@@ -114,6 +114,7 @@ void image_describePixel(char *dest,double x,double y)
 		int color;
 		double lat,lon;
 
+                
 		sprintf(dest,"Line: %.3f   Sample: %.3f \n",y,x);
 		/*Print pixel's value (for each band)*/
 		for (color=0;color<ddr->nbands;color++)
@@ -148,5 +149,9 @@ void image_describePixel(char *dest,double x,double y)
 			sprintf(&dest[strlen(dest)],"Lat: %s  Lon: %s (DMS)\n",
 				print_dms(1,lat,latBuf),print_dms(0,lon,lonBuf));
 		}
+                /* Incidence angle */
+                sprintf(&dest[strlen(dest)],
+                        "Incid: %f (deg), Look: %f (deg)\n",
+                        R2D*meta_incid(meta, y, x), R2D*meta_look(meta, y, x));
 	}
 }
