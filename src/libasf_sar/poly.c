@@ -10,8 +10,8 @@ Orion Sky Lawlor, 3/99
 /*Return the value of the i'th term of this polynomial.
   E.g., term 2 is y; term 4 is x*y, etc.
  Degree TermNo            Reduced     Value
- 0      0	          0	      1
- 1      1 2	          0 1         x    y
+ 0      0                 0           1
+ 1      1 2               0 1         x    y
  2      3 4 5             0 1 2       x^2  x*y    y^2
  3      6 7 8 9           0 1 2 3     x^3  x^2*y  x*y^2    y^3
  4      10 11 12 13 14    0 1 2 3 4   x^4  x^3*y  x^2*y^2  x*y^3    y^4
@@ -59,7 +59,10 @@ double poly_term(int termNo,double x,double y)
         case 11:
             return x*x*x*y;
         case 12:
-            return x*x*y*y;
+        {
+            double xy=x*y;
+            return xy*xy;
+        }
         case 13:
             return x*y*y*y;
         case 14:
@@ -78,9 +81,15 @@ double poly_term(int termNo,double x,double y)
             return x2*x2*y;
         }
         case 17:
-            return x*x*x*y*y;
+        {
+            double xy=x*y;
+            return xy*xy*x;
+        }
         case 18:
-            return x*x*y*y*y;
+        {
+            double xy=x*y;
+            return xy*xy*y;
+        }
         case 19:
         {
             double y2=y*y;
