@@ -277,7 +277,7 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
 }
 
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
-                           float *out,int ns, int doInterp, float *mask)
+                           float *out,int ns, int doInterp, float *mask, int line)
 {
     int i,grX;
     int valid_data_yet=0;
@@ -298,6 +298,11 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
     // ugly hack to say right edge is 400 pixels from right of image
     int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
+
+    // shadow tracker -- this is the negative cosine of the biggest look
+    // angle found so far.  As we move across we image, this should increase
+    // if it doesn't ==> shadow
+    double biggest_look = -2;
 
     for (grX=0;grX<ns;grX++)
     {
@@ -383,41 +388,19 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             
         }
 
-        // determine if this pixel is in shadow, by tracing back to the sat
-        if (mask && d->meta && height>0) 
-        {
-            double slantFirst, slantPer;
-            meta_get_slants(d->meta, &slantFirst, &slantPer);
+        // double cur_look = meta_look(d->meta, line, grX);
+        double h = meta_get_sat_height(d->meta, line, grX);
+        double er = meta_get_earth_radius(d->meta, line, grX) + grDEM[grX];
+        double sr = meta_get_slant(d->meta, line, grX); // srX instead?
+        double cur_look = - (sr*sr + h*h - er*er)/(2*srX*h);
 
-            double sr_0 = slantFirst + grX*slantPer;
-            double sh = meta_get_sat_height(d->meta, 0, (long)grX) -
-                        meta_get_earth_radius(d->meta, 0, (long)grX);
-            double nd_0 = sqrt(sr_0*sr_0 - sh*sh);
-
-            int x = grX - 1;
-            while (x > 0) {
-                double sr = slantFirst + x*slantPer;
-                double nd = sqrt(sr*sr - sh*sh);
-
-                // height of the ray from grX back to satellite
-                // using similar triangles
-                double ray_ht = (nd_0-nd) * sh/nd_0 + grDEM[grX];
-
-                // can stop if the ray we're tracing is already higher than
-                // height point seen so far, but add some padding just in case
-                if (ray_ht > max_height + 100) {
-                    break;
-                }
-
-                // does ray hit the terrain?  if so => shadow
-                if (grDEM[x] > ray_ht) {
-                    ++n_shadow;
-                    mask[grX] = MASK_SHADOW;
-                    break;
-                }
-
-                --x;
-            }
+        if (cur_look >= biggest_look) {
+            // normal case -- no shadow
+            biggest_look = cur_look;
+        } else {
+            // this point is shadowed by the point that generated
+            // the current "biggest_look" value
+            mask[grX] = MASK_SHADOW;
         }
     }
 
@@ -696,13 +679,13 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
                     if (inMaskFlag) {
 			    geo_compensate(&d,grDEMline,mask+y*d.numSamples,
-					    outLine,d.numSamples,0,NULL);
+					    outLine,d.numSamples,0,NULL,y);
                         for (x=0; x<d.numSamples; ++x)
                             mask[y*d.numSamples+x] = outLine[x];
                     }
 
                     geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
-				    1,mask+y*d.numSamples);
+				    1,mask+y*d.numSamples,y);
 
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
