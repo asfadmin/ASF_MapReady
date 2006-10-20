@@ -388,11 +388,15 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             
         }
 
-        // double cur_look = meta_look(d->meta, line, grX);
+        // need to compute the slant range value incorporating
+        // the height
         double h = meta_get_sat_height(d->meta, line, grX);
-        double er = meta_get_earth_radius(d->meta, line, grX) + grDEM[grX];
-        double sr = meta_get_slant(d->meta, line, grX); // srX instead?
-        double cur_look = - (sr*sr + h*h - er*er)/(2*srX*h);
+        double sr = meta_get_slant(d->meta, line, grX);
+        double er = meta_get_earth_radius(d->meta, line, grX);
+        double ang = acos((h*h + er*er - sr*sr)/(2*h*er));
+        er += grDEM[grX];
+        sr = sqrt(h*h + er*er - 2*h*er*cos(ang));
+        double cur_look = - (sr*sr + h*h - er*er)/(2*sr*h);
 
         if (cur_look >= biggest_look) {
             // normal case -- no shadow
@@ -401,6 +405,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             // this point is shadowed by the point that generated
             // the current "biggest_look" value
             mask[grX] = MASK_SHADOW;
+            ++n_shadow;
         }
     }
 
