@@ -122,6 +122,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case IMAGE:
 	meta_put_string(fp,"image_data_type:","IMAGE",comment);
 	break;
+      case MASK:
+        meta_put_string(fp,"image_data_type:","MASK",comment);
+        break;
       default:
 	meta_put_string(fp,"image_data_type:","???",comment);
 	break;
