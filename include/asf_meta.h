@@ -96,7 +96,8 @@ typedef enum {
   LUT_IMAGE,
   ELEVATION,
   DEM,
-  IMAGE
+  IMAGE,
+  MASK
 } image_data_type_t;
 
 typedef enum {
@@ -136,7 +137,8 @@ typedef enum {
   NAD27_DATUM,   /* North American Datum 1927 (Clarke 1866) */
   NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
   WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
-  WGS84_DATUM    /* World Geodetic System 1984 (WGS84) */
+  WGS84_DATUM,    /* World Geodetic System 1984 (WGS84) */
+  UNKNOWN_DATUM
 } datum_type_t;
 
 /* Return the spheroid generally associated with a given datum.
