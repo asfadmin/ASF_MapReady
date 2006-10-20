@@ -14,7 +14,6 @@ all: build_only
 	mkdir -p $(SHAREDIR)/asf_convert
 	cp batch.config $(SHAREDIR)/asf_convert
 	cp asf_convert.defaults $(SHAREDIR)/asf_convert
-	cp asf_convert_cmd.pdf $(SHAREDIR)/asf_convert
 
 build_only: $(OBJS)
 	rm -f libasf_convert.a
