@@ -9,10 +9,12 @@
 #ifndef GEOTIFF_FLAVORS_H
 #define GEOTIFF_FLAVORS_H
 
+#include <stdarg.h>
+
 // Type of a pointer to a function appropriate for importing a
 // geotiff_file of some specific flavor.
 typedef void (*geotiff_importer)(const char *geotiff_file, 
-                                 const char *outBaseName);
+				 const char *outBaseName, int flag[], ...);
 
 // Try to detect the flavor of a given geotiff file, and return an
 // appropriate geotiff_importer.

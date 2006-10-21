@@ -6,15 +6,14 @@
 
 /******************************************************************************
  * Import the ESRI format into our ASF Tools file format */
-void import_esri(char *inDataName, char *inMetaName, char *outBaseName)
+void import_esri(char *inDataName, char *inMetaName, char *outBaseName,
+                 int flags[])
 {
   char line[255]="", key[25]="", value[25]="";
   char outDataName[256], outMetaName[256];
   FILE *fp;
   meta_parameters *meta=NULL;
   esri_header *esri=NULL;
-
-  asfPrintWarning("ESRI Import not completely tested!\n");
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);

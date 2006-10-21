@@ -23,7 +23,7 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
 void import_ceos(char *inDataName, char *inMetaName, char *lutName,
-                 char *outBaseName, radiometry_t radiometry, int db_flag)
+                 char *outBaseName, int flags[])
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
@@ -38,7 +38,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   struct IOF_VFDR image_fdr;                  /* CEOS File Descriptor Record */
   data_type_t ceos_data_type;                     /* Data type for CEOS File */
   FILE *fpIn=NULL, *fpOut=NULL;              /* In/output data file pointers */
-  int lut_flag=FALSE;
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
@@ -59,10 +58,6 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     if (meta->sar) meta->sar->earth_radius_pp = pp_er;
   }
 
-  /*Provided a LUT?*/
-  if (lutName != NULL && strlen(lutName) > 0)
-      lut_flag = TRUE;
-
   /************************* BEGIN RAW DATA SECTION **************************/
   if (meta->general->data_type==COMPLEX_BYTE) {
     int trash;
@@ -71,10 +66,10 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     iqType *iqBuf;           /* Buffer containing the complex i & q channels */
 
     /* Die if the sprocket flag is specified, since it doesn't do lvl 0 */
-    //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-    //  asfPrintError("Data is level 0, SProCKET can not use it.");
-    //  exit(EXIT_FAILURE);
-    //}
+    if (flags[f_SPROCKET] != FLAG_NOT_SET) {
+      asfPrintError("Data is level 0, SProCKET can not use it.");
+      exit(EXIT_FAILURE);
+    }
 
     /* Let the user know what format we are working on */
     asfPrintStatus("   Input data type: level zero raw data\n"
@@ -82,18 +77,16 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
-    switch (radiometry) {
-        case r_AMP:
-            sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; break;
-        case r_SIGMA:
-            sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; break;
-        case r_BETA:
-            sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
-        case r_GAMMA:
-            sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
-        case r_POWER:
-            sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
-    }
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
@@ -132,18 +125,16 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
-    switch (radiometry) {
-        case r_AMP:
-            sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; break;
-        case r_SIGMA:
-            sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; break;
-        case r_BETA:
-            sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
-        case r_GAMMA:
-            sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
-        case r_POWER:
-            sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
-    }
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
@@ -202,18 +193,16 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
-    switch (radiometry) {
-        case r_AMP:
-            sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; break;
-        case r_SIGMA:
-            sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; break;
-        case r_BETA:
-            sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
-        case r_GAMMA:
-            sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
-        case r_POWER:
-            sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
-    }
+    if (flags[f_AMP] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
+    if (flags[f_SIGMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_BETA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
+    if (flags[f_GAMMA] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
+    if (flags[f_POWER] != FLAG_NOT_SET)
+      { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
@@ -272,8 +261,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     strcat(outDataName,TOOLS_IMAGE_EXT);
 
     if (check_cal(inMetaName)==0 &&
-        ( (radiometry == r_SIGMA) || (radiometry == r_GAMMA) || 
-          (radiometry == r_BETA) ) ) {
+        ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET) ||
+          (flags[f_BETA]!=FLAG_NOT_SET) ) ) {
       asfPrintError("Unable to find calibration parameters in the metadata.\n");
     }
 
@@ -312,48 +301,48 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
-    else if (radiometry == r_AMP) {
+    else if (flags[f_AMP] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: amplitude image\n\n");
       meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
-    else if (radiometry == r_POWER) {
+    else if (flags[f_POWER] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: power image\n\n");
       meta->general->image_data_type = POWER_IMAGE;
     }
-    else if (radiometry == r_SIGMA) {
+    else if (flags[f_SIGMA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (sigma power scale values)\n\n");
       meta->general->image_data_type = SIGMA_IMAGE;
     }
-    else if (radiometry == r_GAMMA) {
+    else if (flags[f_GAMMA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (gamma power scale values)\n\n");
       meta->general->image_data_type = GAMMA_IMAGE;
     }
-    else if (radiometry == r_BETA) {
+    else if (flags[f_BETA] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: calibrated image (beta power scale values)\n\n");
       meta->general->image_data_type = BETA_IMAGE;
     }
-    else if (lut_flag) {
+    else if (flags[f_LUT] != FLAG_NOT_SET) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
               "   Output data type: user defined LUT image\n\n");
       meta->general->image_data_type = LUT_IMAGE;
     }
     else { /* No chosen output type: default to amplitude */
-        radiometry = r_AMP;
-        sprintf(logbuf,
-                "   Input data type: level one data\n"
-                "   Output data type: amplitude image\n\n");
-        meta->general->image_data_type = AMPLITUDE_IMAGE;
+      flags[f_AMP] = FLAG_SET;
+      sprintf(logbuf,
+              "   Input data type: level one data\n"
+              "   Output data type: amplitude image\n\n");
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
     asfPrintStatus(logbuf);
 
@@ -389,7 +378,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
 
   /**** Take care of LUT images ****/
-    if (lut_flag) {
+    if (flags[f_LUT]!=FLAG_NOT_SET) {
       FILE *fpLut;
       double incid_table[MAX_tableRes];                  /* Incidence angle */
       double scale_table[MAX_tableRes];                   /* Scaling factor */
@@ -547,8 +536,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
 
   /**** Create calibrated (sigma, gamma, or beta naught) image ****/
-    else if (radiometry==r_SIGMA || radiometry==r_GAMMA || radiometry==r_BETA)
-    {
+    else if ( (flags[f_SIGMA]!=FLAG_NOT_SET) || (flags[f_GAMMA]!=FLAG_NOT_SET)
+              || (flags[f_BETA]!=FLAG_NOT_SET) ) {
       int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
       double noise_table[MAX_tableRes];       /* Noise table for calibration */
       double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
@@ -561,11 +550,11 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
       cal_param=create_cal_params(inMetaName);
       if (cal_param==NULL) /* Die if we can't get the calibration params */
         asfPrintError("Unable to extract calibration parameters from CEOS file.");
-      if (radiometry==r_SIGMA)
+      if (flags[f_SIGMA]!=FLAG_NOT_SET)
         cal_param->output_type=sigma_naught;
-      else if (radiometry==r_GAMMA)
+      else if (flags[f_GAMMA]!=FLAG_NOT_SET)
         cal_param->output_type=gamma_naught;
-      else if (radiometry==r_BETA)
+      else if (flags[f_BETA]!=FLAG_NOT_SET)
         cal_param->output_type=beta_naught;
 
     /**** Read 16 bit data and convert to calibrated amplitude data ****/
@@ -585,12 +574,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
             for (kk=0;kk<tableRes;kk++)
               noise_table[kk]=get_noise(cal_param,kk*tablePix,ii);
-          if (radiometry==r_GAMMA)
+          if (flags[f_GAMMA]!=FLAG_NOT_SET)
             /*Allocate incidence table entries or update.*/
             if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
               for (kk=0;kk<tableRes;kk++)
                 incid_cos[kk]=get_invCosIncAngle(cal_param,kk*tablePix,ii);
-          if (radiometry==r_BETA)
+          if (flags[f_BETA]!=FLAG_NOT_SET)
             /*Allocate incidence table entries or update.*/
             if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
               for (kk=0;kk<tableRes;kk++)
@@ -608,11 +597,11 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 		incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
 	      if (cal_param->output_type==beta_naught)
 		incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-	      if (db_flag) {
-		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
+	      if (flags[f_DB] == FLAG_NOT_SET) {
+		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
 	      }
 	      else {
-		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
+		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
 	      }
 	    }
             else
@@ -636,12 +625,12 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
             for (kk=0;kk<tableRes;kk++)
               noise_table[kk]=get_noise(cal_param,kk*tablePix,ii);
-          if (radiometry==r_GAMMA)
+          if (flags[f_GAMMA]!=FLAG_NOT_SET)
             /*Allocate incidence table entries or update.*/
             if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
               for (kk=0;kk<tableRes;kk++)
                 incid_cos[kk]=get_invCosIncAngle(cal_param,kk*tablePix,ii);
-          if (radiometry==r_BETA)
+          if (flags[f_BETA]!=FLAG_NOT_SET)
             /*Allocate incidence table entries or update.*/
             if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
               for (kk=0;kk<tableRes;kk++)
@@ -659,11 +648,11 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
                 incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
               if (cal_param->output_type==beta_naught)
                 incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-              if (db_flag) {
-                out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
+              if (flags[f_DB] == FLAG_NOT_SET) {
+                out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
               }
               else {
-                out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)byte_buf[kk]);
+                out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)byte_buf[kk]);
               }
             }
             else
@@ -687,7 +676,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
           /* Put the data in proper endian order before we do anything */
           big16(short_buf[kk]);
           /* Now do our stuff */
-          if (radiometry==r_POWER)
+          if (flags[f_POWER]!=FLAG_NOT_SET)
             out_buf[kk]=(float)(short_buf[kk]*short_buf[kk]);
           else
             out_buf[kk]=(float)short_buf[kk];
@@ -707,7 +696,7 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
         FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
         for (kk=0; kk<ns; kk++) {
-          if (radiometry==r_POWER)
+          if (flags[f_POWER] != FLAG_NOT_SET)
             out_buf[kk]=(float)(byte_buf[kk]*byte_buf[kk]);
           else
             out_buf[kk]=(float)byte_buf[kk];
@@ -724,23 +713,22 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
   /************************ END DETECTED DATA SECTION ************************/
 
   /* Now that the data file is written, write the metadata */
-  //if(flags[f_OLD_META] != FLAG_NOT_SET) {
-    //char ddrName[256];
-    //struct DDR ddr;
-    //strcpy(ddrName, outBaseName);
-    //strcat(ddrName, ".ddr");
-    //meta2ddr(meta, &ddr);
-    //c_putddr(ddrName, &ddr);
-    //meta_new2old(meta);
-    //meta_write_old(meta, outMetaName);
-  //} else {
-    meta_write(meta,outMetaName);
-  //}
+  if(flags[f_OLD_META] != FLAG_NOT_SET) {
+    char ddrName[256];
+    struct DDR ddr;
+    strcpy(ddrName, outBaseName);
+    strcat(ddrName, ".ddr");
+    meta2ddr(meta, &ddr);
+    c_putddr(ddrName, &ddr);
+    meta_new2old(meta);
+    meta_write_old(meta, outMetaName);
+  }
+  else meta_write(meta,outMetaName);
 
   if (isPP(meta))
   {
-      asfPrintStatus("PP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
-      asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
+      asfPrintStatus("\nPP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
+      asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n\n",
                      meta->sar->earth_radius);
   }
 

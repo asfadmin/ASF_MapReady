@@ -13,12 +13,17 @@
 #include <xtiffio.h>
 
 #include <asf.h>
+#include <proj.h>
 #include "asf_import.h"
 #include "geotiff_flavors.h"
+#include "import_arcgis_geotiff.h"
+#include "find_arcgis_geotiff_aux_name.h"
 
 geotiff_importer
 detect_geotiff_flavor (const char *file)
 {
+  GString *inGeotiffAuxName;
+        
   // Open the Geotiff.
   TIFF *tiff = XTIFFOpen (file, "r");
   asfRequire (tiff != NULL, "Error opening input TIFF file.\n");
@@ -33,22 +38,45 @@ detect_geotiff_flavor (const char *file)
   // Ensure the citation is at least eventually terminated somewhere.
   citation[max_citation_length] = '\0';
 
-  printf("citation: %s:::\n", citation);
-
   // Test for a particular flavor.
   const char *tmp = "IMAGINE GeoTIFF Support";
   if ( strncmp (citation, tmp, strlen (tmp)) == 0 ) {
     short model_type;
+    short proj_type;
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
-    printf("model_type: %d\n", model_type);
-    printf("ModelTypeGeographic: %d\n", ModelTypeGeographic);
     if ( model_type == ModelTypeGeographic ) {
       return import_usgs_seamless;
     }
+    // If the TIFF claims that a projection exists OR if the projection type
+    // is unknown, then check for an ArcGIS metadata (.aux) file since it may
+    // contain the needed info.
+    //
+    // If the tiff turns out to be an ArcGIS GeoTIFF and the file(s) contain
+    // a supported projection type, then return the arcgis importer...
+    else if ( model_type == ModelTypeProjected ||
+              (model_type != ModelTypeGeographic && model_type != ModelTypeGeocentric)
+            ) {
+      inGeotiffAuxName = find_arcgis_geotiff_aux_name(file);
+      if ( inGeotiffAuxName != NULL ) {
+        proj_type = getArcgisProjType (inGeotiffAuxName->str);
+        switch (proj_type) {
+          case UTM:     // Universal Transverse Mercator (UTM)
+          case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
+          case LAMCC:   // Lambert Conformal Conic
+          case PS:      // Polar Stereographic
+          case LAMAZ:   // Lambert Azimuthal Equal Area
+            return import_arcgis_geotiff;
+            break;
+          case DHFA_UNKNOWN_PROJECTION:
+            default:      // Else cont...
+            break;
+        }
+      }
+    }
   }
-
+  
   // Test for a particular flavor.
   GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
   // Ensure the citation is at least eventually terminated somewhere.

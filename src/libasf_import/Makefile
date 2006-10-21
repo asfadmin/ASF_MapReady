@@ -54,9 +54,11 @@ OBJS  = ardop_write.o \
 	decoder_RSAT.o \
 	decoder_utils.o \
 	fetch_prc_stvec.o \
+	find_arcgis_geotiff_aux_name.o \
 	find_geotiff_name.o \
 	frame.o \
 	geotiff_flavors.o \
+	import_arcgis_geotiff.o \
 	import_asf_utm_geotiff.o \
 	import_ceos.o \
 	import_envi.o \
@@ -70,6 +72,7 @@ OBJS  = ardop_write.o \
 	sprocket_layers.o \
         tiff_to_float_image.o \
 	unpack.o \
+	utilities.o \
 	utilities_ceos.o \
 	utilities_stf.o \
 	write_meta_and_img.o

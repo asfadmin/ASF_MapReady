@@ -71,7 +71,7 @@ These macros are used by the decoder_* files' *_init() routines.
 	s->slope=-4.285714e+11;      /*chirp slope, Hz/sec.*/ \
 	s->pulsedur=27E-06;     /*chirp length, in sec.*/ \
 	s->frequency=speedOfLight/0.2360571; /*radar wavelength, in m.*/ \
-        /*s->prf=2159827.2138229;*/ \
+//        s->prf=2159827.2138229; \
 
 /***********************************************
 Satellite auxiliary parameters, used by aux_* routines.

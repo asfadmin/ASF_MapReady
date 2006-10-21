@@ -68,7 +68,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   date_ymd2jd(&img_date,&img_jdate);
 
 /*Read a state vector.*/
-  if (!prcflag) {
+  if (prcflag == -1) {
       sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].x:", nVec);
       stVec.pos.x = lzDouble(parN,buf,NULL);
       sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].y:", nVec);
@@ -145,7 +145,8 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
  * lines in the level-0 file, by reading the granule (.gran) file. */
 #include <ctype.h>
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
-            readPulseFunc *readNextPulse)
+            readPulseFunc *readNextPulse,
+            int prcflag, char *prcPath)
 {
   bin_state *s;
   char lzName[256];

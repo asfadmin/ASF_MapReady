@@ -23,10 +23,11 @@
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"
 
-// Import a USGS seamless server digital elevation model (a
+// Import a USGS seamless server digital elevation model (a 
 // pseudoprojected GeoTIFF flavor) into our own ASF Tools format.
 void
-import_usgs_seamless (const char *inFileName, const char *outBaseName)
+import_usgs_seamless (const char *inFileName, const char *outBaseName,
+		      int flag[], ...)
 {
   // Let the user know what format we are working on.
   asfPrintStatus

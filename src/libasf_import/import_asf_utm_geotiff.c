@@ -25,7 +25,8 @@
 // Import a UTM projected GeoTIFF originally created by the ASF tools
 // back into our own ASF Tools format.
 void
-import_asf_utm_geotiff (const char *inFileName, const char *outBaseName)
+import_asf_utm_geotiff (const char *inFileName, const char *outBaseName,
+			int flag[], ...)
 {
   // Let the user know what format we are working on.
   asfPrintStatus
