@@ -50,7 +50,7 @@ main (int argc, char *argv[])
   int do_resample = TRUE;
   int do_interp = TRUE;
   int do_fftMatch_verification = TRUE;
-  int do_corner_matching = TRUE;
+  int do_corner_matching = FALSE;
   int generate_water_mask = FALSE;
   int save_clipped_dem = FALSE;
   int update_original_metadata_with_offsets = FALSE;
