@@ -111,12 +111,13 @@ float get_default_ypix(const char *outBaseName)
 /******************************************************************************
 * Lets rock 'n roll!
 *****************************************************************************/
-int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type,
-               char *image_data_type, char *lutName, 
-	       char *prcPath, double lowerLat, double upperLat, 
-	       double range_scale, double azimuth_scale, 
-	       double correct_y_pixel_size,
-	       char *inBaseName, char *outBaseName)
+// Convenience wrapper, without the kludgey "flags" array
+int asf_import(radiometry_t radiometry, int db_flag,
+               char *format_type, char *image_data_type, char *lutName, 
+      	       char *prcPath, double lowerLat, double upperLat, 
+      	       double range_scale, double azimuth_scale, 
+      	       double correct_y_pixel_size,
+      	       char *inBaseName, char *outBaseName)
 {
     char inDataName[256]="", inMetaName[256]="";
     char unscaledBaseName[256]="";
@@ -173,9 +174,9 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type,
       asfPrintStatus("   Data format: %s\n", format_type);
       GString *inGeotiffName = find_geotiff_name (inBaseName);
       if ( inGeotiffName == NULL ) {
-	asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
-		       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
-		       "corresponding to specified inBaseName");
+      	asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
+		                   "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
+		                   "corresponding to specified inBaseName");
       }
       // At the moment, we are set up to ingest only a subset of the
       // GeoTIFF variants, and no general GeoTIFF handler is implemented
@@ -191,8 +192,7 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type,
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
         if (importer == import_arcgis_geotiff     &&
-            flags[f_IMAGE_DATA_TYPE]              &&
-            strlen(image_data_type)                &&
+            strlen(image_data_type)               &&
             strncmp(image_data_type, "???", 3) != 0
            )
         {
@@ -207,50 +207,50 @@ int asf_import(int flags[NUM_IMPORT_FLAGS], char *format_type,
           // NOTE: Any of these three importers may be returned by
           // the detect_geotiff_flavor() function above
           //
-          importer (inGeotiffName->str, outBaseName, flags, image_data_type);
+          importer (inGeotiffName->str, outBaseName, image_data_type);
         }
         else {
-	  importer (inGeotiffName->str, outBaseName, flags);
+      	  importer (inGeotiffName->str, outBaseName);
         }
       } else {
-	asfPrintWarning ("Couldn't identify the GeoTIFF file variant... \n");
+      	asfPrintWarning ("Couldn't identify the GeoTIFF file variant... \n");
  
-	// Haven't written import-generic_geotiff yet...
-	asfPrintError ("Tried to import an unrecognized GeoTIFF variant...\n"
-		       "Unrecognized data format...\n");
-	// import_generic_geotiff (inGeotiffName->str, outBaseName, flags);
+      	// Haven't written import-generic_geotiff yet...
+      	asfPrintError ("Tried to import an unrecognized GeoTIFF variant...\n"
+            		       "Unrecognized data format...\n");
+      	//import_generic_geotiff (inGeotiffName->str, outBaseName);
       }
       g_string_free (inGeotiffName, TRUE);
     }
     /* Don't recognize this data format; report & quit */
     else {
-        asfPrintError("Unrecognized data format: '%s'",format_type);
+      asfPrintError("Unrecognized data format: '%s'",format_type);
     }
 
     /* resample, if necessary */
     if (do_resample)
     {
-        if (range_scale < 0)
-	    range_scale = DEFAULT_RANGE_SCALE;
+      if (range_scale < 0)
+     	    range_scale = DEFAULT_RANGE_SCALE;
 
-        if (azimuth_scale < 0)
-	    azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+      if (azimuth_scale < 0)
+   	    azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
 
-        asfPrintStatus("Resampling with scale factors: "
-		       "%lf range, %lf azimuth.\n",
-            range_scale, azimuth_scale);
+      asfPrintStatus("Resampling with scale factors: "
+           		       "%lf range, %lf azimuth.\n",
+                      range_scale, azimuth_scale);
 
-        resample_nometa(unscaledBaseName, outBaseName,
-			range_scale, azimuth_scale);
+      resample_nometa(unscaledBaseName, outBaseName,
+                 			range_scale, azimuth_scale);
 
-	asfPrintStatus("Done.\n");
+    	asfPrintStatus("Done.\n");
     }
 
     /* metadata pixel size fix, if necessary */
     if (do_metadata_fix)
     {
         if (correct_y_pixel_size < 0)
-	    correct_y_pixel_size = get_default_ypix(outBaseName);
+    	    correct_y_pixel_size = get_default_ypix(outBaseName);
 
         fix_ypix(outBaseName, correct_y_pixel_size);
     }

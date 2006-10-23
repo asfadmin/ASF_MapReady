@@ -26,8 +26,7 @@
 // Import a USGS seamless server digital elevation model (a 
 // pseudoprojected GeoTIFF flavor) into our own ASF Tools format.
 void
-import_usgs_seamless (const char *inFileName, const char *outBaseName,
-		      int flag[], ...)
+import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 {
   // Let the user know what format we are working on.
   asfPrintStatus
