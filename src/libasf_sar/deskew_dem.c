@@ -301,6 +301,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     // ugly hack to say right edge is 400 pixels from right of image
     int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
 
+    // height of the satellite at this line
+    double sat_ht = meta_get_sat_height(d->meta, line, grX);
+
     // shadow tracker -- this is the negative cosine of the biggest look
     // angle found so far.  As we move across we image, this should increase
     // if it doesn't ==> shadow
@@ -401,7 +404,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
         // need to compute the slant range value incorporating
         // the height
-        double h = meta_get_sat_height(d->meta, line, grX);
+        double h = sat_ht;
         double sr = meta_get_slant(d->meta, line, grX);
         double er = meta_get_earth_radius(d->meta, line, grX);
         double ang_cos = (h*h + er*er - sr*sr)/(2*h*er);
