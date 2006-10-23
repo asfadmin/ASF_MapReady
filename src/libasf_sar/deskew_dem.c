@@ -160,6 +160,8 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
             lastOutValue=height;
             lastOutX=outX;
         }
+        //lastOutValue=height;
+        //lastOutX=outX;
     }
     for (outX=lastOutX+1;outX<ns;outX++) {
         outBuf[outX]=badDEMht;
@@ -306,13 +308,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 
     for (grX=0;grX<ns;grX++)
     {
-        double height=grDEM[grX];	
-        double srX=dem_gr2sr(d,grX,height);
-     
-        if (grDEM[grX] > max_height) max_height = grDEM[grX];
+        double height=grDEM[grX];
+        double srX;
+        if (height!=badDEMht)
+        {
+            srX=dem_gr2sr(d,grX,height);
+            if (height > max_height) max_height = height;
 
-        if (srX >= 0 && srX < ns-1) {
-            if (height!=badDEMht)
+            if (srX >= 0 && srX < ns-1)
             {
                 int x=floor(srX);
                 double dx=srX-x;
@@ -364,7 +367,16 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             }
         }
         else {
-            out[grX]=0.0;
+            // bad DEM height. just copy the pixel over, if we can.
+            // (assume zero height in coversion to slant range)
+            srX=dem_gr2sr(d,grX,0);
+
+            if (valid_data_yet && srX >= 0 && srX < ns-1) {
+                out[grX] = in[(int)(srX+.5)];
+            } else {
+                out[grX] = 0;
+            }
+            
             if (mask)
                 mask[grX] = MASK_INVALID_DATA;
 
@@ -385,7 +397,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     }
                 }
 */
-            
         }
 
         // need to compute the slant range value incorporating
@@ -393,9 +404,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         double h = meta_get_sat_height(d->meta, line, grX);
         double sr = meta_get_slant(d->meta, line, grX);
         double er = meta_get_earth_radius(d->meta, line, grX);
-        double ang = acos((h*h + er*er - sr*sr)/(2*h*er));
+        double ang_cos = (h*h + er*er - sr*sr)/(2*h*er);
         er += grDEM[grX];
-        sr = sqrt(h*h + er*er - 2*h*er*cos(ang));
+        sr = sqrt(h*h + er*er - 2*h*er*ang_cos);
         double cur_look = - (sr*sr + h*h - er*er)/(2*sr*h);
 
         if (cur_look >= biggest_look) {
