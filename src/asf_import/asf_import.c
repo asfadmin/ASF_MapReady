@@ -23,9 +23,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-lut <file>] [-lat <lower> <upper>]\n"\
-"              [-prc] [-old] [-log <logFile>] [-quiet] [-license] [-version]\n"\
-"              [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
+"              [-format <inputFormat>] [-image-data-type <type>] [-lut <file>]\n"\
+"              [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
+"              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>]\n"\
 "              [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
@@ -61,6 +61,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', and 'geotiff'. 'CEOS' is the default behavior.\n"\
+"   -image-data-type <type>\n"\
+"        Force input data to be interpreted as the given image data type. Valid\n"\
+"        formats are 'geocoded_image', 'dem', and 'mask'.  Default is \"???\".\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n"\
@@ -158,6 +161,7 @@ typedef enum {
     f_RANGE_SCALE,
     f_AZIMUTH_SCALE,
     f_FIX_META_YPIX,
+    f_IMAGE_DATA_TYPE,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -277,6 +281,7 @@ int main(int argc, char *argv[])
     char *lutName=NULL;
     char *prcPath=NULL;
     char format_type[256]="";
+    char image_data_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
     double lowerLat=NAN, upperLat=NAN;
@@ -314,6 +319,7 @@ int main(int argc, char *argv[])
     flags[f_LOG] = checkForOption("-log", argc, argv);
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
+    flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
@@ -392,6 +398,7 @@ int main(int argc, char *argv[])
         if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
         if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_FIX_META_YPIX] != FLAG_NOT_SET)
@@ -435,6 +442,11 @@ int main(int argc, char *argv[])
         /*Make sure the field following -format isn't another option*/
         if(   argv[flags[f_FORMAT]+1][0] == '-'
             || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
+            print_usage();
+    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)
+        /*Make sure the field following -format isn't another option*/
+        if(   argv[flags[f_IMAGE_DATA_TYPE]+1][0] == '-'
+            || flags[f_IMAGE_DATA_TYPE] >= argc-REQUIRED_ARGS)
             print_usage();
 
     /* Be sure to open log ASAP */
@@ -532,6 +544,16 @@ int main(int argc, char *argv[])
     else
         strcpy(format_type, "CEOS");
 
+    /* Deal with input image data type */
+    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET) {
+      strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
+      for (ii=0; ii<strlen(image_data_type); ii++) {
+        image_data_type[ii] = (char)toupper(image_data_type[ii]);
+      }
+    }
+    else
+      strcpy(image_data_type, "???");
+
     /* Make sure STF specific options are not used with other data types */
     if (strcmp(format_type, "STF")!=0) {
         if (flags[f_PRC] != FLAG_NOT_SET) {
@@ -599,8 +621,8 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
         
-        asf_import(radiometry, db_flag, format_type, lutName, prcPath,
-                   lowerLat, upperLat, p_range_scale, p_azimuth_scale,
+        asf_import(radiometry, db_flag, format_type, image_data_type, lutName,
+                   prcPath, lowerLat, upperLat, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, inMetaNameOption,
                    inBaseName, outBaseName);
     }
@@ -619,3 +641,4 @@ int main(int argc, char *argv[])
 
     exit(EXIT_SUCCESS);
 }
+
