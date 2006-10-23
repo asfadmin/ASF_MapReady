@@ -365,16 +365,25 @@ void meta_read_old(meta_parameters *meta, char *fileName)
  * remain in their 'invalid' state */
 void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 {
-	int ii=0;
 	struct DDR ddr;
 	c_getddr(ddr_name, &ddr);
 	
-	meta->general->line_count = ddr.nl;
-	meta->general->sample_count = ddr.ns;
+        ddr2meta(&ddr, meta);
+} /* End function meta_read_only_ddr() */
+
+/****************************************************************
+ * ddr2meta
+ * Convert the values in a DDR struct into an already-allocated
+ * and raw_init()-ed metadata structure. */
+void ddr2meta(struct DDR *ddr, meta_parameters *meta)
+{
+	int ii=0;
+	meta->general->line_count = ddr->nl;
+	meta->general->sample_count = ddr->ns;
 	meta->general->band_number = 0;
-	meta->general->start_line = ddr.master_line - 1;
-	meta->general->start_sample = ddr.master_sample - 1;
-	switch (ddr.dtype) {
+	meta->general->start_line = ddr->master_line - 1;
+	meta->general->start_sample = ddr->master_sample - 1;
+	switch (ddr->dtype) {
 	  case 0:/*Equivalent to DTYPE_BYTE*/
 	  case DTYPE_BYTE:    meta->general->data_type = BYTE;      break;
 	  case DTYPE_SHORT:   meta->general->data_type = INTEGER16; break;
@@ -383,98 +392,98 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 	  case DTYPE_DOUBLE:  meta->general->data_type = REAL64;    break;
 	  case DTYPE_COMPLEX: meta->general->data_type = COMPLEX_REAL32; break;
 	  default:
-		printf("ERROR in meta_read_only_ddr(): Unrecognized DDR data type (%d)... Exit program.\n",ddr.dtype);
+		printf("ERROR in meta_read_only_ddr(): Unrecognized DDR data type (%d)... Exit program.\n",ddr->dtype);
 		exit (EXIT_FAILURE);
 	}
-	if (strcmp(ddr.system,"ieee-std")==0)
+	if (strcmp(ddr->system,"ieee-std")==0)
 		strcpy(meta->general->system,"big_ieee");
-	else if (strcmp(ddr.system,"ieee-lil")==0)
+	else if (strcmp(ddr->system,"ieee-lil")==0)
 		strcpy(meta->general->system,"lil_ieee");
-	else if (strcmp(ddr.system,"cray-unicos")==0)
+	else if (strcmp(ddr->system,"cray-unicos")==0)
 		strcpy(meta->general->system,"cray_float");
 	else
 		strcpy(meta->general->system,MAGIC_UNSET_STRING);
-	if (ddr.valid[DDPDV] == VALID) {
-		meta->general->x_pixel_size = ddr.pdist_x;
-		meta->general->y_pixel_size = ddr.pdist_y;
+	if (ddr->valid[DDPDV] == VALID) {
+		meta->general->x_pixel_size = ddr->pdist_x;
+		meta->general->y_pixel_size = ddr->pdist_y;
 	}
-	if (ddr.valid[DDINCV] == VALID) {
-		meta->sar->line_increment = ddr.line_inc;
-		meta->sar->sample_increment = ddr.sample_inc;
+	if (ddr->valid[DDINCV] == VALID) {
+		meta->sar->line_increment = ddr->line_inc;
+		meta->sar->sample_increment = ddr->sample_inc;
 	}
     /* Projection stuff */
 	for (ii=0; ii<DDNVAL; ii++) {
-	  if ((ddr.valid[ii]==VALID) && (ii!=DDINCV)) {
+	  if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) {
 		meta->projection = meta_projection_init();
 		/* Projection units */
-		if (ddr.valid[DDPUV] == VALID)
-			strncpy(meta->projection->units, ddr.proj_units, 12);
+		if (ddr->valid[DDPUV] == VALID)
+			strncpy(meta->projection->units, ddr->proj_units, 12);
 		else
 			strcpy(meta->projection->units, "meters");
 		meta->projection->hem = MAGIC_UNSET_CHAR;
-		if (ddr.valid[DDZCV] == VALID)
-		  datum2earth_radius(ddr.datum_code, &meta->projection->re_major, &meta->projection->re_minor);
+		if (ddr->valid[DDZCV] == VALID)
+		  datum2earth_radius(ddr->datum_code, &meta->projection->re_major, &meta->projection->re_minor);
 		else {
 		  meta->projection->re_major = MAGIC_UNSET_DOUBLE;
 		  meta->projection->re_minor = MAGIC_UNSET_DOUBLE;
 		}
-		if ((ddr.valid[DDPCV]==VALID) && (ddr.valid[DDPPV]==VALID)) {
-		   switch (ddr.proj_code) {
+		if ((ddr->valid[DDPCV]==VALID) && (ddr->valid[DDPPV]==VALID)) {
+		   switch (ddr->proj_code) {
 		     case ALBERS:
 		        meta->projection->type = ALBERS_EQUAL_AREA;
-			if (ddr.proj_coef[2]) {
-				meta->projection->re_major = ddr.proj_coef[0];
-				meta->projection->re_minor = ddr.proj_coef[0];
+			if (ddr->proj_coef[2]) {
+				meta->projection->re_major = ddr->proj_coef[0];
+				meta->projection->re_minor = ddr->proj_coef[0];
 			}
 			else {
 				meta->projection->re_major = 6370997;
 				meta->projection->re_minor = 6370997;
 			}
-		        meta->projection->param.albers.std_parallel1 = unpacked_deg(ddr.proj_coef[2]);
-		        meta->projection->param.albers.std_parallel2 = unpacked_deg(ddr.proj_coef[3]);
-		        meta->projection->param.albers.center_meridian  = unpacked_deg(ddr.proj_coef[4]);
-		        meta->projection->param.albers.orig_latitude  = unpacked_deg(ddr.proj_coef[5]);
+		        meta->projection->param.albers.std_parallel1 = unpacked_deg(ddr->proj_coef[2]);
+		        meta->projection->param.albers.std_parallel2 = unpacked_deg(ddr->proj_coef[3]);
+		        meta->projection->param.albers.center_meridian  = unpacked_deg(ddr->proj_coef[4]);
+		        meta->projection->param.albers.orig_latitude  = unpacked_deg(ddr->proj_coef[5]);
 		        break;
 		     case LAMCC:
 		        meta->projection->type = LAMBERT_CONFORMAL_CONIC;
-			if (ddr.proj_coef[2]) {
-				meta->projection->re_major = ddr.proj_coef[0];
-				meta->projection->re_minor = ddr.proj_coef[0];
+			if (ddr->proj_coef[2]) {
+				meta->projection->re_major = ddr->proj_coef[0];
+				meta->projection->re_minor = ddr->proj_coef[0];
 			}
 			else {
 				meta->projection->re_major = 6370997;
 				meta->projection->re_minor = 6370997;
 			}
-		        meta->projection->param.lamcc.plat1 = unpacked_deg(ddr.proj_coef[2]);
-		        meta->projection->param.lamcc.plat2 = unpacked_deg(ddr.proj_coef[3]);
-		        meta->projection->param.lamcc.lon0  = unpacked_deg(ddr.proj_coef[4]);
-		        meta->projection->param.lamcc.lat0  = unpacked_deg(ddr.proj_coef[5]);
+		        meta->projection->param.lamcc.plat1 = unpacked_deg(ddr->proj_coef[2]);
+		        meta->projection->param.lamcc.plat2 = unpacked_deg(ddr->proj_coef[3]);
+		        meta->projection->param.lamcc.lon0  = unpacked_deg(ddr->proj_coef[4]);
+		        meta->projection->param.lamcc.lat0  = unpacked_deg(ddr->proj_coef[5]);
 		        break;
 		     case PS:
 		        meta->projection->type = POLAR_STEREOGRAPHIC;
-		        meta->projection->re_major      = ddr.proj_coef[0];
-		        meta->projection->re_minor      = ddr.proj_coef[1];
-		        meta->projection->param.ps.slon = unpacked_deg(ddr.proj_coef[4]);
-		        meta->projection->param.ps.slat = unpacked_deg(ddr.proj_coef[5]);
+		        meta->projection->re_major      = ddr->proj_coef[0];
+		        meta->projection->re_minor      = ddr->proj_coef[1];
+		        meta->projection->param.ps.slon = unpacked_deg(ddr->proj_coef[4]);
+		        meta->projection->param.ps.slat = unpacked_deg(ddr->proj_coef[5]);
 		        break;
 		     case UTM:
 		        meta->projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-		        if (ddr.valid[DDZCV] == VALID)
-		          meta->projection->param.utm.zone = ddr.zone_code;
+		        if (ddr->valid[DDZCV] == VALID)
+		          meta->projection->param.utm.zone = ddr->zone_code;
 		        else
 		          meta->projection->param.utm.zone = MAGIC_UNSET_INT;
 		        break;
 		     default:
 			meta->projection->type = MAGIC_UNSET_CHAR;
-		        printf("WARNING: DDR projection code '%d' not supported by meta file\n",ddr.proj_code);
+		        printf("WARNING: DDR projection code '%d' not supported by meta file\n",ddr->proj_code);
 		        break;
-		   } /* End switch(ddr.proj_code) */
-		} /* End if (ddr.valid[DDPPV] == VALID) */
-		if (ddr.valid[DDCCV] == VALID) {
-			meta->projection->startY = ddr.upleft[0];
-			meta->projection->startX = ddr.upleft[1];
-			meta->projection->perY = (ddr.loright[0] - ddr.upleft[0]) / (double)ddr.nl;
-			meta->projection->perX = (ddr.loright[1] - ddr.upleft[1]) / (double)ddr.ns;
+		   } /* End switch(ddr->proj_code) */
+		} /* End if (ddr->valid[DDPPV] == VALID) */
+		if (ddr->valid[DDCCV] == VALID) {
+			meta->projection->startY = ddr->upleft[0];
+			meta->projection->startX = ddr->upleft[1];
+			meta->projection->perY = (ddr->loright[0] - ddr->upleft[0]) / (double)ddr->nl;
+			meta->projection->perX = (ddr->loright[1] - ddr->upleft[1]) / (double)ddr->ns;
 		}
 		break;
 	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
@@ -482,7 +491,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
     /* Make some guesses */
 	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR))
 		meta->sar->image_type = 'P';
-} /* End function meta_read_only_ddr() */
+} 
 
 
 

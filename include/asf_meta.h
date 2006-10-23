@@ -504,6 +504,7 @@ void meta_free(meta_parameters *meta);
  */
 /* In meta_read.c */
 meta_parameters *meta_read(const char *inName);
+void ddr2meta(struct DDR *ddr, meta_parameters *meta);
 
 /* In meta_copy.c: Allocates new structure and fills it will values from src */
 meta_parameters *meta_copy(meta_parameters *src);
