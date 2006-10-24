@@ -11,8 +11,7 @@
 
 /******************************************************************************
  * Import the ENVI format into our ASF Tools file format */
-void import_envi(char *inDataName, char *inMetaName, char *outBaseName,
-                 int flags[])
+void import_envi(char *inDataName, char *inMetaName, char *outBaseName)
 {
   char line[256]="", key[25]="", value[25]="", bla[25];
   char outDataName[256], outMetaName[256];
@@ -23,6 +22,8 @@ void import_envi(char *inDataName, char *inMetaName, char *outBaseName,
   FILE *fp;
   meta_parameters *meta=NULL;
   envi_header *envi=NULL;
+
+  asfPrintWarning("ENVI Import not completely tested!\n");
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
