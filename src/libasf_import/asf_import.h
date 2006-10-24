@@ -25,17 +25,17 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                char *image_data_type, // "geocoded_image", "dem", or "mask"
                char *lutName, // NULL for no lookup table
                               // otherwise, this is the lookup table filename
-	       char *prcPath, // NULL for not using precision orbit data
+               char *prcPath, // NULL for not using precision orbit data
                               // otherwise, this is the precision state vector
                               // path
                double lowerLat, // -99 means not constrained
                double upperLat, // -99 means not constrained
-	       double *p_range_scale, // NULL for no scaling
+               double *p_range_scale, // NULL for no scaling
                double *p_azimuth_scale, // NULL for no scaling
-	       double *p_correct_y_pixel_size, // NULL for no fixing
+               double *p_correct_y_pixel_size, // NULL for no fixing
                char *inMetaNameOption, // NULL for normal metadata naming
                                        // otherwise, this is the meta file name
-	       char *inBaseName, // input file
+               char *inBaseName, // input file
                char *outBaseName // output file
                );
 
