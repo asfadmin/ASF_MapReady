@@ -262,7 +262,6 @@ unsigned char local_machine_is_little_endian();
 /***** importer prototypes *****/
 /*                             */
 short getArcgisProjType(const char *file);
-void  import_arcgis_geotiff (const char *inFileName, const char *outBaseName,
-                             int flag[], ...);
+void  import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 #endif // _IMPORT_ARCGIS_GEOTIFF_H_

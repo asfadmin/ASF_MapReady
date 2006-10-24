@@ -130,8 +130,7 @@ spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName);
 // our own ASF Tools format (.img, .meta)
 //
 void
-import_arcgis_geotiff (const char *inFileName, const char *outBaseName,
-		      int flag[], ...)
+import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 {
   // Counts holding the size of the returns from gt_methods.get method
   // calls.  The geo_keyp.h header has the interface specification for
@@ -404,6 +403,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName,
     // Read map info data from .aux file
     getArcgisMapInfo(inGeotiffAuxName->str, &arcgisMapInfo);
   }
+  g_string_free (inGeotiffAuxName, TRUE);
 
   /***** CONVERT TIFF TO FLOAT IMAGE *****/
   /*                                     */
@@ -448,7 +448,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName,
 
   // Get the image data type from the variable arguments list
   char image_data_type[256];
-  va_start(ap, flag);
+  va_start(ap, outBaseName); // outBaseName is the last argument before ", ..."
   strcpy(image_data_type, (char *)va_arg(ap, char *));
   va_end(ap);
   if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
