@@ -11,15 +11,14 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
                    int nVec, float fd, float fdd, float fddd, int prcFlag,
                    char *prcPath);
 bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
-                              readPulseFunc *readNextPulse, int prcFlag,
-                              char *prcPath);
+                              readPulseFunc *readNextPulse);
 void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 
 
 /******************************************************************************
  * Import Sky Telemetry Format data to ASF Tools format */
 void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
-                int flags[],
+                radiometry_t radiometry, int lat_constrained,
                 double lowerLat, double upperLat, char *prcPath)/*this last line of parameters are extra from the rest of the import_*() functions */
 {
   char outDataName[256]="", outMetaName[256]="";        /* Output file names */
@@ -35,11 +34,12 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   int tempFlag=FALSE;
   meta_parameters *meta;
   double lat, lon;
+  int prc_flag = FALSE;
 
-  if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-    asfPrintError("Data is level 0, sprocket can not use this.\n");
-    exit(EXIT_FAILURE);
-  }
+  //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
+  //  asfPrintError("Data is level 0, sprocket can not use this.\n");
+  //  exit(EXIT_FAILURE);
+  //}
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
@@ -47,18 +47,24 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   strcpy(outMetaName,outBaseName);
   strcat(outMetaName,TOOLS_META_EXT);
 
+  /* PRC? */
+  if (prcPath != NULL && strlen(prcPath) > 0)
+      prc_flag = TRUE;
+
   /* Make sure that none of the detected level one flags are set */
   strcpy(logbuf,"");
-  if (flags[f_AMP] != FLAG_NOT_SET)
-    { sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; }
-  if (flags[f_SIGMA] != FLAG_NOT_SET)
-    { sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; }
-  if (flags[f_BETA] != FLAG_NOT_SET)
-    { sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; }
-  if (flags[f_GAMMA] != FLAG_NOT_SET)
-    { sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; }
-  if (flags[f_POWER] != FLAG_NOT_SET)
-    { sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; }
+  switch (radiometry) {
+      case r_AMP:
+          sprintf(logbuf, "%s amplitude", logbuf);  tempFlag=TRUE; break;
+      case r_SIGMA:
+          sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; break;
+      case r_BETA:
+          sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
+      case r_GAMMA:
+          sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
+      case r_POWER:
+          sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
+  }
   if (tempFlag) {
     asfPrintStatus(
       "Warning:\n"
@@ -66,7 +72,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
       "  %s\n", logbuf);
   }
 
-  if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
+  if (lat_constrained) {
     /* Determine start and end line for latitude constraint */
     createSubset(inDataName, lowerLat, upperLat, &imgStart, &imgEnd,
                  imgTimeStr, &nVec, &fd, &fdd, &fddd);
@@ -108,8 +114,7 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
 
   /* Read the metadata to determine where window position shifts happen, as
      well as the number of lines in the image. */
-  s=convertMetadata_lz(inDataName,outMetaName,&nTotal,&readNextPulse,
-                       flags[f_PRC],prcPath);
+  s=convertMetadata_lz(inDataName,outMetaName,&nTotal,&readNextPulse);
   asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
   iqBuf=(iqType *)MALLOC(sizeof(iqType)*2*s->nSamp);
   if (imgEnd == 0) imgEnd = nTotal;
@@ -142,14 +147,14 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
       asfLineMeter(outLine,nTotal);*/
   }
 
-  if (flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET) {
+  if (lat_constrained) {
     s->nLines -= 4096; /* reduce the line number from extra padding */
     createMeta_lz(s,inDataName,outMetaName,imgTimeStr,nVec,fd,fdd,fddd,
-                  flags[f_PRC],prcPath);
+                  prc_flag,prcPath);
   }
   else {
     createMeta_lz(s,inDataName,outMetaName,NULL,nVec,fd,fdd,fddd,
-                  flags[f_PRC],prcPath);
+                  prc_flag,prcPath);
   }
 
   /* Clean up memory & open files */
