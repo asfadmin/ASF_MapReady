@@ -67,14 +67,15 @@ detect_geotiff_flavor (const char *file)
           case LAMCC:   // Lambert Conformal Conic
           case PS:      // Polar Stereographic
           case LAMAZ:   // Lambert Azimuthal Equal Area
+            g_string_free(inGeotiffAuxName, TRUE);
             return import_arcgis_geotiff;
             break;
           case DHFA_UNKNOWN_PROJECTION:
           default:      // Else cont...
+            g_string_free(inGeotiffAuxName, TRUE);
             break;
         }
       }
-      g_string_free(inGeotiffAuxName, TRUE);
     }
   } // strncmp on citation, tmp
   
