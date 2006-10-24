@@ -8,6 +8,7 @@
 #include "decoder.h"
 #include "find_geotiff_name.h"
 #include "find_arcgis_geotiff_aux_name.h"
+#include "import_arcgis_geotiff.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
 #include "asf_raster.h"
@@ -114,14 +115,14 @@ float get_default_ypix(const char *outBaseName)
 // Convenience wrapper, without the kludgey "flags" array
 int asf_import(radiometry_t radiometry, int db_flag,
                char *format_type, char *image_data_type, char *lutName, 
-      	       char *prcPath, double lowerLat, double upperLat, 
-      	       double range_scale, double azimuth_scale, 
-      	       double correct_y_pixel_size,
-      	       char *inBaseName, char *outBaseName)
+	       char *prcPath, double lowerLat, double upperLat, 
+	       double *p_range_scale, double *p_azimuth_scale, 
+	       double *p_correct_y_pixel_size, char *inMetaNameOption,
+	       char *inBaseName, char *outBaseName)
 {
     char inDataName[256]="", inMetaName[256]="";
     char unscaledBaseName[256]="";
-    char inMetaNameOption[256];
+//    char inMetaNameOption[256];
     int do_resample;
     int do_metadata_fix;
 
@@ -191,8 +192,8 @@ int asf_import(radiometry_t radiometry, int db_flag,
       // really weird stuff go ahead and throw an exception.
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
-        if (importer == import_arcgis_geotiff     &&
-            strlen(image_data_type)               &&
+        if (importer == import_arcgis_geotiff   &&
+            strlen(image_data_type)             &&
             strncmp(image_data_type, "???", 3) != 0
            )
         {
@@ -207,10 +208,11 @@ int asf_import(radiometry_t radiometry, int db_flag,
           // NOTE: Any of these three importers may be returned by
           // the detect_geotiff_flavor() function above
           //
-          importer (inGeotiffName->str, outBaseName, image_data_type);
+          importer (inGeotiffName->str, outBaseName,
+                    image_data_type);
         }
         else {
-      	  importer (inGeotiffName->str, outBaseName);
+          importer (inGeotiffName->str, outBaseName);
         }
       } else {
       	asfPrintWarning ("Couldn't identify the GeoTIFF file variant... \n");

@@ -1,5 +1,5 @@
 // Implementation of interface described in tiff_to_float_image.h.
-#include <asf.h>
+#include "asf.h"
 #include "tiff_to_float_image.h"
 
 FloatImage *
@@ -54,7 +54,7 @@ tiff_to_float_image (TIFF *tif)
           asfRequire(0,"\nUnsupported TIFF pixel data type\n");
       }
       float_image_set_pixel (fim, current_column, current_row, 
-			     sample);
+                             sample);
     }
   }
 

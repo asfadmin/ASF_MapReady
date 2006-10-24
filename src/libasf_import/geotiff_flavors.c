@@ -23,7 +23,7 @@ geotiff_importer
 detect_geotiff_flavor (const char *file)
 {
   GString *inGeotiffAuxName;
-        
+  
   // Open the Geotiff.
   TIFF *tiff = XTIFFOpen (file, "r");
   asfRequire (tiff != NULL, "Error opening input TIFF file.\n");
@@ -49,6 +49,7 @@ detect_geotiff_flavor (const char *file)
     if ( model_type == ModelTypeGeographic ) {
       return import_usgs_seamless;
     }
+<<<<<<< .mine
     // If the TIFF claims that a projection exists OR if the projection type
     // is unknown, then check for an ArcGIS metadata (.aux) file since it may
     // contain the needed info.
@@ -70,12 +71,13 @@ detect_geotiff_flavor (const char *file)
             return import_arcgis_geotiff;
             break;
           case DHFA_UNKNOWN_PROJECTION:
-            default:      // Else cont...
+          default:      // Else cont...
             break;
         }
       }
+      g_string_free(inGeotiffAuxName, TRUE);
     }
-  }
+  } // strncmp on citation, tmp
   
   // Test for a particular flavor.
   GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);

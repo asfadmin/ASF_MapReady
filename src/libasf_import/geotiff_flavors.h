@@ -14,7 +14,7 @@
 // Type of a pointer to a function appropriate for importing a
 // geotiff_file of some specific flavor.
 typedef void (*geotiff_importer)(const char *geotiff_file, 
-      				 const char *outBaseName, ...);
+                                 const char *outBaseName, ...);
 
 // Try to detect the flavor of a given geotiff file, and return an
 // appropriate geotiff_importer.
