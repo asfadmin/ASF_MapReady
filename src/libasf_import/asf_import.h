@@ -22,6 +22,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int db_flag,   // TRUE if the output should be in decibels
                               // only ok for radiometry=SIGMA,GAMMA,BETA
                char *format_type, // eg, "STF", "CEOS" - etc
+               char *image_data_type, // "geocoded_image", "dem", or "mask"
                char *lutName, // NULL for no lookup table
                               // otherwise, this is the lookup table filename
 	       char *prcPath, // NULL for not using precision orbit data
