@@ -58,8 +58,8 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
                 radiometry_t radiometry, int lat_constrained,
                 double lowerLat, double upperLat, char *prcPath);/*this last line of parameters are extra from the rest of the import_*() functions */
 void
-import_usgs_seamless (const char *inFileName, const char *outBaseName);
+import_usgs_seamless (const char *inFileName, const char *outBaseName, ...);
 void
-import_asf_utm_geotiff (const char *inFileName, const char *outBaseName);
+import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 #endif

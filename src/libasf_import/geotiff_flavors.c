@@ -49,7 +49,6 @@ detect_geotiff_flavor (const char *file)
     if ( model_type == ModelTypeGeographic ) {
       return import_usgs_seamless;
     }
-<<<<<<< .mine
     // If the TIFF claims that a projection exists OR if the projection type
     // is unknown, then check for an ArcGIS metadata (.aux) file since it may
     // contain the needed info.
