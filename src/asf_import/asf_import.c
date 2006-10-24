@@ -63,7 +63,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        are 'ceos', 'stf', and 'geotiff'. 'CEOS' is the default behavior.\n"\
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
-"        formats are 'geocoded_image', 'dem', and 'mask'.  Default is \"???\".\n"\
+"        formats are 'geocoded_image', 'dem', and 'mask'.  This parameter is \n"\
+"        ignored unless the -format parameter is \"geotiff\".\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n"\
@@ -545,14 +546,22 @@ int main(int argc, char *argv[])
         strcpy(format_type, "CEOS");
 
     /* Deal with input image data type */
-    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET) {
+    if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
+       strncmp(format_type, "GEOTIFF", 7) == 0)
+    {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {
         image_data_type[ii] = (char)toupper(image_data_type[ii]);
       }
     }
     else
+    {
+      if (flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET) {
+        asfPrintWarning("-image-data-type parameter ignored (only valid for GeoTIFF\n"
+            "image format type)\n");
+      }
       strcpy(image_data_type, "???");
+    }
 
     /* Make sure STF specific options are not used with other data types */
     if (strcmp(format_type, "STF")!=0) {
