@@ -62,5 +62,7 @@ void
 import_usgs_seamless (const char *inFileName, const char *outBaseName, ...);
 void
 import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...);
+void
+import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 #endif

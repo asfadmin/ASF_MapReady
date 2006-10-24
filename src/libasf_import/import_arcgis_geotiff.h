@@ -241,6 +241,7 @@ void printDataNode(_Ehfa_Entry *node, unsigned long nodeOffset);
 void traverseNodes(FILE *fp, _Ehfa_Entry *node,unsigned long nodeOffset, BOOL dumpFlag);
 void ParseDictionary(char *dd, ddObject ddObjects[], int lim);
 BOOL getObjectToken(char **tdd, ddObject *tmpObj);
+short getArcgisProjType(const char *file);
 void ParseDictionaryToObjectStrs(char *dd, ddObject Objects[], int *count, int lim);
 int  validDataType(char dataType);
 void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems);
@@ -258,10 +259,5 @@ void freeItems(ddItem *items, int numItems);
 void freeOneItem(ddItem *item);
 void usage (const char *name);
 unsigned char local_machine_is_little_endian();
-
-/***** importer prototypes *****/
-/*                             */
-short getArcgisProjType(const char *file);
-void  import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 #endif // _IMPORT_ARCGIS_GEOTIFF_H_
