@@ -392,6 +392,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
                               uc(cfg->import->format),
+                              MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
                               cfg->import->lat_begin, cfg->import->lat_end,
                               NULL, NULL, NULL, NULL,
@@ -544,8 +545,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
           update_status(cfg, "Importing DEM...");
           check_return(
-              asf_import(r_AMP, FALSE, "GEOTIFF", NULL, NULL, 0, 0,
-                         NULL, NULL, NULL, NULL, tiff_basename, imported_dem),
+              asf_import(r_AMP, FALSE, "GEOTIFF", MAGIC_UNSET_STRING, NULL,
+                         NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
+                         imported_dem),
               "ingesting Geotiff DEM (asf_import)\n");
 
           update_status(cfg, "Geocoding DEM...");
