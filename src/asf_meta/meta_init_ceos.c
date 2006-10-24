@@ -192,6 +192,21 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 	  }
 	  meta->sar->image_type = 'P';
 	}
+	else if (strncmp(dssr->sys_id,"FOCUS",5)==0) {
+	  if (rcdr->num_rec == 2)
+	    strcpy(beamname, "SNA");
+	  else if (rcdr->num_rec == 3)
+	    strcpy(beamname, "SNB");
+	  else if (rcdr->num_rec == 4) {
+	    // We assume a nominal center look angle of 40.45 degrees for SWA
+	    if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65)
+	      strcpy(beamname, "SWA");
+	    // We assume a nominla center look angle of 38.2 degrees for SWB
+	    else if (rcdr->look_angle[3] > 38.0 && rcdr->look_angle[3] < 38.4)
+	      strcpy(beamname, "SWB");
+	  }
+	  meta->sar->image_type = 'P';
+	}
 	else {
 	  if (strncmp(dssr->beam3,"WD3",3)==0) strcpy(beamname,"SWA");
 	  else if (strncmp(dssr->beam3,"ST5",3)==0) strcpy(beamname,"SWB");
