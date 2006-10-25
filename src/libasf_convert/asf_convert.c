@@ -545,7 +545,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
           update_status(cfg, "Importing DEM...");
           check_return(
-              asf_import(r_AMP, FALSE, "GEOTIFF", MAGIC_UNSET_STRING, NULL,
+              asf_import(r_AMP, FALSE, "GEOTIFF", "DEM", NULL,
                          NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
                          imported_dem),
               "ingesting Geotiff DEM (asf_import)\n");
