@@ -70,6 +70,7 @@
 #define ARCGIS_NAD27_DATUM                  "NAD27"
 #define ARCGIS_NAD83_DATUM                  "NAD83"
 #define ARCGIS_HARN_DATUM                   "HARN"
+#define ARCGIS_WGS84_DATUM                  "WGS84"
 
 typedef struct {
   char sphereName[MAX_EHFA_ENTRY_NAMESTRING_LEN]; // Spheroid name
@@ -393,6 +394,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     }
     else if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD83_DATUM, strlen(ARCGIS_NAD83_DATUM)) == 0) {
       datum = NAD83_DATUM;
+    }
+    else if (strncmp(arcgisDatumParms.datumname, ARCGIS_WGS84_DATUM, strlen(ARCGIS_WGS84_DATUM)) == 0) {
+      datum = WGS84_DATUM;
     }
     else {
       asfPrintWarning("\nCouldn't identify datum in GeoTIFF or ArcGIS metadata (.aux) file...\n");
