@@ -291,6 +291,10 @@ main (int argc, char **argv)
   // Value to put in the region outside the image
   double background_val = 0.0;
 
+  if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
+    print_help();
+  }
+
   // Detect & Process logging arguments
   if ((logflag = detect_string_options(argc, argv, logFile,
 				      "-log", "--log", NULL))) {
@@ -318,10 +322,6 @@ main (int argc, char **argv)
 
   // The argument at which the filenames start
   int arg_num = 1;
-
-  if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
-    print_help();
-  }
 
   if (detect_flag_options(argc, argv, "-debug", NULL)) {
     debug_dump=TRUE;
