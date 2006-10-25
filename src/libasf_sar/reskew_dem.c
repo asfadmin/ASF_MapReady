@@ -155,11 +155,13 @@ static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
    
 /*Step through the ground range line using grX.
 Convert each grX to an srX.  Update amplitude and height images.*/
-    for (grX=1;grX<gr_ns;grX++)
+    for (grX=0;grX<gr_ns;grX++)
     {
         double height=grDEM[grX];
+        if (height < -900) height = badDEMht;
+
 	/*srX: float slant range pixel position.*/
-        double srX=srE2srH(grX,height);
+        double srX=srE2srH(grX,height); 
         int sriX=(int)srX;
 	if ((inMask[grX] != 0 ) && (srX>=0)&&(srX<sr_ns))
         {
@@ -183,7 +185,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                 for (x=lastSrX+1;x<=sriX;x++)
                     if (outmask[x]!=MASK_USER_MASK)
                         amp[x]+=currAmp*getSpeckle;
-		
+
                 /*Then, update the height image.*/
                 if (intRun!=0)
                 {
@@ -200,7 +202,7 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                             //srDEM[x]=curr;
                         } else {
                             /*Hit this pixel a 2nd time ==> layover*/
-                            if (maxval > srDEM[x]) 
+                            if (maxval > srDEM[x])
                                 srDEM[x] = maxval;
                         }
                         curr+=delt;
@@ -222,6 +224,17 @@ Convert each grX to an srX.  Update amplitude and height images.*/
     }
 
 /* Just plug all the holes and see what happens */
+/* First, handle the left edge "holes" */
+    if (srDEM[0] == badDEMht) {
+        for (x=1; x<5; ++x) { // 5 because we don't want to get carried away
+            if (srDEM[x] != badDEMht) {
+                for (iX=x-1; iX>=0; --iX)
+                    srDEM[iX] = srDEM[x];
+                break;
+            }
+        }
+    }
+
 /*Attempt to plug one-pixel holes, by interpolating over them.*/
     for (x=1;x<(sr_ns-2);x++)
     {
