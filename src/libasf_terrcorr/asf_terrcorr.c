@@ -349,8 +349,8 @@ clip_dem(meta_parameters *metaSAR,
     asfPrintStatus("Clipping %s to %dx%d LxS using polynomial fit...\n",
 		   what, demHeight, demWidth);
     
-    // DEMs get a background value of 0 -- User Masks get 1 (masked).
-    int background_value = strcmp(what, "DEM") == 0 ? 1 : 0;
+    // DEMs get a background value of 0, User Masks get 2 (masked&invalid).
+    int background_value = strcmp(what, "DEM") == 0 ? 0 : 2;
     remap_poly(fwX, fwY, bwX, bwY, demWidth, demHeight, demFile, demClipped,
             background_value);
 
@@ -421,7 +421,7 @@ int match_dem(meta_parameters *metaSAR,
   // big offset.
   do
   {
-    ++num_attempts;    
+    ++num_attempts;
     asfPrintStatus("Using DEM '%s' for refining geolocation ...\n", demFile);
 
     demClipped = outputName(output_dir, demFile, "_clip");
@@ -647,6 +647,12 @@ int match_dem(meta_parameters *metaSAR,
             }
         }
     }
+    else if (dx*dx+dy*dy < .5)
+    {
+        // Skip the verification step-- we've got an excellent match already
+        do_fftMatch_verification = FALSE;
+    }
+    
   } while (redo_clipping);
   
   // Corner test
