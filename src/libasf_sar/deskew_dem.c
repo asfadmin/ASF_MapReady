@@ -135,6 +135,7 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
     int outX=0,inX,xInterp;
     int lastOutX=-1;
     float lastOutValue=badDEMht;
+
     for (inX=0;inX<ns;inX++)
     {
         float height=inBuf[inX];
@@ -279,7 +280,8 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
 }
 
 static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
-                           float *out,int ns, int doInterp, float *mask, int line)
+                           float *out, int ns, int doInterp, float *mask,
+                           int line)
 {
     int i,grX;
     int valid_data_yet=0;
@@ -312,6 +314,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     for (grX=0;grX<ns;grX++)
     {
         double height=grDEM[grX];
+        if (height < -900) height = badDEMht;
+
         double srX;
         if (height!=badDEMht)
         {
@@ -330,8 +334,10 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     out[grX]= dx <= 0.5 ? in[x] : in[x+1];
                 }
                 valid_data_yet=1;
-                
+
                 if (sr_hits) {
+                    //--------------------------------------------------------
+                    // Layover 
                     int is_layover = TRUE; // until we learn otherwise
                     for (i=0; i<num_hits_required_for_layover; ++i) {
                         if (sr_hits[i*ns+x] == -1) {
@@ -354,16 +360,37 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                         mask[grX] = MASK_LAYOVER;
                         ++n_layover;
                     }
+
+                    //--------------------------------------------------------
+                    // Shadow
+                    double h = sat_ht;
+                    // first calculate at h==0, get phi (the angle
+                    // between h and er).  The meta_get_slant call should
+                    // be quick since we are in slant range already.
+                    double sr = meta_get_slant(d->meta, line, grX);
+                    double er = meta_get_earth_radius(d->meta, line, grX);
+                    double phi_cos = (h*h + er*er - sr*sr)/(2*h*er);
+                    // now account for the height
+                    er += grDEM[grX];
+                    sr = sqrt(h*h + er*er - 2*h*er*phi_cos);
+                    // so, cur_look is the (cosine of the) look angle when
+                    // pointing at the terrain
+                    double cur_look = - (sr*sr + h*h - er*er)/(2*sr*h);
+                    
+                    if (cur_look >= biggest_look) {
+                        // normal case -- no shadow
+                        biggest_look = cur_look;
+                    } else {
+                        // this point is shadowed by the point that generated
+                        // the current "biggest_look" value
+                        mask[grX] = MASK_SHADOW;
+                        ++n_shadow;
+                    }
                 }
             }
             else {
-                // just copy the pixel over -- user can mask if desired
-                // if we haven't hit valid data yet, just put in 0.
-                if (valid_data_yet) {
-                    out[grX] = in[(int)(srX+.5)];
-                } else {
-                    out[grX] = 0;
-                }
+                // source value for this pixel outside the image -- use 0.
+                out[grX] = 0;
 
                 if (mask)
                     mask[grX] = MASK_INVALID_DATA;
@@ -400,26 +427,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     }
                 }
 */
-        }
-
-        // need to compute the slant range value incorporating
-        // the height
-        double h = sat_ht;
-        double sr = meta_get_slant(d->meta, line, grX);
-        double er = meta_get_earth_radius(d->meta, line, grX);
-        double ang_cos = (h*h + er*er - sr*sr)/(2*h*er);
-        er += grDEM[grX];
-        sr = sqrt(h*h + er*er - 2*h*er*ang_cos);
-        double cur_look = - (sr*sr + h*h - er*er)/(2*sr*h);
-
-        if (cur_look >= biggest_look) {
-            // normal case -- no shadow
-            biggest_look = cur_look;
-        } else {
-            // this point is shadowed by the point that generated
-            // the current "biggest_look" value
-            mask[grX] = MASK_SHADOW;
-            ++n_shadow;
         }
     }
 
