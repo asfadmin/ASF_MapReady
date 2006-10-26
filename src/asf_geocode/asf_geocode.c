@@ -182,14 +182,14 @@ trouble, and use edit_man_header. :)
 "     -quiet\n"\
 "          Supresses all non-essential output.\n"\
 "\n"\
-"   -license\n"\
-"        Print copyright and license for this software then exit.\n"\
+"     -license\n"\
+"          Print copyright and license for this software then exit.\n"\
 "\n"\
-"   -version\n"\
-"        Print version and copyright then exit.\n"\
+"     -version\n"\
+"          Print version and copyright then exit.\n"\
 "\n"\
-"   -help\n"\
-"        Print a help page and exit.\n"
+"     -help\n"\
+"          Print a help page and exit.\n"
 
 #define ASF_EXAMPLES_STRING \
 "     To map project an image with centerpoint at -147 degrees\n"\
