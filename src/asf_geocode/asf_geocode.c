@@ -316,8 +316,7 @@ main (int argc, char **argv)
 			   &force_flag);
 
   if (!pp) {
-      asfPrintError("Use the -help option information on specifying "
-                    "a projection.\n");
+      print_usage();
   }
 
   // The argument at which the filenames start

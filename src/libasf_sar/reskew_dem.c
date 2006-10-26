@@ -189,23 +189,12 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                 /*Then, update the height image.*/
                 if (intRun!=0)
                 {
-                    float curr=lastOutValue;
-                    float delt=(height-lastOutValue)/intRun;
                     float maxval=height>lastOutValue ? height : lastOutValue;
-                    curr+=delt;
                     for (x=lastSrX+1;x<=sriX;x++)
                     {
-                        if (srDEM[x]==unInitDEM) {
-                            /*Only write on fresh pixels.*/
+                        if (srDEM[x]==unInitDEM || maxval > srDEM[x]) {
                             srDEM[x]=maxval;
-                            // mask[x]=MASK_NORMAL;
-                            //srDEM[x]=curr;
-                        } else {
-                            /*Hit this pixel a 2nd time ==> layover*/
-                            if (maxval > srDEM[x])
-                                srDEM[x] = maxval;
                         }
-                        curr+=delt;
                     }
                 } else {
                     int ind = (int)lastSrX+1;
@@ -243,6 +232,9 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                srDEM[x-1]!=badDEMht &&
                srDEM[x+1]!=badDEMht)*/
             srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
+
+        if (srDEM[x]==unInitDEM)
+            srDEM[x]=badDEMht;
     }
 
     FREE(outmask);
@@ -257,7 +249,7 @@ Diffuse (lambertian) reflection:
 */
 
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile,  char *inMaskFile)
+               char *outAmpFile, char *inMaskFile)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;

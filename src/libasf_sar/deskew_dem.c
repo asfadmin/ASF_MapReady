@@ -288,20 +288,25 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     const int num_hits_required_for_layover=3;
     int *sr_hits=NULL;
     float max_height=grDEM[0];
+    double last_good_height = 0;
 
     if (mask) {
+        // The "sr_hits" tracks points in ground range that map to the same
+        // point in slant range, for the purposes of detecting layover
         sr_hits=(int*)MALLOC(sizeof(int)*ns*num_hits_required_for_layover);
+
         for (grX=0; grX<ns; ++grX) {
             if (mask[grX] != MASK_USER_MASK && mask[grX] != MASK_INVALID_DATA)
                 mask[grX] = MASK_NORMAL;
 
+            // Initially, all slant range points haven't been hit ==> -1
             for (i=0; i<num_hits_required_for_layover; ++i)
                 sr_hits[i*ns+grX] = -1; 
         }
     }
 
     // ugly hack to say right edge is 400 pixels from right of image
-    int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
+    //int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
 
     // height of the satellite at this line
     double sat_ht = meta_get_sat_height(d->meta, line, grX);
@@ -321,6 +326,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         {
             srX=dem_gr2sr(d,grX,height);
             if (height > max_height) max_height = height;
+            last_good_height = height;
 
             if (srX >= 0 && srX < ns-1)
             {
@@ -364,15 +370,15 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     //--------------------------------------------------------
                     // Shadow
                     double h = sat_ht;
-                    // first calculate at h==0, get phi (the angle
-                    // between h and er).  The meta_get_slant call should
+                    // first calculate at height==0, get phi (the angle
+                    // between sat_ht and er).  The meta_get_slant call should
                     // be quick since we are in slant range already.
                     double sr = meta_get_slant(d->meta, line, grX);
                     double er = meta_get_earth_radius(d->meta, line, grX);
-                    double phi_cos = (h*h + er*er - sr*sr)/(2*h*er);
+                    double phi_cos_x2 = (h*h + er*er - sr*sr)/(h*er);
                     // now account for the height
                     er += grDEM[grX];
-                    sr = sqrt(h*h + er*er - 2*h*er*phi_cos);
+                    sr = sqrt(h*h + er*er - h*er*phi_cos_x2);
                     // so, cur_look is the (cosine of the) look angle when
                     // pointing at the terrain
                     double cur_look = - (sr*sr + h*h - er*er)/(2*sr*h);
@@ -397,9 +403,20 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             }
         }
         else {
-            // bad DEM height. just copy the pixel over, if we can.
-            // (assume zero height in coversion to slant range)
-            srX=dem_gr2sr(d,grX,0);
+            // Bad DEM height.
+
+            // Hard to say what to do here.  It depends on what the bad DEM
+            // height means -- if it is water, we can just copy over the pixel
+            // but if it means outside the DEM, we should leave it blank?
+
+            // Try using "last_good_height" ... should be close ...
+            // and then copy the pixel over.
+
+            // Note that because of the "valid_data_yet" condition we shouldn't
+            // ever use a bad (uninitialized, i.e. 0) "last_good_height" value
+
+            // User can use the mask to eliminate the copied pixels, if desired
+            srX=dem_gr2sr(d,grX,last_good_height);
 
             if (valid_data_yet && srX >= 0 && srX < ns-1) {
                 out[grX] = in[(int)(srX+.5)];
@@ -409,7 +426,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             
             if (mask)
                 mask[grX] = MASK_INVALID_DATA;
-
 /*                
                 if ( (height==badDEMht && !valid_data_yet) ||
                      ( srX > rpoint) )                    
@@ -429,6 +445,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
 */
         }
     }
+
+/*
+  -- I can't figure out why this code is here... surely we can take it out???
 
     // now have a bit of code that goes back and unsets 
     // extra MASK_INVALID_DATA
@@ -451,6 +470,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         }
     }
     // end unsetting code
+
+*/
 }
 
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
