@@ -214,9 +214,10 @@ main (int argc, char *argv[])
   asfSplashScreen(argc, argv);
   inMaskFile = NULL;
 
-  if (strmatches(argv[1],"-help","--help",NULL)) {
+  if (argc<=1)
+      usage(ASF_NAME_STRING);
+  else if (strmatches(argv[1],"-help","--help",NULL))
       print_help();
-  }
 
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
