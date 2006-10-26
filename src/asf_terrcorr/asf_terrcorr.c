@@ -33,15 +33,17 @@
 "     -keep (-k)\n"\
 "          The terrain correction process produces a number of intermediate\n"\
 "          files on the way to generating the final product.  Normally, these\n"\
-"          are deleted when the process completes, however if you wish to\n"\
-"          keep these files around you may do so by adding this option.\n"\
+"          temporary files are deleted when the process completes, however\n"\
+"          if you wish to keep these files around you may do so with this\n"\
+"          option.\n"\
 "\n"\
 "     -no-resample\n"\
-"          If the DEM has a pixel size that is significantly larger than\n"\
-"          the SAR image, by default the SAR image is downsampled to a pixel\n"\
-"          size half that of the DEM.  With -no-resample, no resampling of\n"\
-"          this type will be done.  However, the quality of the terrain\n"\
-"          corrected product is still limited by the resolution of the DEM.\n"\
+"          If the DEM has a pixel size that is significantly larger (a factor\n"\
+"          of 2) than the SAR image, by default the SAR image is downsampled\n"\
+"          to a pixel size half that of the DEM.  With -no-resample, no\n"\
+"          resampling of this type will be done.  However, the quality of the\n"\
+"          terrain corrected product is still limited by the resolution of.\n"\
+"          the DEM.\n"\
 "\n"\
 "     -no-interp\n"\
 "          Layover regions in the output image are going to contain data that\n"\
