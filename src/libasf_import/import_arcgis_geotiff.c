@@ -369,7 +369,12 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   }
   /***** GET ALL VALUES THAT ARE IN THE ARCGIS METADATA FILE (.aux)  *****/
   /*     IF THE FILE EXISTS.                                             */
-  inGeotiffAuxName = find_arcgis_geotiff_aux_name(inFileName);
+  char inBaseName[256];
+  strcpy(inBaseName, inFileName);
+  if (strrchr(inBaseName, '.')) {
+    *(strrchr(inBaseName, '.')) = '\0';
+  }
+  inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
   if ( inGeotiffAuxName == NULL) {
     asfPrintWarning("No ArcGIS metadata (.aux) file was found using <basename>.\n"
         "Meta data will be incomplete.\n");

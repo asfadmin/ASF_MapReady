@@ -58,7 +58,12 @@ detect_geotiff_flavor (const char *file)
     else if ( model_type == ModelTypeProjected ||
               (model_type != ModelTypeGeographic && model_type != ModelTypeGeocentric)
             ) {
-      inGeotiffAuxName = find_arcgis_geotiff_aux_name(file);
+      char inBaseName[256];
+      strcpy(inBaseName, file);
+      if (strrchr(inBaseName, '.')) {
+        *(strrchr(inBaseName, '.')) = '\0';
+      }
+      inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
         proj_type = getArcgisProjType (inGeotiffAuxName->str);
         switch (proj_type) {
