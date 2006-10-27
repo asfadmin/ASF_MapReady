@@ -224,11 +224,12 @@ int asf_import(radiometry_t radiometry, int db_flag,
           importer (inGeotiffName->str, outBaseName);
         }
       } else {
-	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
-			 "falling back to the generic GeoTIFF importer (cross "
-			 "fingers)... \n");
+//	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
+//			 "falling back to the generic GeoTIFF importer (cross "
+//			 "fingers)... \n");
 	// Haven't written import-generic_geotiff yet...
-	asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
+	
+        asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
 		       "but the code to do so isn't written yet");
 	//import_generic_geotiff (inGeotiffName->str, outBaseName);
       }

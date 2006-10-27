@@ -60,9 +60,7 @@ detect_geotiff_flavor (const char *file)
             ) {
       char inBaseName[256];
       strcpy(inBaseName, file);
-      if (strrchr(inBaseName, '.')) {
-        *(strrchr(inBaseName, '.')) = '\0';
-      }
+      *(findExt(inBaseName)) = '\0';
       inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
         proj_type = getArcgisProjType (inGeotiffAuxName->str);

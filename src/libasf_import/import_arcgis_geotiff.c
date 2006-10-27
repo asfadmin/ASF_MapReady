@@ -330,6 +330,20 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
     asfRequire(read_count == 1,
                "\nUnable to determine datum type from GeoTIFF file\n");
+    switch(geokey_datum){
+      case Datum_WGS84:
+        datum = WGS84_DATUM;
+        break;
+      case Datum_North_American_Datum_1927:
+        datum = NAD27_DATUM;
+        break;
+      case Datum_North_American_Datum_1983:
+        datum = NAD83_DATUM;
+        break;
+      default:
+        datum = UNKNOWN_DATUM;
+        break;
+    }
     
     switch(proj_coords_trans) {
       case CT_TransverseMercator:
@@ -474,9 +488,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   /*     IF THE FILE EXISTS.                                             */
   char inBaseName[256];
   strcpy(inBaseName, inFileName);
-  if (strrchr(inBaseName, '.')) {
-    *(strrchr(inBaseName, '.')) = '\0';
-  }
+  *(findExt(inBaseName)) = '\0';
   inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
   if ( inGeotiffAuxName == NULL) {
     asfPrintWarning("No ArcGIS metadata (.aux) file was found using <basename>.\n"
@@ -859,7 +871,11 @@ short getArcgisProjType(const char *file) {
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
+  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+             "\nArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
+  asfRequire(dhdr.version == 1,
+             "\nArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2024,7 +2040,11 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
+  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+             "\nArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
+  asfRequire(dhdr.version == 1,
+             "\nArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2266,7 +2286,11 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
+  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+             "\nArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
+  asfRequire(dhdr.version == 1,
+             "\nArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2381,7 +2405,11 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
+  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+             "\nArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
+  asfRequire(dhdr.version == 1,
+             "\nArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
