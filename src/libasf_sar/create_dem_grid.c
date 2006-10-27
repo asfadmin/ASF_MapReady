@@ -132,6 +132,10 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   if (gridResX < 0) gridResX = 20;
   if (gridResY < 0) gridResY = 20;
 
+  project_set_datum(metaDem->projection->datum);
+  asfPrintStatus("DEM Datum: %s\n",
+                 datum_toString(metaDem->projection->datum));
+
   /* Convert all angles in projection part of metadata into radians -
      latlon_to_proj needs that lateron */
   switch (metaDem->projection->type) 

@@ -30,3 +30,51 @@ datum_spheroid (datum_type_t datum)
     break;
   }
 }
+
+/* Returns a string identifying the given datum */
+const char *datum_toString(datum_type_t datum)
+{
+  switch (datum) {
+      /* Earth Gravity Model 1996 (spheroid: WGS84) */
+      case EGM96_DATUM:   
+          return "EGM96";
+
+      /* European Datum 1950 (International 1924) */
+      case ED50_DATUM:    
+          return "ED50";
+
+      /* European Terrestrial Reference Frame 1989 (WGS84) */
+      case ETRF89_DATUM:  
+          return "ETRF89";
+
+      /* European Terrestrial Reference System 1989 (GRS 1980) */
+      case ETRS89_DATUM:  
+          return "ETRS89";
+
+      /* International Terrestrial Reference Frame (GRS 1980) */
+      case ITRF_DATUM:    
+          return "ITRF";
+
+      /* North American Datum 1927 (Clarke 1866) */
+      case NAD27_DATUM:   
+          return "NAD27";
+
+      /* North American Datum 1983 (GRS 1980) */
+      case NAD83_DATUM:   
+          return "NAD83";
+
+      /* World Geodetic System 1972 (WGS72) */
+      case WGS72_DATUM:   
+          return "WGS72";
+
+      /* World Geodetic System 1984 (WGS84) */
+      case WGS84_DATUM:    
+          return "WGS84";
+
+      case UNKNOWN_DATUM:
+          return "UNKNOWN";
+
+      default:
+          return MAGIC_UNSET_STRING;
+  }
+}

@@ -352,35 +352,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"re_minor:",meta->projection->re_minor,
 		    "Minor Axis (polar) of earth [m]");
     if (META_VERSION >= 1.3) {
-      switch (meta->projection->datum) {
-      case EGM96_DATUM:
-	meta_put_string(fp,"datum:","EGM96","Geodetic Datum");
-	break;
-      case ED50_DATUM:
-	meta_put_string(fp,"datum:","ED50","Geodetic Datum");
-	break;
-      case ETRF89_DATUM:
-	meta_put_string(fp,"datum:","ETRF89","Geodetic Datum");
-	break;
-      case ETRS89_DATUM:
-	meta_put_string(fp,"datum:","ETRS89","Geodetic Datum");
-	break;
-      case ITRF_DATUM:
-	meta_put_string(fp,"datum:","ITRF","Geodetic Datum");
-	break;
-      case NAD27_DATUM:
-	meta_put_string(fp,"datum:","NAD27","Geodetic Datum");
-	break;
-      case NAD83_DATUM:
-	meta_put_string(fp,"datum:","NAD83","Geodetic Datum");
-	break;
-      case WGS72_DATUM:
-	meta_put_string(fp,"datum:","WGS72","Geodetic Datum");
-	break;
-      case WGS84_DATUM:
-	meta_put_string(fp,"datum:","WGS84","Geodetic Datum");
-	break;
-      }
+        meta_put_string(fp,"datum:",datum_toString(meta->projection->datum),
+                        "Geodetic Datum");
     }
     if (META_VERSION >= 1.6)
       meta_put_double(fp, "height:", meta->projection->height,

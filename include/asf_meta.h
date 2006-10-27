@@ -159,8 +159,11 @@ datum_spheroid (datum_type_t datum);
 void
 spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
 
+/* String identifying the datum */
+const char *datum_toString(datum_type_t);
+
 /********************************************************************
- * meta_general: General RAdio Detection And Ranging parameters
+ * meta_general: General Radio Detection And Ranging parameters
  */
 typedef struct {
   char sensor[FIELD_STRING_MAX];    /* Name of sensor - satellite really   */
