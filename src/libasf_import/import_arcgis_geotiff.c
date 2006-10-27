@@ -75,7 +75,7 @@
 #define ARCGIS_NAD27_DATUM                  "NAD27"
 #define ARCGIS_NAD83_DATUM                  "NAD83"
 #define ARCGIS_HARN_DATUM                   "HARN"
-#define ARCGIS_WGS84_DATUM                  "WGS84"
+#define ARCGIS_WGS84_DATUM                  "WGS 84"
 
 typedef struct {
   char sphereName[MAX_EHFA_ENTRY_NAMESTRING_LEN]; // Spheroid name
