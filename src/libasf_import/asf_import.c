@@ -229,8 +229,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
 //			 "fingers)... \n");
 	// Haven't written import-generic_geotiff yet...
 	
-        asfPrintError ("Tried to import a GeoTIFF of unrecognized flavor, "
-		       "but the code to do so isn't written yet");
+        asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
 	//import_generic_geotiff (inGeotiffName->str, outBaseName);
       }
       g_string_free (inGeotiffName, TRUE);

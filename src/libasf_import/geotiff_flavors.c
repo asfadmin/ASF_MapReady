@@ -43,6 +43,9 @@ detect_geotiff_flavor (const char *file)
   if ( strncmp (citation, tmp, strlen (tmp)) == 0 ) {
     short model_type;
     short proj_type;
+    
+    asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF type.\n");
+    
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
@@ -63,6 +66,7 @@ detect_geotiff_flavor (const char *file)
       *(findExt(inBaseName)) = '\0';
       inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
+        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF metadata (.aux) file.\n");
         proj_type = getArcgisProjType (inGeotiffAuxName->str);
         switch (proj_type) {
           case UTM:     // Universal Transverse Mercator (UTM)
@@ -78,6 +82,10 @@ detect_geotiff_flavor (const char *file)
             g_string_free(inGeotiffAuxName, TRUE);
             break;
         }
+      }
+      else {
+        asfPrintWarning("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF but the\n"
+            "associated metadata (.aux) file appears to be missing.\n");
       }
     }
   } // strncmp on citation, tmp
