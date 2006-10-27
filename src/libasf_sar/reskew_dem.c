@@ -193,7 +193,10 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     for (x=lastSrX+1;x<=sriX;x++)
                     {
                         if (srDEM[x]==unInitDEM || maxval > srDEM[x]) {
-                            srDEM[x]=maxval;
+                            if (outmask[x]!=MASK_USER_MASK)
+                                srDEM[x]=maxval;
+                            else
+                                srDEM[x]=badDEMht;
                         }
                     }
                 } else {
@@ -271,7 +274,6 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	outDEM = fopenImage(outDEMfile,"wb");
 	outAmp = fopenImage(outAmpFile,"wb");
 	
-	int i;
 	inMaskLine = (float *)MALLOC(sizeof(float)*gr_ns);
 	if (inMaskFile)
         {
@@ -286,6 +288,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
         else
         {
             // make a blank mask
+            int i;
             for (i=0; i<gr_ns; i++)
                 inMaskLine[i] = 0; // put our mask pointer into right place
         }

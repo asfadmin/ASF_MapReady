@@ -289,6 +289,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     int *sr_hits=NULL;
     float max_height=grDEM[0];
     double last_good_height = 0;
+    double max_valid_srX = -1;
+    double max_valid_srX_height = 0;
 
     if (mask) {
         // The "sr_hits" tracks points in ground range that map to the same
@@ -318,10 +320,9 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         double height=grDEM[grX];
         if (height < -900) height = badDEMht;
 
-        double srX;
         if (height!=badDEMht)
         {
-            srX=dem_gr2sr(d,grX,height);
+            double srX=dem_gr2sr(d,grX,height);
             if (height > max_height) max_height = height;
             last_good_height = height;
 
@@ -337,6 +338,11 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     out[grX]= dx <= 0.5 ? in[x] : in[x+1];
                 }
                 valid_data_yet=1;
+
+                if (srX > max_valid_srX) {
+                    max_valid_srX = srX;
+                    max_valid_srX_height = height;
+                }
 
                 if (sr_hits) {
                     //--------------------------------------------------------
@@ -394,9 +400,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             else {
                 // source value for this pixel outside the image -- use 0.
                 out[grX] = 0;
-
-                if (mask)
-                    mask[grX] = MASK_INVALID_DATA;
             }
         }
         else {
@@ -413,17 +416,65 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             // ever use a bad (uninitialized, i.e. 0) "last_good_height" value
 
             // User can use the mask to eliminate the copied pixels, if desired
-            srX=dem_gr2sr(d,grX,last_good_height);
+            double srX=dem_gr2sr(d,grX,last_good_height);
 
             if (valid_data_yet && srX >= 0 && srX < ns-1) {
                 out[grX] = in[(int)(srX+.5)];
-            } else {
+
+                if (out[grX] != 0.0) {
+                    if (srX > max_valid_srX) {
+                        max_valid_srX = srX;
+                        max_valid_srX_height = last_good_height;
+                    }
+                }
+            } 
+            else {
                 out[grX] = 0;
             }
-            
-            if (mask)
-                mask[grX] = MASK_INVALID_DATA;
         }
+    }
+
+    //-----------------------------------------------------------------------
+    // Invalid data, on the left & right edges
+
+    // Find the left & right edges of the valid data in slant range, convert
+    // to ground range, then mark from those points outward as invalid data.
+    double min_valid_srX = ns-1;
+    double min_valid_srX_height = 0;
+    last_good_height = 0;
+    for (grX=ns-1;grX>=0;grX--)
+    {
+        double height=grDEM[grX];
+        if (height > -900 && height!=badDEMht)
+        {
+            last_good_height = height;
+            double srX=dem_gr2sr(d,grX,height);
+            if (srX>=0 && srX < min_valid_srX) {
+                min_valid_srX = srX;
+                min_valid_srX_height = height;
+            }
+        }
+        else {
+            double srX=dem_gr2sr(d,grX,last_good_height);
+            if (srX>=0 && srX < min_valid_srX) {
+                min_valid_srX = srX;
+                min_valid_srX_height = last_good_height;
+                if (out[grX] == 0.0)
+                    out[grX] = in[(int)(srX+.5)];
+            }
+        }
+    }
+
+    if (mask) {
+        int max_valid_grX = 
+            (int)floor(SR2GR(d, max_valid_srX, max_valid_srX_height));
+        int min_valid_grX =
+            (int)ceil(SR2GR(d, min_valid_srX, min_valid_srX_height));
+        
+        for (i=max_valid_grX; i<ns; ++i)
+            mask[i] = MASK_INVALID_DATA;
+        for (i=min_valid_grX; i>=0; --i)
+            mask[i] = MASK_INVALID_DATA;
     }
 }
 
