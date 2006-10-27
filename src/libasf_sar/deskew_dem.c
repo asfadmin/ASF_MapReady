@@ -305,9 +305,6 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
         }
     }
 
-    // ugly hack to say right edge is 400 pixels from right of image
-    //int rpoint = d->numSamples - (2*DEM_GRID_RHS_PADDING); 
-
     // height of the satellite at this line
     double sat_ht = meta_get_sat_height(d->meta, line, grX);
 
@@ -426,52 +423,8 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             
             if (mask)
                 mask[grX] = MASK_INVALID_DATA;
-/*                
-                if ( (height==badDEMht && !valid_data_yet) ||
-                     ( srX > rpoint) )                    
-                {
-                    mask[grX] = MASK_INVALID_DATA;
-                }
-                else
-                {
-                    if (valid_data_yet) {
-                        if (mask[grX] == MASK_NORMAL ||
-                            mask[grX] == MASK_INVALID_DATA)
-                            ++n_layover;
-                        
-                        mask[grX] = MASK_LAYOVER;
-                    }
-                }
-*/
         }
     }
-
-/*
-  -- I can't figure out why this code is here... surely we can take it out???
-
-    // now have a bit of code that goes back and unsets 
-    // extra MASK_INVALID_DATA
-    if (mask)
-    {
-        int set = 1;
-        for (grX = ns-1; grX >= rpoint; --grX)
-        {
-            if (mask[grX] != MASK_INVALID_DATA)
-            {   // ok so we have left ths comfortable region
-                set = -1;
-            }
-            else if  (set == -1)
-            { 
-                if (mask[grX] == MASK_NORMAL) {
-                    ++n_layover;
-                    mask[grX] = MASK_LAYOVER;
-                }
-            }
-        }
-    }
-    // end unsetting code
-
-*/
 }
 
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
