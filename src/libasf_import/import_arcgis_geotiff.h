@@ -116,6 +116,8 @@
 #define EPRJ_SIZE                 "Eprj_Size"
 #define EPRJ_MAPINFO              "Eprj_MapInfo"
 
+#define EIMG_MAPINFORMATION       "Eimg_MapInformation"
+
 #define EFGA_POLYNOMIAL           "Efga_Polynomial"
 #define CALIBRATION_NODE          "Calibration_Node"
 #define EMIF_ROOTNODE             "root"
@@ -194,7 +196,7 @@ typedef struct {
   unsigned long child; /* Offset to first child node */
   unsigned long next; /* Offset to next node in data tree */
   unsigned long prev; /* Offset to previous node in data tree */
-}_Ehfa_Entry;
+} _Ehfa_Entry;
 
 /* The terms 'object' and 'item' etc are defined in the ERDAS MIF HFA */
 /* document iau_docu1.pdf.  The following typedefs are named to       */
@@ -241,7 +243,7 @@ void printDataNode(_Ehfa_Entry *node, unsigned long nodeOffset);
 void traverseNodes(FILE *fp, _Ehfa_Entry *node,unsigned long nodeOffset, BOOL dumpFlag);
 void ParseDictionary(char *dd, ddObject ddObjects[], int lim);
 BOOL getObjectToken(char **tdd, ddObject *tmpObj);
-short getArcgisProjType(const char *file);
+short getArcgisProjType(const char *auxFile);
 void ParseDictionaryToObjectStrs(char *dd, ddObject Objects[], int *count, int lim);
 int  validDataType(char dataType);
 void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems);

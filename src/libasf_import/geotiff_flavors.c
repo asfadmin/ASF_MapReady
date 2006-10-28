@@ -44,7 +44,7 @@ detect_geotiff_flavor (const char *file)
     short model_type;
     short proj_type;
     
-    asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF type.\n");
+    asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF.\n");
     
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
@@ -66,7 +66,11 @@ detect_geotiff_flavor (const char *file)
       *(findExt(inBaseName)) = '\0';
       inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
-        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF metadata (.aux) file.\n");
+        // If an aux file is found, then return import_arcgis_geotiff() regardless,
+        // but warn if it does not contain projection information.  import_arcgis_geotiff()
+        // handles this case and looks for the info in the TIFF instead...
+        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF\n"
+            "metadata (.aux) file.\n");
         proj_type = getArcgisProjType (inGeotiffAuxName->str);
         switch (proj_type) {
           case UTM:     // Universal Transverse Mercator (UTM)
@@ -79,7 +83,10 @@ detect_geotiff_flavor (const char *file)
             break;
           case DHFA_UNKNOWN_PROJECTION:
           default:      // Else cont...
+            asfPrintWarning("\nUnable to determine projection type from\n"
+                "ArcGIS metadata (.aux) file.\n");
             g_string_free(inGeotiffAuxName, TRUE);
+            return import_arcgis_geotiff;
             break;
         }
       }
