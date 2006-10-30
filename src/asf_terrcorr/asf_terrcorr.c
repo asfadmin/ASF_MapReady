@@ -4,6 +4,7 @@
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-keep (-k)]\n"\
 "          [-no-resample] [-no-interp] [-pixel-size <size>]\n"\
 "          [-mask-file <filename> | -auto-water-mask]\n"\
+"          [-mask-height-cutoff <height in meters>\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
@@ -82,6 +83,11 @@
 "          produced from the DEM.  Areas where the DEM height is less than 1\n"\
 "          meter are masked.\n\n"\
 "          You cannot use this option together with -mask-file.\n"\
+"\n"\
+"     -mask-height-cutoff <height>\n"\
+"          Only applies to automatic water masking.\n\n"\
+"          DEM pixels of the given value or below are masked.  The default\n"\
+"          is 1 meter.\n"\
 "\n"\
 "     -fill <fill value>\n"\
 "          Specifies a particular value to put in the terrain corrected image\n"\
@@ -208,6 +214,8 @@ main (int argc, char *argv[])
   int generate_water_mask = FALSE;
   int save_clipped_dem = FALSE;
   int update_original_metadata_with_offsets = FALSE;
+  float mask_height_cutoff = 1.0;
+  int mask_height_cutoff_specified = FALSE;
 
   // -1 -> no masking, other values mean fill it with that value
   int fill_value = 0; 
@@ -262,6 +270,11 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-auto-water-mask","--auto-water-mask",NULL)) {
         generate_water_mask = TRUE;
     }
+    else if (strmatches(key,"-mask-height-cutoff","--mask-height-cutoff",NULL)) {
+        CHECK_ARG(1);
+        mask_height_cutoff = atof(GET_ARG(1));
+        mask_height_cutoff_specified = TRUE;
+    }
     else if (strmatches(key, "-u", "-update-original-meta",
                         "--update-original-meta", NULL))
     {
@@ -288,6 +301,11 @@ main (int argc, char *argv[])
     usage(ASF_NAME_STRING);
   }
 
+  if (mask_height_cutoff_specified && !generate_water_mask) {
+    asfPrintWarning("Ignoring -mask-height-cutoff option, as you did not "
+                    "request a water mask.\n");
+  }
+
   inFile = argv[currArg];
   demFile = argv[currArg+1];
   outFile = argv[currArg+2];
@@ -297,7 +315,8 @@ main (int argc, char *argv[])
                               do_interp, do_fftMatch_verification,
                               dem_grid_size, TRUE, fill_value, 
                               generate_water_mask, save_clipped_dem,
-                              update_original_metadata_with_offsets);
+                              update_original_metadata_with_offsets,
+                              mask_height_cutoff);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

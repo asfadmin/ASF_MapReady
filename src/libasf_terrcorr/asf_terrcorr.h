@@ -16,7 +16,7 @@ int asf_terrcorr(char *sarFile, char *demFile,char *inMaskFile,
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
                        char *outFile, int update_metadata_flag,
-                       int auto_water_mask);
+                       int auto_water_mask, float mask_height_cutoff);
 
 int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
 			  char *simAmpFile, char *demSlant);
@@ -35,12 +35,13 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *inMaskFile,
 **/
 
 int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
-		     char *outFile, double pixel_size, int clean_files,
-		     int do_resample, int do_corner_matching, int do_interp,
-		     int do_fftMatch_verification, int dem_grid_size, 
+                     char *outFile, double pixel_size, int clean_files,
+                     int do_resample, int do_corner_matching, int do_interp,
+                     int do_fftMatch_verification, int dem_grid_size, 
                      int do_terrain_correction, int fill_value,
                      int generate_water_mask, int save_clipped_dem,
-                     int update_original_metadata_with_offsets);
+                     int update_original_metadata_with_offsets,
+                     float mask_height_cutoff);
 
 /**
    Functions private to terrain correction, not meant for general use.

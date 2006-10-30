@@ -17,8 +17,9 @@ static char *generate_fake_spaces(const char *s)
 void usage(const char *name)
 {
   printf("Usage: %s [-log <logfile>] [-quiet] [-update] [-mask-file <file>]\n"
-         "       %s [-auto-water-mask] <inFile> <demFile> <outFile>\n", name,
-         generate_fake_spaces(name));
+         "       %s [-auto-water-mask] [-mask-height-cutoff <height in meters>]\n"
+         "       %s <inFile> <demFile> <outFile>\n", name,
+         generate_fake_spaces(name), generate_fake_spaces(name));
   exit(EXIT_FAILURE);
 }
 
@@ -51,6 +52,7 @@ main (int argc, char *argv[])
   int update_flag = FALSE;
   int NUM_ARGS = 2;
   int auto_water_mask = FALSE;
+  float mask_height_cutoff = 1.0;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -72,6 +74,10 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-mask-file","--mask-file",NULL)) {
         CHECK_ARG(1);
         maskFile = GET_ARG(1);
+    }
+    else if (strmatches(key,"-mask-height-cutoff","--mask-height-cutoff",NULL)) {
+        CHECK_ARG(1);
+        mask_height_cutoff = atof(GET_ARG(1));
     }
     else if (strmatches(key,"-auto-water-mask","--auto-water-mask",NULL)) {
         auto_water_mask = TRUE;
@@ -99,7 +105,8 @@ main (int argc, char *argv[])
   }
 
   int ret = refine_geolocation(inFile, demFile, maskFile, outFile, 
-                               update_flag, auto_water_mask);
+                               update_flag, auto_water_mask,
+                               mask_height_cutoff);
 
   if (update_flag) {
       char *meta = appendExt(outFile, ".meta");

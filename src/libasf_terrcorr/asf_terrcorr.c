@@ -220,17 +220,19 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int save_clipped_dem = FALSE;
   int fill_value = 0;
   int update_original_metadata_with_offsets = FALSE;
+  float mask_height_cutoff = -999; // not used
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
-			  clean_files, do_resample, do_corner_matching,
-                          do_interp, do_fftMatch_verification,
-                          dem_grid_size, do_terrain_correction, fill_value,
-                          generate_water_mask, save_clipped_dem,
-                          update_original_metadata_with_offsets);
+      clean_files, do_resample, do_corner_matching,
+      do_interp, do_fftMatch_verification,
+      dem_grid_size, do_terrain_correction, fill_value,
+      generate_water_mask, save_clipped_dem,
+      update_original_metadata_with_offsets, mask_height_cutoff);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
-                       char *outFile, int update_flag, int auto_water_mask)
+                       char *outFile, int update_flag, int auto_water_mask,
+                       float mask_height_cutoff)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
@@ -249,7 +251,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        clean_files, do_resample, do_corner_matching,
                        do_interp, do_fftMatch_verification, dem_grid_size,
                        do_terrain_correction, fill_value, auto_water_mask,
-                       save_clipped_dem, update_orig_metadata_with_offsets);
+                       save_clipped_dem, update_orig_metadata_with_offsets,
+                       mask_height_cutoff);
 
   if (ret==0)
   {
@@ -753,12 +756,13 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 }
 
 int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
-		     char *outFile, double pixel_size, int clean_files,
-		     int do_resample, int do_corner_matching, int do_interp,
-		     int do_fftMatch_verification, int dem_grid_size,
-		     int do_terrain_correction, int fill_value,
+                     char *outFile, double pixel_size, int clean_files,
+                     int do_resample, int do_corner_matching, int do_interp,
+                     int do_fftMatch_verification, int dem_grid_size,
+                     int do_terrain_correction, int fill_value,
                      int generate_water_mask, int save_clipped_dem,
-                     int update_original_metadata_with_offsets)
+                     int update_original_metadata_with_offsets, 
+                     float mask_height_cutoff)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -809,7 +813,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (generate_water_mask) {
       userMaskFile = outputName(output_dir, demFile, "_water_mask");
 
-      const float cutoff = 1.00001; // FIXME: this ok?
+      const float cutoff = mask_height_cutoff + 0.00001; // a little fudge
       asfPrintStatus("Generating a Water Mask from DEM: %s.\n", demFile);
       asfPrintStatus("Height cutoff: %.2fm.\n", cutoff);
 

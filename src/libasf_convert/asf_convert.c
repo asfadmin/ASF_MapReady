@@ -583,7 +583,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             refine_geolocation(inFile, cfg->terrain_correct->dem,
                                cfg->terrain_correct->mask,
                                outFile, FALSE,
-                               cfg->terrain_correct->auto_mask_water),
+                               cfg->terrain_correct->auto_mask_water,
+                               cfg->terrain_correct->mask_height_cutoff),
             "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
@@ -596,7 +597,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              TRUE, FALSE, cfg->terrain_correct->interp, 
                              TRUE, 20, TRUE, cfg->terrain_correct->fill_value,
                              cfg->terrain_correct->auto_mask_water,
-                             cfg->terrain_correct->save_terrcorr_dem, FALSE),
+                             cfg->terrain_correct->save_terrcorr_dem, FALSE,
+                             cfg->terrain_correct->mask_height_cutoff),
             "terrain correcting data file (asf_terrcorr)\n");
       }
     }
