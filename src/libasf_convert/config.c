@@ -258,7 +258,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->terrain_correct->dem, "");
   cfg->terrain_correct->mask = (char *)MALLOC(sizeof(char)*255);
   cfg->terrain_correct->auto_mask_water = 0;
-  cfg->terrain_correct->mask_height_cutoff = 1.0;
+  cfg->terrain_correct->water_height_cutoff = 1.0;
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
@@ -369,8 +369,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
       if (strncmp(test, "auto mask water", 15)==0)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
-      if (strncmp(test, "mask height cutoff", 18)==0)
-        cfg->terrain_correct->mask_height_cutoff = read_double(line, "mask height cutoff");
+      if (strncmp(test, "water height cutoff", 19)==0)
+        cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -586,8 +586,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
       if (strncmp(test, "auto mask water", 15)==0)
         cfg->terrain_correct->auto_mask_water = read_int(line, "auto mask water");
-      if (strncmp(test, "mask height cutoff", 18)==0)
-        cfg->terrain_correct->mask_height_cutoff = read_double(line, "mask height cutoff");
+      if (strncmp(test, "water height cutoff", 19)==0)
+        cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "save terrcorr dem", 17)==0)
@@ -850,13 +850,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# automatically generate a mask for you, based on the DEM, which attempts to mask\n"
                 "# the regions of your scene that are water (these regions provide a poor match).\n"
                 "# Specifically, all DEM values <1m are masked, unless a different height cutoff\n"
-                "# is specified with the 'mask height cutoff' option, described next.\n\n");
+                "# is specified with the 'water height cutoff' option, described next.\n\n");
       fprintf(fConfig, "auto mask water = %d\n", cfg->terrain_correct->auto_mask_water);
       if (!shortFlag)
         fprintf(fConfig, "\n# When creating a mask automatically with the previous flag,\n"
                 "# you may specify use a value other than 1m as the height cutoff.\n"
                 "# This value is ignored when 'auto mask water' is 0.\n\n");
-      fprintf(fConfig, "mask height cutoff = %f\n", cfg->terrain_correct->mask_height_cutoff);
+      fprintf(fConfig, "water height cutoff = %f\n", cfg->terrain_correct->water_height_cutoff);
       if (!shortFlag)
         fprintf(fConfig, "\n# When applying a mask during terrain correction, you can choose\n"
                 "# how the regions covered by the mask are filled in the final terrain corrected\n"
