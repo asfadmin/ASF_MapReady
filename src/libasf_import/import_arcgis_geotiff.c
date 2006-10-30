@@ -163,6 +163,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   int i;
   short model_type;
   short projection_type;
+  short raster_type;
+  short linear_units;
   GString *inGeotiffAuxName;
   arcgisProjParms_t arcgisProjParms;
   arcgisDatumParms_t arcgisDatumParms;
@@ -217,6 +219,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
   /*                                            */
   // Read GeoTIFF file citation (general info from the maker of the file)
+  // NOTE: The citation may or may not exist ...it is not required by the
+  // file standard but we need it to help check for ERDAS IMAGINE type format
   int citation_length;
   int typeSize;
   tagtype_t citation_type;
@@ -226,12 +230,16 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   char *citation = MALLOC ((citation_length) * typeSize);
   GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
   asfPrintStatus("Citation: %s\n", citation);
+  
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
   // geotiff theoretically supports multiple tie points, we don't
   // (rationale: ArcView currently doesn't either, and multiple tie
   // points don't make sense with the pixel scale option, which we
   // need).
+  // NOTE: Since neither ERDAS or ESRI store tie points in the .aux
+  // file associated with their geotiffs, it is _required_ that they
+  // are found in their tiff files.
   double *tie_point;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count, 
   &tie_point);
@@ -246,9 +254,23 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
               "\nGeoTIFF file does not contain pixel scale parameters\n");
   asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
               "\nGeoTIFF file contains invalid pixel scale parameters\n");
+  
+  // CHECK TO SEE IF THE GEOTIFF DOES CONTAIN USEFUL DATA:
+  //  If the tiff file contains geocoded information, then the model type
+  // will be ModelTypeProjected.  We add the requirement that pixels 
+  // represent area and that the units are in meters because that's what
+  // we support to date.
   read_count
       = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-  if (read_count == 1 && model_type == ModelTypeProjected) {
+  read_count 
+      += GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, &raster_type, 0, 0);
+  read_count
+      += GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
+  if (read_count == 3                   &&
+      model_type == ModelTypeProjected  &&
+      raster_type == RasterPixelIsArea  &&
+      linear_units == Linear_Meter      )
+  {
     geotiff_data_exists = 1;
   }
   else {
@@ -262,16 +284,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
                       (model_type == ModelTypeProjected) ?
                       "ModelTypeProjected" :
                       "Unknown");
-  // Try to get the units in which other metadata parameters are specified from the TIFF file
-  short linear_units;
-  read_count
-      = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
-  if (geotiff_data_exists && read_count == 1 && linear_units == Linear_Meter) {
-    geotiff_data_exists = 1;
-  }
-  else {
-    geotiff_data_exists = 0;
-  }
+  asfPrintStatus ("Input GeoTIFF key GTRasterTypeGeoKey is %s\n",
+                  (raster_type == RasterPixelIsArea) ?
+                      "RasterPixelIsArea" : "(Unsupported type)");
   asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                   (linear_units == Linear_Meter) ?
                       "meters" : "(Unsupported type)");
@@ -287,6 +302,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // ArcGIS metadata (.aux) file
   // Read the model type from the GeoTIFF file ...expecting that it is
   // unknown, but could possibly be ModelTypeProjection
+  //
+  // Start of reading projection parameters from geotiff ...if it exists //
   if (geotiff_data_exists) {
     // Init ArcGIS projection parameters
     // NOTE: A direct copy from these into the meta data occurs below, so we
@@ -506,7 +523,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       default:
         break;
     }
-  }
+  } // End of reading projection parameters from geotiff ...if it existed
+  
   /***** GET ALL VALUES THAT ARE IN THE ARCGIS METADATA FILE (.aux)  *****/
   /*     IF THE FILE EXISTS.                                             */
   char inBaseName[256];
