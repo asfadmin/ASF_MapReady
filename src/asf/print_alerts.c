@@ -116,7 +116,7 @@ void asfPrintWarning(const char *format, ...)
   va_list ap;
 
   va_start(ap, format);
-  len = 2 + vsnprintf(buf, sizeof(buf), format, ap);
+  len = 2 + vsnprintf(buf, 0, format, ap);
   va_end(ap);
 
   buf = MALLOC(len*sizeof(char));
@@ -140,7 +140,7 @@ void asfPrintError(const char *format, ...)
   va_list ap;
 
   va_start(ap, format);
-  len = 2 + vsnprintf(buf, sizeof(buf), format, ap);
+  len = 2 + vsnprintf(buf, 0, format, ap);
   va_end(ap);
 
   buf = MALLOC(len*sizeof(char));
