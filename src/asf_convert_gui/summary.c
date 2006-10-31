@@ -75,7 +75,7 @@ void update_summary()
         strcat(text, "STF");
         if (s->latitude_checked)
         {
-            sprintf(text, "%s (Lat: %f - %f)", text, s->latitude_low,
+            sprintf(text, "%s (Lat: %.2f - %.2f)", text, s->latitude_low,
                 s->latitude_hi);
         }
         break;
@@ -114,12 +114,12 @@ void update_summary()
         {
             if (s->specified_tc_pixel_size)
             {
-                sprintf(text, "%s\n   Pixel Size: %f m", text,
+                sprintf(text, "%s\n   Pixel Size: %.2f m", text,
                         s->tc_pixel_size);
             }
             else if (s->specified_pixel_size)
             {
-                sprintf(text, "%s\n   Pixel Size: %f m (from geocode)",
+                sprintf(text, "%s\n   Pixel Size: %.2f m (from geocode)",
                         text, s->pixel_size);
             }
 
@@ -188,38 +188,38 @@ void update_summary()
 
         case PROJ_PS:
             sprintf(text, "%sPolar Stereo\n"
-                "   Center: (%f, %f)\n",
+                "   Center: (%.2f, %.2f)\n",
                 text, s->lat0, s->lon0);
             break;
 
         case PROJ_LAMCC:
             sprintf(text, "%sLambert Conformal Conic\n"
-                "   Center: (%f, %f)\n"
-                "   Standard Parallels: (%f, %f)\n",
+                "   Center: (%.2f, %.2f)\n"
+                "   Standard Parallels: (%.2f, %.2f)\n",
                 text, s->lat0, s->lon0,
                 s->plat1, s->plat2);
             break;
 
         case PROJ_LAMAZ:
             sprintf(text, "%sLambert Azimuthal Equal Area\n"
-                "   Center: (%f, %f)\n",
+                "   Center: (%.2f, %.2f)\n",
                 text, s->lat0, s->lon0);
             break;
 
         case PROJ_ALBERS:
             sprintf(text, "%sAlbers Conical Equal Area\n"
-                "   Center: (%f, %f)\n"
-                "   Standard Parallels: (%f, %f)\n",
+                "   Center: (%.2f, %.2f)\n"
+                "   Standard Parallels: (%.2f, %.2f)\n",
                 text, s->lat0, s->lon0,
                 s->plat1, s->plat2);
             break;
         }
 
         if (s->specified_height)
-            sprintf(text, "%s   Height: %f\n", text, s->height);
+            sprintf(text, "%s   Height: %.2f\n", text, s->height);
 
         if (s->specified_pixel_size)
-            sprintf(text, "%s   Pixel Size: %f m\n", text, s->pixel_size);
+            sprintf(text, "%s   Pixel Size: %.2f m\n", text, s->pixel_size);
 
         sprintf(text, "%s   Datum: %s\n", text, datum_string(s->datum));
 
