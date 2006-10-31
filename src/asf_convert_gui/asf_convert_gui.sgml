@@ -364,7 +364,12 @@
                     Refining the geolocation doesn't change the image data,
                     only the metadata is adjusted.  Terrain correction also
                     applies geolocation refinement, and corrects the image data
-                    for the side-looking SAR geometry.
+                    for the side-looking SAR geometry.  
+                </para>
+                <para>
+                    The default is terrain correction.  Some of the following
+                    options are only available if you've selected terrain
+                    correction.
                 </para>
             </listitem>
             <listitem>
@@ -433,6 +438,27 @@
                     it isn't possible to recover the actual backscatter values in
                     the layover regions.  However, doing so does produce a nicer looking
                     result.  You may wish to leave the layover regions blank instead.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Save Layover/Shadow Mask</para>
+                <para>
+                    If you wish, a copy of the layover/shadow mask generated during
+                    the terrain correction process can be saved, and then geocoded
+                    and exported using the same parameters as the SAR scene.
+                </para>
+            </listitem>
+            <listitem>
+                <para>Save DEM</para>
+                <para>
+                    If you wish, a copy of the clipped DEM generated during
+                    the terrain correction process can be saved, and then geocoded
+                    and exported using the same parameters as the SAR scene.
+                </para>
+                <para>
+                    The DEM will cover a larger area than the SAR image and the
+                    layover/shadow mask, since a little extra is clipped in order
+                    to account for relief near the edges.
                 </para>
             </listitem>
         </orderedlist>
