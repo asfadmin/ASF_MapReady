@@ -14,6 +14,16 @@
 
 #include "asf_convert_gui.h"
 
+void default_to_terrcorr_on()
+{
+// The "initially on" value on the .glade file for the terrain correction
+// radio button doesn't seem to be working... turn it on manually.
+  GtkWidget *rb_terrcorr;
+  rb_terrcorr =
+      glade_xml_get_widget(glade_xml, "rb_terrcorr");
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_terrcorr), TRUE);
+}
+
 void terrcorr_options_changed()
 {
   GtkWidget *terrcorr_vbox;

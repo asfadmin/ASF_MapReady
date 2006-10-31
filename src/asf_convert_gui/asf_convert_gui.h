@@ -297,6 +297,7 @@ void print_share_dir();
 /* terrcorr.c */
 void terrcorr_options_changed();
 const char * terrcorr_options_string(const Settings *settings);
+void default_to_terrcorr_on();
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

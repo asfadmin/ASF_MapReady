@@ -115,9 +115,9 @@ main(int argc, char **argv)
     settings_on_execute = NULL;
 
     /* explicit call to the function that refreshes the "summary" */
-    /* section when geocoding options are changed, so get the     */
-    /* settings initially in there                                */
-    geocode_options_changed();
+    /* section when options are changed, so get the settings      */
+    /* initially in there                                         */
+    default_to_terrcorr_on();
     terrcorr_options_changed();
 
     gtk_main ();
