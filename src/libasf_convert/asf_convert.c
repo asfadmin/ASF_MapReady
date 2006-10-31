@@ -84,7 +84,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 {
   convert_config *cfg;
   char inFile[255], outFile[255];
-  const int pid = getpid();
 
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
@@ -488,8 +487,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->geocoding || cfg->general->export) {
-        sprintf(outFile, "tmp%i_image_stats", pid);
+      if (cfg->general->terrain_correct || 
+          cfg->general->geocoding || 
+          cfg->general->export)
+      {
+        sprintf(outFile, "%s/image_stats", cfg->general->tmp_dir);
       }
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -744,34 +746,32 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     // Process the clipped DEM if requested
     if (cfg->terrain_correct->save_terrcorr_dem) {
-        //Commenting this section out for now --- we won't geocode the DEM
-        //  ... we'll assume it has already been geocoded in the user's
-        // favored projection, or that they'll be content to let the GIS
-        // software handle any differences.
+        // We know the name of the clipped DEM in the temporary directory
+        char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
+        char *tmp2 = stripExt(tmp);
+        sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
+        free(tmp);
+        free(tmp2);
 
-        //if (cfg->general->geocoding) {
-        //    update_status(cfg, "Geocoding clipped DEM...");
-        //    char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
-        //    char *tmp2 = stripExt(tmp);
-        //    sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
-        //    free(tmp); free(tmp2);
-        //    sprintf(outFile, "%s/dem_geocoded", cfg->general->tmp_dir);
-        //    check_return(
-        //        asf_geocode_from_proj_file(
-        //            cfg->geocoding->projection, cfg->geocoding->force,
-        //            RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
-        //            datum, cfg->geocoding->pixel, inFile, outFile,
-        //            cfg->geocoding->background),
-        //        "geocoding clipped DEM (asf_geocode)\n");
-        //}
+        // output name will be the SAR image's name with a "_dem" added
+        // to the basename
+        sprintf(outFile, "%s_dem", cfg->general->out_name);
 
+        //Never re-geocode the DEM -- assume user has already put it into
+        //their favored projection (since at this time we require that
+        //DEMs be geocoded for terrain correction ingest).  So, proceed
+        //directly to export.
         if (cfg->general->export) {
             update_status(cfg, "Exporting clipped DEM...");
-            sprintf(inFile, "%s", outFile);
-            sprintf(outFile, "%s_dem", cfg->general->out_name);
+
             check_return(
                 asf_export(format, size, TRUNCATE, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
+        }
+        else {
+            // User requested that we save the clipped DEM, but chose not
+            // to export.  So... just move the clipped DEM out of the tmp dir
+            renameImgAndMeta(inFile, outFile);
         }
     }
 
@@ -788,6 +788,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     datum, cfg->geocoding->pixel, inFile, outFile,
                     cfg->geocoding->background),
                 "geocoding clipped DEM (asf_geocode)\n");
+        } 
+        else {
+            // no geocoding ... just prepare the 'outFile' param for export
+            sprintf(outFile, "%s/terrain_correct_mask",cfg->general->tmp_dir);
         }
 
         if (cfg->general->export) {
