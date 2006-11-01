@@ -1302,7 +1302,7 @@ settings_update_dem(Settings *s, const char *output_path, int is_first)
     {
         // ... we point to the saved DEM instead of the TIFF
         char *file = get_basename(s->dem_file);
-        sprintf(s->dem_file, "%s/%s", output_path, file);
+        sprintf(s->dem_file, "%s/%s.img", output_path, file);
         free(file);
     }
 }
