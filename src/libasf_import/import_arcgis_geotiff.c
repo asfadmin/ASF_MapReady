@@ -1350,8 +1350,10 @@ void DHFAGetDoubleVal(FILE *fp, double *val)
 
   /* Just in case the definitions change, use the type lengths */
   /* for the fread() etc.                                      */
+  pTmpVal = MALLOC(EMIF_T_DOUBLE_LEN);
   DHFAfread(pTmpVal, EMIF_T_DOUBLE_LEN, fp);
   *val = *((double*) pTmpVal);
+  FREE(pTmpVal);
 }
 
 /***** DHFAGetFloatValFromOffset()                            *****/
@@ -1371,8 +1373,10 @@ void DHFAGetFloatVal(FILE *fp, float *val)
 
   /* Just in case the definitions change, use the type lengths */
   /* for the fread() etc.                                      */
-  DHFAfread(pTmpVal, EMIF_T_DOUBLE_LEN, fp);
+  pTmpVal = MALLOC(EMIF_T_DOUBLE_LEN);
+  DHFAfread(pTmpVal, EMIF_T_FLOAT_LEN, fp);
   *val = *((float*) pTmpVal);
+  FREE(pTmpVal);
 }
 
 void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
@@ -1449,64 +1453,6 @@ void GetDataDictionary(FILE *fp, unsigned long ddOffset,char **dd)
         "corrupt.  Dictionary is not properly terminated.\n");
     (*dd)[ddLen] = '\0';
   }
-  
-  // Find opening brace
-  /*
-  for (i=0; i<ddLen && level ==0; i++) {
-    DHFAfread(pTmpUchar, EMIF_T_UCHAR_LEN, fp);
-    if (feof(fp))
-        break;
-    (*dd)[i] = (unsigned char) *pTmpUchar;
-    if (*pTmpUchar == OPEN_BRACE)
-      level++;
-  }
-  */
-  
-  // Read the rest of the dictionary, quitting not just at the right
-  // length or EOF, but also when the final closing brace (followed
-  // by a comma and a period) indicates that the end of the dictionary
-  // has been reached.  I found that some aux files seem to be corrupt
-  // and have garbage characters after the data dictionary and before
-  // the EOF
-  /*
-  for (; i<ddLen; i++) {
-    DHFAfread(pTmpUchar, EMIF_T_UCHAR_LEN, fp);
-    if (feof(fp))
-        break;
-    (*dd)[i] = (unsigned char) *pTmpUchar;
-    
-    switch(*pTmpUchar) {
-      case OPEN_BRACE:
-        level++;
-        break;
-      case CLOSE_BRACE:
-        level--;
-        break;
-      default:
-        break;
-    }
-    if (level == 0) {
-      i++;
-      DHFAfread(pTmpUchar, EMIF_T_UCHAR_LEN, fp);
-      if (feof(fp))
-        break;
-      (*dd)[i] = (unsigned char) *pTmpUchar;
-    
-      i++;
-      DHFAfread(pTmpUchar, EMIF_T_UCHAR_LEN, fp);
-      if (feof(fp))
-        break;
-      (*dd)[i] = (unsigned char) *pTmpUchar;
-      
-      if ((*dd)[i] != '.' || (*dd)[i-1] != ',') {
-        asfPrintWarning("ArcGIS metadata (.aux) file's data dictionary may be\n"
-            "corrupt.  Nesting of objects and items not properly terminated.\n");
-      }
-      break;
-    }
-  }
-  (*dd)[ddLen] = '\0';
-  */
 
   /* Clean up */
   FREE(pTmpUchar);
