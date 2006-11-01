@@ -588,10 +588,13 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   /***** EXPORT FLOAT IMAGE AS JPEG *****/
   /*                                    */
   // Note to self:  float_image_export_as_jpeg asserts if it fails
-  asfPrintStatus("\nConverting original image to jpeg format and saving to disk...\n");
-  float_image_export_as_jpeg 
-    (image, "pre_bad_data_remap.jpeg",
-     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
+  //
+  // UPDATE: I'm commenting out the creation of a pre-bad data scan jpeg because
+  // for now it doesn't seem likely that ArcGIS geotiffs will have problems
+//  asfPrintStatus("\nConverting original image to jpeg format and saving to disk...\n");
+//  float_image_export_as_jpeg 
+//    (image, "pre_bad_data_remap.jpeg",
+//     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
 
   /***** FIX DEM IMAGE'S BAD DATA *****/
   /*                                  */
@@ -600,17 +603,30 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // For now we deal with this by mapping these values to a less negative magic number
   // of our own that still lets things work somewhat (assuming the bad
   // data values are rare at least).
+  //
+  // UPDATE: I'm leaving this scan in for not (11-1-06) ...but if it never issues
+  // any warnings when ingesting ArcGIS geotiffs then it's probably not necessary
+  // to scan for 'bad data'.  AND, it's possible that the stats calculations can handle
+  // the bad data now ...needs testing.
   asfPrintStatus("\nScanning image for bad data values...\n");
   const float bad_data_ceiling = -10e10;
   const float new_bad_data_magic_number = -999.0;
   size_t ii, jj;
+  char bad_values_existed = 0;
   for ( ii = 0 ; ii < image->size_y ; ii++ ) {
     for ( jj = 0 ; jj < image->size_x ; jj++ ) {
       if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
 	float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
+        bad_values_existed = 1;
       }
     }
   }
+  if (bad_values_existed) {
+    asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
+        "result in inaccurate image statistics.\n\n");
+    asfPrintStatus("Extra-negative values found within the float image have been removed\n\n");
+  }
+  
   // Get the raster width and height of the image.
   uint32 width = image->size_x;
   uint32 height = image->size_y;
