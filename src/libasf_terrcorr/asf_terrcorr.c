@@ -125,6 +125,18 @@ static int mini(int a, int b)
   return a < b ? a : b;
 }
 
+static void update_meta_offsets(const char *filename, double t_offset,
+                                double x_offset)
+{
+    asfPrintStatus("Updating offsets in the metadata for: %s\n", filename);
+
+    meta_parameters *meta = meta_read(filename);
+    meta->sar->time_shift += t_offset;
+    meta->sar->slant_shift += x_offset;
+    meta_write(meta, filename);
+    meta_free(meta);
+}
+
 static void 
 fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
 {
@@ -227,12 +239,13 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       do_interp, do_fftMatch_verification,
       dem_grid_size, do_terrain_correction, fill_value,
       generate_water_mask, save_clipped_dem,
-      update_original_metadata_with_offsets, mask_height_cutoff);
+      update_original_metadata_with_offsets, mask_height_cutoff, NULL);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile, 
                        char *outFile, int update_flag, int auto_water_mask,
-                       float mask_height_cutoff)
+                       float mask_height_cutoff,
+                       char **other_files_to_update_with_offsets)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
@@ -252,7 +265,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        do_interp, do_fftMatch_verification, dem_grid_size,
                        do_terrain_correction, fill_value, auto_water_mask,
                        save_clipped_dem, update_orig_metadata_with_offsets,
-                       mask_height_cutoff);
+                       mask_height_cutoff, other_files_to_update_with_offsets);
 
   if (ret==0)
   {
@@ -762,7 +775,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
                      int do_terrain_correction, int fill_value,
                      int generate_water_mask, int save_clipped_dem,
                      int update_original_metadata_with_offsets, 
-                     float mask_height_cutoff)
+                     float mask_height_cutoff,
+                     char **other_files_to_update_with_offset)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -959,11 +973,16 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   {
       // update input data file with the calculated offsets
       asfPrintStatus("Updating original metadata with offsets...\n");
-      meta_parameters *m = meta_read(sarFile);
-      m->sar->time_shift += t_offset;
-      m->sar->slant_shift += x_offset;
-      meta_write(m, sarFile);
-      meta_free(m);
+      update_meta_offsets(sarFile, t_offset, x_offset);
+  }
+
+  if (other_files_to_update_with_offset)
+  {
+      char **other_file = other_files_to_update_with_offset;
+      while (*other_file) {
+          update_meta_offsets(*other_file, t_offset, x_offset);
+          ++file;
+      }
   }
 
   if (do_terrain_correction)

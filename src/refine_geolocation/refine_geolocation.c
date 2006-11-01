@@ -16,10 +16,13 @@ static char *generate_fake_spaces(const char *s)
 
 void usage(const char *name)
 {
-  printf("Usage: %s [-log <logfile>] [-quiet] [-update] [-mask-file <file>]\n"
-         "       %s [-auto-water-mask] [-mask-height-cutoff <height in meters>]\n"
-         "       %s <inFile> <demFile> <outFile>\n", name,
-         generate_fake_spaces(name), generate_fake_spaces(name));
+  char *pad = generate_fake_spaces(name);
+  printf("Usage: %s [-log <logfile>] [-quiet] [-update]\n"
+         "       %s [-mask-file <file>] [-auto-water-mask]\n"
+         "       %s [-mask-height-cutoff <height in meters>]\n"
+         "       %s [-other-file <filename>]\n"
+         "       %s <inFile> <demFile> <outFile>\n",
+         name, pad, pad, pad, pad);
   exit(EXIT_FAILURE);
 }
 
@@ -43,6 +46,8 @@ int strmatches(const char *key, ...)
   return found;
 }
 
+#define MAX_OTHER 10
+
 // Main program body.
 int
 main (int argc, char *argv[])
@@ -53,6 +58,11 @@ main (int argc, char *argv[])
   int NUM_ARGS = 2;
   int auto_water_mask = FALSE;
   float mask_height_cutoff = 1.0;
+  char *other_files[MAX_OTHER];
+  int i,n_other = 0;
+
+  for (i=0; i<MAX_OTHER; ++i)
+      other_files[i]=NULL;
 
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -82,6 +92,12 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-auto-water-mask","--auto-water-mask",NULL)) {
         auto_water_mask = TRUE;
     }
+    else if (strmatches(key,"-other-file","--other-file",NULL)) {
+        CHECK_ARG(1);
+        if (n_other == MAX_OTHER)
+            asfPrintError("-other-file option only supported %d times.\n", MAX_OTHER);
+        other_files[n_other++] = strdup(GET_ARG(1));
+    }
     else {
         --currArg;
         break;
@@ -106,7 +122,7 @@ main (int argc, char *argv[])
 
   int ret = refine_geolocation(inFile, demFile, maskFile, outFile, 
                                update_flag, auto_water_mask,
-                               mask_height_cutoff);
+                               mask_height_cutoff, other_files);
 
   if (update_flag) {
       char *meta = appendExt(outFile, ".meta");
@@ -114,6 +130,10 @@ main (int argc, char *argv[])
       FREE(meta);
       FREE(outFile);
   }
+
+  for (i=0; i<MAX_OTHER; ++i)
+      if (other_files[i])
+          free(other_files[i]);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

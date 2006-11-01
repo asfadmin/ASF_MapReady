@@ -4,8 +4,9 @@
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-keep (-k)]\n"\
 "          [-no-resample] [-no-interp] [-pixel-size <size>]\n"\
 "          [-mask-file <filename> | -auto-water-mask]\n"\
-"          [-mask-height-cutoff <height in meters>\n"\
+"          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
+"          [-other-file <basename>]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -109,6 +110,17 @@
 "          updated with these offsets, increasing the accuracy of the original\n"\
 "          data.\n"\
 "\n"\
+"     -other-file <basename>\n"\
+"          The correlation process that is done during the terrain correction\n"\
+"          process produces offsets in range and azimuth that, when applied \n"\
+"          to the SAR image's metadata, result in a good match with the DEM.\n"\
+"          Sometimes, you will want these same offsets applied to other data\n"\
+"          files.  Specifying -other-file will update the metadata for this\n"\
+"          listed file with the calculated offsets, in addition to the files\n"\
+"          already updated (specifically, the terrain corrected product, and,\n"\
+"          if you specified -u, the input SAR image).\n\n"\
+"          This option may be specified more than once.\n"\
+"\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -148,6 +160,7 @@
 #include <asf_contact.h>
 
 #define NUM_ARGS 3
+#define MAX_OTHER 10
 
 // Print minimalistic usage info & exit
 static void usage(const char *name)
@@ -198,6 +211,7 @@ int strmatches(const char *key, ...)
   return found;
 }
 
+
 // Main program body.
 int
 main (int argc, char *argv[])
@@ -216,6 +230,11 @@ main (int argc, char *argv[])
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = 1.0;
   int mask_height_cutoff_specified = FALSE;
+  char *other_files[MAX_OTHER];
+  int i,n_other = 0;
+
+  for (i=0; i<MAX_OTHER; ++i)
+      other_files[i]=NULL;
 
   // -1 -> no masking, other values mean fill it with that value
   int fill_value = 0; 
@@ -291,6 +310,12 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
     }
+    else if (strmatches(key,"-other-file","--other-file",NULL)) {
+        CHECK_ARG(1);
+        if (n_other == MAX_OTHER)
+            asfPrintError("-other-file option only supported %d times.\n", MAX_OTHER);
+        other_files[n_other++] = strdup(GET_ARG(1));
+    }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage(ASF_NAME_STRING);
@@ -316,7 +341,11 @@ main (int argc, char *argv[])
                               dem_grid_size, TRUE, fill_value, 
                               generate_water_mask, save_clipped_dem,
                               update_original_metadata_with_offsets,
-                              mask_height_cutoff);
+                              mask_height_cutoff, other_files);
+
+  for (i=0; i<MAX_OTHER; ++i)
+      if (other_files[i])
+          free(other_files[i]);
 
   return ret==0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }
