@@ -1015,6 +1015,7 @@
 				      <child>
 					<widget class="GtkCheckButton" id="interpolate_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">Fill regions of layover with plausible values.  If unchecked, these regions will be left blank.</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes">Interpolate Layover/Shadow Regions</property>
 					  <property name="use_underline">True</property>
