@@ -981,7 +981,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       char **other_file = other_files_to_update_with_offset;
       while (*other_file) {
           update_meta_offsets(*other_file, t_offset, x_offset);
-          ++file;
+          ++other_file;
       }
   }
 
@@ -1007,9 +1007,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      clean(padFile);
-      clean(deskewDemFile);
-      clean(deskewDemMask);
+      //clean(padFile);
+      //clean(deskewDemFile);
+      //clean(deskewDemMask);
 
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);
@@ -1029,7 +1029,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
               outputName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
           resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
-          clean(lsMaskFile_2);
+          //clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }
