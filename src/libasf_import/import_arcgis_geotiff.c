@@ -658,7 +658,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // least would work for non-square pixel dimensions, with the
   // caveats that output pixels would still be square, and would have
   // default size derived solely from the input pixel size
-  if (fabs (mg->x_pixel_size - mg->y_pixel_size) < 0.0001) {
+  if (fabs (mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
     asfPrintWarning("Found non-square pixels: x versus y pixel size differs\n"
         "by more than 0.0001 <units>\n");
   }
