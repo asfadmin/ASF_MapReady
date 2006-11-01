@@ -13,6 +13,7 @@
 #include "asf_nan.h"
 #include "ardop_defs.h"
 #include <ctype.h>
+#include <string.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
 
@@ -78,6 +79,64 @@ static int has_tiff_ext(const char *f)
         strcmp(ext, ".tiff") == 0 ||
         strcmp(ext, ".TIF") == 0 ||
         strcmp(ext, ".TIFF") == 0;
+}
+
+static char *
+convert_tiff(const char *tiff_file, const char *what, convert_config *cfg,
+             int save_converted)
+{
+    char *tiff_basename, imported[255], geocoded[255], status[255];
+    tiff_basename = stripExt(tiff_file);
+    sprintf(imported, "%s/imported_%s", cfg->general->tmp_dir, what);
+
+    // want see "dem" as "DEM" in the status messages, and asf_import
+    // requires an uppercase string for the image_data_type
+    char *uc_what = MALLOC(strlen(what)+2);
+    strcpy(uc_what, uc(what)); // uc() returns ptr to static mem => make copy
+
+    // if user wants to save the converted file, do so, otherwise we
+    // put it into the temporary directory along with everything else
+    if (save_converted) {
+        char *outfileDir = get_dirname(cfg->general->out_name);
+        char *basename = get_basename(tiff_basename);
+        sprintf(geocoded, "%s%s", outfileDir, basename);
+        free(outfileDir);
+        free(basename);
+    }
+    else {
+        sprintf(geocoded, "%s/geocoded_%s", cfg->general->tmp_dir, what);
+    }
+
+    sprintf(status, "Importing %s...", uc_what);
+    update_status(cfg, status);
+
+    sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
+    check_return(
+        asf_import(r_AMP, FALSE, "GEOTIFF", what, NULL,
+                   NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
+                   imported), status);
+
+    sprintf(status, "Geocoding %s...", uc_what);
+    update_status(cfg, status);
+
+    sprintf(status, "geocoding GeoTIFF %s (asf_geocode)\n", uc_what);
+    if (cfg->general->geocoding) {
+        // use the user's projection, if we have it
+        check_return(
+            asf_geocode_from_proj_file(
+                cfg->geocoding->projection, cfg->geocoding->force,
+                RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
+                imported, geocoded, cfg->geocoding->background),
+            status);
+    }
+    else {
+        // use UTM if no geocoding specified
+        check_return(
+            asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
+                            NAN, imported, geocoded, 0.0), status);
+    }
+
+    return strdup(geocoded);
 }
 
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
@@ -528,52 +587,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // If the DEM is a GeoTIFF, we need to import it, and geocode it.
       if (has_tiff_ext(cfg->terrain_correct->dem)) {
-          char *tiff_basename, imported_dem[255], geocoded_dem[255];
-          tiff_basename = stripExt(cfg->terrain_correct->dem);
-          sprintf(imported_dem, "%s/imported_dem", cfg->general->tmp_dir);
-
-          // if user wants to save the converted DEM, do so, otherwise we
-          // put it into the temporary directory along with everything else
-          if (saveDEM) {              
-              char *outfileDir = get_dirname(cfg->general->out_name);
-              char *dem_basename = get_basename(tiff_basename);
-              sprintf(geocoded_dem, "%s%s", outfileDir, dem_basename);
-              free(outfileDir);
-              free(dem_basename);
-          }
-          else {
-              sprintf(geocoded_dem, "%s/geocoded_dem", cfg->general->tmp_dir);
-          }
-
-          update_status(cfg, "Importing DEM...");
-          check_return(
-              asf_import(r_AMP, FALSE, "GEOTIFF", "DEM", NULL,
-                         NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
-                         imported_dem),
-              "ingesting Geotiff DEM (asf_import)\n");
-
-          update_status(cfg, "Geocoding DEM...");
-          if (cfg->general->geocoding) {
-              // use the user's projection, if we have it
-              check_return(
-                  asf_geocode_from_proj_file(
-                      cfg->geocoding->projection, cfg->geocoding->force,
-                      RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
-                      imported_dem, geocoded_dem, cfg->geocoding->background),
-                  "geocoding geotiff DEM (asf_geocode)\n");
-          }
-          else {
-              // use UTM if no geocoding specified
-              check_return(
-                  asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
-                                  NAN, imported_dem, geocoded_dem, 0.0),
-                  "geocoding geotiff DEM (asf_geocode)\n");
-          }
-
-          strcpy(cfg->terrain_correct->dem, geocoded_dem);
-          free(tiff_basename);
+          char * converted_dem =
+              convert_tiff(cfg->terrain_correct->dem, "dem", cfg, saveDEM);
+          strcpy(cfg->terrain_correct->dem, converted_dem);
+          free(converted_dem);
       }
-
+      
       // Generate filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
@@ -768,7 +787,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             update_status(cfg, "Exporting clipped DEM...");
 
             check_return(
-                asf_export(format, size, TRUNCATE, inFile, outFile),
+                asf_export(format, size, SIGMA, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
         }
         else {
@@ -805,7 +824,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             strcpy(outFile, tmp);
             free(tmp);
 
-            sprintf(outFile, "%s_layover_mask", cfg->general->out_name);
             check_return(
                 asf_export(format, size, TRUNCATE, inFile, outFile),
                 "exporting layover mask (asf_export)\n");
