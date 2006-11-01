@@ -132,7 +132,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   if (gridResX < 0) gridResX = 20;
   if (gridResY < 0) gridResY = 20;
 
-  project_set_datum(metaDem->projection->datum);
+  //project_set_datum(metaDem->projection->datum);
   asfPrintStatus("DEM Datum: %s\n",
                  datum_toString(metaDem->projection->datum));
 
@@ -197,7 +197,6 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       latlon_to_proj(metaDem->projection, metaSar->sar->look_direction, 
 		     lat*D2R, lon*D2R, elev, &demProj_x, &demProj_y,
 		     &demProj_z);
-      
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) / metaDem->projection->perX;
       dem_y = (demProj_y - metaDem->projection->startY) / metaDem->projection->perY;
