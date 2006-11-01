@@ -534,7 +534,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
           // if user wants to save the converted DEM, do so, otherwise we
           // put it into the temporary directory along with everything else
-          if (saveDEM) {
+          if (saveDEM) {              
               char *outfileDir = get_dirname(cfg->general->out_name);
               char *dem_basename = get_basename(tiff_basename);
               sprintf(geocoded_dem, "%s%s", outfileDir, dem_basename);
@@ -748,14 +748,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->terrain_correct->save_terrcorr_dem) {
         // We know the name of the clipped DEM in the temporary directory
         char *tmp = appendToBasename(cfg->terrain_correct->dem, "_clip");
-        char *tmp2 = stripExt(tmp);
+        char *tmp2 = get_basename(tmp);
         sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
         free(tmp);
         free(tmp2);
 
         // output name will be the SAR image's name with a "_dem" added
         // to the basename
-        sprintf(outFile, "%s_dem", cfg->general->out_name);
+        tmp = appendToBasename(cfg->general->out_name, "_dem");
+        strcpy(outFile, tmp);
+        free(tmp);
 
         //Never re-geocode the DEM -- assume user has already put it into
         //their favored projection (since at this time we require that
@@ -797,6 +799,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->export) {
             update_status(cfg, "Exporting layover mask...");
             sprintf(inFile, "%s", outFile);
+            char *tmp = 
+                appendToBasename(cfg->general->out_name, "_layover_mask");
+            strcpy(outFile, tmp);
+            free(tmp);
+
             sprintf(outFile, "%s_layover_mask", cfg->general->out_name);
             check_return(
                 asf_export(format, size, TRUNCATE, inFile, outFile),

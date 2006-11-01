@@ -376,9 +376,9 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem = 
             read_int(line, "save terrcorr dem");
-      if (strncmp(test, "save_terrcorr_layover_mask", 26)==0)
+      if (strncmp(test, "save terrcorr layover mask", 26)==0)
         cfg->terrain_correct->save_terrcorr_layover_mask = 
-            read_int(line, "save_terrcorr_layover_mask");
+            read_int(line, "save terrcorr layover mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only = 
           read_int(line, "refine_geolocation_only");
@@ -593,9 +593,9 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem = 
             read_int(line, "save terrcorr dem");
-      if (strncmp(test, "save_terrcorr_layover_mask", 26)==0)
+      if (strncmp(test, "save terrcorr layover mask", 26)==0)
         cfg->terrain_correct->save_terrcorr_layover_mask = 
-            read_int(line, "save_terrcorr_layover_mask");
+            read_int(line, "save terrcorr layover mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only =
             read_int(line, "refine_geolocation_only");
