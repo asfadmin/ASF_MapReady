@@ -345,7 +345,7 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   GString *output_meta_data = g_string_new (output_image->str);
   g_string_append (output_meta_data, ".meta");
 
-  asfPrintStatus("Geocoding...\n");
+  asfPrintStatus("Geocoding: %s\n", in_base_name);
 
   // Input metadata.
   meta_parameters *imd = meta_read (input_meta_data->str);

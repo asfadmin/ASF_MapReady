@@ -38,7 +38,7 @@ void check_parameters(projection_type_t projection_type,
 //	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n"
 //	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
 //	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
-        asfPrintStatus("Projection: UTM\nZone: %d\n\n", pp->utm.zone);
+        asfPrintStatus("Projection: UTM\n  Zone: %d\n", pp->utm.zone);
         
       // Outside range tests
       if (pp->utm.zone < 1 || pp->utm.zone > 60)
@@ -105,9 +105,9 @@ void check_parameters(projection_type_t projection_type,
     case POLAR_STEREOGRAPHIC:
       asfPrintStatus(
           "Projection: Polar Stereographic\n"
-          "Standard parallel: %.4f\n"
-          "Central meridian: %.4f\n"
-          "Hemisphere: %c\n\n", 
+          "  Standard parallel: %.4f\n"
+          "  Central meridian: %.4f\n"
+          "  Hemisphere: %c\n", 
           pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S');
 
       // Outside range tests
@@ -144,10 +144,10 @@ void check_parameters(projection_type_t projection_type,
     case ALBERS_EQUAL_AREA:
       asfPrintStatus(
           "Projection: Albers Equal Area Conic\n"
-          "First standard parallel: %.4f\n"
-          "Second standard parallel: %.4f\n"
-          "Central meridian: %.4f\n"
-          "Latitude of origin: %.4f\n\n",
+          "  First standard parallel: %.4f\n"
+          "  Second standard parallel: %.4f\n"
+          "  Central meridian: %.4f\n"
+          "  Latitude of origin: %.4f\n",
           pp->albers.std_parallel1, pp->albers.std_parallel2,
           pp->albers.center_meridian, pp->albers.orig_latitude);
 
@@ -196,10 +196,10 @@ void check_parameters(projection_type_t projection_type,
     case LAMBERT_CONFORMAL_CONIC:
       asfPrintStatus(
           "Projection: Lambert Conformal Conic\n"
-          "First standard parallel: %.4f\n"
-          "Second standard parallel: %.4f\n"
-          "Central meridian: %.4f\n"
-          "Latitude of origin: %.4f\n\n",
+          "  First standard parallel: %.4f\n"
+          "  Second standard parallel: %.4f\n"
+          "  Central meridian: %.4f\n"
+          "  Latitude of origin: %.4f\n",
           pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0);
 
       // Outside range tests
@@ -247,8 +247,8 @@ void check_parameters(projection_type_t projection_type,
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       asfPrintStatus(
           "Projection: Lambert Azimuthal Equal Area\n"
-          "Latitude of origin: %.4f\n"
-          "Central meridian: %.4f\n\n",
+          "  Latitude of origin: %.4f\n"
+          "  Central meridian: %.4f\n",
           pp->lamaz.center_lat, pp->lamaz.center_lon);
 
       // Outside range tests

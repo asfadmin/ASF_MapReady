@@ -47,6 +47,6 @@ int asf_export(output_format_t format, long size, scale_t sample_mapping,
     write_kml_overlay (in_data_name);
   }
 
-  asfPrintStatus("Export successful!\n");
+  asfPrintStatus("Export successful!\n\n");
   return (EXIT_SUCCESS);
 }
