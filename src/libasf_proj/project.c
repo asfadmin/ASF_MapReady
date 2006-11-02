@@ -545,7 +545,7 @@ static char * utm_projection_description(project_parameters_t * pps)
   {
       sprintf(utm_wgs84_projection_description,
 	      "+proj=utm +zone=%d %s+datum=%s",
-	      pps->utm.zone, pps->utm.lat0 < 0 ? "+south " : "", datum(pps));
+	      pps->utm.zone, pps->utm.lat0 < 0 ? "+south " : " ", datum(pps));
   }
 
   return utm_wgs84_projection_description;
@@ -1062,7 +1062,7 @@ void latLon2UTM_zone(double lat, double lon, double elev, int zone,
 void latLon2proj(double lat, double lon, double elev, char *projFile, 
 		 double *projX, double *projY)
 {
-    asfRequire(projFile != NULL);
+    asfRequire(projFile != NULL, "A projection file is required.\n");
     latLon2proj_imp(lat, lon, elev, projFile, projX, projY);
 }
 
@@ -1095,4 +1095,117 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   *lon *= R2D;
 }
 
+void to_radians(projection_type_t pt, project_parameters_t * pps)
+{
+    switch (pt)
+    {
+	case UNIVERSAL_TRANSVERSE_MERCATOR:
+            if (!ISNAN(pps->utm.lon0))
+                pps->utm.lon0 *= DEG_TO_RAD;
+            if (!ISNAN(pps->utm.lat0))
+                pps->utm.lat0 *= DEG_TO_RAD;
+            
+            break;
+            
+	case POLAR_STEREOGRAPHIC:
+            if (!ISNAN(pps->ps.slon))
+                pps->ps.slon *= DEG_TO_RAD;
+            if (!ISNAN(pps->ps.slat))
+                pps->ps.slat *= DEG_TO_RAD;
+            
+            break;
+            
+	case ALBERS_EQUAL_AREA:
+            if (!ISNAN(pps->albers.center_meridian))
+                pps->albers.center_meridian *= DEG_TO_RAD;
+            if (!ISNAN(pps->albers.orig_latitude))
+                pps->albers.orig_latitude *= DEG_TO_RAD;
+            if (!ISNAN(pps->albers.std_parallel1))
+                pps->albers.std_parallel1 *= DEG_TO_RAD;
+            if (!ISNAN(pps->albers.std_parallel2))
+                pps->albers.std_parallel2 *= DEG_TO_RAD;
+            
+            break;
+            
+	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+            if (!ISNAN(pps->lamaz.center_lat))
+                pps->lamaz.center_lat *= DEG_TO_RAD;
+            if (!ISNAN(pps->lamaz.center_lon))
+                pps->lamaz.center_lon *= DEG_TO_RAD;
+            
+            break;
+            
+	case LAMBERT_CONFORMAL_CONIC:
+            if (!ISNAN(pps->lamcc.plat1))
+                pps->lamcc.plat1 *= DEG_TO_RAD;
+            if (!ISNAN(pps->lamcc.plat2))
+                pps->lamcc.plat2 *= DEG_TO_RAD;
+            if (!ISNAN(pps->lamcc.lat0))
+                pps->lamcc.lat0 *= DEG_TO_RAD;
+            if (!ISNAN(pps->lamcc.lon0))
+                pps->lamcc.lon0 *= DEG_TO_RAD;
+            
+            break;
+            
+	default:
+            asfPrintError("to_radians: illegal projection type!");
+    }
+}
+
+void to_degrees(projection_type_t pt, project_parameters_t * pps)
+{
+    switch (pt)
+    {
+	case UNIVERSAL_TRANSVERSE_MERCATOR:
+            if (!ISNAN(pps->utm.lon0))
+                pps->utm.lon0 *= RAD_TO_DEG;
+            if (!ISNAN(pps->utm.lat0))
+                pps->utm.lat0 *= RAD_TO_DEG;
+            
+            break;
+            
+	case POLAR_STEREOGRAPHIC:
+            if (!ISNAN(pps->ps.slon))
+                pps->ps.slon *= RAD_TO_DEG;
+            if (!ISNAN(pps->ps.slat))
+                pps->ps.slat *= RAD_TO_DEG;
+
+            break;
+            
+	case ALBERS_EQUAL_AREA:
+            if (!ISNAN(pps->albers.center_meridian))
+                pps->albers.center_meridian *= RAD_TO_DEG;
+            if (!ISNAN(pps->albers.orig_latitude))
+                pps->albers.orig_latitude *= RAD_TO_DEG;
+            if (!ISNAN(pps->albers.std_parallel1))
+                pps->albers.std_parallel1 *= RAD_TO_DEG;
+            if (!ISNAN(pps->albers.std_parallel2))
+                pps->albers.std_parallel2 *= RAD_TO_DEG;
+            
+            break;
+            
+	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+            if (!ISNAN(pps->lamaz.center_lat))
+                pps->lamaz.center_lat *= RAD_TO_DEG;
+            if (!ISNAN(pps->lamaz.center_lon))
+                pps->lamaz.center_lon *= RAD_TO_DEG;
+            
+            break;
+            
+	case LAMBERT_CONFORMAL_CONIC:
+            if (!ISNAN(pps->lamcc.plat1))
+                pps->lamcc.plat1 *= RAD_TO_DEG;
+            if (!ISNAN(pps->lamcc.plat2))
+                pps->lamcc.plat2 *= RAD_TO_DEG;
+            if (!ISNAN(pps->lamcc.lat0))
+                pps->lamcc.lat0 *= RAD_TO_DEG;
+            if (!ISNAN(pps->lamcc.lon0))
+                pps->lamcc.lon0 *= RAD_TO_DEG;
+            
+            break;
+            
+	default:
+            asfPrintError("to_degrees: illegal projection type!");
+    }
+}
 

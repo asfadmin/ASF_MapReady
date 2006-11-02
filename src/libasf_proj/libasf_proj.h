@@ -390,4 +390,10 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
 void read_proj_file(char * file, project_parameters_t * pps,
 		    projection_type_t * proj_type);
 
+/***************************************************************************
+  Misc projection-related functions
+***************************************************************************/
+void to_degrees(projection_type_t pt, project_parameters_t * pps);
+void to_radians(projection_type_t pt, project_parameters_t * pps);
+
 #endif

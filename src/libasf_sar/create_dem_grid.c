@@ -132,42 +132,14 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   if (gridResX < 0) gridResX = 20;
   if (gridResY < 0) gridResY = 20;
 
-  //project_set_datum(metaDem->projection->datum);
   asfPrintStatus("DEM Datum: %s\n",
                  datum_toString(metaDem->projection->datum));
 
   /* Convert all angles in projection part of metadata into radians -
-     latlon_to_proj needs that lateron */
-  switch (metaDem->projection->type) 
-    {
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      metaDem->projection->param.utm.lat0 *= D2R;
-      metaDem->projection->param.utm.lon0 *= D2R;
-      break;
-    case POLAR_STEREOGRAPHIC:
-      metaDem->projection->param.ps.slat *= D2R;
-      metaDem->projection->param.ps.slon *= D2R;
-      break;
-    case ALBERS_EQUAL_AREA:
-      metaDem->projection->param.albers.std_parallel1 *= D2R;
-      metaDem->projection->param.albers.std_parallel2 *= D2R;
-      metaDem->projection->param.albers.center_meridian *= D2R;
-      metaDem->projection->param.albers.orig_latitude *= D2R;
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      metaDem->projection->param.lamcc.plat1 *= D2R;
-      metaDem->projection->param.lamcc.plat2 *= D2R;
-      metaDem->projection->param.lamcc.lat0 *= D2R;
-      metaDem->projection->param.lamcc.lon0 *= D2R;
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      metaDem->projection->param.lamaz.center_lon *= D2R;
-      metaDem->projection->param.lamaz.center_lat *= D2R;
-      break;
-    default:
-      break; /* do nothing, though perhaps we should error out? */
-    }
-    
+     latlon_to_proj needs that later on */
+  to_radians(metaDem->projection->type, &metaDem->projection->param);
+
+  /* Counters for the coverage report at the end */
   pixels_in_dem = pixels_out_dem = 0;
 
   /*Create a grid on the SAR image, and for each grid point:*/
