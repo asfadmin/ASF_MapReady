@@ -44,7 +44,7 @@
 "          of 2) than the SAR image, by default the SAR image is downsampled\n"\
 "          to a pixel size half that of the DEM.  With -no-resample, no\n"\
 "          resampling of this type will be done.  However, the quality of the\n"\
-"          terrain corrected product is still limited by the resolution of.\n"\
+"          terrain corrected product is still limited by the resolution of\n"\
 "          the DEM.\n"\
 "\n"\
 "     -no-interp\n"\
@@ -82,7 +82,8 @@
 "     -auto-water-mask\n"\
 "          A mask file (see the -mask-file option, above) is automatically\n"\
 "          produced from the DEM.  Areas where the DEM height is less than 1\n"\
-"          meter are masked.\n\n"\
+"          meter are masked.  (Though you may change this cutoff with the\n"\
+"          option -mask-height-cutoff.)\n\n"\
 "          You cannot use this option together with -mask-file.\n"\
 "\n"\
 "     -mask-height-cutoff <height>\n"\
@@ -150,7 +151,7 @@
 "     Can be quite slow when terrain correcting with a mask.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"     asf_import, asf_export\n"
+"     refine_geolocation\n"
 
 #include <stdio.h>
 #include <asf.h>
