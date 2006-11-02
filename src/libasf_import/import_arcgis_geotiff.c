@@ -2671,7 +2671,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   fclose(fp);
 }
 
-int CSTypeKey2UTMZone(short pcs, datum_type_t *datum, unsigned long *zone)
+int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
 {
   // The GeoTIFF standard defines the UTM zones numerically in a way that
   // let's us pick off the data mathematically (NNNzz where zz is the zone
