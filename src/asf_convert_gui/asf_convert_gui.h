@@ -196,6 +196,7 @@ int settings_get_run_terrcorr(const Settings *);
 int  settings_get_output_format_can_be_thumbnailed(const Settings *s);
 void settings_delete(Settings *);
 void settings_update_dem(Settings *s, const char *output_path, int is_first);
+void settings_update_mask(Settings *s, const char *output_path, int is_first);
 char * settings_to_config_file(const Settings *s,
 			     const gchar *input_file, const gchar *output_file,
 			     const gchar *output_path, const gchar *tmp_dir);

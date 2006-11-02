@@ -592,6 +592,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strcpy(cfg->terrain_correct->dem, converted_dem);
           free(converted_dem);
       }
+
+      // If the Mask is a GeoTIFF, we need to import it, and geocode it.
+      if (has_tiff_ext(cfg->terrain_correct->mask)) {
+          char * converted_mask =
+              convert_tiff(cfg->terrain_correct->dem, "mask", cfg, saveDEM);
+          strcpy(cfg->terrain_correct->mask, converted_mask);
+          free(converted_mask);
+      }
       
       // Generate filenames
       sprintf(inFile, "%s", outFile);
@@ -601,12 +609,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (cfg->terrain_correct->refine_geolocation_only) {
           update_status(cfg, "Refining Geolocation...");
           check_return(
-            refine_geolocation(inFile, cfg->terrain_correct->dem,
-                               cfg->terrain_correct->mask,
-                               outFile, FALSE,
-                               cfg->terrain_correct->auto_mask_water,
-                               cfg->terrain_correct->water_height_cutoff,
-                               NULL),
+              refine_geolocation(inFile, cfg->terrain_correct->dem,
+                                 cfg->terrain_correct->mask, outFile, FALSE,
+                                 cfg->terrain_correct->auto_mask_water,
+                                 cfg->terrain_correct->water_height_cutoff,
+                                 NULL),
             "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {

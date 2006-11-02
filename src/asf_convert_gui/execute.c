@@ -479,7 +479,6 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
     extern int logflag;
     extern FILE *fLog;
 
-    gchar *the_output;
     FILE *output;
     char logFile[256];
 
@@ -535,7 +534,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
 	free(statFile);
     }
 
-    the_output = NULL;
+    gchar *the_output = NULL;
 
     output = fopen(logFile, "rt");
 
@@ -628,6 +627,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 	set_asf_tmp_dir(tmp_dir);
 
         settings_update_dem(user_settings, output_dir, is_first);
+        settings_update_mask(user_settings, output_dir, is_first);
 
 	config_file =
 	  settings_to_config_file(user_settings, in_basename, out_full,
