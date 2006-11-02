@@ -39,7 +39,8 @@
 #include "find_arcgis_geotiff_aux_name.h"
 #include "import_arcgis_geotiff.h"
 
-#define ARCGIS_DEFAULT_SCALE_FACTOR         0.9996
+#define ARCGIS_DEFAULT_UTM_SCALE_FACTOR     0.9996
+#define ARCGIS_DEFAULT_SCALE_FACTOR         1.0
 
 #define ARCGIS_NUM_PROJDPARAMS              15
 #define ARCGIS_PROJPARAMS_STATE_PLANE       0
@@ -135,7 +136,7 @@ void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
                                 unsigned long strLen, char *str);
 void DHFAGetStringVal(FILE *fp, unsigned long strLen, char *str);
 spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName);
-unsigned long CSTypeKey2UTMZone(short geokey_utm_zone);
+int PCS_2_UTM (short pcs, datum_type_t *datum, unsigned long *zone);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -165,6 +166,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   short projection_type;
   short raster_type;
   short linear_units;
+  double scale_factor;
   GString *inGeotiffAuxName;
   arcgisProjParms_t arcgisProjParms;
   arcgisDatumParms_t arcgisDatumParms;
@@ -260,6 +262,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // will be ModelTypeProjected.  We add the requirement that pixels 
   // represent area and that the units are in meters because that's what
   // we support to date.
+  
   read_count
       = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
   read_count 
@@ -271,6 +274,10 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       raster_type == RasterPixelIsArea  &&
       linear_units == Linear_Meter      )
   {
+    // GeoTIFF appears to contain the projection parameters, but note that
+    // (ProjectedCSTypeGeoKey must either be a UTM type) -or- 
+    // (ProjectedCSTypeGeoKey is not UTM and ProjCoordTransGeoKey is a supported
+    // type).  See the if(geotiff_data_exists) section on reading parameters below.
     geotiff_data_exists = 1;
   }
   else {
@@ -328,8 +335,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     // GeoTIFF, e.g. from ArcMap, then the UNTESTED_CODE define should
     // be removed and the following code tested for release
     short proj_coords_trans;
+    short pcs;
     short geokey_datum;
-    short geokey_utm_zone;
     double false_easting;
     double false_northing;
     double lonOrigin;
@@ -338,63 +345,75 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     double stdParallel2;
     double lonPole;
     
-    asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
-        "with data found in the ArcGIS metadata (.aux) file.\n");
-    
-    read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-    asfRequire(read_count == 1,
-               "\nUnable to determine type of projection coordinate system in GeoTIFF file\n");
-    
-    datum = UNKNOWN_DATUM;
-    read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
-    if (read_count == 1) {
-      switch(geokey_datum){
-        case Datum_WGS84:
-          datum = WGS84_DATUM;
-          break;
-        case Datum_North_American_Datum_1927:
-          datum = NAD27_DATUM;
-          break;
-        case Datum_North_American_Datum_1983:
-          datum = NAD83_DATUM;
-          break;
-        default:
-          break;
-      }
+    // Get datum and zone as appropriate
+    read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
+    if (read_count == 1 && PCS_2_UTM(pcs, &datum, &arcgisProjParms.proZone)) {
+      proj_coords_trans = CT_TransverseMercator;
     }
-    if (datum == UNKNOWN_DATUM) {
-      read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
+    else {
+      // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
+      //
+      // The ProjCoordTransGeoKey will be true if the PCS was user-defined or if the PCS was
+      // not in the geotiff file... or so the standard says.  If the ProjCoordTransGeoKey is
+      // false, it means that an unsupported (by us) UTM or State Plane projection was
+      // discovered (above.)  All other projection types make use of the ProjCoordTransGeoKey
+      // geokey.
+      read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
+      asfRequire(read_count == 1,
+                 "\nUnable to determine type of projection coordinate system in GeoTIFF file\n");
+      datum = UNKNOWN_DATUM;
+      read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
       if (read_count == 1) {
         switch(geokey_datum){
-          case GCS_WGS_84:
+          case Datum_WGS84:
             datum = WGS84_DATUM;
             break;
-          case GCS_NAD27:
+          case Datum_North_American_Datum_1927:
             datum = NAD27_DATUM;
             break;
-          case GCS_NAD83:
+          case Datum_North_American_Datum_1983:
             datum = NAD83_DATUM;
             break;
           default:
             break;
         }
       }
-    }
-    if (geokey_datum == UNKNOWN_DATUM) {
-      asfPrintWarning("\nUnable to determine datum type from GeoTIFF file\n");
+      if (datum == UNKNOWN_DATUM) {
+        read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
+        if (read_count == 1) {
+          switch(geokey_datum){
+            case GCS_WGS_84:
+              datum = WGS84_DATUM;
+              break;
+            case GCS_NAD27:
+              datum = NAD27_DATUM;
+              break;
+            case GCS_NAD83:
+              datum = NAD83_DATUM;
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      if (geokey_datum == UNKNOWN_DATUM) {
+        asfPrintWarning("\nUnable to determine datum type from GeoTIFF file\n");
+      }
     }
     
+    asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
+        "with data found in the ArcGIS metadata (.aux) file.\n");
+    
+    scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
     switch(proj_coords_trans) {
       // TODO: The UTM case is UNTESTED
       case CT_TransverseMercator:
+      case CT_TransvMercator_Modified_Alaska:
       case CT_TransvMercator_SouthOriented:
+        // Zone and datum should already be defined at this point (see above.)
         projection_type = UTM;
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "UTM");
-        read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &geokey_utm_zone, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine UTM zone from GeoTIFF file\n");
-        arcgisProjParms.proZone = CSTypeKey2UTMZone(geokey_utm_zone);
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine false easting from GeoTIFF file\n");
@@ -411,7 +430,15 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfRequire(read_count == 1,
                    "\nUnable to determine center latitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        // TODO: Consider getting scale from ProjScaleAtOriginGeoKey/ProjScaleAtNatOriginGeoKey
+        read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
+        if (read_count == 0) {
+          scale_factor = ARCGIS_DEFAULT_UTM_SCALE_FACTOR;
+
+          char msg[256];
+          sscanf(msg, "UTM scale factor not found in GeoTIFF ...defaulting to %lf\n", &scale_factor);
+          asfPrintWarning(msg);
+          //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
+        }
         break;
       // Albers Conical Equal Area case IS tested
       case CT_AlbersEqualArea:
@@ -434,7 +461,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfRequire(read_count == 1,
                    "\nUnable to determine false northing from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center longitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
@@ -443,8 +470,38 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
                    "\nUnable to determine center latitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
         break;
-      // TODO: The Lambert Conformal Conic case is UNTESTED
+      // TODO: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
       case CT_LambertConfConic_1SP:
+        projection_type = LAMCC;
+        arcgisProjParms.proNumber = projection_type;
+        strcpy(arcgisProjParms.proName, "Lambert Conformal Conic");
+        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+        asfRequire(read_count == 1,
+                   "\nUnable to determine false easting from GeoTIFF file\n");
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+        asfRequire(read_count == 1,
+                   "\nUnable to determine false northing from GeoTIFF file\n");
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+        asfRequire(read_count == 1,
+                   "\nUnable to determine center longitude from GeoTIFF file\n");
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+        asfRequire(read_count == 1,
+                   "\nUnable to determine center latitude from GeoTIFF file\n");
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
+        if (read_count == 0) {
+          scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
+
+          char msg[256];
+          sscanf(msg, "UTM scale factor not found in GeoTIFF ...defaulting to %lf\n", &scale_factor);
+          asfPrintWarning(msg);
+          //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
+        }
+        break;
+      // TODO: The Lambert Conformal Conic 2 Std Parallels case is UNTESTED
       case CT_LambertConfConic_2SP:
         projection_type = LAMCC;
         arcgisProjParms.proNumber = projection_type;
@@ -465,11 +522,11 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfRequire(read_count == 1,
                    "\nUnable to determine false northing from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+        read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center longitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+        read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center latitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -479,11 +536,13 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         projection_type = PS;
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Polar Stereographic");
-        // NOTE and TODO: It's possible that the latitude of true scale may be stored in the
-        // ProjStdParallel1GeoKey rather than the ProjNatOriginLatGeoKey ...needs testing
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center latitude from GeoTIFF file\n");
+        // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
+        // alignment with where this value is found when coming from the .aux file.
+        // These values are copied to the meta data parameters later on and the assumption
+        // is made that THIS is where this data item will be...
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*latOrigin;
         read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
         asfRequire(read_count == 1,
@@ -497,6 +556,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfRequire(read_count == 1,
                    "\nUnable to determine false northing from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
+        // use it, e.g. it is not current written to the meta data file with meta_write().
         break;
       // TODO: The Lambert Azimuthal Equal Area case is UNTESTED
       case CT_LambertAzimEqualArea:
@@ -511,11 +572,11 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfRequire(read_count == 1,
                    "\nUnable to determine false northing from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+        read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center longitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+        read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
         asfRequire(read_count == 1,
                    "\nUnable to determine center latitude from GeoTIFF file\n");
         arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -577,6 +638,12 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     }
   }
   g_string_free (inGeotiffAuxName, TRUE);
+  
+  // If at this point, the projection parameters were found in neither file
+  // then quit ...
+  asfRequire(geotiff_data_exists || auxDataExists,
+              "\nProjection parameters appear to be missing in the GeoTIFF\n"
+              "file and/or the ArcGIS metadata (.aux) file.\n");
 
   /***** CONVERT TIFF TO FLOAT IMAGE *****/
   /*                                     */
@@ -640,8 +707,15 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Get the image data type from the variable arguments list
   char image_data_type[256];
+  char *pTmpChar;
   va_start(ap, outBaseName); // outBaseName is the last argument before ", ..."
-  strcpy(image_data_type, (char *)va_arg(ap, char *));
+  pTmpChar = (char *)va_arg(ap, char *);
+  if (pTmpChar != NULL) {
+    strcpy(image_data_type, pTmpChar);
+  }
+  else {
+    strcpy(image_data_type, MAGIC_UNSET_STRING);
+  }
   va_end(ap);
   if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
     mg->image_data_type = GEOCODED_IMAGE;
@@ -730,7 +804,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
           R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
           MAGIC_UNSET_DOUBLE;
-      mp->param.utm.scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
+      mp->param.utm.scale_factor = scale_factor;
       break;
     case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
       mp->type = ALBERS_EQUAL_AREA;
@@ -785,7 +859,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
           R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
           MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
+      mp->param.lamcc.scale_factor = scale_factor;
       break;
     case PS:      // Polar Stereographic
       mp->type = POLAR_STEREOGRAPHIC;
@@ -809,6 +883,11 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
           R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
           MAGIC_UNSET_DOUBLE;
+      // Note: A GeoTIFF (.tif) file, if that's where the parameters came from,
+      // does have a scale factor tag in it for Polar Stereographic.  We do not
+      // use it however.  It does not exist in the meta data struct and is also
+      // not written to the meta data file with meta_write().  See the GeoTIFF
+      // Standard, key ProjScaleAtNatOriginGeoKey for polar stereographic.
       break;
     case LAMAZ:   // Lambert Azimuthal Equal Area
       mp->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
@@ -2592,304 +2671,54 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   fclose(fp);
 }
 
-unsigned long CSTypeKey2UTMZone(short geokey_utm_zone)
+int CSTypeKey2UTMZone(short pcs, datum_type_t *datum, unsigned long *zone)
 {
-  unsigned long zone;
-  
-  switch (geokey_utm_zone) {
-    case PCS_WGS84_UTM_zone_1N:
-    case PCS_WGS84_UTM_zone_1S:
-      zone = 1;
-      break;
-    case PCS_WGS84_UTM_zone_2N:
-    case PCS_WGS84_UTM_zone_2S:
-      zone = 2;
-      break;
-    case PCS_WGS84_UTM_zone_3N:
-    case PCS_WGS84_UTM_zone_3S:
-    case PCS_NAD27_UTM_zone_3N:
-    case PCS_NAD83_UTM_zone_3N:
-      zone = 3;
-      break;
-    case PCS_WGS84_UTM_zone_4N:
-    case PCS_WGS84_UTM_zone_4S:
-    case PCS_NAD27_UTM_zone_4N:
-    case PCS_NAD83_UTM_zone_4N:
-      zone = 4;
-      break;
-    case PCS_WGS84_UTM_zone_5N:
-    case PCS_WGS84_UTM_zone_5S:
-    case PCS_NAD27_UTM_zone_5N:
-    case PCS_NAD83_UTM_zone_5N:
-      zone = 5;
-      break;
-    case PCS_WGS84_UTM_zone_6N:
-    case PCS_WGS84_UTM_zone_6S:
-    case PCS_NAD27_UTM_zone_6N:
-    case PCS_NAD83_UTM_zone_6N:
-      zone = 6;
-      break;
-    case PCS_WGS84_UTM_zone_7N:
-    case PCS_WGS84_UTM_zone_7S:
-    case PCS_NAD27_UTM_zone_7N:
-    case PCS_NAD83_UTM_zone_7N:
-      zone = 7;
-      break;
-    case PCS_WGS84_UTM_zone_8N:
-    case PCS_WGS84_UTM_zone_8S:
-    case PCS_NAD27_UTM_zone_8N:
-    case PCS_NAD83_UTM_zone_8N:
-      zone = 8;
-      break;
-    case PCS_WGS84_UTM_zone_9N:
-    case PCS_WGS84_UTM_zone_9S:
-    case PCS_NAD27_UTM_zone_9N:
-    case PCS_NAD83_UTM_zone_9N:
-      zone = 9;
-      break;
-    case PCS_WGS84_UTM_zone_10N:
-    case PCS_WGS84_UTM_zone_10S:
-    case PCS_NAD27_UTM_zone_10N:
-    case PCS_NAD83_UTM_zone_10N:
-      zone = 10;
-      break;
-    case PCS_WGS84_UTM_zone_11N:
-    case PCS_WGS84_UTM_zone_11S:
-    case PCS_NAD27_UTM_zone_11N:
-    case PCS_NAD83_UTM_zone_11N:
-      zone = 11;
-      break;
-    case PCS_WGS84_UTM_zone_12N:
-    case PCS_WGS84_UTM_zone_12S:
-    case PCS_NAD27_UTM_zone_12N:
-    case PCS_NAD83_UTM_zone_12N:
-      zone = 12;
-      break;
-    case PCS_WGS84_UTM_zone_13N:
-    case PCS_WGS84_UTM_zone_13S:
-    case PCS_NAD27_UTM_zone_13N:
-    case PCS_NAD83_UTM_zone_13N:
-      zone = 13;
-      break;
-    case PCS_WGS84_UTM_zone_14N:
-    case PCS_WGS84_UTM_zone_14S:
-    case PCS_NAD27_UTM_zone_14N:
-    case PCS_NAD83_UTM_zone_14N:
-      zone = 14;
-      break;
-    case PCS_WGS84_UTM_zone_15N:
-    case PCS_WGS84_UTM_zone_15S:
-    case PCS_NAD27_UTM_zone_15N:
-    case PCS_NAD83_UTM_zone_15N:
-      zone = 15;
-      break;
-    case PCS_WGS84_UTM_zone_16N:
-    case PCS_WGS84_UTM_zone_16S:
-    case PCS_NAD27_UTM_zone_16N:
-    case PCS_NAD83_UTM_zone_16N:
-      zone = 16;
-      break;
-    case PCS_WGS84_UTM_zone_17N:
-    case PCS_WGS84_UTM_zone_17S:
-    case PCS_NAD27_UTM_zone_17N:
-    case PCS_NAD83_UTM_zone_17N:
-      zone = 17;
-      break;
-    case PCS_WGS84_UTM_zone_18N:
-    case PCS_WGS84_UTM_zone_18S:
-    case PCS_NAD27_UTM_zone_18N:
-    case PCS_NAD83_UTM_zone_18N:
-      zone = 18;
-      break;
-    case PCS_WGS84_UTM_zone_19N:
-    case PCS_WGS84_UTM_zone_19S:
-    case PCS_NAD27_UTM_zone_19N:
-    case PCS_NAD83_UTM_zone_19N:
-      zone = 19;
-      break;
-    case PCS_WGS84_UTM_zone_20N:
-    case PCS_WGS84_UTM_zone_20S:
-    case PCS_NAD27_UTM_zone_20N:
-    case PCS_NAD83_UTM_zone_20N:
-      zone = 20;
-      break;
-    case PCS_WGS84_UTM_zone_21N:
-    case PCS_WGS84_UTM_zone_21S:
-    case PCS_NAD27_UTM_zone_21N:
-    case PCS_NAD83_UTM_zone_21N:
-      zone = 21;
-      break;
-    case PCS_WGS84_UTM_zone_22N:
-    case PCS_WGS84_UTM_zone_22S:
-    case PCS_NAD27_UTM_zone_22N:
-    case PCS_NAD83_UTM_zone_22N:
-      zone = 22;
-      break;
-    case PCS_WGS84_UTM_zone_23N:
-    case PCS_WGS84_UTM_zone_23S:
-    case PCS_NAD83_UTM_zone_23N:
-      zone = 23;
-      break;
-    case PCS_WGS84_UTM_zone_24N:
-    case PCS_WGS84_UTM_zone_24S:
-      zone = 24;
-      break;
-    case PCS_WGS84_UTM_zone_25N:
-    case PCS_WGS84_UTM_zone_25S:
-      zone = 25;
-      break;
-    case PCS_WGS84_UTM_zone_26N:
-    case PCS_WGS84_UTM_zone_26S:
-      zone = 26;
-      break;
-    case PCS_WGS84_UTM_zone_27N:
-    case PCS_WGS84_UTM_zone_27S:
-      zone = 27;
-      break;
-    case PCS_WGS84_UTM_zone_28N:
-    case PCS_WGS84_UTM_zone_28S:
-      zone = 28;
-      break;
-    case PCS_WGS84_UTM_zone_29N:
-    case PCS_WGS84_UTM_zone_29S:
-      zone = 29;
-      break;
-    case PCS_WGS84_UTM_zone_30N:
-    case PCS_WGS84_UTM_zone_30S:
-      zone = 30;
-      break;
-    case PCS_WGS84_UTM_zone_31N:
-    case PCS_WGS84_UTM_zone_31S:
-      zone = 31;
-      break;
-    case PCS_WGS84_UTM_zone_32N:
-    case PCS_WGS84_UTM_zone_32S:
-      zone = 32;
-      break;
-    case PCS_WGS84_UTM_zone_33N:
-    case PCS_WGS84_UTM_zone_33S:
-      zone = 33;
-      break;
-    case PCS_WGS84_UTM_zone_34N:
-    case PCS_WGS84_UTM_zone_34S:
-      zone = 34;
-      break;
-    case PCS_WGS84_UTM_zone_35N:
-    case PCS_WGS84_UTM_zone_35S:
-      zone = 35;
-      break;
-    case PCS_WGS84_UTM_zone_36N:
-    case PCS_WGS84_UTM_zone_36S:
-      zone = 36;
-      break;
-    case PCS_WGS84_UTM_zone_37N:
-    case PCS_WGS84_UTM_zone_37S:
-      zone = 37;
-      break;
-    case PCS_WGS84_UTM_zone_38N:
-    case PCS_WGS84_UTM_zone_38S:
-      zone = 38;
-      break;
-    case PCS_WGS84_UTM_zone_39N:
-    case PCS_WGS84_UTM_zone_39S:
-      zone = 39;
-      break;
-    case PCS_WGS84_UTM_zone_40N:
-    case PCS_WGS84_UTM_zone_40S:
-      zone = 40;
-      break;
-    case PCS_WGS84_UTM_zone_41N:
-    case PCS_WGS84_UTM_zone_41S:
-      zone = 41;
-      break;
-    case PCS_WGS84_UTM_zone_42N:
-    case PCS_WGS84_UTM_zone_42S:
-      zone = 42;
-      break;
-    case PCS_WGS84_UTM_zone_43N:
-    case PCS_WGS84_UTM_zone_43S:
-      zone = 43;
-      break;
-    case PCS_WGS84_UTM_zone_44N:
-    case PCS_WGS84_UTM_zone_44S:
-      zone = 44;
-      break;
-    case PCS_WGS84_UTM_zone_45N:
-    case PCS_WGS84_UTM_zone_45S:
-      zone = 45;
-      break;
-    case PCS_WGS84_UTM_zone_46N:
-    case PCS_WGS84_UTM_zone_46S:
-      zone = 46;
-      break;
-    case PCS_WGS84_UTM_zone_47N:
-    case PCS_WGS84_UTM_zone_47S:
-      zone = 47;
-      break;
-    case PCS_WGS84_UTM_zone_48N:
-    case PCS_WGS84_UTM_zone_48S:
-      zone = 48;
-      break;
-    case PCS_WGS84_UTM_zone_49N:
-    case PCS_WGS84_UTM_zone_49S:
-      zone = 49;
-      break;
-    case PCS_WGS84_UTM_zone_50N:
-    case PCS_WGS84_UTM_zone_50S:
-      zone = 50;
-      break;
-    case PCS_WGS84_UTM_zone_51N:
-    case PCS_WGS84_UTM_zone_51S:
-      zone = 51;
-      break;
-    case PCS_WGS84_UTM_zone_52N:
-    case PCS_WGS84_UTM_zone_52S:
-      zone = 52;
-      break;
-    case PCS_WGS84_UTM_zone_53N:
-    case PCS_WGS84_UTM_zone_53S:
-      zone = 53;
-      break;
-    case PCS_WGS84_UTM_zone_54N:
-    case PCS_WGS84_UTM_zone_54S:
-      zone = 54;
-      break;
-    case PCS_WGS84_UTM_zone_55N:
-    case PCS_WGS84_UTM_zone_55S:
-      zone = 55;
-      break;
-    case PCS_WGS84_UTM_zone_56N:
-    case PCS_WGS84_UTM_zone_56S:
-      zone = 56;
-      break;
-    case PCS_WGS84_UTM_zone_57N:
-    case PCS_WGS84_UTM_zone_57S:
-      zone = 57;
-      break;
-    case PCS_WGS84_UTM_zone_58N:
-    case PCS_WGS84_UTM_zone_58S:
-      zone = 58;
-      break;
-    case PCS_WGS84_UTM_zone_59N:
-    case PCS_WGS84_UTM_zone_59S:
-      zone = 59;
-      break;
-    case PCS_WGS84_UTM_zone_60N:
-    case PCS_WGS84_UTM_zone_60S:
-      zone = 60;
-      break;
-    default:
-      zone = 0;
-      break;
-  }
-  
-  return zone;
-}
+  // The GeoTIFF standard defines the UTM zones numerically in a way that
+  // let's us pick off the data mathematically (NNNzz where zz is the zone
+  // number):
+  //
+  // For NAD83 datums, Zones 3N through 23N, NNN == 269
+  // For NAD27 datums, Zones 3N through 22N, NNN == 367
+  // For WGS72 datums, Zones 1N through 60N, NNN == 322
+  // For WGS72 datums, Zones 1S through 60S, NNN == 323
+  // For WGS84 datums, Zones 1N through 60N, NNN == 326
+  // For WGS84 datums, Zones 1S through 60S, NNN == 327
+  // For user-defined and unsupported UTM projections, NNN can be
+  //   a variety of other numbers (see the GeoTIFF Standard)
+  //
+  // NOTE: For NAD27 and NAD83, only the restricted range of zones
+  // above is supported by the GeoTIFF standard.
+  //
+  const short NNN_NAD27 = 367;
+  const short NNN_NAD83 = 269;
+  const short NNN_WGS84 = 326;
+  int isUTM = 0;
+  short datumClassifierNNN;
 
-//typedef struct {
-  //char projection[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-  //char units[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-//} arcgisEimg_MapInformation_t;
+  datumClassifierNNN = pcs / 1000;
+  if (datumClassifierNNN == NNN_NAD27) {
+      *datum = NAD27_DATUM;
+      *zone = pcs - (pcs / 1000)*1000;
+      isUTM = 1;
+  }
+  else if (datumClassifierNNN == NNN_NAD83) {
+      *datum = NAD83_DATUM;
+      *zone = pcs - (pcs / 1000)*1000;
+      isUTM = 1;
+  }
+  else if (datumClassifierNNN == NNN_WGS84) {
+      *datum = WGS84_DATUM;
+      *zone = pcs - (pcs / 1000)*1000;
+      isUTM = 1;
+  }
+  else {
+      *datum = UNKNOWN_DATUM;
+      *zone = 0;
+      isUTM = 0;
+  }
+
+  return isUTM;
+}
 
 void getArcgisEimg_MapInformation (char *infile,
                  arcgisEimg_MapInformation_t *arcgisEimg_MapInformation)
@@ -2993,7 +2822,3 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   strcpy(arcgisEimg_MapInformation->projection, projection);
   strcpy(arcgisEimg_MapInformation->units, units);
 }
-
-
-
-
