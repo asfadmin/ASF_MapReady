@@ -82,7 +82,7 @@ static int has_tiff_ext(const char *f)
 }
 
 static char *
-convert_tiff(const char *tiff_file, const char *what, convert_config *cfg,
+convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
              int save_converted)
 {
     char *tiff_basename, imported[255], geocoded[255], status[255];
