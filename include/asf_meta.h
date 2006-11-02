@@ -709,6 +709,12 @@ void xpyp_getPixSizes(meta_parameters *meta, float *range_pixsiz,
 void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
                         float *corrected_velocity);
 
+/* Scansar projection functions, in jpl_proj.c */
+void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, 
+           double *c1, double *c2);
+void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,
+           double *lat_d, double *lon);
+
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
 typedef struct {
