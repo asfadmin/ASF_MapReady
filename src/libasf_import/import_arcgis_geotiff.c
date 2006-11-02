@@ -73,6 +73,8 @@
 #define ARCGIS_HARN_DATUM                   "HARN"
 #define ARCGIS_WGS84_DATUM                  "WGS 84"
 
+#define UNKNOWN_PROJECTION_TYPE             -1
+
 typedef struct {
   char sphereName[MAX_EHFA_ENTRY_NAMESTRING_LEN]; // Spheroid name
   double a; // Major axis
@@ -344,7 +346,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     double stdParallel1;
     double stdParallel2;
     double lonPole;
-    
+
     // Get datum and zone as appropriate
     read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
     if (read_count == 1 && PCS_2_UTM(pcs, &datum, &arcgisProjParms.proZone)) {
@@ -404,6 +406,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
         "with data found in the ArcGIS metadata (.aux) file.\n");
     
+    projection_type = UNKNOWN_PROJECTION_TYPE;
     scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
     switch(proj_coords_trans) {
       // TODO: The UTM case is UNTESTED
@@ -415,21 +418,37 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "UTM");
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
+        if (read_count != 1) {
+          asfPrintWarning(
                    "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
+        if (read_count != 1) {
+          asfPrintWarning(
                    "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        asfRequire(read_count == 1,
+        if (read_count != 1) {
+          asfPrintWarning(
                    "\nUnable to determine center longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
+        if (read_count != 1) {
+          asfPrintWarning(
                    "\nUnable to determine center latitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
         if (read_count == 0) {
           scale_factor = ARCGIS_DEFAULT_UTM_SCALE_FACTOR;
@@ -612,7 +631,14 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       auxDataExists = 0;
     }
     else {
-      projection_type = proj_type;
+      if ( proj_type == UTM     ||
+           proj_type == ALBERS  ||
+           proj_type == LAMCC   ||
+           proj_type == PS      ||
+           proj_type == LAMAZ   )
+      {
+        projection_type = proj_type;
+      }
       // Read projection parameters from .aux file
       getArcgisProjParameters(inGeotiffAuxName->str,
                               &arcgisProjParms);
@@ -2695,20 +2721,20 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   int isUTM = 0;
   short datumClassifierNNN;
 
-  datumClassifierNNN = pcs / 1000;
+  datumClassifierNNN = pcs / 100;
   if (datumClassifierNNN == NNN_NAD27) {
       *datum = NAD27_DATUM;
-      *zone = pcs - (pcs / 1000)*1000;
+      *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
   }
   else if (datumClassifierNNN == NNN_NAD83) {
       *datum = NAD83_DATUM;
-      *zone = pcs - (pcs / 1000)*1000;
+      *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
   }
   else if (datumClassifierNNN == NNN_WGS84) {
       *datum = WGS84_DATUM;
-      *zone = pcs - (pcs / 1000)*1000;
+      *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
   }
   else {
