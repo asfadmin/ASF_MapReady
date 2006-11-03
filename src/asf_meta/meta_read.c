@@ -482,8 +482,8 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
 		if (ddr->valid[DDCCV] == VALID) {
 			meta->projection->startY = ddr->upleft[0];
 			meta->projection->startX = ddr->upleft[1];
-			meta->projection->perY = (ddr->loright[0] - ddr->upleft[0]) / (double)ddr->nl;
-			meta->projection->perX = (ddr->loright[1] - ddr->upleft[1]) / (double)ddr->ns;
+                        meta->projection->perY = (ddr->loright[0] - ddr->upleft[0]) / (double)(ddr->nl-1);
+                        meta->projection->perX = (ddr->loright[1] - ddr->upleft[1]) / (double)(ddr->ns-1);
 		}
 		break;
 	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */

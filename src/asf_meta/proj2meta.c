@@ -71,9 +71,9 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta)
 	/* Starting Coordinates */
 	proj->startY = ddr->upleft[0];
 	proj->startX = ddr->upleft[1];
-	proj->perY = (ddr->loright[0] - proj->startY) / meta->general->line_count;
-	proj->perX = (ddr->loright[1] - proj->startX) / meta->general->sample_count;
-	proj->hem = (meta->general->center_latitude>0) ? 'N' : 'S';
+        proj->perY = (ddr->loright[0] - proj->startY) / (meta->general->line_count-1);
+        proj->perX = (ddr->loright[1] - proj->startX) / (meta->general->sample_count-1);
+        proj->hem = (meta->general->center_latitude>0) ? 'N' : 'S';
 
 	meta->projection = proj;
 }
