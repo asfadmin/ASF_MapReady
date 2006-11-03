@@ -1001,6 +1001,7 @@ ceos_description *get_ceos_description(char *fName)
 	if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32)) 
 	  ceos->product=SLC;
 	else if (0==strncmp(prodStr,"SCANSAR WIDE",12)) ceos->product=SCANSAR;
+	else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
 	else {
 	  printf("Get_ceos_description Warning! Unknown CDPF product type '%s'!\n",
 		 prodStr);
@@ -1052,6 +1053,7 @@ ceos_description *get_ceos_description(char *fName)
       if (0==strncmp(prodStr, "SCANSAR WIDE",12)) ceos->product=SCANSAR;
       else if (0==strncmp(prodStr, "SAR GEOREF EXTRA FINE",21)) ceos->product=SGF;
       else if (0==strncmp(prodStr, "SCANSAR NARROW",14)) ceos->product=SCN;
+      else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
       else {
 	printf("Get_ceos_description Warning! Unknown RSI product type '%s'!\n",
 	       prodStr);
