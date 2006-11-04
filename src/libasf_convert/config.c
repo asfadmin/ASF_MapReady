@@ -115,7 +115,7 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
           "# flag switched on will generate an [Terrain correction] section where you\n"
           "# can define further parameters.\n\n");
-  fprintf(fConfig, "terrain correction = 1\n\n");
+  fprintf(fConfig, "terrain correction = 0\n\n");
   // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
           "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
@@ -135,8 +135,8 @@ int init_convert_config(char *configFile)
           "# settings. In most cases, you will work on a study where your area of interest is\n"
           "# geographically well defined. You want the data for the entire project in the same\n"
           "# projection, with the same pixel spacing and the same output format.\n");
-  fprintf(fConfig, "# A sample of a default values file can be located in %s/asf_convert.\n\n", 
-          get_asf_share_dir());
+  fprintf(fConfig, "# A sample of a default values file can be located in\n");
+  fprintf(fConfig, "# %s/asf_convert.\n\n", get_asf_share_dir());
   fprintf(fConfig, "default values = \n\n");
   // intermediates flag
   fprintf(fConfig, "# The intermediates flag indicates whether the intermediate processing\n"
@@ -736,8 +736,8 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# settings. In most cases, you will work on a study where your area of interest is\n"
               "# geographically well defined. You want the data for the entire project in the same\n"
               "# projection, with the same pixel spacing and the same output format.\n\n");
-      fprintf(fConfig, "# A sample of a default values file can be located in %s/asf_convert.\n\n", 
-              get_asf_share_dir());
+      fprintf(fConfig, "# A sample of a default values file can be located in\n");
+      fprintf(fConfig, "# %s/asf_convert.\n\n", get_asf_share_dir());
     }
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
     // General - Intermediates
@@ -873,7 +873,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# image statistics in the remainder of the image), or they may be interpolated over\n"
                 "# (resulting in a nicer-looking image).  Setting this parameter to 1 indicates that\n"
                 "# these regions should be interpolated over.\n\n");
-      fprintf(fConfig, "interpolate = %d\n\n", cfg->terrain_correct->interp);
+      fprintf(fConfig, "interpolate = %d\n", cfg->terrain_correct->interp);
       if (!shortFlag)
         fprintf(fConfig, "\n# The DEM that is provided is clipped to match the scene.  Normally this\n"
                 "# clipped DEM is removed along with the other temporary files, however if you are \n"
@@ -883,7 +883,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# when you exporting your SAR data as bytes).  The clipped DEM will be slightly\n"
                 "# larger than the SAR image, usually, since a larger region must be clipped to\n"
                 "# allow for the height variations.\n\n");
-      fprintf(fConfig, "save terrcorr dem = %d\n\n", cfg->terrain_correct->save_terrcorr_dem);
+      fprintf(fConfig, "save terrcorr dem = %d\n", cfg->terrain_correct->save_terrcorr_dem);
       if (!shortFlag)
         fprintf(fConfig, "\n# This option determines if a file marking the regions of layover and \n"
                 "# shadow should be created along with the output image.  It is geocoded using the\n"
@@ -900,8 +900,8 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
-        fprintf(fConfig, "# The projection parameter files are located in %s/projections.\n\n", 
-                get_asf_share_dir());
+        fprintf(fConfig, "# The projection parameter files are located in\n");
+	fprintf(fConfig, "%s/projections.\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)
