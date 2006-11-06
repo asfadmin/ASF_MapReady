@@ -48,15 +48,17 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
-"                truncates the input values regardless of their value range.\n"\
+"                values less than 0 are mapped to 0, values greater than 255\n"\
+"                are mapped to 255, and values in between rounded down to\n"\
+"                an integer value between 0 and 255.\n"\
 "            minmax\n"\
 "                determines the minimum and maximum values of the input image\n"\
 "                and linearly maps those values to the byte range of 0 to 255.\n"\
 "            sigma\n"\
 "                determines the mean and standard deviation of an image and\n"\
-"                applies a buffer of 2 sigma around the mean value (it\n"\
-"                adjusts this buffer if the 2 sigma buffer is outside the\n"\
-"                value range).\n"\
+"                applies a buffer of 2 sigma around the mean value, and maps\n"\
+"                this buffer to the byte range 0 to 255.  This buffer is\n"\
+"                adjusted if the 2 sigma buffer is outside the value range.\n"\
 "            histogram_equalize\n"\
 "                produces an image with equally distributed brightness levels\n"\
 "                over the entire brightness scale which increases contrast.\n"\
