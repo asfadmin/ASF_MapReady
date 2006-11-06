@@ -457,7 +457,7 @@
 		      <child>
 			<widget class="GtkOptionMenu" id="input_data_type_combobox">
 			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">Radiometry setting for the image.</property>
+			  <property name="tooltip" translatable="yes">Radiometry setting for the image.  If you are planning to apply terrain correction, it is a good idea to select &quot;output DB&quot; when using sigma, beta or gamma.</property>
 			  <property name="can_focus">True</property>
 			  <property name="history">0</property>
 
@@ -528,7 +528,7 @@
 		  <child>
 		    <widget class="GtkCheckButton" id="checkbutton_db">
 		      <property name="visible">True</property>
-		      <property name="tooltip" translatable="yes">Output calibrated image in decibles. This can only be used with -sigma, -beta, or -gamma.</property>
+		      <property name="tooltip" translatable="yes">Output calibrated image in decibles. This can only be used with -sigma, -beta, or -gamma.  Recommended when terrain correcting.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">Output DB</property>
 		      <property name="use_underline">True</property>
