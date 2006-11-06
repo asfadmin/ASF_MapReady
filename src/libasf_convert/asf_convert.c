@@ -73,12 +73,14 @@ static void copy_meta(char *src, char *dest)
 static int has_tiff_ext(const char *f)
 {
     char *ext = findExt(f);
-
-    return
+    if (ext)
+      return
         strcmp(ext, ".tif") == 0 ||
         strcmp(ext, ".tiff") == 0 ||
         strcmp(ext, ".TIF") == 0 ||
         strcmp(ext, ".TIFF") == 0;
+    else
+      return FALSE;
 }
 
 static char *
@@ -594,7 +596,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // If the Mask is a GeoTIFF, we need to import it, and geocode it.
-      if (has_tiff_ext(cfg->terrain_correct->mask)) {
+      if (cfg->terrain_correct->mask &&
+          strlen(cfg->terrain_correct->mask) > 0 &&
+          has_tiff_ext(cfg->terrain_correct->mask)) 
+      {
           char * converted_mask =
               convert_tiff(cfg->terrain_correct->dem, "mask", cfg, saveDEM);
           strcpy(cfg->terrain_correct->mask, converted_mask);
