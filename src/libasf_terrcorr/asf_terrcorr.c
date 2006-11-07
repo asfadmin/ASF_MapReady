@@ -17,6 +17,7 @@
 #include <asf_contact.h>
 #include <asf_license.h>
 #include <asf_sar.h>
+#include <libasf_proj.h>
 #include <poly.h>
 
 #include <asf_terrcorr.h>
@@ -303,6 +304,59 @@ static char * getOutputDir(char *outFile)
     return d;
 }
 
+static void update_extents(int lineSAR, int sampSAR, 
+                           meta_parameters *metaDEM, meta_parameters *metaSAR,
+                           int *line_min, int *line_max,
+                           int *samp_min, int *samp_max)
+{
+    double lat, lon, x, y, z;
+    int line, samp; // line & samp in the DEM
+
+    meta_get_latLon(metaSAR, lineSAR, sampSAR, 0.0, &lat, &lon);
+    latlon_to_proj(metaDEM->projection, metaDEM->sar->look_direction,
+        lat, lon, 0.0, &x, &y, &z);
+
+    // these should work even if perX or perY is negative
+    samp = (int) (.5 + (metaDEM->projection->startX - x) / 
+                        metaDEM->projection->perX);
+    line = (int) (.5 + (metaDEM->projection->startY - y) /
+                        metaDEM->projection->perY);
+
+    if (samp < *samp_min) *samp_min = samp;
+    if (line < *line_min) *line_min = line;
+
+    if (samp > *samp_max) *samp_max = samp;
+    if (line > *line_max) *line_max = line;
+}
+
+static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
+                    char *demFile, char *output_dir)
+{
+    asfRequire(metaDEM->projection != NULL, "Requires projected DEM");
+
+    int line_min, line_max, samp_min, samp_max;
+    line_min = samp_min = INT_MAX;
+    line_max = samp_max = INT_MIN;
+    int nl = metaSAR->general->line_count;
+    int ns = metaSAR->general->sample_count;
+
+    update_extents(0,    0,    metaDEM, metaSAR, 
+                   &line_min, &line_max, &samp_min, &samp_max);
+    update_extents(nl-1, 0,    metaDEM, metaSAR,
+                   &line_min, &line_max, &samp_min, &samp_max);
+    update_extents(0,    ns-1, metaDEM, metaSAR,
+                   &line_min, &line_max, &samp_min, &samp_max);
+    update_extents(nl-1, ns-1, metaDEM, metaSAR,
+                   &line_min, &line_max, &samp_min, &samp_max);
+
+    char *cutDemFile = outputName(output_dir, demFile, "_cut");
+
+    trim(demFile, cutDemFile, line_min, samp_min,
+         line_max - line_min, samp_max - samp_min);
+
+    free(cutDemFile);
+}
+
 static void
 clip_dem(meta_parameters *metaSAR,
          char *srFile,
@@ -417,7 +471,6 @@ int match_dem(meta_parameters *metaSAR,
 	      int apply_dem_padding,
               int mask_dem_same_size_and_projection,
               int clean_files,
-              int save_clipped_dem,
               double *t_offset, 
 	      double *x_offset)
 {
@@ -718,8 +771,7 @@ int match_dem(meta_parameters *metaSAR,
   }
 
   if (clean_files) {
-      if (!save_clipped_dem)
-          clean(demClipped);
+      clean(demClipped);
       clean(demSimAmp);
       clean(demSlant);
   }
@@ -744,7 +796,6 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int apply_dem_padding = FALSE;
   int clean_files = TRUE;
   int madssap = FALSE; // mask and dem same size and projection
-  int save_clipped_dem = FALSE;
   int dem_grid_size = 20;
   double t_offset, x_offset;
   char output_dir[255];
@@ -760,7 +811,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 	    simAmpFile, demSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, save_clipped_dem, &t_offset, &x_offset);
+            madssap, clean_files, &t_offset, &x_offset);
 
   if (clean_files)
       clean(userMaskClipped);
@@ -783,8 +834,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   char *lsMaskFile, *padFile = NULL, *userMaskClipped = NULL;
   char *deskewDemFile = NULL, *deskewDemMask = NULL;
   char *output_dir;
-  double demRes, sarRes, maskRes;
-  meta_parameters *metaSAR, *metaDEM, *metamask;
+  double demRes, sarRes, maskRes=-1;
+  meta_parameters *metaSAR, *metaDEM, *metamask=NULL;
   int force_resample = FALSE;
   double t_offset, x_offset;
   int madssap = FALSE; // mask and dem same size and projection
@@ -966,8 +1017,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
-            FALSE, TRUE, TRUE, madssap, clean_files, save_clipped_dem,
-            &t_offset, &x_offset);
+            FALSE, TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
 
   if (update_original_metadata_with_offsets)
   {
@@ -1043,6 +1093,12 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       metaSAR->sar->time_shift += t_offset;
       metaSAR->sar->slant_shift += x_offset;
       meta_write(metaSAR, outFile);
+  }
+
+  if (save_clipped_dem)
+  {
+    asfPrintStatus("Cutting out portion of the DEM...\n");
+    cut_dem(metaSAR, metaDEM, demFile, output_dir);
   }
 
   if (clean_files) {
