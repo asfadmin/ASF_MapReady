@@ -25,17 +25,24 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
     ext = settings_get_output_format_extension(user_settings);
 
     gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file_name, -1);
-    path = g_path_get_dirname(data_file_name);
-    if (strcmp(path, ".") == 0)
+    if (output_directory)
     {
-        *path = '\0';
+        path = g_strdup(output_directory);
     }
     else
     {
-        int len = strlen(path);
-        path = (gchar *) g_realloc(path, sizeof(gchar) * (len + 2));
-        *(path + len) = DIR_SEPARATOR;
-        *(path + len + 1) = '\0';   
+        path = g_path_get_dirname(data_file_name);
+        if (strcmp(path, ".") == 0)
+        {
+            *path = '\0';
+        }
+        else
+        {
+            int len = strlen(path);
+            path = (gchar *) g_realloc(path, sizeof(gchar) * (len + 2));
+            *(path + len) = DIR_SEPARATOR;
+            *(path + len + 1) = '\0';   
+        }
     }
 
     /* do not allow user to move output file to a different location */
@@ -53,7 +60,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 
     /* add appropriate extension if was not given by user */
     basename = g_strdup(name_without_path);
-    p = strrchr(basename, '.');
+    p = findExt(basename);
     if (p)
     {
         *p = '\0';
