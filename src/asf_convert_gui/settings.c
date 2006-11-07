@@ -1345,7 +1345,7 @@ settings_to_config_file(const Settings *s,
 
     if (s->geocode_is_checked) {
 
-      tmp_projfile = MALLOC(sizeof(char)*(32+strlen(tmp_dir)));
+      tmp_projfile = MALLOC(sizeof(char)*(9+strlen(basename)+strlen(tmp_dir)));
       sprintf(tmp_projfile, "%s/%s.proj", tmp_dir, basename);
 
       FILE * pf = fopen(tmp_projfile, "wt");
@@ -1389,7 +1389,7 @@ settings_to_config_file(const Settings *s,
       fclose(pf);
     }
 
-    tmp_cfgfile = MALLOC(sizeof(char)*(32+strlen(tmp_dir)));
+    tmp_cfgfile = MALLOC(sizeof(char)*(9+strlen(basename)+strlen(tmp_dir)));
     sprintf(tmp_cfgfile, "%s/%s.cfg", tmp_dir, basename);
     tmp_statfile = appendExt(tmp_cfgfile, ".status");
 
