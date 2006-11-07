@@ -39,6 +39,7 @@ MODULES = \
 	src/sr2gr \
 	src/gr2sr \
         src/metadata \
+        src/combine \
 	@ASF_GUI@
 # src_x/sarview
 
