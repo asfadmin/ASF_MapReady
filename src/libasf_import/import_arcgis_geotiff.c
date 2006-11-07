@@ -27,6 +27,7 @@
 #include <float_image.h>
 #include <spheroids.h>
 #include <proj.h>
+#include <libasf_proj.h>
 
 #include "asf.h"
 #include "asf_nan.h"
@@ -139,6 +140,7 @@ void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
 void DHFAGetStringVal(FILE *fp, unsigned long strLen, char *str);
 spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName);
 int PCS_2_UTM (short pcs, datum_type_t *datum, unsigned long *zone);
+void copy_proj_parms(meta_projection *dest, meta_projection *src);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -420,7 +422,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n");
+                   "\nUnable to determine false easting from GeoTIFF file\n"
+                   "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -428,7 +431,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n");
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                   "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
@@ -436,7 +440,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center longitude from GeoTIFF file\n");
+              "\nUnable to determine center longitude from GeoTIFF file\n"
+              "using ProjNatOriginLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
@@ -444,7 +449,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
+              "\nUnable to determine center latitude from GeoTIFF file\n"
+              "using ProjNatOriginLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -454,7 +460,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           scale_factor = ARCGIS_DEFAULT_UTM_SCALE_FACTOR;
 
           char msg[256];
-          sscanf(msg, "UTM scale factor not found in GeoTIFF ...defaulting to %lf\n", &scale_factor);
+          sprintf(msg,
+                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+                  scale_factor);
           asfPrintWarning(msg);
           //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
         }
@@ -465,29 +473,63 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Albers Conical Equal Area");
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine first standard parallel from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine first standard parallel from GeoTIFF file\n"
+                       "using ProjStdParallel1GeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine second standard parallel from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine second standard parallel from GeoTIFF file\n"
+                       "using \n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false easting from GeoTIFF file\n"
+                       "using ProjStdParallel2GeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                       "using ProjFalseNorthingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        if (read_count != 1) {
+          asfPrintWarning("\nUnable to determine center longitude from GeoTIFF file\n"
+              "using ProjNatOriginLongGeoKey\n");
+          read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+          if (read_count != 1) {
+            asfPrintWarning("\nUnable to determine center longitude from GeoTIFF file\n"
+                "using ProjCenterLongGeoKey as well...\n");
+          }
+        }
+        if (read_count == 1) {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center latitude from GeoTIFF file\n"
+                       "using ProjNatOriginLatGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
         break;
       // TODO: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
       case CT_LambertConfConic_1SP:
@@ -495,29 +537,50 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Lambert Conformal Conic");
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        if (read_count != 1) {
+          asfPrintWarning(
+                     "\nUnable to determine false easting from GeoTIFF file\n"
+                       "using ProjFalseEastingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                       "using ProjFalseNorthingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center longitude from GeoTIFF file\n"
+                       "using ProjNatOriginLongGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center latitude from GeoTIFF file\n"
+                       "using ProjNatOriginLatGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
-        if (read_count == 0) {
+        if (read_count != 1) {
           scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
 
           char msg[256];
-          sscanf(msg, "UTM scale factor not found in GeoTIFF ...defaulting to %lf\n", &scale_factor);
+          sprintf(msg,
+                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+                  scale_factor);
           asfPrintWarning(msg);
-          //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
         }
         break;
       // TODO: The Lambert Conformal Conic 2 Std Parallels case is UNTESTED
@@ -526,29 +589,59 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Lambert Conformal Conic");
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine first standard parallel from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine first standard parallel from GeoTIFF file\n"
+                       "using \n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine second standard parallel from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine second standard parallel from GeoTIFF file\n"
+                       "using ProjStdParallel1GeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false easting from GeoTIFF file\n"
+                       "using ProjFalseEastingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                       "using ProjFalseNorthingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center longitude from GeoTIFF file\n"
+                       "using ProjFalseOriginLongGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center latitude from GeoTIFF file\n"
+                       "using ProjFalseOriginLatGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
         break;
       // TODO: The Polar Stereographic case is UNTESTED
       case CT_PolarStereographic:
@@ -556,25 +649,45 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Polar Stereographic");
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
-        // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
-        // alignment with where this value is found when coming from the .aux file.
-        // These values are copied to the meta data parameters later on and the assumption
-        // is made that THIS is where this data item will be...
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*latOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center latitude from GeoTIFF file\n"
+                       "using ProjNatOriginLatGeoKey\n");
+        }
+        else {
+          // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
+          // alignment with where this value is found when coming from the .aux file.
+          // These values are copied to the meta data parameters later on and the assumption
+          // is made that THIS is where this data item will be...
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*latOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine vertical pole longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonPole;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine vertical pole longitude from GeoTIFF file\n"
+                       "using ProjStraightVertPoleLongGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonPole;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false easting from GeoTIFF file\n"
+                       "using ProjFalseEastingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                       "using ProjFalseNorthingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
         // use it, e.g. it is not current written to the meta data file with meta_write().
         break;
@@ -584,21 +697,41 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         arcgisProjParms.proNumber = projection_type;
         strcpy(arcgisProjParms.proName, "Lambert Azimuthal Equal-area");
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false easting from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false easting from GeoTIFF file\n"
+                       "using ProjFalseEastingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine false northing from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine false northing from GeoTIFF file\n"
+                       "using ProjFalseNorthingGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center longitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center longitude from GeoTIFF file\n"
+                       "using ProjCenterLongGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
+        }
         read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
-        asfRequire(read_count == 1,
-                   "\nUnable to determine center latitude from GeoTIFF file\n");
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        if (read_count != 1) {
+          asfPrintWarning(
+                   "\nUnable to determine center latitude from GeoTIFF file\n"
+                       "using ProjCenterLatGeoKey\n");
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
+        }
         break;
       default:
         break;
@@ -775,6 +908,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // caveats that output pixels would still be square, and would have
   // default size derived solely from the input pixel size
   if (fabs (mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
+    char msg[256];
+    sprintf(msg, "Pixel size is (x,y): (%lf, %lf)\n", mg->x_pixel_size, mg->y_pixel_size);
+    asfPrintStatus(msg);
     asfPrintWarning("Found non-square pixels: x versus y pixel size differs\n"
         "by more than 0.0001 <units>\n");
   }
@@ -788,10 +924,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   double tp_lat = tie_point[4]; // [5] is zero for 2D space
 
   // Center latitude and longitude of image data
-  mg->center_latitude 
-      = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-  mg->center_longitude
-      = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  double center_x = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
+  double center_y = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  // converts to center_latitude and center_longitude below...
   
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     mg->re_major = arcgisProjParms.proSpheroid.a;
@@ -937,7 +1072,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     default:
       break;
   }
-
+  
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     mp->startX = arcgisMapInfo.upperLeftCenter.x - (arcgisMapInfo.pixelSize.width / 2.0);
     mp->startY = arcgisMapInfo.upperLeftCenter.y + (arcgisMapInfo.pixelSize.height / 2.0);
@@ -956,8 +1091,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     char *units = (linear_units == Linear_Meter) ? "meters" : MAGIC_UNSET_STRING;
     strcpy (mp->units, units);
   }
-
-  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
 
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     mp->spheroid = arcgisSpheroidName2spheroid(arcgisProjParms.proSpheroid.sphereName);
@@ -979,6 +1112,22 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
                           FLOAT_IMAGE_DEFAULT_MASK);
   mp->height = mean;
+
+  // Calculate the center latitude and longitude now that the projection
+  // parameters are stored.
+  double center_latitude;
+  double center_longitude;
+  double dummy_var;
+  meta_projection proj;
+  
+  // Copy all fields just in case of future code rearrangements...
+  copy_proj_parms (&proj, mp);
+  proj_to_latlon(&proj, 'R',
+                  center_x, center_y, 0.0,
+                  &center_latitude, &center_longitude, &dummy_var);
+  mg->center_latitude = R2D*center_latitude;
+  mg->center_longitude = R2D*center_longitude;
+  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
 
   msar->image_type = 'P'; // Map Projected
   ms->mean = mean;
@@ -2847,4 +2996,64 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   // Populate return struct
   strcpy(arcgisEimg_MapInformation->projection, projection);
   strcpy(arcgisEimg_MapInformation->units, units);
+}
+
+void copy_proj_parms(meta_projection *dest, meta_projection *src)
+{
+  dest->type = src->type;
+  dest->startX = src->startX;
+  dest->startY = src->startY;
+  dest->perX = src->perX;
+  dest->perY = src->perY;
+  strcpy (dest->units, src->units);
+  dest->hem = src->hem;
+  dest->spheroid = src->spheroid;
+  dest->re_major = src->re_major;
+  dest->re_minor = src->re_minor;
+  dest->datum = src->datum;
+  dest->height = src->height;
+  
+  switch (src->type) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      dest->param.utm.zone = src->param.utm.zone;
+      dest->param.utm.lat0 = D2R*src->param.utm.lat0;
+      dest->param.utm.lon0 = D2R*src->param.utm.lon0;
+      dest->param.utm.false_easting = src->param.utm.false_easting;
+      dest->param.utm.false_northing = src->param.utm.false_northing;
+      dest->param.utm.scale_factor = src->param.utm.scale_factor;
+      break;
+    case POLAR_STEREOGRAPHIC:
+      dest->param.ps.slat = D2R*src->param.ps.slat;
+      dest->param.ps.slon = D2R*src->param.ps.slon;
+      dest->param.ps.is_north_pole = src->param.ps.is_north_pole;
+      dest->param.ps.false_easting = src->param.ps.false_easting;
+      dest->param.ps.false_northing = src->param.ps.false_northing;
+      break;
+    case ALBERS_EQUAL_AREA:
+      dest->param.albers.std_parallel1 = D2R*src->param.albers.std_parallel1;
+      dest->param.albers.std_parallel2 = D2R*src->param.albers.std_parallel2;
+      dest->param.albers.center_meridian = D2R*src->param.albers.center_meridian;
+      dest->param.albers.orig_latitude = D2R*src->param.albers.orig_latitude;
+      dest->param.albers.false_easting = src->param.albers.false_easting;
+      dest->param.albers.false_northing = src->param.albers.false_northing;
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      dest->param.lamcc.plat1 = D2R*src->param.lamcc.plat1;
+      dest->param.lamcc.plat2 = D2R*src->param.lamcc.plat2;
+      dest->param.lamcc.lat0 = D2R*src->param.lamcc.lat0;
+      dest->param.lamcc.lon0 = D2R*src->param.lamcc.lon0;
+      dest->param.lamcc.false_easting = src->param.lamcc.false_easting;
+      dest->param.lamcc.false_northing = src->param.lamcc.false_northing;
+      dest->param.lamcc.scale_factor = src->param.lamcc.scale_factor;
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      dest->param.lamaz.center_lon = D2R*src->param.lamaz.center_lon;
+      dest->param.lamaz.center_lat = D2R*src->param.lamaz.center_lat;
+      dest->param.lamaz.false_easting = src->param.lamaz.false_easting;
+      dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
+      break;
+    default:
+      asfRequire(0,"Unsupported projection type found.\n");
+      break;
+  }
 }
