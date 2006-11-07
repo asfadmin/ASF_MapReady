@@ -103,7 +103,7 @@ project_spheroid_axes_lengths (spheroid_type_t spheroid, double *major,
 }
 
 // The default as advertised in the interface.
-static datum_type_t input_spheroid = GEM6_SPHEROID;
+static spheroid_type_t input_spheroid = GEM6_SPHEROID;
 void project_set_input_spheroid(spheroid_type_t spheroid)
 {
   input_spheroid = spheroid;
