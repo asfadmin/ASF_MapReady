@@ -71,6 +71,26 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 	if (meta_is_valid_double(meta->sar->earth_radius)) {
 		earth_rad = meta->sar->earth_radius;
 	}
+        else if (meta->projection == NULL && meta->sar->image_type=='P')
+        {
+            /* This is a special case situation, sort of a kludge, for ALOS and
+               Scansar.  Sometimes we don't have the projection block read in
+               yet (need the earth radius first, that's why we're here).  So,
+               we can't use the code in the else block below.  Here's another
+               method that results in a reasonable estimate. */
+                double re, rp, lat;
+		re = (meta_is_valid_double(meta->general->re_major))
+		       ? meta->general->re_major : 6378137.0;
+		rp = (meta_is_valid_double(meta->general->re_minor))
+		       ? meta->general->re_minor : 6356752.31414;
+
+                asfRequire(meta_is_valid_double(meta->general->center_latitude),
+                           "Center latitude must be valid.");
+
+                lat = meta->general->center_latitude*D2R;
+        	earth_rad = (re*rp)
+		        / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+        }
 	else {
 		double re, rp, lat, ht, time;
 		stateVector stVec;

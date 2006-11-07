@@ -581,17 +581,30 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
                                      + asf_facdr->scalt*1000;
    }
    else { // need to calculate it from the state vectors
-     meta->sar->earth_radius = meta_get_earth_radius(meta, 
-						     meta->general->line_count/2, 
-						     meta->general->sample_count/2);
-     meta->sar->satellite_height = meta_get_sat_height(meta,
-						       meta->general->line_count/2,
-						       meta->general->sample_count/2);
+     meta->sar->earth_radius =
+         meta_get_earth_radius(meta, 
+                               meta->general->line_count/2, 
+                               meta->general->sample_count/2);
    }
 
    /* Initialize map projection for projected images */
    if (meta->sar->image_type=='P' && mpdr) {
       ceos_init_proj(meta, dssr, mpdr);
+
+      /* Do these again -- can get a better estimate now that we have
+         the projection block figured out. */
+      meta->sar->earth_radius =
+          meta_get_earth_radius(meta, 
+                                meta->general->line_count/2, 
+                                meta->general->sample_count/2);
+   }
+
+   /* Now the satellite height */
+   if (!asf_facdr) {
+     meta->sar->satellite_height =
+         meta_get_sat_height(meta,
+                             meta->general->line_count/2,
+                             meta->general->sample_count/2);
    }
 
    /* Propagate state vectors if they are covering more than frame size in case
@@ -743,7 +756,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                    struct VMPDREC *mpdr)
 {
    meta_projection *projection; 
-   if (projection == NULL) {
+   if (meta->projection == NULL) {
      projection = (meta_projection *)MALLOC(sizeof(meta_projection));
      meta->projection = projection;
    }
