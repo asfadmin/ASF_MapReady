@@ -6,16 +6,70 @@
 #include "asf_raster.h"
 #include "float_image.h"
 
+#include "asf_contact.h"
+#include "asf_license.h"
+#include "asf_version.h"
+
+#define ASF_NAME_STRING "combine"
+
 static const float_image_byte_order_t fibo_be =
     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
+
+void help()
+{
+    printf(
+"Tool name:\n"
+"    %s\n\n"
+"Usage:\n"
+"    %s <outfile> <infile1> <infile2> ... \n\n"
+"Description:\n"
+"    This program mosaics the input files together, producing an output image\n"
+"    that is the union of all listed input images.  Where the input images\n"
+"    overlap, the pixel in the image listed earlier on the command-line is\n"
+"    chosen.\n\n"
+"Input:\n"
+"    At least 2 input files are required.  You may list as many input files\n"
+"    as desired, however extremely large output files will take some time to\n"
+"    process.\n\n"
+"    All input files must be geocoded to the same projection, with the same\n"
+"    projection parameters, and the same pixel size.\n\n"
+"Output:\n"
+"    The output file, listed first, is created by the program, and, depending\n"
+"    on the locations of the input files relative to each other, can range\n"
+"    in size from equal to the largest input image, to much larger than the\n"
+"    total size of all input images.\n\n"
+"Options:\n"
+"    -help\n"
+"        Print this help information and exit.\n"
+"    -license\n"
+"        Print copyright and license for this software and exit.\n"
+"    -version\n"
+"        Print version and copyright and exit.\n\n"
+"Examples:\n"
+"    %s out in1 in2 in3 in4 in5 in6\n\n"
+"Limitations:\n"
+"    Theoretically, any size output image will work.  The output image will\n"
+"    be cached on disk if it is too large to fit in memory, however in this\n"
+"    situation the process will be quite slow.\n\n"
+"    All input images MUST be in the same projection, with the same projection\n"
+"    parameters, and the same pixel size.\n\n"
+"See also:\n"
+"    asf_geocode\n\n"
+"Contact:\n"
+"%s\n\n"
+"Version:\n"
+"    %s\n",
+ASF_NAME_STRING, ASF_NAME_STRING, ASF_NAME_STRING,
+ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
+);
+    exit(1);
+}
 
 void usage()
 {
     printf("Usage:\n"
            "    combine <outfile> <infile1> <infile2> ... \n\n"
-           "At least 2 input files are required.\n"
-           "All input files must be geocoded to the same projection, with\n"
-           "the same projection parameters, and the same pixel size.\n");
+           "At least 2 input files are required.\n");
     exit(1);
 }
 
@@ -311,6 +365,9 @@ static void add_pixels(FloatImage *out, char *file,
 
 int main(int argc, char *argv[])
 {
+    handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+    if (argc>1 && (strcmp(argv[1], "-help")==0 || strcmp(argv[1],"--help")==0))
+        help();
     if (argc<3) usage();
 
     char *outfile = argv[1];
@@ -337,7 +394,7 @@ int main(int argc, char *argv[])
     asfPrintStatus("  Start X,Y: %f,%f\n", start_x, start_y);
     asfPrintStatus("    Per X,Y: %.2f,%.2f\n", per_x, per_y);
 
-    // float_image will handle caching of the large output image
+    // float_image will handle cacheing of the large output image
     FloatImage *out = float_image_new(size_x, size_y);
 
     // loop over the input images, last to first, so that the files listed
