@@ -154,16 +154,26 @@ default: clean doc $(OBJS)
 
 %.c: %.h
 
-doc: asf_convert_gui.txt
+doc: asf_convert_gui.txt how_to_install.html
 
 DB2T = $(shell which docbook2txt 2>/dev/null)
 
 asf_convert_gui.txt:
 	if test "X$(DB2T)" = "X"; then \
-	  echo "No documentation built - docbook2 tools not found."; \
+	  echo "No documentation built - docbook2* tools not found."; \
 	else \
 	  docbook2txt asf_convert_gui.sgml; \
 	  cp $(TARGET).txt $(SHAREDIR); \
+	fi
+
+DB2H = $(shell which docbook2html 2>/dev/null)
+how_to_install.html:
+	@if test "X$(DB2H)" = "X"; then \
+	  echo "No documentation built - docbook2* tools not found."; \
+	else \
+          echo "Building the html document on how to install the tool..."; \
+	  docbook2html --nochunks --output . how_to_install.sgml; \
+	  cp how_to_install.html $(SHAREDIR); \
 	fi
 
 clean:

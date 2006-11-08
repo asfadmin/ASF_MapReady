@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
+<book>
+  <bookinfo>
+    <date>2006-11</date>
+    <title>The ASF Convert Installation Guide</title>
+  </bookinfo>
+  <toc></toc>
+  <chapter id="obtaining">
+    <title>Obtaining and Installing the Tool</title>
+    <para>The latest version can be downloaded from
+       the ASF web site, at http://www.asf.alaska.edu.  On that page,
+       select the option to "Get SAR Tools".  You can then choose this
+       tool from the list of tools currently distributed by ASF.
+    </para>
+    <para>How you install the tool depends on which operating system
+       you are using. Windows packages come with an installer, Linux
+       packages come as an RPM, and Source packages contain source
+       code with an autoconf-style configure script.</para>
+
+    <sect1 id="Windows">
+      <title>Windows Installation</title>
+      <para>The Windows package contains just a single file, the
+        installer.</para>
+      <para>To install, you open the archive file that
+        you downloaded (double-clicking on it will open it); then
+        run the installer program contained within.</para>
+      <para>After installation, you will have a start-menu shortcut
+        that you can use to run the tool.</para>
+    </sect1>
+    
+
+    <sect1 id="Linux">
+      <title>Linux Installation</title>
+      <para>To install the RPM, you must have root access. If you
+        do not, you will need your system administrator to
+        install the package for you.  If that isn't feasible or you
+        don't want to, you can instead download the Source package,
+        and compile the tools yourself, where you can install them
+        in your own home directory which does not require root
+        privileges.</para>
+      <para>To install the package:</para>
+      <para>First extract the rpm from the archive:</para>
+      <simplelist>
+        <member>gunzip convert-X.X.X-linux.tar.gz</member>
+        <member>tar xvf convert-X.X.X-linux.tar</member>
+      </simplelist>
+      <para>Then, as root, install the rpm:</para>
+      <simplelist>
+        <member>rpm -i convert-X.X.X.rpm</member>
+      </simplelist>
+      <para>(Of course you need to replace the X's with whatever
+        version you downloaded, for example: "rpm -i convert-2.1.9.rpm")
+      </para>
+      <para>After the package is installed, you can find out where it
+        was put by using this rpm command, which does not require root
+        access:</para>
+      <simplelist><member>rpm -ql stp | grep asf_convert</member></simplelist>
+      <para>You should see something like the following:</para>
+      <simplelist><member>/usr/local/bin/asf_convert</member></simplelist>
+      <para>which tells you that the package has been installed in
+        /usr/local, which is the default.</para>
+      <para>This directory needs to be added to your path, in order to
+        run the tools.  Exactly how you do this depends on which UNIX
+        shell you are using.</para>
+      <para>For example, suppose you've installed the software in
+        /opt/asf_tools.  For sh, ksh, bash, or the like, add these lines to your
+        ~/.profile or ~/.bashrc file:</para>
+      <simplelist>
+        <member>PATH=/opt/asf_tools/bin:$PATH</member>
+        <member>export PATH</member>
+      </simplelist>
+      <para>For csh or tcsh, add this line to your ~/.cshrc file:</para>
+      <simplelist>
+        <member>setenv PATH /opt/asf_tools/bin:$PATH</member>
+      </simplelist>
+      <para>If you've gone with the default installation location of
+        /usr/local, you may already have /usr/local/bin in your path,
+        in which case you don't need to do anything.</para>
+    </sect1>
+
+    <sect1 id="Source">
+      <title>Source Installation</title>
+      <para>After you've downloaded and extracted the archive, you
+      need to compile the tools before they can be installed. To do
+      this, make sure you're in the asf_tools directory, then:</para>
+      <para>First extract the directory tree from the archive:</para>
+      <simplelist>
+        <member>gunzip convert-X.X.X-src.tar.gz</member>
+        <member>tar xvf convert-X.X.X-src.tar</member>
+      </simplelist>
+      <para>Then build the tools. Please note that you will need
+      permissions to put files into [[installation location]]! The
+      default is /usr/local.</para>
+      <simplelist>
+        <member>cd asf_tools</member>
+        <member>./configure --prefix=[[installation location]]</member>
+        <member>make</member>
+      </simplelist>
+      <para>Next install them:</para>
+      <simplelist>
+        <member>make install</member>
+      </simplelist>
+      <para>Lastly you need to include the tools in your path. You do this
+      one of two ways depending on the UNIX shell you are using.</para>
+      <para>For sh, ksh, bash, and the like, add the following lines to
+      either the ~/.profile or ~/.bashrc file.</para>
+      <simplelist>
+        <member>PATH=[[installation location]]/bin:$PATH</member>
+        <member>export PATH</member>
+      </simplelist>
+      <para>For csh or tcsh, add this line to your ~/.cshrc file:</para>
+      <simplelist>
+        <member>setenv PATH [[installation location]]/bin:$PATH</member>
+      </simplelist>
+      <para>For example, say you would like to install the tools in
+      a folder called "asf_tools" in your home directory
+      (/home/jdoe/asf_tools), and you use the bourne (sh) UNIX shell</para>
+      <simplelist>
+        <member>./configure --prefix=/home/jdoe/asf_tools</member>
+        <member>make</member>
+        <member>make install</member>
+        <member>echo >> "PATH=/home/jdoe/asf_tools/bin:$PATH</member>
+        <member>echo >> "export PATH"</member>
+      </simplelist>
+    </sect1>
+  </chapter>
+
+  <chapter id="contacting-us">
+    <title>Contacting Us</title>
+    <para>If you have any questions or comments about this software,
+      we would love to hear from you!</para>
+    <address>
+      http://www.asf.alaska.edu
+      <email>uso@asf.alaska.edu</email>
+    </address>
+    <address>
+      Alaska Satellite Facility
+      Geophysical Institute
+      University of Alaska Fairbanks
+      P.O. Box 757320
+      Fairbanks, AK 99775-7320
+    </address>
+
+  </chapter>
+</book>
