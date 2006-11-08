@@ -381,3 +381,34 @@ pixel_float2byte(float paf, scale_t sample_mapping,
   }
   return pab;
 }
+
+// Putting this function here for now.
+
+// I don't really want to put it in libasf_raster/float_image (which really
+// is the most logical place), because I don't want to introduce a dependency
+// in there on asf_meta -- that code is much better without opening that
+// up.
+
+// Returns a new FloatImage, for the image corresponding to the given metadata.
+FloatImage *
+float_image_new_from_metadata(meta_parameters *meta, const char *file)
+{
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+
+    FILE * fp = FOPEN(file, "rb");
+    FloatImage * fi = float_image_new(ns, nl);
+
+    int i,j;
+    float *buf = MALLOC(sizeof(float)*ns);
+    for (i = 0; i < nl; ++i) {
+        get_float_line(fp, meta, i, buf);
+        for (j = 0; j < ns; ++j)
+            float_image_set_pixel(fi, j, i, buf[j]);
+    }
+
+    free(buf);
+    fclose(fp);
+
+    return fi;
+}

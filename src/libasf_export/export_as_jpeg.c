@@ -22,18 +22,23 @@ export_as_jpeg (const char *metadata_file_name,
   struct jpeg_error_mgr jerr;
   FILE *ofp;
 
-  asfRequire (md->general->data_type == REAL32,
-              "Input data type must be in big endian 32-bit floating point "
-              "format.\n");
+  //asfRequire (md->general->data_type == REAL32,
+  //            "Input data type must be in big endian 32-bit floating point "
+  //            "format.\n");
 
   /* Get the image data.  */
   asfPrintStatus ("Loading image...\n");
-  const off_t start_of_file_offset = 0;
-  FloatImage *iim
-    = float_image_new_from_file (md->general->sample_count,
-                                 md->general->line_count,
-                                 image_data_file_name, start_of_file_offset,
-                                 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  // Should be able to get rid of all this :
+  //const off_t start_of_file_offset = 0;
+  //FloatImage *iim
+  //  = float_image_new_from_file (md->general->sample_count,
+  //                               md->general->line_count,
+  //                               image_data_file_name, start_of_file_offset,
+  //                               FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+  FloatImage *iim =
+      float_image_new_from_metadata(md, image_data_file_name);
 
   /* We want to scale the image st the long dimension is less than or
      equal to the prescribed maximum, if any.  */
