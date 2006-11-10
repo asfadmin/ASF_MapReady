@@ -115,10 +115,14 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
  * file pointer  */
 FILE *openCeos(char *fName, char *outN, bin_state *s)
 {
-  char dataName[256];
+  char **dataName;
+  int ii, nBands=1;
   FILE *ret;
-  require_ceos_data(fName,dataName);
-  ret=FOPEN(dataName,"rb");
+  dataName = (char **) MALLOC(512*MAX_BANDS*sizeof(char));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    dataName[ii] = (char *) MALLOC(512*sizeof(char));
+  require_ceos_data(fName,dataName,&nBands);
+  ret=FOPEN(dataName[0],"rb");
   FSEEK64(ret,0,0);/*Seek to beginning of file*/
   getNextCeosLine(ret, s, fName, outN);/*Skip over first line of file*/
   return ret;

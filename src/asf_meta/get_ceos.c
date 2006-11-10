@@ -32,19 +32,25 @@ typedef enum {
 	CEOS_RCDR=51          // Radiometric Compensation Data Record - RSI
 } CEOS_RECORD_TYPE;
 
-int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
+int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
                   unsigned char **buff)
 {
 	FILE *fp;
 	char metaRecordName[256];
-	char dataName[256], leaderName[256];
+	char **dataName, leaderName[256];
 	struct HEADER  bufhdr;
-	int nOccurences=0, era=1;
+	int nOccurences=0, era=1, ii;
+	int nBands=1;
 
-	require_ceos_pair(inName, dataName, leaderName);
+	// Allocate memory
+	dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+	for (ii=0; ii<MAX_BANDS; ii++)
+	  dataName[ii] = (char *) MALLOC(512*sizeof(char));
+
+	require_ceos_pair(inName, dataName, leaderName, &nBands);
 
 	if (recordType==CEOS_IFILEDR)
-		strcpy(metaRecordName, dataName);
+		strcpy(metaRecordName, dataName[0]);
 	else {
 		strcpy(metaRecordName, leaderName);
 		/* If looking for FDR record type, set it to IFILEDR type */
@@ -86,7 +92,7 @@ int getCeosRecord(char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	return -1;
 }
 
-int get_atdr(char *filename,struct att_data_rec *rec)
+int get_atdr(const char *filename,struct att_data_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -97,7 +103,7 @@ int get_atdr(char *filename,struct att_data_rec *rec)
 	return era;
 }
 
-int get_dhr(char *filename,struct data_hist_rec *rec)
+int get_dhr(const char *filename,struct data_hist_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -108,7 +114,7 @@ int get_dhr(char *filename,struct data_hist_rec *rec)
 	return era;
 }
 
-int get_sdhr(char *filename,struct data_hist_rec *rec)
+int get_sdhr(const char *filename,struct data_hist_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -119,7 +125,7 @@ int get_sdhr(char *filename,struct data_hist_rec *rec)
 	return era;
 }
 
-int get_dqsr(char *filename,struct qual_sum_rec *rec)
+int get_dqsr(const char *filename,struct qual_sum_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -130,7 +136,7 @@ int get_dqsr(char *filename,struct qual_sum_rec *rec)
 	return era;
 }
 
-int get_dssr(char *filename,struct dataset_sum_rec *rec)
+int get_dssr(const char *filename,struct dataset_sum_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -141,7 +147,7 @@ int get_dssr(char *filename,struct dataset_sum_rec *rec)
 	return era;
 }
 
-int get_asf_facdr(char *filename,struct VFDRECV *rec)
+int get_asf_facdr(const char *filename,struct VFDRECV *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -152,7 +158,7 @@ int get_asf_facdr(char *filename,struct VFDRECV *rec)
 	return era;
 }
 
-int get_esa_facdr(char *filename,struct ESA_FACDR *rec)
+int get_esa_facdr(const char *filename,struct ESA_FACDR *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -163,7 +169,7 @@ int get_esa_facdr(char *filename,struct ESA_FACDR *rec)
 	return era;
 }
 
-int get_mpdr(char *filename,struct VMPDREC *rec)
+int get_mpdr(const char *filename,struct VMPDREC *rec)
 {
 	unsigned char *buff;
 	int era=getCeosRecord(filename,CEOS_MPDR,1,&buff);
@@ -175,7 +181,7 @@ int get_mpdr(char *filename,struct VMPDREC *rec)
 	return era;
 }
 
-int get_ppdr(char *filename,struct pos_data_rec *rec)
+int get_ppdr(const char *filename,struct pos_data_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -186,7 +192,7 @@ int get_ppdr(char *filename,struct pos_data_rec *rec)
 	return era;
 }
 
-int get_raddr(char *filename,struct VRADDR *rec)
+int get_raddr(const char *filename,struct VRADDR *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -196,7 +202,7 @@ int get_raddr(char *filename,struct VRADDR *rec)
 	}
 	return era;
 }
-int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec)
+int get_rsi_raddr(const char *filename, struct RSI_VRADDR *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -207,7 +213,7 @@ int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec)
 	return era;
 }
 
-int get_rsr(char *filename,struct rng_spec_rec *rec)
+int get_rsr(const char *filename,struct rng_spec_rec *rec)
 {
 	unsigned char *buff;
 	int era;
@@ -218,7 +224,7 @@ int get_rsr(char *filename,struct rng_spec_rec *rec)
 	return era;
 }
 
-int get_ifiledr(char *filename,struct IOF_VFDR *vfdr)
+int get_ifiledr(const char *filename,struct IOF_VFDR *vfdr)
 {
 	unsigned char *buff;
 	int era;
@@ -229,7 +235,7 @@ int get_ifiledr(char *filename,struct IOF_VFDR *vfdr)
 	return era;
 }
 
-int get_fdr(char *filename,struct FDR *fdr)
+int get_fdr(const char *filename,struct FDR *fdr)
 {
 	unsigned char *buff;
 	int era;
@@ -240,7 +246,7 @@ int get_fdr(char *filename,struct FDR *fdr)
 	return(era);
 }
 
-int get_ppr(char *filename,struct PPREC *ppr)
+int get_ppr(const char *filename,struct PPREC *ppr)
 {
 	unsigned char *buff;
 	int era;
@@ -251,7 +257,7 @@ int get_ppr(char *filename,struct PPREC *ppr)
 	return(era);
 }
 
-int get_rcdr(char *filename, struct radio_comp_data_rec *rcdr)
+int get_rcdr(const char *filename, struct radio_comp_data_rec *rcdr)
 {
 	unsigned char *buff;
 	int era;
@@ -262,7 +268,7 @@ int get_rcdr(char *filename, struct radio_comp_data_rec *rcdr)
 	return(era);
 }
 
-int get_shr(char *filename, struct scene_header_rec *shr)
+int get_shr(const char *filename, struct scene_header_rec *shr)
 {
 	unsigned char *buff;
 	int era;
@@ -296,7 +302,7 @@ int get_lfpr(char *filename,struct FPREC *fpr)
 	return(era);
 }
 
-int get_dfpr(char *filename,struct FPREC *nvdr)
+int get_dfpr(const char *filename,struct FPREC *nvdr)
 {
 	unsigned char *buff;
 	int era;
@@ -307,7 +313,7 @@ int get_dfpr(char *filename,struct FPREC *nvdr)
 	return(era);
 }
 
-int get_tr(char *filename,struct TREC *tr)
+int get_tr(const char *filename,struct TREC *tr)
 {
 	unsigned char *buff;
 	int era;
@@ -318,7 +324,7 @@ int get_tr(char *filename,struct TREC *tr)
 	return(era);
 }
 
-int get_nvdr(char *filename,struct VDREC *nvdr)
+int get_nvdr(const char *filename,struct VDREC *nvdr)
 {
 	unsigned char *buff;
 	int era;

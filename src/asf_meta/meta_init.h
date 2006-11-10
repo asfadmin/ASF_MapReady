@@ -17,7 +17,7 @@ DESCRIPTION:
 
 /* Useful stuff for meta initialization from CEOS metadata */
 typedef struct {
-   struct dataset_sum_rec dssr;
+  struct dataset_sum_rec dssr;
   struct scene_header_rec shr;
   enum {
     unknownFacility,
@@ -107,3 +107,4 @@ void ardop_init(const char *fName,meta_parameters *sar);
 #define EXPECTED_RSR 18.96 /* Expected range sampling rate, in MHz */
 #define EXPECTED_PRF 1700 // Expected PRF, in Hz
 double get_units(double value, double expectedValue);
+

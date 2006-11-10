@@ -18,6 +18,7 @@ typedef enum {
   CEOS_ldr,
   CEOS_LEA,
   CEOS_lea,
+  CEOS_LED,
   NUM_CEOS_METADATA_EXTS
 } ceos_metadata_ext_t;
 extern const char ceos_metadata_extensions[][8];
@@ -30,6 +31,7 @@ typedef enum {
   CEOS_raw,
   CEOS_DAT,
   CEOS_dat,
+  CEOS_IMG,
   NUM_CEOS_DATA_EXTS
 } ceos_data_ext_t;
 extern const char ceos_data_extensions[][8];
@@ -42,6 +44,7 @@ typedef enum {
    CEOS_raw_ldr_PAIR,
    CEOS_DAT_LEA_PAIR,
    CEOS_dat_lea_PAIR,
+   CEOS_IMG_LED_PAIR,
    NUM_CEOS_FILE_PAIRS
 } ceos_file_pairs_t;
 
@@ -59,22 +62,22 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char *metaName);
    if it is a CEOS data file (depending on our accepted CEOS extensions). If
    so, populate dataName with the appropriate name and return the appropriate
    ENUM ceos_data_ext_t value.  */
-ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName);
+ceos_data_ext_t get_ceos_data_name(const char *ceosName, char **dataName, int *nBands);
 
 /* If get_ceos_data_name fails to find a file, then exit the program.  */
-ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName);
+ceos_data_ext_t require_ceos_data(const char *ceosName, char **dataName, int *nBands);
 
 /* Given the name of a file (potentially with path in front of it), determine
    if it is one of a CEOS file pair (depending on our accepted CEOS file
    extensions). If so populate dataName & metaName with the appropriate names
    and return the appropriate ENUM ceos_file_pairs_t value.  */
-ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
-                                 char *metaName);
+ceos_file_pairs_t get_ceos_names(const char *ceosName, char **dataName,
+                                 char *metaName, int *nBands);
 
 /* Do as get_ceos_names unless there is no pair in which case exit the program
    with a failure.  */
-ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
-                                    char *metaName);
+ceos_file_pairs_t require_ceos_pair(const char *ceosName, char **dataName,
+                                    char *metaName, int *nBands);
 
 
 #endif

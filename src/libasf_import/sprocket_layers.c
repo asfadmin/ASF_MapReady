@@ -231,7 +231,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   char metaName[256], sprocketMetaName[256];
   char ampName[256], lookName[256], sigmaName[256];
   char lookTiePointName[256];
-  char junk1[256], junk2[256];
+  char **junk1, junk2[256];
 /*char latName[256], lonName[256];*/
   float *lookLayerBuf=NULL; /*Entire look layer has its own buffer*/
   float *ampBuf=NULL, *lookBuf=NULL, *sigmaBuf=NULL;
@@ -241,8 +241,13 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
   double re=NAN, rp=NAN;
 /*Calibration stuff*/
   double noise_table[MAX_tableRes];
+  int ii, nBands=1;
 
-  if (CEOS_dat_lea_PAIR==get_ceos_names(leaderName, junk1, junk2)) {
+  junk1 = (char **) MALLOC(512*MAX_BANDS*sizeof(char));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    junk1[ii] = (char *) MALLOC (512*sizeof(char));
+
+  if (CEOS_dat_lea_PAIR==get_ceos_names(leaderName, junk1, junk2, &nBands)) {
     rsiCeos=TRUE;
   }
 

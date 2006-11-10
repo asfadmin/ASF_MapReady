@@ -919,6 +919,28 @@ struct dataset_sum_rec {
     char   az_time_center[25];      /* zero-Doppler azimuth time center pixel */
     char   az_time_last[25];        /* zero-Doppler azimuth time last pixel */
     /****** ESA data set summary record fields *****/
+
+  // Begin ALOS data set summary record fields
+  short cal_data_indicator;   // calibration data indicator
+  int start_cal_up;           // start line number of calibration at upper image
+  int stop_cal_up;            // stop line number of calibration at upper image
+  int start_cal_bottom;       // start line number of calibration at bottom image
+  int stop_cal_bottom;        // stop line number of calibration at bottom image
+  short prf_switch;           // PRF switching indicator
+  int line_prf_switch;        // line locator of PRF switching
+  double beam_center_dir;     // direction of a beam center in a scene scenter
+  short yew_steering;         // yew steering mode flag
+  short param_table;          // parameter table number of automatically setting
+  double off_nadir_angle;     // nominal offnadir angle
+  short ant_beam_num;         // antenna beam number
+  char spare12[8];            // spare
+  double incid_a0;            // incidence angle constant term (a0)
+  double incid_a1;            // incidence angle linear term (a1)
+  double incid_a2;            // incidence angle quadratic term (a2)
+  double incid_a3;            // incidence angle cubic term (a3)
+  double incid_a4;            // incidence angle fourth term (a4)
+  double incid_a5;            // incidence angle fifth term (a5)
+  // End ALOS data set summary record fields
 };
 
 
@@ -1522,23 +1544,23 @@ void   Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir);
 int set_era(const char *inbasename,char *outldrname,int operation);
 
 /*Easier-to-use prototypes for fetching a single record from a CEOS file.*/
-int get_atdr(char *filename,struct att_data_rec *rec);
-int get_dhr(char *filename,struct data_hist_rec *rec);
-int get_sdhr(char *filename,struct data_hist_rec *rec);
-int get_dqsr(char *filename,struct qual_sum_rec *rec);
-int get_dssr(char *filename,struct dataset_sum_rec *rec);
-int get_asf_facdr(char *filename,struct VFDRECV *rec);
-int get_esa_facdr(char *filename,struct ESA_FACDR *rec);
-int get_mpdr(char *filename,struct VMPDREC *rec);
-int get_ppdr(char *filename,struct pos_data_rec *rec);
-int get_raddr(char *filename,struct VRADDR *rec);
-int get_rsi_raddr(char *filename, struct RSI_VRADDR *rec);
-int get_rsr(char *filename,struct rng_spec_rec *rec);
-int get_ifiledr(char *filename,struct IOF_VFDR *vfdr);
-int get_fdr(char *filename,struct FDR *rec);
-int get_ppr(char *filename,struct PPREC *rec);
-int get_rcdr(char *filename,struct radio_comp_data_rec *rcdr);
-int get_shr(char *filename, struct scene_header_rec *shr);
+int get_atdr(const char *filename,struct att_data_rec *rec);
+int get_dhr(const char *filename,struct data_hist_rec *rec);
+int get_sdhr(const char *filename,struct data_hist_rec *rec);
+int get_dqsr(const char *filename,struct qual_sum_rec *rec);
+int get_dssr(const char *filename,struct dataset_sum_rec *rec);
+int get_asf_facdr(const char *filename,struct VFDRECV *rec);
+int get_esa_facdr(const char *filename,struct ESA_FACDR *rec);
+int get_mpdr(const char *filename,struct VMPDREC *rec);
+int get_ppdr(const char *filename,struct pos_data_rec *rec);
+int get_raddr(const char *filename,struct VRADDR *rec);
+int get_rsi_raddr(const char *filename, struct RSI_VRADDR *rec);
+int get_rsr(const char *filename,struct rng_spec_rec *rec);
+int get_ifiledr(const char *filename,struct IOF_VFDR *vfdr);
+int get_fdr(const char *filename,struct FDR *rec);
+int get_ppr(const char *filename,struct PPREC *rec);
+int get_rcdr(const char *filename,struct radio_comp_data_rec *rcdr);
+int get_shr(const char *filename, struct scene_header_rec *shr);
 
 int get_vdr(char *filename,struct VDREC *rec);
 int get_lfpr(char *filename,struct FPREC *rec);

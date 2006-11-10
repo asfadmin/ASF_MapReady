@@ -482,6 +482,26 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	  strV(az_time_center,1838,24);
 	  strV(az_time_last,1862,24);
 	}
+	else if (strncmp(q->mission_id, "ALOS", 4)==0) {
+	  shrtV(cal_data_indicator,1766,4);
+	  intV(start_cal_up,1770,8);
+	  intV(stop_cal_up,1778,8);
+	  intV(start_cal_bottom,1786,8);
+	  intV(stop_cal_bottom,1794,8);
+	  shrtV(prf_switch,1802,4);
+	  intV(line_prf_switch,1806,8);
+	  fltV(beam_center_dir,1814,16);
+	  shrtV(yew_steering,1830,4);
+	  shrtV(param_table,1834,4);
+	  fltV(off_nadir_angle,1838,16);
+	  shrtV(ant_beam_num,1854,4);
+	  fltV(incid_a0,1886,20);
+	  fltV(incid_a1,1906,20);
+	  fltV(incid_a2,1926,20);
+	  fltV(incid_a3,1946,20);
+	  fltV(incid_a4,1966,20);
+	  fltV(incid_a5,1986,20);
+	}
 	/* Coded up the ALOS spec as I had it - does not seem to match 
 	   the data though. Left things here just in case.
 	  

@@ -50,6 +50,7 @@
 #endif
 
 #define EXTENSION_SEPARATOR '.'
+#define ALOS_EXTENSION_SEPARATOR '-'
 
 /* Speed of light */
 #define SPD_LIGHT 2.997924562e8
@@ -153,7 +154,8 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName);
    looks for the extension at the end of the file name. Otherwise it returns
    FALSE and fills 'extension' with an empty string. The extension separator
    is a '.' It assumes 'fileName' is only the file name (no path included) */
-int split_base_and_ext(char *fileName,int side,char *baseName,char *extension);
+int split_base_and_ext(char *fileName, int side, char separator,
+		       char *baseName, char *extension);
 
 /* first tries to open the given image name, then appends ".img" and tries again
    It returns a pointer to the opened file.*/

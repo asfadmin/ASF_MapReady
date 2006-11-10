@@ -37,6 +37,6 @@ meta_parameters *meta_create(const char *fName)
 		ardop_init(fName,meta);
 		success=TRUE;
 	}
-	if (success) meta_new2old(meta);
+	//if (success) meta_new2old(meta);
 	return meta;
 }

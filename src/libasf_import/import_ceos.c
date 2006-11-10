@@ -22,7 +22,7 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 /******************************************************************************
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
-void import_ceos(char *inDataName, char *inMetaName, char *lutName,
+void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
                  char *outBaseName, radiometry_t radiometry, int db_flag)
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
@@ -42,8 +42,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
-  strcpy(outDataName, outBaseName);
-  strcpy(outMetaName, outBaseName);
+  sprintf(outDataName, "%s%s", outBaseName, band);
+  sprintf(outMetaName, "%s%s", outBaseName, band);
   strcat(outMetaName, TOOLS_META_EXT);
 
   /* Create metadata */
@@ -163,7 +163,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
 
     /* Read single look complex data */
-    get_ifiledr(inDataName,&image_fdr);
+    //get_ifiledr(inDataName,&image_fdr);
+    get_ifiledr(inMetaName,&image_fdr);
     /* file + line header *
        Same change as for regular imagery. To be tested. */
     leftFill = image_fdr.lbrdrpxl;
@@ -233,7 +234,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
 
     /* Read single look complex data */
-    get_ifiledr(inDataName,&image_fdr);
+    //get_ifiledr(inDataName,&image_fdr);
+    get_ifiledr(inMetaName,&image_fdr);
     /* file + line header *
        Same change as for regular imagery. To be tested. */
     leftFill = image_fdr.lbrdrpxl;
@@ -362,7 +364,8 @@ void import_ceos(char *inDataName, char *inMetaName, char *lutName,
     fpOut=fopenImage(outDataName,"wb");
 
     /* Check size of the header */
-    get_ifiledr(inDataName,&image_fdr);
+    //get_ifiledr(inDataName,&image_fdr);
+    get_ifiledr(inMetaName,&image_fdr);
     leftFill = image_fdr.lbrdrpxl;
     rightFill = image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)

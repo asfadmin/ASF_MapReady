@@ -45,7 +45,7 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
     }
     /* Hmmm, didn't work, maybe it's got an extension on there already,
      * nix it and try again */
-    split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+    split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
     sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
     if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
       fclose(metaFP);
@@ -127,7 +127,7 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
 
   /* HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK:
    * Lop off any .par extension. So we open the datafile, not the meta file */
-  split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+  split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
   if      (0==strcmp(ext,".PAR")) { strcpy(fileName, baseName); }
   else if (0==strcmp(ext,".par")) { strcpy(fileName, baseName); }
 

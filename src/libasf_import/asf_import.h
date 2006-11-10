@@ -49,7 +49,7 @@ int firstRecordLen(char *ceosName);
 void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
-void import_ceos(char *inDataName, char *inMetaName, char *lutName,
+void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
                  char *outBaseName, radiometry_t radiometry, int db_flag);
 
 void import_envi(char *inDataName,char *inMetaName,char *outBaseName);

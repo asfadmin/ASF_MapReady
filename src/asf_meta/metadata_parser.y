@@ -134,6 +134,7 @@ void error_message(const char *err_mes, ...)
 #define MTL ( (meta_parameters *) current_block)
 #define MGENERAL ( (meta_general *) current_block)
 #define MSAR ( (meta_sar *) current_block)
+#define MOPTICAL ( (meta_optical *) current_block)
 #define MSTATE ( (meta_state_vectors *) current_block)
 #define MVECTOR ( (state_loc *) current_block)
 #define MPROJ ( (meta_projection *) current_block)
@@ -149,6 +150,8 @@ void select_current_block(char *block_name)
     { current_block = MTL->general; goto MATCHED; }
   if ( !strcmp(block_name, "sar") )
     { current_block = MTL->sar; goto MATCHED; }
+  if ( !strcmp(block_name, "optical") )
+    { current_block = MTL->optical; goto MATCHED; }
   if ( !strcmp(block_name, "state") ) {
     if (MTL->state_vectors == NULL)
       { MTL->state_vectors = meta_state_vectors_init(vector_count); }
@@ -459,6 +462,18 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "range_samp_rate") )
       { MSAR->range_sampling_rate = VALP_AS_DOUBLE; return; }
 }
+
+  /* Fields which normally go in the optical block of the metadata file.  */
+  if ( !strcmp(stack_top->block_name, "optical") ) {
+    if ( !strcmp(field_name, "correction_level") )
+      { strcpy(MOPTICAL->correction_level, VALP_AS_CHAR_POINTER); return; }      
+    if ( !strcmp(field_name, "cloud_percentage") )
+      { MOPTICAL->cloud_percentage = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "sun_azimuth_angle") )
+      { MOPTICAL->sun_azimuth_angle = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "sun_elevation_angle") )
+      { MOPTICAL->sun_elevation_angle = VALP_AS_DOUBLE; return; }
+  }
 
   /* Fields which normally go in the state block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "state") ) {

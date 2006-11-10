@@ -104,6 +104,23 @@ meta_sar *meta_sar_init(void)
 }
 
 /********************************************************
+ * meta_sar_init():
+ * Allocate memory for and initialize elements of a meta
+ * sar structure */
+meta_optical *meta_optical_init(void)
+{
+  meta_optical *optical = (meta_optical *)MALLOC(sizeof(meta_optical));
+
+  /* Fill with ludicrous values.  */
+  strcpy(optical->correction_level, MAGIC_UNSET_STRING);
+  optical->cloud_percentage = MAGIC_UNSET_DOUBLE;
+  optical->sun_azimuth_angle = MAGIC_UNSET_DOUBLE;
+  optical->sun_elevation_angle = MAGIC_UNSET_DOUBLE;
+
+  return optical;
+}
+
+/********************************************************
  * meta_projection_init():
  * Allocate memory for and initialize elements of a meta
  * projection structure */
@@ -199,8 +216,8 @@ meta_parameters *raw_init(void)
 {
   meta_parameters *meta = (meta_parameters *)MALLOC(sizeof(meta_parameters));
   meta->general         = meta_general_init();
-  meta->sar             = meta_sar_init();
-  meta->optical         = NULL;  /* Not yet in use */
+  meta->sar             = NULL;
+  meta->optical         = NULL;
   meta->thermal         = NULL;  /* Not yet in use */
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->stats           = NULL;
@@ -213,13 +230,13 @@ meta_parameters *raw_init(void)
 /* Initialize deprecated structure elements: Creates and initializes a
    meta_parameters structure, guessing at conceivable values.  These
    bogus values always end in "989", so you can tell them from real
-   values.  */
+   values.
   meta->geo   = MALLOC(sizeof(geo_parameters));
   meta->ifm   = MALLOC(sizeof(ifm_parameters));
-  meta->stVec = meta->state_vectors; /* Compatability alias.  */
+  meta->stVec = meta->state_vectors; // Compatability alias.
   meta->info  = NULL;
   
-  /* Guess at conceivable values for deprecated elements.  */
+  // Guess at conceivable values for deprecated elements.
   meta->geo->type = 'G';
   meta->geo->proj = NULL;
   meta->geo->lookDir = 'R';
@@ -242,7 +259,7 @@ meta_parameters *raw_init(void)
   meta->ifm->nLooks = 5;
   meta->ifm->orig_nLines = 25989;
   meta->ifm->orig_nSamples = 5989;
-/*  meta->ifm->lookCenter = 19.989;*/
+  //  meta->ifm->lookCenter = 19.989;*/
   
   return meta;
 }
@@ -347,6 +364,7 @@ void meta_free(meta_parameters *meta)
     FREE(meta->location);
     meta->location = NULL;
 
+    /*
     FREE(meta->geo);
     meta->geo = NULL;
     FREE(meta->ifm);
@@ -354,6 +372,7 @@ void meta_free(meta_parameters *meta)
     meta->stVec = NULL;
     FREE(meta->info);
     meta->info = NULL;
+    */
 
     for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++) {
       if (meta_ddr_structs[ii].meta == meta)

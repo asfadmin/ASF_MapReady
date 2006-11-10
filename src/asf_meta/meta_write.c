@@ -168,74 +168,90 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Value indicating no data for a pixel");
   meta_put_string(fp,"}", "","End general");
 
-/* SAR block.  */
-  meta_put_string(fp,"sar {","","Begin parameters used specifically in SAR imaging");
-  meta_put_string(fp,"polarization:",meta->sar->polarization, 
-		  "Signal polarization");
-  meta_put_char  (fp,"image_type:", meta->sar->image_type,
-		  "[S=slant range; G=ground range; P=map projected]");
-  meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
-		  "SAR Satellite look direction [R=right; L=left]");
-  meta_put_int   (fp,"look_count:",meta->sar->look_count,
-		  "Number of looks to take from SLC");
-  meta_put_int   (fp,"deskewed:",meta->sar->deskewed,
-		  "Image moved to zero doppler? [1=yes; 0=no]");
-  meta_put_int   (fp,"original_line_count:",meta->sar->original_line_count,
-		  "Number of lines in original image");
-  meta_put_int   (fp,"original_sample_count:",meta->sar->original_sample_count,
-		  "Number of samples in original image");
-  meta_put_double(fp,"line_increment:",meta->sar->line_increment,
-		  "Line increment for sampling");
-  meta_put_double(fp,"sample_increment:",meta->sar->sample_increment,
-		  "Sample increment for sampling");
-  meta_put_double(fp,"range_time_per_pixel:",meta->sar->range_time_per_pixel,
-		  "Time per pixel in range [s]");
-  meta_put_double(fp,"azimuth_time_per_pixel:",meta->sar->azimuth_time_per_pixel,
-		  "Time per pixel in azimuth [s]");
-  meta_put_double(fp,"slant_range_first_pixel:",meta->sar->slant_range_first_pixel,
-		  "Slant range to first pixel [m]");
-  meta_put_double(fp,"slant_shift:",meta->sar->slant_shift,
-		  "Error correction factor, in slant range [m]");
-  meta_put_double(fp,"time_shift:",meta->sar->time_shift,
-		  "Error correction factor, in time [s]");
-  meta_put_double(fp,"wavelength:",meta->sar->wavelength,
-		  "SAR carrier wavelength [m]");
-  meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency [Hz]");
-  meta_put_double(fp,"earth_radius:",meta->sar->earth_radius,
-		  "Earth radius at scene center [m]");
-  meta_put_double(fp,"earth_radius_pp:",meta->sar->earth_radius_pp,
-		  "Earth radius used by the PP during L0 processsing. [m]");
-  meta_put_double(fp,"satellite_height:",meta->sar->satellite_height,
-		  "Satellite height from earth's center [m]");
-  meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,
-		  "Satellite Binary Time");
-  meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,
-		  "Satellite Clock Time (UTC)");
-  meta_put_double(fp,"dopRangeCen:",meta->sar->range_doppler_coefficients[0],
-		  "Range doppler centroid [Hz]");
-  meta_put_double(fp,"dopRangeLin:",meta->sar->range_doppler_coefficients[1],
-		  "Range doppler per range pixel [Hz/pixel]");
-  meta_put_double(fp,"dopRangeQuad:",meta->sar->range_doppler_coefficients[2],
-		  "Range doppler per range pixel sq. [Hz/(pixel^2)]");
-  meta_put_double(fp,"dopAzCen:",meta->sar->azimuth_doppler_coefficients[0],
-		  "Azimuth doppler centroid [Hz]");
-  meta_put_double(fp,"dopAzLin:",meta->sar->azimuth_doppler_coefficients[1],
-		  "Azimuth doppler per azimuth pixel [Hz/pixel]");
-  meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],
-		  "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
-  if (META_VERSION >= 1.4) {
-    meta_put_double(fp,"azimuth_bandwidth:",meta->sar->azimuth_processing_bandwidth,
-                    "Azimuth processing bandwidth [Hz]");
-    meta_put_double(fp,"chirp_rate:",meta->sar->chirp_rate,
-                    "Chirp rate [Hz/sec]");
-    meta_put_double(fp,"pulse_duration:",meta->sar->pulse_duration,
-                    "Pulse duration [s]");
-    meta_put_double(fp,"range_samp_rate:",meta->sar->range_sampling_rate,
-                    "Range sampling rate [Hz]");
+  /* SAR block.  */
+  if (meta->sar) {
+    meta_put_string(fp,"sar {","","Begin parameters used specifically in SAR imaging");
+    meta_put_string(fp,"polarization:",meta->sar->polarization, 
+		    "Signal polarization");
+    meta_put_char  (fp,"image_type:", meta->sar->image_type,
+		    "[S=slant range; G=ground range; P=map projected]");
+    meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
+		    "SAR Satellite look direction [R=right; L=left]");
+    meta_put_int   (fp,"look_count:",meta->sar->look_count,
+		    "Number of looks to take from SLC");
+    meta_put_int   (fp,"deskewed:",meta->sar->deskewed,
+		    "Image moved to zero doppler? [1=yes; 0=no]");
+    meta_put_int   (fp,"original_line_count:",meta->sar->original_line_count,
+		    "Number of lines in original image");
+    meta_put_int   (fp,"original_sample_count:",meta->sar->original_sample_count,
+		    "Number of samples in original image");
+    meta_put_double(fp,"line_increment:",meta->sar->line_increment,
+		    "Line increment for sampling");
+    meta_put_double(fp,"sample_increment:",meta->sar->sample_increment,
+		    "Sample increment for sampling");
+    meta_put_double(fp,"range_time_per_pixel:",meta->sar->range_time_per_pixel,
+		    "Time per pixel in range [s]");
+    meta_put_double(fp,"azimuth_time_per_pixel:",meta->sar->azimuth_time_per_pixel,
+		    "Time per pixel in azimuth [s]");
+    meta_put_double(fp,"slant_range_first_pixel:",meta->sar->slant_range_first_pixel,
+		    "Slant range to first pixel [m]");
+    meta_put_double(fp,"slant_shift:",meta->sar->slant_shift,
+		    "Error correction factor, in slant range [m]");
+    meta_put_double(fp,"time_shift:",meta->sar->time_shift,
+		    "Error correction factor, in time [s]");
+    meta_put_double(fp,"wavelength:",meta->sar->wavelength,
+		    "SAR carrier wavelength [m]");
+    meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency [Hz]");
+    meta_put_double(fp,"earth_radius:",meta->sar->earth_radius,
+		    "Earth radius at scene center [m]");
+    meta_put_double(fp,"earth_radius_pp:",meta->sar->earth_radius_pp,
+		    "Earth radius used by the PP during L0 processsing. [m]");
+    meta_put_double(fp,"satellite_height:",meta->sar->satellite_height,
+		    "Satellite height from earth's center [m]");
+    meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,
+		    "Satellite Binary Time");
+    meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,
+		    "Satellite Clock Time (UTC)");
+    meta_put_double(fp,"dopRangeCen:",meta->sar->range_doppler_coefficients[0],
+		    "Range doppler centroid [Hz]");
+    meta_put_double(fp,"dopRangeLin:",meta->sar->range_doppler_coefficients[1],
+		    "Range doppler per range pixel [Hz/pixel]");
+    meta_put_double(fp,"dopRangeQuad:",meta->sar->range_doppler_coefficients[2],
+		    "Range doppler per range pixel sq. [Hz/(pixel^2)]");
+    meta_put_double(fp,"dopAzCen:",meta->sar->azimuth_doppler_coefficients[0],
+		    "Azimuth doppler centroid [Hz]");
+    meta_put_double(fp,"dopAzLin:",meta->sar->azimuth_doppler_coefficients[1],
+		    "Azimuth doppler per azimuth pixel [Hz/pixel]");
+    meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],
+		    "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+    if (META_VERSION >= 1.4) {
+      meta_put_double(fp,"azimuth_bandwidth:",meta->sar->azimuth_processing_bandwidth,
+		      "Azimuth processing bandwidth [Hz]");
+      meta_put_double(fp,"chirp_rate:",meta->sar->chirp_rate,
+		      "Chirp rate [Hz/sec]");
+      meta_put_double(fp,"pulse_duration:",meta->sar->pulse_duration,
+		      "Pulse duration [s]");
+      meta_put_double(fp,"range_samp_rate:",meta->sar->range_sampling_rate,
+		      "Range sampling rate [Hz]");
+    }
+    meta_put_string(fp,"}","","End sar");
   }
-  meta_put_string(fp,"}","","End sar");
+  
+  if (meta->optical) {
+    meta_put_string(fp,"optical {","","Begin parameters used specifically in "
+		    "optical imaging");
+    meta_put_string(fp,"correction_level:",meta->optical->correction_level, 
+		    "R - Georeferenced, G - Geocoded, D - DEM correction");
+    meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,
+		    "Cloud cover percentage [%]");
+    meta_put_double(fp,"sun_azimuth_angle:",meta->optical->sun_azimuth_angle,
+		    "Sun azimuth angle [degrees]");
+    meta_put_double(fp,"sun_elevation_angle:",meta->optical->sun_elevation_angle,
+		    "Sun elevation angle [degrees]");
+    meta_put_string(fp,"}","","End optical");
+  }
 
-/* State block.  */
+  /* State block.  */
   if (meta->state_vectors) {
     meta_put_string(fp,"state {","",
 		    "Begin list of state vectors for satellite, over image");
@@ -271,8 +287,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
 
 /* Projection parameters block, if appropriate.  */
-  if ( (meta->sar->image_type == 'P' || meta->general->image_data_type == DEM)
-       && meta->projection ) {
+//  if ( (meta->sar->image_type == 'P' || meta->general->image_data_type == DEM)
+//       && meta->projection ) {
+  if (meta->projection) {
     meta_put_string(fp,"projection {","","Map Projection parameters");
     switch (meta->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:

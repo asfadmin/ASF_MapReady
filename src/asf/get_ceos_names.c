@@ -9,8 +9,10 @@
 #include "get_ceos_names.h"
 
 
-const char ceos_metadata_extensions[][8] = {"",".L",".LDR",".ldr","LEA.","lea."};
-const char ceos_data_extensions[][8]     = {"",".D",".RAW",".raw","DAT.","dat."};
+const char ceos_metadata_extensions[][8] = 
+  {"",".L",".LDR",".ldr","LEA.","lea.","LED-"};
+const char ceos_data_extensions[][8] = 
+  {"",".D",".RAW",".raw","DAT.","dat.","IMG-"};
 
 
 /******************************************************************************
@@ -46,7 +48,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, char *metaName)
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+      split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
       sprintf(metaTemp,"%s%s%s",dirName,baseName,ceos_metadata_extensions[ii]);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
         fclose(metaFP);
@@ -65,7 +67,26 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, char *metaName)
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
-      split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
+      split_base_and_ext(fileName, PREPENDED_EXTENSION, '.', baseName, ext);
+      sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],baseName);
+      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+        fclose(metaFP);
+        strcpy(metaName,metaTemp);
+        return ii;
+      }
+    }
+    /* Third look for prefix style extensions (you can thank ALOS) */
+    else if (ceos_metadata_extensions[ii][strEnd] == ALOS_EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a base name */
+      sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],fileName);
+      if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
+        fclose(metaFP);
+        strcpy(metaName,metaTemp);
+        return ii;
+      }
+      /* Hmmm, didn't work, maybe it's got an extension on there already,
+       * nix it and try again */
+      split_base_and_ext(fileName, PREPENDED_EXTENSION, '-', baseName, ext);
       sprintf(metaTemp,"%s%s%s",dirName,ceos_metadata_extensions[ii],baseName);
       if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
         fclose(metaFP);
@@ -134,7 +155,7 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char *metaName)
  * if it is a CEOS data file (depending on our accepted CEOS extensions). If
  * so populate dataName with the appropriate name and return the appropriate
  * ENUM ceos_data_ext_t value.  */
-ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
+ceos_data_ext_t get_ceos_data_name(const char *ceosName, char **dataName, int *nBands)
 {
   char dirName[256], fileName[256];
   char dataTemp[1024];
@@ -142,7 +163,9 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
   char ext[256];
   FILE *dataFP;
   int begin=NO_CEOS_DATA+1, end=NUM_CEOS_DATA_EXTS;
-  int ii;
+  int ii, kk;
+
+  *nBands = 0;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(ceosName, dirName, fileName);
@@ -156,16 +179,18 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
       sprintf(dataTemp,"%s%s%s",dirName,fileName,ceos_data_extensions[ii]);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
         fclose(dataFP);
-        strcpy(dataName,dataTemp);
+        strcpy(dataName[0],dataTemp);
+	*nBands = 1;
         return ii;
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
-      split_base_and_ext(fileName, APPENDED_EXTENSION, baseName, ext);
+      split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
       sprintf(dataTemp,"%s%s%s",dirName,baseName,ceos_data_extensions[ii]);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
         fclose(dataFP);
-        strcpy(dataName,dataTemp);
+        strcpy(dataName[0],dataTemp);
+	*nBands = 1;
         return ii;
       }
     }
@@ -175,18 +200,58 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
       sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],baseName);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
         fclose(dataFP);
-        strcpy(dataName,dataTemp);
+        strcpy(dataName[0],dataTemp);
+	*nBands = 1;
         return ii;
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
-      split_base_and_ext(fileName, PREPENDED_EXTENSION, baseName, ext);
+      split_base_and_ext(fileName, PREPENDED_EXTENSION, '.', baseName, ext);
       sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],baseName);
       if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
         fclose(dataFP);
-        strcpy(dataName,dataTemp);
+        strcpy(dataName[0],dataTemp);
+	*nBands = 1;
         return ii;
       }
+    }
+    /* Third look for prefix style extensions (you can thank ALOS) */
+    else if (ceos_data_extensions[ii][strEnd] == ALOS_EXTENSION_SEPARATOR) {
+      /* Assume ceosName came to the function as a file name */
+      sprintf(dataTemp,"%s%sHH-%s",dirName,ceos_data_extensions[ii],fileName);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName[*nBands],dataTemp);
+        (*nBands)++;
+      }
+      sprintf(dataTemp,"%s%sHV-%s",dirName,ceos_data_extensions[ii],fileName);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName[*nBands],dataTemp);
+        (*nBands)++;
+      }
+      sprintf(dataTemp,"%s%sVH-%s",dirName,ceos_data_extensions[ii],fileName);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName[*nBands],dataTemp);
+        (*nBands)++;
+      }
+      sprintf(dataTemp,"%s%sVV-%s",dirName,ceos_data_extensions[ii],fileName);
+      if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+        fclose(dataFP);
+        strcpy(dataName[*nBands],dataTemp);
+        (*nBands)++;
+      }
+      for (kk=1; kk<10; kk++) {
+	sprintf(dataTemp,"%s%s0%d-%s",dirName,ceos_data_extensions[ii],kk,fileName);
+	if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+	  fclose(dataFP);
+	  strcpy(dataName[*nBands],dataTemp);
+	  (*nBands)++;
+	}
+      }
+      if (*nBands)
+	return ii;
     }
   }
   /* If we haven't returned yet there ain't no data file */
@@ -197,9 +262,9 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *dataName)
  * require_ceos_data:
  * If get_ceos_data_name fails to find a file, then exit the program.
  * Otherwise act like get_ceos_data_name  */
-ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
+ceos_data_ext_t require_ceos_data(const char *ceosName, char **dataName, int *nBands)
 {
-  ceos_data_ext_t ret = get_ceos_data_name(ceosName, dataName);
+  ceos_data_ext_t ret = get_ceos_data_name(ceosName, dataName, nBands);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_CEOS_DATA) {
@@ -249,19 +314,19 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char *dataName)
  * if it is one of a CEOS file pair (depending on our accepted CEOS file
  * extensions). If so populate dataName & metaName with the appropriate names
  * and return the appropriate ENUM ceos_file_pairs_t value.*/
-ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
-                                 char *metaName)
+ceos_file_pairs_t get_ceos_names(const char *ceosName, char **dataName,
+                                 char *metaName, int *nBands)
 {
-  if (   get_ceos_data_name(ceosName, dataName)     == CEOS_D
-      && get_ceos_metadata_name(ceosName, metaName) == CEOS_L)
+  if (   get_ceos_data_name(ceosName, dataName, nBands) == CEOS_D
+      && get_ceos_metadata_name(ceosName, metaName)     == CEOS_L)
     return CEOS_D_L_PAIR;
 
-  if (   get_ceos_data_name(ceosName, dataName)     == CEOS_RAW
-      && get_ceos_metadata_name(ceosName, metaName) == CEOS_LDR)
+  if (   get_ceos_data_name(ceosName, dataName, nBands) == CEOS_RAW
+      && get_ceos_metadata_name(ceosName, metaName)     == CEOS_LDR)
     return CEOS_RAW_LDR_PAIR;
 
-  if (   get_ceos_data_name(ceosName, dataName)     == CEOS_dat
-      && get_ceos_metadata_name(ceosName, metaName) == CEOS_lea)
+  if (   get_ceos_data_name(ceosName, dataName, nBands) == CEOS_dat
+      && get_ceos_metadata_name(ceosName, metaName)     == CEOS_lea)
     return CEOS_dat_lea_PAIR;
 
   return NO_CEOS_FILE_PAIR;
@@ -271,33 +336,37 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *dataName,
  * require_ceos_pair:
  * Do as get_ceos_names would unless there is no pair in which case exit the
  * program with a failure.  */
-ceos_file_pairs_t require_ceos_pair(const char *ceosName, char *dataName,
-                                    char *metaName)
+ceos_file_pairs_t require_ceos_pair(const char *ceosName, char **dataName,
+                                    char *metaName, int *nBands)
 {
   char extensionList[128];
   int andFlag=TRUE;
   int begin=NO_CEOS_FILE_PAIR+1, end=NUM_CEOS_FILE_PAIRS;
   int ii;
 
-  if (   require_ceos_data(ceosName, dataName)     == CEOS_D
-      && require_ceos_metadata(ceosName, metaName) == CEOS_L)
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_D
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_L)
     return CEOS_D_L_PAIR;
 
-  if (   require_ceos_data(ceosName, dataName)     == CEOS_RAW
-      && require_ceos_metadata(ceosName, metaName) == CEOS_LDR)
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_RAW
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_LDR)
     return CEOS_RAW_LDR_PAIR;
 
-  if (   require_ceos_data(ceosName, dataName)     == CEOS_raw
-      && require_ceos_metadata(ceosName, metaName) == CEOS_ldr)
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_raw
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_ldr)
     return CEOS_raw_ldr_PAIR;
 
-  if (   require_ceos_data(ceosName, dataName)     == CEOS_DAT
-      && require_ceos_metadata(ceosName, metaName) == CEOS_LEA)
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_DAT
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_LEA)
     return CEOS_DAT_LEA_PAIR;
 
-  if (   require_ceos_data(ceosName, dataName)     == CEOS_dat
-      && require_ceos_metadata(ceosName, metaName) == CEOS_lea)
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_dat
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_lea)
     return CEOS_dat_lea_PAIR;
+
+  if (   require_ceos_data(ceosName, dataName, nBands) == CEOS_IMG
+      && require_ceos_metadata(ceosName, metaName)     == CEOS_LED)
+    return CEOS_IMG_LED_PAIR;
 
 /****** We should never actually get here. The above code should either ******
  ****** return or exit with an error message, BUT... just in case       ******/

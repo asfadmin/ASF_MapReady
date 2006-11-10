@@ -33,6 +33,9 @@
    designed to correspond with.  */
 #define META_VERSION 1.6
 
+// Maximum number of bands that are supported by the ingest.
+#define MAX_BANDS 4
+
 /******************Baseline Utilities******************/
 typedef struct {
 	double Bn;	 /* Normal Baseline: perpendicular to look direction.*/
@@ -270,9 +273,12 @@ typedef struct {
  * NOT YET IN USE
  */
 typedef struct {
-  double cloud_pct;                  /* Cloud cover percentage */
-  double sun_az_angle;               /* Sun azimuth angle      */
-  double sun_elev_angle;             /* Sun elevation angle    */
+  char correction_level[5];        // R - Georeferenced
+                                   // G - Geocoded
+                                   // D - DEM correction
+  double cloud_percentage;         // Cloud cover percentage
+  double sun_azimuth_angle;        // Sun azimuth angle
+  double sun_elevation_angle;      // Sun elevation angle
 } meta_optical;
 
 
@@ -526,6 +532,7 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta);
 /*Initialize meta struct & stub structs to dummy values*/
 meta_general *meta_general_init(void);
 meta_sar *meta_sar_init(void);
+meta_optical *meta_optical_init(void);
 meta_projection *meta_projection_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_stats *meta_stats_init(void);

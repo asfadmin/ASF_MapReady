@@ -206,18 +206,18 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName)
  * looks for the extension at the end of the file name. Otherwise it returns
  * FALSE and fills 'extension' with an empty string. The extension separator
  * is a '.' It assumes 'fileName' is only the file name (no path included) */
-int split_base_and_ext(char *fileName, int side, char *baseName,
-                       char *extension)
+int split_base_and_ext(char *fileName, int side, char separator,
+		       char *baseName, char *extension)
 {
    int ii;
 
    if (side == APPENDED_EXTENSION) {
-      /* Work backwards until we hit an extension separator. ('.') */
-      for (ii=strlen(fileName)-1; (ii>0) && (fileName[ii]!='.'); ii--) ;
+      /* Work backwards until we hit an extension separator. */
+      for (ii=strlen(fileName)-1; (ii>0) && (fileName[ii]!=separator); ii--) ;
    }
    else if (side == PREPENDED_EXTENSION) {
-      /* Work forwards until we hit an extension separator. ('.') */
-      for (ii=0; (ii<strlen(fileName)) && (fileName[ii]!='.'); ii++) ;
+      /* Work forwards until we hit an extension separator. */
+      for (ii=0; (ii<strlen(fileName)) && (fileName[ii]!=separator); ii++) ;
    }
    else {
       strcpy(baseName,fileName);
@@ -225,13 +225,13 @@ int split_base_and_ext(char *fileName, int side, char *baseName,
       return FALSE;
    }
 
-   if ((fileName[ii]=='.') && (side==APPENDED_EXTENSION)) {
+   if ((fileName[ii]==separator) && (side==APPENDED_EXTENSION)) {
       strcpy(baseName, fileName);
       baseName[ii] = '\0';
       strcpy(extension, &fileName[ii]);
       return TRUE;
    }
-   if ((fileName[ii]=='.') && (side==PREPENDED_EXTENSION)) {
+   if ((fileName[ii]==separator) && (side==PREPENDED_EXTENSION)) {
       strcpy(baseName, &fileName[ii+1]);
       strcpy(extension, fileName);
       extension[ii+1] = '\0';

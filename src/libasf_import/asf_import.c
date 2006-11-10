@@ -120,13 +120,19 @@ int asf_import(radiometry_t radiometry, int db_flag,
 	       double *p_correct_y_pixel_size, char *inMetaNameOption,
 	       char *inBaseName, char *outBaseName)
 {
-    char inDataName[256]="", inMetaName[256]="";
-    char unscaledBaseName[256]="";
+    char **inBandName, inDataName[512]="", inMetaName[512]="";
+    char unscaledBaseName[256]="", band[10]="", tmp[10]="";
     int do_resample;
     int do_metadata_fix;
     double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
+    int ii, kk, nBands;
 
     asfPrintStatus("Importing: %s\n", inBaseName);
+
+    // Allocate memory
+    inBandName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+    for (ii=0; ii<MAX_BANDS; ii++)
+      inBandName[ii] = (char *) MALLOC(512*sizeof(char));
 
     // Determine some flags
     do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
@@ -148,14 +154,30 @@ int asf_import(radiometry_t radiometry, int db_flag,
     if (strncmp(format_type, "CEOS", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
         if (inMetaNameOption == NULL)
-            require_ceos_pair(inBaseName, inDataName, inMetaName);
+            require_ceos_pair(inBaseName, inBandName, inMetaName, &nBands);
         else {
             /* Allow the base name to be different for data & meta */
-            require_ceos_data(inBaseName, inDataName);
+            require_ceos_data(inBaseName, inBandName, &nBands);
             require_ceos_metadata(inMetaNameOption, inMetaName);
         }
-        import_ceos(inDataName, inMetaName, lutName, unscaledBaseName,
-                    radiometry, db_flag);
+	for (ii=0; ii<nBands; ii++) {
+	  strcpy(band, "");
+	  if (strncmp(inBandName[ii], "IMG-HH", 6)==0) 
+	    strcpy(band, "_HH");
+	  if (strncmp(inBandName[ii], "IMG-HV", 6)==0) 
+	    strcpy(band, "_HV");
+	  if (strncmp(inBandName[ii], "IMG-VH", 6)==0) 
+	    strcpy(band, "_VH");
+	  if (strncmp(inBandName[ii], "IMG-VV", 6)==0) 
+	    strcpy(band, "_VV");
+	  for (kk=1; kk<10; kk++) {
+	    sprintf(tmp, "IMG-0%d", kk);
+	    if (strncmp(inBandName[ii], tmp, 6)==0) 
+	      sprintf(band, "_0%d", kk);
+	  }
+	  import_ceos(inBandName[ii], band, inBaseName, lutName, unscaledBaseName,
+		      radiometry, db_flag);
+	}
     }
     /* Ingest ENVI format data */
     else if (strncmp(format_type, "ENVI", 4) == 0) {

@@ -25,21 +25,40 @@ PROGRAM HISTORY:
 #include "dateUtil.h"
 #include "get_ceos_names.h"
 
+// ALOS beam modes
+char *alos_beam_mode[132]={
+  "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+  "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+  "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+  "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+  "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+  "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+  "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+  "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+  "WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2",
+  "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+  "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+  "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+  "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+  "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
+  "PLR11","PLR12"};
+
+
 /* Internal Prototypes */
 void ceos_init_sar(const char *in_fName,meta_parameters *meta);
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);
-void ceos_init_scansar(char *leaderName, meta_parameters *meta, 
+void ceos_init_scansar(const char *leaderName, meta_parameters *meta, 
 		       struct dataset_sum_rec *dssr,
 		       struct VMPDREC *mpdr, struct VFDRECV *asf_facdr);
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr);
-ceos_description *get_ceos_description(char *fName);
-ceos_description *get_sensor(char *fName);
-double get_firstTime(char *fName);
-void get_polarization (char *fName, char *polarization, double *chirp);
+ceos_description *get_ceos_description(const char *fName);
+ceos_description *get_sensor(const char *fName);
+double get_firstTime(const char *fName);
+void get_polarization (const char *fName, char *polarization, double *chirp);
 
 /* Prototypes from meta_init_stVec.c */
-void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *sar);
+void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *sar);
 double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
                      meta_parameters *meta);
 
@@ -57,11 +76,17 @@ int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
-   char dataName[255],leaderName[255];/* CEOS names, typically .D and .L      */
+   char **dataName,leaderName[255];/* CEOS names, typically .D and .L      */
    ceos_description *ceos=NULL;
+   int ii, nBands=1;
 
-   require_ceos_pair(in_fName, dataName, leaderName);
-   ceos = get_sensor(leaderName);
+   // Allocate memory
+   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+   for (ii=0; ii<MAX_BANDS; ii++)
+     dataName[ii] = (char *) MALLOC(512*sizeof(char));
+
+   require_ceos_pair(in_fName, dataName, leaderName, &nBands);
+   ceos = get_sensor(in_fName);
 
    if (ceos->sensor == SAR || ceos->sensor == PALSAR)
      ceos_init_sar(in_fName, meta);
@@ -78,7 +103,7 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 {
-   char dataName[255],leaderName[255];/* CEOS names, typically .D and .L      */
+   char **dataName,leaderName[255];/* CEOS names, typically .D and .L      */
    char fac[50],sys[50],ver[50];     /* Fields describing the SAR processor   */
    ceos_description *ceos=NULL;
    struct dataset_sum_rec *dssr=NULL;/* Data set summary record               */
@@ -95,40 +120,56 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    hms_time time;
    double firstTime, centerTime;
    char beamname[32],beamtype[32];
+   int ii, nBands=1;
+
+   // Allocate memory
+   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+   for (ii=0; ii<MAX_BANDS; ii++)
+     dataName[ii] = (char *) MALLOC(512*sizeof(char));
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
-   require_ceos_pair(in_fName, dataName, leaderName);
-   ceos = get_ceos_description(leaderName);
+   require_ceos_pair(in_fName, dataName, leaderName, &nBands);
+   //   ceos = get_ceos_description(leaderName);
+   ceos = get_ceos_description(in_fName);
+   meta->sar = meta_sar_init();
 
    dssr = &ceos->dssr;
    iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
-   if ( -1 == get_ifiledr(dataName, iof))  { FREE(iof); iof = NULL; }
+   //if ( -1 == get_ifiledr(dataName, iof))  { FREE(iof); iof = NULL; }
+   if ( -1 == get_ifiledr(in_fName, iof))  { FREE(iof); iof = NULL; }
    mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
    /* Something funny about CDPF SLCs and map projection record: cheezy fix */
    if (strncmp(dssr->fac_id,"CDPF",4)!=0) {
-     if ( -1 == get_mpdr(leaderName, mpdr))    { FREE(mpdr); mpdr = NULL; }
+     //     if ( -1 == get_mpdr(leaderName, mpdr))    { FREE(mpdr); mpdr = NULL; }
+     if ( -1 == get_mpdr(in_fName, mpdr))    { FREE(mpdr); mpdr = NULL; }
    }
    else mpdr = NULL;
    fdr = (struct FDR*) MALLOC(sizeof(struct FDR));
-   if ( -1 == get_fdr(leaderName, fdr))      { FREE(fdr); fdr = NULL; }
+   //if ( -1 == get_fdr(leaderName, fdr))      { FREE(fdr); fdr = NULL; }
+   if ( -1 == get_fdr(in_fName, fdr))      { FREE(fdr); fdr = NULL; }
    ppdr = (struct pos_data_rec*) MALLOC(sizeof(struct pos_data_rec));
-   if ( -1 == get_ppdr(leaderName, ppdr))    {FREE(ppdr); ppdr = NULL; }
+   //if ( -1 == get_ppdr(leaderName, ppdr))    {FREE(ppdr); ppdr = NULL; }
+   if ( -1 == get_ppdr(in_fName, ppdr))    {FREE(ppdr); ppdr = NULL; }
    ppr = (struct PPREC*) MALLOC(sizeof(struct PPREC));
-   if ( -1 == get_ppr(leaderName, ppr))      { FREE(ppr); ppr = NULL; }
+   //if ( -1 == get_ppr(leaderName, ppr))      { FREE(ppr); ppr = NULL; }
+   if ( -1 == get_ppr(in_fName, ppr))      { FREE(ppr); ppr = NULL; }
    /* Fill either asf_facdr or esa_facdr depending on which is there */
    if ((fdr!=NULL) && (fdr->l_facdr==1717)) {
       asf_facdr=(struct VFDRECV*)MALLOC(sizeof(struct VFDRECV));
-      if ( -1 == get_asf_facdr(leaderName, asf_facdr))
+      //if ( -1 == get_asf_facdr(leaderName, asf_facdr))
+      if ( -1 == get_asf_facdr(in_fName, asf_facdr))
          { FREE(asf_facdr); asf_facdr = NULL; }
    }
    else if ((fdr->l_facdr==12288) && (strncmp(dssr->fac_id,"CDPF",4)!=0)) {
       esa_facdr=(struct ESA_FACDR*)MALLOC(sizeof(struct ESA_FACDR));
-      if ( -1 == get_esa_facdr(leaderName, esa_facdr))
+      //if ( -1 == get_esa_facdr(leaderName, esa_facdr))
+      if ( -1 == get_esa_facdr(in_fName, esa_facdr))
          { FREE(esa_facdr); esa_facdr = NULL; }
    }
    rcdr = (struct radio_comp_data_rec *)MALLOC(sizeof(struct radio_comp_data_rec));
-   if ( -1 == get_rcdr(leaderName, rcdr)) {
+   //if ( -1 == get_rcdr(leaderName, rcdr)) {
+   if ( -1 == get_rcdr(in_fName, rcdr)) {
      free(rcdr);
      rcdr = NULL;
    }    
@@ -159,17 +200,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       sprintf(meta->sar->polarization, "HH");
    }
    else if (strncmp(dssr->sensor_id,"ALOS",4)==0) {
-     int kk;
      strcpy(meta->general->sensor,"ALOS");
-     strcpy(meta->general->mode, "???");
-     /*
-     for (kk=0; kk<rcdr->num_rec; kk++) {
-       strcpy(beamtype,rcdr->beam_type[kk]);
-       strtok(beamtype," ");
-       sprintf("beam type: %s\n",beamtype);
-     }
-     */
-     get_polarization(dataName, meta->sar->polarization, &meta->sar->chirp_rate);
+     strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
+     get_polarization(dataName[0], meta->sar->polarization, &meta->sar->chirp_rate);
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
      /* probably need to check incidence angle to figure out what is going on */
@@ -228,7 +261,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       }
       if ((ppr) &&
           (   (strncmp(dssr->fac_id,"CDPF",4)==0)
-           || (strncmp(dssr->fac_id,"FOCUS",5)==0))) {
+           || (strncmp(dssr->fac_id,"FOCUS",5)==0)
+	      || (strncmp(dssr->fac_id,"RSI",3)==0))) {
         strcpy(beamname, ppr->beam_type);
       }
       strcpy(meta->general->mode, beamname);
@@ -458,7 +492,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
                                           / asf_facdr->swathvel;
     }
    else {
-      firstTime = get_firstTime(dataName);
+      firstTime = get_firstTime(dataName[0]);
       if (ceos->facility == ESA || ceos->processor == FOCUS) {
         date_dssr2time(dssr->az_time_first, &time);
         firstTime = date_hms2sec(&time);
@@ -550,7 +584,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
   * meta->state_vectors structure be filled */
-   ceos_init_stVec(leaderName,ceos,meta);
+   ceos_init_stVec(in_fName,ceos,meta);
 
    /* UK-PAF provides only one state vector with its raw data.
       Copy the contents over to create two other ones for the propagation */
@@ -572,7 +606,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    // Initialize ScanSAR data
    if (strcmp(beamname,"SNA")==0 || strcmp(beamname,"SNB")==0 || 
        strcmp(beamname,"SWA")==0 || strcmp(beamname,"SWB")==0)
-     ceos_init_scansar(leaderName, meta, dssr, mpdr, asf_facdr);
+     //ceos_init_scansar(leaderName, meta, dssr, mpdr, asf_facdr);
+     ceos_init_scansar(in_fName, meta, dssr, mpdr, asf_facdr);
 
    /* Let's get the earth radius and satellite height straightened out */
    if (asf_facdr) {     /* Get earth radius & satellite height if we can */
@@ -653,27 +688,58 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 {
-  char dataName[255],leaderName[255]; // CEOS names, typically .D and .L
-  ceos_description *ceos=NULL; 
+  char **dataName,leaderName[255]; // CEOS names, typically .D and .L
+  ceos_description *ceos=NULL;
+  char *substr;
+  int ii, nBands=1;
   
-  require_ceos_pair(in_fName, dataName, leaderName);
-  ceos = get_ceos_description(leaderName);
+  // Allocate memory
+  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    dataName[ii] = (char *) MALLOC(512*sizeof(char));
+
+  require_ceos_pair(in_fName, dataName, leaderName, &nBands);
+  //  ceos = get_ceos_description(leaderName);
+  ceos = get_ceos_description(in_fName);
+  meta->optical = meta_optical_init();
   
   // General block
   strcpy(meta->general->sensor, ceos->shr.mission_id);
   strtok(meta->general->sensor, " "); // Remove spaces from field
-  if (ceos->sensor == AVNIR)
+  if (ceos->sensor == AVNIR) {
     sprintf(meta->general->sensor_name,"AVNIR");
+    // mode
+    substr = ceos->shr.product_id;
+    substr++;
+    if (strncmp(substr,"1A",2)==0)
+      strcpy(meta->general->mode, "1A");
+    else if (strncmp(substr,"1B1",3)==0)
+      strcpy(meta->general->mode, "1B1");
+    else if (strncmp(substr,"1B2",3)==0)
+      strcpy(meta->general->mode, "1B2");
+    // center latitude and longitude
+    if (strcmp(meta->general->mode,"1A")==0 ||
+	strcmp(meta->general->mode,"1B1")==0) {
+      meta->general->center_latitude = ceos->shr.sc_lat;
+      meta->general->center_longitude = ceos->shr.sc_lon;
+    }
+    else if (strcmp(meta->general->mode,"1B2")==0) {
+      meta->general->center_latitude = ceos->shr.sc_lat2;
+      meta->general->center_longitude = ceos->shr.sc_lon2;
+    }
+  }
   else if (ceos->sensor == PRISM)
     sprintf(meta->general->sensor_name,"PRISM");
-  strcpy(meta->general->mode, "STD");
   // processor ???
   meta->general->data_type = BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   strcpy(meta->general->system, meta_get_system());
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
-  // frame ???
+  substr = ceos->shr.sc_id;
+  for (ii=0; ii<11; ii++)
+    substr++;
+  meta->general->frame = atoi(substr);
   // band_number ???
   meta->general->line_count = ceos->shr.lines;
   meta->general->sample_count = ceos->shr.samples;
@@ -681,13 +747,31 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   // start_sample
   // x_pixel_size
   // y_pixel_size
-  meta->general->center_latitude = ceos->shr.sc_lat; // needs refining
-  meta->general->center_longitude = ceos->shr.sc_lon; // needs refining
   // re_major
   // re_minor
   // bit_error_rate
   // missing_lines
   // no_data
+
+  // Optical block
+  if (strcmp(meta->general->mode,"1A")==0)
+    strcpy(meta->optical->correction_level,"");
+  else {
+    substr = ceos->shr.proc_code;
+    for (ii=0; ii<6; ii++)
+      substr++;
+    substr[3] = '\0';
+    strncpy(meta->optical->correction_level, substr, 4);
+  }
+  substr = ceos->shr.sun_angle;
+  for (ii=0; ii<6; ii++)
+    substr++;
+  substr[3] = '\0';
+  meta->optical->sun_elevation_angle = atof(substr);
+  for (ii=0; ii<5; ii++)
+    substr++;
+  substr[3] = '\0';
+  meta->optical->sun_azimuth_angle = atof(substr);
 
   FREE(ceos);
 }
@@ -696,7 +780,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 // Non-ASF ScanSAR data do not follow JPL's along-track/cross-track convention
 // Have to come up with a new initialization strategy, otherwise we run into
 // problems, especially with earth radius calculations
-void ceos_init_scansar(char *leaderName, meta_parameters *meta, 
+void ceos_init_scansar(const char *leaderName, meta_parameters *meta, 
 		       struct dataset_sum_rec *dssr,
 		       struct VMPDREC *mpdr, struct VFDRECV *asf_facdr)
 {
@@ -893,7 +977,7 @@ void atct_init(meta_projection *proj,stateVector st)
  * Extract a ceos_description structure from given CEOS file. This contains
  * "meta-meta-"data, data about the CEOS, such as the generating facility, a
  * decoded product type, etc.*/
-ceos_description *get_ceos_description(char *fName)
+ceos_description *get_ceos_description(const char *fName)
 {
   int sar_image;
   char *versPtr,*satStr;
@@ -1110,7 +1194,7 @@ ceos_description *get_ceos_description(char *fName)
 }
 
 // Determine sensor to see which initialization function to call
-ceos_description *get_sensor(char *fName)
+ceos_description *get_sensor(const char *fName)
 {
   int sar_image;
   char *satStr, *sensorStr;
@@ -1169,7 +1253,7 @@ ceos_description *get_sensor(char *fName)
 function extracts the acquisition time of the first line
 out of the line header
 -----------------------------------*/
-double get_firstTime (char *fName)
+double get_firstTime (const char *fName)
 {
    FILE *fp;
    struct HEADER hdr;
@@ -1191,7 +1275,7 @@ double get_firstTime (char *fName)
 }
 
 // function to figure out beam mode, pixel size and polarization
-void get_polarization (char *fName, char *polarization, double *chirp)
+void get_polarization (const char *fName, char *polarization, double *chirp)
 {
    FILE *fp;
    struct HEADER hdr;
@@ -1223,15 +1307,16 @@ void get_polarization (char *fName, char *polarization, double *chirp)
      polarization[1] = 'V';
    else
      polarization[1] = '_';
+   polarization[2]= ' ';
 
    // check for single, dual or quad pol
    // somebody messed up the spec again - looks like single and dual are mixed up
    if (linehdr.sar_cib == 1)
-     strcat(polarization, " dual"); // as per specs: single
+     strcat(polarization, "single");
    else if (linehdr.sar_cib == 2)
-     strcat(polarization, " single"); // as per specs: dual
+     strcat(polarization, "dual");
    else if (linehdr.sar_cib == 4)
-     strcat(polarization, " quad");
+     strcat(polarization, "quad");
 
    // determine chirp rate
    chirp_rate = linehdr.chirp_linear * 1000.0;

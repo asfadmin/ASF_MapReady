@@ -100,7 +100,7 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
  * Ceos_init_stVec:
  * Reads state vectors from given CEOS file, writing them in the
  * appropriate format to SAR parameters structure.*/
-void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
+void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *meta)
 {
 	int i;
 	double timeStart=0.0;/*Time of first state vector, relative to image start.*/
@@ -143,12 +143,12 @@ void ceos_init_stVec(char *fName,ceos_description *ceos,meta_parameters *meta)
 		s->julDay = (int) ppdr.gmt_day;
 		s->second = ppdr.gmt_sec;
 	} 
-	else if (ceos->facility==RSI)
-	  areInertialVelocity = 1;
 	else
 	{/*Most facility's state vectors don't necessarily start
 	at the same time as the image.*/
-		timeStart=get_timeDelta(ceos,&ppdr,meta);
+	  timeStart=get_timeDelta(ceos,&ppdr,meta);
+	  if (ceos->facility==RSI)
+	    areInertialVelocity = 1;
 	}
 
 /*Fill ouput record with state vectors.*/
