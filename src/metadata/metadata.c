@@ -131,13 +131,14 @@ BUGS:
 
 int main(int argc, char **argv)
 {
-  char  dataName[256], leaderName[256];
+  char  **dataName, leaderName[256];
   int	j, itype=-99, nrecs;
   int   reqrec, era;
   int   fileFlag=0;
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
+  int ii, nBands=1;
 
   struct VFDRECV         *facdr;
   struct VRADDR          *raddr;
@@ -180,7 +181,12 @@ int main(int argc, char **argv)
   era = 1;  /* Used to use set_era() to find if data was pre or post RADARSAT
              * Now we don't support pre-RADARSAT, so era is always 1 (post) */
 
-  get_ceos_names(argv[optind+1], dataName, leaderName);
+  // Allocate memory
+  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    dataName[ii] = (char *) MALLOC(512*sizeof(char));
+  
+  get_ceos_names(argv[optind+1], dataName, leaderName, &nBands);
 
   nrecs = (int) strlen(argv[optind]);
   for (j = 0; j < nrecs; j++)
@@ -250,7 +256,7 @@ int main(int argc, char **argv)
 		free(rsr);
 		break;
      case (192): vfdr=(struct IOF_VFDR *) malloc (sizeof(struct IOF_VFDR));
-                 get_ifiledr(dataName,vfdr);prn_ifiledr(vfdr);free(vfdr);break;
+                 get_ifiledr(dataName[0],vfdr);prn_ifiledr(vfdr);free(vfdr);break;
      case (200): facdr = (struct VFDRECV  *) malloc (sizeof(struct VFDRECV));
                  if (get_asf_facdr(leaderName,facdr) >= 0) { prn_facdr(facdr,era); }
 		 else printf("\nNo Facility Related Data Record Found\n");
