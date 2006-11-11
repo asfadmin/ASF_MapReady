@@ -103,10 +103,14 @@ void meta2dbase(meta_parameters *meta, char *dbaseFile, double *lat, double *lon
   //DBFWriteStringAttribute(dbase, n, 2, meta->sar->polarization);
   DBFWriteIntegerAttribute(dbase, n, 2, meta->general->orbit);
   DBFWriteIntegerAttribute(dbase, n, 3, meta->general->frame);
-  jdate.year = meta->state_vectors->year;
-  jdate.jd = meta->state_vectors->julDay;
-  date_jd2ymd(&jdate, &ymd);
-  sprintf(acquisition_date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
+  if (meta->state_vectors) {
+    jdate.year = meta->state_vectors->year;
+    jdate.jd = meta->state_vectors->julDay;
+    date_jd2ymd(&jdate, &ymd);
+    sprintf(acquisition_date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
+  }
+  else
+    sprintf(acquisition_date, "n/a");
   DBFWriteStringAttribute(dbase, n, 4, acquisition_date);
   if (meta->general->orbit_direction == 'D')
     DBFWriteStringAttribute(dbase, n, 5, "Descending");

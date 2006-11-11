@@ -129,7 +129,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *ceos_filename, char *dir)
 {
     julian_date jdate;
-    ymd_date ymd;  
+    ymd_date ymd;
+    char acquisition_date[15];
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
     double lat_UL, lon_UL;
@@ -139,9 +140,14 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
     char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-    jdate.year = meta->state_vectors->year;
-    jdate.jd = meta->state_vectors->julDay;
-    date_jd2ymd(&jdate, &ymd);
+    if (meta->state_vectors) {
+      jdate.year = meta->state_vectors->year;
+      jdate.jd = meta->state_vectors->julDay;
+      date_jd2ymd(&jdate, &ymd);
+      sprintf(acquisition_date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
+    }
+    else
+      sprintf(acquisition_date, "n/a");
 
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
@@ -149,8 +155,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
     fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
     fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
-    fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n", 
-	    ymd.day, mon[ymd.month], ymd.year);
+    fprintf(kml_file, "<strong>Acquisition date</strong>: %s<br>\n", 
+	    acquisition_date);
     if (meta->general->orbit_direction == 'D')
       fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
     else if (meta->general->orbit_direction == 'A')
