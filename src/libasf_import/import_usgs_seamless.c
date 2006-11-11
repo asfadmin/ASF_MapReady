@@ -245,7 +245,9 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
 
-  meta_out->sar->image_type = 'P';
+  // No necessity to set projection in sar block. Existence of projection
+  // block will do just fine.
+  // meta_out->sar->image_type = 'P';
   mp->type = LAT_LONG_PSEUDO_PROJECTION;
 
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
