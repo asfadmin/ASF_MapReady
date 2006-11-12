@@ -9,7 +9,6 @@
 
 /* Local prototypes */
 void meta_read_old(meta_parameters *meta, char *fileName);
-void meta_new2old(meta_parameters *meta);
 void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name);
 int meta_is_new_style(const char *file_name);
 meta_projection *meta_projection_init(void);
@@ -47,9 +46,6 @@ meta_parameters *meta_read(const char *inName)
   else {
     parse_metadata(meta, meta_name);
   }
-  
-  /* Fill old structure parameters */
-  meta_new2old(meta);
   
   /* Remember the name and location of the meta struct */
   add_meta_ddr_struct(inName, meta, NULL);

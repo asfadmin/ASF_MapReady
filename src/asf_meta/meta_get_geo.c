@@ -54,24 +54,26 @@ int meta_get_latLon(meta_parameters *meta,
                     double yLine, double xSample,double elev,
                     double *lat,double *lon)
 {
-  if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
-    /*Slant or ground range.  Use state vectors and doppler.*/
-    double slant,doppler,time;
-    meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
-			  xSample + meta->general->start_sample,
-			  &time,&slant,&doppler);
-    return meta_timeSlantDop2latLon(meta,
-                                    time,slant,doppler,elev,
-                                    lat,lon);
-  } else if (meta->sar->image_type=='P') {
+  if (meta->sar) {
+    if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
+      /*Slant or ground range.  Use state vectors and doppler.*/
+      double slant,doppler,time;
+      meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
+			    xSample + meta->general->start_sample,
+			    &time,&slant,&doppler);
+      return meta_timeSlantDop2latLon(meta,
+				      time,slant,doppler,elev,
+				      lat,lon);
+    } 
+  }
+  else if (meta->projection) {
     /*Map-Projected. Use projection information to calculate lat & lon.*/
     double px,py;
     px = meta->projection->startX + ((xSample + meta->general->start_sample)
 				     * meta->projection->perX);
     py = meta->projection->startY + ((yLine + meta->general->start_line)
 				     * meta->projection->perY);
-    proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-	       lat,lon);
+    proj_to_ll(meta->projection, 'R', px, py, lat,lon);
     return 0;
   } else { /*Bogus image type.*/
     printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",

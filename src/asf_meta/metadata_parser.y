@@ -148,10 +148,18 @@ void select_current_block(char *block_name)
 
   if ( !strcmp(block_name, "general") )
     { current_block = MTL->general; goto MATCHED; }
-  if ( !strcmp(block_name, "sar") )
-    { current_block = MTL->sar; goto MATCHED; }
-  if ( !strcmp(block_name, "optical") )
-    { current_block = MTL->optical; goto MATCHED; }
+  if ( !strcmp(block_name, "sar") ) { 
+    if (MTL->sar == NULL)
+      { MTL->sar = meta_sar_init(); }
+    current_block = MTL->sar; 
+    goto MATCHED; 
+  }
+  if ( !strcmp(block_name, "optical") ) { 
+    if (MTL->optical == NULL)
+      { MTL->optical = meta_optical_init(); }
+    current_block = MTL->optical; 
+    goto MATCHED; 
+  }
   if ( !strcmp(block_name, "state") ) {
     if (MTL->state_vectors == NULL)
       { MTL->state_vectors = meta_state_vectors_init(vector_count); }

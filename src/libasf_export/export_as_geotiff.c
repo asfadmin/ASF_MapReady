@@ -271,7 +271,7 @@ export_as_geotiff (const char *metadata_file_name,
      blocks of pixels with the first block at pixel 0,0.  */
   GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsPoint);
 
-  if ( md->sar->image_type == 'P' ) {
+  if ( md->projection ) {
     re_major = md->projection->re_major;
     re_minor = md->projection->re_minor;
   }
@@ -318,8 +318,7 @@ export_as_geotiff (const char *metadata_file_name,
   /* If we have a map projected image, write the projection
      information into the GeoTIFF.  */
   /* FIXME: this is a terrible hack to deal with scansar crap.  */
-  if ( md->sar->image_type == 'P' && md->projection != NULL
-       && md->projection->type != SCANSAR_PROJECTION) {
+  if ( md->projection != NULL && md->projection->type != SCANSAR_PROJECTION) {
     /* Tie point for image corner.  To avoid problems with for example
        ArcView, and to escape the fact that the meaning of multiple
        tie points with constant scale factors in GeoTIFF is horribly
@@ -906,12 +905,14 @@ export_as_geotiff (const char *metadata_file_name,
   }
 
   /* FIXME: this is a terrible hack to deal with scansar crap.  */
-  else if ( md->sar->image_type == 'G'
-            || (md->sar->image_type == 'P'
-                && md->projection->type == SCANSAR_PROJECTION) ) {
-    GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeGeographic);
-
-    /*    if ( ellipsoid == WGS84 ) {*/
+  else if ( md->sar ) {
+    if ( md->sar->image_type == 'G'
+	 || (md->sar->image_type == 'P'
+	     && md->projection->type == SCANSAR_PROJECTION) ) {
+      GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, 
+		  ModelTypeGeographic);
+      
+      /*    if ( ellipsoid == WGS84 ) {*/
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
       /*    }
        *    else {
@@ -943,58 +944,60 @@ export_as_geotiff (const char *metadata_file_name,
        *      }
        *    }
        */
-    GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
-    GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
-    {
-      /* Tie points for image corners.  There is space for four tie
-         points, each consisting of three raster coordinates, followed
-         by three geospatial coordinates.  */
-      /* FIXME: I suspect this code of being wrong, I think it should
-	 just be a big flat array of 4 * 6 values.  Not sure where the
-	 idea of a multidimensional array got started, couldn't find
-	 any examples of it and the makegeo program that comes with
-	 GeoTIFF uses a flat array.  I'm not changing anything now
-	 since this branch is probably so broken it doesn't really
-	 matter, and GeoTIFF definition of images tied down using this
-	 three tie point style is horribly vauge and unsupported.  */
-      double tie_points[4][6];
-
-      /* Get the lat/longs of three image corners.  */
-      double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
-      meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
-      meta_get_latLon (md, 0, iim->size_x, 0, &c2_lat, &c2_long);
-      meta_get_latLon (md, iim->size_y, 0, 0, &c3_lat, &c3_long);
-
-      /* Put three tie points in the image, as described in 2.6.2 of the
-         geotiff spec..  */
-      tie_points[0][0] = 0.0;
-      tie_points[0][1] = 0.0;
-      tie_points[0][2] = 0.0;
-      tie_points[0][3] = c1_lat;
-      tie_points[0][4] = c1_long;
-      tie_points[0][5] = 0.0;
-      tie_points[1][0] = 0.0;
-      tie_points[1][1] = si->size_x;
-      tie_points[1][2] = 0.0;
-      tie_points[1][4] = c2_lat;
-      tie_points[1][5] = c2_long;
-      tie_points[1][6] = 0.0;
-      tie_points[2][0] = si->size_y;
-      tie_points[2][1] = 0.0;
-      tie_points[2][2] = 0.0;
-      tie_points[2][4] = c3_lat;
-      tie_points[2][5] = c3_long;
-      tie_points[2][6] = 0.0;
-
-      /* Write the eighteen values that make up the three tie
-         points.  */
-      TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 18, tie_points);
+      GTIFKeySet (ogtif, GeogPrimeMeridianGeoKey, TYPE_SHORT, 1, PM_Greenwich);
+      GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, 
+		  Angular_Degree);
+      {
+	/* Tie points for image corners.  There is space for four tie
+	   points, each consisting of three raster coordinates, followed
+	   by three geospatial coordinates.  */
+	/* FIXME: I suspect this code of being wrong, I think it should
+	   just be a big flat array of 4 * 6 values.  Not sure where the
+	   idea of a multidimensional array got started, couldn't find
+	   any examples of it and the makegeo program that comes with
+	   GeoTIFF uses a flat array.  I'm not changing anything now
+	   since this branch is probably so broken it doesn't really
+	   matter, and GeoTIFF definition of images tied down using this
+	   three tie point style is horribly vauge and unsupported.  */
+	double tie_points[4][6];
+	
+	/* Get the lat/longs of three image corners.  */
+	double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
+	meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
+	meta_get_latLon (md, 0, iim->size_x, 0, &c2_lat, &c2_long);
+	meta_get_latLon (md, iim->size_y, 0, 0, &c3_lat, &c3_long);
+	
+	/* Put three tie points in the image, as described in 2.6.2 of the
+	   geotiff spec..  */
+	tie_points[0][0] = 0.0;
+	tie_points[0][1] = 0.0;
+	tie_points[0][2] = 0.0;
+	tie_points[0][3] = c1_lat;
+	tie_points[0][4] = c1_long;
+	tie_points[0][5] = 0.0;
+	tie_points[1][0] = 0.0;
+	tie_points[1][1] = si->size_x;
+	tie_points[1][2] = 0.0;
+	tie_points[1][4] = c2_lat;
+	tie_points[1][5] = c2_long;
+	tie_points[1][6] = 0.0;
+	tie_points[2][0] = si->size_y;
+	tie_points[2][1] = 0.0;
+	tie_points[2][2] = 0.0;
+	tie_points[2][4] = c3_lat;
+	tie_points[2][5] = c3_long;
+	tie_points[2][6] = 0.0;
+	
+	/* Write the eighteen values that make up the three tie
+	   points.  */
+	TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 18, tie_points);
+      }
     }
-  }
-
-  else if ( md->sar->image_type == 'S' ) {
-    /* Slant range image conversion not implemented yet.  */
-    asfPrintError("Slant range image conversion not implemented yet.\n");
+    
+    if ( md->sar->image_type == 'S' ) {
+      /* Slant range image conversion not implemented yet.  */
+      asfPrintError("Slant range image conversion not implemented yet.\n");
+    }
   }
 
   else {
