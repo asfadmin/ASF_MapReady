@@ -994,15 +994,14 @@ export_as_geotiff (const char *metadata_file_name,
       }
     }
     
-    if ( md->sar->image_type == 'S' ) {
+    else if ( md->sar->image_type == 'S' ) {
       /* Slant range image conversion not implemented yet.  */
       asfPrintError("Slant range image conversion not implemented yet.\n");
     }
-  }
-
-  else {
-    /* Shouldn't be here (unrecognized image type). */
-    asfPrintError("Unrecognized image type.\n");
+    else {
+      /* Shouldn't be here (unrecognized image type). */
+      asfPrintError("Unrecognized image type.\n");
+    }
   }
 
   asfPrintStatus("Writing Output File...\n");
