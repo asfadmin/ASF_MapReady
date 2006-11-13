@@ -483,6 +483,51 @@ void kml_point_entry(FILE *kml_file, char *name, float lat, float lon)
   fprintf(kml_file, "</Placemark>\n");
 }
 
+void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat, 
+		       float *lon, int n)
+{
+  int ii;
+
+  fprintf(kml_file, "<Placemark>\n");
+  fprintf(kml_file, "  <description><![CDATA[\n");
+  for (ii=0; ii<n; ii++) {
+    fprintf(kml_file, "<strong>%s</strong> - ", id[ii]);
+    fprintf(kml_file, "<strong>Lat</strong>: %9.4f, ", lat[ii]);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
+  }
+  fprintf(kml_file, "  ]]></description>\n");
+  fprintf(kml_file, "  <name>%s</name>\n", name);
+  fprintf(kml_file, "  <LookAt>\n");
+  fprintf(kml_file, "    <longitude>%9.4f</longitude>\n", lon[0]);
+  fprintf(kml_file, "    <latitude>%9.4f</latitude>\n", lat[0]);
+  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <tilt>45</tilt>\n");
+  fprintf(kml_file, "    <heading>50</heading>\n");
+  fprintf(kml_file, "  </LookAt>\n");
+  fprintf(kml_file, "  <visibility>1</visibility>\n");
+  fprintf(kml_file, "  <open>1</open>\n");
+  fprintf(kml_file, "  <Style>\n");
+  fprintf(kml_file, "    <LineStyle>\n");
+  fprintf(kml_file, "      <color>ff00ffff</color>\n");
+  fprintf(kml_file, "    </LineStyle>\n");
+  fprintf(kml_file, "    <PolyStyle>\n");
+  fprintf(kml_file, "      <color>7f00ff00</color>\n");
+  fprintf(kml_file, "    </PolyStyle>\n");
+  fprintf(kml_file, "  </Style>\n");
+  fprintf(kml_file, "  <LineString>\n");
+  fprintf(kml_file, "    <extrude>1</extrude>\n");
+  fprintf(kml_file, "    <tessellate>1</tessellate>\n");
+  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(kml_file, "    <coordinates>\n");
+  
+  for (ii=0; ii<n; ii++)
+    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon[ii], lat[ii]);
+  
+  fprintf(kml_file, "    </coordinates>\n");
+  fprintf(kml_file, "  </LineString>\n");
+  fprintf(kml_file, "</Placemark>\n");
+}
+
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
 {
    kml_entry_impl(kml_file, meta, name, NULL, NULL);
@@ -595,6 +640,55 @@ void point2kml_list(char *list, char *filename)
     }
   }
 
+  kml_footer(kml_file);
+  FCLOSE(kml_file);
+  FCLOSE(fp);
+  FREE(kml_filename);
+}
+
+void polygon2kml_list(char *list, char *filename)
+{
+  FILE *fp;
+  float *lat, *lon;
+  char **id;
+  char point[1024], *p;
+  int ii, n=0;
+  
+  char *kml_filename = appendExt(filename, ".kml");
+  
+  FILE *kml_file = FOPEN(kml_filename, "wt");
+  kml_header(kml_file);
+
+  // Figure out how many point we have to deal with
+  fp = FOPEN(list, "r");
+  while (fgets(point, 1024, fp)) {
+    p = strchr(point, ',');
+    if (p)
+      n++;
+  }
+  FCLOSE(fp);
+
+  // Allocate memory for point list
+  id = (char **) MALLOC(n*sizeof(char *));
+  for (ii=0; ii<n; ii++)
+    id[ii] = (char *) MALLOC(255*sizeof(char));
+  lat = (float *) MALLOC(n*sizeof(float));
+  lon = (float *) MALLOC(n*sizeof(float));
+
+  n = 0;
+  fp = FOPEN(list, "r");
+  while (fgets(point, 1024, fp)) {
+    p = strchr(point, ',');
+    if (p) {
+      sscanf(p+1, "%f,%f", &lat[n], &lon[n]);
+      p = strtok(point, ",");
+      sprintf(id[n], "%s\n", p);
+      *p = '\0';
+      n++;
+    }
+  }
+
+  kml_polygon_entry(kml_file, filename, id, lat, lon, n);
   kml_footer(kml_file);
   FCLOSE(kml_file);
   FCLOSE(fp);

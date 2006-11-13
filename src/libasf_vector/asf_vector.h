@@ -33,12 +33,15 @@ void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta,
                             char *jpeg_dir);
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
 void kml_point_entry(FILE *kml_file, char *name, float lat, float lon);
+void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat, 
+		       float *lon, int n);
 void kml_footer(FILE *kml_file);
 void write_kml(char *filename);
 void write_kml_overlay(char *filename);
 void meta2kml(char *kml_filename, meta_parameters *meta);
 void meta2kml_list(char *list, char *filename);
 void point2kml_list(char *list, char *filename);
+void polygon2kml_list(char *list, char *filename);
 void leader2kml(char *leaderFile, char *filename);
 
 // Prototypes from meta2shape.c

@@ -16,7 +16,7 @@ void usage(char *name)
 	name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
-	"    input format:  Input format: point, meta, leader\n"
+	"    input format:  Input format: point, polygon, meta, leader\n"
 	"    output format: Output format: shape, kml\n"
 	"    input file:    Name of the input file\n"
 	"    output file:   Basename of the output file.\n");
@@ -98,6 +98,11 @@ int main(int argc, char **argv)
       asfPrintStatus("   Converting list of points into a kml file ...\n\n");
       point2kml_list(infile, outfile);
     }
+    else if 
+      (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting list of points into a kml file ...\n\n");
+      polygon2kml_list(infile, outfile);
+    }
     else
       asfPrintStatus("   Unsupported conversion\n\n");
   }
@@ -128,6 +133,11 @@ int main(int argc, char **argv)
     }
     else if 
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
+      write_polygon_shapefile(outfile, infile, "");
+    }
+    else if 
+      (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting a point file into a shape file ...\n\n");
       write_polygon_shapefile(outfile, infile, "");
     }
