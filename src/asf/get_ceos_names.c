@@ -250,6 +250,14 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char **dataName, int *n
 	  (*nBands)++;
 	}
       }
+      if (*nBands == 0) {
+	sprintf(dataTemp,"%s%s%s",dirName,ceos_data_extensions[ii],fileName);
+	if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
+	  fclose(dataFP);
+	  strcpy(dataName[*nBands],dataTemp);
+	  (*nBands) = 1;
+	}
+      }
       if (*nBands)
 	return ii;
     }
