@@ -90,8 +90,13 @@ int main(int argc, char **argv)
     }
     else if 
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting list of points into a shape file ...\n\n");
-      write_point_shapefile(outfile, infile);
+      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
+      write_polygon_shapefile(outfile, infile, "");
+    }
+    else if 
+      (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
+      write_polygon_shapefile(outfile, infile, "");
     }
     else if 
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "KML")==0) {
@@ -133,13 +138,8 @@ int main(int argc, char **argv)
     }
     else if 
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
-      write_polygon_shapefile(outfile, infile, "");
-    }
-    else if 
-      (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
-      write_polygon_shapefile(outfile, infile, "");
+      asfPrintStatus("   Converting list of points into a shape file ...\n\n");
+      write_point_shapefile(outfile, infile);
     }
     else 
       asfPrintStatus("   Unsupported conversion\n\n");
