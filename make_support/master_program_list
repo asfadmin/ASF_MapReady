@@ -160,6 +160,7 @@ PROGRAMS
 	detect_cr { }
 	xpix_ypix { }
 	meta_check { }
+	convert2vector { }
 
 @src_tc/
 	2dmap { }
