@@ -273,5 +273,4 @@ void die_function (const char *file, int line, const char *message, ...)
 #endif
 ; /* <--- semicolon for die_function */
 
-
 #endif

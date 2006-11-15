@@ -814,39 +814,6 @@ static void extract_flag(int *argc, char **argv[],
 	}
 }
 
-static void detect_flag_option(int argc, char *argv[], char *arg, int *found)
-{
-	int i;
-
-	for (i = 0; i < argc; ++i)
-	{
-		if (strcmp(argv[i], arg) == 0)
-		{
-			*found = TRUE;
-			return;
-		}
-	}
-}
-
-int detect_flag_options(int argc, char **argv, ...)
-{
-	va_list ap;
-	char * arg = NULL;
-	int found = FALSE;
-
-	va_start(ap, argv);
-	do
-	{
-		arg = va_arg(ap, char *);
-
-		if (arg)
-			detect_flag_option(argc, argv, arg, &found);
-	}
-	while (arg);
-
-	return found;
-}
-
 static int extract_flags(int *argc, char ***argv, ... )
 {
 	va_list ap;
