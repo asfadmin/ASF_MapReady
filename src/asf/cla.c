@@ -15,6 +15,14 @@ int strmatch(const char *key, const char *match)
 	return 1;
 }
 
+// this is just to help with the debugging of these
+static void print_args(int argc, char *argv[])
+{
+    int i;
+    for (i=0; i<argc; ++i)
+        printf("%d: %s\n", i, argv[i]);
+}
+
 static void remove_args(int start, int end, int *argc, char **argv[])
 {
     int i, j, nargs;
@@ -50,8 +58,8 @@ static void detect_flag_option(int argc, char *argv[], char *arg, int *found)
     }
 }
 
-static void extract_flag(int *argc, char **argv[],
-                         char *arg, int *found)
+static void extract_flag_option(int *argc, char **argv[],
+                                char *arg, int *found)
 {
     int i;
     
@@ -61,6 +69,7 @@ static void extract_flag(int *argc, char **argv[],
         {
             *found = TRUE;
             remove_args(i, i, argc, argv);
+            --i; // we must check this arg again
         }
     }
 }
@@ -68,6 +77,8 @@ static void extract_flag(int *argc, char **argv[],
 /*
   Example:
     quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
+
+  Returns TRUE if one of the given arguments does occur on the command line
 */
 
 int detect_flag_options(int argc, char **argv, ...)
@@ -94,10 +105,10 @@ int detect_flag_options(int argc, char **argv, ...)
 
 /*
   Example:
-    quietflag = extract_flag_options(argc, argv, "-quiet", "--quiet", NULL);
+    quietflag = extract_flag_options(&argc, &argv, "-quiet", "--quiet", NULL);
 
   This one differs from detect_flag_options in that the detected argument is
-  removed from the list.
+  removed from the list.  Duplicate flags are ok.
 */
 int extract_flag_options(int *argc, char ***argv, ... )
 {
@@ -111,9 +122,10 @@ int extract_flag_options(int *argc, char ***argv, ... )
         arg = va_arg(ap, char *);
         
         if (arg)
-            extract_flag(argc, argv, arg, &found);
+            extract_flag_option(argc, argv, arg, &found);
     }
     while (arg);
-    
+    va_end(ap);
+
     return found;
 }
