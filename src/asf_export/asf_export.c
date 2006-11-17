@@ -336,7 +336,15 @@ main (int argc, char *argv[])
 
   //Grab the input name
   strcpy (in_base_name, argv[argc - 2]);
+
+  //If user added ".img", strip it.
+  char *ext = findExt(in_base_name);
+  if (strcmp(ext, ".img") == 0) *ext = '\0';
+
+  //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
+  strcat (command_line.in_meta_name, ".meta");
+
   //Grab the output name
   strcpy (command_line.output_name, argv[argc - 1]);
 
