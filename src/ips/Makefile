@@ -1,7 +1,6 @@
 #	ips
 #	by Rudi Gens, ASF, 2001
 
-
 include ../../make_support/system_rules
 
 CFLAGS += \
@@ -34,13 +33,23 @@ LIBS = 	\
 
 OBJLIB	= config.o \
 	functions.o \
-	check_refinement.o
+	check_refinement.o \
+	ips.o
 
-all:    ips clean
+all: lib exe clean
 
-ips: ips.c $(OBJLIB)
-	${CC} ${CFLAGS} ${LDFLAGS} -o ips ips.c $(OBJLIB) ${LIBS}
+lib: ${OBJLIB}
+	ar r libasf_ips.a $(OBJLIB)
+	$(RANLIB) libasf_ips.a
+	mv libasf_ips.a $(LIBDIR)
+	cp ips.h $(ASF_INCLUDE_DIR)
+    
+exe: ips
+
+ips: ips_main.c lib
+	${CC} ${CFLAGS} ${LDFLAGS} -o ips ips_main.c $(LIBDIR)/libasf_ips.a ${LIBS}
 	mv ips $(BINDIR)
 #	cp ips.1 ../../man/cat1
+
 clean:
-	rm -f core ${OBJS} *.o
+	rm -f core* *.o

@@ -172,7 +172,7 @@ typedef struct {
 /* configuration functions */
 int strindex(char s[], char t[]);
 char *read_param(char *line);
-char *read_str(char *line, char *param);
+void read_str(char *dest, char *line, char *param);
 int read_int(char *line, char *param);
 double read_double(char *line, char *param);
 int init_config(char *configFile);
@@ -183,6 +183,7 @@ int write_config(char *configFile, dem_config *cfg);
 // Prototypes
 int check_refinement(char *base1, char *base2, char *base3);
 void check_return(int ret, char *msg);
+int ips(dem_config *cfg, char *configFile, int createFlag);
 
 
 #endif

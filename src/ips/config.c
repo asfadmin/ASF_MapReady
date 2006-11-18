@@ -1,6 +1,24 @@
 #include "asf.h"
 #include "ips.h"
 
+// hard-code a maximum string length... this way the read_str
+// code can enforce a maximum length
+#define MAX_STRING_LEN 255
+
+static char * new_blank_str(void)
+{
+    char *ret = MALLOC(sizeof(char)*MAX_STRING_LEN);
+    strcpy(ret, "");
+    return ret;
+}
+
+static char * new_str(const char *val)
+{
+    char *ret = MALLOC(sizeof(char)*MAX_STRING_LEN);
+    strcpy(ret, val);
+    return ret;
+}
+
 int strindex(char s[], char t[])
 {
   int i, j, k;
@@ -17,9 +35,8 @@ int strindex(char s[], char t[])
 char *read_param(char *line)
 {
   int i, k;
-  char *value=(char *)MALLOC(sizeof(char)*255);
+  char *value=new_blank_str();
   
-  sprintf(value, "");
   i=strindex(line, "]");
   k=strindex(line, "=");
   if (i>0) strncpy(value, line, i+1);
@@ -27,23 +44,22 @@ char *read_param(char *line)
   return value;
 }
 
-char *read_str(char *line, char *param)
+// assume line is of length < 255
+void read_str(char *dest, char *line, char *param)
 {
-  char tmp[255], *start;
-  char *value=(char *)MALLOC(sizeof(char)*255);
-  
-  start = strchr(line, '=');
-  sscanf(start, "%s %s", tmp, value);
-  
-  return value;
+  char *start = strchr(line, '=');
+  if (start)
+    sscanf(start+1, "%s", dest);
+  else
+    strcpy(dest, "");
 }
 
 int read_int(char *line, char *param)
 {
-  char *tmp=NULL;
+  char tmp[255];
   int value;
   
-  tmp = read_str(line, param);
+  read_str(tmp, line, param);
   sscanf(tmp, "%i", &value);
   
   return value;
@@ -51,10 +67,10 @@ int read_int(char *line, char *param)
 
 double read_double(char *line, char *param)
 {
-  char *tmp=NULL;
+  char tmp[255];
   double value;
   
-  tmp = read_str(line, param);
+  read_str(tmp, line, param);
   sscanf(tmp, "%lf", &value);
   
   return value;
@@ -190,7 +206,7 @@ dem_config *init_fill_config(char *configFile)
   
   FILE *fConfig, *fDefaults;
   char line[255], params[25];
-  char *test=(char *)MALLOC(sizeof(char)*255);
+  char *test=new_blank_str();
   int i;
   
   /* Create structure */
@@ -222,56 +238,37 @@ dem_config *init_fill_config(char *configFile)
   /* initialize structure */
   strcpy(cfg->comment, "create_dem: configuration file");
   
-  cfg->general->mode = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->general->mode, "");
-  cfg->general->dem = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->general->dem, "");
-  cfg->general->def_val = (char *)MALLOC(sizeof(char)*255);
-  cfg->general->def_val = "";
-  cfg->general->base = (char *)MALLOC(sizeof(char)*255);
-  cfg->general->base = "";
-  cfg->general->data_type = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->general->data_type, "");
+  cfg->general->mode = new_blank_str();
+  cfg->general->dem = new_blank_str();
+  cfg->general->def_val = new_blank_str();
+  cfg->general->base = new_blank_str();
+  cfg->general->data_type = new_blank_str();
   cfg->general->deskew = 0;
-  cfg->general->doppler = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->general->doppler, "");
+  cfg->general->doppler = new_blank_str();
   cfg->general->lat_begin = -99;
   cfg->general->lat_end = 99;
-  cfg->general->coreg = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->general->coreg, "PATCH");
+  cfg->general->coreg = new_blank_str();
   cfg->general->max_off = 3;
   cfg->general->mflag = 0;
-  cfg->general->mask = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->general->mask, "");
+  cfg->general->mask = new_blank_str();
   cfg->general->test = 0;
   cfg->general->short_config = 0;
-  cfg->general->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->general->status, "new");
+  cfg->general->status = new_str("new");
   
-  cfg->master->path = (char *)MALLOC(sizeof(char)*255);
-  cfg->master->path = "";
-  cfg->master->data = (char *)MALLOC(sizeof(char)*255);
-  cfg->master->data = "";
-  cfg->master->meta = (char *)MALLOC(sizeof(char)*255);
-  cfg->master->meta = "";
+  cfg->master->path = new_blank_str();
+  cfg->master->data = new_blank_str();
+  cfg->master->meta = new_blank_str();
   
-  cfg->slave->path = (char *)MALLOC(sizeof(char)*255);
-  cfg->slave->path = "";
-  cfg->slave->data = (char *)MALLOC(sizeof(char)*255);
-  cfg->slave->data = "";
-  cfg->slave->meta = (char *)MALLOC(sizeof(char)*255);
-  cfg->slave->meta = "";
+  cfg->slave->path = new_blank_str();
+  cfg->slave->data = new_blank_str();
+  cfg->slave->meta = new_blank_str();
   
-  cfg->ingest->prc_master = (char *)MALLOC(sizeof(char)*255);
-  cfg->ingest->prc_master = "";
-  cfg->ingest->prc_slave = (char *)MALLOC(sizeof(char)*255);
-  cfg->ingest->prc_slave = "";
+  cfg->ingest->prc_master = new_blank_str();
+  cfg->ingest->prc_slave = new_blank_str();
   cfg->ingest->prcflag = 0;
-  cfg->ingest->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->ingest->status, "new");
+  cfg->ingest->status = new_str("new");
   
-  cfg->doppler->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->doppler->status, "new");
+  cfg->doppler->status = new_str("new");
   
   cfg->coreg_p1->patches = 1;
   cfg->coreg_p1->start_master = 0;
@@ -280,8 +277,7 @@ dem_config *init_fill_config(char *configFile)
   cfg->coreg_p1->fft = 1;
   cfg->coreg_p1->off_az = 0;
   cfg->coreg_p1->off_rng = 0;
-  cfg->coreg_p1->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->coreg_p1->status, "new");
+  cfg->coreg_p1->status = new_str("new");
   
   cfg->coreg_pL->patches = 1;
   cfg->coreg_pL->start_master = 0;
@@ -290,68 +286,50 @@ dem_config *init_fill_config(char *configFile)
   cfg->coreg_pL->fft = 1;
   cfg->coreg_pL->off_az = 0;
   cfg->coreg_pL->off_rng = 0;
-  cfg->coreg_pL->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->coreg_pL->status, "new");
+  cfg->coreg_pL->status = new_str("new");
   
-  cfg->doppler_per_patch->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->doppler_per_patch->status, "new");
+  cfg->doppler_per_patch->status = new_str("new");
   
   cfg->ardop_master->start_offset = 0;
   cfg->ardop_master->end_offset = 0;
   cfg->ardop_master->patches = 1;
   cfg->ardop_master->power = 1;
-  cfg->ardop_master->power_img = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->ardop_master->power_img, "");
-  cfg->ardop_master->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->ardop_master->status, "new");
+  cfg->ardop_master->power_img = new_blank_str();
+  cfg->ardop_master->status = new_str("new");
   
   cfg->ardop_slave->start_offset = 0;
   cfg->ardop_slave->end_offset = 0;
   cfg->ardop_slave->patches = 1;
   cfg->ardop_slave->power = 1;
-  cfg->ardop_slave->power_img = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->ardop_slave->power_img, "");
-  cfg->ardop_slave->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->ardop_slave->status, "new");
+  cfg->ardop_slave->power_img = new_blank_str();
+  cfg->ardop_slave->status = new_str("new");
   
-  cfg->cpx_autofilter->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->cpx_autofilter->status, "new");
+  cfg->cpx_autofilter->status = new_str("new");
   
   cfg->coreg_slave->grid = 20;
   cfg->coreg_slave->fft = 1;
   cfg->coreg_slave->sinc = 0;
   cfg->coreg_slave->warp = 0;
-  cfg->coreg_slave->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->coreg_slave->status, "new");
+  cfg->coreg_slave->status = new_str("new");
   
-  cfg->igram_coh->igram = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->igram_coh->igram, "");
-  cfg->igram_coh->coh = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->igram_coh->coh, "");
+  cfg->igram_coh->igram = new_blank_str();
+  cfg->igram_coh->coh = new_blank_str();
   cfg->igram_coh->min = 0.3;
   cfg->igram_coh->ml = 1;
-  cfg->igram_coh->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->igram_coh->status, "new");
+  cfg->igram_coh->status = new_str("new");
   
   cfg->offset_match->max = 1.0;
-  cfg->offset_match->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->offset_match->status, "new");
+  cfg->offset_match->status = new_str("new");
   
-  cfg->sim_phase->seeds = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->sim_phase->seeds, "");
-  cfg->sim_phase->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->sim_phase->status, "new");
+  cfg->sim_phase->seeds = new_blank_str();
+  cfg->sim_phase->status = new_str("new");
   
-  cfg->dinsar->igram = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->dinsar->igram, "");
-  cfg->dinsar->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->dinsar->status, "new");
+  cfg->dinsar->igram = new_blank_str();
+  cfg->dinsar->status = new_str("new");
   
-  cfg->deramp_ml->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->deramp_ml->status, "new");
+  cfg->deramp_ml->status = new_str("new");
   
-  cfg->unwrap->algorithm = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->unwrap->algorithm, "escher");
+  cfg->unwrap->algorithm = new_str("escher");
   cfg->unwrap->flattening = 1;
   cfg->unwrap->procs = 8;
   cfg->unwrap->tiles_azimuth = 0;
@@ -359,49 +337,33 @@ dem_config *init_fill_config(char *configFile)
   cfg->unwrap->overlap_azimuth = 400;
   cfg->unwrap->overlap_range = 400;
   cfg->unwrap->filter = 1.6;
-  cfg->unwrap->qc = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->unwrap->qc, "");
-  cfg->unwrap->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->unwrap->status, "new");
+  cfg->unwrap->qc = new_blank_str();
+  cfg->unwrap->status = new_str("new");
   
   cfg->refine->iter = 0;
   cfg->refine->max = 15;
-  cfg->refine->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->refine->status, "new");
+  cfg->refine->status = new_str("new");
   
-  cfg->elevation->dem = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->elevation->dem, "");
-  cfg->elevation->error = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->elevation->error, "");
-  cfg->elevation->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->elevation->status, "new");
+  cfg->elevation->dem = new_blank_str();
+  cfg->elevation->error = new_blank_str();
+  cfg->elevation->status = new_str("new");
   
-  cfg->ground_range->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->ground_range->status, "new");
+  cfg->ground_range->status = new_str("new");
   
-  cfg->geocode->dem = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->dem, "");
-  cfg->geocode->amp = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->amp, "");
-  cfg->geocode->error = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->error, "");
-  cfg->geocode->coh = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->coh, "");
-  cfg->geocode->name = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->name, "utm");
-  cfg->geocode->proj = (char *)MALLOC(sizeof(char)*255);
+  cfg->geocode->dem = new_blank_str();
+  cfg->geocode->amp = new_blank_str();
+  cfg->geocode->error = new_blank_str();
+  cfg->geocode->coh = new_blank_str();
+  cfg->geocode->name = new_str("utm");
+  cfg->geocode->proj = new_blank_str();
   sprintf(cfg->geocode->proj, "%s/projections/utm/utm.proj", 
 	  get_asf_share_dir());
-  cfg->geocode->resample = (char *)MALLOC(sizeof(char)*255);
-  strcpy(cfg->geocode->resample, "bilinear");
+  cfg->geocode->resample = new_str("bilinear");
   cfg->geocode->pixel_spacing = 20;
-  cfg->geocode->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->geocode->status, "new");
+  cfg->geocode->status = new_str("new");
   
-  cfg->export->format = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->export->format, "geotiff");
-  cfg->export->status = (char *)MALLOC(sizeof(char)*25);
-  strcpy(cfg->export->status, "new");
+  cfg->export->format = new_str("geotiff");
+  cfg->export->status = new_str("new");
 
   fConfig = FOPEN(configFile, "r");
   i=0;
@@ -413,7 +375,7 @@ dem_config *init_fill_config(char *configFile)
     if (strcmp(params, "general")==0) {
       test = read_param(line);
       if (strncmp(test, "default values", 14)==0) 
-	cfg->general->def_val = read_str(line, "default values");
+	 read_str(cfg->general->def_val, line, "default values");
     }
   }
   FCLOSE(fConfig);
@@ -425,29 +387,29 @@ dem_config *init_fill_config(char *configFile)
     while (fgets(line, 255, fDefaults) != NULL) {
       test = read_param(line);
       if (strncmp(test, "mode", 4)==0) 
-	cfg->general->mode = read_str(line, "mode"); 
+	read_str(cfg->general->mode, line, "mode"); 
       if (strncmp(test, "short configuration file", 24)==0) 
 	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "reference dem", 13)==0) 
-	cfg->general->dem = read_str(line, "reference dem"); 
+	read_str(cfg->general->dem, line, "reference dem"); 
       if (strncmp(test, "data type", 9)==0) 
-	cfg->general->data_type = read_str(line, "data type");
+	read_str(cfg->general->data_type, line, "data type");
       if (strncmp(test, "coregistration", 14)==0) 
-	cfg->general->coreg = read_str(line, "coregistration");
+	read_str(cfg->general->coreg, line, "coregistration");
       if (strncmp(test, "doppler", 7)==0) 
-	cfg->general->doppler = read_str(line, "doppler");
+	read_str(cfg->general->doppler, line, "doppler");
       if (strncmp(test, "deskew", 6)==0) 
 	cfg->general->deskew = read_int(line, "deskew");
       if (strncmp(test, "maximum offset", 14)==0) 
 	cfg->general->max_off = read_int(line, "maximum offset");
       if (strncmp(test, "precise master", 14)==0) 
-	cfg->ingest->prc_master = read_str(line, "precise master"); 
+	read_str(cfg->ingest->prc_master, line, "precise master"); 
       if (strncmp(test, "precise slave", 13)==0) 
-	cfg->ingest->prc_slave = read_str(line, "precise slave");
+	read_str(cfg->ingest->prc_slave, line, "precise slave");
       if (strncmp(test, "minimum coherence", 17)==0) 
 	cfg->igram_coh->min = read_double(line, "minimum coherence");
       if (strncmp(test, "phase unwrapping", 16)==0) 
-	cfg->unwrap->algorithm = read_str(line, "phase unwrapping");
+	read_str(cfg->unwrap->algorithm, line, "phase unwrapping");
       if (strncmp(test, "tiles per degree", 16)==0) 
 	cfg->unwrap->tiles_per_degree = read_int(line, "tiles per degree");
       if (strncmp(test, "tile overlap", 12)==0) {
@@ -455,13 +417,14 @@ dem_config *init_fill_config(char *configFile)
 	cfg->unwrap->overlap_range = cfg->unwrap->overlap_azimuth;
       }
       if (strncmp(test, "projection name", 15)==0) 
-	cfg->geocode->name = read_str(line, "projection name");
+	read_str(cfg->geocode->name, line, "projection name");
       if (strncmp(test, "projection file", 15)==0) 
-	cfg->geocode->proj = read_str(line, "projection file");
+	read_str(cfg->geocode->proj, line, "projection file");
       if (strncmp(test, "resampling method", 17)==0)
-	cfg->geocode->resample = read_str(line, "resampling method");
+	read_str(cfg->geocode->resample, line, "resampling method");
       if (strncmp(test, "pixel spacing", 13)==0) 
 	cfg->geocode->pixel_spacing = read_int(line, "pixel spacing");
+      free(test);
     }
     FCLOSE(fDefaults);
   }
@@ -475,17 +438,18 @@ dem_config *init_fill_config(char *configFile)
     if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
     if (strcmp(params, "general")==0) {
       test = read_param(line);
-      if (strncmp(test, "mode", 4)==0) cfg->general->mode = read_str(line, "mode"); 
+      if (strncmp(test, "mode", 4)==0)
+    read_str(cfg->general->mode, line, "mode"); 
       if (strncmp(test, "reference dem", 13)==0) 
-	cfg->general->dem = read_str(line, "reference dem"); 
+    read_str(cfg->general->dem, line, "reference dem"); 
       if (strncmp(test, "base name", 9)==0) 
-	cfg->general->base = read_str(line, "base name");
+	read_str(cfg->general->base, line, "base name");
       if (strncmp(test, "data type", 9)==0) 
-	cfg->general->data_type = read_str(line, "data_type");
+	read_str(cfg->general->data_type, line, "data_type");
       if (strncmp(test, "coregistration", 14)==0) 
-	cfg->general->coreg = read_str(line, "coregistration");
+	read_str(cfg->general->coreg, line, "coregistration");
       if (strncmp(test, "doppler", 7)==0) 
-	cfg->general->doppler = read_str(line, "doppler");
+	read_str(cfg->general->doppler, line, "doppler");
       if (strncmp(test, "deskew", 6)==0) 
 	cfg->general->deskew = read_int(line, "deskew");
       if (strncmp(test, "lat begin", 9)==0) 
@@ -493,41 +457,41 @@ dem_config *init_fill_config(char *configFile)
       if (strncmp(test, "lat end", 7)==0) 
 	cfg->general->lat_end = read_double(line, "lat_end"); 
       if (strncmp(test, "coregistration", 14)==0) 
-	cfg->general->coreg = read_str(line, "coregistration");
+	read_str(cfg->general->coreg, line, "coregistration");
       if (strncmp(test, "maximum offset", 14)==0) 
 	cfg->general->max_off = read_int(line, "maximum offset");
       if (strncmp(test, "correlation mask", 16)==0) 
 	cfg->general->mflag = read_int(line, "correlation mask");
       if (strncmp(test, "mask file", 9)==0) 
-	cfg->general->mask = read_str(line, "mask file");
+	read_str(cfg->general->mask, line, "mask file");
       if (strncmp(test, "default values", 14)==0) 
-	cfg->general->def_val = read_str(line, "default values");
+	read_str(cfg->general->def_val, line, "default values");
       if (strncmp(test, "test mode", 9)==0) 
 	cfg->general->test = read_int(line, "test mode");
       if (strncmp(test, "short configuration file", 24)==0) 
 	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "status", 6)==0) 
-	cfg->general->status = read_str(line, "status");
+	read_str(cfg->general->status, line, "status");
     }
     
     if (strncmp(line, "[Master image]", 14)==0) strcpy(params, "master image");
     if (strcmp(params, "master image")==0) {
       test = read_param(line);
-      if (strncmp(test, "path", 4)==0) cfg->master->path = read_str(line, "path");
+      if (strncmp(test, "path", 4)==0) read_str(cfg->master->path, line, "path");
       if (strncmp(test, "data file", 9)==0) 
-	cfg->master->data = read_str(line, "data file");
+	read_str(cfg->master->data, line, "data file");
       if (strncmp(test, "metadata file", 13)==0) 
-	cfg->master->meta = read_str(line, "metadata file");
+	read_str(cfg->master->meta, line, "metadata file");
     }
     
     if (strncmp(line, "[Slave image]", 13)==0) strcpy(params, "slave image");
     if (strcmp(params, "slave image")==0) {
       test = read_param(line);
-      if (strncmp(test, "path", 4)==0) cfg->slave->path = read_str(line, "path"); 
+      if (strncmp(test, "path", 4)==0) read_str(cfg->slave->path, line, "path"); 
       if (strncmp(test, "data file", 9)==0) 
-	cfg->slave->data = read_str(line, "data file");
+	read_str(cfg->slave->data, line, "data file");
       if (strncmp(test, "metadata file", 13)==0) 
-	cfg->slave->meta = read_str(line, "metadata file");
+	read_str(cfg->slave->meta, line, "metadata file");
     }
     
   }
@@ -541,7 +505,7 @@ dem_config *read_config(char *configFile, int createFlag)
   FILE *fConfig;
   dem_config *cfg=NULL;
   char line[255], params[25];
-  char *test=(char *)MALLOC(sizeof(char)*255);
+  char *test=new_blank_str();
   
   cfg = init_fill_config(configFile);
   if (cfg == NULL) check_return(1, "creating configuration structure");
@@ -553,77 +517,77 @@ dem_config *read_config(char *configFile, int createFlag)
     if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
     if (strcmp(params, "general")==0) {
       test = read_param(line);
-      if (strncmp(test, "mode", 4)==0) cfg->general->mode = read_str(line, "mode"); 
+      if (strncmp(test, "mode", 4)==0) read_str(cfg->general->mode, line, "mode"); 
       if (strncmp(test, "reference dem", 13)==0) 
-	cfg->general->dem = read_str(line, "reference dem"); 
+	read_str(cfg->general->dem, line, "reference dem"); 
       if (strncmp(test, "base name", 9)==0) 
-	cfg->general->base = read_str(line, "base name");
+	read_str(cfg->general->base, line, "base name");
       if (strncmp(test, "data type", 9)==0) 
-	cfg->general->data_type = read_str(line, "data type");
+	read_str(cfg->general->data_type, line, "data type");
       if (strncmp(test, "deskew", 6)==0) 
 	cfg->general->deskew = read_int(line, "deskew");
       if (strncmp(test, "doppler", 7)==0) 
-	cfg->general->doppler = read_str(line, "doppler");
+	read_str(cfg->general->doppler, line, "doppler");
       if (strncmp(test, "lat begin", 9)==0) 
 	cfg->general->lat_begin = read_double(line, "lat_begin"); 
       if (strncmp(test, "lat end", 7)==0) 
 	cfg->general->lat_end = read_double(line, "lat_end"); 
       if (strncmp(test, "coregistration", 14)==0) 
-	cfg->general->coreg = read_str(line, "coregistration");
+	read_str(cfg->general->coreg, line, "coregistration");
       if (strncmp(test, "maximum offset", 14)==0) 
 	cfg->general->max_off = read_int(line, "maximum offset");
       if (strncmp(test, "correlation mask", 16)==0) 
 	cfg->general->mflag = read_int(line, "correlation mask");
       if (strncmp(test, "mask file", 9)==0) 
-	cfg->general->mask = read_str(line, "mask file");
+	read_str(cfg->general->mask, line, "mask file");
       if (strncmp(test, "default values", 14)==0) 
-	cfg->general->def_val = read_str(line, "default values");
+	read_str(cfg->general->def_val, line, "default values");
       if (strncmp(test, "test mode", 9)==0) 
 	cfg->general->test = read_int(line, "test mode");
       if (strncmp(test, "short configuration file", 24)==0) 
 	cfg->general->short_config = read_int(line, "short configuration file");
       if (strncmp(test, "status", 6)==0) 
-	cfg->general->status = read_str(line, "status");
+	read_str(cfg->general->status, line, "status");
     }
     
     if (strncmp(line, "[Master image]", 14)==0) strcpy(params, "master image");
     if (strcmp(params, "master image")==0) {
       test = read_param(line);
-      if (strncmp(test, "path", 4)==0) cfg->master->path = read_str(line, "path");
+      if (strncmp(test, "path", 4)==0) read_str(cfg->master->path, line, "path");
       if (strncmp(test, "data file", 9)==0) 
-	cfg->master->data = read_str(line, "data file");
+	read_str(cfg->master->data, line, "data file");
       if (strncmp(test, "metadata file", 13)==0) 
-	cfg->master->meta = read_str(line, "metadata file");
+	read_str(cfg->master->meta, line, "metadata file");
     }
     
     if (strncmp(line, "[Slave image]", 13)==0) strcpy(params, "slave image");
     if (strcmp(params, "slave image")==0) {
       test = read_param(line);
-      if (strncmp(test, "path", 4)==0) cfg->slave->path = read_str(line, "path"); 
+      if (strncmp(test, "path", 4)==0) read_str(cfg->slave->path, line, "path"); 
       if (strncmp(test, "data file", 9)==0) 
-	cfg->slave->data = read_str(line, "data file");
+	read_str(cfg->slave->data, line, "data file");
       if (strncmp(test, "metadata file", 13)==0) 
-	cfg->slave->meta = read_str(line, "metadata file");
+	read_str(cfg->slave->meta, line, "metadata file");
     }
     
     if (strncmp(line, "[Ingest]", 8)==0) strcpy(params, "ingest");
     if (strcmp(params, "ingest")==0) {
       test = read_param(line);
       if (strncmp(test, "precise master", 14)==0) 
-	cfg->ingest->prc_master = read_str(line, "precise master"); 
+	read_str(cfg->ingest->prc_master, line, "precise master"); 
       if (strncmp(test, "precise slave", 13)==0) 
-	cfg->ingest->prc_slave = read_str(line, "precise slave");
+	read_str(cfg->ingest->prc_slave, line, "precise slave");
       if (strncmp(test, "precise orbits", 14)==0) 
 	cfg->ingest->prcflag = read_int(line, "precise orbits");
       if (strncmp(test, "status", 6)==0) 
-	cfg->ingest->status = read_str(line, "status");
+	read_str(cfg->ingest->status, line, "status");
     }
     
     if (strncmp(line, "[Doppler]", 9)==0) strcpy(params, "doppler");
     if (strcmp(params, "doppler")==0) {
       test = read_param(line);
       if (strncmp(test, "status", 6)==0) 
-	cfg->doppler->status = read_str(line, "status");
+	read_str(cfg->doppler->status, line, "status");
     }
     
     if (strncmp(line, "[Coregister first patch]", 24)==0) strcpy(params, "coreg_p1");
@@ -642,7 +606,7 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "offset range", 12)==0) 
 	cfg->coreg_p1->off_rng = read_int(line, "offset azimuth");
       if (strncmp(test, "status", 6)==0) 
-	cfg->coreg_p1->status = read_str(line, "status"); 
+	read_str(cfg->coreg_p1->status, line, "status"); 
     }	  
     
     if (strncmp(line, "[Coregister last patch]", 23)==0) strcpy(params, "coreg_pL");
@@ -661,7 +625,7 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "offset range", 12)==0) 
 	cfg->coreg_pL->off_rng = read_int(line, "offset azimuth");
       if (strncmp(test, "status", 6)==0) 
-	cfg->coreg_pL->status = read_str(line, "status"); 
+	read_str(cfg->coreg_pL->status, line, "status"); 
     }	  
     
     if (strncmp(line, "[doppler_per_patch]", 19)==0) 
@@ -669,7 +633,7 @@ dem_config *read_config(char *configFile, int createFlag)
     if (strcmp(params, "doppler_per_patch")==0) {
       test = read_param(line);
       if (strncmp(test, "status", 6)==0) 
-	cfg->doppler_per_patch->status = read_str(line, "status");
+	read_str(cfg->doppler_per_patch->status, line, "status");
     }
     
     if (strncmp(line, "[ardop - Master image]", 22)==0) strcpy(params, "ardop_master");
@@ -684,9 +648,9 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "power flag", 10)==0) 
 	cfg->ardop_master->power = read_int(line, "power flag"); 
       if (strncmp(test, "power image", 11)==0) 
-	cfg->ardop_master->power_img = read_str(line, "power image"); 
+	read_str(cfg->ardop_master->power_img, line, "power image"); 
       if (strncmp(test, "status", 6)==0) 
-	cfg->ardop_master->status = read_str(line, "status"); 
+	read_str(cfg->ardop_master->status, line, "status"); 
     }	  
     
     if (strncmp(line, "[ardop - Slave image]", 21)==0) strcpy(params, "ardop_slave");
@@ -701,9 +665,9 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "power flag", 10)==0) 
 	cfg->ardop_slave->power = read_int(line, "power flag"); 
       if (strncmp(test, "power image", 11)==0) 
-	cfg->ardop_slave->power_img = read_str(line, "power image"); 
+	read_str(cfg->ardop_slave->power_img, line, "power image"); 
       if (strncmp(test, "status", 6)==0) 
-	cfg->ardop_slave->status = read_str(line, "status"); 
+	read_str(cfg->ardop_slave->status, line, "status"); 
     }	  
     
     if (strncmp(line, "[Coregister slave]", 16)==0) strcpy(params, "coreg_slave");
@@ -718,7 +682,7 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "warp", 4)==0) 
 	cfg->coreg_slave->warp = read_int(line, "warp"); 
       if (strncmp(test, "status", 6)==0) 
-	cfg->coreg_slave->status = read_str(line, "status"); 
+	read_str(cfg->coreg_slave->status, line, "status"); 
     }	  
     
     if (strncmp(line, "[Interferogram/coherence]", 25)==0) 
@@ -726,15 +690,15 @@ dem_config *read_config(char *configFile, int createFlag)
     if (strcmp(params, "igram_coh")==0) {
       test = read_param(line);
       if (strncmp(test, "interferogram", 13)==0) 
-	cfg->igram_coh->igram = read_str(line, "interferogram"); 
+	read_str(cfg->igram_coh->igram, line, "interferogram"); 
       if (strncmp(test, "coherence image", 15)==0) 
-	cfg->igram_coh->coh = read_str(line, "coherence image");
+	read_str(cfg->igram_coh->coh, line, "coherence image");
       if (strncmp(test, "minimum coherence", 17)==0) 
 	cfg->igram_coh->min = read_double(line, "minimum coherence");
       if (strncmp(test, "multilook", 9)==0) 
 	cfg->igram_coh->ml = read_int(line, "multilook");
       if (strncmp(test, "status", 6)==0) 
-	cfg->igram_coh->status = read_str(line, "status");
+	read_str(cfg->igram_coh->status, line, "status");
     }
     
     if (strncmp(line, "[Offset matching]", 17)==0) strcpy(params, "offset_match");
@@ -743,39 +707,39 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "max", 3)==0) 
 	cfg->offset_match->max = read_double(line, "max");
       if (strncmp(test, "status", 6)==0) 
-	cfg->offset_match->status = read_str(line, "status");
+	read_str(cfg->offset_match->status, line, "status");
     }
     
     if (strncmp(line, "[Simulated phase]", 17)==0) strcpy(params, "simulated phase");
     if (strcmp(params, "simulated phase")==0) {
       test = read_param(line);
       if (strncmp(test, "seeds", 5)==0) 
-	cfg->sim_phase->seeds = read_str(line, "seeds");
+	read_str(cfg->sim_phase->seeds, line, "seeds");
       if (strncmp(test, "status", 6)==0) 
-	cfg->sim_phase->status = read_str(line, "status");
+	read_str(cfg->sim_phase->status, line, "status");
     }
     
     if (strncmp(line, "[Differential interferogram]", 28)==0) 
       strcpy(params, "differential interferogram");
     if (strcmp(params, "differential interferogram")==0) {
       test = read_param(line);
-      if (strncmp(test, "igram", 5)==0) cfg->dinsar->igram = read_str(line, "igram");
+      if (strncmp(test, "igram", 5)==0) read_str(cfg->dinsar->igram, line, "igram");
       if (strncmp(test, "status", 6)==0) 
-	cfg->dinsar->status = read_str(line, "status");
+	read_str(cfg->dinsar->status, line, "status");
     }
     
     if (strncmp(line, "[Deramp/multilook]", 18)==0) strcpy(params, "deramp_ml");
     if (strcmp(params, "deramp_ml")==0) {
       test = read_param(line);
       if (strncmp(test, "status", 6)==0) 
-	cfg->deramp_ml->status = read_str(line, "status");
+	read_str(cfg->deramp_ml->status, line, "status");
     }
     
     if (strncmp(line, "[Phase unwrapping]", 18)==0) strcpy(params, "unwrap");
     if (strcmp(params, "unwrap")==0) {
       test = read_param(line);
       if (strncmp(test, "algorithm", 9)==0) 
-	cfg->unwrap->algorithm = read_str(line, "algorithm");
+	read_str(cfg->unwrap->algorithm, line, "algorithm");
       if (strncmp(test, "flattening", 10)==0) 
 	cfg->unwrap->flattening = read_int(line, "flattening");
       if (strncmp(test, "processors", 10)==0) 
@@ -793,9 +757,9 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "filter", 6)==0) 
 	cfg->unwrap->filter = read_double(line, "filter");
       if (strncmp(test, "quality control", 15)==0) 
-	cfg->unwrap->qc = read_str(line, "quality control");
+	read_str(cfg->unwrap->qc, line, "quality control");
       if (strncmp(test, "status", 6)==0) 
-	cfg->unwrap->status = read_str(line, "status");
+	read_str(cfg->unwrap->status, line, "status");
     }
 
     if (strncmp(line, "[Baseline refinement]", 21)==0) strcpy(params, "refine");
@@ -806,55 +770,55 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "max", 3)==0) 
 	cfg->refine->max = read_int(line, "max iterations");
       if (strncmp(test, "status", 6)==0) 
-	cfg->refine->status = read_str(line, "status");
+	read_str(cfg->refine->status, line, "status");
     }
     
     if (strncmp(line, "[Elevation]", 11)==0) strcpy(params, "elev");
     if (strcmp(params, "elev")==0) {
       test = read_param(line);
-      if (strncmp(test, "dem", 3)==0) cfg->elevation->dem = read_str(line, "dem");
+      if (strncmp(test, "dem", 3)==0) read_str(cfg->elevation->dem, line, "dem");
       if (strncmp(test, "error map", 9)==0) 
-	cfg->elevation->error = read_str(line, "error map");
+	read_str(cfg->elevation->error, line, "error map");
       if (strncmp(test, "status", 6)==0) 
-	cfg->elevation->status = read_str(line, "status");
+	read_str(cfg->elevation->status, line, "status");
     }
     
     if (strncmp(line, "[Ground range DEM]", 18)==0) strcpy(params, "final_dem");
     if (strcmp(params, "final_dem")==0) {
       test = read_param(line);
       if (strncmp(test, "status", 6)==0) 
-	cfg->ground_range->status = read_str(line, "status");   
+	read_str(cfg->ground_range->status, line, "status");   
     }
     
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "geocoding");
     if (strcmp(params, "geocoding")==0) {
       test = read_param(line);
-      if (strncmp(test, "dem", 3)==0) cfg->geocode->dem = read_str(line, "dem");
+      if (strncmp(test, "dem", 3)==0) read_str(cfg->geocode->dem, line, "dem");
       if (strncmp(test, "error map", 9)==0) 
-	cfg->geocode->error = read_str(line, "error map");
+	read_str(cfg->geocode->error, line, "error map");
       if (strncmp(test, "amplitude", 9)==0) 
-	cfg->geocode->amp = read_str(line, "amplitude");
+	read_str(cfg->geocode->amp, line, "amplitude");
       if (strncmp(test, "coherence", 9)==0) 
-	cfg->geocode->coh = read_str(line, "coherence");
+	read_str(cfg->geocode->coh, line, "coherence");
       if (strncmp(test, "projection name", 15)==0) 
-	cfg->geocode->name = read_str(line, "projection name");
+	read_str(cfg->geocode->name, line, "projection name");
       if (strncmp(test, "projection file", 15)==0) 
-	cfg->geocode->proj = read_str(line, "projection file");
+	read_str(cfg->geocode->proj, line, "projection file");
       if (strncmp(test, "resampling method", 17)==0)
-	cfg->geocode->resample = read_str(line, "resampling method");
+	read_str(cfg->geocode->resample, line, "resampling method");
       if (strncmp(test, "pixel spacing", 13)==0) 
 	cfg->geocode->pixel_spacing = read_double(line, "pixel spacing");
       if (strncmp(test, "status", 6)==0) 
-	cfg->geocode->status = read_str(line, "status");   
+	read_str(cfg->geocode->status, line, "status");   
     }
     
     if (strncmp(line, "[Export]", 8)==0) strcpy(params, "export");
     if (strcmp(params, "export")==0) {
       test = read_param(line);
       if (strncmp(test, "format", 6)==0)
-	cfg->export->format = read_str(line, "format");
+	read_str(cfg->export->format, line, "format");
       if (strncmp(test, "status", 6)==0)
-	cfg->export->status = read_str(line, "status");
+	read_str(cfg->export->status, line, "status");
     }
   }
   FCLOSE(fConfig);
