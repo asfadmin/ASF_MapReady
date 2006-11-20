@@ -1,7 +1,6 @@
 #ifndef IPS_H
 #define IPS_H
 
-#include "functions.h"
 #include "ceos.h"
 #include "asf.h"
 #include "asf_meta.h"

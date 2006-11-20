@@ -3,7 +3,7 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="ips_window">
+<widget class="GtkWindow" id="ips_main">
   <property name="visible">True</property>
   <property name="title" translatable="yes">ASF Interferometric Processing System</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>

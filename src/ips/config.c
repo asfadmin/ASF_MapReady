@@ -833,7 +833,7 @@ int write_config(char *configFile, dem_config *cfg)
   int shortFlag=FALSE;
   
   if (cfg == NULL) 
-    check_return(1, "not configuration structure to write");
+    check_return(1, "no configuration structure to write");
   if (cfg->general->short_config)
     shortFlag = TRUE;
   fConfig = FOPEN(configFile, "w");

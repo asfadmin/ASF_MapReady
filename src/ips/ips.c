@@ -1,4 +1,5 @@
 #include "ips.h"
+#include "functions.h"
 
 void check_return(int ret, char *msg)
 {
