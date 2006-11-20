@@ -845,20 +845,15 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   if ( !input_projected ) {
 
     // The maximum corner error we are willing to tolerate.
-    double max_corner_error;
+    double max_corner_error = max_allowable_error;
 
     // The so called scansar projection has problems that prevent us
     // from getting as good a match as we would like (see below about
     // asymmetry or meta_get_latLon and meta_get_lineSamp).
     // FIXME: Fix the broken scansar crap *HARD*.
-    if ( imd->sar ) {
-      if (  imd->sar->image_type == 'P' ) {
-	g_assert (imd->projection->type == SCANSAR_PROJECTION);
-	max_corner_error = 3 * max_allowable_error;
-      }
-      else {
-	max_corner_error = max_allowable_error;
-      }
+    if (imd->sar && imd->sar->image_type == 'P') {
+        g_assert (imd->projection->type == SCANSAR_PROJECTION);
+        max_corner_error = 3 * max_allowable_error;
     }
 
     // Upper left corner.
