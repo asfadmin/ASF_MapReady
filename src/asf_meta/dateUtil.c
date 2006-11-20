@@ -4,6 +4,7 @@ formats.
 */
 #include "asf.h"
 #include "dateUtil.h"
+#include <time.h>
 
 /*Get number of days in Gregorian Year.*/
 int date_getDaysInYear(int year)
