@@ -137,6 +137,12 @@ void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time);
 /*Extract second DSSR-style date from instr="DD-MMM-YYYY hh:mm:ss.ttt" */
 void date_dssr2time(const char *inStr,hms_time *time);
 
+// Converts a DDSR style date to a time stamp
+void date_dssr2time_stamp(const char *inStr, char *t_stamp);
+
+// Converts a SHR style date to a data stamp
+void date_shr2date_stamp(const char *inStr, char *d_stamp);
+
 /*Writes YY&MM&DD, where sep==&*/
 char * date_printY2Kdate(ymd_date *in,char sep,char *dest);
 

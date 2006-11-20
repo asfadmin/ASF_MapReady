@@ -351,8 +351,9 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   meta_parameters *imd = meta_read (input_meta_data->str);
   // We can't handle slant range images at the moment.  Happily, there
   // are only a very small number of these products around.
-  if ( imd->sar->image_type == 'S' ) {
-    asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
+  if ( imd->sar )
+    if ( imd->sar->image_type == 'S' ) {
+      asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
 		     "left-looking AMM-1 era images) at present.\n");
   }
 
@@ -372,40 +373,41 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   int (*unproject_input) (project_parameters_t *pps, double x, double y,
 			  double z, double *lat, double *lon, double *height);
   unproject_input = NULL;	// Silence compiler warnings.
-  if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
-       && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
-    input_projected = TRUE;
-
-    switch ( imd->projection->type) {
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      project_input = project_utm;
-      unproject_input = project_utm_inv;
-      break;
-    case POLAR_STEREOGRAPHIC:
-      project_input = project_ps;
-      unproject_input = project_ps_inv;
-      break;
-    case ALBERS_EQUAL_AREA:
-      project_input = project_albers;
-      unproject_input = project_albers_inv;
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      project_input = project_lamcc;
-      unproject_input = project_lamcc_inv;
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      project_input = project_lamaz;
-      unproject_input = project_lamaz_inv;
-      break;
-    case LAT_LONG_PSEUDO_PROJECTION:
-      project_input = project_lat_long_pseudo;
-      unproject_input = project_lat_long_pseudo_inv;
-      break;
-    default:
-      g_assert_not_reached ();
+  if ( imd->sar )
+    if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
+	 && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
+      input_projected = TRUE;
+      
+      switch ( imd->projection->type) {
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+	project_input = project_utm;
+	unproject_input = project_utm_inv;
+	break;
+      case POLAR_STEREOGRAPHIC:
+	project_input = project_ps;
+	unproject_input = project_ps_inv;
+	break;
+      case ALBERS_EQUAL_AREA:
+	project_input = project_albers;
+	unproject_input = project_albers_inv;
+	break;
+      case LAMBERT_CONFORMAL_CONIC:
+	project_input = project_lamcc;
+	unproject_input = project_lamcc_inv;
+	break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+	project_input = project_lamaz;
+	unproject_input = project_lamaz_inv;
+	break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+	project_input = project_lat_long_pseudo;
+	unproject_input = project_lat_long_pseudo_inv;
+	break;
+      default:
+	g_assert_not_reached ();
+      }
     }
-  }
-
+  
   void (*report_func) (const char *format, ...);
   report_func = force_flag ? asfPrintWarning : asfPrintError;
 
@@ -849,12 +851,14 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     // from getting as good a match as we would like (see below about
     // asymmetry or meta_get_latLon and meta_get_lineSamp).
     // FIXME: Fix the broken scansar crap *HARD*.
-    if (  imd->sar->image_type == 'P' ) {
-      g_assert (imd->projection->type == SCANSAR_PROJECTION);
-      max_corner_error = 3 * max_allowable_error;
-    }
-    else {
-      max_corner_error = max_allowable_error;
+    if ( imd->sar ) {
+      if (  imd->sar->image_type == 'P' ) {
+	g_assert (imd->projection->type == SCANSAR_PROJECTION);
+	max_corner_error = 3 * max_allowable_error;
+      }
+      else {
+	max_corner_error = max_allowable_error;
+      }
     }
 
     // Upper left corner.
@@ -867,40 +871,42 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     // input data, where it is off by 1.5% or so and therefore throws
     // this error check just a bit outside of a pixel.  But if the
     // problem is somewhere else I want to know.
-    if (  imd->sar->image_type != 'P' ) {
-      int ret1, ret2;
-      const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
-      double st_lat, st_lon;   // Symmetry test lat and long values.
-      ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
-                              &st_lat, &st_lon);
-      double strx, stry;       // Symmetry test result values.
-      ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height, 
-                                &strx, &stry);
-
-      // We will insist that the results are symmetric to within this
-      // fraction after transforming out and back.
-      printf ("Symmetry testing latLong vs. lineSamp... ");
-      const double sym_th = 0.1;   // Symmetry threshold.
-      if (ret1 || ret2) {
+    if ( imd->sar ) {
+      if (  imd->sar->image_type != 'P' ) {
+	int ret1, ret2;
+	const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
+	double st_lat, st_lon;   // Symmetry test lat and long values.
+	ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
+				&st_lat, &st_lon);
+	double strx, stry;       // Symmetry test result values.
+	ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height, 
+				  &strx, &stry);
+	
+	// We will insist that the results are symmetric to within this
+	// fraction after transforming out and back.
+	printf ("Symmetry testing latLong vs. lineSamp... ");
+	const double sym_th = 0.1;   // Symmetry threshold.
+	if (ret1 || ret2) {
           asfPrintError("Symmetry test failed! %s %s.\n",
                         ret1 ? "meta_get_latLon returned error" : "",
                         ret2 ? "meta_get_lineSamp returned error" : "");
-      }
-      if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
+	}
+	if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
           printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
-                   "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
+		 "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                  strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
-
+	  
           // Abort if the error is "horrible" (more than a pixel)
           if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
-              asfPrintError("Aborting... symmetry testing error too large.");
+	    asfPrintError("Aborting... symmetry testing error too large.");
           }
-      } else {
+	} else {
           printf ("good to within %lf pixels.\n", sym_th);
+	}
+	// Hmm, looks like they are all pretty bad.  Oh well, the
+	// problem of large corner errors when none of the intermediate
+	// grid points were off by much still seems specific to scansar.
       }
-      // Hmm, looks like they are all pretty bad.  Oh well, the
-      // problem of large corner errors when none of the intermediate
-      // grid points were off by much still seems specific to scansar.
     }
 
     double ul_x, ul_y;
@@ -1031,13 +1037,15 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
-  omd->sar->image_type = 'P';
-  omd->sar->range_time_per_pixel *= x_scale;
-  omd->sar->azimuth_time_per_pixel *= y_scale;
-  omd->sar->range_doppler_coefficients[1] *= x_scale;
-  omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
-  omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
-  omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+  if (omd->sar) {
+    omd->sar->image_type = 'P';
+    omd->sar->range_time_per_pixel *= x_scale;
+    omd->sar->azimuth_time_per_pixel *= y_scale;
+    omd->sar->range_doppler_coefficients[1] *= x_scale;
+    omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
+    omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
+    omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+  }
   if (omd->projection) {
     if (omd->projection->perY > 0) {
       g_assert (0);		/* Shouldn't happen.  */

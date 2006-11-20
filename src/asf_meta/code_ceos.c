@@ -483,6 +483,7 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	  strV(az_time_last,1862,24);
 	}
 	else if (strncmp(q->mission_id, "ALOS", 4)==0) {
+	  int i;
 	  shrtV(cal_data_indicator,1766,4);
 	  intV(start_cal_up,1770,8);
 	  intV(stop_cal_up,1778,8);
@@ -491,16 +492,12 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
 	  shrtV(prf_switch,1802,4);
 	  intV(line_prf_switch,1806,8);
 	  fltV(beam_center_dir,1814,16);
-	  shrtV(yew_steering,1830,4);
+	  shrtV(yaw_steering,1830,4);
 	  shrtV(param_table,1834,4);
 	  fltV(off_nadir_angle,1838,16);
 	  shrtV(ant_beam_num,1854,4);
-	  fltV(incid_a0,1886,20);
-	  fltV(incid_a1,1906,20);
-	  fltV(incid_a2,1926,20);
-	  fltV(incid_a3,1946,20);
-	  fltV(incid_a4,1966,20);
-	  fltV(incid_a5,1986,20);
+	  for (i=0; i<6; i++)
+	    fltV(incid_a[i],1886+i*20,20);
 	}
 	/* Coded up the ALOS spec as I had it - does not seem to match 
 	   the data though. Left things here just in case.
@@ -1126,6 +1123,68 @@ void Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir)
   strV(acc_orbit,off,2);
   strV(acc_att,off,2);
   strV(yaw_flag,off,2);
+}
+
+void Code_AMPR(unsigned char *bf, struct alos_map_proj_rec *q, codingDir dir)
+{
+  int ii, off=12;
+
+  intV(sample_count,off,16);
+  intV(line_count,off,16);
+  fltV(x_pixel_size,off,16);
+  fltV(y_pixel_size,off,16);
+  fltV(image_skew,off,16);
+  shrtV(hem,off,4);
+  intV(utm_zone,off,12);
+  strV(blank,off,32);
+  fltV(sc_cen_northing,off,16);
+  fltV(sc_cen_easting,off,16);
+  strV(blank2,off,32);
+  fltV(angle_true_north,off,16);
+  strV(blank3,off,112);
+  fltV(lat_map_origin,off,16);
+  fltV(lon_map_origin,off,16);
+  fltV(ref_lat,off,16);
+  fltV(ref_lon,off,16);
+  strV(blank4,off,32);
+  fltV(sc_center_x,off,16);
+  fltV(sc_center_y,off,16);
+  strV(blank5,off,32);
+  fltV(angle_true_north2,off,16);
+  fltV(sample_count2,off,16);
+  fltV(line_count2,off,16);
+  fltV(x_pixel_size2,off,16);
+  fltV(y_pixel_size2,off,16);
+  strV(blank6,off,48);
+  fltV(angle_true_north3,off,16);
+  fltV(orbit_inc,off,16);
+  fltV(lon_asc_node,off,16);
+  fltV(sat_height,off,16);
+  fltV(gr_speed,off,16);
+  fltV(head_angle,off,16);
+  strV(blank7,off,16);
+  fltV(swath_angle,off,16);
+  fltV(scan_rate,off,16);
+  strV(ref_ellipsoid,off,16);
+  fltV(ref_major_axis,off,16);
+  fltV(ref_minor_axis,off,16);
+  strV(geod_coord_name,off,16);
+  strV(blank8,off,128);
+  for (ii=0,off=956; ii<10; ii++)
+    fltV(phi[ii],off+ii*24,24);
+  for (ii=0,off=1196; ii<10; ii++)
+    fltV(lambda[ii],off+ii*24,24);
+  for (ii=0,off=1436; ii<10; ii++)
+    fltV(i[ii],off+ii*24,24);
+  for (ii=0,off=1676; ii<10; ii++)
+    fltV(j[ii],off+ii*24,24);
+  /*
+  int a,b,c,d,e,f;
+  int phi_ccd[10][8];
+  int lambda_ccd[10][8];
+  int i_ccd[10][8];
+  int j_ccd[10][8];
+  */
 }
 
 void Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir)

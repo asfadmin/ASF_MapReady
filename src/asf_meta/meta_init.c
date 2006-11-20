@@ -43,10 +43,11 @@ meta_general *meta_general_init(void)
   general->data_type = MAGIC_UNSET_INT;
   general->image_data_type = MAGIC_UNSET_INT;
   strcpy(general->system, MAGIC_UNSET_STRING);
+  strcpy(general->acquisition_date, MAGIC_UNSET_STRING);
   general->orbit = MAGIC_UNSET_INT;
   general->orbit_direction = MAGIC_UNSET_CHAR;
   general->frame = MAGIC_UNSET_INT;
-  general->band_number = MAGIC_UNSET_INT;
+  general->band_count = MAGIC_UNSET_INT;
   general->line_count = MAGIC_UNSET_INT;
   general->sample_count = MAGIC_UNSET_INT;
   general->start_line = MAGIC_UNSET_INT;
@@ -142,6 +143,21 @@ meta_projection *meta_projection_init(void)
   return projection;
 }
 
+meta_transform *meta_transform_init(void)
+{
+  int ii;
+
+  meta_transform *map = (meta_transform *) MALLOC(sizeof(meta_transform));
+  map->parameter_count = MAGIC_UNSET_INT;
+  for (ii=0; ii<10; ii++) {
+    map->x[ii] = MAGIC_UNSET_DOUBLE;
+    map->y[ii] = MAGIC_UNSET_DOUBLE;
+    map->l[ii] = MAGIC_UNSET_DOUBLE;
+    map->s[ii] = MAGIC_UNSET_DOUBLE;
+  }
+  return map;
+}
+
 /*******************************************************************************
  * meta_state_vectors_init():
  * Allocate memory for and initialize elements of a meta_state_vectors structure.
@@ -220,6 +236,7 @@ meta_parameters *raw_init(void)
   meta->optical         = NULL;
   meta->thermal         = NULL;  /* Not yet in use */
   meta->projection      = NULL;  /* Allocated later if geocoded */
+  meta->transform       = NULL;
   meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
   //meta->location        = meta_location_init();  
@@ -363,6 +380,8 @@ void meta_free(meta_parameters *meta)
     meta->state_vectors = NULL;
     FREE(meta->location);
     meta->location = NULL;
+    FREE(meta->transform);
+    meta->transform = NULL;
 
     /*
     FREE(meta->geo);

@@ -464,6 +464,41 @@ void date_dssr2time(const char *inStr,hms_time *time)
 	subStr(21,3,&msec);
 	time->sec=sec+msec/1000.0;
 }
+
+/* Convert DSSR style date to time stamp 
+instr="YYYYMMDDhhmmssttt"
+index  01234567890123456
+*/
+void date_dssr2time_stamp(const char *inStr, char *t_stamp)
+{
+  struct tm t;
+  ymd_date date;
+  hms_time time;
+
+  date_dssr2date(inStr, &date, &time);
+  t.tm_year = date.year - 1900;
+  t.tm_mon = date.month - 1;
+  t.tm_mday = date.day;
+  t.tm_sec = time.sec;
+  t.tm_min = time.min - 1;
+  t.tm_hour = time.hour - 1;
+  t.tm_isdst = -1;
+  strftime(t_stamp, 22, "%d-%b-%Y, %H:%M:%S", &t);
+}
+
+void date_shr2date_stamp(const char *inStr, char *d_stamp)
+{
+  char buf[100], tmp[10];
+#define subStr2(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%s",dest);
+  subStr2(0,2,d_stamp);
+  strcat(d_stamp,"-");
+  subStr2(2,3,tmp);
+  strcat(d_stamp,tmp);
+  strcat(d_stamp,"-");
+  subStr2(5,2,tmp);
+  strcat(d_stamp,tmp);
+}
+
 /*
 WriteInt: Internal call.
 	Write the N low-order decimal digits of the given

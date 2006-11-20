@@ -61,6 +61,7 @@ VERSION         DATE   AUTHOR
 #define NVDR      10022
 #define SHR       10023
 #define RCDR      10024
+#define AMPR      10025
 
 /*** RECORD SIZES ***/
 #define H_SZ    12
@@ -929,17 +930,12 @@ struct dataset_sum_rec {
   short prf_switch;           // PRF switching indicator
   int line_prf_switch;        // line locator of PRF switching
   double beam_center_dir;     // direction of a beam center in a scene scenter
-  short yew_steering;         // yew steering mode flag
+  short yaw_steering;         // yaw steering mode flag
   short param_table;          // parameter table number of automatically setting
   double off_nadir_angle;     // nominal offnadir angle
   short ant_beam_num;         // antenna beam number
   char spare12[8];            // spare
-  double incid_a0;            // incidence angle constant term (a0)
-  double incid_a1;            // incidence angle linear term (a1)
-  double incid_a2;            // incidence angle quadratic term (a2)
-  double incid_a3;            // incidence angle cubic term (a3)
-  double incid_a4;            // incidence angle fourth term (a4)
-  double incid_a5;            // incidence angle fifth term (a5)
+  double incid_a[6];          // incidence angle parameter a
   // End ALOS data set summary record fields
 };
 
@@ -1510,6 +1506,59 @@ struct scene_header_rec {
   char yaw_flag[3];           // Yaw steering flag
 };
 
+// Map Projection Record - ALOS style
+struct alos_map_proj_rec {
+  int sample_count;           // Number of nominal pixels per line (1A, 1B1)
+  int line_count;             // Number of nominal lines per scene (1A, 1B1)
+  double x_pixel_size;        // Nominal inter-pixel distance at scene center
+  double y_pixel_size;        // Nominal inter-line distance at scene center
+  double image_skew;          // Image skew (milliradian) at scene center
+  short hem;                  // Hemisphere - 0 is North, 1 is South
+  int utm_zone;               // UTM zone number (1 to 60)
+  char blank[33];
+  double sc_cen_northing;     // Scene center position (northing - km)
+  double sc_cen_easting;      // Scene center position (easting - km)
+  char blank2[33];
+  double angle_true_north;    // Angle map projection and true north
+  char blank3[113];
+  double lat_map_origin;      // Latitude of map projection origin (1B2)
+  double lon_map_origin;      // Longitude of map projection origin (1B2)
+  double ref_lat;             // Reference latitude (1B2)
+  double ref_lon;             // Reference longitude (1B2)
+  char blank4[33];
+  double sc_center_x;         // X coordinates of the scene center (1B2)
+  double sc_center_y;         // Y coordinates of the scene center (1B2)
+  char blank5[33];
+  double angle_true_north2;   // Angle map projection and true north
+  double sample_count2;       // Number of nominal pixels per line (1B2)
+  double line_count2;         // Number of nominal lines per scene (1B2)
+  double x_pixel_size2;       // Nominal inter-pixel distance at scene center (1B2)
+  double y_pixel_size2;       // Nominal inter-pixel distance at scene center (1B2)
+  char blank6[49];
+  double angle_true_north3;   // Angle map projection and true north
+  double orbit_inc;           // Nominal satellite orbit inclination (degree)
+  double lon_asc_node;        // Longitude of nominal ascending node (radian)
+  double sat_height;          // Nominal satellite altitude (km)
+  double gr_speed;            // Nominal ground speed (km/s)
+  double head_angle;          // Satellite heading angle (radian)
+  char blank7[17];
+  double swath_angle;         // Swath angle (nominal - degree)
+  double scan_rate;           // Nominal scan rate (scan/s)
+  char ref_ellipsoid[17];     // Name of reference ellipsoid
+  double ref_major_axis;      // Semimajor axis of reference ellipsoid (m)
+  double ref_minor_axis;      // Semiminor axis of reference ellipsoid (m)
+  char geod_coord_name[17];   // Geodetic coordinates name
+  char blank8[129];
+  double phi[10];             // latitude transformation coefficients
+  double lambda[10];          // longitude transformaiton coefficients
+  double i[10];               // pixel transformation coefficients
+  double j[10];               // line transformation coefficients
+  int a,b,c,d,e,f;            // map coefficients
+  int phi_ccd[10][8];         // latitude transformation coefficients (CCDs)
+  int lambda_ccd[10][8];      // longitude transformaiton coefficients (CCDs)
+  int i_ccd[10][8];           // pixel transformation coefficients (CCDs)
+  int j_ccd[10][8];           // line transformation coefficients (CCDs)
+};
 
 /*Prototypes for converting character buffers to records, and back again.*/
 typedef enum {toASCII,fromASCII} codingDir;
@@ -1532,6 +1581,7 @@ void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
 void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
 void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
+void   Code_AMPR(unsigned char *bf, struct alos_map_proj_rec *q, codingDir dir);
 
 void   Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir);
 void   Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
@@ -1561,6 +1611,7 @@ int get_fdr(const char *filename,struct FDR *rec);
 int get_ppr(const char *filename,struct PPREC *rec);
 int get_rcdr(const char *filename,struct radio_comp_data_rec *rcdr);
 int get_shr(const char *filename, struct scene_header_rec *shr);
+int get_ampr(const char *filename, struct alos_map_proj_rec *ampr);
 
 int get_vdr(char *filename,struct VDREC *rec);
 int get_lfpr(char *filename,struct FPREC *rec);

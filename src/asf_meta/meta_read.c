@@ -48,7 +48,7 @@ meta_parameters *meta_read(const char *inName)
   }
   
   /* Remember the name and location of the meta struct */
-  add_meta_ddr_struct(inName, meta, NULL);
+  //add_meta_ddr_struct(inName, meta, NULL);
 
   FREE(ddr_name);
   FREE(meta_name);
@@ -152,7 +152,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 
 /* Fields that cannot be filled from the old structures */
 	general->frame            = 0;
-	general->band_number      = 0;
+	general->band_count       = 1;
 	general->center_latitude  = MAGIC_UNSET_DOUBLE;
 	general->center_longitude = MAGIC_UNSET_DOUBLE;
 	general->missing_lines    = -999999999;
@@ -376,7 +376,7 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
 	int ii=0;
 	meta->general->line_count = ddr->nl;
 	meta->general->sample_count = ddr->ns;
-	meta->general->band_number = 0;
+	meta->general->band_count = 1;
 	meta->general->start_line = ddr->master_line - 1;
 	meta->general->start_sample = ddr->master_sample - 1;
 	switch (ddr->dtype) {

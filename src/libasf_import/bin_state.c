@@ -149,7 +149,7 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
       meta->general->orbit_direction  = 'A';
     else if (meta->state_vectors->vecs[0].vec.vel.z < 0)
       meta->general->orbit_direction  = 'D';
-    meta->general->band_number  = 0;
+    meta->general->band_count   = 1;
     meta->general->start_line   = 0;
     meta->general->start_sample = 0;
     meta->general->bit_error_rate =

@@ -51,7 +51,8 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
 		       struct dataset_sum_rec *dssr,
 		       struct VMPDREC *mpdr, struct VFDRECV *asf_facdr);
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
-                    struct VMPDREC *mpdr);
+                    struct VMPDREC *mpdr, struct scene_header_rec *shr,
+		    struct alos_map_proj_rec *ampr);
 ceos_description *get_ceos_description(const char *fName);
 ceos_description *get_sensor(const char *fName);
 double get_firstTime(const char *fName);
@@ -288,6 +289,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       default: meta->general->data_type = BYTE;              break;
    }
    strcpy(meta->general->system, meta_get_system());
+   date_dssr2time_stamp(dssr->inp_sctim, meta->general->acquisition_date); 
    meta->general->orbit = atoi(dssr->revolution);
    // Radarsat data include the frame number in the product ID
    if (strcmp(meta->general->sensor, "RSAT-1") == 0) {
@@ -310,7 +312,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      meta->general->frame =
        asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
 
-   meta->general->band_number      = 0;
+   meta->general->band_count = nBands;
    meta->general->orbit_direction  = dssr->asc_des[0];
    if (meta->general->orbit_direction==' ')
      meta->general->orbit_direction = 
@@ -624,7 +626,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 
    /* Initialize map projection for projected images */
    if (meta->sar->image_type=='P' && mpdr) {
-      ceos_init_proj(meta, dssr, mpdr);
+      ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
       /* Do these again -- can get a better estimate now that we have
          the projection block figured out. */
@@ -690,6 +692,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 {
   char **dataName,leaderName[255]; // CEOS names, typically .D and .L
   ceos_description *ceos=NULL;
+  struct alos_map_proj_rec *ampr=NULL;
   char *substr;
   int ii, nBands=1;
   
@@ -706,56 +709,81 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   // General block
   strcpy(meta->general->sensor, ceos->shr.mission_id);
   strtok(meta->general->sensor, " "); // Remove spaces from field
-  if (ceos->sensor == AVNIR) {
+  if (ceos->sensor == AVNIR)
     sprintf(meta->general->sensor_name,"AVNIR");
-    // mode
-    substr = ceos->shr.product_id;
-    substr++;
-    if (strncmp(substr,"1A",2)==0)
-      strcpy(meta->general->mode, "1A");
-    else if (strncmp(substr,"1B1",3)==0)
-      strcpy(meta->general->mode, "1B1");
-    else if (strncmp(substr,"1B2",3)==0)
-      strcpy(meta->general->mode, "1B2");
-    // center latitude and longitude
-    if (strcmp(meta->general->mode,"1A")==0 ||
-	strcmp(meta->general->mode,"1B1")==0) {
-      meta->general->center_latitude = ceos->shr.sc_lat;
-      meta->general->center_longitude = ceos->shr.sc_lon;
-    }
-    else if (strcmp(meta->general->mode,"1B2")==0) {
-      meta->general->center_latitude = ceos->shr.sc_lat2;
-      meta->general->center_longitude = ceos->shr.sc_lon2;
-    }
-  }
   else if (ceos->sensor == PRISM)
     sprintf(meta->general->sensor_name,"PRISM");
+  if (ceos->sensor == AVNIR || ceos->sensor == PRISM) {
+    ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
+    if (get_ampr(in_fName, ampr) == -1) {
+      FREE(ampr);
+      ampr = NULL;
+    }
+  }
+  substr = ceos->shr.product_id;
+  substr++;
+  if (strncmp(substr,"1A",2)==0)
+    strcpy(meta->general->mode, "1A");
+  else if (strncmp(substr,"1B1",3)==0)
+    strcpy(meta->general->mode, "1B1");
+  else if (strncmp(substr,"1B2R",4)==0)
+    strcpy(meta->general->mode, "1B2R");
+  else if (strncmp(substr,"1B2G",4)==0)
+    strcpy(meta->general->mode, "1B2G");
+  if (strcmp(meta->general->mode,"1A")==0 ||
+      strcmp(meta->general->mode,"1B1")==0) {
+    meta->general->center_latitude = ceos->shr.sc_lat;
+    meta->general->center_longitude = ceos->shr.sc_lon;
+  }
+  else if (strncmp(meta->general->mode,"1B2",3)==0) {
+    meta->general->center_latitude = ceos->shr.sc_lat2;
+    meta->general->center_longitude = ceos->shr.sc_lon2;
+    if (strncmp(meta->general->mode,"1B2R",4)==0) 
+      meta->transform = meta_transform_init();
+  }
+  // Don't create a projection block for georeferenced images
+  if (substr[3] == 'G' && (substr[5] == 'U' || substr[5] == 'P'))
+    ceos_init_proj(meta, NULL, NULL, &(ceos->shr), ampr);
+    
   // processor ???
   meta->general->data_type = BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   strcpy(meta->general->system, meta_get_system());
+  if (ceos->shr.sc_time[0] == ' ')
+    date_shr2date_stamp(ceos->shr.acq_date, meta->general->acquisition_date);
+  else
+    date_dssr2time_stamp(ceos->shr.sc_time, meta->general->acquisition_date); 
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
   substr = ceos->shr.sc_id;
   for (ii=0; ii<11; ii++)
     substr++;
   meta->general->frame = atoi(substr);
-  // band_number ???
+  meta->general->band_count = nBands;
   meta->general->line_count = ceos->shr.lines;
   meta->general->sample_count = ceos->shr.samples;
-  // start_line
-  // start_sample
-  // x_pixel_size
-  // y_pixel_size
-  // re_major
-  // re_minor
+  meta->general->start_line = 0;
+  meta->general->start_sample = 0;
+  if (ampr) {
+    if (strcmp(meta->general->mode, "1A")==0 ||
+	strcmp(meta->general->mode, "1B1")==0) {
+      meta->general->x_pixel_size = ampr->x_pixel_size;
+      meta->general->y_pixel_size = ampr->y_pixel_size;
+    }
+    else if (strncmp(meta->general->mode, "1B2", 3)==0) {
+      meta->general->x_pixel_size = ampr->x_pixel_size2;
+      meta->general->y_pixel_size = ampr->y_pixel_size2;
+    }    
+    meta->general->re_major = ampr->ref_major_axis;
+    meta->general->re_minor = ampr->ref_minor_axis;
+  }
   // bit_error_rate
   // missing_lines
   // no_data
 
   // Optical block
   if (strcmp(meta->general->mode,"1A")==0)
-    strcpy(meta->optical->correction_level,"");
+    strcpy(meta->optical->correction_level,"N");
   else {
     substr = ceos->shr.proc_code;
     for (ii=0; ii<6; ii++)
@@ -772,6 +800,65 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     substr++;
   substr[3] = '\0';
   meta->optical->sun_azimuth_angle = atof(substr);
+
+  // Location block
+  meta->location = meta_location_init();  
+  meta->location->lat_start_near_range = ceos->shr.lat_ul;
+  meta->location->lon_start_near_range = ceos->shr.lon_ul;
+  meta->location->lat_start_far_range = ceos->shr.lat_ur;
+  meta->location->lon_start_far_range = ceos->shr.lon_ur;
+  meta->location->lat_end_near_range = ceos->shr.lat_ll;
+  meta->location->lon_end_near_range = ceos->shr.lon_ll;
+  meta->location->lat_end_far_range = ceos->shr.lat_lr;
+  meta->location->lon_end_far_range = ceos->shr.lon_lr;
+
+  // Projection block
+  if (meta->projection) {
+    if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+      meta->projection->startX = 
+	ampr->sc_cen_easting*1000 - ampr->sample_count/2*ampr->x_pixel_size2; 
+      meta->projection->startY =
+	ampr->sc_cen_northing*1000 - ampr->line_count/2*ampr->y_pixel_size2; 
+    }
+    else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
+      meta->projection->startX =
+	ampr->sc_center_x*1000 - ampr->sample_count/2*ampr->x_pixel_size2; 
+      meta->projection->startY =
+	ampr->sc_center_y*1000 - ampr->line_count/2*ampr->y_pixel_size2; 
+    }
+    // If the image is georeferenced set the upper left corner to unknown
+    // This is the safest way to convey that this image has some projection
+    // information but only for the corners
+    if (strcmp(meta->general->mode, "1B2R")==0) {
+      meta->projection->startX = MAGIC_UNSET_DOUBLE;
+      meta->projection->startY = MAGIC_UNSET_DOUBLE;
+    }
+    meta->projection->perX = ampr->x_pixel_size2;
+    meta->projection->perY = -ampr->y_pixel_size2;
+    strcpy(meta->projection->units, "meters");
+    if (ampr->hem == 0)
+      meta->projection->hem = 'N';
+    else
+      meta->projection->hem = 'S';
+    if (strncmp(ampr->ref_ellipsoid, "GRS80", 5) == 0)
+      meta->projection->spheroid = GRS1980_SPHEROID;
+    meta->projection->re_major = ampr->ref_major_axis;
+    meta->projection->re_minor = ampr->ref_minor_axis;
+    if (strncmp(ampr->geod_coord_name, "ITRF97", 6) == 0)
+      meta->projection->datum = ITRF97_DATUM;
+    meta->projection->height = 0.0;
+  }
+
+  // Map transformation coefficients
+  if (meta->transform) {
+    meta->transform->parameter_count = 10;
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      meta->transform->x[ii] = ampr->lambda[ii];
+      meta->transform->y[ii] = ampr->phi[ii];
+      meta->transform->l[ii] = ampr->j[ii];
+      meta->transform->s[ii] = ampr->i[ii];
+    }
+  }
 
   FREE(ceos);
 }
@@ -837,7 +924,8 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
  * Allocate a projection parameters structure, given an ASF map projection data
  * record. */
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
-                   struct VMPDREC *mpdr)
+		    struct VMPDREC *mpdr, struct scene_header_rec *shr,
+		    struct alos_map_proj_rec *ampr)
 {
    meta_projection *projection; 
    if (meta->projection == NULL) {
@@ -847,88 +935,112 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
    else
      projection = meta->projection;
 
-   meta->sar->image_type = 'P';/*Map-Projected image.*/
-   meta->general->sample_count = mpdr->npixels;
-   
-   if ((strncmp(mpdr->mpdesc, "SLANT RANGE", 11) == 0) ||
-       (strncmp(mpdr->mpdesc, "Slant range", 11) == 0)) {
-     /* FOCUS processor populates map projection record for slant range! */
-     /* ESA (I-PAF) apparently does the same */
-     meta->sar->image_type='S';
-     projection->type=MAGIC_UNSET_CHAR;
-   }
-   else if ((strncmp(mpdr->mpdesc, "GROUND RANGE", 12) == 0) ||
-	    (strncmp(mpdr->mpdesc, "Ground range", 12) == 0)) {
-     /* ESA populates map projection record also for ground range! */
-     meta->sar->image_type='G';
-     projection->type=MAGIC_UNSET_CHAR;
-   }
-   else if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
-     projection->type=SCANSAR_PROJECTION;/*Along Track/Cross Track.*/
-   }
-   else if (strncmp(mpdr->mpdesig, "LAMBERT", 7) == 0) {
-     projection->type=LAMBERT_CONFORMAL_CONIC;/*Lambert Conformal Conic.*/
-     printf("WARNING: * Images geocoded with the Lambert Conformal Conic "
-	    "projection may not\n"
-	    "         * be accurately geocoded!\n");
-     projection->param.lamcc.plat1=mpdr->nsppara1;
-     projection->param.lamcc.plat2=mpdr->nsppara2;
-     projection->param.lamcc.lat0=mpdr->blclat+0.023;/*NOTE: This line is a hack.*/
-     projection->param.lamcc.lon0=mpdr->blclong+2.46;/*NOTE: This line is a hack */
-     /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
-      * as far as we can tell, are never stored in the CEOS
-      */
-   }
-   else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
-     projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: pre-radarsat era*/
-     projection->param.ps.slat=70.0;
-     projection->param.ps.slon=-45.0;
-   }
-   else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
-     projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
-     projection->param.ps.slat=mpdr->upslat;
-     projection->param.ps.slon=mpdr->upslong;
-     if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
-       projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
-   }
-   else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
-     projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
-     projection->param.utm.zone=atoi(mpdr->utmzone);
-     projection->param.utm.false_easting=mpdr->utmeast;
-     projection->param.utm.false_northing=mpdr->utmnorth;
-     projection->param.utm.lat0=mpdr->utmlat;
-     projection->param.utm.lon0=mpdr->utmlong;
-     projection->param.utm.scale_factor=mpdr->utmscale;
+   if (meta->sar) {
+     meta->sar->image_type = 'P';/*Map-Projected image.*/
+     meta->general->sample_count = mpdr->npixels;
+     
+     if ((strncmp(mpdr->mpdesc, "SLANT RANGE", 11) == 0) ||
+	 (strncmp(mpdr->mpdesc, "Slant range", 11) == 0)) {
+       /* FOCUS processor populates map projection record for slant range! */
+       /* ESA (I-PAF) apparently does the same */
+       meta->sar->image_type='S';
+       projection->type=MAGIC_UNSET_CHAR;
+     }
+     else if ((strncmp(mpdr->mpdesc, "GROUND RANGE", 12) == 0) ||
+	      (strncmp(mpdr->mpdesc, "Ground range", 12) == 0)) {
+       /* ESA populates map projection record also for ground range! */
+       meta->sar->image_type='G';
+       projection->type=MAGIC_UNSET_CHAR;
+     }
+     else if (strncmp(mpdr->mpdesig, "GROUND RANGE",12) == 0) {
+       projection->type=SCANSAR_PROJECTION;/*Along Track/Cross Track.*/
+     }
+     else if (strncmp(mpdr->mpdesig, "LAMBERT", 7) == 0) {
+       projection->type=LAMBERT_CONFORMAL_CONIC;/*Lambert Conformal Conic.*/
+       printf("WARNING: * Images geocoded with the Lambert Conformal Conic "
+	      "projection may not\n"
+	      "         * be accurately geocoded!\n");
+       projection->param.lamcc.plat1=mpdr->nsppara1;
+       projection->param.lamcc.plat2=mpdr->nsppara2;
+       projection->param.lamcc.lat0=mpdr->blclat+0.023;/*NOTE: Hack.*/
+       projection->param.lamcc.lon0=mpdr->blclong+2.46;/*NOTE: Hack */
+       /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
+	* as far as we can tell, are never stored in the CEOS
+	*/
+     }
+     else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
+       projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic*/
+       projection->param.ps.slat=70.0;
+       projection->param.ps.slon=-45.0;
+     }
+     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
+       projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
+       projection->param.ps.slat=mpdr->upslat;
+       projection->param.ps.slon=mpdr->upslong;
+       if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
+	 projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
+     }
+     else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
+       projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
+       projection->param.utm.zone=atoi(mpdr->utmzone);
+       projection->param.utm.false_easting=mpdr->utmeast;
+       projection->param.utm.false_northing=mpdr->utmnorth;
+       projection->param.utm.lat0=mpdr->utmlat;
+       projection->param.utm.lon0=mpdr->utmlong;
+       projection->param.utm.scale_factor=mpdr->utmscale;
+     }
+     else {
+       printf("Cannot match projection '%s',\n"
+	      "in map projection data record.\n",mpdr->mpdesig);
+       exit(EXIT_FAILURE);
+     }
+     
+     if(strcmp(meta->general->sensor, "ALOS") == 0){
+       // might need to have a check for ALOS coordinates - look like km, not m
+       projection->startY = mpdr->tlcnorth*1000;
+       projection->startX = mpdr->tlceast*1000;
+       projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) * 1000 / mpdr->nlines;
+       projection->perX   = (mpdr->trceast - mpdr->tlceast) * 1000 / mpdr->npixels;
+       projection->datum = ITRF97_DATUM;
+     }
+     else if (projection->type != SCANSAR_PROJECTION){
+       projection->startY = mpdr->tlcnorth;
+       projection->startX = mpdr->tlceast;
+       projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) / mpdr->nlines;
+       projection->perX   = (mpdr->trceast - mpdr->tlceast) / mpdr->npixels;
+     }
+     
+     /* Default the units to meters */
+     strcpy(projection->units,"meters");
+     
+     projection->hem = (dssr->pro_lat>0.0) ? 'N' : 'S';
+     if (strncmp(dssr->ellip_des,"GRS80",5)==0)
+       projection->spheroid = GRS1980_SPHEROID;
+     else if (strncmp(dssr->ellip_des,"GEM06",5)==0)
+       projection->spheroid = GEM6_SPHEROID;
+     projection->re_major = dssr->ellip_maj*1000;
+     projection->re_minor = dssr->ellip_min*1000;
+     projection->height = 0.0;
    }
    else {
-     printf("Cannot match projection '%s',\n"
-	    "in map projection data record.\n",mpdr->mpdesig);
-     exit(EXIT_FAILURE);
+     if (shr->product_id[6] == 'U') {
+       projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+       projection->param.utm.zone = ampr->utm_zone;
+       projection->param.utm.false_easting = 500000.0;
+       if (ampr->hem == 0)
+	 projection->param.utm.false_northing = 0.0;
+       else
+	 projection->param.utm.false_northing = 10000000.0;
+       projection->param.utm.lat0 = 0.0;
+       projection->param.utm.lon0 = (double) (ampr->utm_zone - 1) * 6.0 - 177.0;
+       projection->param.utm.scale_factor = 0.9996;
+     }
+     else if (shr->product_id[6] == 'P') {
+       projection->type = POLAR_STEREOGRAPHIC;
+       projection->param.ps.slat = ampr->lat_map_origin;
+       projection->param.ps.slon = ampr->lon_map_origin;
+     }
    }
-   
-   if(strcmp(meta->general->sensor, "ALOS") == 0){
-     // might need to have a check for ALOS coordinates - look like km, not m
-     projection->startY = mpdr->tlcnorth*1000;
-     projection->startX = mpdr->tlceast*1000;
-     projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) * 1000 / mpdr->nlines;
-     projection->perX   = (mpdr->trceast - mpdr->tlceast) * 1000 / mpdr->npixels;
-   }
-   else if (projection->type != SCANSAR_PROJECTION){
-     projection->startY = mpdr->tlcnorth;
-     projection->startX = mpdr->tlceast;
-     projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) / mpdr->nlines;
-     projection->perX   = (mpdr->trceast - mpdr->tlceast) / mpdr->npixels;
-   }
-     
-   /* Default the units to meters */
-   strcpy(projection->units,"meters");
-   
-   projection->hem = (dssr->pro_lat>0.0) ? 'N' : 'S';
-   
-   projection->re_major = dssr->ellip_maj*1000;
-   projection->re_minor = dssr->ellip_min*1000;
-   projection->height = 0.0;
-
 }
 
 /* Parts that need to come out of jpl_proj.c, once we have sorted out all other

@@ -29,6 +29,7 @@ typedef enum {
 	CEOS_FDR=300,         /* File Descriptor Record.*/
 	CEOS_PPR=120,         /* Processing Parameter Record - CDPF defined.*/
 	CEOS_SHR=18,          // Scene Header Record - ALOS
+	CEOS_AMPR=36,         // Map Projection Record - ALOS
 	CEOS_RCDR=51          // Radiometric Compensation Data Record - RSI
 } CEOS_RECORD_TYPE;
 
@@ -63,6 +64,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	{
 		int itype,length,mallocBytes;
 		itype = bufhdr.rectyp[1];
+		//printf("get_ceos - record type: %d\n", itype);
 		length=bigInt32(bufhdr.recsiz);
 		mallocBytes = (length>16384) ? length : 16384;
 		*buff=(unsigned char *)MALLOC(mallocBytes);
@@ -274,6 +276,17 @@ int get_shr(const char *filename, struct scene_header_rec *shr)
 	int era;
 	if ( (era = getCeosRecord(filename,CEOS_SHR,1,&buff)) != -1) {
 		Code_SHR(buff,shr,fromASCII);
+		FREE(buff);
+	}
+	return(era);
+}
+
+int get_ampr(const char *filename, struct alos_map_proj_rec *ampr)
+{
+	unsigned char *buff;
+	int era;
+	if ( (era = getCeosRecord(filename,CEOS_AMPR,1,&buff)) != -1) {
+		Code_AMPR(buff,ampr,fromASCII);
 		FREE(buff);
 	}
 	return(era);

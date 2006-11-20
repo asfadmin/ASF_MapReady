@@ -141,13 +141,16 @@ void error_message(const char *err_mes, ...)
 #define MPARAM ( (param_t *) current_block)
 #define MSTATS ( (meta_stats *) current_block)
 #define MLOCATION ( (meta_location *) current_block)
+#define MTRANSFORM ( (meta_transform *) current_block)
 
 void select_current_block(char *block_name)
 {
   void *current_block = stack_top->block;
 
-  if ( !strcmp(block_name, "general") )
-    { current_block = MTL->general; goto MATCHED; }
+  if ( !strcmp(block_name, "general") ) { 
+    current_block = MTL->general; 
+    goto MATCHED; 
+  }
   if ( !strcmp(block_name, "sar") ) { 
     if (MTL->sar == NULL)
       { MTL->sar = meta_sar_init(); }
@@ -198,6 +201,13 @@ void select_current_block(char *block_name)
   if ( !strcmp(block_name, "state") )
     { current_block = &((*( (param_t *) current_block)).state); goto MATCHED; }
 
+  if ( !strcmp(block_name, "transform") ) {
+    if (MTL->transform == NULL)
+       { MTL->transform = meta_transform_init();}
+    current_block = MTL->transform;
+    goto MATCHED;
+  }
+
   if ( !strcmp(block_name, "stats") ) {
     if (MTL->stats == NULL)
        { MTL->stats = meta_stats_init(); }
@@ -205,8 +215,12 @@ void select_current_block(char *block_name)
     goto MATCHED;
   }
 
-  if ( !strcmp(block_name, "location") )
-    { current_block = MTL->location; goto MATCHED; }
+  if ( !strcmp(block_name, "location") ) { 
+    if (MTL->location == NULL)
+      { MTL->location = meta_location_init(); }
+    current_block = MTL->location; 
+    goto MATCHED; 
+  }
 
   /* Got an unknown block name, so report.  */
   warning_message("unknown block name: %s", block_name);
@@ -316,6 +330,8 @@ void fill_structure_field(char *field_name, void *valp)
    }
    if ( !strcmp(field_name, "system") )
       { strcpy(MGENERAL->system, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "acquisition_date") )
+      { strcpy(MGENERAL->acquisition_date, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "orbit") )
       { MGENERAL->orbit = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "orbit_direction") ) {
@@ -341,8 +357,8 @@ void fill_structure_field(char *field_name, void *valp)
     }
     if ( !strcmp(field_name, "frame") )
       { MGENERAL->frame = VALP_AS_INT; return; }
-    if ( !strcmp(field_name, "band_number") )
-      { MGENERAL->band_number = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "band_count") )
+      { MGENERAL->band_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "line_count") )
       { MGENERAL->line_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "sample_count") )
@@ -599,8 +615,8 @@ void fill_structure_field(char *field_name, void *valp)
 	MPROJ->datum = ETRF89_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRS89") )
 	MPROJ->datum = ETRS89_DATUM;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ITRF") )
-	MPROJ->datum = ITRF_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ITRF97") )
+	MPROJ->datum = ITRF97_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD27") )
 	MPROJ->datum = NAD27_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD83") )
@@ -713,6 +729,34 @@ void fill_structure_field(char *field_name, void *valp)
      with LAT_LONG_PSEUDO_PROJECTION type files is empty, since all
      the parameters required for that projection are stored in the
      main block.  */
+
+  // Fields which normally go in the transform block of the metadata file. */
+  if ( !strcmp(stack_top->block_name, "transform") ) {
+    int ii;
+    char coeff[15];
+    if ( !strcmp(field_name, "parameter_count") )
+      { MTRANSFORM->parameter_count = VALP_AS_INT; return; }
+    for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
+      sprintf(coeff, "phi(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+	{ MTRANSFORM->y[ii] = VALP_AS_DOUBLE; return; }
+    }
+    for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
+      sprintf(coeff, "lambda(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+	{ MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
+    }
+    for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
+      sprintf(coeff, "i(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+	{ MTRANSFORM->s[ii] = VALP_AS_DOUBLE; return; }
+    }
+    for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
+      sprintf(coeff, "j(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+	{ MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
+    }
+  }
 
   /* Fields which normally go in the statistics block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "stats") ) {

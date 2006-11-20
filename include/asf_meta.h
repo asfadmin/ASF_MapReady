@@ -31,7 +31,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 1.6
+#define META_VERSION 2.0
 
 // Maximum number of bands that are supported by the ingest.
 #define MAX_BANDS 4
@@ -136,11 +136,11 @@ typedef enum {
   ED50_DATUM,    /* European Datum 1950 (International 1924) */
   ETRF89_DATUM,  /* European Terrestrial Reference Frame 1989 (WGS84) */
   ETRS89_DATUM,  /* European Terrestrial Reference System 1989 (GRS 1980) */
-  ITRF_DATUM,    /* International Terrestrial Reference Frame (GRS 1980) */
+  ITRF97_DATUM,  /* International Terrestrial Reference Frame (GRS 1980) */
   NAD27_DATUM,   /* North American Datum 1927 (Clarke 1866) */
   NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
   WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
-  WGS84_DATUM,    /* World Geodetic System 1984 (WGS84) */
+  WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
   UNKNOWN_DATUM
 } datum_type_t;
 
@@ -210,10 +210,11 @@ typedef struct {
  *      ???           ibm-mvs        IBM MVS                               *
  *   cray_float       cray-unicos    Cray Y-MP Unicos                      *
  *      ???           other-msc      Misc. Other systems not covered       */
+  char acquisition_date[FIELD_STRING_MAX]; // Data acquisition date
   int orbit;                 /* Orbit number of satellite.                 */
   char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
-  int band_number;           /* Band number; first band is 0               */
+  int band_count;            /* Number of bands in image                   */
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */
@@ -270,7 +271,6 @@ typedef struct {
 
 /********************************************************************
  * meta_optical: paramenters specific to optical images
- * NOT YET IN USE
  */
 typedef struct {
   char correction_level[5];        // R - Georeferenced
@@ -292,6 +292,14 @@ typedef struct {
   int day;                           /* Day/Night flag 1=day 0=night*/
 } meta_thermal;
 
+// meta_transform: parameters for coordinate transformations
+typedef struct {
+  int parameter_count;     // Number of parameters
+  double x[10];            // Transformation coefficients for x
+  double y[10];            // Transformation coefficients for y
+  double l[10];            // Transformation coefficients for lines
+  double s[10];            // Transformation coefficients for samples
+} meta_transform;
 
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
@@ -484,6 +492,7 @@ typedef struct {
   meta_optical       *optical;         /* Can be NULL (check!).  */
   meta_thermal       *thermal;         /* Can be NULL (check!).  */
   meta_projection    *projection;      /* Can be NULL (check!).  */
+  meta_transform     *transform;       // Can be NULL (check!)
   meta_stats         *stats;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;
@@ -534,6 +543,7 @@ meta_general *meta_general_init(void);
 meta_sar *meta_sar_init(void);
 meta_optical *meta_optical_init(void);
 meta_projection *meta_projection_init(void);
+meta_transform *meta_transform_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_stats *meta_stats_init(void);
 meta_location *meta_location_init(void);

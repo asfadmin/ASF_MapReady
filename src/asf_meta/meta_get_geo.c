@@ -54,6 +54,9 @@ int meta_get_latLon(meta_parameters *meta,
                     double yLine, double xSample,double elev,
                     double *lat,double *lon)
 {
+  int ii;
+  double i,j,x[10],y[10];
+
   if (meta->sar) {
     if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
       /*Slant or ground range.  Use state vectors and doppler.*/
@@ -65,6 +68,19 @@ int meta_get_latLon(meta_parameters *meta,
 				      time,slant,doppler,elev,
 				      lat,lon);
     } 
+  }
+  else if (meta->transform) {
+    for (ii=0; ii<10; ii++) {
+      x[ii] = meta->transform->x[ii];
+      y[ii] = meta->transform->y[ii];
+    }
+    i = xSample;
+    j = yLine;    
+    *lat = y[0] + y[1]*i + y[2]*j + y[3]*i*j + y[4]*i*i + y[5]*j*j +
+      y[6]*i*i*j + y[7]*i*j*j + y[8]*i*i*i + y[9]*j*j*j;
+    *lon = x[0] + x[1]*i + x[2]*j + x[3]*i*j + x[4]*i*i + x[5]*j*j +
+      x[6]*i*i*j + x[7]*i*j*j + x[8]*i*i*i + x[9]*j*j*j;
+    return 0;
   }
   else if (meta->projection) {
     /*Map-Projected. Use projection information to calculate lat & lon.*/

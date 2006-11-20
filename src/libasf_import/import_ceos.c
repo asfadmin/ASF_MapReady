@@ -304,7 +304,7 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
       else if (strcmp(meta->general->sensor, "ALOS") == 0) {
 	sprintf(logbuf,
 		"   Input data type: level two data\n"
-		"   Output data type: geocoded apmplitude image\n\n");
+		"   Output data type: geocoded amplitude image\n\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else {

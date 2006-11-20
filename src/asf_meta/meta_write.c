@@ -8,6 +8,7 @@
 
 void meta_put_string(FILE *meta_file,char *name,char  *value,char *comment);
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment);
+void meta_put_double24(FILE *meta_file,char *name,double value,char *comment);
 void meta_put_int   (FILE *meta_file,char *name,int    value,char *comment);
 void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 
@@ -132,14 +133,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
   }
   meta_put_string(fp,"system:", meta->general->system,
 		  "System of samples (e.g. big_ieee)");
+  meta_put_string(fp,"acquisition_date:", meta->general->acquisition_date,
+		  "Acquisition date of the data");
   meta_put_int   (fp,"orbit:", meta->general->orbit,
 		  "Orbit Number for this datatake");
   meta_put_char  (fp,"orbit_direction:", meta->general->orbit_direction,
 		  "Ascending 'A', or descending 'D'");
   meta_put_int   (fp,"frame:", meta->general->frame,
 		  "Frame for this image [-1 if n/a]");
-  meta_put_int   (fp,"band_number:", meta->general->band_number,
-		  "Band number; first band is 0");
+  meta_put_int   (fp,"band_count:", meta->general->band_count,
+		  "Number of bands in image");
   meta_put_int   (fp,"line_count:", meta->general->line_count,
 		  "Number of lines in image");
   meta_put_int   (fp,"sample_count:", meta->general->sample_count,
@@ -241,7 +244,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"optical {","","Begin parameters used specifically in "
 		    "optical imaging");
     meta_put_string(fp,"correction_level:",meta->optical->correction_level, 
-		    "R - Georeferenced, G - Geocoded, D - DEM correction");
+		    "N - uncorr, R - georef, G - geocoded, D - DEM corr");
     meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,
 		    "Cloud cover percentage [%]");
     meta_put_double(fp,"sun_azimuth_angle:",meta->optical->sun_azimuth_angle,
@@ -504,7 +507,38 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End projection");
   }
 
-/* Write out statistics block */
+  // Write out coordinate transformation parameters (e.g. optical ALOS)
+  if (meta->transform) {
+    int ii;
+    char coeff[15];
+    meta_put_string(fp,"transform {","",
+		    "Block containing ALOS coordinate transformation parameters");
+    meta_put_int(fp,"parameter_count:",meta->transform->parameter_count,
+		 "Number of transformation parameters");
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      sprintf(coeff, "phi(%d):", ii);
+      meta_put_double(fp,coeff,meta->transform->y[ii],
+		      "latitude transformation parameter");
+    }
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      sprintf(coeff, "lambda(%d):", ii);
+      meta_put_double(fp,coeff,meta->transform->x[ii],
+		      "longitude transformation parameter");
+    }
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      sprintf(coeff, "i(%d):", ii);
+      meta_put_double(fp,coeff,meta->transform->s[ii],
+		      "pixel transformation parameter");
+    }
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      sprintf(coeff, "j(%d):", ii);
+      meta_put_double(fp,coeff,meta->transform->l[ii],
+			"line transformation parameter");
+    }
+    meta_put_string(fp,"}","","End transform");
+  }
+
+  /* Write out statistics block */
   if (meta->stats) {
     meta_put_string(fp,"stats {","","Block containing basic image statistics");
     meta_put_double(fp,"min:",meta->stats->min,"Minimum sample value");
@@ -518,26 +552,27 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End stats");
   }
 
-  /* Write out location block - version 1.5 *
-  meta_put_string(fp,"location {","","Block containing image corner coordinates");
-  meta_put_double(fp,"lat_start_near_range:",meta->location->lat_start_near_range,
-		  "Latitude at image start in near range");
-  meta_put_double(fp,"lon_start_near_range:",meta->location->lon_start_near_range,
-		  "Longitude at image start in near range");
-  meta_put_double(fp,"lat_start_far_range:",meta->location->lat_start_far_range,
-		  "Latitude at image start in far range");
-  meta_put_double(fp,"lon_start_far_range:",meta->location->lon_start_far_range,
-		  "Longitude at image start in far range");
-  meta_put_double(fp,"lat_end_near_range:",meta->location->lat_end_near_range,
-		  "Latitude at image end in near range");
-  meta_put_double(fp,"lon_end_near_range:",meta->location->lon_end_near_range,
-		  "Longitude at image end in near range");
-  meta_put_double(fp,"lat_end_far_range:",meta->location->lat_end_far_range,
-		  "Latitude at image end in far range");
-  meta_put_double(fp,"lon_end_far_range:",meta->location->lon_end_far_range,
-		  "Longitude at image end in far range");
-  meta_put_string(fp,"}","","End location");
-  */
+  /* Write out location block - version 1.5 */
+  if (meta->location) {
+    meta_put_string(fp,"location {","","Block containing image corner coordinates");
+    meta_put_double(fp,"lat_start_near_range:",meta->location->lat_start_near_range,
+		    "Latitude at image start in near range");
+    meta_put_double(fp,"lon_start_near_range:",meta->location->lon_start_near_range,
+		    "Longitude at image start in near range");
+    meta_put_double(fp,"lat_start_far_range:",meta->location->lat_start_far_range,
+		    "Latitude at image start in far range");
+    meta_put_double(fp,"lon_start_far_range:",meta->location->lon_start_far_range,
+		    "Longitude at image start in far range");
+    meta_put_double(fp,"lat_end_near_range:",meta->location->lat_end_near_range,
+		    "Latitude at image end in near range");
+    meta_put_double(fp,"lon_end_near_range:",meta->location->lon_end_near_range,
+		    "Longitude at image end in near range");
+    meta_put_double(fp,"lat_end_far_range:",meta->location->lat_end_far_range,
+		    "Latitude at image end in far range");
+    meta_put_double(fp,"lon_end_far_range:",meta->location->lon_end_far_range,
+		    "Longitude at image end in far range");
+    meta_put_string(fp,"}","","End location");
+  }
 
   FCLOSE(fp);
 
@@ -802,7 +837,6 @@ void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 	if (is_empty(param)) { strcpy(param,"NaN"); }
 	meta_put_string(meta_file,name,param,comment);
 }
-
 
 void meta_put_int(FILE *meta_file,char *name,int value,char *comment)
 {

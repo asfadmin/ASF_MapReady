@@ -52,8 +52,8 @@ const char *datum_toString(datum_type_t datum)
           return "ETRS89";
 
       /* International Terrestrial Reference Frame (GRS 1980) */
-      case ITRF_DATUM:    
-          return "ITRF";
+      case ITRF97_DATUM:    
+          return "ITRF97";
 
       /* North American Datum 1927 (Clarke 1866) */
       case NAD27_DATUM:   
