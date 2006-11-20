@@ -192,10 +192,22 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
     fprintf(kml_file, "    <coordinates>\n");
     
-    meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-    meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-    meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-    meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+    if (meta->location) {
+      lat_UL = meta->location->lat_start_near_range;
+      lon_UL = meta->location->lon_start_near_range;
+      lat_UR = meta->location->lat_start_far_range;
+      lon_UR = meta->location->lon_start_far_range;
+      lat_LL = meta->location->lat_end_near_range;
+      lon_LL = meta->location->lon_end_near_range;
+      lat_LR = meta->location->lat_end_far_range;
+      lon_LR = meta->location->lon_end_far_range;
+    }
+    else {
+      meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+      meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+      meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+      meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+    }
 
     update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
