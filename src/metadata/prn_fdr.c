@@ -13,41 +13,73 @@ VERSION         DATE   AUTHOR
 #include "ceos.h"
 #include "metadisplay.h"
 
-void prn_fdr(struct FDR *fdr)
+void prn_fdr(FILE *fp, struct FDR *fdr)
 {
- printf("\n************ Beginning of File Descriptor Record ****************\n\n");
- printf("Number of Dataset Summary Records = 			%i\n", fdr->n_dssr);
- printf("Dataset Summary Record Length (bytes) =			%i\n", fdr->l_dssr);
- printf("Number of Map Projection Records =			%i\n", fdr->n_mpdr);
- printf("Map Projection Record Length (bytes) =			%i\n", fdr->l_mpdr);
- printf("Number of Platform Position Records =			%i\n", fdr->n_ppdr);
- printf("Platform Position Record Length (bytes) =		%i\n", fdr->l_ppdr);
- printf("Number of Attitude Data Records = 			%i\n", fdr->n_atdr);
- printf("Attitude Data Record Length (bytes) = 			%i\n", fdr->l_atdr);
- printf("Number of Radiometric Data Records =			%i\n", fdr->n_raddr);
- printf("Radiometric Data Record Length (bytes) =		%i\n", fdr->l_raddr);
- printf("Number of Radiometric Compensation Records = 		%i\n", fdr->n_rcr);
- printf("Radiometric Compensation Record Length (bytes) =	%i\n", fdr->l_rcr);
- printf("Number of Data Quality Summary Records = 		%i\n", fdr->n_qsr);
- printf("Data Quality Summary Record Length (bytes) =		%i\n", fdr->l_qsr);
- printf("Number of Data Histogram Records =			%i\n", fdr->n_dhr);
- printf("Data Histogram Record Length (bytes) =			%i\n", fdr->l_dhr);
- printf("Number of Range Spectra Records =			%i\n", fdr->n_rsr);
- printf("Range Spectra Record Length (bytes) =			%i\n", fdr->l_rsr);
- printf("Number of DEM Descriptor Records =			%i\n", fdr->n_demdr);
- printf("DEM Descriptor Record Length (bytes) =			%i\n", fdr->l_demdr);
- printf("Number of RADAR Parameter Records =			%i\n", fdr->n_rpr);
- printf("RADAR Parameter Record Length (bytes) =			%i\n", fdr->l_rpr);
- printf("Number of Annotation Data Records = 			%i\n", fdr->n_adr);
- printf("Annotation Data Record Length (bytes) =			%i\n", fdr->l_adr);
- printf("Number of Detailed Processing Parameter Records =	%i\n", fdr->n_dpr);
- printf("Detailed Processing Parameter Record Length (bytes) =	%i\n", fdr->l_dpr);
- printf("Number of Calibration Records = 			%i\n", fdr->n_calr);
- printf("Calibration Record Length (bytes) =			%i\n", fdr->l_calr);
- printf("Number of GCP Records =					%i\n", fdr->n_gcp);
- printf("GCP Record Length (bytes) =				%i\n", fdr->l_gcp);
- printf("Number of Facility Data Records =			%i\n", fdr->n_facdr);
- printf("Facility Data Record Length (bytes) =			%i\n", fdr->l_facdr);
- printf("\n***********************End of Descriptor Record *****************\n\n"); 
- return;
+  fprintf(fp, "\n************ Beginning of File Descriptor Record ***********\n\n");
+  fprintf(fp, "Number of Dataset Summary Records = 			%i\n", 
+	  fdr->n_dssr);
+  fprintf(fp, "Dataset Summary Record Length (bytes) =			%i\n", 
+	  fdr->l_dssr);
+  fprintf(fp, "Number of Map Projection Records =			%i\n", 
+	  fdr->n_mpdr);
+  fprintf(fp, "Map Projection Record Length (bytes) =			%i\n", 
+	  fdr->l_mpdr);
+  fprintf(fp, "Number of Platform Position Records =			%i\n", 
+	  fdr->n_ppdr);
+  fprintf(fp, "Platform Position Record Length (bytes) =		%i\n", 
+	  fdr->l_ppdr);
+  fprintf(fp, "Number of Attitude Data Records = 			%i\n", 
+	  fdr->n_atdr);
+  fprintf(fp, "Attitude Data Record Length (bytes) = 			%i\n", 
+	  fdr->l_atdr);
+  fprintf(fp, "Number of Radiometric Data Records =			%i\n", 
+	  fdr->n_raddr);
+  fprintf(fp, "Radiometric Data Record Length (bytes) =		%i\n", 
+	  fdr->l_raddr);
+  fprintf(fp, "Number of Radiometric Compensation Records = 		%i\n", 
+	  fdr->n_rcr);
+  fprintf(fp, "Radiometric Compensation Record Length (bytes) =	%i\n", 
+	  fdr->l_rcr);
+  fprintf(fp, "Number of Data Quality Summary Records = 		%i\n", 
+	  fdr->n_qsr);
+  fprintf(fp, "Data Quality Summary Record Length (bytes) =		%i\n", 
+	  fdr->l_qsr);
+  fprintf(fp, "Number of Data Histogram Records =			%i\n", 
+	  fdr->n_dhr);
+  fprintf(fp, "Data Histogram Record Length (bytes) =			%i\n", 
+	  fdr->l_dhr);
+  fprintf(fp, "Number of Range Spectra Records =			%i\n", 
+	  fdr->n_rsr);
+  fprintf(fp, "Range Spectra Record Length (bytes) =			%i\n", 
+	  fdr->l_rsr);
+  fprintf(fp, "Number of DEM Descriptor Records =			%i\n", 
+	  fdr->n_demdr);
+  fprintf(fp, "DEM Descriptor Record Length (bytes) =			%i\n", 
+	  fdr->l_demdr);
+  fprintf(fp, "Number of RADAR Parameter Records =			%i\n", 
+	  fdr->n_rpr);
+  fprintf(fp, "RADAR Parameter Record Length (bytes) =			%i\n", 
+	  fdr->l_rpr);
+  fprintf(fp, "Number of Annotation Data Records = 			%i\n", 
+	  fdr->n_adr);
+  fprintf(fp, "Annotation Data Record Length (bytes) =			%i\n", 
+	  fdr->l_adr);
+  fprintf(fp, "Number of Detailed Processing Parameter Records =	%i\n", 
+	  fdr->n_dpr);
+  fprintf(fp, "Detailed Processing Parameter Record Length (bytes) =	%i\n", 
+	  fdr->l_dpr);
+  fprintf(fp, "Number of Calibration Records = 			%i\n", 
+	  fdr->n_calr);
+  fprintf(fp, "Calibration Record Length (bytes) =			%i\n", 
+	  fdr->l_calr);
+  fprintf(fp, "Number of GCP Records =					%i\n", 
+	  fdr->n_gcp);
+  fprintf(fp, "GCP Record Length (bytes) =				%i\n", 
+	  fdr->l_gcp);
+  fprintf(fp, "Number of Facility Data Records =			%i\n", 
+	  fdr->n_facdr);
+  fprintf(fp, "Facility Data Record Length (bytes) =			%i\n", 
+	  fdr->l_facdr);
+  fprintf(fp, "\n******************End of Descriptor Record ***************\n\n"); 
+  return;
  }

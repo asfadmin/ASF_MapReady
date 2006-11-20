@@ -24,6 +24,11 @@ OBJS  = prn_facdr.o \
 	prn_rsr.o \
 	prn_dqsr.o \
 	prn_fdr.o \
+	prn_shr.o \
+	prn_ampr.o \
+	prn_rcdr.o \
+	prn_esa_facdr.o \
+	prn_ppr.o \
 	metadata.o
 
 all: metadata

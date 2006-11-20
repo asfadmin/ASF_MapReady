@@ -11,30 +11,30 @@ VERSION         DATE   AUTHOR
 #include "ceos.h"
 #include "metadisplay.h"
 
-void prn_raddr(struct VRADDR *dr)
+void prn_raddr(FILE *fp, struct VRADDR *dr)
 {
  int i;
 
- printf("\n********** begin of Radiometric Data record *****************\n\n");
- printf("Radiometric Data Record Sequence Number : %i\n", dr->seqnum );
- printf("Number of radiometric data fields       : %i\n", dr->datfield );
- printf("Radiometric data set size in bytes      : %i\n", dr->setsize );
- printf("SAR channel indicator                   : %s\n", dr->sarchan );
- printf("Look Up Table Designator                : %s\n", dr->luttype );
- printf("Number of samples in Look Up Table      : %i\n", dr->nosample );
- printf("Sample Type Designator                  : %s\n", dr->samptype );
- printf("Calibration coefficient a1              : %e\n", dr->a[0] );
- printf("Calibration coefficient a2              : %e\n", dr->a[1] );
- printf("Calibration coefficient a3              : %e\n", dr->a[2] );
+ fprintf(fp, "\n********** begin of Radiometric Data record *****************\n\n");
+ fprintf(fp, "Radiometric Data Record Sequence Number : %i\n", dr->seqnum );
+ fprintf(fp, "Number of radiometric data fields       : %i\n", dr->datfield );
+ fprintf(fp, "Radiometric data set size in bytes      : %i\n", dr->setsize );
+ fprintf(fp, "SAR channel indicator                   : %s\n", dr->sarchan );
+ fprintf(fp, "Look Up Table Designator                : %s\n", dr->luttype );
+ fprintf(fp, "Number of samples in Look Up Table      : %i\n", dr->nosample );
+ fprintf(fp, "Sample Type Designator                  : %s\n", dr->samptype );
+ fprintf(fp, "Calibration coefficient a1              : %e\n", dr->a[0] );
+ fprintf(fp, "Calibration coefficient a2              : %e\n", dr->a[1] );
+ fprintf(fp, "Calibration coefficient a3              : %e\n", dr->a[2] );
  for (i = 0; i < dr->nosample; i +=4)
   {
-    printf("Noise Values %3d - %3d :",i+1,i+4);
-    printf("%12.7f",dr->noise[i]);
-    printf("%12.7f",dr->noise[i+1]);
-    printf("%12.7f",dr->noise[i+2]);
-    printf("%12.7f\n",dr->noise[i+3]);
+    fprintf(fp, "Noise Values %3d - %3d :",i+1,i+4);
+    fprintf(fp, "%12.7f",dr->noise[i]);
+    fprintf(fp, "%12.7f",dr->noise[i+1]);
+    fprintf(fp, "%12.7f",dr->noise[i+2]);
+    fprintf(fp, "%12.7f\n",dr->noise[i+3]);
   }
- printf("*********** end of Radiometric Data record ******************\n\n");
+ fprintf(fp, "*********** end of Radiometric Data record ******************\n\n");
  return;
 }
 

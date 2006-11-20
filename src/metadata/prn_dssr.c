@@ -13,152 +13,190 @@ VERSION         DATE   AUTHOR
 #include "ceos.h"
 #include "metadisplay.h"
 
-void prn_dssr(struct dataset_sum_rec *ds, int era)
+void prn_dssr(FILE *fp, struct dataset_sum_rec *ds, int era)
 {
- int i;
- printf("\n*********** begin of Dataset Summary record *******************\n");
- printf("\n DSS SEQ NUM\t\t%d",ds->seq_num);
- printf("\n SAR CHNL INDTR\t\t%d",ds->sar_chan);
- printf("\n SCENE INDICATOR\t%s",ds->product_id);
- printf("\n SCENE DESIGNATOR\t%s",ds->scene_des);
- printf("\n INPT SCN CTR TIME\t%s",ds->inp_sctim);
- printf("\n ASC/DESCENDING\t\t%s",ds->asc_des);
- printf("\n LAT @ SCN CTR\t\t%16.7f",ds->pro_lat);
- printf("\n LONG @ SCN CTR\t\t%16.7f",ds->pro_long);
- printf("\n SCN CTR HEADING\t%16.7f",ds->pro_head);
- printf("\n ELLIP DESIGNATOR\t%s",ds->ellip_des);
- printf("\n ELLIP SEMIMAJOR\t%16.7f",ds->ellip_maj);
- printf("\n ELLIP SEMIMINOR\t%16.7f",ds->ellip_min);
- printf("\n EARTH MASS\t\t%16.7f",ds->earth_mass);
- printf("\n GRAVITATIONAL CNST\t%16.7f",ds->grav_const);
- printf("\n ELLIP PARM 1\t\t%16.7f",ds->ellip_j[0]);
- printf("\n ELLIP PARM 2\t\t%16.7f",ds->ellip_j[1]);
- printf("\n ELLIP PARM 3\t\t%16.7f",ds->ellip_j[2]);
- printf("\n AVG TERRAIN HT\t\t%16.7f",ds->terrain_h);
- printf("\n IMG CTR LINE NUM\t%f",ds->sc_lin);
- printf("\n IMG CTR PIX NUM\t%f",ds->sc_pix);
- printf("\n IMAGE LENGTH\t\t%16.7f",ds->scene_len);
- printf("\n IMAGE WIDTH\t\t%16.7f",ds->scene_wid);
- printf("\n NUM SAR CHANNELS\t%d",ds->nchn);
- printf("\n MISSION ID\t\t%s",ds->mission_id);
- printf("\n SENSOR ID\t\t%s",ds->sensor_id);
- printf("\n ORBIT NUMBER\t\t%s",ds->revolution);
- printf("\n PLAT LAT @ NADIR\t%8.3f",ds->plat_lat);
- printf("\n PLAT LONG @ NADIR\t%8.3f",ds->plat_long);
- printf("\n PLAT HEADING\t\t%8.3f",ds->plat_head_scene);
- printf("\n SNSR CLK ANGLE\t\t%8.3f",ds->clock_ang);
- printf("\n INCIDENCE ANGLE\t\t%8.3f",ds->incident_ang);
- printf("\n RADAR FREQUENCY\t%8.3f",ds->frequency);
- printf("\n RDR WAVELENGTH\t\t%16.7f",ds->wave_length);
- printf("\n MOTION COMP IND\t%s",ds->motion_comp);
- printf("\n RNG PULSE CODE\t\t%s",ds->pulse_code);
- printf("\n RNG CHIRP 1\t\t%16.7E",ds->ampl_coef[0]);
- printf("\n RNG CHIRP 2\t\t%16.7E",ds->ampl_coef[1]);
- printf("\n RNG CHIRP 3\t\t%16.7E",ds->ampl_coef[2]);
- printf("\n RNG CHIRP 4\t\t%16.7E",ds->ampl_coef[3]);
- printf("\n RNG CHIRP 5\t\t%16.7E",ds->ampl_coef[4]);
- printf("\n RNG PHASE 1\t\t%16.7E",ds->phas_coef[0]);
- printf("\n RNG PHASE 2\t\t%16.7E",ds->phas_coef[1]);
- printf("\n RNG PHASE 3\t\t%16.7E",ds->phas_coef[2]);
- printf("\n RNG PHASE 4\t\t%16.7E",ds->phas_coef[3]);
- printf("\n RNG PHASE 5\t\t%16.7E",ds->phas_coef[4]);
- printf("\n CHRP EXTRACTION IND\t%d",ds->chirp_ext_ind);
- printf("\n RNG CMPLX SAMPLE RATE\t%16.7f",ds->rng_samp_rate);
- printf("\n RNG GATE\t\t%16.7f",ds->rng_gate);
- printf("\n RNG PULSE LEN\t\t%16.7f",ds->rng_length);
- printf("\n BASEBAND FLAG\t\t%s",ds->baseband_f);
- printf("\n RNG COMPRESS FLAG\t%s",ds->rngcmp_f);
- printf("\n RCVR GAIN POLAR\t%16.7f",ds->gn_polar);
- printf("\n RCVR GAIN CROSS\t%16.7f",ds->gn_cross);
- printf("\n QUANT BITS/CHNL\t%d",ds->chn_bits);
- printf("\n QUANTZR DESCRPT\t%s",ds->quant_desc);
- printf("\n I CHNL DC BIAS\t\t%16.7f",ds->i_bias);
- printf("\n Q CHNL DC BIAS\t\t%16.7f",ds->q_bias);
- printf("\n I/Q CHNL RATIO\t\t%16.7f",ds->iq_ratio);
- printf("\n SPARE_DSS_7\t\t\t%16.7f",ds->spare_dss_7);
- printf("\n SPARE_DSS_8\t\t\t%16.7f",ds->spare_dss_8);
- printf("\n ELCTRNC BORESITE\t%16.7f",ds->ele_sight);
- printf("\n MECHNCL BORESITE\t%16.7f",ds->mech_sight);
- printf("\n ECHO TRK FLAG\t\t%s",ds->echo_track);
- printf("\n NOMINAL PRF\t\t%16.7f",ds->prf);
- printf("\n ANT ELEV BEAM WD\t%16.7f",ds->elev_beam);
- printf("\n ANT AZI BEAM WD\t%16.7f",ds->azi_beam);
- printf("\n SATLT BINARY TIME\t%s",ds->sat_bintim);
- printf("\n SATLT CLOCK TIME\t%s",ds->sat_clktim);
- printf("\n SATLT CLOCK INC\t%d",ds->sat_clkinc);
- printf("\n PROCESSING FACILITY\t%s",ds->fac_id);
- printf("\n PROCESSING SYSTEM\t%s",ds->sys_id);
- printf("\n PROCESSING VERSION\t%s",ds->ver_id);
- printf("\n FAC PROCESS CODE\t%s",ds->fac_code);
- printf("\n PRODUCT CODE\t\t%s",ds->lev_code);
- printf("\n PRODUCT TYPE\t\t%s",ds->product_type);
- printf("\n PROCESSING ALGTHM\t%s",ds->algor_id);
- printf("\n NUM LOOKS IN AZI\t%16.7f",ds->n_azilok);
- printf("\n NUM LOOKS IN RNG\t%16.7f",ds->n_rnglok);
- printf("\n BNDWDTH/LOOK IN AZI\t%16.7f",ds->bnd_azilok);
- printf("\n BNDWDTH/LOOK IN RNG\t%16.7f",ds->bnd_rnglok);
- printf("\n PROC BNDWDTH AZI\t%16.7f",ds->bnd_azi);
- printf("\n PROC BNDWDTH RNG\t%16.7f",ds->bnd_rng);
- printf("\n AZI WEIGHT FUNC\t%s",ds->azi_weight);
- printf("\n RNG WEIGHT FUNC\t%s",ds->rng_weight);
- printf("\n DATA INPUT SRC\t\t%s",ds->data_inpsrc);
- printf("\n NOM RESOLUTION RNG\t%16.7f",ds->rng_res);
- printf("\n NOM RESOLUTION AZI\t%16.7f",ds->azi_res);
- printf("\n RADIO STRETCH BIAS\t%16.7f",ds->radi_stretch[0]);
- printf("\n RADIO STRETCH GAIN\t%16.7f",ds->radi_stretch[1]);
- printf("\n ALT DOPPLER FREQ 1\t%16.7f",ds->alt_dopcen[0]);
- printf("\n ALT DOPPLER FREQ 2\t%16.7f",ds->alt_dopcen[1]);
- printf("\n ALT DOPPLER FREQ 3\t%16.7f",ds->alt_dopcen[2]);
- printf("\n CRT DOPPLER FREQ 1\t%16.7f",ds->crt_dopcen[0]);
- printf("\n CRT DOPPLER FREQ 2\t%16.7f",ds->crt_dopcen[1]);
- printf("\n CRT DOPPLER FREQ 3\t%16.7f",ds->crt_dopcen[2]);
- printf("\n TIME DIRECT RNG\t%s",ds->time_dir_pix);
- printf("\n TIME DIRECT AZI\t%s",ds->time_dir_lin);
- printf("\n ALT DOPPLER RATE 1\t%16.7f",ds->alt_rate[0]);
- printf("\n ALT DOPPLER RATE 2\t%16.7f",ds->alt_rate[1]);
- printf("\n ALT DOPPLER RATE 3\t%16.7f",ds->alt_rate[2]);
- printf("\n CRT DOPPLER RATE 1\t%16.7f",ds->crt_rate[0]);
- printf("\n CRT DOPPLER RATE 2\t%16.7f",ds->crt_rate[1]);
- printf("\n CRT DOPPLER RATE 3\t%16.7f",ds->crt_rate[2]);
- printf("\n LINE CONTENT IND\t%s",ds->line_cont);
- printf("\n CLUTTER LOCK FLAG\t%s",ds->clutterlock_flg);
- printf("\n AUTOFOCUS FLAG\t\t%s",ds->auto_focus);
- printf("\n LINE SPACING\t\t%16.7f",ds->line_spacing);
- printf("\n PIXEL SPACING\t\t%16.7f",ds->pixel_spacing);
- printf("\n RNG COMPRESS DESG\t%s",ds->rngcmp_desg);
- if (era==0)
-  {
-   printf("\n NUM ANNOTATION PTS\t%d",ds->annot_pts);
-   for (i=0; i<ds->annot_pts; i++) {
-     printf("\n LINE NUM ANNOT START\t\t%d",ds->annot_line[i]);
-     printf("\n PIXEL NUM ANNOT START\t\t%d",ds->annot_pixel[i]);
-     printf("\n ANNOTATION TEXT\t\t%d",ds->annot_text[i][0]);
-   }
+  int i;
+  fprintf(fp, "\n*********** begin of Dataset Summary record *****************\n");
+  fprintf(fp, "\n DSS SEQ NUM\t\t%d",ds->seq_num);
+  fprintf(fp, "\n SAR CHNL INDTR\t\t%d",ds->sar_chan);
+  fprintf(fp, "\n SCENE INDICATOR\t%s",ds->product_id);
+  fprintf(fp, "\n SCENE DESIGNATOR\t%s",ds->scene_des);
+  fprintf(fp, "\n INPT SCN CTR TIME\t%s",ds->inp_sctim);
+  fprintf(fp, "\n ASC/DESCENDING\t\t%s",ds->asc_des);
+  fprintf(fp, "\n LAT @ SCN CTR\t\t%16.7f",ds->pro_lat);
+  fprintf(fp, "\n LONG @ SCN CTR\t\t%16.7f",ds->pro_long);
+  fprintf(fp, "\n SCN CTR HEADING\t%16.7f",ds->pro_head);
+  fprintf(fp, "\n ELLIP DESIGNATOR\t%s",ds->ellip_des);
+  fprintf(fp, "\n ELLIP SEMIMAJOR\t%16.7f",ds->ellip_maj);
+  fprintf(fp, "\n ELLIP SEMIMINOR\t%16.7f",ds->ellip_min);
+  fprintf(fp, "\n EARTH MASS\t\t%16.7f",ds->earth_mass);
+  fprintf(fp, "\n GRAVITATIONAL CNST\t%16.7f",ds->grav_const);
+  fprintf(fp, "\n ELLIP PARM 1\t\t%16.7f",ds->ellip_j[0]);
+  fprintf(fp, "\n ELLIP PARM 2\t\t%16.7f",ds->ellip_j[1]);
+  fprintf(fp, "\n ELLIP PARM 3\t\t%16.7f",ds->ellip_j[2]);
+  fprintf(fp, "\n AVG TERRAIN HT\t\t%16.7f",ds->terrain_h);
+  fprintf(fp, "\n IMG CTR LINE NUM\t%f",ds->sc_lin);
+  fprintf(fp, "\n IMG CTR PIX NUM\t%f",ds->sc_pix);
+  fprintf(fp, "\n IMAGE LENGTH\t\t%16.7f",ds->scene_len);
+  fprintf(fp, "\n IMAGE WIDTH\t\t%16.7f",ds->scene_wid);
+  fprintf(fp, "\n NUM SAR CHANNELS\t%d",ds->nchn);
+  fprintf(fp, "\n MISSION ID\t\t%s",ds->mission_id);
+  fprintf(fp, "\n SENSOR ID\t\t%s",ds->sensor_id);
+  fprintf(fp, "\n ORBIT NUMBER\t\t%s",ds->revolution);
+  fprintf(fp, "\n PLAT LAT @ NADIR\t%8.3f",ds->plat_lat);
+  fprintf(fp, "\n PLAT LONG @ NADIR\t%8.3f",ds->plat_long);
+  fprintf(fp, "\n PLAT HEADING\t\t%8.3f",ds->plat_head_scene);
+  fprintf(fp, "\n SNSR CLK ANGLE\t\t%8.3f",ds->clock_ang);
+  fprintf(fp, "\n INCIDENCE ANGLE\t\t%8.3f",ds->incident_ang);
+  fprintf(fp, "\n RADAR FREQUENCY\t%8.3f",ds->frequency);
+  fprintf(fp, "\n RDR WAVELENGTH\t\t%16.7f",ds->wave_length);
+  fprintf(fp, "\n MOTION COMP IND\t%s",ds->motion_comp);
+  fprintf(fp, "\n RNG PULSE CODE\t\t%s",ds->pulse_code);
+  fprintf(fp, "\n RNG CHIRP 1\t\t%16.7E",ds->ampl_coef[0]);
+  fprintf(fp, "\n RNG CHIRP 2\t\t%16.7E",ds->ampl_coef[1]);
+  fprintf(fp, "\n RNG CHIRP 3\t\t%16.7E",ds->ampl_coef[2]);
+  fprintf(fp, "\n RNG CHIRP 4\t\t%16.7E",ds->ampl_coef[3]);
+  fprintf(fp, "\n RNG CHIRP 5\t\t%16.7E",ds->ampl_coef[4]);
+  fprintf(fp, "\n RNG PHASE 1\t\t%16.7E",ds->phas_coef[0]);
+  fprintf(fp, "\n RNG PHASE 2\t\t%16.7E",ds->phas_coef[1]);
+  fprintf(fp, "\n RNG PHASE 3\t\t%16.7E",ds->phas_coef[2]);
+  fprintf(fp, "\n RNG PHASE 4\t\t%16.7E",ds->phas_coef[3]);
+  fprintf(fp, "\n RNG PHASE 5\t\t%16.7E",ds->phas_coef[4]);
+  fprintf(fp, "\n CHRP EXTRACTION IND\t%d",ds->chirp_ext_ind);
+  fprintf(fp, "\n RNG CMPLX SAMPLE RATE\t%16.7f",ds->rng_samp_rate);
+  fprintf(fp, "\n RNG GATE\t\t%16.7f",ds->rng_gate);
+  fprintf(fp, "\n RNG PULSE LEN\t\t%16.7f",ds->rng_length);
+  fprintf(fp, "\n BASEBAND FLAG\t\t%s",ds->baseband_f);
+  fprintf(fp, "\n RNG COMPRESS FLAG\t%s",ds->rngcmp_f);
+  fprintf(fp, "\n RCVR GAIN POLAR\t%16.7f",ds->gn_polar);
+  fprintf(fp, "\n RCVR GAIN CROSS\t%16.7f",ds->gn_cross);
+  fprintf(fp, "\n QUANT BITS/CHNL\t%d",ds->chn_bits);
+  fprintf(fp, "\n QUANTZR DESCRPT\t%s",ds->quant_desc);
+  fprintf(fp, "\n I CHNL DC BIAS\t\t%16.7f",ds->i_bias);
+  fprintf(fp, "\n Q CHNL DC BIAS\t\t%16.7f",ds->q_bias);
+  fprintf(fp, "\n I/Q CHNL RATIO\t\t%16.7f",ds->iq_ratio);
+  fprintf(fp, "\n SPARE_DSS_7\t\t\t%16.7f",ds->spare_dss_7);
+  fprintf(fp, "\n SPARE_DSS_8\t\t\t%16.7f",ds->spare_dss_8);
+  fprintf(fp, "\n ELCTRNC BORESITE\t%16.7f",ds->ele_sight);
+  fprintf(fp, "\n MECHNCL BORESITE\t%16.7f",ds->mech_sight);
+  fprintf(fp, "\n ECHO TRK FLAG\t\t%s",ds->echo_track);
+  fprintf(fp, "\n NOMINAL PRF\t\t%16.7f",ds->prf);
+  fprintf(fp, "\n ANT ELEV BEAM WD\t%16.7f",ds->elev_beam);
+  fprintf(fp, "\n ANT AZI BEAM WD\t%16.7f",ds->azi_beam);
+  fprintf(fp, "\n SATLT BINARY TIME\t%s",ds->sat_bintim);
+  fprintf(fp, "\n SATLT CLOCK TIME\t%s",ds->sat_clktim);
+  fprintf(fp, "\n SATLT CLOCK INC\t%d",ds->sat_clkinc);
+  fprintf(fp, "\n PROCESSING FACILITY\t%s",ds->fac_id);
+  fprintf(fp, "\n PROCESSING SYSTEM\t%s",ds->sys_id);
+  fprintf(fp, "\n PROCESSING VERSION\t%s",ds->ver_id);
+  fprintf(fp, "\n FAC PROCESS CODE\t%s",ds->fac_code);
+  fprintf(fp, "\n PRODUCT CODE\t\t%s",ds->lev_code);
+  fprintf(fp, "\n PRODUCT TYPE\t\t%s",ds->product_type);
+  fprintf(fp, "\n PROCESSING ALGTHM\t%s",ds->algor_id);
+  fprintf(fp, "\n NUM LOOKS IN AZI\t%16.7f",ds->n_azilok);
+  fprintf(fp, "\n NUM LOOKS IN RNG\t%16.7f",ds->n_rnglok);
+  fprintf(fp, "\n BNDWDTH/LOOK IN AZI\t%16.7f",ds->bnd_azilok);
+  fprintf(fp, "\n BNDWDTH/LOOK IN RNG\t%16.7f",ds->bnd_rnglok);
+  fprintf(fp, "\n PROC BNDWDTH AZI\t%16.7f",ds->bnd_azi);
+  fprintf(fp, "\n PROC BNDWDTH RNG\t%16.7f",ds->bnd_rng);
+  fprintf(fp, "\n AZI WEIGHT FUNC\t%s",ds->azi_weight);
+  fprintf(fp, "\n RNG WEIGHT FUNC\t%s",ds->rng_weight);
+  fprintf(fp, "\n DATA INPUT SRC\t\t%s",ds->data_inpsrc);
+  fprintf(fp, "\n NOM RESOLUTION RNG\t%16.7f",ds->rng_res);
+  fprintf(fp, "\n NOM RESOLUTION AZI\t%16.7f",ds->azi_res);
+  fprintf(fp, "\n RADIO STRETCH BIAS\t%16.7f",ds->radi_stretch[0]);
+  fprintf(fp, "\n RADIO STRETCH GAIN\t%16.7f",ds->radi_stretch[1]);
+  fprintf(fp, "\n ALT DOPPLER FREQ 1\t%16.7f",ds->alt_dopcen[0]);
+  fprintf(fp, "\n ALT DOPPLER FREQ 2\t%16.7f",ds->alt_dopcen[1]);
+  fprintf(fp, "\n ALT DOPPLER FREQ 3\t%16.7f",ds->alt_dopcen[2]);
+  fprintf(fp, "\n CRT DOPPLER FREQ 1\t%16.7f",ds->crt_dopcen[0]);
+  fprintf(fp, "\n CRT DOPPLER FREQ 2\t%16.7f",ds->crt_dopcen[1]);
+  fprintf(fp, "\n CRT DOPPLER FREQ 3\t%16.7f",ds->crt_dopcen[2]);
+  fprintf(fp, "\n TIME DIRECT RNG\t%s",ds->time_dir_pix);
+  fprintf(fp, "\n TIME DIRECT AZI\t%s",ds->time_dir_lin);
+  fprintf(fp, "\n ALT DOPPLER RATE 1\t%16.7f",ds->alt_rate[0]);
+  fprintf(fp, "\n ALT DOPPLER RATE 2\t%16.7f",ds->alt_rate[1]);
+  fprintf(fp, "\n ALT DOPPLER RATE 3\t%16.7f",ds->alt_rate[2]);
+  fprintf(fp, "\n CRT DOPPLER RATE 1\t%16.7f",ds->crt_rate[0]);
+  fprintf(fp, "\n CRT DOPPLER RATE 2\t%16.7f",ds->crt_rate[1]);
+  fprintf(fp, "\n CRT DOPPLER RATE 3\t%16.7f",ds->crt_rate[2]);
+  fprintf(fp, "\n LINE CONTENT IND\t%s",ds->line_cont);
+  fprintf(fp, "\n CLUTTER LOCK FLAG\t%s",ds->clutterlock_flg);
+  fprintf(fp, "\n AUTOFOCUS FLAG\t\t%s",ds->auto_focus);
+  fprintf(fp, "\n LINE SPACING\t\t%16.7f",ds->line_spacing);
+  fprintf(fp, "\n PIXEL SPACING\t\t%16.7f",ds->pixel_spacing);
+  fprintf(fp, "\n RNG COMPRESS DESG\t%s",ds->rngcmp_desg);
+  if (strncmp(ds->fac_id, "ES", 2)==0 || 
+      strncmp(ds->fac_id, "D-PAF", 5)==0 ||
+      strncmp(ds->fac_id, "I-PAF", 5)==0) {
+    int i;
+    for (i=0; i<3; i++) 
+      fprintf(fp, "\n Zero-Doppler range time (%d)\t%16.7f", i, ds->rng_time[i]);
+    fprintf(fp, "\n Zero-Doppler azimuth time first pixel\t%s", ds->az_time_first);
+    fprintf(fp, "\n Zero-Doppler azimuth time center pixel\t%s", 
+	    ds->az_time_center);
+    fprintf(fp, "\n Zero-Doppler azimuth time last pixel\t%s", ds->az_time_last);
   }
- else
-  {
-   printf("\n NUM OF BEAMS\t%d",ds->no_beams);
-   printf("\n BEAM 1 IDENTIFIER\t%s",ds->beam1);
-   printf("\n BEAM 2 IDENTIFIER\t%s",ds->beam2);
-   printf("\n BEAM 3 IDENTIFIER\t%s",ds->beam3);
-   printf("\n BEAM 4 IDENTIFIER\t%s",ds->beam4);
-   printf("\n PRF OF BEAM 1 HZ\t%8.3f",ds->prf1);
-   printf("\n PRF OF BEAM 2 HZ\t%8.3f",ds->prf2);
-   printf("\n PRF OF BEAM 3 HZ\t%8.3f",ds->prf3);
-   printf("\n PRF OF BEAM 4 HZ\t%8.3f",ds->prf4);
-   printf("\n RANGE GATE OF BEAM 1\t%8.3f",ds->rng_gate1);
-   printf("\n RANGE GATE OF BEAM 2\t%8.3f",ds->rng_gate2);
-   printf("\n RANGE GATE OF BEAM 3\t%8.3f",ds->rng_gate3);
-   printf("\n RANGE GATE OF BEAM 4\t%8.3f",ds->rng_gate4);
-   printf("\n TOTAL PULSES PER BURST\t%d",ds->tot_pls_burst);
-   printf("\n VALID PULSES PER BURST\t%d",ds->val_pls_burst);
-   printf("\n RANGE LNS OVERLAP IN AZI WITH NEXT\t%d",ds->az_ovlp_nxt_img);
-   printf("\n PIXEL OFFSET IN RANGE WITH NEXT\t%d",ds->rg_off_nxt_img);
-   printf("\n CALIBRATION PARAMETER FILE USED\t%s",ds->cal_params_file);
-   printf("\n SCAN RESULTS FILE USED         \t%s",ds->scan_results_file);
-   printf("\n SOFTWARE VERSION OF SCANNER    \t%s",ds->scanner_version);
-   printf("\n SOFTWARE VERSION OF DECODER    \t%s",ds->decode_version);
+
+  else if (strncmp(ds->mission_id, "ALOS", 4)==0) {
+    fprintf(fp, "\n Calibration data indicator\t%d", ds->cal_data_indicator);
+    fprintf(fp, "\n Start line number of calibration at upper image\t%d",
+	    ds->start_cal_up);
+    fprintf(fp, "\n Stop line number of calibration at upper image\t%d", 
+	    ds->stop_cal_up);
+    fprintf(fp, "\n Start line number of calibration at bottom image\t%d", 
+	    ds->start_cal_bottom);
+    fprintf(fp, "\n Stop line number of calibration at bottom image\t%d",
+	    ds->stop_cal_bottom);
+    fprintf(fp, "\n PRF switching indicator\t%d", ds->prf_switch);
+    fprintf(fp, "\n Line locator of PRF switching\t%d", ds->line_prf_switch);
+    fprintf(fp, "\n Direction of a beam center in a scene scenter\t%16.7f", 
+	    ds->beam_center_dir);
+    fprintf(fp, "\n Yaw steering mode flag\t%d", ds->yaw_steering);
+    fprintf(fp, "\n Parameter table number of automatically setting\t%d", 
+	    ds->param_table);
+    fprintf(fp, "\n Nominal offnadir angle\t%16.7f", ds->off_nadir_angle);
+    fprintf(fp, "\n Antenna beam number\t%d", ds->ant_beam_num);
+    int i;
+    for (i=0; i<6; i++)
+      fprintf(fp, "\n Incidence angle parameter (a%d)\t%16.7f", i, ds->incid_a[i]);
   }
-  printf("\n*********** end of Dataset Summary  record ********************\n");
+  else if (strncmp(ds->fac_id, "ASF", 3)==0) {
+    if (era==0)
+      {
+	fprintf(fp, "\n NUM ANNOTATION PTS\t%d",ds->annot_pts);
+	for (i=0; i<ds->annot_pts; i++) {
+	  fprintf(fp, "\n LINE NUM ANNOT START\t\t%d",ds->annot_line[i]);
+	  fprintf(fp, "\n PIXEL NUM ANNOT START\t\t%d",ds->annot_pixel[i]);
+	  fprintf(fp, "\n ANNOTATION TEXT\t\t%d",ds->annot_text[i][0]);
+	}
+      }
+    else
+      {
+	fprintf(fp, "\n NUM OF BEAMS\t%d",ds->no_beams);
+	fprintf(fp, "\n BEAM 1 IDENTIFIER\t%s",ds->beam1);
+	fprintf(fp, "\n BEAM 2 IDENTIFIER\t%s",ds->beam2);
+	fprintf(fp, "\n BEAM 3 IDENTIFIER\t%s",ds->beam3);
+	fprintf(fp, "\n BEAM 4 IDENTIFIER\t%s",ds->beam4);
+	fprintf(fp, "\n PRF OF BEAM 1 HZ\t%8.3f",ds->prf1);
+	fprintf(fp, "\n PRF OF BEAM 2 HZ\t%8.3f",ds->prf2);
+	fprintf(fp, "\n PRF OF BEAM 3 HZ\t%8.3f",ds->prf3);
+	fprintf(fp, "\n PRF OF BEAM 4 HZ\t%8.3f",ds->prf4);
+	fprintf(fp, "\n RANGE GATE OF BEAM 1\t%8.3f",ds->rng_gate1);
+	fprintf(fp, "\n RANGE GATE OF BEAM 2\t%8.3f",ds->rng_gate2);
+	fprintf(fp, "\n RANGE GATE OF BEAM 3\t%8.3f",ds->rng_gate3);
+	fprintf(fp, "\n RANGE GATE OF BEAM 4\t%8.3f",ds->rng_gate4);
+	fprintf(fp, "\n TOTAL PULSES PER BURST\t%d",ds->tot_pls_burst);
+	fprintf(fp, "\n VALID PULSES PER BURST\t%d",ds->val_pls_burst);
+	fprintf(fp, "\n RANGE LNS OVERLAP IN AZI WITH NEXT\t%d",
+		ds->az_ovlp_nxt_img);
+	fprintf(fp, "\n PIXEL OFFSET IN RANGE WITH NEXT\t%d",ds->rg_off_nxt_img);
+	fprintf(fp, "\n CALIBRATION PARAMETER FILE USED\t%s",ds->cal_params_file);
+	fprintf(fp, "\n SCAN RESULTS FILE USED         \t%s",ds->scan_results_file);
+	fprintf(fp, "\n SOFTWARE VERSION OF SCANNER    \t%s",ds->scanner_version);
+	fprintf(fp, "\n SOFTWARE VERSION OF DECODER    \t%s",ds->decode_version);
+      }
+  }
+  fprintf(fp, "\n*********** end of Dataset Summary  record ********************\n");
   return;
  }

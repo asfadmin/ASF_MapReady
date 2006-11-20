@@ -1,29 +1,24 @@
 /********************************************************************
 NAME:    metadata.c -- MAIN PROGRAM TO READ/TEST CEOS METADATA
 
-SYNOPSIS:     metadata [-f] rectypes infile
+SYNOPSIS:     metadata [ <record type> -all -save ] infile
  Where, the rectypes are:
-		u  		Data Set Summary Record
-		m  		Map Projection Data Record
-		l  		Platform Position Data Record
-		a  		Attitude Data Record
-		r  		Radiometric Data Record
-		o  		Radiometric Compensation Record
-		q  		Data Quality Summary Record
-		p		Processed Data Histogram Record
-		h  		Signal Data Histograms Record
-		s  		Range Spectra Record
-		e  		Digital Elevation Model Descriptor Record
-		n  		Annotation Data Record
-		d  		Detailed Parameter Processing Record
-		c  		Calibration Data Record
-		g  		Ground Control Points Record
-		f  		Facility Related Data Record
-		i  		Image File Descriptor Record
-		b		Leader File Descriptor Record
-
-	infile                  the base name of the SAR image
-	-f                      specifies writing the data to an output file
+   -dssr        Data Set Summary record
+   -shr         Scene Header record
+   -mpdr        Map Projection Data Record
+   -ppdr        Platform Position Data record
+   -atdr        Attitude Data record
+   -radr        Radiometric Data record
+   -rcdr        Radiometric Compensation Data record
+   -dqsr        Data Quality Summary record
+   -pdhr        Processed Data Histograms record
+   -sdhr        Signal Data Histograms record
+   -rasr        Range Spectra record
+   -asf_facdr   ASF Facility Related Data record
+   -esa_facdr   ESA Facility Related Data record
+   -ifdr        Image File Descriptor record
+   -lfdr        Leader File Descriptor record
+   infile       Base name of the SAR image
 
  NOTE: NOT ALL OF THESE OPTIONS ARE INCLUDED IN THIS RELEASE. SEE USAGE.
 
@@ -120,6 +115,7 @@ BUGS:
 #include "asf.h"
 #include "get_ceos_names.h"
 #include "metadisplay.h"
+#include "cla.h"
 
 #ifdef win32
 #include <unistd.h>
@@ -127,269 +123,456 @@ BUGS:
 #include <process.h>
 #endif
 
-#define VERSION 2.3
+#define VERSION 3.0
+
+static int check_record(char *fileName, int reqrec);
+static void print_record(FILE *fp, char *fileName, int reqrec);
+static void output_record(char *fileName, char *extension, int rec, int save);
 
 int main(int argc, char **argv)
 {
-  char  **dataName, leaderName[256];
-  int	j, itype=-99, nrecs;
-  int   reqrec, era;
-  int   fileFlag=0;
-  extern int optind;            /* argv index of the next argument */
-  extern char *optarg;          /* current argv[] */
-  int c;                        /* option letter from getopt() */
-  int ii, nBands=1;
+  char *fileName;
 
-  struct VFDRECV         *facdr;
-  struct VRADDR          *raddr;
-  struct IOF_VFDR        *vfdr;
-  struct VMPDREC         *mpdrec;
-  struct FDR		 *fdr;
-  struct dataset_sum_rec *dssr;
-  struct pos_data_rec    *ppdr;
-  struct att_data_rec    *atdr;
-/*struct radi_comp_rec   *rcr;*/
-  struct data_hist_rec   *dhr;
-  struct rng_spec_rec    *rsr;
-  struct qual_sum_rec    *dqsr;
+  int dssr_flag = extract_flag_options(&argc, &argv, "-dssr", "--dssr", NULL);
+  int shr_flag = extract_flag_options(&argc, &argv, "-shr", "--shr", NULL);
+  int mpdr_flag = extract_flag_options(&argc, &argv, "-mpdr", "--mpdr", NULL);
+  int ppdr_flag = extract_flag_options(&argc, &argv, "-ppdr", "--ppdr", NULL);
+  int atdr_flag = extract_flag_options(&argc, &argv, "-atdr", "--atdr", NULL);
+  int ampr_flag = extract_flag_options(&argc, &argv, "-ampr", "--ampr", NULL);
+  int radr_flag = extract_flag_options(&argc, &argv, "-radr", "--radr", NULL);
+  int rcdr_flag = extract_flag_options(&argc, &argv, "-rcdr", "--rcdr", NULL);
+  int dqsr_flag = extract_flag_options(&argc, &argv, "-dqsr", "--dqsr", NULL);
+  int pdhr_flag = extract_flag_options(&argc, &argv, "-pdhr", "--pdhr", NULL);
+  int sdhr_flag = extract_flag_options(&argc, &argv, "-sdhr", "--sdhr", NULL);
+  int rasr_flag = extract_flag_options(&argc, &argv, "-rasr", "--rasr", NULL);
+  int ppr_flag = extract_flag_options(&argc, &argv, "-ppr", "--ppr", NULL);
+  int ifdr_flag = extract_flag_options(&argc, &argv, "-ifdr", "--ifdr", NULL);
+  int facdr_flag = extract_flag_options(&argc, &argv, "-facdr", "--facdr", NULL);
+  int asf_facdr_flag = 
+    extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
+  int esa_facdr_flag = 
+    extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
+  int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
+  int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
+  int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
 
-
-  /* process command line */
-  while ((c=getopt(argc,argv,"f")) != EOF)
-  {
-    switch (c)
-    {
-      case 'f':
-	fileFlag=1;
-	break;
-      default:
-	printf("\n\nInvalid Option: %s\n",argv[optind-1]);
-	usage(argv[0]);
-	break;
-     }
-  }
-
-  if ((argc-optind) != 2)
-  {
-    if ((argc-optind) > 2) printf("\nToo many inputs.\n");
-    if ((argc-optind) < 2) printf("\nToo few inputs.\n");
+  if (argc == 1)
     usage(argv[0]);
+
+  fileName = (char *) MALLOC(sizeof(char)*255);
+  strcpy(fileName, argv[1]);
+
+  if (dssr_flag || all_flag)
+    output_record(fileName, ".dssr", 10, save);
+  if (shr_flag || all_flag)
+    output_record(fileName, ".shr", 18, save);
+  if (mpdr_flag || all_flag)
+    output_record(fileName, ".mpdr", 20, save);
+  if (ppdr_flag || all_flag)
+    output_record(fileName, ".ppdr", 30, save);
+  if (atdr_flag || all_flag)
+    output_record(fileName, ".atdr", 40, save);
+  if (ampr_flag || all_flag)
+    output_record(fileName, ".ampr", 44, save);
+  if (radr_flag || all_flag)
+    output_record(fileName, ".radr", 50, save);
+  if (rcdr_flag || all_flag)
+    output_record(fileName, ".rcdr", 51, save);
+  if (dqsr_flag || all_flag)
+    output_record(fileName, ".dqsr", 60, save);
+  if (pdhr_flag || all_flag)
+    output_record(fileName, ".pdhr", 70, save);
+  if (sdhr_flag || all_flag)
+    output_record(fileName, ".shdr", 71, save);
+  if (rasr_flag || all_flag)
+    output_record(fileName, ".rasr", 80, save);
+  if (ppr_flag || all_flag)
+    output_record(fileName, ".ppr", 120, save);
+  if (ifdr_flag || all_flag)
+    output_record(fileName, ".ifdr", 192, save);
+  if (facdr_flag || all_flag)
+    output_record(fileName, ".facdr", 200, save);
+  if (asf_facdr_flag || all_flag)
+    output_record(fileName, ".asf_facdr", 210, save);
+  if (esa_facdr_flag || all_flag)
+    output_record(fileName, ".esa_facdr", 220, save);
+  if (lfdr_flag || all_flag)
+    output_record(fileName, ".lfdr", 300, save);
+
+  exit (0);
+}
+
+static void output_record(char *fileName, char *extension, int rec, int save)
+{
+  FILE *fp;
+  char *outName;
+
+  if (check_record(fileName, rec)) {
+    if (save) {
+      outName = (char *) MALLOC(sizeof(char)*255);
+      outName = appendExt(fileName, extension);
+      fp = FOPEN(outName, "w");
+      print_record(fp, fileName, rec);
+      FCLOSE(fp);
+      FREE(fp);
+    }
+    else {
+      fp = stdout;
+      print_record(fp, fileName, rec);
+    }
   }
+}
 
-  if (fileFlag) write_to_file(argv[0],argv[optind],argv[optind+1]);
+static void print_record(FILE *fp, char *fileName, int reqrec) 
+{
+  struct VFDRECV *facdr;                // Facility Related Data record
+  struct VRADDR *raddr;                 // Radiometric Data record
+  struct IOF_VFDR *vfdr;                // Image File Descriptor record
+  struct VMPDREC *mpdrec;               // Map Projection Data record
+  struct FDR *fdr;                      // File Descriptor record
+  struct dataset_sum_rec *dssr;         // Data Set Summary record
+  struct pos_data_rec *ppdr;            // Platform Position Data record
+  struct att_data_rec *atdr;            // Attitude Data record
+  struct data_hist_rec *dhr;            // Data Histogram record
+  struct rng_spec_rec *rsr;             // Range Spectra record
+  struct qual_sum_rec *dqsr;            // Data Quality Summary record
+  struct radio_comp_data_rec *rcdr;     // Radiometric Compensation Data record
+  struct scene_header_rec *shr;         // Scene Header record
+  struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
+  struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
+  struct PPREC *ppr;                    // Processing Parameter record
 
-  era = 1;  /* Used to use set_era() to find if data was pre or post RADARSAT
-             * Now we don't support pre-RADARSAT, so era is always 1 (post) */
+  char **dataName, *leaderName;
+  int ii, nBands;
 
   // Allocate memory
   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
   for (ii=0; ii<MAX_BANDS; ii++)
     dataName[ii] = (char *) MALLOC(512*sizeof(char));
+  leaderName = (char *) MALLOC(512*sizeof(char *));
   
-  get_ceos_names(argv[optind+1], dataName, leaderName, &nBands);
+  require_ceos_pair(fileName, dataName, leaderName, &nBands);
 
-  nrecs = (int) strlen(argv[optind]);
-  for (j = 0; j < nrecs; j++)
-  {
-    switch(argv[optind][j]) {
-      case ('u') :  reqrec =  10; break;
-      case ('m') :  reqrec =  20; break;
-      case ('l') :  reqrec =  30; break;
-      case ('a') :  reqrec =  40; break;
-      case ('r') :  reqrec =  50; break;
-      case ('q') :  reqrec =  60; break;
-      case ('p') :  reqrec =  70; break;
-      case ('h') :  reqrec =  71; break;
-      case ('s') :  reqrec =  80; break;
-      case ('i') :  reqrec = 192; break;
-      case ('f') :  reqrec = 200; break;
-      case ('b') :  reqrec = 300; break;
-   /* case (???) :  reqrec =  11; break; */
-   /* case ('o') :  reqrec =  51; break; */
-   /* case ('e') :  reqrec =  90; break; */
-   /* case ('p') :  reqrec = 100; break; *//*p is now being used by another*/
-   /* case ('n') :  reqrec = 110; break; */
-   /* case ('d') :  reqrec = 120; break; */
-   /* case ('c') :  reqrec = 130; break; */
-   /* case ('g') :  reqrec = 140; break; */
-   /* case (???) :  reqrec = 201; break; */
-   /* case (???) :  reqrec = 210; break; */
-      default: printf("Not a valid record type: %s\n",argv[optind]); reqrec = -1;
+  switch (reqrec) 
+    {
+    case (10): 
+      dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+      if (get_dssr(fileName,dssr) >= 0 )
+	prn_dssr(fp,dssr,1);
+      FREE(dssr);
+      break;
+    case (18):
+      shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
+      if (get_shr(leaderName,shr) >= 0 )
+	prn_shr(fp,shr);
+      FREE(shr);
+      break;
+    case (20):	
+      mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
+      if (get_mpdr(leaderName,mpdrec) >= 0 ) 
+	prn_mpdr(fp,mpdrec); 
+      FREE(mpdrec);
+      break;
+    case (30):	
+      ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
+      if (get_ppdr(leaderName,ppdr) >= 0)
+	prn_ppdr(fp,ppdr);
+      FREE(ppdr);
+      break;
+    case (40):	
+      atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
+      if (get_atdr(leaderName,atdr) >= 0)
+	prn_atdr(fp,atdr);
+      FREE(atdr);
+      break;
+    case (44):
+      ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
+      if (get_ampr(leaderName,ampr) >= 0)
+	prn_ampr(fp,ampr);
+      FREE(ampr);
+      break;
+    case (50):	
+      raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
+      if (get_raddr(leaderName,raddr) >= 0)
+	prn_raddr(fp,raddr);
+      FREE(raddr);
+      break;
+    case (51):
+      rcdr = (struct radio_comp_data_rec *) 
+	MALLOC(sizeof(struct radio_comp_data_rec));
+      if (get_rcdr(leaderName,rcdr) >= 0)
+	prn_rcdr(fp,rcdr);
+      FREE(rcdr);
+      break;
+    case (60):	
+      dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
+      if (get_dqsr(leaderName,dqsr) >= 0) 
+	prn_dqsr(fp,dqsr,1);
+      FREE(dqsr);
+      break;
+    case (70):	
+      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
+      if (get_dhr(leaderName,dhr) >= 0) 
+	prn_dhr(fp,dhr);
+      FREE(dhr);
+      break;
+    case (71): 
+      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
+      if (get_sdhr(leaderName,dhr) >= 0) 
+	prn_dhr(fp,dhr);
+      FREE(dhr);
+      break;
+    case (80):	
+      rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
+      if (get_rsr(leaderName,rsr) >= 0) 
+	prn_rsr(fp,rsr);
+      FREE(rsr);
+      break;
+    case (120):
+      ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
+      if (get_ppr(leaderName,ppr) >= 0)
+	prn_ppr(fp,ppr);
+      FREE(ppr);
+      break;
+    case (192): 
+      vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
+      if (get_ifiledr(dataName[0],vfdr) >= 0)
+	prn_ifiledr(fp,vfdr);
+      FREE(vfdr);
+      break;
+    case (200):
+    case (210): 
+      facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
+      if (get_asf_facdr(leaderName,facdr) >= 0) 
+	prn_facdr(fp,facdr,1);
+      FREE(facdr);
+      break;
+    case (220):
+      esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
+      if (get_esa_facdr(leaderName,esa_facdr) >= 0)
+	prn_esa_facdr(fp,esa_facdr);
+      FREE(esa_facdr);
+      break;
+    case (300): 
+      fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
+      if (get_fdr(leaderName,fdr) >= 0) 
+	prn_fdr(fp,fdr);
+      FREE(fdr);
+      break;
+    default:    
+      printf("Not Valid Record Type\n");
+      break;
     }
-
-    switch (reqrec) {
-     case (10): dssr = (struct dataset_sum_rec *) malloc(sizeof(struct dataset_sum_rec));
-		get_dssr(leaderName,dssr); prn_dssr(dssr,era); free(dssr);
-		break;
-     case (20):	mpdrec = (struct VMPDREC  *) malloc (sizeof(struct VMPDREC));
-                if ( get_mpdr(leaderName,mpdrec) >= 0 ) { prn_mpdr(mpdrec); }
-		else printf("\nNo Map Projection Data Record Found\n");
-                free(mpdrec);
-		break;
-     case (30):	ppdr=(struct pos_data_rec*)malloc(sizeof(struct pos_data_rec));
-		get_ppdr(leaderName,ppdr); prn_ppdr(ppdr); free(ppdr);
-		break;
-     case (40):	atdr=(struct att_data_rec*)malloc(sizeof(struct att_data_rec));
-		get_atdr(leaderName,atdr); prn_atdr(atdr); free(atdr);
-		break;
-     case (50):	raddr = (struct VRADDR  *) malloc (sizeof(struct VRADDR));
-		get_raddr(leaderName,raddr); prn_raddr(raddr); free(raddr);
-		break;
-     case (60):	dqsr=(struct qual_sum_rec*)malloc(sizeof(struct qual_sum_rec));
-		if (get_dqsr(leaderName,dqsr) >= 0) { prn_dqsr(dqsr,era); }
-		else printf("\nNo Data Quality Summary Record Found\n");
-		free(dqsr);
-		break;
-     case (70):	dhr=(struct data_hist_rec*)malloc(sizeof(struct data_hist_rec));
-		if (get_dhr(leaderName,dhr) >= 0) { prn_dhr(dhr); }
-		else printf("\nNo Processed Data Histograms Record Found\n");
-		free(dhr);
-		break;
-     case (71): dhr=(struct data_hist_rec*)malloc(sizeof(struct data_hist_rec));
-		if (get_sdhr(leaderName,dhr) >= 0) { prn_dhr(dhr); }
-		else printf("\nNo Signal Data Histograms Record Found\n");
-		free(dhr);
-		break;
-     case (80):	rsr=(struct rng_spec_rec*) malloc (sizeof(struct rng_spec_rec));
-                if (get_rsr(leaderName,rsr) >= 0) { prn_rsr(rsr); }
-		else printf("\nNo Range Spectra Record Found\n");
-		free(rsr);
-		break;
-     case (192): vfdr=(struct IOF_VFDR *) malloc (sizeof(struct IOF_VFDR));
-                 get_ifiledr(dataName[0],vfdr);prn_ifiledr(vfdr);free(vfdr);break;
-     case (200): facdr = (struct VFDRECV  *) malloc (sizeof(struct VFDRECV));
-                 if (get_asf_facdr(leaderName,facdr) >= 0) { prn_facdr(facdr,era); }
-		 else printf("\nNo Facility Related Data Record Found\n");
-		 free(facdr);
-		 break;
-     case (300): fdr = (struct FDR *) malloc (sizeof(struct FDR));
-     		 get_fdr(leaderName,fdr); prn_fdr(fdr); free(fdr);
-     		 break;
-
-/********  THESE ARE THE RECORDS THAT I FOUND, BUT THEY WERE BLANK  ***
- *** case (51):	 printf("Radiometric Compensation Record.\n");	    ***
- ***		 printf("This record is not used by ASF\n"); break; ***
- *** case (120): printf("Detailed Processing Parameters Record.\n");***
- ***		 printf("This record is not used by ASF\n"); break; ***
- *** case (130): printf("Calibration Data Record.\n"); 		    ***
- ***		 printf("This record is not used by ASF\n"); break; ***/
-
-/*** I HAVEN'T BEEN ABLE TO FIND THESE RECORDS IN SAR METADATA FILES YET ***
- *** case (11):  printf("Data Record.\n");				 ***
- ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;	 ***
- *** case (90):	 printf("Digital Elevation Model Descriptor Rec.\n");    ***
- ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
- *** case (100): printf("Radar Parameter Data Update Record.\n");        ***
- ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
- *** case (110): printf("Annotation Data Record.\n");                    ***
- ***             printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
- *** case (140): printf("Ground Control Points Record.\n");              ***
- ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
- *** case (201): printf("GPS Metadata Record.\n"); 			 ***
- ***		 printf("\n...UNDER CONSTRUCTION...\n\n"); break;        ***
- *** case (210): printf("Facility Related Data Record (RADARSAT).\n"):	 ***
- ***		 printf("\n\n...UNDER CONSTRUCTION...\n\n"); break;      ***/
-
-     default:    printf("Not Valid Record Type: %d\n",itype);
-    }  /* End SWITCH reqrec */
-  } /* End FOR j < nrecs */
-  exit (0);
 }
+
+static int check_record(char *fileName, int reqrec) 
+{
+  struct VFDRECV *facdr;                // Facility Related Data record
+  struct VRADDR *raddr;                 // Radiometric Data record
+  struct IOF_VFDR *vfdr;                // Image File Descriptor record
+  struct VMPDREC *mpdrec;               // Map Projection Data record
+  struct FDR *fdr;                      // File Descriptor record
+  struct dataset_sum_rec *dssr;         // Data Set Summary record
+  struct pos_data_rec *ppdr;            // Platform Position Data record
+  struct att_data_rec *atdr;            // Attitude Data record
+  struct data_hist_rec *dhr;            // Data Histogram record
+  struct rng_spec_rec *rsr;             // Range Spectra record
+  struct qual_sum_rec *dqsr;            // Data Quality Summary record
+  struct radio_comp_data_rec *rcdr;     // Radiometric Compensation Data record
+  struct scene_header_rec *shr;         // Scene Header record
+  struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
+  struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
+  struct PPREC *ppr;                    // Processing Parameter record
+
+  char **dataName, *leaderName;
+  int ii, nBands;
+
+  // Allocate memory
+  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    dataName[ii] = (char *) MALLOC(512*sizeof(char));
+  leaderName = (char *) MALLOC(512*sizeof(char *));
+  
+  require_ceos_pair(fileName, dataName, leaderName, &nBands);
+
+  switch (reqrec) 
+    {
+    case (10): 
+      dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+      if (get_dssr(leaderName,dssr) >= 0 )
+	return 1;
+      else
+	printf("\nNo Data Set Summary Record Found\n\n");
+      FREE(dssr);
+      break;
+    case (18):
+      shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
+      if (get_shr(leaderName,shr) >= 0 )
+	return 1;
+      else
+	printf("\nNo Scene Header Record Found\n\n");
+      FREE(shr);
+      break;
+    case (20):	
+      mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
+      if (get_mpdr(leaderName,mpdrec) >= 0 ) 
+        return 1;
+      else 
+	printf("\nNo Map Projection Data Record Found\n\n");
+      FREE(mpdrec);
+      break;
+    case (30):	
+      ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
+      if (get_ppdr(leaderName,ppdr) >= 0)
+        return 1;
+      else
+	printf("\nNo Platform Position Data Record Found\n\n");
+      FREE(ppdr);
+      break;
+    case (40):	
+      atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
+      if (get_atdr(leaderName,atdr) >= 0)
+	return 1;
+      else
+	printf("\nNo Attitude Data Record Found\n\n");
+      FREE(atdr);
+      break;
+    case (44):
+      ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
+      if (get_ampr(leaderName,ampr) >= 0)
+        return 1;
+      else
+	printf("\nNo Map Projection Record (ALOS) Found\n\n");
+      FREE(ampr);
+      break;
+    case (50):	
+      raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
+      if (get_raddr(leaderName,raddr) >= 0)
+	return 1;
+      else
+	printf("\nNo Radiometric Data Record\n\n");
+      FREE(raddr);
+      break;
+    case (51):
+      rcdr = (struct radio_comp_data_rec *) 
+	MALLOC(sizeof(struct radio_comp_data_rec));
+      if (get_rcdr(leaderName,rcdr) >= 0)
+	return 1;
+      else
+	printf("\nNo Radiometric Compensation Data Record\n\n");
+      FREE(rcdr);
+      break;
+    case (60):	
+      dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
+      if (get_dqsr(leaderName,dqsr) >= 0) 
+	return 1;
+      else 
+	printf("\nNo Data Quality Summary Record Found\n\n");
+      FREE(dqsr);
+      break;
+    case (70):	
+      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
+      if (get_dhr(leaderName,dhr) >= 0) 
+	return 1;
+      else 
+	printf("\nNo Processed Data Histograms Record Found\n\n");
+      FREE(dhr);
+      break;
+    case (71): 
+      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
+      if (get_sdhr(leaderName,dhr) >= 0) 
+	return 1;
+      else 
+	printf("\nNo Signal Data Histograms Record Found\n\n");
+      FREE(dhr);
+      break;
+    case (80):	
+      rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
+      if (get_rsr(leaderName,rsr) >= 0) 
+	return 1;
+      else 
+	printf("\nNo Range Spectra Record Found\n\n");
+      FREE(rsr);
+      break;
+    case (120):
+      ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
+      if (get_ppr(leaderName,ppr) >= 0)
+	return 1;
+      else
+	printf("\nNo Processing Parameter Record Found\n\n");
+      FREE(ppr);
+      break;
+    case (192): 
+      vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
+      if (get_ifiledr(dataName[0],vfdr) >= 0)
+	return 1;
+      else
+	printf("\nNo Image File Descriptor Record Found\n\n");
+      FREE(vfdr);
+      break;
+    case (200):
+    case (210): 
+      facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
+      if (get_asf_facdr(leaderName,facdr) >= 0) 
+	return 1;
+      else 
+	printf("\nNo Facility Related Data Record Found\n\n");
+      break;
+      FREE(facdr);
+    case (220):
+      esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
+      if (get_esa_facdr(leaderName,esa_facdr) >= 0)
+	return 1;
+      else
+	printf("\nNo Facility Related Data Record (ESA) Found\n\n");
+      FREE(esa_facdr);
+      break;
+    case (300): 
+      fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
+      if (get_fdr(leaderName,fdr) >= 0) 
+	return 1;
+      else
+	printf("\nNo File Descriptor Record Found\n\n");
+      break;
+      FREE(fdr);
+    default:    
+      printf("Not Valid Record Type\n");
+      break;
+    }
+  return 0;
+}
+
 
 void usage(char *name)
 {
    fprintf(stderr,"\n");
    fprintf(stderr,"USAGE:\n");
-   fprintf(stderr,"  %s [-f] rectypes infile\n",name);
+   fprintf(stderr,"  %s [ <option> ] infile\n",name);
    fprintf(stderr,"\n");
    fprintf(stderr,"OPTIONS:\n");
-   fprintf(stderr,"  -f        Write the records to an output file\n");
+   fprintf(stderr,"  -save        Write the records to an output file\n");
+   fprintf(stderr,"  -all         All records\n");
+   fprintf(stderr,"  -dssr        Data Set Summary record\n");
+   fprintf(stderr,"  -shr         Scene Header record\n");
+   fprintf(stderr,"  -mpdr        Map Projection Data Record\n");
+   fprintf(stderr,"  -ppdr        Platform Position Data record\n");
+   fprintf(stderr,"  -atdr        Attitude Data record\n");
+   fprintf(stderr,"  -radr        Radiometric Data record\n");
+   fprintf(stderr,"  -rcdr        Radiometric Compensation Data record\n");
+   fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
+   fprintf(stderr,"  -pdhr        Processed Data Histograms record\n");
+   fprintf(stderr,"  -sdhr        Signal Data Histograms record\n");
+   fprintf(stderr,"  -rasr        Range Spectra record\n");
+   fprintf(stderr,"  -asf_facdr   ASF Facility Related Data record\n");
+   fprintf(stderr,"  -esa_facdr   ESA Facility Related Data record\n");
+   fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
+   fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
    fprintf(stderr,"\n");
-   fprintf(stderr,"REQUIRED ARGUMENTS:\n");
-   fprintf(stderr,"  rectypes:\n");
-   fprintf(stderr,"     u      Data Set Summary Record\n");
-   fprintf(stderr,"     m      Map Projection Data Record\n");
-   fprintf(stderr,"     l      Platform Position Data Record\n");
-   fprintf(stderr,"     a      Attitude Data Record\n");
-   fprintf(stderr,"     r      Radiometric Data Record\n");
-   fprintf(stderr,"     q      Data Quality Summary Record\n");
-   fprintf(stderr,"     p      Processed Data Histograms Record\n");
-   fprintf(stderr,"     h      Signal Data Histograms Record\n");
-   fprintf(stderr,"     s      Range Spectra Record\n");
-   /*
-   fprintf(stderr,"     o      Radiometric Compensation Record\n");
-   fprintf(stderr,"     e      Digital Elevation Model Descriptor Record\n");
-   fprintf(stderr,"     p      Radar Parameter Data Update Record\n");
-   fprintf(stderr,"     n      Annotation Data Record\n");
-   fprintf(stderr,"     d      Detailed Parameter Processing Record\n");
-   fprintf(stderr,"     c      Calibration Data Record\n");
-   fprintf(stderr,"     g      Ground Control Points Record\n");
-   */
-   fprintf(stderr,"     f      Facility Related Data Record\n");
-   fprintf(stderr,"     i      Image File Descriptor Record\n");
-   fprintf(stderr,"     b      Leader File Descriptor Record\n");
-   fprintf(stderr,"\n");
-   fprintf(stderr,"  infile    The base name of the SAR image\n");
+   fprintf(stderr,"  infile    The base name of the CEOS image\n\n");
    fprintf(stderr,"\n");
    fprintf(stderr,"DESCRIPTION:\n");
-   fprintf(stderr,"  Metadata retrieves ceos structures from SAR metadata\n");
-   fprintf(stderr,"\n");
+   fprintf(stderr,"  Metadata retrieves ceos structures from CEOS metadata\n\n");
    fprintf(stderr,"Version %.2f,  ASF SAR TOOLS\n\n",VERSION);
    exit (1);
 }
 
-void write_to_file(char *exe, char *rectypes, char *infile)
-{
-  int j, nrecs, reqrec;
-  char cmd[1024];
-  char *outfile, *name;
-
-  outfile = MALLOC(sizeof(char)*(strlen(infile)+10));
-  name = MALLOC(sizeof(char)*(strlen(infile)+10));
-
-  nrecs = (int) strlen(rectypes);
-  for (j = 0; j < nrecs; j++)
-  {
-    strcpy(outfile,infile);
-    char * ext = findExt(outfile);
-    if (ext) *ext = '\0';
-    strcpy(name,outfile);
-    switch(rectypes[j]) {
-      case ('u') : reqrec =  10; strcat(outfile,".dssr");    break;
-      case ('m') : reqrec =  20; strcat(outfile,".mpdr");    break;
-      case ('l') : reqrec =  30; strcat(outfile,".ppdr");    break;
-      case ('a') : reqrec =  40; strcat(outfile,".atdr");    break;
-      case ('r') : reqrec =  50; strcat(outfile,".raddr");   break;
-      case ('q') : reqrec =  60; strcat(outfile,".dqsr");    break;
-      case ('p') : reqrec =  70; strcat(outfile,".pdhr");    break;
-      case ('h') : reqrec =  71; strcat(outfile,".sdhr");    break;
-      case ('s') : reqrec =  80; strcat(outfile,".rsr");     break;
-      case ('i') : reqrec = 192; strcat(outfile,".ifiledr"); break;
-      case ('f') : reqrec = 200; strcat(outfile,".facdr");   break;
-      case ('b') : reqrec = 300; strcat(outfile,".fdr");     break;
-   /* case ('o') : reqrec =  51; strcat(outfile,".rcr");     break; */
-   /* case ('e') : reqrec =  90; strcat(outfile,".demdr");   break; */
-   /* case ('p') : reqrec = 100; strcat(outfile,".rpdur");   break; */
-   /* case ('n') : reqrec = 110; strcat(outfile,".andr");    break; */
-   /* case ('d') : reqrec = 120; strcat(outfile,".dppr");    break; */
-   /* case ('c') : reqrec = 130; strcat(outfile,".cdr");     break; */
-   /* case ('g') : reqrec = 140; strcat(outfile,".gcpr");    break; */
-      default: printf("Invalid record type: %c\n",rectypes[j]); reqrec=-1;
-    }
-    if (reqrec > 0)
-    {
-#ifdef win32
-      sprintf(cmd,"\"%s\" %c \"%s\" > \"%s\"\n",exe,rectypes[j],name,outfile);
-#else
-      sprintf(cmd,"%s %c %s > %s\n",exe,rectypes[j],name,outfile);
-#endif
-      if (asfSystem(cmd) != 0) {
-	printf("Error calling metadata: %s\n", strerror(errno)); 
-	exit(0);
-      }
-    }
-  }
-  free(outfile);
-  free(name);
-  exit(0);
-}
