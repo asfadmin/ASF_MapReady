@@ -19,6 +19,9 @@ endif
 UNPACK_DIR := proj-4.4.8
 ZIPFILE := $(UNPACK_DIR).tar.gz
 
+# NAD27 grid shifts file
+NAD27FILE := proj-nad27-1.1.tar.gz
+
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
@@ -27,8 +30,10 @@ build: build_stamp
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
 	gunzip --to-stdout $(ZIPFILE) |	tar xv
-	(   cd $(UNPACK_DIR) ; \
+	(   cp $(NAD27FILE) $(UNPACK_DIR)/nad; \
+	    cd $(UNPACK_DIR) ; \
 	    perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \
+	    cd nad; tar xzvf $(NAD27FILE); cd ..; \
 	    CFLAGS="$(PROJ_CFLAGS)" ./configure --prefix=$(ROOT_DIR) ; \
 	    $(MAKE) ; \
 	    $(MAKE) install ; \
