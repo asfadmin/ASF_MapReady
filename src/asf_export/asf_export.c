@@ -339,7 +339,7 @@ main (int argc, char *argv[])
 
   //If user added ".img", strip it.
   char *ext = findExt(in_base_name);
-  if (strcmp(ext, ".img") == 0) *ext = '\0';
+  if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
   //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
