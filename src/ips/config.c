@@ -1,10 +1,6 @@
 #include "asf.h"
 #include "ips.h"
 
-// hard-code a maximum string length... this way the read_str
-// code can enforce a maximum length
-#define MAX_STRING_LEN 255
-
 static char * new_blank_str(void)
 {
     char *ret = MALLOC(sizeof(char)*MAX_STRING_LEN);
@@ -200,15 +196,10 @@ int init_config(char *configFile)
   return(0);
 }
 
-dem_config *init_fill_config(char *configFile)
-{
 #define newStruct(type) (type *)MALLOC(sizeof(type))
-  
-  FILE *fConfig, *fDefaults;
-  char line[255], params[25];
-  char *test=new_blank_str();
-  int i;
-  
+
+dem_config *create_config_with_defaults()
+{
   /* Create structure */
   dem_config *cfg = newStruct(dem_config);
   cfg->general = newStruct(s_general);
@@ -349,7 +340,6 @@ dem_config *init_fill_config(char *configFile)
   cfg->elevation->status = new_str("new");
   
   cfg->ground_range->status = new_str("new");
-  
   cfg->geocode->dem = new_blank_str();
   cfg->geocode->amp = new_blank_str();
   cfg->geocode->error = new_blank_str();
@@ -364,6 +354,17 @@ dem_config *init_fill_config(char *configFile)
   
   cfg->export->format = new_str("geotiff");
   cfg->export->status = new_str("new");
+  return cfg;
+}
+
+dem_config *init_fill_config(char *configFile)
+{  
+  FILE *fConfig, *fDefaults;
+  char line[255], params[25];
+  char *test=new_blank_str();
+  int i;
+
+  dem_config *cfg = create_config_with_defaults();
 
   fConfig = FOPEN(configFile, "r");
   i=0;

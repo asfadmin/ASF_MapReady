@@ -16,6 +16,10 @@
 #include "asf_export.h"
 #include "asf_geocode.h"
 
+// hard-code a maximum string length... this way the read_str
+// code can enforce a maximum length
+#define MAX_STRING_LEN 255
+
 typedef struct {
   char *mode;		/* processing mode: DEM or DINSAR */
   char *dem;		/* reference DEM */
@@ -174,6 +178,7 @@ char *read_param(char *line);
 void read_str(char *dest, char *line, char *param);
 int read_int(char *line, char *param);
 double read_double(char *line, char *param);
+dem_config *create_config_with_defaults();
 int init_config(char *configFile);
 dem_config *init_fill_config(char *configFile);
 dem_config *read_config(char *configFile, int createFlag);
