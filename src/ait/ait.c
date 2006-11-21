@@ -140,7 +140,13 @@ const char DIR_SEPARATOR = '/';
 #endif
 
 #include "ips.h"
+#include "ait.h"
 
+/************************************************************************
+ * Global variables...
+ */
+
+// pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
 static char *
@@ -157,13 +163,19 @@ add_file(const char *config_file)
 {
 }
 
+SIGNAL_CALLBACK void
+on_ait_main_destroy(GtkWidget *w, gpointer data)
+{
+    gtk_main_quit();
+}
+
 int
 main(int argc, char **argv)
 {
-    gchar *glade_xml_file;
     gtk_init(&argc, &argv);
 
-    glade_xml_file = (gchar *) find_in_share("gips.glade");
+    gchar *glade_xml_file = (gchar *) find_in_share("ait.glade");
+    //printf("Found ait.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
@@ -174,9 +186,9 @@ main(int argc, char **argv)
     /* add version number to window title */
     char title[256];
     sprintf(title,
-            "ASF Interferometric Processing System: Version %s", IPS_GUI_VERSION);
+            "AIT - The ASF Interferometry Tool: Version %s", IPS_GUI_VERSION);
 
-    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ips_main");
+    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ait_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
     //set_font();
@@ -186,3 +198,4 @@ main(int argc, char **argv)
 
     exit (EXIT_SUCCESS);
 }
+

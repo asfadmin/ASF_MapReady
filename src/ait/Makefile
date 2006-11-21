@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
-TARGET = gips
-SRCS = gips.c
+TARGET = ait
+SRCS = ait.c config.c
 
 LIBS  = \
 	$(LIBDIR)/libasf_ips.a \
