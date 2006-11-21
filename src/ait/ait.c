@@ -1,35 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <assert.h>
-#include <unistd.h>
-#include <gtk/gtk.h>
-#include <glade/glade.h>
-#include <glib.h>
-#include <glib/gprintf.h>
-#include <sys/wait.h>
-
-/* for win32, need __declspec(dllexport) on all signal handlers */
-#if !defined(SIGNAL_CALLBACK)
-#  if defined(win32)
-#    define SIGNAL_CALLBACK __declspec(dllexport)
-#  else
-#    define SIGNAL_CALLBACK
-#  endif
-#endif
-
-#define IPS_GUI_VERSION "0.0.1"
+#include "ait.h"
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
-#include <pango/pango.h>
-
-#define BYTE __byte
-#include "asf.h"
-#undef BYTE
-#include <Windows.h>
-#undef DIR_SEPARATOR
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 
@@ -119,28 +91,12 @@ void set_font ()
     try_to_get_windows_font();
 }
 
-#else /* defined(win32) */
-
-#include "asf.h"
-#if defined(DIR_SEPARATOR)
-#undef DIR_SEPARATOR
-#endif
+#else /* #if defined(win32) */
 
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
 
 #endif /* defined(win32) */
-
-#ifdef win32
-const char PATH_SEPARATOR = ';';
-const char DIR_SEPARATOR = '\\';
-#else
-const char PATH_SEPARATOR = ':';
-const char DIR_SEPARATOR = '/';
-#endif
-
-#include "ips.h"
-#include "ait.h"
 
 /************************************************************************
  * Global variables...
@@ -148,6 +104,15 @@ const char DIR_SEPARATOR = '/';
 
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
+
+// We aren't using the asf.h ones because of conflicts in Windows.h
+#if defined(win32)
+const char PATH_SEPARATOR = ';';
+const char DIR_SEPARATOR = '\\';
+#else
+const char PATH_SEPARATOR = ':';
+const char DIR_SEPARATOR = '/';
+#endif
 
 static char *
 find_in_share(const char * filename)
@@ -166,6 +131,9 @@ add_file(const char *config_file)
 SIGNAL_CALLBACK void
 on_ait_main_destroy(GtkWidget *w, gpointer data)
 {
+    dem_config *cfg = get_settings_from_gui();
+    write_config("test.config", cfg);
+    free(cfg);
     gtk_main_quit();
 }
 
