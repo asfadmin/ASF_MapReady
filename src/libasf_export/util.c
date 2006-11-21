@@ -412,3 +412,29 @@ float_image_new_from_metadata(meta_parameters *meta, const char *file)
 
     return fi;
 }
+
+BandedFloatImage *
+banded_float_image_new_from_metadata(meta_parameters *meta, const char *file)
+{
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+    int nbands = meta->general->band_count;
+
+    FILE * fp = FOPEN(file, "rb");
+    BandedFloatImage * bfi = banded_float_image_new(nbands, ns, nl);
+
+    int i,j,k;
+    float *buf = MALLOC(sizeof(float)*ns);
+    for (k = 0; k < nbands; ++k) {
+        for (i = 0; i < nl; ++i) {
+            get_float_line(fp, meta, i+k*nl, buf);
+            for (j = 0; j < ns; ++j)
+                banded_float_image_set_pixel(bfi, k, j, i, buf[j]);
+        }
+    }
+
+    free(buf);
+    fclose(fp);
+
+    return bfi;
+}

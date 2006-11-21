@@ -8,6 +8,7 @@ OBJS = \
 	interpolate.o \
 	kernel.o \
 	float_image.o \
+	banded_float_image.o \
 	uint8_image.o \
 	scaling.o \
 	stats.o \
@@ -16,18 +17,21 @@ OBJS = \
 	shaded_relief.o \
 	resample.o
 
-LIBS = \
-	$(LIBDIR)/asf.a \
+LIBS :=	\
+	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(JPEG_LIBS) \
+	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
-	$(LDFAGS) \
 	-lm
 
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
-	cp asf_raster.h float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
+	cp asf_raster.h float_image.h banded_float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_raster.a
@@ -53,6 +57,12 @@ brighten_float_image: brighten_float_image.o
 brighten_in_memory: brighten_in_memory.o
 	$(CC) -Wall -g3 $^ $(LIBS) -o $@
 	./$@
+
+# Test program useful for testing banded_float_image
+test_bfi: test_bfi.o
+	$(CC) -Wall -g3 $^ $(LIBS) -o $@
+	./$@
+	rm ./$@
 
 # FIXME: remove the stupid PKG_CONFIG_PATH environment var setting
 # once it is sorted out how to have pkg-config know where to find the
