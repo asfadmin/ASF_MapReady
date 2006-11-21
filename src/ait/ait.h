@@ -44,6 +44,10 @@ extern GladeXML *glade_xml;
 extern const char PATH_SEPARATOR;
 extern const char DIR_SEPARATOR;
 
+// ait.c
+void show_summary(int show);
+void message_box(const char *format, ...);
+
 // config.c
 dem_config *get_settings_from_gui();
 

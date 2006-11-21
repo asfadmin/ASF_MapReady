@@ -1,4 +1,5 @@
 #include "ait.h"
+#include <stdarg.h>
 
 /* for win32, set the font to the standard windows one */
 #if defined(win32)
@@ -131,10 +132,83 @@ add_file(const char *config_file)
 SIGNAL_CALLBACK void
 on_ait_main_destroy(GtkWidget *w, gpointer data)
 {
-    dem_config *cfg = get_settings_from_gui();
-    write_config("test.config", cfg);
-    free(cfg);
     gtk_main_quit();
+}
+
+SIGNAL_CALLBACK void
+on_execute_button_clicked(GtkWidget *w)
+{
+}
+
+SIGNAL_CALLBACK void
+on_save_button_clicked(GtkWidget *w)
+{
+    char cfg_name[512];
+    dem_config *cfg = get_settings_from_gui(cfg_name);
+    if (strlen(cfg_name) > 0) {
+        write_config(cfg_name, cfg);
+        message_box("Wrote configuration file: %s\n", cfg_name);
+    }
+    else
+        message_box("Please enter a name for the configuration file.");
+    free(cfg);
+}
+
+SIGNAL_CALLBACK void
+on_stop_button_clicked(GtkWidget *w)
+{
+}
+
+void
+message_box(const char *format, ...)
+{
+    char buf[1024];
+    int len;
+
+    va_list ap;
+    va_start(ap, format);
+    len = vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+
+    if (len > 1022)
+        asfPrintWarning("Lengthy message may have been truncated.\n");
+
+    GtkWidget *dialog, *label;
+
+    dialog = gtk_dialog_new_with_buttons( "Message",
+        NULL,
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_STOCK_OK,
+        GTK_RESPONSE_NONE,
+        NULL);
+
+    label = gtk_label_new(buf);
+
+    g_signal_connect_swapped(dialog, 
+        "response", 
+        G_CALLBACK(gtk_widget_destroy),
+        dialog);
+
+    gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
+
+    gtk_widget_show_all(dialog);
+}
+
+void show_summary(int show)
+{
+    GtkWidget *summary_scrolledwindow =
+        glade_xml_get_widget(glade_xml, "summary_scrolledwindow");
+
+    GtkWidget *viewed_image_scrolledwindow =
+        glade_xml_get_widget(glade_xml, "viewed_image_scrolledwindow");
+
+    if (show) {
+        gtk_widget_show(summary_scrolledwindow);
+        gtk_widget_hide(viewed_image_scrolledwindow);
+    } else {
+        gtk_widget_hide(summary_scrolledwindow);
+        gtk_widget_show(viewed_image_scrolledwindow);
+    }
 }
 
 int
@@ -151,10 +225,13 @@ main(int argc, char **argv)
     if (argc > 1)
         add_file(argv[1]);
 
-    /* add version number to window title */
+    // add version number to window title
     char title[256];
     sprintf(title,
             "AIT - The ASF Interferometry Tool: Version %s", IPS_GUI_VERSION);
+
+    // show the summary view, not the image preview
+    show_summary(TRUE);
 
     GtkWidget *widget = glade_xml_get_widget (glade_xml, "ait_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);

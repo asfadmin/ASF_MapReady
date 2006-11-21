@@ -168,11 +168,12 @@
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
-				      <property name="max_length">0</property>
+				      <property name="max_length">512</property>
 				      <property name="text" translatable="yes"></property>
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="update_summary" last_modification_time="Tue, 21 Nov 2006 23:38:28 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -6482,6 +6483,7 @@ Other
 			      <property name="use_stock">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_save_button_clicked" last_modification_time="Tue, 21 Nov 2006 22:40:04 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="padding">1</property>
@@ -6498,6 +6500,7 @@ Other
 			      <property name="use_stock">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_execute_button_clicked" last_modification_time="Tue, 21 Nov 2006 22:40:15 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="padding">1</property>
@@ -6514,6 +6517,7 @@ Other
 			      <property name="use_stock">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
+			      <signal name="clicked" handler="on_stop_button_clicked" last_modification_time="Tue, 21 Nov 2006 22:40:25 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="padding">1</property>
@@ -6572,7 +6576,7 @@ Other
 	      </child>
 
 	      <child>
-		<widget class="GtkScrolledWindow" id="scrolledwindow1">
+		<widget class="GtkScrolledWindow" id="viewed_image_scrolledwindow">
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>
 		  <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
@@ -6594,6 +6598,42 @@ Other
 			  <property name="ypad">0</property>
 			</widget>
 		      </child>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">True</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkScrolledWindow" id="summary_scrolledwindow">
+		  <property name="visible">True</property>
+		  <property name="can_focus">True</property>
+		  <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		  <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		  <property name="shadow_type">GTK_SHADOW_NONE</property>
+		  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
+
+		  <child>
+		    <widget class="GtkTextView" id="summary_textview">
+		      <property name="visible">True</property>
+		      <property name="can_focus">True</property>
+		      <property name="editable">True</property>
+		      <property name="overwrite">False</property>
+		      <property name="accepts_tab">True</property>
+		      <property name="justification">GTK_JUSTIFY_LEFT</property>
+		      <property name="wrap_mode">GTK_WRAP_NONE</property>
+		      <property name="cursor_visible">True</property>
+		      <property name="pixels_above_lines">0</property>
+		      <property name="pixels_below_lines">0</property>
+		      <property name="pixels_inside_wrap">0</property>
+		      <property name="left_margin">0</property>
+		      <property name="right_margin">0</property>
+		      <property name="indent">0</property>
+		      <property name="text" translatable="yes">Summary will go here!!</property>
 		    </widget>
 		  </child>
 		</widget>

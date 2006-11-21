@@ -118,8 +118,10 @@ static void LNG(long *val, char *widget)
     *val = get_long_from_entry(widget);
 }
 
-dem_config *get_settings_from_gui()
+dem_config *get_settings_from_gui(char *cfg_name)
 {
+    STR(cfg_name, "configuration_file_entry");
+
     dem_config *cfg = create_config_with_defaults();
 
     //cfg->general->mode = new_blank_str();
@@ -239,8 +241,8 @@ dem_config *get_settings_from_gui()
     //cfg->geocode->coh = new_blank_str();
     //cfg->geocode->name = new_str("utm");
     //cfg->geocode->proj = new_blank_str();
-  sprintf(cfg->geocode->proj, "%s/projections/utm/utm.proj", 
-	  get_asf_share_dir());
+    //sprintf(cfg->geocode->proj, "%s/projections/utm/utm.proj", 
+        //get_asf_share_dir());
     //cfg->geocode->resample = new_str("bilinear");
     //cfg->geocode->pixel_spacing = 20;
     //cfg->geocode->status = new_str("new");
@@ -258,4 +260,53 @@ dem_config *get_settings_from_gui()
         "coregister_first_patches_entry");
 */
     return cfg;
+}
+
+void add_to_summary_text(char **summary_text, int *current_len, int increment,
+                         const char *format, ...)
+{
+    char buf[1024];
+    int len;
+
+    va_list ap;
+    va_start(ap, format);
+    len = vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+
+    if (len > 1022)
+        asfPrintWarning("Lengthy message may have been truncated!\n");
+
+    if (strlen(*summary_text) + len >= *current_len) {
+        *current_len += increment;
+        char *new = MALLOC(sizeof(char)*(*current_len));
+        strcpy(new, *summary_text);
+        strcat(new, buf);
+        *summary_text = new;
+    } else {
+        strcat(*summary_text, buf);
+    }
+
+}
+
+SIGNAL_CALLBACK
+void update_summary()
+{
+    char cfg_name[255];
+    dem_config *cfg = get_settings_from_gui(cfg_name);
+    int increment = 10240;
+
+    char *summary_text = MALLOC(sizeof(char) * increment);
+    int current_len = increment;
+
+    add_to_summary_text(&summary_text, &current_len, increment,
+                        "Configuration File: %s\n\n", cfg_name);
+
+    GtkWidget *summary_textview =
+        glade_xml_get_widget(glade_xml, "summary_textview");
+
+    GtkTextBuffer *tb =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(summary_textview));
+
+    gtk_text_buffer_set_text(tb, summary_text, -1);
+
 }
