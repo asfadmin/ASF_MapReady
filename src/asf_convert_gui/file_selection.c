@@ -37,6 +37,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
         "STF Files (*.000)\0*.000\0"
         "Complex Files (*.cpx)\0*.cpx\0"
+        "ALOS Files (LED-*)\0LED-*\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;

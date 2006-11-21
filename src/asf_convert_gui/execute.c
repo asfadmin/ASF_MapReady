@@ -582,6 +582,35 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
     return the_output;
 }
 
+static char *
+generate_input_basename(const char *in_data)
+{
+    int prepen_len = has_prepension(in_data);
+
+    // Two conventions we must be able to handle.  The first is
+    // extension-based, the second prepension-based.
+
+    // For an extension-based basename scheme, we just need to strip
+    // off the extension -- output files will just use a new extension.
+
+    // For prepension-based schemes, we need to strip off the path, then
+    // strip off the prepension, then add back on the path info again.
+    // We don't do anything with any extensions (as there aren't really
+    // any extensions to worry about).
+   
+    if (prepen_len > 0) {
+        gchar *path = g_path_get_dirname(in_data);
+        char *basename = get_basename(in_data);
+        char *ret = MALLOC(sizeof(char)*(strlen(path)+strlen(basename)+1));
+        sprintf(ret, "%s%c%s", path, DIR_SEPARATOR, basename+prepen_len);
+        g_free(path);
+        free(basename);
+        return ret;
+    } else {
+        return stripExt(in_data);
+    }
+}
+
 static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
              int is_first)
@@ -599,7 +628,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
-        char *in_basename = stripExt(in_data);
+        char *in_basename = generate_input_basename(in_data);
 	char *out_basename = stripExt(out_full);
 	char *output_dir = getPath(out_full);
 	char *config_file, *cmd_output, *tmp_dir;

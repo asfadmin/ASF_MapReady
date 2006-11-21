@@ -11,6 +11,17 @@ int COL_OUTPUT_FILE;
 int COL_OUTPUT_THUMBNAIL;
 int COL_STATUS;
 
+/* Returns the length of the prepension if there is an allowed
+   prepension, otherwise returns 0 (no prepension -> chceck extensions) */
+int has_prepension(const gchar * data_file_name)
+{
+    /* at the moment, the only prepension we allow is LED- (ALOS) */
+    char *basename = get_basename(data_file_name);
+    int ret = strncmp(basename, "LED-", 4) == 0;
+    free(basename);
+    return ret ? 4 : 0;
+}
+
 static gchar *
 determine_default_output_file_name(const gchar * data_file_name)
 {
@@ -23,12 +34,21 @@ determine_default_output_file_name(const gchar * data_file_name)
     gchar * schemed_filename;
     gchar * p;
 
-    basename = g_strdup(data_file_name);
-    p = strrchr(basename, '.');
-    if (p)
-        *p = '\0';
+    int prepension = has_prepension(data_file_name);
 
-    filename = g_path_get_basename(basename);
+    if (prepension > 0) {
+        basename = g_path_get_basename(data_file_name);
+        filename = g_strdup(basename + prepension);
+        printf("Filename: %s\n", filename);
+    } else { 
+        basename = g_strdup(data_file_name);
+        p = findExt(basename);
+        if (p)
+            *p = '\0';
+
+        filename = g_path_get_basename(basename);
+    }
+
     schemed_filename = naming_scheme_apply(current_naming_scheme, filename);
 
     if (output_directory && strlen(output_directory) > 0)
@@ -37,7 +57,7 @@ determine_default_output_file_name(const gchar * data_file_name)
     }
     else
     {
-        gchar * tmp = g_path_get_dirname(basename);
+        gchar * tmp = g_path_get_dirname(data_file_name);
         path = g_malloc( sizeof(gchar) * (strlen(tmp) + 4) );
         g_sprintf(path, "%s%c", tmp, DIR_SEPARATOR);
         g_free(tmp);
@@ -85,9 +105,17 @@ static gboolean file_is_valid(const gchar * data_file)
     /* for now, just ensure that the extension is ok */
     /* don't even look at the actual file itself... */
 
+    /* prepension check first */
+    int has_alos_prepension = has_prepension(data_file);
+
+    if (has_alos_prepension) {
+        /* this is a file that uses prepending */
+        return TRUE;
+    }
+
     gchar * p;
 
-    p = strrchr(data_file, '.');
+    p = findExt(data_file);
 
     if (!p)
     {
@@ -236,6 +264,8 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 
     if (valid)
     {
+        printf("Adding: %s\n", data_file);
+
         GtkWidget *files_list;
         gchar * out_name_full;
         

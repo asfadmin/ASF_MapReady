@@ -241,6 +241,7 @@ void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_L_file(const gchar *);
 void show_queued_thumbnails();
+int has_prepension(const gchar *);
 
 /* help.c */
 char * escapify(const char * s);
