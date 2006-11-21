@@ -121,7 +121,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
 	       char *inBaseName, char *outBaseName)
 {
     char **inBandName, inDataName[512]="", inMetaName[512]="";
-    char unscaledBaseName[256]="", band[10]="", tmp[10]="";
+    char unscaledBaseName[256]="", bandExt[10]="", tmp[10]="";
     int do_resample;
     int do_metadata_fix;
     double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
@@ -161,22 +161,22 @@ int asf_import(radiometry_t radiometry, int db_flag,
             require_ceos_metadata(inMetaNameOption, inMetaName);
         }
 	for (ii=0; ii<nBands; ii++) {
-	  strcpy(band, "");
+	  strcpy(bandExt, "");
 	  if (strncmp(inBandName[ii], "IMG-HH", 6)==0) 
-	    strcpy(band, "_HH");
+	    strcpy(bandExt, "HH");
 	  if (strncmp(inBandName[ii], "IMG-HV", 6)==0) 
-	    strcpy(band, "_HV");
+	    strcpy(bandExt, "HV");
 	  if (strncmp(inBandName[ii], "IMG-VH", 6)==0) 
-	    strcpy(band, "_VH");
+	    strcpy(bandExt, "VH");
 	  if (strncmp(inBandName[ii], "IMG-VV", 6)==0) 
-	    strcpy(band, "_VV");
+	    strcpy(bandExt, "VV");
 	  for (kk=1; kk<10; kk++) {
 	    sprintf(tmp, "IMG-0%d", kk);
 	    if (strncmp(inBandName[ii], tmp, 6)==0) 
-	      sprintf(band, "_0%d", kk);
+	      sprintf(bandExt, "%d", kk);
 	  }
-	  import_ceos(inBandName[ii], band, inBaseName, lutName, unscaledBaseName,
-		      radiometry, db_flag);
+	  import_ceos(inBandName[ii], bandExt, ii+1, nBands, inBaseName, lutName, 
+		      unscaledBaseName, radiometry, db_flag);
 	}
     }
     /* Ingest ENVI format data */

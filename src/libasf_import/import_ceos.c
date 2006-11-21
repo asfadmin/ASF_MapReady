@@ -22,8 +22,9 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 /******************************************************************************
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
-void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
-                 char *outBaseName, radiometry_t radiometry, int db_flag)
+void import_ceos(char *inDataName, char *bandExt, int band, int nBands, 
+		 char *inMetaName, char *lutName, char *outBaseName, 
+		 radiometry_t radiometry, int db_flag)
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
@@ -42,8 +43,10 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
-  sprintf(outDataName, "%s%s", outBaseName, band);
-  sprintf(outMetaName, "%s%s", outBaseName, band);
+  //sprintf(outDataName, "%s%s", outBaseName, band);
+  //sprintf(outMetaName, "%s%s", outBaseName, band);
+  strcpy(outDataName, outBaseName);
+  strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
 
   /* Create metadata */
@@ -67,7 +70,8 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
   if (meta->general->data_type==COMPLEX_BYTE) {
     int trash;
     bin_state *s;  /* Structure with info about the satellite & its raw data */
-    readPulseFunc readNextPulse; /* Pointer to function that reads the next line of CEOS Data */
+    readPulseFunc readNextPulse; /* Pointer to function that reads the next line 
+				    of CEOS Data */
     iqType *iqBuf;           /* Buffer containing the complex i & q channels */
 
     /* Die if the sprocket flag is specified, since it doesn't do lvl 0 */
@@ -79,6 +83,8 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     /* Let the user know what format we are working on */
     asfPrintStatus("   Input data type: level zero raw data\n"
                    "   Output data type: complex byte raw data\n");
+    if (nBands > 1)
+      asfPrintStatus("   Input band %s\n", bandExt);
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
@@ -103,7 +109,8 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
-//    meta->general->data_type = COMPLEX_REAL32;  // FIXME: should we output floats or bytes?
+    //    meta->general->data_type = COMPLEX_REAL32;  
+    // FIXME: should we output floats or bytes?
     meta->general->image_data_type = RAW_IMAGE;
     s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
     asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
@@ -129,6 +136,11 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     /* Let the user know what format we are working on */
     asfPrintStatus("   Input data type: single look complex\n"
                    "   Output data type: single look complex\n");
+    if (nBands > 1)
+      asfPrintStatus("   Input band %s\n", bandExt);
+    if (strcmp(meta->general->bands, "") == 0)
+      strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, bandExt);
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
@@ -158,9 +170,12 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     /* Take care of image files and memory */
     strcat(outDataName,TOOLS_COMPLEX_EXT);
     fpIn  = fopenImage(inDataName,"rb");
-    fpOut = fopenImage(outDataName,"wb");
+    if (band == 1)
+      fpOut = fopenImage(outDataName,"wb");
+    else
+      fpOut = fopenImage(outDataName,"ab");
     cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
-    out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
+    out_cpx_buf = (complexFloat *) MALLOC(ns * nBands * sizeof(complexFloat));
 
     /* Read single look complex data */
     //get_ifiledr(inDataName,&image_fdr);
@@ -200,6 +215,11 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     /* Let the user know what format we are working on */
     asfPrintStatus("   Input data type: single look complex\n"
                    "   Output data type: single look complex\n");
+    if (nBands > 1)
+      asfPrintStatus("   Input band: %s\n", bandExt);
+    if (strcmp(meta->general->bands, "") == 0)
+      strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, bandExt);
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
@@ -229,9 +249,12 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     /* Take care of image files and memory */
     strcat(outDataName,TOOLS_COMPLEX_EXT);
     fpIn  = fopenImage(inDataName,"rb");
-    fpOut = fopenImage(outDataName,"wb");
+    if (band == 1)
+      fpOut = fopenImage(outDataName,"wb");
+    else
+      fpOut = fopenImage(outDataName,"ab");
     cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
-    out_cpx_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
+    out_cpx_buf = (complexFloat *) MALLOC(ns * nBands * sizeof(complexFloat));
 
     /* Read single look complex data */
     //get_ifiledr(inDataName,&image_fdr);
@@ -298,70 +321,88 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
         }
         sprintf(logbuf,
                 "   Input data type: level two data\n"
-                "   Output data type: geocoded amplitude image\n\n");
+                "   Output data type: geocoded amplitude image\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
-      else if (strcmp(meta->general->sensor, "ALOS") == 0) {
+      else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+	       strcmp(meta->general->mode, "1B2R") == 0) {
 	sprintf(logbuf,
 		"   Input data type: level two data\n"
-		"   Output data type: geocoded amplitude image\n\n");
+		"   Output data type: georeferenced amplitude image\n");
+        meta->general->image_data_type = GEOREFERENCED_IMAGE;
+      }
+      else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+	       strcmp(meta->general->mode, "1B2G") == 0) {
+	sprintf(logbuf,
+		"   Input data type: level two data\n"
+		"   Output data type: geocoded amplitude image\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else {
         sprintf(logbuf,
                 "   Input data type: level one data\n"
-                "   Output data type: amplitude image\n\n");
+                "   Output data type: amplitude image\n");
         meta->general->image_data_type = AMPLITUDE_IMAGE;
       }
     }
     else if (radiometry == r_AMP) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: amplitude image\n\n");
+              "   Output data type: amplitude image\n");
       meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
     else if (radiometry == r_POWER) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: power image\n\n");
+              "   Output data type: power image\n");
       meta->general->image_data_type = POWER_IMAGE;
     }
     else if (radiometry == r_SIGMA) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (sigma power scale values)\n\n");
+              "   Output data type: calibrated image (sigma power scale values)\n");
       meta->general->image_data_type = SIGMA_IMAGE;
     }
     else if (radiometry == r_GAMMA) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (gamma power scale values)\n\n");
+              "   Output data type: calibrated image (gamma power scale values)\n");
       meta->general->image_data_type = GAMMA_IMAGE;
     }
     else if (radiometry == r_BETA) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: calibrated image (beta power scale values)\n\n");
+              "   Output data type: calibrated image (beta power scale values)\n");
       meta->general->image_data_type = BETA_IMAGE;
     }
     else if (lut_flag) {
       sprintf(logbuf,
               "   Input data type: level one data\n"
-              "   Output data type: user defined LUT image\n\n");
+              "   Output data type: user defined LUT image\n");
       meta->general->image_data_type = LUT_IMAGE;
     }
     else { /* No chosen output type: default to amplitude */
         radiometry = r_AMP;
         sprintf(logbuf,
                 "   Input data type: level one data\n"
-                "   Output data type: amplitude image\n\n");
+                "   Output data type: amplitude image\n");
         meta->general->image_data_type = AMPLITUDE_IMAGE;
     }
     asfPrintStatus(logbuf);
+    if (nBands > 1)
+      asfPrintStatus("   Input band %s\n\n", bandExt);
+    else
+      asfPrintStatus("\n");
+    if (strcmp(meta->general->bands, "") == 0)
+      strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, bandExt);
 
     /* Open image files */
     fpIn=fopenImage(inDataName,"rb");
-    fpOut=fopenImage(outDataName,"wb");
+    if (band == 1)
+      fpOut=fopenImage(outDataName,"wb");
+    else
+      fpOut=fopenImage(outDataName,"ab");
 
     /* Check size of the header */
     //get_ifiledr(inDataName,&image_fdr);
@@ -376,13 +417,13 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
     if (meta->general->data_type==INTEGER16) { /* 16 bit amplitude data */
       ceos_data_type = INTEGER16;
       short_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
-      out_buf = (float *) MALLOC(ns * sizeof(float));
+      out_buf = (float *) MALLOC(ns * nBands * sizeof(float));
     }
     /* Allocate memory for 8 bit amplitude data */
     else if (meta->general->data_type==BYTE) { /* 8 bit amplitude data */
       ceos_data_type = BYTE;
       byte_buf = (unsigned char *) MALLOC(ns * sizeof(unsigned char));
-      out_buf = (float *) MALLOC(ns * sizeof(float));
+      out_buf = (float *) MALLOC(ns * nBands * sizeof(float));
     }
     else
       asfPrintError("Unkown CEOS data format");
@@ -463,7 +504,7 @@ void import_ceos(char *inDataName, char *band, char *inMetaName, char *lutName,
         tablePix=((ns+(tableRes-1))/tableRes);
 
         for (ii=0; ii<nl; ii++) {
-          /* Can't use get_float_line() for CEOS data, so we have to use FSEEK,
+          /* Can't use get_float_line() for CEOS data, so we have to use SEEK,
            * FREAD, and then put the bytes in proper endian order manually  */
           offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
           FSEEK64(fpIn, offset, SEEK_SET);

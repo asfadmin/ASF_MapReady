@@ -313,6 +313,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
        asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
 
    meta->general->band_count = nBands;
+   strcpy(meta->general->bands, "");
    meta->general->orbit_direction  = dssr->asc_des[0];
    if (meta->general->orbit_direction==' ')
      meta->general->orbit_direction = 
@@ -760,6 +761,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     substr++;
   meta->general->frame = atoi(substr);
   meta->general->band_count = nBands;
+  strcpy(meta->general->bands, "");
   meta->general->line_count = ceos->shr.lines;
   meta->general->sample_count = ceos->shr.samples;
   meta->general->start_line = 0;
