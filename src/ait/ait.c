@@ -201,23 +201,6 @@ message_box(const char *format, ...)
     gtk_widget_show_all(dialog);
 }
 
-void show_summary(int show)
-{
-    GtkWidget *summary_scrolledwindow =
-        glade_xml_get_widget(glade_xml, "summary_scrolledwindow");
-
-    GtkWidget *viewed_image_scrolledwindow =
-        glade_xml_get_widget(glade_xml, "viewed_image_scrolledwindow");
-
-    if (show) {
-        gtk_widget_show(summary_scrolledwindow);
-        gtk_widget_hide(viewed_image_scrolledwindow);
-    } else {
-        gtk_widget_hide(summary_scrolledwindow);
-        gtk_widget_show(viewed_image_scrolledwindow);
-    }
-}
-
 int
 main(int argc, char **argv)
 {
@@ -236,9 +219,6 @@ main(int argc, char **argv)
     char title[256];
     sprintf(title,
             "AIT - The ASF Interferometry Tool: Version %s", IPS_GUI_VERSION);
-
-    // show the summary view, not the image preview
-    show_summary(TRUE);
 
     GtkWidget *widget = glade_xml_get_widget (glade_xml, "ait_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);

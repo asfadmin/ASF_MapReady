@@ -242,7 +242,7 @@ dem_config *get_settings_from_gui(char *cfg_name)
 
 static void put_string_to_entry(const char *str, const char *widget_name)
 {
-    GtkWidget *w = gtk_widget_checked(widget_name);
+    GtkWidget *w = get_widget_checked(widget_name);
     gtk_entry_set_text(GTK_ENTRY(w), str);
 }
 
@@ -262,7 +262,7 @@ static void put_long_to_entry(long l, const char *widget_name)
 
 static void put_bool_to_checkbutton(int b, const char *widget_name)
 {
-    GtkWidget *w = gtk_widget_checked(widget_name);
+    GtkWidget *w = get_widget_checked(widget_name);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(w), b);
 }
 
@@ -366,6 +366,20 @@ void add_to_summary_text(char **summary_text, int *current_len, int increment,
 
 }
 
+static const char *noneify(const char *s)
+{
+    static const char *none = "<none>";
+    return strlen(s)==0 ? none : s;
+}
+
+static const char *yesify(int b)
+{
+    static const char *yes = "Yes";
+    static const char *no = "No";
+
+    return b ? yes : no;
+}
+
 SIGNAL_CALLBACK
 void update_summary()
 {
@@ -377,7 +391,22 @@ void update_summary()
     int current_len = increment;
 
     add_to_summary_text(&summary_text, &current_len, increment,
-                        "Configuration File: %s\n\n", cfg_name);
+                      "Configuration File: %s\n", noneify(cfg_name));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Short Config File: %s\n\n",
+                        yesify(cfg->general->short_config));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Master Image Path: %s\n", noneify(cfg->master->path));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Master Image Data: %s\n", noneify(cfg->master->data));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Master Image Meta: %s\n", noneify(cfg->master->meta));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Slave Image Path: %s\n", noneify(cfg->slave->path));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Slave Image Data: %s\n", noneify(cfg->slave->data));
+    add_to_summary_text(&summary_text, &current_len, increment,
+                      "Slave Image Meta: %s\n", noneify(cfg->slave->meta));
 
     GtkWidget *summary_textview =
         glade_xml_get_widget(glade_xml, "summary_textview");
@@ -386,5 +415,297 @@ void update_summary()
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(summary_textview));
 
     gtk_text_buffer_set_text(tb, summary_text, -1);
-
 }
+
+/* And new a whole slew of signal handlers... */
+
+SIGNAL_CALLBACK void on_configuration_file_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_short_configuration_file_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_master_image_path_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_master_image_data_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_master_image_metadata_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_slave_image_path_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_slave_image_data_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_slave_image_metadata_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_reference_dem_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_lat_begin_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_lat_end_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_maximum_offset_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_deskew_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ingest_precise_master_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ingest_precise_slave_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ingest_precise_orbits_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_patches_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_start_master_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_start_slave_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_grid_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_fft_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_offset_azimuth_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_first_offset_range_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_patches_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_start_master_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_start_slave_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_grid_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_fft_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_offset_azimuth_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_coregister_last_offset_range_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_master_start_offset_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_master_end_offset_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_master_patches_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_master_power_flag_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_slave_start_offset_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_slave_end_offset_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_slave_patches_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ardop_slave_power_flag_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_interferogram_min_coherence_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_interferogram_multilook_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_offset_matching_max_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_flattening_checkbutton_toggled(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_processors_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_tiles_azimuth_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_tiles_range_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_tiles_per_degree_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_overlap_azimuth_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_overlap_range_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_phase_unwrapping_filter_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_baseline_refinement_iterations_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_baseline_refinement_max_iterations_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_mode_dem_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_mode_dinsar_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_data_type_stf_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_data_type_raw_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_data_type_slc_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_algorithm_escher_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_algorithm_snaphu_activate(GtkWidget *w)
+{
+    update_summary();
+}
+

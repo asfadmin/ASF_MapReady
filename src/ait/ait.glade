@@ -165,6 +165,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="configuration_file_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This is the file where the configuration information is stored.  </property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -173,7 +174,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
-				      <signal name="changed" handler="update_summary" last_modification_time="Tue, 21 Nov 2006 23:38:28 GMT"/>
+				      <signal name="changed" handler="on_configuration_file_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:18:17 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -219,6 +220,7 @@
 				  <child>
 				    <widget class="GtkCheckButton" id="short_configuration_file_checkbutton">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The short configuration file flag allows the experienced user to generate configuration files without the verbose comments that explain all entries for the parameters in the configuration file (checked for a configuration without comments, unchecked for a configuration file with verbose comments)</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Short Configuration File</property>
 				      <property name="use_underline">True</property>
@@ -227,6 +229,7 @@
 				      <property name="active">False</property>
 				      <property name="inconsistent">False</property>
 				      <property name="draw_indicator">True</property>
+				      <signal name="toggled" handler="on_short_configuration_file_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:00:18 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -508,6 +511,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="master_image_path_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the path of the master image data.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -516,6 +520,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_master_image_path_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:00:45 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -529,6 +534,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="master_image_data_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the name of the master data file. Swath data has usually an extension .000, whereas CEOS data has an extension .D</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -537,6 +543,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_master_image_data_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:01:02 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -550,6 +557,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="master_image_metadata_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the name of the master metadata file. Swath data has usually an extension .par, whereas CEOS data has an extension .L</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -558,6 +566,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_master_image_metadata_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:01:27 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -751,6 +760,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="slave_image_path_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the path of the slave image data.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -759,6 +769,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_slave_image_path_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:01:52 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -772,6 +783,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="slave_image_data_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the name of the slave data file. Swath data has usually an extension .000, whereas CEOS data has an extension .D</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -780,6 +792,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_slave_image_data_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:02:07 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -791,8 +804,9 @@
 				  </child>
 
 				  <child>
-				    <widget class="GtkEntry" id="slave_image_metadata_entry">
+				    <widget class="GtkEntry" id="entry1">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter gives the name of the slave metadata file. Swath data has usually an extension .par, whereas CEOS data has an extension .L</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -801,6 +815,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_master_image_metadata_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:01:27 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -940,6 +955,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="reference_dem_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter looks for the location of the reference DEM file. The reference DEM is used in various parts of the SAR interferometric processing flow, most prominently for the phase unwrapping.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -948,6 +964,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_reference_dem_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:02:48 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -1044,6 +1061,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="lat_begin_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">For effectively using swath data the user can define latitude constraints to select a subset of the swath data.  Lat Begin is the lower latitude.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1052,6 +1070,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_lat_begin_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:03:06 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -1065,6 +1084,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="lat_end_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">For effectively using swath data the user can define latitude constraints to select a subset of the swath data.  Lat End is the upper latitude.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1073,6 +1093,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_lat_end_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:03:19 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -1110,6 +1131,7 @@
 				  <child>
 				    <widget class="GtkEntry" id="maximum_offset_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter defines the maximum allowed pixel offset in range or azimuth after the initial co-registration has been performed. Three pixels is an empirical value that worked in most cases.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1118,6 +1140,7 @@
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_maximum_offset_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:03:35 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -1155,6 +1178,7 @@
 				  <child>
 				    <widget class="GtkCheckButton" id="deskew_checkbutton">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The deskew flag indicates whether the raw data is SAR processed in in zero Doppler geometry or not (checked for deskewing, unchecked for regular processing)</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes"></property>
 				      <property name="use_underline">True</property>
@@ -1163,6 +1187,7 @@
 				      <property name="active">False</property>
 				      <property name="inconsistent">False</property>
 				      <property name="draw_indicator">True</property>
+				      <signal name="toggled" handler="on_deskew_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:03:52 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="left_attach">1</property>
@@ -1199,23 +1224,6 @@
 				  </child>
 
 				  <child>
-				    <widget class="GtkComboBox" id="combobox1">
-				      <property name="visible">True</property>
-				      <property name="items" translatable="yes">STF
-Something
-</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">5</property>
-				      <property name="bottom_attach">6</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options">fill</property>
-				    </packing>
-				  </child>
-
-				  <child>
 				    <widget class="GtkLabel" id="label56">
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Mode: </property>
@@ -1236,23 +1244,6 @@ Something
 				      <property name="bottom_attach">7</property>
 				      <property name="x_options">fill</property>
 				      <property name="y_options"></property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkComboBox" id="combobox2">
-				      <property name="visible">True</property>
-				      <property name="items" translatable="yes">DEM
-DINSAR
-</property>
-				    </widget>
-				    <packing>
-				      <property name="left_attach">1</property>
-				      <property name="right_attach">2</property>
-				      <property name="top_attach">6</property>
-				      <property name="bottom_attach">7</property>
-				      <property name="x_options">fill</property>
-				      <property name="y_options">fill</property>
 				    </packing>
 				  </child>
 
@@ -1299,6 +1290,95 @@ DINSAR
 				      <property name="right_attach">2</property>
 				      <property name="top_attach">2</property>
 				      <property name="bottom_attach">3</property>
+				      <property name="x_options">fill</property>
+				      <property name="y_options"></property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkOptionMenu" id="mode_optionmenu">
+				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The interferometric processing system 'ips' can be run in two different modes. The main mode is DEM for the generation of digital elevation models. The DINSAR mode for differential interferometry is still under development.</property>
+				      <property name="can_focus">True</property>
+				      <property name="history">0</property>
+
+				      <child>
+					<widget class="GtkMenu" id="menu1">
+
+					  <child>
+					    <widget class="GtkMenuItem" id="mode_dem">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">DEM</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_mode_dem_activate" last_modification_time="Wed, 22 Nov 2006 20:04:40 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="mode_dinsar">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">DINSAR</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_mode_dinsar_activate" last_modification_time="Wed, 22 Nov 2006 20:04:40 GMT"/>
+					    </widget>
+					  </child>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="left_attach">1</property>
+				      <property name="right_attach">2</property>
+				      <property name="top_attach">6</property>
+				      <property name="bottom_attach">7</property>
+				      <property name="x_options">fill</property>
+				      <property name="y_options"></property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkOptionMenu" id="data_type_optionmenu">
+				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">The ips handles three different data types. The most flexible type is the level zero Sky Telemetry Format (STF). This swath data type allows for variable area sizes that are processed. The second data type is RAW for CEOS level zero data. The third supported data type is single look complex data (SLC)</property>
+				      <property name="can_focus">True</property>
+				      <property name="history">0</property>
+
+				      <child>
+					<widget class="GtkMenu" id="menu2">
+
+					  <child>
+					    <widget class="GtkMenuItem" id="data_type_stf">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">STF</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_data_type_stf_activate" last_modification_time="Wed, 22 Nov 2006 20:22:11 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="data_type_raw">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">RAW</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_data_type_raw_activate" last_modification_time="Wed, 22 Nov 2006 20:22:11 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="data_type_slc">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">SLC</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_data_type_slc_activate" last_modification_time="Wed, 22 Nov 2006 20:22:11 GMT"/>
+					    </widget>
+					  </child>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="left_attach">1</property>
+				      <property name="right_attach">2</property>
+				      <property name="top_attach">5</property>
+				      <property name="bottom_attach">6</property>
 				      <property name="x_options">fill</property>
 				      <property name="y_options"></property>
 				    </packing>
@@ -1473,6 +1553,7 @@ DINSAR
 				  <child>
 				    <widget class="GtkEntry" id="ingest_precise_master_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter defines the location of the precision state vectors provided by the German Aerospace Center (DLR) for the master image.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1481,6 +1562,7 @@ DINSAR
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_ingest_precise_master_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:18:58 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -1568,6 +1650,7 @@ DINSAR
 				  <child>
 				    <widget class="GtkEntry" id="ingest_precise_slave_entry">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This parameter defines the location of the precision state vectors provided by the German Aerospace Center (DLR) for the slave image</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -1576,6 +1659,7 @@ DINSAR
 				      <property name="has_frame">True</property>
 				      <property name="invisible_char" translatable="yes">*</property>
 				      <property name="activates_default">False</property>
+				      <signal name="changed" handler="on_ingest_precise_slave_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:19:20 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -1621,6 +1705,7 @@ DINSAR
 				  <child>
 				    <widget class="GtkCheckButton" id="ingest_precise_orbits_checkbutton">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">This flag defines whether precision state vectors should be used or not (checked for using precision state vectors, unchecked for not using precision state vectors). This funcionality is not fully implemented yet.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Precise Orbits</property>
 				      <property name="use_underline">True</property>
@@ -1629,6 +1714,7 @@ DINSAR
 				      <property name="active">False</property>
 				      <property name="inconsistent">False</property>
 				      <property name="draw_indicator">True</property>
+				      <signal name="toggled" handler="on_ingest_precise_orbits_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:19:35 GMT"/>
 				    </widget>
 				    <packing>
 				      <property name="padding">0</property>
@@ -2160,6 +2246,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_patches_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the number of patches that are used during the co-registration of the upper part of the images. Ideally the images correlate with one patch. At times, two patches might be required.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2168,6 +2255,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_patches_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:19:53 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2181,6 +2269,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_start_master_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates at which line number the processing of the first patch of the master image is started. This can be changed when the initial co-registration does not succeed.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2189,6 +2278,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_start_master_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:20:14 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2202,6 +2292,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_start_slave_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates at which line number the processing of the first patch of the slave image is started. This can be changed when the initial co-registration does not succeed.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2210,6 +2301,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_start_slave_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:20:38 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2223,6 +2315,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_grid_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter determines the number of pixels that define the grid that is used for the FFT match.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2231,6 +2324,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_grid_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:20:54 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2244,6 +2338,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_offset_azimuth_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the pixel offset in azimuth direction the matching algorithm determined.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2252,6 +2347,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_offset_azimuth_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:21:33 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2265,6 +2361,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_first_offset_range_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the pixel offset in range direction the matching algorithm determined.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2273,6 +2370,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_first_offset_range_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:21:48 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2286,6 +2384,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="coregister_first_fft_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameters defines whether a complex FFT is used for the fine co-registration instead of the coherence (checked for complex FFT match, unchecked for FFT match using coherence). Complex FFT matches usually lead to better matching results.</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -2294,6 +2393,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_coregister_first_fft_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:21:08 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2662,6 +2762,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_patches_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the number of patches that are used during the co-registration of the lower part of the images. Ideally the images correlate with one patch. At times, two patches might be required.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2670,6 +2771,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_patches_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:22:40 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2683,6 +2785,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_start_master_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates at which line number the processing of the last patch of the master image is started. This can be changed when the initial co-registration does not succeed.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2691,6 +2794,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_start_master_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:22:49 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2704,6 +2808,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_start_slave_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates at which line number the processing of the last patch of the slave image is started. This can be changed when the initial co-registration does not succeed.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2712,6 +2817,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_start_slave_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:22:53 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2725,6 +2831,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_grid_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter determines the number of pixels that define the grid that is used for the FFT match.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2733,6 +2840,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_grid_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:22:57 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2746,6 +2854,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_offset_azimuth_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the pixel offset in azimuth direction the matching algorithm determined.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2754,6 +2863,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_offset_azimuth_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:23:08 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2767,6 +2877,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="coregister_last_offset_range_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the pixel offset in range direction the matching algorithm determined.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -2775,6 +2886,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_coregister_last_offset_range_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:23:13 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -2788,6 +2900,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="coregister_last_fft_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameters defines whether a complex FFT is used for the fine co-registration instead of the coherence (checked for complex FFT match, unchecked for FFT match using coherence). Complex FFT matches usually lead to better matching results.</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -2796,6 +2909,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_coregister_last_fft_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:23:02 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3092,6 +3206,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_master_start_offset_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the start offset determined by the first patch co-registration for the master image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3100,6 +3215,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_master_start_offset_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:23:29 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3113,6 +3229,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_master_end_offset_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the end offset determined by the last patch co-registration for the master image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3121,6 +3238,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_master_end_offset_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:23:44 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3134,6 +3252,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_master_patches_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates how many patches of data have been for the master image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3142,6 +3261,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_master_patches_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:24:01 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3155,6 +3275,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="ardop_master_power_flag_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This flag defines whether a power image is created while processing the master image (checked for generating a power image, unchecked for not generating a power image).</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -3163,6 +3284,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_ardop_master_power_flag_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:24:14 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3459,6 +3581,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_slave_start_offset_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the start offset determined by the first patch co-registration for the slave image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3467,6 +3590,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_slave_start_offset_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:24:47 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3480,6 +3604,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_slave_end_offset_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates the end offset determined by the last patch co-registration for the slave image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3488,6 +3613,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_slave_end_offset_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:24:51 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3501,6 +3627,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="ardop_slave_patches_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter indicates how many patches of data have been for the slave image.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3509,6 +3636,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_ardop_slave_patches_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:24:55 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3522,6 +3650,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="ardop_slave_power_flag_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This flag defines whether a power image is created while processing the master image (checked for generating a power image, unchecked for not generating a power image).</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -3530,6 +3659,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_ardop_slave_power_flag_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:25:00 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3778,6 +3908,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="interferogram_min_coherence_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">The minimum coherence level defines the threshold for the interferometric processing flow to interrupt the processing. In case the average of an image pair is below this threshold the ips automatically aborts any further processing. This way the low average coherence is used as an indicator of co-registration problems.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -3786,6 +3917,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_interferogram_min_coherence_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:25:07 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -3799,6 +3931,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="interferogram_multilook_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This indicates whether a multilooked version of the interferogram is stored (checked for generating a multilooked interferogram, unchecked for not generating one).</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -3807,6 +3940,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_interferogram_multilook_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:25:19 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4032,6 +4166,7 @@ DINSAR
 					<widget class="GtkEntry" id="offset_matching_max_entry">
 					  <property name="width_request">60</property>
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">Maximum pixel offset allowed during matching with reference DEM.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4040,6 +4175,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_offset_matching_max_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:25:34 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4802,6 +4938,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_processors_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter sets the number of processors used for the phase unwrapping (only valid when using 'snaphu').</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4810,6 +4947,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_processors_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:26:03 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4823,6 +4961,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_tiles_azimuth_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the number of tiles in azimuth direction  used by the 'snaphu' phase unwrapping algorithm.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4831,6 +4970,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_tiles_azimuth_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:26:16 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4844,6 +4984,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_tiles_range_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the number of tiles in range direction used by the 'snaphu' phase unwrapping algorithm.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4852,6 +4993,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_tiles_range_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:26:29 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4865,6 +5007,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_tiles_per_degree_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">As an alternative to &quot;Tiles Azimuth&quot;, the number of tiles used by 'snaphu' in azimuth direction can defined per degree.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4873,6 +5016,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_tiles_per_degree_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:27:06 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4886,6 +5030,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_overlap_azimuth_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the overlap between tiles in the azimuth direction (only valid when using 'snaphu').</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4894,6 +5039,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_overlap_azimuth_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:27:18 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4907,6 +5053,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_overlap_range_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the overlap between tiles in the range direction (only valid when using 'snaphu').</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4915,6 +5062,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_overlap_range_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:27:41 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4928,6 +5076,7 @@ DINSAR
 				      <child>
 					<widget class="GtkEntry" id="phase_unwrapping_filter_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the weighting factor used for the phase filtering (default value: 1.6).</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -4936,6 +5085,7 @@ DINSAR
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_phase_unwrapping_filter_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:27:46 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4949,6 +5099,7 @@ DINSAR
 				      <child>
 					<widget class="GtkCheckButton" id="phase_unwrapping_flattening_checkbutton">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameters defines whether a topographic phase based on an ellipsoidal approximation is subtracted from the phase before the  phase unwrapping.</property>
 					  <property name="can_focus">True</property>
 					  <property name="label" translatable="yes"></property>
 					  <property name="use_underline">True</property>
@@ -4957,6 +5108,7 @@ DINSAR
 					  <property name="active">False</property>
 					  <property name="inconsistent">False</property>
 					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_phase_unwrapping_flattening_checkbutton_toggled" last_modification_time="Wed, 22 Nov 2006 19:25:49 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4969,11 +5121,34 @@ DINSAR
 				      </child>
 
 				      <child>
-					<widget class="GtkComboBox" id="phase_unwrapping_algorithm_combobox">
+					<widget class="GtkOptionMenu" id="phase_unwrapping_optionmenu">
 					  <property name="visible">True</property>
-					  <property name="items" translatable="yes">Escher
-Other
-</property>
+					  <property name="tooltip" translatable="yes">Name of the phase unwrapping algorithm used. Currently two phase unwrapping algorithms are supported. 'escher' is an implementation of Goldstein's branch cut algorithm. 'snaphu' has been developed and is distributed by Stanford University. It uses a minimum cost flow network.</property>
+					  <property name="can_focus">True</property>
+					  <property name="history">0</property>
+
+					  <child>
+					    <widget class="GtkMenu" id="menu3">
+
+					      <child>
+						<widget class="GtkMenuItem" id="algorithm_escher">
+						  <property name="visible">True</property>
+						  <property name="label" translatable="yes">Escher</property>
+						  <property name="use_underline">True</property>
+						  <signal name="activate" handler="on_algorithm_escher_activate" last_modification_time="Wed, 22 Nov 2006 20:54:33 GMT"/>
+						</widget>
+					      </child>
+
+					      <child>
+						<widget class="GtkMenuItem" id="algorithm_snaphu">
+						  <property name="visible">True</property>
+						  <property name="label" translatable="yes">Snaphu</property>
+						  <property name="use_underline">True</property>
+						  <signal name="activate" handler="on_algorithm_snaphu_activate" last_modification_time="Wed, 22 Nov 2006 20:54:33 GMT"/>
+						</widget>
+					      </child>
+					    </widget>
+					  </child>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -4981,7 +5156,7 @@ Other
 					  <property name="top_attach">0</property>
 					  <property name="bottom_attach">1</property>
 					  <property name="x_options">fill</property>
-					  <property name="y_options">fill</property>
+					  <property name="y_options"></property>
 					</packing>
 				      </child>
 				    </widget>
@@ -5222,6 +5397,7 @@ Other
 				      <child>
 					<widget class="GtkEntry" id="baseline_refinement_iterations_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">Number of iterations used in the baseline refinement.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -5230,6 +5406,7 @@ Other
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_baseline_refinement_iterations_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:28:18 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -5243,6 +5420,7 @@ Other
 				      <child>
 					<widget class="GtkEntry" id="baseline_refinement_max_iterations_entry">
 					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">This parameter defines the maxiumum number of iterations allowed for the iterative determination of the interferometric baseline.</property>
 					  <property name="can_focus">True</property>
 					  <property name="editable">True</property>
 					  <property name="visibility">True</property>
@@ -5251,6 +5429,7 @@ Other
 					  <property name="has_frame">True</property>
 					  <property name="invisible_char" translatable="yes">*</property>
 					  <property name="activates_default">False</property>
+					  <signal name="changed" handler="on_baseline_refinement_max_iterations_entry_changed" last_modification_time="Wed, 22 Nov 2006 19:28:29 GMT"/>
 					</widget>
 					<packing>
 					  <property name="left_attach">1</property>
@@ -6576,65 +6755,119 @@ Other
 	      </child>
 
 	      <child>
-		<widget class="GtkScrolledWindow" id="viewed_image_scrolledwindow">
+		<widget class="GtkNotebook" id="notebook1">
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>
-		  <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
-		  <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
-		  <property name="shadow_type">GTK_SHADOW_NONE</property>
-		  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
+		  <property name="show_tabs">True</property>
+		  <property name="show_border">True</property>
+		  <property name="tab_pos">GTK_POS_TOP</property>
+		  <property name="scrollable">False</property>
+		  <property name="enable_popup">False</property>
 
 		  <child>
-		    <widget class="GtkViewport" id="viewport1">
+		    <widget class="GtkScrolledWindow" id="summary_scrolledwindow">
 		      <property name="visible">True</property>
-		      <property name="shadow_type">GTK_SHADOW_IN</property>
+		      <property name="can_focus">True</property>
+		      <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		      <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		      <property name="shadow_type">GTK_SHADOW_NONE</property>
+		      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		      <child>
-			<widget class="GtkImage" id="viewed_image">
+			<widget class="GtkTextView" id="summary_textview">
+			  <property name="width_request">480</property>
 			  <property name="visible">True</property>
-			  <property name="xalign">0.5</property>
-			  <property name="yalign">0.5</property>
-			  <property name="xpad">0</property>
-			  <property name="ypad">0</property>
+			  <property name="can_focus">True</property>
+			  <property name="editable">False</property>
+			  <property name="overwrite">False</property>
+			  <property name="accepts_tab">True</property>
+			  <property name="justification">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap_mode">GTK_WRAP_NONE</property>
+			  <property name="cursor_visible">True</property>
+			  <property name="pixels_above_lines">0</property>
+			  <property name="pixels_below_lines">0</property>
+			  <property name="pixels_inside_wrap">0</property>
+			  <property name="left_margin">0</property>
+			  <property name="right_margin">0</property>
+			  <property name="indent">0</property>
+			  <property name="text" translatable="yes">No configuration file selected.</property>
 			</widget>
 		      </child>
 		    </widget>
+		    <packing>
+		      <property name="tab_expand">False</property>
+		      <property name="tab_fill">True</property>
+		    </packing>
 		  </child>
-		</widget>
-		<packing>
-		  <property name="padding">0</property>
-		  <property name="expand">True</property>
-		  <property name="fill">True</property>
-		</packing>
-	      </child>
-
-	      <child>
-		<widget class="GtkScrolledWindow" id="summary_scrolledwindow">
-		  <property name="visible">True</property>
-		  <property name="can_focus">True</property>
-		  <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
-		  <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
-		  <property name="shadow_type">GTK_SHADOW_NONE</property>
-		  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		  <child>
-		    <widget class="GtkTextView" id="summary_textview">
+		    <widget class="GtkLabel" id="label159">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Settings</property>
+		      <property name="use_underline">False</property>
+		      <property name="use_markup">False</property>
+		      <property name="justify">GTK_JUSTIFY_LEFT</property>
+		      <property name="wrap">False</property>
+		      <property name="selectable">False</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		    <packing>
+		      <property name="type">tab</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkScrolledWindow" id="viewed_image_scrolledwindow">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
-		      <property name="editable">True</property>
-		      <property name="overwrite">False</property>
-		      <property name="accepts_tab">True</property>
-		      <property name="justification">GTK_JUSTIFY_LEFT</property>
-		      <property name="wrap_mode">GTK_WRAP_NONE</property>
-		      <property name="cursor_visible">True</property>
-		      <property name="pixels_above_lines">0</property>
-		      <property name="pixels_below_lines">0</property>
-		      <property name="pixels_inside_wrap">0</property>
-		      <property name="left_margin">0</property>
-		      <property name="right_margin">0</property>
-		      <property name="indent">0</property>
-		      <property name="text" translatable="yes">Summary will go here!!</property>
+		      <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		      <property name="vscrollbar_policy">GTK_POLICY_ALWAYS</property>
+		      <property name="shadow_type">GTK_SHADOW_NONE</property>
+		      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
+
+		      <child>
+			<widget class="GtkViewport" id="viewport1">
+			  <property name="visible">True</property>
+			  <property name="shadow_type">GTK_SHADOW_IN</property>
+
+			  <child>
+			    <widget class="GtkImage" id="viewed_image">
+			      <property name="visible">True</property>
+			      <property name="xalign">0.5</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
 		    </widget>
+		    <packing>
+		      <property name="tab_expand">False</property>
+		      <property name="tab_fill">True</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkLabel" id="label158">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Image Preview</property>
+		      <property name="use_underline">False</property>
+		      <property name="use_markup">False</property>
+		      <property name="justify">GTK_JUSTIFY_LEFT</property>
+		      <property name="wrap">False</property>
+		      <property name="selectable">False</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		    <packing>
+		      <property name="type">tab</property>
+		    </packing>
 		  </child>
 		</widget>
 		<packing>
