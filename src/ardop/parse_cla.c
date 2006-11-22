@@ -100,8 +100,8 @@ int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g)
 		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = intParm(1);}
 		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = intParm(atoi(GET_ARG(1)));}
-		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave   += atoi(GET_ARG(1));}
-		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst  += atoi(GET_ARG(1));}
+		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave    = atoi(GET_ARG(1));}
+		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst   = atoi(GET_ARG(1));}
 		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = floatParm(atof(GET_ARG(1)));}
 		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = intParm(atoi(GET_ARG(1)));
