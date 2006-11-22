@@ -127,6 +127,13 @@ find_in_share(const char * filename)
 void
 add_file(const char *config_file)
 {
+    dem_config *cfg = read_config(config_file, FALSE);
+    if (cfg) {
+        apply_settings_to_gui(cfg);
+        message_box("Read config file: %s", config_file);
+    } else {
+        message_box("Error reading config file: %s\n", config_file);
+    }
 }
 
 SIGNAL_CALLBACK void
