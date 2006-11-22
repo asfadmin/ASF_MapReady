@@ -1,6 +1,7 @@
 #include "banded_float_image.h"
 #include "asf.h"
 #include <assert.h>
+#include <jpeglib.h>
 
 static const int do_self_tests = 1;
 
@@ -114,3 +115,90 @@ banded_float_image_new_from_model_scaled (BandedFloatImage *model,
     return self;
 }
 
+static int scale_to_byte(float lin_min, float lin_max, float val)
+{
+    if (val < lin_min)
+        return 0;
+    if (val > lin_max)
+        return 255;
+    return (int) (.5 + (val - lin_min)/(lin_max - lin_min) * 255);
+}
+
+void
+banded_float_image_export_as_jpeg(BandedFloatImage *self, const char *output_name)
+{
+  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr jerr;
+  int i;
+
+  assert(self->nbands >= 1);
+
+  float *min, *max, *mean, *stddev, *lin_min, *lin_max;
+  min = MALLOC(sizeof(float)*self->nbands);
+  max = MALLOC(sizeof(float)*self->nbands);
+  mean = MALLOC(sizeof(float)*self->nbands);
+  stddev = MALLOC(sizeof(float)*self->nbands);
+
+  for (i=0; i<self->nbands; ++i) {
+      float_image_statistics(self->images[i], &min[i], &max[i], &mean[i], &stddev[i], -999);
+      lin_min[i] = mean[i] - 2 * stddev[i];
+      lin_max[i] = mean[i] + 2 * stddev[i];
+  }
+
+  cinfo.err = jpeg_std_error (&jerr);
+  jpeg_create_compress (&cinfo);
+
+  FILE *ofp = fopen (output_name, "w");
+  if ( ofp == NULL ) {
+    asfPrintError("Open of %s for writing failed: %s",
+                  output_name, strerror(errno));
+  }
+
+  jpeg_stdio_dest (&cinfo, ofp);
+
+  int nl = banded_float_image_get_size_y(self);
+  int ns = banded_float_image_get_size_x(self);
+
+  cinfo.image_width = ns;
+  cinfo.image_height = nl;
+
+  cinfo.input_components = 3;
+  cinfo.in_color_space = JCS_RGB;
+
+  jpeg_set_defaults (&cinfo);
+  jpeg_start_compress (&cinfo, TRUE);
+
+  JSAMPLE *jsample_row = MALLOC(sizeof(JSAMPLE)*ns*3);
+  JSAMPROW *row_pointer = MALLOC(sizeof(JSAMPROW));
+
+  while (cinfo.next_scanline < cinfo.image_height) {
+      for (i=0; i<ns; ++i) {
+          int band = 0;
+          int r = scale_to_byte(lin_min[band], lin_max[band],
+              banded_float_image_get_pixel(self, band, cinfo.next_scanline, i));
+
+          if (band < self->nbands-1) ++band;
+          int g = scale_to_byte(lin_min[band], lin_max[band],
+              banded_float_image_get_pixel(self, band, cinfo.next_scanline, i));
+
+          if (band < self->nbands-1) ++band;
+          int b = scale_to_byte(lin_min[band], lin_max[band],
+              banded_float_image_get_pixel(self, band, cinfo.next_scanline, i));
+
+          jsample_row[i*3+0] = (JSAMPLE) r;
+          jsample_row[i*3+1] = (JSAMPLE) g;
+          jsample_row[i*3+2] = (JSAMPLE) b;
+      }
+      row_pointer[0] = jsample_row;
+      int written = jpeg_write_scanlines(&cinfo, row_pointer, 1);
+      if (written != 1)
+          asfPrintError("Failed to write the correct number of lines.\n");
+      asfLineMeter(cinfo.next_scanline, cinfo.image_height);
+  }
+
+  FREE(row_pointer);
+  FREE(jsample_row);
+  jpeg_finish_compress (&cinfo);
+  FCLOSE (ofp);
+  jpeg_destroy_compress (&cinfo);
+}

@@ -37,4 +37,9 @@ BandedFloatImage *
 banded_float_image_new_from_model_scaled (BandedFloatImage *model,
                                           ssize_t scale_factor);
 
+void
+banded_float_image_export_as_jpeg(BandedFloatImage *self,
+                                  const char *output_name);
+
+
 #endif
