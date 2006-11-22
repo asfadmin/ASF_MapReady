@@ -29,7 +29,7 @@ meta_parameters *meta_create(const char *fName)
 	int success=FALSE;
 	char junk[256];
 
-	if (get_ceos_metadata_name(fName,junk) != NO_CEOS_METADATA) {
+	if (require_ceos_metadata(fName,junk) != NO_CEOS_METADATA) {
 		ceos_init(fName,meta);
 		success=TRUE;
 	}
