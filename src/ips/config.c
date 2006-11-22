@@ -927,7 +927,7 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "\n# The short configuration file flag allows the experienced user to\n"
             "# generate configuration files without the verbose comments that explain all\n"
             "# entries for the parameters in the configuration file (1 for a configuration\n"
-            "# without comments, 0 for a configuration file with verbose comments)\n\n");
+            "# without comments, 0 for a configuration file with verbose comments).\n\n");
   fprintf(fConfig, "short configuration file = %d\n", cfg->general->short_config);
   // general status
   if (!shortFlag)
@@ -946,13 +946,13 @@ int write_config(char *configFile, dem_config *cfg)
   fprintf(fConfig, "path = %s\n", cfg->master->path);
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter gives the name of the master data file.\n"
-	    "# Swath data has usually an extension .000, whereas CEOS data has an extension\n"
+	    "# Swath data has usually an extension .000, whereas CEOS data has an extension.\n"
 	    "# .D\n\n");
   fprintf(fConfig, "data file = %s\n", cfg->master->data);
   if (!shortFlag) 
     fprintf(fConfig, "\n# This parameter gives the name of the master metadata file.\n"
-	    "# Swath data has usually an extension .par, whereas CEOS data has an extension\n"
-	    "# .D\n\n");		  
+	    "# Swath data has usually an extension .par, whereas CEOS data has an extension.\n"
+	    "# .L\n\n");		  
   fprintf(fConfig, "metadata file = %s\n\n\n", cfg->master->meta);
 	  
   // [Slave] section
@@ -962,12 +962,12 @@ int write_config(char *configFile, dem_config *cfg)
   fprintf(fConfig, "path = %s\n", cfg->slave->path);
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter gives the name of the slave data file.\n"
-            "# Swath data has usually an extension .000, whereas CEOS data has an extension\n"
+            "# Swath data has usually an extension .000, whereas CEOS data has an extension.\n"
             "# .D\n\n");
   fprintf(fConfig, "data file = %s\n", cfg->slave->data);
   if (!shortFlag)
     fprintf(fConfig, "\n# This parameter gives the name of the slave metadata file.\n"
-            "# Swath data has usually an extension .par, whereas CEOS data has an extension\n"
+            "# Swath data has usually an extension .par, whereas CEOS data has an extension.\n"
             "# .D\n\n");		  
   fprintf(fConfig, "metadata file = %s\n\n\n", cfg->slave->meta);
 
@@ -977,12 +977,12 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "[Ingest]\n");
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
-	      "# vectors provided by the German Aerospace Center (DLR) for the master image"
+	      "# vectors provided by the German Aerospace Center (DLR) for the master image."
 	      "\n\n");
     fprintf(fConfig, "precise master = %s\n", cfg->ingest->prc_master);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
-	      "# vectors provided by the German Aerospace Center (DLR) for the slave image"
+	      "# vectors provided by the German Aerospace Center (DLR) for the slave image."
 	      "\n\n");
     fprintf(fConfig, "precise slave = %s\n", cfg->ingest->prc_slave);
     if (!shortFlag)
@@ -1025,7 +1025,7 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "start slave = %ld\n", cfg->coreg_p1->start_slave);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match\n\n");	  
+              "# grid that is used for the FFT match.\n\n");	  
     fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
@@ -1102,11 +1102,11 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "[ardop - Master image]\n");
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter indicates the start offset determined by the\n"
-	      "# the first patch co-registration for the master image.\n\n");
+	      "# first patch co-registration for the master image.\n\n");
     fprintf(fConfig, "start offset = %ld\n", cfg->ardop_master->start_offset);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
-	      "# the last patch co-registration for the master image.\n\n");
+	      "# last patch co-registration for the master image.\n\n");
     fprintf(fConfig, "end offset = %ld\n", cfg->ardop_master->end_offset);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter indicates how many patches of data have been\n"
@@ -1376,7 +1376,7 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# interferometric processing flow to interrupt the processing. In case the\n"
 	    "# average of an image pair is below this threshold the ips automatically\n"
 	    "# aborts any further processing. This way the low average coherence is used\n"
-	    "# as an indicator for co-registration problems.\n\n");
+	    "# as an indicator of co-registration problems.\n\n");
   fprintf(fConfig, "minimum coherence = %.1f\n", cfg->igram_coh->min);
   if (!shortFlag)
     fprintf(fConfig, "\n# This indicates whether a multilooked version of the interferogram\n"
@@ -1451,11 +1451,11 @@ int write_config(char *configFile, dem_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameters defines whether a topographic phase based on\n"
 	      "# an ellipsoidal approximation is subtracted from the phase before the\n"
-	      "# phase unwrapping\n\n");
+	      "# phase unwrapping.\n\n");
     fprintf(fConfig, "flattening = %d\n", cfg->unwrap->flattening);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter sets the number of processors used for the\n"
-	      "# phase unwrapping (only valid for using 'snaphu').\n\n");
+	      "# phase unwrapping (only valid when using 'snaphu').\n\n");
     fprintf(fConfig, "processors = %d\n", cfg->unwrap->procs);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter defines the number of tiles in azimuth direction\n"
@@ -1470,12 +1470,12 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# direction can defined per degree.\n\n");
     fprintf(fConfig, "tiles per degree = %d\n", cfg->unwrap->tiles_per_degree);
     if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the overlap between tiles in azimuth\n"
-	      "# direction (only valid for using 'snaphu').\n\n");
+      fprintf(fConfig, "\n# This parameter defines the overlap between tiles in the azimuth\n"
+	      "# direction (only valid when using 'snaphu').\n\n");
     fprintf(fConfig, "overlap azimuth = %d\n", cfg->unwrap->overlap_azimuth);
     if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the overlap between tiles in range\n"
-	      "# direction (only valid for using 'snaphu').\n\n");
+      fprintf(fConfig, "\n# This parameter defines the overlap between tiles in the range\n"
+	      "# direction (only valid when using 'snaphu').\n\n");
     fprintf(fConfig, "overlap range = %d\n", cfg->unwrap->overlap_range);
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter defines the weighting factor used for the\n"
@@ -1494,10 +1494,10 @@ int write_config(char *configFile, dem_config *cfg)
     // [Baseline refinement] section
     fprintf(fConfig, "[Baseline refinement]\n");
     if (!shortFlag)
-      fprintf(fConfig, "Number of iterations used in the baseline refinement.\n\n");
+      fprintf(fConfig, "# Number of iterations used in the baseline refinement.\n\n");
     fprintf(fConfig, "iterations = %d\n", cfg->refine->iter);
     if (!shortFlag)
-      fprintf(fConfig, "This parameter defines the maxiumum number of iterations allowed\n"
+      fprintf(fConfig, "# This parameter defines the maxiumum number of iterations allowed\n"
 	      "# for the iterative determination of the interferometric baseline.\n\n");
     fprintf(fConfig, "max iterations = %d\n", cfg->refine->max);
     if (!shortFlag)
