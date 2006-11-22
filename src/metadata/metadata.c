@@ -263,74 +263,74 @@ static void print_record(FILE *fp, char *fileName, int reqrec)
       break;
     case (18):
       shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
-      if (get_shr(leaderName,shr) >= 0 )
+      if (get_shr(fileName,shr) >= 0 )
 	prn_shr(fp,shr);
       FREE(shr);
       break;
     case (20):	
       mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
-      if (get_mpdr(leaderName,mpdrec) >= 0 ) 
+      if (get_mpdr(fileName,mpdrec) >= 0 ) 
 	prn_mpdr(fp,mpdrec); 
       FREE(mpdrec);
       break;
     case (30):	
       ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
-      if (get_ppdr(leaderName,ppdr) >= 0)
+      if (get_ppdr(fileName,ppdr) >= 0)
 	prn_ppdr(fp,ppdr);
       FREE(ppdr);
       break;
     case (40):	
       atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
-      if (get_atdr(leaderName,atdr) >= 0)
+      if (get_atdr(fileName,atdr) >= 0)
 	prn_atdr(fp,atdr);
       FREE(atdr);
       break;
     case (44):
       ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
-      if (get_ampr(leaderName,ampr) >= 0)
+      if (get_ampr(fileName,ampr) >= 0)
 	prn_ampr(fp,ampr);
       FREE(ampr);
       break;
     case (50):	
       raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
-      if (get_raddr(leaderName,raddr) >= 0)
+      if (get_raddr(fileName,raddr) >= 0)
 	prn_raddr(fp,raddr);
       FREE(raddr);
       break;
     case (51):
       rcdr = (struct radio_comp_data_rec *) 
 	MALLOC(sizeof(struct radio_comp_data_rec));
-      if (get_rcdr(leaderName,rcdr) >= 0)
+      if (get_rcdr(fileName,rcdr) >= 0)
 	prn_rcdr(fp,rcdr);
       FREE(rcdr);
       break;
     case (60):	
       dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
-      if (get_dqsr(leaderName,dqsr) >= 0) 
+      if (get_dqsr(fileName,dqsr) >= 0) 
 	prn_dqsr(fp,dqsr,1);
       FREE(dqsr);
       break;
     case (70):	
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_dhr(leaderName,dhr) >= 0) 
+      if (get_dhr(fileName,dhr) >= 0) 
 	prn_dhr(fp,dhr);
       FREE(dhr);
       break;
     case (71): 
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_sdhr(leaderName,dhr) >= 0) 
+      if (get_sdhr(fileName,dhr) >= 0) 
 	prn_dhr(fp,dhr);
       FREE(dhr);
       break;
     case (80):	
       rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
-      if (get_rsr(leaderName,rsr) >= 0) 
+      if (get_rsr(fileName,rsr) >= 0) 
 	prn_rsr(fp,rsr);
       FREE(rsr);
       break;
     case (120):
       ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
-      if (get_ppr(leaderName,ppr) >= 0)
+      if (get_ppr(fileName,ppr) >= 0)
 	prn_ppr(fp,ppr);
       FREE(ppr);
       break;
@@ -343,19 +343,19 @@ static void print_record(FILE *fp, char *fileName, int reqrec)
     case (200):
     case (210): 
       facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
-      if (get_asf_facdr(leaderName,facdr) >= 0) 
+      if (get_asf_facdr(fileName,facdr) >= 0) 
 	prn_facdr(fp,facdr,1);
       FREE(facdr);
       break;
     case (220):
       esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
-      if (get_esa_facdr(leaderName,esa_facdr) >= 0)
+      if (get_esa_facdr(fileName,esa_facdr) >= 0)
 	prn_esa_facdr(fp,esa_facdr);
       FREE(esa_facdr);
       break;
     case (300): 
       fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
-      if (get_fdr(leaderName,fdr) >= 0) 
+      if (get_fdr(fileName,fdr) >= 0) 
 	prn_fdr(fp,fdr);
       FREE(fdr);
       break;
@@ -399,7 +399,7 @@ static int check_record(char *fileName, int reqrec)
     {
     case (10): 
       dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-      if (get_dssr(leaderName,dssr) >= 0 )
+      if (get_dssr(fileName,dssr) >= 0 )
 	return 1;
       else
 	printf("\nNo Data Set Summary Record Found\n\n");
@@ -407,7 +407,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (18):
       shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
-      if (get_shr(leaderName,shr) >= 0 )
+      if (get_shr(fileName,shr) >= 0 )
 	return 1;
       else
 	printf("\nNo Scene Header Record Found\n\n");
@@ -415,7 +415,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (20):	
       mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
-      if (get_mpdr(leaderName,mpdrec) >= 0 ) 
+      if (get_mpdr(fileName,mpdrec) >= 0 ) 
         return 1;
       else 
 	printf("\nNo Map Projection Data Record Found\n\n");
@@ -423,7 +423,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (30):	
       ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
-      if (get_ppdr(leaderName,ppdr) >= 0)
+      if (get_ppdr(fileName,ppdr) >= 0)
         return 1;
       else
 	printf("\nNo Platform Position Data Record Found\n\n");
@@ -431,7 +431,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (40):	
       atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
-      if (get_atdr(leaderName,atdr) >= 0)
+      if (get_atdr(fileName,atdr) >= 0)
 	return 1;
       else
 	printf("\nNo Attitude Data Record Found\n\n");
@@ -439,7 +439,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (44):
       ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
-      if (get_ampr(leaderName,ampr) >= 0)
+      if (get_ampr(fileName,ampr) >= 0)
         return 1;
       else
 	printf("\nNo Map Projection Record (ALOS) Found\n\n");
@@ -447,7 +447,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (50):	
       raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
-      if (get_raddr(leaderName,raddr) >= 0)
+      if (get_raddr(fileName,raddr) >= 0)
 	return 1;
       else
 	printf("\nNo Radiometric Data Record\n\n");
@@ -456,7 +456,7 @@ static int check_record(char *fileName, int reqrec)
     case (51):
       rcdr = (struct radio_comp_data_rec *) 
 	MALLOC(sizeof(struct radio_comp_data_rec));
-      if (get_rcdr(leaderName,rcdr) >= 0)
+      if (get_rcdr(fileName,rcdr) >= 0)
 	return 1;
       else
 	printf("\nNo Radiometric Compensation Data Record\n\n");
@@ -464,7 +464,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (60):	
       dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
-      if (get_dqsr(leaderName,dqsr) >= 0) 
+      if (get_dqsr(fileName,dqsr) >= 0) 
 	return 1;
       else 
 	printf("\nNo Data Quality Summary Record Found\n\n");
@@ -472,7 +472,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (70):	
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_dhr(leaderName,dhr) >= 0) 
+      if (get_dhr(fileName,dhr) >= 0) 
 	return 1;
       else 
 	printf("\nNo Processed Data Histograms Record Found\n\n");
@@ -480,7 +480,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (71): 
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_sdhr(leaderName,dhr) >= 0) 
+      if (get_sdhr(fileName,dhr) >= 0) 
 	return 1;
       else 
 	printf("\nNo Signal Data Histograms Record Found\n\n");
@@ -488,7 +488,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (80):	
       rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
-      if (get_rsr(leaderName,rsr) >= 0) 
+      if (get_rsr(fileName,rsr) >= 0) 
 	return 1;
       else 
 	printf("\nNo Range Spectra Record Found\n\n");
@@ -496,7 +496,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (120):
       ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
-      if (get_ppr(leaderName,ppr) >= 0)
+      if (get_ppr(fileName,ppr) >= 0)
 	return 1;
       else
 	printf("\nNo Processing Parameter Record Found\n\n");
@@ -513,7 +513,7 @@ static int check_record(char *fileName, int reqrec)
     case (200):
     case (210): 
       facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
-      if (get_asf_facdr(leaderName,facdr) >= 0) 
+      if (get_asf_facdr(fileName,facdr) >= 0) 
 	return 1;
       else 
 	printf("\nNo Facility Related Data Record Found\n\n");
@@ -521,7 +521,7 @@ static int check_record(char *fileName, int reqrec)
       FREE(facdr);
     case (220):
       esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
-      if (get_esa_facdr(leaderName,esa_facdr) >= 0)
+      if (get_esa_facdr(fileName,esa_facdr) >= 0)
 	return 1;
       else
 	printf("\nNo Facility Related Data Record (ESA) Found\n\n");
@@ -529,7 +529,7 @@ static int check_record(char *fileName, int reqrec)
       break;
     case (300): 
       fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
-      if (get_fdr(leaderName,fdr) >= 0) 
+      if (get_fdr(fileName,fdr) >= 0) 
 	return 1;
       else
 	printf("\nNo File Descriptor Record Found\n\n");
