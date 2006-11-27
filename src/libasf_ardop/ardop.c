@@ -34,7 +34,7 @@ FILE REFERENCES:
     ifile.L		 Input CCSD leader file
     ofile.cpx		 Output float complex image file
     ofile.in		 Parameter file used to create ofile
-    ofile_amp.img	 Multilooked float amplitude file 
+    ofile_amp.img	 Multilooked float amplitude file
 
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
@@ -46,31 +46,31 @@ PROGRAM HISTORY:
     1.1		5/98	O. Lawlor	Generalized I/O, slight cleaning.
     2.0		8/98	O. Lawlor	Globals now confined to ardop_setup.c.
     					Can read image info from .fmt, .replica.
-    2.5		3/99	O. Lawlor	Can now read from .in file just like 
+    2.5		3/99	O. Lawlor	Can now read from .in file just like
                                         it reads from .L file.
     2.6     6/00    D. Koster   changed fseek->fseek64, to read files > 2GB
     2.7     7/00    O. Lawlor   Replaced doppler rate estimation with Curlander's.
-    2.8     7/00    M. Ayers	Added Kaiser and Hamming windows for azimuth 
+    2.8     7/00    M. Ayers	Added Kaiser and Hamming windows for azimuth
 				reference function.
     2.81    7/01    R. Gens	Added logfile and quiet switch
     2.9	    8/01    R. Gens	Added power image switch
     2.91    9/01    S. Watts	Made sure input file is CCSD (not ceos)
 				Looks for <name>.D 1st, then looks for
-				<name>.raw if *.D is invalid. 
-    3.0	    10/02   J. Nicoll	Made calibrateable, added beta, sigma, gamma 
+				<name>.raw if *.D is invalid.
+    3.0	    10/02   J. Nicoll	Made calibrateable, added beta, sigma, gamma
     				products. Fixed deskew to exclude data wedges.
-    3.1     6/03    J. Nicoll   Expanded debug options and change debug flags.			
+    3.1     6/03    J. Nicoll   Expanded debug options and change debug flags.
 
 HARDWARE/SOFTWARE LIMITATIONS:
     This program requires large amounts of memory to run.  The main
-    buffer is 
+    buffer is
 	      size(trans) = n_az * n_range * sizeof(complexFloat)
 
               where  n_az = number of lines in a patch (azimuth samples)
-		     n_range = number of lines in the azimuth (range samples) 
+		     n_range = number of lines in the azimuth (range samples)
 
     n_az is defined is ardop_def.h as 4096, and a full swath of ERS CCSD
-    data includes 5616 range samples, so size(trans) = 176 Mbytes.  When 
+    data includes 5616 range samples, so size(trans) = 176 Mbytes.  When
     this is combined with the rest of the storage requirements for the
     program, 200+ Mbytes are needed.
 
@@ -173,7 +173,8 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 
 	strcpy (meta->general->system, meta_get_system());
 	meta->general->data_type = REAL32;
-	meta->general->band_number = 0;
+//	FIXME: determine number of bands
+//	meta->general->band_count = 1;
 	meta->general->x_pixel_size = meta->sar->range_time_per_pixel
                                        * (speedOfLight/2.0);
 	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
@@ -184,11 +185,11 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 	  printf("   Processing %dx %d az by %d range patches...\n",f->nPatches,n_az,n_range);
 	  printf("   Of the %d azimuth lines, only %d are valid.\n",n_az,f->n_az_valid);
 	}
-	
+
 /*
 Create "patch" of data.  This patch is re-used to process
 all of the input data.
-*/	
+*/
 	p=newPatch(n_az,n_range);
 
 /*Loop over each patch of data present, and process it.*/
@@ -196,7 +197,7 @@ all of the input data.
 	{
 		int lineToBeRead;
 		printf("\n   *****    PROCESSING PATCH %i    *****\n\n",patchNo);
-		
+
 		lineToBeRead = f->firstLineToProcess + (patchNo-1) * f->n_az_valid;
 		if (lineToBeRead+p->n_az>signalGetRec->nLines) {
 		  printf("   Read all the patches in the input file.\n");
@@ -213,9 +214,9 @@ all of the input data.
 
 	destroyPatch(p);
 /*	printf("\nPROGRAM COMPLETED\n\n");*/
-	
+
 	if (logflag) {
-	  if (f->nPatches==1) 
+	  if (f->nPatches==1)
 	    printLog("\n   Processed 1 patch.\n\n");
 	  else {
 	    sprintf(logbuf,"\n   Processed %d patches.\n\n", f->nPatches);
