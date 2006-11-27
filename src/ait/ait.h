@@ -50,5 +50,6 @@ void message_box(const char *format, ...);
 
 // config.c
 dem_config *get_settings_from_gui();
+void apply_settings_to_gui(dem_config *cfg, const char *cfg_name);
 
 #endif

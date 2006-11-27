@@ -12,6 +12,11 @@
 #include <glib/gprintf.h>
 #include <sys/wait.h>
 
+static int double_equals_tol(double a, double b, double tol)
+{
+    return fabs(a-b)<tol;
+}
+
 static GtkWidget *get_widget_checked(const char *widget_name)
 {
     GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
@@ -29,6 +34,19 @@ static double get_double_from_entry(const char *widget_name)
     const gchar * str = gtk_entry_get_text(GTK_ENTRY(w));
     double val = atof(str);
     return val;
+}
+
+static double get_double_from_entry_blank(const char *widget_name,
+                                          double blank_val)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    const gchar * str = gtk_entry_get_text(GTK_ENTRY(w));
+    if (strlen(str) > 0) {
+        double val = atof(str);
+        return val;
+    } else {
+        return blank_val;
+    }
 }
 
 static int get_int_from_entry(const char *widget_name)
@@ -81,6 +99,11 @@ static void get_dbl(double *val, const char *widget)
     *val = get_double_from_entry(widget);
 }
 
+static void get_dbl_blank(double *val, const char *widget, double blank_val)
+{
+    *val = get_double_from_entry_blank(widget, blank_val);
+}
+
 static void get_chk(int *val, const char *widget)
 {
     *val = get_bool_from_checkbutton(widget);
@@ -109,8 +132,8 @@ dem_config *get_settings_from_gui(char *cfg_name)
     //cfg->general->data_type = new_blank_str();
     get_chk(&cfg->general->deskew, "deskew_checkbutton");
     //cfg->general->doppler = new_blank_str();
-    get_dbl(&cfg->general->lat_begin, "lat_begin_entry");
-    get_dbl(&cfg->general->lat_end, "lat_end_entry");
+    get_dbl_blank(&cfg->general->lat_begin, "lat_begin_entry", -99);
+    get_dbl_blank(&cfg->general->lat_end, "lat_end_entry", -99);
     //cfg->general->coreg = new_blank_str();
     get_int(&cfg->general->max_off, "maximum_offset_entry");
     //cfg->general->mflag = 0;
@@ -276,6 +299,14 @@ static void put_dbl(double val, char *widget)
     put_double_to_entry(val, widget);
 }
 
+static void put_dbl_blank(double val, char *widget, double blank_val)
+{
+    if (double_equals_tol(val, blank_val, 0.000001))
+        put_string_to_entry("", widget);
+    else
+        put_double_to_entry(val, widget);
+}
+
 static void put_chk(int val, char *widget)
 {
     assert(val==1 || val==0);
@@ -292,12 +323,432 @@ static void put_int(int val, char *widget)
     put_long_to_entry((long)val, widget);
 }
 
-void apply_settings_to_gui(dem_config *cfg)
+static void
+add_to_summary_text_bad(int bad, char **summary_text, int *current_len,
+                        int increment, const char *format, ...)
 {
+    char buf[1024];
+    int len;
+
+    if (bad)
+        strcat(*summary_text, "<r>");
+
+    va_list ap;
+    va_start(ap, format);
+    len = vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+
+    if (len > 1000)
+        asfPrintWarning("Lengthy message may have been truncated!\n");
+
+    if (strlen(*summary_text) + len >= *current_len) {
+        *current_len += increment;
+        char *new = MALLOC(sizeof(char)*(*current_len));
+        strcpy(new, *summary_text);
+        strcat(new, buf);
+        free(*summary_text);
+        *summary_text = new;
+    } else {
+        strcat(*summary_text, buf);
+    }
+
+    if (bad)
+        strcat(*summary_text, "</r>");
+}
+
+static void
+add_to_summary_text(char **summary_text, int *current_len,
+                    int increment, const char *format, ...)
+{
+    char buf[1024];
+    int len;
+
+    va_list ap;
+    va_start(ap, format);
+    len = vsnprintf(buf, sizeof(buf), format, ap);
+    va_end(ap);
+
+    if (len > 1020)
+        asfPrintWarning("Lengthy message may have been truncated!\n");
+
+    if (strlen(*summary_text) + len >= *current_len) {
+        *current_len += increment;
+        char *new = MALLOC(sizeof(char)*(*current_len));
+        strcpy(new, *summary_text);
+        strcat(new, buf);
+        free(*summary_text);
+        *summary_text = new;
+    } else {
+        strcat(*summary_text, buf);
+    }
+}
+
+static const char *noneify(const char *s)
+{
+    static const char *none = "<none>";
+    return strlen(s)==0 ? none : s;
+}
+
+static const char *yesify(int b)
+{
+    static const char *yes = "Yes";
+    static const char *no = "No";
+
+    return b ? yes : no;
+}
+
+/* returns newly allocated memory that must be free'd */
+static char *ninetynineify(double d)
+{
+    char *ret = MALLOC(sizeof(char)*32);
+    if (double_equals_tol(d, -99, 0.0000001))
+        strcpy(ret, "none");
+    else
+        sprintf(ret, "%f", d);
+    return ret;
+}
+
+static int check_lats(double lat_begin, double lat_end)
+{
+    int lat_begin_is_blank = double_equals_tol(lat_begin, -99, .00001);
+    if (!lat_begin_is_blank) {
+        if (lat_begin < -90) return TRUE;
+        if (lat_begin > 90) return TRUE;
+    }
+
+    int lat_end_is_blank = double_equals_tol(lat_end, -99, .00001);
+    if (!lat_end_is_blank) {
+        if (lat_end < -90) return TRUE;
+        if (lat_end > 90) return TRUE;
+    }
+
+    if (!lat_begin_is_blank && !lat_end_is_blank && lat_begin >= lat_end)
+        return TRUE;
+
+    return FALSE;
+}
+
+void add_to_summary_text_lats(char **summary_text, int *current_len, int increment,
+                              double lat_begin, double lat_end)
+{
+    int bad = check_lats(lat_begin, lat_end);
+
+    if (double_equals_tol(lat_begin, -99, 0.000001) &&
+        double_equals_tol(lat_end, -99, 0.000001))
+    {
+        // user has not specified a latitude top or botton lat constraint
+        add_to_summary_text_bad(bad, summary_text, current_len, increment,
+            "Latitude Range: None\n");
+    } else if (
+        !double_equals_tol(lat_begin, -99, 0.000001) &&
+        !double_equals_tol(lat_end, -99, 0.000001))
+    {
+        // user has both constraints specified
+        add_to_summary_text_bad(bad, summary_text, current_len, increment,
+            "Latitude Range: (%f, %f)\n", lat_begin, lat_end);
+    } else {
+        char *begin = ninetynineify(lat_begin);
+        char *end = ninetynineify(lat_end);
+        add_to_summary_text_bad(bad, summary_text, current_len, increment,
+            "Latitude Range: (%s, %s)\n", begin, end);
+        free(begin);
+        free(end);
+    }
+}
+
+SIGNAL_CALLBACK
+void update_summary()
+{
+    char cfg_name[255];
+    dem_config *cfg = get_settings_from_gui(cfg_name);
+    // "increment" needs to be big enough for each line in the summary
+    const int increment = 10240; 
+    int bad;
+
+    char *summary_text = MALLOC(sizeof(char) * increment);
+    int current_len = increment;
+
+    // From "Configuration File" tab
+    bad = strlen(cfg_name) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Configuration File: %s\n", noneify(cfg_name));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Short Config File: %s\n\n",
+        yesify(cfg->general->short_config));
+
+    // "Input" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>General</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Mode: %s\n", cfg->general->mode);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Reference DEM: %s\n", cfg->general->dem);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Base name: %s\n", cfg->general->base);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Data Type: %s\n", cfg->general->data_type);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Deskew: %s\n", yesify(cfg->general->deskew));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Doppler: %s\n", cfg->general->doppler);
+    add_to_summary_text_lats(&summary_text, &current_len, increment,
+        cfg->general->lat_begin, cfg->general->lat_end);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Coregistration: %s\n", cfg->general->coreg);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Maximum Offset: %d\n", cfg->general->max_off);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Mask Flag: %s\n", yesify(cfg->general->mflag));
+    //if (cfg->general->mflag)
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Mask: %s\n", cfg->general->mask);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Test Mode: %s\n", yesify(cfg->general->test));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->general->status);
+
+    // More from the "Input" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Master Image</b>\n");
+    bad = strlen(cfg->master->path) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Path: %s\n", noneify(cfg->master->path));
+    bad = strlen(cfg->master->data) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Data: %s\n", noneify(cfg->master->data));
+    bad = strlen(cfg->master->meta) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Metadata: %s\n\n", noneify(cfg->master->meta));
+
+    // More from the "Input" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Slave Image</b>\n");
+    bad = strlen(cfg->slave->path) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Path: %s\n", noneify(cfg->slave->path));
+    bad = strlen(cfg->slave->data) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Data: %s\n", noneify(cfg->slave->data));
+    bad = strlen(cfg->slave->meta) == 0;
+    add_to_summary_text_bad(bad, &summary_text, &current_len, increment,
+        "Metadata: %s\n\n", noneify(cfg->slave->meta));
+
+    // "Ingest" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Ingest</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Precise Master: %s\n", cfg->ingest->prc_master);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Precise Slave: %s\n", cfg->ingest->prc_slave);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Precise Orbits: %s\n", yesify(cfg->ingest->prcflag));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->ingest->status);
+
+    // "Coregister First" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Coregister First Patch</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Patches: %d\n", cfg->coreg_p1->patches);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Master: %ld\n", cfg->coreg_p1->start_master);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Slave: %ld\n", cfg->coreg_p1->start_slave);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Grid: %d\n", cfg->coreg_p1->grid);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "FFT: %s\n", yesify(cfg->coreg_p1->fft));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Sinc: %s\n", yesify(cfg->coreg_p1->sinc));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Warp: %s\n", yesify(cfg->coreg_p1->warp));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Offset Azimuth: %d\n", cfg->coreg_p1->off_az);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Offset Range: %d\n", cfg->coreg_p1->off_rng);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->coreg_p1->status);
+
+    // "Coregister Last" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Coregister Last Patch</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Patches: %d\n", cfg->coreg_pL->patches);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Master: %ld\n", cfg->coreg_pL->start_master);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Slave: %ld\n", cfg->coreg_pL->start_slave);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Grid: %d\n", cfg->coreg_pL->grid);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "FFT: %s\n", yesify(cfg->coreg_pL->fft));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Sinc: %s\n", yesify(cfg->coreg_pL->sinc));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Warp: %s\n", yesify(cfg->coreg_pL->warp));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Offset Azimuth: %d\n", cfg->coreg_pL->off_az);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Offset Range: %d\n", cfg->coreg_pL->off_rng);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->coreg_pL->status);
+
+    // "ArDOP - Master" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>ArDOP - Master Image</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Offset: %d\n", cfg->ardop_master->start_offset);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "End Offset: %d\n", cfg->ardop_master->end_offset);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Patches: %d\n", cfg->ardop_master->patches);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Power Flag: %s\n", yesify(cfg->ardop_master->power));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Power Image: %s\n", cfg->ardop_master->power_img);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->ardop_master->status);
+
+    // "ArDOP - Slave" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>ArDOP - Slave Image</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Start Offset: %d\n", cfg->ardop_slave->start_offset);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "End Offset: %d\n", cfg->ardop_slave->end_offset);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Patches: %d\n", cfg->ardop_slave->patches);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Power Flag: %s\n", yesify(cfg->ardop_slave->power));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Power Image: %s\n", cfg->ardop_slave->power_img);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->ardop_slave->status);
+
+    // "Interferogram" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Interferogram/Coherence</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Interferogram: %s\n", cfg->igram_coh->igram);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Coherence Image: %s\n", cfg->igram_coh->coh);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Minimum Coherence: %f\n", cfg->igram_coh->min);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Multilook: %s\n", yesify(cfg->igram_coh->ml));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->igram_coh->status);
+
+    // "Offset Matching" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Offset Matching</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Maximum: %f\n", cfg->offset_match->max);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->offset_match->status);
+
+    // "Simulated Phase" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Simulated Phase</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Seeds: %s\n", cfg->sim_phase->seeds);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->sim_phase->status);
+
+    // "Deramp" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Deramp/Multilook</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->deramp_ml->status);
+
+    // "Phase Unwrapping" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Phase Unwrapping</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Algorithm: %s\n", cfg->unwrap->algorithm);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Flattening: %s\n", yesify(cfg->unwrap->flattening));
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Processors: %d\n", cfg->unwrap->procs);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Tiles Azimuth: %d\n", cfg->unwrap->tiles_azimuth);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Tiles Range: %d\n", cfg->unwrap->tiles_range);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Tiles Per Degree: %d\n", cfg->unwrap->tiles_per_degree);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Overlap Azimuth: %d\n", cfg->unwrap->overlap_azimuth);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Overlap Range: %d\n", cfg->unwrap->overlap_range);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Filter: %f\n", cfg->unwrap->filter);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Quality Control: %s\n", cfg->unwrap->qc);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->unwrap->status);
+
+    // "Refine Baseline" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Refine Baseline</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Iterations: %d\n", cfg->refine->iter);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Max Iterations: %d\n", cfg->refine->max);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->refine->status);
+
+    // "Ground Range DEM" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Ground Range DEM</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->ground_range->status);
+
+    // "Geocoding" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Geocoding</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "DEM: %s\n", cfg->geocode->dem);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Error Map: %s\n", cfg->geocode->error);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Amplitude: %s\n", cfg->geocode->amp);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Coherence: %s\n", cfg->geocode->coh);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Projection Name: %s\n", cfg->geocode->name);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Projection File: %s\n", cfg->geocode->proj);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Resampling Method: %s\n", cfg->geocode->resample);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Pixel Spacing: %f\n", cfg->geocode->pixel_spacing);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->geocode->status);
+
+    // "Export" tab
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "<b>Export</b>\n");
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Format: %s\n", cfg->export->format);
+    add_to_summary_text(&summary_text, &current_len, increment,
+        "Status: %s\n\n", cfg->export->status);
+        
+    GtkWidget *summary_textview =
+        glade_xml_get_widget(glade_xml, "summary_textview");
+
+    GtkTextBuffer *tb =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(summary_textview));
+
+    gtk_text_buffer_set_text(tb, summary_text, -1);
+}
+
+void apply_settings_to_gui(dem_config *cfg, const char *cfg_name)
+{
+    put_str(cfg_name, "configuration_file_entry");
     put_str(cfg->general->dem, "reference_dem_entry");
     put_chk(cfg->general->deskew, "deskew_checkbutton");
-    put_dbl(cfg->general->lat_begin, "lat_begin_entry");
-    put_dbl(cfg->general->lat_end, "lat_end_entry");
+    put_dbl_blank(cfg->general->lat_begin, "lat_begin_entry", -99);
+    put_dbl_blank(cfg->general->lat_end, "lat_end_entry", -99);
     put_int(cfg->general->max_off, "maximum_offset_entry");
     put_chk(cfg->general->short_config, "short_configuration_file_checkbutton");
     put_str(cfg->ingest->prc_master, "ingest_precise_master_entry");
@@ -338,83 +789,7 @@ void apply_settings_to_gui(dem_config *cfg)
     put_int(cfg->unwrap->tiles_per_degree, "phase_unwrapping_tiles_per_degree_entry");
     put_int(cfg->refine->iter, "baseline_refinement_iterations_entry");
     put_int(cfg->refine->max, "baseline_refinement_max_iterations_entry");
-}
-
-void add_to_summary_text(char **summary_text, int *current_len, int increment,
-                         const char *format, ...)
-{
-    char buf[1024];
-    int len;
-
-    va_list ap;
-    va_start(ap, format);
-    len = vsnprintf(buf, sizeof(buf), format, ap);
-    va_end(ap);
-
-    if (len > 1022)
-        asfPrintWarning("Lengthy message may have been truncated!\n");
-
-    if (strlen(*summary_text) + len >= *current_len) {
-        *current_len += increment;
-        char *new = MALLOC(sizeof(char)*(*current_len));
-        strcpy(new, *summary_text);
-        strcat(new, buf);
-        *summary_text = new;
-    } else {
-        strcat(*summary_text, buf);
-    }
-
-}
-
-static const char *noneify(const char *s)
-{
-    static const char *none = "<none>";
-    return strlen(s)==0 ? none : s;
-}
-
-static const char *yesify(int b)
-{
-    static const char *yes = "Yes";
-    static const char *no = "No";
-
-    return b ? yes : no;
-}
-
-SIGNAL_CALLBACK
-void update_summary()
-{
-    char cfg_name[255];
-    dem_config *cfg = get_settings_from_gui(cfg_name);
-    int increment = 10240;
-
-    char *summary_text = MALLOC(sizeof(char) * increment);
-    int current_len = increment;
-
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Configuration File: %s\n", noneify(cfg_name));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Short Config File: %s\n\n",
-                        yesify(cfg->general->short_config));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Master Image Path: %s\n", noneify(cfg->master->path));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Master Image Data: %s\n", noneify(cfg->master->data));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Master Image Meta: %s\n", noneify(cfg->master->meta));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Slave Image Path: %s\n", noneify(cfg->slave->path));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Slave Image Data: %s\n", noneify(cfg->slave->data));
-    add_to_summary_text(&summary_text, &current_len, increment,
-                      "Slave Image Meta: %s\n", noneify(cfg->slave->meta));
-
-    GtkWidget *summary_textview =
-        glade_xml_get_widget(glade_xml, "summary_textview");
-
-    GtkTextBuffer *tb =
-        gtk_text_view_get_buffer(GTK_TEXT_VIEW(summary_textview));
-
-    gtk_text_buffer_set_text(tb, summary_text, -1);
+    update_summary();
 }
 
 /* And new a whole slew of signal handlers... */
