@@ -131,17 +131,88 @@ static void get_lng(long *val, const char *widget)
     *val = get_long_from_entry(widget);
 }
 
+static int
+text_to_index(const char *widget_name, const char *selected_text)
+{
+    if (strcmp(widget_name, "mode_optionmenu") == 0) {
+        // DEM, DINSAR
+        if (strcmp(uc(selected_text), "DEM") == 0) return 0;
+        if (strcmp(uc(selected_text), "DINSAR") == 0) return 1;
+        assert(FALSE);
+    } else if (strcmp(widget_name, "data_type_optionmenu") == 0) {
+        // STF, RAW, SLC
+        if (strcmp(uc(selected_text), "STF") == 0) return 0;
+        if (strcmp(uc(selected_text), "RAW") == 0) return 1;
+        if (strcmp(uc(selected_text), "SLC") == 0) return 2;
+        assert(FALSE);
+    } else if (strcmp(widget_name, "phase_unwrapping_optionmenu") == 0) {
+        // Escher, Snaphu
+        if (strcmp(uc(selected_text), "ESCHER") == 0) return 0;
+        if (strcmp(uc(selected_text), "SNAPHU") == 0) return 1;
+        assert(FALSE);
+    }
+    assert(FALSE);
+    return -1;
+}
+
+static void 
+set_combo_box_item(const char *widget_name, const char *selected_text)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    int index = text_to_index(widget_name, selected_text);
+    gtk_option_menu_set_history(GTK_OPTION_MENU(w), index);
+}
+
+static const char *
+index_to_text(const char *widget_name, int index)
+{
+    if (strcmp(widget_name, "mode_optionmenu") == 0) {
+        // DEM, DINSAR
+        switch (index) {
+            case 0: return "DEM";
+            case 1: return "DINSAR";
+        }
+        assert(FALSE);
+    } else if (strcmp(widget_name, "data_type_optionmenu") == 0) {
+        // STF, RAW, SLC
+        switch (index) {
+            case 0: return "STF";
+            case 1: return "RAW";
+            case 2: return "SLC";
+        }
+        assert(FALSE);
+    } else if (strcmp(widget_name, "phase_unwrapping_optionmenu") == 0) {
+        // Escher, Snaphu
+        switch (index) {
+            case 0: return "Escher";
+            case 1: return "Snaphu";
+        }
+        assert(FALSE);
+    }
+    assert(FALSE);
+    return "";    
+}
+
+static const char *
+get_combo_box_item(const char *widget_name)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    int index = gtk_option_menu_get_history(GTK_OPTION_MENU(w));
+    return index_to_text(widget_name, index);    
+}
+
 dem_config *get_settings_from_gui(char *cfg_name)
 {
     get_str(cfg_name, "configuration_file_entry");
 
     dem_config *cfg = create_config_with_defaults();
 
-    //cfg->general->mode = new_blank_str();
+    strcpy(cfg->general->mode, get_combo_box_item("mode_optionmenu"));
     get_str(cfg->general->dem, "reference_dem_entry");
     //cfg->general->def_val = new_blank_str();
     //cfg->general->base = new_blank_str();
-    //cfg->general->data_type = new_blank_str();
+    strcpy(cfg->general->data_type,
+           get_combo_box_item("data_type_optionmenu"));
     get_chk(&cfg->general->deskew, "deskew_checkbutton");
     //cfg->general->doppler = new_blank_str();
     get_dbl_blank(&cfg->general->lat_begin, "lat_begin_entry", -99);
@@ -227,7 +298,8 @@ dem_config *get_settings_from_gui(char *cfg_name)
 
     //cfg->deramp_ml->status = new_str("new");
 
-    //cfg->unwrap->algorithm = new_str("escher");
+    strcpy(cfg->unwrap->algorithm,
+           get_combo_box_item("phase_unwrapping_optionmenu"));
     get_chk(&cfg->unwrap->flattening, "phase_unwrapping_flattening_checkbutton");
     get_int(&cfg->unwrap->procs, "phase_unwrapping_processors_entry");
     get_int(&cfg->unwrap->tiles_azimuth, "phase_unwrapping_tiles_azimuth_entry");
@@ -825,9 +897,11 @@ void update_summary()
 
 void apply_settings_to_gui(dem_config *cfg, const char *cfg_name)
 {
+    set_combo_box_item("mode_optionmenu", cfg->general->mode);
     put_str(cfg_name, "configuration_file_entry");
     put_str(cfg->general->dem, "reference_dem_entry");
     put_chk(cfg->general->deskew, "deskew_checkbutton");
+    set_combo_box_item("data_type_optionmenu", cfg->general->data_type);
     put_dbl_blank(cfg->general->lat_begin, "lat_begin_entry", -99);
     put_dbl_blank(cfg->general->lat_end, "lat_end_entry", -99);
     put_int(cfg->general->max_off, "maximum_offset_entry");
@@ -860,6 +934,7 @@ void apply_settings_to_gui(dem_config *cfg, const char *cfg_name)
     put_dbl(cfg->igram_coh->min, "interferogram_min_coherence_entry");
     put_chk(cfg->igram_coh->ml, "interferogram_multilook_checkbutton");
     put_dbl(cfg->offset_match->max, "offset_matching_max_entry");
+    set_combo_box_item("phase_unwrapping_optionmenu", cfg->unwrap->algorithm);
     put_chk(cfg->unwrap->flattening, "phase_unwrapping_flattening_checkbutton");
     put_int(cfg->unwrap->procs, "phase_unwrapping_processors_entry");
     put_int(cfg->unwrap->tiles_azimuth, "phase_unwrapping_tiles_azimuth_entry");
