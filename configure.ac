@@ -6,7 +6,7 @@ AC_INIT
 AC_LANG(C)
 
 PACKAGE=convert
-VERSION=`grep PACKAGE_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"$/\1/'`
+VERSION=`grep PACKAGE_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"/\1/'`
 
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
