@@ -380,3 +380,23 @@ int FFLUSH(FILE *stream)
 {
 	return fflush(stream);
 }
+
+// Some systems don't seem to have "strdup" ... here we define
+// one for ourselves -- also, it goes through our checked-malloc,
+// MALLOC, so now all memory is really checked, plus if we ever
+// add mem-leak detection in MALLOC we can trace strdup's usage
+// as well.
+char *STRDUP (const char *s)
+{
+  char *result = MALLOC (sizeof (char) * (strlen (s) + 1));
+
+  int idx = 0;
+  while ( s[idx] != '\0') {
+    result[idx] = s[idx];
+    idx++;
+  }
+
+  result[idx] = '\0';
+
+  return result;
+}

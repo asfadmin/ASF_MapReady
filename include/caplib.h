@@ -28,6 +28,7 @@ int FSEEK64(FILE *stream,long long offset, int ptrname);
 long long FTELL64(FILE *stream);
 int FCLOSE(FILE *stream);
 int FFLUSH(FILE *stream);
+char *STRDUP(const char *string);
 
 void programmer_error(char *mess);
 

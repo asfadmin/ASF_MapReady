@@ -9,22 +9,6 @@
 
 #include "asf.h"
 
-static char *
-static_strdup (const char *s)
-{
-  char *result = malloc (sizeof (char) * (strlen (s) + 1));
-
-  int idx = 0;
-  while ( s[idx] != '\0') {
-    result[idx] = s[idx];
-    idx++;
-  }
-
-  result[idx] = '\0';
-
-  return result;
-}
-
 int extExists(const char *name, const char *newExt)
 {
   char *fName = appendExt (name,newExt);
@@ -63,7 +47,7 @@ char *findExt(const char *name)
    any extension removed */
 char *stripExt(const char *in)
 {
-  char *out = static_strdup(in);
+  char *out = STRDUP(in);
   char *ext = findExt(out);
   if (ext) *ext = '\0';
   return out;
