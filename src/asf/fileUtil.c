@@ -94,7 +94,7 @@ char * appendToBasename(const char *inFile, const char *suffix)
        suffix, then add back on the extension again */
     char *ext;
     *p++ = '\0';
-    ext = static_strdup(p);
+    ext = STRDUP(p);
     strcat(ret, suffix);
     strcat(ret, ".");
     strcat(ret, ext);
