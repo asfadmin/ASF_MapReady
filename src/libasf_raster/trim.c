@@ -10,22 +10,25 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
 	  long long sizeX, long long sizeY)
 {
   meta_parameters *metaIn, *metaOut;
-  int isComplex;
   long long pixelSize, offset;
   long long x,y,inMaxX,inMaxY,lastReadY,firstReadX,numInX;
   FILE *in,*out;
   char *buffer;
 
-  /* Check for complex data and open files */
-  isComplex = (findExt(infile)&&(0==strcmp(findExt(infile),".cpx")));
+  /* Open files */
   in = fopenImage(infile,"rb");
   out = fopenImage(outfile,"wb");
 
+  // Check the pixel size
   metaIn = meta_read(infile);
   pixelSize = metaIn->general->data_type;
-  if (pixelSize==3) pixelSize=4;
-  if (pixelSize==5) pixelSize=8;
-  if (isComplex)    pixelSize*=2;
+  if (pixelSize==3) pixelSize=4;         // INTEGER32
+  else if (pixelSize==5) pixelSize=8;    // REAL64
+  else if (pixelSize==6) pixelSize=2;    // COMPLEX_BYTE
+  else if (pixelSize==7) pixelSize=4;    // COMPLEX_INTEGER16
+  else if (pixelSize==8) pixelSize=8;    // COMPLEX_INTEGER32
+  else if (pixelSize==9) pixelSize=8;    // COMPLEX_REAL32
+  else if (pixelSize==10) pixelSize=16;  // COMPLEX_REAL64
 
   inMaxX = metaIn->general->sample_count;
   inMaxY = metaIn->general->line_count;
