@@ -161,7 +161,7 @@ static GtkWidget * populate_predefined_projections(int projection)
                     char * name_dup;
                     char * p;
 
-                    name_dup = strdup(name);
+                    name_dup = STRDUP(name);
                     p = strrchr(name_dup, '.');
 
                     if (p && strcmp(p, ".proj") == 0)
@@ -244,7 +244,7 @@ void release_predefined_projections()
 
 void set_predefined_projections(int projection)
 {
-    GtkWidget * predefined_projection_option_menu;
+    GtkWidget * predefined_projection_optionmenu;
     GtkWidget * menu = NULL;
 
     /* looking through all the files can be slow, skip it if we can */
@@ -276,9 +276,9 @@ void set_predefined_projections(int projection)
         g_object_ref(albers_menu);
     }
 
-    predefined_projection_option_menu =
-        glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
-    g_assert(predefined_projection_option_menu);
+    predefined_projection_optionmenu =
+        glade_xml_get_widget(glade_xml, "predefined_projection_optionmenu");
+    g_assert(predefined_projection_optionmenu);
 
     switch (projection)
     {
@@ -307,13 +307,13 @@ void set_predefined_projections(int projection)
 
     previous_projection = projection;
     gtk_option_menu_set_menu(
-        GTK_OPTION_MENU(predefined_projection_option_menu), menu);
+        GTK_OPTION_MENU(predefined_projection_optionmenu), menu);
 
     gtk_option_menu_set_history(
-        GTK_OPTION_MENU(predefined_projection_option_menu), 0);
+        GTK_OPTION_MENU(predefined_projection_optionmenu), 0);
 
     gtk_widget_show(menu);
-    gtk_widget_show(predefined_projection_option_menu);
+    gtk_widget_show(predefined_projection_optionmenu);
 }
 
 static void readline(FILE * f, char * buffer, size_t n)
@@ -353,7 +353,7 @@ static int parse_val(char * inbuf, char * key, double * val)
     char * p, * eq, * buf;
     int match = FALSE;
 
-    buf = strdup(inbuf);
+    buf = STRDUP(inbuf);
 
     p = eq = strchr(buf, '=');
     if (!eq)
@@ -432,11 +432,12 @@ static void get_fields(FILE * fp, ...)
 }
 
 static int read_proj_args_file(char * file, project_parameters_t * pps,
-                               projection_type_t * proj_type)
+                               projection_type_t * proj_type, datum_type_t *datum)
 {
     FILE * fp;
     char buf[256];
     int ret;
+    double ddatum = -1; // kludge
 
     fp = fopen(file, "rt");
     if (!fp)
@@ -458,6 +459,7 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
             "Latitude of Origin", &pps->albers.orig_latitude,
             "False Easting", &pps->albers.false_easting,
             "False Northing", &pps->albers.false_northing,
+            "Datum", &ddatum,
             NULL);
     }
     else if (strcmp(buf, bracketed_projection_name(PROJ_LAMAZ)) == 0)
@@ -468,6 +470,7 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
             "Latitude of Origin", &pps->lamaz.center_lat,
             "False Easting", &pps->lamaz.false_easting,
             "False Northing", &pps->lamaz.false_northing,
+            "Datum", &ddatum,
             NULL);
     }
     else if (strcmp(buf, bracketed_projection_name(PROJ_LAMCC)) == 0)
@@ -480,6 +483,7 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
             "Latitude of Origin", &pps->lamcc.lat0,
             "False Easting", &pps->lamcc.false_easting,
             "False Northing", &pps->lamcc.false_northing,
+            "Datum", &ddatum,
             /* "Scale Factor", &pps->lamcc.scale_factor, */
             NULL);
     }
@@ -494,6 +498,7 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
             "False Easting", &pps->ps.false_easting,
             "False Northing", &pps->ps.false_northing,
             "Northern Projection", &is_north_pole,
+            "Datum", &ddatum,
             NULL);
         pps->ps.is_north_pole = (int) is_north_pole;
     }
@@ -508,6 +513,7 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
             "False Easting", &pps->utm.false_easting,
             "False Northing", &pps->utm.false_northing,
             "Zone", &zone,
+            "Datum", &ddatum,
             NULL);
         pps->utm.zone = (int) zone;
     }
@@ -517,6 +523,10 @@ static int read_proj_args_file(char * file, project_parameters_t * pps,
     }
 
     fclose(fp);
+
+    if (ddatum != -1)
+        *datum = (datum_type_t) ddatum;
+
     return ret;
 }
 
@@ -531,7 +541,7 @@ static int out_of_sync(const char * filename, int projection)
 project_parameters_t *
 load_selected_predefined_projection_parameters(int projection)
 {
-    GtkWidget * predefined_projection_option_menu;
+    GtkWidget * predefined_projection_optionmenu;
     GtkWidget * menu;
     GtkWidget * selected_item;
     char filename[256];
@@ -539,13 +549,14 @@ load_selected_predefined_projection_parameters(int projection)
     char * path_and_filename;
     project_parameters_t * ret;
     projection_type_t type;
+    datum_type_t datum;
 
-    predefined_projection_option_menu =
-        glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
+    predefined_projection_optionmenu =
+        glade_xml_get_widget(glade_xml, "predefined_projection_optionmenu");
 
     menu =
         gtk_option_menu_get_menu(
-        GTK_OPTION_MENU(predefined_projection_option_menu));
+            GTK_OPTION_MENU(predefined_projection_optionmenu));
 
     selected_item =
         gtk_menu_get_active(GTK_MENU(menu));
@@ -564,7 +575,7 @@ load_selected_predefined_projection_parameters(int projection)
     sprintf(path_and_filename, "%s/%s", path, filename);
 
     ret = (project_parameters_t *) MALLOC(sizeof(project_parameters_t));
-    if (!read_proj_args_file(path_and_filename, ret, &type))
+    if (!read_proj_args_file(path_and_filename, ret, &type, &datum))
     {
         char * tmp = (char *)
             MALLOC(sizeof(char *) * (strlen(path_and_filename) + 100));
@@ -580,4 +591,25 @@ load_selected_predefined_projection_parameters(int projection)
     free(path_and_filename);
 
     return ret;
+}
+
+meta_projection *read_proj_file(char *filename, ait_params_t *ait_params)
+{
+    meta_projection *proj = meta_projection_init();
+
+    if (!read_proj_args_file(filename, &proj->param, &proj->type, &proj->datum))
+    {
+        // couldn't read .proj file
+        free(proj);
+        proj = NULL;
+    }
+
+    // organize...
+    if (ait_params)
+    {
+        proj->perX = ait_params->cfg->geocode->pixel_spacing;
+        proj->perY = ait_params->cfg->geocode->pixel_spacing;
+    }
+
+    return proj;
 }

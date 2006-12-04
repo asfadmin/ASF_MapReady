@@ -39,6 +39,7 @@
 #endif /* #if defined(win32) */
 
 #include "ips.h"
+#include "asf_nan.h"
 
 // The global vars
 extern GladeXML *glade_xml;
@@ -70,25 +71,51 @@ enum Datums
     DATUM_NAD83 = 2
 };
 
+typedef struct ait_params 
+{
+    char *name;
+
+    // main config settings
+    dem_config *cfg;
+
+    // geocoding stuff
+    meta_projection *proj; // NULL if geocoding off
+    resample_method_t resample_method;
+    int force;
+} ait_params_t;
+
+// Used by the "Browse" fuctionality - the callback should take the selected
+// file and populate the appropriate widgets.
+typedef void browse_callback(char *selected_file);
+
 // Prototypes
 
 // ait.c
 void show_summary(int show);
 void message_box(const char *format, ...);
+GtkWidget *get_widget_checked(const char *widget_name);
 
 // config.c
-dem_config *get_settings_from_gui();
-void apply_settings_to_gui(dem_config *cfg, const char *cfg_name);
+ait_params_t *get_settings_from_gui();
+void apply_settings_to_gui(ait_params_t *params);
+void update_summary();
+void write_settings(ait_params_t *params);
+ait_params_t *read_settings(char *config_file);
+void free_ait_params(ait_params_t *params);
 
 // projfile.c
 project_parameters_t *
 load_selected_predefined_projection_parameters(int projection);
 void set_predefined_projections(int projection);
 void release_predefined_projections();
+meta_projection *read_proj_file(char *filename, ait_params_t *ait_params);
 
 // geocode.c
 void geocode_options_changed();
 const char * datum_string(int datum);
 const char * resample_method_string(resample_method_t resample_method);
+
+// browse.c
+void browse(browse_callback bcb);
 
 #endif

@@ -29,17 +29,6 @@ static int double_equals_tol(double a, double b, double tol)
     return fabs(a-b)<tol;
 }
 
-static GtkWidget *get_widget_checked(const char *widget_name)
-{
-    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
-    if (!w)
-    {
-        asfPrintError("get_*_from_entry() failed: "
-            "The widget %s was not found.\n", widget_name);
-    }
-    return w;
-}
-
 static double get_double_from_entry(const char *widget_name)
 {
     GtkWidget *w = get_widget_checked(widget_name);
@@ -131,6 +120,119 @@ static void get_lng(long *val, const char *widget)
     *val = get_long_from_entry(widget);
 }
 
+static meta_projection *
+get_projection_options(int *force, resample_method_t *resample_method)
+{
+    meta_projection *proj;
+    int geocode_on;
+
+    get_chk(&geocode_on, "geocode_checkbutton");
+
+    if (geocode_on) {
+        proj = meta_projection_init();
+
+        GtkWidget *w = get_widget_checked("projection_optionmenu");
+        int index = gtk_option_menu_get_history(GTK_OPTION_MENU(w));
+
+        // we set it up so that the projections in the optionmenu are in the same
+        // order listed in the enum projection_type_t
+        switch (index)
+        {
+            case 0: proj->type = PROJ_UTM; break;
+            case 1: proj->type = PROJ_PS; break;
+            case 2: proj->type = PROJ_ALBERS; break;
+            case 3: proj->type = PROJ_LAMAZ; break;
+            case 4: proj->type = PROJ_LAMCC; break;
+            default: assert(FALSE); break;
+        }
+
+        // Projection Parameters
+        switch (proj->type) {
+            case PROJ_UTM:
+                get_int(&proj->param.utm.zone, "zone_entry");
+                break;
+
+            case PROJ_PS:
+                get_dbl(&proj->param.ps.slat, "first_standard_parallel_entry");
+                get_dbl(&proj->param.ps.slon, "central_meridian_entry");
+                break;
+
+            case PROJ_LAMCC:
+                get_dbl(&proj->param.lamcc.plat1, "first_standard_parallel_entry");
+                get_dbl(&proj->param.lamcc.plat2, "second_standard_parallel_entry");
+                get_dbl(&proj->param.lamcc.lon0, "central_meridian_entry");
+                get_dbl(&proj->param.lamcc.lat0, "latitude_of_origin_entry");
+                break;
+
+            case PROJ_LAMAZ:
+                get_dbl(&proj->param.lamaz.center_lon, "central_meridian_entry");
+                get_dbl(&proj->param.lamaz.center_lat, "latitude_of_origin_entry");
+
+            case PROJ_ALBERS:
+                get_dbl(&proj->param.albers.std_parallel1, "first_standard_parallel_entry");
+                get_dbl(&proj->param.albers.std_parallel2, "second_standard_parallel_entry");
+                get_dbl(&proj->param.albers.center_meridian, "central_meridian_entry");
+                get_dbl(&proj->param.albers.orig_latitude, "latitude_of_origin_entry");
+                break;
+
+            default:
+                assert(FALSE);
+                break;
+        }
+
+        // Datum
+        w = get_widget_checked("datum_optionmenu");
+        index = gtk_option_menu_get_history(GTK_OPTION_MENU(w));
+
+        switch (index) {
+            case 0: proj->datum = WGS84_DATUM; break;
+            case 1: proj->datum = NAD27_DATUM; break;
+            case 2: proj->datum = NAD83_DATUM; break;
+            default: assert(FALSE); break;
+        }
+
+        // Average Height
+        int height_checked;
+        get_chk(&height_checked, "height_checkbutton");
+        if (height_checked)
+            get_dbl(&proj->height, "height_entry");
+        else
+            proj->height = 0.0;
+
+        // Pixel Size
+        int pixel_size_checked;
+        get_chk(&pixel_size_checked, "pixel_size_checkbutton");
+        if (pixel_size_checked) {
+            get_dbl(&proj->perX, "pixel_size_entry");
+            if (proj->perX > 0)
+                proj->perY = proj->perX;
+            else
+                proj->perX = MAGIC_UNSET_DOUBLE; //user didn't enter anything
+        }
+
+        // resampling method
+        w = get_widget_checked("datum_optionmenu");
+        index = gtk_option_menu_get_history(GTK_OPTION_MENU(w));
+
+        switch (index) {
+            case 0: *resample_method = RESAMPLE_NEAREST_NEIGHBOR; break;
+            case 1: *resample_method = RESAMPLE_BILINEAR; break;
+            case 2: *resample_method = RESAMPLE_BICUBIC; break;
+            default: assert(FALSE); break;
+        }
+
+        // ignore projection errors
+        get_chk(force, "force_checkbutton");
+    }
+    else
+    {
+        // no geocoding selected
+        proj = NULL;
+    }
+
+    return proj;
+}
+
 static int
 text_to_index(const char *widget_name, const char *selected_text)
 {
@@ -149,6 +251,18 @@ text_to_index(const char *widget_name, const char *selected_text)
         // Escher, Snaphu
         if (strcmp(uc(selected_text), "ESCHER") == 0) return 0;
         if (strcmp(uc(selected_text), "SNAPHU") == 0) return 1;
+        assert(FALSE);
+    } else if (strcmp(widget_name, "datum_optionmenu") == 0) {
+        // WGS84, NAD27, NAD83
+        if (strcmp(uc(selected_text), "WGS84") == 0) return 0;
+        if (strcmp(uc(selected_text), "NAD27") == 0) return 1;
+        if (strcmp(uc(selected_text), "NAD83") == 0) return 2;
+        assert(FALSE);
+    } else if (strcmp(widget_name, "resample_method_optionmenu") == 0) {
+        // WGS84, NAD27, NAD83
+        if (strcmp(uc(selected_text), "NEAREST NEIGHBOR") == 0) return 0;
+        if (strcmp(uc(selected_text), "BILINEAR") == 0) return 1;
+        if (strcmp(uc(selected_text), "BICUBIC") == 0) return 2;
         assert(FALSE);
     }
     assert(FALSE);
@@ -201,9 +315,51 @@ get_combo_box_item(const char *widget_name)
     return index_to_text(widget_name, index);    
 }
 
-dem_config *get_settings_from_gui(char *cfg_name)
+static const char * projection_type_str(projection_type_t proj_type)
 {
+    switch (proj_type)
+    {
+    case PROJ_UTM:
+        return "UTM";
+
+    case PROJ_PS:
+        return "Polar Stereographic";
+
+    case PROJ_ALBERS:
+        return "Albers Conical Equal Area";
+
+    case PROJ_LAMAZ:
+        return "Lambert Azimuthal Equal Area";
+
+    case PROJ_LAMCC:
+        return "Lambert Conformal Conic";
+
+    default:
+        return MAGIC_UNSET_STRING;
+    }
+}
+
+void free_ait_params(ait_params_t *params)
+{
+    if (params) {
+        if (params->name)
+            free(params->name);
+        if (params->proj)
+            free(params->proj);
+        if (params->cfg)
+            free(params->cfg);
+        free(params);
+    }
+}
+
+ait_params_t *get_settings_from_gui()
+{
+    ait_params_t *ret = MALLOC(sizeof(ait_params_t));
+
+    char cfg_name[MAX_STRING_LEN+1];
     get_str(cfg_name, "configuration_file_entry");
+    ret->name = MALLOC(sizeof(char)*(strlen(cfg_name)+2));
+    strcpy(ret->name, cfg_name);
 
     dem_config *cfg = create_config_with_defaults();
 
@@ -344,7 +500,11 @@ dem_config *get_settings_from_gui(char *cfg_name)
     cfg->coreg_p1->patches = get_int_from_entry(
     "coregister_first_patches_entry");
     */
-    return cfg;
+    ret->cfg = cfg;
+
+    ret->proj = get_projection_options(&ret->force, &ret->resample_method);
+
+    return ret;
 }
 
 static void put_string_to_entry(const char *str, const char *widget_name)
@@ -579,8 +739,13 @@ void add_to_summary_text_lats(char **summary_text, int *current_len, int increme
 SIGNAL_CALLBACK
 void update_summary()
 {
-    char cfg_name[255];
-    dem_config *cfg = get_settings_from_gui(cfg_name);
+    ait_params_t *params = get_settings_from_gui();
+
+    // a couple convenience aliases
+    dem_config *cfg = params->cfg;
+    assert(cfg != NULL); // this one can't be NULL ...
+    meta_projection *proj = params->proj; // ... though this one can
+
     // "increment" needs to be big enough for each line in the summary
     const int increment = 10240; 
     // these keep track of the locations (indexes into "summary text") where
@@ -593,9 +758,9 @@ void update_summary()
     int current_len = increment;
 
     // From "Configuration File" tab
-    bad = strlen(cfg_name) == 0;
+    bad = strlen(params->name) == 0;
     add_to_summary_text_bad(bad, marks, &n_marks, &summary_text, &current_len,
-        increment, "Configuration File: %s\n", noneify(cfg_name));
+        increment, "Configuration File: %s\n", noneify(params->name));
     add_to_summary_text(&summary_text, &current_len, increment,
         "Short Config File: %s\n\n",
         yesify(cfg->general->short_config));
@@ -830,24 +995,91 @@ void update_summary()
     // "Geocoding" tab
     add_to_summary_text_section(&summary_text, &current_len,
         increment, "Geocoding", marks, &n_marks);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "DEM: %s\n", cfg->geocode->dem);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Error Map: %s\n", cfg->geocode->error);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Amplitude: %s\n", cfg->geocode->amp);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Coherence: %s\n", cfg->geocode->coh);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Projection Name: %s\n", cfg->geocode->name);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Projection File: %s\n", cfg->geocode->proj);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Resampling Method: %s\n", cfg->geocode->resample);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Pixel Spacing: %f\n", cfg->geocode->pixel_spacing);
-    add_to_summary_text(&summary_text, &current_len, increment,
-        "Status: %s\n\n", cfg->geocode->status);
+    if (proj)
+    {
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Projection: %s\n", projection_type_str(proj->type));
+
+        switch (proj->type) {
+            case PROJ_UTM:
+                if (proj->param.utm.zone != 0)
+                    add_to_summary_text(&summary_text, &current_len, increment,
+                        "Zone: %d\n", proj->param.utm.zone);
+                else
+                    add_to_summary_text(&summary_text, &current_len, increment,
+                        "Zone: <from metadata>\n");
+                break;
+
+            case PROJ_PS:
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Center: (%.2f, %.2f)\n", proj->param.ps.slat,
+                    proj->param.ps.slon);
+                break;
+
+            case PROJ_LAMCC:
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Center: (%.2f, %.2f)\n", proj->param.lamcc.lat0,
+                    proj->param.lamcc.lon0);
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Standard Parallels: (%.2f, %.2f)\n",
+                    proj->param.lamcc.plat1,
+                    proj->param.lamcc.plat2);
+                break;
+
+            case PROJ_LAMAZ:
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Center: (%.2f, %.2f)\n", proj->param.lamaz.center_lat,
+                    proj->param.lamaz.center_lon);
+                break;
+
+            case PROJ_ALBERS:
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Center: (%.2f, %.2f)\n", proj->param.albers.orig_latitude,
+                    proj->param.albers.center_meridian);
+                add_to_summary_text(&summary_text, &current_len, increment,
+                    "Standard Parallels: (%.2f, %.2f)\n",
+                    proj->param.albers.std_parallel1,
+                    proj->param.albers.std_parallel2);
+                break;
+
+            default:
+                assert(FALSE);
+                break;
+        }
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Height: %f\n", proj->height);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Pixel Size: %f\n", proj->perX);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Datum: %s\n", datum_string(proj->datum));
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Resampling Method: %s\n", resample_method_string(params->resample_method));
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Force: %s\n", yesify(params->force));
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "DEM: %s\n", cfg->geocode->dem);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Error Map: %s\n", cfg->geocode->error);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Amplitude: %s\n", cfg->geocode->amp);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Coherence: %s\n", cfg->geocode->coh);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Projection Name: %s\n", cfg->geocode->name);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Projection File: %s\n", cfg->geocode->proj);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Resampling Method: %s\n", cfg->geocode->resample);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Pixel Spacing: %f\n", cfg->geocode->pixel_spacing);
+        add_to_summary_text(&summary_text, &current_len, increment,
+            "Status: %s\n\n", cfg->geocode->status);
+    }
+    else
+    {
+        // no geocoding
+        add_to_summary_text(&summary_text, &current_len, increment, "Off\n\n");
+    }
 
     // "Export" tab
     add_to_summary_text_section(&summary_text, &current_len,
@@ -863,7 +1095,24 @@ void update_summary()
     GtkTextBuffer *tb =
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(summary_textview));
 
+    // save the current scroll position
+    GtkTextIter iter;
+    gtk_text_buffer_get_start_iter(tb, &iter);
+    gtk_text_buffer_create_mark(tb, "tmp", &iter, TRUE);
+    GtkTextMark *mark = gtk_text_buffer_get_mark(tb, "tmp");
+    gtk_text_view_move_mark_onscreen(GTK_TEXT_VIEW(summary_textview), mark);
+    gtk_text_buffer_get_iter_at_mark(tb, &iter, mark);
+    int offset = gtk_text_iter_get_offset(&iter);
+    //printf("Offset: %d\n", offset);
+
     gtk_text_buffer_set_text(tb, summary_text, -1);
+    
+    // scroll to saved position
+    gtk_text_buffer_get_iter_at_offset(tb, &iter, offset);
+    gtk_text_buffer_create_mark(tb, "tmp", &iter, TRUE);
+    mark = gtk_text_buffer_get_mark(tb, "tmp");
+    gtk_text_view_scroll_to_mark(GTK_TEXT_VIEW(summary_textview), mark, 0, 1, 0, 0);
+    gtk_text_buffer_delete_mark(tb, mark);
 
     static GtkTextTag *bold_tag = NULL;
     if (!bold_tag) {
@@ -893,12 +1142,18 @@ void update_summary()
         else if (marks[i].type == MarkerTypeBadData)
             gtk_text_buffer_apply_tag(tb, bad_tag, &begin_iter, &end_iter);
     }
+
+    free_ait_params(params);
 }
 
-void apply_settings_to_gui(dem_config *cfg, const char *cfg_name)
+void apply_settings_to_gui(ait_params_t *params)
 {
+    dem_config *cfg = params->cfg;
+    assert(cfg != NULL);
+    meta_projection *proj = params->proj;
+
     set_combo_box_item("mode_optionmenu", cfg->general->mode);
-    put_str(cfg_name, "configuration_file_entry");
+    put_str(params->name, "configuration_file_entry");
     put_str(cfg->general->dem, "reference_dem_entry");
     put_chk(cfg->general->deskew, "deskew_checkbutton");
     set_combo_box_item("data_type_optionmenu", cfg->general->data_type);
@@ -945,7 +1200,210 @@ void apply_settings_to_gui(dem_config *cfg, const char *cfg_name)
     put_int(cfg->unwrap->tiles_per_degree, "phase_unwrapping_tiles_per_degree_entry");
     put_int(cfg->refine->iter, "baseline_refinement_iterations_entry");
     put_int(cfg->refine->max, "baseline_refinement_max_iterations_entry");
+
+    put_chk(params->proj != NULL, "geocode_checkbutton");
+
+    if (params->proj != NULL)
+    {
+        switch (proj->type) {
+            case PROJ_UTM:
+                put_int(proj->param.utm.zone, "zone_entry");
+                break;
+
+            case PROJ_PS:
+                put_dbl(proj->param.ps.slat, "latitude_of_origin_entry");
+                put_dbl(proj->param.ps.slon, "center_meridian_entry");
+                break;
+
+            case PROJ_LAMCC:
+                put_dbl(proj->param.lamcc.lat0, "latitude_of_origin_entry");
+                put_dbl(proj->param.lamcc.lon0, "center_meridian_entry");
+                put_dbl(proj->param.lamcc.plat1, "first_standard_parallel_entry");
+                put_dbl(proj->param.lamcc.plat2, "second_standard_parallel_entry");
+                break;
+
+            case PROJ_LAMAZ:
+                put_dbl(proj->param.lamaz.center_lat, "latitude_of_origin_entry");
+                put_dbl(proj->param.lamaz.center_lon, "center_meridian_entry");
+                break;
+
+            case PROJ_ALBERS:
+                put_dbl(proj->param.albers.orig_latitude, "latitude_of_origin_entry");
+                put_dbl(proj->param.albers.center_meridian, "center_meridian_entry");
+                put_dbl(proj->param.albers.std_parallel1, "first_standard_parallel_entry");
+                put_dbl(proj->param.albers.std_parallel2, "second_standard_parallel_entry");
+                break;
+
+            default:
+                assert(FALSE);
+                break;
+        }
+
+        if (proj->height != 0.0 && !ISNAN(proj->height)) {
+            put_chk(TRUE, "height_checkbutton");
+            put_dbl(proj->height, "height_entry");
+        } else {
+            put_chk(FALSE, "height_checkbutton");
+            put_str("", "height_entry");
+        }
+
+        if (proj->perX != 0.0 && !ISNAN(proj->perX)) {
+            put_chk(TRUE, "pixel_size_checkbutton");
+            put_dbl(proj->height, "pixel_size_entry");
+        } else {
+            put_chk(FALSE, "pixel_size_checkbutton");
+            put_str("", "pixel_size_entry");
+        }
+
+        switch (proj->datum) {
+            case WGS84_DATUM:
+                set_combo_box_item("datum_optionmenu", "WGS84");
+                break;
+
+            case NAD27_DATUM:
+                set_combo_box_item("datum_optionmenu", "NAD27");
+                break;
+
+            case NAD83_DATUM:
+                set_combo_box_item("datum_optionmenu", "NAD83");
+                break;
+
+            default:
+                assert(FALSE);
+                break;
+        }
+
+        switch (params->resample_method) {
+            case RESAMPLE_NEAREST_NEIGHBOR: 
+                set_combo_box_item("resample_method_optionmenu", "Nearest Neighbor");
+                break;
+
+            case RESAMPLE_BILINEAR: 
+                set_combo_box_item("resample_method_optionmenu", "Bilinear");
+                break;
+
+            case RESAMPLE_BICUBIC: 
+                set_combo_box_item("resample_method_optionmenu", "Bicubic");
+                break;
+
+            default:
+                assert(FALSE);                                   
+                break;
+        }
+
+        put_chk(params->force, "force_checkbutton");
+    }
+
     update_summary();
+}
+
+void write_settings(ait_params_t *params)
+{
+    // convenience aliases
+    dem_config *cfg = params->cfg;
+    assert(cfg != NULL);
+
+    meta_projection *proj = params->proj;
+    int geocode_on = params->proj != NULL;
+
+    // write the projection file
+    if (geocode_on)
+    {
+        char *proj_name = appendExt(params->name, ".proj");
+        strcpy(cfg->geocode->proj, proj_name);
+
+        FILE *pf = fopen(proj_name, "w");
+        if (!pf) {
+            message_box("Error opening projection file: %s\n", proj_name);
+            return;
+        }
+
+        switch (proj->type)
+        {
+        case PROJ_UTM:
+            {
+                proj_utm *s = &proj->param.utm;
+                fprintf(pf, "[Universal Transverse Mercator]\n");
+                fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
+            }
+            break;
+
+        case PROJ_PS:
+            {
+                proj_ps *s = &proj->param.ps;
+                fprintf(pf, "[Polar Stereographic]\n");
+                fprintf(pf, "First Standard Parallel=%.10f\n", s->slat);
+                fprintf(pf, "Central Meridian=%.10f\n", s->slon);
+                fprintf(pf, "Northern Projection=%d\n", s->is_north_pole ? 1 : 0);
+            }
+            break;
+
+        case PROJ_ALBERS:
+            {
+                proj_albers *s = &proj->param.albers;
+                fprintf(pf, "[Albers Conical Equal Area]\n");
+                fprintf(pf, "First standard parallel=%.10f\n", s->std_parallel1);
+                fprintf(pf, "Second standard parallel=%.10f\n", s->std_parallel2);
+                fprintf(pf, "Central Meridian=%.10f\n", s->center_meridian);
+                fprintf(pf, "Latitude of Origin=%.10f\n", s->orig_latitude);
+            }
+            break;
+
+        case PROJ_LAMAZ:
+            {
+                proj_lamaz *s = &proj->param.lamaz;
+                fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
+                fprintf(pf, "Central Meridian=%.10f\n", s->center_lon);
+                fprintf(pf, "Latitude of Origin=%.10f\n", s->center_lat);
+            }
+            break;
+
+        case PROJ_LAMCC:
+            {
+                proj_lamcc *s = &proj->param.lamcc;
+                fprintf(pf, "[Lambert Conformal Conic]\n");
+                fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
+                fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
+                fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+                fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+            }
+            break;
+
+        default:
+            assert(FALSE);
+            break;
+        }
+
+        fclose(pf);
+        free(proj_name);
+    }
+
+    // write the IPS configuration file
+    write_config(params->name, params->cfg);
+}
+
+ait_params_t *read_settings(char *config_file)
+{
+    dem_config *cfg = read_config(config_file, FALSE);
+    if (!cfg) return NULL; // failed to read the file
+
+    ait_params_t *params = MALLOC(sizeof(ait_params_t));
+
+    params->cfg = cfg;
+    params->name = MALLOC(sizeof(char)*(strlen(config_file)+2));
+    strcpy(params->name, config_file);
+
+    if (strlen(cfg->geocode->proj) > 0)
+    {
+        params->proj = read_proj_file(cfg->geocode->proj, params);
+    }
+    else
+    {
+        // no geocoding
+        params->proj = NULL;
+    }
+
+    return params;
 }
 
 /* And new a whole slew of signal handlers... */

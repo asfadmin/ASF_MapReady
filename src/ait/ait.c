@@ -127,13 +127,48 @@ find_in_share(const char * filename)
 void
 add_file(char *config_file)
 {
-    dem_config *cfg = read_config(config_file, FALSE);
-    if (cfg) {
-        apply_settings_to_gui(cfg, config_file);
+    ait_params_t *params = read_settings(config_file);
+    if (params) {
+        apply_settings_to_gui(params);
         message_box("Read config file: %s", config_file);
     } else {
         message_box("Error reading config file: %s\n", config_file);
     }
+}
+
+static char *meta_file_name(const char *data_file_name)
+{
+    int len = strlen(data_file_name) + 3;
+    char *p = findExt(data_file_name);
+    if (!p)
+    {
+        // no extension -- assume a ceos .D file?
+        char *ret = MALLOC(sizeof(char)*len);
+        strcpy(ret, data_file_name);
+        strcat(ret, ".L");
+        return ret;
+    }
+
+    // move past the "."
+    ++p; 
+
+    if (strcmp(p, "D") == 0)
+    {
+        char *ret = STRDUP(data_file_name);
+        ret[strlen(data_file_name) - 1] = 'L';
+        return ret;
+    }
+
+    if (strcmp(p, "img") == 0)
+    {
+        char * ret = MALLOC(sizeof(char) * len);
+        strcpy(ret, data_file_name);
+        *p = '\0';
+        strcat(ret, "meta");    
+        return ret;
+    }
+
+    return STRDUP("");
 }
 
 SIGNAL_CALLBACK void
@@ -150,20 +185,89 @@ on_execute_button_clicked(GtkWidget *w)
 SIGNAL_CALLBACK void
 on_save_button_clicked(GtkWidget *w)
 {
-    char cfg_name[512];
-    dem_config *cfg = get_settings_from_gui(cfg_name);
-    if (strlen(cfg_name) > 0) {
-        write_config(cfg_name, cfg);
-        message_box("Wrote configuration file: %s\n", cfg_name);
+    ait_params_t *params = get_settings_from_gui();
+    if (strlen(params->name) > 0) {
+        write_settings(params);
+        message_box("Wrote configuration file: %s\n", params->name);
     }
     else
         message_box("Please enter a name for the configuration file.");
-    free(cfg);
+    free_ait_params(params);
 }
 
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget *w)
 {
+}
+
+// Configuration File "Browse"
+void config_callback(char *config_file)
+{
+    GtkWidget *w = get_widget_checked("configuration_file_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), config_file);
+    add_file(config_file);
+}
+
+SIGNAL_CALLBACK void
+on_configuration_file_browse_button_clicked(GtkWidget *w)
+{
+    browse(config_callback);
+}
+
+// Master Image "Browse"
+void master_callback(char *master_file)
+{
+    char *path = MALLOC(sizeof(char)*(strlen(master_file)+2));
+    char *data_file = MALLOC(sizeof(char)*(strlen(master_file)+2));
+    split_dir_and_file(master_file, path, data_file);
+    char *meta_file = meta_file_name(data_file);
+
+    GtkWidget *w = get_widget_checked("master_image_path_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), path);
+
+    w = get_widget_checked("master_image_data_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), data_file);
+
+    w = get_widget_checked("master_image_metadata_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), meta_file);
+
+    free(meta_file);
+    free(data_file);
+    free(path);
+}
+
+SIGNAL_CALLBACK void
+on_master_image_browse_button_clicked(GtkWidget *w)
+{
+    browse(master_callback);
+}
+
+// Slave Image "Browse"
+void slave_callback(char *slave_file)
+{
+    char *path = MALLOC(sizeof(char)*(strlen(slave_file)+2));
+    char *data_file = MALLOC(sizeof(char)*(strlen(slave_file)+2));
+    split_dir_and_file(slave_file, path, data_file);
+    char *meta_file = meta_file_name(data_file);
+
+    GtkWidget *w = get_widget_checked("slave_image_path_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), path);
+
+    w = get_widget_checked("slave_image_data_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), data_file);
+
+    w = get_widget_checked("slave_image_metadata_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), meta_file);
+
+    free(meta_file);
+    free(data_file);
+    free(path);
+}
+
+SIGNAL_CALLBACK void
+on_slave_image_browse_button_clicked(GtkWidget *w)
+{
+    browse(slave_callback);
 }
 
 void
@@ -199,6 +303,17 @@ message_box(const char *format, ...)
     gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
 
     gtk_widget_show_all(dialog);
+}
+
+GtkWidget *get_widget_checked(const char *widget_name)
+{
+    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    if (!w)
+    {
+        asfPrintError("get_widget_checked() failed: "
+            "The widget %s was not found.\n", widget_name);
+    }
+    return w;
 }
 
 int
