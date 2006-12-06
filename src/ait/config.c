@@ -240,30 +240,30 @@ text_to_index(const char *widget_name, const char *selected_text)
         // DEM, DINSAR
         if (strcmp(uc(selected_text), "DEM") == 0) return 0;
         if (strcmp(uc(selected_text), "DINSAR") == 0) return 1;
-        assert(FALSE);
+        return 0; //default
     } else if (strcmp(widget_name, "data_type_optionmenu") == 0) {
         // STF, RAW, SLC
         if (strcmp(uc(selected_text), "STF") == 0) return 0;
         if (strcmp(uc(selected_text), "RAW") == 0) return 1;
         if (strcmp(uc(selected_text), "SLC") == 0) return 2;
-        assert(FALSE);
+        return 2; //default
     } else if (strcmp(widget_name, "phase_unwrapping_optionmenu") == 0) {
         // Escher, Snaphu
         if (strcmp(uc(selected_text), "ESCHER") == 0) return 0;
         if (strcmp(uc(selected_text), "SNAPHU") == 0) return 1;
-        assert(FALSE);
+        return 0; //defualt
     } else if (strcmp(widget_name, "datum_optionmenu") == 0) {
         // WGS84, NAD27, NAD83
         if (strcmp(uc(selected_text), "WGS84") == 0) return 0;
         if (strcmp(uc(selected_text), "NAD27") == 0) return 1;
         if (strcmp(uc(selected_text), "NAD83") == 0) return 2;
-        assert(FALSE);
-    } else if (strcmp(widget_name, "resample_method_optionmenu") == 0) {
+        return 0; //defualt
+    } else if (strcmp(widget_name, "resample_optionmenu") == 0) {
         // WGS84, NAD27, NAD83
         if (strcmp(uc(selected_text), "NEAREST NEIGHBOR") == 0) return 0;
         if (strcmp(uc(selected_text), "BILINEAR") == 0) return 1;
         if (strcmp(uc(selected_text), "BICUBIC") == 0) return 2;
-        assert(FALSE);
+        return 1; //defualt
     }
     assert(FALSE);
     return -1;
@@ -553,6 +553,7 @@ static void put_dbl_blank(double val, char *widget, double blank_val)
 
 static void put_chk(int val, char *widget)
 {
+    printf("val: %d, widget: %s\n", val, widget);
     assert(val==1 || val==0);
     put_bool_to_checkbutton(val, widget);
 }
@@ -1200,7 +1201,6 @@ void apply_settings_to_gui(ait_params_t *params)
     put_int(cfg->unwrap->tiles_per_degree, "phase_unwrapping_tiles_per_degree_entry");
     put_int(cfg->refine->iter, "baseline_refinement_iterations_entry");
     put_int(cfg->refine->max, "baseline_refinement_max_iterations_entry");
-
     put_chk(params->proj != NULL, "geocode_checkbutton");
 
     if (params->proj != NULL)
@@ -1256,6 +1256,7 @@ void apply_settings_to_gui(ait_params_t *params)
         }
 
         switch (proj->datum) {
+            default:
             case WGS84_DATUM:
                 set_combo_box_item("datum_optionmenu", "WGS84");
                 break;
@@ -1267,34 +1268,25 @@ void apply_settings_to_gui(ait_params_t *params)
             case NAD83_DATUM:
                 set_combo_box_item("datum_optionmenu", "NAD83");
                 break;
-
-            default:
-                assert(FALSE);
-                break;
         }
 
         switch (params->resample_method) {
             case RESAMPLE_NEAREST_NEIGHBOR: 
-                set_combo_box_item("resample_method_optionmenu", "Nearest Neighbor");
-                break;
-
-            case RESAMPLE_BILINEAR: 
-                set_combo_box_item("resample_method_optionmenu", "Bilinear");
-                break;
-
-            case RESAMPLE_BICUBIC: 
-                set_combo_box_item("resample_method_optionmenu", "Bicubic");
+                set_combo_box_item("resample_optionmenu", "Nearest Neighbor");
                 break;
 
             default:
-                assert(FALSE);                                   
+            case RESAMPLE_BILINEAR: 
+                set_combo_box_item("resample_optionmenu", "Bilinear");
+                break;
+
+            case RESAMPLE_BICUBIC: 
+                set_combo_box_item("resample_optionmenu", "Bicubic");
                 break;
         }
 
         put_chk(params->force, "force_checkbutton");
     }
-
-    update_summary();
 }
 
 void write_settings(ait_params_t *params)
@@ -1382,17 +1374,27 @@ void write_settings(ait_params_t *params)
     write_config(params->name, params->cfg);
 }
 
-ait_params_t *read_settings(char *config_file)
+static ait_params_t *ait_params_new(dem_config *cfg, char *config_file)
 {
-    dem_config *cfg = read_config(config_file, FALSE);
-    if (!cfg) return NULL; // failed to read the file
-
     ait_params_t *params = MALLOC(sizeof(ait_params_t));
+
+    params->proj = NULL;
+    params->resample_method = RESAMPLE_BILINEAR;
+    params->force = FALSE;
 
     params->cfg = cfg;
     params->name = MALLOC(sizeof(char)*(strlen(config_file)+2));
     strcpy(params->name, config_file);
 
+    return params;
+}
+
+ait_params_t *read_settings(char *config_file)
+{
+    dem_config *cfg = read_config(config_file, FALSE);
+    if (!cfg) return NULL; // failed to read the file
+
+    ait_params_t *params = ait_params_new(cfg, config_file);
     if (strlen(cfg->geocode->proj) > 0)
     {
         params->proj = read_proj_file(cfg->geocode->proj, params);

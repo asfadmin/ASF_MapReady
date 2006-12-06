@@ -206,6 +206,7 @@ void config_callback(char *config_file)
     GtkWidget *w = get_widget_checked("configuration_file_entry");
     gtk_entry_set_text(GTK_ENTRY(w), config_file);
     add_file(config_file);
+    update_summary();
 }
 
 SIGNAL_CALLBACK void
@@ -234,6 +235,8 @@ void master_callback(char *master_file)
     free(meta_file);
     free(data_file);
     free(path);
+
+    update_summary();
 }
 
 SIGNAL_CALLBACK void
@@ -262,12 +265,28 @@ void slave_callback(char *slave_file)
     free(meta_file);
     free(data_file);
     free(path);
+
+    update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_slave_image_browse_button_clicked(GtkWidget *w)
 {
     browse(slave_callback);
+}
+
+// Reference DEM "Browse"
+void dem_callback(char *dem_file)
+{
+    GtkWidget *w = get_widget_checked("reference_dem_entry");
+    gtk_entry_set_text(GTK_ENTRY(w), dem_file);
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_reference_dem_browse_button_clicked(GtkWidget *w)
+{
+    browse(dem_callback);
 }
 
 void
@@ -327,8 +346,10 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-    if (argc > 1)
+    if (argc > 1) {
         add_file(argv[1]);
+        update_summary();
+    }
 
     // add version number to window title
     char title[256];
