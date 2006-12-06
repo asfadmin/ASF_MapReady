@@ -553,7 +553,6 @@ static void put_dbl_blank(double val, char *widget, double blank_val)
 
 static void put_chk(int val, char *widget)
 {
-    printf("val: %d, widget: %s\n", val, widget);
     assert(val==1 || val==0);
     put_bool_to_checkbutton(val, widget);
 }

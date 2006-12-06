@@ -605,7 +605,7 @@ meta_projection *read_proj_file(char *filename, ait_params_t *ait_params)
     }
 
     // organize...
-    if (ait_params)
+    if (ait_params && proj)
     {
         proj->perX = ait_params->cfg->geocode->pixel_spacing;
         proj->perY = ait_params->cfg->geocode->pixel_spacing;

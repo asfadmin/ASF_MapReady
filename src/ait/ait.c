@@ -349,6 +349,7 @@ main(int argc, char **argv)
     if (argc > 1) {
         add_file(argv[1]);
         update_summary();
+        geocode_options_changed();
     }
 
     // add version number to window title
