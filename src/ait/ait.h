@@ -45,6 +45,7 @@
 extern GladeXML *glade_xml;
 extern const char PATH_SEPARATOR;
 extern const char DIR_SEPARATOR;
+extern GtkListStore *images_list;
 
 // A couple enums
 enum OutputFormat
@@ -117,5 +118,9 @@ const char * resample_method_string(resample_method_t resample_method);
 
 // browse.c
 void browse(browse_callback bcb);
+
+// imagery.c
+void setup_images_treeview();
+int add_to_image_list(const char * data_file);
 
 #endif

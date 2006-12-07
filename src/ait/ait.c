@@ -106,6 +106,9 @@ void set_font () {}
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
+// list of imagery the user may look at
+GtkListStore *images_list;
+
 // We aren't using the asf.h ones because of conflicts in Windows.h
 #if defined(win32)
 const char PATH_SEPARATOR = ';';
@@ -361,6 +364,11 @@ main(int argc, char **argv)
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
     //set_font();
+    setup_images_treeview();
+    add_to_image_list("File1.img");
+    add_to_image_list("File2.img");
+    add_to_image_list("File3.img");
+    add_to_image_list("test.config");
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();

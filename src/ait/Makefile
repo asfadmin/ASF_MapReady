@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = ait
-SRCS = ait.c config.c geocode.c projfile.c browse.c
+SRCS = ait.c config.c geocode.c projfile.c browse.c imagery.c
 
 LIBS = 	\
 	$(LIBDIR)/libasf_ips.a \
