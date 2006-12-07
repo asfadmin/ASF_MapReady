@@ -11,7 +11,6 @@ DESCRIPTION:
 
 #include "asf_meta.h"
 #include "float_image.h"
-#include "banded_float_image.h"
 
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define ASF_EXPORT_FLOAT_MICRON 0.000000001
@@ -80,8 +79,8 @@ float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLi
 		  float xSample, weighting_type_t weighting, int sinc_points);
 
 /* Prototypes from trim.c ****************************************************/
-void trim(char *infile, char *outfile, long long startX, long long startY,
-          long long sizeX, long long sizeY);
+int trim(char *infile, char *outfile, long long startX, long long startY,
+	 long long sizeX, long long sizeY);
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
 
 /* Prototypes from fftMatch.c ************************************************/

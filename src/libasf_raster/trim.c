@@ -6,8 +6,8 @@
 #define MINI(a,b) (((a)<(b))?(a):(b))
 #define MAXI(a,b) (((a)>(b))?(a):(b))
 
-void trim(char *infile, char *outfile, long long startX, long long startY,
-	  long long sizeX, long long sizeY)
+int trim(char *infile, char *outfile, long long startX, long long startY,
+	 long long sizeX, long long sizeY)
 {
   meta_parameters *metaIn, *metaOut;
   long long pixelSize, offset;
@@ -108,6 +108,8 @@ void trim(char *infile, char *outfile, long long startX, long long startY,
 
   meta_free(metaIn);
   meta_free(metaOut);
+
+  return 0;
 }
 
 void trim_zeros(char *infile, char *outfile, int * startX, int * endX)
