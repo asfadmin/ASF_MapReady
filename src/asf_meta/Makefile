@@ -111,7 +111,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	proj2meta.o \
 	propagate.o \
 	readSubset.o \
-	read_baseline.o \
 	set_era.o \
 	slantRange2groundPixel.o \
 	unpacked_deg.o \

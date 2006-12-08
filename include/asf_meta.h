@@ -26,7 +26,7 @@
 #include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
-#include "asf_complex.h"
+#include "asf_insar.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -35,18 +35,6 @@
 
 // Maximum number of bands that are supported by the ingest.
 #define MAX_BANDS 4
-
-/******************Baseline Utilities******************/
-typedef struct {
-	double Bn;	 /* Normal Baseline: perpendicular to look direction.*/
-	double dBn;	 /* Change in normal baseline per scene.*/
-	double Bp;	 /* Parallel Baseline: parallel to look direction.*/
-	double dBp;	 /* Change in parallel baseline per scene.*/
-	double temporal; /* Temporal baseline, in fractional days.*/
-} baseline;
-
-/* Reads baseline from given baseline file, or exits.*/
-baseline read_baseline(char *fName);
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.

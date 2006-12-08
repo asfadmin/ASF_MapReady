@@ -16,7 +16,7 @@
 #define __IFM_H
 
 #include "asf.h"          /* for FILE * variable type */
-#include "asf_complex.h"  /* for Complex Type declarations */
+#include "asf_insar.h"    /* for Complex Type declarations */
 
 typedef struct {
     unsigned char red;
