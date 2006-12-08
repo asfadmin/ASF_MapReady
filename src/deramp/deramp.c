@@ -100,12 +100,6 @@ int main(int argc, char *argv[])
 	float *data;
 	double *sflat,*cflat;
 	double derampDirection=1.0;/*1.0=forward deramping.  -1.0=backward deramping.*/
-	struct DDR ddr;
-	
-	StartWatch();
-	system("date");
-	printf("Program: deramp\n\n");
-
 	logflag=0;
 
 /* process command line args */
@@ -129,6 +123,8 @@ int main(int argc, char *argv[])
 	create_name(szInAmp, argv[currArg], "_amp.img");
 	create_name(szInPhase, argv[currArg], "_phase.img");
 	baseFile = argv[currArg+1];
+
+	asfSplashScreen(argc, argv);
 	
 	/* Get input scene size and windowing info, check validity */
 	meta = meta_read(szInPhase);

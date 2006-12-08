@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 	double *phase2elevBase,*sinFlat,*cosFlat;
 	baseline base;
 	meta_parameters *meta;
-	char *datafile, *basefile, *metafile, *outfile,*seedfile;
+	char *datafile, *basefile, *outfile,*seedfile;
 	FILE *fdata, *fout,*fseed;
 	float *f_uwp,*f_elev;
 	int nrows,ncols/*,arows,acols*/;
@@ -148,12 +148,7 @@ int main(int argc, char **argv)
 	outfile  = argv[currArg++];
 	seedfile = argv[currArg];
 
-	printf("%s\n",date_time_stamp());
-	printf("Program: elev\n\n");
-	if (logflag) {
-		StartWatchLog(fLog);
-		printLog("Program: elev\n\n");
-	}
+	asfSplashScreen(argc, argv);
 
 /* Get input scene size and windowing info. Get datafile values*/
 	meta = meta_read(datafile);

@@ -126,13 +126,7 @@ int main(int argc, char **argv)
 	strcpy(basefile, argv[currArg+1]);
 	strcpy(outfile, argv[currArg+2]);
 
-/* Start the program body! */
-        printf("%s\n",date_time_stamp());
-	printf("Program: eleverr\n\n");
-	if (logflag) {
-	  StartWatchLog(fLog);
-	  printLog("Program: eleverr\n\n");
-	}
+	asfSplashScreen(argc, argv);
 
 /* Get appropriate metadata */
 	meta = meta_read(datafile);

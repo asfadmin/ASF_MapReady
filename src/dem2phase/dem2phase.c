@@ -66,6 +66,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "asf_insar.h"
 
 #define VERSION 2.25
 
@@ -85,13 +86,8 @@ int main(int argc, char **argv)
 	char *datafile, *basefile, *outfile;
 	FILE *fdata, *fout;
 	float *f_uwp,*f_elev;
-	char *ceos;
 	int nrows,ncols;
-	/*double delta_phase,delta_height;*/
-	struct DDR ddr,newddr;
 
-	/* handle command line parameters
-	StartWatch();*/
 	/* parse command line */
 	currArg=1; /*from cla.h in asf.h*/
 	while (currArg < (argc-3)) {
@@ -110,8 +106,7 @@ int main(int argc, char **argv)
 	basefile = argv[currArg+1];
 	outfile  = argv[currArg+2];
 
-	system("date");
-	printf("Program: dem2phase\n\n");
+	asfSplashScreen(argc, argv);
 
 	meta = meta_read(datafile);
 	ss = meta->general->start_sample;
