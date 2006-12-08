@@ -74,4 +74,6 @@ int complex2polar(char *cpxfile, char *ampfile, char *phsfile)
   meta_free(inMeta);
   meta_free(ampMeta);
   meta_free(phsMeta);
+
+  return 0;
 }

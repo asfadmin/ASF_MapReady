@@ -84,4 +84,6 @@ int polar2complex(char *ampName, char *phsName, char *cpxName)
   FREE(phsBuf);
   meta_free(inMeta);
   meta_free(outMeta);
+
+  return 0;
 }

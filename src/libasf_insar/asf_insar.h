@@ -48,5 +48,6 @@ int polar2complex(char *ampName, char *phsName, char *cpxName);
 // Prototypes from baseline.c
 baseline find_baseline(char *file1,char *file2);
 baseline read_baseline(char *fName);
+void write_baseline(char *fnm, baseline b);
 
 #endif
