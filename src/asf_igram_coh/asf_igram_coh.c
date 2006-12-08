@@ -45,7 +45,11 @@ DESCRIPTION:
 *									      *
 ******************************************************************************/
 
-#include "asf_igram_coh.h"
+#define VERSION 1.0
+
+#include "asf.h"
+#include "asf_meta.h"
+#include "asf_insar.h"
 
 void usage(char *name)
 {

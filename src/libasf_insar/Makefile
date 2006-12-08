@@ -2,19 +2,23 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS)
+CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
 	complex2polar.o \
 	polar2complex.o \
-	baseline.o
+	baseline.o \
+	asf_igram_coh.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LDFLAGS) \
+	$(PROJ_LIBS) \
+	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
-	-lm
+	-lm -lz
 
 all: build_only
 	cp libasf_insar.a $(LIBDIR)

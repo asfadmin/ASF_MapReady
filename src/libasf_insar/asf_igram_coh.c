@@ -1,6 +1,10 @@
-#include "asf_igram_coh.h"
+#include "asf.h"
+#include "asf_meta.h"
+#include "asf_insar.h"
+#include "asf_raster.h"
 
-#define   MIN(a,b)      (((a) < (b)) ? (a) : (b))                    /* minimum */
+#define AMP(cpx) sqrt((cpx).real*(cpx).real + (cpx).imag*(cpx).imag)
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 		  char *masterFile, char *slaveFile, char *outBase)
@@ -93,7 +97,6 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   for (line=0; line<line_count; line+=stepLine)
   {
     register int offset, row, column, limitLine;
-    register float denXYS1, denXYS2;
     double igram_real, igram_imag;
     int inCol;
     limitLine=MIN(lookLine, line_count-line);
