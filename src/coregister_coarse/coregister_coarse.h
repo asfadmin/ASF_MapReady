@@ -17,8 +17,7 @@
 /**************/
 #include "asf.h"
 #include "asf_meta.h"
-
-baseline find_baseline(char *in1,char *in2);
+#include "asf_insar.h"
 
 #endif
 

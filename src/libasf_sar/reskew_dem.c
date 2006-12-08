@@ -133,7 +133,7 @@ static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
     int x,grX;
     double lastSrX=-1;/*Slant range pixels up to (and including) here 
                         have been filled.*/
-    int OsriX;
+    int OsriX=0;
     int iX;
     float lastOutValue=badDEMht;
     int *outmask;

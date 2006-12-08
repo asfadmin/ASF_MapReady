@@ -11,16 +11,6 @@ OBJS = \
 	asf_igram_coh.o \
 	asf_elevation.o
 
-LIBS = \
-	$(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_proj.a \
-	$(LDFLAGS) \
-	$(PROJ_LIBS) \
-	$(GLIB_LIBS) \
-	$(GSL_LIBS) \
-	-lm -lz
-
 all: build_only
 	cp libasf_insar.a $(LIBDIR)
 	cp asf_insar.h $(ASF_INCLUDE_DIR)

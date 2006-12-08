@@ -13,7 +13,7 @@
 #include "error.h"
 #include "log.h"
 #include "cla.h"
-#include "asf_insar.h" /* For get_complexFloat_line(s) and
+#include "asf_complex.h" /* For get_complexFloat_line(s) and
                           * put_complexFloat_line(s) */
 
 #include "asf_version.h"

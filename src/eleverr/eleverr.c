@@ -63,6 +63,7 @@ BUGS:
 ******************************************************************************/
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_insar.h"
 
 #define NUM_ARGS        3
 #define DEFAULT_ERROR   0.0

@@ -16,6 +16,7 @@ MODULES = \
 	src/asf \
 	src/libasf_proj \
 	src/libasf_ardop \
+	src/libasf_insar \
 	src/asf_meta \
 	src/asf_lt \
 	src/asf_geolib \

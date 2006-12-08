@@ -1283,6 +1283,7 @@ settings_delete(Settings * s)
 static int has_tiff_ext(const char *f)
 {
     char *ext = findExt(f);
+    if (!ext) return FALSE;
 
     return
         strcmp(ext, ".tif") == 0 ||

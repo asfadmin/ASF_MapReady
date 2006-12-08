@@ -80,6 +80,7 @@ BUGS:
 
 
 #include "asf.h"
+#include "asf_insar.h"
 
 #define VERSION 1.5
 

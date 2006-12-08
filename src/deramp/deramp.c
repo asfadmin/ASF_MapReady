@@ -78,6 +78,7 @@ BUGS:
 #include "asf_meta.h"
 #include "ddr.h"
 #include "asf_endian.h"
+#include "asf_insar.h"
 
 /* local constants */
 #define VERSION 2.5

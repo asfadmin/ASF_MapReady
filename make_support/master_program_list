@@ -70,9 +70,7 @@ LIBS
 	libasf_meta
 	asf_odl
 	libasf_sar
-	libasf_elevation
 	libasf_raster
-	libasf_igram_coh
 	libasf_vector
 	libifm
 	libasf_import

@@ -1,6 +1,8 @@
 #include "asf.h"
 #include "geolocate.h"
 #include "dateUtil.h"
+#include "asf_insar.h"
+#include <assert.h>
 
 /* function declarations */
 double get_days(meta_state_vectors *s1,meta_state_vectors *s2);
@@ -208,4 +210,46 @@ void write_baseline(char *fnm, baseline b)
   fprintf(fp,"%f  %f  %f  %f %f\n",b.Bn,b.dBn,b.Bp,b.dBp,b.temporal);
   FCLOSE(fp);
   return;
+}
+
+void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double *Bn_y,double *Bp_y)
+{
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+
+	double frac=meta_scene_frac(meta,y);
+	*Bn_y = base.Bn + base.dBn*frac;
+	*Bp_y = base.Bp + base.dBp*frac;
+}
+
+double meta_flat_phase(meta_parameters *meta,const baseline base,int y,int x)
+{
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  assert (meta->projection == NULL
+	   || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+
+	double flat=meta_flat(meta,y,x);
+	double Bn_y,Bp_y;
+	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
+	return 2.0*meta_get_k(meta)*(Bp_y*cos(flat)-Bn_y*sin(flat));
+}
+
+double meta_phase_rate(meta_parameters *meta,const baseline base,int y,int x)
+{
+  // No effort has been made to make this routine work with
+  // pseudoprojected images.
+  assert (meta->projection == NULL
+	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+
+	double sr=meta_get_slant(meta,y,x);
+	double flat=meta_flat(meta,y,x);
+	double incid=meta_incid(meta,y,x);
+	double Bn_y,Bp_y;
+	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
+/*Note: this is the slant range times sin of the incidence angle, 
+	divided by the derivative of meta_flat_phase.*/
+	return (sr*sin(incid))/(2.0*meta_get_k(meta)*(-Bp_y*sin(flat)-Bn_y*cos(flat)));
 }

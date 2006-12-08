@@ -3,7 +3,9 @@
 
 include ../../make_support/system_rules
 
-LIBS = 	$(LIBDIR)/libifm.a \
+LIBS = \
+	$(LIBDIR)/libasf_insar.a \
+	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \

@@ -26,7 +26,7 @@
 #include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
-#include "asf_insar.h"
+#include "asf_complex.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -665,19 +665,9 @@ double meta_get_k(meta_parameters *sar);
 /*Return the fraction of the scene that is after line y*/
 double meta_scene_frac(meta_parameters *sar,int y);
 
-/*Interpolate the given baseline for the (original image) line y.*/
-void meta_interp_baseline(meta_parameters *sar,const baseline base,
-	int y,double *Bn_y,double *Bp_y);
-
 /*Return the "flat earth" look deviation--
 	this is the x look angle minus the center look angle.*/
 double meta_flat(meta_parameters *sar,double y,double x);
-
-/*Return the expected phase of the given point for a bald earth-- elevation 0.*/
-double meta_flat_phase(meta_parameters *sar,const baseline base,int y,int x);
-
-/*Return the "phase rate"-- the number of meters of elevation per radian of phase.*/
-double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 
 /* Convert meta->general->data_type field from complex to polar and visa versa.
  * If data is already in the correct format, leave it.*/

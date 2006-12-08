@@ -25,9 +25,7 @@
 /*-----------------------------------------------------*/
 /* define complex variable type if not already defined */
 /*-----------------------------------------------------*/
-#include "asf_insar.h"
-
-
+#include "asf_complex.h"
 #include "read_signal.h"
 #include "geolocate.h"
 #include "asf_meta.h"

@@ -154,17 +154,6 @@ double meta_scene_frac(meta_parameters *meta,int y)
 	return (double)(y - meta->sar->original_line_count/2)
 			/ (double)meta->sar->original_line_count;
 }
-void meta_interp_baseline(meta_parameters *meta,const baseline base,int y,double *Bn_y,double *Bp_y)
-{
-  // No effort has been made to make this routine work with
-  // pseudoprojected images.
-  assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
-	double frac=meta_scene_frac(meta,y);
-	*Bn_y = base.Bn + base.dBn*frac;
-	*Bp_y = base.Bp + base.dBp*frac;
-}
 double meta_flat(meta_parameters *meta,double y,double x)
 {
   // No effort has been made to make this routine work with
@@ -173,32 +162,4 @@ double meta_flat(meta_parameters *meta,double y,double x)
 	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
 	return meta_look(meta,y,x) - meta_look(meta, 0, meta->sar->original_sample_count/2);
-}
-double meta_flat_phase(meta_parameters *meta,const baseline base,int y,int x)
-{
-  // No effort has been made to make this routine work with
-  // pseudoprojected images.
-  assert (meta->projection == NULL
-	   || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
-	double flat=meta_flat(meta,y,x);
-	double Bn_y,Bp_y;
-	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
-	return 2.0*meta_get_k(meta)*(Bp_y*cos(flat)-Bn_y*sin(flat));
-}
-double meta_phase_rate(meta_parameters *meta,const baseline base,int y,int x)
-{
-  // No effort has been made to make this routine work with
-  // pseudoprojected images.
-  assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
-	double sr=meta_get_slant(meta,y,x);
-	double flat=meta_flat(meta,y,x);
-	double incid=meta_incid(meta,y,x);
-	double Bn_y,Bp_y;
-	meta_interp_baseline(meta,base,y,&Bn_y,&Bp_y);
-/*Note: this is the slant range times sin of the incidence angle, 
-	divided by the derivative of meta_flat_phase.*/
-	return (sr*sin(incid))/(2.0*meta_get_k(meta)*(-Bp_y*sin(flat)-Bn_y*cos(flat)));
 }
