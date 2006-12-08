@@ -53,9 +53,15 @@ baseline find_baseline(char *file1,char *file2);
 baseline read_baseline(char *fName);
 void write_baseline(char *fnm, baseline b);
 
-// Prototypes from igram_coh.c
+// Prototypes from asf_igram_coh.c
 int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 		  char *masterFile, char *slaveFile, char *outBase);
 
+// Prototypes from asf_elevation.c
+int asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask, 
+		  char *baseFile, char *seeds, char *slant_amplitude, 
+		  char *slant_coherence, char *ground_elevation, 
+		  char *ground_elevation_error, char *ground_amplitude, 
+		  char *ground_coherence);
 
 #endif

@@ -8,7 +8,8 @@ OBJS = \
 	complex2polar.o \
 	polar2complex.o \
 	baseline.o \
-	asf_igram_coh.o
+	asf_igram_coh.o \
+	asf_elevation.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \

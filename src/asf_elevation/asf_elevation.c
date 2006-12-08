@@ -1,5 +1,5 @@
 /****************************************************************
-NAME:  elev
+NAME:  asf_elevation
 
 SYNOPSIS:  
 
@@ -73,6 +73,7 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_endian.h"
+#include "asf_insar.h"
 
 #define VERSION 2.6
 

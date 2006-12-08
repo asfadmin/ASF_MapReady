@@ -2,16 +2,15 @@
 
 include ../../make_support/system_rules
 
-DEBUG_BUILD = 2
-
-LIBS  = $(LIBDIR)/libasf_elevation.a \
+LIBS  = $(LIBDIR)/libasf_insar.a \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	-lm
+
 OBJS  = asf_elevation.o
 
 all: asf_elevation clean

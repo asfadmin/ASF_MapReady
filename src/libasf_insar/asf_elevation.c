@@ -1,10 +1,15 @@
-#include "asf_elevation.h"
+#include "asf.h"
+#include "asf_meta.h"
+#include "asf_endian.h"
+#include "asf_sar.h"
 
-void asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask, 
-		   char *baseFile, char *seeds, char *slant_amplitude, 
-		   char *slant_coherence, char *ground_elevation, 
-		   char *ground_elevation_error, char *ground_amplitude, 
-		   char *ground_coherence)
+#define FLOAT_EQUALS_ZERO(X) (X<0.000000000001 && X>-0.000000000001)
+
+int asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask, 
+		  char *baseFile, char *seeds, char *slant_amplitude, 
+		  char *slant_coherence, char *ground_elevation, 
+		  char *ground_elevation_error, char *ground_amplitude, 
+		  char *ground_coherence)
 {
   int x, y, ss, sl, nrows, ncols;
   double xScale, yScale, k, *phase2elevBase, *sinFlat, *cosFlat;
@@ -213,4 +218,5 @@ void asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask,
   deskew_dem(slant_elevation, ground_coherence, slant_coherence, 0, NULL, NULL,
              TRUE, fill_value);
 
+  return 0;
 }
