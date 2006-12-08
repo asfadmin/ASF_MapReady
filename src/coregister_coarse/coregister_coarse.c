@@ -99,6 +99,7 @@ BUGS:
 *******************************************************************************/
 
 #include "coregister_coarse.h"
+#include "asf_insar.h"
 
 /* local constants */
 #define VERSION 5.7
@@ -110,7 +111,6 @@ BUGS:
 void usage(char *name);
 void CreateFicoControl(char *ctrl,char *img1,char *img2,int multiLook);
 void WriteFicoControl(char *,int,int);
-void WriteBaseline(char *fnm, baseline b);
 
 int main(int argc, char **argv)
 {
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
 	/* get baseline, write it out. */
 	create_name(meta1, img1, "_amp");
 	create_name(meta2, img2, "_amp");
-	WriteBaseline( szBaseFile, find_baseline(meta1,meta2) );
+	write_baseline( szBaseFile, find_baseline(meta1,meta2) );
 
 	/* write the ctrl file for use with coregister_fine (aka fico) */
 	CreateFicoControl(szCtrlFile,img1,img2,multiLook);
@@ -279,21 +279,6 @@ void WriteFicoControl(char *fnm, int xoff, int yoff)
 	fp=FOPEN(fnm,"w");
 	fprintf(fp,"%d\n%d\n%d\n%d\n%f\n%f\n",
 		xoff, yoff, chip_size, os,xmep,ymep);
-	FCLOSE(fp);
-	return;
-}
-
-void WriteBaseline(char *fnm, baseline b)
-{
-	FILE *fp=FOPEN(fnm,"w");
-
-	sprintf(logbuf,
-		"\n   Baseline: Bn = %f, dBn = %f, Bp = %f, dBp = %f, Btemp = %f\n",
-		b.Bn,b.dBn,b.Bp,b.dBp,b.temporal);
-	printf("%s",logbuf);
-	if (logflag) { printLog(logbuf); }
-
-	fprintf(fp,"%f  %f  %f  %f %f\n",b.Bn,b.dBn,b.Bp,b.dBp,b.temporal);
 	FCLOSE(fp);
 	return;
 }

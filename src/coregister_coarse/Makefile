@@ -4,6 +4,7 @@
 include ../../make_support/system_rules
 
 LIBS  = \
+	$(LIBDIR)/libasf_insar.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
@@ -11,8 +12,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	-lm
 
-OBJS  = coregister_coarse.o \
-	find_baseline.o 
+OBJS  = coregister_coarse.o
 
 all: coregister_coarse clean
 
