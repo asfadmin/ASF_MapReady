@@ -12,7 +12,7 @@ OBJS = \
 	asf_elevation.o
 
 all: build_only
-	cp libasf_insar.a $(LIBDIR)
+	mv libasf_insar.a $(LIBDIR)
 	cp asf_insar.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
