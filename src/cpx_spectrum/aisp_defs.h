@@ -18,7 +18,7 @@
 /*-----------------------------------------------------*/
 /* define complex variable type if not already defined */
 /*-----------------------------------------------------*/
-#include "asf_complex.h"
+#include "asf_insar.h"
 
 /*-----------------------------*/
 /* Simple function definitions */

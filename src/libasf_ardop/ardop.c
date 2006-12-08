@@ -173,8 +173,12 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 
 	strcpy (meta->general->system, meta_get_system());
 	meta->general->data_type = REAL32;
+<<<<<<< .mine
+	//meta->general->band_count = 1;
+=======
 //	FIXME: determine number of bands
 //	meta->general->band_count = 1;
+>>>>>>> .r4432
 	meta->general->x_pixel_size = meta->sar->range_time_per_pixel
                                        * (speedOfLight/2.0);
 	meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
