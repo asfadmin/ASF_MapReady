@@ -122,5 +122,6 @@ void browse(browse_callback bcb);
 // imagery.c
 void setup_images_treeview();
 int add_to_image_list(const char * data_file);
+int add_to_image_list2(const char * path, const char * data_file);
 
 #endif

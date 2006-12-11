@@ -1286,6 +1286,11 @@ void apply_settings_to_gui(ait_params_t *params)
 
         put_chk(params->force, "force_checkbutton");
     }
+
+    // Imagery List
+    add_to_image_list(cfg->general->dem);
+    add_to_image_list2(cfg->master->path, cfg->master->data);
+    add_to_image_list2(cfg->slave->path, cfg->slave->data);
 }
 
 void write_settings(ait_params_t *params)
@@ -1695,6 +1700,86 @@ SIGNAL_CALLBACK void on_algorithm_escher_activate(GtkWidget *w)
 }
 
 SIGNAL_CALLBACK void on_algorithm_snaphu_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_resample_optionmenu_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_central_meridian_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_pixel_size_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_first_standard_parallel_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_second_standard_parallel_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_datum_optionmenu_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_ppm_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_jpg_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_projection_optionmenu_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_force_checkbutton(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_latitude_of_origin_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_zone_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_height_entry_changed(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_geotiff_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_tiff_activate(GtkWidget *w)
+{
+    update_summary();
+}
+
+SIGNAL_CALLBACK void on_force_checkbutton_toggled(GtkWidget *w)
 {
     update_summary();
 }

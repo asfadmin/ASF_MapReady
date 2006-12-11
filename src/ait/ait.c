@@ -349,12 +349,6 @@ main(int argc, char **argv)
 
     g_free(glade_xml_file);
 
-    if (argc > 1) {
-        add_file(argv[1]);
-        update_summary();
-        geocode_options_changed();
-    }
-
     // add version number to window title
     char title[256];
     sprintf(title,
@@ -365,10 +359,12 @@ main(int argc, char **argv)
 
     //set_font();
     setup_images_treeview();
-    add_to_image_list("File1.img");
-    add_to_image_list("File2.img");
-    add_to_image_list("File3.img");
-    add_to_image_list("test.config");
+
+    if (argc > 1) {
+        add_file(argv[1]);
+        update_summary();
+        geocode_options_changed();
+    }
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
