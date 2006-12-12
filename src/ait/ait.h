@@ -95,6 +95,7 @@ typedef void browse_callback(char *selected_file);
 void show_summary(int show);
 void message_box(const char *format, ...);
 GtkWidget *get_widget_checked(const char *widget_name);
+void update_everything();
 
 // config.c
 ait_params_t *get_settings_from_gui();
@@ -121,6 +122,7 @@ void browse(browse_callback bcb);
 
 // imagery.c
 void setup_images_treeview();
+void clear_image_list();
 int add_to_image_list(const char * data_file);
 int add_to_image_list2(const char * path, const char * data_file);
 

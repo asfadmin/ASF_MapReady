@@ -127,6 +127,12 @@ find_in_share(const char * filename)
     return ret;
 }
 
+void update_everything()
+{
+    update_summary();
+    geocode_options_changed();
+}
+
 void
 add_file(char *config_file)
 {
@@ -362,8 +368,7 @@ main(int argc, char **argv)
 
     if (argc > 1) {
         add_file(argv[1]);
-        update_summary();
-        geocode_options_changed();
+        update_everything();
     }
 
     glade_xml_signal_autoconnect(glade_xml);

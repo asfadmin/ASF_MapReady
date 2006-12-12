@@ -13,7 +13,8 @@
 #include <sys/wait.h>
 
 static const int COL_DATA_FILE = 0;
-static const int COL_EXISTS = 1;
+static const int COL_DATA_FILE_FULL = 1; // hidden column, contains full path
+static const int COL_EXISTS = 2;
 
 int add_to_image_list(const char * data_file)
 {
@@ -31,8 +32,8 @@ int add_to_image_list(const char * data_file)
     gtk_list_store_append(images_list, &iter);
     gtk_list_store_set(images_list, &iter,
         COL_DATA_FILE, file,
-        COL_EXISTS, exists, 
-        -1);
+        COL_DATA_FILE_FULL, data_file,
+        COL_EXISTS, exists, -1);
 
     free(dir);
     free(file);
@@ -54,13 +55,20 @@ int add_to_image_list2(const char * path, const char * data_file)
     GtkTreeIter iter;
     gtk_list_store_append(images_list, &iter);
     gtk_list_store_set(images_list, &iter,
-        COL_DATA_FILE, f,
+        COL_DATA_FILE, data_file,
+        COL_DATA_FILE_FULL, f,
         COL_EXISTS, exists, 
         -1);
 
     free(f);
 
     return TRUE;
+}
+
+void clear_image_list()
+{
+    printf("Clearing list...\n");
+    gtk_list_store_clear(images_list);
 }
 
 void render_filename(GtkTreeViewColumn *tree_column,
@@ -118,6 +126,16 @@ setup_images_treeview()
     /* add our custom renderer (turns existing files red) */
     gtk_tree_view_column_set_cell_data_func(col, renderer,
         render_filename, NULL, NULL);
+
+    /* Next Column: File Name include the path (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Data File (Full)");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(images_treeview), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE_FULL);
 
     /* Next Column: File Exists Yes/No (if the coloring isn't enough) */
     col = gtk_tree_view_column_new();
@@ -295,19 +313,21 @@ SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)
         char *file_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(images_list), &iter, 
-            COL_DATA_FILE, &file_name, -1);
+            COL_DATA_FILE_FULL, &file_name, -1);
 
-	if (g_file_test(file_name, G_FILE_TEST_EXISTS))
-	{
-	    show_output_image(file_name);
-	}
-	else
-	{
-	    char msg[2048];
-	    sprintf(msg, "The file was not found:\n"
-		         "   %s\n", file_name);
-	    message_box(msg);
-	}
+        printf("Displaying: %s\n", file_name);
+
+        if (g_file_test(file_name, G_FILE_TEST_EXISTS))
+        {
+            show_output_image(file_name);
+        }
+        else
+        {
+            char msg[2048];
+            sprintf(msg, "The file was not found:\n"
+                "   %s\n", file_name);
+            message_box(msg);
+        }
     }
     else
     {

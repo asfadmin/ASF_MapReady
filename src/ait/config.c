@@ -1288,6 +1288,7 @@ void apply_settings_to_gui(ait_params_t *params)
     }
 
     // Imagery List
+    clear_image_list();
     add_to_image_list(cfg->general->dem);
     add_to_image_list2(cfg->master->path, cfg->master->data);
     add_to_image_list2(cfg->slave->path, cfg->slave->data);
@@ -1416,371 +1417,371 @@ ait_params_t *read_settings(char *config_file)
 
 SIGNAL_CALLBACK void on_configuration_file_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_short_configuration_file_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_master_image_path_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_master_image_data_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_master_image_metadata_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_slave_image_path_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_slave_image_data_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_slave_image_metadata_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_reference_dem_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_lat_begin_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_lat_end_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_maximum_offset_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_deskew_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ingest_precise_master_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ingest_precise_slave_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ingest_precise_orbits_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_patches_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_start_master_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_start_slave_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_grid_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_fft_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_offset_azimuth_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_first_offset_range_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_patches_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_start_master_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_start_slave_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_grid_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_fft_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_offset_azimuth_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_coregister_last_offset_range_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_master_start_offset_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_master_end_offset_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_master_patches_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_master_power_flag_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_slave_start_offset_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_slave_end_offset_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_slave_patches_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ardop_slave_power_flag_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_interferogram_min_coherence_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_interferogram_multilook_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_offset_matching_max_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_flattening_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_processors_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_tiles_azimuth_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_tiles_range_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_tiles_per_degree_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_overlap_azimuth_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_overlap_range_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_phase_unwrapping_filter_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_baseline_refinement_iterations_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_baseline_refinement_max_iterations_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_mode_dem_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_mode_dinsar_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_data_type_stf_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_data_type_raw_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_data_type_slc_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_algorithm_escher_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_algorithm_snaphu_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_resample_optionmenu_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_central_meridian_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_pixel_size_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_first_standard_parallel_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_second_standard_parallel_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_datum_optionmenu_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_ppm_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_jpg_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_projection_optionmenu_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_force_checkbutton(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_latitude_of_origin_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_zone_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_height_entry_changed(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_geotiff_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_tiff_activate(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
 SIGNAL_CALLBACK void on_force_checkbutton_toggled(GtkWidget *w)
 {
-    update_summary();
+    update_everything();
 }
 
