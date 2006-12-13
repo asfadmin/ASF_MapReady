@@ -8067,12 +8067,14 @@
 			  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 			  <child>
-			    <widget class="GtkViewport" id="viewport1">
+			    <widget class="GtkViewport" id="viewed_image_viewport">
 			      <property name="visible">True</property>
 			      <property name="shadow_type">GTK_SHADOW_IN</property>
 
 			      <child>
 				<widget class="GtkImage" id="viewed_image">
+				  <property name="width_request">640</property>
+				  <property name="height_request">600</property>
 				  <property name="visible">True</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>

@@ -1289,6 +1289,7 @@ void apply_settings_to_gui(ait_params_t *params)
 
     // Imagery List
     clear_image_list();
+
     add_to_image_list(cfg->general->dem);
     add_to_image_list2(cfg->master->path, cfg->master->data);
     add_to_image_list2(cfg->slave->path, cfg->slave->data);
