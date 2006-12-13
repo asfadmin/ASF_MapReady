@@ -403,7 +403,7 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
 		meta->general->x_pixel_size = ddr->pdist_x;
 		meta->general->y_pixel_size = ddr->pdist_y;
 	}
-	if (ddr->valid[DDINCV] == VALID) {
+	if (ddr->valid[DDINCV] == VALID && meta->sar != NULL) {
 		meta->sar->line_increment = ddr->line_inc;
 		meta->sar->sample_increment = ddr->sample_inc;
 	}
@@ -485,7 +485,8 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
 	  } /* End if ((ddr->valid[ii]==VALID) && (ii!=DDINCV)) */
 	} /* End for (ii=0; ii<DDNVAL; ii++) */
     /* Make some guesses */
-	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR))
+	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR) &&
+            meta->sar)
 		meta->sar->image_type = 'P';
 } 
 

@@ -58,6 +58,9 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   char *st_timeStr;/*Source state vector time, YYYY-MM-DD hh:mm:ss.ttt*/
   int num_vecs;
 
+/*Need a SAR block*/
+  if (!meta->sar) meta->sar = meta_sar_init();
+
 /*Open the parameter file*/
   get_stf_metadata_name(inN, parN);
 
