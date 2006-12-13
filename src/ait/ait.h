@@ -96,6 +96,7 @@ void show_summary(int show);
 void message_box(const char *format, ...);
 GtkWidget *get_widget_checked(const char *widget_name);
 void update_everything();
+char *meta_file_name(const char *data_file_name);
 
 // config.c
 ait_params_t *get_settings_from_gui();

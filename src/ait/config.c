@@ -380,13 +380,13 @@ ait_params_t *get_settings_from_gui()
     //cfg->general->test = 0;
     get_chk(&cfg->general->short_config, "short_configuration_file_checkbutton");
 
-    //cfg->master->path = new_blank_str();
-    //cfg->master->data = new_blank_str();
-    //cfg->master->meta = new_blank_str();
+    get_str(cfg->master->path, "master_image_path_entry");
+    get_str(cfg->master->data, "master_image_data_entry");
+    get_str(cfg->master->meta, "master_image_metadata_entry");
 
-    //cfg->slave->path = new_blank_str();
-    //cfg->slave->data = new_blank_str();
-    //cfg->slave->meta = new_blank_str();
+    get_str(cfg->slave->path, "slave_image_path_entry");
+    get_str(cfg->slave->data, "slave_image_data_entry");
+    get_str(cfg->slave->meta, "slave_image_metadata_entry");
 
     get_str(cfg->ingest->prc_master, "ingest_precise_master_entry");
     get_str(cfg->ingest->prc_slave, "ingest_precise_slave_entry");
@@ -1164,6 +1164,12 @@ void apply_settings_to_gui(ait_params_t *params)
     put_str(cfg->ingest->prc_master, "ingest_precise_master_entry");
     put_str(cfg->ingest->prc_slave, "ingest_precise_slave_entry");
     put_chk(cfg->ingest->prcflag, "ingest_precise_orbits_checkbutton");
+    put_str(cfg->master->path, "master_image_path_entry");
+    put_str(cfg->master->data, "master_image_data_entry");
+    put_str(cfg->master->meta, "master_image_metadata_entry");
+    put_str(cfg->slave->path, "slave_image_path_entry");
+    put_str(cfg->slave->data, "slave_image_data_entry");
+    put_str(cfg->slave->meta, "slave_image_metadata_entry");
     put_int(cfg->coreg_p1->patches, "coregister_first_patches_entry");
     put_lng(cfg->coreg_p1->start_master, "coregister_first_start_master_entry");
     put_lng(cfg->coreg_p1->start_slave, "coregister_first_start_slave_entry");
@@ -1374,6 +1380,11 @@ void write_settings(ait_params_t *params)
 
         fclose(pf);
         free(proj_name);
+    }
+    else
+    {
+        // no geocoding
+        strcpy(cfg->geocode->proj, "");
     }
 
     // write the IPS configuration file

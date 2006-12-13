@@ -145,9 +145,9 @@ add_file(char *config_file)
     }
 }
 
-static char *meta_file_name(const char *data_file_name)
+char *meta_file_name(const char *data_file_name)
 {
-    int len = strlen(data_file_name) + 3;
+    int len = strlen(data_file_name) + 10;
     char *p = findExt(data_file_name);
     if (!p)
     {
@@ -172,7 +172,7 @@ static char *meta_file_name(const char *data_file_name)
     {
         char * ret = MALLOC(sizeof(char) * len);
         strcpy(ret, data_file_name);
-        *p = '\0';
+        ret[strlen(data_file_name) - 3] = '\0';
         strcat(ret, "meta");    
         return ret;
     }

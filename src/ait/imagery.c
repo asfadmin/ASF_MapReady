@@ -47,7 +47,11 @@ int add_to_image_list(const char * data_file)
 int add_to_image_list2(const char * path, const char * data_file)
 {
     char *f = MALLOC(sizeof(char)*(strlen(path)+strlen(data_file)+10));
-    sprintf(f, "%s/%s", path, data_file);
+
+    if (path[strlen(path)-1]==DIR_SEPARATOR)
+        sprintf(f, "%s%s", path, data_file);
+    else
+        sprintf(f, "%s/%s", path, data_file);
 
     int file_exists = fileExists(f);
 
@@ -137,7 +141,7 @@ setup_images_treeview()
 
     /* Next Column: File Exists Yes/No (if the coloring isn't enough) */
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Done");
+    gtk_tree_view_column_set_title(col, "Done?");
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(images_treeview), col);
     renderer = gtk_cell_renderer_text_new();
@@ -220,16 +224,6 @@ make_ceos_image_pixbuf (const char *input_metadata,
     /* Make a copy of one of the arguments so the compilers doesn't
     complain about us ignoring the const qualifier when we pass it fo
     fopenCeos().  */
-
-    if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16 &&
-        imd->general->data_type != INTEGER32 &&
-        imd->general->data_type != REAL32 &&
-        imd->general->data_type != REAL64)
-    {
-        /* don't know how to make a thumbnail for this type ... */
-        return NULL;
-    }
 
     gchar *tmp = g_strdup (input_data);
     g_assert (tmp != NULL);
@@ -362,26 +356,15 @@ make_asf_image_pixbuf (const char *input_metadata,
                        const char *input_data,
                        size_t max_dimension)
 {
-    meta_parameters *imd = meta_read (input_metadata); // Input metadata.
-
-    if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16 &&
-        imd->general->data_type != INTEGER32 &&
-        imd->general->data_type != REAL32 &&
-        imd->general->data_type != REAL64)
-    {
-        /* don't know how to make a thumbnail for this type ... */
-        return NULL;
-    }
-
     FILE *img = fopenImage(input_data, "rb");
     if (!img) {
         // failed for some reason, just quit without thumbnailing...
         // possibly the file is bad, or perhaps it was removed from the
         // file list before we could get around to thumbnailing it.
-        meta_free(imd);
         return NULL;
     }
+
+    meta_parameters *imd = meta_read (input_metadata); // Input metadata.
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
@@ -586,6 +569,72 @@ void show_output_image(const char * filename)
     show_it(filename, TRUE);
 }
 
+static void show_metadata(char *metadata_filename)
+{
+    GtkWidget *metadata_textview = get_widget_checked("metadata_textview");
+    GtkTextBuffer *text_buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(metadata_textview));
+
+    // clear out current contents
+    gtk_text_buffer_set_text(text_buffer, "", -1);
+
+    // read the metadata file, populate!
+    FILE *metadata_file = fopen(metadata_filename, "rt");
+    const int max_line_len = 256;
+
+    if (metadata_file)
+    {
+        char *buffer = (char *)MALLOC(sizeof(char) * max_line_len);
+        while (!feof(metadata_file))
+        {
+            char *p = fgets(buffer, max_line_len, metadata_file);
+            if (p)
+            {
+                GtkTextIter end;
+
+                gtk_text_buffer_get_end_iter(text_buffer, &end);
+                gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
+            }
+        }
+
+        fclose(metadata_file);
+        free(buffer);
+
+        /* change to a fixed-width font in the window */
+        GtkTextIter start, end;
+        static GtkTextTag *tt = NULL;
+
+        if (!tt)
+	    {
+#ifdef win32
+            const char *fnt = "Courier";
+#else
+	        const char *fnt = "Mono";
+#endif
+		    tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+					"font", fnt, NULL);
+        }
+
+        gtk_text_buffer_get_start_iter(text_buffer, &start);
+        gtk_text_buffer_get_end_iter(text_buffer, &end);
+
+        gtk_text_buffer_apply_tag(text_buffer, tt, &start, &end);    
+
+        GtkWidget *metadata_label = get_widget_checked("metadata_label");
+        gtk_label_set_text(GTK_LABEL(metadata_label), metadata_filename);
+    }
+    else
+    {
+        char *buf = MALLOC(sizeof(char)*(strlen(metadata_filename) + 64));
+        sprintf(buf, "Error opening metadata file: %s", metadata_filename);
+        gtk_text_buffer_set_text(text_buffer, buf, -1);
+        free(buf);
+
+        GtkWidget *metadata_label = get_widget_checked("metadata_label");
+        gtk_label_set_text(GTK_LABEL(metadata_label), metadata_filename);
+    }
+}
+
 SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)
 {
     GtkWidget *images_treeview;
@@ -594,8 +643,13 @@ SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)
     images_treeview = get_widget_checked("images_treeview");
     if (get_iter_to_first_selected_row(images_treeview, &iter))
     {
-        char *file_name;
+        GtkWidget *metadata_label = get_widget_checked("metadata_label");
+        GtkWidget *metadata_textview =
+            get_widget_checked("metadata_textview");
+        GtkTextBuffer *tb =
+            gtk_text_view_get_buffer(GTK_TEXT_VIEW(metadata_textview));
 
+        char *file_name;
         gtk_tree_model_get(GTK_TREE_MODEL(images_list), &iter, 
             COL_DATA_FILE_FULL, &file_name, -1);
 
@@ -612,9 +666,63 @@ SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)
                 "   %s\n", file_name);
             message_box(msg);
         }
+
+        char *meta_name = meta_file_name(file_name);
+        char *ext = findExt(meta_name);
+        if (strcmp(ext, ".L") == 0)
+        {
+            gtk_text_buffer_set_text(tb, 
+                "Display of CEOS Metadata not yet supported!", -1);
+            gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);            
+        }
+        else if (g_file_test(meta_name, G_FILE_TEST_EXISTS))
+        {
+            show_metadata(meta_name);
+        }
+        else
+        {
+            char *buf = MALLOC(sizeof(char)*(strlen(meta_name) + 64));
+            sprintf(buf, "Metadata file not found: %s", meta_name);
+            gtk_text_buffer_set_text(tb, buf, -1);
+            free(buf);
+
+            gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);
+        }
+
+        free(meta_name);
     }
     else
     {
         show_please_select_message();
     }
+}
+
+static void update_done_column()
+{
+    if (images_list)
+    {
+        GtkTreeIter iter;
+        int ok = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(images_list), &iter);
+        while (ok)
+        {
+            char *filename;
+            gtk_tree_model_get(GTK_TREE_MODEL(images_list), &iter, 
+                COL_DATA_FILE_FULL, &filename, -1);
+
+            int file_exists = fileExists(filename);
+            const char *exists = file_exists ? "Yes" : "No";
+            printf("%s? %s\n", filename, exists);
+
+            gtk_list_store_set(images_list, &iter, COL_EXISTS, exists, -1);
+
+            g_free(filename);
+
+            ok = gtk_tree_model_iter_next(GTK_TREE_MODEL(images_list), &iter);
+        }
+    }
+}
+
+SIGNAL_CALLBACK void on_refresh_button_clicked(GtkWidget *w)
+{
+    update_done_column();
 }
