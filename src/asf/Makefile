@@ -25,7 +25,6 @@ OBJS  = caplib.o \
 	tmpdir.o \
 	license.o \
 	splash_screen.o \
-	progress_meters.o \
 	print_alerts.o \
 	diagnostics.o
 
