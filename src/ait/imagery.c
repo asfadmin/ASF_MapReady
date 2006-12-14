@@ -777,68 +777,9 @@ on_viewed_image_eventbox_key_press_event(
 
 static void show_metadata(char *metadata_filename)
 {
-    GtkWidget *metadata_textview = get_widget_checked("metadata_textview");
-    GtkTextBuffer *text_buffer =
-        gtk_text_view_get_buffer(GTK_TEXT_VIEW(metadata_textview));
-
-    // clear out current contents
-    gtk_text_buffer_set_text(text_buffer, "", -1);
-
-    // read the metadata file, populate!
-    FILE *metadata_file = fopen(metadata_filename, "rt");
-    const int max_line_len = 256;
-
-    if (metadata_file)
-    {
-        char *buffer = (char *)MALLOC(sizeof(char) * max_line_len);
-        while (!feof(metadata_file))
-        {
-            char *p = fgets(buffer, max_line_len, metadata_file);
-            if (p)
-            {
-                GtkTextIter end;
-
-                gtk_text_buffer_get_end_iter(text_buffer, &end);
-                gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
-            }
-        }
-
-        fclose(metadata_file);
-        free(buffer);
-
-        /* change to a fixed-width font in the window */
-        GtkTextIter start, end;
-        static GtkTextTag *tt = NULL;
-
-        if (!tt)
-        {
-#ifdef win32
-            const char *fnt = "Courier";
-#else
-            const char *fnt = "Mono";
-#endif
-            tt = gtk_text_buffer_create_tag(text_buffer, "mono",
-                                            "font", fnt, NULL);
-        }
-
-        gtk_text_buffer_get_start_iter(text_buffer, &start);
-        gtk_text_buffer_get_end_iter(text_buffer, &end);
-
-        gtk_text_buffer_apply_tag(text_buffer, tt, &start, &end);    
-
-        GtkWidget *metadata_label = get_widget_checked("metadata_label");
-        gtk_label_set_text(GTK_LABEL(metadata_label), metadata_filename);
-    }
-    else
-    {
-        char *buf = MALLOC(sizeof(char)*(strlen(metadata_filename) + 64));
-        sprintf(buf, "Error opening metadata file: %s", metadata_filename);
-        gtk_text_buffer_set_text(text_buffer, buf, -1);
-        free(buf);
-
-        GtkWidget *metadata_label = get_widget_checked("metadata_label");
-        gtk_label_set_text(GTK_LABEL(metadata_label), metadata_filename);
-    }
+    file_into_textview(metadata_filename, "metadata_textview");
+    GtkWidget *metadata_label = get_widget_checked("metadata_label");
+    gtk_label_set_text(GTK_LABEL(metadata_label), metadata_filename);
 }
 
 SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)

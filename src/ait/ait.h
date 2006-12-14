@@ -41,6 +41,13 @@
 #include "ips.h"
 #include "asf_nan.h"
 
+// Fixed-width font, used in metadata & log areas
+#if defined(win32)
+#define FW_FNT_NAME "Courier"
+#else
+#define FW_FNT_NAME "Mono"
+#endif
+
 // The global vars
 extern GladeXML *glade_xml;
 extern const char PATH_SEPARATOR;
@@ -97,6 +104,7 @@ void message_box(const char *format, ...);
 GtkWidget *get_widget_checked(const char *widget_name);
 void update_everything();
 char *meta_file_name(const char *data_file_name);
+void file_into_textview(char *filename, const char *textview_name);
 
 // config.c
 ait_params_t *get_settings_from_gui();

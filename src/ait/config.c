@@ -503,6 +503,7 @@ ait_params_t *get_settings_from_gui()
     ret->cfg = cfg;
 
     ret->proj = get_projection_options(&ret->force, &ret->resample_method);
+    cfg->geocode->pixel_spacing = ret->proj->perX;
 
     return ret;
 }
@@ -1254,7 +1255,7 @@ void apply_settings_to_gui(ait_params_t *params)
 
         if (proj->perX != 0.0 && !ISNAN(proj->perX)) {
             put_chk(TRUE, "pixel_size_checkbutton");
-            put_dbl(proj->height, "pixel_size_entry");
+            put_dbl(proj->perX, "pixel_size_entry");
         } else {
             put_chk(FALSE, "pixel_size_checkbutton");
             put_str("", "pixel_size_entry");
@@ -1458,6 +1459,7 @@ ait_params_t *read_settings(char *config_file)
     if (strlen(cfg->geocode->proj) > 0)
     {
         params->proj = read_proj_file(cfg->geocode->proj, params);
+        params->proj->perX = cfg->geocode ? cfg->geocode->pixel_spacing : 0;
     }
     else
     {

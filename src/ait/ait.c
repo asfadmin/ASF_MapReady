@@ -145,6 +145,70 @@ add_file(char *config_file)
     }
 }
 
+void file_into_textview(char *filename, const char *textview_name)
+{
+    GtkWidget *text_view = get_widget_checked(textview_name);
+    GtkTextBuffer *text_buffer =
+        gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+
+    // clear out current contents
+    gtk_text_buffer_set_text(text_buffer, "", -1);
+
+    // read the file, populate!
+    FILE *fp = fopen(filename, "rt");
+    const int max_line_len = 512;
+
+    if (fp)
+    {
+        // loop through the file, appending each line to the text buffer
+        char *buffer = (char *)MALLOC(sizeof(char) * max_line_len);
+        while (!feof(fp))
+        {
+            char *p = fgets(buffer, max_line_len, fp);
+            if (p)
+            {
+                GtkTextIter end;
+                gtk_text_buffer_get_end_iter(text_buffer, &end);
+                gtk_text_buffer_insert(text_buffer, &end, buffer, -1);
+            }
+        }
+
+        fclose(fp);
+        free(buffer);
+
+        // change to a fixed-width font in the window
+        static GtkTextTag *tt = NULL;
+        if (!tt)
+        {
+            tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+                                            "font", FW_FNT_NAME, NULL);
+        }
+
+        GtkTextIter start, end;
+        gtk_text_buffer_get_start_iter(text_buffer, &start);
+        gtk_text_buffer_get_end_iter(text_buffer, &end);
+        gtk_text_buffer_apply_tag(text_buffer, tt, &start, &end);    
+    }
+    else
+    {
+        // error opening the file
+        char *buf = MALLOC(sizeof(char)*(strlen(filename) + 64));
+        sprintf(buf, "Error opening file: %s", filename);
+        gtk_text_buffer_set_text(text_buffer, buf, -1);
+        free(buf);
+    }
+}
+
+static void
+grab_log(char *config_file)
+{
+    char *log_file = appendExt(config_file, ".log");
+    file_into_textview(log_file, "log_textview");
+
+    GtkWidget *log_label = get_widget_checked("log_label");
+    gtk_label_set_text(GTK_LABEL(log_label), log_file);
+}
+
 char *meta_file_name(const char *data_file_name)
 {
     int len = strlen(data_file_name) + 10;
@@ -189,6 +253,17 @@ on_ait_main_destroy(GtkWidget *w, gpointer data)
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *w)
 {
+    ait_params_t *params = get_settings_from_gui();
+
+    if (strlen(params->name) > 0) {
+        write_settings(params);
+        ips(params->cfg, params->name, FALSE);
+        grab_log(params->name);
+    } else {
+        message_box("Error running ips: No configuration file name.");
+    }
+
+    free_ait_params(params);
 }
 
 SIGNAL_CALLBACK void
@@ -207,6 +282,19 @@ on_save_button_clicked(GtkWidget *w)
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget *w)
 {
+    const char *tmp_dir = get_asf_tmp_dir();
+    char *stop_file = MALLOC(sizeof(char) * (strlen(tmp_dir) + 24));
+    sprintf(stop_file, "%s/stop.txt", tmp_dir);
+    FILE * fp = fopen(stop_file, "w");
+    if (fp) {
+        fprintf(fp,
+                "Temporary file.\n\n"
+                "Flags any asf tools currently running in this directory "
+                "to halt processing immediately.\n\n"
+                "This file should be deleted once processing has stopped.\n");
+        fclose(fp);
+    }
+    free(stop_file);
 }
 
 // Configuration File "Browse"
