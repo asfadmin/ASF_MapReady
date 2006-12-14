@@ -758,11 +758,15 @@ SIGNAL_CALLBACK int
 on_viewed_image_eventbox_key_press_event(
     GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 {
+    int incr = 1;
+    if (event->state & GDK_CONTROL_MASK) incr = 10;
+    else if (event->state & GDK_SHIFT_MASK) incr = 25;
+
     switch (event->keyval) {
-        case GDK_Up: --crosshair_y; break;
-        case GDK_Down: ++crosshair_y; break;
-        case GDK_Left: --crosshair_x; break;
-        case GDK_Right: ++crosshair_x; break;
+        case GDK_Up: crosshair_y -= incr; break;
+        case GDK_Down: crosshair_y += incr; break;
+        case GDK_Left: crosshair_x -= incr; break;
+        case GDK_Right: crosshair_x += incr; break;
         default: return TRUE;
     }
 
