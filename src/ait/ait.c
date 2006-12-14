@@ -139,7 +139,7 @@ add_file(char *config_file)
     ait_params_t *params = read_settings(config_file);
     if (params) {
         apply_settings_to_gui(params);
-        message_box("Read config file: %s", config_file);
+        //message_box("Read config file: %s", config_file);
     } else {
         message_box("Error reading config file: %s\n", config_file);
     }
@@ -360,8 +360,11 @@ main(int argc, char **argv)
     sprintf(title,
             "AIT - The ASF Interferometry Tool: Version %s", IPS_GUI_VERSION);
 
-    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ait_main");
+    GtkWidget *widget = get_widget_checked("ait_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);
+
+    widget = get_widget_checked("viewed_image_eventbox");
+    gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
 
     //set_font();
     setup_images_treeview();

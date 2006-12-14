@@ -11,6 +11,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
+#include <gdk/gdkkeysyms.h>
 
 #include <ceos_io.h>
 
@@ -20,6 +21,12 @@ static const int COL_EXISTS = 2;
 
 static double constant_term = 0.0;
 static double linear_term = 1.0;
+static GdkPixbuf *output_pixbuf = NULL;
+static GdkPixbuf *shown_pixbuf = NULL;
+static meta_parameters *meta = NULL;
+static double scale_factor = 1.0;
+static int crosshair_x = -1;
+static int crosshair_y = -1;
 
 int add_to_image_list(const char * data_file)
 {
@@ -217,7 +224,7 @@ static void update_image_stats(double avg, double stddev,
     constant_term = -lmin*linear_term;
 
     sprintf(buf, "Mean: %f\nStd Dev: %f\n"
-            "Mapping: pixel value = %.2f * image value %c %.2f\n",
+            "Mapping: y = %.2f * x %c %.2f\n",
             avg, stddev, linear_term, constant_term > 0 ? '+' : '-',
             fabs(constant_term));
 
@@ -500,12 +507,55 @@ static void show_loading_label(int show)
     }
 }
 
+static void put_crosshair (GdkPixbuf *pixbuf)
+{
+    if (crosshair_x < 0 || crosshair_y < 0)
+        return;
+
+    int i, lo, hi;
+    int width, height, rowstride, n_channels;
+    guchar *pixels, *p;
+    
+    n_channels = gdk_pixbuf_get_n_channels (pixbuf);
+    
+    g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
+    g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
+    g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
+    g_assert (n_channels == 3);
+    
+    width = gdk_pixbuf_get_width (pixbuf);
+    height = gdk_pixbuf_get_height (pixbuf);
+    
+    g_assert (crosshair_x >= 0 && crosshair_x < width);
+    g_assert (crosshair_y >= 0 && crosshair_y < height);
+
+    rowstride = gdk_pixbuf_get_rowstride (pixbuf);
+    pixels = gdk_pixbuf_get_pixels (pixbuf);
+
+    lo = crosshair_x - 15;   if (lo < 0)     lo = 0;
+    hi = crosshair_x + 15;   if (hi > width) hi = width;
+
+    for (i = lo; i < hi; ++i) {
+        if (i > crosshair_x-3 && i < crosshair_x+3) i = crosshair_x+3;
+        p = pixels + crosshair_y * rowstride + i * n_channels;
+        p[1] = 255;
+        p[0] = p[2] = 0;
+    }
+
+    lo = crosshair_y - 15;   if (lo < 0)      lo = 0;
+    hi = crosshair_y + 15;   if (hi > height) hi = height;
+
+    for (i = lo; i < hi; ++i) {
+        if (i > crosshair_y-3 && i < crosshair_y+3) i = crosshair_y+3;
+        p = pixels + i * rowstride + crosshair_x * n_channels;
+        p[1] = 255;
+        p[0] = p[2] = 0;
+    }
+}
+
 static void show_it(const char * filename, int is_new)
 {
     GtkWidget *viewed_image;
-    static GdkPixbuf *output_pixbuf = NULL;
-    static GdkPixbuf *shown_pixbuf = NULL;
-    static meta_parameters *meta = NULL;
 
     if (!output_pixbuf && !filename) return;
  
@@ -559,6 +609,11 @@ static void show_it(const char * filename, int is_new)
             return;
         }
 
+        // clear out the "clicked pixel"
+        GtkWidget *pixel_info_label = get_widget_checked("pixel_info_label");
+        gtk_label_set_text(GTK_LABEL(pixel_info_label), "");
+        crosshair_x = crosshair_y = -1;
+
         printf("Read in the pixbuf, generating sized version...\n");
     }
 
@@ -570,22 +625,21 @@ static void show_it(const char * filename, int is_new)
     GtkWindow *win = (GtkWindow*)get_widget_checked("ait_main");
 
     gtk_window_get_size(win, &scaled_w, &scaled_h);
-    scaled_w -= 524;
-    scaled_h -= 90;
 
-    //GtkRequisition rec;
-    //GtkWidget *win = get_widget_checked("viewed_image_scrolledwindow");
-    //gtk_widget_size_request(win, &rec);
+    // I got these by empirical trial & error... we can only get the width
+    // of the full window, but we want just the width of the GtkImage.  So,
+    // we subtract off the mostly-static width & heights of the "other stuff"
+    // A kludge... need to find a better way.  FIXME.
+    scaled_w -= 522;
+    scaled_h -= 85;
 
-    //int scaled_w = rec.width;
-    //int scaled_h = rec.height;
     double sw = scaled_w/(double)w;
     double sh = scaled_h/(double)h;
 
-    double s = sw > sh ? sh : sw;
+    scale_factor = sw > sh ? sh : sw;
 
-    scaled_w = (int)(s*w);
-    scaled_h = (int)(s*h);
+    scaled_w = (int)(scale_factor * w);
+    scaled_h = (int)(scale_factor * h);
 
     update_size_info(meta->general->line_count, meta->general->sample_count,
                      scaled_w, scaled_h);
@@ -593,9 +647,12 @@ static void show_it(const char * filename, int is_new)
     int bps = gdk_pixbuf_get_bits_per_sample(output_pixbuf);
     shown_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE,
                                   bps, scaled_w, scaled_h);
-    GdkInterpType interp = sw>.2 ? GDK_INTERP_BILINEAR : GDK_INTERP_NEAREST;
+    GdkInterpType interp = scale_factor > 0.2  ?
+        GDK_INTERP_BILINEAR : GDK_INTERP_NEAREST;
     gdk_pixbuf_scale(output_pixbuf, shown_pixbuf, 0, 0, scaled_w, scaled_h,
-                     0, 0, s, s, interp);
+                     0, 0, scale_factor, scale_factor, interp);
+
+    put_crosshair(shown_pixbuf);
 
     viewed_image = get_widget_checked("viewed_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewed_image), shown_pixbuf);
@@ -621,6 +678,97 @@ SIGNAL_CALLBACK void on_resize(GtkWidget *w)
 {
     //printf("signal!!\n");
     show_it(NULL, FALSE);
+}
+
+static guchar get_pixel (GdkPixbuf *pixbuf, int x, int y)
+{
+    int width, height, rowstride, n_channels;
+    guchar *pixels, *p;
+    
+    n_channels = gdk_pixbuf_get_n_channels (pixbuf);
+    
+    g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
+    g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
+    g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
+    g_assert (n_channels == 3);
+    
+    width = gdk_pixbuf_get_width (pixbuf);
+    height = gdk_pixbuf_get_height (pixbuf);
+    
+    g_assert (x >= 0 && x < width);
+    g_assert (y >= 0 && y < height);
+    
+    rowstride = gdk_pixbuf_get_rowstride (pixbuf);
+    pixels = gdk_pixbuf_get_pixels (pixbuf);
+    
+    p = pixels + y * rowstride + x * n_channels;
+    return p[0];
+}
+
+static void update_pixel_info()
+{
+    char buf[256];
+    GtkWidget *lbl = get_widget_checked("pixel_info_label");
+
+    int w = gdk_pixbuf_get_width(shown_pixbuf);
+    int h = gdk_pixbuf_get_height(shown_pixbuf);
+
+    if (crosshair_x < 0 ||
+        crosshair_x >= w || 
+        crosshair_y < 0 || 
+        crosshair_y >= h)
+    {
+        // outside of the image
+        strcpy(buf, "");
+        crosshair_x = crosshair_y = 0;
+    }
+    else
+    {
+        assert(meta);
+        assert(shown_pixbuf);
+        
+        int line = crosshair_y / scale_factor;
+        int sample = crosshair_x / scale_factor;
+        
+        guchar uval = get_pixel(shown_pixbuf, crosshair_x, crosshair_y);
+        float fval = ((float)uval - constant_term)/linear_term;
+        
+        sprintf(buf,
+                "Clicked: x=%d y=%d\n"
+                "Line: %d, Sample: %d\n"
+                "Pixel Value: %.2f -> %d\n",
+                crosshair_x, crosshair_y, line, sample, fval, (int)uval);
+    }
+
+    gtk_label_set_text(GTK_LABEL(lbl), buf);
+}
+
+SIGNAL_CALLBACK int
+on_viewed_image_eventbox_button_press_event(
+    GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+    crosshair_x = (int)event->x;
+    crosshair_y = (int)event->y;
+    update_pixel_info();
+    show_it(NULL, FALSE);
+    return TRUE;
+}
+
+SIGNAL_CALLBACK int
+on_viewed_image_eventbox_key_press_event(
+    GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+    switch (event->keyval) {
+        case GDK_Up: --crosshair_y; break;
+        case GDK_Down: ++crosshair_y; break;
+        case GDK_Left: --crosshair_x; break;
+        case GDK_Right: ++crosshair_x; break;
+        default: return TRUE;
+    }
+
+    update_pixel_info();
+    show_it(NULL, FALSE);
+    return TRUE;
 }
 
 static void show_metadata(char *metadata_filename)
