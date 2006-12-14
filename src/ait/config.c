@@ -1299,6 +1299,49 @@ void apply_settings_to_gui(ait_params_t *params)
     add_to_image_list(cfg->general->dem);
     add_to_image_list2(cfg->master->path, cfg->master->data);
     add_to_image_list2(cfg->slave->path, cfg->slave->data);
+
+    char *path = MALLOC(sizeof(char) * (strlen(params->name) + 64));
+    char *tmp = MALLOC(sizeof(char) * (strlen(params->name) + 64));
+    split_dir_and_file(params->name, path, tmp);
+    if (strlen(path) == 0) strcpy(path, ".");
+
+    add_to_image_list2(path, "a_amp.img");
+    add_to_image_list2(path, "b_amp.img");
+
+    sprintf(tmp, "%s_coh.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    sprintf(tmp, "%s_igram_ml_amp.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    sprintf(tmp, "%s_igram_ml_amp_byte.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    add_to_image_list2(path, "dem_slant.img");
+    add_to_image_list2(path, "dem_sim.img");
+    add_to_image_list2(path, "dem_sim_byte.img");
+    add_to_image_list2(path, "out_dem_phase.img");
+    add_to_image_list2(path, "filtered_phase.img");
+    add_to_image_list2(path, "escher_in_phase.img");
+    add_to_image_list2(path, "unwrap_dem.img");
+
+    sprintf(tmp, "%s_igram_ml_rgb.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    add_to_image_list2(path, "unwrap_phase.img");
+
+    sprintf(tmp, "%s_ht.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    sprintf(tmp, "%s_err_ht.img", cfg->general->base);
+    add_to_image_list2(path, tmp);
+
+    add_to_image_list2(path, "elevation.img");
+    add_to_image_list2(path, "amplitude.img");
+    add_to_image_list2(path, "error.img");
+    
+    free(tmp);
+    free(path);
 }
 
 void write_settings(ait_params_t *params)

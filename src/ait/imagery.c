@@ -18,6 +18,9 @@ static const int COL_DATA_FILE = 0;
 static const int COL_DATA_FILE_FULL = 1; // hidden column, contains full path
 static const int COL_EXISTS = 2;
 
+static double constant_term = 0.0;
+static double linear_term = 1.0;
+
 int add_to_image_list(const char * data_file)
 {
     int file_exists = fileExists(data_file);
@@ -199,20 +202,45 @@ show_please_select_message()
     message_box(msg);
 }
 
-static double get_scale()
-{
-    return .5;
-}
-
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
     g_free(pixels);
 }
 
+static void update_image_stats(double avg, double stddev,
+                               double lmin, double lmax)
+{
+    GtkWidget *lbl = get_widget_checked("image_info_label");
+
+    char buf[256];
+    linear_term = 255.0/(lmax-lmin);
+    constant_term = -lmin*linear_term;
+
+    sprintf(buf, "Mean: %f\nStd Dev: %f\n"
+            "Mapping: pixel value = %.2f * image value %c %.2f\n",
+            avg, stddev, linear_term, constant_term > 0 ? '+' : '-',
+            fabs(constant_term));
+
+    gtk_label_set_text(GTK_LABEL(lbl), buf);
+}
+
+static void update_size_info(int line_count, int sample_count,
+                             int scaled_height, int scaled_width)
+{
+    GtkWidget *lbl = get_widget_checked("image_size_label");
+
+    char buf[256];
+    sprintf(buf, "Size: %dx%d LxS -> %dx%d LxS",
+            line_count, sample_count, scaled_height, scaled_width);
+
+    gtk_label_set_text(GTK_LABEL(lbl), buf);
+}
+
 static GdkPixbuf *
 make_ceos_image_pixbuf (const char *input_metadata, 
                         const char *input_data,
-                        size_t max_dimension)
+                        size_t max_dimension,
+                        meta_parameters **meta)
 {
     /* This can happen if we don't get around to drawing the thumbnail
        until the file has already been processes & cleaned up, don't want
@@ -221,6 +249,7 @@ make_ceos_image_pixbuf (const char *input_metadata,
         return NULL;
 
     meta_parameters *imd = meta_create (input_metadata); // Input metadata.
+
     /* Make a copy of one of the arguments so the compilers doesn't
     complain about us ignoring the const qualifier when we pass it fo
     fopenCeos().  */
@@ -240,24 +269,24 @@ make_ceos_image_pixbuf (const char *input_metadata,
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
-    int larger_dim = 512;
+    int larger_dim = max_dimension;
 
     // Vertical and horizontal scale factors required to meet the
     // max_dimension part of the interface contract.
     int vsf = ceil (imd->general->line_count / larger_dim);
     int hsf = ceil (imd->general->sample_count / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
-    int sf = (hsf > vsf ? hsf : vsf);
+    int sf = (hsf > vsf ? hsf : (vsf > 0 ? vsf : 1));
 
     // Thumbnail image sizes.
     size_t tsx = imd->general->sample_count / sf;
     size_t tsy = imd->general->line_count / sf;
 
-    // Thumbnail image buffers - 'idata' is the temporary data prior
+    // Thumbnail image buffers - 'fdata' is the temporary data prior
     // to scaling to 2-sigma, 'data' is the byte buffer used to create the
     // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
     // wants an RGB value.
-    int *idata = g_new(int, tsx*tsy);
+    float *fdata = g_new(float, tsx*tsy);
     guchar *data = g_new(guchar, 3*tsx*tsy);
 
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
@@ -284,7 +313,7 @@ make_ceos_image_pixbuf (const char *input_metadata,
                 csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
             }
 
-            idata[ii*tsx + jj] = (int)csv;
+            fdata[ii*tsx + jj] = (float)csv;
             avg += csv;
         }
     }
@@ -295,7 +324,7 @@ make_ceos_image_pixbuf (const char *input_metadata,
     avg /= tsx*tsy;
     double stddev = 0.0;
     for (ii = 0; ii < tsx*tsy; ++ii)
-        stddev += ((double)idata[ii] - avg) * ((double)idata[ii] - avg);
+        stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
     stddev = sqrt(stddev / (tsx*tsy));
     
     // Set the limits of the scaling - 2-sigma on either side of the mean
@@ -305,7 +334,7 @@ make_ceos_image_pixbuf (const char *input_metadata,
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
-        int val = idata[ii];
+        float val = fdata[ii];
         guchar uval;
         if (val < lmin)
             uval = 0;
@@ -320,41 +349,29 @@ make_ceos_image_pixbuf (const char *input_metadata,
         data[n+2] = uval;
     }
     
-    g_free(idata);
+    g_free(fdata);
     
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+
+    update_image_stats(avg, stddev, lmin, lmax);
+    *meta = imd;
     
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
-        meta_free(imd);
         g_free(data);
-        return NULL;
-    }
-    
-    // Scale down to the size we actually want, using the built-in Gdk
-    // scaling method, much nicer than what we did above
-    GdkPixbuf *pb_s =
-        gdk_pixbuf_scale_simple(pb, max_dimension, 
-                                max_dimension, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
-    
-    if (!pb_s) {
-        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
-        meta_free(imd);
-        return NULL;
     }
 
-    meta_free(imd);
-    return pb_s;
+    return pb;
 }
 
 static GdkPixbuf *
 make_asf_image_pixbuf (const char *input_metadata, 
                        const char *input_data,
-                       size_t max_dimension)
+                       size_t max_dimension,
+                       meta_parameters **meta)
 {
     FILE *img = fopenImage(input_data, "rb");
     if (!img) {
@@ -368,7 +385,7 @@ make_asf_image_pixbuf (const char *input_metadata,
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
-    int larger_dim = 4096;
+    int larger_dim = max_dimension;
 
     // Vertical and horizontal scale factors required to meet the
     // max_dimension part of the interface contract.
@@ -376,16 +393,17 @@ make_asf_image_pixbuf (const char *input_metadata,
     int hsf = ceil (imd->general->sample_count / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : (vsf > 0 ? vsf : 1));
+    printf("Scale factor: %d\n", sf);
 
     // Thumbnail image sizes.
     int tsx = imd->general->sample_count / sf;
     int tsy = imd->general->line_count / sf;
 
-    // Thumbnail image buffers - 'idata' is the temporary data prior
+    // Thumbnail image buffers - 'fdata' is the temporary data prior
     // to scaling to 2-sigma, 'data' is the byte buffer used to create the
     // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
     // wants an RGB value.
-    int *idata = g_new(int, tsx*tsy);
+    float *fdata = g_new(float, tsx*tsy);
     guchar *data = g_new(guchar, 3*tsx*tsy);
 
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
@@ -405,14 +423,14 @@ make_asf_image_pixbuf (const char *input_metadata,
             double csv;		
 
             // We will average a couple pixels together.
-            if ( jj * sf < imd->general->line_count - 1 ) {
+            if ( jj * sf < imd->general->sample_count - 1 ) {
                 csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
             }
             else {
                 csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
             }
 
-            idata[ii*tsx + jj] = (int)csv;
+            fdata[ii*tsx + jj] = (float)csv;
             avg += csv;
         }
     }
@@ -423,17 +441,17 @@ make_asf_image_pixbuf (const char *input_metadata,
     avg /= tsx*tsy;
     double stddev = 0.0;
     for (ii = 0; ii < tsx*tsy; ++ii)
-        stddev += ((double)idata[ii] - avg) * ((double)idata[ii] - avg);
+        stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
     stddev = sqrt(stddev / (tsx*tsy));
     
     // Set the limits of the scaling - 2-sigma on either side of the mean
     double lmin = avg - 2*stddev;
     double lmax = avg + 2*stddev;
-    
+
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
-        int val = idata[ii];
+        float val = fdata[ii];
         guchar uval;
         if (val < lmin)
             uval = 0;
@@ -448,35 +466,38 @@ make_asf_image_pixbuf (const char *input_metadata,
         data[n+2] = uval;
     }
     
-    g_free(idata);
+    g_free(fdata);
     
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-    
+
+    update_image_stats(avg, stddev, lmin, lmax);
+    *meta = imd;
+
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
-        meta_free(imd);
         g_free(data);
-        return NULL;
-    }
-    
-    // Scale down to the size we actually want, using the built-in Gdk
-    // scaling method, much nicer than what we did above
-    GdkPixbuf *pb_s =
-        gdk_pixbuf_scale_simple(pb, max_dimension, 
-                                max_dimension, GDK_INTERP_BILINEAR);
-    gdk_pixbuf_unref(pb);
-    
-    if (!pb_s) {
-        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
-        meta_free(imd);
-        return NULL;
     }
 
-    meta_free(imd);
-    return pb_s;
+    return pb;
+}
+
+static void show_loading_label(int show)
+{
+    return;
+
+    GtkWidget *loading_label = get_widget_checked("loading_label");
+    GtkWidget *viewed_image = get_widget_checked("viewed_image");
+
+    if (show) {
+        gtk_widget_show(loading_label);
+        gtk_widget_hide(viewed_image);
+    } else {
+        gtk_widget_hide(loading_label);
+        gtk_widget_show(viewed_image);
+    }
 }
 
 static void show_it(const char * filename, int is_new)
@@ -484,6 +505,11 @@ static void show_it(const char * filename, int is_new)
     GtkWidget *viewed_image;
     static GdkPixbuf *output_pixbuf = NULL;
     static GdkPixbuf *shown_pixbuf = NULL;
+    static meta_parameters *meta = NULL;
+
+    if (!output_pixbuf && !filename) return;
+ 
+    show_loading_label(TRUE);
 
     if (is_new)
     {
@@ -498,6 +524,8 @@ static void show_it(const char * filename, int is_new)
         // should already have an output image loaded
         assert(output_pixbuf);
         assert(shown_pixbuf);
+        assert(meta);
+        assert(!filename);
     }
 
     if (shown_pixbuf) {
@@ -515,45 +543,63 @@ static void show_it(const char * filename, int is_new)
         if (strcmp(ext, ".D") == 0) {
             char *metadata_filename = appendExt(filename, ".L");
             output_pixbuf = make_ceos_image_pixbuf(metadata_filename,
-                                                   filename, max_size);
+                                                   filename, max_size, &meta);
             free(metadata_filename);
         } else if (strcmp(ext, ".img") == 0) {
             char *metadata_filename = appendExt(filename, ".meta");
             printf("Pulling %s\n", metadata_filename);
             output_pixbuf = make_asf_image_pixbuf(metadata_filename,
-                                                  filename, max_size);
+                                                  filename, max_size, &meta);
             free(metadata_filename);
         }
 
-        if ( output_pixbuf == NULL ) {
+        if (!output_pixbuf) {
             printf ("Couldn't open output image: %s\n", filename);
             message_box("Error opening output image");
             return;
         }
+
+        printf("Read in the pixbuf, generating sized version...\n");
     }
 
-    printf("Read in the pixbuf, generating sized version...\n");
-
-    double s = get_scale();
     int w = gdk_pixbuf_get_width(output_pixbuf);
     int h = gdk_pixbuf_get_height(output_pixbuf);
 
-    GtkRequisition rec;
-    GtkWidget *viewport = get_widget_checked("viewed_image_viewport");
-    gtk_widget_size_request(viewport, &rec);
+    int scaled_w;
+    int scaled_h;
+    GtkWindow *win = (GtkWindow*)get_widget_checked("ait_main");
 
-    int scaled_w = rec.width;
-    int scaled_h = rec.height;
-    printf("%dx%d -> %dx%d\n", w, h, scaled_w, scaled_h);
+    gtk_window_get_size(win, &scaled_w, &scaled_h);
+    scaled_w -= 524;
+    scaled_h -= 90;
+
+    //GtkRequisition rec;
+    //GtkWidget *win = get_widget_checked("viewed_image_scrolledwindow");
+    //gtk_widget_size_request(win, &rec);
+
+    //int scaled_w = rec.width;
+    //int scaled_h = rec.height;
+    double sw = scaled_w/(double)w;
+    double sh = scaled_h/(double)h;
+
+    double s = sw > sh ? sh : sw;
+
+    scaled_w = (int)(s*w);
+    scaled_h = (int)(s*h);
+
+    update_size_info(meta->general->line_count, meta->general->sample_count,
+                     scaled_w, scaled_h);
+
     int bps = gdk_pixbuf_get_bits_per_sample(output_pixbuf);
     shown_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE,
                                   bps, scaled_w, scaled_h);
-    GdkInterpType interp = s>.2 ? GDK_INTERP_BILINEAR : GDK_INTERP_NEAREST;
+    GdkInterpType interp = sw>.2 ? GDK_INTERP_BILINEAR : GDK_INTERP_NEAREST;
     gdk_pixbuf_scale(output_pixbuf, shown_pixbuf, 0, 0, scaled_w, scaled_h,
                      0, 0, s, s, interp);
 
     viewed_image = get_widget_checked("viewed_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(viewed_image), shown_pixbuf);
+    //gtk_image_set_from_pixbuf(GTK_IMAGE(viewed_image), output_pixbuf);
 
     if (is_new)
     {
@@ -562,11 +608,19 @@ static void show_it(const char * filename, int is_new)
 
         gtk_label_set_text(GTK_LABEL(displayed_filename_label), filename);
     }
+
+    show_loading_label(FALSE);
 }
 
 void show_output_image(const char * filename)
 {
     show_it(filename, TRUE);
+}
+
+SIGNAL_CALLBACK void on_resize(GtkWidget *w)
+{
+    //printf("signal!!\n");
+    show_it(NULL, FALSE);
 }
 
 static void show_metadata(char *metadata_filename)
@@ -605,14 +659,14 @@ static void show_metadata(char *metadata_filename)
         static GtkTextTag *tt = NULL;
 
         if (!tt)
-	    {
+        {
 #ifdef win32
             const char *fnt = "Courier";
 #else
-	        const char *fnt = "Mono";
+            const char *fnt = "Mono";
 #endif
-		    tt = gtk_text_buffer_create_tag(text_buffer, "mono",
-					"font", fnt, NULL);
+            tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+                                            "font", fnt, NULL);
         }
 
         gtk_text_buffer_get_start_iter(text_buffer, &start);
