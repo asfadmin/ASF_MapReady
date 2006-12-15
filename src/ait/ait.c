@@ -347,7 +347,7 @@ void config_callback(char *config_file)
 SIGNAL_CALLBACK void
 on_configuration_file_browse_button_clicked(GtkWidget *w)
 {
-    browse(config_callback);
+    browse(FILTER_CFG, config_callback);
 }
 
 // Master Image "Browse"
@@ -377,7 +377,7 @@ void master_callback(char *master_file)
 SIGNAL_CALLBACK void
 on_master_image_browse_button_clicked(GtkWidget *w)
 {
-    browse(master_callback);
+    browse(FILTER_IMAGERY, master_callback);
 }
 
 // Slave Image "Browse"
@@ -407,7 +407,7 @@ void slave_callback(char *slave_file)
 SIGNAL_CALLBACK void
 on_slave_image_browse_button_clicked(GtkWidget *w)
 {
-    browse(slave_callback);
+    browse(FILTER_IMAGERY, slave_callback);
 }
 
 // Reference DEM "Browse"
@@ -421,7 +421,7 @@ void dem_callback(char *dem_file)
 SIGNAL_CALLBACK void
 on_reference_dem_browse_button_clicked(GtkWidget *w)
 {
-    browse(dem_callback);
+    browse(FILTER_IMAGERY, dem_callback);
 }
 
 void
@@ -493,6 +493,7 @@ main(int argc, char **argv)
     gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
 
     //set_font();
+    create_open_dialogs();
     setup_images_treeview();
 
     if (argc > 1) {

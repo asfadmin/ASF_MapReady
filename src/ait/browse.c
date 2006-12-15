@@ -15,115 +15,144 @@
 
 #include "ait.h"
 
-typedef struct CallbackAndWidget
+static GtkWidget *open_img_win = NULL;
+static GtkWidget *open_cfg_win = NULL;
+static browse_callback *last_callback = NULL;
+
+static void handle_ok(GtkWidget *open_win)
 {
-    browse_callback *bcb;
-    GtkFileSelection *filew;
-} callback_and_widget_t;
+    assert(open_win);
+    assert(last_callback);
 
-static void file_ok_sel(GtkWidget *w, callback_and_widget_t *s)
-{
-    GtkFileSelection *fs = s->filew;
-    const char *str =
-        gtk_file_selection_get_filename (GTK_FILE_SELECTION (fs));
+    char *selected_file = gtk_file_chooser_get_filename(
+        GTK_FILE_CHOOSER(open_win));
 
-    // make a copy of the pointer to static memory
-    char *selected_file = MALLOC(sizeof(char)*(strlen(str)+2));
-    strcpy(selected_file, str);
-    printf ("Selected: %s\n", selected_file);
+    printf("Selected: %s\n", selected_file);
+    gtk_widget_hide(open_win);
 
-    s->bcb(selected_file);
+    if (selected_file)
+    {
+        last_callback(selected_file);
+        g_free(selected_file);
+    }
 
-    gtk_widget_destroy(GTK_WIDGET(fs));
-    free(selected_file);
-    free(s);
+    last_callback = NULL;
 }
 
-static void file_cancel_sel(GtkWidget *w, callback_and_widget_t *s)
+static void handle_cancel(GtkWidget *open_win)
 {
-    if (s) {
-        gtk_widget_destroy(GTK_WIDGET(s->filew));
-        free(s);
+    assert(open_win);
+    gtk_widget_hide(open_win);
+    last_callback = NULL;
+}
+
+static void img_ok_clicked()
+{
+    handle_ok(open_img_win);
+}
+
+static void cfg_ok_clicked()
+{
+    printf("Yo!\n");
+    handle_ok(open_cfg_win);
+}
+
+static void img_cancel_clicked()
+{
+    handle_cancel(open_img_win);
+}
+
+static void cfg_cancel_clicked()
+{
+    handle_cancel(open_cfg_win);
+}
+
+void create_open_dialogs()
+{
+    GtkWidget *parent = get_widget_checked("ait_main");
+
+    // Create dialog for opening up a D/img file
+    {
+        open_img_win = gtk_file_chooser_dialog_new(
+            "Open Image File", GTK_WINDOW(parent), GTK_FILE_CHOOSER_ACTION_OPEN,
+            GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+            GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+            NULL);
+
+        // we need to extract the buttons, so we can connect them to our
+        // button handlers, above
+        GtkHButtonBox *box = 
+            (GtkHButtonBox*)(((GtkDialog*)open_img_win)->action_area);
+        GList *buttons = box->button_box.box.children;
+
+        GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+        GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+        g_signal_connect((gpointer)cancel_btn, "clicked",
+            G_CALLBACK(img_cancel_clicked), NULL);
+        g_signal_connect((gpointer)ok_btn, "clicked",
+            G_CALLBACK(img_ok_clicked), NULL);
+
+        // add the filters
+        GtkFileFilter *D_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(D_filt, "CEOS Data Files (*.D)");
+        gtk_file_filter_add_pattern(D_filt, "*.D");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_img_win), D_filt);
+
+        GtkFileFilter *img_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(img_filt, "ASF Image Files (*.img)");
+        gtk_file_filter_add_pattern(img_filt, "*.img");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_img_win), img_filt);
+
+        GtkFileFilter *all_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+        gtk_file_filter_add_pattern(all_filt, "*.*");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_img_win), all_filt);
+    }
+
+    // Create dialog for opening up a .cfg file
+    {
+        open_cfg_win = gtk_file_chooser_dialog_new(
+            "Open Configuration File", GTK_WINDOW(parent), GTK_FILE_CHOOSER_ACTION_OPEN,
+            GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+            GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+            NULL);
+
+        GtkHButtonBox *box = 
+            (GtkHButtonBox*)(((GtkDialog*)open_img_win)->action_area);
+        GList *buttons = box->button_box.box.children;
+
+        GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+        GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+        g_signal_connect((gpointer)cancel_btn, "clicked",
+            G_CALLBACK(cfg_cancel_clicked), NULL);
+        g_signal_connect((gpointer)ok_btn, "clicked",
+            G_CALLBACK(cfg_ok_clicked), NULL);
+
+        GtkFileFilter *cfg_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(cfg_filt, "Configuration Files (*.cfg)");
+        gtk_file_filter_add_pattern(cfg_filt, "*.cfg");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_cfg_win), cfg_filt);
+
+        GtkFileFilter *all_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+        gtk_file_filter_add_pattern(all_filt, "*.*");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_cfg_win), all_filt);
     }
 }
 
-void browse(browse_callback bcb)
+void browse(int filter_type, browse_callback bcb)
 {
-#ifdef win32
-    OPENFILENAME of;
-    int retval;
-    char fname[1024];
-
-    fname[0] = '\0';
-
-    memset(&of, 0, sizeof(of));
-
-#ifdef OPENFILENAME_SIZE_VERSION_400
-    of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
-#else
-    of.lStructSize = sizeof(of);
-#endif
-
-    of.hwndOwner = NULL;
-    of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
-        "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
-        "STF Files (*.000)\0*.000\0"
-        "Complex Files (*.cpx)\0*.cpx\0"
-        "ALOS Files (LED-*)\0LED-*\0"
-        "All Files\0*\0";
-    of.lpstrCustomFilter = NULL;
-    of.nFilterIndex = 1;
-    of.lpstrFile = fname;
-    of.nMaxFile = sizeof(fname);
-    of.lpstrFileTitle = NULL;
-    of.lpstrInitialDir = ".";
-    of.lpstrTitle = "Select File";
-    of.lpstrDefExt = NULL;
-    of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
-
-    retval = GetOpenFileName(&of);
-
-    if (!retval) {
-        if (CommDlgExtendedError())
-            message_box("File dialog box error");
-        return;
+    last_callback = bcb;
+    if (filter_type == FILTER_IMAGERY)
+    {
+        assert(open_img_win);
+        gtk_widget_show(open_img_win);
+    } 
+    else if (filter_type == FILTER_CFG)
+    {
+        assert(open_cfg_win);
+        gtk_widget_show(open_cfg_win);
     }
-
-    /* the returned "fname" has the following form:            */
-    /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
-    char * dir = strdup(fname);
-    char * p = fname + strlen(dir) + 1;
-
-    if (*p) { 
-        while (*p) {
-            char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
-            sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
-            add_to_files_list(dir_and_file);
-            p += strlen(p) + 1;
-            free(dir_and_file);
-        }
-    } else {
-        add_to_files_list(dir);
-    }
-
-    free(dir);
-
-#else
-    GtkWidget *filew = gtk_file_selection_new("Select File");
-    gtk_window_set_modal(GTK_WINDOW(filew), TRUE);
-
-    callback_and_widget_t *s = MALLOC(sizeof(callback_and_widget_t));
-    s->filew = GTK_FILE_SELECTION(filew);
-    s->bcb = bcb;
-
-    g_signal_connect(G_OBJECT(filew), "destroy", 
-        G_CALLBACK(file_cancel_sel), NULL);
-    g_signal_connect(G_OBJECT(GTK_FILE_SELECTION(filew)->ok_button),
-        "clicked", G_CALLBACK(file_ok_sel), (gpointer)s);
-    g_signal_connect_swapped(
-        G_OBJECT(GTK_FILE_SELECTION(filew)->cancel_button),
-        "clicked", G_CALLBACK(file_cancel_sel), (gpointer)s);
-
-    gtk_widget_show(filew);
-#endif
 }

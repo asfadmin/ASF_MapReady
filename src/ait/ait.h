@@ -22,7 +22,7 @@
 #  endif
 #endif
 
-#define IPS_GUI_VERSION "0.0.1"
+#define IPS_GUI_VERSION "0.1.0"
 
 #if defined(win32)
 #include <pango/pango.h>
@@ -79,6 +79,12 @@ enum Datums
     DATUM_NAD83 = 2
 };
 
+enum Filters
+{
+    FILTER_IMAGERY = 0,
+    FILTER_CFG = 1
+};
+
 typedef struct ait_params 
 {
     char *name;
@@ -128,7 +134,8 @@ const char * datum_string(int datum);
 const char * resample_method_string(resample_method_t resample_method);
 
 // browse.c
-void browse(browse_callback bcb);
+void create_open_dialogs();
+void browse(int filter_type, browse_callback bcb);
 
 // imagery.c
 void setup_images_treeview();
