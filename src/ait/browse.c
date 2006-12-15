@@ -46,23 +46,22 @@ static void handle_cancel(GtkWidget *open_win)
     last_callback = NULL;
 }
 
-static void img_ok_clicked()
+SIGNAL_CALLBACK void img_ok_clicked()
 {
     handle_ok(open_img_win);
 }
 
-static void cfg_ok_clicked()
+SIGNAL_CALLBACK void cfg_ok_clicked()
 {
-    printf("Yo!\n");
     handle_ok(open_cfg_win);
 }
 
-static void img_cancel_clicked()
+SIGNAL_CALLBACK void img_cancel_clicked()
 {
     handle_cancel(open_img_win);
 }
 
-static void cfg_cancel_clicked()
+SIGNAL_CALLBACK void cfg_cancel_clicked()
 {
     handle_cancel(open_cfg_win);
 }
@@ -74,7 +73,8 @@ void create_open_dialogs()
     // Create dialog for opening up a D/img file
     {
         open_img_win = gtk_file_chooser_dialog_new(
-            "Open Image File", GTK_WINDOW(parent), GTK_FILE_CHOOSER_ACTION_OPEN,
+            "Open Image File", GTK_WINDOW(parent),
+            GTK_FILE_CHOOSER_ACTION_OPEN,
             GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
             GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
             NULL);
@@ -108,18 +108,26 @@ void create_open_dialogs()
         gtk_file_filter_set_name(all_filt, "All Files (*.*)");
         gtk_file_filter_add_pattern(all_filt, "*.*");
         gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_img_win), all_filt);
+
+        // we need to make these modal -- if the user opens multiple "open"
+        // dialogs, we'll get confused on the callbacks
+        gtk_window_set_modal(GTK_WINDOW(open_img_win), TRUE);
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(open_img_win), TRUE);
+        gtk_dialog_set_default_response(GTK_DIALOG(open_img_win),
+                                        GTK_RESPONSE_OK);
     }
 
     // Create dialog for opening up a .cfg file
     {
         open_cfg_win = gtk_file_chooser_dialog_new(
-            "Open Configuration File", GTK_WINDOW(parent), GTK_FILE_CHOOSER_ACTION_OPEN,
+            "Open Configuration File", GTK_WINDOW(parent),
+            GTK_FILE_CHOOSER_ACTION_OPEN,
             GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
             GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
             NULL);
 
         GtkHButtonBox *box = 
-            (GtkHButtonBox*)(((GtkDialog*)open_img_win)->action_area);
+            (GtkHButtonBox*)(((GtkDialog*)open_cfg_win)->action_area);
         GList *buttons = box->button_box.box.children;
 
         GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
@@ -139,6 +147,11 @@ void create_open_dialogs()
         gtk_file_filter_set_name(all_filt, "All Files (*.*)");
         gtk_file_filter_add_pattern(all_filt, "*.*");
         gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(open_cfg_win), all_filt);
+
+        gtk_window_set_modal(GTK_WINDOW(open_cfg_win), TRUE);
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(open_cfg_win), TRUE);
+        gtk_dialog_set_default_response(GTK_DIALOG(open_cfg_win),
+                                        GTK_RESPONSE_OK);
     }
 }
 

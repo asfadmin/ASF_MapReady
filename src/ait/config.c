@@ -1734,375 +1734,99 @@ int params_diff(ait_params_t *p1, ait_params_t *p2)
     return err > 0;
 }
 
-/* And new a whole slew of signal handlers... */
-
-SIGNAL_CALLBACK void on_configuration_file_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_short_configuration_file_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_master_image_path_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_master_image_data_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_master_image_metadata_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_slave_image_path_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_slave_image_data_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_slave_image_metadata_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_reference_dem_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_lat_begin_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_lat_end_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_maximum_offset_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_deskew_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ingest_precise_master_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ingest_precise_slave_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ingest_precise_orbits_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_patches_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_start_master_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_start_slave_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_grid_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_fft_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_offset_azimuth_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_first_offset_range_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_patches_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_start_master_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_start_slave_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_grid_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_fft_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_offset_azimuth_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_coregister_last_offset_range_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_master_start_offset_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_master_end_offset_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_master_patches_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_master_power_flag_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_slave_start_offset_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_slave_end_offset_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_slave_patches_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ardop_slave_power_flag_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_interferogram_min_coherence_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_interferogram_multilook_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_offset_matching_max_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_flattening_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_processors_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_tiles_azimuth_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_tiles_range_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_tiles_per_degree_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_overlap_azimuth_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_overlap_range_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_phase_unwrapping_filter_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_baseline_refinement_iterations_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_baseline_refinement_max_iterations_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_mode_dem_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_mode_dinsar_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_data_type_stf_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_data_type_raw_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_data_type_slc_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_algorithm_escher_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_algorithm_snaphu_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_resample_optionmenu_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_central_meridian_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_pixel_size_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_first_standard_parallel_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_second_standard_parallel_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_datum_optionmenu_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_ppm_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_jpg_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_projection_optionmenu_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_force_checkbutton(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_latitude_of_origin_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_zone_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_height_entry_changed(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_geotiff_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_tiff_activate(GtkWidget *w)
-{
-    update_everything();
-}
-
-SIGNAL_CALLBACK void on_force_checkbutton_toggled(GtkWidget *w)
-{
-    update_everything();
-}
-
+// And new a whole slew of signal handlers... 
+// These are all for updating the "summary" section whenever the user
+// changes any settings.
+
+// In case one widget updates another, we temporarily block while
+// updating.
+
+static int block = FALSE;
+
+static void callback_code()
+{
+    if (block) // do not allow updates to trigger more updates
+        return;
+
+    block = TRUE;
+    update_everything();
+    block = FALSE;
+}
+
+#define DEFINE_CALLBACK(x) \
+    SIGNAL_CALLBACK void x(GtkWidget *w) { callback_code(); }
+
+DEFINE_CALLBACK(on_configuration_file_entry_changed)
+DEFINE_CALLBACK(on_short_configuration_file_checkbutton_toggled)
+DEFINE_CALLBACK(on_master_image_path_entry_changed)
+DEFINE_CALLBACK(on_master_image_data_entry_changed)
+DEFINE_CALLBACK(on_master_image_metadata_entry_changed)
+DEFINE_CALLBACK(on_slave_image_path_entry_changed)
+DEFINE_CALLBACK(on_slave_image_data_entry_changed)
+DEFINE_CALLBACK(on_slave_image_metadata_entry_changed)
+DEFINE_CALLBACK(on_reference_dem_entry_changed)
+DEFINE_CALLBACK(on_lat_begin_entry_changed)
+DEFINE_CALLBACK(on_lat_end_entry_changed)
+DEFINE_CALLBACK(on_maximum_offset_entry_changed)
+DEFINE_CALLBACK(on_deskew_checkbutton_toggled)
+DEFINE_CALLBACK(on_ingest_precise_master_entry_changed)
+DEFINE_CALLBACK(on_ingest_precise_slave_entry_changed)
+DEFINE_CALLBACK(on_ingest_precise_orbits_checkbutton_toggled)
+DEFINE_CALLBACK(on_coregister_first_patches_entry_changed)
+DEFINE_CALLBACK(on_coregister_first_start_master_entry_changed)
+DEFINE_CALLBACK(on_coregister_first_start_slave_entry_changed)
+DEFINE_CALLBACK(on_coregister_first_grid_entry_changed)
+DEFINE_CALLBACK(on_coregister_first_fft_checkbutton_toggled)
+DEFINE_CALLBACK(on_coregister_first_offset_azimuth_entry_changed)
+DEFINE_CALLBACK(on_coregister_first_offset_range_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_patches_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_start_master_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_start_slave_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_grid_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_fft_checkbutton_toggled)
+DEFINE_CALLBACK(on_coregister_last_offset_azimuth_entry_changed)
+DEFINE_CALLBACK(on_coregister_last_offset_range_entry_changed)
+DEFINE_CALLBACK(on_ardop_master_start_offset_entry_changed)
+DEFINE_CALLBACK(on_ardop_master_end_offset_entry_changed)
+DEFINE_CALLBACK(on_ardop_master_patches_entry_changed)
+DEFINE_CALLBACK(on_ardop_master_power_flag_checkbutton_toggled)
+DEFINE_CALLBACK(on_ardop_slave_start_offset_entry_changed)
+DEFINE_CALLBACK(on_ardop_slave_end_offset_entry_changed)
+DEFINE_CALLBACK(on_ardop_slave_patches_entry_changed)
+DEFINE_CALLBACK(on_ardop_slave_power_flag_checkbutton_toggled)
+DEFINE_CALLBACK(on_interferogram_min_coherence_entry_changed)
+DEFINE_CALLBACK(on_interferogram_multilook_checkbutton_toggled)
+DEFINE_CALLBACK(on_offset_matching_max_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_flattening_checkbutton_toggled)
+DEFINE_CALLBACK(on_phase_unwrapping_processors_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_tiles_azimuth_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_tiles_range_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_tiles_per_degree_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_overlap_azimuth_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_overlap_range_entry_changed)
+DEFINE_CALLBACK(on_phase_unwrapping_filter_entry_changed)
+DEFINE_CALLBACK(on_baseline_refinement_iterations_entry_changed)
+DEFINE_CALLBACK(on_baseline_refinement_max_iterations_entry_changed)
+DEFINE_CALLBACK(on_mode_dem_activate)
+DEFINE_CALLBACK(on_mode_dinsar_activate)
+DEFINE_CALLBACK(on_data_type_stf_activate)
+DEFINE_CALLBACK(on_data_type_raw_activate)
+DEFINE_CALLBACK(on_data_type_slc_activate)
+DEFINE_CALLBACK(on_algorithm_escher_activate)
+DEFINE_CALLBACK(on_algorithm_snaphu_activate)
+DEFINE_CALLBACK(on_resample_optionmenu_changed)
+DEFINE_CALLBACK(on_central_meridian_entry_changed)
+DEFINE_CALLBACK(on_pixel_size_entry_changed)
+DEFINE_CALLBACK(on_first_standard_parallel_entry_changed)
+DEFINE_CALLBACK(on_second_standard_parallel_entry_changed)
+DEFINE_CALLBACK(on_datum_optionmenu_changed)
+DEFINE_CALLBACK(on_ppm_activate)
+DEFINE_CALLBACK(on_jpg_activate)
+DEFINE_CALLBACK(on_projection_optionmenu_changed)
+DEFINE_CALLBACK(on_force_checkbutton)
+DEFINE_CALLBACK(on_latitude_of_origin_entry_changed)
+DEFINE_CALLBACK(on_zone_entry_changed)
+DEFINE_CALLBACK(on_height_entry_changed)
+DEFINE_CALLBACK(on_geotiff_activate)
+DEFINE_CALLBACK(on_tiff_activate)
+DEFINE_CALLBACK(on_force_checkbutton_toggled)
