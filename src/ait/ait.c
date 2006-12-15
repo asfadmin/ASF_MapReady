@@ -140,9 +140,20 @@ add_file(char *config_file)
     if (params) {
         apply_settings_to_gui(params);
         //message_box("Read config file: %s", config_file);
+
+        int do_test = TRUE;
+        if (do_test) {
+            ait_params_t *p1 = get_settings_from_gui();
+            if (!params_diff(params, p1))
+                asfPrintWarning("Applied to GUI != Read from file!\n");
+            free_ait_params(p1);
+        }
+
     } else {
         message_box("Error reading config file: %s\n", config_file);
     }
+
+    free_ait_params(params);
 }
 
 void file_into_textview(char *filename, const char *textview_name)
@@ -205,7 +216,7 @@ grab_log(char *config_file)
     char *log_file = appendExt(config_file, ".log");
     file_into_textview(log_file, "log_textview");
 
-    GtkWidget *log_label = get_widget_checked("log_label");
+    GtkWidget *log_label = get_widget_checked("log_file_label");
     gtk_label_set_text(GTK_LABEL(log_label), log_file);
 }
 
@@ -255,11 +266,38 @@ on_execute_button_clicked(GtkWidget *w)
 {
     ait_params_t *params = get_settings_from_gui();
 
-    if (strlen(params->name) > 0) {
-        write_settings(params);
-        ips(params->cfg, params->name, FALSE);
+    if (strlen(params->name) > 0)
+    {
+        GtkWidget *execute_button = get_widget_checked("execute_button");
+        gtk_widget_set_sensitive(execute_button, FALSE);
+
+        int pid = fork();
+
+        if (pid == 0)
+        {
+            /* This is the background thread: runs ips */
+            write_settings(params);
+            ips(params->cfg, params->name, FALSE);
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            /* This is the gui thread */
+            while (waitpid(-1, NULL, WNOHANG) == 0)
+            {
+                while (gtk_events_pending())
+                    gtk_main_iteration();
+                
+                g_usleep(50);
+            }     
+        }
+
         grab_log(params->name);
-    } else {
+        gtk_widget_set_sensitive(execute_button, TRUE);
+    }
+    else
+    {
+        // must have a config file name to start
         message_box("Error running ips: No configuration file name.");
     }
 

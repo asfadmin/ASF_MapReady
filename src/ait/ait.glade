@@ -7768,7 +7768,7 @@
 					<widget class="GtkTextView" id="metadata_textview">
 					  <property name="visible">True</property>
 					  <property name="can_focus">True</property>
-					  <property name="editable">True</property>
+					  <property name="editable">False</property>
 					  <property name="overwrite">False</property>
 					  <property name="accepts_tab">True</property>
 					  <property name="justification">GTK_JUSTIFY_LEFT</property>
@@ -7917,7 +7917,7 @@
 				  </child>
 
 				  <child>
-				    <widget class="GtkLabel" id="log_label">
+				    <widget class="GtkLabel" id="log_file_label">
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">-</property>
 				      <property name="use_underline">False</property>

@@ -363,10 +363,12 @@ ait_params_t *get_settings_from_gui()
 
     dem_config *cfg = create_config_with_defaults();
 
+    // "base" is the config file's basename
+    cfg->general->base = get_basename(cfg_name);
+
     strcpy(cfg->general->mode, get_combo_box_item("mode_optionmenu"));
     get_str(cfg->general->dem, "reference_dem_entry");
     //cfg->general->def_val = new_blank_str();
-    //cfg->general->base = new_blank_str();
     strcpy(cfg->general->data_type,
            get_combo_box_item("data_type_optionmenu"));
     get_chk(&cfg->general->deskew, "deskew_checkbutton");
@@ -503,7 +505,7 @@ ait_params_t *get_settings_from_gui()
     ret->cfg = cfg;
 
     ret->proj = get_projection_options(&ret->force, &ret->resample_method);
-    cfg->geocode->pixel_spacing = ret->proj->perX;
+    cfg->geocode->pixel_spacing = ret->proj ? ret->proj->perX : 0.0;
 
     return ret;
 }
@@ -1297,6 +1299,7 @@ void apply_settings_to_gui(ait_params_t *params)
     // Imagery List
     clear_image_list();
 
+    add_section_to_image_list("Input Files");
     add_to_image_list(cfg->general->dem);
     add_to_image_list2(cfg->master->path, cfg->master->data);
     add_to_image_list2(cfg->slave->path, cfg->slave->data);
@@ -1306,22 +1309,28 @@ void apply_settings_to_gui(ait_params_t *params)
     split_dir_and_file(params->name, path, tmp);
     if (strlen(path) == 0) strcpy(path, ".");
 
+    add_section_to_image_list("Ingest");
     add_to_image_list2(path, "a_amp.img");
     add_to_image_list2(path, "b_amp.img");
 
+    add_section_to_image_list("Coherence");
     sprintf(tmp, "%s_coh.img", cfg->general->base);
     add_to_image_list2(path, tmp);
 
+    add_section_to_image_list("Interferograms");
     sprintf(tmp, "%s_igram_ml_amp.img", cfg->general->base);
     add_to_image_list2(path, tmp);
 
     sprintf(tmp, "%s_igram_ml_amp_byte.img", cfg->general->base);
     add_to_image_list2(path, tmp);
 
+    add_section_to_image_list("Offset Matching");
     add_to_image_list2(path, "dem_slant.img");
     add_to_image_list2(path, "dem_sim.img");
     add_to_image_list2(path, "dem_sim_byte.img");
     add_to_image_list2(path, "out_dem_phase.img");
+
+    add_section_to_image_list("Phase Unwrapping");
     add_to_image_list2(path, "filtered_phase.img");
     add_to_image_list2(path, "escher_in_phase.img");
     add_to_image_list2(path, "unwrap_dem.img");
@@ -1331,12 +1340,14 @@ void apply_settings_to_gui(ait_params_t *params)
 
     add_to_image_list2(path, "unwrap_phase.img");
 
+    add_section_to_image_list("Elevation");
     sprintf(tmp, "%s_ht.img", cfg->general->base);
     add_to_image_list2(path, tmp);
 
     sprintf(tmp, "%s_err_ht.img", cfg->general->base);
     add_to_image_list2(path, tmp);
 
+    add_section_to_image_list("Export");
     add_to_image_list2(path, "elevation.img");
     add_to_image_list2(path, "amplitude.img");
     add_to_image_list2(path, "error.img");
@@ -1468,6 +1479,259 @@ ait_params_t *read_settings(char *config_file)
     }
 
     return params;
+}
+
+static int diff_str(const char *field_name, const char *s1, const char *s2)
+{
+    int ok = strcmp(s1,s2)==0;
+    if (!ok)
+        printf("%s: %s != %s\n", field_name, s1, s2);
+
+    return ok;
+}
+
+static int diff_dbl(const char *field_name, double d1, double d2)
+{
+    int ok = fabs(d1-d2)<.001;
+    if (!ok)
+        printf("%s: %.2f != %.2f\n", field_name, d1, d2);
+
+    return ok;
+}
+
+static int diff_int(const char *field_name, int i1, int i2)
+{
+    int ok = i1==i2;
+    if (!ok)
+        printf("%s: %d != %d\n", field_name, i1, i2);
+
+    return ok;
+}
+
+static int diff_lng(const char *field_name, long l1, long l2)
+{
+    int ok = l1==l2;
+    if (!ok)
+        printf("%s: %ld != %ld\n", field_name, l1, l2);
+
+    return ok;
+}
+
+int params_diff(ait_params_t *p1, ait_params_t *p2)
+{
+    int err = 0;
+
+    dem_config *c1 = p1->cfg;
+    dem_config *c2 = p2->cfg;
+
+#define DSTR(x) err += diff_str(#x, c1->x, c2->x)
+#define DDBL(x) err += diff_dbl(#x, c1->x, c2->x)
+#define DINT(x) err += diff_int(#x, c1->x, c2->x)
+#define DLNG(x) err += diff_lng(#x, c1->x, c2->x)
+
+    DSTR(general->mode);
+    DSTR(general->dem);
+    DSTR(general->base);
+    DSTR(general->data_type);
+    DINT(general->deskew);
+    DSTR(general->doppler);
+    DDBL(general->lat_begin);
+    DDBL(general->lat_end);
+    DSTR(general->coreg);
+    DINT(general->max_off);
+    DINT(general->mflag);
+    DSTR(general->mask);
+    DSTR(general->def_val);
+    DINT(general->test);
+    DINT(general->short_config);
+    DSTR(general->status);
+
+    DSTR(master->path);
+    DSTR(master->data);
+    DSTR(master->meta);
+
+    DSTR(slave->path);
+    DSTR(slave->data);
+    DSTR(slave->meta);
+
+    DSTR(ingest->prc_master);
+    DSTR(ingest->prc_slave);
+    DINT(ingest->prcflag);
+    DSTR(ingest->status);
+
+    DSTR(doppler->status);
+    DSTR(doppler_per_patch->status);
+
+    DINT(coreg_p1->patches);
+    DLNG(coreg_p1->start_master);
+    DLNG(coreg_p1->start_slave);
+    DINT(coreg_p1->grid);
+    DINT(coreg_p1->fft);
+    DINT(coreg_p1->sinc);
+    DINT(coreg_p1->warp);
+    DINT(coreg_p1->off_az);
+    DINT(coreg_p1->off_rng);
+    DSTR(coreg_p1->status);
+
+    DINT(coreg_pL->patches);
+    DLNG(coreg_pL->start_master);
+    DLNG(coreg_pL->start_slave);
+    DINT(coreg_pL->grid);
+    DINT(coreg_pL->fft);
+    DINT(coreg_pL->sinc);
+    DINT(coreg_pL->warp);
+    DINT(coreg_pL->off_az);
+    DINT(coreg_pL->off_rng);
+    DSTR(coreg_pL->status);
+
+    DLNG(ardop_master->start_offset);
+    DLNG(ardop_master->end_offset);
+    DINT(ardop_master->patches);
+    DINT(ardop_master->power);
+    DSTR(ardop_master->power_img);
+    DSTR(ardop_master->status);
+
+    DLNG(ardop_slave->start_offset);
+    DLNG(ardop_slave->end_offset);
+    DINT(ardop_slave->patches);
+    DINT(ardop_slave->power);
+    DSTR(ardop_slave->power_img);
+    DSTR(ardop_slave->status);
+
+    DSTR(cpx_autofilter->status);
+
+    DINT(coreg_slave->patches);
+    DLNG(coreg_slave->start_master);
+    DLNG(coreg_slave->start_slave);
+    DINT(coreg_slave->grid);
+    DINT(coreg_slave->fft);
+    DINT(coreg_slave->sinc);
+    DINT(coreg_slave->warp);
+    DINT(coreg_slave->off_az);
+    DINT(coreg_slave->off_rng);
+    DSTR(coreg_slave->status);
+
+    DSTR(igram_coh->igram);
+    DSTR(igram_coh->coh);
+    DDBL(igram_coh->min);
+    DINT(igram_coh->ml);
+    DSTR(igram_coh->status);
+
+    DDBL(offset_match->max);
+    DSTR(offset_match->status);
+
+    DSTR(sim_phase->seeds);
+    DSTR(sim_phase->status);
+
+    DSTR(dinsar->igram);
+    DSTR(dinsar->status);
+
+    DSTR(deramp_ml->status);
+
+    DSTR(unwrap->algorithm);
+    DINT(unwrap->flattening);
+    DINT(unwrap->procs);
+    DINT(unwrap->tiles_azimuth);
+    DINT(unwrap->tiles_range);
+    DINT(unwrap->tiles_per_degree);
+    DINT(unwrap->overlap_azimuth);
+    DINT(unwrap->overlap_range);
+    DDBL(unwrap->filter);
+    DSTR(unwrap->qc);
+    DSTR(unwrap->status);
+
+    DINT(refine->iter);
+    DINT(refine->max);
+    DSTR(refine->status);
+
+    DSTR(elevation->dem);
+    DSTR(elevation->error);
+    DSTR(elevation->status);
+
+    DSTR(ground_range->status);
+
+    DSTR(geocode->dem);
+    DSTR(geocode->amp);
+    DSTR(geocode->error);
+    DSTR(geocode->coh);
+    DSTR(geocode->name);
+    //DSTR(geocode->proj);
+    DSTR(geocode->resample);
+    DDBL(geocode->pixel_spacing);
+    DSTR(geocode->status);
+
+    DSTR(export->status);
+
+#undef DSTR
+#undef DDBL
+#undef DINT
+#undef DLNG
+
+#define DSTR(x) err += diff_str(#x, p1->x, p2->x)
+#define DDBL(x) err += diff_dbl(#x, p1->x, p2->x)
+#define DINT(x) err += diff_int(#x, p1->x, p2->x)
+#define DLNG(x) err += diff_lng(#x, p1->x, p2->x)
+
+    DSTR(name);
+    DINT(resample_method);
+    DINT(force);
+
+#undef DSTR
+#undef DDBL
+#undef DINT
+#undef DLNG
+
+    meta_projection *proj1 = p1->proj;
+    meta_projection *proj2 = p2->proj;
+
+#define DSTR(x) err += diff_str(#x, proj1->x, proj2->x)
+#define DDBL(x) err += diff_dbl(#x, proj1->x, proj2->x)
+#define DINT(x) err += diff_int(#x, proj1->x, proj2->x)
+#define DLNG(x) err += diff_lng(#x, proj1->x, proj2->x)
+
+    DINT(type);
+    DDBL(perX);
+    DDBL(perY);
+    DINT(datum);
+    DDBL(height);
+
+    switch (proj1->type) {
+        case UNIVERSAL_TRANSVERSE_MERCATOR:
+            DINT(param.utm.zone);
+            break;
+        case POLAR_STEREOGRAPHIC:
+            DDBL(param.ps.slat);
+            DDBL(param.ps.slon);
+            DINT(param.ps.is_north_pole);
+            break;
+        case ALBERS_EQUAL_AREA:
+            DDBL(param.albers.std_parallel1);
+            DDBL(param.albers.std_parallel2);
+            DDBL(param.albers.center_meridian);
+            DDBL(param.albers.orig_latitude);
+            break;
+        case LAMBERT_CONFORMAL_CONIC:
+            DDBL(param.lamcc.plat1);
+            DDBL(param.lamcc.plat2);
+            DDBL(param.lamcc.lat0);
+            DDBL(param.lamcc.lon0);
+            break;
+        case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+            DDBL(param.lamaz.center_lon);
+            DDBL(param.lamaz.center_lat);
+            break;
+        default:
+            printf("Invalid projection type: %d\n", proj1->type);
+            ++err;
+            break;
+    }
+
+#undef DSTR
+#undef DDBL
+#undef DINT
+#undef DLNG
+    
+    return err > 0;
 }
 
 /* And new a whole slew of signal handlers... */

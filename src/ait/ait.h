@@ -105,6 +105,7 @@ GtkWidget *get_widget_checked(const char *widget_name);
 void update_everything();
 char *meta_file_name(const char *data_file_name);
 void file_into_textview(char *filename, const char *textview_name);
+int params_diff(ait_params_t *p1, ait_params_t *p2);
 
 // config.c
 ait_params_t *get_settings_from_gui();
@@ -134,5 +135,6 @@ void setup_images_treeview();
 void clear_image_list();
 int add_to_image_list(const char * data_file);
 int add_to_image_list2(const char * path, const char * data_file);
+int add_section_to_image_list(const char *section_name);
 
 #endif

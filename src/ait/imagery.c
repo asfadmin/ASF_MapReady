@@ -28,6 +28,18 @@ static double scale_factor = 1.0;
 static int crosshair_x = -1;
 static int crosshair_y = -1;
 
+int add_section_to_image_list(const char *section_name)
+{
+    GtkTreeIter iter;
+    gtk_list_store_append(images_list, &iter);
+    gtk_list_store_set(images_list, &iter,
+                       COL_DATA_FILE, section_name,
+                       COL_DATA_FILE_FULL, "X",
+                       COL_EXISTS, "",
+                       -1);
+    return TRUE;
+}
+
 int add_to_image_list(const char * data_file)
 {
     int file_exists = fileExists(data_file);
@@ -46,7 +58,7 @@ int add_to_image_list(const char * data_file)
                        COL_DATA_FILE, file,
                        COL_DATA_FILE_FULL, data_file,
                        COL_EXISTS, exists,
-        -1);
+                       -1);
 
     free(dir);
     free(file);
@@ -95,26 +107,48 @@ void render_filename(GtkTreeViewColumn *tree_column,
                      gpointer data)
 {
     char *data_file;
+    char *data_file_full;
 
     gtk_tree_model_get (tree_model, iter, 
-        COL_DATA_FILE, &data_file, -1);
+        COL_DATA_FILE, &data_file, COL_DATA_FILE_FULL, &data_file_full, -1);
 
-    if (fileExists(data_file))
+    if (strcmp(data_file_full, "X") == 0)
+    {
+        // this is a section heading...
+        GdkColor c;
+        c.blue = 65535;
+        c.red = c.green = 0;
+
+        g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+        g_object_set( G_OBJECT (cell), "font", "Bold", NULL);
+    }
+    else if (fileExists(data_file))
     {
         GdkColor c;
-
         c.red = 65535;
         c.green = c.blue = 0;
 
         g_object_set( G_OBJECT (cell), "foreground-gdk", &c, NULL);
+        g_object_set( G_OBJECT (cell), "font", "Normal 8", NULL);
     }
     else
     {
         g_object_set( G_OBJECT (cell), "foreground-gdk", NULL, NULL);
+        g_object_set( G_OBJECT (cell), "font", "Normal 8", NULL);
     }
 
     g_object_set (G_OBJECT (cell), "text", data_file, NULL);
     g_free(data_file);
+    g_free(data_file_full);
+}
+
+void render_exists(GtkTreeViewColumn *tree_column,
+                   GtkCellRenderer *cell,
+                   GtkTreeModel *tree_model,
+                   GtkTreeIter *iter,
+                   gpointer data)
+{
+    g_object_set( G_OBJECT (cell), "font", "Normal 8", NULL);
 }
 
 void
@@ -136,7 +170,7 @@ setup_images_treeview()
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE);
 
-    /* add our custom renderer (turns existing files red) */
+    /* add our custom renderer (turns existing files red, changes font) */
     gtk_tree_view_column_set_cell_data_func(col, renderer,
         render_filename, NULL, NULL);
 
@@ -157,6 +191,10 @@ setup_images_treeview()
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_EXISTS);
+
+    /* add our custom renderer (smaller font) */
+    gtk_tree_view_column_set_cell_data_func(col, renderer,
+        render_exists, NULL, NULL);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(images_treeview), 
         GTK_TREE_MODEL(images_list));  
@@ -747,10 +785,20 @@ SIGNAL_CALLBACK int
 on_viewed_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+    // temporarily block keypress events...
+    widget = get_widget_checked("viewed_image_eventbox");
+    gtk_widget_set_events(widget, 0);
+    
     crosshair_x = (int)event->x;
     crosshair_y = (int)event->y;
+
     update_pixel_info();
     show_it(NULL, FALSE);
+
+    while (gtk_events_pending())
+        gtk_main_iteration();    
+
+    gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
@@ -800,43 +848,46 @@ SIGNAL_CALLBACK void on_view_button_clicked(GtkWidget *w)
         gtk_tree_model_get(GTK_TREE_MODEL(images_list), &iter, 
             COL_DATA_FILE_FULL, &file_name, -1);
 
-        printf("Displaying: %s\n", file_name);
+        if (strcmp(file_name, "X") != 0)
+        {
+            printf("Displaying: %s\n", file_name);
+            
+            if (g_file_test(file_name, G_FILE_TEST_EXISTS))
+            {
+                show_output_image(file_name);
+            }
+            else
+            {
+                char msg[2048];
+                sprintf(msg, "The file was not found:\n"
+                        "   %s\n", file_name);
+                message_box(msg);
+            }
+            
+            char *meta_name = meta_file_name(file_name);
+            char *ext = findExt(meta_name);
+            if (strcmp(ext, ".L") == 0)
+            {
+                gtk_text_buffer_set_text(tb, 
+                    "Display of CEOS Metadata not yet supported!", -1);
+                gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);
+            }
+            else if (g_file_test(meta_name, G_FILE_TEST_EXISTS))
+            {
+                show_metadata(meta_name);
+            }
+            else
+            {
+                char *buf = MALLOC(sizeof(char)*(strlen(meta_name) + 64));
+                sprintf(buf, "Metadata file not found: %s", meta_name);
+                gtk_text_buffer_set_text(tb, buf, -1);
+                free(buf);
 
-        if (g_file_test(file_name, G_FILE_TEST_EXISTS))
-        {
-            show_output_image(file_name);
+                gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);
+            }
+         
+            free(meta_name);
         }
-        else
-        {
-            char msg[2048];
-            sprintf(msg, "The file was not found:\n"
-                "   %s\n", file_name);
-            message_box(msg);
-        }
-
-        char *meta_name = meta_file_name(file_name);
-        char *ext = findExt(meta_name);
-        if (strcmp(ext, ".L") == 0)
-        {
-            gtk_text_buffer_set_text(tb, 
-                "Display of CEOS Metadata not yet supported!", -1);
-            gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);            
-        }
-        else if (g_file_test(meta_name, G_FILE_TEST_EXISTS))
-        {
-            show_metadata(meta_name);
-        }
-        else
-        {
-            char *buf = MALLOC(sizeof(char)*(strlen(meta_name) + 64));
-            sprintf(buf, "Metadata file not found: %s", meta_name);
-            gtk_text_buffer_set_text(tb, buf, -1);
-            free(buf);
-
-            gtk_label_set_text(GTK_LABEL(metadata_label), meta_name);
-        }
-
-        free(meta_name);
     }
     else
     {
