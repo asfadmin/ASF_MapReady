@@ -180,7 +180,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   meta_parameters *meta_out;
   datum_type_t datum;
   va_list ap;
-  
+
   /***** INITIALIZE PARAMETERS *****/
   /*                               */
   // Create a new metadata object for the image.
@@ -197,7 +197,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   meta_out->ifm = NULL;
   meta_out->info = NULL;
   datum = UNKNOWN_DATUM;
-  
+
   // Set up convenience pointers
   meta_general *mg = meta_out->general;
   meta_projection *mp = meta_out->projection;
@@ -218,10 +218,10 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Open the structure that contains the geotiff keys.
   input_gtif = GTIFNew (input_tiff);
-  asfRequire (input_gtif != NULL, 
+  asfRequire (input_gtif != NULL,
 	      "Error reading GeoTIFF keys from input TIFF file.\n");
 
-  
+
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
   /*                                            */
   // Read GeoTIFF file citation (general info from the maker of the file)
@@ -236,7 +236,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   char *citation = MALLOC ((citation_length) * typeSize);
   GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
   asfPrintStatus("Citation: %s\n", citation);
-  
+
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
   // geotiff theoretically supports multiple tie points, we don't
@@ -247,7 +247,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // file associated with their geotiffs, it is _required_ that they
   // are found in their tiff files.
   double *tie_point;
-  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count, 
+  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
   &tie_point);
   asfRequire (count == 6,
               "\nGeoTIFF file does not contain tie points\n");
@@ -260,16 +260,16 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
               "\nGeoTIFF file does not contain pixel scale parameters\n");
   asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
               "\nGeoTIFF file contains invalid pixel scale parameters\n");
-  
+
   // CHECK TO SEE IF THE GEOTIFF DOES CONTAIN USEFUL DATA:
   //  If the tiff file contains geocoded information, then the model type
-  // will be ModelTypeProjected.  We add the requirement that pixels 
+  // will be ModelTypeProjected.  We add the requirement that pixels
   // represent area and that the units are in meters because that's what
   // we support to date.
-  
+
   read_count
       = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-  read_count 
+  read_count
       += GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, &raster_type, 0, 0);
   read_count
       += GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
@@ -279,7 +279,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       linear_units == Linear_Meter      )
   {
     // GeoTIFF appears to contain the projection parameters, but note that
-    // (ProjectedCSTypeGeoKey must either be a UTM type) -or- 
+    // (ProjectedCSTypeGeoKey must either be a UTM type) -or-
     // (ProjectedCSTypeGeoKey is not UTM and ProjCoordTransGeoKey is a supported
     // type).  See the if(geotiff_data_exists) section on reading parameters below.
     geotiff_data_exists = 1;
@@ -301,7 +301,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                   (linear_units == Linear_Meter) ?
                       "meters" : "(Unsupported type)");
-  
+
   /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
   /***** THEN READ THEM FROM THE METADATA (.AUX) FILE TO SUPERCEDE IF THEY EXIST *****/
   /*                                                                                 */
@@ -335,9 +335,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     arcgisProjParms.proSpheroid.eSquared = MAGIC_UNSET_DOUBLE;
     arcgisProjParms.proSpheroid.radius = MAGIC_UNSET_DOUBLE;
 
-    // TODO: If ArcGIS ever decides to put projection information in the
-    // GeoTIFF, e.g. from ArcMap, then the UNTESTED_CODE define should
-    // be removed and the following code tested for release
     short proj_coords_trans;
     short pcs;
     short geokey_datum;
@@ -404,14 +401,13 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         asfPrintWarning("\nUnable to determine datum type from GeoTIFF file\n");
       }
     }
-    
+
     asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
         "with data found in the ArcGIS metadata (.aux) file.\n");
-    
+
     projection_type = UNKNOWN_PROJECTION_TYPE;
     scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
     switch(proj_coords_trans) {
-      // TODO: The UTM case is UNTESTED
       case CT_TransverseMercator:
       case CT_TransvMercator_Modified_Alaska:
       case CT_TransvMercator_SouthOriented:
@@ -531,7 +527,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
         }
         break;
-      // TODO: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
+      // FIXME: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
       case CT_LambertConfConic_1SP:
         projection_type = LAMCC;
         arcgisProjParms.proNumber = projection_type;
@@ -583,7 +579,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           asfPrintWarning(msg);
         }
         break;
-      // TODO: The Lambert Conformal Conic 2 Std Parallels case is UNTESTED
       case CT_LambertConfConic_2SP:
         projection_type = LAMCC;
         arcgisProjParms.proNumber = projection_type;
@@ -643,7 +638,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
         }
         break;
-      // TODO: The Polar Stereographic case is UNTESTED
       case CT_PolarStereographic:
         projection_type = PS;
         arcgisProjParms.proNumber = projection_type;
@@ -691,7 +685,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
         // use it, e.g. it is not current written to the meta data file with meta_write().
         break;
-      // TODO: The Lambert Azimuthal Equal Area case is UNTESTED
       case CT_LambertAzimEqualArea:
         projection_type = LAMAZ;
         arcgisProjParms.proNumber = projection_type;
@@ -737,7 +730,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         break;
     }
   } // End of reading projection parameters from geotiff ...if it existed
-  
+
   /***** GET ALL VALUES THAT ARE IN THE ARCGIS METADATA FILE (.aux)  *****/
   /*     IF THE FILE EXISTS.                                             */
   char inBaseName[256];
@@ -797,7 +790,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     }
   }
   g_string_free (inGeotiffAuxName, TRUE);
-  
+
   // If at this point, the projection parameters were found in neither file
   // then quit ...
   asfRequire(geotiff_data_exists || auxDataExists,
@@ -818,7 +811,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // UPDATE: I'm commenting out the creation of a pre-bad data scan jpeg because
   // for now it doesn't seem likely that ArcGIS geotiffs will have problems
 //  asfPrintStatus("\nConverting original image to jpeg format and saving to disk...\n");
-//  float_image_export_as_jpeg 
+//  float_image_export_as_jpeg
 //    (image, "pre_bad_data_remap.jpeg",
 //     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
 
@@ -852,15 +845,15 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         "result in inaccurate image statistics.\n\n");
     asfPrintStatus("Extra-negative values found within the float image have been removed\n\n");
   }
-  
+
   // Get the raster width and height of the image.
   uint32 width = image->size_x;
   uint32 height = image->size_y;
 
-  
+
   /***** FILL IN THE META DATA *****/
   /*                               */
-  
+
   // Data type is REAL32 because the image is converted to float
   mg->data_type = REAL32;
 
@@ -927,7 +920,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   double center_x = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
   double center_y = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
   // converts to center_latitude and center_longitude below...
-  
+
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     mg->re_major = arcgisProjParms.proSpheroid.a;
     mg->re_minor = arcgisProjParms.proSpheroid.b;
@@ -942,7 +935,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       mg->re_minor = MAGIC_UNSET_DOUBLE;
     }
   }
-  
+
   // NOTE: The arcgisProjParms structure is populated either from the GeoTIFF or
   // the .aux file at this point, so no need to check geotiff_data_exists etc
   switch (projection_type) {
@@ -950,7 +943,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
       mp->param.utm.zone = arcgisProjParms.proZone;
       mp->param.utm.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ? 
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
           R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
           MAGIC_UNSET_DOUBLE;
       mp->param.utm.false_northing =
@@ -1072,7 +1065,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     default:
       break;
   }
-  
+
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     mp->startX = arcgisMapInfo.upperLeftCenter.x - (arcgisMapInfo.pixelSize.width / 2.0);
     mp->startY = arcgisMapInfo.upperLeftCenter.y + (arcgisMapInfo.pixelSize.height / 2.0);
@@ -1083,7 +1076,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   }
   mp->perX = mg->x_pixel_size;
   mp->perY = -mg->y_pixel_size;
-  
+
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
     strcpy (mp->units, arcgisMapInfo.units);
   }
@@ -1119,7 +1112,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   double center_longitude;
   double dummy_var;
   meta_projection proj;
-  
+
   // Copy all fields just in case of future code rearrangements...
   copy_proj_parms (&proj, mp);
   proj_to_latlon(&proj, 'R',
@@ -1148,10 +1141,10 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   ml->lon_end_near_range = mp->startY + mp->perY * height;
   ml->lat_end_far_range = mp->startX + mp->perX * width;
   ml->lon_end_far_range = mp->startY + mp->perY * height;
-  
+
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
-  asfRequire (return_code == 0, 
+  asfRequire (return_code == 0,
 	      "Failed to write new '.meta' and '.img' files.");
 
   // We're now done with the data and metadata.
@@ -1186,11 +1179,11 @@ short getArcgisProjType(const char *auxFile) {
   unsigned long proNumber;
   int i;
   FILE *fp;
-  
+
   fp = fopen(auxFile, "r");
   asfRequire(fp != NULL,
              "\nError opening input ArcGIS metadata (.aux) file.\n");
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
@@ -1202,7 +1195,7 @@ short getArcgisProjType(const char *auxFile) {
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
-  
+
   /* Get root data node and traverse tree to find projection parameters, */
   /* then get projection type to determine parameter list to grab from   */
   /* the file                                                            */
@@ -1218,7 +1211,7 @@ short getArcgisProjType(const char *auxFile) {
     DHFAGetIntegerVal(fp, &proNumber, _EMIF_T_LONG);
     projType = (short)proNumber;
   }
-  
+
   // If the Eprj_ProParameters data node was nonexistent, then the
   // Eimg_MapInformation node usually is ...try to find the projection
   // type from Eimg_MapInformation instead
@@ -1234,7 +1227,7 @@ short getArcgisProjType(const char *auxFile) {
       &arcgisEimg_MapInformation);*/
     }
   }
-  
+
   /***** Clean up memory allocations and close the file *****/
   /*                                                        */
   if (dictionary != NULL) {
@@ -1245,7 +1238,7 @@ short getArcgisProjType(const char *auxFile) {
   }
   fclose(fp);
 
-  
+
   return projType;
 }
 
@@ -1266,7 +1259,7 @@ unsigned char local_machine_is_little_endian()
 {
   unsigned long testlong=1L;
   unsigned char rtn = *(unsigned char*)&testlong;
-  
+
   return rtn;
 }
 
@@ -1282,21 +1275,21 @@ void GetAuxHeader(FILE *fp, _Ehfa_HeaderTag* hdr)
 {
   char* pTmpUlong;
   char* pTmpUchar;
-  
+
   /* Allocate temporary variables */
   pTmpUlong = MALLOC(EMIF_T_ULONG_LEN);
   pTmpUchar = MALLOC(EMIF_T_UCHAR_LEN);
-  
+
   /* Go to beginning of file */
   fseek(fp, 0L, SEEK_SET);
-  
+
   /* Read file header label tag */
   DHFAGetString(fp, strlen(EHFA_HEADER_TAG)+1, hdr->label);
-  
+
   /* Read offset to data header */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
   hdr->headerPtr = *((unsigned long*) pTmpUlong);
-  
+
   /* Clean up */
   FREE(pTmpUlong);
   FREE(pTmpUchar);
@@ -1314,15 +1307,15 @@ void GetDataHeader(FILE *fp, _Ehfa_File* dhdr, _Ehfa_HeaderTag* hdr)
   char* pTmpUlong;
   char* pTmpLong;
   char* pTmpSint;
-  
+
   /* Allocate temporary variables */
   pTmpUlong = MALLOC(EMIF_T_ULONG_LEN);
   pTmpLong = MALLOC(EMIF_T_LONG_LEN);
   pTmpSint = MALLOC(EMIF_T_SHORT_LEN);
-  
+
   /* Go to data header offset */
   fseek(fp, hdr->headerPtr, SEEK_SET);
-  
+
   /* Read version number of ERDAS MIF file, should be '1' */
   DHFAfread(pTmpLong, EMIF_T_LONG_LEN, fp);
   dhdr->version = *((long*)pTmpLong);
@@ -1330,11 +1323,11 @@ void GetDataHeader(FILE *fp, _Ehfa_File* dhdr, _Ehfa_HeaderTag* hdr)
   /* Read offset to free data locations list */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
   dhdr->freeList = *((unsigned long*) pTmpUlong);
-  
+
   /* Read offset to root entry in data tree */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
   dhdr->rootEntryPtr = *((unsigned long*) pTmpUlong);
-  
+
   /* Read length of header portion of data nodes */
   DHFAfread(pTmpSint, EMIF_T_SHORT_LEN, fp);
   dhdr->entryHeaderLength = *((short int*) pTmpSint);
@@ -1361,7 +1354,7 @@ void GetDataHeader(FILE *fp, _Ehfa_File* dhdr, _Ehfa_HeaderTag* hdr)
 void DHFAswab(char *from, char *to, unsigned int numBytes)
 {
   int i, j;
-  
+
   for (i=0, j=numBytes-1;
        numBytes>0 && i<numBytes;
        i++, j--)
@@ -1389,7 +1382,7 @@ void DHFAfread(char *ptr, size_t size, FILE *fp)
   char failed = 0;
   int bytesRead;
   int i;
-  
+
   /* Allocate temporary storage */
   for (i=0; i<2; i++) {
     pTmp[i] = MALLOC(size);
@@ -1400,7 +1393,7 @@ void DHFAfread(char *ptr, size_t size, FILE *fp)
   if (bytesRead < size) {
     failed = 1;
   }
-  
+
   /* swab() bytes on big-endian machines since fread() didn't */
   if (!failed) {
     if (local_machine_is_little_endian() == 0) {
@@ -1435,15 +1428,15 @@ void GetNode(FILE *fp, unsigned long nodeOffset, _Ehfa_Entry *nodeEntry)
   char* pTmpUlong;
   char* pTmpLong;
   unsigned char* pTmpUchar;
-  
+
   /* Allocate temporary variables */
   pTmpUlong = MALLOC(EMIF_T_ULONG_LEN);
   pTmpLong = MALLOC(EMIF_T_LONG_LEN);
   pTmpUchar = MALLOC(EMIF_T_UCHAR_LEN);
-  
+
   /* Go to node offset */
   fseek(fp, nodeOffset, SEEK_SET);
-  
+
   /* Read 'next child' pointer (file offset) */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
   nodeEntry->next = *((unsigned long*)pTmpUlong);
@@ -1470,10 +1463,10 @@ void GetNode(FILE *fp, unsigned long nodeOffset, _Ehfa_Entry *nodeEntry)
 
   /* Read 'node name' string */
   DHFAGetString(fp, MAX_EHFA_ENTRY_NAMESTRING_LEN, nodeEntry->name);
-  
+
   /* Read 'data type' string */
   DHFAGetString(fp, MAX_EHFA_ENTRY_TYPESTRING_LEN, nodeEntry->type);
-  
+
   /* Read 'time node last modified' */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
   nodeEntry->modTime = *((long*)pTmpUlong);
@@ -1496,7 +1489,7 @@ void DHFAGetStringFromOffset(FILE *fp, unsigned char strOffset,
 {
   /* Go to node offset */
   fseek(fp, strOffset, SEEK_SET);
-  
+
   /* Read the string from the file */
   DHFAGetString(fp, maxSize, str);
 }
@@ -1512,10 +1505,10 @@ void DHFAGetString(FILE *fp, unsigned int maxSize, unsigned char *str)
 {
   unsigned char* pTmpUchar; /* Initialize to anything but '\0' */
   int i;
-  
+
   /* Allocate temporary variables */
   pTmpUchar = MALLOC(EMIF_T_UCHAR_LEN);
-  
+
   /* Read the string from the file (up to and including any '\0's)   */
   /* NOTE: ASCII strings in ERDAS MIF HFA files are fixed length,    */
   /* so do not terminate the loop upon finding a '\0'.  It is up     */
@@ -1530,7 +1523,7 @@ void DHFAGetString(FILE *fp, unsigned int maxSize, unsigned char *str)
     str[i] = (unsigned char) *pTmpUchar;
   }
   str[maxSize-1] = '\0'; /* Terminate the string (to be safe) */
-  
+
   /* Clean up */
   FREE(pTmpUchar);
 }
@@ -1598,7 +1591,7 @@ void DHFAGetIntegerVal(FILE *fp, long *val, char type)
       *val = 0;
       break;
   }
-  
+
   /* Clean up */
   FREE(pTmpWord);
 }
@@ -1693,23 +1686,23 @@ void GetDataDictionary(FILE *fp, unsigned long ddOffset,char **dd)
   unsigned long endPos;
   unsigned long ddLen;
   int level;
-  
+
   /* Allocate temporary variables */
   pTmpUchar = MALLOC(EMIF_T_UCHAR_LEN);
-  
+
   /* Count the number of bytes in the data dictionary */
   /* NOTE: The data dictionary exists at the end of the file but   */
   /* is of unknown length.  It starts at ddOffset and ends at EOF. */
   fseek(fp,0, SEEK_END);
   endPos = ftell(fp);
   ddLen = endPos - ddOffset;
-  
+
   /* Allocate the data dictionary and read the data dictionary from */
   /* the file into it.                                              */
   *dd = MALLOC(1 + sizeof(unsigned char) * ddLen);
   level = 0; // Level of nesting in {} pairs
 //  fseek(fp, ddOffset, SEEK_SET);
-  
+
   /* Read the dictionary (a string) */
   DHFAGetStringValFromOffset(fp, ddOffset, ddLen, *dd);
   char *substr = strstr(*dd, ",.");
@@ -1743,7 +1736,7 @@ void ParseDictionary(char *dd, ddObject ddObjects[], int lim)
 {
   int numObjects;
   int i;
-  
+
   /***** Parse the dictionary to produce an array of un-parsed object */
   /* strings.  Example: if the dd is                                  */
   /*                                                                  */
@@ -1759,7 +1752,7 @@ void ParseDictionary(char *dd, ddObject ddObjects[], int lim)
   /*            <etc>                                                 */
   /*                                                                  */
   ParseDictionaryToObjectStrs (dd, ddObjects, &numObjects, lim);
-  
+
   /***** Parse the data dictionary (string) objects into lists of *****/
   /* items.                                                           */
   /*                                                                  */
@@ -1778,26 +1771,26 @@ void ParseDictionaryToObjectStrs (char *dd, ddObject ddObjects[],
   ddObject tmpObj;
   char *tdd;
   BOOL foundObj;
-  
+
   /* Parse out the first object string from the data dictionary */
   tdd = dd;
   *count = 0;
   do {
     foundObj = getObjectToken(&tdd, &tmpObj);
-    
+
     if (foundObj) {
       strcpy(ddObjects[*count].objStr, tmpObj.objStr);
       strcpy(ddObjects[*count].objName, tmpObj.objName);
       ddObjects[*count].prev = NULL;
       ddObjects[*count].next = NULL;
-      
+
       if (*count > 0) {
         ddObjects[*count].prev = &ddObjects[*count - 1];
         ddObjects[*count - 1].next = &ddObjects[*count];
       }
-      
+
       (*count)++;
-      
+
       /* NOTE: Not allowing *count to equal lim exactly allows some */
       /* buffer in ddObjects for extraneous characters that may     */
       /* result from nested item descriptions (this adds additional */
@@ -1817,7 +1810,7 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
   char *pcTmp3;
   int level;
   int charCount;
-  
+
   /* Find and copy the object (string) token */
   pcTmp = strchr(*tdd, OPEN_BRACE);
   if (pcTmp != NULL && *pcTmp == OPEN_BRACE) {
@@ -1852,21 +1845,21 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
     /* Save the object token (string) */
     strncpy(tmpObj->objStr, pcTmp, charCount);
     tmpObj->objStr[charCount] = '\0';
-    
+
     /*** Find the copy the object token's name (data type) ***/
     /* Send the pointer back ready to find a new object token */
     *tdd = strchr(pcTmp2, ',');
     (*tdd)++;
-    
+
     /*** Find the copy the object token's name (data type) ***/
     pcTmp = strtok_r(pcTmp2, ",", &pcTmp3);
     asfRequire(pcTmp != NULL,
                "\ngetObjectToken() ERROR: Invalid data dictionary record in file\n");
     strcpy(tmpObj->objName, pcTmp);
-    
+
     rtn = 1;
   }
-  
+
   return rtn;
 }
 
@@ -1876,7 +1869,7 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
 /* struct's members, and that the file contains many such     */
 /* struct-type data type definitions                          */
 void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems)
-{ 
+{
   BOOL tooManyItems = 0;
   BOOL missingName;
   BOOL nestedItemFound;
@@ -1889,21 +1882,21 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
   int i;
   ddItem *item; /* Convenience pointer */
   ddObject tmpObj;
-  
+
   asfRequire(pcTmp != NULL && *pcTmp != '\0',
              "\nParse_ObjectString_to_Items() ERROR: Empty object string\n");
-  
+
   /* For each item in the object... */
   while (*pcTmp != '\0' && itemNo < MAX_EHFA_ITEMS_PER_OBJECT) {
     item = &(items[itemNo]); /* convenience ptr */
-  
+
     /* Init prev/next and fields that may remain unused */
     item->numEnums = 0;
     strcpy(item->prevTypeName, "");
     strcpy(item->definedTypeName, "");
     item->nestedItems = NULL;
     item->indirectData = ' ';
-    
+
     /* Parse out the number of items for this item type */
     while (!isdigit(*pcTmp) && *pcTmp != '\0') pcTmp++;
     pcTmp2 = pcTmp;
@@ -1918,13 +1911,13 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     item->number = atoi(tmpStr); /* Zero (0) is a valid result */
     pcTmp = pcTmp2;
     pcTmp++; /* Point at first char past the ':' */
-    
+
     /* Check for 'indirect data type' and store if necessary */
     if (*pcTmp == '*' || *pcTmp == 'p') {
       item->indirectData = *pcTmp;
       pcTmp++; /* Move to char just past the '*' or 'p' */
     }
-    
+
     /* Store the data type indicator (a char) */
     asfRequire(validDataType(*pcTmp) != 0,
                "\nERROR: Invalid or unsupported data type found in data dictionary\n");
@@ -1933,7 +1926,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     /* pcTmp now either points at the name of the type, the number of enums in an */
     /* enum type, left brace (for nested, 'defined', types) or the name of a      */
     /* previously-defined type                                                    */
-    
+
     /* Perform datatype-specific parsing if necessary including recursive call to */
     /* Parse_ObjectString_to_Items() if necessary for nested types                */
     switch (item->dataType)
@@ -2000,7 +1993,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         if (nestedItemFound) {
           /* Recursive call to Parse_ObjectString_to_Items() to populate  */
           /* the nested item with the item list contained within it.      */
-          Parse_ObjectString_to_Items(tmpObj.objStr, item->nestedItems, 
+          Parse_ObjectString_to_Items(tmpObj.objStr, item->nestedItems,
                                       &item->numNestedItems);
           strcpy(item->definedTypeName, tmpObj.objName);
         }
@@ -2008,7 +2001,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         default: /* Other data types do not need further parsing */
           break;
     }
-    
+
     /* Parse out & save the datatype name */
     numChars = strlen(pcTmp);
     if (*pcTmp != '\0' && strlen(pcTmp) > 0) {
@@ -2025,7 +2018,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
           "item description.  Original object string:\n\n\"%s\"\n",
       objString);
     }
-    
+
     /* If too many items for allocated storage, then vaMoose */
     itemNo++;
     tooManyItems = (itemNo >= MAX_EHFA_ITEMS_PER_OBJECT) ? 1 : 0;
@@ -2080,11 +2073,11 @@ void PrintDictionary(ddObject *ddObjects, char *dd)
 {
   int i;
   ddObject *obj;
-  
+
   printf("\nDATA DICTIONARY (raw, unparsed):"
       "\n====================================");
   printf("\n%s\n", dd);
-  
+
   printf("\nDATA DICTIONARY (parsed):"
       "\n=============================");
   obj = ddObjects;
@@ -2104,7 +2097,7 @@ void PrintItems(ddItem *items, int numItems, int tabLevel)
   int i, j; /* loop vars */
   char tabs[TABSTRING_LEN]; /* leading indent */
   char type[32]; /* Item type name string */
-  
+
   /* Build leading whitespace string for indent */
   strcpy(tabs, "");
   strncat(tabs, TABSTRING, (tabLevel * TAB_LEN > TABSTRING_LEN - 2) ?
@@ -2170,7 +2163,7 @@ void PrintItems(ddItem *items, int numItems, int tabLevel)
         strcpy(type, "Undefined type");
         break;
     }
-    
+
     /* Dump to stdio */
     printf("\n%sITEM DESCRIPTION:\n", tabs);
     printf("%s  name: \"%s\"\n", tabs, items[i].name);
@@ -2215,7 +2208,7 @@ void PrintItems(ddItem *items, int numItems, int tabLevel)
 void traverseNodes(FILE *fp, _Ehfa_Entry *node, unsigned long nodeOffset, BOOL dumpFlag)
 {
   _Ehfa_Entry newNode;
-  
+
   if (dumpFlag) {
     printDataNode(node, nodeOffset);
   }
@@ -2243,7 +2236,7 @@ void freeOneItem(ddItem *item)
 {
   int i;
   ddItem *_nestedItems;
-  
+
   /* NOTE: The array of objects declared in main has no malloc()'d            */
   /* memory but each object contains an array of ddItems.  ddItems have no    */
   /* malloc()'d memory unless the type includes enums or nested items.        */
@@ -2253,7 +2246,7 @@ void freeOneItem(ddItem *item)
   /* handle the situation where items are nested in items to some unknown     */
   /* level.                                                                   */
   /*                                                                          */
-  
+
   /* Free the enums if they exist */
   if (item->dataType == _EMIF_T_ENUM && item->numEnums > 0) {
     for (i=0; i<item->numEnums; i++) {
@@ -2261,7 +2254,7 @@ void freeOneItem(ddItem *item)
     }
     FREE(item->enumNames);
   }
-  
+
   /* Free the nested types if they exist */
   if (item->dataType == _EMIF_T_DEFINED && item->numNestedItems > 0) {
     _nestedItems = (ddItem *)item->nestedItems;
@@ -2297,7 +2290,7 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
 {
   short nodeFound = 0;
   _Ehfa_Entry newNode;
-  
+
   /* Pre-order check on searched-for node */
   /* ...FOUND... STOP LOOKING...          */
   if (strncmp(node->type, type, strlen(type)) == 0) {
@@ -2313,7 +2306,7 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
 
     nodeFound = 1;
   }
-  
+
   /* If not found yet and a child node exists, look further... */
   if (node->child && !nodeFound) {
     GetNode(fp, node->child, &newNode);
@@ -2321,13 +2314,13 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
                "\nFindNode() found a child with non-NULL prev pointer\n");
     nodeFound = FindNode(fp, &newNode, type, foundNode);
   }
-  
+
   /* If not found yet and a next node exists, look further... */
   if (node->next && !nodeFound) {
     GetNode(fp, node->next, &newNode);
     nodeFound = FindNode(fp, &newNode, type, foundNode);
   }
-  
+
   /* ...NOT FOUND and NO MORE NODES... Nullify all...       */
   if (!nodeFound) {
     strcpy(foundNode->name, "");
@@ -2340,7 +2333,7 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
     foundNode->next = (unsigned long)0;
     foundNode->prev = (unsigned long)0;
   }
-  
+
   return nodeFound;
 }
 
@@ -2357,7 +2350,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   int i;
   unsigned long strLen;
   unsigned long nElements;
-  
+
   char    sphereName[MAX_EHFA_ENTRY_NAMESTRING_LEN];
   double  a,
           b,
@@ -2369,13 +2362,13 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   unsigned long proType;
   char    proExeName[MAX_EHFA_ENTRY_NAMESTRING_LEN];
   char    proName[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-  
+
   FILE *fp;
-  
+
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
              "\nError opening input ArcGIS metadata (.aux) file.\n");
-  
+
   // Populate values to be read from the file with initial values
   proNumber = (unsigned long)MAGIC_UNSET_INT;
   proZone = (unsigned long)MAGIC_UNSET_INT;
@@ -2390,7 +2383,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   b = MAGIC_UNSET_DOUBLE;
   eSquared = MAGIC_UNSET_DOUBLE;
   radius = MAGIC_UNSET_DOUBLE;
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
@@ -2402,7 +2395,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
-  
+
   /* Get root data node and traverse tree to find projection parameters, */
   /* then get projection type to determine parameter list to grab from   */
   /* the file                                                            */
@@ -2411,10 +2404,10 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   if (nodeFound) {
     // Get proType (enum idx, 0 == 'EPRJ_INTERNAL' and 1 == 'EPRJ_EXTERNAL'
     DHFAGetIntegerValFromOffset(fp, foundNode.data, &proType, _EMIF_T_ENUM);
-    
+
     // Get proNumber, e.g. 4 => Lambert Conformal Conic
     DHFAGetIntegerVal(fp, &proNumber, _EMIF_T_LONG);
-    
+
     // Get proExeName, first val is a ushort string length and
     // if greater than zero, immediately followed by an offset to
     // the string of characters (otherwise followed by next data item)
@@ -2454,7 +2447,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     // Get the proZone (only applies to UTM, but always exists in
     // the file)
     DHFAGetIntegerVal(fp, &proZone, _EMIF_T_LONG);
-    
+
     // Get the proParams, the array of projection parameters (always
     // exists in the file), DOUBLE-p
     DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get num of elements in array
@@ -2467,7 +2460,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
         }
       }
     }
-    
+
     // Get proSpheroid data from file (CHAR-*)
     DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get number of spheroids (should be 1)
     if (nElements > 0) {
@@ -2489,7 +2482,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     DHFAGetDoubleVal(fp, &eSquared);
     DHFAGetDoubleVal(fp, &radius);
   }
-  
+
   // Populate return struct
   proParms->proNumber = proNumber;
   proParms->proZone = proZone;
@@ -2504,7 +2497,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   proParms->proSpheroid.b = b;
   proParms->proSpheroid.eSquared = eSquared;
   proParms->proSpheroid.radius = radius;
-  
+
   /***** Clean up memory allocations and close the file *****/
   /*                                                        */
   if (dictionary != NULL) {
@@ -2617,18 +2610,18 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
   int i;
   unsigned long strLen;
   unsigned long nElements;
-  
+
   char          datumname[MAX_EHFA_ENTRY_NAMESTRING_LEN];
   unsigned long type;
   double        params[ARCGIS_NUM_DATUMDPARAMS];
   char          gridname[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-  
+
   FILE *fp;
-  
+
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
              "\nError opening input ArcGIS metadata (.aux) file.\n");
-  
+
   // Populate values to be read from the file with initial values
   strcpy(datumname, MAGIC_UNSET_STRING);
   type = 0L;
@@ -2636,7 +2629,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
     params[i] = MAGIC_UNSET_DOUBLE;
   }
   strcpy(gridname, MAGIC_UNSET_STRING);
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
@@ -2648,7 +2641,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
-  
+
   /* Get root data node and traverse tree to find projection parameters, */
   /* then get projection type to determine parameter list to grab from   */
   /* the file                                                            */
@@ -2666,11 +2659,11 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
         DHFAGetStringVal(fp, strLen, datumname);
       }
     }
-    
-    // Get type (enum idx, 0 == 'EPRJ_DATUM_PARAMETRIC', 
+
+    // Get type (enum idx, 0 == 'EPRJ_DATUM_PARAMETRIC',
     // 1 == 'EPRJ_DATUM_GRID', and 2 == 'EPRJ_DATUM_REGRESSION'
     DHFAGetIntegerVal(fp, &type, _EMIF_T_ENUM);
-    
+
     // Get the datum double params, the array of datum parameters (always
     // exists in the file), DOUBLE-p
     DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get num of elements in array
@@ -2683,7 +2676,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
         }
       }
     }
-    
+
     // Get gridname, first val is a ushort string length and
     // if greater than zero, immediately followed by an offset to
     // the string of characters (otherwise followed by next data item)
@@ -2700,7 +2693,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
       }
     }
   }
-  
+
   // Populate return struct
   strcpy(datumParms->datumname, datumname);
   datumParms->type = (unsigned short)type;
@@ -2708,7 +2701,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
     datumParms->params[i] = params[i];
   }
   strcpy(datumParms->gridname, gridname);
-  
+
   /***** Clean up memory allocations and close the file *****/
   /*                                                        */
   if (dictionary != NULL) {
@@ -2733,19 +2726,19 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   int i;
   unsigned long strLen;
   unsigned long nElements;
-  
+
   char                proName[MAX_EHFA_ENTRY_NAMESTRING_LEN];
   arcgisCoordinate_t  upperLeftCenter; // x, y
   arcgisCoordinate_t  lowerRightCenter; // x, y
   arcgisSize_t        pixelSize; // width, height
   char                units[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-  
+
   FILE *fp;
-  
+
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
              "\nError opening input ArcGIS metadata (.aux) file.\n");
-  
+
   // Populate values to be read from the file with initial values
   strcpy(proName, MAGIC_UNSET_STRING);
   upperLeftCenter.x = MAGIC_UNSET_DOUBLE;
@@ -2755,7 +2748,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   pixelSize.width = MAGIC_UNSET_DOUBLE;
   pixelSize.height = MAGIC_UNSET_DOUBLE;
   strcpy(units, MAGIC_UNSET_STRING);
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
@@ -2767,7 +2760,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
-  
+
   /* Get root data node and traverse tree to find projection parameters, */
   /* then get projection type to determine parameter list to grab from   */
   /* the file                                                            */
@@ -2785,7 +2778,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
         DHFAGetStringVal(fp, strLen, proName);
       }
     }
-    
+
     // Get upperLeftCenter coordinates
     // ...read number of Eprj_Coordinate elements and offset to first one,
     // then read the doubles.  No need to loop here since the Eprj_MapInfo
@@ -2795,7 +2788,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
     fseek(fp, offset, SEEK_SET);
     DHFAGetDoubleVal(fp, &upperLeftCenter.x);
     DHFAGetDoubleVal(fp, &upperLeftCenter.y);
-    
+
     // Get lowerRightCenter coordinates
     DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG);
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG);
@@ -2824,7 +2817,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
       }
     }
   }
-  
+
   // Populate return struct
   strcpy(arcgisMapInfo->proName, proName);
   arcgisMapInfo->upperLeftCenter.x = upperLeftCenter.x;
@@ -2834,7 +2827,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   arcgisMapInfo->pixelSize.width = pixelSize.width;
   arcgisMapInfo->pixelSize.height = pixelSize.height;
   strcpy(arcgisMapInfo->units, units);
-  
+
   /***** Clean up memory allocations and close the file *****/
   /*                                                        */
   if (dictionary != NULL) {
@@ -2907,15 +2900,15 @@ void getArcgisEimg_MapInformation (char *infile,
   _Ehfa_Entry foundNode; /* Data node for desired data */
   ddObject ddObjects[MAX_EHFA_OBJECTS_PER_DICTIONARY]; /* data dictionary objects */
   FILE *fp;
-  
+
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
              "\nError opening input ArcGIS metadata (.aux) file.\n");
-  
+
   // Populate values to be read from the file with initial values
   strcpy(arcgisEimg_MapInformation->projection, MAGIC_UNSET_STRING);
   strcpy(arcgisEimg_MapInformation->units, MAGIC_UNSET_STRING);
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
@@ -2927,7 +2920,7 @@ void getArcgisEimg_MapInformation (char *infile,
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
-  
+
   /* Get root data node and traverse tree to find projection parameters, */
   /* then get projection type to determine parameter list to grab from   */
   /* the file                                                            */
@@ -2936,7 +2929,7 @@ void getArcgisEimg_MapInformation (char *infile,
   if (nodeFound) {
     readArcgisEimg_MapInformation (fp, foundNode.data, arcgisEimg_MapInformation);
   }
-  
+
   /***** Clean up memory allocations and close the file *****/
   /*                                                        */
   if (dictionary != NULL) {
@@ -2958,12 +2951,12 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   unsigned long strLen;
   char  projection[MAX_EHFA_ENTRY_NAMESTRING_LEN];
   char  units[MAX_EHFA_ENTRY_NAMESTRING_LEN];
-  
-  
+
+
   // Populate values to be read from the file with initial values
   strcpy(projection, MAGIC_UNSET_STRING);
   strcpy(units, MAGIC_UNSET_STRING);
-  
+
   /***** Parse header and data dictionary *****/
   /*                                          */
   fseek(fp, offset, SEEK_SET);
@@ -2978,7 +2971,7 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
       DHFAGetStringVal(fp, strLen, projection);
     }
   }
-    
+
   // Get units string, first val is a ushort string length and
   // if greater than zero, immediately followed by an offset to
   // the string of characters (otherwise followed by next data item)
@@ -2992,7 +2985,7 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
       DHFAGetStringVal(fp, strLen, units);
     }
   }
-  
+
   // Populate return struct
   strcpy(arcgisEimg_MapInformation->projection, projection);
   strcpy(arcgisEimg_MapInformation->units, units);
@@ -3012,7 +3005,7 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
   dest->re_minor = src->re_minor;
   dest->datum = src->datum;
   dest->height = src->height;
-  
+
   switch (src->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       dest->param.utm.zone = src->param.utm.zone;
