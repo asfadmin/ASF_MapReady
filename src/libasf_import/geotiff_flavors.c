@@ -17,20 +17,21 @@
 #include "asf_import.h"
 #include "geotiff_flavors.h"
 #include "import_arcgis_geotiff.h"
+#include "import_generic_geotiff.h"
 #include "find_arcgis_geotiff_aux_name.h"
 
 geotiff_importer
 detect_geotiff_flavor (const char *file)
 {
   GString *inGeotiffAuxName;
-  
+
   // Open the Geotiff.
   TIFF *tiff = XTIFFOpen (file, "r");
   asfRequire (tiff != NULL, "Error opening input TIFF file.\n");
   GTIF *gtif = GTIFNew (tiff);
-  asfRequire (gtif != NULL, 
+  asfRequire (gtif != NULL,
 	      "Error reading GeoTIFF keys from input TIFF file.\n");
-  
+
   // Grab the citation.
   size_t max_citation_length = 10000;
   char *citation = MALLOC ((max_citation_length + 1) * sizeof (char));
@@ -43,12 +44,12 @@ detect_geotiff_flavor (const char *file)
   if ( strncmp (citation, tmp, strlen (tmp)) == 0 ) {
     short model_type;
     short proj_type;
-    
+
     asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF.\n");
-    
+
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-    asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
+    asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
     if ( model_type == ModelTypeGeographic ) {
       return import_usgs_seamless;
     }
@@ -95,21 +96,29 @@ detect_geotiff_flavor (const char *file)
             "associated metadata (.aux) file appears to be missing.\n");
       }
     }
-  } // strncmp on citation, tmp
-  
+  } // strncmp on citation, tmp looking for IMAGINE GeoTIFF type
+  else {
+    return import_generic_geotiff;
+  }
+
+  // FIXME: The import_asf_utm_geotiff() function should be deprecated as
+  // soon as the import_generic_geotiff() function is completed and tested
+  // since it will be capable of reading any ASF GeoTIFF ...not just UTM
+  // or non-UTM GeoTIFFs
+
   // Test for a particular flavor.
   GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
   // Ensure the citation is at least eventually terminated somewhere.
   citation[max_citation_length] = '\0';
   regex_t asf_utm_citation_regex;
   /*
-  int return_code 
-    = regcomp (&asf_utm_citation_regex, 
+  int return_code
+    = regcomp (&asf_utm_citation_regex,
 	       "UTM zone ? projected GeoTIFF on WGS84 ellipsoid datum written "
 	       "by Alaska Satellite Facility tools.", REG_NOSUB);
   */
-  int return_code 
-    = regcomp (&asf_utm_citation_regex, 
+  int return_code
+    = regcomp (&asf_utm_citation_regex,
 	       "UTM zone [[:digit:]]+ [NS]", REG_EXTENDED | REG_NOSUB);
   //[[:digit:]]+ [NS]
   assert (return_code == 0);
