@@ -97,9 +97,9 @@ detect_geotiff_flavor (const char *file)
       }
     }
   } // strncmp on citation, tmp looking for IMAGINE GeoTIFF type
-  else {
-    return import_generic_geotiff;
-  }
+  //else {
+    //return import_generic_geotiff;
+  //}
 
   // FIXME: The import_asf_utm_geotiff() function should be deprecated as
   // soon as the import_generic_geotiff() function is completed and tested
