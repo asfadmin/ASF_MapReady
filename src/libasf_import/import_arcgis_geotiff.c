@@ -1120,7 +1120,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
                   &center_latitude, &center_longitude, &dummy_var);
   mg->center_latitude = R2D*center_latitude;
   mg->center_longitude = R2D*center_longitude;
-  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
+  mp->hem = mg->center_latitude >= 0.0 ? 'N' : 'S';
 
   msar->image_type = 'P'; // Map Projected
   ms->mean = mean;
