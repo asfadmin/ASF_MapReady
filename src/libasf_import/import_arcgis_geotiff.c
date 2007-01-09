@@ -481,7 +481,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         if (read_count != 1) {
           asfPrintWarning(
                    "\nUnable to determine second standard parallel from GeoTIFF file\n"
-                       "using \n");
+                       "using ProjStdParallel2GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
@@ -490,7 +490,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         if (read_count != 1) {
           asfPrintWarning(
                    "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjStdParallel2GeoKey\n");
+                       "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -587,7 +587,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         if (read_count != 1) {
           asfPrintWarning(
                    "\nUnable to determine first standard parallel from GeoTIFF file\n"
-                       "using \n");
+                       "using ProjStdParallel1GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
@@ -596,7 +596,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         if (read_count != 1) {
           asfPrintWarning(
                    "\nUnable to determine second standard parallel from GeoTIFF file\n"
-                       "using ProjStdParallel1GeoKey\n");
+                       "using ProjStdParallel2GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
