@@ -574,7 +574,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
           char msg[256];
           sprintf(msg,
-                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+                  "Lambert Conformal Conic scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
                   scale_factor);
           asfPrintWarning(msg);
         }
