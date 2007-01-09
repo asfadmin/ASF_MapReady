@@ -173,10 +173,10 @@ int asf_import(radiometry_t radiometry, int db_flag,
 	  for (kk=1; kk<10; kk++) {
 	    sprintf(tmp, "IMG-0%d", kk);
 	    if (strncmp(inBandName[ii], tmp, 6)==0) 
-	      sprintf(bandExt, "%d", kk);
+	      sprintf(bandExt, "0%d", kk);
 	  }
 	  import_ceos(inBandName[ii], bandExt, ii+1, nBands, inBaseName, lutName, 
-		      unscaledBaseName, radiometry, db_flag);
+	  	      unscaledBaseName, radiometry, db_flag);
 	}
     }
     /* Ingest ENVI format data */
