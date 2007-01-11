@@ -356,6 +356,11 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
       asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
 		     "left-looking AMM-1 era images) at present.\n");
   }
+  if (imd->optical)
+    if (strcmp(imd->general->mode, "1A") == 0 ||
+	strcmp(imd->general->mode, "1B1") == 0)
+      asfPrintError("Geocoding %s level %s data is not supported.\n", 
+		    imd->general->sensor_name, imd->general->mode);
 
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
