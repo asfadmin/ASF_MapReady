@@ -177,7 +177,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"polarization:",meta->sar->polarization, 
 		    "Signal polarization");
     meta_put_char  (fp,"image_type:", meta->sar->image_type,
-		    "[S=slant range; G=ground range; P=map projected]");
+		    "[S=slant range; G=ground range; P=map projected; R=georeferenced]");
     meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
 		    "SAR Satellite look direction [R=right; L=left]");
     meta_put_int   (fp,"look_count:",meta->sar->look_count,

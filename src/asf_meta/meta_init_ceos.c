@@ -365,6 +365,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    meta->general->x_pixel_size     = dssr->pixel_spacing;
    meta->general->y_pixel_size     = dssr->line_spacing;
 
+   // data type test
+   //printf("data type: %d\n", meta->general->data_type);
+
    // ALOS L1.1 products have no pixel spacing information (yet)
    // Requires some backwards engineering looking at the polarization
    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
@@ -385,6 +388,31 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
        meta->general->y_pixel_size = 3.125;
        meta->sar->look_count = 4;
      }
+   }
+
+   // ALOS L1.5 products are currently only georeferenced
+   // Need to set them to projected as it does not fit any other scheme
+   if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+       meta->general->data_type == INTEGER16) {
+     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
+     meta->transform = meta_transform_init();
+     meta->transform->parameter_count = 4;
+     meta->transform->x[0] = mpdr->a11;
+     meta->transform->x[1] = mpdr->a12;
+     meta->transform->x[2] = mpdr->a13;
+     meta->transform->x[3] = mpdr->a14;
+     meta->transform->y[0] = mpdr->a21;
+     meta->transform->y[1] = mpdr->a22;
+     meta->transform->y[2] = mpdr->a23;
+     meta->transform->y[3] = mpdr->a24;
+     meta->transform->l[0] = mpdr->b11;
+     meta->transform->l[1] = mpdr->b12;
+     meta->transform->l[2] = mpdr->b13;
+     meta->transform->l[3] = mpdr->b14;
+     meta->transform->s[0] = mpdr->b21;
+     meta->transform->s[1] = mpdr->b22;
+     meta->transform->s[2] = mpdr->b23;
+     meta->transform->s[3] = mpdr->b24;
    }
 
    meta->general->center_latitude  = dssr->pro_lat;
@@ -672,6 +700,12 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      meta->location->lon_end_near_range = asf_facdr->nearelon;
      meta->location->lat_end_far_range = asf_facdr->farelat;
      meta->location->lon_end_far_range = asf_facdr->farelon;
+   }
+
+   // Now that everything is calculated we can set the image type for
+   // georeferenced ALOS data
+   if (meta->transform) {
+     meta->sar->image_type = 'R';
    }
 
    FREE(ceos);
@@ -1001,8 +1035,10 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        // might need to have a check for ALOS coordinates - look like km, not m
        projection->startY = mpdr->tlcnorth*1000;
        projection->startX = mpdr->tlceast*1000;
-       projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) * 1000 / mpdr->nlines;
-       projection->perX   = (mpdr->trceast - mpdr->tlceast) * 1000 / mpdr->npixels;
+       //projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) * 1000 / mpdr->nlines;
+       //projection->perX   = (mpdr->trceast - mpdr->tlceast) * 1000 / mpdr->npixels;
+       projection->perY = -mpdr->nomild;
+       projection->perX = mpdr->nomipd;
        projection->datum = ITRF97_DATUM;
      }
      else if (projection->type != SCANSAR_PROJECTION){

@@ -404,6 +404,10 @@ void fill_structure_field(char *field_name, void *valp)
         MSAR->image_type = 'P';
         return;
       }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) {
+        MSAR->image_type = 'R';
+        return;
+      }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
         MSAR->image_type = '?';
