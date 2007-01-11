@@ -40,7 +40,7 @@ void prn_shr(FILE *fp, struct scene_header_rec *sh)
   fprintf(fp, "\n Sensor ID\t\t\t\t\t\t%16s", sh->sensor_id);
   fprintf(fp, "\n Calculated orbit number\t\t\t%16d", sh->orbit);
   fprintf(fp, "\n Orbit direction\t\t\t\t\t%16s", sh->orbit_dir);
-  //fprintf(fp, "\n Off-nadir mirror pointing angle\t%16.7f", sh->off_nadir_angle);
+  fprintf(fp, "\n Off-nadir mirror pointing angle\t\t%16s", sh->off_nadir_angle);
   fprintf(fp, "\n Acquisition date\t\t\t\t%16s", sh->acq_date);
   fprintf(fp, "\n Latitude and longitude of scene center\t\t%16s", sh->center_loc);
   fprintf(fp, "\n Type of sensor and spectrum identification\t%16s", 
