@@ -790,7 +790,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     date_dssr2time_stamp(ceos->shr.sc_time, meta->general->acquisition_date); 
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
-  substr = ceos->shr.sc_id;
+  substr = ceos->shr.work_scene_id;
   for (ii=0; ii<11; ii++)
     substr++;
   meta->general->frame = atoi(substr);
@@ -818,6 +818,23 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   // no_data
 
   // Optical block
+  substr = ceos->shr.product_id;
+  if (ceos->sensor == PRISM) {
+    if (substr[7] == 'F')
+      sprintf(meta->optical->pointing_direction, "Forward");
+    else if (substr[7] == 'B')
+      sprintf(meta->optical->pointing_direction, "Backward");
+    else // assume nadir direction
+      sprintf(meta->optical->pointing_direction, "Nadir");
+  }
+  substr = ceos->shr.off_nadir_angle;
+  meta->optical->off_nadir_angle = atof(substr);
+  if (ceos->sensor == AVNIR) {
+    if (meta->optical->off_nadir_angle > 0.0)
+      sprintf(meta->optical->pointing_direction, "Off-nadir");
+    else
+      sprintf(meta->optical->pointing_direction, "Nadir");
+  }
   if (strcmp(meta->general->mode,"1A")==0)
     strcpy(meta->optical->correction_level,"N");
   else {

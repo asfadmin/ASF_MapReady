@@ -264,6 +264,8 @@ typedef struct {
  * meta_optical: paramenters specific to optical images
  */
 typedef struct {
+  char pointing_direction[15];     // Nadir, Off-nadir, Forward, Backward
+  double off_nadir_angle;          // Off-nadir angle
   char correction_level[5];        // R - Georeferenced
                                    // G - Geocoded
                                    // D - DEM correction

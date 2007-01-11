@@ -243,6 +243,10 @@ void meta_write(meta_parameters *meta, const char *file_name)
   if (meta->optical) {
     meta_put_string(fp,"optical {","","Begin parameters used specifically in "
 		    "optical imaging");
+    meta_put_string(fp,"pointing_direction:",meta->optical->pointing_direction, 
+		    "Pointing direction of the sensor");
+    meta_put_double(fp,"off_nadir_angle:",meta->optical->off_nadir_angle,
+		    "Off-nadir angle of the sensor [degrees]");
     meta_put_string(fp,"correction_level:",meta->optical->correction_level, 
 		    "N - uncorr, R - georef, G - geocoded, D - DEM corr");
     meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,

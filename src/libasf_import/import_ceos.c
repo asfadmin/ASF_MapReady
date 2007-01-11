@@ -43,8 +43,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
-  sprintf(outDataName, "%s_%s", outBaseName, bandExt);
-  sprintf(outMetaName, "%s_%s", outBaseName, bandExt);
+  if (strcmp(bandExt, "") == 0) {
+    strcpy(outDataName, outBaseName);
+    strcpy(outMetaName, outBaseName);
+  }
+  else {
+    sprintf(outDataName, "%s_%s", outBaseName, bandExt);
+    sprintf(outMetaName, "%s_%s", outBaseName, bandExt);
+  }
   //strcpy(outDataName, outBaseName);
   //strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);

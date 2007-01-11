@@ -493,6 +493,10 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the optical block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "optical") ) {
+    if ( !strcmp(field_name, "pointing_direction") )
+      { strcpy(MOPTICAL->pointing_direction, VALP_AS_CHAR_POINTER); return; }      
+    if ( !strcmp(field_name, "off_nadir_angle") )
+      { MOPTICAL->off_nadir_angle = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "correction_level") )
       { strcpy(MOPTICAL->correction_level, VALP_AS_CHAR_POINTER); return; }      
     if ( !strcmp(field_name, "cloud_percentage") )
