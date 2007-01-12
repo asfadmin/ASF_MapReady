@@ -32,19 +32,20 @@ int read_shapefile (char *baseFile, char *pointFile)
 
   if (pointType == SHPT_POLYGON) {
 
-    asfPrintStatus("   Number of structures: %d\n", nEntities);
+    //asfPrintStatus("   Number of structures: %d\n", nEntities);
     
     fpShape = FOPEN(pointFile, "w");
     for (k=0; k<nEntities; k++) {
       // Read a shape object
-      asfPrintStatus("\n   Reading structure: %d\n", k+1);
+      //asfPrintStatus("\n   Reading structure: %d\n", k+1);
       shapeObject = SHPReadObject(shape, k);
       nParts = shapeObject->nParts;
-      asfPrintStatus("   Number of vertices: %d\n", shapeObject->nVertices);
-      asfPrintStatus("   Number of parts: %d\n", nParts);
+      //asfPrintStatus("   Number of vertices: %d\n", shapeObject->nVertices);
+      //asfPrintStatus("   Number of parts: %d\n", nParts);
 
       // Write the lat/lon coordinates out of the object into a point file
       for (i=0, iPart=1; i<shapeObject->nVertices; i++) {
+	/*
 	if (nParts == 0)
 	  fprintf(fpShape, "%d\n", shapeObject->nVertices);
 	else if (i == 0) {
@@ -59,13 +60,14 @@ int read_shapefile (char *baseFile, char *pointFile)
 	    shapeObject->panPartStart[iPart-1];
 	  fprintf(fpShape, "%d\n", nVertices);
 	}
-	fprintf(fpShape, "%d\t%.4lf\t%.4lf\n", i+1, shapeObject->padfY[i], 
+	*/
+	fprintf(fpShape, "%d, %.4lf, %.4lf\n", i+1, shapeObject->padfY[i], 
 		shapeObject->padfX[i]);
       }
 
       SHPDestroyObject(shapeObject);
     }
-    fprintf(fpShape, "end\n");
+    //fprintf(fpShape, "end\n");
     FCLOSE(fpShape);
     SHPClose(shape);
 

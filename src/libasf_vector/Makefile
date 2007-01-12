@@ -38,7 +38,7 @@ build_only: $(OBJS)
 $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
 
 clean:
-	rm -rf $(OBJS) libasf_vector.a
+	rm -rf $(OBJS) libasf_vector.a core* *~
 	rm delta_mask* cook_inlet.* delta_polygon.* gi_antenna* test_write* delta_test.txt test_read.txt
 
 test: test_shape.t.c all

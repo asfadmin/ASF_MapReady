@@ -36,7 +36,7 @@ void usage(char *name)
 int main(int argc, char **argv)
 {
   meta_parameters *meta;
-  char informat[25], outformat[25], infile[255], outfile[255];
+  char informat[25], outformat[25], infile[255], tmpfile[255], outfile[255];
   extern int currArg; /* pre-initialized to 1; like optind */
   int listflag=0;
   
@@ -60,6 +60,7 @@ int main(int argc, char **argv)
   sprintf(outformat, "%s", argv[currArg+1]);
   sprintf(infile, "%s", argv[currArg+2]);
   sprintf(outfile, "%s", argv[currArg+3]);
+  sprintf(tmpfile, "%s_to_%s.tmp", argv[currArg+2], argv[currArg+3]);
   
   asfSplashScreen (argc, argv);
 
@@ -140,6 +141,12 @@ int main(int argc, char **argv)
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting list of points into a shape file ...\n\n");
       write_point_shapefile(outfile, infile);
+    }
+    else if 
+      (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting a shape file into a kml file ...\n\n");
+      read_shapefile(infile, tmpfile);
+      polygon2kml_list(tmpfile, outfile);
     }
     else 
       asfPrintStatus("   Unsupported conversion\n\n");
