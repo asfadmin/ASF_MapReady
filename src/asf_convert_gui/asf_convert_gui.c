@@ -59,7 +59,7 @@ main(int argc, char **argv)
     /* add version number to window title */
     char title [256];
     sprintf (title,
-        "Alaska Satellite Facility Data Conversion Tool: Version %s",
+        "Alaska Satellite Facility ALOS Data Conversion Tool: Version %s",
         CONVERT_PACKAGE_VERSION_STRING);
 
     widget = glade_xml_get_widget (glade_xml, "asf_convert");
