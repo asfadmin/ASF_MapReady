@@ -71,7 +71,7 @@ all: asf_export
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
-	mv asf_export$(BIN_POSTFIX) $(BINDIR)
+	mv asf_export$(BIN_POSTFIX) $(BINDIR)/alos_export$(BIN_POSTFIX)
 
 .PHONY: clean
 clean:

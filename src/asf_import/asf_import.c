@@ -19,7 +19,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_import"
+"alos_import"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\

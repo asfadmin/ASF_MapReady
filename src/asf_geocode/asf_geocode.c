@@ -19,7 +19,7 @@ trouble, and use edit_man_header. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_geocode"
+"alos_geocode"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\

@@ -17,7 +17,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_export"
+"alos_export"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-size <max_dimension>]\n"\
