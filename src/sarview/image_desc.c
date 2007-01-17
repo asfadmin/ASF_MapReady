@@ -34,7 +34,7 @@ void image_describeImage(char *dest)
 		image.slope,image.offset,
 		scale_fromByte(0),scale_fromByte(255)
 	);
-	if (meta!=NULL)
+	if (meta!=NULL && meta->sar!=NULL)
 	{
 #define prt sprintf(&dest[strlen(dest)],
 		switch(meta->sar->image_type)

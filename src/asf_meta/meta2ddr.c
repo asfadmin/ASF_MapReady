@@ -56,11 +56,18 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	ddr->valid[DDPUV] = VALID;
 
 /* Increment per sample in x & y directions; both double */
-	ddr->line_inc   = meta->sar->line_increment;
-	ddr->sample_inc = meta->sar->sample_increment;
-	ddr->valid[DDINCV] = ((meta->sar->line_increment   == meta->sar->line_increment)
-	                    &&(meta->sar->sample_increment == meta->sar->sample_increment))
-	                ? VALID : INVAL;
+	if (meta->sar) {
+	  ddr->line_inc   = meta->sar->line_increment;
+	  ddr->sample_inc = meta->sar->sample_increment;
+	  ddr->valid[DDINCV] = ((meta->sar->line_increment   == meta->sar->line_increment)
+				&&(meta->sar->sample_increment == meta->sar->sample_increment))
+	    ? VALID : INVAL;
+	}
+	else {
+	  ddr->line_inc = 1;
+	  ddr->sample_inc = 1;
+	  ddr->valid[DDINCV] = VALID;
+	}
 
 /* Line/sample relative to master image; both int */
 	ddr->master_line   = meta->general->start_line + 1;
@@ -74,7 +81,7 @@ void meta2ddr(meta_parameters *meta, struct DDR *ddr)
 	                ? VALID : INVAL;
 
 /* Projection dependent stuff */
-	if (meta->sar->image_type=='P') {
+	if (meta->projection) {
 		meta_projection *proj = meta->projection;
 	/* UTM zone code or 62 if n/a; int */
 		ddr->zone_code = (proj->type==UNIVERSAL_TRANSVERSE_MERCATOR) ? 
