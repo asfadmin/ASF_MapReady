@@ -330,22 +330,43 @@ int asf_geocode_from_proj_file(const char *projection_file,
 		     out_base_name, background_val);
 }
 
-int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
-		 int force_flag, resample_method_t resample_method, 
-		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name, float background_val)
+int asf_geocode(project_parameters_t *pp, projection_type_t projection_type, 
+		int force_flag, resample_method_t resample_method, 
+		double average_height, datum_type_t datum, double pixel_size,
+		char *in_base_name, char *out_base_name, float background_val)
+{
+  char **in_base_names, **out_base_names;
+
+  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+  out_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  out_base_names[0] = (char *) MALLOC(512*sizeof(char));
+  strcpy(in_base_names[0], in_base_name);
+  strcpy(out_base_names[0], out_base_name);
+
+  return asf_geocode_bands(pp, projection_type, force_flag, resample_method, 
+			   average_height, datum, pixel_size, in_base_names, 
+			   out_base_names, background_val);
+}
+
+int asf_geocode_bands(project_parameters_t *pp, 
+		      projection_type_t projection_type, 
+		      int force_flag, resample_method_t resample_method, 
+		      double average_height, datum_type_t datum, 
+		      double pixel_size, char **in_base_names, 
+		      char **out_base_names, float background_val)
 {
   int ret;
 
   // Assign various filenames
-  GString *input_image = g_string_new (in_base_name);
+  GString *input_image = g_string_new (in_base_names[0]);
   GString *input_meta_data = g_string_new (input_image->str);
   g_string_append (input_meta_data, ".meta");
-  GString *output_image = g_string_new (out_base_name);
+  GString *output_image = g_string_new (out_base_names[0]);
   GString *output_meta_data = g_string_new (output_image->str);
   g_string_append (output_meta_data, ".meta");
 
-  asfPrintStatus("Geocoding: %s\n", in_base_name);
+  asfPrintStatus("Geocoding ...\n");
 
   // Input metadata.
   meta_parameters *imd = meta_read (input_meta_data->str);
@@ -968,213 +989,232 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  // Now we are ready to produce our output image.
-  asfPrintStatus ("Resampling input image into output image "
-		  "coordinate space...\n");
+  // Now the mapping function is calculated and we can apply that to
+  // all the files passed into the function.
+  size_t kk=0;
+  while (in_base_names[kk] != NULL) {
 
-  // Projection coordinates per pixel in output image.  There is a
-  // significant assumption being made here: we assume that the
-  // projection coordinates (which are in meters) come at least
-  // reasonably close to the ground distances.  This way, when we set
-  // the projection coordinates per pixel in the output image equal to
-  // the pixel size of the input image, we should be resampling at
-  // close to one-to-one (which is where resampling works and we don't
-  // have to worry about pixel averaging or anything).
-  double pc_per_x = pixel_size;
-  double pc_per_y = pixel_size;
+    // Assign various filenames
+    input_image = g_string_new (in_base_names[kk]);
+    input_meta_data = g_string_new (input_image->str);
+    g_string_append (input_meta_data, ".meta");
+    output_image = g_string_new (out_base_names[kk]);
+    output_meta_data = g_string_new (output_image->str);
+    g_string_append (output_meta_data, ".meta");
 
-  // Maximum pixel indicies in output image.
-  size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
-  size_t oiy_max = ceil ((max_y - min_y) / pc_per_y);
-
-  // Input image.
-  GString *input_data_file = g_string_new (input_image->str);
-  g_string_append (input_data_file, ".img");
-  FloatImage *iim
-    = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
-				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  g_string_free (input_data_file, TRUE);
-
-  // Output image.
-  FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
-
-  // Convenience macros for getting a pixel.
+    // Now we are ready to produce our output image.
+    asfPrintStatus ("\nResampling input image (%s) into output image (%s)"
+		    " coordinate space...\n", in_base_names[kk],
+		    out_base_names[kk]);
+    
+    // Projection coordinates per pixel in output image.  There is a
+    // significant assumption being made here: we assume that the
+    // projection coordinates (which are in meters) come at least
+    // reasonably close to the ground distances.  This way, when we set
+    // the projection coordinates per pixel in the output image equal to
+    // the pixel size of the input image, we should be resampling at
+    // close to one-to-one (which is where resampling works and we don't
+    // have to worry about pixel averaging or anything).
+    double pc_per_x = pixel_size;
+    double pc_per_y = pixel_size;
+    
+    // Maximum pixel indicies in output image.
+    size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
+    size_t oiy_max = ceil ((max_y - min_y) / pc_per_y);
+    
+    // Input image.
+    GString *input_data_file = g_string_new (input_image->str);
+    g_string_append (input_data_file, ".img");
+    FloatImage *iim
+      = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 0,
+				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    g_string_free (input_data_file, TRUE);
+    
+    // Output image.
+    FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
+    
+    // Convenience macros for getting a pixel.
 #define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
-
-  // Translate the command line notion of the resampling method into
-  // the lingo known by the float_image class.  The compiler is
-  // reassured with a default.
-  float_image_sample_method_t float_image_sample_method
-    = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-  switch ( resample_method ) {
-  case RESAMPLE_NEAREST_NEIGHBOR:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-    break;
-  case RESAMPLE_BILINEAR:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-    break;
-  case RESAMPLE_BICUBIC:
-    float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
-    break;
-  default:
-    g_assert_not_reached ();
-  }
-
-  // Now we need some metadata for the output image.  We will just
-  // start with the metadata from the input image and add the
-  // geocoding parameters.
-  meta_parameters *omd = meta_read (input_meta_data->str);
-  double x_pixel_size = omd->general->x_pixel_size;
-  double y_pixel_size = omd->general->y_pixel_size;
-  double x_scale = pixel_size / x_pixel_size;
-  double y_scale = pixel_size / y_pixel_size;
-
-  // Update no data value
-  omd->general->no_data = background_val;
-
-  // Fix up the output metadata to match the user's selected pixel size
-  omd->general->x_pixel_size = pixel_size;
-  omd->general->y_pixel_size = pixel_size;
-  omd->general->line_count = oiy_max + 1;
-  omd->general->sample_count = oix_max + 1;
-  if (omd->sar) {
-    omd->sar->image_type = 'P';
-    omd->sar->range_time_per_pixel *= x_scale;
-    omd->sar->azimuth_time_per_pixel *= y_scale;
-    omd->sar->range_doppler_coefficients[1] *= x_scale;
-    omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
-    omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
-    omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
-  }
-  if (omd->projection) {
-    if (omd->projection->perY > 0) {
-      g_assert (0);		/* Shouldn't happen.  */
-      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+    
+    // Translate the command line notion of the resampling method into
+    // the lingo known by the float_image class.  The compiler is
+    // reassured with a default.
+    float_image_sample_method_t float_image_sample_method
+      = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+    switch ( resample_method ) {
+    case RESAMPLE_NEAREST_NEIGHBOR:
+      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+      break;
+    case RESAMPLE_BILINEAR:
+      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+      break;
+    case RESAMPLE_BICUBIC:
+      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
+      break;
+    default:
+      g_assert_not_reached ();
     }
-    else
-      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-  }
-  omd->projection = MALLOC(sizeof(meta_projection));
-  memset (omd->projection, 0, sizeof(meta_projection));
-  omd->projection->type = projection_type;
-  omd->projection->startX = min_x;
-  omd->projection->startY = max_y;
-  omd->projection->perX = pc_per_x;
-  omd->projection->perY = -pc_per_y;
-  strcpy (omd->projection->units, "meters");
-  if ( lat_0 > 0.0 ) {
-    omd->projection->hem = 'N';
-  }
-  else {
-    omd->projection->hem = 'S';
-  }
-
-  /* output the correct earth radii based on the datum that was used
-     to do the projection */
-  omd->projection->datum = datum;
-  if (datum == WGS84_DATUM) {
-    const double wgs84_semiminor_axis
-      = WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
-    omd->projection->re_major = WGS84_SEMIMAJOR;
-    omd->projection->re_minor = wgs84_semiminor_axis;
-  } else if (datum == NAD27_DATUM) {
-    // NAD27 datum is based on clark 1866 ellipsoid
-    const double nad27_semiminor_axis
-      = CLARKE1866_SEMIMAJOR * (1 - (1 / CLARKE1866_INV_FLATTENING));
-    omd->projection->re_major = CLARKE1866_SEMIMAJOR;
-    omd->projection->re_minor = nad27_semiminor_axis;
-  } else if (datum == NAD83_DATUM) {
-    // NAD83 datum is based on GRS80 ellipsoid
-    const double nad83_semiminor_axis
-      = GRS1980_SEMIMAJOR * (1 - (1 / GRS1980_INV_FLATTENING));
-    omd->projection->re_major = GRS1980_SEMIMAJOR;
-    omd->projection->re_minor = nad83_semiminor_axis;
-  } else {
-    asfPrintError("Unsupported datum! %d\n", datum);
-  }
-
-  // We need to convert things in this structure back to degrees
-  // before storing the metadata (according to file format).
-  to_degrees (projection_type, pp);
-  omd->projection->param = *pp;
-  meta_write (omd, output_meta_data->str);
-
-  // Set the pixels of the output image.
-  size_t oix, oiy;		// Output image pixel indicies.
-  for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
-    for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-      // Projection coordinates for the center of this pixel.
-      double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
-      // We want projection coordinates to increase as we move from
-      // the bottom of the image to the top, so that north ends up up.
-      double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
-      // Determine pixel of interest in input image.  The fractional
-      // part is desired, we will use some sampling method to
-      // interpolate between pixel values.
-      double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
-      double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-      // If we are outside the extent of the input image, set to the
-      // fill value.
-      float fill_value = background_val;
-      g_assert (ii_size_x <= SSIZE_MAX);
-      g_assert (ii_size_y <= SSIZE_MAX);
-      if (    input_x_pixel < 0
-	   || input_x_pixel > (ssize_t) ii_size_x - 1.0
-	   || input_y_pixel < 0
-	   || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
-	SET_PIXEL (oix, oiy, (float) fill_value);
+    
+    // Now we need some metadata for the output image.  We will just
+    // start with the metadata from the input image and add the
+    // geocoding parameters.
+    meta_parameters *omd = meta_read (input_meta_data->str);
+    double x_pixel_size = omd->general->x_pixel_size;
+    double y_pixel_size = omd->general->y_pixel_size;
+    double x_scale = pixel_size / x_pixel_size;
+    double y_scale = pixel_size / y_pixel_size;
+    
+    // Update no data value
+    omd->general->no_data = background_val;
+    
+    // Fix up the output metadata to match the user's selected pixel size
+    omd->general->x_pixel_size = pixel_size;
+    omd->general->y_pixel_size = pixel_size;
+    omd->general->line_count = oiy_max + 1;
+    omd->general->sample_count = oix_max + 1;
+    if (omd->sar) {
+      omd->sar->image_type = 'P';
+      omd->sar->range_time_per_pixel *= x_scale;
+      omd->sar->azimuth_time_per_pixel *= y_scale;
+      omd->sar->range_doppler_coefficients[1] *= x_scale;
+      omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
+      omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
+      omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+    }
+    if (omd->projection) {
+      if (omd->projection->perY > 0) {
+	g_assert (0);		/* Shouldn't happen.  */
+	pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) 
+	  * pixel_size;
       }
-      // Otherwise, set to the value from the appropriate position in
-      // the input image.
-      else {
-
+      else
+	pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) 
+	  * pixel_size;
+    }
+    omd->projection = MALLOC(sizeof(meta_projection));
+    memset (omd->projection, 0, sizeof(meta_projection));
+    omd->projection->type = projection_type;
+    omd->projection->startX = min_x;
+    omd->projection->startY = max_y;
+    omd->projection->perX = pc_per_x;
+    omd->projection->perY = -pc_per_y;
+    strcpy (omd->projection->units, "meters");
+    if ( lat_0 > 0.0 ) {
+      omd->projection->hem = 'N';
+    }
+    else {
+      omd->projection->hem = 'S';
+    }
+    
+    /* output the correct earth radii based on the datum that was used
+       to do the projection */
+    omd->projection->datum = datum;
+    if (datum == WGS84_DATUM) {
+      const double wgs84_semiminor_axis
+	= WGS84_SEMIMAJOR * (1 - (1 / WGS84_INV_FLATTENING));
+      omd->projection->re_major = WGS84_SEMIMAJOR;
+      omd->projection->re_minor = wgs84_semiminor_axis;
+    } else if (datum == NAD27_DATUM) {
+      // NAD27 datum is based on clark 1866 ellipsoid
+      const double nad27_semiminor_axis
+	= CLARKE1866_SEMIMAJOR * (1 - (1 / CLARKE1866_INV_FLATTENING));
+      omd->projection->re_major = CLARKE1866_SEMIMAJOR;
+      omd->projection->re_minor = nad27_semiminor_axis;
+    } else if (datum == NAD83_DATUM) {
+      // NAD83 datum is based on GRS80 ellipsoid
+      const double nad83_semiminor_axis
+	= GRS1980_SEMIMAJOR * (1 - (1 / GRS1980_INV_FLATTENING));
+      omd->projection->re_major = GRS1980_SEMIMAJOR;
+      omd->projection->re_minor = nad83_semiminor_axis;
+    } else {
+      asfPrintError("Unsupported datum! %d\n", datum);
+    }
+    
+    // We need to convert things in this structure back to degrees
+    // before storing the metadata (according to file format).
+    to_degrees (projection_type, pp);
+    omd->projection->param = *pp;
+    meta_write (omd, output_meta_data->str);
+    
+    // Set the pixels of the output image.
+    size_t oix, oiy;		// Output image pixel indicies.
+    for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
+      for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+	// Projection coordinates for the center of this pixel.
+	double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
+	// We want projection coordinates to increase as we move from
+	// the bottom of the image to the top, so that north ends up up.
+	double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
+	// Determine pixel of interest in input image.  The fractional
+	// part is desired, we will use some sampling method to
+	// interpolate between pixel values.
+	double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
+	double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
+	// If we are outside the extent of the input image, set to the
+	// fill value.
+	float fill_value = background_val;
+	g_assert (ii_size_x <= SSIZE_MAX);
+	g_assert (ii_size_y <= SSIZE_MAX);
+	if ( input_x_pixel < 0
+	     || input_x_pixel > (ssize_t) ii_size_x - 1.0
+	     || input_y_pixel < 0
+	     || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
+	  SET_PIXEL (oix, oiy, (float) fill_value);
+	}
+	// Otherwise, set to the value from the appropriate position in
+	// the input image.
+	else {
+	  
           float val = float_image_sample(iim, input_x_pixel, input_y_pixel,
                                          float_image_sample_method);
-
+	  
           // If we are reprojecting a DEM, need to account for the height
           // difference between the vertical datum (NGVD27) and our WGS84 
           // ellipsoid. Since geoid heights closely match vertical datum
           // heights, this will work for SAR imagery
           if ( imd->general->image_data_type == DEM ) {
-              double lat, lon;
-              ret = meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
-              g_assert(ret == 0);
-              val += get_geoid_height(lat, lon);
+	    double lat, lon;
+	    ret = meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
+	    g_assert(ret == 0);
+	    val += get_geoid_height(lat, lon);
           }
-
+	  
           SET_PIXEL (oix, oiy, val);
+	}
+	
       }
-
+      asfLineMeter(oiy, oiy_max + 1 );
     }
-    asfLineMeter(oiy, oiy_max + 1 );
+    
+    asfPrintStatus ("Done resampling image.\n");
+    
+    // Flip the non-reprojected image if the y pixel size is negative.
+    if ( y_pixel_size < 0 && omd->projection == NULL ) {
+      asfPrintStatus ("Negative y pixel size, flipping output image.\n");
+      g_assert (0); 		/* Shouldn't be here.  */
+      float_image_flip_y (oim);
+      y_pixel_size = -y_pixel_size;
+    }
+    
+    // Store the output image, and free image resources.
+    GString *output_data_file = g_string_new (output_image->str);
+    g_string_append (output_data_file, ".img");
+    asfPrintStatus ("Storing geocoded image...\n");
+    ret = float_image_store (oim, output_data_file->str,
+			     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    asfPrintStatus ("Done storing geocoded image.\n");
+    asfRequire (ret == 0, "Error saving image.\n");
+    float_image_free (oim);
+    g_string_free (output_data_file, TRUE);
+    
+    float_image_free (iim);
+    
+    // Done with the output metadata.
+    meta_free (omd);
+
+    kk++;
   }
-
-  asfPrintStatus ("Done resampling image.\n");
-
-  // Flip the non-reprojected image if the y pixel size is negative.
-  if ( y_pixel_size < 0 && omd->projection == NULL ) {
-    asfPrintStatus ("Negative y pixel size, flipping output image.\n");
-    g_assert (0); 		/* Shouldn't be here.  */
-    float_image_flip_y (oim);
-    y_pixel_size = -y_pixel_size;
-  }
-
-  // Store the output image, and free image resources.
-  GString *output_data_file = g_string_new (output_image->str);
-  g_string_append (output_data_file, ".img");
-  asfPrintStatus ("Storing geocoded image...\n");
-  ret = float_image_store (oim, output_data_file->str,
-                           FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  asfPrintStatus ("Done storing geocoded image.\n");
-  asfRequire (ret == 0, "Error saving image.\n");
-  float_image_free (oim);
-  g_string_free (output_data_file, TRUE);
-
-  float_image_free (iim);
-
-  // Done with the metadata.
   meta_free (imd);
-  meta_free (omd);
 
   /////////////////////////////////////////////////////////////////////////////
   //

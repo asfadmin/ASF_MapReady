@@ -54,7 +54,7 @@
 
 /* Maximum length of mode field, including trailing null.  In case its
    so short for some good reason.  */
-#define MODE_FIELD_STRING_MAX 5
+#define MODE_FIELD_STRING_MAX 7
 
 /* Default value of a pixel which indicates "NO DATA" */
 #define DEFAULT_NO_DATA_VALUE 0
@@ -158,6 +158,7 @@ const char *datum_toString(datum_type_t);
  * meta_general: General Radio Detection And Ranging parameters
  */
 typedef struct {
+  char basename[FIELD_STRING_MAX];  // Name of file
   char sensor[FIELD_STRING_MAX];    /* Name of sensor - satellite really   */
   char sensor_name[FIELD_STRING_MAX]; // Name of the sensor
   char mode[MODE_FIELD_STRING_MAX]; /* Mode of imaging sensor.             */

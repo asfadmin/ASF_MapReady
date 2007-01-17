@@ -38,6 +38,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
 /* General block.  */
   meta_put_string(fp,"general {", "","Begin parameters generally used in remote sensing");
+  meta_put_string(fp,"name:", meta->general->basename, "File name");
   meta_put_string(fp,"sensor:", meta->general->sensor, "Imaging satellite");
   meta_put_string(fp,"sensor_name:", meta->general->sensor_name, "Imaging sensor");
   meta_put_string(fp,"mode:",meta->general->mode,"Imaging mode");
@@ -143,6 +144,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Frame for this image [-1 if n/a]");
   meta_put_int   (fp,"band_count:", meta->general->band_count,
 		  "Number of bands in image");
+  meta_put_string(fp,"band:", meta->general->bands,
+		  "Band of the sensor");
   meta_put_int   (fp,"line_count:", meta->general->line_count,
 		  "Number of lines in image");
   meta_put_int   (fp,"sample_count:", meta->general->sample_count,

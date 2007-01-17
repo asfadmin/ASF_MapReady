@@ -165,6 +165,12 @@ int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name,
                  float background_val);
+int asf_geocode_bands(project_parameters_t *pp, 
+		      projection_type_t projection_type, 
+		      int force_flag, resample_method_t resample_method, 
+		      double average_height, datum_type_t datum, 
+		      double pixel_size, char **in_base_names, 
+		      char **out_base_names, float background_val);
 void sigsegv_handler (int signal_number);
 
 // Prototypes from geoid.c

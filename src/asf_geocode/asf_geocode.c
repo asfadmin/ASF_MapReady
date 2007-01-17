@@ -272,6 +272,8 @@ main (int argc, char **argv)
   int force_flag = FALSE;
   int debug_dump = FALSE;
   char *in_base_name, *out_base_name;
+  char **in_base_names, **out_base_names, tmp[10]="";
+  int ii, kk;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
   out_base_name = (char *) MALLOC(sizeof(char)*255);
@@ -333,7 +335,6 @@ main (int argc, char **argv)
 
   // Get non-option command line arguments.
   if ( argc != 3 && !debug_dump ) {
-    int ii;
     int bad_arg = FALSE;
 
     for (ii = 0; ii < argc; ++ii) {
@@ -354,10 +355,64 @@ main (int argc, char **argv)
 
   asfSplashScreen(argc, argv);
 
+  // Read in bands
+  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  out_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  ii = 0;
+  sprintf(tmp, "%s_HH.img", in_base_name);
+  if (fileExists(tmp)) {
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[ii], "%s_HH", in_base_name);
+    out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(out_base_names[ii], "%s_HH", out_base_name);
+    ii++;
+  }
+  sprintf(tmp, "%s_HV.img", in_base_name);
+  if (fileExists(tmp)) {
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[ii], "%s_HV", in_base_name);
+    out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(out_base_names[ii], "%s_HV", out_base_name);
+    ii++;
+  }
+  sprintf(tmp, "%s_VH.img", in_base_name);
+  if (fileExists(tmp)) {
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[ii], "%s_VH", in_base_name);
+    out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(out_base_names[ii], "%s_VH", out_base_name);
+    ii++;
+  }
+  sprintf(tmp, "%s_VV.img", in_base_name);
+  if (fileExists(tmp)) {
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[ii], "%s_VV", in_base_name);
+    out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    sprintf(out_base_names[ii], "%s_VV", out_base_name);
+    ii++;
+  }
+  for (kk=1; kk<10; kk++) {
+    sprintf(tmp, "%s_0%d.img", in_base_name, kk);
+    if (fileExists(tmp)) {
+      in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+      sprintf(in_base_names[ii], "%s_0%d", in_base_name, kk);
+      out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+      sprintf(out_base_names[ii], "%s_0%d", out_base_name, kk);
+      ii++;
+    }
+  }
+  if (ii == 0) {
+    sprintf(tmp, "%s.img", in_base_name);
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    strcpy(in_base_names[0], in_base_name);
+    out_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    strcpy(out_base_names[0], out_base_name);
+  }
+
   // Call library function that does the actual work
-  asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
-	      datum, pixel_size, in_base_name, out_base_name,
-              (float)background_val);
+  asf_geocode_bands(pp, projection_type, force_flag, resample_method, 
+		    average_height, datum, pixel_size, in_base_names, 
+		    out_base_names, (float)background_val);
 
   // Close Log, if needed
   if (logflag)

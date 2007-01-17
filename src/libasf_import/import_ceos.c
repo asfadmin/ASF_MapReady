@@ -786,7 +786,9 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     //meta_new2old(meta);
     //meta_write_old(meta, outMetaName);
   //} else {
-    meta_write(meta,outMetaName);
+  strcpy(meta->general->basename, inDataName);
+  strcpy(meta->general->bands, bandExt);
+  meta_write(meta,outMetaName);
   //}
 
   if (isPP(meta))

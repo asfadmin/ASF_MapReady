@@ -253,6 +253,8 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the general block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "general") ) {
+    if ( !strcmp(field_name, "name") )
+      { strcpy(MGENERAL->basename, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "sensor") )
       { strcpy(MGENERAL->sensor, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "sensor_name") )
@@ -359,6 +361,8 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->frame = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "band_count") )
       { MGENERAL->band_count = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "band") )
+      { strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "line_count") )
       { MGENERAL->line_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "sample_count") )
