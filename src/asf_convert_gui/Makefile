@@ -84,7 +84,7 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe $(BINDIR)
+	mv $(TARGET).exe $(BINDIR)/alos_convert_gui.exe
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
 	cp earth2.gif $(SHAREDIR)
@@ -145,7 +145,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: clean doc $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
-	mv $(TARGET) $(BINDIR)
+	mv $(TARGET) $(BINDIR)/alos_convert_gui
 	cp $(TARGET).glade $(SHAREDIR)
 	cp $(TARGET).ico $(SHAREDIR)
 	cp earth2.gif $(SHAREDIR)
