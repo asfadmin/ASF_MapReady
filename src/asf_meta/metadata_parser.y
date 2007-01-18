@@ -408,7 +408,7 @@ void fill_structure_field(char *field_name, void *valp)
         MSAR->image_type = 'P';
         return;
       }
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) {
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) {
         MSAR->image_type = 'R';
         return;
       }
