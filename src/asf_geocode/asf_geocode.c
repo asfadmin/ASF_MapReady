@@ -236,6 +236,8 @@ trouble, and use edit_man_header. :)
 // Headers used by this program.
 #include "asf_geocode.h"
 
+#define MAX_BANDS 4
+
 // Print minimalistic usage info & exit
 static void print_usage(void)
 {
@@ -272,7 +274,7 @@ main (int argc, char **argv)
   int force_flag = FALSE;
   int debug_dump = FALSE;
   char *in_base_name, *out_base_name;
-  char **in_base_names, **out_base_names, tmp[10]="";
+  char **in_base_names, **out_base_names, tmp[255]="";
   int ii, kk;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
