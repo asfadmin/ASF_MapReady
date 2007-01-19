@@ -26,6 +26,7 @@
 #define NO_MAXIMUM_OUTPUT_SIZE -1
 /* Maximum length of a calibration comment */
 #define MAX_COMMENT_LENGTH 255
+#define MAX_CHANNEL_STRING_LENGTH 15
 
 #define FLAG_NOT_SET -1
 
@@ -72,11 +73,16 @@ typedef struct {
   char cal_params_file[MAX_IMAGE_NAME_LENGTH + MAX_EXTENSION_LENGTH + 1];
   char cal_comment[MAX_COMMENT_LENGTH];
   scale_t sample_mapping;
+  char red_channel[MAX_CHANNEL_STRING_LENGTH];
+  char blue_channel[MAX_CHANNEL_STRING_LENGTH];
+  char green_channel[MAX_CHANNEL_STRING_LENGTH];  
 } command_line_parameters_t;
 
 /* Prototypes */
 int asf_export(output_format_t format, long size, scale_t sample_mapping, 
 	       char *in_base_name, char *output_name);
+int asf_export_bands(output_format_t format, long size, scale_t sample_mapping, 
+		     char **in_base_names, char *output_name, int rgb);
 
 void usage();
 void help_page();
@@ -116,6 +122,12 @@ void export_as_geotiff (const char *metadata_file_name,
                         const char *output_file_name,
                         long max_size,
                         scale_t sample_mapping);
+
+void export_rgb_as_geotiff (char **in_base_names,
+			    const char *output_file_name,
+			    long max_size,
+			    scale_t sample_mapping,
+			    int rgb);
 
 void export_as_jpeg (const char *metadata_file_name,
                      const char *image_data_file_name,

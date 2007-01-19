@@ -94,16 +94,34 @@ export_as_geotiff (const char *metadata_file_name,
                    long max_size,
                    scale_t sample_mapping)
 {
+  char **in_base_names;
+
+  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+  in_base_names[0] = stripExt(image_data_file_name);
+
+  return export_rgb_as_geotiff(in_base_names, output_file_name, max_size,
+			       sample_mapping, 0);
+}
+
+void
+tags_for_geotiff (const char *metadata_file_name,
+		  const char *image_data_file_name,
+		  const char *output_file_name,
+		  scale_t sample_mapping,
+		  int rgb,
+		  TIFF **out_tif, GTIF **out_gtif)
+{
+  TIFF *otif;
+  GTIF *ogtif;
+
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
+
   /* Scale factor needed to satisfy max_size argument.  */
   size_t scale_factor;
   unsigned short sample_size = 4;
   unsigned short sample_format;
-  int jj;
-  TIFF *otif;
-  GTIF *ogtif;
-  ssize_t ii;
   int return_code;
 
   /* Major and minor ellipse axis lengths.  This shows up in two
@@ -135,44 +153,18 @@ export_as_geotiff (const char *metadata_file_name,
   asfRequire (sizeof (unsigned int) == 4,
               "Unsigned integer data type size is different than expected.\n");
 
-  /* Get the image data.  */
-  asfPrintStatus("Loading image...\n");
-  
-  //asfRequire (md->general->data_type == REAL32,
-  //            "Input data type must be in 32-bit floating point format.\n");
-  //const off_t start_of_file = 0;
-  //FloatImage *iim
-  //  = float_image_new_from_file (md->general->sample_count,
-  //                               md->general->line_count,
-  //                               image_data_file_name, start_of_file,
-  //                               FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-
-  FloatImage *iim =
-      float_image_new_from_metadata(md, image_data_file_name);
-
-  /* We want to scale the image st the long dimension is less than or
-     equal to the prescribed maximum, if any.  */
-  if ( (max_size > iim->size_x && max_size > iim->size_y)
-       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
-    scale_factor = 1;
+  if (sample_mapping != NONE) {
+    
+    asfRequire (sizeof(unsigned char) == 1,
+		"Size of the unsigned char data type on this machine is "
+		"different than expected.\n");
+    sample_size = 1;
+    sample_format = SAMPLEFORMAT_UINT;
   }
   else {
-    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
-                         / max_size);
-    /* The scaling code we intend to use needs odd scale factors.  */
-    if ( scale_factor % 2 != 1 ) {
-      scale_factor++;
-    }
-  }
-
-  /* Generate the scaled version of the image, if needed.  */
-  FloatImage *si;
-  if ( scale_factor != 1 ) {
-    asfPrintStatus ("Scaling...\n");
-    si = float_image_new_from_model_scaled (iim, scale_factor);
-  }
-  else {
-    si = iim;
+    g_assert (sizeof (float) == 4);
+    sample_size = 4;
+    sample_format = SAMPLEFORMAT_IEEEFP;
   }
 
   /* Open output tiff file and GeoKey file descriptor.  */
@@ -181,77 +173,17 @@ export_as_geotiff (const char *metadata_file_name,
   ogtif = GTIFNew (otif);
   asfRequire (ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
 
-  /* Lower and upper extents of the range of float values which are to
-     be mapped linearly into the output space.  Needed for if output
-     will be bytes.  */
-  float omin, omax;
-
-  /* Scale float image down to bytes, if required.  This is currently
-     done in a very memory intensive way and could stand to be
-     rewritten to use float_image.  */
-  float mean, standard_deviation;
-  const int default_sampling_stride = 30;
-  const int minimum_samples_in_direction = 10;
-  int sampling_stride = GSL_MIN (default_sampling_stride,
-                                 GSL_MIN (si->size_x, si->size_y)
-                                 / minimum_samples_in_direction);
-  float min_sample = -1.0, max_sample = -1.0;
-  gsl_histogram *my_hist = NULL;
-  if (sample_mapping != NONE) {
-    /* We might someday want to mask out certain valus for some type of
-       images, so they don't corrupt the statistics used for mapping
-       floats to integers.  Enabling this will require changes to the
-       statistics routines and the code that does the mapping from
-       floats to integers.  */
-    /*
-     * double mask;
-     * if ( md->general->image_data_type == SIGMA_IMAGE
-     *      || md->general->image_data_type == GAMMA_IMAGE
-     *      || md->general->image_data_type == BETA_IMAGE
-     *      || strcmp(md->general->mode, "SNA") == 0.0
-     *      || strcmp(md->general->mode, "SNB") == 0.0
-     *      || strcmp(md->general->mode, "SWA") == 0.0
-     *      || strcmp(md->general->mode, "SWB") == 0.0 )
-     *   mask = 0.0;
-     * else
-     *   mask = NAN;
-     */
-
-    /* We need a version of the data in byte form, so we have to map
-       floats into bytes.  */
-
-    /* Make sure the unsigned char is the size we expect.  */
-    asfRequire (sizeof(unsigned char) == 1,
-                "Size of the unsigned char data type on this machine is "
-                "different than expected.\n");
-
-    /* Gather some statistics to help with the mapping.  Note that if
-       min_sample and max_sample will actually get used for anything
-       they will be set to some better values than this.  */
-    asfPrintStatus("Gathering image statistics...\n");
-    get_statistics (si, sample_mapping, sampling_stride, &mean,
-                    &standard_deviation, &min_sample, &max_sample, &omin,
-                    &omax, &my_hist, md->general->no_data);
-
-    /* Its a byte image, so the sample_size is one.  */
-    sample_size = 1;
-    sample_format = SAMPLEFORMAT_UINT;
-  }
-  else {
-    /* Its a floating point image.  */
-    g_assert (sizeof (float) == 4);
-    sample_size = 4;
-    sample_format = SAMPLEFORMAT_IEEEFP;
-  }
-
   /* Set the normal TIFF image tags.  */
   TIFFSetField(otif, TIFFTAG_SUBFILETYPE, 0);
-  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, si->size_x);
-  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, si->size_y);
+  TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, md->general->sample_count);
+  TIFFSetField(otif, TIFFTAG_IMAGELENGTH, md->general->line_count);
   TIFFSetField(otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
   TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
   TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-  TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
+  if (rgb)
+    TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 3);
+  else
+    TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
   TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP, 1);
   TIFFSetField(otif, TIFFTAG_XRESOLUTION, 1.0);
   TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
@@ -964,8 +896,8 @@ export_as_geotiff (const char *metadata_file_name,
 	/* Get the lat/longs of three image corners.  */
 	double c1_lat, c1_long, c2_lat, c2_long, c3_lat, c3_long;
 	meta_get_latLon (md, 0, 0, 0, &c1_lat, &c1_long);
-	meta_get_latLon (md, 0, iim->size_x, 0, &c2_lat, &c2_long);
-	meta_get_latLon (md, iim->size_y, 0, 0, &c3_lat, &c3_long);
+	meta_get_latLon (md, 0, md->general->sample_count, 0, &c2_lat, &c2_long);
+	meta_get_latLon (md, md->general->line_count, 0, 0, &c3_lat, &c3_long);
 	
 	/* Put three tie points in the image, as described in 2.6.2 of the
 	   geotiff spec..  */
@@ -976,12 +908,12 @@ export_as_geotiff (const char *metadata_file_name,
 	tie_points[0][4] = c1_long;
 	tie_points[0][5] = 0.0;
 	tie_points[1][0] = 0.0;
-	tie_points[1][1] = si->size_x;
+	tie_points[1][1] = md->general->sample_count;
 	tie_points[1][2] = 0.0;
 	tie_points[1][4] = c2_lat;
 	tie_points[1][5] = c2_long;
 	tie_points[1][6] = 0.0;
-	tie_points[2][0] = si->size_y;
+	tie_points[2][0] = md->general->line_count;
 	tie_points[2][1] = 0.0;
 	tie_points[2][2] = 0.0;
 	tie_points[2][4] = c3_lat;
@@ -1004,7 +936,131 @@ export_as_geotiff (const char *metadata_file_name,
     }
   }
 
-  asfPrintStatus("Writing Output File...\n");
+  meta_free (md);
+
+  *out_tif = otif;
+  *out_gtif = ogtif;
+}
+
+void
+export_rgb_as_geotiff (char **in_base_names,
+		       const char *output_file_name,
+		       long max_size,
+		       scale_t sample_mapping,
+		       int rgb)
+{
+  TIFF *otif=NULL;
+  GTIF *ogtif=NULL;
+  float omin, omax;
+  int jj;
+  ssize_t ii;
+  char metadata_file_name[512], image_data_file_name[512];
+  size_t scale_factor;
+  unsigned short sample_size = 4;
+  unsigned short sample_format;
+  int return_code;
+
+  sprintf(metadata_file_name, "%s.meta", in_base_names[0]);
+  sprintf(image_data_file_name, "%s.img", in_base_names[0]);
+  meta_parameters *md = meta_read (metadata_file_name);
+
+  // Work out all those tags
+  tags_for_geotiff (metadata_file_name, image_data_file_name,
+		    output_file_name, sample_mapping, rgb, &otif, &ogtif);
+
+  // Read red channel
+  if (rgb)
+    asfPrintStatus("\nWorking on red channel:\n");
+  else
+    asfPrintStatus("Working on greyscale image:\n");
+  asfPrintStatus("Loading channel ...\n");
+
+  sprintf(image_data_file_name, "%s.img", in_base_names[0]);  
+  FloatImage *iim =
+      float_image_new_from_metadata(md, image_data_file_name);
+
+  /* We want to scale the image st the long dimension is less than or
+     equal to the prescribed maximum, if any.  */
+  if ( (max_size > iim->size_x && max_size > iim->size_y)
+       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+    scale_factor = 1;
+  }
+  else {
+    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+                         / max_size);
+    /* The scaling code we intend to use needs odd scale factors.  */
+    if ( scale_factor % 2 != 1 ) {
+      scale_factor++;
+    }
+  }
+
+  /* Generate the scaled version of the image, if needed.  */
+  FloatImage *si;
+  if ( scale_factor != 1 ) {
+    asfPrintStatus ("Scaling channel ...\n");
+    si = float_image_new_from_model_scaled (iim, scale_factor);
+  }
+  else {
+    si = iim;
+  }
+
+  /* Scale float image down to bytes, if required.  This is currently
+     done in a very memory intensive way and could stand to be
+     rewritten to use float_image.  */
+  float mean, standard_deviation;
+  const int default_sampling_stride = 30;
+  const int minimum_samples_in_direction = 10;
+  int sampling_stride = GSL_MIN (default_sampling_stride,
+                                 GSL_MIN (si->size_x, si->size_y)
+                                 / minimum_samples_in_direction);
+  float min_sample = -1.0, max_sample = -1.0;
+  gsl_histogram *my_hist = NULL;
+  if (sample_mapping != NONE) {
+    /* We might someday want to mask out certain valus for some type of
+       images, so they don't corrupt the statistics used for mapping
+       floats to integers.  Enabling this will require changes to the
+       statistics routines and the code that does the mapping from
+       floats to integers.  */
+    /*
+     * double mask;
+     * if ( md->general->image_data_type == SIGMA_IMAGE
+     *      || md->general->image_data_type == GAMMA_IMAGE
+     *      || md->general->image_data_type == BETA_IMAGE
+     *      || strcmp(md->general->mode, "SNA") == 0.0
+     *      || strcmp(md->general->mode, "SNB") == 0.0
+     *      || strcmp(md->general->mode, "SWA") == 0.0
+     *      || strcmp(md->general->mode, "SWB") == 0.0 )
+     *   mask = 0.0;
+     * else
+     *   mask = NAN;
+     */
+
+    /* We need a version of the data in byte form, so we have to map
+       floats into bytes.  */
+
+    /* Make sure the unsigned char is the size we expect.  */
+    asfRequire (sizeof(unsigned char) == 1,
+                "Size of the unsigned char data type on this machine is "
+                "different than expected.\n");
+
+    /* Gather some statistics to help with the mapping.  Note that if
+       min_sample and max_sample will actually get used for anything
+       they will be set to some better values than this.  */
+    asfPrintStatus("Gathering channel statistics ...\n");
+    get_statistics (si, sample_mapping, sampling_stride, &mean,
+                    &standard_deviation, &min_sample, &max_sample, &omin,
+                    &omax, &my_hist, md->general->no_data);
+
+    /* Its a byte image, so the sample_size is one.  */
+    sample_size = 1;
+    sample_format = SAMPLEFORMAT_UINT;
+  }
+  else {
+    /* Its a floating point image.  */
+    g_assert (sizeof (float) == 4);
+    sample_size = 4;
+    sample_format = SAMPLEFORMAT_IEEEFP;
+  }
 
   // Stuff for histogram equalization
   gsl_histogram_pdf *my_hist_pdf = NULL;
@@ -1016,28 +1072,217 @@ export_as_geotiff (const char *metadata_file_name,
   /* Write the actual image data.  */
   float *line_buffer = g_new (float, si->size_x);
   unsigned char *byte_line_buffer = g_new (unsigned char, si->size_x);
-  for ( ii = 0 ; ii < si->size_y ; ii++ ) {
-    if ( sample_mapping == NONE ) {
-      float_image_get_row (si, ii, line_buffer);
-      if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
-        asfPrintError("Error writing to output geotiff file %s",
-                      output_file_name);
+  if (rgb) {
+    float *rgb_float_line = g_new (float, si->size_x * 3);
+    unsigned char *rgb_byte_line = g_new (unsigned char, si->size_x);
+    for ( ii = 0 ; ii < si->size_y ; ii++ ) {
+      if ( sample_mapping == NONE ) {
+	float_image_get_row (si, ii, line_buffer);
       }
+      else {
+	for ( jj = 0 ; jj < si->size_x ; jj++ ) {
+	  float paf = float_image_get_pixel (si, jj, ii); // Pixel as float.
+	  byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
+						  omax, my_hist, my_hist_pdf,
+						  md->general->no_data);
+	}
+	if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      asfLineMeter(ii, si->size_y);
+    }
+  }
+  else {
+    for ( ii = 0 ; ii < si->size_y ; ii++ ) {
+      if ( sample_mapping == NONE ) {
+	float_image_get_row (si, ii, line_buffer);
+	if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      else {
+	for ( jj = 0 ; jj < si->size_x ; jj++ ) {
+	  float paf = float_image_get_pixel (si, jj, ii); // Pixel as float.
+	  byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
+						  omax, my_hist, my_hist_pdf,
+						  md->general->no_data);
+	}
+	if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      asfLineMeter(ii, si->size_y);
+    }
+  }
+
+  if (rgb) {
+    // Read green channel
+    asfPrintStatus("\nWorking on green channel:\n");
+    asfPrintStatus("Loading channel ...\n");
+    
+    sprintf(image_data_file_name, "%s.img", in_base_names[1]);  
+    iim = float_image_new_from_metadata(md, image_data_file_name);
+    if ( (max_size > iim->size_x && max_size > iim->size_y)
+	 || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+      scale_factor = 1;
     }
     else {
-      for ( jj = 0 ; jj < si->size_x ; jj++ ) {
-        float paf = float_image_get_pixel (si, jj, ii);     // Pixel as float.
-        byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
-                                                omax, my_hist, my_hist_pdf,
-                                                md->general->no_data);
-      }
-      if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
-        asfPrintError("Error writing to output geotiff file %s",
-                      output_file_name);
+      scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+			   / max_size);
+      if ( scale_factor % 2 != 1 ) {
+	scale_factor++;
       }
     }
-    asfLineMeter(ii, si->size_y);
+    
+    if ( scale_factor != 1 ) {
+      asfPrintStatus ("Scaling channel ...\n");
+      si = float_image_new_from_model_scaled (iim, scale_factor);
+    }
+    else {
+      si = iim;
+    }
+    
+    sampling_stride = GSL_MIN (default_sampling_stride,
+			       GSL_MIN (si->size_x, si->size_y)
+			       / minimum_samples_in_direction);
+    my_hist = NULL;
+    if (sample_mapping != NONE) {
+      
+      asfRequire (sizeof(unsigned char) == 1,
+		  "Size of the unsigned char data type on this machine is "
+		  "different than expected.\n");
+      
+      asfPrintStatus("Gathering channel statistics ...\n");
+      get_statistics (si, sample_mapping, sampling_stride, &mean,
+		      &standard_deviation, &min_sample, &max_sample, &omin,
+		      &omax, &my_hist, md->general->no_data);
+      
+      sample_size = 1;
+      sample_format = SAMPLEFORMAT_UINT;
+    }
+    else {
+      g_assert (sizeof (float) == 4);
+      sample_size = 4;
+      sample_format = SAMPLEFORMAT_IEEEFP;
+    }
+
+    asfPrintStatus("Writing channel ...\n");
+    
+    my_hist_pdf = NULL;
+    if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+      my_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+      gsl_histogram_pdf_init (my_hist_pdf, my_hist);
+    }
+
+    for ( ii = 0 ; ii < si->size_y ; ii++ ) {
+      if ( sample_mapping == NONE ) {
+	float_image_get_row (si, ii, line_buffer);
+	if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      else {
+	for ( jj = 0 ; jj < si->size_x ; jj++ ) {
+	  float paf = float_image_get_pixel (si, jj, ii);     // Pixel as float.
+	  byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
+						  omax, my_hist, my_hist_pdf,
+						  md->general->no_data);
+	}
+	if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      asfLineMeter(ii, si->size_y);
+    }
+    
+    // Read blue channel
+    asfPrintStatus("\nWorking on blue channel:\n");
+    asfPrintStatus("Loading channel ...\n");
+    
+    sprintf(image_data_file_name, "%s.img", in_base_names[2]);  
+    iim = float_image_new_from_metadata(md, image_data_file_name);
+    if ( (max_size > iim->size_x && max_size > iim->size_y)
+	 || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
+      scale_factor = 1;
+    }
+    else {
+      scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
+			   / max_size);
+      if ( scale_factor % 2 != 1 ) {
+	scale_factor++;
+      }
+    }
+    
+    if ( scale_factor != 1 ) {
+      asfPrintStatus ("Scaling channel ...\n");
+      si = float_image_new_from_model_scaled (iim, scale_factor);
+    }
+    else {
+      si = iim;
+    }
+    
+    sampling_stride = GSL_MIN (default_sampling_stride,
+			       GSL_MIN (si->size_x, si->size_y)
+			       / minimum_samples_in_direction);
+    my_hist = NULL;
+    if (sample_mapping != NONE) {
+      
+      asfRequire (sizeof(unsigned char) == 1,
+		  "Size of the unsigned char data type on this machine is "
+		  "different than expected.\n");
+      
+      asfPrintStatus("Gathering channel statistics ...\n");
+      get_statistics (si, sample_mapping, sampling_stride, &mean,
+		      &standard_deviation, &min_sample, &max_sample, &omin,
+		      &omax, &my_hist, md->general->no_data);
+      
+      sample_size = 1;
+      sample_format = SAMPLEFORMAT_UINT;
+    }
+    else {
+      g_assert (sizeof (float) == 4);
+      sample_size = 4;
+      sample_format = SAMPLEFORMAT_IEEEFP;
+    }
+    
+    asfPrintStatus("Writing channel ...\n");
+    
+    my_hist_pdf = NULL;
+    if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+      my_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+      gsl_histogram_pdf_init (my_hist_pdf, my_hist);
+    }
+    
+    for ( ii = 0 ; ii < si->size_y ; ii++ ) {
+      if ( sample_mapping == NONE ) {
+	float_image_get_row (si, ii, line_buffer);
+	if ( TIFFWriteScanline (otif, line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      else {
+	for ( jj = 0 ; jj < si->size_x ; jj++ ) {
+	  float paf = float_image_get_pixel (si, jj, ii);     // Pixel as float.
+	  byte_line_buffer[jj] = pixel_float2byte(paf, sample_mapping, omin,
+						  omax, my_hist, my_hist_pdf,
+						  md->general->no_data);
+	}
+	if ( TIFFWriteScanline (otif, byte_line_buffer, ii, 0) < 0 ) {
+	  asfPrintError("Error writing to output geotiff file %s",
+			output_file_name);
+	}
+      }
+      asfLineMeter(ii, si->size_y);
+    }    
   }
+
   g_free (byte_line_buffer);
   g_free (line_buffer);
 
@@ -1057,4 +1302,3 @@ export_as_geotiff (const char *metadata_file_name,
   float_image_free (iim);
   meta_free (md);
 }
-

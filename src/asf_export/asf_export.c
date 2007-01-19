@@ -171,6 +171,45 @@ check_return (int ret, char *msg)
     asfPrintError (msg);
 }
 
+// Detect whether a band is one of the RGB channels
+void detect_channel(char **in_base_names, char *in_base_name, 
+		    command_line_parameters_t command_line, char *band,
+		    int *red, int *green, int *blue)
+{
+  *red = 0;
+  *green = 0;
+  *blue = 0;
+  if (strcmp(band, command_line.red_channel) == 0) {
+    *red = 1;
+    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[0], "%s_%s", in_base_name, band);
+  }
+  else if (band[1] == command_line.red_channel[0]) {
+    *red = 1;
+    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
+  }
+  if (strcmp(band, command_line.green_channel) == 0) {
+    *green = 2;
+    in_base_names[1] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[1], "%s_%s", in_base_name, band);
+  }
+  else if (band[1] == command_line.green_channel[0]) {
+    *green = 2;
+    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
+  }
+  if (strcmp(band, command_line.blue_channel) == 0) {
+    *blue = 4;
+    in_base_names[2] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[2], "%s_%s", in_base_name, band);
+  }
+  else if (band[1] == command_line.blue_channel[0]) {
+    *blue = 4;
+    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
+  }
+}
 
 // Main program body.
 int
@@ -178,9 +217,11 @@ main (int argc, char *argv[])
 {
   output_format_t format = 0;
   meta_parameters *md;
-  char *in_base_name;
+  char *in_base_name, *output_name;
+  char **in_base_names, tmp[10]="", band[10]="";
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
+  output_name = (char *) MALLOC(sizeof(char)*255);
 
 /**********************BEGIN COMMAND LINE PARSING STUFF**********************/
   // Command line input goes in it's own structure.
@@ -196,10 +237,13 @@ main (int argc, char *argv[])
   strcpy (command_line.cal_params_file, "");
   strcpy (command_line.cal_comment, "");
   command_line.sample_mapping = 0;
+  strcpy(command_line.red_channel, "");
+  strcpy(command_line.green_channel, "");
+  strcpy(command_line.blue_channel, "");
 
-  int formatFlag, sizeFlag, logFlag, quietFlag, byteFlag;
+  int formatFlag, sizeFlag, logFlag, quietFlag, byteFlag, rgbFlag;
   int needed_args = 3;  //command & argument & argument
-  int ii;
+  int ii, kk, red=0, green=0, blue=0, check_sum=0, rgb=0;
   char sample_mapping_string[25];
 
   //Check to see which options were specified
@@ -215,6 +259,7 @@ main (int argc, char *argv[])
   logFlag = checkForOption ("-log", argc, argv);
   quietFlag = checkForOption ("-quiet", argc, argv);
   byteFlag = checkForOption ("-byte", argc, argv);
+  rgbFlag = checkForOption ("-rgb", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -230,6 +275,9 @@ main (int argc, char *argv[])
   }
   if ( byteFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
+  }
+  if ( rgbFlag != FLAG_NOT_SET ) {
+    needed_args += 4;           // Option & 3 parameters.
   }
 
   if ( argc != needed_args ) {
@@ -256,7 +304,13 @@ main (int argc, char *argv[])
     }
   }
   if ( byteFlag != FLAG_NOT_SET ) {
-    if ( argv[byteFlag + 1][0] == '-' || byteFlag >= argc -3 ) {
+    if ( argv[byteFlag + 1][0] == '-' || byteFlag >= argc - 3 ) {
+      print_usage ();
+    }
+  }
+  if ( rgbFlag != FLAG_NOT_SET ) {
+    if (( argv[rgbFlag + 1][0] == '-' && argv[rgbFlag + 2][0] == '-' &&
+	  argv[rgbFlag + 3][0] == '-' ) || rgbFlag >= argc - 5 ) {
       print_usage ();
     }
   }
@@ -334,19 +388,80 @@ main (int argc, char *argv[])
                     sample_mapping_string);
   }
 
-  //Grab the input name
-  strcpy (in_base_name, argv[argc - 2]);
+  // Set rgb combination
+  if ( rgbFlag != FLAG_NOT_SET ) {
+    strcpy (command_line.red_channel, argv[rgbFlag + 1]);
+    strcpy (command_line.green_channel, argv[rgbFlag + 2]);
+    strcpy (command_line.blue_channel, argv[rgbFlag + 3]);
+    asfPrintStatus("Exporting multiband image ...\n");
+    asfPrintStatus("Red channel: %s\n", command_line.red_channel);
+    asfPrintStatus("Green channel: %s\n", command_line.green_channel);
+    asfPrintStatus("Blue channel: %s\n\n", command_line.blue_channel);
+  }
 
-  //If user added ".img", strip it.
+  // Grab the input and output name
+  strcpy (in_base_name, argv[argc - 2]);
+  strcpy (output_name, argv[argc - 1]);
+
+  // If user added ".img", strip it.
   char *ext = findExt(in_base_name);
   if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
+  // Read in bands
+  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  sprintf(band, "HH");
+  sprintf(tmp, "%s_%s.img", in_base_name, band);
+  if (fileExists(tmp)) {
+    detect_channel(in_base_names, in_base_name, command_line, band, 
+		   &red, &green, &blue);
+    check_sum += red + green + blue;
+  }
+  sprintf(band, "HV");
+  sprintf(tmp, "%s_%s.img", in_base_name, band);
+  if (fileExists(tmp)) {
+    detect_channel(in_base_names, in_base_name, command_line, band, 
+		   &red, &green, &blue);
+    check_sum += red + green + blue;
+  }
+  sprintf(band, "VH");
+  sprintf(tmp, "%s_%s.img", in_base_name, band);
+  if (fileExists(tmp)) {
+    detect_channel(in_base_names, in_base_name, command_line, band, 
+		   &red, &green, &blue);
+    check_sum += red + green + blue;
+  }
+  sprintf(band, "VV");
+  sprintf(tmp, "%s_%s.img", in_base_name, band);
+  if (fileExists(tmp)) {
+    detect_channel(in_base_names, in_base_name, command_line, band, 
+		   &red, &green, &blue);
+    check_sum += red + green + blue;
+  }
+  if (check_sum == 0) {
+    for (kk=1; kk<10; kk++) {
+      sprintf(band, "0%d", kk);
+      sprintf(tmp, "%s_%s.img", in_base_name, band);
+      if (fileExists(tmp)) {
+	detect_channel(in_base_names, in_base_name, command_line, band, 
+		       &red, &green, &blue);
+	check_sum += red + green + blue;
+      }
+    }
+  }
+  if (check_sum == 0) {
+    sprintf(tmp, "%s.img", in_base_name);
+    in_base_names[ii] = (char *) MALLOC(512*sizeof(char));
+    strcpy(in_base_names[0], in_base_name);
+  }
+
+  // Found three channels for RGB?
+  if (check_sum == 7)
+    rgb = 1;
+
   //Compose input metadata name
-  strcpy (command_line.in_meta_name, in_base_name);
+  strcpy (command_line.in_meta_name, in_base_names[0]);
   strcat (command_line.in_meta_name, ".meta");
 
-  //Grab the output name
-  strcpy (command_line.output_name, argv[argc - 1]);
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
@@ -394,9 +509,8 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export(format, command_line.size, 
-	     command_line.sample_mapping, in_base_name,
-	     command_line.output_name);
+  asf_export_bands(format, command_line.size, command_line.sample_mapping, 
+		   in_base_names, output_name, rgb);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
