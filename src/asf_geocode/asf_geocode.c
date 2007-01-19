@@ -360,6 +360,8 @@ main (int argc, char **argv)
   // Read in bands
   in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
   out_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    in_base_names[ii] = NULL;
   ii = 0;
   sprintf(tmp, "%s_HH.img", in_base_name);
   if (fileExists(tmp)) {
