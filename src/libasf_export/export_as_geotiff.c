@@ -178,11 +178,14 @@ tags_for_geotiff (const char *metadata_file_name,
   TIFFSetField(otif, TIFFTAG_IMAGELENGTH, md->general->line_count);
   TIFFSetField(otif, TIFFTAG_BITSPERSAMPLE, sample_size * 8);
   TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-  TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-  if (rgb)
+  if (rgb) {
+    TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
     TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 3);
-  else
+  }
+  else {
     TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
+    TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+  }
   TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP, 1);
   TIFFSetField(otif, TIFFTAG_XRESOLUTION, 1.0);
   TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
