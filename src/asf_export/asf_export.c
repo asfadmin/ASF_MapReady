@@ -181,7 +181,7 @@ void detect_channel(char **in_base_names, char *in_base_name,
     in_base_names[0] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[0], "%s_%s", in_base_name, band);
   }
-  else if (band[1] == command_line.red_channel[0]) {
+  else if (band[1] == command_line.red_channel[0] && atoi(band)) {
     *red = 1;
     in_base_names[0] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
@@ -191,7 +191,7 @@ void detect_channel(char **in_base_names, char *in_base_name,
     in_base_names[1] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[1], "%s_%s", in_base_name, band);
   }
-  else if (band[1] == command_line.green_channel[0]) {
+  else if (band[1] == command_line.green_channel[0] && atoi(band)) {
     *green = 2;
     in_base_names[1] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[1], "%s_0%c", in_base_name, band[1]);
@@ -201,7 +201,7 @@ void detect_channel(char **in_base_names, char *in_base_name,
     in_base_names[2] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[2], "%s_%s", in_base_name, band);
   }
-  else if (band[1] == command_line.blue_channel[0]) {
+  else if (band[1] == command_line.blue_channel[0] && atoi(band)) {
     *blue = 4;
     in_base_names[2] = (char *) MALLOC(512*sizeof(char));
     sprintf(in_base_names[2], "%s_0%c", in_base_name, band[1]);
