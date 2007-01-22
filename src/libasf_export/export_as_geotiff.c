@@ -101,8 +101,7 @@ export_as_geotiff (const char *metadata_file_name,
   in_base_names[0] = stripExt(image_data_file_name);
 
   return 
-    export_rgb_as_geotiff(in_base_names, out  TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, sample_format);
-put_file_name, sample_mapping, 0);
+    export_rgb_as_geotiff(in_base_names, output_file_name, sample_mapping, 0);
 }
 
 void
@@ -120,7 +119,6 @@ tags_for_geotiff (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
 
   /* Scale factor needed to satisfy max_size argument.  */
-  size_t scale_factor;
   unsigned short sample_size = 4;
   unsigned short sample_format;
   int return_code;
@@ -321,13 +319,13 @@ tags_for_geotiff (const char *metadata_file_name,
         asfPrintWarning("Unexpected non-positive perX in the "
                         "projection block.\n");
 
-    pixel_scale[0] = fabs(md->projection->perX) * scale_factor;
+    pixel_scale[0] = fabs(md->projection->perX);
 
     if (md->projection->perY > 0.0)
         asfPrintWarning("Unexpected non-negative perY in the "
                         "projection block.\n");
 
-    pixel_scale[1] = fabs(md->projection->perY) * scale_factor;
+    pixel_scale[1] = fabs(md->projection->perY);
     pixel_scale[2] = 0;
     TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
