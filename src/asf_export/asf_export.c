@@ -193,8 +193,8 @@ void detect_channel(char **in_base_names, char *in_base_name,
   }
   else if (band[1] == command_line.green_channel[0]) {
     *green = 2;
-    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
-    sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
+    in_base_names[1] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[1], "%s_0%c", in_base_name, band[1]);
   }
   if (strcmp(band, command_line.blue_channel) == 0) {
     *blue = 4;
@@ -203,8 +203,8 @@ void detect_channel(char **in_base_names, char *in_base_name,
   }
   else if (band[1] == command_line.blue_channel[0]) {
     *blue = 4;
-    in_base_names[0] = (char *) MALLOC(512*sizeof(char));
-    sprintf(in_base_names[0], "%s_0%c", in_base_name, band[1]);
+    in_base_names[2] = (char *) MALLOC(512*sizeof(char));
+    sprintf(in_base_names[2], "%s_0%c", in_base_name, band[1]);
   }
 }
 
