@@ -4,6 +4,46 @@
 #include "asf_raster.h"
 
 
+void calc_stats_from_file(char *inFile, double mask, double *min,
+			  double *max, double *mean, double *stdDev,
+			  gsl_histogram *histogram)
+{
+  FILE *fp;
+  meta_parameters *meta;
+  char dataFile[255], metaFile[255];
+  float *data;
+  long long pixel_count;
+
+  sprintf(dataFile, "%s.img", inFile);
+  sprintf(metaFile, "%s.meta", inFile);
+  meta = meta_read(metaFile);
+  pixel_count = meta->general->line_count * meta->general->sample_count;
+  data = (float *) MALLOC(sizeof(float) * pixel_count);
+  fp = FOPEN(dataFile, "rb");
+  get_float_lines(fp, meta, 0, meta->general->line_count, data);
+  calc_stats(data, pixel_count, mask, min, max, mean, stdDev);
+  histogram = calc_histogram(data, pixel_count, *min, *max, 256);
+  FCLOSE(fp);
+  FREE(data);
+  
+  return;
+}
+
+gsl_histogram *calc_histogram (float *data, long long pixel_count,
+			       double min, double max, size_t num_bins)
+{
+  // Initialize the histogram.
+  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+  gsl_histogram_set_ranges_uniform (hist, min, max);
+
+  // Populate the histogram over every sample in the image.
+  long long ii;
+  for (ii=0; ii<pixel_count; ii++)
+    gsl_histogram_increment (hist, data[ii]);
+
+  return hist;
+}
+
 /* Calculate minimum, maximum, mean and standard deviation for a floating point
    image. A mask value can be defined that is excluded from this calculation.
    If no mask value is supposed to be used, pass the mask value as NAN. */

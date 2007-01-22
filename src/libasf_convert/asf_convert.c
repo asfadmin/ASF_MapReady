@@ -701,7 +701,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     output_format_t format = JPEG;
-    long size = -1;
 
     if (cfg->general->export) {
 
@@ -736,7 +735,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
 
-      check_return(asf_export(format, size, scale, inFile, outFile),
+      check_return(asf_export(format, scale, inFile, outFile),
                    "exporting data file (asf_export)\n");
 
       // Move the .meta file out of temporary status: <out basename>.meta
@@ -752,8 +751,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintStatus("Generating Thumbnail image...\n");
         
         output_format_t format = JPEG;
-        long size = 48;
         scale_t scale = SIGMA;
+	meta_parameters *meta;
+	double in_side_length, out_pixel_size;
+	char *tmpFile;
+
+	tmpFile = (char *) MALLOC(sizeof(char)*512);
+
+	// Calculate pixel size for generating right size thumbnail
+	meta = meta_read(inFile);
+	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
+	  meta->general->line_count : meta->general->sample_count;
+	out_pixel_size = meta->general->x_pixel_size / in_side_length * 48;
         
         // Pass in command line
         if (!cfg->general->export)
@@ -766,13 +775,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->intermediates) {
             sprintf(outFile, "%s/%s_thumb.jpg",
                     cfg->general->tmp_dir, basename);
+            sprintf(tmpFile, "%s/%s_thumb",
+                    cfg->general->tmp_dir, basename);
         } else {
             char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
+            strcpy(tmpFile, tmp);
             strcpy(outFile, tmp);
             free(tmp);
         }
 
-        check_return(asf_export(format, size, scale, inFile, outFile),
+	check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
+		     "resampling data to thumbnail size (resample)\n");
+        check_return(asf_export(format, scale, tmpFile, outFile),
                      "exporting thumbnail data file (asf_export)\n");
     }
 
@@ -799,7 +813,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             update_status(cfg, "Exporting clipped DEM...");
 
             check_return(
-                asf_export(format, size, SIGMA, inFile, outFile),
+                asf_export(format, SIGMA, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
         }
         else {
@@ -837,7 +851,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(tmp);
 
             check_return(
-                asf_export(format, size, TRUNCATE, inFile, outFile),
+                asf_export(format, TRUNCATE, inFile, outFile),
                 "exporting layover mask (asf_export)\n");
         }
     }

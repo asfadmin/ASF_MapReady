@@ -3,7 +3,7 @@
 #include <asf_vector.h>
 
 
-int asf_export(output_format_t format, long size, scale_t sample_mapping, 
+int asf_export(output_format_t format, scale_t sample_mapping, 
                char *in_base_name, char *output_name)
 {
   char **in_base_names;
@@ -12,16 +12,17 @@ int asf_export(output_format_t format, long size, scale_t sample_mapping,
   in_base_names[0] = (char *) MALLOC(512*sizeof(char));
   strcpy(in_base_names[0], in_base_name);
 
-  return asf_export_bands(format, size, sample_mapping, 
+  return asf_export_bands(format, sample_mapping, 
 			  in_base_names, output_name, 0);
 }
 
-int asf_export_bands(output_format_t format, long size, scale_t sample_mapping, 
+int asf_export_bands(output_format_t format, scale_t sample_mapping, 
 		     char **in_base_names, char *output_name, int rgb)
 {
   int ii;
   char in_meta_name[255], in_data_name[255];
   char *out_name = (char*)MALLOC(512*sizeof(char));
+  int size = -1;
 
   asfPrintStatus("Exporting ...\n");
 
@@ -63,9 +64,9 @@ int asf_export_bands(output_format_t format, long size, scale_t sample_mapping,
   else if ( format == GEOTIFF ) {
     append_ext_if_needed (output_name, ".tif", ".tiff");
     if (rgb) // three-channel RGB image
-      export_rgb_as_geotiff (in_base_names, output_name, size, sample_mapping, 1);
+      export_rgb_as_geotiff (in_base_names, output_name, sample_mapping, 1);
     else // writing as many single bands as you can find
-      export_rgb_as_geotiff (in_base_names, output_name, size, sample_mapping, 0);
+      export_rgb_as_geotiff (in_base_names, output_name, sample_mapping, 0);
   }
   else if ( format == JPEG ) {
     ii = 0;

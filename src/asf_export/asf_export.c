@@ -20,9 +20,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "alos_export"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-format <output_format>] [-size <max_dimension>]\n"\
-"              [-byte <sample mapping option>] [-log <log_file>] [-quiet]\n"\
-"              [-license] [-version] [-help]\n"\
+"   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
+"              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -43,8 +42,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            ppm     - Portable pixmap image, with byte valued pixels\n"\
-"   -size <size>\n"\
-"        Scale image so that its largest dimension is, at most, <size>.\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
@@ -241,7 +238,7 @@ main (int argc, char *argv[])
   strcpy(command_line.green_channel, "");
   strcpy(command_line.blue_channel, "");
 
-  int formatFlag, sizeFlag, logFlag, quietFlag, byteFlag, rgbFlag;
+  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag;
   int needed_args = 3;  //command & argument & argument
   int ii, kk, red=0, green=0, blue=0, check_sum=0, rgb=0;
   char sample_mapping_string[25];
@@ -255,16 +252,12 @@ main (int argc, char *argv[])
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
   formatFlag = checkForOption ("-format", argc, argv);
-  sizeFlag = checkForOption ("-size", argc, argv);
   logFlag = checkForOption ("-log", argc, argv);
   quietFlag = checkForOption ("-quiet", argc, argv);
   byteFlag = checkForOption ("-byte", argc, argv);
   rgbFlag = checkForOption ("-rgb", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
-    needed_args += 2;           // Option & parameter.
-  }
-  if ( sizeFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
   }
   if ( quietFlag != FLAG_NOT_SET ) {
@@ -295,11 +288,6 @@ main (int argc, char *argv[])
   // parameters don't bleed into required arguments.
   if ( formatFlag != FLAG_NOT_SET ) {
     if ( argv[formatFlag + 1][0] == '-' || formatFlag >= argc - 3 ) {
-      print_usage ();
-    }
-  }
-  if ( sizeFlag != FLAG_NOT_SET ) {
-    if ( argv[sizeFlag + 1][0] == '-' || sizeFlag >= argc - 3 ) {
       print_usage ();
     }
   }
@@ -359,8 +347,6 @@ main (int argc, char *argv[])
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 )
     command_line.sample_mapping = NONE;
 
-  if ( sizeFlag != FLAG_NOT_SET )
-    command_line.size = atol (argv[sizeFlag + 1]);
   else
     command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
 
@@ -409,6 +395,8 @@ main (int argc, char *argv[])
 
   // Read in bands
   in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  for (ii=0; ii<MAX_BANDS; ii++)
+    in_base_names[ii] = NULL;
   sprintf(band, "HH");
   sprintf(tmp, "%s_%s.img", in_base_name, band);
   if (fileExists(tmp)) {
@@ -509,7 +497,7 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export_bands(format, command_line.size, command_line.sample_mapping, 
+  asf_export_bands(format, command_line.sample_mapping, 
 		   in_base_names, output_name, rgb);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
