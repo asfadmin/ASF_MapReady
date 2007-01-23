@@ -21,6 +21,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
+"              [-rgb <red> <green> <blue> ]\n"\
 "              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
@@ -59,6 +60,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            histogram_equalize\n"\
 "                produces an image with equally distributed brightness levels\n"\
 "                over the entire brightness scale which increases contrast.\n"\
+"   -rgb <red> <green> <blue>\n"\
+"        Converts output image into a color RGB image.\n"\
+"        Currently implemented for GeoTIFF imagery.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
