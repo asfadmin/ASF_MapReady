@@ -285,17 +285,6 @@ on_flicker_window_delete_event(GtkWidget *w, gpointer data)
     quit();
 }
 
-static int imx(int a, int b) { return a>b?a:b; }
-
-static char * get_basename(const char *name)
-{
-    char dirName[255];
-    char fileName[255];
-    split_dir_and_file(name, dirName, fileName);
-
-    return strdup(fileName);
-}
-
 static void load_images(const char *f1, const char *f2)
 {
     meta_parameters *m1 = meta_read(f1);
@@ -307,9 +296,10 @@ static void load_images(const char *f1, const char *f2)
 //    assert(m1->general->line_count == m2->general->line_count);
 //    assert(m1->general->sample_count == m2->general->sample_count);
 
-    int lines = imx(m1->general->line_count, m2->general->sample_count);
-    int samps = imx(m1->general->sample_count, m2->general->sample_count);
-    int max = lines > samps ? lines : samps;
+    //int lines = imx(m1->general->line_count, m2->general->sample_count);
+    //int samps = imx(m1->general->sample_count, m2->general->sample_count);
+    //int max = lines > samps ? lines : samps;
+    int max = 1200;
     int ret;
 
     FloatImage *fi1 = 
