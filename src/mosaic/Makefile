@@ -1,6 +1,6 @@
 include ../../make_support/system_rules
 
-TARGET = combine
+TARGET = mosaic
 
 CFLAGS += $(GLIBS_CFLAGS)
 

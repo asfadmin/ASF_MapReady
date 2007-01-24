@@ -10,7 +10,7 @@
 #include "asf_license.h"
 #include "asf_version.h"
 
-#define ASF_NAME_STRING "combine"
+#define ASF_NAME_STRING "mosaic"
 
 static const float_image_byte_order_t fibo_be =
     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
@@ -68,8 +68,8 @@ ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
 void usage()
 {
     printf("Usage:\n"
-           "    combine <outfile> <infile1> <infile2> ... \n\n"
-           "At least 2 input files are required.\n");
+           "    %s <outfile> <infile1> <infile2> ... \n\n"
+           "At least 2 input files are required.\n", ASF_NAME_STRING);
     exit(1);
 }
 
@@ -293,7 +293,7 @@ static void determine_extents(char **infiles, int n_inputs,
     }
 
     if (n_ok < 2) {
-        asfPrintError("Not enough images to combine.\n");
+        asfPrintError("Not enough images to mosaic.\n");
     }
 
     *start_x = x0;

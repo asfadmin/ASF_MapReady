@@ -26,21 +26,21 @@ MODULES = \
 	src/libasf_vector \
 	src/libasf_sar \
 	src/ardop \
-	src/libasf_export \
-	src/asf_export \
 	src/libasf_import \
-	src/asf_import \
 	src/libasf_geocode \
-	src/asf_geocode \
+	src/libasf_export \
 	src/libasf_terrcorr \
+	src/asf_import \
+	src/asf_export \
+	src/asf_geocode \
 	src/asf_terrcorr \
 	src/libasf_convert \
 	src/asf_convert \
 	src/refine_geolocation \
 	src/sr2gr \
 	src/gr2sr \
-        src/metadata \
-        src/combine \
+	src/metadata \
+	src/mosaic \
 	@ASF_GUI@
 # src_x/sarview
 
@@ -65,13 +65,17 @@ install: all
 	chmod a+x @SHAREDIR@/projections
 	chmod a+x @SHAREDIR@/projections/*
 	chmod a+x @SHAREDIR@/asf_convert
+	chmod a+x @SHAREDIR@/proj
 
 external_libs:
+	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
 	$(MAKE) -C external
 	-cp -R external/lib/* lib
 	-chmod -R ug+w lib
 	-cp -R external/include/* include
 	-chmod -R ug+w include
+	-cp -R external/share/* share/asf_tools
+	-chmod -R ug+w share
 
 clean:
 	rm -rf bin/* lib/* share/*
