@@ -55,13 +55,12 @@ export_as_geotiff (const char *metadata_file_name,
   char **in_base_names;
 
   in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  in_base_names[0] = (char *) MALLOC(512*sizeof(char));
+  //in_base_names[0] = (char *) MALLOC(512*sizeof(char));
   in_base_names[0] = stripExt(image_data_file_name);
 
-  return
-    export_rgb_as_geotiff(in_base_names, output_file_name, sample_mapping, 0);
+  export_rgb_as_geotiff(in_base_names, output_file_name, sample_mapping, 0);
 
-  // FIXME: in_base_names should be freed here... not somewhere else
+  FREE(in_base_names);
 }
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
@@ -137,7 +136,6 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
   meta_parameters *md = meta_read (metadata_file_name);
   int map_projected = is_map_projected(md);
   int is_slant_range_image = is_slant_range(md);
-  size_t scale_factor;
   TIFF *otif;
 
   /* Semi-major and -minor ellipse axis lengths.  This shows up in two
@@ -168,6 +166,7 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
   /* Set the GeoTIFF extension image tags.  */
   if (map_projected)
   {
+    // Write common tags for map-projected GeoTIFFs
     GTIFKeySet (ogtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
     GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
     GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
@@ -178,269 +177,276 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
     re_minor = md->projection->re_minor;
   }
   else {
+    // If not map-projected, then common tags are not written.  If the file
+    // is georeferenced however, then pixel scale and tie point will be
+    // written below
+
     re_major = md->general->re_major;
     re_minor = md->general->re_minor;
   }
 
-   /* We will tie down the top left corner of the image (which has
-      TIFF raster coordinates 0, 0, 0).  */
-   if (md->projection) {
-     if (!(meta_is_valid_double(md->projection->startX) &&
-           meta_is_valid_double(md->projection->startY)) ||
-         md->projection->startX < 0 ||
-         md->projection->startY < 0
-        )
-     {
-       asfPrintWarning("Metadata projection block contains invalid startX "
-           "or startY values\n");
-     }
-     // Write georeferencing data
-     if (!is_slant_range_image) {
-       double tie_point[6];
-       double pixel_scale[3];
+  if (md->projection) {
+    if (!(meta_is_valid_double(md->projection->startX) &&
+          meta_is_valid_double(md->projection->startY)) ||
+        md->projection->startX < 0 ||
+        md->projection->startY < 0
+       )
+    {
+      asfPrintWarning("Metadata projection block contains invalid startX "
+          "or startY values\n");
+    }
+    // Write georeferencing data
+    if (!is_slant_range_image) {
+      double tie_point[6];
+      double pixel_scale[3];
 
-       tie_point[0] = 0.0;
-       tie_point[1] = 0.0;
-       tie_point[2] = 0.0;
-       tie_point[3] = md->projection->startX;
-       tie_point[4] = md->projection->startY;
-       tie_point[5] = 0.0;
-       TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
+      tie_point[0] = 0.0;
+      tie_point[1] = 0.0;
+      tie_point[2] = 0.0;
+      tie_point[3] = md->projection->startX;
+      tie_point[4] = md->projection->startY;
+      tie_point[5] = 0.0;
+      TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
-       /* Set the scale of the pixels, in projection coordinates.  */
-       if (md->projection->perX < 0.0) {
-         asfPrintWarning("Unexpected non-positive perX in the "
-             "projection block.\n");
-       }
-       else {
-         pixel_scale[0] = fabs(md->projection->perX) * scale_factor;
-       }
+      /* Set the scale of the pixels, in projection coordinates.  */
+      if (md->projection->perX < 0.0) {
+        asfPrintWarning("Unexpected non-positive perX in the "
+            "projection block.\n");
+      }
+      else {
+        pixel_scale[0] = fabs(md->projection->perX);
+      }
 
-       if (md->projection->perY > 0.0) {
-         asfPrintWarning("Unexpected non-negative perY in the "
-             "projection block.\n");
-       }
-       else {
-         pixel_scale[1] = fabs(md->projection->perY) * scale_factor;
-         pixel_scale[2] = 0;
-       }
-       TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
-     }
-   }
+      if (md->projection->perY > 0.0) {
+        asfPrintWarning("Unexpected non-negative perY in the "
+            "projection block.\n");
+      }
+      else {
+        pixel_scale[1] = fabs(md->projection->perY);
+        pixel_scale[2] = 0;
+      }
+      TIFFSetField (otif, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
+    }
+  }
 
-   // Write geocode (map projection) parameters
-   if (map_projected) {
-     int max_citation_length = 512;
-     char *citation;
-     int citation_length;
+  // Write geocode (map projection) parameters
+  if (map_projected) {
+    int max_citation_length = 512;
+    char *citation;
+    int citation_length;
 
-     /* Write the appropriate geotiff keys for the projection type.  */
-     switch (md->projection->type) {
-       case UNIVERSAL_TRANSVERSE_MERCATOR:
-       {
-         short pcs;
-         if ( UTM_2_PCS(&pcs, md->projection->datum,
-              md->projection->param.utm.zone, md->projection->hem) ) {
-           GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, pcs);
+    /* Write the appropriate geotiff keys for the projection type.  */
+    switch (md->projection->type) {
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+      {
+        short pcs;
+        if ( UTM_2_PCS(&pcs, md->projection->datum,
+             md->projection->param.utm.zone, md->projection->hem) ) {
+          GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1, pcs);
 
-           // Write the citation
-           char datum_str[256];
-           pcs_2_string (datum_str, pcs);
-           citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-           citation_length = snprintf (citation, max_citation_length + 1,
-                                       "UTM zone %d %c projected GeoTIFF on %s "
-                                       "datum written by Alaska Satellite Facility tools.",
-                                       md->projection->param.utm.zone, md->projection->hem,
-                                       datum_str);
-           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
-                       "GeoTIFF citation too long" );
-           GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-           FREE(citation);
-         }
-         else {
-           asfPrintWarning("Unsupported combination of datum and hemisphere for a UTM\n"
-               "map projection occurred.\n"
-               "...GeoTIFF will be written but will not contain projection information\n"
-               "other than tiepoints and pixel scales.\n");
-         }
-       }
-         break;
-       case ALBERS_EQUAL_AREA:
-       {
-         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-                     CT_AlbersEqualArea);
-         GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.std_parallel1);
-         GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.std_parallel2);
-         GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.false_easting);
-         GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.false_northing);
-         GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.orig_latitude);
-         // The following is where ArcGIS looks for the center meridian
-         GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.center_meridian);
-         // The following is where the center meridian _should_ be stored
-         GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.albers.center_meridian);
-         // This writes the GeographicTypeGeoKey
-         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
-
-         /* Set the citation key.  */
-         char datum_str[256];
-         datum_2_string (datum_str, md->projection->datum);
-         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-         citation_length =
-             snprintf (citation, max_citation_length + 1,
-                       "Albers equal-area conic projected GeoTIFF using %s "
-                       "datum written by Alaska Satellite Facility "
-                       "tools.", datum_str);
-         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
-                     "bad citation length");
-         // The following is not needed for any but UTM (according to the standard)
-         // but it appears that everybody uses it anyway... so we'll write it
-         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-         // The following is recommended by the standard
-         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-         free (citation);
-       }
-         break;
-       case LAMBERT_CONFORMAL_CONIC:
-       {
-         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-                     CT_LambertConfConic_2SP);
-         GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.plat1);
-         GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.plat2);
-         GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.false_easting);
-         GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.false_northing);
-         GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.lon0);
-         GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamcc.lat0);
+          // Write the citation
+          char datum_str[256];
+          if (md->projection->datum == ITRF97_DATUM) {
+            strcpy(datum_str, "ITRF97 (WGS 84)");
+          }
+          else {
+            pcs_2_string (datum_str, pcs);
+          }
+          citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+          citation_length = snprintf (citation, max_citation_length + 1,
+                                      "UTM zone %d %c projected GeoTIFF on %s "
+                                      "datum written by Alaska Satellite Facility tools.",
+                                      md->projection->param.utm.zone, md->projection->hem,
+                                      datum_str);
+          asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
+                     "GeoTIFF citation too long" );
+          GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+          FREE(citation);
+        }
+        else {
+          asfPrintWarning("Unsupported combination of datum and hemisphere for a UTM\n"
+              "map projection occurred.\n"
+              "...GeoTIFF will be written but will not contain projection information\n"
+              "other than tiepoints and pixel scales.\n");
+        }
+      }
+        break;
+      case ALBERS_EQUAL_AREA:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_AlbersEqualArea);
+        GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.std_parallel1);
+        GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.std_parallel2);
+        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.false_easting);
+        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.false_northing);
+        GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.orig_latitude);
+        // The following is where ArcGIS looks for the center meridian
+        GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.center_meridian);
+        // The following is where the center meridian _should_ be stored
+        GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.albers.center_meridian);
         // This writes the GeographicTypeGeoKey
-         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
-         /* Set the citation key.  */
-         char datum_str[256];
-         datum_2_string (datum_str, md->projection->datum);
-         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-         citation_length =
-             snprintf (citation, max_citation_length + 1,
-                       "Lambert conformal conic projected GeoTIFF using %s "
-                       "datum written by Alaska Satellite Facility "
-                       "tools.", datum_str);
-         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
-                     "bad citation length");
-         // The following is not needed for any but UTM (according to the standard)
-         // but it appears that everybody uses it anyway... so we'll write it
-         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-         // The following is recommended by the standard
-         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-         free (citation);
-       }
-         break;
-       case POLAR_STEREOGRAPHIC:
-       {
-         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-                     CT_PolarStereographic);
-         GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.ps.slon);
-         GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.ps.slat);
-         GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.ps.false_easting);
-         GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.ps.false_northing);
-         // This writes the GeographicTypeGeoKey
-         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        citation_length =
+            snprintf (citation, max_citation_length + 1,
+                      "Albers equal-area conic projected GeoTIFF using %s "
+                      "datum written by Alaska Satellite Facility "
+                      "tools.", datum_str);
+        asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
+                    "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      case LAMBERT_CONFORMAL_CONIC:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_LambertConfConic_2SP);
+        GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.plat1);
+        GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.plat2);
+        GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.false_easting);
+        GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.false_northing);
+        GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.lon0);
+        GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamcc.lat0);
+       // This writes the GeographicTypeGeoKey
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
-         /* Set the citation key.  */
-         char datum_str[256];
-         datum_2_string (datum_str, md->projection->datum);
-         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-         citation_length =
-             snprintf (citation, max_citation_length + 1,
-                       "Polar stereographic projected GeoTIFF using %s "
-                       "datum written by Alaska Satellite Facility "
-                       "tools.", datum_str);
-         asfRequire (citation_length >= 0 &&
-             citation_length <= max_citation_length,
-             "bad citation length");
-         // The following is not needed for any but UTM (according to the standard)
-         // but it appears that everybody uses it anyway... so we'll write it
-         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-         // The following is recommended by the standard
-         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-         free (citation);
-       }
-         break;
-       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-       {
-         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
-                     user_defined_value_code);
-         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
-                     CT_LambertAzimEqualArea);
-         GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamaz.center_lon);
-         GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamaz.center_lat);
-         GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamaz.false_easting);
-         GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                     md->projection->param.lamaz.false_northing);
-         // This writes the GeographicTypeGeoKey
-         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        citation_length =
+            snprintf (citation, max_citation_length + 1,
+                      "Lambert conformal conic projected GeoTIFF using %s "
+                      "datum written by Alaska Satellite Facility "
+                      "tools.", datum_str);
+        asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
+                    "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      case POLAR_STEREOGRAPHIC:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_PolarStereographic);
+        GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.ps.slon);
+        GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.ps.slat);
+        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.ps.false_easting);
+        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.ps.false_northing);
+        // This writes the GeographicTypeGeoKey
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
-         /* Set the citation key.  */
-         char datum_str[256];
-         datum_2_string (datum_str, md->projection->datum);
-         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-         citation_length =
-             snprintf (citation, max_citation_length + 1,
-                       "Lambert azimuthal equal area projected GeoTIFF using "
-                       "%s datum written by Alaska Satellite "
-                       "Facility tools.", datum_str);
-             asfRequire (citation_length >= 0 &&
-                 citation_length <= max_citation_length,
-                 "bad citation length");
-         // The following is not needed for any but UTM (according to the standard)
-         // but it appears that everybody uses it anyway... so we'll write it
-         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-         // The following is recommended by the standard
-         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
-         free (citation);
-       }
-         break;
-       default:
-         asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
-             "contain projection information.\n");
-         break;
-     }
-   }
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        citation_length =
+            snprintf (citation, max_citation_length + 1,
+                      "Polar stereographic projected GeoTIFF using %s "
+                      "datum written by Alaska Satellite Facility "
+                      "tools.", datum_str);
+        asfRequire (citation_length >= 0 &&
+            citation_length <= max_citation_length,
+            "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      {
+        GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjectionGeoKey, TYPE_SHORT, 1,
+                    user_defined_value_code);
+        GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
+                    CT_LambertAzimEqualArea);
+        GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamaz.center_lon);
+        GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamaz.center_lat);
+        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamaz.false_easting);
+        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                    md->projection->param.lamaz.false_northing);
+        // This writes the GeographicTypeGeoKey
+        write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
-   // NOTE: GTIFWriteKeys() must be called to finalize the writing of geokeys
-   // to the GeoTIFF file ...see finalize_tiff_file() ...do not insert a call
-   // to GTIFWriteKeys() here plz.
+        /* Set the citation key.  */
+        char datum_str[256];
+        datum_2_string (datum_str, md->projection->datum);
+        citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+        citation_length =
+            snprintf (citation, max_citation_length + 1,
+                      "Lambert azimuthal equal area projected GeoTIFF using "
+                      "%s datum written by Alaska Satellite "
+                      "Facility tools.", datum_str);
+            asfRequire (citation_length >= 0 &&
+                citation_length <= max_citation_length,
+                "bad citation length");
+        // The following is not needed for any but UTM (according to the standard)
+        // but it appears that everybody uses it anyway... so we'll write it
+        GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+        // The following is recommended by the standard
+        GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
+        free (citation);
+      }
+        break;
+      default:
+        asfPrintWarning ("Unsupported map projection found.  TIFF file will not\n"
+            "contain projection information.\n");
+        break;
+    }
+  }
+
+  // NOTE: GTIFWriteKeys() must be called to finalize the writing of geokeys
+  // to the GeoTIFF file ...see finalize_tiff_file() ...do not insert a call
+  // to GTIFWriteKeys() here plz.
 
   meta_free (md);
 }
@@ -487,6 +493,12 @@ export_rgb_as_geotiff (char **in_base_names,
                         output_file_name, is_geotiff,
                         sample_mapping, rgb);
 
+  // Temporary note:  rgb is currently zero when export_rgb_as_geotiff() is
+  // called by the normal export_as_geotiff() function, and in_base_names
+  // only contains a single basename.  The ALOS version of asf_export calls
+  // export_rgb_as_geotiff() directly and sets rgb to one or zero appropriately
+  // and also is responsible for allocating and freeing in_base_names+ before/after
+  // the direct calling of export_rgb_as_geotiff().
   if (rgb) {
     double red_min, red_max, red_mean, red_stdDev;
     double green_min, green_max, green_mean, green_stdDev;
@@ -905,6 +917,13 @@ int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem)
   // NOTE: For NAD27 and NAD83, only the restricted range of zones
   // above is supported by the GeoTIFF standard.
   //
+  // NOTE: For ALOS's ITRF97 datum, note that it is based on
+  // WGS84 and subsituting WGS84 for ITRF97 because the GeoTIFF
+  // standard does not contain a PCS for ITRF97 (or any ITRFxx)
+  // will result in errors of less than one meter.  So when
+  // writing GeoTIFFs, we choose to use WGS84 when ITRF97 is
+  // desired.
+  //
 
   const short NNN_NAD27N = 267;
   const short NNN_NAD83N = 269;
@@ -916,6 +935,12 @@ int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem)
   int supportedUTM;
   int valid_Zone_and_Datum_and_Hemisphere;
 
+  // Substitute WGS84 for ITRF97 per comment above
+  if (datum == ITRF97_DATUM) {
+    datum = WGS84_DATUM;
+  }
+
+  // Check for valid datum, hemisphere, and zone combination
   uc_hem = toupper(hem);
   valid_Zone_and_Datum_and_Hemisphere =
       (
@@ -1036,6 +1061,9 @@ void datum_2_string (char *datum_str, datum_type_t datum)
     case WGS84_DATUM:
       strcpy (datum_str, "WGS 84");
       break;
+    case ITRF97_DATUM:
+      strcpy(datum_str, "ITRF97 (WGS 84)");
+      break;
     default:
       strcpy (datum_str, "UNKNOWN or UNSUPPORTED");
       break;
@@ -1045,6 +1073,14 @@ void datum_2_string (char *datum_str, datum_type_t datum)
 void write_datum_key (GTIF *ogtif, datum_type_t datum,
                       double re_major, double re_minor)
 {
+  //
+  // NOTE: There is no GCS or GCSE value available for ITRF97,
+  // but ITRF97 is based on WGS84.  Using WGS84 rather than ITRF97
+  // results in errors of less than one meter, so we choose to
+  // use WGS84 whenever ITRF97 is specified (except in citation
+  // strings)
+  //
+
   // If datum is recognized, then write a GCS_ datum to GeographicTypeGeoKey
   switch (datum) {
     case ED50_DATUM:
@@ -1059,13 +1095,13 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
     case WGS72_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_72);
       break;
+    case ITRF97_DATUM:
     case WGS84_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
       break;
     case EGM96_DATUM:
     case ETRF89_DATUM:
     case ETRS89_DATUM:
-    case ITRF97_DATUM:
     default:
     {
         // Else fit an ellipsoid to the major/minor axis and write an
