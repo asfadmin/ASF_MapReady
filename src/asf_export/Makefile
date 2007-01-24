@@ -44,6 +44,7 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libasf_geocode.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
