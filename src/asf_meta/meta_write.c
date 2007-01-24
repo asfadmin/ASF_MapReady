@@ -144,7 +144,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		  "Frame for this image [-1 if n/a]");
   meta_put_int   (fp,"band_count:", meta->general->band_count,
 		  "Number of bands in image");
-  meta_put_string(fp,"band:", meta->general->bands,
+  meta_put_string(fp,"bands:", meta->general->bands,
 		  "Band of the sensor");
   meta_put_int   (fp,"line_count:", meta->general->line_count,
 		  "Number of lines in image");

@@ -361,8 +361,16 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->frame = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "band_count") )
       { MGENERAL->band_count = VALP_AS_INT; return; }
-    if ( !strcmp(field_name, "band") )
-      { strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER); return; }
+    if ( !strcmp(field_name, "bands") ) { 
+      if (strlen(VALP_AS_CHAR_POINTER) == 0) {
+	char tmp[10];
+	sprintf(tmp, "0%.0lf" , VALP_AS_DOUBLE);
+	strcpy(MGENERAL->bands, tmp);
+      }
+      else
+	strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER); 
+      return; 
+    }
     if ( !strcmp(field_name, "line_count") )
       { MGENERAL->line_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "sample_count") )
