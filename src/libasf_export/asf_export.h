@@ -144,3 +144,6 @@ void export_as_tiff (const char *metadata_file_name,
                      const char *output_file_name,
                      long max_size,
                      scale_t sample_mapping);
+
+int find_bands(char ***p_in_base_names, char *in_base_name,
+               char *red_channel, char *green_channel, char *blue_channel);

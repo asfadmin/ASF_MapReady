@@ -19,7 +19,8 @@ SOURCES := asf_export.c \
 	export_as_jpeg.c \
 	export_as_ppm.c \
 	export_as_tiff.c \
-	util.c
+	util.c \
+	rgb.c
 
 ###############################################################################
 #

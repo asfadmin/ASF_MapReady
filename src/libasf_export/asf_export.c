@@ -11,6 +11,7 @@ int asf_export(output_format_t format, scale_t sample_mapping,
   in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
   in_base_names[0] = (char *) MALLOC(512*sizeof(char));
   strcpy(in_base_names[0], in_base_name);
+  in_base_names[1] = NULL;
 
   return asf_export_bands(format, sample_mapping, 
 			  in_base_names, output_name, 0);
