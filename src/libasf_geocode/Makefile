@@ -17,6 +17,7 @@ SOURCES := geocode_options.c \
            parse_options.c \
            check_parameters.c \
            asf_geocode.c \
+	   is_map_projected.c \
 	   geoid.c
 
 ###############################################################################

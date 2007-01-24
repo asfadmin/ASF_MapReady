@@ -20,7 +20,7 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
                                                 int *did_write_proj_file);
 void parse_other_options(int *argc, char **argv[],
                          double *height, double *pixel_size,
-                         datum_type_t *datum, 
+                         datum_type_t *datum,
                          resample_method_t *resample_method,
                          int *override_checks);
 
@@ -49,13 +49,15 @@ typedef int (*array_projector_t) (project_parameters_t *ppd, double *xi,
 
 // Select the appropriate projection and unprojection routines for
 // projection_type from libasf_proj.
-void set_projection_functions (projection_type_t projection_type, 
+void set_projection_functions (projection_type_t projection_type,
 			       projector_t *project, projector_t *unproject,
 			       array_projector_t *array_project,
 			       array_projector_t *array_unproject);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// Check to see if the image metadata contains a supported map projection
+int is_map_projected(meta_parameters *md);
 
 // This is the old geocode_options.h
 /*
@@ -66,46 +68,46 @@ void set_projection_functions (projection_type_t projection_type,
   --projection <name> <<projection specific options>>
   -p <name> <<projection specific options>>
 
-     UTM 
-     --- 
-          --zone,                     : Zone 
-          --central-meridian          : Longitude of Central Meridian 
-           
-          Either the zone or center_longitude must be specified. 
- 
-     POLAR STEREO 
-     ------------ 
-          --first-standard-parallel    : Latitude of True Scale 
-          --central-meridian           : Longitude of Central Meridian 
-          -n, --north-pole             : Center on North Pole (no argument) 
-          -s, --south-pole             : Center on South Pole (no argument) 
-          --false-easting              : False Easting (optional) 
-          --false-northing             : False Northing (optional) 
- 
-     LAMBERT CONFORMAL CONIC 
-     ----------------------- 
-          --first-standard-parallel   : First Standard Parallel 
-          --second-standard-parallel  : Second Standard Parallel 
-          --latitude-of-origin        : Latitude at projection's origin 
-          --central-meridian          : Central Meridian 
-          --false-easting             : False Easting (optional) 
-          --false-northing            : False Northing (optional) 
- 
-     LAMBERT AZIMUTHAL EQUAL AREA 
-     ---------------------------- 
-          --latitude-of-origin        : Latitude at center of projection 
-          --central-meridian          : Longitude at center of projection 
-          --false-easting             : False Easting (optional) 
-          --false-northing            : False Northing (optional) 
- 
-     ALBERS CONICAL EQUAL AREA 
-     ------------------------- 
-          --first-standard-parallel   : First Standard Parallel 
-          --second-standard-parallel  : Second Standard Parallel 
-          --latitude-of-origin        : Latitude of projection's origin 
-          --central-meridian          : Central Meridian 
-          --false-easting             : False Easting (optional) 
-          --false-northing            : False Northing (optional) 
+     UTM
+     ---
+          --zone,                     : Zone
+          --central-meridian          : Longitude of Central Meridian
+
+          Either the zone or center_longitude must be specified.
+
+     POLAR STEREO
+     ------------
+          --first-standard-parallel    : Latitude of True Scale
+          --central-meridian           : Longitude of Central Meridian
+          -n, --north-pole             : Center on North Pole (no argument)
+          -s, --south-pole             : Center on South Pole (no argument)
+          --false-easting              : False Easting (optional)
+          --false-northing             : False Northing (optional)
+
+     LAMBERT CONFORMAL CONIC
+     -----------------------
+          --first-standard-parallel   : First Standard Parallel
+          --second-standard-parallel  : Second Standard Parallel
+          --latitude-of-origin        : Latitude at projection's origin
+          --central-meridian          : Central Meridian
+          --false-easting             : False Easting (optional)
+          --false-northing            : False Northing (optional)
+
+     LAMBERT AZIMUTHAL EQUAL AREA
+     ----------------------------
+          --latitude-of-origin        : Latitude at center of projection
+          --central-meridian          : Longitude at center of projection
+          --false-easting             : False Easting (optional)
+          --false-northing            : False Northing (optional)
+
+     ALBERS CONICAL EQUAL AREA
+     -------------------------
+          --first-standard-parallel   : First Standard Parallel
+          --second-standard-parallel  : Second Standard Parallel
+          --latitude-of-origin        : Latitude of projection's origin
+          --central-meridian          : Central Meridian
+          --false-easting             : False Easting (optional)
+          --false-northing            : False Northing (optional)
 
 
 */
@@ -139,8 +141,8 @@ void to_degrees(projection_type_t proj_type, project_parameters_t * pps);
 // Perform geocoding of DEM input.
 int geocode_dem(projection_type_t projection_type,
 		project_parameters_t *pp,
-		datum_type_t datum,            
-		double pixel_size,                
+		datum_type_t datum,
+		double pixel_size,
 		resample_method_t resample_method,
 		const GString *input_image,
 		const meta_parameters *imd,
@@ -152,7 +154,7 @@ void set_options_testing(int is_testing);
 
 // Prototype from asf_geocode.c
 int asf_geocode_from_proj_file (const char *projection_file,
-		 int force_flag, resample_method_t resample_method, 
+		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name,
                  float background_val);
@@ -160,16 +162,16 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     datum_type_t datum, double pixel_size,
                     char *in_base_name, char *out_base_name,
                     float background_val);
-int asf_geocode (project_parameters_t *pp, projection_type_t projection_type, 
-		 int force_flag, resample_method_t resample_method, 
+int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
+		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
 		 char *in_base_name, char *out_base_name,
                  float background_val);
-int asf_geocode_bands(project_parameters_t *pp, 
-		      projection_type_t projection_type, 
-		      int force_flag, resample_method_t resample_method, 
-		      double average_height, datum_type_t datum, 
-		      double pixel_size, char **in_base_names, 
+int asf_geocode_bands(project_parameters_t *pp,
+		      projection_type_t projection_type,
+		      int force_flag, resample_method_t resample_method,
+		      double average_height, datum_type_t datum,
+		      double pixel_size, char **in_base_names,
 		      char **out_base_names, float background_val);
 void sigsegv_handler (int signal_number);
 
