@@ -2147,18 +2147,17 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
 }
 
 int
-float_image_store (FloatImage *self, const char *file,
-                   float_image_byte_order_t byte_order)
+float_image_store_ext(FloatImage *self, const char *file,
+                      float_image_byte_order_t byte_order, int append_flag)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
   // Open the file to write to.
-  FILE *fp = fopen (file, "w");
+  FILE *fp = fopen (file, append_flag ? "a" : "w");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
-  // We will write the image data in horizontal stips one line at a
-  // time.
+  // We will write the image data in horizontal stips one line at a time.
   float *line_buffer = g_new (float, self->size_x);
 
   // Reorganize data into tiles in tile oriented disk file.
@@ -2205,6 +2204,14 @@ float_image_store (FloatImage *self, const char *file,
   // Return success code.
   return 0;
 }
+
+int
+float_image_store (FloatImage *self, const char *file,
+                   float_image_byte_order_t byte_order) 
+{
+    float_image_store_ext(self, file, byte_order, FALSE);
+}
+
 /*
  * JPEG ERROR HANDLING:
  *

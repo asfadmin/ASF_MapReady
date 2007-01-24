@@ -343,6 +343,9 @@ float_image_freeze (FloatImage *self, FILE *file_pointer);
 int
 float_image_store (FloatImage *self, const char *file,
 		   float_image_byte_order_t byte_order);
+int
+float_image_store_ext(FloatImage *self, const char *file,
+                      float_image_byte_order_t byte_order, int append_flag);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
