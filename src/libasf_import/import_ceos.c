@@ -43,16 +43,9 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
   /* Fill output names (don't add extention to data name because it differs
    * for raw, complex, and 'image' */
-  if (strcmp(bandExt, "") == 0) {
-    strcpy(outDataName, outBaseName);
-    strcpy(outMetaName, outBaseName);
-  }
-  else {
-    sprintf(outDataName, "%s_%s", outBaseName, bandExt);
-    sprintf(outMetaName, "%s_%s", outBaseName, bandExt);
-  }
-  //strcpy(outDataName, outBaseName);
-  //strcpy(outMetaName, outBaseName);
+
+  strcpy(outDataName, outBaseName);
+  strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
 
   /* Create metadata */
@@ -91,6 +84,15 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
                    "   Output data type: complex byte raw data\n");
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
+    if (band > 1) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcat(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
+    if (strcmp(meta->general->bands, "") != 0)
+      strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, bandExt);
 
     /* Make sure that none of the detected level one flags are set */
     strcpy(logbuf,"");
@@ -144,7 +146,13 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
                    "   Output data type: single look complex\n");
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
-    if (strcmp(meta->general->bands, "") == 0)
+    if (band > 1) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcat(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
+    if (strcmp(meta->general->bands, "") != 0)
       strcat(meta->general->bands, ",");
     strcat(meta->general->bands, bandExt);
 
@@ -176,10 +184,10 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     /* Take care of image files and memory */
     strcat(outDataName,TOOLS_COMPLEX_EXT);
     fpIn  = fopenImage(inDataName,"rb");
-    //if (band == 1)
-    fpOut = fopenImage(outDataName,"wb");
-    //else
-    //  fpOut = fopenImage(outDataName,"ab");
+    if (band == 1)
+      fpOut = fopenImage(outDataName,"wb");
+    else
+      fpOut = fopenImage(outDataName,"ab");
     cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
     out_cpx_buf = (complexFloat *) MALLOC(ns * nBands * sizeof(complexFloat));
 
@@ -223,7 +231,13 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
                    "   Output data type: single look complex\n");
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
-    if (strcmp(meta->general->bands, "") == 0)
+    if (band > 1) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcat(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
+    if (strcmp(meta->general->bands, "") != 0)
       strcat(meta->general->bands, ",");
     strcat(meta->general->bands, bandExt);
 
@@ -255,10 +269,10 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     /* Take care of image files and memory */
     strcat(outDataName,TOOLS_COMPLEX_EXT);
     fpIn  = fopenImage(inDataName,"rb");
-    //if (band == 1)
-    fpOut = fopenImage(outDataName,"wb");
-    //else
-    //  fpOut = fopenImage(outDataName,"ab");
+    if (band == 1)
+      fpOut = fopenImage(outDataName,"wb");
+    else
+      fpOut = fopenImage(outDataName,"ab");
     cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
     out_cpx_buf = (complexFloat *) MALLOC(ns * nBands * sizeof(complexFloat));
 
@@ -397,18 +411,22 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     asfPrintStatus(logbuf);
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n\n", bandExt);
-    else
-      asfPrintStatus("\n");
-    if (strcmp(meta->general->bands, "") == 0)
+    if (band > 1) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcpy(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
+    if (strcmp(meta->general->bands, "") != 0)
       strcat(meta->general->bands, ",");
     strcat(meta->general->bands, bandExt);
 
     /* Open image files */
     fpIn=fopenImage(inDataName,"rb");
-    //if (band == 1)
-    fpOut=fopenImage(outDataName,"wb");
-    //else
-    //fpOut=fopenImage(outDataName,"ab");
+    if (band == 1)
+      fpOut=fopenImage(outDataName,"wb");
+    else
+      fpOut=fopenImage(outDataName,"ab");
 
     /* Check size of the header */
     //get_ifiledr(inDataName,&image_fdr);
@@ -787,7 +805,6 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     //meta_write_old(meta, outMetaName);
   //} else {
   strcpy(meta->general->basename, inDataName);
-  strcpy(meta->general->bands, bandExt);
   meta_write(meta,outMetaName);
   //}
 
