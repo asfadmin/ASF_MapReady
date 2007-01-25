@@ -32,7 +32,7 @@ all:    asf_convert clean
 
 asf_convert: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
+	mv asf_convert$(BIN_POSTFIX) $(BINDIR)/alos_convert$(BIN_POSTFIX)
 
 clean:
 	rm -f core $(OBJS) *.o *~
