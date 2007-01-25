@@ -298,23 +298,6 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
   return gsl_spline_eval (crnt_rmy, x, crnt_accel_rmy);
 }
 
-char **extract_band_names(char *bands, int band_count)
-{
-  char **band_name;
-  int ii, kk;
-  
-  band_name = (char **) MALLOC(band_count*sizeof(char *));
-  for (ii=0; ii<band_count; ii++) {
-    band_name[ii] = (char *) MALLOC(10*sizeof(char));
-    strncpy(band_name[ii], bands, 2);
-    band_name[ii][2] = '\0';
-    if (ii < band_count-1)
-      for (kk=0; kk<3; kk++)
-	bands++;
-  }
-  return band_name;
-}
-
 int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     datum_type_t datum, double pixel_size,
                     char *in_base_name, char *out_base_name,

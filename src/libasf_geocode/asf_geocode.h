@@ -153,8 +153,6 @@ int geocode_dem(projection_type_t projection_type,
 void set_options_testing(int is_testing);
 
 // Prototype from asf_geocode.c
-char **extract_band_names(char *bands, int band_count);
-
 int asf_geocode_from_proj_file (const char *projection_file,
 		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
