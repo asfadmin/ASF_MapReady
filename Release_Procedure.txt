@@ -28,8 +28,14 @@
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
       src/asf_lt
       src/asf_geolib
-      src/asf_odl
-      src/asf_fft
+      src/ardop
+
+    ALOS release, 3.1: also eliminate:
+      src/asf_terrcorr
+      src/refine_geolocation
+      src/sr2gr
+      src/gr2sr
+      src/mosaic
 
  7. Check out the important parts of the release directory:
       svn co https://lindon/svn/repos/release/trunk/autotar release/autotar
@@ -46,15 +52,19 @@
  9. ** KLUDGE #3 **
       cd release/autotar
     Edit release/autotar/source.convert, adding these items:
-      external
-      src/asf_convert_gui
-      src/metadata_gui
+src/libasf_sar
+src/libasf_insar
+external
+src/asf_convert_gui
+src/metadata_gui
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
 
 11. Run the rpmprep script:
       ./rpmprep convert asf_convert
+    ALOS:
+      ./rpmprep convert alos_convert
 
 12. Edit the .spec file in ../rpmbuild to use the correct version,
     then rename the file to match.
@@ -67,7 +77,9 @@
 
 14. Create tarballs of the rpms.  The binary rpm will also contain the
     README_rpm.txt file from ../../asf_tools.
-      ./tarrpms
+      ./tarrpms asf_convert
+    ALOS:
+      ./tarrpms alos_convert
 
 15. Put the built files on quantum or someplace:
       scp RPMS/asf_convert-X.X.X-1.i386.rpm
