@@ -11,6 +11,7 @@ OBJS = \
 	banded_float_image.o \
 	uint8_image.o \
 	scaling.o \
+	bands.o \
 	stats.o \
 	trim.o \
 	fftMatch.o \

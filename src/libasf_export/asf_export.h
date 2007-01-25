@@ -82,7 +82,7 @@ typedef struct {
 int asf_export(output_format_t format, scale_t sample_mapping, 
 	       char *in_base_name, char *output_name);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, 
-		     char **in_base_names, char *output_name, int rgb);
+		     char *in_base_name, char *output_name, char **rgb);
 
 void usage();
 void help_page();
@@ -122,10 +122,11 @@ void export_as_geotiff (const char *metadata_file_name,
                         const char *output_file_name,
                         scale_t sample_mapping);
 
-void export_rgb_as_geotiff (char **in_base_names,
+void export_rgb_as_geotiff (const char *metadata_file_name,
+			    const char *image_data_file_name,
 			    const char *output_file_name,
 			    scale_t sample_mapping,
-			    int rgb);
+			    char **band_name);
 
 void export_as_jpeg (const char *metadata_file_name,
                      const char *image_data_file_name,
@@ -144,6 +145,3 @@ void export_as_tiff (const char *metadata_file_name,
                      const char *output_file_name,
                      long max_size,
                      scale_t sample_mapping);
-
-int find_bands(char ***p_in_base_names, char *in_base_name,
-               char *red_channel, char *green_channel, char *blue_channel);

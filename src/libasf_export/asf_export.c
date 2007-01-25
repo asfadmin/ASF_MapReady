@@ -6,21 +6,13 @@
 int asf_export(output_format_t format, scale_t sample_mapping, 
                char *in_base_name, char *output_name)
 {
-  char **in_base_names;
-
-  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  in_base_names[0] = (char *) MALLOC(512*sizeof(char));
-  strcpy(in_base_names[0], in_base_name);
-  in_base_names[1] = NULL;
-
   return asf_export_bands(format, sample_mapping, 
-			  in_base_names, output_name, 0);
+			  in_base_name, output_name, NULL);
 }
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, 
-		     char **in_base_names, char *output_name, int rgb)
+		     char *in_base_name, char *output_name, char **band_name)
 {
-  int ii;
   char in_meta_name[255], in_data_name[255];
   char *out_name = (char*)MALLOC(512*sizeof(char));
   int size = -1;
@@ -29,79 +21,49 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping,
 
   // Do that exporting magic!
   if ( format == ENVI ) {
-    ii = 0;
-    while (in_base_names[ii] != NULL) {
-      // no multi-band output for ENVI format
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      sprintf(out_name, "%s.envi", output_name);
-      export_as_envi (in_meta_name, in_data_name, out_name);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    sprintf(out_name, "%s.envi", output_name);
+    export_as_envi (in_meta_name, in_data_name, out_name);
   }
   else if ( format == ESRI ) {
-    ii = 0;
-    while (in_base_names[ii]) {
-      // no multi-band output for ESRI format
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      sprintf(out_name, "%s.esri", output_name);
-      export_as_esri (in_meta_name, in_data_name, out_name);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    sprintf(out_name, "%s.esri", output_name);
+    export_as_esri (in_meta_name, in_data_name, out_name);
   }
   else if ( format == TIF ) {
-    ii = 0;
-    while (in_base_names[ii]) {
-      // temporary fix
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      append_ext_if_needed (out_name, ".tif", ".tiff");
-      export_as_tiff (in_meta_name, in_data_name, out_name, size, 
-		      sample_mapping);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    append_ext_if_needed (out_name, ".tif", ".tiff");
+    export_as_tiff (in_meta_name, in_data_name, out_name, size, 
+		      sample_mapping); 
   }
   else if ( format == GEOTIFF ) {
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".tif", ".tiff");
-    if (rgb) // three-channel RGB image
-      export_rgb_as_geotiff (in_base_names, output_name, sample_mapping, 1);
-    else // writing as many single bands as you can find
-      export_rgb_as_geotiff (in_base_names, output_name, sample_mapping, 0);
+    export_rgb_as_geotiff (in_meta_name, in_data_name, output_name, 
+			   sample_mapping, band_name);
   }
   else if ( format == JPEG ) {
-    ii = 0;
-    while (in_base_names[ii]) {
-      // temporary fix
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      append_ext_if_needed (out_name, ".jpg", ".jpeg");
-      export_as_jpeg (in_meta_name, in_data_name, out_name, size,
-		      sample_mapping);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    append_ext_if_needed (out_name, ".jpg", ".jpeg");
+    export_as_jpeg (in_meta_name, in_data_name, out_name, size,
+		    sample_mapping);
   }
   else if ( format == PPM ) {
-    ii = 0;
-    while (in_base_names[ii]) {
-      // no multi-band output for PPM format
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      sprintf(out_name, "%s.ppm", output_name);
-      export_as_ppm (in_meta_name, in_data_name, out_name, size,
-		     sample_mapping);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    sprintf(out_name, "%s.ppm", output_name);
+    export_as_ppm (in_meta_name, in_data_name, out_name, size,
+		   sample_mapping);
   }
   else if ( format == KML ) {
-    ii = 0;
-    while (in_base_names[ii]) {
-      // no multi-band output for KML format
-      sprintf(in_data_name, "%s.img", in_base_names[ii]);
-      sprintf(in_meta_name, "%s.meta", in_base_names[ii]);
-      write_kml_overlay (in_data_name);
-      ii++;
-    }
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    write_kml_overlay (in_data_name);
   }
 
   asfPrintStatus("Export successful!\n\n");

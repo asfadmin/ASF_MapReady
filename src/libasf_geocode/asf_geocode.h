@@ -173,3 +173,6 @@ void sigsegv_handler (int signal_number);
 
 // Prototypes from geoid.c
 float get_geoid_height(double lat, double lon);
+
+// Prototypes from is_map_projected.c
+int is_map_projected(meta_parameters *md);

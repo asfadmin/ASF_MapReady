@@ -15,13 +15,12 @@
 int is_map_projected(meta_parameters *md)
 {
   // Convenience pointers
-  meta_sar *ms = md->sar;
   meta_projection *mp = md->projection;
 
   // Return true if the image is projected and the
   // projection is one of the ASF-supported map
   // projection types
-  return (ms->image_type == 'P'     &&
+  return (mp     &&
           (mp->type == UNIVERSAL_TRANSVERSE_MERCATOR  ||
            mp->type == POLAR_STEREOGRAPHIC            ||
            mp->type == ALBERS_EQUAL_AREA              ||

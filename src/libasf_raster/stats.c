@@ -4,7 +4,7 @@
 #include "asf_raster.h"
 
 
-void calc_stats_from_file(char *inFile, double mask, double *min,
+void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
 			  gsl_histogram *histogram)
 {
@@ -12,15 +12,20 @@ void calc_stats_from_file(char *inFile, double mask, double *min,
   meta_parameters *meta;
   char dataFile[255], metaFile[255];
   float *data;
+  int band_number;
   long long pixel_count;
+  long offset;
 
-  sprintf(dataFile, "%s.img", inFile);
-  sprintf(metaFile, "%s.meta", inFile);
-  meta = meta_read(metaFile);
+  //sprintf(dataFile, "%s.img", inFile);
+  //sprintf(metaFile, "%s.meta", inFile);
+  meta = meta_read(inFile);
+  band_number = 
+    get_band_number(meta->general->bands, meta->general->band_count, band);
   pixel_count = meta->general->line_count * meta->general->sample_count;
+  offset = meta->general->line_count;
   data = (float *) MALLOC(sizeof(float) * pixel_count);
-  fp = FOPEN(dataFile, "rb");
-  get_float_lines(fp, meta, 0, meta->general->line_count, data);
+  fp = FOPEN(inFile, "rb");
+  get_float_lines(fp, meta, offset, meta->general->line_count, data);
   calc_stats(data, pixel_count, mask, min, max, mean, stdDev);
   histogram = calc_histogram(data, pixel_count, *min, *max, 256);
   FCLOSE(fp);

@@ -63,14 +63,15 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
   sample_size = data_type2sample_size(data_type);
 
   /* Make sure not to go past the end of file */
-  if (line_number > meta->general->line_count) {
+  if (line_number > (meta->general->line_count * meta->general->band_count)) {
     printf("\nget_data_lines: Cannot read line %d in a file of %d lines. Exiting.\n",
-           line_number, meta->general->line_count);
+           line_number, meta->general->line_count*meta->general->band_count);
     exit(EXIT_FAILURE);
   }
-  if ((line_number+num_lines_to_get) > meta->general->line_count) {
-    num_samples_to_get = (meta->general->line_count - line_number)
-                          * sample_count;
+  if ((line_number+num_lines_to_get) > 
+      (meta->general->line_count * meta->general->band_count)) {
+    num_samples_to_get = 
+      (meta->general->line_count * meta->general->band_count - line_number) * sample_count;
   }
 
   /* Scan to the beginning of the line.  */

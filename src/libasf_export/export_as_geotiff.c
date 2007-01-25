@@ -52,15 +52,8 @@ export_as_geotiff (const char *metadata_file_name,
                    const char *output_file_name,
                    scale_t sample_mapping)
 {
-  char **in_base_names;
-
-  in_base_names = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  //in_base_names[0] = (char *) MALLOC(512*sizeof(char));
-  in_base_names[0] = stripExt(image_data_file_name);
-
-  export_rgb_as_geotiff(in_base_names, output_file_name, sample_mapping, 0);
-
-  FREE(in_base_names);
+  return export_rgb_as_geotiff(metadata_file_name, image_data_file_name, 
+			output_file_name, sample_mapping, NULL);
 }
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
@@ -469,36 +462,30 @@ void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff)
 }
 
 void
-export_rgb_as_geotiff (char **in_base_names,
+export_rgb_as_geotiff (const char *metadata_file_name,
+		       const char *image_data_file_name,
                        const char *output_file_name,
                        scale_t sample_mapping,
-                       int rgb)
+                       char **band_name)
 {
   int map_projected;
   int is_geotiff = 1;
   TIFF *otif=NULL; // FILE* pointer for TIFF files
   GTIF *ogtif=NULL;
-  int jj;
+  int jj, rgb=0;
   ssize_t ii;
-  char metadata_file_name[512], image_data_file_name[512];
 
-  sprintf(metadata_file_name, "%s.meta", in_base_names[0]);
-  sprintf(image_data_file_name, "%s.img", in_base_names[0]);
+  if (band_name) 
+    rgb = 1;
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
   // Generic single-point TIFF tag and header writer ...works for both
   // TIFF and GeoTIFF files
-  initialize_tiff_file(&otif, &ogtif, metadata_file_name,
-                        output_file_name, is_geotiff,
-                        sample_mapping, rgb);
+  initialize_tiff_file(&otif, &ogtif, output_file_name,
+                       metadata_file_name, is_geotiff,
+		       sample_mapping, rgb);
 
-  // Temporary note:  rgb is currently zero when export_rgb_as_geotiff() is
-  // called by the normal export_as_geotiff() function, and in_base_names
-  // only contains a single basename.  The ALOS version of asf_export calls
-  // export_rgb_as_geotiff() directly and sets rgb to one or zero appropriately
-  // and also is responsible for allocating and freeing in_base_names+ before/after
-  // the direct calling of export_rgb_as_geotiff().
   if (rgb) {
     double red_min, red_max, red_mean, red_stdDev;
     double green_min, green_max, green_mean, green_stdDev;
@@ -512,8 +499,9 @@ export_rgb_as_geotiff (char **in_base_names,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering red channel statistics ...\n");
-      calc_stats_from_file(in_base_names[0], 0.0, &red_min, &red_max,
-                           &red_mean, &red_stdDev, red_hist);
+      calc_stats_from_file(image_data_file_name, band_name[0], 0.0, 
+			   &red_min, &red_max, &red_mean, 
+			   &red_stdDev, red_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         red_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
         gsl_histogram_pdf_init (red_hist_pdf, red_hist);
@@ -528,8 +516,9 @@ export_rgb_as_geotiff (char **in_base_names,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering green channel statistics ...\n");
-      calc_stats_from_file(in_base_names[1], 0.0, &green_min, &green_max,
-                           &green_mean, &green_stdDev, green_hist);
+      calc_stats_from_file(image_data_file_name, band_name[1], 0.0, 
+			   &green_min, &green_max, &green_mean, 
+			   &green_stdDev, green_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         green_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
         gsl_histogram_pdf_init (green_hist_pdf, green_hist);
@@ -544,8 +533,9 @@ export_rgb_as_geotiff (char **in_base_names,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering blue channel statistics ...\n");
-      calc_stats_from_file(in_base_names[2], 0.0, &blue_min, &blue_max,
-                           &blue_mean, &blue_stdDev, blue_hist);
+      calc_stats_from_file(image_data_file_name, band_name[2], 0.0, 
+			   &blue_min, &blue_max, &blue_mean, 
+			   &blue_stdDev, blue_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         blue_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
         gsl_histogram_pdf_init (blue_hist_pdf, blue_hist);
@@ -553,17 +543,14 @@ export_rgb_as_geotiff (char **in_base_names,
     }
 
     // Write the actual image data
-    FILE *fp_red, *fp_green, *fp_blue;
+    FILE *fp;
     float *red_float_line, *green_float_line, *blue_float_line, *rgb_float_line;
     unsigned char *rgb_byte_line;
 
-    fp_red = FOPEN(image_data_file_name, "rb");
-    sprintf(image_data_file_name, "%s.img", in_base_names[1]);
-    fp_green = FOPEN(image_data_file_name, "rb");
-    sprintf(image_data_file_name, "%s.img", in_base_names[2]);
-    fp_blue = FOPEN(image_data_file_name, "rb");
+    fp = FOPEN(image_data_file_name, "rb");
 
     int sample_count = md->general->sample_count;
+    int offset = md->general->line_count;
     red_float_line = (float *) MALLOC(sizeof(float) * sample_count);
     green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
     blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
@@ -574,9 +561,9 @@ export_rgb_as_geotiff (char **in_base_names,
     for (ii=0; ii<md->general->line_count; ii++) {
       if (sample_mapping == NONE) {
         // Write float lines if float image
-        get_float_line(fp_red, md, ii, red_float_line);
-        get_float_line(fp_green, md, ii, green_float_line);
-        get_float_line(fp_blue, md, ii, blue_float_line);
+        get_float_line(fp, md, ii, red_float_line);
+        get_float_line(fp, md, ii+offset, green_float_line);
+        get_float_line(fp, md, ii+2*offset, blue_float_line);
         for (jj=0; jj<sample_count; jj++) {
           rgb_float_line[jj*3] = red_float_line[jj];
           rgb_float_line[(jj*3)+1] = green_float_line[jj];
@@ -590,9 +577,9 @@ export_rgb_as_geotiff (char **in_base_names,
       }
       else {
         // Write byte lines if byte image
-        get_float_line(fp_red, md, ii, red_float_line);
-        get_float_line(fp_green, md, ii, green_float_line);
-        get_float_line(fp_blue, md, ii, blue_float_line);
+        get_float_line(fp, md, ii, red_float_line);
+        get_float_line(fp, md, ii+offset, green_float_line);
+        get_float_line(fp, md, ii+2*offset, blue_float_line);
         for (jj=0; jj<sample_count; jj++) {
           rgb_byte_line[jj*3] =
             pixel_float2byte(red_float_line[jj], sample_mapping,
@@ -632,8 +619,8 @@ export_rgb_as_geotiff (char **in_base_names,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering statistics ...\n");
-      calc_stats_from_file(in_base_names[0], 0.0, &min, &max,
-                           &mean, &stdDev, hist);
+      calc_stats_from_file(image_data_file_name, band_name[0], 0.0, 
+			   &min, &max, &mean, &stdDev, hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
         gsl_histogram_pdf_init (hist_pdf, hist);
@@ -751,9 +738,13 @@ int is_slant_range(meta_parameters *md)
   // Return true if the image is projected and the
   // projection is one of the ASF-supported map
   // projection types
-  return ( (ms->image_type == 'P' && mp->type == SCANSAR_PROJECTION) ||
-      ms->image_type == 'S'
-         ) ? 1 : 0;
+  if (ms) {
+    return ( (ms->image_type == 'P' && mp->type == SCANSAR_PROJECTION) ||
+	     ms->image_type == 'S'
+	     ) ? 1 : 0;
+  }
+  else
+    return 0;
 }
 
 double spheroid_diff_from_axis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor)

@@ -117,6 +117,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include <asf.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
+#include <asf_raster.h>
 #include <asf_export.h>
 #include <asf_contact.h>
 #include <asf_license.h>
@@ -179,7 +180,7 @@ main (int argc, char *argv[])
   output_format_t format = 0;
   meta_parameters *md;
   char *in_base_name, *output_name;
-  char **in_base_names;
+  char **band_name=NULL;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
   output_name = (char *) MALLOC(sizeof(char)*255);
@@ -204,7 +205,7 @@ main (int argc, char *argv[])
 
   int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag;
   int needed_args = 3;  //command & argument & argument
-  int ii, rgb=0;
+  int ii;
   char sample_mapping_string[25];
 
   //Check to see which options were specified
@@ -344,9 +345,6 @@ main (int argc, char *argv[])
     strcpy (command_line.green_channel, argv[rgbFlag + 2]);
     strcpy (command_line.blue_channel, argv[rgbFlag + 3]);
     asfPrintStatus("Exporting multiband image ...\n");
-    //asfPrintStatus("Red channel: %s\n", command_line.red_channel);
-    //asfPrintStatus("Green channel: %s\n", command_line.green_channel);
-    //asfPrintStatus("Blue channel: %s\n\n", command_line.blue_channel);
   }
 
   // Grab the input and output name
@@ -357,19 +355,21 @@ main (int argc, char *argv[])
   char *ext = findExt(in_base_name);
   if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
-  rgb = find_bands(&in_base_names, in_base_name, command_line.red_channel,
-                   command_line.green_channel, command_line.blue_channel);
+  band_name = find_bands(in_base_name, command_line.red_channel,
+			 command_line.green_channel, 
+			 command_line.blue_channel);
 
-  if (rgb) {
-      asfPrintStatus("Red channel: %s\n", in_base_names[0]);
-      asfPrintStatus("Green channel: %s\n", in_base_names[1]);
-      asfPrintStatus("Blue channel: %s\n\n", in_base_names[2]);
-  } else {
-      asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
+  if (rgbFlag) {
+    asfPrintStatus("Red channel: %s\n", command_line.red_channel);
+    asfPrintStatus("Green channel: %s\n", command_line.green_channel);
+    asfPrintStatus("Blue channel: %s\n\n", command_line.blue_channel);
+  } 
+  else {
+    asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
   }
 
   //Compose input metadata name
-  strcpy (command_line.in_meta_name, in_base_names[0]);
+  strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
 
 
@@ -420,7 +420,7 @@ main (int argc, char *argv[])
 
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, 
-		   in_base_names, output_name, rgb);
+		   in_base_name, output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
