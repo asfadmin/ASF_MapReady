@@ -3,32 +3,31 @@
 
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_geolib.a \
+LIBS  = $(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_lt.a \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/libifm.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/libifm.a
-LIBS = $(OLIBS) -lm
+        -lm
 
 OBJS = airsargeo.o
 POBJS = proj_pix.o proj_win.o proj_prm.o proj.o proj_grid.o projectGeo.o
 
-all: projectGeo airsargeo
+all: projectGeo airsargeo clean
 
-projectGeo: $(POBJS) $(OLIBS)
+projectGeo: $(POBJS)
 	$(CC) $(CFLAGS) -o projectGeo $(POBJS) $(LIBS)
 	mv projectGeo$(BIN_POSTFIX) $(BINDIR)
 	cp projectGeo.1 ../../man/cat1
 
 airsargeo: $(OBJS)
 	$(CC) $(CFLAGS) -o airsargeo $(OBJS) $(LIBS)
-	rm *.o
-	mv airsargeo $(BIN_POSTFIX) $(BINDIR)
+	mv airsargeo$(BIN_POSTFIX) $(BINDIR)
 	cp airsargeo.1 ../../man/cat1
-	cp geocode_airsar $(BIN_POSTFIX) $(BINDIR)
+	cp geocode_airsar.sh $(BINDIR)/geocode_airsar
 	cp geocode_airsar.1 ../../man/cat1
 
 clean:	
