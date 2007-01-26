@@ -20,11 +20,16 @@ char **extract_band_names(char *bands, int band_count)
   return band_name;
 }
 
-// Sample usage:
-//    char *red, *green, *blue;
-//    split3("HH,VV,VH", &red, &green, &blue);
-// Now red is "HH", green is "VV", blue is "VH"
-// You must free() the returned strings.
+/*
+ Sample usage:
+   const char *rgb = "HH,VH,VV"; // probably would be read from a .meta file
+   char *r, *b, *g;
+   if (split3(rgb, &r, &g, &b, ',')) {
+      // Success! Now: r=="HH" g=="VH" and b=="VV"
+      FREE(r); FREE(g); FREE(b);
+   } else
+      // failed -- don't call FREE.
+*/
 int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 {
     // call them commas, even though could be something else
@@ -35,9 +40,9 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
     if (!comma2) return FALSE;
 
     // allocating too much space...
-    char *r = MALLOC(sizeof(char)*strlen(rgb)+1);
-    char *g = MALLOC(sizeof(char)*strlen(rgb)+1);
-    char *b = MALLOC(sizeof(char)*strlen(rgb)+1);
+    char *r = MALLOC(sizeof(char)*(strlen(rgb)+1));
+    char *g = MALLOC(sizeof(char)*(strlen(rgb)+1));
+    char *b = MALLOC(sizeof(char)*(strlen(rgb)+1));
     *pr = r; *pg = g; *pb = b;
 
     strcpy(r, rgb);

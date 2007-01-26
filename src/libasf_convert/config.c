@@ -282,6 +282,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->format, "GEOTIFF");
   cfg->export->byte = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->byte, "SIGMA");
+  cfg->export->rgb = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->export->rgb, "");
 
   // Check for a default values file
   fConfig = FOPEN(configFile, "r");
@@ -405,6 +407,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->export->format, read_str(line, "output format"));
       if (strncmp(test, "byte conversion", 15)==0)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
+      if (strncmp(test, "rgb banding", 11)==0)
+        strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
       FREE(test);
     }
   }
@@ -631,6 +635,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->export->format, read_str(line, "format"));
       if (strncmp(test, "byte conversion", 15)==0)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
+      if (strncmp(test, "rgb banding", 11)==0)
+        strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
       FREE(test);
     }
   }
@@ -951,6 +957,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# The byte conversion options are SIGMA, MINMAX, TRUNCATE or\n"
                 "# HISTOGRAM_EQUALIZE. They scale the floating point values to byte values.\n\n");
       fprintf(fConfig, "byte conversion = %s\n\n", cfg->export->byte);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have more than one band available in your data, you can\n"
+                "# create the exported file using the different bands for the R, G, and B\n"
+                "# channels in the output image.  List the R, G, and B channels in that order\n"
+                "# separated by commas.  E.g.  HH,HV,VV\n\n");
+      fprintf(fConfig, "rgb banding = %s\n\n", cfg->export->rgb);
     }
   }
   else {

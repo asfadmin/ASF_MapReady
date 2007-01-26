@@ -138,7 +138,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
                             NAN, imported, geocoded, 0.0), status);
     }
 
-    return strdup(geocoded);
+    return STRDUP(geocoded);
 }
 
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
@@ -250,23 +250,38 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Precision state vector file check can only be done
       // from within asf_import
 
-      // Assign appropriate file name
-      if (strncmp(uc(cfg->import->format), "ASF", 3) == 0) {
+      // Get input file name ready
+      strcpy(inFile, cfg->general->in_name);
+/*
+ * Taking the extension-adding and existence check out on the input file
+ *
+ * asf_import already does all of this, and it does it better since it
+ * handles prepension schemes (alos), and has better handling of basename
+ * versus the extension-already-there case, etc.
+ *
+      if (strcmp_case(cfg->import->format, "ASF")) == 0) {
         create_name(inFile, cfg->general->in_name, ".img");
-        cfg->general->import = 0; // does not need import
       }
-      else if (strcmp(uc(cfg->import->format), "CEOS") == 0) {
+      else if (strcmp_case(cfg->import->format, "CEOS")) == 0) {
         create_name(inFile, cfg->general->in_name, ".D");
         if (!fileExists(inFile)) {
             create_name(inFile, cfg->general->in_name, ".RAW");
         }
       }
-      else if (strcmp(uc(cfg->import->format), "STF") == 0)
+      else if (strcmp_case(cfg->import->format, "STF")) == 0)
         strcpy(inFile, cfg->general->in_name);
 
       // Data file existence check
       if (!fileExists(inFile))
           asfPrintError("Import data file '%s' does not exist!\n", inFile);
+
+ * ... end of the commented out input-file-existence-check code.
+ */
+
+      // Can skip import if the input is already asf internal.
+      if (strncmp(uc(cfg->import->format), "ASF", 3) == 0) {
+          cfg->general->import = 0;
+      }
     }
 
     // Check whether everything in the [SAR processing] block is reasonable
@@ -735,8 +750,36 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
 
-      check_return(asf_export(format, scale, inFile, outFile),
-                   "exporting data file (asf_export)\n");
+      if (strlen(cfg->export->rgb) > 0) {
+          // user has requested banding
+          char *red,  *green, *blue;
+          if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
+              char **bands = find_bands(inFile, red, green, blue);
+              if (bands) {
+                  check_return(asf_export_bands(format, scale, inFile, outFile, bands),
+                               "export data file (asf_export), banded.\n");
+                  FREE(bands[0]); FREE(bands[1]); FREE(bands[2]); FREE(bands);
+              } else {
+                  asfPrintWarning("The requested bands: %s\n"
+                                  "Were not available in the file: %s\n"
+                                  "Exporting without banding...\n",
+                                  cfg->export->rgb, inFile);
+                  strcpy(cfg->export->rgb, "");
+              }
+              FREE(red); FREE(green); FREE(blue);
+          } else {
+              asfPrintWarning("Invalid listing of RGB bands: %s\n"
+                              "Exporting without banding...\n", cfg->export->rgb);
+              strcpy(cfg->export->rgb, "");
+          }
+      }
+
+      if (strlen(cfg->export->rgb) == 0)
+      {
+          // no banding
+          check_return(asf_export(format, scale, inFile, outFile),
+                       "exporting data file (asf_export)\n");
+      }
 
       // Move the .meta file out of temporary status: <out basename>.meta
       copy_meta(inFile, outFile);

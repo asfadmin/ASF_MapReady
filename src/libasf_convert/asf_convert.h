@@ -102,6 +102,7 @@ typedef struct
   char *format;           // output format: ASF, GEOTIFF, JPEG, PPM
   char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE, 
                           // HISTOGRAM_EQUALIZE
+  char *rgb;              // RGB banding setting
 } s_export;
 
 typedef struct
