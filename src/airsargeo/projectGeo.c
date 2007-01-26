@@ -80,7 +80,7 @@ int main(int argc,char **argv)
 			else if (0==strcmp(argv[optind],"-i"))
 				pointOfInterest=1;/*User specified point of interest.*/
 			else print_usage();/*Unrecognized option*/
-			out_window=getUserWindow(pointOfInterest,&argv[optind+1]);
+			out_window=getUserWindow(pointOfInterest,argv[optind+1]);
 		}
 		else
 			print_usage();
