@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include <ctype.h>
 
 char **extract_band_names(char *bands, int band_count)
 {
@@ -52,15 +53,32 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
 
 int get_band_number(char *bands, int band_count, char *channel)
 {
+  char tmp[16];
+  char *comma;
+  char *t;
+  int cmp;
   int ii, kk;
-  
-  if (strncmp(bands, channel, 2) == 0)
+ 
+  strcpy(tmp, bands);
+  t = tmp;
+  while (!isdigit(*t)) t++;
+  while (isdigit(*t) && *t == '0') t++;
+  comma = strchr(t, ',');
+  if (comma) *comma = '\0';
+  if (strncmp(t, channel, 2) == 0)
     return 0;
   for (ii=1; ii<band_count; ii++) {
     for (kk=0; kk<3; kk++)
       bands++;
-    if (strncmp(bands, channel, 2) == 0)
+    strcpy(tmp, bands);
+    t = tmp;
+    while (!isdigit(*t)) t++;
+    while (isdigit(*t) && *t == '0') t++;
+    comma = strchr(t, ',');
+    if (comma) *comma = '\0';
+    if (strncmp(t, channel, 2) == NULL)
       return ii;
   }
   return -1;
 }
+
