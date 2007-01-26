@@ -103,12 +103,7 @@ int main(int argc, char **argv)
   create_name(envi_name, argv[currArg], ".hdr");
   create_name(meta_name, argv[currArg+1], ".meta");
 
-  system("date");
-  printf("Program: envi2meta\n\n");
-  if (logflag) {
-    StartWatchLog(fLog);
-    printLog("Program: envi2meta\n\n");
-  }
+  asfSplashScreen(argc, argv);
   
   /* Allocate memory for ESRI header structure */
   envi = (envi_header *)MALLOC(sizeof(envi_header));
@@ -242,14 +237,8 @@ int main(int argc, char **argv)
 
   /* Clean and report */
   meta_free(meta);
-  sprintf(logbuf, "   Converted ENVI header (%s) to metadata file (%s)\n\n",
-	  envi_name, meta_name);
-  printf(logbuf);
-  if (logflag) {
-    fLog = FOPEN(logFile, "a");
-    printLog(logbuf);
-    FCLOSE(fLog);
-  }
+  asfPrintStatus("   Converted ENVI header (%s) to metadata file (%s)\n\n",
+		 envi_name, meta_name);
   
   return 0;
 }

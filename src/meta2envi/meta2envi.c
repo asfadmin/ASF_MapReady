@@ -101,12 +101,7 @@ int main(int argc, char **argv)
   create_name(meta_name, argv[currArg], ".meta");
   create_name(envi_name, argv[currArg+1], ".hdr");
 
-  system("date");
-  printf("Program: meta2envi\n\n");
-  if (logflag) {
-    StartWatchLog(fLog);
-    printLog("Program: meta2envi\n\n");
-  }
+  asfSplashScreen(argc, argv);
   t = time(NULL);
   strftime(t_stamp, 12, "%d-%b-%Y", localtime(&t));
   
@@ -196,7 +191,9 @@ int main(int argc, char **argv)
 		envi->center_lon, envi->projection);
 	break;
       case STATE_PLANE:
-      case SCANSAR_PROJECTION: break;
+      case SCANSAR_PROJECTION: 
+      case LAT_LONG_PSEUDO_PROJECTION:
+	break;
       }
   }
   fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
@@ -205,14 +202,8 @@ int main(int argc, char **argv)
 
   /* Clean and report */
   meta_free(meta);
-  sprintf(logbuf, "   Converted metadata file (%s) to ENVI header (%s)\n\n",
-	  meta_name, envi_name);
-  printf(logbuf);
-  if (logflag) {
-    fLog = FOPEN(logFile, "a");
-    printLog(logbuf);
-    FCLOSE(fLog);
-  }
+  asfPrintStatus("   Converted metadata file (%s) to ENVI header (%s)\n\n",
+		 meta_name, envi_name);
   
   return 0;
 }

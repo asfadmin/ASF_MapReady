@@ -101,12 +101,7 @@ int main(int argc, char **argv)
   create_name(meta_name, argv[currArg], ".meta");
   create_name(esri_name, argv[currArg+1], ".hdr");
 
-  system("date");
-  printf("Program: meta2esri\n\n");
-  if (logflag) {
-    StartWatchLog(fLog);
-    printLog("Program: meta2esri\n\n");
-  }
+  asfSplashScreen(argc, argv);
   t = time(NULL);
   strftime(t_stamp, 12, "%d-%b-%Y", localtime(&t));
   
@@ -137,15 +132,8 @@ int main(int argc, char **argv)
 
   /* Clean and report */
   meta_free(meta);
-  sprintf(logbuf, "   Converted metadata file (%s) to ESRI header (%s)\n\n",
-	  meta_name, esri_name);
-  printf(logbuf);
-  if (logflag) {
-    fLog = FOPEN(logFile, "a");
-    printLog(logbuf);
-    StopWatchLog(fLog);
-    FCLOSE(fLog);
-  }
+  asfPrintStatus("   Converted metadata file (%s) to ESRI header (%s)\n\n",
+		 meta_name, esri_name);
   
   return 0;
 }

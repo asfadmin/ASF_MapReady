@@ -31,6 +31,7 @@ esri_header* meta2esri(meta_parameters *meta)
   /* Fill the values in from the metadata */
   esri->nrows = meta->general->line_count;
   esri->ncols = meta->general->sample_count;
+  esri->nbands = meta->general->band_count;
   switch (meta->general->data_type) 
     {
     case BYTE: esri->nbits = 8; break;
@@ -44,15 +45,8 @@ esri_header* meta2esri(meta_parameters *meta)
       printErr(errbuf);
       break;
     }
-  if (strncmp(meta->general->system, "lil_ieee", 8)==0) 
-    esri->byteorder = 'I'; /* Intel byte order */
-  else if (strncmp(meta->general->system, "big_ieee", 8)==0)
-    esri->byteorder = 'M'; /* Motorola byte order */
-  else {
-    sprintf(errbuf,"\n   ERROR: Unsupported system type: %s\n",
-	    meta->general->system);
-    printErr(errbuf);
-  }
+  // All our data are now generated as big-endian
+  esri->byteorder = 'M'; /* Motorola byte order */
   if (meta->projection) {
     esri->ulxmap = meta->projection->startX;
     esri->ulymap = meta->projection->startY;
@@ -73,6 +67,7 @@ meta_parameters* esri2meta(esri_header  *esri)
   /* Fill metadata with valid ERSI header data */
   meta->general->line_count = esri->nrows;
   meta->general->sample_count = esri->ncols;
+  meta->general->band_count = esri->nbands;
 
   switch (esri->nbits)
     {

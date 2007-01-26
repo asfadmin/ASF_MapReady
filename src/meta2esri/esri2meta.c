@@ -99,12 +99,7 @@ int main(int argc, char **argv)
   create_name(esri_name, argv[currArg], ".hdr");
   create_name(meta_name, argv[currArg+1], ".meta");
 
-  system("date");
-  printf("Program: esri2meta\n\n");
-  if (logflag) {
-    StartWatchLog(fLog);
-    printLog("Program: esri2meta\n\n");
-  }
+  asfSplashScreen(argc, argv);
   
   /* Allocate memory for ESRI header structure */
   esri = (esri_header *)MALLOC(sizeof(esri_header));
@@ -122,18 +117,13 @@ int main(int argc, char **argv)
         printErr(errbuf);
       }
     } 
-    else if (strncmp(key, "NBANDS", 6)==0) {
+    else if (strncmp(key, "NBANDS", 6)==0)
       esri->nbands = atoi(value);
-      if (esri->nbands > 1) {
-        sprintf(errbuf, "\n   ERROR: metadata do not support multi-band data\n\n");
-        printErr(errbuf);
-      }
-    }
     else if (strncmp(key, "BYTEORDER", 9)==0) esri->byteorder = value[0];
     else if (strncmp(key, "LAYOUT", 6)==0) {
       sprintf(esri->layout, "%s", value);
-      if (strncmp(uc(esri->layout), "BIL", 3)!=0) {
-        sprintf(errbuf, "\n   ERROR: metadata do not support data other than BIL format\n\n");
+      if (strncmp(uc(esri->layout), "BSQ", 3)!=0) {
+        sprintf(errbuf, "\n   ERROR: metadata do not support data other than BSQ format\n\n");
         printErr(errbuf);
       }
     }
@@ -160,15 +150,8 @@ int main(int argc, char **argv)
 
   /* Clean and report */
   meta_free(meta);
-  sprintf(logbuf, "   Converted ESRI header (%s) to metadata file (%s)\n\n",
-	  esri_name, meta_name);
-  printf(logbuf);
-  if (logflag) {
-    fLog = FOPEN(logFile, "a");
-    printLog(logbuf);
-    StopWatchLog(fLog);
-    FCLOSE(fLog);
-  }
+  asfPrintStatus("   Converted ESRI header (%s) to metadata file (%s)\n\n",
+		 esri_name, meta_name);
   
   return 0;
 }

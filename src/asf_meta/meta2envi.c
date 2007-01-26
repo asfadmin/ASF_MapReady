@@ -44,6 +44,7 @@ envi_header* meta2envi(meta_parameters *meta)
   /* Fill the values in from the metadata */
   envi->samples = meta->general->sample_count;
   envi->lines = meta->general->line_count;
+  envi->bands = meta->general->band_count;
   switch (meta->general->data_type) 
     {
     case BYTE: envi->data_type = 1; break;
@@ -63,15 +64,8 @@ envi_header* meta2envi(meta_parameters *meta)
     sprintf(envi->sensor_type, "%s", meta->general->sensor);
   else if (strcmp(meta->general->sensor, "JERS-1")==0)
     sprintf(envi->sensor_type, "%s", meta->general->sensor);
-  if (strncmp(meta->general->system, "lil_ieee", 8)==0) 
-    envi->byte_order = 0; /* little endian */
-  else if (strncmp(meta->general->system, "big_ieee", 8)==0)
-    envi->byte_order = 1; /* big endian */
-  else {
-    sprintf(errbuf,"\n   ERROR: Unsupported system type: %s\n",
-	    meta->general->system);
-    printErr(errbuf);
-  }
+  // All the data we generate now is big_endian by default
+  envi->byte_order = 1;
   if (meta->projection) {
     switch (meta->projection->type)
       {
@@ -143,6 +137,7 @@ meta_parameters* envi2meta(envi_header *envi)
   /* Fill metadata with valid ENVI header data */
   meta->general->line_count = envi->lines;
   meta->general->sample_count = envi->samples;
+  meta->general->band_count = envi->bands;
 
   switch (envi->data_type)
     {
