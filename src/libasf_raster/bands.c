@@ -38,6 +38,7 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
     for (ii=0; ii<3; ii++) {
       rgb[ii] = (char *) MALLOC(10*sizeof(char));
       strncpy(rgb[ii], meta->general->bands, 2);
+      rgb[ii][2] = '\0';
     }
     strcpy(rgb[0], red_channel);
     strcpy(rgb[1], green_channel);
