@@ -22,7 +22,7 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
   band_number = 
     get_band_number(meta->general->bands, meta->general->band_count, band);
   pixel_count = meta->general->line_count * meta->general->sample_count;
-  offset = meta->general->line_count;
+  offset = meta->general->line_count * band_number;
   data = (float *) MALLOC(sizeof(float) * pixel_count);
   fp = FOPEN(inFile, "rb");
   get_float_lines(fp, meta, offset, meta->general->line_count, data);
