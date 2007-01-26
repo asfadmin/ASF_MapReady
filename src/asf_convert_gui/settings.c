@@ -25,6 +25,22 @@ settings_get_output_format_requires_byte(const Settings *s)
         s->output_format == OUTPUT_FORMAT_TIFF;
 }
 
+static void
+set_combo_box_entry_item(const char *widget_name, const char *entry_text)
+{
+    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    gtk_entry_set_text(e, entry_text);
+}
+
+static void
+get_combo_box_entry_item(const char *widget_name, char *dest)
+{
+    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    strcpy(dest, gtk_entry_get_text(e));
+}
+
 void
 settings_apply_to_gui(const Settings * s)
 {
@@ -160,6 +176,16 @@ settings_apply_to_gui(const Settings * s)
             glade_xml_get_widget(glade_xml, "scaling_method_combobox");
 
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
+
+        if (s->export_bands) {
+            set_combo_box_entry_item("rgb_band1_comboboxentry", s->red);
+            set_combo_box_entry_item("rgb_band2_comboboxentry", s->green);
+            set_combo_box_entry_item("rgb_band3_comboboxentry", s->blue);
+        } else {
+            set_combo_box_entry_item("rgb_band1_comboboxentry", "");
+            set_combo_box_entry_item("rgb_band2_comboboxentry", "");
+            set_combo_box_entry_item("rgb_band3_comboboxentry", "");
+        }
     }        
 
     output_format_combobox_changed();
@@ -554,6 +580,21 @@ settings_get_from_gui()
                 ret->scaling_method =
                     get_combo_box_item(scaling_method_combobox);
             }
+        }
+
+        GtkWidget * rgb_checkbutton =
+            glade_xml_get_widget(glade_xml, "rgb_checkbutton");
+        ret->export_bands = gtk_toggle_button_get_active(
+            GTK_TOGGLE_BUTTON(rgb_checkbutton));
+
+        if (ret->export_bands) {
+            get_combo_box_entry_item("rgb_band1_comboboxentry", ret->red);
+            get_combo_box_entry_item("rgb_band2_comboboxentry", ret->green);
+            get_combo_box_entry_item("rgb_band3_comboboxentry", ret->blue);
+        } else {
+            strcpy(ret->red, "");
+            strcpy(ret->green, "");
+            strcpy(ret->blue, "");
         }
     }
 
@@ -1500,6 +1541,8 @@ settings_to_config_file(const Settings *s,
       } else {
           fprintf(cf, "byte conversion = none\n");
       }
+      if (s->export_bands)
+          fprintf(cf, "rgb banding = %s,%s,%s\n", s->red, s->green, s->blue);
       fprintf(cf, "\n");
     }
 

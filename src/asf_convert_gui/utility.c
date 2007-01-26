@@ -1,5 +1,19 @@
 #include "asf_convert_gui.h"
 
+static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
+{
+    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    gtk_entry_set_max_length(e, maxlen);
+}
+
+void setup_band_comboboxes()
+{
+    set_combobox_entry_maxlen("rgb_band1_comboboxentry", 8);
+    set_combobox_entry_maxlen("rgb_band2_comboboxentry", 8);
+    set_combobox_entry_maxlen("rgb_band3_comboboxentry", 8);
+}
+
 void
 set_combo_box_item(GtkWidget * drop_down_list, gint index)
 {

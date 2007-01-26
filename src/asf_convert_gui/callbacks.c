@@ -284,6 +284,24 @@ scale_checkbutton_toggle()
 }
 
 void
+rgb_checkbutton_toggle()
+{
+    GtkWidget *rgb_checkbutton, *rgb_hbox;
+    gboolean is_checked;
+
+    rgb_checkbutton =
+        glade_xml_get_widget(glade_xml, "rgb_checkbutton");
+
+    rgb_hbox =
+        glade_xml_get_widget(glade_xml, "rgb_hbox");
+
+    is_checked =
+        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rgb_checkbutton));
+
+    gtk_widget_set_sensitive(rgb_hbox, is_checked);
+}
+
+void
 output_bytes_checkbutton_toggle()
 {
     GtkWidget *output_bytes_checkbutton,
@@ -328,8 +346,10 @@ export_checkbutton_toggle()
         *scale_checkbutton,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
-        *scaling_method_label;
-
+        *scaling_method_label,
+        *rgb_checkbutton,
+        *rgb_hbox;
+    
     gint output_format;
     gboolean export_checked, show;
 
@@ -363,6 +383,12 @@ export_checkbutton_toggle()
 
     scaling_method_label =
         glade_xml_get_widget(glade_xml, "scaling_method_label");
+
+    rgb_checkbutton =
+        glade_xml_get_widget(glade_xml, "rgb_checkbutton");
+
+    rgb_hbox =
+        glade_xml_get_widget(glade_xml, "rgb_hbox");
 
     if (export_checked)
     {
@@ -422,6 +448,9 @@ export_checkbutton_toggle()
 
             break;
         }
+
+        gtk_widget_set_sensitive(rgb_checkbutton, TRUE);
+        rgb_checkbutton_toggle();
     }
     else
     {
@@ -432,6 +461,8 @@ export_checkbutton_toggle()
         gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
         gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
         gtk_widget_set_sensitive(scaling_method_label, FALSE);
+        gtk_widget_set_sensitive(rgb_checkbutton, FALSE);
+        gtk_widget_set_sensitive(rgb_hbox, FALSE);
     }
 
     update_all_extensions();
@@ -530,6 +561,13 @@ SIGNAL_CALLBACK void
 on_scale_checkbutton_toggled(GtkWidget *widget)
 {
     scale_checkbutton_toggle();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rgb_checkbutton_toggled(GtkWidget *widget)
+{
+    rgb_checkbutton_toggle();
     update_summary();
 }
 

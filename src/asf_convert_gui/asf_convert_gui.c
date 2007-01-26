@@ -101,6 +101,9 @@ main(int argc, char **argv)
     /* right-click menu setup */
     setup_popup_menu();
 
+    /* bands dropdown setup*/
+    setup_band_comboboxes();
+
     current_naming_scheme = naming_scheme_default();
 
     /* set initial vpanel setting */

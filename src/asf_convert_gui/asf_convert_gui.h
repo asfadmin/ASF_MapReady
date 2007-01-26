@@ -113,6 +113,10 @@ typedef struct
   int longest_dimension;
   int output_bytes;
   int scaling_method;
+  int export_bands;
+  char red[10];
+  char green[10];
+  char blue[10];
 
   /* geocode */
   int geocode_is_checked;
@@ -218,6 +222,7 @@ void latitude_checkbutton_toggle();
 void input_data_type_changed();
 
 /* utility.c */
+void setup_band_comboboxes();
 void set_combo_box_item(GtkWidget *, gint);
 gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
