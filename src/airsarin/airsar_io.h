@@ -8,7 +8,7 @@ void airsar2ddr(char *airsarname, struct DDR *ddrOut);
 void airsar2meta(char *airsarname, meta_parameters *meta);
 void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta);
 char* get_airsar(char *fname, char *Header, char *Record);
-void linetail(char* strIn, char *chOut);
+char* linetail(char* strIn);
 
 typedef struct {
 	struct DDR ddr;
