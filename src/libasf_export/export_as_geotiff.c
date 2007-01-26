@@ -52,7 +52,7 @@ export_as_geotiff (const char *metadata_file_name,
                    const char *output_file_name,
                    scale_t sample_mapping)
 {
-  return export_rgb_as_geotiff(metadata_file_name, image_data_file_name, 
+  return export_rgb_as_geotiff(metadata_file_name, image_data_file_name,
 			output_file_name, sample_mapping, NULL);
 }
 
@@ -113,7 +113,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = GTIFNew (otif);
+    *ogtif = GTIFNew (*otif);
     asfRequire (*ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
 
     write_tags_for_geotiff (*ogtif, metadata_file_name);
@@ -470,12 +470,12 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 {
   int map_projected;
   int is_geotiff = 1;
-  TIFF *otif=NULL; // FILE* pointer for TIFF files
-  GTIF *ogtif=NULL;
+  TIFF *otif = NULL; // FILE* pointer for TIFF files
+  GTIF *ogtif = NULL;
   int jj, rgb=0;
   ssize_t ii;
 
-  if (band_name) 
+  if (band_name)
     rgb = 1;
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
@@ -499,8 +499,8 @@ export_rgb_as_geotiff (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering red channel statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[0], 0.0, 
-			   &red_min, &red_max, &red_mean, 
+      calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
+			   &red_min, &red_max, &red_mean,
 			   &red_stdDev, red_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         red_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
@@ -516,8 +516,8 @@ export_rgb_as_geotiff (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering green channel statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[1], 0.0, 
-			   &green_min, &green_max, &green_mean, 
+      calc_stats_from_file(image_data_file_name, band_name[1], 0.0,
+			   &green_min, &green_max, &green_mean,
 			   &green_stdDev, green_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         green_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
@@ -533,8 +533,8 @@ export_rgb_as_geotiff (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering blue channel statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[2], 0.0, 
-			   &blue_min, &blue_max, &blue_mean, 
+      calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
+			   &blue_min, &blue_max, &blue_mean,
 			   &blue_stdDev, blue_hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         blue_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
@@ -619,7 +619,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[0], 0.0, 
+      calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
 			   &min, &max, &mean, &stdDev, hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
