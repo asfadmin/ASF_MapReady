@@ -44,7 +44,6 @@ BUGS:
 
 #include "ifm.h"
 #include "asf.h"
-#include "airsar_io.h"
 #include "asf_meta.h"
 
 #define VERSION 1.0
