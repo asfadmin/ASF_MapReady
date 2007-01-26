@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
   char *outname;
   char *ext;
   char *off_char;
-  char *buf;
 
   int *ibuff;			/* Input and output buffers		*/
   float *obuff;
@@ -82,7 +81,6 @@ int main(int argc, char *argv[])
   int nl, ns;			/* Number of lines, number of samples	*/
   int y, x;			/* Counters				*/
   int hb, lb;			/* Header Bytes, Line Bytes		*/
-  int stati;			/* error message return			*/
   int demi2=0;			/* Is this a DEM?			*/
 
   float incr=1;
@@ -133,22 +131,14 @@ int main(int argc, char *argv[])
   obuff_char =(unsigned char*)malloc(ns * sizeof(unsigned char));
 
 /* Determine the headerBytes and the length of each line */
-  buf = get_airsar(airsarname, "FIRST", "BYTE OFFSET OF FIRST DATA RECORD");
-  hb = atoi(buf);
-  free(buf);
-  buf = get_airsar(airsarname, "FIRST", "RECORD LENGTH IN BYTES");
-  lb = atoi(buf);
-  free(buf);
+  hb = atoi(get_airsar(airsarname,"FIRST","BYTE OFFSET OF FIRST DATA RECORD"));
+  lb = atoi(get_airsar(airsarname,"FIRST","RECORD LENGTH IN BYTES"));
 
   if(demi2){
     off_char = (char *)malloc(sizeof(char));
-    buf = get_airsar(airsarname, "DEM", "ELEVATION OFFSET");
-    strcpy(off_char,buf);
-    free(buf);
+    strcpy(off_char, get_airsar(airsarname,"DEM","ELEVATION OFFSET"));
     offset = atof(off_char); 
-    buf = get_airsar(airsarname,"DEM","ELEVATION INCREMENT");
-    incr = atof(buf);
-    free(buf);
+    incr = atof( get_airsar(airsarname,"DEM","ELEVATION INCREMENT"));
     printf("offset should be = \t%s\n", off_char);
     printf("offset = \t\t%f\n", offset);
     printf("increment = \t\t%f\n", incr);

@@ -107,7 +107,7 @@ printf("Starting AirSAR Header -> DDR conversion!\n");
     else if(!strcmp(dtype, "INTEGER*4")) dt=ELONG;
     else if(!strcmp(dtype, "REAL*4")) dt=EREAL;
     else if(!strcmp(dtype, "REAL*8")) dt=EDOUBLE;
-    else dt=NULL;
+    else asfPrintError("Unknown data type '%s'\n",dtype);
 
     /* data type of pixels (unsigned char, short int, float)*/
     ddrOut->dtype = dt;
@@ -168,7 +168,6 @@ printf("Starting AirSAR Header -> DDR conversion!\n");
 void airsar2meta(char* airsarname, meta_parameters *meta)
 {
     char dtype[50];
-    int dt, i;
 
     strcpy(meta->general->sensor, "AirSAR");
 
@@ -183,7 +182,7 @@ void airsar2meta(char* airsarname, meta_parameters *meta)
     printf(".");
 
     /* number of bands in image	*/
-    meta->general->band_number = 0; 
+    meta->general->band_count = 1; 
     printf(".");
 
     meta->general->y_pixel_size = 

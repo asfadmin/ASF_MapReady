@@ -63,14 +63,12 @@ void readAirSARLine(FILE *fp,int *dest,int hb,int lb,int y,meta_parameters *meta
 char* get_airsar(char* fname, char* Header, char* Record)
 {
 	FILE* fp;
-        char airsar_rec[50];
-        int HDR=0, REC=0;
-        char c;
-        int i;
+	char airsar_rec[50];
+	int HDR=0, REC=0;
+	char c;
+	int i;
 	int rl;
-        char *chOut;
-
-	chOut = (char *) MALLOC (256 * sizeof(char));
+	static char chOut[256];
 
 	rl=strlen(Record);
 	fp=FOPEN(fname, "r");
@@ -100,7 +98,7 @@ char* get_airsar(char* fname, char* Header, char* Record)
 char* linetail(char* strIn)
 {
 	int i=49;
-	char chOut[50];
+	static char chOut[50];
 
 	while(strIn[i] != ' ') i--;
 	strcpy(chOut, &strIn[++i]);
