@@ -26,6 +26,7 @@
 
 #define BYTE __byte
 #include "asf.h"
+#include "metadisplay.h"
 #undef BYTE
 #include <windows.h>
 #undef DIR_SEPARATOR
@@ -121,6 +122,7 @@ void set_font ()
 #else /* defined(win32) */
 
 #include "asf.h"
+#include "metadisplay.h"
 
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
@@ -313,42 +315,6 @@ on_metadata_viewer_delete_event(GtkWidget *w, gpointer data)
     gtk_main_quit();
 }
 
-static void readline(FILE * f, gchar * buffer, size_t n)
-{
-    gchar * p;
-    gchar * newline;
-
-    p = fgets(buffer, n, f);
-
-    if (!p)
-    {
-        strcpy(buffer, "");
-    }
-    else
-    {
-        newline = strrchr(buffer, '\n');
-        if (newline)
-            *newline = '\0';
-    }
-}
-
-static gchar *
-change_extension(const gchar * file, const gchar * ext)
-{
-    if (ext[0] != '.')
-    {
-        char *buf = MALLOC(sizeof(char)*(strlen(ext)+3));
-        sprintf(buf, ".%s", ext);
-        char *ret = appendExt(file, buf);
-        free(buf);
-        return ret;
-    }
-    else
-    {
-        return appendExt(file, ext);
-    }
-}
-
 void
 append_output(const gchar * txt, GtkWidget * textview_output)
 {
@@ -389,57 +355,6 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 }
 
 static void
-put_file_in_textview(const char * file, const char * ext, const char * tv)
-{
-    gchar *filename = change_extension(file, ext);
-    FILE * fp = fopen(filename, "rt");
-    const int maxchars = 50000;
-
-    gchar * txt;
-
-    if (fp)
-    {
-        txt = g_malloc(sizeof(gchar) * maxchars);
-        strcpy(txt, "");
-
-        while (!feof(fp))
-        {
-            gchar buf[512];
-            readline(fp, buf, 512);
-
-	    // guard against buffer overrun
-	    if (strlen(txt) + strlen(buf) > maxchars - 50) {
-	      strcat(txt, "(truncated)\n");
-	      break;
-	    } else {
-	      strcat(txt, buf);
-	      strcat(txt, "\n");
-	    }
-        }
-
-        fclose(fp);
-        unlink(filename);
-    }
-    else
-    {
-        txt = (gchar *) g_malloc (sizeof(gchar) * 1024);
-        sprintf(txt, "Error opening file '%s': %s", filename, strerror(errno));
-    }
-
-    free(filename);
-
-    gchar widget_name[128];
-    sprintf(widget_name, "%s_textview", tv);
-
-    GtkWidget * w = glade_xml_get_widget(glade_xml, widget_name);
-    if (!w) { printf("Bad: %s\n", widget_name); return; }
-
-    append_output(txt, w);
-
-    g_free(txt);
-}
-
-static void
 put_text_in_textview(const char * text, const char * tv)
 {
     gchar widget_name[128];
@@ -451,20 +366,13 @@ put_text_in_textview(const char * text, const char * tv)
     append_output(text, w);
 }
 
-void error(const char * t)
+static void
+put_metadata_in_textview(const char * file, int reqrec, const char * tv)
 {
-    put_text_in_textview(t, "data_set_summary");
-    put_text_in_textview(t, "map_projection_data");
-    put_text_in_textview(t, "platform_position_data");
-    put_text_in_textview(t, "attitude_data");
-    put_text_in_textview(t, "radiometric_data");
-    put_text_in_textview(t, "data_quality_summary");
-    put_text_in_textview(t, "processed_data_histograms");
-    put_text_in_textview(t, "signal_data_histograms");
-    put_text_in_textview(t, "range_spectra");
-    put_text_in_textview(t, "facility_related_data");
-    put_text_in_textview(t, "image_file_descriptor");
-    put_text_in_textview(t, "leader_file_descriptor");
+    char *rec = get_record_as_string((char*)file, reqrec);
+    put_text_in_textview(rec, tv);
+
+    FREE(rec);
 }
 
 static void execute()
@@ -475,40 +383,18 @@ static void execute()
     const char * input_file =
         gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
-    gchar cmd[1024];
-
-    sprintf(cmd, "\"%s/metadata\" -f umlarqphsfib \"%s\"", 
-        get_asf_bin_dir(), input_file);
-
-    int i;
-    for (i = 0; i < strlen(cmd); ++i)
-        if (cmd[i] == '\\' && cmd[i+1] != ' ') cmd[i] = '/';
-
-    int ret = asfSystem(cmd);
-
-    // printf("ret = %d\n", ret);
-    if (ret != 0)
-    {
-        printf("Error Calling metadata back-end (%d): \n", ret);
-        printf("  errno = %d\n", errno);
-        printf("  err = %s\n", strerror(errno));
-    }
-
-    // Call these even if processing failed, as they will put
-    // error message info on each of the tabs, so the user is
-    // sure to see it.
-    put_file_in_textview(input_file, "dssr", "data_set_summary");
-    put_file_in_textview(input_file, "mpdr", "map_projection_data");
-    put_file_in_textview(input_file, "ppdr", "platform_position_data");
-    put_file_in_textview(input_file, "atdr", "attitude_data");
-    put_file_in_textview(input_file, "raddr", "radiometric_data");
-    put_file_in_textview(input_file, "dqsr", "data_quality_summary");
-    put_file_in_textview(input_file, "pdhr", "processed_data_histograms");
-    put_file_in_textview(input_file, "sdhr", "signal_data_histograms");
-    put_file_in_textview(input_file, "rsr", "range_spectra");
-    put_file_in_textview(input_file, "facdr", "facility_related_data");
-    put_file_in_textview(input_file, "ifiledr", "image_file_descriptor");
-    put_file_in_textview(input_file, "fdr", "leader_file_descriptor");
+    put_metadata_in_textview(input_file, 10, "data_set_summary");
+    put_metadata_in_textview(input_file, 20, "map_projection_data");
+    put_metadata_in_textview(input_file, 30, "platform_position_data");
+    put_metadata_in_textview(input_file, 40, "attitude_data");
+    put_metadata_in_textview(input_file, 50, "radiometric_data");
+    put_metadata_in_textview(input_file, 60, "data_quality_summary");
+    put_metadata_in_textview(input_file, 70, "processed_data_histograms");
+    put_metadata_in_textview(input_file, 71, "signal_data_histograms");
+    put_metadata_in_textview(input_file, 80, "range_spectra");
+    put_metadata_in_textview(input_file, 200, "facility_related_data");
+    put_metadata_in_textview(input_file, 192, "image_file_descriptor");
+    put_metadata_in_textview(input_file, 300, "leader_file_descriptor");
 }
 
 static void add_file (const gchar * filename)

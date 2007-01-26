@@ -13,7 +13,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	-lm
 
-OBJS  = prn_facdr.o \
+OBJLIB  = prn_facdr.o \
 	prn_raddr.o \
 	prn_ifiledr.o \
 	prn_mpdr.o \
@@ -24,18 +24,25 @@ OBJS  = prn_facdr.o \
 	prn_rsr.o \
 	prn_dqsr.o \
 	prn_fdr.o \
-	prn_shr.o \
 	prn_ampr.o \
-	prn_rcdr.o \
 	prn_esa_facdr.o \
 	prn_ppr.o \
+	prn_rcdr.o \
+	prn_shr.o \
 	metadata.o
 
-all: metadata
-	rm *.o
- 
-metadata: $(OBJS)
-	$(CC) $(CFLAGS) -o metadata $(OBJS) $(LIBS) $(LDFLAGS)
+all: lib exe clean
+
+lib: ${OBJLIB}
+	ar r libasf_metadata.a $(OBJLIB)
+	$(RANLIB) libasf_metadata.a
+	mv libasf_metadata.a $(LIBDIR)
+	cp metadisplay.h $(ASF_INCLUDE_DIR)
+
+exe: metadata
+
+metadata: metadata_main.c lib
+	$(CC) $(CFLAGS) -o metadata metadata_main.c $(LIBDIR)/libasf_metadata.a $(LIBS)
 	mv  metadata$(BIN_POSTFIX) $(BINDIR)
 	cp metadata.man ../../man/cat1/metadata.1 
 

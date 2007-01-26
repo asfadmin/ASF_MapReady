@@ -48,15 +48,16 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	for (ii=0; ii<MAX_BANDS; ii++)
 	  dataName[ii] = (char *) MALLOC(512*sizeof(char));
 
-	require_ceos_pair(inName, dataName, leaderName, &nBands);
-
-	if (recordType==CEOS_IFILEDR)
-		strcpy(metaRecordName, dataName[0]);
-	else {
-		strcpy(metaRecordName, leaderName);
-		/* If looking for FDR record type, set it to IFILEDR type */
-		if (recordType==CEOS_FDR)
-			recordType=CEOS_IFILEDR;
+	if (recordType==CEOS_IFILEDR) {
+            int nBands;
+            require_ceos_data(inName, dataName, &nBands);
+            strcpy(metaRecordName, dataName[0]);
+	} else {
+            require_ceos_metadata(inName, leaderName);
+            strcpy(metaRecordName, leaderName);
+            /* If looking for FDR record type, set it to IFILEDR type */
+            if (recordType==CEOS_FDR)
+                recordType=CEOS_IFILEDR;
 	}
 
 	fp=FOPEN(metaRecordName, "r");
