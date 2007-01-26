@@ -190,57 +190,6 @@ find_in_share(const char * filename)
     return ret;
 }
 
-gchar *
-find_in_path(gchar * file)
-{
-    gchar *path, *buf, *name, *p;
-    int len, pathlen;
-
-    path = (gchar *)g_getenv("PATH");
-
-    len = strlen(file) + 1;
-    pathlen = strlen(path);
-
-    /* work area */
-    buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
-
-    /* put separator + filename at the end of the buffer */
-    name = buf + pathlen + 1;
-    *name = DIR_SEPARATOR;
-    memcpy(name + 1, file, len);
-
-    /* now try each path item, prepended to the filename in the work area */
-    p = path;
-    do
-    {
-        gchar * start;
-        gchar * q = strchr(p + 1, PATH_SEPARATOR);
-
-        /* if separator not found, point to the end */
-        if ( !q ) 
-            q = path + pathlen;
-
-        start = name - (q - p);
-
-        /* copy path portion to the work area */
-        memcpy( start, p, q - p );
-
-        if (g_file_test( start, G_FILE_TEST_EXISTS ))
-        {
-            gchar * ret = g_strdup(start);
-            g_free(buf);
-            return ret; 
-        }
-
-        p = q;
-    } 
-    while (*p++ != '\0');
-
-    /* not found! */ 
-    g_free(buf);
-    return NULL;
-}
-
 void
 set_app_title(char *file)
 {
@@ -293,14 +242,7 @@ static void load_images(const char *f1, const char *f2)
     meta_parameters *m2 = meta_read(f2);
     assert(m2);
 
-//    assert(m1->general->line_count == m2->general->line_count);
-//    assert(m1->general->sample_count == m2->general->sample_count);
-
-    //int lines = imx(m1->general->line_count, m2->general->sample_count);
-    //int samps = imx(m1->general->sample_count, m2->general->sample_count);
-    //int max = lines > samps ? lines : samps;
-    int max = 1200;
-    int ret;
+    int ret,max=1200;
 
     FloatImage *fi1 = 
         float_image_new_from_file(m1->general->sample_count, 
@@ -348,48 +290,25 @@ static void do_wait(double secs)
     }
 }
 
-static void flicker_thread(FlickerItems *f_items, gpointer user_data)
+static void start_flicker()
 {
     GtkWidget *img = glade_xml_get_widget(glade_xml, "flicker_image");
 
     while (1) {
-        gtk_image_set_from_pixbuf(GTK_IMAGE(img), f_items->i1);
-        set_app_title(f_items->file1);
+        gtk_image_set_from_pixbuf(GTK_IMAGE(img), flicker_items.i1);
+        set_app_title(flicker_items.file1);
 
         do_wait(1);
 
         if (!keep_going) break;
 
-        gtk_image_set_from_pixbuf(GTK_IMAGE(img), f_items->i2);
-        set_app_title(f_items->file2);
+        gtk_image_set_from_pixbuf(GTK_IMAGE(img), flicker_items.i2);
+        set_app_title(flicker_items.file2);
 
         do_wait(1);
 
         if (!keep_going) break;
     }
-}
-
-static void start_flicker()
-{
-    flicker_thread(&flicker_items, NULL);
-    return;
-
-    assert(flicker_items.i1);
-    assert(flicker_items.i2);
-
-    static GThreadPool *ttp = NULL;
-    GError *err = NULL;
-
-    if (!ttp)
-    {
-        if (!g_thread_supported ()) g_thread_init (NULL);
-        ttp = g_thread_pool_new ((GFunc) flicker_thread, NULL,
-                                 2, TRUE, &err);
-        assert (err == NULL);
-    }
-
-    g_thread_pool_push(ttp, &flicker_items, &err);
-    assert(err == NULL);
 }
 
 int
@@ -419,7 +338,7 @@ main(int argc, char **argv)
     load_images(argv[1], argv[2]);
 
     glade_xml_signal_autoconnect(glade_xml);
-    start_flicker();
+    start_flicker(&flicker_items);
 
     if (keep_going)
         gtk_main ();
