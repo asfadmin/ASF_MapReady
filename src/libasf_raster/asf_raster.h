@@ -64,6 +64,7 @@ char **extract_band_names(char *bands, int band_count);
 char **find_bands(char *in_base_name, char *red_channel, char *green_channel, 
 		  char *blue_channel);
 int get_band_number(char *bands, int band_count, char *channel);
+int split3(const char *rgb, char **pr, char **pg, char **pb, char sep);
 
 /* Prototypes from scaling.c *************************************************/
 unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,

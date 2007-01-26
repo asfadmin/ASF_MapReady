@@ -20,6 +20,36 @@ char **extract_band_names(char *bands, int band_count)
   return band_name;
 }
 
+// Sample usage:
+//    char *red, *green, *blue;
+//    split3("HH,VV,VH", &red, &green, &blue);
+// Now red is "HH", green is "VV", blue is "VH"
+// You must free() the returned strings.
+int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
+{
+    // call them commas, even though could be something else
+    char *comma1 = strchr(rgb, sep);
+    if (!comma1) return FALSE;
+
+    char *comma2 = strchr(comma1+1, sep);
+    if (!comma2) return FALSE;
+
+    // allocating too much space...
+    char *r = MALLOC(sizeof(char)*strlen(rgb)+1);
+    char *g = MALLOC(sizeof(char)*strlen(rgb)+1);
+    char *b = MALLOC(sizeof(char)*strlen(rgb)+1);
+    *pr = r; *pg = g; *pb = b;
+
+    strcpy(r, rgb);
+    r[comma1-rgb]='\0';
+
+    strcpy(g, comma1+1);
+    g[comma2-comma1-1]='\0';
+
+    strcpy(b, comma2+1);
+    return TRUE;
+}
+
 char **find_bands(char *in_base_name, char *red_channel, char *green_channel, 
 		  char *blue_channel)
 {
