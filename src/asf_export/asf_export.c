@@ -344,7 +344,34 @@ main (int argc, char *argv[])
     strcpy (command_line.red_channel, argv[rgbFlag + 1]);
     strcpy (command_line.green_channel, argv[rgbFlag + 2]);
     strcpy (command_line.blue_channel, argv[rgbFlag + 3]);
-    asfPrintStatus("Exporting multiband image ...\n");
+
+    // Check to make sure that bands are numeric and in range
+    int channel = atoi(command_line.red_channel);
+    asfRequire(channel >= 1 && channel <= 3,
+               "Invalid band number for red channel\n"
+                   "Out of range or non-numeric characters found\n");
+    channel = atoi(command_line.green_channel);
+    asfRequire(channel >= 1 && channel <= 3,
+               "Invalid band number for green channel\n"
+                   "Out of range or non-numeric characters found\n");
+    channel = atoi(command_line.blue_channel);
+    asfRequire(channel >= 1 && channel <= 3,
+               "Invalid band number for blue channel\n"
+                   "Out of range or non-numeric characters found\n");
+    // Remove trailing non-numeric characters from the channel number
+    // string
+    sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
+    sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
+    sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
+
+    asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
+    asfPrintStatus("Green channel: %s\n", command_line.green_channel);
+    asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
+
+    asfPrintStatus("Exporting multiband image ...\n\n");
+  }
+  else {
+    asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
   }
 
   // Grab the input and output name
@@ -356,17 +383,8 @@ main (int argc, char *argv[])
   if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
   band_name = find_bands(in_base_name, command_line.red_channel,
-			 command_line.green_channel, 
+			 command_line.green_channel,
 			 command_line.blue_channel);
-
-  if (rgbFlag) {
-    asfPrintStatus("Red channel: %s\n", command_line.red_channel);
-    asfPrintStatus("Green channel: %s\n", command_line.green_channel);
-    asfPrintStatus("Blue channel: %s\n\n", command_line.blue_channel);
-  } 
-  else {
-    asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
-  }
 
   //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
@@ -419,7 +437,7 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export_bands(format, command_line.sample_mapping, 
+  asf_export_bands(format, command_line.sample_mapping,
 		   in_base_name, output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
