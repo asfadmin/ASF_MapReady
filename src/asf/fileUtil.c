@@ -388,6 +388,17 @@ get_dirname(const char *in)
    return dir;
 }
 
+/* returns a newly allocated string, returns just the filename portion. */
+char *
+get_filename(const char *in)
+{
+   char *dir = MALLOC(sizeof(char)*(strlen(in)+2));
+   char *file = MALLOC(sizeof(char)*(strlen(in)+2));
+   split_dir_and_file(in,dir,file);
+   free(dir);
+   return file;
+}
+
 
 // create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
 int

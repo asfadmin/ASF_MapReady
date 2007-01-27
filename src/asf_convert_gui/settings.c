@@ -1375,7 +1375,8 @@ settings_to_config_file(const Settings *s,
     char *tmp_statfile;
     char *dts;
     char *output_file;
-    char *basename;
+    char *output_basename;
+    char *input_basename;
 
     if (s->export_is_checked) {
         output_file = strdup(output_full);
@@ -1383,12 +1384,27 @@ settings_to_config_file(const Settings *s,
         output_file = stripExt(output_full);
     }
 
-    basename = get_basename(output_file);
+    output_basename = get_basename(output_file);
+
+    // handle prepensions in the input filename
+    int prepension = has_prepension(input_file);
+    if (prepension > 0) {
+        char *base = get_filename(input_file);
+        char *path = g_path_get_dirname(input_file);
+        printf("base: %s\n", base);
+        input_basename = MALLOC(sizeof(char)*(strlen(base)+strlen(path)+2));
+        sprintf(input_basename, "%s/%s", path, base+prepension);
+        FREE(base);
+        g_free(path);
+    } else {
+        input_basename = get_basename(input_file);
+    }
 
     if (s->geocode_is_checked) {
 
-      tmp_projfile = MALLOC(sizeof(char)*(9+strlen(basename)+strlen(tmp_dir)));
-      sprintf(tmp_projfile, "%s/%s.proj", tmp_dir, basename);
+      tmp_projfile =
+          MALLOC(sizeof(char)*(9 + strlen(output_basename) + strlen(tmp_dir)));
+      sprintf(tmp_projfile, "%s/%s.proj", tmp_dir, output_basename);
 
       FILE * pf = fopen(tmp_projfile, "wt");
       if (!pf) return NULL; /* FIXME, need better error handling here */
@@ -1431,8 +1447,9 @@ settings_to_config_file(const Settings *s,
       fclose(pf);
     }
 
-    tmp_cfgfile = MALLOC(sizeof(char)*(9+strlen(basename)+strlen(tmp_dir)));
-    sprintf(tmp_cfgfile, "%s/%s.cfg", tmp_dir, basename);
+    tmp_cfgfile =
+        MALLOC(sizeof(char)*(9 + strlen(output_basename) + strlen(tmp_dir)));
+    sprintf(tmp_cfgfile, "%s/%s.cfg", tmp_dir, output_basename);
     tmp_statfile = appendExt(tmp_cfgfile, ".status");
 
     FILE * cf = fopen(tmp_cfgfile, "wt");
@@ -1444,7 +1461,7 @@ settings_to_config_file(const Settings *s,
     free(dts);
 
     fprintf(cf, "[General]\n");
-    fprintf(cf, "input file = %s\n", input_file);
+    fprintf(cf, "input file = %s\n", input_basename);
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = 1\n");
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
@@ -1551,6 +1568,7 @@ settings_to_config_file(const Settings *s,
     if (tmp_projfile)
       free(tmp_projfile);
     free(output_file);
-    free(basename);
+    free(output_basename);
+    free(input_basename);
     return tmp_cfgfile;
 }

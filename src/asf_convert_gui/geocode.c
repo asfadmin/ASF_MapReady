@@ -411,8 +411,8 @@ void geocode_options_changed()
         }
 
         if (!predefined_projection_is_selected)
-        {	    
-            switch (projection)
+        {
+          switch (projection)
             {
             case PROJ_UTM:
                 enable_utm_zone = TRUE;
@@ -471,10 +471,14 @@ void geocode_options_changed()
 
         // turn off the average height checkbutton if terrain correction
         // is selected
+        GtkWidget * dem_checkbutton = glade_xml_get_widget(
+            glade_xml, "dem_checkbutton");
         GtkWidget * rb_terrcorr = glade_xml_get_widget(
             glade_xml, "rb_terrcorr");
 
         if (gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(dem_checkbutton)) &&
+            gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(rb_terrcorr)))
         {
             enable_average_height_checkbutton = FALSE;

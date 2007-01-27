@@ -34,7 +34,7 @@ static gboolean confirm_overwrite()
     user_settings = settings_get_from_gui();
     if (settings_on_execute)
     {
-        settings_different = !settings_equal(user_settings, 
+        settings_different = !settings_equal(user_settings,
             settings_on_execute);
     }
 
@@ -113,7 +113,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
             /* Problem running the command... if we got a log file assume the
             error is logged in there, and user will see it through that.
 
-            Otherwise, see if errno can give us anything useful. 
+            Otherwise, see if errno can give us anything useful.
             Put this into the log file that parent expects to see.
             */
 
@@ -174,7 +174,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
                         if (have_import && have_export)
                         {
                             /* found the executable(s)... not sure what went wrong. */
-                            fprintf(output, "Unknown Error trying to run command:\n%s\n",
+                            fprintf(output, "Unknown error trying to run command:\n%s\n",
                                 cmd);
                         }
                         else
@@ -189,7 +189,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
                                 cmd);
                         }
                     }
-                    fclose(output); 
+                    fclose(output);
                 }
                 else
                 {
@@ -205,7 +205,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
         while (waitpid(-1, NULL, WNOHANG) == 0)
         {
             while (gtk_events_pending())
-                gtk_main_iteration();    
+                gtk_main_iteration();
 
             g_usleep(50);
         }
@@ -274,7 +274,7 @@ gboolean check_for_error(gchar * txt)
 
             /* ignore use of the word "error" in the comments */
             if (strstr(p, "Calibration Comments") == NULL &&
-                (strstr(p, "Error") != NULL || 
+                (strstr(p, "Error") != NULL ||
                 strstr(p, "ERROR") != NULL))
             {
                 *q = '\n';
@@ -350,7 +350,7 @@ append_begin_processing_tag(const gchar * input_filename)
         */
 
         tt = gtk_text_buffer_create_tag(text_buffer, "bold",
-            "weight", PANGO_WEIGHT_BOLD, 
+            "weight", PANGO_WEIGHT_BOLD,
             "foreground", "blue",
             NULL);
     }
@@ -401,7 +401,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
 	if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
 	{
             if (scaling_required)
-                pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name, 
+                pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
                                                       THUMB_SIZE, THUMB_SIZE,
                                                       &err);
             else
@@ -469,22 +469,21 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
 //#ifdef win32
 //    sprintf(buf, "\"%s/%s\"", get_asf_bin_dir(), exec_name);
 //#else
-//    sprintf(buf, "%s/%s", get_asf_bin_dir(), exec_name);    
+//    sprintf(buf, "%s/%s", get_asf_bin_dir(), exec_name);
 //#endif
 //}
 
 static char *
-do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
+do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
+           int keep_files)
 {
     extern int logflag;
     extern FILE *fLog;
 
     FILE *output;
-    char logFile[256];
+    char *logFile = appendExt(cfg_file, ".log");
 
-    snprintf(logFile, sizeof(logFile), "tmp%d.log", pid);
-
-    pid = fork();    
+    pid = fork();
     if (pid == 0)
     {
         /* child */
@@ -495,7 +494,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
 		       cfg_file);
 
 	asf_convert_ext(FALSE, cfg_file, save_dem);
-	
+
 	FCLOSE(fLog);
 	exit(EXIT_SUCCESS);
     }
@@ -503,13 +502,13 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
     {
         /* parent */
         int counter = 1;
-	char *statFile = appendExt(cfg_file, ".status");	
-	char *projFile = appendExt(cfg_file, ".proj");	
+	char *statFile = appendExt(cfg_file, ".status");
+	char *projFile = appendExt(cfg_file, ".proj");
 
         while (waitpid(-1, NULL, WNOHANG) == 0)
 	{
 	    while (gtk_events_pending())
-	      gtk_main_iteration();    
+	      gtk_main_iteration();
 
             g_usleep(50);
 
@@ -568,7 +567,9 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
             }
         }
         fclose(output);
-        unlink(logFile);
+
+        if (!keep_files)
+            unlink(logFile);
     }
 
     if (!the_output)
@@ -579,36 +580,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem)
         the_output = g_strdup("Error Opening Log File: Disk Full?\n");
     }
 
+    free(logFile);
     return the_output;
-}
-
-static char *
-generate_input_basename(const char *in_data)
-{
-    int prepen_len = has_prepension(in_data);
-
-    // Two conventions we must be able to handle.  The first is
-    // extension-based, the second prepension-based.
-
-    // For an extension-based basename scheme, we just need to strip
-    // off the extension -- output files will just use a new extension.
-
-    // For prepension-based schemes, we need to strip off the path, then
-    // strip off the prepension, then add back on the path info again.
-    // We don't do anything with any extensions (as there aren't really
-    // any extensions to worry about).
-   
-    if (prepen_len > 0) {
-        gchar *path = g_path_get_dirname(in_data);
-        char *basename = get_basename(in_data);
-        char *ret = MALLOC(sizeof(char)*(strlen(path)+strlen(basename)+1));
-        sprintf(ret, "%s%c%s", path, DIR_SEPARATOR, basename+prepen_len);
-        g_free(path);
-        free(basename);
-        return ret;
-    } else {
-        return stripExt(in_data);
-    }
 }
 
 static void
@@ -620,7 +593,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
     pid = getpid();
 
-    gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter, 
+    gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter,
         COL_DATA_FILE, &in_data,
         COL_OUTPUT_FILE, &out_full,
         COL_STATUS, &status,
@@ -628,8 +601,9 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
-        char *in_basename = generate_input_basename(in_data);
+        //char *in_basename = stripExt(in_data);
 	char *out_basename = stripExt(out_full);
+        char *out_nameonly = get_basename(out_full);
 	char *output_dir = getPath(out_full);
 	char *config_file, *cmd_output, *tmp_dir;
 	gchar *err_string;
@@ -642,15 +616,17 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);
 
             g_free(err_string);
-            free(in_basename);
+            //free(in_basename);
             free(out_basename);
             free(output_dir);
 
             return;
         }
 
-        tmp_dir = MALLOC(sizeof(char)*(strlen(output_dir)+32));
-        sprintf(tmp_dir, "%s/convert-%s", output_dir, time_stamp_dir());
+        tmp_dir = MALLOC(sizeof(char)*
+                         (strlen(output_dir)+strlen(out_nameonly)+32));
+        sprintf(tmp_dir, "%s/%s-%s", output_dir, out_nameonly,
+                time_stamp_dir());
 
         create_clean_dir(tmp_dir);
 	set_asf_tmp_dir(tmp_dir);
@@ -659,7 +635,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         settings_update_mask(user_settings, output_dir, is_first);
 
 	config_file =
-	  settings_to_config_file(user_settings, in_basename, out_full,
+	  settings_to_config_file(user_settings, in_data, out_full,
 				  output_dir, tmp_dir);
         if (!config_file) {
             message_box("Error creating configuration file.\n");
@@ -667,22 +643,23 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         }
 
 	append_begin_processing_tag(in_data);
-	cmd_output = do_convert(pid, iter, config_file, TRUE);
+	cmd_output = do_convert(pid, iter, config_file, TRUE, user_settings->keep_files);
 	err = check_for_error(cmd_output);
 	append_output(cmd_output);
 
 	free(config_file);
 	free(out_basename);
 	free(output_dir);
-	free(in_basename);
+	//free(in_basename);
+        free(out_nameonly);
 	g_free(cmd_output);
-	
+
 	if (use_thumbnails)
 	{
             set_thumbnail(iter, tmp_dir, out_full);
-	}	
-	    
-	char *done = err ? "Error" : "Done"; 
+	}
+
+	char *done = err ? "Error" : "Done";
 	gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
 
         if (!user_settings->keep_files)
@@ -793,4 +770,18 @@ on_stop_button_clicked(GtkWidget * widget)
 {
     append_output("Stopping...\n");
     keep_going = FALSE;
+
+    const char *tmp_dir = get_asf_tmp_dir();
+    char *stop_file = MALLOC(sizeof(char) * (strlen(tmp_dir) + 24));
+    sprintf(stop_file, "%s/stop.txt", tmp_dir);
+    FILE * fp = fopen(stop_file, "w");
+    if (fp) {
+        fprintf(fp,
+                "Temporary file.\n\n"
+                "Flags any asf tools currently running in this directory "
+                "to halt processing immediately.\n\n"
+                "This file should be deleted once processing has stopped.\n");
+        fclose(fp);
+    }
+    free(stop_file);
 }

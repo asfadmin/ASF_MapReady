@@ -224,6 +224,7 @@ void fileRename(const char *src, const char *dst);
 void renameImgAndMeta(const char *src, const char *dst);
 char *get_basename(const char *filename);
 char *get_dirname(const char *in);
+char *get_filename(const char *in);
 
 /* Prototypes from progress_meters.c *****************************************/
 void asfLineMeter(int currentLine, int totalLines);

@@ -193,6 +193,7 @@ on_dem_browse_button_clicked(GtkWidget *widget)
 
     of.hwndOwner = NULL;
     of.lpstrFilter = "DEM Imagery Files (*.img)\0*.img\0"
+        "GeoTIFF Files (*.tif)\0*.tif\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
