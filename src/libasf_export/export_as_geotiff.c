@@ -549,8 +549,17 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 
     fp = FOPEN(image_data_file_name, "rb");
 
+    int red_channel = atoi(band_name[0]) - 1;
+    int green_channel = atoi(band_name[1]) - 1;
+    int blue_channel = atoi(band_name[2]) - 1;
+    asfRequire(red_channel >= 0 && red_channel <= MAX_BANDS &&
+               green_channel >= 0 && green_channel <= MAX_BANDS &&
+               blue_channel >= 0 && blue_channel <= MAX_BANDS,
+               "Band number out of range\n");
+
     int sample_count = md->general->sample_count;
     int offset = md->general->line_count;
+
     red_float_line = (float *) MALLOC(sizeof(float) * sample_count);
     green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
     blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
@@ -561,9 +570,9 @@ export_rgb_as_geotiff (const char *metadata_file_name,
     for (ii=0; ii<md->general->line_count; ii++) {
       if (sample_mapping == NONE) {
         // Write float lines if float image
-        get_float_line(fp, md, ii, red_float_line);
-        get_float_line(fp, md, ii+offset, green_float_line);
-        get_float_line(fp, md, ii+2*offset, blue_float_line);
+        get_float_line(fp, md, ii+red_channel*offset, red_float_line);
+        get_float_line(fp, md, ii+green_channel*offset, green_float_line);
+        get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
         for (jj=0; jj<sample_count; jj++) {
           rgb_float_line[jj*3] = red_float_line[jj];
           rgb_float_line[(jj*3)+1] = green_float_line[jj];
@@ -577,9 +586,9 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       }
       else {
         // Write byte lines if byte image
-        get_float_line(fp, md, ii, red_float_line);
-        get_float_line(fp, md, ii+offset, green_float_line);
-        get_float_line(fp, md, ii+2*offset, blue_float_line);
+        get_float_line(fp, md, ii+red_channel*offset, red_float_line);
+        get_float_line(fp, md, ii+green_channel*offset, green_float_line);
+        get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
         for (jj=0; jj<sample_count; jj++) {
           rgb_byte_line[jj*3] =
             pixel_float2byte(red_float_line[jj], sample_mapping,
