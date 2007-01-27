@@ -345,24 +345,22 @@ main (int argc, char *argv[])
     strcpy (command_line.green_channel, argv[rgbFlag + 2]);
     strcpy (command_line.blue_channel, argv[rgbFlag + 3]);
 
-    // Check to make sure that bands are numeric and in range
-    int channel = atoi(command_line.red_channel);
-    asfRequire(channel >= 1 && channel <= 3,
-               "Invalid band number for red channel\n"
-                   "Out of range or non-numeric characters found\n");
-    channel = atoi(command_line.green_channel);
-    asfRequire(channel >= 1 && channel <= 3,
-               "Invalid band number for green channel\n"
-                   "Out of range or non-numeric characters found\n");
-    channel = atoi(command_line.blue_channel);
-    asfRequire(channel >= 1 && channel <= 3,
-               "Invalid band number for blue channel\n"
-                   "Out of range or non-numeric characters found\n");
-    // Remove trailing non-numeric characters from the channel number
-    // string
-    sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
-    sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
-    sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
+    // Check to see if the bands are numeric and in range
+    int r_channel = atoi(command_line.red_channel);
+    int g_channel = atoi(command_line.green_channel);
+    int b_channel = atoi(command_line.blue_channel);
+    if (r_channel >= 1 && r_channel <= MAX_BANDS &&
+        g_channel >= 1 && g_channel <= MAX_BANDS &&
+        b_channel >= 1 && b_channel <= MAX_BANDS) {
+      // Remove trailing non-numeric characters from the channel number
+      // string
+      sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
+      sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
+      sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
+    }
+    else {
+      ;
+    }
 
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
