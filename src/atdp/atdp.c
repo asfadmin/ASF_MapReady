@@ -27,7 +27,7 @@ SYNOPSIS:     atdp ifile ofile
 
 #include "asf.h"
 #include "asf_meta.h"
-#include "atdp_defs.h"
+#include "ardop_defs.h"
 #include "asf_complex.h"
 #include "read_signal.h"
 
@@ -37,8 +37,16 @@ SYNOPSIS:     atdp ifile ofile
                                 (a, b, FLOAT_MICRON))
 #define SQR(a) (a*a)
 
-/*Usage:*/
 
+/* prototypes */
+void atdp_setup (struct ARDOP_PARAMS *g_in, meta_parameters *meta, file **f,
+		getRec **signalGetRec);
+int parse_cla (int argc, char *argv[], struct ARDOP_PARAMS *g,
+               meta_parameters **meta_out);
+
+
+
+/*Usage:*/
 void give_usage(char *name)
 {
  printf("\n"
@@ -61,22 +69,27 @@ void give_usage(char *name)
  exit(EXIT_FAILURE);
 }
 
+
 double rect(double range_time, double pulse_duration) 
 {
   double ratio = range_time / pulse_duration;
-  if (ratio > 0.5) return 0.0;
-  else if (FLOAT_EQUIVALENT(ratio, 0.5)) return 0.5;
-  else if (ratio < 0.5) return 1.0;
+  if (ratio > 0.5)
+    return 0.0;
+  else if (FLOAT_EQUIVALENT(ratio, 0.5))
+    return 0.5;
+  else /*if (ratio < 0.5)*/
+    return 1.0;
 }
 
-main (int argc, char *argv [])
+
+int main (int argc, char *argv [])
 {
   FILE *fp;
   getRec *signalGetRec;
   file *f;
   int ii, kk, ll, mm, give_usage_action=0, offset;
   int filter_azimuth, filter_range, filter_size;
-  struct AISP_PARAMS params;
+  struct ARDOP_PARAMS params;
   meta_parameters *meta;
   complexFloat *image_in, *image_out, impulse_response, sum;
   double lines, samples;

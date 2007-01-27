@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   aisp_setup.c -- Routines used to set up the parameters for a run        *
+*   atdp_setup.c -- Routines used to set up the parameters for a run        *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -32,7 +32,7 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "atdp_defs.h"
+#include "ardop_defs.h"
 #include "asf_meta.h"
 #include "odl.h"
 #include <math.h>
@@ -41,7 +41,7 @@
 /*-------------------------------------------------------------------------*/
 /*    The following is the list of all parameters needed to run aisp.c      */
 /*-------------------------------------------------------------------------*/
-struct AISP_PARAMS g;/*AISP Globals, defined in aisp_params.h*/
+struct ARDOP_PARAMS g;
 
 int     n_az;         /* Number of lines in the Azimuth per patch   */
 float azpix,rngpix; /*Size of pixel in azimuth and slant range.*/
@@ -83,7 +83,7 @@ file *newFile(void)
   return f;
 }
 
-void atdp_setup(struct AISP_PARAMS *g_in, meta_parameters *meta, file **f,
+void atdp_setup(struct ARDOP_PARAMS *g_in, meta_parameters *meta, file **f,
 		getRec **signalGetRec)
 {
   int az_reflen, skew_lines;
@@ -142,7 +142,7 @@ void atdp_setup(struct AISP_PARAMS *g_in, meta_parameters *meta, file **f,
   
   meta->sar->time_shift=(n_az-g.na_valid)/g.prf/2.0;
   
-  /*Write the version of AISP*/
+  /*Write the version of ATDP*/
   sprintf(meta->general->processor,"ASF/ATDP/%.2f",VERSION);
   
   *signalGetRec=fillOutGetRec(g.in1);

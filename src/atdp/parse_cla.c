@@ -1,6 +1,6 @@
 /****************************************************************************
 *								            *
-*   parse_cla.c:  Routines used to parse AISP command line parameters       *
+*   parse_cla.c:  Routines used to parse command line parameters       *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -18,7 +18,7 @@
 *									      *
 ******************************************************************************/
 /***********************************************************************
-  parse_cla.c  -- Routines to parse AISP's input parameters.
+  parse_cla.c  -- Routines to parse input parameters.
   
      FUNCTIONS INCLUDED IN THIS FILE:
 	parse_cla	- parses the cla's, fills parameters in aisp_global.h
@@ -33,7 +33,7 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "atdp_defs.h"
+#include "ardop_defs.h"
 #include "geolocate.h"
 
 /* this define is a hack to avoid calling usage() as done in cla.h */	
@@ -43,12 +43,12 @@
   else currArg+=num_args;
 
 /*Prototypes:*/
-void get_params(char *,struct AISP_PARAMS *,meta_parameters **);
+void get_params(char *,struct ARDOP_PARAMS *,meta_parameters **);
 
 
 /******************************************
 Parse_cla:
-	Parses AISP command-line options to
+	Parses command-line options to
 determine SAR processing parameters.  Returns
 0 on user command-line error, 1 on success, 2 
 on debug help, or not at all on other errors.  
@@ -57,7 +57,7 @@ for this scene.
 
 ******************************************/
 
-int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta_out)
+int parse_cla(int argc,char *argv[],struct ARDOP_PARAMS *g,meta_parameters **meta_out)
 {
   int read_offset = 0,   /* Flag - Read resampling offsets from file?   */
     read_dopplr = 0;   /* Flag - Read doppler constant from file?     */
@@ -100,9 +100,9 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
   strcpy(g->out,argv[argc-1]);
   
   
-  /*Create AISP_PARAMS struct as well as meta_parameters.*/
+  /*Create ARDOP_PARAMS struct as well as meta_parameters.*/
   if (extExists(g->in1,".in"))
-    {/*Read parameters from AISP parameter file*/
+    {/*Read parameters from parameter file*/
       read_params(g->in1,g);
       if (extExists(g->in1,".meta"))/*Input file has .meta attached: read it*/
 	meta=meta_read(g->in1);
@@ -168,7 +168,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
     FCLOSE(fp);
   }
     
-  /*Copy fields from AISP_PARAMS struct to meta_parameters struct.*/
+  /*Copy fields from ARDOP_PARAMS struct to meta_parameters struct.*/
   meta->sar->image_type              = 'S';          /*Slant range image*/
   meta->sar->look_count              = g->nlooks;
   meta->sar->deskewed                = g->deskew;
@@ -190,7 +190,7 @@ int parse_cla(int argc,char *argv[],struct AISP_PARAMS *g,meta_parameters **meta
   
   strcpy (meta->general->system, meta_get_system());
   meta->general->data_type = REAL32;
-  meta->general->band_number = 0;
+  meta->general->band_count = 1;
   meta->general->x_pixel_size = meta->sar->range_time_per_pixel
     * (speedOfLight/2.0);
   meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
@@ -228,7 +228,7 @@ ALGORITHM DESCRIPTION: Fills each of the ASP globals with appropriate values.
 ******************************************************************************/
 #include "odl.h"
 
-void get_params(char *file,struct AISP_PARAMS *g,meta_parameters **meta_out)
+void get_params(char *file,struct ARDOP_PARAMS *g,meta_parameters **meta_out)
 {
   meta_parameters *meta;
   struct VFDRECV asf_facdr1;

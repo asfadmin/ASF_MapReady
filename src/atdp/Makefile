@@ -6,24 +6,31 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS)
-LIBC = $(LIBS) -lm 
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
+	-lm 
 
-ASPLIB = atdp_setup.o read_signal.o parse_cla.o
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)
+
+OBJS = \
+	atdp_setup.o \
+        read_signal.o \
+        parse_cla.o \
+        atdp.o
 
 # Filter out the ISOC99 FLAGS which causes some problems.
-CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
+#CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
 
 all: atdp clean
 
-atdp:	$(ASPLIB) atdp.o $(LIBS)
-	$(CC) $(CFLAGS) -o atdp atdp.o $(ASPLIB) $(LIBC) $(LDFLAGS)
+atdp:	$(OBJS)
+	$(CC) $(CFLAGS) -o atdp $(OBJS) $(LIBS) $(LDFLAGS)
 	mv atdp$(BIN_POSTFIX) $(BINDIR)
 
 clean:
