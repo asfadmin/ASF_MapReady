@@ -377,6 +377,7 @@ void latLon2proj(double lat, double lon, double elev, char *projFile,
 		 double *projX, double *projY);
 
 int utm_zone(double lon);
+void fill_in_utm(double lat, double lon, project_parameters_t *pps);
 void latLon2UTM(double lat, double lon, double elev,
                 double *projX, double *projY);
 void latLon2UTM_zone(double lat, double lon, double elev, int zone,

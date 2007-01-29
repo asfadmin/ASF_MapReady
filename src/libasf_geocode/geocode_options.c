@@ -1,4 +1,5 @@
 #include "asf_geocode.h"
+#include "libasf_proj.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
 #include "proj_api.h"
@@ -171,6 +172,8 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 					meta_parameters * meta, double * average_height,
 					double * pixel_size)
 {
+  double lat, lon;
+
 	if ( ISNAN (*average_height) )
 		*average_height = 0.0;
 
@@ -194,48 +197,10 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	switch (pt)
 	{
 	case UNIVERSAL_TRANSVERSE_MERCATOR:
-            if (ISNAN(pps->utm.lon0)) {
-                if (ISNAN(meta->general->center_longitude)) {
-                    double lat, lon;
-                    meta_get_latLon(meta, meta->general->line_count/2,
-                                    meta->general->sample_count/2, 0,
-                                    &lat, &lon);
-                    meta->general->center_longitude = lon;
-                }
-                pps->utm.lon0 = meta->general->center_longitude;
-            }
-            if (ISNAN(pps->utm.lat0)) {
-                if (ISNAN(meta->general->center_latitude)) {
-                    double lat, lon;
-                    meta_get_latLon(meta, meta->general->line_count/2,
-                                    meta->general->sample_count/2, 0,
-                                    &lat, &lon);
-                    meta->general->center_latitude = lat;
-                }
-                pps->utm.lat0 = meta->general->center_latitude;
-            }
-
-		/* set the zone based on the specified longitude */
-		if (pps->utm.zone == MAGIC_UNSET_INT) {
-			// The only sane thing to do is refuse to operate if we
-			// get a longitude that puts us on a zone boundry --
-			// such an argument is essentially ambiguous, and the
-			// user must resolve it.
-			if ( pps->utm.lon0 / 6.0 - floor (pps->utm.lon0 / 6.0) == 0.0 ) {
-				asfPrintError ("Longitude %.6f lies on a UTM zone boundry, "
-					"(i.e. is ambiguous as to which UTM zone "
-					"should be used for geocoding)\n",
-					pps->utm.lon0);
-			}
-			pps->utm.zone = calc_utm_zone(pps->utm.lon0);
-		}
-
-		/* false easting & false northing are fixed for utm */
-		pps->utm.false_northing = pps->utm.lat0 >= 0 ? 0 : 10000000;
-		pps->utm.false_easting = 500000;
-		pps->utm.scale_factor = 0.9996;
-
-		break;
+	  meta_get_latLon(meta, meta->general->line_count/2,
+			  meta->general->sample_count/2, 0, &lat, &lon);
+	  fill_in_utm(lat, lon, pps);
+	  break;
 
 	case POLAR_STEREOGRAPHIC:
 		/* SMMI standard values */
