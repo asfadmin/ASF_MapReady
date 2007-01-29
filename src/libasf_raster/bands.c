@@ -58,15 +58,17 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 char **find_bands(char *in_base_name, char *red_channel, char *green_channel, 
 		  char *blue_channel)
 {
-  char **rgb;
+  char **rgb=NULL;
   meta_parameters *meta;
   int ii, red=0, green=0, blue=0;
 
   meta = meta_read(in_base_name);
   // Check for bands
-  if (strstr(meta->general->bands, red_channel)) red = 1;
-  if (strstr(meta->general->bands, green_channel)) green = 1;
-  if (strstr(meta->general->bands, blue_channel)) blue = 1;
+  if (strcmp(meta->general->bands, "???") != 0) { 
+    if (strstr(meta->general->bands, red_channel)) red = 1;
+    if (strstr(meta->general->bands, green_channel)) green = 1;
+    if (strstr(meta->general->bands, blue_channel)) blue = 1;
+  }
   
   // Found three channels for RGB?
   if (red && green && green) {
@@ -80,8 +82,6 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
     strcpy(rgb[1], green_channel);
     strcpy(rgb[2], blue_channel);
   }
-  else 
-    rgb = NULL;
 
   return rgb;
 }

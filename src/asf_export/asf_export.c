@@ -288,6 +288,14 @@ main (int argc, char *argv[])
   // We're good enough at this point... print the splash screen.
   asfSplashScreen (argc, argv);
 
+  // Grab the input and output name
+  strcpy (in_base_name, argv[argc - 2]);
+  strcpy (output_name, argv[argc - 1]);
+
+  // If user added ".img", strip it.
+  char *ext = findExt(in_base_name);
+  if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
+
   // Set default output type
   if( formatFlag != FLAG_NOT_SET ) {
     strcpy (command_line.format, argv[formatFlag + 1]);
@@ -365,25 +373,18 @@ main (int argc, char *argv[])
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
-
-    asfPrintStatus("Exporting multiband image ...\n\n");
   }
-  else {
-    asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
-  }
-
-  // Grab the input and output name
-  strcpy (in_base_name, argv[argc - 2]);
-  strcpy (output_name, argv[argc - 1]);
-
-  // If user added ".img", strip it.
-  char *ext = findExt(in_base_name);
-  if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
   band_name = find_bands(in_base_name, command_line.red_channel,
 			 command_line.green_channel,
 			 command_line.blue_channel);
-
+  if (band_name)
+    asfPrintStatus("Exporting multiband image ...\n\n");
+  else if (rgbFlag != FLAG_NOT_SET)
+    asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
+  else
+    asfPrintStatus("Exporting as greyscale.\n");
+  
   //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
