@@ -114,9 +114,9 @@ float get_default_ypix(const char *outBaseName)
 *****************************************************************************/
 // Convenience wrapper, without the kludgey "flags" array
 int asf_import(radiometry_t radiometry, int db_flag,
-               char *format_type, char *image_data_type, char *lutName, 
-	       char *prcPath, double lowerLat, double upperLat, 
-	       double *p_range_scale, double *p_azimuth_scale, 
+               char *format_type, char *image_data_type, char *lutName,
+	       char *prcPath, double lowerLat, double upperLat,
+	       double *p_range_scale, double *p_azimuth_scale,
 	       double *p_correct_y_pixel_size, char *inMetaNameOption,
 	       char *inBaseName, char *outBaseName)
 {
@@ -152,7 +152,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
 
     /* Ingest all sorts of flavors of CEOS data */
     if (strncmp(format_type, "CEOS", 4) == 0) {
-        asfPrintStatus("   Data format: %s\n", format_type);
+        asfPrintStatus("   Data format: %s\n\n", format_type);
         if (inMetaNameOption == NULL)
             require_ceos_pair(inBaseName, inBandName, inMetaName, &nBands);
         else {
@@ -162,21 +162,23 @@ int asf_import(radiometry_t radiometry, int db_flag,
         }
 	for (ii=0; ii<nBands; ii++) {
 	  strcpy(bandExt, "");
-	  if (strncmp(inBandName[ii], "IMG-HH", 6)==0) 
+	  if (strncmp(inBandName[ii], "IMG-HH", 6)==0)
 	    strcpy(bandExt, "HH");
-	  if (strncmp(inBandName[ii], "IMG-HV", 6)==0) 
+	  if (strncmp(inBandName[ii], "IMG-HV", 6)==0)
 	    strcpy(bandExt, "HV");
-	  if (strncmp(inBandName[ii], "IMG-VH", 6)==0) 
+	  if (strncmp(inBandName[ii], "IMG-VH", 6)==0)
 	    strcpy(bandExt, "VH");
-	  if (strncmp(inBandName[ii], "IMG-VV", 6)==0) 
+	  if (strncmp(inBandName[ii], "IMG-VV", 6)==0)
 	    strcpy(bandExt, "VV");
 	  for (kk=1; kk<10; kk++) {
-	    sprintf(tmp, "IMG-0%d", kk);
-	    if (strncmp(inBandName[ii], tmp, 6)==0) 
+	    sprintf(tmp, "IMG-%02d", kk);
+	    if (strncmp(inBandName[ii], tmp, 6)==0)
 	      sprintf(bandExt, "0%d", kk);
 	  }
-	  import_ceos(inBandName[ii], bandExt, ii+1, nBands, inBaseName, lutName, 
+          asfPrintStatus("   File: %s\n", inBandName[ii]);
+	  import_ceos(inBandName[ii], bandExt, ii+1, nBands, inBaseName, lutName,
 	  	      unscaledBaseName, radiometry, db_flag);
+          asfPrintStatus("\n");
 	}
     }
     /* Ingest ENVI format data */
@@ -250,7 +252,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
 //			 "falling back to the generic GeoTIFF importer (cross "
 //			 "fingers)... \n");
 	// Haven't written import-generic_geotiff yet...
-	
+
         asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
 	//import_generic_geotiff (inGeotiffName->str, outBaseName);
       }
@@ -294,7 +296,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
     //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
     //    create_sprocket_layers(outBaseName, inMetaName);
     //}
-    
+
     asfPrintStatus("Import complete.\n");
     return 0;
 }
