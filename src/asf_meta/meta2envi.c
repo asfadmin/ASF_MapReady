@@ -120,7 +120,7 @@ envi_header* meta2envi(meta_parameters *meta)
     envi->pixel_northing = meta->projection->startY;
     envi->proj_dist_x = meta->projection->perX;
     envi->proj_dist_y = fabs(meta->projection->perY);
-    if (strcmp(envi->projection,"UTM")==0)
+    if (strcmp(envi->projection,"UTM") != 0)
       envi->projection_zone = 0;
     if (meta->projection->hem == 'N') 
       sprintf(envi->hemisphere, "North");
