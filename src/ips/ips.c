@@ -45,7 +45,6 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   float background_value=0;
   output_format_t out_format;
   scale_t sample_mapping=SIGMA;
-  long size;
   
   // Determine datatype
   if (strncmp(uc(cfg->general->data_type), "STF", 3)==0) {
@@ -1114,16 +1113,16 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       check_return(1, tmp);
     }
     
-    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->dem, 
+    check_return(asf_export(out_format, sample_mapping, cfg->geocode->dem, 
 			    cfg->geocode->dem), 
 		 "exporting geocoded DEM (asf_export)");
-    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->amp, 
+    check_return(asf_export(out_format, sample_mapping, cfg->geocode->amp, 
 			    cfg->geocode->amp), 
 		 "exporting geocoded amplitude image (asf_export)");
-    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->error, 
+    check_return(asf_export(out_format, sample_mapping, cfg->geocode->error, 
 			    cfg->geocode->error), 
 		 "exporting geocoded DEM error map (asf_export)");
-    check_return(asf_export(out_format, size, sample_mapping, cfg->geocode->coh, 
+    check_return(asf_export(out_format, sample_mapping, cfg->geocode->coh, 
 			    cfg->geocode->coh), 
 		 "exporting geocoded coherence image (asf_export)");
     
