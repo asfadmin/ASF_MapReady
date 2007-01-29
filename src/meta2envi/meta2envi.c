@@ -130,36 +130,36 @@ int main(int argc, char **argv)
       {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
 	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %i, %s}\n", 
+		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %i, %s}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, envi->projection_zone, envi->hemisphere);
 	fprintf(fp, 
-		"projection info = {3, %.4f, %.4f, %.4f, %.4f, " 
+		"projection info = {3, %.3f, %.3f, %.4f, %.4f, " 
                 "0.0, 0.0, 0.99996, %s}\n", 
 		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 		envi->center_lon, envi->projection);
 	break;
       case POLAR_STEREOGRAPHIC:
 	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, envi->hemisphere);
 	fprintf(fp, 
-		"projection info = {31, %.4f, %.4f, %.4f, %.4f, " 
+		"projection info = {31, %.3f, %.3f, %.4f, %.4f, " 
                 "0.0, 0.0, %s}\n", 
 		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 		envi->center_lon, envi->projection);
 	break;
       case ALBERS_EQUAL_AREA:
 	fprintf(fp, 
-		"map info = {%s, %i, %i  , %.4f, %.4f, %.4f, %.4f, %s}\n", 
+		"map info = {%s, %i, %i  , %.3f, %.3f, %.3f, %.3f, %s}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, envi->hemisphere);
 	fprintf(fp, 
-		"projection info = {9, %.4f, %.4f, %.4f, %.4f, " 
+		"projection info = {9, %.3f, %.3f, %.4f, %.4f, " 
                 "0.0, 0.0, %.4f, %.4f, %s}\n", 
 		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 		envi->center_lon, envi->standard_parallel1, 
@@ -167,12 +167,12 @@ int main(int argc, char **argv)
 	break;
       case LAMBERT_CONFORMAL_CONIC:
 	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, envi->hemisphere);
 	fprintf(fp, 
-		"projection info = {4, %.4f, %.4f, %.4f, %.4f, " 
+		"projection info = {4, %.3f, %.3f, %.4f, %.4f, " 
                 "0.0, 0.0, %.4f, %.4f, %s}\n", 
 		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 		envi->center_lon, envi->standard_parallel1,
@@ -180,12 +180,12 @@ int main(int argc, char **argv)
 	break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
 	fprintf(fp, 
-		"map info = {%s, %i, %i, %.4f, %.4f, %.4f, %.4f, %s}\n", 
+		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
 		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
 		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
 		envi->proj_dist_y, envi->hemisphere);
 	fprintf(fp, 
-		"projection info = {11, %.4f, %.4f, %.4f, %.4f, " 
+		"projection info = {11, %.3f, %.3f, %.4f, %.4f, " 
                 "0.0, 0.0, %s}\n", 
 		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
 		envi->center_lon, envi->projection);
