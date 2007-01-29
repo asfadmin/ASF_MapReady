@@ -548,7 +548,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
     unsigned char *rgb_byte_line;
 
     fp = FOPEN(image_data_file_name, "rb");
-
+/*
     int red_channel = atoi(band_name[0]) - 1;
     int green_channel = atoi(band_name[1]) - 1;
     int blue_channel = atoi(band_name[2]) - 1;
@@ -556,7 +556,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
                green_channel >= 0 && green_channel <= MAX_BANDS &&
                blue_channel >= 0 && blue_channel <= MAX_BANDS,
                "Band number out of range\n");
-
+*/
     int sample_count = md->general->sample_count;
     int offset = md->general->line_count;
 
