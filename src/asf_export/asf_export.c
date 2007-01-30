@@ -164,15 +164,6 @@ checkForOption (char *key, int argc, char *argv[])
 }
 
 
-// Check the return value of a function and display an error message
-// if it's a bad return.
-void
-check_return (int ret, char *msg)
-{
-  if ( ret != 0 )
-    asfPrintError (msg);
-}
-
 // Main program body.
 int
 main (int argc, char *argv[])
