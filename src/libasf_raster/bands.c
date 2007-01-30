@@ -3,6 +3,9 @@
 #include "asf_raster.h"
 #include <ctype.h>
 
+// Prototypes
+char *channel_trim (const char *channel);
+
 // Assumes comma-delimited 2-digit or 2-character band names
 // with no white space (before, in, or after the band info)
 // Ex) If 4 bands exist: "01,02,03,04" or "HH,HV,VH,VV" etc
@@ -134,7 +137,6 @@ int get_band_number(char *bands, int band_count, char *channel)
 {
   char *t_bands;
   char *t_channel;
-  char *s;
   char *ptrptr;
   char **band;
   int i;
@@ -146,13 +148,93 @@ int get_band_number(char *bands, int band_count, char *channel)
   // bands (try to bullet-proof things a bit since metadata is an
   // editable text file)
   //
-  // Copy and trim leading/trailing white space
-  t_bands = (char*) MALLOC(sizeof(char) * strlen(bands));
-  t_channel = (char*) MALLOC(sizeof(char) * strlen(bands));
-  strcpy(t_bands, bands);
-  s = channel;
+  // Copy then trim leading white space and zeros, and trailing white
+  // space, from channel identifier
+  t_bands = STRDUP(bands);
+  t_channel = channel_trim(channel);
+
+  // Tokenize and strip leading zeros/white space and trailing
+  // white space at the same time
+  band = (char **) MALLOC(sizeof(char*) * (band_count+1));
+  band[0] = channel_trim(strtok_r(t_bands, ",", &ptrptr));
+  for (i = 0; band[i] != NULL;) {
+    i++;
+    band[i] = channel_trim(strtok_r(NULL, ",", &ptrptr));
+  }
+
+  /////////////////////////////////////////////////////////////////////
+  // Find band in list of bands
+  //
+  // => Returns first find when searching from left to
+  // right in list of bands.  No error on duplicates.
+  //
+  found = 0;
+  for (band_no = 0; !found && band_no < band_count; band_no++) {
+    if (strcmp(band[band_no], t_channel) != 0) {
+      found = 1;
+    }
+  }
+  band_no--;
+
+  // Clean up
+  FREE(t_bands);
+  FREE(t_channel);
+  for (i=0; band[i] != NULL; i++) {
+    FREE(band[i]);
+  }
+
+  if (found)
+    return band_no;
+  else
+    return -1;
+}
+
+//
+// Trims leading white space and zeros, then
+// trims trailing white space.
+//
+// Returns:
+//   - NULL is returned for all-spaces or NULL
+//   channel strings
+//   - If a channel string is all zeros (other than
+//   leading white space), then a duplicate is returned
+//   as-is
+//   - Otherwise, a trimmed version of the channel
+//   string is returned
+//
+// Requirements: Calling routine must free memory pointed
+//   to by the return value (if not NULL)
+//
+char *channel_trim (const char *channel)
+{
+  char *s = (char *) channel;
+  char *t_channel;
+  int i;
+
+  // Null channel ptr or zero-length channel
+  // invalid ...return NULL
+  if (channel == NULL || strlen(channel) == 0) {
+    return NULL;
+  }
+
+  // Remove leading white space
   while (isspace(*s) && *s != '\0') s++;
-  strcpy(t_channel, s);
+  if (strlen(s) == 0) {
+    // channel was all spaces ...invalid so return NULL
+    return NULL;
+  }
+
+  // Remove leading zeros
+  char *z = s;
+  while (*z == '0' && *z != '\0') z++;
+  if (strlen(z) == 0) {
+    // channel was all zeros ...return as-is to support
+    // the case where a channel name IS all zeros
+    return STRDUP(channel);
+  }
+
+  // Remove trailing white space
+  t_channel = STRDUP(z);
   for (i = strlen(t_channel) - 1; i >= 0; i--) {
     if (isspace(t_channel[i])) {
       t_channel[i] = '\0';
@@ -162,55 +244,5 @@ int get_band_number(char *bands, int band_count, char *channel)
     }
   }
 
-  // Tokenize
-  band = (char **) MALLOC(sizeof(char*) * (band_count+1));
-  band[0] = strtok_r(t_bands, ",", &ptrptr);
-  for (i = 0; band[i] != NULL;) {
-    i++;
-    band[i] = strtok_r(NULL, ",", &ptrptr);
-  }
-
-  /////////////////////////////////////////////////////////////////////
-  // Find band in list of bands
-  //
-  // => Returns first find when searching from left to
-  // right in list of bands.  No error on duplicates.
-  // Alpha and numeric channels are never negative
-  //
-  int iChannel = atoi(t_channel);
-  asfRequire(iChannel >= 0,
-             "Invalid channel\n");
-  if (iChannel > 0) {
-    // Channel is numeric
-    asfRequire(iChannel > 0 && iChannel <= MAX_BANDS,
-               "Invalid channel number\n");
-    found = 0;
-    for (band_no = 0; !found && band_no < band_count; band_no++) {
-      int iBand_no = atoi(band[band_no]);
-      asfRequire(iBand_no > 0 && iBand_no <= MAX_BANDS,
-                 "Invalid channel number in list of bands\n");
-      if (iChannel == iBand_no) {
-        found = 1;
-      }
-    }
-    band_no--;
-  }
-  else {
-    // Channel is alpha
-    found = 0;
-    for (band_no = 0; !found && band_no < band_count; band_no++) {
-      if (strstr(band[band_no], t_channel) != NULL) {
-        found = 1;
-      }
-    }
-    band_no--;
-  }
-
-  FREE(t_bands);
-  FREE(t_channel);
-
-  if (found)
-    return band_no;
-  else
-    return -1;
+  return t_channel;
 }
