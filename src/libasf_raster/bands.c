@@ -7,21 +7,29 @@
 // with no white space (before, in, or after the band info)
 // Ex) If 4 bands exist: "01,02,03,04" or "HH,HV,VH,VV" etc
 //    => Result bands[0] == "01", bands[1] == "02" etc
+// FIXME: This function is currently unused, but if that
+// changes then white white space should be allowed in the
+// list of bands
 char **extract_band_names(char *bands, int band_count)
 {
   char **band_name;
   int ii, kk;
 
-  band_name = (char **) MALLOC(band_count*sizeof(char *));
-  for (ii=0; ii<band_count; ii++) {
-    band_name[ii] = (char *) MALLOC(10*sizeof(char));
-    strncpy(band_name[ii], bands, 2);
-    band_name[ii][2] = '\0';
-    if (ii < band_count-1)
-      for (kk=0; kk<3; kk++)
-        bands++;
+  if (bands && strlen(bands) && band_count > 0) {
+    band_name = (char **) MALLOC(band_count*sizeof(char *));
+    for (ii=0; ii<band_count; ii++) {
+      band_name[ii] = (char *) MALLOC(10*sizeof(char));
+      strncpy(band_name[ii], bands, 2);
+      band_name[ii][2] = '\0';
+      if (ii < band_count-1)
+        for (kk=0; kk<3; kk++)
+          bands++;
+    }
+    return band_name;
   }
-  return band_name;
+  else {
+    return NULL;
+  }
 }
 
 /*
@@ -36,27 +44,32 @@ char **extract_band_names(char *bands, int band_count)
 */
 int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 {
-    // call them commas, even though could be something else
-    char *comma1 = strchr(rgb, sep);
-    if (!comma1) return FALSE;
+    if (rgb && strlen(rgb)) {
+      // call them commas, even though could be something else
+      char *comma1 = strchr(rgb, sep);
+      if (!comma1) return FALSE;
 
-    char *comma2 = strchr(comma1+1, sep);
-    if (!comma2) return FALSE;
+      char *comma2 = strchr(comma1+1, sep);
+      if (!comma2) return FALSE;
 
-    // allocating too much space...
-    char *r = MALLOC(sizeof(char)*(strlen(rgb)+1));
-    char *g = MALLOC(sizeof(char)*(strlen(rgb)+1));
-    char *b = MALLOC(sizeof(char)*(strlen(rgb)+1));
-    *pr = r; *pg = g; *pb = b;
+      // allocating too much space...
+      char *r = MALLOC(sizeof(char)*(strlen(rgb)+1));
+      char *g = MALLOC(sizeof(char)*(strlen(rgb)+1));
+      char *b = MALLOC(sizeof(char)*(strlen(rgb)+1));
+      *pr = r; *pg = g; *pb = b;
 
-    strcpy(r, rgb);
-    r[comma1-rgb]='\0';
+      strcpy(r, rgb);
+      r[comma1-rgb]='\0';
 
-    strcpy(g, comma1+1);
-    g[comma2-comma1-1]='\0';
+      strcpy(g, comma1+1);
+      g[comma2-comma1-1]='\0';
 
-    strcpy(b, comma2+1);
-    return TRUE;
+      strcpy(b, comma2+1);
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
 }
 
 // Returns an array of strings which represent band numbers,
@@ -68,7 +81,18 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
   meta_parameters *meta;
   int ii, red=0, green=0, blue=0;
 
-  meta = meta_read(in_base_name);
+  // ALOS fix... ALOS basenames can contain a '.' and the appendExt()
+  // in meta_read() ends up truncating the basename at that point
+  // prior to appending the ".meta" extension.  By adding the ".meta"
+  // extension here, appendExt() will just remove and replace the same
+  // extension... no harm, no foul.
+  char *meta_name = (char *) MALLOC((6 + strlen(in_base_name)) * sizeof(char));
+  strcpy(meta_name, in_base_name);
+  // FIXME: Not sure if the .ddr is necessary for compatibility with old stuff or not...
+  // The 'also accepted' extension can likely be set to NULL
+  append_ext_if_needed(meta_name, ".meta", ".ddr");
+  meta = meta_read(meta_name);
+  //meta = meta_read(in_base_name);
   // Check for bands
   if (strcmp(meta->general->bands, "???") != 0) {
     if (strstr(meta->general->bands, red_channel)) red = 1;
