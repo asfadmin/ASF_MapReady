@@ -62,7 +62,10 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "                over the entire brightness scale which increases contrast.\n"\
 "   -rgb <red> <green> <blue>\n"\
 "        Converts output image into a color RGB image.\n"\
-"        Currently implemented for GeoTIFF imagery.\n"\
+"        <red>, <green>, and <blue> specify which channel\n"\
+"        is assigned to color planes red, green, or blue,\n"\
+"        ex) -rgb HH VH VV, or -rgb 3 2 1\n"\
+"        Currently implemented for GeoTIFF imagery (only).\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
@@ -282,6 +285,7 @@ main (int argc, char *argv[])
   // Grab the input and output name
   strcpy (in_base_name, argv[argc - 2]);
   strcpy (output_name, argv[argc - 1]);
+  strcpy (command_line.output_name, output_name);
 
   // If user added ".img", strip it.
   char *ext = findExt(in_base_name);
@@ -375,7 +379,7 @@ main (int argc, char *argv[])
     asfPrintStatus("Not all RGB channels found - exporting as greyscale.\n");
   else
     asfPrintStatus("Exporting as greyscale.\n");
-  
+
   //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
@@ -428,7 +432,7 @@ main (int argc, char *argv[])
 
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping,
-		   in_base_name, output_name, band_name);
+		   in_base_name, command_line.output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
