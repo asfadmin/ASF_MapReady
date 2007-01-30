@@ -122,7 +122,7 @@ int get_band_number(char *bands, int band_count, char *channel)
   // bands (try to bullet-proof things a bit since metadata is an
   // editable text file)
   //
-  // Copy, capitalize, and trim leading/trailing white space
+  // Copy and trim leading/trailing white space
   t_bands = (char*) MALLOC(sizeof(char) * strlen(bands));
   t_channel = (char*) MALLOC(sizeof(char) * strlen(bands));
   strcpy(t_bands, bands);
