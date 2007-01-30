@@ -498,7 +498,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       asfRequire (sizeof(unsigned char) == 1,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
-      asfPrintStatus("Gathering red channel statistics ...\n");
+      asfPrintStatus("\nGathering red channel statistics ...\n");
       calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
 			   &red_min, &red_max, &red_mean,
 			   &red_stdDev, red_hist);
@@ -532,7 +532,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       asfRequire (sizeof(unsigned char) == 1,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
-      asfPrintStatus("Gathering blue channel statistics ...\n");
+      asfPrintStatus("Gathering blue channel statistics ...\n\n");
       calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
 			   &blue_min, &blue_max, &blue_mean,
 			   &blue_stdDev, blue_hist);
