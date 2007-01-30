@@ -91,9 +91,7 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
   // extension... no harm, no foul.
   char *meta_name = (char *) MALLOC((6 + strlen(in_base_name)) * sizeof(char));
   strcpy(meta_name, in_base_name);
-  // FIXME: Not sure if the .ddr is necessary for compatibility with old stuff or not...
-  // The 'also accepted' extension can likely be set to NULL
-  append_ext_if_needed(meta_name, ".meta", ".ddr");
+  append_ext_if_needed(meta_name, ".meta", NULL);
   meta = meta_read(meta_name);
   //meta = meta_read(in_base_name);
   // Check for bands
