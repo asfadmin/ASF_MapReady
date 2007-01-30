@@ -2209,7 +2209,7 @@ int
 float_image_store (FloatImage *self, const char *file,
                    float_image_byte_order_t byte_order) 
 {
-    float_image_store_ext(self, file, byte_order, FALSE);
+    return float_image_store_ext(self, file, byte_order, FALSE);
 }
 
 /*
