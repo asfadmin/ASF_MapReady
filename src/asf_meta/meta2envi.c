@@ -74,15 +74,11 @@ envi_header* meta2envi(meta_parameters *meta)
 	envi->projection_zone = meta->projection->param.utm.zone;
 	envi->center_lat = meta->projection->param.utm.lat0;
 	envi->center_lon = meta->projection->param.utm.lon0;
-	envi->ref_pixel_x = meta->projection->param.utm.false_easting;
-	envi->ref_pixel_y = meta->projection->param.utm.false_northing;
 	break;
-      case POLAR_STEREOGRAPHIC: 
+      case POLAR_STEREOGRAPHIC:
 	sprintf(envi->projection, "Polar Stereographic"); 
 	envi->center_lat = meta->projection->param.ps.slat;
 	envi->center_lon = meta->projection->param.ps.slon;
-	envi->ref_pixel_x = meta->projection->param.ps.false_easting;
-	envi->ref_pixel_y = meta->projection->param.ps.false_northing;
 	break;
       case ALBERS_EQUAL_AREA:
 	sprintf(envi->projection, "Albers Conical Equal Area"); 
@@ -90,8 +86,6 @@ envi_header* meta2envi(meta_parameters *meta)
 	envi->standard_parallel2 = meta->projection->param.albers.std_parallel2;
 	envi->center_lat = meta->projection->param.albers.center_meridian;
 	envi->center_lon = meta->projection->param.albers.orig_latitude;
-	envi->ref_pixel_x = meta->projection->param.albers.false_easting;
-	envi->ref_pixel_y = meta->projection->param.albers.false_northing;
 	break;
       case LAMBERT_CONFORMAL_CONIC: 
 	sprintf(envi->projection, "Lambert Conformal Conic"); 
@@ -99,15 +93,11 @@ envi_header* meta2envi(meta_parameters *meta)
 	envi->standard_parallel2 = meta->projection->param.lamcc.plat2;
 	envi->center_lat = meta->projection->param.lamcc.lat0;
 	envi->center_lon = meta->projection->param.lamcc.lon0;
-	envi->ref_pixel_x = meta->projection->param.lamcc.false_easting;
-	envi->ref_pixel_y = meta->projection->param.lamcc.false_northing;
 	break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA: 
 	sprintf(envi->projection, "Lambert Azimuthal Equal Area");
 	envi->center_lat = meta->projection->param.lamaz.center_lat;
 	envi->center_lon = meta->projection->param.lamaz.center_lon;
-	envi->ref_pixel_x = meta->projection->param.lamaz.false_easting;
-	envi->ref_pixel_y = meta->projection->param.lamaz.false_northing;
 	break;
       case STATE_PLANE: 
       case SCANSAR_PROJECTION: break;
@@ -116,6 +106,8 @@ envi_header* meta2envi(meta_parameters *meta)
 	assert (0);
 	break;
       }
+    envi->ref_pixel_y = 1;
+    envi->ref_pixel_x = 1;
     envi->pixel_easting = meta->projection->startX;
     envi->pixel_northing = meta->projection->startY;
     envi->proj_dist_x = meta->projection->perX;
