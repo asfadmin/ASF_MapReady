@@ -10,7 +10,7 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
 {
   FILE *fp;
   meta_parameters *meta;
-  char dataFile[255], metaFile[255];
+  //char dataFile[255], metaFile[255];
   float *data;
   int band_number;
   long long pixel_count;
