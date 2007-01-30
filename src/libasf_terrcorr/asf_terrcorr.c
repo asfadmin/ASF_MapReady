@@ -630,7 +630,7 @@ int match_dem(meta_parameters *metaSAR,
                                  "Matching using another seed point.\n",
                                  100*cert, dx, dy, 100*cert_cutoff);
               }
-          } while (cert < cert_cutoff);
+          } while (!(cert > cert_cutoff)); // guard against NANs
       }
 
       if (err==1) {
