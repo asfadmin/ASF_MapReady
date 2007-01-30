@@ -14,6 +14,8 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
    -pdhr        Processed Data Histograms record
    -sdhr        Signal Data Histograms record
    -rasr        Range Spectra record
+   -ppr         Processing Parameter record
+   -dqsr        Data Quality Summary record
    -asf_facdr   ASF Facility Related Data record
    -esa_facdr   ESA Facility Related Data record
    -ifdr        Image File Descriptor record
@@ -141,6 +143,8 @@ void usage(char *name)
    fprintf(stderr,"  -pdhr        Processed Data Histograms record\n");
    fprintf(stderr,"  -sdhr        Signal Data Histograms record\n");
    fprintf(stderr,"  -rasr        Range Spectra record\n");
+   fprintf(stderr,"  -ppr         Processing Parameter record\n");
+   fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
    fprintf(stderr,"  -asf_facdr   ASF Facility Related Data record\n");
    fprintf(stderr,"  -esa_facdr   ESA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");

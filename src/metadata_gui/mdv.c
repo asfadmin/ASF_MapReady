@@ -384,14 +384,18 @@ static void execute()
         gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
     put_metadata_in_textview(input_file, 10, "data_set_summary");
+    put_metadata_in_textview(input_file, 18, "scene_header_record");
     put_metadata_in_textview(input_file, 20, "map_projection_data");
     put_metadata_in_textview(input_file, 30, "platform_position_data");
     put_metadata_in_textview(input_file, 40, "attitude_data");
+    put_metadata_in_textview(input_file, 44, "alos_map_projection_data");
     put_metadata_in_textview(input_file, 50, "radiometric_data");
+    put_metadata_in_textview(input_file, 51, "radiometric_compensation_data");
     put_metadata_in_textview(input_file, 60, "data_quality_summary");
     put_metadata_in_textview(input_file, 70, "processed_data_histograms");
     put_metadata_in_textview(input_file, 71, "signal_data_histograms");
     put_metadata_in_textview(input_file, 80, "range_spectra");
+    put_metadata_in_textview(input_file, 120, "processing_parameters");
     put_metadata_in_textview(input_file, 200, "facility_related_data");
     put_metadata_in_textview(input_file, 192, "image_file_descriptor");
     put_metadata_in_textview(input_file, 300, "leader_file_descriptor");
