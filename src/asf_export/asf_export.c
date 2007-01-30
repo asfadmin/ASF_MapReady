@@ -355,6 +355,7 @@ main (int argc, char *argv[])
     if (r_channel >= 1 && r_channel <= MAX_BANDS &&
         g_channel >= 1 && g_channel <= MAX_BANDS &&
         b_channel >= 1 && b_channel <= MAX_BANDS) {
+      /////////// Numeric channel case ////////////
       // Remove trailing non-numeric characters from the channel number
       // string
       sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
@@ -362,6 +363,7 @@ main (int argc, char *argv[])
       sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
     }
     else {
+      //////////// Alpha channel case /////////////
       ;
     }
 
