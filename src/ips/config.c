@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "ips.h"
 
+
 static char * new_blank_str(void)
 {
     char *ret = MALLOC(sizeof(char)*MAX_STRING_LEN);
@@ -15,7 +16,7 @@ static char * new_str(const char *val)
     return ret;
 }
 
-int strindex(char s[], char t[])
+static int strindex(char s[], char t[])
 {
   int i, j, k;
   
@@ -28,7 +29,7 @@ int strindex(char s[], char t[])
   return -1;
 }
 
-char *read_param(char *line)
+static char *read_param(char *line)
 {
   int i, k;
   char *value=new_blank_str();
@@ -41,7 +42,7 @@ char *read_param(char *line)
 }
 
 // assume line is of length < 255
-void read_str(char *dest, char *line, char *param)
+static void read_str(char *dest, char *line, char *param)
 {
   char *start = strchr(line, '=');
   if (start)
@@ -50,7 +51,7 @@ void read_str(char *dest, char *line, char *param)
     strcpy(dest, "");
 }
 
-int read_int(char *line, char *param)
+static int read_int(char *line, char *param)
 {
   char tmp[255];
   int value;
@@ -61,7 +62,7 @@ int read_int(char *line, char *param)
   return value;
 }
 
-double read_double(char *line, char *param)
+static double read_double(char *line, char *param)
 {
   char tmp[255];
   double value;
@@ -383,7 +384,7 @@ dem_config *init_fill_config(char *configFile)
   
   if (strcmp(cfg->general->def_val, "")!=0) {
     if (!fileExists(cfg->general->def_val)) 
-      check_return(1, "default values file does not exist");
+      asfPrintError("default values file does not exist");
     fDefaults = FOPEN(cfg->general->def_val, "r");
     while (fgets(line, 255, fDefaults) != NULL) {
       test = read_param(line);
@@ -509,7 +510,7 @@ dem_config *read_config(char *configFile, int createFlag)
   char *test=new_blank_str();
   
   cfg = init_fill_config(configFile);
-  if (cfg == NULL) check_return(1, "creating configuration structure");
+  if (cfg == NULL) asfPrintError("creating configuration structure");
   if (createFlag) return cfg;
   
   fConfig = FOPEN(configFile, "r");
@@ -834,7 +835,7 @@ int write_config(char *configFile, dem_config *cfg)
   int shortFlag=FALSE;
   
   if (cfg == NULL) 
-    check_return(1, "no configuration structure to write");
+    asfPrintError("no configuration structure to write");
   if (cfg->general->short_config)
     shortFlag = TRUE;
   fConfig = FOPEN(configFile, "w");

@@ -100,7 +100,10 @@ BUGS:
 
 *********************************************************************************/
 
-#include "ips.h"
+#include <ips.h>
+#include <asf.h>
+#include <asf_license.h>
+#include <asf_contact.h>
 
 #define FLAG_NOT_SET -1
 #define REQUIRED_ARGS 1
@@ -207,7 +210,7 @@ int main(int argc, char *argv[])
     sprintf(cfg->geocode->amp, "%s_amp", cfg->general->base);
     sprintf(cfg->geocode->error, "%s_error", cfg->general->base);
     sprintf(cfg->geocode->coh, "%s_coh", cfg->general->base);
-    check_return(write_config(configFile, cfg), 
+    asfRequire( 0==write_config(configFile, cfg), 
 		 "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     exit(EXIT_SUCCESS);

@@ -1,21 +1,6 @@
 #ifndef IPS_H
 #define IPS_H
 
-#include "ceos.h"
-#include "asf.h"
-#include "asf_meta.h"
-#include "proj.h"
-#include "asf_license.h"
-#include "asf_contact.h"
-#include <ctype.h>
-#include <time.h>
-#include "lzFetch.h"
-#include "asf_terrcorr.h"
-#include "asf_raster.h"
-#include "asf_vector.h"
-#include "asf_export.h"
-#include "asf_geocode.h"
-
 // hard-code a maximum string length... this way the read_str
 // code can enforce a maximum length
 #define MAX_STRING_LEN 255
@@ -172,12 +157,7 @@ typedef struct {
 } dem_config;
 
 
-/* configuration functions */
-int strindex(char s[], char t[]);
-char *read_param(char *line);
-void read_str(char *dest, char *line, char *param);
-int read_int(char *line, char *param);
-double read_double(char *line, char *param);
+/* config file functions */
 dem_config *create_config_with_defaults();
 int init_config(char *configFile);
 dem_config *init_fill_config(char *configFile);
@@ -185,8 +165,6 @@ dem_config *read_config(char *configFile, int createFlag);
 int write_config(char *configFile, dem_config *cfg);
 
 // Prototypes
-int check_refinement(char *base1, char *base2, char *base3);
-void check_return(int ret, char *msg);
 int ips(dem_config *cfg, char *configFile, int createFlag);
 
 

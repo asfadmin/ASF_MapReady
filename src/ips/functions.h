@@ -5,12 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <asf_import.h>
+#include <asf_terrcorr.h>
+#include <asf_geocode.h>
+#include <asf_export.h>
+
 int exit_code;
 
 /* Function definitions*/
-int asf_import(char *inFile, char *outFile, char *format,
-               char *prcOrbits, int prcFlag,
-               double lat_begin, double lat_end);
 int avg_in_dop(char *inFile1, char *inFile2, char *outFile1);
 int doppler_per_patch(char *parFile1, char *parFile2, char *metaFile1, 
 		      char *metaFile2, char *deltaFile, char *outFile1, 

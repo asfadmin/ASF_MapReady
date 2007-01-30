@@ -2,32 +2,7 @@
 #define FUNCTIONS_C
 
 #include "asf.h"
-#include <stdio.h>
 #include "functions.h"
-
-int asf_import(char *inFile, char *outFile, char *format,
-               char *prcOrbits, int prcFlag,
-               double lat_begin, double lat_end)
-{
-  char options[255]="", command[255];
-  int ret;
-
-  sprintf(options, "-log %s -quiet", logFile);
-  if (prcFlag) sprintf (options, "%s -prc %s", options, prcOrbits);
-  if (lat_begin!=-99.0 && lat_end!=99.0)
-    sprintf(options, "%s -lat %lf %lf", options, lat_begin, lat_end);
-  sprintf(command, "asf_import -format %s %s %s %s",
-          format, options, inFile, outFile);
-
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-
-  return ret;
-}
 
 int avg_in_dop(char *inFile1, char * inFile2, char *outFile)
 {

@@ -1,14 +1,66 @@
+#include <asf.h>
+#include <lzFetch.h>
+
 #include "ips.h"
 #include "functions.h"
 
-void check_return(int ret, char *msg)
+
+typedef struct
+{
+	double Bn,dBn;
+	double Bp,dBp;
+} baseLine;
+
+static baseLine readBaseLine(char *fname)
+{
+	baseLine base;
+	FILE *fp1;
+	fp1 = FOPEN(fname,"r");
+	if (4!=fscanf(fp1,"%lf%lf%lf%lf",&base.Bn,&base.dBn,&base.Bp,&base.dBp))
+		{ printf("Unable to read baseline from file '%s'\n",fname); exit(1); }
+	fclose(fp1);
+	return base;
+}
+
+static double baseLineDiff(const baseLine *a,const baseLine *b)
+{
+	return fabs(a->Bn-b->Bn)+
+		fabs(a->dBn-b->dBn)+
+		fabs(a->Bp-b->Bp)+
+		fabs(a->dBp-b->dBp);
+}
+
+static int check_refinement(char *base1, char *base2, char *base3)
+{
+    baseLine b1,b2,b3;
+    b1=readBaseLine(base1);
+    if (base2!=NULL)
+    	b2=readBaseLine(base2);
+    if (base3!=NULL)
+    	b3=readBaseLine(base3);
+    
+    /*If the baseline's changed by less than 1 mm,*/
+    if (base2!=NULL)
+    	if (baseLineDiff(&b1,&b2) < 0.001) 
+    		return(1); /*we've sucessfully converged.*/
+    
+    /*If the baseline's changed by less than 1 mm,*/
+    if (base3!=NULL)
+    	if (baseLineDiff(&b1,&b3) < 0.001) 
+		return(1); /*we're cyclic, but (pretty close to) converged anyway.*/
+    return(0);
+}
+
+
+static void check_return(int ret, char *msg)
 {
   if (ret!=0) {
     asfPrintError("%s\n", msg);
   }
 }
 
-int check_status(char *status)
+
+static int check_status(char *status)
 {
   if (strncmp(status, "new", 3)==0) return 1;
   else if (strncmp(status, "stop", 4)==0) {
@@ -18,7 +70,8 @@ int check_status(char *status)
   else return 0;
 }
 
-char *base2str(int baseNo, char *base)
+
+static char *base2str(int baseNo, char *base)
 {
   char *baseStr=(char *)MALLOC(sizeof(char)*50);
   
@@ -27,6 +80,8 @@ char *base2str(int baseNo, char *base)
   
   return baseStr;
 }
+
+
 
 int ips(dem_config *cfg, char *configFile, int createFlag)
 {
@@ -158,20 +213,20 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       if (!fileExists("master.000")) 
 	check_return(1, "master image data file does not exist");
       if (!fileExists("master.000.par")) 
-	check_return(1, "master image metadata file does not exist"); 
-      check_return(asf_import("master", "a", format,
-			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
-		   "ingesting master image(asf_import)");
+	check_return(1, "master image metadata file does not exist");
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_master,
+                              cfg->general->lat_begin, cfg->general->lat_end,
+                              NULL, NULL, NULL, NULL, "master", "a"),
+                   "ingesting master image (asf_import)");
       if (!fileExists("slave.000")) 
 	check_return(1, "slave image data file does not exist");
       if (!fileExists("slave.000.par")) 
 	check_return(1, "slave image metadata file does not exist"); 
-      check_return(asf_import("slave", "b", format,
-			      cfg->ingest->prc_slave, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
-		   "ingesting slave image (asf_import)");
-      
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_slave,
+                              cfg->general->lat_begin, cfg->general->lat_end,
+                              NULL, NULL, NULL, NULL, "slave", "b"),
+                   "ingesting slave image (asf_import)");
+
       strcat(strcpy(metaFile,"a"),".meta");
       cfg->ardop_master->end_offset = 
 	lzInt(metaFile, "sar.original_line_count:", NULL);
@@ -203,17 +258,17 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 	check_return(1, "master image data file does not exist");
       if (!fileExists("master.L")) 
 	check_return(1, "master image metadata file does not exist");
-      check_return(asf_import("master", "a", format,
-			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_master,
+                              cfg->general->lat_begin, cfg->general->lat_end,
+                              NULL, NULL, NULL, NULL, "master", "a"),
 		   "ingesting master image (asf_import)");
       if (!fileExists("master.D")) 
 	check_return(1, "slave image data file does not exist");
       if (!fileExists("master.L")) 
 	check_return(1, "slave image metadata file does not exist"); 
-      check_return(asf_import("slave", "b", format,
-			      cfg->ingest->prc_master, cfg->ingest->prcflag, 
-			      cfg->general->lat_begin, cfg->general->lat_end), 
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_slave,
+                              cfg->general->lat_begin, cfg->general->lat_end,
+                              NULL, NULL, NULL, NULL, "slave", "b"),
 		   "ingesting slave image (asf_import)");
       
       /* Setting patches and offsets for processing */
@@ -642,11 +697,11 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 	 (vfdr1.datgroup < vfdr2.datgroup) ? vfdr1.datgroup : vfdr2.datgroup;
 	 }
       */
-      check_return(asf_import("master", "a_cpx", format,
-			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_master,
+                              -99.0, -99.0, NULL, NULL, NULL, NULL, "master", "a_cpx"),
 		   "ingesting master image (asf_import)");
-      check_return(asf_import("slave", "b_cpx", format,
-			      cfg->ingest->prc_master, 0, -99.0, -99.0), 
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, cfg->ingest->prc_slave,
+                              -99.0, -99.0, NULL, NULL, NULL, NULL, "slave", "b_cpx"),
  		   "ingesting slave image (asf_import)");
       check_return(c2p("a_cpx", "a"), 
 		   "converting complex master image into phase and amplitude (c2p)");
