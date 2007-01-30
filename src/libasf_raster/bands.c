@@ -168,7 +168,7 @@ int get_band_number(char *bands, int band_count, char *channel)
   //
   found = 0;
   for (band_no = 0; !found && band_no < band_count; band_no++) {
-    if (strcmp(band[band_no], t_channel) != 0) {
+    if (strcmp(band[band_no], t_channel) == 0) {
       found = 1;
     }
   }
