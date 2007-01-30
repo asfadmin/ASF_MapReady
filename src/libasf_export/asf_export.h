@@ -87,7 +87,6 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping,
 void usage();
 void help_page();
 int checkForOption (char *key, int argc, char *argv[]);
-void check_return (int ret, char *msg);
 void *get_image_data (meta_parameters *metadata, const char *image_data_file);
 unsigned char averaging_kernel (gsl_matrix_uchar *img, int kernel_size, size_t i, size_t j);
 unsigned char *average_unsigned_char_pixels (unsigned char *pixels, unsigned long *width, \
