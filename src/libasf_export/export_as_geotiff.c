@@ -549,9 +549,15 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 
     fp = FOPEN(image_data_file_name, "rb");
 
-    int red_channel = atoi(band_name[0]) - 1;
-    int green_channel = atoi(band_name[1]) - 1;
-    int blue_channel = atoi(band_name[2]) - 1;
+    int red_channel = get_band_number(md->general->bands,
+                                      md->general->band_count,
+                                      band_name[0]);
+    int green_channel = get_band_number(md->general->bands,
+                                        md->general->band_count,
+                                        band_name[1]);
+    int blue_channel = get_band_number(md->general->bands,
+                                       md->general->band_count,
+                                       band_name[2]);
     asfRequire(red_channel >= 0 && red_channel <= MAX_BANDS &&
                green_channel >= 0 && green_channel <= MAX_BANDS &&
                blue_channel >= 0 && blue_channel <= MAX_BANDS,
