@@ -3,9 +3,17 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
-	-lm $(GSL_LIBS)
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
+	-lm
+
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
 
 OBJS  = ceos2meta.o
 
