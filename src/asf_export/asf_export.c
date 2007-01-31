@@ -372,17 +372,20 @@ main (int argc, char *argv[])
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
   }
 
-  int num_found;
+  int num_bands_found;
   band_name = find_bands(in_base_name, command_line.red_channel,
                          command_line.green_channel,
                          command_line.blue_channel,
-                         &num_found);
-  if (num_found >= 3) {
-    asfPrintStatus("Exporting multiband image ...\n\n");
-  }
-  else if (rgbFlag != FLAG_NOT_SET) {
-    asfPrintWarning("Not all RGB channels found - exporting channel \"%s\" as greyscale.\n\n",
-                   command_line.red_channel);
+                         &num_bands_found);
+  if (rgbFlag != FLAG_NOT_SET) {
+    if (num_bands_found >= 3) {
+      asfPrintStatus("Exporting multiband image ...\n\n");
+    }
+    else {
+      asfPrintError("Not all RGB channels found.\n");
+//    asfPrintWarning("Not all RGB channels found - exporting channel \"%s\" as greyscale.\n",
+//                   command_line.red_channel);
+    }
   }
   else {
     asfPrintStatus("Exporting as greyscale.\n\n");
@@ -449,7 +452,7 @@ main (int argc, char *argv[])
       remove(logFile);
   }
 
-  for (ii = 0; ii<num_found; ii++) {
+  for (ii = 0; ii<num_bands_found; ii++) {
     FREE(band_name[ii]);
   }
   FREE(band_name);
