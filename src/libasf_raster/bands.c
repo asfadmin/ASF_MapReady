@@ -78,11 +78,12 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 // Returns an array of strings which represent band numbers,
 //
 char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
-		  char *blue_channel)
+		  char *blue_channel, int *num_found)
 {
   char **rgb=NULL;
   meta_parameters *meta;
-  int ii, red=0, green=0, blue=0;
+  int ii;
+  int red=0, green=0, blue=0;
 
   // ALOS fix... ALOS basenames can contain a '.' and the appendExt()
   // in meta_read() ends up truncating the basename at that point
@@ -95,23 +96,48 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
   meta = meta_read(meta_name);
   //meta = meta_read(in_base_name);
   // Check for bands
+  *num_found = 0;
+  rgb = (char **) MALLOC(3*sizeof(char *));
   if (strcmp(meta->general->bands, "???") != 0) {
-    if (strstr(meta->general->bands, red_channel)) red = 1;
-    if (strstr(meta->general->bands, green_channel)) green = 1;
-    if (strstr(meta->general->bands, blue_channel)) blue = 1;
-  }
-
-  // Found three channels for RGB?
-  if (red && green && green) {
-    rgb = (char **) MALLOC(3*sizeof(char *));
-    for (ii=0; ii<3; ii++) {
-      rgb[ii] = (char *) MALLOC(10*sizeof(char));
-      //strncpy(rgb[ii], meta->general->bands, 2);
-      //rgb[ii][2] = '\0';
+    if (strstr(meta->general->bands, red_channel)) {
+      red = 1;
+      rgb[*num_found] = (char *) MALLOC(10*sizeof(char));
+      strcpy(rgb[*num_found], red_channel);
+      (*num_found)++;
     }
-    strcpy(rgb[0], red_channel);
-    strcpy(rgb[1], green_channel);
-    strcpy(rgb[2], blue_channel);
+    else {
+      rgb[*num_found] = NULL;
+      asfPrintWarning("Channel specified for RED (\"%s\")"
+                      " not found in image file.\n"
+                      "Available channels are %s\n", red_channel,
+                      meta->general->bands);
+    }
+    if (strstr(meta->general->bands, green_channel)) {
+      green = 1;
+      rgb[*num_found] = (char *) MALLOC(10*sizeof(char));
+      strcpy(rgb[*num_found], green_channel);
+      (*num_found)++;
+    }
+    else {
+      rgb[*num_found] = NULL;
+      asfPrintWarning("Channel specified for GREEN (\"%s\")"
+                      " not found in image file.\n"
+                      "Available channels are %s\n", green_channel,
+                      meta->general->bands);
+    }
+    if (strstr(meta->general->bands, blue_channel)) {
+      blue = 1;
+      rgb[*num_found] = (char *) MALLOC(10*sizeof(char));
+      strcpy(rgb[*num_found], blue_channel);
+      (*num_found)++;
+    }
+    else {
+      rgb[*num_found] = NULL;
+      asfPrintWarning("Channel specified for BLUE (\"%s\")"
+                      " not found in image file.\n"
+                      "Available channels are %s\n", blue_channel,
+                      meta->general->bands);
+    }
   }
 
   return rgb;
