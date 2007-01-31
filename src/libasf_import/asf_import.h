@@ -22,6 +22,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int db_flag,   // TRUE if the output should be in decibels
                               // only ok for radiometry=SIGMA,GAMMA,BETA
                char *format_type, // eg, "STF", "CEOS" - etc
+               char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
                char *image_data_type, // "geocoded_image", "dem", or "mask"
                char *lutName, // NULL for no lookup table
                               // otherwise, this is the lookup table filename
@@ -65,7 +66,7 @@ void
 import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...);
 void
 import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
-//void
-//import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
+void
+import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 #endif
