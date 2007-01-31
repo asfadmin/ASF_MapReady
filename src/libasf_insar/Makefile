@@ -5,6 +5,9 @@ include ../../make_support/system_rules
 CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
+	functions.o \
+	ips_config.o \
+	ips.o \
 	complex2polar.o \
 	polar2complex.o \
 	baseline.o \
@@ -14,6 +17,7 @@ OBJS = \
 all: build_only
 	mv libasf_insar.a $(LIBDIR)
 	cp asf_insar.h $(ASF_INCLUDE_DIR)
+	cp ips.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_insar.a

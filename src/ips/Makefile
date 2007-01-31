@@ -12,6 +12,8 @@ CFLAGS += \
 	$(GLIB_CFLAGS)
 
 LIBS = 	\
+	$(LIBDIR)/libasf_insar.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
@@ -36,18 +38,10 @@ OBJLIB	= config.o \
 	check_refinement.o \
 	ips.o
 
-all: lib exe clean
+all: ips clean
 
-lib: ${OBJLIB}
-	ar r libasf_ips.a $(OBJLIB)
-	$(RANLIB) libasf_ips.a
-	mv libasf_ips.a $(LIBDIR)
-	cp ips.h $(ASF_INCLUDE_DIR)
-    
-exe: ips
-
-ips: ips_main.c lib
-	${CC} ${CFLAGS} ${LDFLAGS} -o ips ips_main.c $(LIBDIR)/libasf_ips.a ${LIBS}
+ips: ips_main.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ips ips_main.c $(LIBS)
 	mv ips $(BINDIR)
 #	cp ips.1 ../../man/cat1
 
