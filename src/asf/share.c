@@ -16,7 +16,7 @@ static char * s_bin_dir = 0;
 #undef BYTE
 #include <windows.h>
 
-static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\";
+static const char * s_asf_application_key = "SOFTWARE\\ALOS_Tools\\";
 
 static const char * s_asf_share_dir_key = "Install_Dir";
 static const char * s_asf_install_dir_key = "Install_Dir";
