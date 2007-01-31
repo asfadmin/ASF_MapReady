@@ -672,7 +672,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
     if (green_float_line) FREE(green_float_line);
     if (blue_float_line) FREE(blue_float_line);
 
-    if (rgb_float_line) FREE(red_float_line);
+    if (rgb_float_line) FREE(rgb_float_line);
     if (rgb_byte_line) FREE(rgb_byte_line);
   }
   else { // Single-band image
