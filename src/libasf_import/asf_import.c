@@ -162,17 +162,23 @@ int asf_import(radiometry_t radiometry, int db_flag,
         }
 	for (ii=0; ii<nBands; ii++) {
 	  strcpy(bandExt, "");
-	  if (strncmp(inBandName[ii], "IMG-HH", 6)==0)
+          // p will point to the beginning of the actual file (past the path)
+          char *p = strrchr(inBandName[ii], DIR_SEPARATOR);
+          if (!p)
+              p = inBandName[ii];
+          else
+              ++p;
+	  if (strncmp(p, "IMG-HH", 6)==0)
 	    strcpy(bandExt, "HH");
-	  if (strncmp(inBandName[ii], "IMG-HV", 6)==0)
+	  if (strncmp(p, "IMG-HV", 6)==0)
 	    strcpy(bandExt, "HV");
-	  if (strncmp(inBandName[ii], "IMG-VH", 6)==0)
+	  if (strncmp(p, "IMG-VH", 6)==0)
 	    strcpy(bandExt, "VH");
-	  if (strncmp(inBandName[ii], "IMG-VV", 6)==0)
+	  if (strncmp(p, "IMG-VV", 6)==0)
 	    strcpy(bandExt, "VV");
 	  for (kk=1; kk<10; kk++) {
 	    sprintf(tmp, "IMG-%02d", kk);
-	    if (strncmp(inBandName[ii], tmp, 6)==0)
+	    if (strncmp(p, tmp, 6)==0)
 	      sprintf(bandExt, "0%d", kk);
 	  }
           asfPrintStatus("   File: %s\n", inBandName[ii]);
