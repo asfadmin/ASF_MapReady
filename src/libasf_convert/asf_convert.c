@@ -754,11 +754,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // user has requested banding
           char *red,  *green, *blue;
           if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
-              char **bands = find_bands(inFile, red, green, blue);
-              if (bands) {
+              int num_found;
+              char **bands = find_bands(inFile, red, green, blue, &num_found);
+              if (num_found > 0) {
                   check_return(asf_export_bands(format, scale, inFile, outFile, bands),
                                "export data file (asf_export), banded.\n");
-                  FREE(bands[0]); FREE(bands[1]); FREE(bands[2]); FREE(bands);
+                  int i;
+                  for (i = 0; i<num_found; i++) {
+                    FREE(bands[i]);
+                  }
+                  FREE(bands);
               } else {
                   asfPrintWarning("The requested bands: %s\n"
                                   "Were not available in the file: %s\n"
