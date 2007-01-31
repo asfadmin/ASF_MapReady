@@ -34,7 +34,7 @@
 #define META_VERSION 2.0
 
 // Maximum number of bands that are supported by the ingest.
-#define MAX_BANDS 4
+#define MAX_BANDS 20
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
