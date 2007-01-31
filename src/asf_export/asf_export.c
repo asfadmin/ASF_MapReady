@@ -388,6 +388,10 @@ main (int argc, char *argv[])
     }
   }
   else {
+    // FIXME: When the -band option is developed, then
+    // landing here with a multi-band image should result
+    // in the same action as "-band all" ...each available
+    // band will export to its own grayscale file
     asfPrintStatus("Exporting as greyscale.\n\n");
   }
 
