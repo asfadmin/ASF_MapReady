@@ -956,7 +956,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       if (!shortFlag)
         fprintf(fConfig, "\n# The byte conversion options are SIGMA, MINMAX, TRUNCATE or\n"
                 "# HISTOGRAM_EQUALIZE. They scale the floating point values to byte values.\n\n");
-      fprintf(fConfig, "byte conversion = %s\n\n", cfg->export->byte);
+      fprintf(fConfig, "byte conversion = %s\n", cfg->export->byte);
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have more than one band available in your data, you can\n"
                 "# create the exported file using the different bands for the R, G, and B\n"

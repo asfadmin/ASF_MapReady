@@ -40,12 +40,14 @@ void update_status(convert_config *cfg, const char *format, ...)
 
 // If a temporary directory has not been specified, create one using the time
 // stamp as the name of the temporary directory
-static void create_and_set_tmp_dir(char *tmp_dir)
+static void create_and_set_tmp_dir(char *basename, char *tmp_dir)
 {
   int empty_name = strlen(tmp_dir)==0;
 
   if (empty_name) {
-    strcpy(tmp_dir, time_stamp_dir());
+    strcpy(tmp_dir, basename);
+    strcat(tmp_dir, "-");
+    strcat(tmp_dir, time_stamp_dir());
     create_clean_dir(tmp_dir);
   }
   else {
@@ -183,11 +185,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       char batchItem[255], fileName[255], batchPreDir[255];
       FILE *fConfig;
 
-      create_and_set_tmp_dir(tmp_dir);
-
       sscanf(line, "%s", batchItem);
       split_dir_and_file(batchItem, batchPreDir, fileName);
       // Create temporary configuration file
+      create_and_set_tmp_dir(fileName, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
       fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
@@ -219,7 +220,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     update_status(cfg, "Processing...");
     
-    create_and_set_tmp_dir(cfg->general->tmp_dir);
+    create_and_set_tmp_dir(cfg->general->in_name, cfg->general->tmp_dir);
 
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
@@ -810,7 +811,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	meta = meta_read(inFile);
 	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
-	out_pixel_size = meta->general->x_pixel_size / in_side_length * 48;
+	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 48;
         
         // Pass in command line
         if (!cfg->general->export)
@@ -829,6 +830,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
             strcpy(tmpFile, tmp);
             strcpy(outFile, tmp);
+            strcat(outFile, ".jpg");
             free(tmp);
         }
 
