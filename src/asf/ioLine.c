@@ -205,6 +205,18 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
   return samples_gotten;
 }
 
+int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
+                  unsigned char *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, dest, BYTE);
+}
+
+int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_get, unsigned char *dest)
+{
+  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,BYTE);
+}
+
 /*******************************************************************************
  * Get one line of any non-complex data type via get_data_lines and fill a float
  * buffer with it. Returns number of samples gotten                           */
@@ -287,6 +299,11 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
     printf("\nput_data_lines: Cannot put simple data into a complex data file. Exiting.\n\n");
     exit(EXIT_FAILURE);
   }
+
+  // Write out all optical data as byte image. 
+  // They don't have a larger dynamic range than that.
+  if (meta->optical)
+    data_type = BYTE;
 
   /* Determine sample size.  */
   sample_size = data_type2sample_size(data_type);

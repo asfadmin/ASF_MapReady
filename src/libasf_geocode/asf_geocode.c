@@ -1074,20 +1074,18 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // Now the mapping function is calculated and we can apply that to
   // all the bands in the file
   int kk;
-  off_t offset;
   for (kk=0; kk<imd->general->band_count; kk++) {
 
-    asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
-    offset = kk * ii_size_x * ii_size_y * sizeof(float);
+    if (imd->general->band_count == 1)
+      asfPrintStatus("Geocoding image ...\n");
+    else
+      asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
     // Input image.
-    GString *input_data_file = g_string_new (input_image->str);
-    g_string_append (input_data_file, ".img");
-    FloatImage *iim
-      = float_image_new_from_file (ii_size_x, ii_size_y, input_data_file->str, 
-				   offset,
-				   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-    g_string_free (input_data_file, TRUE);
+    char input_data_file[255];
+    sprintf(input_data_file, "%s.img", input_image->str);
+    FloatImage *iim = 
+      float_image_band_new_from_metadata(imd, kk, input_data_file);
     
     // Output image.
     FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
@@ -1179,26 +1177,14 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     }
     
     // Store the output image, and free image resources.
-    GString *output_data_file = g_string_new (output_image->str);
-    g_string_append (output_data_file, ".img");
-    if (imd->general->band_count == 1) {
-      asfPrintStatus("Storing geocoded image...\n");
-      ret = float_image_store (oim, output_data_file->str,
-			       FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-      asfRequire (ret == 0, "Error saving image.\n");
-    }
-    else {
-      asfPrintStatus("Storing geocoded band...\n");
-      if (kk == 0)
-	ret = float_image_store (oim, output_data_file->str,
-				 FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-      else
-	ret = float_image_store_ext (oim, output_data_file->str,
-				     FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN, 1);
-      asfRequire (ret == 0, "Error saving band.\n");
-    }
+    char output_data_file[255];
+    sprintf(output_data_file, "%s.img", output_image->str);
+    if (kk == 0) // Create new output file
+      ret = float_image_band_store (oim, output_data_file, omd, 0);
+    else // Append to existing output file
+      ret = float_image_band_store (oim, output_data_file, omd, 1);
+    asfRequire (ret == 0, "Error saving image.\n");
     float_image_free (oim);
-    g_string_free (output_data_file, TRUE);
     
     float_image_free (iim);
   }

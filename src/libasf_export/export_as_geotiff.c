@@ -71,7 +71,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
 
-  if (sample_mapping == NONE) {
+  if (sample_mapping == NONE && !md->optical) {
     // Float image
     asfRequire(sizeof (float) == 4,
                "Size of the unsigned char data type on this machine is "
@@ -487,65 +487,65 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 		       sample_mapping, rgb);
 
   if (rgb) {
+    
     double red_min, red_max, red_mean, red_stdDev;
     double green_min, green_max, green_mean, green_stdDev;
     double blue_min, blue_max, blue_mean, blue_stdDev;
-
-    // Red channel statistics
-    gsl_histogram *red_hist = NULL;
-    gsl_histogram_pdf *red_hist_pdf = NULL;
-    if (sample_mapping != NONE) { // byte image
-      asfRequire (sizeof(unsigned char) == 1,
-                  "Size of the unsigned char data type on this machine is "
-                  "different than expected.\n");
-      asfPrintStatus("Gathering red channel statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
-			   &red_min, &red_max, &red_mean,
-			   &red_stdDev, red_hist);
-      if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-        red_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
-        gsl_histogram_pdf_init (red_hist_pdf, red_hist);
-      }
-    }
-
-    // Green channel statistics
-    gsl_histogram *green_hist = NULL;
-    gsl_histogram_pdf *green_hist_pdf = NULL;
-    if (sample_mapping != NONE) { // byte image
-      asfRequire (sizeof(unsigned char) == 1,
-                  "Size of the unsigned char data type on this machine is "
-                  "different than expected.\n");
-      asfPrintStatus("Gathering green channel statistics ...\n");
-      calc_stats_from_file(image_data_file_name, band_name[1], 0.0,
-			   &green_min, &green_max, &green_mean,
-			   &green_stdDev, green_hist);
-      if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-        green_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
-        gsl_histogram_pdf_init (green_hist_pdf, green_hist);
-      }
-    }
-
-    // Blue channel statistics
-    gsl_histogram *blue_hist = NULL;
+    gsl_histogram *red_hist = NULL, *green_hist = NULL, *blue_hist = NULL;
+    gsl_histogram_pdf *red_hist_pdf = NULL, *green_hist_pdf = NULL;
     gsl_histogram_pdf *blue_hist_pdf = NULL;
-    if (sample_mapping != NONE) { // byte image
-      asfRequire (sizeof(unsigned char) == 1,
-                  "Size of the unsigned char data type on this machine is "
-                  "different than expected.\n");
-      asfPrintStatus("Gathering blue channel statistics ...\n\n");
-      calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
-			   &blue_min, &blue_max, &blue_mean,
-			   &blue_stdDev, blue_hist);
-      if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-        blue_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
-        gsl_histogram_pdf_init (blue_hist_pdf, blue_hist);
+      
+    if (!md->optical) { 
+      // Red channel statistics
+      if (sample_mapping != NONE) { // byte image
+	asfRequire (sizeof(unsigned char) == 1,
+		    "Size of the unsigned char data type on this machine is "
+		    "different than expected.\n");
+	asfPrintStatus("Gathering red channel statistics ...\n");
+	calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
+			     &red_min, &red_max, &red_mean,
+			     &red_stdDev, red_hist);
+	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+	  red_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+	  gsl_histogram_pdf_init (red_hist_pdf, red_hist);
+	}
+      }
+      
+      // Green channel statistics
+      if (sample_mapping != NONE) { // byte image
+	asfRequire (sizeof(unsigned char) == 1,
+		    "Size of the unsigned char data type on this machine is "
+		    "different than expected.\n");
+	asfPrintStatus("Gathering green channel statistics ...\n");
+	calc_stats_from_file(image_data_file_name, band_name[1], 0.0,
+			     &green_min, &green_max, &green_mean,
+			     &green_stdDev, green_hist);
+	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+	  green_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+	  gsl_histogram_pdf_init (green_hist_pdf, green_hist);
+	}
+      }
+      
+      // Blue channel statistics
+      if (sample_mapping != NONE) { // byte image
+	asfRequire (sizeof(unsigned char) == 1,
+		    "Size of the unsigned char data type on this machine is "
+		    "different than expected.\n");
+	asfPrintStatus("Gathering blue channel statistics ...\n");
+	calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
+			     &blue_min, &blue_max, &blue_mean,
+			     &blue_stdDev, blue_hist);
+	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+	  blue_hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+	  gsl_histogram_pdf_init (blue_hist_pdf, blue_hist);
+	}
       }
     }
-
+      
     // Write the actual image data
     FILE *fp;
     float *red_float_line, *green_float_line, *blue_float_line, *rgb_float_line;
-    unsigned char *rgb_byte_line;
+    unsigned char *red_byte_line, *green_byte_line, *blue_byte_line, *rgb_byte_line;
 
     fp = FOPEN(image_data_file_name, "rb");
 
@@ -566,15 +566,41 @@ export_rgb_as_geotiff (const char *metadata_file_name,
     int sample_count = md->general->sample_count;
     int offset = md->general->line_count;
 
-    red_float_line = (float *) MALLOC(sizeof(float) * sample_count);
-    green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
-    blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
-    rgb_float_line = (float *) MALLOC(sizeof(float) * sample_count * 3);
-    rgb_byte_line = (unsigned char *)
-      MALLOC(sizeof(unsigned char) * sample_count * 3);
+    // Allocate some memory
+    if (md->optical) {
+      red_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
+      green_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
+      blue_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
+    }
+    else {
+      red_float_line = (float *) MALLOC(sizeof(float) * sample_count);
+      green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
+      blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
+    }
+    if (md->optical || sample_mapping == NONE) 
+      rgb_byte_line = (unsigned char *)
+	MALLOC(sizeof(unsigned char) * sample_count * 3);
+    else
+      rgb_float_line = (float *) MALLOC(sizeof(float) * sample_count * 3);
 
     for (ii=0; ii<md->general->line_count; ii++) {
-      if (sample_mapping == NONE) {
+      if (md->optical) {
+	// Optical images come as byte in the first place
+	get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
+	get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
+	get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
+        for (jj=0; jj<sample_count; jj++) {
+          rgb_byte_line[jj*3] = red_byte_line[jj];
+          rgb_byte_line[(jj*3)+1] = green_byte_line[jj];
+          rgb_byte_line[(jj*3)+2] = blue_byte_line[jj];
+        }
+        if ( TIFFWriteScanline (otif, rgb_byte_line, ii, 0) < 0 ) {
+          asfPrintError("Error writing to output %s file %s",
+                 is_geotiff ? "GeoTIFF" : "TIFF",
+                 output_file_name);
+        }
+      }
+      else if (sample_mapping == NONE) {
         // Write float lines if float image
         get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         get_float_line(fp, md, ii+green_channel*offset, green_float_line);
@@ -617,11 +643,20 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       }
       asfLineMeter(ii, md->general->line_count);
     }
-    FREE(red_float_line);
-    FREE(green_float_line);
-    FREE(blue_float_line);
-    FREE(rgb_float_line);
-    FREE(rgb_byte_line);
+    if (md->optical) {
+      FREE(red_byte_line);
+      FREE(green_byte_line);
+      FREE(blue_byte_line);
+    }
+    else {
+      FREE(red_float_line);
+      FREE(green_float_line);
+      FREE(blue_float_line);
+    }
+    if (md->optical || sample_mapping == NONE) 
+      FREE(rgb_byte_line);
+    else
+      FREE(rgb_float_line);
   }
   else { // Single-band image
     double min, max, mean, stdDev;

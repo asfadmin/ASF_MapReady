@@ -17,6 +17,10 @@
 #ifndef FLOAT_IMAGE_H
 #define FLOAT_IMAGE_H
 
+#ifndef solaris
+#  include <stdint.h>
+#endif
+#include "asf_meta.h"
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -103,7 +107,7 @@ float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
 typedef enum {
-  FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN,
+  FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN=1,
   FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN
 } float_image_byte_order_t;
 
@@ -137,11 +141,22 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 				  const char *file, off_t offset,
 				  float_image_byte_order_t byte_order);
 
+// The function that does it all, generating an instance of FloatImage
+// from a file and the metadata
+FloatImage *
+float_image_new_from_metadata(meta_parameters *meta, const char *file);
+
+// For multi-band imagery the previous function needs to be more specific.
+FloatImage *
+float_image_band_new_from_metadata(meta_parameters *meta, 
+				   int band, const char *file);
+
 // Sample type of an image that is to be used to create a float_image
 // instance.  For example, floating point image can be created from
 // signed sixteen bit integer data.
 typedef enum {
-  FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER,
+  FLOAT_IMAGE_SAMPLE_TYPE_SIGNED_TWO_BYTE_INTEGER=1,
+  FLOAT_IMAGE_SAMPLE_TYPE_UNSIGNED_BYTE
 } float_image_sample_type;
 
 // Form a new image by reading a data file full of sample_type
@@ -343,9 +358,11 @@ float_image_freeze (FloatImage *self, FILE *file_pointer);
 int
 float_image_store (FloatImage *self, const char *file,
 		   float_image_byte_order_t byte_order);
+
 int
-float_image_store_ext(FloatImage *self, const char *file,
-                      float_image_byte_order_t byte_order, int append_flag);
+float_image_band_store(FloatImage *self, const char *file,
+		       meta_parameters *meta, int append_flag);
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //

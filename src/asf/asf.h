@@ -177,6 +177,10 @@ int remove_dir(const char *dir);
 /* Size of line chunk to read or write.  */
 #define CHUNK_OF_LINES 32
 
+int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
+                  unsigned char *dest);
+int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
+                   int num_lines_to_get, unsigned char *dest);
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 		float *dest);
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,

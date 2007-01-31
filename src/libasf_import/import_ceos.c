@@ -454,7 +454,10 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     else
       asfPrintError("Unkown CEOS data format");
 
-    meta->general->data_type=REAL32;
+    if (meta->optical)
+      meta->general->data_type = BYTE;
+    else
+      meta->general->data_type = REAL32;
 
 
 
