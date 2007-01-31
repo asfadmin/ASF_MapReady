@@ -544,8 +544,10 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       
     // Write the actual image data
     FILE *fp;
-    float *red_float_line, *green_float_line, *blue_float_line, *rgb_float_line;
-    unsigned char *red_byte_line, *green_byte_line, *blue_byte_line, *rgb_byte_line;
+    float *red_float_line=NULL, *green_float_line=NULL, *blue_float_line=NULL,
+        *rgb_float_line=NULL;
+    unsigned char *red_byte_line=NULL, *green_byte_line=NULL,
+        *blue_byte_line=NULL, *rgb_byte_line=NULL;
 
     fp = FOPEN(image_data_file_name, "rb");
 
@@ -577,7 +579,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
       blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
     }
-    if (md->optical || sample_mapping == NONE) 
+    if (md->optical || sample_mapping != NONE)
       rgb_byte_line = (unsigned char *)
 	MALLOC(sizeof(unsigned char) * sample_count * 3);
     else
@@ -586,6 +588,9 @@ export_rgb_as_geotiff (const char *metadata_file_name,
     for (ii=0; ii<md->general->line_count; ii++) {
       if (md->optical) {
 	// Optical images come as byte in the first place
+        asfRequire(red_byte_line && green_byte_line && blue_byte_line &&
+                   rgb_byte_line,
+                   "Internal Error: Byte arrays haven't been initialized.");
 	get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
 	get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
 	get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
@@ -602,6 +607,9 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       }
       else if (sample_mapping == NONE) {
         // Write float lines if float image
+        asfRequire(red_float_line && green_float_line && blue_float_line &&
+                   rgb_float_line,
+                   "Internal Error: Float arrays haven't been initialized.");
         get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         get_float_line(fp, md, ii+green_channel*offset, green_float_line);
         get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
@@ -618,6 +626,9 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       }
       else {
         // Write byte lines if byte image
+        asfRequire(red_float_line && green_float_line && blue_float_line &&
+                   rgb_float_line,
+                   "Internal Error: Float arrays haven't been initialized.");
         get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         get_float_line(fp, md, ii+green_channel*offset, green_float_line);
         get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
