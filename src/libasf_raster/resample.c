@@ -131,8 +131,11 @@ resample_impl(char *infile, char *outfile,
     outbuf = (float *) MALLOC (onp*sizeof(float));
  
    /*----------  Open the Input & Output Files ---------------------*/
+    char *imgfile = STRDUP(outfile);
+    append_ext_if_needed(imgfile, ".img", NULL);
+
     fpin=fopenImage(infile,"rb");
-    fpout=fopenImage(outfile,"wb");
+    fpout=fopenImage(imgfile,"wb");
 
     metaOut->general->line_count = onl;
     metaOut->general->sample_count = onp;
@@ -151,7 +154,9 @@ resample_impl(char *infile, char *outfile,
       metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
     }
 
-    meta_write(metaOut, outfile);
+    char *metafile = STRDUP(outfile);
+    append_ext_if_needed(metafile, ".meta", NULL);
+    meta_write(metaOut, metafile);
 
   /*--------  Process inbuf to give outbuf ------------------------*/
     for (i = 0; i < onl; i++)
@@ -185,6 +190,9 @@ resample_impl(char *infile, char *outfile,
 
     FREE(inbuf);
     FREE(outbuf);
+
+    FREE(imgfile);
+    FREE(metafile);
 
     return(0);
 }
