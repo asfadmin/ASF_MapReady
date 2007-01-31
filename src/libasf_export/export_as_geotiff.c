@@ -599,7 +599,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 	// Optical images come as byte in the first place
         asfRequire(red_byte_line && green_byte_line && blue_byte_line &&
                    rgb_byte_line,
-                   "Internal Error: Byte arrays haven't been initialized.");
+                   "Internal Error: Byte arrays haven't been initialized.\n");
 	get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
 	get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
 	get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
@@ -618,7 +618,7 @@ export_rgb_as_geotiff (const char *metadata_file_name,
         // Write float lines if float image
         asfRequire(red_float_line && green_float_line && blue_float_line &&
                    rgb_float_line,
-                   "Internal Error: Float arrays haven't been initialized.");
+                   "Internal Error: Float arrays haven't been initialized.\n");
         get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         get_float_line(fp, md, ii+green_channel*offset, green_float_line);
         get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
@@ -636,8 +636,8 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       else {
         // Write byte lines if byte image
         asfRequire(red_float_line && green_float_line && blue_float_line &&
-                   rgb_float_line,
-                   "Internal Error: Float arrays haven't been initialized.");
+                   rgb_byte_line,
+                   "Internal Error: Byte arrays haven't been initialized.\n");
         get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         get_float_line(fp, md, ii+green_channel*offset, green_float_line);
         get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
@@ -663,20 +663,17 @@ export_rgb_as_geotiff (const char *metadata_file_name,
       }
       asfLineMeter(ii, md->general->line_count);
     }
-    if (md->optical) {
-      FREE(red_byte_line);
-      FREE(green_byte_line);
-      FREE(blue_byte_line);
-    }
-    else {
-      FREE(red_float_line);
-      FREE(green_float_line);
-      FREE(blue_float_line);
-    }
-    if (md->optical || sample_mapping == NONE) 
-      FREE(rgb_byte_line);
-    else
-      FREE(rgb_float_line);
+
+    if (red_byte_line) FREE(red_byte_line);
+    if (green_byte_line) FREE(green_byte_line);
+    if (blue_byte_line) FREE(blue_byte_line);
+
+    if (red_float_line) FREE(red_float_line);
+    if (green_float_line) FREE(green_float_line);
+    if (blue_float_line) FREE(blue_float_line);
+
+    if (rgb_float_line) FREE(red_float_line);
+    if (rgb_byte_line) FREE(rgb_byte_line);
   }
   else { // Single-band image
     double min, max, mean, stdDev;
