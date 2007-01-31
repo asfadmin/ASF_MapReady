@@ -120,16 +120,12 @@ void create_name(char *out,const char *in,const char *newExt)
 }
 
 /* Append an extension if it's not already there. Case insensitive. */
-void append_ext_if_needed(char *file_name, const char *newExt, 
+void append_ext_if_needed(char *file_name, const char *newExt,
                           const char *alsoAllowedExt)
 {
   char *ext, extuc[1024];
   char new1uc[1024], new2uc[1024];
   int ext_exists;
-  int new1_exists, new2_exists;
-
-  new1_exists = (new1uc) ? TRUE : FALSE;
-  new2_exists = (new2uc) ? TRUE : FALSE;
 
   ext = findExt(file_name);
   ext_exists = (ext) ? TRUE : FALSE;
@@ -137,19 +133,20 @@ void append_ext_if_needed(char *file_name, const char *newExt,
     strcpy(extuc, uc(ext));
 
   if (ext_exists) {
-    if (new1_exists) {
+    if (newExt != NULL) {
       strcpy(new1uc,uc(newExt));
       if (strcmp(extuc, new1uc)==0) {
         return;
       }
     }
-    if (new2_exists) {
+    if (alsoAllowedExt != NULL) {
       strcpy(new2uc,uc(alsoAllowedExt));
       if (strcmp(extuc, new2uc)==0) {
         return;
       }
     }
   }
+
   // If we haven't returned yet, we need to apply the extension
   strcat(file_name, newExt);
 }
@@ -449,7 +446,7 @@ static void dirwalk(const char *dir, int (*fcn)(const char*))
   char name[1024];
   struct dirent *dp;
   DIR *dfd;
-  
+
   if ((dfd = opendir(dir)) == NULL) {
     asfPrintWarning("dirwalk: cannot open %s\n",dir);
     return; // error
@@ -476,7 +473,7 @@ int
 remove_dir(const char *name)
 {
   struct stat stbuf;
-  
+
   if (stat(name, &stbuf) == -1) {
 //    asfPrintWarning("remove_dir: cannot access %s\n", name);
     return -1; // error
