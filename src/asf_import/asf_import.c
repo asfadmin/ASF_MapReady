@@ -23,8 +23,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-image-data-type <type>] [-lut <file>]\n"\
-"              [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
+"              [-format <inputFormat>] [-band <band_id | all>] [-image-data-type <type>]\n"\
+"              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
 "              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>]\n"\
 "              [-help]\n"\
@@ -61,6 +61,11 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', and 'geotiff'. 'CEOS' is the default behavior.\n"\
+"   -band <band_id | all>\n"\
+"        If the data contains multiple data files, one for each band (channel)\n"\
+"        then import the band identified by 'band_id' (only).  If 'all' is\n"\
+"        specified rather than a band_id, then import all available bands into\n"\
+"        a single ASF-format file.  Default is '-band all'.\n"\
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
 "        formats are 'geocoded_image', 'dem', and 'mask'.  This parameter is \n"\
@@ -111,7 +116,17 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "\n"\
 "   To import a STF fileset (fileSTF.000 & file.000.par) you will need to\n"\
 "   specify the -format option since STF is not the default.\n"\
-"        example> asf_import -format stf fileSTF.000 fileASF\n"
+"        example> asf_import -format stf fileSTF.000 fileASF\n" \
+"\n"\
+"   To import an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file, IMG-VH-file,\n"\
+"   IMG-VV-file, and LED-file) you will need to specify the input basename 'file'.\n"\
+"        example> asf_import file outfile\n"\
+"\n"\
+"   To import a single band of an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file,\n"\
+"   IMG-VH-file,IMG-VV-file, and LED-file; or IMG-01-file, IMG-02-file, etc) you\n"\
+"   will need to specify the band_id and input basename 'file'.\n"\
+"        example1> asf_import -band VH file outfile\n"\
+"        example2> asf_import -band 04 file outfile\n"
 
 #define ASF_LIMITATIONS_STRING \
 "   CEOS base name issue:\n"\
@@ -163,6 +178,7 @@ typedef enum {
     f_AZIMUTH_SCALE,
     f_FIX_META_YPIX,
     f_IMAGE_DATA_TYPE,
+    f_BAND,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -195,13 +211,13 @@ static int checkForOptionWithArg(char *key, int argc, char *argv[])
   while (ii < argc)
   {
     /* make a copy of the arg, and remove anything past the "=" */
-    char *arg = strdup(argv[ii]);
+    char *arg = STRDUP(argv[ii]);
     char *eq = strchr(arg, '=');
     if (eq) *eq = '\0';
 
     /* now check for an exact match */
-    int match = !strcmp(key, arg);    
-    free(arg);
+    int match = !strcmp(key, arg);
+    FREE(arg);
     if (match) {
       return ii;
     }
@@ -226,7 +242,7 @@ static double getDoubleOptionArgWithDefault(char *arg, double def)
   return val;
 }
 
-static void 
+static void
 pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName)
 {
   if (*flag_count==0)
@@ -282,6 +298,7 @@ int main(int argc, char *argv[])
     char *lutName=NULL;
     char *prcPath=NULL;
     char format_type[256]="";
+    char band_id[256]="";
     char image_data_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
@@ -321,6 +338,7 @@ int main(int argc, char *argv[])
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
+    flags[f_BAND] = checkForOption("-band", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
@@ -399,6 +417,7 @@ int main(int argc, char *argv[])
         if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
         if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
@@ -444,6 +463,11 @@ int main(int argc, char *argv[])
         if(   argv[flags[f_FORMAT]+1][0] == '-'
             || flags[f_FORMAT] >= argc-REQUIRED_ARGS)
             print_usage();
+    if(flags[f_BAND] != FLAG_NOT_SET)
+      /*Make sure the field following -format isn't another option*/
+      if(   argv[flags[f_BAND]+1][0] == '-'
+            || flags[f_BAND] >= argc-REQUIRED_ARGS)
+        print_usage();
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)
         /*Make sure the field following -format isn't another option*/
         if(   argv[flags[f_IMAGE_DATA_TYPE]+1][0] == '-'
@@ -545,6 +569,14 @@ int main(int argc, char *argv[])
     else
         strcpy(format_type, "CEOS");
 
+    /* Deal with band_id */
+    if(flags[f_BAND] != FLAG_NOT_SET) {
+      strcpy(band_id, argv[flags[f_BAND] + 1]);
+      if (strlen(band_id) && strcmp("ALL", uc(band_id)) == 0) {
+        strcpy(band_id, "");
+      }
+    }
+
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
        strncmp(format_type, "GEOTIFF", 7) == 0)
@@ -629,8 +661,8 @@ int main(int argc, char *argv[])
         if(flags[f_BETA] != FLAG_NOT_SET)     radiometry = r_BETA;
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
-        
-        asf_import(radiometry, db_flag, format_type, image_data_type, lutName,
+
+        asf_import(radiometry, db_flag, format_type, band_id, image_data_type, lutName,
                    prcPath, lowerLat, upperLat, p_range_scale, p_azimuth_scale,
                    p_correct_y_pixel_size, inMetaNameOption,
                    inBaseName, outBaseName);
