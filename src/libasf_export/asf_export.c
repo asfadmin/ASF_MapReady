@@ -17,7 +17,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping,
   char *out_name = (char*)MALLOC(512*sizeof(char));
   int size = -1;
 
-  asfPrintStatus("Exporting ...\n");
+  asfPrintStatus("Exporting ...\n\n");
 
   // Do that exporting magic!
   if ( format == ENVI ) {
