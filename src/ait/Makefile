@@ -4,7 +4,8 @@ TARGET = ait
 SRCS = ait.c config.c geocode.c projfile.c browse.c imagery.c
 
 LIBS = 	\
-	$(LIBDIR)/libasf_ips.a \
+	$(LIBDIR)/libasf_insar.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
