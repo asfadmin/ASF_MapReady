@@ -257,7 +257,7 @@ main (int argc, char *argv[])
   }
   if ( rgbFlag != FLAG_NOT_SET ) {
     if (( argv[rgbFlag + 1][0] == '-' && argv[rgbFlag + 2][0] == '-' &&
-	  argv[rgbFlag + 3][0] == '-' ) || rgbFlag >= argc - 5 ) {
+          argv[rgbFlag + 3][0] == '-' ) || rgbFlag >= argc - 5 ) {
       print_usage ();
     }
   }
@@ -373,8 +373,8 @@ main (int argc, char *argv[])
   }
 
   band_name = find_bands(in_base_name, command_line.red_channel,
-			 command_line.green_channel,
-			 command_line.blue_channel);
+                         command_line.green_channel,
+                         command_line.blue_channel);
   if (band_name)
     asfPrintStatus("Exporting multiband image ...\n\n");
   else if (rgbFlag != FLAG_NOT_SET)
@@ -434,7 +434,7 @@ main (int argc, char *argv[])
 
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping,
-		   in_base_name, command_line.output_name, band_name);
+                   in_base_name, command_line.output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
