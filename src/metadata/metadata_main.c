@@ -8,6 +8,7 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
    -mpdr        Map Projection Data Record
    -ppdr        Platform Position Data record
    -atdr        Attitude Data record
+   -ampr        ALOS Map Projection Data record
    -radr        Radiometric Data record
    -rcdr        Radiometric Compensation Data record
    -dqsr        Data Quality Summary record
@@ -137,6 +138,7 @@ void usage(char *name)
    fprintf(stderr,"  -mpdr        Map Projection Data Record\n");
    fprintf(stderr,"  -ppdr        Platform Position Data record\n");
    fprintf(stderr,"  -atdr        Attitude Data record\n");
+   fprintf(stderr,"  -ampr        ALOS Map Projection Data\n");
    fprintf(stderr,"  -radr        Radiometric Data record\n");
    fprintf(stderr,"  -rcdr        Radiometric Compensation Data record\n");
    fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
