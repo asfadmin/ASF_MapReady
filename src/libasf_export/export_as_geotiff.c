@@ -470,15 +470,24 @@ export_rgb_as_geotiff (const char *metadata_file_name,
 {
   int map_projected;
   int is_geotiff = 1;
+  int num_bands_found;
   TIFF *otif = NULL; // FILE* pointer for TIFF files
   GTIF *ogtif = NULL;
   int jj, rgb=0;
   ssize_t ii;
 
-  if (band_name)
-    rgb = 1;
+
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
+
+  for (ii=0, num_bands_found = 0; band_name != NULL && ii<MAX_BANDS; ii++) {
+    if (band_name[ii] != NULL && strlen(band_name[ii]) > 0) {
+      num_bands_found++;
+    }
+  }
+  if (num_bands_found == 3) {
+    rgb = 1;
+  }
 
   // Generic single-point TIFF tag and header writer ...works for both
   // TIFF and GeoTIFF files
