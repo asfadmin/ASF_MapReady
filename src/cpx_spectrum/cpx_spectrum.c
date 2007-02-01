@@ -101,6 +101,28 @@ BUGS:
 #define FFT_LEN 2048
 #define VERSION 1.10
 
+
+void usage (char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+ 	"   %s <in_cpx> <az_specs> <start_line>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <in_cpx>      Input Complex Image\n"
+	"   <az_specs>    ASCII file containing the azimuthal spectrum\n"
+	"   <start_line>  Line to begin processing at.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   An Azimuthal Spectrum Calculator for Complex Images\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);	
+}
+
+
+
 int main(int argc,char **argv)
 {
   int lines,samps,start_line;   /* Number of image lines and samples          */
@@ -204,23 +226,4 @@ int main(int argc,char **argv)
   FCLOSE(outF1);
   StopWatch();
   return 0;
-}
-
-void usage (char *name)
-{
- printf("\n"
-	"USAGE:\n"
- 	"   %s <in_cpx> <az_specs> <start_line>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   <in_cpx>      Input Complex Image\n"
-	"   <az_specs>    ASCII file containing the azimuthal spectrum\n"
-	"   <start_line>  Line to begin processing at.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   An Azimuthal Spectrum Calculator for Complex Images\n");
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);	
 }
