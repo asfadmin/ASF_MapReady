@@ -114,11 +114,11 @@ float get_default_ypix(const char *outBaseName)
 *****************************************************************************/
 // Convenience wrapper, without the kludgey "flags" array
 int asf_import(radiometry_t radiometry, int db_flag,
-               char *format_type, char *image_data_type, char *lutName,
-	       char *prcPath, double lowerLat, double upperLat,
-	       double *p_range_scale, double *p_azimuth_scale,
-	       double *p_correct_y_pixel_size, char *inMetaNameOption,
-	       char *inBaseName, char *outBaseName)
+               char *format_type, char *band_id, char *image_data_type, char *lutName,
+               char *prcPath, double lowerLat, double upperLat,
+               double *p_range_scale, double *p_azimuth_scale,
+               double *p_correct_y_pixel_size, char *inMetaNameOption,
+               char *inBaseName, char *outBaseName)
 {
     char **inBandName, inDataName[512]="", inMetaName[512]="";
     char unscaledBaseName[256]="", bandExt[10]="", tmp[10]="";
@@ -160,32 +160,62 @@ int asf_import(radiometry_t radiometry, int db_flag,
             require_ceos_data(inBaseName, inBandName, &nBands);
             require_ceos_metadata(inMetaNameOption, inMetaName);
         }
-	for (ii=0; ii<nBands; ii++) {
-	  strcpy(bandExt, "");
+        for (ii=0; ii<nBands; ii++) {
+          // Determine the band extension (band ID)
+          strcpy(bandExt, "");
           // p will point to the beginning of the actual file (past the path)
           char *p = strrchr(inBandName[ii], DIR_SEPARATOR);
           if (!p)
               p = inBandName[ii];
           else
               ++p;
-	  if (strncmp(p, "IMG-HH", 6)==0)
-	    strcpy(bandExt, "HH");
-	  if (strncmp(p, "IMG-HV", 6)==0)
-	    strcpy(bandExt, "HV");
-	  if (strncmp(p, "IMG-VH", 6)==0)
-	    strcpy(bandExt, "VH");
-	  if (strncmp(p, "IMG-VV", 6)==0)
-	    strcpy(bandExt, "VV");
-	  for (kk=1; kk<10; kk++) {
-	    sprintf(tmp, "IMG-%02d", kk);
-	    if (strncmp(p, tmp, 6)==0)
-	      sprintf(bandExt, "0%d", kk);
-	  }
+          if (strncmp(p, "IMG-HH", 6)==0)
+            strcpy(bandExt, "HH");
+          if (strncmp(p, "IMG-HV", 6)==0)
+            strcpy(bandExt, "HV");
+          if (strncmp(p, "IMG-VH", 6)==0)
+            strcpy(bandExt, "VH");
+          if (strncmp(p, "IMG-VV", 6)==0)
+            strcpy(bandExt, "VV");
+          for (kk=1; kk<10; kk++) {
+            sprintf(tmp, "IMG-%02d", kk);
+            if (strncmp(p, tmp, 6)==0)
+              sprintf(bandExt, "0%d", kk);
+          }
+          // Check to see if the user forced a band extension
+          // (band_id) upon us... override the above if so
+          int import_single_band = 0;
+          if (band_id && strlen(band_id)) {
+            // Force ii index to point at correct filename,
+            // dying if it can't be found.
+            char file_prefix[256];
+            int found=0;
+
+            sprintf(file_prefix, "IMG-%s-", band_id);
+            ii = 0;
+            do {
+              if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0)
+                found = 1;
+              ii++;
+              if (ii > nBands)
+                asfPrintError("Selected band (\"%s\") file was not found \"%s\"\n",
+                              band_id, strcat(file_prefix, inBaseName));
+            } while (!found);
+            if (found) {
+              ii--;
+              import_single_band = 1;
+              strcpy(bandExt, band_id);
+            }
+          }
+
+          // Time to rock...
           asfPrintStatus("   File: %s\n", inBandName[ii]);
-	  import_ceos(inBandName[ii], bandExt, ii+1, nBands, inBaseName, lutName,
-	  	      unscaledBaseName, radiometry, db_flag);
+          import_ceos(inBandName[ii], bandExt,
+                      import_single_band ? 1 : ii+1, nBands, inBaseName, lutName,
+                      unscaledBaseName, radiometry, db_flag, import_single_band);
+          if (import_single_band) nBands = 1;
           asfPrintStatus("\n");
-	}
+        }
     }
     /* Ingest ENVI format data */
     else if (strncmp(format_type, "ENVI", 4) == 0) {
@@ -215,9 +245,9 @@ int asf_import(radiometry_t radiometry, int db_flag,
       asfPrintStatus("   Data format: %s\n", format_type);
       GString *inGeotiffName = find_geotiff_name (inBaseName);
       if ( inGeotiffName == NULL ) {
-	asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
-		       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
-		       "corresponding to specified inBaseName");
+        asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
+                       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
+                       "corresponding to specified inBaseName");
       }
       // At the moment, we are set up to ingest only a GeoTIFF
       // variants, and no general GeoTIFF handler is implemented
@@ -254,13 +284,13 @@ int asf_import(radiometry_t radiometry, int db_flag,
           importer (inGeotiffName->str, outBaseName);
         }
       } else {
-//	asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
-//			 "falling back to the generic GeoTIFF importer (cross "
-//			 "fingers)... \n");
-	// Haven't written import-generic_geotiff yet...
+//        asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
+//                         "falling back to the generic GeoTIFF importer (cross "
+//                         "fingers)... \n");
+        // Haven't written import-generic_geotiff yet...
 
         asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
-	//import_generic_geotiff (inGeotiffName->str, outBaseName);
+        //import_generic_geotiff (inGeotiffName->str, outBaseName);
       }
       g_string_free (inGeotiffName, TRUE);
     }
@@ -273,26 +303,26 @@ int asf_import(radiometry_t radiometry, int db_flag,
     if (do_resample)
     {
         if (range_scale < 0)
-	    range_scale = DEFAULT_RANGE_SCALE;
+            range_scale = DEFAULT_RANGE_SCALE;
 
         if (azimuth_scale < 0)
-	    azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+            azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
 
         asfPrintStatus("Resampling with scale factors: "
-		       "%lf range, %lf azimuth.\n",
+                       "%lf range, %lf azimuth.\n",
             range_scale, azimuth_scale);
 
         resample_nometa(unscaledBaseName, outBaseName,
-			range_scale, azimuth_scale);
+                        range_scale, azimuth_scale);
 
-	asfPrintStatus("Done.\n");
+        asfPrintStatus("Done.\n");
     }
 
     /* metadata pixel size fix, if necessary */
     if (do_metadata_fix)
     {
         if (correct_y_pixel_size < 0)
-	    correct_y_pixel_size = get_default_ypix(outBaseName);
+            correct_y_pixel_size = get_default_ypix(outBaseName);
 
         fix_ypix(outBaseName, correct_y_pixel_size);
     }

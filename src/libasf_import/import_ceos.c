@@ -22,9 +22,9 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 /******************************************************************************
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
-void import_ceos(char *inDataName, char *bandExt, int band, int nBands, 
-		 char *inMetaName, char *lutName, char *outBaseName, 
-		 radiometry_t radiometry, int db_flag)
+void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
+		 char *inMetaName, char *lutName, char *outBaseName,
+		 radiometry_t radiometry, int db_flag, int import_single_band)
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
@@ -69,7 +69,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
   if (meta->general->data_type==COMPLEX_BYTE) {
     int trash;
     bin_state *s;  /* Structure with info about the satellite & its raw data */
-    readPulseFunc readNextPulse; /* Pointer to function that reads the next line 
+    readPulseFunc readNextPulse; /* Pointer to function that reads the next line
 				    of CEOS Data */
     iqType *iqBuf;           /* Buffer containing the complex i & q channels */
 
@@ -117,7 +117,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
-    //    meta->general->data_type = COMPLEX_REAL32;  
+    //    meta->general->data_type = COMPLEX_REAL32;
     // FIXME: should we output floats or bytes?
     meta->general->image_data_type = RAW_IMAGE;
     s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
@@ -317,7 +317,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     strcat(outDataName,TOOLS_IMAGE_EXT);
 
     if (check_cal(inMetaName)==0 &&
-        ( (radiometry == r_SIGMA) || (radiometry == r_GAMMA) || 
+        ( (radiometry == r_SIGMA) || (radiometry == r_GAMMA) ||
           (radiometry == r_BETA) ) ) {
       asfPrintError("Unable to find calibration parameters in the metadata.\n");
     }
@@ -808,6 +808,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     //meta_write_old(meta, outMetaName);
   //} else {
   strcpy(meta->general->basename, inDataName);
+  meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   meta_write(meta,outMetaName);
   //}
 
