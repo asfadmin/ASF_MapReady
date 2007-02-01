@@ -120,9 +120,12 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "\n"\
 "   To import an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file, IMG-VH-file,\n"\
 "   IMG-VV-file, and LED-file) you will need to specify the input basename 'file'.\n"\
+"   When importing optical or other multi-band CEOS-formatted data such as ALOS\n"\
+"   Avnir optical images, you only need to specify the file names in the same way\n"\
+"   as well.\n"\
 "        example> asf_import file outfile\n"\
 "\n"\
-"   To import a single band of an ALOS Palsar fileset (IMG-HH-file, IMG-HV-file,\n"\
+"   To import a single band of an ALOS fileset (IMG-HH-file, IMG-HV-file,\n"\
 "   IMG-VH-file,IMG-VV-file, and LED-file; or IMG-01-file, IMG-02-file, etc) you\n"\
 "   will need to specify the band_id and input basename 'file'.\n"\
 "        example1> asf_import -band VH file outfile\n"\
