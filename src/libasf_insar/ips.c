@@ -218,7 +218,8 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     // asf_convert, then the 4th parameter below will need to reflect
     // this rather than just be NULL.  NULL defaults to importing all
     // available bands. (Applies to the next 2 calls to asf_import())
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_master,
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_master,
                               cfg->general->lat_begin, cfg->general->lat_end,
                               NULL, NULL, NULL, NULL, "master", "a"),
                    "ingesting master image (asf_import)");
@@ -226,7 +227,8 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 	check_return(1, "slave image data file does not exist");
       if (!fileExists("slave.000.par")) 
 	check_return(1, "slave image metadata file does not exist"); 
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_slave,
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_slave,
                               cfg->general->lat_begin, cfg->general->lat_end,
                               NULL, NULL, NULL, NULL, "slave", "b"),
                    "ingesting slave image (asf_import)");
@@ -266,7 +268,8 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     // asf_convert, then the 4th parameter below will need to reflect
     // this rather than just be NULL.  NULL defaults to importing all
     // available bands.
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_master,
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_master,
                               cfg->general->lat_begin, cfg->general->lat_end,
                               NULL, NULL, NULL, NULL, "master", "a"),
 		   "ingesting master image (asf_import)");
@@ -278,7 +281,8 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     // asf_convert, then the 4th parameter below will need to reflect
     // this rather than just be NULL.  NULL defaults to importing all
     // available bands.
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_slave,
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_slave,
                               cfg->general->lat_begin, cfg->general->lat_end,
                               NULL, NULL, NULL, NULL, "slave", "b"),
 		   "ingesting slave image (asf_import)");
@@ -713,11 +717,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     // asf_convert, then the 4th parameter below will need to reflect
     // this rather than just be NULL.  NULL defaults to importing all
     // available bands. (Applies to next 2 calls)
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_master,
-                              -99.0, -99.0, NULL, NULL, NULL, NULL, "master", "a_cpx"),
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_master, -99.0, -99.0, NULL, NULL,
+			      NULL, NULL, "master", "a_cpx"),
 		   "ingesting master image (asf_import)");
-      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL, NULL, cfg->ingest->prc_slave,
-                              -99.0, -99.0, NULL, NULL, NULL, NULL, "slave", "b_cpx"),
+      check_return(asf_import(r_AMP, FALSE, format, NULL, NULL,
+                              cfg->ingest->prc_slave, -99.0, -99.0, NULL, NULL,
+			      NULL, NULL, "slave", "b_cpx"),
  		   "ingesting slave image (asf_import)");
       check_return(c2p("a_cpx", "a"), 
 		   "converting complex master image into phase and amplitude (c2p)");
