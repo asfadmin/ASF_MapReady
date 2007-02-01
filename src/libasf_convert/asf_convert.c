@@ -130,14 +130,14 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
             asf_geocode_from_proj_file(
                 cfg->geocoding->projection, cfg->geocoding->force,
                 RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
-                imported, geocoded, cfg->geocoding->background),
+                NULL, imported, geocoded, cfg->geocoding->background),
             status);
     }
     else {
         // use UTM if no geocoding specified
         check_return(
             asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
-                            NAN, imported, geocoded, 0.0), status);
+                            NAN, NULL, imported, geocoded, 0.0), status);
     }
 
     return STRDUP(geocoded);
@@ -707,7 +707,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
                                               force_flag, resample_method,
                                               average_height, datum,
-                                              pixel_size, inFile, outFile,
+                                              pixel_size, NULL, inFile, outFile,
                                               background_val),
                    "geocoding data file (asf_geocode)\n");
 
@@ -885,7 +885,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 asf_geocode_from_proj_file(
                     cfg->geocoding->projection, cfg->geocoding->force,
                     RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
-                    datum, cfg->geocoding->pixel, inFile, outFile,
+                    datum, cfg->geocoding->pixel, NULL, inFile, outFile,
                     cfg->geocoding->background),
                 "geocoding clipped DEM (asf_geocode)\n");
         }
