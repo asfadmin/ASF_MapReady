@@ -1,6 +1,6 @@
 /*==================BEGIN ASF AUTO-GENERATED DOCUMENTATION==================*/
 /*
-ABOUT EDITING THIS DOCUMENTATION: 
+ABOUT EDITING THIS DOCUMENTATION:
 If you wish to edit the documentation for this program, you need to
 change the following defines. For the short ones (like
 ASF_NAME_STRING) this is no big deal. However, for some of the longer
@@ -24,8 +24,8 @@ trouble, and use edit_man_header. :)
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
-"               [-datum <datum>] [-pixel-size <pixel size>] [-log <file>]\n"\
-"               [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
+"               [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
+"               [-log <file>] [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
@@ -162,6 +162,15 @@ trouble, and use edit_man_header. :)
 "          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
 "          by default will preserve the pixel size of the input image.\n"\
 "\n"\
+"     -band <band_id | all>\n"\
+"          If the image file contains multiple bands (channels), then\n"\
+"          geocode the band identified by 'band_id' (only) into a single-band\n"\
+"          ASF-format file.  If 'all' is specified rather than a band_id, then\n"\
+"          geocode all available bands into a single multi-band ASF-format file.\n"\
+"          In this case, all bands will be geocoded using the same set of\n"\
+"          projection parameters, and the parameters in the resulting metadata\n"\
+"          file apply to all.  Default is '-band all'.\n"\
+"\n"\
 "     -background <background fill value>\n"\
 "          Value to use for pixels that fall outside of the scene.  "ASF_NAME_STRING"\n"\
 "          by default will fill the outside with zeroes.\n"\
@@ -197,7 +206,17 @@ trouble, and use edit_man_header. :)
 "     mercator projection, with one pixel 50 meters on a side:\n"\
 "\n"\
 "     "ASF_NAME_STRING" -p utm --central-meridian -147.0 --height 466\n"\
-"                 input_image output_image\n"
+"                 input_image output_image\n"\
+"\n"\
+"     To geocode one band within an image file, you specify the selected band\n"\
+"     with the -band option, and the selected band MUST be one of which appears\n"\
+"     in the list of available bands as noted in the 'bands' item found in the\n"\
+"     'general' (first) block in the metadata file.  For example, if 'bands'\n"\
+"     contains \"01,02,03,04\", then you could specify a band_id, e.g. \"-band 02\"\n"\
+"     etc on the command line.  The same applies to band lists such as \"HH,HV,VH,VV\"\n"\
+"     or just \"03\" etcetera.\n"\
+"\n"\
+"     "ASF_NAME_STRING" -p utm -band HV file outfile_HV\n"
 
 #define ASF_LIMITATIONS_STRING \
 "     May fail badly if bad projection parameters are supplied for the\n"\
@@ -271,6 +290,7 @@ main (int argc, char **argv)
 {
   int force_flag = FALSE;
   int debug_dump = FALSE;
+  char band_id[256]="";
   char *in_base_name, *out_base_name;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
@@ -291,7 +311,7 @@ main (int argc, char **argv)
   // Value to put in the region outside the image
   double background_val = 0.0;
 
-  if (detect_flag_options(argc, argv, "--help", "-help", "-h", NULL)) {
+  if (detect_flag_options(argc, argv, "-help", "--help", "-h", NULL)) {
     print_help();
   }
 
@@ -313,7 +333,7 @@ main (int argc, char **argv)
   project_parameters_t *pp
     = get_geocode_options (&argc, &argv, &projection_type, &average_height,
 			   &pixel_size, &datum, &resample_method,
-			   &force_flag);
+			   &force_flag, band_id);
 
   if (!pp) {
       print_usage();
@@ -356,7 +376,7 @@ main (int argc, char **argv)
 
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
-	      datum, pixel_size, in_base_name, out_base_name,
+	      datum, pixel_size, band_id, in_base_name, out_base_name,
               (float)background_val);
 
   // Close Log, if needed
