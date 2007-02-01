@@ -904,10 +904,10 @@ export_band_image (const char *metadata_file_name,
     }
   }
   else { // Single-band image
+
     channel_stats_t stats;
 
-    // image statistics
-    if (sample_mapping != NONE) { // byte image
+    if (!md->optical && sample_mapping != NONE) {
       asfRequire (sizeof(unsigned char) == 1,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");

@@ -165,6 +165,10 @@ int get_band_number(char *bands, int band_count, char *channel)
   int found;
   int band_no;
 
+  // First do the obvious for single-band images.
+  if (band_count == 1)
+    return 0;
+
   /////////////////////////////////////////////////////////////////////
   // Get everything ready for finding the channel in the list of
   // bands (try to bullet-proof things a bit since metadata is an
