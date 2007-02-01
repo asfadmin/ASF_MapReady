@@ -626,7 +626,7 @@ void write_rgb_tiff_float2byte(TIFF *otif,
 }
 
 void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line, 
-			  struct jpeg_compress_struct cinfo,
+			  struct jpeg_compress_struct *cinfo,
 			  int line, int sample_count)
 {
   int jj;
@@ -638,13 +638,13 @@ void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
     jsample_row[jj] = (JSAMPLE) byte_line[jj];
   }
   row_pointer[0] = jsample_row;
-  jpeg_write_scanlines (&cinfo, row_pointer, 1);
+  jpeg_write_scanlines (cinfo, row_pointer, 1);
   g_free (jsample_row);
   FREE (row_pointer);
 }
 
 void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
-			   struct jpeg_compress_struct cinfo,
+			   struct jpeg_compress_struct *cinfo,
 			   channel_stats_t stats,
 			   scale_t sample_mapping,
 			   float no_data, int line, int sample_count)
@@ -660,7 +660,7 @@ void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
 		       stats.hist, stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
-  jpeg_write_scanlines (&cinfo, row_pointer, 1);
+  jpeg_write_scanlines (cinfo, row_pointer, 1);
   g_free (jsample_row);
   FREE (row_pointer);
 }
@@ -669,7 +669,7 @@ void write_rgb_jpeg_byte2byte(FILE *ojpeg,
 			      unsigned char *red_byte_line,
 			      unsigned char *green_byte_line,
 			      unsigned char *blue_byte_line,
-			      struct jpeg_compress_struct cinfo,
+			      struct jpeg_compress_struct *cinfo,
 			      int line, int sample_count)
 {
   int jj;
@@ -683,7 +683,7 @@ void write_rgb_jpeg_byte2byte(FILE *ojpeg,
     jsample_row[(jj*3)+2] = (JSAMPLE) blue_byte_line[jj];
   }
   row_pointer[0] = jsample_row;
-  jpeg_write_scanlines (&cinfo, row_pointer, 1);
+  jpeg_write_scanlines (cinfo, row_pointer, 1);
   g_free (jsample_row);
   FREE (row_pointer);
 }
@@ -692,7 +692,7 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
 			       float *red_float_line,
 			       float *green_float_line,
 			       float *blue_float_line,
-			       struct jpeg_compress_struct cinfo,
+			       struct jpeg_compress_struct *cinfo,
 			       channel_stats_t red_stats,
 			       channel_stats_t green_stats,
 			       channel_stats_t blue_stats,
@@ -719,7 +719,7 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
 		       blue_stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
-  jpeg_write_scanlines (&cinfo, row_pointer, 1);
+  jpeg_write_scanlines (cinfo, row_pointer, 1);
   g_free (jsample_row);
   FREE (row_pointer);
 }
@@ -861,7 +861,7 @@ export_band_image (const char *metadata_file_name,
 				   blue_byte_line, ii, sample_count);
 	else if (format == JPEG)
 	  write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
-				   blue_byte_line, cinfo, ii, sample_count);
+				   blue_byte_line, &cinfo, ii, sample_count);
       }
       else if (sample_mapping == NONE) {
         // Write float lines if float image
@@ -884,7 +884,7 @@ export_band_image (const char *metadata_file_name,
 				    md->general->no_data, ii, sample_count);
 	else if (format == JPEG)
 	  write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
-				    blue_float_line, cinfo, red_stats, 
+				    blue_float_line, &cinfo, red_stats, 
 				    green_stats, blue_stats, sample_mapping,
 				    md->general->no_data, ii, sample_count);
       }
@@ -935,7 +935,7 @@ export_band_image (const char *metadata_file_name,
 	if (format == TIF || format == GEOTIFF)
 	  write_tiff_byte2byte(otif, byte_line, ii);
 	else if (format == JPEG)
-	  write_jpeg_byte2byte(ojpeg, byte_line, cinfo, ii, sample_count);
+	  write_jpeg_byte2byte(ojpeg, byte_line, &cinfo, ii, sample_count);
       }
       else if (sample_mapping == NONE) {
         get_float_line(fp, md, ii, float_line);
@@ -948,7 +948,7 @@ export_band_image (const char *metadata_file_name,
 	  write_tiff_float2byte(otif, float_line, stats, sample_mapping,
 				md->general->no_data, ii, sample_count);
 	else if (format == JPEG)
-	  write_jpeg_float2byte(ojpeg, float_line, cinfo, stats, 
+	  write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats, 
 				sample_mapping, md->general->no_data, 
 				ii, sample_count);
       }
