@@ -91,6 +91,28 @@ BUGS:
 #define TOSS_SIZE BLOCK_SIZE/100
 #define VERSION 1.5
 
+
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <.cpx in> <.cpx out> <frequency parameter file>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+	"   <.cpx in>   Input Complex Image\n"
+	"   <.cpx out>  Output Complex Image\n"
+	"   <frequency parameter file>   File containing passband information.\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program filters complex image data in azimuth to remove\n"
+	"   non-overlapping frequencies.\n");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n", VERSION);
+ exit(EXIT_FAILURE);
+}
+
+
 int main(int argc,char **argv)
 {
   int lines,samps;                   /* Number of image lines and samples     */
@@ -344,24 +366,4 @@ int main(int argc,char **argv)
   FCLOSE(outF1);
   StopWatch();
   return 0;
-}
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s <.cpx in> <.cpx out> <frequency parameter file>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   <.cpx in>   Input Complex Image\n"
-	"   <.cpx out>  Output Complex Image\n"
-	"   <frequency parameter file>   File containing passband information.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   This program filters complex image data in azimuth to remove\n"
-	"   non-overlapping frequencies.\n");
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n", VERSION);
- exit(EXIT_FAILURE);
 }

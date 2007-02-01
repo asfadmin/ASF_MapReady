@@ -96,6 +96,27 @@ BUGS:
 #define thresh 0.1	/* set the threshold to determine which frequencies we will be zeroing currently 5% of max amplitude */
 #define VERSION 1.10
 
+
+void usage(char *name)
+{
+ printf("\n"
+	"USAGE:\n"
+	"   %s <cpx img1> <cpx img2> <out_filt_params>\n",name);
+ printf("\n"
+	"REQUIRED ARGUMENTS:\n"
+        "   <cpx img1>          Complex Input image 1 (no extension)\n"
+        "   <cpx img2>          Complex Input image 2 (no extension)\n"
+        "   <out_filt_params>   Output file containing filter parameters\n");
+ printf("\n"
+	"DESCRIPTION:\n"
+	"   This program generates filter parameters for cpx_filter");
+ printf("\n"
+	"Version %.2f, ASF InSAR Tools\n"
+	"\n",VERSION);
+ exit(EXIT_FAILURE);
+}
+
+
 int main(int argc,char **argv)
 {
 	
@@ -383,23 +404,4 @@ int main(int argc,char **argv)
 	fprintf(outF1,"%f\n%f\n%f %f\n%f %f",f_s,freq_mod,lo_out_1,hi_out_1,lo_out_2,hi_out_2);
 	FCLOSE(outF1);
         return 0;
-}
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s <cpx img1> <cpx img2> <out_filt_params>\n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-        "   <cpx img1>          Complex Input image 1 (no extension)\n"
-        "   <cpx img2>          Complex Input image 2 (no extension)\n"
-        "   <out_filt_params>   Output file containing filter parameters\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   This program generates filter parameters for cpx_filter");
- printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
 }

@@ -3,30 +3,39 @@
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
+	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/asf_fft.a -lm
+	-lm
+
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
 
 CPXOBJS = cpx_filter.o \
           cfft1d_risc.o
 
-all:	cpx_filter \
-	gen_filt_params
-	rm *.o
-	cp cpx_autofilter $(BIN_POSTFIX) $(BINDIR)
+all:  bins clean
+
+bins: cpx_filter gen_filt_params
+	cp cpx_autofilter $(BINDIR)
 	-chmod 775 $(BINDIR)/cpx_autofilter
 	cp cpx_autofilter.1 ../../man/cat1
 
 cpx_filter: $(CPXOBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o cpx_filter $(CPXOBJS) $(LIBS)
-	mv cpx_filter $(BIN_POSTFIX) $(BINDIR)
-	cp *.1 ../../man/cat1
+	mv cpx_filter$(BIN_POSTFIX) $(BINDIR)
+	cp cpx_filter.1 ../../man/cat1
 
 gen_filt_params: gen_filt_params.o
 	$(CC) $(CFLAGS) $(LFLAGS) -o gen_filt_params gen_filt_params.o $(LIBS)
-	mv gen_filt_params $(BIN_POSTFIX) $(BINDIR)
-	cp *.1 ../../man/cat1
+	mv gen_filt_params$(BIN_POSTFIX) $(BINDIR)
+	cp gen_filt_params.1 ../../man/cat1
+
+clean:
+	rm -f *.o core *~
 
