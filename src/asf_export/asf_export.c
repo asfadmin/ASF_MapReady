@@ -374,7 +374,7 @@ main (int argc, char *argv[])
   }
 
   int num_bands_found;
-  band_name = find_bands(in_base_name, command_line.red_channel,
+  band_name = find_bands(in_base_name, rgbFlag, command_line.red_channel,
                          command_line.green_channel,
                          command_line.blue_channel,
                          &num_bands_found);
