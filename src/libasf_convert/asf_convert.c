@@ -759,9 +759,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               int num_found;
               char **bands = find_bands(inFile, TRUE, red, green, blue, &num_found);
               if (num_found > 0) {
-                check_return(asf_export_bands(format, scale, strlen(cfg->export->rgb) > 0,
-                             inFile, outFile, bands),
-                             "export data file (asf_export), banded.\n");
+                  check_return(asf_export_bands(format, scale, TRUE,
+                                                inFile, outFile, bands),
+                               "export data file (asf_export), banded.\n");
                   int i;
                   for (i = 0; i<num_found; i++) {
                     FREE(bands[i]);

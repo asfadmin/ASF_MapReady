@@ -915,7 +915,7 @@ export_band_image (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
       asfPrintStatus("Gathering statistics ...\n");
-      calc_stats_from_file(image_data_file_name, "", 0.0,
+      calc_stats_from_file(image_data_file_name, NULL, 0.0,
 			   &stats.min, &stats.max, &stats.mean, 
 			   &stats.standard_deviation, stats.hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {

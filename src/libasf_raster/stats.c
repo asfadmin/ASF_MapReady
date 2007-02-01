@@ -19,7 +19,7 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
   //sprintf(dataFile, "%s.img", inFile);
   //sprintf(metaFile, "%s.meta", inFile);
   meta = meta_read(inFile);
-  band_number = 
+  band_number = (!band || strlen(band) == 0) ? 0 :
     get_band_number(meta->general->bands, meta->general->band_count, band);
   pixel_count = meta->general->line_count * meta->general->sample_count;
   offset = meta->general->line_count * band_number;
