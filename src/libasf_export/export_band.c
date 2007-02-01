@@ -127,10 +127,9 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
 
 void initialize_jpeg_file(const char *output_file_name, 
 			  meta_parameters *meta, FILE **ojpeg, 
-			  struct jpeg_compress_struct *jpeg_cinfo, int rgb)
+			  struct jpeg_compress_struct *cinfo, int rgb)
 {
-  struct jpeg_error_mgr jerr;
-  struct jpeg_compress_struct cinfo;
+  struct jpeg_error_mgr *jerr = MALLOC(sizeof(struct jpeg_error_mgr));
 
   /* We need a version of the data in JSAMPLE form, so we have to map
      floats into JSAMPLEs.  We do this by defining a region 2 sigma on
@@ -151,32 +150,29 @@ void initialize_jpeg_file(const char *output_file_name,
              "Something wacky happened, like data overflow.\n");
 
   // Initializae libjpg structures.
-  cinfo.err = jpeg_std_error (&jerr);
-  jpeg_create_compress (&cinfo);
+  cinfo->err = jpeg_std_error (jerr);
+  jpeg_create_compress (cinfo);
 
   // Open the output file to be used.
   *ojpeg = FOPEN(output_file_name, "wb");
 
   // Connect jpeg output to the output file to be used.
-  jpeg_stdio_dest (&cinfo, *ojpeg);
+  jpeg_stdio_dest (cinfo, *ojpeg);
 
   // Set image parameters that libjpeg needs to know about.
-  cinfo.image_width = meta->general->sample_count;
-  cinfo.image_height = meta->general->line_count;
+  cinfo->image_width = meta->general->sample_count;
+  cinfo->image_height = meta->general->line_count;
   if (rgb) {
-    cinfo.in_color_space = JCS_RGB;
-    cinfo.input_components = 3;
+    cinfo->in_color_space = JCS_RGB;
+    cinfo->input_components = 3;
   }
   else {
-    cinfo.in_color_space = JCS_GRAYSCALE;
-    cinfo.input_components = 1;
+    cinfo->in_color_space = JCS_GRAYSCALE;
+    cinfo->input_components = 1;
   }
-  jpeg_set_defaults (&cinfo);   // Use default compression parameters.
+  jpeg_set_defaults (cinfo);   // Use default compression parameters.
   // Reassure libjpeg that we will be writing a complete JPEG file.
-  jpeg_start_compress (&cinfo, TRUE);
-
-  // Return
-  *jpeg_cinfo = cinfo;
+  jpeg_start_compress (cinfo, TRUE);
 
   return;
 }
