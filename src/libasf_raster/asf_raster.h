@@ -59,6 +59,15 @@ typedef enum {
   LANCZOS
 } weighting_type_t;
 
+typedef struct {
+  double min;
+  double max;
+  double mean;
+  double standard_deviation;
+  gsl_histogram *hist;
+  gsl_histogram_pdf *hist_pdf;
+} channel_stats_t;
+
 // Prototypes from bands.c
 char **extract_band_names(char *bands, int band_count);
 char **find_bands(char *in_base_name, char *red_channel, char *green_channel, 
