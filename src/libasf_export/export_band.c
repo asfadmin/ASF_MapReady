@@ -125,8 +125,8 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   }
 }
 
-void initialize_jpeg_file(const char *output_file_name, 
-			  meta_parameters *meta, FILE **ojpeg, 
+void initialize_jpeg_file(const char *output_file_name,
+			  meta_parameters *meta, FILE **ojpeg,
 			  struct jpeg_compress_struct *cinfo, int rgb)
 {
   struct jpeg_error_mgr *jerr = MALLOC(sizeof(struct jpeg_error_mgr));
@@ -538,12 +538,12 @@ void write_tiff_float2byte(TIFF *otif, float *float_line,
 {
   int jj;
   unsigned char *byte_line;
-  
+
   byte_line = (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
 
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
-      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max, 
+      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
 		       stats.hist, stats.hist_pdf, no_data);
   }
   TIFFWriteScanline (otif, byte_line, line, 0);
@@ -558,10 +558,10 @@ void write_rgb_tiff_byte2byte(TIFF *otif,
 {
   int jj;
   unsigned char *rgb_byte_line;
-  
+
   rgb_byte_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
-  
+
   for (jj=0; jj<sample_count; jj++) {
     rgb_byte_line[jj*3] = red_byte_line[jj];
     rgb_byte_line[(jj*3)+1] = green_byte_line[jj];
@@ -579,7 +579,7 @@ void write_rgb_tiff_float2float(TIFF *otif,
 {
   int jj;
   float *rgb_float_line;
-  
+
   rgb_float_line = (float *) MALLOC(sizeof(float) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
@@ -603,29 +603,29 @@ void write_rgb_tiff_float2byte(TIFF *otif,
 {
   int jj;
   unsigned char *rgb_byte_line;
-  
+
   rgb_byte_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
     rgb_byte_line[jj*3] =
       pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist, 
+		       red_stats.min, red_stats.max, red_stats.hist,
 		       red_stats.hist_pdf, no_data);
     rgb_byte_line[(jj*3)+1] =
       pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist, 
+		       green_stats.min, green_stats.max, green_stats.hist,
 		       green_stats.hist_pdf, no_data);
     rgb_byte_line[(jj*3)+2] =
       pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist, 
+		       blue_stats.min, blue_stats.max, blue_stats.hist,
 		       blue_stats.hist_pdf, no_data);
   }
   TIFFWriteScanline (otif, rgb_byte_line, line, 0);
   FREE(rgb_byte_line);
 }
 
-void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line, 
+void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
 			  struct jpeg_compress_struct *cinfo,
 			  int line, int sample_count)
 {
@@ -656,7 +656,7 @@ void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
 
   for (jj=0; jj<sample_count; jj++) {
     jsample_row[jj] = (JSAMPLE)
-      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max, 
+      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
 		       stats.hist, stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
@@ -673,7 +673,7 @@ void write_rgb_jpeg_byte2byte(FILE *ojpeg,
 			      int line, int sample_count)
 {
   int jj;
-  
+
   JSAMPLE *jsample_row = g_new (JSAMPLE, sample_count * 3);
   JSAMPROW *row_pointer = MALLOC (sizeof (JSAMPROW));
 
@@ -707,15 +707,15 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
   for (jj=0; jj<sample_count; jj++) {
     jsample_row[jj*3] = (JSAMPLE)
       pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist, 
+		       red_stats.min, red_stats.max, red_stats.hist,
 		       red_stats.hist_pdf, no_data);
     jsample_row[(jj*3)+1] = (JSAMPLE)
       pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist, 
+		       green_stats.min, green_stats.max, green_stats.hist,
 		       green_stats.hist_pdf, no_data);
     jsample_row[(jj*3)+2] = (JSAMPLE)
       pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist, 
+		       blue_stats.min, blue_stats.max, blue_stats.hist,
 		       blue_stats.hist_pdf, no_data);
   }
   row_pointer[0] = jsample_row;
@@ -763,10 +763,10 @@ export_band_image (const char *metadata_file_name,
   }
 
   if (rgb) {
-    
+
     channel_stats_t red_stats, blue_stats, green_stats;
-      
-    if (!md->optical) { 
+
+    if (!md->optical) {
       // Red channel statistics
       if (sample_mapping != NONE) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
@@ -781,7 +781,7 @@ export_band_image (const char *metadata_file_name,
 	  gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
 	}
       }
-      
+
       // Green channel statistics
       if (sample_mapping != NONE) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
@@ -789,16 +789,16 @@ export_band_image (const char *metadata_file_name,
 		    "different than expected.\n");
 	asfPrintStatus("Gathering green channel statistics ...\n");
 	calc_stats_from_file(image_data_file_name, band_name[1], 0.0,
-			     &green_stats.min, &green_stats.max, 
-			     &green_stats.mean, 
-			     &green_stats.standard_deviation, 
+			     &green_stats.min, &green_stats.max,
+			     &green_stats.mean,
+			     &green_stats.standard_deviation,
 			     green_stats.hist);
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	  green_stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	  gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
 	}
       }
-      
+
       // Blue channel statistics
       if (sample_mapping != NONE) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
@@ -806,9 +806,9 @@ export_band_image (const char *metadata_file_name,
 		    "different than expected.\n");
 	asfPrintStatus("Gathering blue channel statistics ...\n");
 	calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
-			     &blue_stats.min, &blue_stats.max, 
+			     &blue_stats.min, &blue_stats.max,
 			     &blue_stats.mean,
-			     &blue_stats.standard_deviation, 
+			     &blue_stats.standard_deviation,
 			     blue_stats.hist);
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	  blue_stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
@@ -816,7 +816,7 @@ export_band_image (const char *metadata_file_name,
 	}
       }
     }
-      
+
     // Write the actual image data
     FILE *fp;
     float *red_float_line, *green_float_line, *blue_float_line;
@@ -833,9 +833,9 @@ export_band_image (const char *metadata_file_name,
     int blue_channel = get_band_number(md->general->bands,
                                        md->general->band_count,
                                        band_name[2]);
-    asfRequire(red_channel >= 0 && red_channel <= MAX_BANDS &&
-               green_channel >= 0 && green_channel <= MAX_BANDS &&
-               blue_channel >= 0 && blue_channel <= MAX_BANDS,
+    asfRequire(red_channel >= 0 && red_channel < MAX_BANDS &&
+               green_channel >= 0 && green_channel < MAX_BANDS &&
+               blue_channel >= 0 && blue_channel < MAX_BANDS,
                "Band number out of range\n");
 
     int sample_count = md->general->sample_count;
@@ -887,7 +887,7 @@ export_band_image (const char *metadata_file_name,
 				    md->general->no_data, ii, sample_count);
 	else if (format == JPEG)
 	  write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
-				    blue_float_line, &cinfo, red_stats, 
+				    blue_float_line, &cinfo, red_stats,
 				    green_stats, blue_stats, sample_mapping,
 				    md->general->no_data, ii, sample_count);
       }
@@ -916,7 +916,7 @@ export_band_image (const char *metadata_file_name,
                   "different than expected.\n");
       asfPrintStatus("Gathering statistics ...\n");
       calc_stats_from_file(image_data_file_name, NULL, 0.0,
-			   &stats.min, &stats.max, &stats.mean, 
+			   &stats.min, &stats.max, &stats.mean,
 			   &stats.standard_deviation, stats.hist);
       if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
         stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
@@ -951,13 +951,13 @@ export_band_image (const char *metadata_file_name,
 	  write_tiff_float2byte(otif, float_line, stats, sample_mapping,
 				md->general->no_data, ii, sample_count);
 	else if (format == JPEG)
-	  write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats, 
-				sample_mapping, md->general->no_data, 
+	  write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
+				sample_mapping, md->general->no_data,
 				ii, sample_count);
       }
       asfLineMeter(ii, md->general->line_count);
     }
-    
+
     // Free memory
     if (float_line) FREE(float_line);
     if (byte_line) FREE(byte_line);
