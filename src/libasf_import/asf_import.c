@@ -213,7 +213,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
                 found = 1;
               ii++;
               if (ii > nBands)
-                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band data but\n"
+                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band data and\n"
                     "selected band (\"%s\") file was not found \"%s\"\n", band_id,
                     strcat(file_prefix, inBaseName));
             } while (!found);
