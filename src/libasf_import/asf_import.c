@@ -191,6 +191,21 @@ int asf_import(radiometry_t radiometry, int db_flag,
             char file_prefix[256];
             int found=0;
 
+            // Be forgiving on numeric-only band IDs and let
+            // the user enter digits with or without leading
+            // zeros, e.g. 01 or 1 ...they are equivalent
+            int iBandNo = atoi(band_id);
+            if (iBandNo > 0 && iBandNo <= MAX_BANDS) {
+              // band_id appears to be a valid numeric band number
+              int alpha = 0;
+              char *s = band_id;
+              while (*s != '\0') {
+                if (isalpha(*s)) alpha = 1;
+                s++;
+              }
+              if (!alpha)
+                sprintf(band_id, "%02d", iBandNo);
+            }
             sprintf(file_prefix, "IMG-%s-", band_id);
             ii = 0;
             do {
