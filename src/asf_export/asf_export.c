@@ -175,6 +175,7 @@ main (int argc, char *argv[])
   meta_parameters *md;
   char *in_base_name, *output_name;
   char **band_name=NULL;
+  int rgb=0;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
   output_name = (char *) MALLOC(sizeof(char)*255);
@@ -380,6 +381,7 @@ main (int argc, char *argv[])
   if (rgbFlag != FLAG_NOT_SET) {
     if (num_bands_found >= 3) {
       asfPrintStatus("Exporting multiband image ...\n\n");
+      rgb = 1;
     }
     else {
       asfPrintError("Not all RGB channels found.\n");
@@ -446,7 +448,7 @@ main (int argc, char *argv[])
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export_bands(format, command_line.sample_mapping,
+  asf_export_bands(format, command_line.sample_mapping, rgb,
                    in_base_name, command_line.output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept

@@ -12,13 +12,13 @@
 
 void
 export_as_ppm (const char *metadata_file_name,
-               const char *image_data_file_name,const char *output_file_name,
-               long max_size, scale_t sample_mapping)
+               const char *image_data_file_name,
+	       const char *output_file_name,
+               scale_t sample_mapping)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
   /* Scale factor needed to satisfy max_size argument.  */
-  size_t scale_factor;
   FILE *ofp;                    /* Output file pointer.  */
   const char *ppm_magic_number = PPM_MAGIC_NUMBER;
   int print_count;              /* For return from printf().  */
@@ -39,33 +39,8 @@ export_as_ppm (const char *metadata_file_name,
   //                               image_data_file_name, start_of_file_offset,
   //                               FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
 
-  FloatImage *iim =
+  FloatImage *si =
       float_image_new_from_metadata(md, image_data_file_name);
-
-  /* We want to scale the image st the long dimension is less than or
-     equal to the prescribed maximum, if any.  */
-  if ( (max_size > iim->size_x && max_size > iim->size_y)
-       || max_size == NO_MAXIMUM_OUTPUT_SIZE ) {
-    scale_factor = 1;
-  }
-  else {
-    scale_factor = ceil ((double) GSL_MAX (iim->size_x, iim->size_y)
-                         / max_size);
-    /* The scaling code we intend to use needs odd scale factors.  */
-    if ( scale_factor % 2 != 1 ) {
-      scale_factor++;
-    }
-  }
-
-  /* Generate the scaled version of the image, if needed.  */
-  FloatImage *si;
-  if ( scale_factor != 1 ) {
-    asfPrintStatus ("Scaling...\n");
-    si = float_image_new_from_model_scaled (iim, scale_factor);
-  }
-  else {
-    si = iim;
-  }
 
   /* We need a version of the data in byte form, so we have to map
      floats into bytes.  We do this by defining a region 2 sigma on
@@ -139,14 +114,6 @@ export_as_ppm (const char *metadata_file_name,
 
   FCLOSE (ofp);
 
-  // If the scale factor wasn't one, the scaled version of the image
-  // will be different from the original and so will need to be freed
-  // seperately.
-  if ( si != iim) {
-    float_image_free (si);
-  }
-
-  float_image_free (iim);
-
+  float_image_free (si);
   meta_free (md);
 }

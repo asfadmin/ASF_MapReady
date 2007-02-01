@@ -40,7 +40,6 @@ typedef enum {
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
   PPM,                          /* Portable PixMap.  */
-  CEOS,                         /* CEOS format */
   KML                           // JPEG with GoogleEarth overlay file
 } output_format_t;
 
@@ -81,8 +80,8 @@ typedef struct {
 /* Prototypes */
 int asf_export(output_format_t format, scale_t sample_mapping, 
 	       char *in_base_name, char *output_name);
-int asf_export_bands(output_format_t format, scale_t sample_mapping, 
-		     char *in_base_name, char *output_name, char **rgb);
+int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
+		     char *in_base_name, char *output_name, char **band_name);
 
 void usage();
 void help_page();
@@ -128,17 +127,21 @@ void export_rgb_as_geotiff (const char *metadata_file_name,
 void export_as_jpeg (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
-                     long max_size,
                      scale_t sample_mapping);
 
 void export_as_ppm (const char *metadata_file_name,
                     const char *image_data_file_name,
                     const char *output_file_name,
-                    long max_size,
                     scale_t sample_mapping);
 
 void export_as_tiff (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name,
-                     long max_size,
                      scale_t sample_mapping);
+
+void export_band_image(const char *metadata_file_name,
+		       const char *image_data_file_name,
+		       const char *output_file_name,
+		       scale_t sample_mapping,
+		       char **band_name, int rgb,
+		       output_format_t format);
