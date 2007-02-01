@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include <asf_export.h>
 #include <ctype.h>
 
 // Prototypes
@@ -77,7 +78,7 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 
 // Returns an array of strings which represent band numbers,
 //
-char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
+char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel,
 		  char *blue_channel, int *num_found)
 {
   char **rgb=NULL;
@@ -103,34 +104,34 @@ char **find_bands(char *in_base_name, char *red_channel, char *green_channel,
     strcpy(rgb[ii],"");
   }
   if (strcmp(meta->general->bands, "???") != 0) {
-    if (strstr(meta->general->bands, red_channel)) {
+    if (strlen(red_channel) && strstr(meta->general->bands, red_channel)) {
       red = 1;
       strcpy(rgb[*num_found], red_channel);
       (*num_found)++;
     }
-    else {
+    else if (rgb_flag != FLAG_NOT_SET) {
       asfPrintWarning("Channel specified for RED (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", red_channel,
                       meta->general->bands);
     }
-    if (strstr(meta->general->bands, green_channel)) {
+    if (strlen(green_channel) && strstr(meta->general->bands, green_channel)) {
       green = 1;
       strcpy(rgb[*num_found], green_channel);
       (*num_found)++;
     }
-    else {
+    else if (rgb_flag != FLAG_NOT_SET) {
       asfPrintWarning("Channel specified for GREEN (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", green_channel,
                       meta->general->bands);
     }
-    if (strstr(meta->general->bands, blue_channel)) {
+    if (strlen(blue_channel) && strstr(meta->general->bands, blue_channel)) {
       blue = 1;
       strcpy(rgb[*num_found], blue_channel);
       (*num_found)++;
     }
-    else {
+    else if (rgb_flag != FLAG_NOT_SET) {
       asfPrintWarning("Channel specified for BLUE (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", blue_channel,
@@ -170,10 +171,6 @@ int get_band_number(char *bands, int band_count, char *channel)
     return 0;
 
   /////////////////////////////////////////////////////////////////////
-  // Get everything ready for finding the channel in the list of
-  // bands (try to bullet-proof things a bit since metadata is an
-  // editable text file)
-  //
   // Copy then trim leading white space and zeros, and trailing white
   // space, from channel identifier
   t_bands = STRDUP(bands);
@@ -272,3 +269,4 @@ char *channel_trim (const char *channel)
 
   return t_channel;
 }
+
