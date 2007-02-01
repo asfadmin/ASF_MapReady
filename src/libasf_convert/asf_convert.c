@@ -116,7 +116,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
-        asf_import(r_AMP, FALSE, "GEOTIFF", what, NULL,
+        asf_import(r_AMP, FALSE, "GEOTIFF", NULL, what, NULL,
                    NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
                    imported), status);
 
@@ -157,7 +157,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // Extend the configuration file if the file already exist
   else if ( createflag==TRUE && fileExists(configFileName) ) {
     cfg = read_convert_config(configFileName);
-    check_return(write_convert_config(configFileName, cfg), 
+    check_return(write_convert_config(configFileName, cfg),
                  "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     FCLOSE(fLog);
@@ -203,7 +203,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Extend the temporary configuration file
       tmp_cfg = read_convert_config(tmpCfgName);
-      check_return(write_convert_config(tmpCfgName, tmp_cfg), 
+      check_return(write_convert_config(tmpCfgName, tmp_cfg),
                    "Could not update configuration file");
       FREE(tmp_cfg);
 
@@ -219,12 +219,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   else {
 
     update_status(cfg, "Processing...");
-    
+
     create_and_set_tmp_dir(cfg->general->in_name, cfg->general->tmp_dir);
 
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
- 
+
       // Import format: ASF, CEOS or STF
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
@@ -292,7 +292,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         // We actually think this is working in many cases, but it hasn't
         // been fully tested yet for all satellites/beams.
         asfPrintWarning("Processing from level 0 is not fully tested yet!\n");
-        
+
       // Radiometry
       if (strncmp(uc(cfg->sar_processing->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
           strncmp(uc(cfg->sar_processing->radiometry), "POWER_IMAGE", 11) != 0 &&
@@ -373,7 +373,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         if (have_mask && cfg->terrain_correct->auto_mask_water) {
             asfPrintStatus("Mask File: %s\n", cfg->terrain_correct->mask);
-            asfPrintStatus("Auto Water Mask: %d\n", 
+            asfPrintStatus("Auto Water Mask: %d\n",
                            cfg->terrain_correct->auto_mask_water);
             asfPrintWarning("You cannot specify a mask for terrain correction "
                           "and also request an automatically generated mask.\n"
@@ -413,7 +413,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
-        !cfg->general->terrain_correct && !cfg->general->geocoding && 
+        !cfg->general->terrain_correct && !cfg->general->geocoding &&
         !cfg->general->export) {
       asfPrintError("Nothing to be done\n");
     }
@@ -468,6 +468,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
                               uc(cfg->import->format),
+                              NULL,
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
                               cfg->import->lat_begin, cfg->import->lat_end,
@@ -510,7 +511,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         } else if (strncmp(uc(cfg->sar_processing->radiometry), "BETA_IMAGE", 10) == 0) {
             params_in->betaFlag = &one;
         }
-        
+
         // When terrain correcting, add the deskew flag
         if (cfg->general->terrain_correct)
             params_in->deskew = &one;
@@ -528,7 +529,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         else if (strcmp(cfg->sar_processing->radiometry, "BETA_IMAGE") == 0)
           sprintf(outFile, "%s/sar_processing_beta", cfg->general->tmp_dir);
         else
-            asfPrintError("Unexpected radiometry: %s\n", 
+            asfPrintError("Unexpected radiometry: %s\n",
                           cfg->sar_processing->radiometry);
 
         // If we are not going to be terrain correcting, get the output
@@ -547,7 +548,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       meta_free(meta);
     }
-    
+
     if (cfg->general->image_stats) {
       char values[255];
 
@@ -564,8 +565,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->terrain_correct || 
-          cfg->general->geocoding || 
+      if (cfg->general->terrain_correct ||
+          cfg->general->geocoding ||
           cfg->general->export)
       {
         sprintf(outFile, "%s/image_stats", cfg->general->tmp_dir);
@@ -614,14 +615,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // If the Mask is a GeoTIFF, we need to import it, and geocode it.
       if (cfg->terrain_correct->mask &&
           strlen(cfg->terrain_correct->mask) > 0 &&
-          has_tiff_ext(cfg->terrain_correct->mask)) 
+          has_tiff_ext(cfg->terrain_correct->mask))
       {
           char * converted_mask =
               convert_tiff(cfg->terrain_correct->dem, "mask", cfg, saveDEM);
           strcpy(cfg->terrain_correct->mask, converted_mask);
           free(converted_mask);
       }
-      
+
       // Generate filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s/terrain_correct", cfg->general->tmp_dir);
@@ -641,10 +642,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status(cfg, "Terrain Correcting...");
           check_return(
             asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
-                             cfg->terrain_correct->mask, outFile, 
+                             cfg->terrain_correct->mask, outFile,
                              cfg->terrain_correct->pixel,
                              !cfg->general->intermediates,
-                             TRUE, FALSE, cfg->terrain_correct->interp, 
+                             TRUE, FALSE, cfg->terrain_correct->interp,
                              TRUE, 20, TRUE, cfg->terrain_correct->fill_value,
                              cfg->terrain_correct->auto_mask_water,
                              cfg->terrain_correct->save_terrcorr_dem, FALSE,
@@ -732,7 +733,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format = JPEG;
       } else if (strncmp(uc(cfg->export->format), "PPM", 3) == 0) {
         format = PPM;
-      } 
+      }
 
       // Byte scaling
       if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
@@ -758,8 +759,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               int num_found;
               char **bands = find_bands(inFile, TRUE, red, green, blue, &num_found);
               if (num_found > 0) {
-                  check_return(asf_export_bands(format, scale, inFile, outFile, bands),
-                               "export data file (asf_export), banded.\n");
+                check_return(asf_export_bands(format, scale, strlen(cfg->export->rgb) > 0,
+                             inFile, outFile, bands),
+                             "export data file (asf_export), banded.\n");
                   int i;
                   for (i = 0; i<num_found; i++) {
                     FREE(bands[i]);
@@ -798,7 +800,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Generate a small thumbnail if requested.
     if (cfg->general->thumbnail) {
         asfPrintStatus("Generating Thumbnail image...\n");
-        
+
         output_format_t format = JPEG;
         scale_t scale = SIGMA;
 	meta_parameters *meta;
@@ -812,11 +814,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
 	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 48;
-        
+
         // Pass in command line
         if (!cfg->general->export)
             sprintf(inFile, "%s", outFile);
-        
+
         // Put the thumbnail in the intermediates directory, if it is
         // being kept, otherwise in the output directory.
         char *basename = get_basename(cfg->general->out_name);
@@ -886,7 +888,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     datum, cfg->geocoding->pixel, inFile, outFile,
                     cfg->geocoding->background),
                 "geocoding clipped DEM (asf_geocode)\n");
-        } 
+        }
         else {
             // no geocoding ... just prepare the 'outFile' param for export
             sprintf(outFile, "%s/terrain_correct_mask",cfg->general->tmp_dir);
@@ -895,7 +897,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->export) {
             update_status(cfg, "Exporting layover mask...");
             sprintf(inFile, "%s", outFile);
-            char *tmp = 
+            char *tmp =
                 appendToBasename(cfg->general->out_name, "_layover_mask");
             strcpy(outFile, tmp);
             free(tmp);
