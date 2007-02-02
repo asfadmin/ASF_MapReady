@@ -25,6 +25,7 @@
 #include <typlim.h>
 
 #define ASF_NAME_STRING "asf_export"
+#define PPM_MAGIC_NUMBER "P6"
 
 /* This constant is from the GeoTIFF spec.  It basically means that
    the system which would normally be specified by the field
@@ -47,16 +48,6 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            int is_geotiff, scale_t sample_mapping, int rgb);
 void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
-
-void
-export_as_geotiff (const char *metadata_file_name,
-                   const char *image_data_file_name,
-                   char *output_file_name,
-                   scale_t sample_mapping)
-{
-  return export_band_image(metadata_file_name, image_data_file_name,
-			   output_file_name, sample_mapping, NULL, 0, GEOTIFF);
-}
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -175,6 +166,21 @@ void initialize_jpeg_file(const char *output_file_name,
   jpeg_start_compress (cinfo, TRUE);
 
   return;
+}
+
+void initialize_ppm_file(const char *output_file_name, 
+			 meta_parameters *meta, FILE **oppm)
+{
+  const int max_color_value = 255;
+
+  *oppm = FOPEN (output_file_name, "w");
+
+  fprintf (*oppm, "%s\n", PPM_MAGIC_NUMBER);
+  fprintf (*oppm, "%ld\n", (long int) meta->general->sample_count);
+  fprintf (*oppm, "%ld\n", (long int) meta->general->line_count);
+  fprintf (*oppm, "%d\n", max_color_value);
+
+  return;  
 }
 
 void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
@@ -522,6 +528,11 @@ void finalize_jpeg_file(FILE *ojpeg, struct jpeg_compress_struct *cinfo)
   jpeg_destroy_compress (cinfo);
 }
 
+void finalize_ppm_file(FILE *oppm)
+{
+  FCLOSE(oppm);
+}
+
 void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line, int line)
 {
   TIFFWriteScanline (otif, byte_line, line, 0);
@@ -724,6 +735,61 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
   FREE (row_pointer);
 }
 
+void write_ppm_byte2byte(FILE *oppm,
+			 unsigned char *red_byte_line,
+			 unsigned char *green_byte_line,
+			 unsigned char *blue_byte_line,
+			 int line, int sample_count)
+{
+  int jj;
+  unsigned char *rgb_byte_line;
+
+  rgb_byte_line = (unsigned char *)
+    MALLOC(sizeof(unsigned char) * sample_count * 3);
+
+  for (jj=0; jj<sample_count; jj++) {
+    rgb_byte_line[jj*3] = red_byte_line[jj];
+    rgb_byte_line[(jj*3)+1] = green_byte_line[jj];
+    rgb_byte_line[(jj*3)+2] = blue_byte_line[jj];
+  }
+  FWRITE(rgb_byte_line, sizeof(unsigned char)*3, sample_count, oppm);
+  FREE(rgb_byte_line);
+}
+
+void write_ppm_float2byte(FILE *oppm,
+			  float *red_float_line,
+			  float *green_float_line,
+			  float *blue_float_line,
+			  channel_stats_t red_stats,
+			  channel_stats_t green_stats,
+			  channel_stats_t blue_stats,
+			  scale_t sample_mapping,
+			  float no_data, int line, int sample_count)
+{
+  int jj;
+  unsigned char *rgb_byte_line;
+
+  rgb_byte_line = (unsigned char *)
+    MALLOC(sizeof(unsigned char) * sample_count * 3);
+
+  for (jj=0; jj<sample_count; jj++) {
+    rgb_byte_line[jj*3] =
+      pixel_float2byte(red_float_line[jj], sample_mapping,
+		       red_stats.min, red_stats.max, red_stats.hist,
+		       red_stats.hist_pdf, no_data);
+    rgb_byte_line[(jj*3)+1] =
+      pixel_float2byte(green_float_line[jj], sample_mapping,
+		       green_stats.min, green_stats.max, green_stats.hist,
+		       green_stats.hist_pdf, no_data);
+    rgb_byte_line[(jj*3)+2] =
+      pixel_float2byte(blue_float_line[jj], sample_mapping,
+		       blue_stats.min, blue_stats.max, blue_stats.hist,
+		       blue_stats.hist_pdf, no_data);
+  }
+  FWRITE(rgb_byte_line, sizeof(unsigned char)*3, sample_count, oppm);
+  FREE(rgb_byte_line);
+}
+
 void
 export_band_image (const char *metadata_file_name,
 		   const char *image_data_file_name,
@@ -736,7 +802,7 @@ export_band_image (const char *metadata_file_name,
   int is_geotiff = 1;
   TIFF *otif = NULL; // FILE* pointer for TIFF files
   GTIF *ogtif = NULL;
-  FILE *ojpeg = NULL;
+  FILE *ojpeg = NULL, *oppm=NULL;
   struct jpeg_compress_struct cinfo;
   ssize_t ii;
 
@@ -759,6 +825,9 @@ export_band_image (const char *metadata_file_name,
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
+    }
+    else if (format == PPM) {
+      initialize_ppm_file(output_file_name, md, &oppm);
     }
 
     channel_stats_t red_stats, blue_stats, green_stats;
@@ -862,6 +931,9 @@ export_band_image (const char *metadata_file_name,
 	else if (format == JPEG)
 	  write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
 				   blue_byte_line, &cinfo, ii, sample_count);
+	else if (format == PPM)
+	  write_ppm_byte2byte(oppm, red_byte_line, green_byte_line,
+			      blue_byte_line, ii, sample_count);
       }
       else if (sample_mapping == NONE) {
         // Write float lines if float image
@@ -887,6 +959,11 @@ export_band_image (const char *metadata_file_name,
 				    blue_float_line, &cinfo, red_stats,
 				    green_stats, blue_stats, sample_mapping,
 				    md->general->no_data, ii, sample_count);
+	else if (format == PPM)
+	  write_ppm_float2byte(oppm, red_float_line, green_float_line,
+			       blue_float_line, red_stats, green_stats,
+			       blue_stats, sample_mapping,
+			       md->general->no_data, ii, sample_count);
       }
       asfLineMeter(ii, md->general->line_count);
     }
@@ -908,6 +985,8 @@ export_band_image (const char *metadata_file_name,
       finalize_tiff_file(otif, ogtif, is_geotiff);
     else if (format == JPEG)
       finalize_jpeg_file(ojpeg, &cinfo);
+    else if (format == PPM)
+      finalize_ppm_file(oppm);
   }
   else { // Single-band image output
 
@@ -944,6 +1023,10 @@ export_band_image (const char *metadata_file_name,
 	  append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
 	  initialize_jpeg_file(output_file_name, md, 
 			       &ojpeg, &cinfo, rgb);
+	}
+	else if (format == PPM) {
+	  append_ext_if_needed (output_file_name, ".ppm", ".ppm");
+	  initialize_ppm_file(output_file_name, md, &oppm);
 	}
 
 	// Determine which channel to read
@@ -988,6 +1071,9 @@ export_band_image (const char *metadata_file_name,
 	      write_tiff_byte2byte(otif, byte_line, ii);
 	    else if (format == JPEG)
 	      write_jpeg_byte2byte(ojpeg, byte_line, &cinfo, ii, sample_count);
+	    else if (format == PPM)
+	      write_ppm_byte2byte(oppm, byte_line, byte_line, byte_line, 
+				  ii, sample_count);
 	  }
 	  else if (sample_mapping == NONE) {
 	    get_float_line(fp, md, ii+channel*offset, float_line);
@@ -1003,6 +1089,10 @@ export_band_image (const char *metadata_file_name,
 	    write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats, 
 				  sample_mapping, md->general->no_data, 
 				  ii, sample_count);
+	  else if (format == PPM)
+	    write_ppm_float2byte(oppm, float_line, float_line, float_line, 
+				 stats, stats, stats, sample_mapping,
+				 md->general->no_data, ii, sample_count);
 	  }
 	  asfLineMeter(ii, md->general->line_count);
 	}
@@ -1016,6 +1106,8 @@ export_band_image (const char *metadata_file_name,
 	  finalize_tiff_file(otif, ogtif, is_geotiff);
 	else if (format == JPEG)
 	  finalize_jpeg_file(ojpeg, &cinfo);
+	else if (format == PPM)
+	  finalize_ppm_file(oppm);
       }
     }
   }

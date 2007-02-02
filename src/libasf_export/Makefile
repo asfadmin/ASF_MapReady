@@ -16,7 +16,6 @@ SOURCES := asf_export.c \
 	export_band.c \
 	export_as_envi.c \
 	export_as_esri.c \
-	export_as_ppm.c \
 	util.c 
 
 ###############################################################################
