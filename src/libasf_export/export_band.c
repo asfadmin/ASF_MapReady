@@ -51,7 +51,7 @@ void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 void
 export_as_geotiff (const char *metadata_file_name,
                    const char *image_data_file_name,
-                   const char *output_file_name,
+                   char *output_file_name,
                    scale_t sample_mapping)
 {
   return export_band_image(metadata_file_name, image_data_file_name,
@@ -126,7 +126,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
 }
 
 void initialize_jpeg_file(const char *output_file_name,
-			  meta_parameters *meta, FILE **ojpeg,
+			  meta_parameters *meta, FILE **ojpeg, 
 			  struct jpeg_compress_struct *cinfo, int rgb)
 {
   struct jpeg_error_mgr *jerr = MALLOC(sizeof(struct jpeg_error_mgr));
@@ -727,7 +727,7 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
 void
 export_band_image (const char *metadata_file_name,
 		   const char *image_data_file_name,
-		   const char *output_file_name,
+		   char *output_file_name,
 		   scale_t sample_mapping,
 		   char **band_name, int rgb,
 		   output_format_t format)
@@ -743,26 +743,23 @@ export_band_image (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
-  // Initialize the chosen format
-  if (format == TIF) {
-    is_geotiff = 0;
-    initialize_tiff_file(&otif, &ogtif, output_file_name,
-			 metadata_file_name, is_geotiff,
-			 sample_mapping, rgb);
-  }
-  else if (format == GEOTIFF) {
-    initialize_tiff_file(&otif, &ogtif, output_file_name,
-			 metadata_file_name, is_geotiff,
-			 sample_mapping, rgb);
-  }
-  else if (format == JPEG) {
-      if (sample_mapping == NONE)
-          asfPrintError("JPEG Conversion requires that the output be "
-                        "converted to bytes.\n");
-      initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
-  }
-
   if (rgb) {
+    
+    // Initialize the chosen format
+    if (format == TIF) {
+      is_geotiff = 0;
+      initialize_tiff_file(&otif, &ogtif, output_file_name,
+			   metadata_file_name, is_geotiff,
+			   sample_mapping, rgb);
+    }
+    else if (format == GEOTIFF) {
+      initialize_tiff_file(&otif, &ogtif, output_file_name,
+			   metadata_file_name, is_geotiff,
+			   sample_mapping, rgb);
+    }
+    else if (format == JPEG) {
+      initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
+    }
 
     channel_stats_t red_stats, blue_stats, green_stats;
 
@@ -905,70 +902,124 @@ export_band_image (const char *metadata_file_name,
       if (green_float_line) FREE(green_float_line);
       if (blue_float_line) FREE(blue_float_line);
     }
+    
+    // Finalize the chosen format
+    if (format == TIF || format == GEOTIFF)
+      finalize_tiff_file(otif, ogtif, is_geotiff);
+    else if (format == JPEG)
+      finalize_jpeg_file(ojpeg, &cinfo);
   }
-  else { // Single-band image
+  else { // Single-band image output
 
-    channel_stats_t stats;
+    int band_count = md->general->band_count;
+    char base_name[25], bands[25];
+    sprintf(bands, md->general->bands);
+    sprintf(base_name, output_file_name);
+    int kk;
+    for (kk=0; kk<band_count; kk++) {
+      if (band_name[kk]) {
 
-    if (!md->optical && sample_mapping != NONE) {
-      asfRequire (sizeof(unsigned char) == 1,
-                  "Size of the unsigned char data type on this machine is "
-                  "different than expected.\n");
-      asfPrintStatus("Gathering statistics ...\n");
-      calc_stats_from_file(image_data_file_name, NULL, 0.0,
-			   &stats.min, &stats.max, &stats.mean,
-			   &stats.standard_deviation, stats.hist);
-      if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-        stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
-        gsl_histogram_pdf_init (stats.hist_pdf, stats.hist);
+	if (band_name[1])
+	  asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
+
+	// Initialize the chosen format
+	if (band_name[1])
+	  append_band_ext(base_name, output_file_name, band_name[kk]);
+	else
+	  append_band_ext(base_name, output_file_name, NULL);
+	if (format == TIF) {
+	  is_geotiff = 0;
+	  append_ext_if_needed (output_file_name, ".tif", ".tiff");
+	  initialize_tiff_file(&otif, &ogtif, output_file_name,
+			       metadata_file_name, is_geotiff,
+			       sample_mapping, rgb);
+	}
+	else if (format == GEOTIFF) {
+	  append_ext_if_needed (output_file_name, ".tif", ".tiff");
+	  initialize_tiff_file(&otif, &ogtif, output_file_name, 
+			       metadata_file_name, is_geotiff,
+			       sample_mapping, rgb);
+	}
+	else if (format == JPEG) {
+	  append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
+	  initialize_jpeg_file(output_file_name, md, 
+			       &ojpeg, &cinfo, rgb);
+	}
+
+	// Determine which channel to read
+	int channel = get_band_number(bands,
+				      band_count,
+				      band_name[kk]);
+	asfRequire(channel >= 0 && channel <= MAX_BANDS,
+		   "Band number out of range\n");
+	
+	int sample_count = md->general->sample_count;
+	int offset = md->general->line_count;
+	
+	// Get the statistics if necessary
+	channel_stats_t stats;
+	if (!md->optical && sample_mapping != NONE) {
+	  asfRequire (sizeof(unsigned char) == 1,
+		      "Size of the unsigned char data type on this machine is "
+		      "different than expected.\n");
+	  asfPrintStatus("Gathering statistics ...\n");
+	  calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
+			       &stats.min, &stats.max, &stats.mean, 
+			       &stats.standard_deviation, stats.hist);
+	  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+	    stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
+	    gsl_histogram_pdf_init (stats.hist_pdf, stats.hist);
+	  }
+	}
+	
+	FILE *fp;
+	float *float_line;
+	unsigned char *byte_line;
+	
+	// Write the output image
+	fp = FOPEN(image_data_file_name, "rb");
+	float_line = (float *) MALLOC(sizeof(float) * sample_count);
+	byte_line = 
+	  (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
+	for (ii=0; ii<md->general->line_count; ii++ ) {
+	  if (md->optical) {
+	    get_byte_line(fp, md, ii+channel*offset, byte_line);
+	    if (format == TIF || format == GEOTIFF)
+	      write_tiff_byte2byte(otif, byte_line, ii);
+	    else if (format == JPEG)
+	      write_jpeg_byte2byte(ojpeg, byte_line, &cinfo, ii, sample_count);
+	  }
+	  else if (sample_mapping == NONE) {
+	    get_float_line(fp, md, ii+channel*offset, float_line);
+	    if (format == TIF || format == GEOTIFF)
+	      write_tiff_float2float(otif, float_line, ii);
+	  }
+	  else {
+	    get_float_line(fp, md, ii+channel*offset, float_line);
+	  if (format == TIF || format == GEOTIFF)
+	    write_tiff_float2byte(otif, float_line, stats, sample_mapping,
+				  md->general->no_data, ii, sample_count);
+	  else if (format == JPEG)
+	    write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats, 
+				  sample_mapping, md->general->no_data, 
+				  ii, sample_count);
+	  }
+	  asfLineMeter(ii, md->general->line_count);
+	}
+	
+	// Free memory
+	if (float_line) FREE(float_line);
+	if (byte_line) FREE(byte_line);
+
+	// Finalize the chosen format
+	if (format == TIF || format == GEOTIFF)
+	  finalize_tiff_file(otif, ogtif, is_geotiff);
+	else if (format == JPEG)
+	  finalize_jpeg_file(ojpeg, &cinfo);
       }
     }
-
-    FILE *fp;
-    float *float_line;
-    unsigned char *byte_line;
-
-    fp = FOPEN(image_data_file_name, "rb");
-    int sample_count = md->general->sample_count;
-    float_line = (float *) MALLOC(sizeof(float) * sample_count);
-    byte_line = (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
-    for (ii=0; ii<md->general->line_count; ii++ ) {
-      if (md->optical) {
-	get_byte_line(fp, md, ii, byte_line);
-	if (format == TIF || format == GEOTIFF)
-	  write_tiff_byte2byte(otif, byte_line, ii);
-	else if (format == JPEG)
-	  write_jpeg_byte2byte(ojpeg, byte_line, &cinfo, ii, sample_count);
-      }
-      else if (sample_mapping == NONE) {
-        get_float_line(fp, md, ii, float_line);
-	if (format == TIF || format == GEOTIFF)
-	  write_tiff_float2float(otif, float_line, ii);
-      }
-      else {
-	get_float_line(fp, md, ii, float_line);
-	if (format == TIF || format == GEOTIFF)
-	  write_tiff_float2byte(otif, float_line, stats, sample_mapping,
-				md->general->no_data, ii, sample_count);
-	else if (format == JPEG)
-	  write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
-				sample_mapping, md->general->no_data,
-				ii, sample_count);
-      }
-      asfLineMeter(ii, md->general->line_count);
-    }
-
-    // Free memory
-    if (float_line) FREE(float_line);
-    if (byte_line) FREE(byte_line);
   }
-
-  // Finalize the chosen format
-  if (format == TIF || format == GEOTIFF)
-    finalize_tiff_file(otif, ogtif, is_geotiff);
-  else if (format == JPEG)
-    finalize_jpeg_file(ojpeg, &cinfo);
-
+  
   meta_free (md);
 }
 

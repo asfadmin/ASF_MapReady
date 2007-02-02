@@ -151,6 +151,33 @@ void append_ext_if_needed(char *file_name, const char *newExt,
   strcat(file_name, newExt);
 }
 
+// Strip of known extension and return file name with band extension added
+void append_band_ext(char *inFile, char *outFile, char *bandExt)
+{
+  char *ext, *base_name;
+
+  base_name = (char *) MALLOC(sizeof(char)*255);
+
+  ext = findExt(inFile);
+
+  if (ext && 
+      (strcmp(uc(ext), ".IMG") == 0 ||
+       strcmp(uc(ext), ".TIF") == 0 ||
+       strcmp(uc(ext), ".TIFF") == 0 ||
+       strcmp(uc(ext), ".JPG") == 0 ||
+       strcmp(uc(ext), ".JPEG") == 0 ||
+       strcmp(uc(ext), ".PPM") == 0))
+    base_name = stripExt(inFile);
+  else
+    strcpy(base_name, inFile);
+  if (bandExt)
+    sprintf(outFile, "%s_%s", base_name, bandExt);
+  else
+    strcpy(outFile, base_name);
+  if (ext)
+    strcat(outFile, ext);
+}
+
 /****************************************************************************
  * split_dir_and_file:
  * Takes a string and fills one pre-allocated array with any path prior to

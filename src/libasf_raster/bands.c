@@ -7,28 +7,24 @@
 // Prototypes
 char *channel_trim (const char *channel);
 
-// Assumes comma-delimited 2-digit or 2-character band names
-// with no white space (before, in, or after the band info)
-// Ex) If 4 bands exist: "01,02,03,04" or "HH,HV,VH,VV" etc
-//    => Result bands[0] == "01", bands[1] == "02" etc
-// FIXME: This function is currently unused, but if that
-// changes then white white space should be allowed in the
-// list of bands
 char **extract_band_names(char *bands, int band_count)
 {
   char **band_name;
-  int ii, kk;
+  char *p;
+  int ii;
 
   if (bands && strlen(bands) && band_count > 0) {
     band_name = (char **) MALLOC(band_count*sizeof(char *));
-    for (ii=0; ii<band_count; ii++) {
+    for (ii=0; ii<band_count-1; ii++) {
       band_name[ii] = (char *) MALLOC(10*sizeof(char));
-      strncpy(band_name[ii], bands, 2);
-      band_name[ii][2] = '\0';
-      if (ii < band_count-1)
-        for (kk=0; kk<3; kk++)
-          bands++;
+      p = strchr(bands, ',');
+      *p = '\0';
+      sprintf(band_name[ii], bands);
+      *p = ',';
+      bands = p+1;
     }
+    band_name[band_count-1] = (char *) MALLOC(10*sizeof(char));
+    sprintf(band_name[band_count-1], bands);
     return band_name;
   }
   else {
@@ -76,7 +72,7 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
     }
 }
 
-// Returns an array of strings which represent band numbers,
+// Returns an array of strings which represent bands.
 //
 char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel,
 		  char *blue_channel, int *num_found)
@@ -140,6 +136,39 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
   }
 
   return rgb;
+}
+
+// Returns a pointer to a string with the band (if found).
+// Otherwise the string will be empty.
+char **find_single_band(char *in_base_name, char *band, int *num_found)
+{
+  char **band_name=NULL;
+  meta_parameters *meta;
+  char *meta_name = (char *) MALLOC((6 + strlen(in_base_name)) * sizeof(char));
+  strcpy(meta_name, in_base_name);
+  append_ext_if_needed(meta_name, ".meta", NULL);
+  meta = meta_read(meta_name);
+
+  // Check for band
+  *num_found = 0;
+  band_name = (char **) MALLOC(meta->general->band_count*sizeof(char *));
+  if (strcmp(uc(band), "ALL") == 0) 
+    band_name = extract_band_names(meta->general->bands, 
+				   meta->general->band_count);
+  else {
+    int ii;
+    for (ii=0; ii<meta->general->band_count; ii++)
+      band_name[ii] = NULL;
+    band_name[0] = (char *) MALLOC(10*sizeof(char));
+    strcpy(band_name[0],"");
+    if (strcmp(meta->general->bands, "???") != 0) {
+      if (strlen(band) && strstr(meta->general->bands, band)) {
+	strcpy(band_name[*num_found], band);
+	(*num_found)++;
+      }
+    }
+  }
+  return band_name;
 }
 
 // Given a string that represents a band number, e.g. "03" or "3"

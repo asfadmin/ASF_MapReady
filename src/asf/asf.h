@@ -132,6 +132,8 @@ char * appendToBasename(const char *filename, const char *suffix);
 void append_ext_if_needed(char *file_name, const char *newExt, 
                           const char *alsoAllowedExt);
 
+void append_band_ext(char *inFile, char *outFile, char *bandExt);
+
 /* Remove the extension from the name, if any.
    Returns a newly allocated string. */
 char *stripExt(const char *in);

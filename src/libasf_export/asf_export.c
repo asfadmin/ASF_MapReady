@@ -34,7 +34,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == TIF ) {
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (out_name, ".tif", ".tiff");
+    append_ext_if_needed (output_name, ".tif", ".tiff");
     export_band_image(in_meta_name, in_data_name, output_name, 
 		      sample_mapping, band_name, rgb, TIF); 
   }
@@ -48,7 +48,7 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
   else if ( format == JPEG ) {
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (out_name, ".jpg", ".jpeg");
+    append_ext_if_needed (output_name, ".jpg", ".jpeg");
     export_band_image(in_meta_name, in_data_name, output_name, 
 		      sample_mapping, band_name, rgb, JPEG);
   }

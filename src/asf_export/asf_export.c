@@ -21,7 +21,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
-"              [-rgb <red> <green> <blue> ]\n"\
+"              [-rgb <red> <green> <blue> ] [-band <band_id | all> ]\n"\
 "              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
@@ -65,7 +65,14 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        <red>, <green>, and <blue> specify which channel\n"\
 "        is assigned to color planes red, green, or blue,\n"\
 "        ex) -rgb HH VH VV, or -rgb 3 2 1\n"\
-"        Currently implemented for GeoTIFF imagery (only).\n"\
+"        Currently implemented for GeoTIFF, TIFF and JPEG.\n"\
+"        Cannot be chosen together with the -band option.\n"\
+"   -band <band_id | all>\n"\
+"        If the data contains multiple data files, one for each band (channel)\n"\
+"        then export the band identified by 'band_id' (only).  If 'all' is\n"\
+"        specified rather than a band_id, then export all available bands into\n"\
+"        a single ASF-format file.  Default is '-band all'.\n"\
+"        Cannot be chosen together with the -rgb option.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
@@ -89,7 +96,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        example> "ASF_NAME_STRING" -format jpeg -size 800 file1 file3\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   Currently only supports ingest of ASF format floating point data.\n"\
+"   Currently supports ingest of ASF format floating point and byte data.\n"\
 "\n"\
 "   Floating-point image formats (i.e., geotiff) are not supported in many\n"\
 "   image viewing programs.\n"
@@ -176,6 +183,7 @@ main (int argc, char *argv[])
   char *in_base_name, *output_name;
   char **band_name=NULL;
   int rgb=0;
+  int num_bands_found;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
   output_name = (char *) MALLOC(sizeof(char)*255);
@@ -197,8 +205,9 @@ main (int argc, char *argv[])
   strcpy(command_line.red_channel, "");
   strcpy(command_line.green_channel, "");
   strcpy(command_line.blue_channel, "");
+  strcpy(command_line.band, "");
 
-  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag;
+  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
@@ -216,6 +225,7 @@ main (int argc, char *argv[])
   quietFlag = checkForOption ("-quiet", argc, argv);
   byteFlag = checkForOption ("-byte", argc, argv);
   rgbFlag = checkForOption ("-rgb", argc, argv);
+  bandFlag = checkForOption ("-band", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -231,6 +241,9 @@ main (int argc, char *argv[])
   }
   if ( rgbFlag != FLAG_NOT_SET ) {
     needed_args += 4;           // Option & 3 parameters.
+  }
+  if ( bandFlag != FLAG_NOT_SET ) {
+    needed_args += 2;           // Option & parameter.
   }
 
   if ( argc != needed_args ) {
@@ -262,11 +275,18 @@ main (int argc, char *argv[])
       print_usage ();
     }
   }
+  if ( bandFlag != FLAG_NOT_SET ) {
+    if ( argv[bandFlag + 1][0] == '-' || bandFlag >= argc - 3 ) {
+      print_usage ();
+    }
+  }
   if ( logFlag != FLAG_NOT_SET ) {
     if ( argv[logFlag + 1][0] == '-' || logFlag >= argc - 3 ) {
       print_usage ();
     }
   }
+  if ( rgbFlag != FLAG_NOT_SET && bandFlag != FLAG_NOT_SET)
+    print_help ();
 
   if( logFlag != FLAG_NOT_SET ) {
     strcpy(logFile, argv[logFlag+1]);
@@ -371,13 +391,22 @@ main (int argc, char *argv[])
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
+
+    band_name = find_bands(in_base_name, rgbFlag, 
+			   command_line.red_channel,
+			   command_line.green_channel,
+			   command_line.blue_channel,
+			   &num_bands_found);
   }
 
-  int num_bands_found;
-  band_name = find_bands(in_base_name, rgbFlag, command_line.red_channel,
-                         command_line.green_channel,
-                         command_line.blue_channel,
-                         &num_bands_found);
+  // Set band
+  if ( bandFlag != FLAG_NOT_SET) {
+    strcpy (command_line.band, argv[bandFlag + 1]);
+    band_name = find_single_band(in_base_name, command_line.band,
+				 &num_bands_found);
+  }
+
+  // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET) {
     if (num_bands_found >= 3) {
       asfPrintStatus("Exporting multiband image ...\n\n");
@@ -385,15 +414,18 @@ main (int argc, char *argv[])
     }
     else {
       asfPrintError("Not all RGB channels found.\n");
-//    asfPrintWarning("Not all RGB channels found - exporting channel \"%s\" as greyscale.\n",
-//                   command_line.red_channel);
     }
   }
+  else if (bandFlag != FLAG_NOT_SET) {
+    if (strcmp(uc(command_line.band), "ALL") == 0)
+      asfPrintStatus("Exporting all bands as greyscale ...\n\n");
+    else if (num_bands_found == 1)
+      asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
+		     command_line.band);
+    else
+      asfPrintError("Band could not be found in the image.\n");
+  }
   else {
-    // FIXME: When the -band option is developed, then
-    // landing here with a multi-band image should result
-    // in the same action as "-band all" ...each available
-    // band will export to its own grayscale file
     asfPrintStatus("Exporting as greyscale.\n\n");
   }
 
@@ -412,17 +444,14 @@ main (int argc, char *argv[])
   }
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 ||
             strcmp (command_line.format, "GEOTIF") == 0) {
-    append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = GEOTIFF;
   }
   else if ( strcmp (command_line.format, "TIFF") == 0 ||
             strcmp (command_line.format, "TIF") == 0) {
-    append_ext_if_needed (command_line.output_name, ".tif", ".tiff");
     format = TIF;
   }
   else if ( strcmp (command_line.format, "JPEG") == 0 ||
             strcmp (command_line.format, "JPG") == 0) {
-    append_ext_if_needed (command_line.output_name, ".jpg", ".jpeg");
     format = JPEG;
   }
   else if ( strcmp (command_line.format, "PPM") == 0 ) {

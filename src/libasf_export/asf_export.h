@@ -74,7 +74,8 @@ typedef struct {
   scale_t sample_mapping;
   char red_channel[MAX_CHANNEL_STRING_LENGTH];
   char blue_channel[MAX_CHANNEL_STRING_LENGTH];
-  char green_channel[MAX_CHANNEL_STRING_LENGTH];  
+  char green_channel[MAX_CHANNEL_STRING_LENGTH];
+  char band[MAX_CHANNEL_STRING_LENGTH];
 } command_line_parameters_t;
 
 /* Prototypes */
@@ -115,7 +116,7 @@ void export_as_esri (const char *metadata_file_name,
 
 void export_as_geotiff (const char *metadata_file_name,
                         const char *image_data_file_name,
-                        const char *output_file_name,
+                        char *output_file_name,
                         scale_t sample_mapping);
 
 void export_rgb_as_geotiff (const char *metadata_file_name,
@@ -141,7 +142,7 @@ void export_as_tiff (const char *metadata_file_name,
 
 void export_band_image(const char *metadata_file_name,
 		       const char *image_data_file_name,
-		       const char *output_file_name,
+		       char *output_file_name,
 		       scale_t sample_mapping,
 		       char **band_name, int rgb,
 		       output_format_t format);
