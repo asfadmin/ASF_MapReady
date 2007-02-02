@@ -366,9 +366,11 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // If the band_id is NULL, is empty, or is equal to 'all'
   // then geocode all available bands, else geocode the selected
   // band
+  //if (band_id) band_num = get_band_number(bands, band_count, band_id);
+  printf("strlen = %d\n", strlen(band_id));
   if (band_id == NULL ||
-      (band_id && strlen(band_id) == 0) ||
-      (band_id && strcmp("ALL", uc(band_id)))
+      (band_id && (strlen(band_id) == 0)) ||
+      (band_id && strcmp(uc(band_id), "ALL") == 0)
      ) {
     // Geocode all available bands
     multiband = 1;
@@ -1288,9 +1290,15 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   } // End of 'for each band' in the file 'map-project the data into the file'
 
   // Free metadata structures
+  int i;
+  for (i = 0; i < imd->general->band_count; i++) {
+    FREE(band_name[i]);
+  }
+  FREE(band_name);
   meta_free (imd);
   meta_free (omd);
   asfPrintStatus ("Done storing geocoded image.\n");
+
 
   /////////////////////////////////////////////////////////////////////////////
   //
