@@ -1,7 +1,0 @@
-imagedir	./
-maskdir	 	./
-helpdir		/home/pdenny/asf_tools/src_x/sprocket/help_files/
-logfile		/home/pdenny/sprocket.log
-
-xy_plotter	/home/pdenny/asf_tools/bin/linux/xy_plotter
-outputfile	./xy_plotted.txt

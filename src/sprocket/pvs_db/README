@@ -1,4 +1,0 @@
-These sqsh scripts require sqsh version 1.7.
-
-Hopefully someday we will implement these queries from within the Java
-classes SelectArea and SelectTargets.
