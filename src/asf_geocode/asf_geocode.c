@@ -386,8 +386,6 @@ main (int argc, char **argv)
   if (strcmp(in_base_name, out_base_name) == 0)
     asfPrintError(msg);
 
-  asfSplashScreen(argc, argv);
-
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
 	      datum, pixel_size, band_id, in_base_name, out_base_name,
