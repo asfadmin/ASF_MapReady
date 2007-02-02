@@ -456,6 +456,13 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
          && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
       input_projected = TRUE;
 
+      // Don't bail out for the lat/lon pseudoprojection
+      if (imd->projection &&
+          imd->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        asfPrintError("Input image already geocoded.  "
+                      "Reprojection is not yet supported.\n");
+      }
+
       switch ( imd->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
         project_input = project_utm;
