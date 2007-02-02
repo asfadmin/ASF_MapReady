@@ -372,6 +372,20 @@ main (int argc, char **argv)
   strcpy (in_base_name, argv[arg_num]);
   strcpy (out_base_name, argv[arg_num + 1]);
 
+  // Strip .img and also check to make sure input and output
+  // base names are not the same
+  char *ext = findExt(in_base_name);
+  if (ext && strncmp(ext, ".img", 4) == 0) *ext = '\0';
+  ext = findExt(out_base_name);
+  if (ext && strncmp(ext, ".img", 4) == 0) *ext = '\0';
+  char msg[512];
+  sprintf(msg,"Input and output basenames cannot be the same:\n"
+      "    Input base name : %s\n"
+          "    Output base name: %s\n",
+      in_base_name, out_base_name);
+  if (strcmp(in_base_name, out_base_name) == 0)
+    asfPrintError(msg);
+
   asfSplashScreen(argc, argv);
 
   // Call library function that does the actual work
