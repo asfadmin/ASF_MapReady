@@ -22,7 +22,8 @@ void parse_other_options(int *argc, char **argv[],
                          double *height, double *pixel_size,
                          datum_type_t *datum,
                          resample_method_t *resample_method,
-                         int *override_checks);
+                         int *override_checks,
+                         char *band_id);
 
 void parse_log_options(int *argc, char **argv[]);
 
@@ -117,7 +118,8 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
                                            double *height, double *pixel_size,
                                            datum_type_t *datum,
                                            resample_method_t *resample_method,
-                                           int *override_checks);
+                                           int *override_checks,
+                                           char *band_id);
 
 void parse_proj_args_file(const char * file, project_parameters_t * pps,
 			  projection_type_t * proj_type);
@@ -156,16 +158,16 @@ void set_options_testing(int is_testing);
 int asf_geocode_from_proj_file (const char *projection_file,
 		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name,
+		 char *band_id, char *in_base_name, char *out_base_name,
                  float background_val);
 int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     datum_type_t datum, double pixel_size,
-                    char *in_base_name, char *out_base_name,
+                    char *band_id, char *in_base_name, char *out_base_name,
                     float background_val);
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
 		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name,
+		 char *band_id, char *in_base_name, char *out_base_name,
                  float background_val);
 void sigsegv_handler (int signal_number);
 

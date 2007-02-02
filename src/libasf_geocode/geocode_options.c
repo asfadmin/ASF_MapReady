@@ -19,7 +19,8 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 										   double *height, double *pixel_size,
 										   datum_type_t *datum,
 										   resample_method_t *resample_method,
-										   int *override_checks)
+										   int *override_checks,
+                                          char *band_id)
 {
 	/* projection parameters obtained from the command line */
 	project_parameters_t * pps;
@@ -39,7 +40,7 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
 		/* "other" options include: 'height', 'pixel-size', 'force'
 		and 'resample_method'.  */
 		parse_other_options(argc, argv, height, pixel_size, datum,
-			resample_method, override_checks);
+			resample_method, override_checks, band_id);
 
 		/* here the semantics of the projection parameters are applied */
 		sanity_check(*proj_type, pps);
@@ -60,12 +61,12 @@ local_earth_radius (spheroid_type_t spheroid, double geodetic_lat)
 {
   double a, b;
   spheroid_axes_lengths (spheroid, &a, &b);
-  
+
   double e2 = 1 - (pow (b, 2.0) / pow (a, 2.0));
-  
+
   // Geocentric latitude.
   double gcl = atan (tan (geodetic_lat) * (1 - e2));
-  
+
   return (a * b) / sqrt (pow (b * cos (gcl), 2.0) + pow (a * sin (gcl), 2.0));
 }
 
@@ -183,9 +184,9 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 	  // approximate pixel size.  There are comments relating to
 	  // pixel size in the import_usgs_seamless.c file that should
 	  // change if this approach is changed.
-	  if ( meta->projection != NULL 
+	  if ( meta->projection != NULL
 	       && meta->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
-	    *pixel_size 
+	    *pixel_size
 	      = arc_length_at_latitude (meta->projection->spheroid,
 					meta->general->center_latitude,
 					meta->general->y_pixel_size * D2R);

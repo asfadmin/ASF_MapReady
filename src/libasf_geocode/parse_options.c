@@ -773,7 +773,7 @@ static int extract_string_options(int *argc, char **argv[], char *val, ... )
 			extract_string_option(argc, argv, val, arg, &found);
 	}
 	while (arg);
-
+ // FIXME: Needs a va_end()... in several functions here (parse_options.c)
 	return found;
 }
 
@@ -916,9 +916,11 @@ void parse_other_options(int *argc, char **argv[],
                          double *height, double *pixel_size,
                          datum_type_t *datum,
                          resample_method_t *resample_method,
-                         int *override_checks)
+                         int *override_checks,
+                         char *band_id)
 {
 	*datum = parse_datum_option(argc, argv);
+        extract_string_options(argc, argv, band_id, "-band", "--band", NULL);
 	extract_double_options(argc, argv, height, "--height", "-height", "-h", NULL);
 	extract_double_options(argc, argv, pixel_size,
 		"--pixel-size", "-pixel-size", "-pix", NULL);

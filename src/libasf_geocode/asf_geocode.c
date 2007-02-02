@@ -25,10 +25,15 @@
 // Headers defined by this library.
 #include "asf_geocode.h"
 
-// Prototype
+// Prototypes
 void check_parameters(projection_type_t projection_type,
-		      project_parameters_t *pp, meta_parameters *meta,
-		      int override_checks);
+                      project_parameters_t *pp, meta_parameters *meta,
+                      int override_checks);
+int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
+                    int force_flag, resample_method_t resample_method,
+                    double average_height, datum_type_t datum, double pixel_size,
+                    int multiband, int band_num, char *in_base_name,
+                    char *out_base_name, float background_val);
 
 // Blurb about what the user can do if projection errors are too
 // large.  Called when we detect this condition.
@@ -50,12 +55,12 @@ static void print_large_error_blurb(int force_flag)
 // have to do is convert as appropriate.  But we still need these
 // functions to use when we need to use a function pointer to perform
 // a generic operation.
-static int 
+static int
 project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
-			 double height, double *x, double *y, double *z)
+                         double height, double *x, double *y, double *z)
 {
   /* Silence compiler warning about unused argument.  */
-  pps = pps;		
+  pps = pps;
 
   *x = lon * R2D;
   *y = lat * R2D;
@@ -65,8 +70,8 @@ project_lat_long_pseudo (project_parameters_t *pps, double lat, double lon,
 }
 static int
 project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
-			     double z, double *lat, double *lon,
-			     double *height)
+                             double z, double *lat, double *lon,
+                             double *height)
 {
   /* Silence compiler warning about unused argument.  */
   pps = pps;
@@ -123,13 +128,13 @@ project_lat_long_pseudo_inv (project_parameters_t *pps, double x, double y,
 
 // This is the form of the input data we want to fit splines to.
 struct data_to_fit {
-  size_t grid_size;		// Size of grid of points, in points on a side.
-  size_t n;			// Number of transformed points (grid_size^2).
-  double *x_proj;		// Projection x coordinates.
-  double *y_proj;		// Projection y coordinates.
+  size_t grid_size;                // Size of grid of points, in points on a side.
+  size_t n;                        // Number of transformed points (grid_size^2).
+  double *x_proj;                // Projection x coordinates.
+  double *y_proj;                // Projection y coordinates.
   // Input image pixel coordinates put 0, 0 at the top left.
-  double *x_pix;		// Input image pixel x coordinate.
-  double *y_pix;		// Input image pixel y coordinate.
+  double *x_pix;                // Input image pixel x coordinate.
+  double *y_pix;                // Input image pixel y coordinate.
 
   // These values are like the above ones, and should form a grid
   // covering the same area, but are considerably more sparse.
@@ -210,18 +215,18 @@ reverse_map_x (struct data_to_fit *dtf, double x, double y)
       y_spline_rmx = g_new (gsl_spline *, sgs);
       size_t ii;
       for ( ii = 0 ; ii < sgs ; ii++ ) {
-	gsl_vector *cypv = gsl_vector_alloc (sgs);
-	gsl_vector *cxpixv = gsl_vector_alloc (sgs);
-	size_t jj;
-	for ( jj = 0 ; jj < sgs ; jj++ ) {
-	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
-	  gsl_vector_set (cxpixv, jj, xpixs[jj * sgs + ii]);
-	}
-	y_accel_rmx[ii] = gsl_interp_accel_alloc ();
-	y_spline_rmx[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
-	gsl_spline_init (y_spline_rmx[ii], cypv->data, cxpixv->data, sgs);
-	gsl_vector_free (cxpixv);
-	gsl_vector_free (cypv);
+        gsl_vector *cypv = gsl_vector_alloc (sgs);
+        gsl_vector *cxpixv = gsl_vector_alloc (sgs);
+        size_t jj;
+        for ( jj = 0 ; jj < sgs ; jj++ ) {
+          gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
+          gsl_vector_set (cxpixv, jj, xpixs[jj * sgs + ii]);
+        }
+        y_accel_rmx[ii] = gsl_interp_accel_alloc ();
+        y_spline_rmx[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+        gsl_spline_init (y_spline_rmx[ii], cypv->data, cxpixv->data, sgs);
+        gsl_vector_free (cxpixv);
+        gsl_vector_free (cypv);
       }
       first_time_through_rmx = FALSE;
     }
@@ -264,20 +269,20 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
       y_spline_rmy = g_new (gsl_spline *, sgs);
       size_t ii;
       for ( ii = 0 ; ii < sgs ; ii++ ) {
-	// Current y projection value.
-	gsl_vector *cypv = gsl_vector_alloc (sgs);
-	// Current y pixel value.
-	gsl_vector *cypixv = gsl_vector_alloc (sgs);
-	size_t jj;
-	for ( jj = 0 ; jj < sgs ; jj++ ) {
-	  gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
-	  gsl_vector_set (cypixv, jj, ypixs[jj * sgs + ii]);
-	}
-	y_accel_rmy[ii] = gsl_interp_accel_alloc ();
-	y_spline_rmy[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
-	gsl_spline_init (y_spline_rmy[ii], cypv->data, cypixv->data, sgs);
-	gsl_vector_free (cypixv);
-	gsl_vector_free (cypv);
+        // Current y projection value.
+        gsl_vector *cypv = gsl_vector_alloc (sgs);
+        // Current y pixel value.
+        gsl_vector *cypixv = gsl_vector_alloc (sgs);
+        size_t jj;
+        for ( jj = 0 ; jj < sgs ; jj++ ) {
+          gsl_vector_set (cypv, jj, yprojs[jj * sgs + ii]);
+          gsl_vector_set (cypixv, jj, ypixs[jj * sgs + ii]);
+        }
+        y_accel_rmy[ii] = gsl_interp_accel_alloc ();
+        y_spline_rmy[ii] = gsl_spline_alloc (gsl_interp_cspline, sgs);
+        gsl_spline_init (y_spline_rmy[ii], cypv->data, cypixv->data, sgs);
+        gsl_vector_free (cypixv);
+        gsl_vector_free (cypv);
       }
       first_time_through_rmy = FALSE;
     }
@@ -300,7 +305,7 @@ reverse_map_y (struct data_to_fit *dtf, double x, double y)
 
 int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     datum_type_t datum, double pixel_size,
-                    char *in_base_name, char *out_base_name,
+                    char *band_id, char *in_base_name, char *out_base_name,
                     float background_val)
 {
   project_parameters_t pp;
@@ -311,14 +316,15 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
   pp.utm.lon0 = MAGIC_UNSET_DOUBLE;
 
   return asf_geocode(&pp, projection_type, FALSE, resample_method,
-		     average_height, datum, pixel_size, in_base_name,
-		     out_base_name, background_val);
+                     average_height, datum, pixel_size, band_id, in_base_name,
+                     out_base_name, background_val);
 }
 
 int asf_geocode_from_proj_file(const char *projection_file,
-		 int force_flag, resample_method_t resample_method, 
-		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name, float background_val)
+                 int force_flag, resample_method_t resample_method,
+                 double average_height, datum_type_t datum, double pixel_size,
+                 char *band_id, char *in_base_name, char *out_base_name,
+                 float background_val)
 {
   project_parameters_t pp;
   projection_type_t projection_type;
@@ -326,14 +332,79 @@ int asf_geocode_from_proj_file(const char *projection_file,
   parse_proj_args_file(projection_file, &pp, &projection_type);
 
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
-		     average_height, datum, pixel_size, in_base_name,
-		     out_base_name, background_val);
+                     average_height, datum, pixel_size, band_id, in_base_name,
+                     out_base_name, background_val);
 }
 
-int asf_geocode(project_parameters_t *pp, projection_type_t projection_type, 
-		int force_flag, resample_method_t resample_method, 
-		double average_height, datum_type_t datum, double pixel_size,
-		char *in_base_name, char *out_base_name, float background_val)
+
+int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
+                    int force_flag, resample_method_t resample_method,
+                    double average_height, datum_type_t datum, double pixel_size,
+                    char *band_id, char *in_base_name, char *out_base_name, float background_val)
+{
+  char input_meta_data[1024];
+  char *bands; // A string containing list of available band_id's
+  int i;
+  int ret;
+  int multiband = 1; // boolean - true means geocode all available bands, false means one band
+  int band_count;
+  int band_num = 0;
+
+  sprintf(input_meta_data, "%s.meta", in_base_name);
+  meta_parameters *imd = meta_read(input_meta_data);
+  bands = STRDUP(imd->general->bands);
+  band_count = imd->general->band_count;
+  if (band_count > MAX_BANDS) {
+    asfPrintWarning("Data contains too many bands (%d)\n"
+        "asf_geocode cannot geocode more than %d bands\n",
+        band_count, MAX_BANDS);
+  }
+  asfRequire(band_count > 0,
+             "Invalid band_count in metadata\n");
+
+
+  // If the band_id is NULL, is empty, or is equal to 'all'
+  // then geocode all available bands, else geocode the selected
+  // band
+  if (band_id == NULL ||
+      (band_id && strlen(band_id) == 0) ||
+      (band_id && strcmp("ALL", uc(band_id)))
+     ) {
+    // Geocode all available bands
+    multiband = 1;
+    ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
+                          average_height, datum, pixel_size,
+                          multiband, band_num, in_base_name,
+                          out_base_name, background_val);
+    asfRequire(ret == 0,
+               "Failed to geocode band number %02d\n", i + 1);
+  }
+  else {
+    // Geocode a single selected band
+
+    multiband = 0;
+    band_num = get_band_number(bands, band_count, band_id);
+    asfRequire(band_num >= 0 && band_num < MAX_BANDS,
+              "Selected band number out of range\n");
+    ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
+                          average_height, datum, pixel_size,
+                          multiband, band_num, in_base_name,
+                          out_base_name, background_val);
+    asfRequire(ret == 0,
+               "Failed to geocode band number 01\n");
+  }
+
+  meta_free(imd);
+  FREE(bands);
+
+  return ret;
+}
+
+int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
+                int force_flag, resample_method_t resample_method,
+                double average_height, datum_type_t datum, double pixel_size,
+                int multiband, int band_num, char *in_base_name,
+                char *out_base_name, float background_val)
 {
   int ret;
 
@@ -354,13 +425,15 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   if ( imd->sar )
     if ( imd->sar->image_type == 'S' ) {
       asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
-		     "left-looking AMM-1 era images) at present.\n");
+                     "left-looking AMM-1 era images) at present.\n");
   }
-  if (imd->optical)
+  if (imd->optical) {
     if (strcmp(imd->general->mode, "1A") == 0 ||
-	strcmp(imd->general->mode, "1B1") == 0)
-      asfPrintError("Geocoding %s level %s data is not supported.\n", 
-		    imd->general->sensor_name, imd->general->mode);
+        strcmp(imd->general->mode, "1B1") == 0) {
+      asfPrintError("Geocoding %s level %s data is not supported.\n",
+                    imd->general->sensor_name, imd->general->mode);
+    }
+  }
 
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
@@ -373,46 +446,46 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   meta_projection *ipb = imd->projection;
   project_parameters_t *ipp = &imd->projection->param;
   int (*project_input) (project_parameters_t *pps, double lat, double lon,
-			double height, double *x, double *y, double *z);
-  project_input = NULL;		// Silence compiler warnings.
+                        double height, double *x, double *y, double *z);
+  project_input = NULL;                // Silence compiler warnings.
   int (*unproject_input) (project_parameters_t *pps, double x, double y,
-			  double z, double *lat, double *lon, double *height);
-  unproject_input = NULL;	// Silence compiler warnings.
+                          double z, double *lat, double *lon, double *height);
+  unproject_input = NULL;        // Silence compiler warnings.
   if ( imd->sar )
     if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
-	 && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
+         && imd->projection->type != SCANSAR_PROJECTION && imd->projection ) {
       input_projected = TRUE;
-      
+
       switch ( imd->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
-	project_input = project_utm;
-	unproject_input = project_utm_inv;
-	break;
+        project_input = project_utm;
+        unproject_input = project_utm_inv;
+        break;
       case POLAR_STEREOGRAPHIC:
-	project_input = project_ps;
-	unproject_input = project_ps_inv;
-	break;
+        project_input = project_ps;
+        unproject_input = project_ps_inv;
+        break;
       case ALBERS_EQUAL_AREA:
-	project_input = project_albers;
-	unproject_input = project_albers_inv;
-	break;
+        project_input = project_albers;
+        unproject_input = project_albers_inv;
+        break;
       case LAMBERT_CONFORMAL_CONIC:
-	project_input = project_lamcc;
-	unproject_input = project_lamcc_inv;
-	break;
+        project_input = project_lamcc;
+        unproject_input = project_lamcc_inv;
+        break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-	project_input = project_lamaz;
-	unproject_input = project_lamaz_inv;
-	break;
+        project_input = project_lamaz;
+        unproject_input = project_lamaz_inv;
+        break;
       case LAT_LONG_PSEUDO_PROJECTION:
-	project_input = project_lat_long_pseudo;
-	unproject_input = project_lat_long_pseudo_inv;
-	break;
+        project_input = project_lat_long_pseudo;
+        unproject_input = project_lat_long_pseudo_inv;
+        break;
       default:
-	g_assert_not_reached ();
+        g_assert_not_reached ();
       }
     }
-  
+
   void (*report_func) (const char *format, ...);
   report_func = force_flag ? asfPrintWarning : asfPrintError;
 
@@ -434,7 +507,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // so what matters is that we set libasf_proj's notion of the
   // spheroid correctly (to whatever the pseudoprojected image uses).
   // Bleah.
-  if (imd->projection != NULL 
+  if (imd->projection != NULL
       && imd->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
     project_set_input_spheroid (imd->projection->spheroid);
   }
@@ -450,15 +523,15 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // Assign our transformation function pointers to point to the
   // appropriate functions.
   int (*project) (project_parameters_t *pps, double lat, double lon,
-		  double height, double *x, double *y, double *z);
+                  double height, double *x, double *y, double *z);
   int (*project_arr) (project_parameters_t *pps, double *lat, double *lon,
-		      double *height, double **projected_x,
-		      double **projected_y, double **projected_z, long length);
+                      double *height, double **projected_x,
+                      double **projected_y, double **projected_z, long length);
   int (*unproject) (project_parameters_t *pps, double x, double y, double z,
-		    double *lat, double *lon, double *height);
-  project = NULL;		// Silence compiler warnings.
-  project_arr = NULL;		// Silence compiler warnings.
-  unproject = NULL;		// Silence compiler warnings.
+                    double *lat, double *lon, double *height);
+  project = NULL;                // Silence compiler warnings.
+  project_arr = NULL;                // Silence compiler warnings.
+  unproject = NULL;                // Silence compiler warnings.
   switch ( projection_type ) {
   case UNIVERSAL_TRANSVERSE_MERCATOR:
     project = project_utm;
@@ -506,7 +579,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // This lets us determine the exact extent of the projected image in
   // projection coordinates.
   asfPrintStatus ("Determining input image extent in projection coordinate "
-		  "space... ");
+                  "space... ");
 
   double min_x = DBL_MAX;
   double max_x = -DBL_MAX;
@@ -522,81 +595,81 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     size_t ii = 0, jj = 0;
     for ( ; ii < ii_size_x - 1 ; ii++ ) {
       if ( input_projected ) {
-	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY + ipb->perY * jj;
-	project_set_datum (imd->projection->datum);
-	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+        double xpc = ipb->startX + ipb->perX * ii;
+        double ypc = ipb->startY + ipb->perY * jj;
+        project_set_datum (imd->projection->datum);
+        ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]), NULL);
-	g_assert (ret);
+        g_assert (ret);
       }
       else {
-	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+        ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]));
         g_assert (ret == 0);
-	lats[current_edge_point] *= D2R;
-	lons[current_edge_point] *= D2R;
+        lats[current_edge_point] *= D2R;
+        lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
       if ( input_projected ) {
-	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY + ipb->perY * jj;
-	project_set_datum (imd->projection->datum);
-	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+        double xpc = ipb->startX + ipb->perX * ii;
+        double ypc = ipb->startY + ipb->perY * jj;
+        project_set_datum (imd->projection->datum);
+        ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]), NULL);
-	g_assert (ret);
+        g_assert (ret);
       }
       else {
-	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+        ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]));
         g_assert (ret == 0);
-	lats[current_edge_point] *= D2R;
-	lons[current_edge_point] *= D2R;
+        lats[current_edge_point] *= D2R;
+        lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
       if ( input_projected ) {
-	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY + ipb->perY * jj;
-	project_set_datum (imd->projection->datum);
-	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+        double xpc = ipb->startX + ipb->perX * ii;
+        double ypc = ipb->startY + ipb->perY * jj;
+        project_set_datum (imd->projection->datum);
+        ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]), NULL);
-	g_assert (ret);
+        g_assert (ret);
       }
       else {
-	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+        ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]));
         g_assert (ret == 0);
-	lats[current_edge_point] *= D2R;
-	lons[current_edge_point] *= D2R;
+        lats[current_edge_point] *= D2R;
+        lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
       if ( input_projected ) {
-	double xpc = ipb->startX + ipb->perX * ii;
-	double ypc = ipb->startY + ipb->perY * jj;
-	project_set_datum (imd->projection->datum); 
-	ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
+        double xpc = ipb->startX + ipb->perX * ii;
+        double ypc = ipb->startY + ipb->perY * jj;
+        project_set_datum (imd->projection->datum);
+        ret = unproject_input (ipp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]), NULL);
-	g_assert (ret);
+        g_assert (ret);
       }
       else {
-	ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
+        ret = meta_get_latLon (imd, (double)jj, (double)ii, average_height,
                                &(lats[current_edge_point]),
                                &(lons[current_edge_point]));
         g_assert (ret == 0);
-	lats[current_edge_point] *= D2R;
-	lons[current_edge_point] *= D2R;
+        lats[current_edge_point] *= D2R;
+        lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
     }
@@ -636,7 +709,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // Issue a warning when the chosen pixel size is smaller than the
   // input pixel size.
   if ( GSL_MIN(imd->general->x_pixel_size,
-	       imd->general->y_pixel_size) > pixel_size ) {
+               imd->general->y_pixel_size) > pixel_size ) {
     asfPrintWarning
       ("Requested pixel size %lf is smaller then the input image resolution "
        "(%le meters).\n", pixel_size,
@@ -646,12 +719,12 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // The pixel size requested by the user better not oversample by
   // the factor of 2.  Specifying --force will skip this check
   if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
-	       imd->general->y_pixel_size) > (2*pixel_size) ) {
+               imd->general->y_pixel_size) > (2*pixel_size) ) {
     report_func
       ("Requested pixel size %lf is smaller then the minimum implied by half \n"
        "the input image resolution (%le meters), this is not supported.\n",
        pixel_size, GSL_MIN (imd->general->x_pixel_size,
-			    imd->general->y_pixel_size));
+                            imd->general->y_pixel_size));
   }
 
   // Generate some mappings between output image projection
@@ -659,7 +732,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // compute transformations for points on a grid_size * grid_size
   // grid and a sparse_grid_size * sparse_grid_size grid.
   asfPrintStatus ("Performing analytical projection of a spatially "
-		  "distributed\nsubset of input image pixels... ");
+                  "distributed\nsubset of input image pixels... ");
   fflush (stdout);
   double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
   // This grid size seems to work pretty well in general for our
@@ -713,30 +786,30 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
       ret = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
                        &lat, &lon, NULL);
       if ( !ret ) {
-	// Details of the error should have already been printed.
-	asfPrintError ("Projection Error!\n");
+        // Details of the error should have already been printed.
+        asfPrintError ("Projection Error!\n");
       }
       lat *= R2D;
       lon *= R2D;
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       if ( input_projected ) {
-	// Input projection coordinates of the current pixel.
-	double ipcx, ipcy;
-	project_set_datum (imd->projection->datum);
-	ret = project_input (ipp, D2R * lat, D2R * lon,
+        // Input projection coordinates of the current pixel.
+        double ipcx, ipcy;
+        project_set_datum (imd->projection->datum);
+        ret = project_input (ipp, D2R * lat, D2R * lon,
                              ASF_PROJ_NO_HEIGHT, &ipcx, &ipcy, NULL);
-	if ( ret == 0 ) {
-	  g_assert_not_reached ();
-	}
-	g_assert (ret);
-	// Find the input image pixel indicies corresponding to input
-	// projection coordinates.
-	x_pix = (ipcx - ipb->startX) / ipb->perX;
-	y_pix = (ipcy - ipb->startY) / ipb->perY;
+        if ( ret == 0 ) {
+          g_assert_not_reached ();
+        }
+        g_assert (ret);
+        // Find the input image pixel indicies corresponding to input
+        // projection coordinates.
+        x_pix = (ipcx - ipb->startX) / ipb->perX;
+        y_pix = (ipcy - ipb->startY) / ipb->perY;
       }
       else {
-	ret = meta_get_lineSamp (imd, lat, lon, average_height,
+        ret = meta_get_lineSamp (imd, lat, lon, average_height,
                                  &y_pix, &x_pix);
         g_assert (ret == 0);
       }
@@ -746,12 +819,12 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
       dtf.y_pix[current_mapping] = y_pix;
 
       if ( ii % sparse_grid_sample_stride == 0
-	   && jj % sparse_grid_sample_stride == 0 ) {
-	dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
-	dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
-	dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
-	dtf.sparse_y_pix[current_sparse_mapping] = y_pix;
-	current_sparse_mapping++;
+           && jj % sparse_grid_sample_stride == 0 ) {
+        dtf.sparse_x_proj[current_sparse_mapping] = cxproj;
+        dtf.sparse_y_proj[current_sparse_mapping] = cyproj;
+        dtf.sparse_x_pix[current_sparse_mapping] = x_pix;
+        dtf.sparse_y_pix[current_sparse_mapping] = y_pix;
+        current_sparse_mapping++;
       }
       current_mapping++;
     }
@@ -786,7 +859,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
       double y_error = ypfm - dtf.y_pix[ii];
       double error_distance = sqrt (pow (x_error, 2) + pow (y_error, 2));
       float_image_set_pixel (error_map, ii % grid_size, ii / grid_size,
-			     error_distance);
+                             error_distance);
       gsl_vector_set (model_x_errors, ii, x_error);
       gsl_vector_set (model_y_errors, ii, y_error);
       gsl_vector_set (model_errors, ii, error_distance);
@@ -797,10 +870,10 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     float_image_free (error_map);
     double mean_error
       = gsl_stats_mean (model_errors->data, model_errors->stride,
-			model_errors->size);
+                        model_errors->size);
     double error_standard_deviation
       = gsl_stats_sd_m (model_errors->data, model_errors->stride,
-			model_errors->size, mean_error);
+                        model_errors->size, mean_error);
     double max_x_error = gsl_vector_max (model_x_errors);
     double min_x_error = gsl_vector_min (model_x_errors);
     double largest_x_error;
@@ -822,20 +895,20 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     double largest_error = gsl_vector_max (model_errors);
     if ( largest_error > max_allowable_error ) {
             print_large_error_blurb(force_flag);
-	    report_func("Largest Error was larger than maximum allowed! "
-		            "%f > %f\n", largest_error, max_allowable_error);
+            report_func("Largest Error was larger than maximum allowed! "
+                            "%f > %f\n", largest_error, max_allowable_error);
     }
     asfPrintStatus ("For the differences between spline model values and "
-		    "projected values\nfor the analytically projected "
-		    "control points:\n");
+                    "projected values\nfor the analytically projected "
+                    "control points:\n");
     asfPrintStatus ("Mean: %g\n", mean_error);
     asfPrintStatus ("Standard deviation: %g\n", error_standard_deviation);
     asfPrintStatus ("Maximum (Worst observed error in pixel index distance): "
-		    "%g\n", largest_error);
+                    "%g\n", largest_error);
     asfPrintStatus ("Maximum x error (worst observed error in x pixel index): "
-		    "%g\n", largest_x_error);
+                    "%g\n", largest_x_error);
     asfPrintStatus ("Maximum y error (worst observed error in y pixel index): "
-		    "%g\n", largest_y_error);
+                    "%g\n", largest_y_error);
     gsl_vector_free (model_errors);
     gsl_vector_free (model_y_errors);
     gsl_vector_free (model_x_errors);
@@ -873,71 +946,71 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     // problem is somewhere else I want to know.
     if ( imd->sar ) {
       if (  imd->sar->image_type != 'P' ) {
-	int ret1, ret2;
-	const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
-	double st_lat, st_lon;   // Symmetry test lat and long values.
-	ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
-				&st_lat, &st_lon);
-	double strx, stry;       // Symmetry test result values.
-	ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height, 
-				  &strx, &stry);
-	
-	// We will insist that the results are symmetric to within this
-	// fraction after transforming out and back.
-	printf ("Symmetry testing latLong vs. lineSamp... ");
-	const double sym_th = 0.1;   // Symmetry threshold.
-	if (ret1 || ret2) {
+        int ret1, ret2;
+        const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
+        double st_lat, st_lon;   // Symmetry test lat and long values.
+        ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
+                                &st_lat, &st_lon);
+        double strx, stry;       // Symmetry test result values.
+        ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height,
+                                  &strx, &stry);
+
+        // We will insist that the results are symmetric to within this
+        // fraction after transforming out and back.
+        printf ("Symmetry testing latLong vs. lineSamp... ");
+        const double sym_th = 0.1;   // Symmetry threshold.
+        if (ret1 || ret2) {
           asfPrintError("Symmetry test failed! %s %s.\n",
                         ret1 ? "meta_get_latLon returned error" : "",
                         ret2 ? "meta_get_lineSamp returned error" : "");
-	}
-	if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
+        }
+        if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
           printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
-		 "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
+                 "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                  strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
-	  
+
           // Abort if the error is "horrible" (more than a pixel)
           if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
-	    asfPrintError("Aborting... symmetry testing error too large.");
+            asfPrintError("Aborting... symmetry testing error too large.");
           }
-	} else {
+        } else {
           printf ("good to within %lf pixels.\n", sym_th);
-	}
-	// Hmm, looks like they are all pretty bad.  Oh well, the
-	// problem of large corner errors when none of the intermediate
-	// grid points were off by much still seems specific to scansar.
+        }
+        // Hmm, looks like they are all pretty bad.  Oh well, the
+        // problem of large corner errors when none of the intermediate
+        // grid points were off by much still seems specific to scansar.
       }
     }
 
     double ul_x, ul_y;
     project_set_datum (datum);
     project (pp, D2R * ul_lat, D2R * ul_lon, ASF_PROJ_NO_HEIGHT,
-	     &ul_x, &ul_y, NULL);
+             &ul_x, &ul_y, NULL);
     double ul_x_pix_approx = X_PIXEL (ul_x, ul_y);
     if (fabs (ul_x_pix_approx) > max_corner_error ) {
       print_large_error_blurb(force_flag);
       report_func("Upper left x corner error was too large!  %f > %f\n",
-		  fabs (ul_x_pix_approx), max_corner_error );
+                  fabs (ul_x_pix_approx), max_corner_error );
     }
     else {
       asfPrintStatus ("Upper left x corner error: %f\n",
-		      fabs (ul_x_pix_approx));
+                      fabs (ul_x_pix_approx));
     }
 
     double ul_y_pix_approx = Y_PIXEL (ul_x, ul_y);
     if (fabs (ul_y_pix_approx) > max_corner_error ) {
       print_large_error_blurb(force_flag);
       report_func ("Upper left y corner error was too large! %f > %f\n",
-		   fabs (ul_y_pix_approx), max_corner_error );
+                   fabs (ul_y_pix_approx), max_corner_error );
     }
     else {
       asfPrintStatus ("Upper left y corner error: %f\n",
-		      fabs (ul_y_pix_approx));
+                      fabs (ul_y_pix_approx));
     }
 
     // Lower right corner.
     double lr_lat, lr_lon;
-    ret = meta_get_latLon (imd, (float) (ii_size_y - 1), 
+    ret = meta_get_latLon (imd, (float) (ii_size_y - 1),
                            (float) (ii_size_x - 1),
                            average_height, &lr_lat, &lr_lon);
     g_assert (ret == 0);
@@ -945,13 +1018,13 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     double lr_x, lr_y;
     project_set_datum (datum);
     project (pp, D2R * lr_lat, D2R * lr_lon, ASF_PROJ_NO_HEIGHT,
-	     &lr_x, &lr_y, NULL);
+             &lr_x, &lr_y, NULL);
     double lr_x_pix_approx = X_PIXEL (lr_x, lr_y);
     double lr_x_corner_error = fabs (lr_x_pix_approx - (ii_size_x - 1));
     if ( lr_x_corner_error > max_corner_error ) {
       print_large_error_blurb(force_flag);
       report_func ("Lower right x corner error was too large! %f > %f\n",
-		   lr_x_corner_error, max_corner_error);
+                   lr_x_corner_error, max_corner_error);
     }
     else {
       asfPrintStatus ("Lower right x corner error: %f\n", lr_x_corner_error);
@@ -961,7 +1034,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
     if ( lr_y_corner_error > max_corner_error ) {
       print_large_error_blurb(force_flag);
       report_func ("Lower right Y corner error was too large! %f > %f\n",
-		     lr_y_corner_error, max_corner_error);
+                     lr_y_corner_error, max_corner_error);
     }
     else {
       asfPrintStatus ("Lower right y corner error: %f\n", lr_y_corner_error);
@@ -978,11 +1051,11 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // have to worry about pixel averaging or anything).
   double pc_per_x = pixel_size;
   double pc_per_y = pixel_size;
-  
+
   // Maximum pixel indicies in output image.
   size_t oix_max = ceil ((max_x - min_x) / pc_per_x);
   size_t oiy_max = ceil ((max_y - min_y) / pc_per_y);
-  
+
   // Now we need some metadata for the output image.  We will just
   // start with the metadata from the input image and add the
   // geocoding parameters.
@@ -991,10 +1064,10 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   double y_pixel_size = omd->general->y_pixel_size;
   double x_scale = pixel_size / x_pixel_size;
   double y_scale = pixel_size / y_pixel_size;
-  
+
   // Update no data value
   omd->general->no_data = background_val;
-  
+
   // Fix up the output metadata to match the user's selected pixel size
   omd->general->x_pixel_size = pixel_size;
   omd->general->y_pixel_size = pixel_size;
@@ -1011,13 +1084,13 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   }
   if (omd->projection) {
     if (omd->projection->perY > 0) {
-      g_assert (0);		/* Shouldn't happen.  */
-      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) 
-	* pixel_size;
+      g_assert (0);                /* Shouldn't happen.  */
+      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5)
+        * pixel_size;
     }
     else
-      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) 
-	* pixel_size;
+      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5)
+        * pixel_size;
   }
   omd->projection = MALLOC(sizeof(meta_projection));
   memset (omd->projection, 0, sizeof(meta_projection));
@@ -1033,7 +1106,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   else {
     omd->projection->hem = 'S';
   }
-  
+
   /* output the correct earth radii based on the datum that was used
      to do the projection */
   omd->projection->datum = datum;
@@ -1054,10 +1127,17 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
       = GRS1980_SEMIMAJOR * (1 - (1 / GRS1980_INV_FLATTENING));
     omd->projection->re_major = GRS1980_SEMIMAJOR;
     omd->projection->re_minor = nad83_semiminor_axis;
+  } else if (datum == ITRF97_DATUM) {
+    // ITRF97 datum is based on WGS84 (btw)
+    const double itrf97_semiminor_axis
+        = INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR *
+        (1 - (1 / INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_INV_FLATTENING));
+    omd->projection->re_major = INTERNATIONAL_TERRESTRIAL_REFERENCE_FRAME_1997_SEMIMAJOR;
+    omd->projection->re_minor = itrf97_semiminor_axis;
   } else {
     asfPrintError("Unsupported datum! %d\n", datum);
   }
-  
+
   // We need to convert things in this structure back to degrees
   // before storing the metadata (according to file format).
   to_degrees (projection_type, pp);
@@ -1067,7 +1147,7 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // Now we are ready to produce our output image.
   asfPrintStatus ("\nResampling input image into output coordinate space...\n");
 
-  // Determine the names of the bands  
+  // Determine the names of the bands
   char **band_name;
   band_name = extract_band_names(imd->general->bands, imd->general->band_count);
 
@@ -1075,120 +1155,131 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // all the bands in the file
   int kk;
   for (kk=0; kk<imd->general->band_count; kk++) {
+    if (multiband || kk == band_num) {
+      if (imd->general->band_count == 1)
+        asfPrintStatus("Geocoding image ...\n");
+      else
+        asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
-    if (imd->general->band_count == 1)
-      asfPrintStatus("Geocoding image ...\n");
-    else
-      asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
+      // Input image.
+      char input_data_file[255];
+      sprintf(input_data_file, "%s.img", input_image->str);
+      FloatImage *iim =
+        float_image_band_new_from_metadata(imd, kk, input_data_file);
 
-    // Input image.
-    char input_data_file[255];
-    sprintf(input_data_file, "%s.img", input_image->str);
-    FloatImage *iim = 
-      float_image_band_new_from_metadata(imd, kk, input_data_file);
-    
-    // Output image.
-    FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
-    
-    // Convenience macros for getting a pixel.
-#define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
-    
-    // Translate the command line notion of the resampling method into
-    // the lingo known by the float_image class.  The compiler is
-    // reassured with a default.
-    float_image_sample_method_t float_image_sample_method
-      = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-    switch ( resample_method ) {
-    case RESAMPLE_NEAREST_NEIGHBOR:
-      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-      break;
-    case RESAMPLE_BILINEAR:
-      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-      break;
-    case RESAMPLE_BICUBIC:
-      float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
-      break;
-    default:
-      g_assert_not_reached ();
-    }
-    
-    
-    // Set the pixels of the output image.
-    size_t oix, oiy;		// Output image pixel indicies.
-    for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
-      for ( oix = 0 ; oix <= oix_max ; oix++ ) {
-	// Projection coordinates for the center of this pixel.
-	double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
-	// We want projection coordinates to increase as we move from
-	// the bottom of the image to the top, so that north ends up up.
-	double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
-	// Determine pixel of interest in input image.  The fractional
-	// part is desired, we will use some sampling method to
-	// interpolate between pixel values.
-	double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
-	double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-	// If we are outside the extent of the input image, set to the
-	// fill value.
-	float fill_value = background_val;
-	g_assert (ii_size_x <= SSIZE_MAX);
-	g_assert (ii_size_y <= SSIZE_MAX);
-	if ( input_x_pixel < 0
-	     || input_x_pixel > (ssize_t) ii_size_x - 1.0
-	     || input_y_pixel < 0
-	     || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
-	  SET_PIXEL (oix, oiy, (float) fill_value);
-	}
-	// Otherwise, set to the value from the appropriate position in
-	// the input image.
-	else {
-	  
-          float val = float_image_sample(iim, input_x_pixel, input_y_pixel,
-                                         float_image_sample_method);
-	  
-          // If we are reprojecting a DEM, need to account for the height
-          // difference between the vertical datum (NGVD27) and our WGS84 
-          // ellipsoid. Since geoid heights closely match vertical datum
-          // heights, this will work for SAR imagery
-          if ( imd->general->image_data_type == DEM ) {
-	    double lat, lon;
-	    ret = meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
-	    g_assert(ret == 0);
-	    val += get_geoid_height(lat, lon);
-          }
-	  
-          SET_PIXEL (oix, oiy, val);
-	}
-	
+      // Output image.
+      FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
+
+      // Convenience macros for getting a pixel.
+  #define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
+
+      // Translate the command line notion of the resampling method into
+      // the lingo known by the float_image class.  The compiler is
+      // reassured with a default.
+      float_image_sample_method_t float_image_sample_method
+        = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+      switch ( resample_method ) {
+      case RESAMPLE_NEAREST_NEIGHBOR:
+        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+        break;
+      case RESAMPLE_BILINEAR:
+        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+        break;
+      case RESAMPLE_BICUBIC:
+        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
+        break;
+      default:
+        g_assert_not_reached ();
       }
-      asfLineMeter(oiy, oiy_max + 1 );
-    }
-    
-    if (imd->general->band_count == 1) 
-      asfPrintStatus("Done resampling image.\n");
-    else
-      asfPrintStatus("Done resampling band.\n");
-    
-    // Flip the non-reprojected image if the y pixel size is negative.
-    if ( y_pixel_size < 0 && omd->projection == NULL ) {
-      asfPrintStatus ("Negative y pixel size, flipping output image.\n");
-      g_assert (0); 		/* Shouldn't be here.  */
-      float_image_flip_y (oim);
-      y_pixel_size = -y_pixel_size;
-    }
-    
-    // Store the output image, and free image resources.
-    char output_data_file[255];
-    sprintf(output_data_file, "%s.img", output_image->str);
-    if (kk == 0) // Create new output file
-      ret = float_image_band_store (oim, output_data_file, omd, 0);
-    else // Append to existing output file
-      ret = float_image_band_store (oim, output_data_file, omd, 1);
-    asfRequire (ret == 0, "Error saving image.\n");
-    float_image_free (oim);
-    
-    float_image_free (iim);
-  }
-  
+
+
+      // Set the pixels of the output image.
+      size_t oix, oiy;                // Output image pixel indicies.
+      for ( oiy = 0 ; oiy <= oiy_max ; oiy++ ) {
+        for ( oix = 0 ; oix <= oix_max ; oix++ ) {
+          // Projection coordinates for the center of this pixel.
+          double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
+          // We want projection coordinates to increase as we move from
+          // the bottom of the image to the top, so that north ends up up.
+          double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
+          // Determine pixel of interest in input image.  The fractional
+          // part is desired, we will use some sampling method to
+          // interpolate between pixel values.
+          double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
+          double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
+          // If we are outside the extent of the input image, set to the
+          // fill value.
+          float fill_value = background_val;
+          g_assert (ii_size_x <= SSIZE_MAX);
+          g_assert (ii_size_y <= SSIZE_MAX);
+          if ( input_x_pixel < 0
+               || input_x_pixel > (ssize_t) ii_size_x - 1.0
+               || input_y_pixel < 0
+               || input_y_pixel > (ssize_t) ii_size_y - 1.0 ) {
+            SET_PIXEL (oix, oiy, (float) fill_value);
+          }
+          // Otherwise, set to the value from the appropriate position in
+          // the input image.
+          else {
+
+            float val = float_image_sample(iim, input_x_pixel, input_y_pixel,
+                                           float_image_sample_method);
+
+            // If we are reprojecting a DEM, need to account for the height
+            // difference between the vertical datum (NGVD27) and our WGS84
+            // ellipsoid. Since geoid heights closely match vertical datum
+            // heights, this will work for SAR imagery
+            if ( imd->general->image_data_type == DEM ) {
+              double lat, lon;
+              ret = meta_get_latLon(omd, oiy, oix, average_height, &lat, &lon);
+              g_assert(ret == 0);
+              val += get_geoid_height(lat, lon);
+            }
+
+            SET_PIXEL (oix, oiy, val);
+          }
+
+        }
+        asfLineMeter(oiy, oiy_max + 1 );
+      }
+
+      if (imd->general->band_count == 1)
+        asfPrintStatus("Done resampling image.\n");
+      else
+        asfPrintStatus("Done resampling band.\n");
+
+      // Flip the non-reprojected image if the y pixel size is negative.
+      if ( y_pixel_size < 0 && omd->projection == NULL ) {
+        asfPrintStatus ("Negative y pixel size, flipping output image.\n");
+        g_assert (0);                 /* Shouldn't be here.  */
+        float_image_flip_y (oim);
+        y_pixel_size = -y_pixel_size;
+      }
+
+      // Store the output image, and free image resources.
+      char output_data_file[255];
+      sprintf(output_data_file, "%s.img", output_image->str);
+      if(multiband) {
+        // Writing all bands from input file to output file
+        if (kk == 0) // Create new output file
+          ret = float_image_band_store (oim, output_data_file, omd, 0);
+        else // Append to existing output file
+          ret = float_image_band_store (oim, output_data_file, omd, 1);
+        asfRequire (ret == 0, "Error saving image.\n");
+      }
+      else {
+        // Write single band when found...
+        if (kk == band_num) { // Create new output file
+          ret = float_image_band_store (oim, output_data_file, omd, 0);
+          asfRequire (ret == 0, "Error saving image.\n");
+        }
+      }
+
+      float_image_free (oim);
+      float_image_free (iim);
+    } // End of 'if multiband or single band and current band is the requested band'
+  } // End of 'for each band' in the file 'map-project the data into the file'
+
   // Free metadata structures
   meta_free (imd);
   meta_free (omd);
