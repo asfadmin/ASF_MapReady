@@ -1151,14 +1151,19 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // before storing the metadata (according to file format).
   to_degrees (projection_type, pp);
   omd->projection->param = *pp;
-  meta_write (omd, output_meta_data->str);
-
-  // Now we are ready to produce our output image.
-  asfPrintStatus ("\nResampling input image into output coordinate space...\n");
 
   // Determine the names of the bands
   char **band_name;
   band_name = extract_band_names(imd->general->bands, imd->general->band_count);
+  if (!multiband) {
+    sprintf(omd->general->bands, "%s", band_name[band_num]);
+    omd->general->band_count = 1;
+  }
+
+  meta_write (omd, output_meta_data->str);
+
+  // Now we are ready to produce our output image.
+  asfPrintStatus ("\nResampling input image into output coordinate space...\n");
 
   // Now the mapping function is calculated and we can apply that to
   // all the bands in the file
