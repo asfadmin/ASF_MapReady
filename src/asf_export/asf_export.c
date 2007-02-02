@@ -392,7 +392,7 @@ main (int argc, char *argv[])
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
 
-    band_name = find_bands(in_base_name, rgbFlag, 
+    band_name = find_bands(in_base_name, rgbFlag,
 			   command_line.red_channel,
 			   command_line.green_channel,
 			   command_line.blue_channel,
@@ -404,6 +404,10 @@ main (int argc, char *argv[])
     strcpy (command_line.band, argv[bandFlag + 1]);
     band_name = find_single_band(in_base_name, command_line.band,
 				 &num_bands_found);
+  }
+  else if (rgbFlag == FLAG_NOT_SET) {
+    band_name = find_single_band(in_base_name, "all",
+                                 &num_bands_found);
   }
 
   // Report what is going to happen
