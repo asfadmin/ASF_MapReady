@@ -34,19 +34,22 @@ meta_parameters *meta_read(const char *inName)
 
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {
+
     meta_read_only_ddr(meta, ddr_name);
 /*    printf("WARNING: * Unable to locate '%s';\n"
            "         * Using only '%s' for meta data;\n"
            "         * Errors due to lack of meta data are very likely.\n",
 	   meta_name, ddr_name);*/
   }
-  else if ( !meta_is_new_style(meta_name) ) {
-    meta_read_old(meta, meta_name);
+  else if ( fileExists(meta_name) ) {
+    if ( !meta_is_new_style(meta_name) ) {
+      meta_read_old(meta, meta_name);
+    }
+    else {
+      parse_metadata(meta, meta_name);
+    }
   }
-  else {
-    parse_metadata(meta, meta_name);
-  }
-  
+
   /* Remember the name and location of the meta struct */
   //add_meta_ddr_struct(inName, meta, NULL);
 
@@ -66,7 +69,6 @@ int meta_is_new_style(const char *file_name)
 #define MAX_METADATA_LINE 1024 
  /* Version where new metadata was adopted.  */
 #define NEW_FORMAT_VERSION 1.0 
-
   int return_value;		/* Value to be returned.  */
   char *meta_name = appendExt(file_name, ".meta");
   FILE *meta_file = FOPEN(meta_name, "r");
@@ -78,28 +80,31 @@ int meta_is_new_style(const char *file_name)
   int return_count = 0;
   char *end_ptr;		/* Used by strtod.  */
   double version;		/* Version as floating point.  */
-  do {
-    if ( fgets(line, MAX_METADATA_LINE, meta_file) == '\0' ) {
-      err_die("%s function: didn't find Meta version field\n", 
-              "meta_is_new_style");
-    }    
-    /* Note: whitespace in a scanf conversion matches zero or more
-       white space characters, %s matches non-white-space.  */
-  } while ( (return_count = sscanf (line, " meta_version: %s \n", 
-				    version_string)) != 1 );
-  version = strtod (version_string, &end_ptr);
-  if ( *end_ptr != '\0' ) {
-    err_die ("%s function: error parsing Meta vesion field\n",
-             "meta_is_new_style");
-  }
-  if ( strtod(version_string, &end_ptr)
-       < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
-    return_value = 0;
-  } else {
-    return_value = 1;
-  }
 
-  FCLOSE(meta_file);            /* Done using meta file directly.  */
+  if (meta_file != NULL) {
+    do {
+      if ( fgets(line, MAX_METADATA_LINE, meta_file) == NULL ) {
+        err_die("%s function: didn't find Meta version field\n",
+                "meta_is_new_style");
+      }
+      /* Note: whitespace in a scanf conversion matches zero or more
+         white space characters, %s matches non-white-space.  */
+    } while ( (return_count = sscanf (line, " meta_version: %s \n", 
+				      version_string)) != 1 );
+    version = strtod (version_string, &end_ptr);
+    if ( *end_ptr != '\0' ) {
+        err_die ("%s function: error parsing Meta vesion field\n",
+              "meta_is_new_style");
+    }
+    if ( strtod(version_string, &end_ptr)
+        < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
+      return_value = 0;
+    } else {
+      return_value = 1;
+    }
+
+    FCLOSE(meta_file);            /* Done using meta file directly.  */
+  }
   free(meta_name);		/* Done with file name with extension.  */
 
   return return_value;
