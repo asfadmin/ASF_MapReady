@@ -24,12 +24,12 @@ MODULES = \
 	src/libasf_raster \
 	src/libasf_vector \
 	src/libasf_sar \
-	src/libasf_insar \
 	src/ardop \
 	src/libasf_import \
 	src/libasf_geocode \
 	src/libasf_export \
 	src/libasf_terrcorr \
+	src/libasf_insar \
 	src/asf_import \
 	src/asf_export \
 	src/asf_geocode \

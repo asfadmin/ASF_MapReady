@@ -1,7 +1,6 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
-#include <asf_export.h>
 #include <ctype.h>
 
 // Prototypes
@@ -105,7 +104,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
       strcpy(rgb[*num_found], red_channel);
       (*num_found)++;
     }
-    else if (rgb_flag != FLAG_NOT_SET) {
+    else if (rgb_flag) {
       asfPrintWarning("Channel specified for RED (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", red_channel,
@@ -116,7 +115,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
       strcpy(rgb[*num_found], green_channel);
       (*num_found)++;
     }
-    else if (rgb_flag != FLAG_NOT_SET) {
+    else if (rgb_flag) {
       asfPrintWarning("Channel specified for GREEN (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", green_channel,
@@ -127,7 +126,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
       strcpy(rgb[*num_found], blue_channel);
       (*num_found)++;
     }
-    else if (rgb_flag != FLAG_NOT_SET) {
+    else if (rgb_flag) {
       asfPrintWarning("Channel specified for BLUE (\"%s\")"
                       " not found in image file.\n"
                       "Available channels are %s\n", blue_channel,
