@@ -325,28 +325,37 @@ ceos_data_ext_t require_ceos_data(const char *ceosName, char **dataName, int *nB
 ceos_file_pairs_t get_ceos_names(const char *ceosName, char **dataName,
                                  char *metaName, int *nBands)
 {
-    ceos_data_ext_t data_ext = get_ceos_data_name(ceosName, dataName, nBands);
-    ceos_metadata_ext_t meta_ext = get_ceos_metadata_name(ceosName, metaName);
+  ceos_metadata_ext_t metadata_ext;
+  ceos_data_ext_t     data_ext;
 
-    if (data_ext == CEOS_D && meta_ext == CEOS_L)
-        return CEOS_D_L_PAIR;
+  strcpy(metaName, "");
+  strcpy(*dataName, "");
+  metadata_ext = get_ceos_metadata_name(ceosName, metaName);
+  data_ext = get_ceos_data_name(ceosName, dataName, nBands);
 
-    if (data_ext == CEOS_RAW && meta_ext == CEOS_LDR)
-        return CEOS_RAW_LDR_PAIR;
+  if (   data_ext     == CEOS_D
+      && metadata_ext == CEOS_L)
+    return CEOS_D_L_PAIR;
+  if (   data_ext     == CEOS_RAW
+      && metadata_ext == CEOS_LDR)
+    return CEOS_RAW_LDR_PAIR;
+  if (   data_ext     == CEOS_dat
+      && metadata_ext == CEOS_lea)
+    return CEOS_dat_lea_PAIR;
 
-    if (data_ext == CEOS_raw && meta_ext == CEOS_ldr)
-        return CEOS_RAW_LDR_PAIR;
-
-    if (data_ext == CEOS_DAT && meta_ext == CEOS_LEA)
-        return CEOS_dat_lea_PAIR;
-
-    if (data_ext == CEOS_dat && meta_ext == CEOS_lea)
-        return CEOS_dat_lea_PAIR;
-
-    if (data_ext == CEOS_IMG && meta_ext == CEOS_LED)
-        return CEOS_IMG_LED_PAIR;
-
-    return NO_CEOS_FILE_PAIR;
+  if (data_ext == CEOS_raw && metadata_ext == CEOS_ldr)
+    return CEOS_RAW_LDR_PAIR;
+  
+  if (data_ext == CEOS_DAT && metadata_ext == CEOS_LEA)
+    return CEOS_dat_lea_PAIR;
+  
+  if (data_ext == CEOS_dat && metadata_ext == CEOS_lea)
+    return CEOS_dat_lea_PAIR;
+  
+  if (data_ext == CEOS_IMG && metadata_ext == CEOS_LED)
+    return CEOS_IMG_LED_PAIR;
+  
+  return NO_CEOS_FILE_PAIR;
 }
 
 /******************************************************************************

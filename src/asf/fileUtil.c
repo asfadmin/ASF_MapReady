@@ -194,6 +194,9 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName)
     ii--;
   }
 
+  /* ii could be -1, if the input string was empty */
+  if (ii < 0) ii = 0;
+
   if (IS_DIR_SEPARATOR(inString[ii])) {
     ii++;
   }
@@ -312,8 +315,12 @@ FILE *fopenImage(const char *fName,const char *access)
 		}
 	}
 /*An error occured-- tell the user and quit.*/
+        if (errno) asfPrintStatus("Error %d: %s\n", strerror(errno));
+        asfPrintStatus("Tried to open: %s\n", openName);
+
+
 	fprintf(stderr,
-			"********************** ERROR! ***********************\n"
+			"********************** Error! ***********************\n"
 			"An error occured trying to open for %s the\n"
 			"file named '%s'.\n\n",forWriting?"write or create":"reading",
 			fName);

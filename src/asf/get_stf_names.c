@@ -134,7 +134,7 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
   for (ii=begin; ii<end; ii++) {
     /* Assume the FILENAME is the base name (so just tack the extension on) */
     sprintf(dataTemp,"%s%s%s",dirName,fileName,stf_data_extensions[ii]);
-    if ((dataFP=fopen(stfName,"r"))!=NULL) {
+    if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
       fclose(dataFP);
       strcpy(dataName,dataTemp);
       return ii;
