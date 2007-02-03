@@ -9,8 +9,8 @@
 extern int currArg;
 
 int strmatch(const char *key, const char *match);
-
 int detect_flag_options(int argc, char **argv, ...);
 int extract_flag_options(int *argc, char ***argv, ... );
+int extract_double_options(int *argc, char **argv[], double *val, ... );
 
 #endif

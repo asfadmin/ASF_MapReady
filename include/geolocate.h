@@ -103,6 +103,7 @@ typedef struct {
 /*Earth Parameters*/
 	double re;/*Equator Radius, in meters*/
 	double rp;/*Polar Radius, in meters*/
+	double earth_radius; /* Earth radius at scene center */
 	double dayLength; /*Length of day, in seconds.*/
 	double angularVelocity; /* 2*PI/dayLength, in radians per second.*/
 	double gxMe; /*Gravitational Constant times mass of planet (Kg).*/

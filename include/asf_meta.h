@@ -104,7 +104,8 @@ typedef enum {
   /* A simple "projection" in which the image pixels are arranged such
      that latitude and longitude lines form an regular rectangular
      grid over the image.  */
-  LAT_LONG_PSEUDO_PROJECTION
+  LAT_LONG_PSEUDO_PROJECTION,
+  UNKNOWN_PROJECTION
 } projection_type_t;
 
 typedef enum {
@@ -117,7 +118,8 @@ typedef enum {
   INTERNATIONAL1924_SPHEROID,
   INTERNATIONAL1967_SPHEROID,
   WGS72_SPHEROID,
-  WGS84_SPHEROID
+  WGS84_SPHEROID,
+  UNKNOWN_SPHEROID
 } spheroid_type_t;
 
 typedef enum {
@@ -715,6 +717,11 @@ void ll_ac(meta_projection *proj, char look_dir, double lat, double lon,
            double *c1, double *c2);
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,
            double *lat_d, double *lon);
+
+/* Wrapper for scansar */
+void scan_to_latlon(meta_parameters *meta,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height);
 
 /* Keep track of open meta and ddr structures, so that all updated
  * metadata can be written to the metafile, initialized in meta_init.c Nov '02 */
