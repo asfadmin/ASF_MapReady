@@ -74,6 +74,8 @@
 #define ARCGIS_HARN_DATUM                   "HARN"
 #define ARCGIS_WGS84_DATUM                  "WGS 84"
 
+#define ARCGIS_USER_DEFINED_PCS             32767
+
 #define UNKNOWN_PROJECTION_TYPE             -1
 
 typedef struct {
@@ -207,7 +209,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Let the user know what format we are working on.
   asfPrintStatus
-    ("   Input data type: GeoTIFF (ArcGIS "
+    ("\n   Input data type: GeoTIFF (ArcGIS "
       "flavor with ArcGIS metadata (.aux) file)\n");
   asfPrintStatus
     ("   Output data type: ASF format\n");
@@ -232,10 +234,10 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   tagtype_t citation_type;
   citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
   asfRequire (citation_length > 0,
-              "\nMissing citation string in GeoTIFF file\n");
+              "Missing citation string in GeoTIFF file\n");
   char *citation = MALLOC ((citation_length) * typeSize);
   GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
-  asfPrintStatus("Citation: %s\n", citation);
+  asfPrintStatus("\nCitation: %s\n", citation);
 
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
@@ -250,16 +252,16 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
   &tie_point);
   asfRequire (count == 6,
-              "\nGeoTIFF file does not contain tie points\n");
+              "GeoTIFF file does not contain tie points\n");
   // Get the scale factors which define the scale relationship between
   // raster pixels and geographic coordinate space.
   double *pixel_scale;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
   &pixel_scale);
   asfRequire (count == 3,
-              "\nGeoTIFF file does not contain pixel scale parameters\n");
+              "GeoTIFF file does not contain pixel scale parameters\n");
   asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
-              "\nGeoTIFF file contains invalid pixel scale parameters\n");
+              "GeoTIFF file contains invalid pixel scale parameters\n");
 
   // CHECK TO SEE IF THE GEOTIFF DOES CONTAIN USEFUL DATA:
   //  If the tiff file contains geocoded information, then the model type
@@ -335,7 +337,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     arcgisProjParms.proSpheroid.eSquared = MAGIC_UNSET_DOUBLE;
     arcgisProjParms.proSpheroid.radius = MAGIC_UNSET_DOUBLE;
 
-    short proj_coords_trans;
+    short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
     short geokey_datum;
     double false_easting;
@@ -359,9 +361,18 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       // false, it means that an unsupported (by us) UTM or State Plane projection was
       // discovered (above.)  All other projection types make use of the ProjCoordTransGeoKey
       // geokey.
-      read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-      asfRequire(read_count == 1,
-                 "\nUnable to determine type of projection coordinate system in GeoTIFF file\n");
+
+      // Check for a user-defined UTM projection
+      read_count = GTIFKeyGet (input_gtif, ProjectionGeoKey, &pcs, 0, 0);
+      if (read_count == 1 && PCS_2_UTM(pcs, &datum, &arcgisProjParms.proZone)) {
+        proj_coords_trans = CT_TransverseMercator;
+      }
+      else { // Some other type of projection may exist
+        read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
+      }
+      asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
+                 "Unable to determine type of projection coordinate system in GeoTIFF file\n");
+
       datum = UNKNOWN_DATUM;
       read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
       if (read_count == 1) {
@@ -384,6 +395,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         if (read_count == 1) {
           switch(geokey_datum){
             case GCS_WGS_84:
+            case GCSE_WGS84:
               datum = WGS84_DATUM;
               break;
             case GCS_NAD27:
@@ -397,13 +409,12 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           }
         }
       }
-      if (geokey_datum == UNKNOWN_DATUM) {
-        asfPrintWarning("\nUnable to determine datum type from GeoTIFF file\n");
+      if (datum == UNKNOWN_DATUM) {
+        asfPrintWarning("Unable to determine datum type from GeoTIFF file\n");
       }
     }
-
-    asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
-        "with data found in the ArcGIS metadata (.aux) file.\n");
+    //asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
+        //"with data found in the ArcGIS metadata (.aux) file.\n");
 
     projection_type = UNKNOWN_PROJECTION_TYPE;
     scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
@@ -417,36 +428,36 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         strcpy(arcgisProjParms.proName, "UTM");
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
-          asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                   "using ProjFalseEastingGeoKey\n");
+//          asfPrintWarning(
+//                   "Unable to determine false easting from GeoTIFF file\n"
+//                   "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
         }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
-          asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                   "using ProjFalseNorthingGeoKey\n");
+//          asfPrintWarning(
+//                   "Unable to determine false northing from GeoTIFF file\n"
+//                   "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
         }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
-          asfPrintWarning(
-              "\nUnable to determine center longitude from GeoTIFF file\n"
-              "using ProjNatOriginLongGeoKey\n");
+//          asfPrintWarning(
+//              "Unable to determine center longitude from GeoTIFF file\n"
+//              "using ProjNatOriginLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
         }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
-          asfPrintWarning(
-              "\nUnable to determine center latitude from GeoTIFF file\n"
-              "using ProjNatOriginLatGeoKey\n");
+//          asfPrintWarning(
+//              "Unable to determine center latitude from GeoTIFF file\n"
+//              "using ProjNatOriginLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -456,11 +467,12 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           scale_factor = ARCGIS_DEFAULT_UTM_SCALE_FACTOR;
 
           char msg[256];
-          sprintf(msg,
-                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-                  scale_factor);
-          asfPrintWarning(msg);
-          //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
+//          sprintf(msg,
+//                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+//                  scale_factor);
+//          asfPrintWarning(msg);
+          sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", scale_factor);
+          asfPrintStatus(msg);
         }
         break;
       // Albers Conical Equal Area case IS tested
@@ -471,8 +483,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine first standard parallel from GeoTIFF file\n"
-                       "using ProjStdParallel1GeoKey\n");
+                   "Unable to determine first standard parallel from GeoTIFF file\n"
+              "using ProjStdParallel1GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
@@ -480,8 +492,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine second standard parallel from GeoTIFF file\n"
-                       "using ProjStdParallel2GeoKey\n");
+                   "Unable to determine second standard parallel from GeoTIFF file\n"
+              "using ProjStdParallel2GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
@@ -489,8 +501,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjFalseEastingGeoKey\n");
+                   "Unable to determine false easting from GeoTIFF file\n"
+              "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -498,19 +510,19 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                       "using ProjFalseNorthingGeoKey\n");
+                   "Unable to determine false northing from GeoTIFF file\n"
+              "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
         }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
-          asfPrintWarning("\nUnable to determine center longitude from GeoTIFF file\n"
-              "using ProjNatOriginLongGeoKey\n");
+          asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
+              "using ProjNatOriginLongGeoKey.  Trying ProjCenterLongGeoKey...\n");
           read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
           if (read_count != 1) {
-            asfPrintWarning("\nUnable to determine center longitude from GeoTIFF file\n"
+            asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
                 "using ProjCenterLongGeoKey as well...\n");
           }
         }
@@ -520,8 +532,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n"
-                       "using ProjNatOriginLatGeoKey\n");
+                   "Unable to determine center latitude from GeoTIFF file\n"
+              "using ProjNatOriginLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -535,8 +547,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                     "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjFalseEastingGeoKey\n");
+                     "Unable to determine false easting from GeoTIFF file\n"
+              "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -544,8 +556,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                       "using ProjFalseNorthingGeoKey\n");
+                   "Unable to determine false northing from GeoTIFF file\n"
+              "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
@@ -553,8 +565,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center longitude from GeoTIFF file\n"
-                       "using ProjNatOriginLongGeoKey\n");
+                   "Unable to determine center longitude from GeoTIFF file\n"
+              "using ProjNatOriginLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
@@ -562,8 +574,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n"
-                       "using ProjNatOriginLatGeoKey\n");
+                   "Unable to determine center latitude from GeoTIFF file\n"
+              "using ProjNatOriginLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -586,8 +598,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine first standard parallel from GeoTIFF file\n"
-                       "using ProjStdParallel1GeoKey\n");
+                   "Unable to determine first standard parallel from GeoTIFF file\n"
+              "using ProjStdParallel1GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
@@ -595,8 +607,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine second standard parallel from GeoTIFF file\n"
-                       "using ProjStdParallel2GeoKey\n");
+                   "Unable to determine second standard parallel from GeoTIFF file\n"
+              "using ProjStdParallel2GeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
@@ -604,8 +616,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjFalseEastingGeoKey\n");
+                   "Unable to determine false easting from GeoTIFF file\n"
+              "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -613,8 +625,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                       "using ProjFalseNorthingGeoKey\n");
+                   "Unable to determine false northing from GeoTIFF file\n"
+              "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
@@ -622,8 +634,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center longitude from GeoTIFF file\n"
-                       "using ProjFalseOriginLongGeoKey\n");
+                   "Unable to determine center longitude from GeoTIFF file\n"
+              "using ProjFalseOriginLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
@@ -631,8 +643,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n"
-                       "using ProjFalseOriginLatGeoKey\n");
+                   "Unable to determine center latitude from GeoTIFF file\n"
+              "using ProjFalseOriginLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
@@ -645,8 +657,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n"
-                       "using ProjNatOriginLatGeoKey\n");
+                   "Unable to determine center latitude from GeoTIFF file\n"
+              "using ProjNatOriginLatGeoKey\n");
         }
         else {
           // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
@@ -658,8 +670,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine vertical pole longitude from GeoTIFF file\n"
-                       "using ProjStraightVertPoleLongGeoKey\n");
+                   "Unable to determine vertical pole longitude from GeoTIFF file\n"
+              "using ProjStraightVertPoleLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonPole;
@@ -667,8 +679,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjFalseEastingGeoKey\n");
+                   "Unable to determine false easting from GeoTIFF file\n"
+              "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -676,8 +688,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                       "using ProjFalseNorthingGeoKey\n");
+                   "Unable to determine false northing from GeoTIFF file\n"
+              "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
@@ -692,8 +704,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                       "using ProjFalseEastingGeoKey\n");
+                   "Unable to determine false easting from GeoTIFF file\n"
+              "using ProjFalseEastingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
@@ -701,8 +713,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine false northing from GeoTIFF file\n"
-                       "using ProjFalseNorthingGeoKey\n");
+                   "Unable to determine false northing from GeoTIFF file\n"
+              "using ProjFalseNorthingGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
@@ -710,8 +722,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center longitude from GeoTIFF file\n"
-                       "using ProjCenterLongGeoKey\n");
+                   "Unable to determine center longitude from GeoTIFF file\n"
+              "using ProjCenterLongGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
@@ -719,14 +731,18 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
         read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
         if (read_count != 1) {
           asfPrintWarning(
-                   "\nUnable to determine center latitude from GeoTIFF file\n"
-                       "using ProjCenterLatGeoKey\n");
+                   "Unable to determine center latitude from GeoTIFF file\n"
+              "using ProjCenterLatGeoKey\n");
         }
         else {
           arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
         }
         break;
       default:
+        asfPrintWarning(
+            "Unable to determine projection type from GeoTIFF file\n"
+            "using ProjectedCSTypeGeoKey or ProjCoordTransGeoKey\n");
+        geotiff_data_exists = 0;
         break;
     }
   } // End of reading projection parameters from geotiff ...if it existed
@@ -739,7 +755,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
   if ( inGeotiffAuxName == NULL) {
     asfPrintWarning("No ArcGIS metadata (.aux) file was found using <basename>.\n"
-        "Meta data will be incomplete.\n");
+        "Meta data may be incomplete.\n");
     auxDataExists = 0;
   }
   if ( inGeotiffAuxName != NULL ) { // ArcGIS metadata file (.aux) exists
@@ -752,8 +768,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
           proj_type != PS     &&
           proj_type != LAMAZ)
     {
-      asfPrintWarning ("\nMissing or unsupported projection parameters found in\n"
-          "ArcGIS metadata (.aux) file\n");
+      //asfPrintWarning ("Missing or unsupported projection parameters found in\n"
+          //"ArcGIS metadata (.aux) file\n");
       auxDataExists = 0;
     }
     else {
@@ -779,8 +795,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       else if (strncmp(arcgisDatumParms.datumname, ARCGIS_WGS84_DATUM, strlen(ARCGIS_WGS84_DATUM)) == 0) {
         datum = WGS84_DATUM;
       }
-      else {
-        asfPrintWarning("\nCouldn't identify datum in GeoTIFF or ArcGIS metadata (.aux) file...\n");
+      else if (!geotiff_data_exists) {
+        asfPrintWarning("Couldn't identify datum in GeoTIFF or ArcGIS metadata (.aux) file...\n");
         // NOTE: The ArcGIS .aux file may have contained "HARN" for High Accuracy Reference Network
         // (a GPS-enhanced NAD83), but we don't separately support it at this time and I'm not sure
         // if it's OK to just call it NAD83 ...
@@ -794,8 +810,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // If at this point, the projection parameters were found in neither file
   // then quit ...
   asfRequire(geotiff_data_exists || auxDataExists,
-              "\nProjection parameters appear to be missing in the GeoTIFF\n"
-              "file and/or the ArcGIS metadata (.aux) file.\n");
+              "Projection parameters missing in both the GeoTIFF\n"
+              "file and the ArcGIS metadata (.aux) file.  Projection\n"
+              "parameters will be incomplete.\n");
 
   /***** CONVERT TIFF TO FLOAT IMAGE *****/
   /*                                     */
@@ -823,28 +840,31 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // of our own that still lets things work somewhat (assuming the bad
   // data values are rare at least).
   //
-  // UPDATE: I'm leaving this scan in for not (11-1-06) ...but if it never issues
+  // UPDATE: I'm leaving this scan in for now (11-1-06) ...but if it never issues
   // any warnings when ingesting ArcGIS geotiffs then it's probably not necessary
   // to scan for 'bad data'.  AND, it's possible that the stats calculations can handle
   // the bad data now ...needs testing.
-  asfPrintStatus("\nScanning image for bad data values...\n");
-  const float bad_data_ceiling = -10e10;
-  const float new_bad_data_magic_number = -999.0;
-  size_t ii, jj;
-  char bad_values_existed = 0;
-  for ( ii = 0 ; ii < image->size_y ; ii++ ) {
-    for ( jj = 0 ; jj < image->size_x ; jj++ ) {
-      if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
-	float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
-        bad_values_existed = 1;
-      }
-    }
-  }
-  if (bad_values_existed) {
-    asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
-        "result in inaccurate image statistics.\n\n");
-    asfPrintStatus("Extra-negative values found within the float image have been removed\n\n");
-  }
+
+  // UPDATE: I'm taking this scan out for now (01-25-07)
+  //
+  //asfPrintStatus("\nScanning image for bad data values...\n");
+  //const float bad_data_ceiling = -10e10;
+  //const float new_bad_data_magic_number = -999.0;
+  //size_t ii, jj;
+  //char bad_values_existed = 0;
+  //for ( ii = 0 ; ii < image->size_y ; ii++ ) {
+    //for ( jj = 0 ; jj < image->size_x ; jj++ ) {
+      //if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
+	//float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
+        //bad_values_existed = 1;
+      //}
+    //}
+  //}
+  //if (bad_values_existed) {
+    //asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
+        //"result in inaccurate image statistics.\n");
+    //asfPrintStatus("Extra-negative values found within the float image have been removed\n");
+  //}
 
   // Get the raster width and height of the image.
   uint32 width = image->size_x;
@@ -1145,7 +1165,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
   asfRequire (return_code == 0,
-	      "Failed to write new '.meta' and '.img' files.");
+	      "Failed to write new '.meta' and '.img' files.\n");
 
   // We're now done with the data and metadata.
   meta_free (meta_out);
@@ -1177,21 +1197,41 @@ short getArcgisProjType(const char *auxFile) {
   ddObject ddObjects[MAX_EHFA_OBJECTS_PER_DICTIONARY]; /* data dictionary objects */
   unsigned long proType;
   unsigned long proNumber;
-  int i;
+  int i, j;
   FILE *fp;
+
+  for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
+    for (j=0; j<MAX_EHFA_ITEMS_PER_OBJECT; j++) {
+      ddObjects[i].ddItems[j].number = 0;
+      ddObjects[i].ddItems[j].indirectData = '\0';
+      strcpy(ddObjects[i].ddItems[j].name, "");
+      ddObjects[i].ddItems[j].dataType = '\0';
+      strcpy(ddObjects[i].ddItems[j].definedTypeName, "");
+      ddObjects[i].ddItems[j].enumNames = NULL;
+      ddObjects[i].ddItems[j].numEnums = 0;
+      strcpy(ddObjects[i].ddItems[j].prevTypeName, "");
+      ddObjects[i].ddItems[j].nestedItems = NULL;
+      ddObjects[i].ddItems[j].numNestedItems = 0;
+    }
+    ddObjects[i].numItems = 0;
+    strcpy(ddObjects[i].objStr, "");
+    strcpy(ddObjects[i].objName, "");
+    ddObjects[i].prev = NULL;
+    ddObjects[i].next = NULL;
+  }
 
   fp = fopen(auxFile, "r");
   asfRequire(fp != NULL,
-             "\nError opening input ArcGIS metadata (.aux) file.\n");
+             "Error opening input ArcGIS metadata (.aux) file.\n");
 
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
   asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -1234,10 +1274,11 @@ short getArcgisProjType(const char *auxFile) {
     FREE(dictionary);
   }
   for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
-    freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    if (strlen(ddObjects[i].objName) > 0) {
+      freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    }
   }
   fclose(fp);
-
 
   return projType;
 }
@@ -1796,8 +1837,12 @@ void ParseDictionaryToObjectStrs (char *dd, ddObject ddObjects[],
       /* result from nested item descriptions (this adds additional */
       /* '{' and '}' characters to the stream)                      */
       asfRequire(*count < lim,
-                  "\nERROR: Infile contains too many data type objects"
+                  "ERROR: Infile contains too many data type objects"
                       " in the data dictionary\n");
+    }
+    else {
+      strcpy(ddObjects[*count].objStr, "");
+      strcpy(ddObjects[*count].objName, "");
     }
   } while (foundObj);
 }
@@ -1838,7 +1883,7 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
       }
       if (level > 0 && *pcTmp2 == '\0') {
         asfRequire(0,
-                   "\ngetObjectToken() ERROR: Invalid data dictionary record in file\n");
+                   "getObjectToken() ERROR: Invalid data dictionary record in file\n");
       }
       pcTmp2++;
     }
@@ -1854,7 +1899,7 @@ BOOL getObjectToken(char **tdd, ddObject *tmpObj)
     /*** Find the copy the object token's name (data type) ***/
     pcTmp = strtok_r(pcTmp2, ",", &pcTmp3);
     asfRequire(pcTmp != NULL,
-               "\ngetObjectToken() ERROR: Invalid data dictionary record in file\n");
+               "getObjectToken() ERROR: Invalid data dictionary record in file\n");
     strcpy(tmpObj->objName, pcTmp);
 
     rtn = 1;
@@ -1884,7 +1929,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
   ddObject tmpObj;
 
   asfRequire(pcTmp != NULL && *pcTmp != '\0',
-             "\nParse_ObjectString_to_Items() ERROR: Empty object string\n");
+             "Parse_ObjectString_to_Items() ERROR: Empty object string\n");
 
   /* For each item in the object... */
   while (*pcTmp != '\0' && itemNo < MAX_EHFA_ITEMS_PER_OBJECT) {
@@ -1920,7 +1965,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
 
     /* Store the data type indicator (a char) */
     asfRequire(validDataType(*pcTmp) != 0,
-               "\nERROR: Invalid or unsupported data type found in data dictionary\n");
+               "ERROR: Invalid or unsupported data type found in data dictionary\n");
     item->dataType = *pcTmp;
     pcTmp++;
     /* pcTmp now either points at the name of the type, the number of enums in an */
@@ -1945,28 +1990,28 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         tmpStr[numChars] = '\0';
         item->numEnums = atoi(tmpStr); /* Must be integer and grt zero */
         asfRequire(item->numEnums > 0,
-                   "\nERROR: Found enum type with no members in data dictionary\n");
+                   "ERROR: Found enum type with no members in data dictionary\n");
         pcTmp += numChars + 1; /* Now points at first char of first enum string */
         /* Parse out the enum strings (names of enum types) */
         item->enumNames = (char **)MALLOC(item->numEnums * sizeof(char *));
         asfRequire(item->enumNames != NULL,
-                   "\nParse_ObjectString_to_Items() ERROR: Memory allocation error\n");
+                   "Parse_ObjectString_to_Items() ERROR: Memory allocation error\n");
         for (i=0; i < item->numEnums; i++) {
           item->enumNames[i] =
               (char *)MALLOC(MAX_EHFA_ITEMSTRING_LEN * sizeof(char));
           asfRequire(item->enumNames[i] != NULL,
-                     "\nParse_ObjectString_to_Items() ERROR: Memory allocation error\n");
+                     "Parse_ObjectString_to_Items() ERROR: Memory allocation error\n");
         }
         strcpy(tmpStr, pcTmp); /* copy remainder of object string for strtok_r() */
         pcTmp2 = strtok_r(tmpStr, ",", &pcTmp3);
         asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
-                   "\nERROR: Found empty enum element name in data dictionary\n");
+                   "ERROR: Found empty enum element name in data dictionary\n");
         strcpy(item->enumNames[0], pcTmp2);
         numChars = strlen(item->enumNames[0]);
         for (i=1; i < item->numEnums; i++) {
           pcTmp2 = strtok_r(NULL, ",", &pcTmp3);
           asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
-                     "\nERROR: Found empty enum element name in data dictionary\n");
+                     "ERROR: Found empty enum element name in data dictionary\n");
           strcpy(item->enumNames[i], pcTmp2);
           numChars += strlen(item->enumNames[i]);
         }
@@ -1976,7 +2021,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         strcpy(tmpStr, pcTmp); /* copy remainder of object string for strtok_r() */
         pcTmp2 = strtok_r(tmpStr, ",", &pcTmp3); /* get name of predefined type */
         asfRequire(pcTmp2 != NULL && pcTmp2 > 0,
-                   "\nERROR: Found empty predefined type name in data dictionary\n");
+                   "ERROR: Found empty predefined type name in data dictionary\n");
         strcpy(item->prevTypeName, pcTmp2);
         numChars = strlen(item->prevTypeName);
         pcTmp += numChars + 1; /* Now points at data type name following predef data type name */
@@ -1985,7 +2030,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
         /* Allocate an array to hold the nested items */
         item->nestedItems = MALLOC(MAX_EHFA_NESTEDITEMS_PER_ITEM * sizeof(ddItem));
         asfRequire(item->nestedItems != NULL,
-                   "\nERROR: Parse_ObjectString_to_Items() memory allocation error\n");
+                   "ERROR: Parse_ObjectString_to_Items() memory allocation error\n");
         /* The following borrows the getObjectToken() function since a nested item */
         /* has the same format ({...}...,) as an object string.  Upon return, the  */
         /* item string is contained in tmpObj.objStr                               */
@@ -2014,7 +2059,7 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
       missingName = 1;
     }
     if (missingName) {
-      printf("\nERROR: Parse_ObjectString_to_Items() found missing data type name in\n"
+      asfPrintWarning("ERROR: Parse_ObjectString_to_Items() found missing data type name in\n"
           "item description.  Original object string:\n\n\"%s\"\n",
       objString);
     }
@@ -2023,12 +2068,12 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     itemNo++;
     tooManyItems = (itemNo >= MAX_EHFA_ITEMS_PER_OBJECT) ? 1 : 0;
     if (tooManyItems) {
-      printf("\nParse_ObjectString_to_Items() found too many items in data\n"
+      asfPrintWarning("Parse_ObjectString_to_Items() found too many items in data\n"
           "dictionary object.  Original object string:\n\n\"%s\"\n",
       objString);
     }
     asfRequire(tooManyItems == 0,
-               "\nERROR: Too many items in data dictionary object\n");
+               "ERROR: Too many items in data dictionary object\n");
   }
   *numItems = itemNo;
 }
@@ -2164,7 +2209,7 @@ void PrintItems(ddItem *items, int numItems, int tabLevel)
         break;
     }
 
-    /* Dump to stdio */
+    /* Dump to stdout */
     printf("\n%sITEM DESCRIPTION:\n", tabs);
     printf("%s  name: \"%s\"\n", tabs, items[i].name);
     printf("%s  number: %d\n", tabs, items[i].number);
@@ -2215,7 +2260,7 @@ void traverseNodes(FILE *fp, _Ehfa_Entry *node, unsigned long nodeOffset, BOOL d
   if (node->child) {
     GetNode(fp, node->child, &newNode);
     asfRequire(newNode.prev == (unsigned long) 0,
-               "\nERROR: traverseNodes() found a child with non-NULL prev pointer\n");
+               "ERROR: traverseNodes() found a child with non-NULL prev pointer\n");
     traverseNodes(fp, &newNode, node->child, dumpFlag);
   }
   if (node->next) {
@@ -2311,7 +2356,7 @@ short FindNode (FILE *fp, _Ehfa_Entry *node, char *type,
   if (node->child && !nodeFound) {
     GetNode(fp, node->child, &newNode);
     asfRequire(newNode.prev == (unsigned long) 0,
-               "\nFindNode() found a child with non-NULL prev pointer\n");
+               "FindNode() found a child with non-NULL prev pointer\n");
     nodeFound = FindNode(fp, &newNode, type, foundNode);
   }
 
@@ -2367,7 +2412,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
 
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
-             "\nError opening input ArcGIS metadata (.aux) file.\n");
+             "Error opening input ArcGIS metadata (.aux) file.\n");
 
   // Populate values to be read from the file with initial values
   proNumber = (unsigned long)MAGIC_UNSET_INT;
@@ -2388,10 +2433,10 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   /*                                          */
   GetAuxHeader(fp, &hdr);
   asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2504,7 +2549,9 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     FREE(dictionary);
   }
   for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
-    freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    if (strlen(ddObjects[i].objName) > 0) {
+      freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    }
   }
   fclose(fp);
 }
@@ -2620,7 +2667,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
 
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
-             "\nError opening input ArcGIS metadata (.aux) file.\n");
+             "Error opening input ArcGIS metadata (.aux) file.\n");
 
   // Populate values to be read from the file with initial values
   strcpy(datumname, MAGIC_UNSET_STRING);
@@ -2634,10 +2681,10 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
   /*                                          */
   GetAuxHeader(fp, &hdr);
   asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2708,7 +2755,9 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
     FREE(dictionary);
   }
   for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
-    freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    if (strlen(ddObjects[i].objName) > 0) {
+      freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    }
   }
   fclose(fp);
 }
@@ -2737,7 +2786,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
 
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
-             "\nError opening input ArcGIS metadata (.aux) file.\n");
+             "Error opening input ArcGIS metadata (.aux) file.\n");
 
   // Populate values to be read from the file with initial values
   strcpy(proName, MAGIC_UNSET_STRING);
@@ -2753,10 +2802,10 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   /*                                          */
   GetAuxHeader(fp, &hdr);
   asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2834,7 +2883,9 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
     FREE(dictionary);
   }
   for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
-    freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    if (strlen(ddObjects[i].objName) > 0) {
+      freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    }
   }
   fclose(fp);
 }
@@ -2851,8 +2902,11 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   // For WGS72 datums, Zones 1S through 60S, NNN == 323
   // For WGS84 datums, Zones 1N through 60N, NNN == 326
   // For WGS84 datums, Zones 1S through 60S, NNN == 327
-  // For user-defined and unsupported UTM projections, NNN can be
-  //   a variety of other numbers (see the GeoTIFF Standard)
+  // For user-defined UTMs, Northern Hemisphere, NNN == 160
+  // For user-defined UTMs, Southern Hemisphere, NNN == 161
+  // For other user-defined and/or unsupported UTM projections,
+  //   then NNN can be a variety of other numbers (see the
+  //   GeoTIFF Standard)
   //
   // NOTE: For NAD27 and NAD83, only the restricted range of zones
   // above is supported by the GeoTIFF standard.
@@ -2860,6 +2914,8 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   const short NNN_NAD27 = 367;
   const short NNN_NAD83 = 269;
   const short NNN_WGS84 = 326;
+  const short NNN_USER_DEFINED_NORTH = 160;
+  const short NNN_USER_DEFINED_SOUTH = 161;
   int isUTM = 0;
   short datumClassifierNNN;
 
@@ -2868,16 +2924,48 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
       *datum = NAD27_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 3 || *zone > 22) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
   }
   else if (datumClassifierNNN == NNN_NAD83) {
       *datum = NAD83_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 3 || *zone > 23) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
   }
   else if (datumClassifierNNN == NNN_WGS84) {
       *datum = WGS84_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 1 || *zone > 60) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
+  }
+  else if (datumClassifierNNN == NNN_USER_DEFINED_NORTH ||
+           datumClassifierNNN == NNN_USER_DEFINED_SOUTH) {
+    /*
+        NOTE: For the user-defined cases, the datum should be set
+        from the geokey GeographicTypeGeoKey (or possibly
+        GeogGeodeticDatumGeoKey) before or after the calling of
+        PCS_2_UTM(), therefore *datum is not assigned anything
+        here.
+    */
+    *zone = pcs - (pcs / 100)*100;
+    isUTM = 1;
+    if (*zone < 1 || *zone > 60) {
+      *datum = UNKNOWN_DATUM;
+      *zone = 0;
+      isUTM = 0;
+    }
   }
   else {
       *datum = UNKNOWN_DATUM;
@@ -2903,7 +2991,7 @@ void getArcgisEimg_MapInformation (char *infile,
 
   fp = fopen(infile, "r");
   asfRequire(fp != NULL,
-             "\nError opening input ArcGIS metadata (.aux) file.\n");
+             "Error opening input ArcGIS metadata (.aux) file.\n");
 
   // Populate values to be read from the file with initial values
   strcpy(arcgisEimg_MapInformation->projection, MAGIC_UNSET_STRING);
@@ -2913,10 +3001,10 @@ void getArcgisEimg_MapInformation (char *infile,
   /*                                          */
   GetAuxHeader(fp, &hdr);
   asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
-             "\nArcGIS metadata (.aux) file invalid\n");
+             "ArcGIS metadata (.aux) file invalid\n");
   /* NOTE: GetDataDictionary() dynamically allocates 'dictionary' with MALLOC() */
   GetDataDictionary(fp, dhdr.dictionaryPtr, &dictionary);
   ParseDictionary(dictionary, ddObjects, MAX_EHFA_OBJECTS_PER_DICTIONARY);
@@ -2936,7 +3024,9 @@ void getArcgisEimg_MapInformation (char *infile,
     FREE(dictionary);
   }
   for (i=0; i<MAX_EHFA_OBJECTS_PER_DICTIONARY; i++) {
-    freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    if (strlen(ddObjects[i].objName) > 0) {
+      freeItems(ddObjects[i].ddItems, ddObjects[i].numItems);
+    }
   }
   fclose(fp);
 }
