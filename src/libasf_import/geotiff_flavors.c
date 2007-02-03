@@ -44,8 +44,7 @@ detect_geotiff_flavor (const char *file)
   if ( strncmp (citation, tmp, strlen (tmp)) == 0 ) {
     short model_type;
     short proj_type;
-
-    asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF.\n");
+    asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS, USGS Seamless etc) type of GeoTIFF.\n");
 
     int read_count
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
@@ -64,14 +63,17 @@ detect_geotiff_flavor (const char *file)
             ) {
       char inBaseName[256];
       strcpy(inBaseName, file);
-      *(findExt(inBaseName)) = '\0';
+      char *ext = findExt(inBaseName);
+      if (ext) {
+        *ext = '\0';
+      }
       inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
         // If an aux file is found, then return import_arcgis_geotiff() regardless,
         // but warn if it does not contain projection information.  import_arcgis_geotiff()
         // handles this case and looks for the info in the TIFF instead...
-        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF\n"
-            "metadata (.aux) file.\n");
+        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF "
+            "metadata\n  (.AUX or .aux) file.\n");
         proj_type = getArcgisProjType (inGeotiffAuxName->str);
         switch (proj_type) {
           case UTM:     // Universal Transverse Mercator (UTM)
@@ -93,18 +95,11 @@ detect_geotiff_flavor (const char *file)
       }
       else {
         asfPrintWarning("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF but the\n"
-            "associated metadata (.aux) file appears to be missing.\n");
+            "associated metadata (.aux) file appears to be missing.  The TIFF file\n"
+            "will be examined for this data...\n");
       }
     }
   } // strncmp on citation, tmp looking for IMAGINE GeoTIFF type
-  //else {
-    //return import_generic_geotiff;
-  //}
-
-  // FIXME: The import_asf_utm_geotiff() function should be deprecated as
-  // soon as the import_generic_geotiff() function is completed and tested
-  // since it will be capable of reading any ASF GeoTIFF ...not just UTM
-  // or non-UTM GeoTIFFs
 
   // Test for a particular flavor.
   GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
