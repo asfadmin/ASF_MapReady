@@ -372,6 +372,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
       case WGS84_SPHEROID:
 	meta_put_string(fp,"spheroid:","WGS84","Spheroid");
 	break;
+      default:
+        meta_put_string(fp,"spheroid:","???","Spheroid");
+        break;
       }
     }
     meta_put_double(fp,"re_major:",meta->projection->re_major,

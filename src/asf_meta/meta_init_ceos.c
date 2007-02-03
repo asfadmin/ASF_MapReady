@@ -939,8 +939,8 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
   if (mpdr) { // all ASF ScanSAR have a map projection record
     projection->startY = mpdr->tlceast;
     projection->startX = mpdr->tlcnorth;
-    projection->perY   = (mpdr->blceast - mpdr->tlceast) / mpdr->nlines;
-    projection->perX   = (mpdr->trcnorth - mpdr->tlcnorth) / mpdr->npixels;
+    projection->perY   = (mpdr->blceast - mpdr->tlceast) / (mpdr->nlines-1);
+    projection->perX   = (mpdr->trcnorth - mpdr->tlcnorth) / (mpdr->npixels-1);
   }
   else { // RSI ScanSAR does not - needs some calulation
     // RSI ScanSAR does not follow JPL's along-track/cross-track scheme
@@ -969,7 +969,6 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
   projection->re_major = dssr->ellip_maj*1000;
   projection->re_minor = dssr->ellip_min*1000;
   projection->height = 0.0;
-
 }
 
 /*******************************************************************************

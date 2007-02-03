@@ -41,7 +41,6 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	char **dataName, leaderName[256];
 	struct HEADER  bufhdr;
 	int nOccurences=0, era=1, ii;
-	int nBands=1;
 
 	// Allocate memory
 	dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));

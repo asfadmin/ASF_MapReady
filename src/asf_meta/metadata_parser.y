@@ -92,26 +92,31 @@ void warning_message(const char *warn_msg, ...)
   char temp2[MAX_MESSAGE_LENGTH];
   int ii;
 
-/* Format string for pretty terminal display */
+  /* Format string for pretty terminal display */
   strncpy (message_to_print, warn_msg, MAX_MESSAGE_LENGTH);
   message_to_print[MAX_MESSAGE_LENGTH-1] = '\0';
   for (ii=0; ii<MAX_MESSAGE_LENGTH || message_to_print[ii]=='\0'; ii++) {
     if (message_to_print[ii] == '\n') {
+      int num_appended = 0;
       strncpy (temp1, message_to_print, ii);
       temp1[ii] = '\0';
-      strncat(temp1, "\n         * ", ii+13);
-      strncpy(temp2, (message_to_print+ii+1), MAX_MESSAGE_LENGTH);
-      strncat(temp1, temp2, MAX_MESSAGE_LENGTH);
+      num_appended = strlen(temp1)+13 < MAX_MESSAGE_LENGTH ? 12 :
+          strlen(temp1)+2 < MAX_MESSAGE_LENGTH ? 1 : 0;
+      strncat(temp1, "\n         * ", num_appended);
+      strncpy(temp2, (message_to_print+ii+1), MAX_MESSAGE_LENGTH-ii-1);
+      strncat(temp1, temp2,
+              strlen(temp1)+strlen(temp2) < MAX_MESSAGE_LENGTH ? strlen(temp2) :
+                  MAX_MESSAGE_LENGTH-strlen(temp1)-1);
       strncpy(message_to_print, temp1, MAX_MESSAGE_LENGTH);
-      ii += 12;
+      ii += num_appended;
     }
   }
 
-/* Print warning with some diagnostics */
+  /* Print warning with some diagnostics */
   printf("\n");
   printf("WARNING: * Parsing %s around line %d:\n"
-         "         * ", current_file, line_number);
-  va_start(ap, message_to_print);
+      "         * ", current_file, line_number);
+  va_start(ap, warn_msg);
   vprintf(message_to_print, ap);
   va_end(ap);
   printf("\n");
@@ -190,9 +195,9 @@ void select_current_block(char *block_name)
     { current_block = &((*( (param_t *) current_block)).lamaz); goto MATCHED; }
   if ( !strcmp(block_name, "lamcc") )
     { current_block = &((*( (param_t *) current_block)).lamcc); goto MATCHED; }
-  if ( !strcmp(block_name, "albers") ){ 
-    current_block = &((*( (param_t *) current_block)).albers); 
-    goto MATCHED; 
+  if ( !strcmp(block_name, "albers") ){
+    current_block = &((*( (param_t *) current_block)).albers);
+    goto MATCHED;
   }
   if ( !strcmp(block_name, "ps") )
     { current_block = &((*( (param_t *) current_block)).ps); goto MATCHED; }
@@ -239,6 +244,39 @@ void fill_structure_field(char *field_name, void *valp)
 {
   /* Pointer to substructure corresponding to current block.  */
   void *current_block = stack_top->block;
+
+  /* FIXME: Because the yacc parser returns after each token is found, there
+  is no token-to-token state inherent in the code.  I added 2 static ints for
+  'remembering' the sar block image_type and a 'map projected' flag that indicates
+  whether or not a map-projected type of projection was found in the projection
+  block ('type' field).  These are utilized in calls to warning_message() after
+  parsing projection type, spheroid, and datum type tokens from the metadata.
+
+  This presents 2 problems that we should probably resolve in the
+  future:
+          1) If we re-order the SAR and Projection blocks, then the logic
+      on the warning messages will break
+          2) This solution only works for sequentially-called parsing, e.g.
+      meta_read().  If child processes are forked off and both are
+          reading a metadata file then the shared static vars will
+          be in a race condition that will likely break the logic on
+          the warning messages.
+
+  Neither of these two issues is critical since it only impacts warning messages,
+  but we ought to re-think the warning message methodology and maybe consider moving
+  the warning message logic to the code that uses the parser rather than having the
+  parser itself issue the warnings ...just let it return tokens silently.
+  */
+
+  /* Maintains fact that a 'P' was found in the sar block image_type
+     field
+  */
+  static int sar_projected;
+
+  /* Maintains the fact that a recognized map projection type
+     was found in the projection block
+  */
+  static int map_projection_type;
 
 #ifdef DEBUG_METADATA_PARSER
     extern int yydebug;
@@ -324,6 +362,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = DEM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "IMAGE") )
         MGENERAL->image_data_type = IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "MASK") )
+        MGENERAL->image_data_type = MASK;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;
@@ -406,14 +446,17 @@ void fill_structure_field(char *field_name, void *valp)
     if ( !strcmp(field_name, "image_type") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "S") ) {
         MSAR->image_type = 'S';
+        sar_projected = 0;
         return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "G") ) {
         MSAR->image_type = 'G';
+        sar_projected = 0;
         return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "P") ) {
         MSAR->image_type = 'P';
+        sar_projected = 1;
         return;
       }
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "R") ) {
@@ -423,10 +466,12 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
         MSAR->image_type = '?';
+        sar_projected = 0;
         return;
       }
       else {
         warning_message("Bad value: image_type = '%s'.",VALP_AS_CHAR_POINTER);
+        sar_projected = 0;
         return;
       }
     }
@@ -561,24 +606,44 @@ void fill_structure_field(char *field_name, void *valp)
 
   if ( !strcmp(stack_top->block_name, "projection") ) {
     if ( !strcmp(field_name, "type") ) {
-      if ( !strcmp(VALP_AS_CHAR_POINTER, "UNIVERSAL_TRANSVERSE_MERCATOR") )
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "UNIVERSAL_TRANSVERSE_MERCATOR") ) {
         MPROJ->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLAR_STEREOGRAPHIC") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLAR_STEREOGRAPHIC") ) {
         MPROJ->type = POLAR_STEREOGRAPHIC;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ALBERS_EQUAL_AREA") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "ALBERS_EQUAL_AREA") ) {
         MPROJ->type = ALBERS_EQUAL_AREA;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_CONFORMAL_CONIC") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_CONFORMAL_CONIC") ) {
         MPROJ->type = LAMBERT_CONFORMAL_CONIC;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_AZIMUTHAL_EQUAL_AREA") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAMBERT_AZIMUTHAL_EQUAL_AREA") ) {
         MPROJ->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "STATE_PLANE") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "STATE_PLANE") ) {
         MPROJ->type = STATE_PLANE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") )
+        map_projection_type = 1;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SCANSAR_PROJECTION") ) {
         MPROJ->type = SCANSAR_PROJECTION;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAT_LONG_PSEUDO_PROJECTION") )
-	MPROJ->type = LAT_LONG_PSEUDO_PROJECTION;
+        map_projection_type = 0;
+      }
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LAT_LONG_PSEUDO_PROJECTION") ) {
+        MPROJ->type = LAT_LONG_PSEUDO_PROJECTION;
+        map_projection_type = 0;
+      }
       else {
-        warning_message("Bad value: type = '%s'.",VALP_AS_CHAR_POINTER);
+        MPROJ->type = UNKNOWN_PROJECTION;
+        // Only complain if the image is truly map projected
+        if (sar_projected && map_projection_type) {
+          warning_message("Bad value: type = '%s'.",VALP_AS_CHAR_POINTER);
+        }
       }
       return;
     }
@@ -618,7 +683,11 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
         MPROJ->spheroid = WGS84_SPHEROID;
       else {
-        warning_message("Bad value: spheroid = '%s'.",VALP_AS_CHAR_POINTER);
+        MPROJ->spheroid = UNKNOWN_SPHEROID;
+        // Only complain if the image is truly map projected
+        if (sar_projected && map_projection_type) {
+          warning_message("Bad value: spheroid = '%s'.",VALP_AS_CHAR_POINTER);
+        }
       }
       return;
     }
@@ -646,7 +715,11 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
 	MPROJ->datum = WGS84_DATUM;
       else {
-	warning_message("Bad value: datum = '%s'.", VALP_AS_CHAR_POINTER);
+        MPROJ->datum = UNKNOWN_DATUM;
+        // Only complain if the mage is truly map projected
+        if (sar_projected && map_projection_type) {
+          warning_message("Bad value: datum = '%s'.", VALP_AS_CHAR_POINTER);
+        }
       }
       return;
     }
@@ -731,6 +804,10 @@ void fill_structure_field(char *field_name, void *valp)
   if ( !strcmp(stack_top->block_name, "utm") ) {
     if ( !strcmp(field_name, "zone") )
       { (*MPARAM).utm.zone = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "latitude") )
+      { (*MPARAM).utm.lat0 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "longitude") )
+      { (*MPARAM).utm.lon0 = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_easting") )
       { (*MPARAM).utm.false_easting = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_northing") )
@@ -880,6 +957,10 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   global_meta = dest;
 
+  /***                                             ***/
+  /* FIXME: current_file should be forcefully null-  */
+  /*   terminated after the strncpy() below.         */
+  /***                                             ***/
   /* Put file name in a global for error reporting.  */
   strncpy(current_file, file_name, MAX_FILE_NAME);
 

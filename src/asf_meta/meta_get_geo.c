@@ -7,7 +7,7 @@ DESCRIPTION:
    the geolocation-related routines.
 
 RETURN VALUE:
-   
+
 SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
@@ -27,13 +27,13 @@ PROGRAM HISTORY:
  * gracelessly our metadata represents the different types of images
  * we have to cope with. */
 void meta_get_original_line_sample(meta_parameters *meta,
-				int line, int sample,
-				int *original_line, int *original_sample)
+        int line, int sample,
+        int *original_line, int *original_sample)
 {
   *original_line   = line   * meta->sar->line_increment
-				+ meta->general->start_line;
+        + meta->general->start_line;
   *original_sample = sample * meta->sar->sample_increment
-				+ meta->general->start_sample;
+        + meta->general->start_sample;
 }
 
 /******************************************************************
@@ -41,9 +41,9 @@ void meta_get_original_line_sample(meta_parameters *meta,
  * DEPRECATED.  You probably want meta_get_original_line_sample.  */
 void meta_get_orig(void *fake_ddr, int y, int x,int *yOrig,int *xOrig)
 {
-	struct DDR *ddr=(struct DDR *)fake_ddr;
-	*xOrig=(x)*ddr->sample_inc + (ddr->master_sample-1);
-	*yOrig=(y)*ddr->line_inc + (ddr->master_line-1);
+  struct DDR *ddr=(struct DDR *)fake_ddr;
+  *xOrig=(x)*ddr->sample_inc + (ddr->master_sample-1);
+  *yOrig=(y)*ddr->line_inc + (ddr->master_line-1);
 }
 
 /*******************************************************************
@@ -94,14 +94,22 @@ int meta_get_latLon(meta_parameters *meta,
     /*Map-Projected. Use projection information to calculate lat & lon.*/
     double px,py;
     px = meta->projection->startX + ((xSample + meta->general->start_sample)
-				     * meta->projection->perX);
+             * meta->projection->perX);
     py = meta->projection->startY + ((yLine + meta->general->start_line)
-				     * meta->projection->perY);
-    proj_to_ll(meta->projection, 'R', px, py, lat,lon);
+             * meta->projection->perY);
+    /*Currently have to handle scansar separately, because it depends on
+      a lot more info than the other projections */
+    if (meta->projection->type == SCANSAR_PROJECTION) {
+        double h;
+        scan_to_latlon(meta, px, py, elev, lat, lon, &h);
+    } else {
+        proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
+                   lat,lon);
+    }
     return 0;
   } else { /*Bogus image type.*/
     printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
-	   meta->sar->image_type);
+     meta->sar->image_type);
     exit(1);
     return 1; /* Not Reached */
   }
@@ -117,77 +125,77 @@ int meta_timeSlantDop2latLon(meta_parameters *meta,
                              double time, double slant,double dop,double elev,
                              double *lat,double *lon)
 {
-	double ignored;
-	stateVector stVec;
-	stVec=meta_get_stVec(meta,time);
-	fixed2gei(&stVec,0.0);/*Subtract Earth's spin.*/
-		
-	return getLatLongMeta(stVec,meta,slant,dop,elev,
+  double ignored;
+  stateVector stVec;
+  stVec=meta_get_stVec(meta,time);
+  fixed2gei(&stVec,0.0);/*Subtract Earth's spin.*/
+
+  return getLatLongMeta(stVec,meta,slant,dop,elev,
                               lat,lon,&ignored);
 }
 
 /*******************************************************************
  * meta_get_timeSlantDop:
  * Converts a given line and sample in image into time, slant-range,
- * and doppler.  Works with all image types.*/  
+ * and doppler.  Works with all image types.*/
 void meta_get_timeSlantDop(meta_parameters *meta,
-	double yLine,double xSample,double *time,double *slant,double *dop)
+  double yLine,double xSample,double *time,double *slant,double *dop)
 {
   // No effort has been made to make this routine work with
   // pseudoprojected images.
   assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+    || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
-	if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
-	{ /*Slant or ground range.  These are easy.*/
-		*slant = meta_get_slant(meta,yLine,xSample);
-		*time  = meta_get_time(meta,yLine,xSample);
-		if (dop != NULL)
-		{
-			if (meta->sar->deskewed == 1)
-				*dop=0.0;
-			else
-				*dop=meta_get_dop(meta,yLine,xSample);
-		}
-	} else  if (meta->sar->image_type=='P') /*Map-projected image.  These are more difficult.*/
-	{
-		double lat,lon;
-		meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);
-		latLon2timeSlant(meta,lat,lon,time,slant,dop);
-	} else
-	{	/*Bogus image type.*/
-		printf("Error! Invalid image type '%c' passed to meta_get_timeSlantDop!\n",
-			meta->sar->image_type);
-		exit(1);
-	}
+  if (meta->sar->image_type=='S'||meta->sar->image_type=='G')
+  { /*Slant or ground range.  These are easy.*/
+    *slant = meta_get_slant(meta,yLine,xSample);
+    *time  = meta_get_time(meta,yLine,xSample);
+    if (dop != NULL)
+    {
+      if (meta->sar->deskewed == 1)
+        *dop=0.0;
+      else
+        *dop=meta_get_dop(meta,yLine,xSample);
+    }
+  } else  if (meta->sar->image_type=='P') /*Map-projected image.  These are more difficult.*/
+  {
+    double lat,lon;
+    meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);
+    latLon2timeSlant(meta,lat,lon,time,slant,dop);
+  } else
+  {  /*Bogus image type.*/
+    printf("Error! Invalid image type '%c' passed to meta_get_timeSlantDop!\n",
+      meta->sar->image_type);
+    exit(1);
+  }
 }
 
 /******************************************************************
  * Internal utilities for meta_get_lineSamp() */
 typedef struct {
-	double lat;
-	double lon;
+  double lat;
+  double lon;
 } lat_lon;
 
 static double get_distance(lat_lon one,lat_lon two)
 {
-	double dlat=one.lat-two.lat;
-	double dlon;
-	if ( one.lon < -170 && two.lon > 170 ) {
-	  dlon = (180 + one.lon) + (180 - two.lon);
-	}
-	else if ( one.lon > 170 && two.lon < -170 ) {
-	  dlon = (180 - one.lon) + (180 + two.lon);
-	}
-	else {
-	  dlon = one.lon - two.lon;
-	}
+  double dlat=one.lat-two.lat;
+  double dlon;
+  if ( one.lon < -170 && two.lon > 170 ) {
+    dlon = (180 + one.lon) + (180 - two.lon);
+  }
+  else if ( one.lon > 170 && two.lon < -170 ) {
+    dlon = (180 - one.lon) + (180 + two.lon);
+  }
+  else {
+    dlon = one.lon - two.lon;
+  }
 
-	/* Scale longitude difference to take into accound the fact
-	   that longitude lines are a lot closer at the pole.  */
-	dlon *= cos (one.lat * PI / 180.0);
+  /* Scale longitude difference to take into accound the fact
+     that longitude lines are a lot closer at the pole.  */
+  dlon *= cos (one.lat * PI / 180.0);
 
-	return dlat * dlat + dlon * dlon;
+  return dlat * dlat + dlon * dlon;
 }
 
 static int get_error(meta_parameters *meta,
@@ -195,11 +203,11 @@ static int get_error(meta_parameters *meta,
                      double xSamp,double yLine,
                      double *error)
 {
-	lat_lon new;
+  lat_lon new;
         int err;
-	err = meta_get_latLon(meta,yLine,xSamp,elev,&new.lat,&new.lon);
+  err = meta_get_latLon(meta,yLine,xSamp,elev,&new.lat,&new.lon);
         if (err) return err;
-	*error = get_distance(new,target);
+  *error = get_distance(new,target);
         return 0;
 }
 
@@ -208,51 +216,61 @@ static int get_error(meta_parameters *meta,
  * Converts given latitude and longitude back to the original line
  * and sample.*/
 static int meta_get_lineSamp_imp(meta_parameters *meta,
-				  double x_start, double y_start,
-				  double lat,double lon,double elev,
-				  double *yLine,double *xSamp)
+          double x_start, double y_start,
+          double lat,double lon,double elev,
+          double *yLine,double *xSamp)
 {
-        /*Number of pixels along which to 
-          perform finite difference approximation of the derivative.*/
-        const double DELTA = 0.1;
+  /*Number of pixels along which to
+    perform finite difference approximation of the derivative.*/
+  const double DELTA = 0.1;
 
-        double x = x_start;
-        double y = y_start;
-	double x_old=1000, y_old=1000;
-	int iter=0,err=0;
-	lat_lon target;
+  double x = x_start;
+  double y = y_start;
+  double x_old=1000, y_old=1000;
+  double dx, dy;
+  int iter=0,err=0;
+  lat_lon target;
 
+  target.lat = lat;
+  target.lon = lon;
+  while (fabs(x-x_old)+fabs(y-y_old)>DELTA)
+  {
+    double cur_err, tmp, del_x, del_y, rad;
 
-	target.lat = lat;
-	target.lon = lon;
-	while (fabs(x-x_old)+fabs(y-y_old)>DELTA)
-	{
-		double cur_err, tmp, del_x, del_y, rad;
-                err = get_error(meta,target,elev,x,y,&cur_err);
-                if (err) return err;
+//printf("iter %d: x=%6.1f; y=%6.1f, cur_err=",iter,x,y);
 
-                get_error(meta,target,elev,x+DELTA,y,&tmp);
-                del_x = (tmp-cur_err)/DELTA;
+    err = get_error(meta,target,elev,x,y,&cur_err);
+//printf("%lf, err=%d\n", cur_err, err);
+    if (err)
+      return err;
 
-                get_error(meta,target,elev,x,y+DELTA,&tmp);
-                del_y = (tmp-cur_err)/DELTA;
+    get_error(meta,target,elev,x+DELTA,y,&tmp);
+    del_x = (tmp-cur_err)/DELTA;
 
-		rad = fabs(del_x) + fabs(del_y);
+    get_error(meta,target,elev,x,y+DELTA,&tmp);
+    del_y = (tmp-cur_err)/DELTA;
 
-		//printf(" %d: x=%6.1f; y=%6.1f, err=%.6f\n",iter,x,y,cur_err);
-	       
-		x_old=x;y_old=y;
-		x=x-(fabs(del_x)/rad)*cur_err/del_x;
-		y=y-(fabs(del_y)/rad)*cur_err/del_y;
-		iter++;
+    rad = fabs(del_x) + fabs(del_y);
 
-		if (iter>1000) return 1;
-	}
-	//printf("  %d iterations\n",iter);
- 
-	*yLine=y-DELTA/2;
-	*xSamp=x-DELTA/2;
-	return 0;
+//printf("iter %d: x=%6.1f; y=%6.1f, cur_err=%.6f\n",iter,x,y,cur_err);
+
+    x_old = x;
+    y_old = y;
+    dx = (fabs(del_x)/rad)*cur_err/del_x;
+    x -= dx;
+    dy = (fabs(del_y)/rad)*cur_err/del_y;
+    y -= dy;
+
+    iter++;
+    if (iter>1000)
+      return 1;
+  }
+  //printf("  %d iterations\n",iter);
+
+  *yLine=y-DELTA/2;
+  *xSamp=x-DELTA/2;
+
+  return 0;
 }
 
 int meta_get_lineSamp(meta_parameters *meta,
@@ -263,7 +281,7 @@ int meta_get_lineSamp(meta_parameters *meta,
   // correspond to lat/long values) No effort has been made to make
   // this routine work with pseudoprojected images yet though.
   assert (meta->projection == NULL
-	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+    || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
   double x0, y0;
   int err;

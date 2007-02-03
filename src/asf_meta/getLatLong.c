@@ -91,6 +91,11 @@ GEOLOCATE_REC * init_geolocate_meta(const stateVector *stVec,meta_parameters *me
 	GEOLOCATE_REC *g=init_geolocate(stVec);
 	g->lambda=meta->sar->wavelength;
 	g->side=meta->sar->look_direction;
+	g->earth_radius = meta->sar->earth_radius;
+        /* FIXME: The check for 'projected' images below is incomplete.  ScanSAR and
+           pseuodo-lat-long projected images are not map projected but still fall into
+           the if-statement below.  Need to decide what is proper here and then do it.
+        */
 	if (meta->sar->image_type=='P')/*Image is map projected-- get earth radii from there*/
 	{
 		g->re=meta->projection->re_major;

@@ -51,12 +51,14 @@ void ll_lamcc(meta_projection *proj,double lat,double lon,double *x,double *y);
 void ll_ps(meta_projection *proj,double lat, double lon, double *x, double *y);
 void ll_utm(meta_projection *proj,double tlat, double tlon, double *p1, double *p2);
 void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y);
+void ll_lamaz(meta_projection *proj,double lat,double lon,double *x,double *y);
 
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,double *lat_d, double *lon);
 void lamcc_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 void ps_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 void utm_ll(meta_projection *proj,double x,double y,double *lat_d,double *lon);
 void alb_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
+void lamaz_ll(meta_projection *proj,double xx,double yy,double *alat,double *alon);
 
 /*Convert projection units (meters) from geodetic latitude and longitude (degrees).*/
 void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,double *p1,double *p2)
@@ -67,6 +69,7 @@ void ll_to_proj(meta_projection *proj,char look_dir,double lat_d,double lon,doub
 	{
 		case SCANSAR_PROJECTION: ll_ac(proj,look_dir,lat_d,lon,p2,p1); break;
 		case LAMBERT_CONFORMAL_CONIC: ll_lamcc(proj,lat_d,lon,p1,p2); break;
+		case LAMBERT_AZIMUTHAL_EQUAL_AREA: ll_lamaz(proj,lat_d,lon,p1,p2); break;
 		case POLAR_STEREOGRAPHIC: ll_ps(proj,lat_d,lon,p1,p2); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: ll_utm(proj,lat_d,lon,p1,p2); break;
 	        case ALBERS_EQUAL_AREA: ll_alb(proj,lat_d,lon,p1,p2); break;
@@ -86,6 +89,7 @@ void proj_to_ll(meta_projection *proj, char look_dir, double p1, double p2, doub
 	{
 		case SCANSAR_PROJECTION: ac_ll(proj,look_dir,p2,p1,lat_d,lon); break;
 		case LAMBERT_CONFORMAL_CONIC: lamcc_ll(proj,p1,p2,lat_d,lon); break;
+		case LAMBERT_AZIMUTHAL_EQUAL_AREA: lamaz_ll(proj,p1,p2,lat_d,lon); break;
 		case POLAR_STEREOGRAPHIC: ps_ll(proj,p1,p2,lat_d,lon); break;
 		case UNIVERSAL_TRANSVERSE_MERCATOR: utm_ll(proj,p1,p2,lat_d,lon); break;
 	        case ALBERS_EQUAL_AREA: alb_ll(proj,p1,p2,lat_d,lon); break;
@@ -432,7 +436,7 @@ void ll_alb(meta_projection *proj,double lat, double lon, double *x, double *y)
   pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
   pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
   pps.albers.false_easting = pps.albers.false_northing = 0;
-  project_albers(&pps, lat*D2R, lon*D2R, 0, x, y, &z);
+  project_albers(&pps, lat*D2R, lon*D2R, 0, x, y, &z, proj->datum);
 }
 
 void alb_ll(meta_projection *proj,double xx,double yy,
@@ -446,7 +450,34 @@ void alb_ll(meta_projection *proj,double xx,double yy,
   pps.albers.center_meridian = proj->param.albers.center_meridian * D2R;
   pps.albers.orig_latitude = proj->param.albers.orig_latitude * D2R;
   pps.albers.false_easting = pps.albers.false_northing = 0;
-  project_albers_inv(&pps, xx, yy, 0, alat, alon, &h);
+  project_albers_inv(&pps, xx, yy, 0, alat, alon, &h, proj->datum);
+  *alat *= R2D;
+  *alon *= R2D;
+}
+
+/*************************** Lambert Azimuthal Conversion Routines********/
+void ll_lamaz(meta_projection *proj,double lat, double lon,
+              double *x, double *y)
+{
+  /* Use libasf_proj, wrapper for libproj */
+  double z;
+  project_parameters_t pps;
+  pps.lamaz.center_lat = proj->param.lamaz.center_lat * D2R;
+  pps.lamaz.center_lon = proj->param.lamaz.center_lon * D2R;
+  pps.lamaz.false_easting = pps.lamaz.false_northing = 0;
+  project_lamaz(&pps, lat*D2R, lon*D2R, 0, x, y, &z, proj->datum);
+}
+
+void lamaz_ll(meta_projection *proj,double xx,double yy,
+	    double *alat,double *alon)
+{
+  /* Use libasf_proj, wrapper for libproj */
+  double h;
+  project_parameters_t pps;
+  pps.lamaz.center_lat = proj->param.lamaz.center_lat * D2R;
+  pps.lamaz.center_lon = proj->param.lamaz.center_lon * D2R;
+  pps.lamaz.false_easting = pps.lamaz.false_northing = 0;
+  project_lamaz_inv(&pps, xx, yy, 0, alat, alon, &h, proj->datum);
   *alat *= R2D;
   *alon *= R2D;
 }
@@ -568,4 +599,44 @@ void rotate_y(vector *v,double theta)
 	zNew = v->z*cosd(theta)+v->x*sind(theta);
 	xNew = -v->z*sind(theta)+v->x*cosd(theta);
 	v->x = xNew; v->z = zNew;
+}
+
+void scan_to_latlon(meta_parameters *meta,
+		    double x, double y, double z,
+		    double *lat_d, double *lon, double *height)
+{
+	double qlat, qlon;
+	double lat,radius;
+	vector pos;
+        meta_projection *proj = meta->projection;
+
+        if (z != 0.0) {
+            // height correction applies directly to y (range direction)
+            double line, samp;
+            line = (y-proj->startY)/proj->perY - meta->general->start_line;
+            samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
+            double sr = meta_get_slant(meta,line,samp);
+            double er = proj->param.atct.rlocal;
+            double ht = meta_get_sat_height(meta,line,samp);
+            double incid = PI-acos((SQR(sr) + SQR(er) - SQR(ht))/(2.0*sr*er));
+            x += z*tan(PI/2-incid);
+        }
+
+	if (meta->sar->look_direction=='R')
+		qlat = -x/proj->param.atct.rlocal; /* Right looking sar */
+	else
+		qlat =  x/proj->param.atct.rlocal; /* Left looking sar */
+	qlon = y/(proj->param.atct.rlocal*cos(qlat));
+	
+	sph2cart(proj->param.atct.rlocal, qlat, qlon, &pos);
+	
+	rotate_z(&pos,-proj->param.atct.alpha3);
+	rotate_y(&pos,-proj->param.atct.alpha2);
+	rotate_z(&pos,-proj->param.atct.alpha1);
+	
+	cart2sph(pos,&radius,&lat,lon);
+	*lon *= R2D;
+	lat *= R2D;
+	*lat_d = atand(tand(lat) / (1-ecc2));
+        *height = z; // FIXME
 }
