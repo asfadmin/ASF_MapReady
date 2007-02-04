@@ -1,0 +1,161 @@
+Convert Version History
+
+v3.0.<POINT_RELEASE> (released <RELEASE_DATE>)
+Improved datum and spheroid support
+Added new metadata values:
+  In the "general" block:
+    sensor_name (name of sensor used by the satellite)
+    no_data (value a pixel is set to if there is no data available there)
+  In the "sar" block:
+    earth_radius_pp (earth radius calculated by the precision processor)
+    polarization (polarization of the beam)
+Moved metadata value "average_height" from the "general" block to the
+  "projection" block
+Adjustment made for erroneous earth radius given by the precision processor
+Added azimuth scaling to correct for precision processor velocity errors
+Fixed off-by-one error in x/y pixel sizes (perX, perY) in the ddr to meta data
+  conversion
+Fixed north direction in geotiffs created from scenes that have descending
+  orbits
+Added SGF (RADARSAT fine beam) as a valid product type for RSI and CDPF data
+Added installation documentation
+Several minor bug fixes (eg memory leaks)
+
+GUI
+Added datum selection drop-down and "Ignore projection errors" checkbox
+On Windows, use the native file selector dialog instead of the GTK file selector
+Added support to view a bounding box representing the geolocation of the output
+  image in the Google Earth (tm) software
+Eliminated "scale output" option on export tab. Pixel size option on Geocode
+  tab is utilized instead.
+Corrected inaccuracies in summary section when histogram equalization has been
+  selected
+Default to UTM projection, applying the most-appropriate zone, when geocoding is
+  selected but no map projection is specified.
+Better thumbnailing support and thumbnails for output images
+New "DEM" tab allows for terrain correction or refinement of the SAR geolocation
+  with the assistance of a user provided DEM
+Made the "Stop" button more responsive
+Add labels to the checkboxes on geocode and export
+
+Command Line
+asf_convert
+  Added ability to specify a name for the temporary directory in the Convert
+    configuration file (asf_convert).
+asf_import
+  Ingest USGS seamless server format GeoTIFF DEM files (for terrain correction
+    only)
+  Ingest ENVI ArcGIS format GeoTIFF files (for terrain correction masking only)
+  Added -image-data-type option (can specify dem, mask, or geocoded)
+  Fix bug that would cause a crash if latitude constraints were not set when
+    importing STF format data
+asf_terrcorr - New tool!
+  Terrain corrects data
+  Added Terrain Correction capabilities:
+  Can mask out regions that yield poor co-registration using a user-provided
+    mask file
+  Ability to mask out water regions automatically
+  Automatic layover and shadow masking
+  SAR co-registration with DEM (foreword-geocoded with DEM converted to slant
+      range in SAR-coordinates)
+  Option to keep intermediate files
+refine_geolocation - New tool!
+  Refines the geolocation of SAR data using a DEM the user provides
+mosaic - New tool!
+  Rudimentary tool that can combine many ASF-format geocoded images into one
+    image. Inputs must have the same projection parameters and pixel size.
+akdem_grab - New tool!
+  Retrieves a DEM from the USGS seamless server when given corner coordinates
+asf_geocode
+  Added background fill option
+  Exit with an error if no projection is specified
+  Added ability to project ingested lat/lon format DEM files (for terrain
+    correction only)
+asf_export
+  Fix scaling calculation used in histogram equalization when downsampling
+    output to byte
+  Can now accept other input data types (no longer needs to be floating point)
+  Allow input basename to have a "." in it.
+metadata
+  n/a
+
+
+2.1.9 (released 2006 May 15)
+RPM installer for linux
+Use autoconf/configure for source distribution
+Added meta->sar->azimuth_processing_bandwidth field to the metadata file
+Added meta->sar->chirp_rate field to the metadata file
+Added meta->sar->pulse_duration field to the metadata file
+Added meta->sar->range_sampling_rate field to the metadata file
+Added meta->general->average_height field to the metadata file
+Fixed metadata error reading whitespace on Windows
+Fix memory error when internally copying the metadata structure
+Fix for infrequent crash regarding the library level "get_look" function
+
+GUI
+Change "output directory" & "naming scheme" buttons no longer obliterate
+  changes made by the other.
+Items in the batch list update automatically (no longer require a mouse over)
+When you right click on a dataset you can bring up ceos metadata
+  (in the metadata gui)
+When you right click on a dataset you can bring up asf metadata
+  (after processing)
+Windows file selector is now used on Windows instead of the GTK file selector
+By default the GUI will now clean up intermediate files (this can be disabled
+  via a checkbox)
+CEOS Metadata viewer integrated into GUI
+
+Import tab
+  Keep intermediate files checkbox added
+Radiometry
+  Added a checkbox to output in the decible scale instead of power
+Geocode tab
+  Output pixel size option
+  New projection: lambert conformal conic
+Export tab
+  Histogram equalization sample mapping method option (for mapping float to
+    byte)
+
+Command Line
+All Convert command line tools
+  Logging enabled
+  Information in the help updated
+  New -license option to display copyright & license
+  New -version option to display version number and copyright
+asf_convert
+  Now operates via use of a configuration file
+  Geocoding now available in the processing flow
+asf_import
+  Remove 0 fill on left or right of image
+  Will now allow projected CEOS data to be imported (though it cannot be
+    reprojected at this time)
+  New -dB option to output calibrated data in decibles instead of the power
+    scale (only works with -sigma, -beta, & -gamma flags)
+asf_geocode
+  New option "force" added (allows projections in bizarre locations)
+  Reading & writing of projection files completely revamped
+  Fixed bug which caused program to fail if a projection file was used
+    with the UTM projection
+  Properly update datum in the metadata
+  Output pixel size option
+  If the polarstereo projection is used, the default hemisphere is dynamically
+    chosen based on the metadata (instead of always north)
+asf_export
+  Histogram equalization sample mapping method option (for mapping float to
+    byte)
+metadata
+  n/a
+
+-------------------------------------------------------------------------------
+
+2.0.1 (released 2005 April 28)
+The ASF software tools are designed to make it easier for users to process ASF 
+data products and translate them into a variety of other formats. A graphical 
+user interface exists which guides the user through the process of ingesting, 
+geocoding, and exporting datasets.
+
+The tools can currently ingest most Level 1 ASF products, and produce geocoded 
+(or ungeocoded) GeoTIFF, TIFF, JPEG, or portable pixmap images. The GUI that 
+runs on the windows environment has 4 different tabs which allows the user to 
+import, export, geocode to apply one of four projections and to modify how the 
+radiometry is displayed.

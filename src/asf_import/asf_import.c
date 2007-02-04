@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     char image_data_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
-    double lowerLat=NAN, upperLat=NAN;
+    double lowerLat=-99.0, upperLat=-99.0;
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;

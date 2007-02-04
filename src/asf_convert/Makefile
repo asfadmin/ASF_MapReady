@@ -21,9 +21,9 @@ LIBS  = \
 	$(LIBDIR)/asf_fft.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(JPEG_LIBS) \
 	$(GLIB_LIBS) \
 	$(TIFF_LIBS) \
+	$(JPEG_LIBS) \
 	$(GEOTIFF_LIBS)
 
 OBJS  = asf_convert.o

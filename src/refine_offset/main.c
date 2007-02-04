@@ -133,7 +133,7 @@ int main(int argc,char *argv[])
 			int djNum;
 			char *inDj=argv[argStart];
 			for (djNum=0;djArr[djNum].name!=NULL;djNum++)
-				if (0==strcasecmp(inDj,djArr[djNum].name))
+				if (0==strcmp_case(inDj,djArr[djNum].name))
 				{
 					lat=djArr[djNum].lat;
 					lon=djArr[djNum].lon;

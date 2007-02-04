@@ -17,7 +17,7 @@ FILE *ddr_file=NULL;
 CEOS_FILE *ceos=NULL;
 meta_parameters *meta=NULL;
 histogram *data_hist=NULL;  /* used for histogram display */
-
+double *ignore_val=NULL;
 
 /*****************************************************
  * image_delete
@@ -149,7 +149,8 @@ void image_slopeOffset(void)
 		for (x=0; x<image.width; x++)
 		{
 			double val = inBuf[x];
-			if ( FLOAT_EQUIVALENT(0.0, val) ) continue;
+			if (ignore_val &&
+                            FLOAT_EQUIVALENT(*ignore_val, val)) continue;
 			if (min>val) min=val;
 			if (max<val) max=val;
 		}

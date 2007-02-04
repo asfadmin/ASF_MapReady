@@ -85,6 +85,15 @@ int main (int argc, char *argv[])
   asfRequire(gtif != NULL,
     "\nERROR: Error reading GeoTIFF keys from input TIFF file.\n\n");
 
+  // Grab the citation.
+//  size_t max_citation_length = 10000;
+//  char *citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+//  GTIFKeyGet (gtif, GTCitationGeoKey, citation, 0, max_citation_length);
+  // Ensure the citation is at least eventually terminated somewhere.
+//  citation[max_citation_length] = '\0';
+//  printf("\n\n--------------Citation --------------\n%s\n--------------Citation--------------\n\n", citation);
+
+
   /***** Dump TIFF File Header Info *****/
   /*                                    */
   curIFDnum = 0;

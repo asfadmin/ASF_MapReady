@@ -41,4 +41,4 @@ TCL_LIBRARY=${tempDir}/lib/${sys}/tcl8.1
 export TCL_LIBRARY
 
 echo "Running SARview..."
-$0_bin $1 &
+$0_bin $@ &

@@ -19,7 +19,7 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/07/11 (ASF)
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-
+#include <math.h>
 
 void bail(const char *why) {
 	fprintf(stderr,"FATAL ERROR> %s\n",why);
@@ -59,7 +59,12 @@ std::string lat_lon_to_seamless(const lat_lon_box &b)
 	if (b.lat_lo>90.0 || b.lat_hi<-90.0) bail("download_usgs_seamless latitude and longitude interchanged");
 	if (b.lon_lo>=b.lon_hi) bail("download_usgs_seamless longitude range inverted: lo>=hi");
 	if (b.lat_lo>=b.lat_hi) bail("download_usgs_seamless latitude range inverted: lo>=hi");
-	if (b.lon_hi-b.lon_lo>5.0) bail("download_usgs_seamless longitude range absurdly huge");
+
+        float absurdly_huge_lon = 5.0; // allow lon to "bunch up" at higher lats
+        if (fabs(b.lat_hi) > 60) absurdly_huge_lon += 5;
+        if (fabs(b.lat_hi) > 75) absurdly_huge_lon += 5;
+
+	if (b.lon_hi-b.lon_lo>absurdly_huge_lon) bail("download_usgs_seamless longitude range absurdly huge");
 	if (b.lat_hi-b.lat_lo>5.0) bail("download_usgs_seamless latitude range absurdly huge");
 	
 	sprintf(req,"lft=%.14f&rgt=%.14f&top=%.14f&bot=%.14f",b.lon_lo,b.lon_hi,b.lat_hi,b.lat_lo);
@@ -111,6 +116,22 @@ std::string download_usgs_seamless_srtm1(
 		"siz=17&key=SM3&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&"
 		+lat_lon_to_seamless(b)+
 		"&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=SRTM1FIN&mdf=HTML&arc=ZIP&sde=SRTM.C_US_1_ELEVATION&msd=SRTM.c_national_1_elevation_meta&zun=&prj=0&csx=2.777777778000001E-4&csy=2.777777778000001E-4&bnd=&bndnm=",
+		p);
+}
+
+std::string download_usgs_seamless_srtm3(
+	const lat_lon_box &b,
+	osl::network_progress &p) 
+{
+/*
+siz=6&key=SM9&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-70.44844530145976&rgt=-69.24475685034686&top=-26.904016505854926&bot=-27.653958525134655&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=SRTM3FIN&mdf=HTML&arc=ZIP&sde=SRTM.C_SA_3_ELEVATION&msd=SRTM.c_world_3_elevation_meta&zun=&prj=0&csx=8.333333332999158E-4&csy=8.333333332999158E-4&bnd=&bndnm=
+*/
+
+	p.status(0,"Downloading 3 arc-second SRTM elevations");
+	return download_usgs_seamless(
+		"siz=6&key=SM9&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&"
+		+lat_lon_to_seamless(b)+
+		"&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=SRTM3FIN&mdf=HTML&arc=ZIP&sde=SRTM.C_SA_3_ELEVATION&msd=SRTM.c_world_3_elevation_meta&zun=&prj=0&csx=8.333333332999158E-4&csy=8.333333332999158E-4&bnd=&bndnm=",
 		p);
 }
 
@@ -194,10 +215,12 @@ int main(int argc,char *argv[]) {
 		  d=download_usgs_seamless_ned1(b,p);
 	  else if (argc>5 && 0==strcmp(argv[5],"SRTM1"))
 		  d=download_usgs_seamless_srtm1(b,p);
+	  else if (argc>5 && 0==strcmp(argv[5],"SRTM3"))
+		  d=download_usgs_seamless_srtm3(b,p);
 	  else
 		  d=download_usgs_seamless_akned(b,p);
 	} else {
-	  printf("Usage: akdem_grab <lat lo> <lat hi>  <lon lo> <lon hi> [ NED1 | SRTM1 ]\n");
+	  printf("Usage: akdem_grab <lat lo> <lat hi>  <lon lo> <lon hi> [ NED1 | SRTM1 | SRTM3 ]\n");
 	  return 0;
 	}
 	FILE *f=fopen("saved.zip","wb");

@@ -29,7 +29,13 @@
 "     image is in ground range.\n\n"\
 "     A layover/shadow mask of the region will also be automatically produced\n"\
 "     and it will have the same base name as the output file, with the\n"\
-"     suffix '_mask' added.\n"
+"     suffix '_mask' added.\n\n"\
+"     The layover shadow mask values are as follows:\n"\
+"          Normal: %d\n"\
+"          User Masked: %d\n"\
+"          Shadow: %d\n"\
+"          Layover: %d\n"\
+"          Invalid: %d\n\n"
 
 #define ASF_OPTIONS_STRING \
 "     -keep (-k)\n"\
@@ -188,7 +194,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      (int)MASK_NORMAL,(int)MASK_USER_MASK,(int)MASK_SHADOW,(int)MASK_LAYOVER,(int)MASK_INVALID_DATA);
   exit(EXIT_SUCCESS);
 }
 
@@ -212,7 +219,6 @@ int strmatches(const char *key, ...)
   return found;
 }
 
-
 // Main program body.
 int
 main (int argc, char *argv[])
@@ -228,9 +234,11 @@ main (int argc, char *argv[])
   int do_corner_matching = FALSE;
   int generate_water_mask = FALSE;
   int save_clipped_dem = FALSE;
+  int doRadiometric = FALSE;
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = 1.0;
   int mask_height_cutoff_specified = FALSE;
+  int smooth_dem_holes = FALSE;
   char *other_files[MAX_OTHER];
   int i,n_other = 0;
 
@@ -308,6 +316,33 @@ main (int argc, char *argv[])
         // leave masked regions alone - fill with sar data
         fill_value = LEAVE_MASK; 
     }
+    else if (strmatches(key,"-do-radiometric","--do-radiometric",NULL)) {
+        CHECK_ARG(1);
+        char *form = strdup(GET_ARG(1));
+        doRadiometric = atoi(form);
+
+        // give the do-radiometric help in here for now, later should be
+        // put into the rest of the help (when it is officially supported)
+        if (strmatches(form, "help", "?", NULL) || doRadiometric==0) {
+            asfPrintStatus(
+                "Specify a radiometric terrain correction formula to use.\n"
+                "Formula numbers are as follows:\n"
+                "    1 :    LI\n"
+                "    2 :    GO\n"
+                "    3 :    SQ\n"
+                "    4 :    VX\n"
+                "    5 :    1 - .7*pow(cos(li), 7)\n"
+                "\n"
+                "e.g.,\n"
+                "    asf_terrcorr -do-radiometric 1  ...\n\n");
+            exit(1);
+        }
+
+        free(form);
+    }
+    else if (strmatches(key,"-smooth-dem-holes","--smooth-dem-holes",NULL)) {
+        smooth_dem_holes = TRUE;
+    }
     else if (strmatches(key,"-help","--help",NULL)) {
         print_help(); // doesn't return
     }
@@ -342,7 +377,8 @@ main (int argc, char *argv[])
                               dem_grid_size, TRUE, fill_value, 
                               generate_water_mask, save_clipped_dem,
                               update_original_metadata_with_offsets,
-                              mask_height_cutoff, other_files);
+                              mask_height_cutoff, doRadiometric,
+                              smooth_dem_holes, other_files);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

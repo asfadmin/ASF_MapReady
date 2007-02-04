@@ -67,14 +67,21 @@ void setSupportPath(const char *appLoc)
  * which will return the favor immediately by calling Tcl_AppInit.
  */
 char *firstArg=NULL;
+extern double *ignore_val;
 int main(int argc, char *argv[])
 {
 	/* Set the "support" directory path, based on the application
 	 * location or environment variable.*/
 	setSupportPath(argv[0]);
 
+        double d;
+        if (extract_double_options(&argc, &argv, &d, "-ignore", "-i", NULL)) {
+            ignore_val = MALLOC(sizeof(double)); *ignore_val = d;
+            printf("Ignoring: %f\n", *ignore_val);
+        }
+
 	if (argc>1)
-		firstArg=argv[1];
+            firstArg=argv[1];
 	argc=1;    /* Hide our arguments from Tcl                   */
 
 	Tk_Main(argc, argv, Tcl_AppInit);
