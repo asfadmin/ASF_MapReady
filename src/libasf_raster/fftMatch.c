@@ -276,6 +276,7 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
     meta_write(metaOut, corrFile);
     meta_free(metaOut);
     FREE(outBuf);
+    FCLOSE(corrF);
   }
 
   /*Search correlation image for a peak.*/
@@ -290,6 +291,8 @@ void fftMatch(char *inFile1, char *inFile2, char *corrFile,
 
   meta_free(metaSlave);
   meta_free(metaMaster);
+  FCLOSE(in1F);
+  FCLOSE(in2F);
 }
 
 /* This method is here to match the old interface of fftMatch.  Old code

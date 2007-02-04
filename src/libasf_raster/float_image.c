@@ -1386,9 +1386,9 @@ float_image_statistics (FloatImage *self, float *min, float *max,
 
   g_free (row_buffer);
 
-  g_assert (*min != FLT_MAX);
-  g_assert (*max != -FLT_MAX);
-
+  if (*min == FLT_MAX || *max == -FLT_MAX)
+      asfPrintError ("Image did not contain any valid data!\n");
+      
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
 
   g_assert (fabs (mean_as_double) <= FLT_MAX);
@@ -1424,8 +1424,7 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
-      // If in the mask interval, do not consider this pixel any
-      // further.
+      // If in the mask interval, do not consider this pixel any further.
       if ( cs >= interval_start && cs <= interval_end ) {
 	continue;
       }
@@ -1440,8 +1439,8 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
 
   g_free (row_buffer);
 
-  g_assert (*min != FLT_MAX);
-  g_assert (*max != -FLT_MAX);
+  if (*min == FLT_MAX || *max == -FLT_MAX)
+      asfPrintError ("Image did not contain any valid data!\n");
 
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
 
@@ -1960,7 +1959,6 @@ float_image_store (FloatImage *self, const char *file,
   meta = meta_read(file);
   return float_image_band_store(self, file, meta, 0);
 }
-
 
 /*
  * JPEG ERROR HANDLING:

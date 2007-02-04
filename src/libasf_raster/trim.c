@@ -40,6 +40,10 @@ int trim(char *infile, char *outfile, long long startX, long long startY,
   metaOut = meta_read(infile);
   metaOut->general->line_count = sizeY;
   metaOut->general->sample_count = sizeX;
+  if (!meta_is_valid_double(metaOut->sar->line_increment))
+      metaOut->sar->line_increment = 1;
+  if (!meta_is_valid_double(metaOut->sar->sample_increment))
+      metaOut->sar->sample_increment = 1;
   metaOut->general->start_line += startY * metaOut->sar->line_increment;
   metaOut->general->start_sample += startX * metaOut->sar->sample_increment;
 
