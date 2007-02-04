@@ -128,9 +128,6 @@ static void rotate(double x_in, double y_in, double x0, double y0, double ang,
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
                            char *name, char *ceos_filename, char *dir)
 {
-    julian_date jdate;
-    ymd_date ymd;
-    char acquisition_date[15];
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
     double lat_UL, lon_UL;
@@ -138,33 +135,50 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_LL, lon_LL;
     double lat_LR, lon_LR;
     double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
-    char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-    if (meta->state_vectors) {
-      jdate.year = meta->state_vectors->year;
-      jdate.jd = meta->state_vectors->julDay;
-      date_jd2ymd(&jdate, &ymd);
-      sprintf(acquisition_date, "%d-%s-%d", ymd.day, mon[ymd.month], ymd.year);
+
+    if (meta->location) {
+      lat_UL = meta->location->lat_start_near_range;
+      lon_UL = meta->location->lon_start_near_range;
+      lat_UR = meta->location->lat_start_far_range;
+      lon_UR = meta->location->lon_start_far_range;
+      lat_LL = meta->location->lat_end_near_range;
+      lon_LL = meta->location->lon_end_near_range;
+      lat_LR = meta->location->lat_end_far_range;
+      lon_LR = meta->location->lon_end_far_range;
     }
-    else
-      sprintf(acquisition_date, "n/a");
+    else {
+      meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+      meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+      meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+      meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+    }
 
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
     fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
+    fprintf(kml_file, "<strong>Sensor name</strong>: %s<br>\n", 
+	    meta->general->sensor_name);
     fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
     fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
     fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
     fprintf(kml_file, "<strong>Acquisition date</strong>: %s<br>\n", 
-	    acquisition_date);
+	    meta->general->acquisition_date);
     if (meta->general->orbit_direction == 'D')
       fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
     else if (meta->general->orbit_direction == 'A')
       fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
-    fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n", 
+    fprintf(kml_file, "<strong>Center - Lat</strong>: %9.4lf, ", 
 	    meta->general->center_latitude);
-    fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n", 
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", 
 	    meta->general->center_longitude);
+    fprintf(kml_file, "<strong>Corner 1 - Lat</strong>: %9.4lf, ", lat_UL);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_UL);
+    fprintf(kml_file, "<strong>Corner 2 - Lat</strong>: %9.4lf, ", lat_UR);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_UR);
+    fprintf(kml_file, "<strong>Corner 3 - Lat</strong>: %9.4lf, ", lat_LR);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_LR);
+    fprintf(kml_file, "<strong>Corner 4 - Lat</strong>: %9.4lf, ", lat_LL);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_LL);
     fprintf(kml_file, "  ]]></description>\n");
     fprintf(kml_file, "  <name>%s</name>\n", name);
     fprintf(kml_file, "  <LookAt>\n");
@@ -192,23 +206,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
     fprintf(kml_file, "    <coordinates>\n");
     
-    if (meta->location) {
-      lat_UL = meta->location->lat_start_near_range;
-      lon_UL = meta->location->lon_start_near_range;
-      lat_UR = meta->location->lat_start_far_range;
-      lon_UR = meta->location->lon_start_far_range;
-      lat_LL = meta->location->lat_end_near_range;
-      lon_LL = meta->location->lon_end_near_range;
-      lat_LR = meta->location->lat_end_far_range;
-      lon_LR = meta->location->lon_end_far_range;
-    }
-    else {
-      meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-      meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-      meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-      meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-    }
-
     update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
@@ -474,92 +471,21 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   
 }
 
-void kml_point_entry(FILE *kml_file, char *name, float lat, float lon)
-{
-  fprintf(kml_file, "<Placemark>\n");
-  fprintf(kml_file, "  <description><![CDATA[\n");
-  fprintf(kml_file, "<strong>Latitude</strong>: %9.4f<br>\n", lat);
-  fprintf(kml_file, "<strong>Longitude</strong>: %9.4f<br>\n", lon);
-  fprintf(kml_file, "  ]]></description>\n");
-  fprintf(kml_file, "  <name>%s</name>\n", name);
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%9.4f</longitude>\n", lon);
-  fprintf(kml_file, "    <latitude>%9.4f</latitude>\n", lat);
-  fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>45</tilt>\n");
-  fprintf(kml_file, "    <heading>50</heading>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <Point>\n");
-  fprintf(kml_file, "    <coordinates>%f,%f,0</coordinates>\n", lon, lat);
-  fprintf(kml_file, "  </Point>\n");
-  fprintf(kml_file, "</Placemark>\n");
-}
-
-void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat, 
-		       float *lon, int n)
-{
-  int ii;
-
-  fprintf(kml_file, "<Placemark>\n");
-  fprintf(kml_file, "  <description><![CDATA[\n");
-  for (ii=0; ii<n; ii++) {
-    fprintf(kml_file, "<strong>%s</strong> - ", id[ii]);
-    fprintf(kml_file, "<strong>Lat</strong>: %9.4f, ", lat[ii]);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
-  }
-  fprintf(kml_file, "  ]]></description>\n");
-  fprintf(kml_file, "  <name>%s</name>\n", name);
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%9.4f</longitude>\n", lon[0]);
-  fprintf(kml_file, "    <latitude>%9.4f</latitude>\n", lat[0]);
-  fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>45</tilt>\n");
-  fprintf(kml_file, "    <heading>50</heading>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <visibility>1</visibility>\n");
-  fprintf(kml_file, "  <open>1</open>\n");
-  fprintf(kml_file, "  <Style>\n");
-  fprintf(kml_file, "    <LineStyle>\n");
-  fprintf(kml_file, "      <color>ff00ffff</color>\n");
-  fprintf(kml_file, "    </LineStyle>\n");
-  fprintf(kml_file, "    <PolyStyle>\n");
-  fprintf(kml_file, "      <color>7f00ff00</color>\n");
-  fprintf(kml_file, "    </PolyStyle>\n");
-  fprintf(kml_file, "  </Style>\n");
-  fprintf(kml_file, "  <LineString>\n");
-  fprintf(kml_file, "    <extrude>1</extrude>\n");
-  fprintf(kml_file, "    <tessellate>1</tessellate>\n");
-  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
-  fprintf(kml_file, "    <coordinates>\n");
-  
-  for (ii=0; ii<n; ii++)
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon[ii], lat[ii]);
-  
-  fprintf(kml_file, "    </coordinates>\n");
-  fprintf(kml_file, "  </LineString>\n");
-  fprintf(kml_file, "</Placemark>\n");
-}
-
-void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
-{
-   kml_entry_impl(kml_file, meta, name, NULL, NULL);
-}
-
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
                             char *ceos_filename, char *jpeg_dir)
 {
    kml_entry_impl(kml_file, meta, name, ceos_filename, jpeg_dir);
 }
 
+void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
+{
+  kml_entry_impl(kml_file, meta, name, NULL, NULL);
+}
+
 void kml_footer(FILE *kml_file)
 {
     fprintf(kml_file, "</Document>\n");
     fprintf(kml_file, "</kml>\n");
-}
-
-void write_kml(char *filename)
-{
-    meta2kml(filename, NULL);
 }
 
 void write_kml_overlay(char *filename)
@@ -579,177 +505,62 @@ void write_kml_overlay(char *filename)
 
 }
 
-void meta2kml(char *filename, meta_parameters *meta)
+void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
 {
-    int call_meta_free = FALSE;
-
-    if (!meta) {
-        meta = meta_read(filename);
-        call_meta_free = TRUE;
+  switch (format)
+    {
+    case META:
+      meta2kml(line, fp);
+      break;
+    case POINT:
+      point2kml(line, fp);
+      break;
+    case POLYGON:
+      polygon2kml(line, fp, name);
+      break;
+    case RGPS:
+      rgps2kml(line, fp, name);
+      break;
+    case TEXT:
+    case KMLFILE:
+    case SHAPEFILE:
+      break;
     }
 
-    char *kml_filename = appendExt(filename, ".kml");
-    char *basename = get_basename(filename);
-
-    FILE *kml_file = FOPEN(kml_filename, "wt");
-
-    kml_header(kml_file);
-    kml_entry(kml_file, meta, basename);
-    kml_footer(kml_file);
-
-    FCLOSE(kml_file);
-    FREE(basename);
-    FREE(kml_filename);
-
-    if (call_meta_free)
-        meta_free(meta);
+  return;
 }
 
-void meta2kml_list(char *list, char *filename)
+void write_kml(char *inFile, char *basename, format_type_t format, int list)
 {
-  FILE *fp;
-  meta_parameters *meta;
-  char metaFile[1024];
+  FILE *fpIn, *fpOut;
+  char *line, *outFile;
+  int n=0;
 
-  char *kml_filename = appendExt(filename, ".kml");
-  char *basename = get_basename(filename);
-  
-  FILE *kml_file = FOPEN(kml_filename, "wt");
-  kml_header(kml_file);
-  
-  fp = FOPEN(list, "r");
-  while (fgets(metaFile, 1024, fp)) {
-    meta = meta_read(metaFile);
-    kml_entry(kml_file, meta, basename);
-    meta_free(meta);
-  }
+  // Write kml header
+  outFile = (char *) MALLOC(sizeof(char)*255);
+  sprintf(outFile, "%s.kml", basename);
+  fpOut = FOPEN(outFile, "wt");
+  kml_header(fpOut);
 
-  kml_footer(kml_file);
-  FCLOSE(kml_file);
-  FCLOSE(fp);
-  FREE(basename);
-  FREE(kml_filename);
-}
-
-void point2kml_list(char *list, char *filename)
-{
-  FILE *fp;
-  float lat, lon;
-  char point[1024], *p;
-  
-  char *kml_filename = appendExt(filename, ".kml");
-  
-  FILE *kml_file = FOPEN(kml_filename, "wt");
-  kml_header(kml_file);
-
-  fp = FOPEN(list, "r");
-  while (fgets(point, 1024, fp)) {
-    p = strchr(point, ',');
-    if (p) {
-      sscanf(p+1, "%f,%f", &lat, &lon);
-      *p = '\0';
-      kml_point_entry(kml_file, point, lat, lon);
-    }
-  }
-
-  kml_footer(kml_file);
-  FCLOSE(kml_file);
-  FCLOSE(fp);
-  FREE(kml_filename);
-}
-
-void polygon2kml_list(char *list, char *filename)
-{
-  FILE *fp;
-  float *lat, *lon;
-  char **id;
-  char point[1024], *p;
-  int ii, n=0;
-  
-  char *kml_filename = appendExt(filename, ".kml");
-  
-  FILE *kml_file = FOPEN(kml_filename, "wt");
-  kml_header(kml_file);
-
-  // Figure out how many point we have to deal with
-  fp = FOPEN(list, "r");
-  while (fgets(point, 1024, fp)) {
-    p = strchr(point, ',');
-    if (p)
-      n++;
-  }
-  FCLOSE(fp);
-
-  // Allocate memory for point list
-  id = (char **) MALLOC(n*sizeof(char *));
-  for (ii=0; ii<n; ii++)
-    id[ii] = (char *) MALLOC(255*sizeof(char));
-  lat = (float *) MALLOC(n*sizeof(float));
-  lon = (float *) MALLOC(n*sizeof(float));
-
-  n = 0;
-  fp = FOPEN(list, "r");
-  while (fgets(point, 1024, fp)) {
-    p = strchr(point, ',');
-    if (p) {
-      sscanf(p+1, "%f,%f", &lat[n], &lon[n]);
-      p = strtok(point, ",");
-      sprintf(id[n], "%s\n", p);
-      *p = '\0';
+  // Convert to kml
+  if (list) {
+    line = (char *) MALLOC(sizeof(char)*1024);
+    fpIn = FOPEN(inFile, "r");
+    while (fgets(line, 1024, fpIn)) {      
+      convert2kml(line, fpOut, basename, format);
       n++;
     }
+    FCLOSE(fpIn);
+    FREE(line);
   }
+  else
+    convert2kml(inFile, fpOut, basename, format);
+  
+  // Close business
+  kml_footer(fpOut);
+  FCLOSE(fpOut);
+  FREE(outFile);
 
-  kml_polygon_entry(kml_file, filename, id, lat, lon, n);
-  kml_footer(kml_file);
-  FCLOSE(kml_file);
-  FCLOSE(fp);
-  FREE(kml_filename);
+  return;
 }
 
-void leader2kml(char *leaderFile, char *filename)
-{
-    meta_parameters *meta;
-    char *kml_filename = appendExt(filename, ".kml");
-    char *basename = get_basename(filename);
-
-    FILE *kml_file = FOPEN(kml_filename, "wt");
-    meta = meta_create(leaderFile);
-
-    kml_header(kml_file);
-    kml_entry(kml_file, meta, basename);
-    kml_footer(kml_file);
-
-    FCLOSE(kml_file);
-    FREE(basename);
-    FREE(kml_filename);
-    meta_free(meta);
-}
-
-void leader2kml_list(char *list, char *filename)
-{
-  FILE *fp;
-  meta_parameters *meta;
-  char leaderFile[1024];
-  
-  char *kml_filename = appendExt(filename, ".kml");
-  char *basename = get_basename(filename);
-  
-  FILE *kml_file = FOPEN(kml_filename, "wt");
-  kml_header(kml_file);
-  
-  fp = FOPEN(list, "r");
-  while (fgets(leaderFile, 1023, fp)) {
-    leaderFile[strlen(leaderFile)-1]='\0';
-    meta = meta_create(leaderFile);
-    kml_entry(kml_file, meta, basename);
-    meta_free(meta);
-  }
-  
-  kml_footer(kml_file);
-  FCLOSE(kml_file);
-  FCLOSE(fp);
-  FREE(basename);
-  FREE(kml_filename);
-  
-}

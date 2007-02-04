@@ -5,18 +5,19 @@ include ../../make_support/system_rules
 CFLAGS := $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
 
 OBJS = \
-	write_shape.o \
-	read_shape.o \
-	mask.o \
 	kml.o \
-	meta2shape.o
+	convert_kml.o \
+	shape.o \
+	convert_shape.o \
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
@@ -39,7 +40,3 @@ $(OBJS): Makefile $(wildcard *.h) $(wildcard ../../include/*.h)
 
 clean:
 	rm -rf $(OBJS) libasf_vector.a core* *~
-	rm delta_mask* cook_inlet.* delta_polygon.* gi_antenna* test_write* delta_test.txt test_read.txt
-
-test: test_shape.t.c all
-	$(CC) $(CFLAGS) test_shape.t.c $(LIBS) -o test_shape.t
