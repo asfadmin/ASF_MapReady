@@ -3,9 +3,6 @@
 
 #include "asf_meta.h"
 
-/* test function only ... */
-int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
-
 /**************************************************************************
    project_set_avg_height
 
@@ -19,25 +16,6 @@ int project_poly(double phi_deg, double lam_deg, double * xx, double *yy);
 void project_set_avg_height(double height);
 
 #define ASF_PROJ_NO_HEIGHT -100000.0
-
-/**************************************************************************
-   project_set_input_spheroid
-
-   The spheroid to which the geodetic lat/long pairs used as the input
-   to a forward projection or output of reverse projection are
-   relative.  If this is not called prior to projecting, a GEM6
-   spheroid will be used.
-****************************************************************************/
-void project_set_input_spheroid(spheroid_type_t spheroid);
-
-/**************************************************************************
-   project_set_datum
-
-   The datum parameter for the target map projection.  If this is not
-   called prior to projecting, an WGS84 ellipsoidal datum will be
-   used.
-****************************************************************************/
-void project_set_datum(datum_type_t datum);
 
 /****************************************************************************
   Universal Transverse Mercator
@@ -53,6 +31,8 @@ void project_set_datum(datum_type_t datum);
    lat, lon : Latitude, Longitude of point to transform (radians)
    height : Height above the input spheroid of the point to transform (meters)
    x, y, z : Projected point [output] and height (z)
+   datum : The datum used in projected space.  Note that at this time, the
+           datum in latlong space is WGS84.
 
    If z information is not required, ASF_PROJ_NO_HEIGHT may be passed
    for height, and NULL for z.
@@ -62,8 +42,10 @@ void project_set_datum(datum_type_t datum);
 
    Please see project.t.c for usage examples
 */
-int project_utm(project_parameters_t * pps, double lat, double lon,
-		double height, double *x, double *y, double *z);
+int 
+project_utm(project_parameters_t * pps, double lat, double lon,
+            double height, double *x, double *y, double *z,
+            datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_utm_arr
@@ -82,6 +64,8 @@ int project_utm(project_parameters_t * pps, double lat, double lon,
             enough storage to hold the projected points.
 
    length : Number of points in the arrays of points to be transformed.
+   datum : The datum used in projected space.  Note that at this time, the
+           datum in latlong space is WGS84.
 
    If z information is not required, NULL may be passed for both
    height and projected_z (in which case no space will be allocated to
@@ -95,7 +79,8 @@ int project_utm(project_parameters_t * pps, double lat, double lon,
 int project_utm_arr (project_parameters_t * pps,
                      double *lat, double *lon, double *height,
                      double **projected_x, double **projected_y, 
-		     double **projected_z, long length);
+		             double **projected_z, long length,
+                     datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_utm_inv
@@ -107,6 +92,8 @@ int project_utm_arr (project_parameters_t * pps,
    z: height above projection datum of point to transform (meters)
    lat, lon: (Inverse) projected point [output] (radians)
    height: height above input spheroid (meters)
+   datum : The datum used in projected space.  Note that at this time, the
+           datum in latlong space is WGS84.
 
    If height information is not required, ASF_PROJ_NO_HEIGHT may be
    passed for z, and NULL for height.
@@ -117,7 +104,8 @@ int project_utm_arr (project_parameters_t * pps,
    Please see project.t.c for usage examples
 */
 int project_utm_inv (project_parameters_t * pps, double x, double y, double z,
-                     double *lat, double *lon, double *height);
+                     double *lat, double *lon, double *height,
+                     datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_utm_arr_inv
@@ -148,7 +136,7 @@ int project_utm_inv (project_parameters_t * pps, double x, double y, double z,
 int project_utm_arr_inv (project_parameters_t * pps,
                          double *x, double *y, double *z,
                          double **lat, double **lon, double **height,
-                         long length);
+                         long length, datum_type_t datum);
 
 /****************************************************************************
   Polar Stereographic
@@ -179,7 +167,7 @@ int project_utm_arr_inv (project_parameters_t * pps,
 */
 int project_ps(project_parameters_t * pps,
                double lat, double lon, double height,
-               double *x, double *y, double *z);
+               double *x, double *y, double *z, datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_ps_arr
@@ -209,10 +197,11 @@ int project_ps(project_parameters_t * pps,
 
    Please see project.t.c for usage examples
 */
-int project_ps_arr(project_parameters_t * pps,
-                   double *lat, double *lon, double *height,
-                   double **projected_x, double **projected_y,
-		   double **projected_z, long length);
+int 
+project_ps_arr(project_parameters_t * pps,
+               double *lat, double *lon, double *height,
+               double **projected_x, double **projected_y,
+               double **projected_z, long length, datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_ps_inv
@@ -235,8 +224,9 @@ int project_ps_arr(project_parameters_t * pps,
 
    Please see project.t.c for usage examples
 */
-int project_ps_inv(project_parameters_t * pps, double x, double y, double z,
-		   double *lat, double *lon, double *height);
+int 
+project_ps_inv(project_parameters_t * pps, double x, double y, double z,
+               double *lat, double *lon, double *height, datum_type_t datum);
 
 /*--------------------------------------------------------------------------
    project_ps_arr_inv
@@ -266,26 +256,26 @@ int project_ps_inv(project_parameters_t * pps, double x, double y, double z,
 int project_ps_arr_inv(project_parameters_t * pps,
                        double *x, double *y, double *z,
                        double **lat, double **lon, double **height,
-                       long length);
+                       long length, datum_type_t datum);
 
 /****************************************************************************
   Lambert Azimuthal Equal Area
   www.remotesensing.org/geotiff/proj_list/lambert_azimuthal_equal_area.html
 ****************************************************************************/
 int project_lamaz(project_parameters_t * pps,
-		  double lat, double lon, double height, 
-		  double *x, double *y, double *z);
+                  double lat, double lon, double height, 
+                  double *x, double *y, double *z, datum_type_t datum);
 int project_lamaz_arr(project_parameters_t *pps,
                       double *lat, double *lon, double *height,
                       double **projected_x, double **projected_y,
-		      double **projected_z, long length);
+                      double **projected_z, long length, datum_type_t datum);
 int project_lamaz_inv(project_parameters_t * pps,
                       double x, double y, double z, double *lat, double *lon,
-		      double *height);
+                      double *height, datum_type_t datum);
 int project_lamaz_arr_inv(project_parameters_t * pps,
                           double *x, double *y, double *z,
                           double **lat, double **lon, double **height,
-                          long length);
+                          long length, datum_type_t datum);
 
 /****************************************************************************
   Lambert Conformal Conic
@@ -293,18 +283,18 @@ int project_lamaz_arr_inv(project_parameters_t * pps,
 ****************************************************************************/
 int project_lamcc(project_parameters_t * pps,
                   double lat, double lon, double height, 
-		  double *x, double *y, double *z);
+                  double *x, double *y, double *z, datum_type_t datum);
 int project_lamcc_arr(project_parameters_t *pps,
                       double *lat, double *lon, double *height,
                       double **projected_x, double **projected_y,
-		      double **projected_z, long length);
+                      double **projected_z, long length, datum_type_t datum);
 int project_lamcc_inv(project_parameters_t * pps,
                       double x, double y, double z,
-		      double *lat, double *lon, double *height);
+                      double *lat, double *lon, double *height, datum_type_t datum);
 int project_lamcc_arr_inv(project_parameters_t *pps,
                           double *x, double *y, double *z,
                           double **lat, double **lon, double **height,
-                          long length);
+                          long length, datum_type_t datum);
 
 /****************************************************************************
   Albers Equal-Area Conic
@@ -312,18 +302,18 @@ int project_lamcc_arr_inv(project_parameters_t *pps,
 ****************************************************************************/
 int project_albers(project_parameters_t *pps,
                    double lat, double lon, double height,
-		   double *x, double *y, double *z);
+                   double *x, double *y, double *z, datum_type_t datum);
 int project_albers_arr(project_parameters_t *pps,
                        double *lat, double *lon, double *height,
                        double **projected_x, double **projected_y,
-		       double **projected_z, long length);
+                       double **projected_z, long length, datum_type_t datum);
 int project_albers_inv(project_parameters_t *pps,
                        double x, double y, double z,
-		       double *lat, double *lon, double *height);
+                       double *lat, double *lon, double *height, datum_type_t datum);
 int project_albers_arr_inv(project_parameters_t *pps,
                            double *x, double *y, double *z,
                            double **lat, double **lon, double **height,
-                           long length);
+                           long length, datum_type_t datum);
 
 /******************************************************************************
   Pseudo Projection
@@ -349,18 +339,20 @@ int project_albers_arr_inv(project_parameters_t *pps,
 ******************************************************************************/
 
 int project_pseudo (project_parameters_t *pps, double lat, double lon,
-		    double height, double *x, double *y, double *z);
+                    double height, double *x, double *y, double *z, 
+                    datum_type_t datum);
 
 int project_pseudo_inv (project_parameters_t *pps, double x, double y,
-			double z, double *lat, double *lon, double *height);
+                        double z, double *lat, double *lon, double *height, 
+                        datum_type_t datum);
 
 int project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,
-			double *height, double **x, double **y, double **z,
-			long length);
+                        double *height, double **x, double **y, double **z,
+                        long length, datum_type_t datum);
 
 int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
-			    double *z, double **lat, double **lon,
-			    double **height, long length);
+                            double *z, double **lat, double **lon,
+                            double **height, long length, datum_type_t datum);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic
@@ -396,5 +388,7 @@ void read_proj_file(char * file, project_parameters_t * pps,
 ***************************************************************************/
 void to_degrees(projection_type_t pt, project_parameters_t * pps);
 void to_radians(projection_type_t pt, project_parameters_t * pps);
+
+int test_nad27(double lat, double lon);
 
 #endif

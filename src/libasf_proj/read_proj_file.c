@@ -33,19 +33,7 @@ static_strdup (const char *s)
 static int
 static_strcaseneq (const char *s1, const char *s2)
 {
-  size_t len = strlen (s1);
-  if ( strlen (s2) != strlen (s1) ) {
-    return 1;
-  }
-
-  size_t ii;
-  for ( ii = 0 ; ii < len ; ii++ ) {
-    if ( tolower (s1[ii]) != tolower(s2[ii]) ) {
-      return 1;
-    }
-  }
-
-  return 0;
+    return !!strcmp_case(s1,s2);
 }
 
 static void readline(FILE * f, char * buffer, size_t n)
