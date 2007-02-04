@@ -24,8 +24,8 @@ ifeq ($(SYS),win32)
 build_glib_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
 	rm -rf *.zip
-	cp ../../../../support/gtk/win32/glib-*.zip .
-	cp ../../../../support/gtk/win32/libiconv-*.zip .	
+	cp ../../../../support/win32/gtk/glib-*.zip .
+	cp ../../../../support/win32/gtk/libiconv-*.zip .	
 	for f in *.zip; do (yes|unzip $$f -d glib); done;
 	cp glib/lib/libglib-2.0.dll.a $(LIB_DIR)/libglib-2.0.a;
 	cp glib/lib/libiconv.a $(LIB_DIR);

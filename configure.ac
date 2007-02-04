@@ -146,6 +146,9 @@ AC_SUBST(ASF_LIB_JPEG)
 
 #### libtiff check ####
 AC_CHECK_LIB(tiff,TIFFGetTagListCount,have_tiff="yes",have_tiff="no")
+if test "$sys" = "win32" ; then
+  have_tiff="no"
+fi
 if test "$have_tiff" = "no" ; then
    ASF_LIB_TIFF="${ext_lib_src_dir}/libtiff"
    TIFF_LIBS="\$(LIBDIR)/libtiff.a"
@@ -159,6 +162,9 @@ AC_SUBST(LIBTIFF_LOCATION)
 
 #### libgeotiff check ####
 AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no")
+if test "$sys" = "win32" ; then
+  have_geotiff="no"
+fi
 if test "$have_geotiff" = "no" ; then
    ASF_LIB_GEOTIFF="${ext_lib_src_dir}/libgeotiff"
    GEOTIFF_LIBS="\$(LIBDIR)/libgeotiff.a"

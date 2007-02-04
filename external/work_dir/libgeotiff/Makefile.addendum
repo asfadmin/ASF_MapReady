@@ -1,5 +1,5 @@
 asf_install:
 	$(INSTALL) -d $(DESTDIR)$(libdir)
-	$(INSTALL) libgeotiff.a $(GEOTIFF_IMP) $(DESTDIR)${libdir}
+	$(INSTALL) libgeotiff.a $(DESTDIR)${libdir}
 	$(INSTALL) -d $(DESTDIR)$(includedir)
 	$(foreach IFL, $(GT_INCLUDE_FILES), $(INSTALL) $(IFL) $(DESTDIR)$(includedir) &&) true
