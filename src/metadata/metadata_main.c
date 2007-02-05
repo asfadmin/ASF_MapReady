@@ -163,7 +163,8 @@ void usage(char *name)
 int main(int argc, char **argv)
 {
   char *fileName;
-
+  int found = 0;
+  
   int dssr_flag = extract_flag_options(&argc, &argv, "-dssr", "--dssr", NULL);
   int shr_flag = extract_flag_options(&argc, &argv, "-shr", "--shr", NULL);
   int mpdr_flag = extract_flag_options(&argc, &argv, "-mpdr", "--mpdr", NULL);
@@ -187,7 +188,13 @@ int main(int argc, char **argv)
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
 
-  if (argc == 1)
+  if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag || 
+      ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
+      sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
+      asf_facdr_flag || esa_facdr_flag || lfdr_flag || all_flag)
+    found = 1;
+
+  if (argc == 1 || !found)
     usage(argv[0]);
 
   fileName = (char *) MALLOC(sizeof(char)*255);
