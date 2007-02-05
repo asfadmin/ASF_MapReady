@@ -1,4 +1,5 @@
 #include "asf_raster.h"
+#include "libasf_proj.h"
 
 
 /* Evaluate to true if floats are within tolerance of each other.  */

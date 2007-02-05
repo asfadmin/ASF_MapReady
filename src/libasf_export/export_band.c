@@ -18,7 +18,6 @@
 #include <asf_nan.h>
 #include <asf_endian.h>
 #include <asf_meta.h>
-#include <asf_geocode.h>
 #include <asf_export.h>
 #include <float_image.h>
 #include <spheroids.h>
