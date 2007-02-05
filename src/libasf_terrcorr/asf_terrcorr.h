@@ -42,7 +42,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      int do_terrain_correction, int fill_value,
                      int generate_water_mask, int save_clipped_dem,
                      int update_original_metadata_with_offsets,
-                     float mask_height_cutoff,
+                     float mask_height_cutoff, int doRadiometric,
+                     int smooth_dem_holes,
                      char **other_files_to_update_with_offsets);
 
 /**

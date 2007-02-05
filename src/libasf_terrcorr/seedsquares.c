@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "asf.h"
+#include "asf_sar.h"
 
 static void seed_points(int *x, int *y, int ns, int nl)
 {   // generates new random location seed points to start from
@@ -43,7 +44,7 @@ void check_square(int size,int x_pos, int y_pos, float  *mask,
         {   //  step through each pixel and find out how good it is
             loc = y*ns + x;
             //printf("mask[%d,%d] = %f\n", x,y, mask[loc]);
-            if (mask[loc] != 0)
+            if (is_masked(mask[loc]))
             {   // we have something masked_pixels
                 pmp++;
             }
@@ -59,8 +60,10 @@ void check_square(int size,int x_pos, int y_pos, float  *mask,
 
 static int grab_more(int size, int nl, int ns)
 {
-    if (size < 1000)
+    if (size < 300)
         return size * 2;
+    else if (size < 1000)
+        return size + 100;
     else if (size < 10000)
         return size + 1000;
     else
@@ -76,7 +79,8 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
     int ii,seed;
     long pixels_cutoff;
 
-    seed = (int)time(0);	/* choose a seed value */
+    //seed = (int)time(0);	/* choose a seed value */
+    seed = 42;                  /* choose a seed value */
     srand(seed);		/* initialize random number generator */
 
     asfPrintStatus("Searching for suitable seed points...\n");
