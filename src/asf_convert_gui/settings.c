@@ -77,7 +77,6 @@ settings_apply_to_gui(const Settings * s)
         glade_xml_get_widget(glade_xml, "apply_metadta_fix_checkbutton");
 
     set_combo_box_item(input_data_format_combobox, s->input_data_format);
-    set_combo_box_item(output_format_combobox, s->output_format);
     set_combo_box_item(input_data_type_combobox, s->data_type);
 
     if (s->process_to_level1)
@@ -159,11 +158,10 @@ settings_apply_to_gui(const Settings * s)
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(export_checkbutton), s->export_is_checked);
 
-    if (settings_get_output_format_requires_byte(s))
-    {
-        /* seems like we should do something! */
-    }
-    else if (s->export_is_checked)
+    set_combo_box_item(output_format_combobox, s->output_format);
+    output_format_combobox_changed();
+
+    if (s->export_is_checked)
     {
         output_bytes_checkbutton =
             glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
@@ -187,8 +185,6 @@ settings_apply_to_gui(const Settings * s)
             set_combo_box_entry_item("rgb_band3_comboboxentry", "");
         }
     }        
-
-    output_format_combobox_changed();
 
     if (s->geocode_is_checked)
     {
@@ -222,6 +218,7 @@ settings_apply_to_gui(const Settings * s)
                 glade_xml_get_widget(glade_xml, "projection_option_menu");
 
             set_combo_box_item(projection_option_menu, s->projection);
+            geocode_options_changed();
 
             utm_zone_entry =
                 glade_xml_get_widget(glade_xml, "utm_zone_entry");
@@ -337,6 +334,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *interpolate_checkbutton;
         GtkWidget *rb_terrcorr;
         GtkWidget *rb_refine_geolocation;
+        GtkWidget *mask_checkbutton;
 
         dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
@@ -358,7 +356,6 @@ settings_apply_to_gui(const Settings * s)
 
         if (s->terrcorr_is_checked)
         {
-            GtkWidget *rb_auto_water_mask, *rb_mask_file;
             GtkWidget *save_dem_checkbutton;
             GtkWidget *layover_mask_checkbutton;
 
@@ -372,7 +369,7 @@ settings_apply_to_gui(const Settings * s)
             tc_pixel_size_entry =
                 glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
 
-            if (s->specified_pixel_size)
+            if (s->specified_tc_pixel_size)
             {
                 gchar tmp[32];
                 sprintf(tmp, "%f", s->tc_pixel_size);
@@ -401,20 +398,43 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(layover_mask_checkbutton),
                 s->generate_layover_mask);
+        }
 
+
+        mask_checkbutton =
+            glade_xml_get_widget(glade_xml, "mask_checkbutton");
+        
+        if (s->auto_water_mask_is_checked || s->mask_file_is_checked)
+        {
+            GtkWidget *mask_entry;
+            GtkWidget *rb_auto_water_mask, *rb_mask_file;
+            
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(mask_checkbutton), TRUE);
+            
             rb_auto_water_mask =
                 glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
-
+            
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(rb_auto_water_mask), 
                 s->auto_water_mask_is_checked);
-
+            
             rb_mask_file =
                 glade_xml_get_widget(glade_xml, "rb_mask_file");
-
+            
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(rb_mask_file), 
                 s->mask_file_is_checked);
+            
+            mask_entry =
+                glade_xml_get_widget(glade_xml, "mask_entry");
+            
+            gtk_entry_set_text(GTK_ENTRY(mask_entry), s->mask_file);
+        }
+        else
+        {
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(mask_checkbutton), FALSE);
         }
     }
     else
@@ -433,9 +453,10 @@ settings_apply_to_gui(const Settings * s)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
         s->keep_files);
 
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(
-        apply_metadata_fix_checkbutton),
-        s->apply_metadata_fix);
+    //  This widget was removed
+    //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(
+    //    apply_metadata_fix_checkbutton),
+    //    s->apply_metadata_fix);
 }
 
 Settings *
@@ -517,8 +538,8 @@ settings_get_from_gui()
             GTK_SPIN_BUTTON(longest_dimension_spinbutton));
     }
 
-    ret->latitude_low = -999;
-    ret->latitude_hi = -999;
+    ret->latitude_low = -99;
+    ret->latitude_hi = -99;
 
     if (settings_get_input_data_format_allows_latitude(ret))
     {
@@ -779,9 +800,7 @@ settings_get_from_gui()
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(interpolate_checkbutton));
 
-            // it doesn't matter what we set this to - when terrain
-            // correcting, the refine geolocation code is mandatory
-            ret->refine_geolocation_is_checked = TRUE;
+            ret->refine_geolocation_is_checked = FALSE;
             
             save_dem_checkbutton =
                 glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
@@ -804,9 +823,11 @@ settings_get_from_gui()
             rb_refine_geolocation =
                 glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
 
+            // this should be checked if we aren't terrain correcting
             ret->refine_geolocation_is_checked =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(rb_refine_geolocation));
+            assert(ret->refine_geolocation_is_checked);
         }
 
         rb_auto_water_mask =
@@ -1532,6 +1553,7 @@ settings_to_config_file(const Settings *s,
         if (s->mask_file_is_checked) {
             fprintf(cf, "mask = %s\n", s->mask_file);
         }
+        fprintf(cf, "fill value = -1\n");
         fprintf(cf, "\n");
     }
 

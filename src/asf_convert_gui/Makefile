@@ -66,9 +66,9 @@ LIB = \
 	$(ASF_LIB)/libasf_raster.a \
 	$(ASF_LIB)/asf_fft.a \
 	$(GSL_LIBS) \
-	$(JPEG_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
+	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32

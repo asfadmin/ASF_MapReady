@@ -2979,7 +2979,7 @@ Export: JPEG (size 1000)
 		      <child>
 			<widget class="GtkButton" id="jump_button">
 			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">Jump To Log</property>
+			  <property name="tooltip" translatable="yes">Jump To Log (scrolls the log window to the selected file's log)</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
@@ -4005,6 +4005,7 @@ Export: JPEG (size 1000)
 </widget>
 
 <widget class="GtkDialog" id="change_output_directory_dialog">
+  <property name="width_request">800</property>
   <property name="can_default">True</property>
   <property name="title" translatable="yes">Change Output Directory</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>

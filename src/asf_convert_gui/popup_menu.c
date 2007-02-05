@@ -71,7 +71,8 @@ enable_menu_items(GtkMenu * menu, gboolean enable_view_output,
             (n == popup_menu_item_display_ceos_metadata &&
             (!enable_display_ceos_metadata || !use_thumbnails)) ||
             (n == popup_menu_item_display_asf_metadata &&
-            !enable_display_asf_metadata))
+            !enable_display_asf_metadata) ||
+            (n == popup_menu_item_google_earth && !processing))
         {
             enable = FALSE;
         }      
@@ -606,7 +607,7 @@ handle_view_output()
 	else
 	{
 	    char msg[2048];
-	    sprintf(msg, "The output image file was not found:\n"
+	    sprintf(msg, "Processing on selected file not complete OR\noutput image file was not found:\n"
 		         "   %s\n", out_name);
 	    message_box(msg);
 	}
@@ -733,8 +734,9 @@ handle_google_earth()
 
             meta = meta_read(metadata_name);    
             printf("input_name: %s\n", input_name);
-            kml_entry_with_overlay(kml_file, meta, base_output_name, 
-                                   input_name, output_dir);
+//            kml_entry_with_overlay(kml_file, meta, base_output_name, 
+//                                   input_name, output_dir);
+            kml_entry(kml_file, meta, base_output_name);
             meta_free(meta);
             free(base_output_name);
 
@@ -927,11 +929,12 @@ setup_popup_menu()
         G_CALLBACK(popup_menu_view_output), NULL);
     gtk_widget_show(item);
 
-    item = gtk_menu_item_new_with_label("View With Google Earth");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
-    g_signal_connect_swapped(G_OBJECT(item), "activate",
-        G_CALLBACK(popup_menu_google_earth), NULL);
-    gtk_widget_show(item);
+    // Turning off the google earth for convert 3.0
+    //item = gtk_menu_item_new_with_label("View With Google Earth");
+    //gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    //g_signal_connect_swapped(G_OBJECT(item), "activate",
+    //    G_CALLBACK(popup_menu_google_earth), NULL);
+    //gtk_widget_show(item);
 
     gtk_widget_show(menu);
 

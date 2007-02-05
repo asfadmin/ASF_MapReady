@@ -30,7 +30,7 @@ static void show_it(const gchar * filename, int is_new)
             hpos = hadjust->page_size / 2.0 / hadjust->upper;
         else
             hpos = (hadjust->value + hadjust->page_size / 2) / hadjust->upper;
-        
+
         if (vadjust->upper == vadjust->page_size)
             vpos = vadjust->page_size / 2.0 / vadjust->upper;
         else
@@ -61,10 +61,13 @@ static void show_it(const gchar * filename, int is_new)
         assert(filename);
         GError *err = NULL;
         output_pixbuf = gdk_pixbuf_new_from_file(filename, &err);
-        if ( err != NULL ) {
-            printf ("Couldn't open output image: %s\n", err->message);
-            message_box("Error opening output image");
-            return;
+        if ( err != NULL || output_pixbuf == NULL) {
+          if (strstr(err->message, "32-bit samples") || err->code == G_FILE_ERROR_NOTDIR) {
+            asfPrintWarning ("Unable to display floating point or RGBA (RGB w/alpha channel) images in preview image\n");
+          }
+          asfPrintWarning ("Unsupported image data type for preview display or could not open output image: \n\n%s\n", err->message);
+          message_box("\n  Unsupported image data type for preview display or  \n   could not open output image  \n");
+          return;
         }
     }
 
@@ -74,7 +77,7 @@ static void show_it(const gchar * filename, int is_new)
     int scaled_w = (int)(w*s);
     int scaled_h = (int)(h*s);
     int bps = gdk_pixbuf_get_bits_per_sample(output_pixbuf);
-    shown_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE,
+    shown_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE,
                                   bps, scaled_w, scaled_h);
     GdkInterpType interp = s>.2 ? GDK_INTERP_BILINEAR : GDK_INTERP_NEAREST;
     gdk_pixbuf_scale(output_pixbuf, shown_pixbuf, 0, 0, scaled_w, scaled_h,
@@ -96,12 +99,12 @@ static void show_it(const gchar * filename, int is_new)
 
         snprintf(title, sizeof(title), "Output Image - %s", filename);
         gtk_window_set_title(GTK_WINDOW(output_image_dialog), title);
-        
+
         gtk_window_set_default_size(GTK_WINDOW(output_image_dialog), 800, 600);
-        
+
         gtk_widget_show(output_image_dialog);
-        
-        /* user may have selected "View Output" when the image window 
+
+        /* user may have selected "View Output" when the image window
            was already opened (for another image) -- bring it to the top */
         gtk_window_present(GTK_WINDOW(output_image_dialog));
     }
@@ -167,7 +170,7 @@ on_output_image_dialog_destroy(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK gboolean
-on_output_image_dialog_key_press_event(GtkWidget * widget, 
+on_output_image_dialog_key_press_event(GtkWidget * widget,
                                        GdkEventKey * event,
                                        GtkWidget * win)
 {

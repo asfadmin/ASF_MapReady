@@ -3,13 +3,18 @@
 
 /* for now use a hard-coded file */
 const gchar *save_name = "asf_convert_gui.sav";
-const int save_major_ver = 2;
-const int save_minor_ver = 5;
+const int save_major_ver = 3;
+const int save_minor_ver = 0;
 
 /* Save file version history                  */
 
+/*   3.0: Added refine geolocation flag       */
+/*        Added mask file, auto water mask    */
+/*        Added TC Pixel Size, interp         */
+/*        Added Generate layover mask, DEM    */
+/*        Added "force"                       */
 /*   2.5: Added "Process to level1"           */
-/*   2.4: Added "force"                       */
+/*   2.4: Added "keep files"                  */
 /*        Added terrcorr options              */
 /*   2.3: Added "output db"                   */
 /*   2.2: Added pixel size                    */
@@ -70,20 +75,28 @@ on_save_button_clicked(GtkWidget *w, gpointer data)
                "UseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
         s->data_type, s->output_db, s->latitude_checked,
         s->latitude_low, s->latitude_hi);
-    fprintf(f, "[TerrCorr]\nTerrCorr=%d\nDEMFile=%s\n\n",
-	s->terrcorr_is_checked, s->dem_file);
+    fprintf(f, "[TerrCorr]\nTerrCorr=%d\nRefineGeo=%d\n"
+        "DEMFile=%s\nUseTcPixelSize=%d\nTCPixelSize=%lf\n"
+        "Interp=%d\nAutoWaterMask=%d\nUseMaskFile=%d\n"
+        "MaskFile=%s\nGenerateLayoverMask=%d\n"
+        "GenerateDem=%d\n\n",
+        s->terrcorr_is_checked, s->refine_geolocation_is_checked,
+        s->dem_file, s->specified_tc_pixel_size, s->tc_pixel_size,
+        s->interp, s->auto_water_mask_is_checked, s->mask_file_is_checked,
+        s->mask_file, s->generate_layover_mask, s->generate_dem);
     fprintf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
         "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
         "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
-        "Zone=%d\nDatum=%d\nKeepFiles=%d\n\n",
+        "Zone=%d\nDatum=%d\nKeepFiles=%d\nForce=%d\n\n",
         s->geocode_is_checked, s->projection, s->plat1, s->plat2,
         s->lat0, s->lon0, s->false_easting, s->false_northing,
         s->specified_height, s->height, s->specified_pixel_size,
-        s->pixel_size, s->zone, s->datum, s->keep_files);
-    fprintf(f, "[Export]\nFormat=%d\nScale=%d\nLongest=%d\n"
+        s->pixel_size, s->zone, s->datum, s->keep_files, s->geocode_force);
+    fprintf(f, "[Export]\nExport=%d\nFormat=%d\nScale=%d\nLongest=%d\n"
         "OutputBytes=%d\nScalingMethod=%d\nResampleMethod=%d\n\n",
-        s->output_format, s->apply_scaling, s->longest_dimension,
-        s->output_bytes, s->scaling_method, s->resample_method);
+        s->export_is_checked, s->output_format, s->apply_scaling,
+        s->longest_dimension, s->output_bytes, s->scaling_method,
+        s->resample_method);
 
     fprintf(f, "[NamingScheme]\nPrefix=%s\nSuffix=%s\nScheme=%s\n\n",
         current_naming_scheme->prefix,
@@ -802,6 +815,88 @@ static void read_ver_2_5(FILE *f)
     read_files_v2(f);
 }
 
+static void read_ver_3_0(FILE *f)
+{
+    Settings s;
+    gchar line[1024];
+    gchar *prefix, *suffix, *scheme;
+
+    fscanf(f, "[Import]\nFormat=%d\nProcessToLevel1=%d\n\n", 
+           &s.input_data_format, &s.process_to_level1);
+    fscanf(f, "[Transformations]\nType=%d\nDB=%d\n"
+              "UseLat=%d\nLatLo=%lf\nLatHi=%lf\n\n",
+        &s.data_type, &s.output_db, &s.latitude_checked,
+        &s.latitude_low, &s.latitude_hi);
+    fscanf(f, "[TerrCorr]\nTerrCorr=%d\nRefineGeo=%d\nDEMFile=",
+        &s.terrcorr_is_checked, &s.refine_geolocation_is_checked);
+    readline(f, line, sizeof(line));
+    strcpy(s.dem_file, line);
+    fscanf(f, "UseTcPixelSize=%d\nTCPixelSize=%lf\nInterp=%d\n"
+        "AutoWaterMask=%d\nUseMaskFile=%d\nMaskFile=",
+        &s.specified_tc_pixel_size, &s.tc_pixel_size, &s.interp,
+        &s.auto_water_mask_is_checked, &s.mask_file_is_checked);
+    readline(f, line, sizeof(line));
+    strcpy(s.mask_file, line);
+    fscanf(f, "GenerateLayoverMask=%d\nGenerateDem=%d\n\n",
+        &s.generate_layover_mask, &s.generate_dem);
+    fscanf(f, "[Geocode]\nGeocode=%d\nProjection=%d\nLat1=%lf\nLat2=%lf\n"
+        "Lat0=%lf\nLon0=%lf\nFalseEasting=%lf\nFalseNorthing=%lf\n"
+        "UseHeight=%d\nHeight=%lf\nUsePixelSize=%d\nPixelSize=%lf\n"
+        "Zone=%d\nDatum=%d\nKeepFiles=%d\nForce=%d\n\n",
+        &s.geocode_is_checked, &s.projection, &s.plat1, &s.plat2,
+        &s.lat0, &s.lon0, &s.false_easting, &s.false_northing,
+        &s.specified_height, &s.height, &s.specified_pixel_size,
+        &s.pixel_size, &s.zone, &s.datum, &s.keep_files,
+        &s.geocode_force);
+    fscanf(f, "[Export]\nExport=%d\nFormat=%d\nScale=%d\nLongest=%d\n"
+        "OutputBytes=%d\nScalingMethod=%d\nResampleMethod=%d\n\n",
+        &s.export_is_checked, &s.output_format, &s.apply_scaling,
+        &s.longest_dimension, &s.output_bytes, &s.scaling_method,
+        &s.resample_method);
+
+    settings_apply_to_gui(&s);
+    settings_on_execute = settings_copy(&s);
+
+    /* read naming scheme */
+    fscanf(f, "[NamingScheme]\nPrefix=");
+    readline(f, line, sizeof(line));
+    prefix = g_strdup(line);
+
+    fscanf(f, "Suffix=");
+    readline(f, line, sizeof(line));
+    suffix = g_strdup(line);
+
+    fscanf(f, "Scheme=");
+    readline(f, line, sizeof(line));
+    scheme = g_strdup(line);
+
+    if (current_naming_scheme)
+        naming_scheme_delete(current_naming_scheme);
+
+    current_naming_scheme = naming_scheme_new(prefix, suffix, scheme);
+
+    g_free(prefix);
+    g_free(suffix);
+    g_free(scheme);
+
+    /* output directory */
+    if (output_directory)
+        g_free(output_directory);
+
+    fscanf(f, "\n[OutputDirectory]\nDir=");
+    readline(f, line, sizeof(line));
+    output_directory = g_strdup(line);
+
+    if (strcmp(output_directory, "(null)") == 0)
+    {
+        g_free(output_directory);
+        output_directory = NULL;
+    }
+
+    fscanf(f, "\n");
+    read_files_v2(f);
+}
+
 SIGNAL_CALLBACK void
 on_load_button_clicked(GtkWidget *w, gpointer data)
 {
@@ -852,6 +947,10 @@ on_load_button_clicked(GtkWidget *w, gpointer data)
     else if (major_ver == 2 && minor_ver == 5)
     {
         read_ver_2_5(f);
+    }
+    else if (major_ver == 3 && minor_ver == 0)
+    {
+        read_ver_3_0(f);
     }
     else
     {

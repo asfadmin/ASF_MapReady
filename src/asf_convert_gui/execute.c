@@ -652,6 +652,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 	free(output_dir);
 	//free(in_basename);
         free(out_nameonly);
+        free(out_nameonly);
 	g_free(cmd_output);
 
 	if (use_thumbnails)

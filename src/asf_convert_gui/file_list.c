@@ -35,7 +35,6 @@ determine_default_output_file_name(const gchar * data_file_name)
     gchar * p;
 
     int prepension = has_prepension(data_file_name);
-
     if (prepension > 0) {
         basename = g_path_get_basename(data_file_name);
         filename = g_strdup(basename + prepension);
@@ -78,9 +77,15 @@ determine_default_output_file_name(const gchar * data_file_name)
 
     output_name_full = 
         (gchar *) g_malloc(sizeof(gchar) * 
-        (strlen(basename) + strlen(ext) + 2));
+        (strlen(basename) + strlen(ext) + 10));
 
     g_sprintf(output_name_full, "%s.%s", basename, ext);
+
+    // CEOS Level 0 uses RAW and raw as default extensions...
+    // so we have this kludge to avoid constant Errors due to the same
+    // input and output filename.
+    if (strcmp_case(output_name_full, data_file_name) == 0)
+        g_sprintf(output_name_full, "%s_out.%s", basename, ext);
 
     g_free(basename);
     settings_delete(user_settings);
@@ -95,7 +100,7 @@ gboolean is_L_file(const gchar * data_file)
     if (!p)
         return FALSE;
     else
-        return strcasecmp(p, "L") == 0;
+        return strcmp_case(p, "L") == 0;
 }
 
 static gboolean file_is_valid(const gchar * data_file)
@@ -125,12 +130,12 @@ static gboolean file_is_valid(const gchar * data_file)
     else
     {
         ++p;
-        if (strcasecmp(p, "D") == 0 ||
-            /*strcasecmp(p, "img") == 0 ||*/
-            /*strcasecmp(p, "L") == 0 ||*/
-            /*strcasecmp(p, "meta") == 0 ||*/
-            strcasecmp(p, "raw") == 0 ||
-            strcasecmp(p, "000") == 0)
+        if (strcmp_case(p, "D") == 0 ||
+            /*strcmp_case(p, "img") == 0 ||*/
+            /*strcmp_case(p, "L") == 0 ||*/
+            /*strcmp_case(p, "meta") == 0 ||*/
+            strcmp_case(p, "raw") == 0 ||
+            strcmp_case(p, "000") == 0)
         {
             return TRUE;
         }

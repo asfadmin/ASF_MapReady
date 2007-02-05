@@ -9,7 +9,9 @@ show_execute_button(gboolean show)
       *load_button,
       *process_button,
       *remove_button,
-      *rename_button;
+      *rename_button,
+      *google_earth_button,
+      *view_output_button;
 
     execute_button =
         glade_xml_get_widget(glade_xml, "execute_button");
@@ -29,12 +31,20 @@ show_execute_button(gboolean show)
     rename_button =
         glade_xml_get_widget(glade_xml, "rename_button");
 
+    google_earth_button =
+        glade_xml_get_widget(glade_xml, "google_earth_button");
+
+    view_output_button =
+        glade_xml_get_widget(glade_xml, "view_output_button");
+
     gtk_widget_set_sensitive(execute_button, show);
     gtk_widget_set_sensitive(stop_button, !show);
     gtk_widget_set_sensitive(load_button, show);
     gtk_widget_set_sensitive(process_button, show);
     gtk_widget_set_sensitive(remove_button, show);
     gtk_widget_set_sensitive(rename_button, show);
+    gtk_widget_set_sensitive(google_earth_button, show);
+    gtk_widget_set_sensitive(view_output_button, show);
 }
 
 void latitude_checkbutton_toggle()
