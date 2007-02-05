@@ -52,7 +52,7 @@ all: asf_import
 asf_import: $(OBJS)
 	perl -e 'exit("$(SYS)" eq "solaris" and "$(LDFLAGS)" =~ m/-lefence/);'
 	$(CC) $(CFLAGS) -o asf_import $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_import$(BIN_POSTFIX) $(BINDIR)/alos_import$(BIN_POSTFIX)
+	mv asf_import$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core $(OBJS) *.o

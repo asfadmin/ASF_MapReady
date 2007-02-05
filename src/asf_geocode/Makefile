@@ -70,7 +70,7 @@ OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
 $(PROGRAM): $(OBJS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LDLIBS) -o $@
-	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)/alos_geocode$(BIN_POSTFIX)
+	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
 clean:
