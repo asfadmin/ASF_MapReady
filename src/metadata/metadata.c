@@ -229,9 +229,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       printf("Not Valid Record Type\n");
       break;
     }
-  for (ii=0; ii<MAX_BANDS; ++ii)
-    FREE(dataNames[ii]);
-  FREE(dataNames);
+  FREE_BANDS(dataNames);
   if (!ret)
       return STRDUP("Record not found.\n");
   return ret;

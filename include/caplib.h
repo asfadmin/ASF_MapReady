@@ -20,6 +20,7 @@ extern behavior_on_error_t caplib_behavior_on_error;
 
 void *MALLOC(size_t size);
 void FREE(void *ptr);
+void FREE_BANDS(char **ptr);
 FILE *FOPEN(const char *file,const char *mode);
 size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream);
 size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream);
