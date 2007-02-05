@@ -74,7 +74,7 @@ external_libs:
 	-chmod -R ug+w lib
 	-cp -R external/include/* include
 	-chmod -R ug+w include
-	-cp -R external/share/* share/alos_tools
+	-cp -R external/share/* share/asf_tools
 	-chmod -R ug+w share
 
 clean:
