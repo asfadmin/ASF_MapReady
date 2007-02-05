@@ -12,7 +12,7 @@ LIBS =	$(PROJ_LIBS) \
 	-lm
 
 OBJS =  read_proj_file.o \
-	is_map_projected.o \	
+	is_map_projected.o \
 	project.o
 
 all: build_only
