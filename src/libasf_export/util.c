@@ -274,6 +274,8 @@ get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
                 float *omin, float *omax, gsl_histogram **hist,
                 float no_data)
 {
+  asfRequire(*max_sample >= *min_sample,
+              "get_statistics() error ...max_sample parameter < min_sample parameter\n");
 
   if ( sample_mapping == SIGMA ) {
     float_image_approximate_statistics (si, sampling_stride, mean,
@@ -295,8 +297,26 @@ get_statistics (FloatImage *si, scale_t sample_mapping, int sampling_stride,
     // Add a little bit of tail padding on the histgram to avoid problems
     // when searching for image min or max in the histogram (gsl histogram
     // limitation)
-    *omin = *min_sample * 0.025 * (*min_sample);
-    *omax = *max_sample * 0.025 * (*max_sample);
+    //*omin = *min_sample * 0.025 * (*min_sample);
+    //*omax = *max_sample * 0.025 * (*max_sample);
+    //
+    // NOTE:  The above doesn't work properly for data with negative
+    // values and also, I think the first multiply is a typo and that
+    // a '+' was probably intended.  If so, then the affect of the
+    // above code is for the GSL increment (bin counting) function to
+    // ignore values outside the adjusted min/max range, e.g. ignore
+    // boundary case values (black and white noise tends to sum in the
+    // limits, so ignoring the boundaries produces a higher quality 
+    // image.)
+
+    // NOTE: The following assumes that the intent of the above code was
+    // to ignore boundary case values, but the new histogram limits are
+    // now calculated based on the full data range.
+    float bin_range;
+    
+    bin_range = (*max_sample - *min_sample) / NUM_HIST_BINS;
+    *omin = *min_sample + (0.025 * bin_range);
+    *omax = *max_sample - (0.025 * bin_range);
     *hist = float_image_gsl_histogram (si, *omin, *omax, NUM_HIST_BINS);
   }
 }
@@ -321,7 +341,7 @@ pixel_float2byte(float paf, scale_t sample_mapping,
 {
   const unsigned char min_brightness=0;          // Minimum brightess via byte
   const unsigned char max_brightness=UCHAR_MAX;  // Maximum brightess via byte
-  unsigned char pab;                             // Pixel As Byte.
+  unsigned char pab = 0;                         // Pixel As Byte.
   size_t hist_bin;                       // histogram bin for given float value
 
   // This case is easy -- always map the "no data" value to 0.
@@ -356,17 +376,28 @@ pixel_float2byte(float paf, scale_t sample_mapping,
     // Since we used a mask when we called float_image_statistics() earlier,
     // we've got to account for it when writing the image out. The only way we
     // could think to do that was casting the mask value to byte :(.
+    //
+    // FIXME: The following cast of FLOAT_IMAGE_DEFAULT_MASK (currently equal
+    // to 0.0) is incorrect for images such as DEMs and db's that contain
+    // negative data.  I'm voting for something similar, but force data values
+    // sufficiently close to omin TO omin ...if we do any forcing at all.
+    // SIDE EFFECTS: As-is, the following will result in black shot-noise and
+    // 'topo line' type artifacts in images that contain negative data (in regions
+    // where zero-crossings occur or in noise near 0.0)
+    //
     if (0==gsl_fcmp(paf, FLOAT_IMAGE_DEFAULT_MASK, 0.00000000001)) {
       pab = (unsigned char)FLOAT_IMAGE_DEFAULT_MASK;
     }
     else {
+      // Determine which bin the pixel-as-float is in
       if (paf <= gsl_histogram_min(hist)) {
 	hist_bin = 0;
       }
       else if (paf >= gsl_histogram_max(hist)) {
-	hist_bin = gsl_histogram_bins(hist) - 1;
+        hist_bin = gsl_histogram_bins(hist) - 1;
       }
       else {
+        // Pixel is within a valid range, so the following should not complain
 	gsl_histogram_find (hist, paf, &hist_bin);
       }
 

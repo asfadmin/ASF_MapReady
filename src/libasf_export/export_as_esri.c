@@ -144,6 +144,13 @@ export_as_esri (const char *metadata_file_name,
       asfPrintError ("Exporting in ESRI format using the GEM10C spheroid is "
 		     "not implemented.");
       break;
+    case UNKNOWN_SPHEROID:
+      asfPrintError ("Exporting in ESRI format using the UNKNOWN_SPHEROID is "
+                     "not supported.");
+      break;
+    default:
+      asfPrintError ("Unknown or unsupported spheroid type encountered.  "
+                     "Cannot export.");
     }
 
     switch (md->projection->type) {
@@ -435,6 +442,10 @@ export_as_esri (const char *metadata_file_name,
     case LAT_LONG_PSEUDO_PROJECTION:
       asfPrintError ("Exporting pseudoprojected images in ESRI format is not "
 		     "implemented.");
+      break;
+    case UNKNOWN_PROJECTION:
+    default:
+      asfPrintError ("Unknown or unsupported projection encountered.  Cannot export.");
       break;
     }
   }

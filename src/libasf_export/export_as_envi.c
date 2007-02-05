@@ -125,6 +125,11 @@ export_as_envi (const char *metadata_file_name,
       asfPrintError ("Exporting scansar projected images probably doesn't "
 		     "make sense and isn't supported.");
       break;
+    case UNKNOWN_PROJECTION:
+    default:
+      asfPrintError ("Unknown or unsupported projection type encountered. "
+		     "Cannot export.");
+      break;
     }
   }
   fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
