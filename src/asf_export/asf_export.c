@@ -434,9 +434,14 @@ main (int argc, char *argv[])
   }
 
   //Compose input metadata name
+
+  //If user added ".img", strip it.
+  ext = findExt(in_base_name);
+  if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
+
+  //Compose input metadata name
   strcpy (command_line.in_meta_name, in_base_name);
   strcat (command_line.in_meta_name, ".meta");
-
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 

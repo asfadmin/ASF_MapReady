@@ -42,9 +42,9 @@ LIBS  = \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
