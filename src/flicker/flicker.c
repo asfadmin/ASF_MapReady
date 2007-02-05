@@ -244,6 +244,12 @@ static void load_images(const char *f1, const char *f2)
 
     int ret,max=1200;
 
+    int lines = imx(m1->general->line_count, m2->general->sample_count);
+    int samps = imx(m1->general->sample_count, m2->general->sample_count);
+    //int max = lines > samps ? lines : samps;
+    int max = 1200;
+    int ret;
+
     FloatImage *fi1 = 
         float_image_new_from_file(m1->general->sample_count, 
                                   m1->general->line_count, f1, 0,
