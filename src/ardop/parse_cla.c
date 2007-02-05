@@ -19,7 +19,7 @@
 ******************************************************************************/
 /***********************************************************************
   parse_cla.c  -- Routines to parse ARDOP's input parameters.
-  
+
      FUNCTIONS INCLUDED IN THIS FILE:
 	parse_cla	- parses the cla's, fills parameters in ardop_global.h
 	get_params	- reads from metadata & calculates parameters
@@ -36,7 +36,7 @@
 #include "ardop_defs.h"
 #include "geolocate.h"
 
-/* this define is a hack to avoid calling usage() as done in cla.h */	
+/* this define is a hack to avoid calling usage() as done in cla.h */
 #define CHK_ARG_ASP(num_args) if (currArg+num_args>argc) \
   {printf("   *****You need %i arguments for the keyword %s.\n\n",currArg-argc+num_args,argv[currArg-1]);return 0;} \
   else currArg+=num_args;
@@ -45,9 +45,9 @@
 Parse_cla:
 	Parses ARDOP command-line options to
 determine SAR processing parameters.  Returns
-0 on user command-line error, 1 on success, 2 
-on debug help, or not at all on other errors.  
-Meta_out will contain a pointer to the metadata 
+0 on user command-line error, 1 on success, 2
+on debug help, or not at all on other errors.
+Meta_out will contain a pointer to the metadata
 for this scene.
 
 ******************************************/
@@ -89,7 +89,7 @@ int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g)
 						  logflag = 1; fLog = FOPEN(logFile, "a");}
 		else if (strmatch(key,"-debug")) {
 			CHK_ARG_ASP(1);
-			g->iflag    = intParm(atoi(GET_ARG(1))); 
+			g->iflag    = intParm(atoi(GET_ARG(1)));
 			if (*(g->iflag)==0) return debug_help; }
 		else if (strmatch(key,"-quiet")) {quietflag = 1;}
 		else if (strmatch(key,"-power")) {g->pwrFlag=intParm(1);}
@@ -100,13 +100,13 @@ int parse_cla(int argc,char *argv[], struct INPUT_ARDOP_PARAMS *g)
 		else if (strmatch(key,"-kaiser"))  {g->kaiFlag = intParm(1);}
 		else if (strmatch(key,"-l")) {CHK_ARG_ASP(1); g->ifirstline = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-p")) {CHK_ARG_ASP(1); g->npatches = intParm(atoi(GET_ARG(1)));}
-		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave    = atoi(GET_ARG(1));}
-		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst   = atoi(GET_ARG(1));}
+		else if (strmatch(key,"-f")) {CHK_ARG_ASP(1); g->isave    = intParm(atoi(GET_ARG(1)));}
+		else if (strmatch(key,"-s")) {CHK_ARG_ASP(1); g->ifirst   = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-n")) {CHK_ARG_ASP(1); g->nla      = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-r")) {CHK_ARG_ASP(1); g->azres    = floatParm(atof(GET_ARG(1)));}
 		else if (strmatch(key,"-e")) {CHK_ARG_ASP(1); g->deskew   = intParm(atoi(GET_ARG(1)));
 		 			      g->na_valid = intParm(-99);}
-	/* If you use the -e flag, then a deskew wedge in the data will need to be removed. Override  
+	/* If you use the -e flag, then a deskew wedge in the data will need to be removed. Override
 	internal measurement of the number of valid azimuth lines with the -v option flag */
 		else if (strmatch(key,"-v")) {CHK_ARG_ASP(1); g->na_valid = intParm(atoi(GET_ARG(1)));}
 		else if (strmatch(key,"-o")) {CHK_ARG_ASP(1); strcpy(fName_slope,GET_ARG(1));
