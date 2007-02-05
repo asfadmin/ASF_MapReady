@@ -15,6 +15,13 @@
 ****************************************************************************/
 void project_set_avg_height(double height);
 
+/*
+   Returns nonzero if projection parameters exist and are populated
+   with map-projected values (not ScanSAR and not pseudo lat/lon)
+*/
+int is_map_projected(meta_parameters *md);
+
+
 #define ASF_PROJ_NO_HEIGHT -100000.0
 
 /****************************************************************************
