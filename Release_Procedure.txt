@@ -13,6 +13,11 @@
       svn copy https://lindon/svn/repos/asf_tools/trunk
                https://lindon/svn/repos/asf_tools/tags/convert_vX-X-X
 
+    [[ tagging a branched revision --
+      svn copy https://lindon/svn/repos/asf_tools/branches/convert_vX-X-X
+               https://lindon/svn/repos/asf_tools/tags/convert_vX-X-X
+    ]]
+
  3. Create a clean directory, for example:
       mkdir ~/asf/svn-rXXXX
       cd ~/asf/svn-rXXXX
@@ -57,6 +62,11 @@ src/libasf_insar
 external
 src/asf_convert_gui
 src/metadata_gui
+src/gr2sr
+src/sr2gr
+src/mosaic
+src/refine_geolocation
+src/asf_terrcorr
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
@@ -69,8 +79,8 @@ src/metadata_gui
 12. Edit the .spec file in ../rpmbuild to use the correct version,
     then rename the file to match.
       cd ../rpmbuild
-      vi asf_convert-2.1.0-1.spec
-      mv asf_convert-2.1.0-1.spec asf_convert-X.X.X-1.spec
+      vi asf_convert-3.0.0-1.spec
+      mv asf_convert-3.0.0-1.spec asf_convert-X.X.X-1.spec
 
 13. Build the rpm:
       rpmbuild -ba asf_convert-X.X.X-1.spec
@@ -82,24 +92,17 @@ src/metadata_gui
       ./tarrpms alos_convert
 
 15. Put the built files on quantum or someplace:
-      scp RPMS/asf_convert-X.X.X-1.i386.rpm
+      scp RPMS/asf_convert-X.X.X-rpm.*
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
-      scp SRPMS/asf_convert-X.X.X-1.i386.rpm
-          'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
-      cd ../tar/asf_convert
-      scp asf_convert.src.tar.gz
-          'quantum://shares/utd/Releases\ for\ Data\ Quality/Source/asf_convert-X.X.X.src.tar.gz'
+      #We aren't actually putting the source rpms anywhere now
+      #scp SRPMS/asf_convert-X.X.X-rpm-src.*
+      #    'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
+      scp Source/* 'quantum://shares/utd/Releases\ for\ Data\ Quality/Source'
 
 16. Bump the version in include/asf_version.h, add "-dev" to the end.
 
 17. The windows procedure is the same as described below.  Notes:
 
-  A. When checking out the windows version, you might have to manually
-     edit make_support/system_rules (after running configure) to make
-     sure it has:
-           JPEG_LIBS = $(LIBDIR)/libjpeg.a
-     and NOT
-           JPEG_LIBS = -ljpeg
 
 Old instructions follow:
 -----------------------------------------------------------------------------
