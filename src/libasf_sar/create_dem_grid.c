@@ -9,9 +9,9 @@ SYNOPSIS:
 	<DEM>      A DEM to create a grid upon
         <SAR>      a SAR file for which to create the grid
         <out_grid> a mapping grid, for use with fit_plane-
-        
-DESCRIPTION:  
-	
+
+DESCRIPTION:
+
 	Create a grid of points over the given LAS DEM
 	that surrounds the given LAS SAR image/ceos.  This grid is
 	used to project the DEM into the SAR image's (slant or ground
@@ -89,16 +89,16 @@ static int getNextSarPt(meta_parameters *meta,int gridNo,int *x,int *y,
 			int gridResX, int gridResY)
 {
   int xtmp, ytmp;
-  
+
   if (gridNo>=gridResX*gridResY)
     return 0;
-  
+
   xtmp = gridNo % gridResX;
   ytmp = gridNo / gridResX;
 
   *x = 1 + (float) xtmp / (float) (gridResX-1) * (width+DEM_GRID_RHS_PADDING);
   *y = 1 + (float) ytmp / (float) (gridResY-1) * (height);
-  
+
   return 1;
 }
 
@@ -124,16 +124,21 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   gridResY = size;
 
   out=FOPEN(outName,"w");
+
+  asfPrintStatus("\nReading metadata from:\n%s\n\n", sarName);
+  asfRequire(extExists(sarName, ".meta") || extExists(sarName, ".ddr"),
+             "\nSAR metadata file missing or cannot be opened\n");
   metaSar = meta_read(sarName);
-  metaDem = meta_read(demName);  
+
+  asfPrintStatus("\nReading metadata from:\n%s\n\n", demName);
+  asfRequire(extExists(demName, ".meta") || extExists(demName, ".ddr"),
+             "\nDEM (or mask) metadata file missing or cannot be opened\n");
+  metaDem = meta_read(demName);
 
   if (width < 0) width = metaSar->general->sample_count;
   if (height < 0) height = metaSar->general->line_count;
   if (gridResX < 0) gridResX = 20;
   if (gridResY < 0) gridResY = 20;
-
-  asfPrintStatus("DEM Datum: %s\n",
-                 datum_toString(metaDem->projection->datum));
 
   /* Convert all angles in projection part of metadata into radians -
      latlon_to_proj needs that later on */
@@ -148,7 +153,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 		    width,height,gridResX,gridResY);
        gridCount++)
     {
-      double dem_x,dem_y; /*This is what we're seeking-- 
+      double dem_x,dem_y; /*This is what we're seeking--
 			    the location on the DEM corresponding to the SAR point.*/
       double lat,lon; /*This is how we go between SAR and DEM images.*/
       double demProj_x,demProj_y; /*These are the projection coordinates for the DEM.*/
@@ -164,18 +169,18 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
       /*Compute the latitude and longitude of this location on the ground.*/
       meta_get_original_line_sample(metaSar, sar_y, sar_x, &orig_y, &orig_x);
       meta_get_latLon(metaSar,(float)orig_y,(float)orig_x,elev,&lat,&lon);
-      
+
       /*Compute the projection coordinates of this location in the DEM.*/
-      latlon_to_proj(metaDem->projection, metaSar->sar->look_direction, 
+      latlon_to_proj(metaDem->projection, metaSar->sar->look_direction,
 		     lat*D2R, lon*D2R, elev, &demProj_x, &demProj_y,
 		     &demProj_z);
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) /
-          metaDem->projection->perX - metaDem->general->start_sample;
-      dem_y = (demProj_y - metaDem->projection->startY) / 
-          metaDem->projection->perY - metaDem->general->start_line;
+          metaDem->projection->perX; //- metaDem->general->start_sample;
+      dem_y = (demProj_y - metaDem->projection->startY) /
+          metaDem->projection->perY; //- metaDem->general->start_line;
 
-      if (dem_x > 0 && dem_y > 0 && 
+      if (dem_x > 0 && dem_y > 0 &&
 	  dem_x < metaDem->general->sample_count &&
 	  dem_y < metaDem->general->line_count)
 	++pixels_in_dem;
@@ -189,7 +194,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
     }
 
   if (coverage_pct) {
-    *coverage_pct = ((double)pixels_in_dem * 100.) / 
+    *coverage_pct = ((double)pixels_in_dem * 100.) /
                      (pixels_in_dem + pixels_out_dem);
 
     asfPrintStatus("Coverage: %.2lf%% (%d out of %d points)\n",

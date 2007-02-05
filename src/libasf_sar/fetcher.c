@@ -48,7 +48,7 @@ or just under 7 minutes, a 100x speed increase.
 #define IMAGE_SLOP 4 /*# of input image widths to pad with zeros in the cache*/
 #define CACHE_SLOP 20 /*# of extra cache blocks to allocate*/
 
-static int backgroundFill=0;
+static float backgroundFill=0;
 
 typedef struct {
 /*Original Image Info:*/
@@ -199,7 +199,7 @@ float *cacheMiss(fetchRec *g,int imgX,int imgY)
 /************ External Entry Point:
 set_background:
     Sets the value used when a remapped pixel falls outside the original image.*/
-void set_background(int v)
+void set_background(float v)
 {
 
     backgroundFill = v;

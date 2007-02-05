@@ -58,6 +58,12 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
     double off_t = gsl_vector_get(x,0);
     double off_x = gsl_vector_get(x,1);
 
+    if (!meta_is_valid_double(off_x) ||
+        !meta_is_valid_double(off_t)) {
+        // This does happen sometimes, when we've already found the root
+	return GSL_FAILURE;
+    }
+
     struct refine_offset_params *p = (struct refine_offset_params *)params;
     meta_parameters *meta = p->meta;
 
@@ -237,3 +243,4 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
     gsl_vector_free(x);
     gsl_set_error_handler(prev);
 }
+

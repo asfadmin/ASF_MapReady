@@ -10,6 +10,13 @@
 #define MASK_LAYOVER 192.0
 #define MASK_INVALID_DATA 255
 
+/* At the moment, changing this to something other than 0 doesn't work.
+   Needs to be investigated. */
+#define BAD_DEM_HEIGHT 0.0
+
+/* Choose a value not likely to occur in a DEM, and also won't screw up
+   the range too much when viewing the DEM */
+#define NO_DEM_DATA -3.333
 
 /* Number of pixels added by create_dem_grid at the right edge of the 
    image, to allow for height differences */
@@ -34,7 +41,7 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile, char *inMaskFile);
+	       char *outAmpFile, char *inMaskFile, int interp_holes);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
@@ -51,7 +58,7 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 /* Prototypes from remap_poly.c */
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 	       int outWidth, int outHeight, char *infile, char *outfile,
-           int background_value);
+               float background_value);
 
 /* Prototypes from fit_poly.c */
 int fit_poly(char * gridFile, int degree, double *maxErr,
@@ -63,5 +70,9 @@ void refine_offset(double x_off, double y_off, meta_parameters *meta,
 
 /* Prototypes from mfd.c */
 int dem_to_mask(char *inDem, char *outMask, float cutoff);
+
+int is_masked(double value);
+float masked_value();
+float unmasked_value();
 
 #endif

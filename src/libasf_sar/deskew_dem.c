@@ -92,7 +92,7 @@ struct deskew_dem_data {
         meta_parameters *meta;
 };
 
-static const float badDEMht=0.0;
+static const float badDEMht=BAD_DEM_HEIGHT;
 //static int maxBreakLen=20;
 static const int maxBreakLen=5;
 
@@ -141,7 +141,7 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
         float height=inBuf[inX];
         outX=(int)SR2GR(d,(float)inX,height);
 
-        if ((height!=badDEMht)&&(height!=-1)&&(outX>=0)&&(outX<ns))
+        if ((height!=badDEMht)/*&&(height!=-1)*/&&(outX>=0)&&(outX<ns))
         {
             if (lastOutValue!=badDEMht &&
                 (fill_holes || outX-lastOutX<maxBreakLen))
@@ -262,7 +262,13 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     return er/d->phiMul;
 }
 
-static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
+static eq(float a, float b, float tol)
+{
+    return fabs(a-b)<tol;
+}
+
+static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
+                            float *grDEM, struct deskew_dem_data *d)
 {
     int x;
     for (x=0; x<ns; x++)
@@ -275,6 +281,13 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask)
             // other values are user specified values that should be put in
             if (fill_value != LEAVE_MASK)
                 in[x] = fill_value;
+        }
+        else 
+        {
+            // where we have no DEM data, set output to 0
+            if (eq(grDEM[x],NO_DEM_DATA,.000001)) {
+                in[x] = 0.0;
+            }
         }
     }
 }
@@ -366,8 +379,10 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                             }
                         }
                         // including the current one
-                        mask[grX] = MASK_LAYOVER;
-                        ++n_layover;
+                        if (mask[grX] == MASK_NORMAL) {
+                            mask[grX] = MASK_LAYOVER;
+                            ++n_layover;
+                        }
                     }
 
                     //--------------------------------------------------------
@@ -392,8 +407,10 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
                     } else {
                         // this point is shadowed by the point that generated
                         // the current "biggest_look" value
-                        mask[grX] = MASK_SHADOW;
-                        ++n_shadow;
+                        if (mask[grX] == MASK_NORMAL) {
+                            mask[grX] = MASK_SHADOW;
+                            ++n_shadow;
+                        }
                     }
                 }
             }
@@ -475,11 +492,14 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             mask[i] = MASK_INVALID_DATA;
         for (i=min_valid_grX; i>=0; --i)
             mask[i] = MASK_INVALID_DATA;
+
+        free(sr_hits);
     }
 }
 
 static void radio_compensate(struct deskew_dem_data *d,float *grDEM,
-                             float *grDEMprev,float *inout,int ns)
+                             float *grDEMprev,float *inout,int ns,
+                             int line, int form)
 {
 
 /*
@@ -514,36 +534,74 @@ Here's what it looked like before optimization:
 
 */
 
-	int x;
-	if (d->cosineScale==NULL)
-	{
-		int i;
-		double cosAng;
-		d->cosineScale=(double *)MALLOC(sizeof(double)*512);
-		for (i=0;i<512;i++)
-		{
-			cosAng=i/511.0;
-			d->cosineScale[(int)(cosAng*511)]=1.00-0.70*pow(cosAng,7.0);
-		}
-	}
-	for (x=1;x<ns;x++)
-	{
-		double dx,dy,grX,vecLen,cosAng;
-	  /*Find terrain normal.*/
-	  	grX=grDEM[x];
-		if ((grX==badDEMht)||
-		    (grDEMprev[x]==badDEMht)||
-		    (grDEM[x-1]==badDEMht)) 
-			{inout[x]=0;continue;}
-		dx=(grX-grDEM[x-1])/d->grPixelSize;
-		dy=(grDEMprev[x]-grX)/d->grPixelSize;
-	  /*Make the normal a unit vector.*/
-		vecLen=sqrt(dx*dx+dy*dy+1);
-	  /*Take dot product of this vector and the incidence vector.*/
-		cosAng=(dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
-		if (cosAng>0)/* Ordinary diffuse radar reflection */
-			inout[x]*=d->cosineScale[(int)(cosAng*511)];/*=cosScaled*255;*/
-	}
+    int x;
+    for (x=1;x<ns;x++)
+    {
+        double dx,dy,grX,vecLen,cosAng;
+
+        /*Find terrain normal.*/
+        grX=grDEM[x];
+        if ((grX==badDEMht)||
+            (grDEMprev[x]==badDEMht)||
+            (grDEM[x-1]==badDEMht)) 
+        {
+            inout[x]=0;
+            continue;
+        }
+
+        dx=(grX-grDEM[x-1])/d->grPixelSize;
+        dy=(grDEMprev[x]-grX)/d->grPixelSize;
+
+        /*Make the normal a unit vector.*/
+        vecLen=sqrt(dx*dx+dy*dy+1);
+
+        /*Take dot product of this vector and the incidence vector.*/
+        cosAng=(-dx*d->sinIncidAng[x]+d->cosIncidAng[x])/vecLen;
+
+        double li = acos(cosAng);
+        double gi = meta_incid(d->meta, line, x);
+
+        double tanphie = tan(gi);
+        double cosphi = cosAng;
+        double sinphir = fabs(gi+asin(dy/sqrt(dy*dy+1)));
+        double cosphia = 1/sqrt(dx*dx+1);
+
+        if (cosAng>=0) {
+            switch (form) {
+                default:
+                case 0:
+                    /* should not be in here... */
+                    asfPrintError("Bad radiometric correction formula: %d\n",
+                                  form);
+                    return;
+                case 1:
+                    /* From the old terrcorr: ftcli */
+                    inout[x] *= tan(li) / tanphie;
+                    break;
+                case 2:
+                    /* From the old terrcorr: ftcgo */
+                    inout[x] *= (sinphir * cosphia) / (tanphie * cosphi);
+                    break;
+                case 3:
+                    /* From the old terrcorr: ftcsq */
+                    inout[x] *= (sinphir * cosphia) / (tanphie * sqrt(cosphi));
+                    break;
+                case 4:
+                    /* From the old terrcorr: ftcvx */
+                    inout[x] *= (sinphir * cosphia) / sin(gi);
+                    break;
+                case 5:
+                    /* Ordinary diffuse radar reflection */
+                    /* This is the formula that was previously in deskew_dem */
+                    inout[x] *= 1-.7*pow(cosAng,7);
+                    break;
+                case 22:
+                    /* Secret test mode */
+                    inout[x] = 4+(float)x/ns;
+                    break;
+            }
+        }
+    }
 }
 
 /* inSarName can be NULL, in this case doRadiometric is ignored */
@@ -577,6 +635,10 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 //            asfPrintError("DEM is not a DEM!\n");
 //            return FALSE;
 //        }
+
+        if (doRadiometric)
+            asfPrintWarning("Radiometric terrain correction is still "
+                            "experimental.\n");
 
         if (inDemMeta->sar->image_type == 'G')
 	   dem_is_ground_range=TRUE;
@@ -700,7 +762,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     if (mask[x+y*d.numSamples]==2.0) {
                         mask[x+y*d.numSamples] = MASK_INVALID_DATA;
                     }
-                    else if (mask[x+y*d.numSamples]>=1.0) {
+                    else if (is_masked(mask[x+y*d.numSamples])) {
                         mask[x+y*d.numSamples] = MASK_USER_MASK;
                     }
                 }
@@ -740,11 +802,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 
                     if (y>0&&doRadiometric)
                         radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                         d.numSamples);
+                                         d.numSamples,y,doRadiometric);
 
 		    // subtract away the masked region
                     mask_float_line(d.numSamples,fill_value,outLine,
-                                    mask+y*d.numSamples);
+                                    mask+y*d.numSamples,grDEMline,&d);
 
                     put_float_line(outFp,outMeta,y,outLine);
 		}

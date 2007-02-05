@@ -25,10 +25,10 @@ typedef struct {
 float fetchPixelValue(pixelFetcher *inGetRec,int x, int y);
 pixelFetcher *createFetchRec(FILE *in,meta_parameters *meta);
 void killFetchRec(pixelFetcher *inGetRec);
-void set_background(int v);
+void set_background(float v);
 
 /* From remap.c */
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 	       int outWidth, int outHeight, char *infile, char *outfile,
-           int background_value);
+               float background_value);
 

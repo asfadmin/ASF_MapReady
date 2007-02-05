@@ -22,6 +22,13 @@ static polyMapRec * createPolyMap(poly_2d *fwX, poly_2d *fwY,
   return q;
 }
 
+static void destroyPolyMap(polyMapRec *pmr)
+{
+    // We don't actually own the poly_2d pointers in here.
+    // Caller will have to free those.
+    free(pmr);
+}
+
 /*grow: Increases the size of an axis-aligned box defined by two points min and max.*/
 static void grow(fPoint *min,fPoint *max,fPoint addThis)
 {
@@ -226,7 +233,7 @@ static void update_projection(meta_parameters *in_meta, polyMapRec *map,
 
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 	       int outWidth, int outHeight, char *infile, char *outfile,
-           int background_value)
+               float background_value)
 {
   FILE *in,*out=NULL;
   meta_parameters *meta_in, *meta_out;
@@ -258,5 +265,6 @@ int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
   FCLOSE(out);
   meta_free(meta_in);
   meta_free(meta_out);
+  destroyPolyMap(map);
   return 1;
 }
