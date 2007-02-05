@@ -1,5 +1,5 @@
 #include <asf_meta.h>
-#include <asf_geocode.h>
+#include <libasf_proj.h>
 
 // Utility function written solely for the purpose of
 // making if-statement (etc) conditional expressions
