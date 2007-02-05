@@ -12,7 +12,6 @@ typedef enum {
 
 int detect_string_options(int argc, char *argv[], char *val, ... );
 int detect_flag_options(int argc, char **argv, ...);
-void extract_double_options(int *argc, char **argv[], double *val, ... );
 
 void set_options_testing(int is_testing);
 project_parameters_t * parse_projection_options(int *argc, char **argv[],
@@ -40,13 +39,13 @@ void parse_log_options(int *argc, char **argv[]);
 // yo, zo.  Mainly intended to be set to project_utm, project_utm_inv,
 // or some other function from this library, or a similar function.
 typedef int (*projector_t) (project_parameters_t *pps, double xi, double yi,
-			    double zi, double *xo, double *yo, double *zo);
+           double zi, double *xo, double *yo, double *zo, datum_type_t datum);
 
 // Like the above, but does a whole array of length points at once.
 // Corresponds to for examplze project_utm_arr.
 typedef int (*array_projector_t) (project_parameters_t *ppd, double *xi,
 				  double *yi, double *zi, double **xo,
-				  double **yo, double **zo, long length);
+				  double **yo, double **zo, long length, datum_type_t datum);
 
 // Select the appropriate projection and unprojection routines for
 // projection_type from libasf_proj.
@@ -56,9 +55,6 @@ void set_projection_functions (projection_type_t projection_type,
 			       array_projector_t *array_unproject);
 
 ///////////////////////////////////////////////////////////////////////////////
-
-// Check to see if the image metadata contains a supported map projection
-int is_map_projected(meta_parameters *md);
 
 // This is the old geocode_options.h
 /*
@@ -135,6 +131,9 @@ void apply_defaults(projection_type_t proj_type, project_parameters_t * pps,
    longitudes that fall on zone thresholds into the higher numbered
    UTM zone.  */
 int calc_utm_zone (double lon);
+void check_parameters(projection_type_t projection_type, datum_type_t datum,
+                      project_parameters_t *pp, meta_parameters *meta,
+                      int force_flag);
 
 /* Convert all the angle measures in pps between radians and degree.  */
 void to_radians(projection_type_t proj_type, project_parameters_t * pps);
@@ -174,5 +173,3 @@ void sigsegv_handler (int signal_number);
 // Prototypes from geoid.c
 float get_geoid_height(double lat, double lon);
 
-// Prototypes from is_map_projected.c
-int is_map_projected(meta_parameters *md);
