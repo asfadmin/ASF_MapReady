@@ -67,7 +67,7 @@ void update_summary()
     default:
     case INPUT_FORMAT_CEOS_LEVEL1:
         strcat(text, "CEOS Level One");
-        //sprintf(text, "%s\nData type: %s", text, type);
+        sprintf(text, "%s\nData type: %s", text, type);
 
         break;
 
@@ -85,7 +85,7 @@ void update_summary()
         break;
     }
 
-/*
+
     if (s->terrcorr_is_checked || s->refine_geolocation_is_checked)
     {
         GtkWidget *dem_entry;
@@ -168,7 +168,7 @@ void update_summary()
     {
         strcat(text, "\nTerrain Correction: No");
     }
-*/
+
 
     strcat(text, "\nGeocoding: ");
 

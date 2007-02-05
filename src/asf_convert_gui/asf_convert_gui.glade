@@ -420,6 +420,760 @@
 	      </child>
 
 	      <child>
+		<widget class="GtkHBox" id="hbox44">
+		  <property name="visible">True</property>
+		  <property name="homogeneous">False</property>
+		  <property name="spacing">0</property>
+
+		  <child>
+		    <widget class="GtkVBox" id="vbox53">
+		      <property name="border_width">4</property>
+		      <property name="visible">True</property>
+		      <property name="homogeneous">False</property>
+		      <property name="spacing">4</property>
+
+		      <child>
+			<widget class="GtkHBox" id="hbox37">
+			  <property name="visible">True</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
+
+			  <child>
+			    <widget class="GtkLabel" id="input_data_type_label">
+			      <property name="width_request">84</property>
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Data type: </property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">False</property>
+			      <property name="justify">GTK_JUSTIFY_LEFT</property>
+			      <property name="wrap">False</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0</property>
+			      <property name="yalign">0.5</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkOptionMenu" id="input_data_type_combobox">
+			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Radiometry setting for the image.  If you are planning to apply terrain correction, it is a good idea to select &quot;output DB&quot; when using sigma, beta or gamma.</property>
+			      <property name="can_focus">True</property>
+			      <property name="history">0</property>
+
+			      <child>
+				<widget class="GtkMenu" id="menu2">
+
+				  <child>
+				    <widget class="GtkMenuItem" id="sigma">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Sigma</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_input_data_type_sigma_activate" last_modification_time="Wed, 29 Mar 2006 22:12:24 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="beta">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Beta</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_input_data_type_beta_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="gamma">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Gamma</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_input_data_type_gamma_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="amplitude">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Amplitude</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_input_data_type_amplitude_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				    </widget>
+				  </child>
+
+				  <child>
+				    <widget class="GtkMenuItem" id="power">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Power</property>
+				      <property name="use_underline">True</property>
+				      <signal name="activate" handler="on_input_data_type_power_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
+				    </widget>
+				  </child>
+				</widget>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkCheckButton" id="checkbutton_db">
+			  <property name="visible">True</property>
+			  <property name="tooltip" translatable="yes">Output calibrated image in decibles. This can only be used with -sigma, -beta, or -gamma.  Recommended when terrain correcting.</property>
+			  <property name="can_focus">True</property>
+			  <property name="label" translatable="yes">Output DB</property>
+			  <property name="use_underline">True</property>
+			  <property name="relief">GTK_RELIEF_NORMAL</property>
+			  <property name="focus_on_click">True</property>
+			  <property name="active">False</property>
+			  <property name="inconsistent">False</property>
+			  <property name="draw_indicator">True</property>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">False</property>
+			  <property name="fill">False</property>
+			</packing>
+		      </child>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">True</property>
+		      <property name="fill">True</property>
+		    </packing>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="tab_expand">False</property>
+		  <property name="tab_fill">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkLabel" id="label92">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">Radiometry</property>
+		  <property name="use_underline">False</property>
+		  <property name="use_markup">False</property>
+		  <property name="justify">GTK_JUSTIFY_LEFT</property>
+		  <property name="wrap">False</property>
+		  <property name="selectable">False</property>
+		  <property name="xalign">0.5</property>
+		  <property name="yalign">0.5</property>
+		  <property name="xpad">0</property>
+		  <property name="ypad">0</property>
+		</widget>
+		<packing>
+		  <property name="type">tab</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkVBox" id="vbox57">
+		  <property name="homogeneous">False</property>
+		  <property name="spacing">0</property>
+
+		  <child>
+		    <widget class="GtkHBox" id="hbox43">
+		      <property name="visible">True</property>
+		      <property name="homogeneous">False</property>
+		      <property name="spacing">0</property>
+
+		      <child>
+			<widget class="GtkVBox" id="vbox_terrain_correction">
+			  <property name="visible">True</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
+
+			  <child>
+			    <widget class="GtkHBox" id="hbox39">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<widget class="GtkVBox" id="vbox56">
+				  <property name="visible">True</property>
+				  <property name="homogeneous">False</property>
+				  <property name="spacing">0</property>
+
+				  <child>
+				    <widget class="GtkCheckButton" id="dem_checkbutton">
+				      <property name="visible">True</property>
+				      <property name="can_focus">True</property>
+				      <property name="label" translatable="yes">Digital Elevation Model (DEM) available</property>
+				      <property name="use_underline">True</property>
+				      <property name="relief">GTK_RELIEF_NORMAL</property>
+				      <property name="focus_on_click">True</property>
+				      <property name="active">False</property>
+				      <property name="inconsistent">False</property>
+				      <property name="draw_indicator">True</property>
+				      <signal name="toggled" handler="on_dem_checkbutton_toggled" last_modification_time="Wed, 02 Aug 2006 22:17:58 GMT"/>
+				    </widget>
+				    <packing>
+				      <property name="padding">8</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkVBox" id="terrcorr_vbox">
+				      <property name="visible">True</property>
+				      <property name="homogeneous">False</property>
+				      <property name="spacing">0</property>
+
+				      <child>
+					<widget class="GtkHBox" id="terrcorr_hbox">
+					  <property name="visible">True</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkLabel" id="label76">
+					      <property name="width_request">95</property>
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">     DEM File: </property>
+					      <property name="use_underline">False</property>
+					      <property name="use_markup">False</property>
+					      <property name="justify">GTK_JUSTIFY_LEFT</property>
+					      <property name="wrap">False</property>
+					      <property name="selectable">False</property>
+					      <property name="xalign">0.5</property>
+					      <property name="yalign">0.5</property>
+					      <property name="xpad">0</property>
+					      <property name="ypad">0</property>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">False</property>
+					      <property name="fill">False</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkEntry" id="dem_entry">
+					      <property name="width_request">400</property>
+					      <property name="visible">True</property>
+					      <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).</property>
+					      <property name="can_focus">True</property>
+					      <property name="editable">True</property>
+					      <property name="visibility">True</property>
+					      <property name="max_length">0</property>
+					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
+					      <property name="invisible_char" translatable="yes">*</property>
+					      <property name="activates_default">False</property>
+					      <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">False</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkButton" id="dem_browse_button">
+					      <property name="visible">True</property>
+					      <property name="can_focus">True</property>
+					      <property name="label" translatable="yes">Browse...</property>
+					      <property name="use_underline">True</property>
+					      <property name="relief">GTK_RELIEF_NORMAL</property>
+					      <property name="focus_on_click">True</property>
+					      <signal name="clicked" handler="on_dem_browse_button_clicked" last_modification_time="Thu, 27 Apr 2006 01:52:03 GMT"/>
+					    </widget>
+					    <packing>
+					      <property name="padding">5</property>
+					      <property name="expand">False</property>
+					      <property name="fill">False</property>
+					    </packing>
+					  </child>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">False</property>
+					  <property name="fill">True</property>
+					</packing>
+				      </child>
+
+				      <child>
+					<widget class="GtkRadioButton" id="rb_refine_geolocation">
+					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">Refine the geolocation of the SAR image using the DEM (the image is not affected - only the metadata is adjusted)</property>
+					  <property name="can_focus">True</property>
+					  <property name="label" translatable="yes">Refine Geolocation Only</property>
+					  <property name="use_underline">True</property>
+					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
+					  <property name="active">False</property>
+					  <property name="inconsistent">False</property>
+					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_rb_refine_geolocation_toggled" last_modification_time="Tue, 03 Oct 2006 18:13:45 GMT"/>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">False</property>
+					  <property name="fill">False</property>
+					</packing>
+				      </child>
+
+				      <child>
+					<widget class="GtkRadioButton" id="rb_terrcorr">
+					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">Correct the SAR image for the side-looking geometry using the specified DEM</property>
+					  <property name="can_focus">True</property>
+					  <property name="label" translatable="yes">Apply Terrain Correction</property>
+					  <property name="use_underline">True</property>
+					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
+					  <property name="active">True</property>
+					  <property name="inconsistent">False</property>
+					  <property name="draw_indicator">True</property>
+					  <property name="group">rb_refine_geolocation</property>
+					  <signal name="toggled" handler="on_rb_terrcorr_toggled" last_modification_time="Tue, 03 Oct 2006 18:13:59 GMT"/>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">False</property>
+					  <property name="fill">False</property>
+					</packing>
+				      </child>
+
+				      <child>
+					<widget class="GtkHBox" id="hbox_terrcorr_items">
+					  <property name="visible">True</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkVBox" id="vbox_terrcorr_items">
+					      <property name="visible">True</property>
+					      <property name="homogeneous">False</property>
+					      <property name="spacing">0</property>
+
+					      <child>
+						<widget class="GtkHBox" id="hbox42">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkCheckButton" id="mask_checkbutton">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Use a mask to ignore certain parts of the image when matching the SAR image with the DEM.</property>
+						      <property name="can_focus">True</property>
+						      <property name="label" translatable="yes">Apply a user mask</property>
+						      <property name="use_underline">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <property name="active">False</property>
+						      <property name="inconsistent">False</property>
+						      <property name="draw_indicator">True</property>
+						      <signal name="toggled" handler="on_mask_checkbutton_toggled" last_modification_time="Mon, 18 Sep 2006 22:43:18 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkLabel" id="label85">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">                    </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkRadioButton" id="rb_auto_water_mask">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Automatically generate a mask from the DEM.  Regions of 1m or less are masked.</property>
+						      <property name="can_focus">True</property>
+						      <property name="label" translatable="yes">Automatically Mask   </property>
+						      <property name="use_underline">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <property name="active">False</property>
+						      <property name="inconsistent">False</property>
+						      <property name="draw_indicator">True</property>
+						      <signal name="toggled" handler="on_rb_auto_water_mask_toggled" last_modification_time="Tue, 03 Oct 2006 18:14:20 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkRadioButton" id="rb_mask_file">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Use the provided file to mask</property>
+						      <property name="can_focus">True</property>
+						      <property name="label" translatable="yes">Mask from File</property>
+						      <property name="use_underline">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <property name="active">False</property>
+						      <property name="inconsistent">False</property>
+						      <property name="draw_indicator">True</property>
+						      <property name="group">rb_auto_water_mask</property>
+						      <signal name="toggled" handler="on_rb_mask_file_toggled" last_modification_time="Tue, 03 Oct 2006 18:14:14 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkHBox" id="hbox_mask_file">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkLabel" id="label84">
+						      <property name="width_request">95</property>
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">     Mask File: </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="mask_entry">
+						      <property name="width_request">400</property>
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Name of the mask file.</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						      <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkButton" id="mask_browse_button">
+						      <property name="visible">True</property>
+						      <property name="can_focus">True</property>
+						      <property name="label" translatable="yes">Browse...</property>
+						      <property name="use_underline">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <signal name="clicked" handler="on_mask_browse_button_clicked" last_modification_time="Mon, 18 Sep 2006 22:55:11 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">5</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkCheckButton" id="tc_pixel_size_checkbutton">
+						  <property name="visible">True</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Specify Pixel Size</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <signal name="toggled" handler="on_tc_pixel_size_checkbutton_toggled" last_modification_time="Thu, 13 Jul 2006 21:07:35 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkHBox" id="hbox_tc_pixel_size">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkLabel" id="label81">
+						      <property name="width_request">95</property>
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">     Pixel Size: </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="tc_pixel_size_entry">
+						      <property name="width_request">80</property>
+						      <property name="visible">True</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						      <signal name="changed" handler="update_summary" last_modification_time="Wed, 08 Mar 2006 18:48:51 GMT"/>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkLabel" id="label82">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes"> meters</property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkCheckButton" id="interpolate_checkbutton">
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Fill regions of layover with plausible values.  If unchecked, these regions will be left blank.</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Interpolate Layover/Shadow Regions</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">True</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <signal name="toggled" handler="update_summary" last_modification_time="Thu, 13 Jul 2006 22:50:50 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkCheckButton" id="layover_mask_checkbutton">
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Generate a mask file indicating regions of layover and shadow</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Save Layover/Shadow Mask</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <signal name="toggled" handler="update_summary" last_modification_time="Tue, 03 Oct 2006 19:01:28 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkCheckButton" id="save_dem_checkbutton">
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Save the portion of the DEM that was used to apply terrain correction.</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Save Clipped DEM</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <signal name="toggled" handler="update_summary" last_modification_time="Tue, 03 Oct 2006 19:01:43 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+					    </widget>
+					    <packing>
+					      <property name="padding">20</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">True</property>
+					  <property name="fill">True</property>
+					</packing>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">True</property>
+				      <property name="fill">True</property>
+				    </packing>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">7</property>
+				  <property name="expand">True</property>
+				  <property name="fill">True</property>
+				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">True</property>
+			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="padding">0</property>
+			  <property name="expand">True</property>
+			  <property name="fill">True</property>
+			</packing>
+		      </child>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">True</property>
+		      <property name="fill">True</property>
+		    </packing>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="tab_expand">False</property>
+		  <property name="tab_fill">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkLabel" id="label91">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">DEM</property>
+		  <property name="use_underline">False</property>
+		  <property name="use_markup">False</property>
+		  <property name="justify">GTK_JUSTIFY_LEFT</property>
+		  <property name="wrap">False</property>
+		  <property name="selectable">False</property>
+		  <property name="xalign">0.5</property>
+		  <property name="yalign">0.5</property>
+		  <property name="xpad">0</property>
+		  <property name="ypad">0</property>
+		</widget>
+		<packing>
+		  <property name="type">tab</property>
+		</packing>
+	      </child>
+
+	      <child>
 		<widget class="GtkVBox" id="vbox_geocode">
 		  <property name="border_width">4</property>
 		  <property name="visible">True</property>
@@ -1962,724 +2716,6 @@ VV
 	    <packing>
 	      <property name="padding">0</property>
 	      <property name="expand">False</property>
-	      <property name="fill">True</property>
-	    </packing>
-	  </child>
-
-	  <child>
-	    <widget class="GtkVBox" id="vbox57">
-	      <property name="homogeneous">False</property>
-	      <property name="spacing">0</property>
-
-	      <child>
-		<widget class="GtkHBox" id="hbox43">
-		  <property name="visible">True</property>
-		  <property name="homogeneous">False</property>
-		  <property name="spacing">0</property>
-
-		  <child>
-		    <widget class="GtkVBox" id="vbox_terrain_correction">
-		      <property name="visible">True</property>
-		      <property name="homogeneous">False</property>
-		      <property name="spacing">0</property>
-
-		      <child>
-			<widget class="GtkHBox" id="hbox39">
-			  <property name="visible">True</property>
-			  <property name="homogeneous">False</property>
-			  <property name="spacing">0</property>
-
-			  <child>
-			    <widget class="GtkVBox" id="vbox56">
-			      <property name="visible">True</property>
-			      <property name="homogeneous">False</property>
-			      <property name="spacing">0</property>
-
-			      <child>
-				<widget class="GtkCheckButton" id="dem_checkbutton">
-				  <property name="visible">True</property>
-				  <property name="can_focus">True</property>
-				  <property name="label" translatable="yes">Digital Elevation Model (DEM) available</property>
-				  <property name="use_underline">True</property>
-				  <property name="relief">GTK_RELIEF_NORMAL</property>
-				  <property name="focus_on_click">True</property>
-				  <property name="active">False</property>
-				  <property name="inconsistent">False</property>
-				  <property name="draw_indicator">True</property>
-				  <signal name="toggled" handler="on_dem_checkbutton_toggled" last_modification_time="Wed, 02 Aug 2006 22:17:58 GMT"/>
-				</widget>
-				<packing>
-				  <property name="padding">8</property>
-				  <property name="expand">False</property>
-				  <property name="fill">False</property>
-				</packing>
-			      </child>
-
-			      <child>
-				<widget class="GtkVBox" id="terrcorr_vbox">
-				  <property name="visible">True</property>
-				  <property name="homogeneous">False</property>
-				  <property name="spacing">0</property>
-
-				  <child>
-				    <widget class="GtkHBox" id="terrcorr_hbox">
-				      <property name="visible">True</property>
-				      <property name="homogeneous">False</property>
-				      <property name="spacing">0</property>
-
-				      <child>
-					<widget class="GtkLabel" id="label76">
-					  <property name="width_request">95</property>
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">     DEM File: </property>
-					  <property name="use_underline">False</property>
-					  <property name="use_markup">False</property>
-					  <property name="justify">GTK_JUSTIFY_LEFT</property>
-					  <property name="wrap">False</property>
-					  <property name="selectable">False</property>
-					  <property name="xalign">0.5</property>
-					  <property name="yalign">0.5</property>
-					  <property name="xpad">0</property>
-					  <property name="ypad">0</property>
-					</widget>
-					<packing>
-					  <property name="padding">0</property>
-					  <property name="expand">False</property>
-					  <property name="fill">False</property>
-					</packing>
-				      </child>
-
-				      <child>
-					<widget class="GtkEntry" id="dem_entry">
-					  <property name="width_request">400</property>
-					  <property name="visible">True</property>
-					  <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).</property>
-					  <property name="can_focus">True</property>
-					  <property name="editable">True</property>
-					  <property name="visibility">True</property>
-					  <property name="max_length">0</property>
-					  <property name="text" translatable="yes"></property>
-					  <property name="has_frame">True</property>
-					  <property name="invisible_char" translatable="yes">*</property>
-					  <property name="activates_default">False</property>
-					  <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
-					</widget>
-					<packing>
-					  <property name="padding">0</property>
-					  <property name="expand">False</property>
-					  <property name="fill">True</property>
-					</packing>
-				      </child>
-
-				      <child>
-					<widget class="GtkButton" id="dem_browse_button">
-					  <property name="visible">True</property>
-					  <property name="can_focus">True</property>
-					  <property name="label" translatable="yes">Browse...</property>
-					  <property name="use_underline">True</property>
-					  <property name="relief">GTK_RELIEF_NORMAL</property>
-					  <property name="focus_on_click">True</property>
-					  <signal name="clicked" handler="on_dem_browse_button_clicked" last_modification_time="Thu, 27 Apr 2006 01:52:03 GMT"/>
-					</widget>
-					<packing>
-					  <property name="padding">5</property>
-					  <property name="expand">False</property>
-					  <property name="fill">False</property>
-					</packing>
-				      </child>
-				    </widget>
-				    <packing>
-				      <property name="padding">0</property>
-				      <property name="expand">False</property>
-				      <property name="fill">True</property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkRadioButton" id="rb_refine_geolocation">
-				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Refine the geolocation of the SAR image using the DEM (the image is not affected - only the metadata is adjusted)</property>
-				      <property name="can_focus">True</property>
-				      <property name="label" translatable="yes">Refine Geolocation Only</property>
-				      <property name="use_underline">True</property>
-				      <property name="relief">GTK_RELIEF_NORMAL</property>
-				      <property name="focus_on_click">True</property>
-				      <property name="active">False</property>
-				      <property name="inconsistent">False</property>
-				      <property name="draw_indicator">True</property>
-				      <signal name="toggled" handler="on_rb_refine_geolocation_toggled" last_modification_time="Tue, 03 Oct 2006 18:13:45 GMT"/>
-				    </widget>
-				    <packing>
-				      <property name="padding">0</property>
-				      <property name="expand">False</property>
-				      <property name="fill">False</property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkRadioButton" id="rb_terrcorr">
-				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Correct the SAR image for the side-looking geometry using the specified DEM</property>
-				      <property name="can_focus">True</property>
-				      <property name="label" translatable="yes">Apply Terrain Correction</property>
-				      <property name="use_underline">True</property>
-				      <property name="relief">GTK_RELIEF_NORMAL</property>
-				      <property name="focus_on_click">True</property>
-				      <property name="active">True</property>
-				      <property name="inconsistent">False</property>
-				      <property name="draw_indicator">True</property>
-				      <property name="group">rb_refine_geolocation</property>
-				      <signal name="toggled" handler="on_rb_terrcorr_toggled" last_modification_time="Tue, 03 Oct 2006 18:13:59 GMT"/>
-				    </widget>
-				    <packing>
-				      <property name="padding">0</property>
-				      <property name="expand">False</property>
-				      <property name="fill">False</property>
-				    </packing>
-				  </child>
-
-				  <child>
-				    <widget class="GtkHBox" id="hbox_terrcorr_items">
-				      <property name="visible">True</property>
-				      <property name="homogeneous">False</property>
-				      <property name="spacing">0</property>
-
-				      <child>
-					<widget class="GtkVBox" id="vbox_terrcorr_items">
-					  <property name="visible">True</property>
-					  <property name="homogeneous">False</property>
-					  <property name="spacing">0</property>
-
-					  <child>
-					    <widget class="GtkHBox" id="hbox42">
-					      <property name="visible">True</property>
-					      <property name="homogeneous">False</property>
-					      <property name="spacing">0</property>
-
-					      <child>
-						<widget class="GtkCheckButton" id="mask_checkbutton">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Use a mask to ignore certain parts of the image when matching the SAR image with the DEM.</property>
-						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">Apply a user mask</property>
-						  <property name="use_underline">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <property name="active">False</property>
-						  <property name="inconsistent">False</property>
-						  <property name="draw_indicator">True</property>
-						  <signal name="toggled" handler="on_mask_checkbutton_toggled" last_modification_time="Mon, 18 Sep 2006 22:43:18 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkLabel" id="label85">
-						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">                    </property>
-						  <property name="use_underline">False</property>
-						  <property name="use_markup">False</property>
-						  <property name="justify">GTK_JUSTIFY_LEFT</property>
-						  <property name="wrap">False</property>
-						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
-						  <property name="yalign">0.5</property>
-						  <property name="xpad">0</property>
-						  <property name="ypad">0</property>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkRadioButton" id="rb_auto_water_mask">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Automatically generate a mask from the DEM.  Regions of 1m or less are masked.</property>
-						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">Automatically Mask   </property>
-						  <property name="use_underline">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <property name="active">False</property>
-						  <property name="inconsistent">False</property>
-						  <property name="draw_indicator">True</property>
-						  <signal name="toggled" handler="on_rb_auto_water_mask_toggled" last_modification_time="Tue, 03 Oct 2006 18:14:20 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkRadioButton" id="rb_mask_file">
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Use the provided file to mask</property>
-						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">Mask from File</property>
-						  <property name="use_underline">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <property name="active">False</property>
-						  <property name="inconsistent">False</property>
-						  <property name="draw_indicator">True</property>
-						  <property name="group">rb_auto_water_mask</property>
-						  <signal name="toggled" handler="on_rb_mask_file_toggled" last_modification_time="Tue, 03 Oct 2006 18:14:14 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">True</property>
-					      <property name="fill">True</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkHBox" id="hbox_mask_file">
-					      <property name="visible">True</property>
-					      <property name="homogeneous">False</property>
-					      <property name="spacing">0</property>
-
-					      <child>
-						<widget class="GtkLabel" id="label84">
-						  <property name="width_request">95</property>
-						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">     Mask File: </property>
-						  <property name="use_underline">False</property>
-						  <property name="use_markup">False</property>
-						  <property name="justify">GTK_JUSTIFY_LEFT</property>
-						  <property name="wrap">False</property>
-						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
-						  <property name="yalign">0.5</property>
-						  <property name="xpad">0</property>
-						  <property name="ypad">0</property>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkEntry" id="mask_entry">
-						  <property name="width_request">400</property>
-						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Name of the mask file.</property>
-						  <property name="can_focus">True</property>
-						  <property name="editable">True</property>
-						  <property name="visibility">True</property>
-						  <property name="max_length">0</property>
-						  <property name="text" translatable="yes"></property>
-						  <property name="has_frame">True</property>
-						  <property name="invisible_char" translatable="yes">*</property>
-						  <property name="activates_default">False</property>
-						  <signal name="changed" handler="update_summary" last_modification_time="Thu, 27 Apr 2006 02:03:07 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">True</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkButton" id="mask_browse_button">
-						  <property name="visible">True</property>
-						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">Browse...</property>
-						  <property name="use_underline">True</property>
-						  <property name="relief">GTK_RELIEF_NORMAL</property>
-						  <property name="focus_on_click">True</property>
-						  <signal name="clicked" handler="on_mask_browse_button_clicked" last_modification_time="Mon, 18 Sep 2006 22:55:11 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">5</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">True</property>
-					      <property name="fill">True</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkCheckButton" id="tc_pixel_size_checkbutton">
-					      <property name="visible">True</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Specify Pixel Size</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <property name="active">False</property>
-					      <property name="inconsistent">False</property>
-					      <property name="draw_indicator">True</property>
-					      <signal name="toggled" handler="on_tc_pixel_size_checkbutton_toggled" last_modification_time="Thu, 13 Jul 2006 21:07:35 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">False</property>
-					      <property name="fill">False</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkHBox" id="hbox_tc_pixel_size">
-					      <property name="visible">True</property>
-					      <property name="homogeneous">False</property>
-					      <property name="spacing">0</property>
-
-					      <child>
-						<widget class="GtkLabel" id="label81">
-						  <property name="width_request">95</property>
-						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">     Pixel Size: </property>
-						  <property name="use_underline">False</property>
-						  <property name="use_markup">False</property>
-						  <property name="justify">GTK_JUSTIFY_LEFT</property>
-						  <property name="wrap">False</property>
-						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
-						  <property name="yalign">0.5</property>
-						  <property name="xpad">0</property>
-						  <property name="ypad">0</property>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkEntry" id="tc_pixel_size_entry">
-						  <property name="width_request">80</property>
-						  <property name="visible">True</property>
-						  <property name="can_focus">True</property>
-						  <property name="editable">True</property>
-						  <property name="visibility">True</property>
-						  <property name="max_length">0</property>
-						  <property name="text" translatable="yes"></property>
-						  <property name="has_frame">True</property>
-						  <property name="invisible_char" translatable="yes">*</property>
-						  <property name="activates_default">False</property>
-						  <signal name="changed" handler="update_summary" last_modification_time="Wed, 08 Mar 2006 18:48:51 GMT"/>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">True</property>
-						</packing>
-					      </child>
-
-					      <child>
-						<widget class="GtkLabel" id="label82">
-						  <property name="visible">True</property>
-						  <property name="label" translatable="yes"> meters</property>
-						  <property name="use_underline">False</property>
-						  <property name="use_markup">False</property>
-						  <property name="justify">GTK_JUSTIFY_LEFT</property>
-						  <property name="wrap">False</property>
-						  <property name="selectable">False</property>
-						  <property name="xalign">0.5</property>
-						  <property name="yalign">0.5</property>
-						  <property name="xpad">0</property>
-						  <property name="ypad">0</property>
-						</widget>
-						<packing>
-						  <property name="padding">0</property>
-						  <property name="expand">False</property>
-						  <property name="fill">False</property>
-						</packing>
-					      </child>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">True</property>
-					      <property name="fill">True</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkCheckButton" id="interpolate_checkbutton">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">Fill regions of layover with plausible values.  If unchecked, these regions will be left blank.</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Interpolate Layover/Shadow Regions</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <property name="active">True</property>
-					      <property name="inconsistent">False</property>
-					      <property name="draw_indicator">True</property>
-					      <signal name="toggled" handler="update_summary" last_modification_time="Thu, 13 Jul 2006 22:50:50 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">False</property>
-					      <property name="fill">False</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkCheckButton" id="layover_mask_checkbutton">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">Generate a mask file indicating regions of layover and shadow</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Save Layover/Shadow Mask</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <property name="active">False</property>
-					      <property name="inconsistent">False</property>
-					      <property name="draw_indicator">True</property>
-					      <signal name="toggled" handler="update_summary" last_modification_time="Tue, 03 Oct 2006 19:01:28 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">False</property>
-					      <property name="fill">False</property>
-					    </packing>
-					  </child>
-
-					  <child>
-					    <widget class="GtkCheckButton" id="save_dem_checkbutton">
-					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">Save the portion of the DEM that was used to apply terrain correction.</property>
-					      <property name="can_focus">True</property>
-					      <property name="label" translatable="yes">Save Clipped DEM</property>
-					      <property name="use_underline">True</property>
-					      <property name="relief">GTK_RELIEF_NORMAL</property>
-					      <property name="focus_on_click">True</property>
-					      <property name="active">False</property>
-					      <property name="inconsistent">False</property>
-					      <property name="draw_indicator">True</property>
-					      <signal name="toggled" handler="update_summary" last_modification_time="Tue, 03 Oct 2006 19:01:43 GMT"/>
-					    </widget>
-					    <packing>
-					      <property name="padding">0</property>
-					      <property name="expand">False</property>
-					      <property name="fill">False</property>
-					    </packing>
-					  </child>
-					</widget>
-					<packing>
-					  <property name="padding">20</property>
-					  <property name="expand">True</property>
-					  <property name="fill">True</property>
-					</packing>
-				      </child>
-				    </widget>
-				    <packing>
-				      <property name="padding">0</property>
-				      <property name="expand">True</property>
-				      <property name="fill">True</property>
-				    </packing>
-				  </child>
-				</widget>
-				<packing>
-				  <property name="padding">0</property>
-				  <property name="expand">True</property>
-				  <property name="fill">True</property>
-				</packing>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">7</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">True</property>
-			  <property name="fill">True</property>
-			</packing>
-		      </child>
-		    </widget>
-		    <packing>
-		      <property name="padding">0</property>
-		      <property name="expand">True</property>
-		      <property name="fill">True</property>
-		    </packing>
-		  </child>
-		</widget>
-		<packing>
-		  <property name="padding">0</property>
-		  <property name="expand">True</property>
-		  <property name="fill">True</property>
-		</packing>
-	      </child>
-
-	      <child>
-		<widget class="GtkHBox" id="hbox44">
-		  <property name="visible">True</property>
-		  <property name="homogeneous">False</property>
-		  <property name="spacing">0</property>
-
-		  <child>
-		    <widget class="GtkVBox" id="vbox53">
-		      <property name="border_width">4</property>
-		      <property name="visible">True</property>
-		      <property name="homogeneous">False</property>
-		      <property name="spacing">4</property>
-
-		      <child>
-			<widget class="GtkHBox" id="hbox37">
-			  <property name="visible">True</property>
-			  <property name="homogeneous">False</property>
-			  <property name="spacing">0</property>
-
-			  <child>
-			    <widget class="GtkLabel" id="input_data_type_label">
-			      <property name="width_request">84</property>
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Data type: </property>
-			      <property name="use_underline">False</property>
-			      <property name="use_markup">False</property>
-			      <property name="justify">GTK_JUSTIFY_LEFT</property>
-			      <property name="wrap">False</property>
-			      <property name="selectable">False</property>
-			      <property name="xalign">0</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkOptionMenu" id="input_data_type_combobox">
-			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Radiometry setting for the image.  If you are planning to apply terrain correction, it is a good idea to select &quot;output DB&quot; when using sigma, beta or gamma.</property>
-			      <property name="can_focus">True</property>
-			      <property name="history">0</property>
-
-			      <child>
-				<widget class="GtkMenu" id="menu2">
-
-				  <child>
-				    <widget class="GtkMenuItem" id="sigma">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Sigma</property>
-				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_input_data_type_sigma_activate" last_modification_time="Wed, 29 Mar 2006 22:12:24 GMT"/>
-				    </widget>
-				  </child>
-
-				  <child>
-				    <widget class="GtkMenuItem" id="beta">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Beta</property>
-				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_input_data_type_beta_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
-				    </widget>
-				  </child>
-
-				  <child>
-				    <widget class="GtkMenuItem" id="gamma">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Gamma</property>
-				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_input_data_type_gamma_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
-				    </widget>
-				  </child>
-
-				  <child>
-				    <widget class="GtkMenuItem" id="amplitude">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Amplitude</property>
-				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_input_data_type_amplitude_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
-				    </widget>
-				  </child>
-
-				  <child>
-				    <widget class="GtkMenuItem" id="power">
-				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Power</property>
-				      <property name="use_underline">True</property>
-				      <signal name="activate" handler="on_input_data_type_power_activate" last_modification_time="Wed, 29 Mar 2006 22:18:25 GMT"/>
-				    </widget>
-				  </child>
-				</widget>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">False</property>
-			      <property name="fill">False</property>
-			    </packing>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkCheckButton" id="checkbutton_db">
-			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">Output calibrated image in decibles. This can only be used with -sigma, -beta, or -gamma.  Recommended when terrain correcting.</property>
-			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">Output DB</property>
-			  <property name="use_underline">True</property>
-			  <property name="relief">GTK_RELIEF_NORMAL</property>
-			  <property name="focus_on_click">True</property>
-			  <property name="active">False</property>
-			  <property name="inconsistent">False</property>
-			  <property name="draw_indicator">True</property>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
-		    </widget>
-		    <packing>
-		      <property name="padding">0</property>
-		      <property name="expand">True</property>
-		      <property name="fill">True</property>
-		    </packing>
-		  </child>
-		</widget>
-		<packing>
-		  <property name="padding">0</property>
-		  <property name="expand">True</property>
-		  <property name="fill">True</property>
-		</packing>
-	      </child>
-	    </widget>
-	    <packing>
-	      <property name="padding">0</property>
-	      <property name="expand">True</property>
 	      <property name="fill">True</property>
 	    </packing>
 	  </child>
