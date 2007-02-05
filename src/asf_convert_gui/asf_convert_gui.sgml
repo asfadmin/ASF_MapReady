@@ -770,6 +770,21 @@
                 <para>The default is "sigma".</para>
 
             </listitem>
+            <listitem>
+                <para>Export Multiple Bands as RGB</para>
+
+                <para>
+                    If your data has multiple bands, you can export
+                    them separately (each a greyscale image) by
+                    leaving this option unchecked.
+                </para>
+                <para>
+                    Turning on this option output the image into a 
+                    color RGB image.  The selected bands are
+                    assigned to the color planes red, green, or
+                    blue.
+                </para>
+            </listitem>
             <!-- take this out for 3.0, probably can be removed permanently
       <listitem>
 	<para>Scale output image</para>
