@@ -12,6 +12,7 @@ LIBS =	$(PROJ_LIBS) \
 	-lm
 
 OBJS =  read_proj_file.o \
+	is_map_projected.o \	
 	project.o
 
 all: build_only
@@ -29,3 +30,4 @@ clean:
 
 test: project.t.c  nad27.t.c all
 	$(CC) $(CFLAGS) nad27.t.c $(LIBDIR)/libasf_proj.a $(LIBS) -o nad27.t
+
