@@ -75,6 +75,11 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
 	pix++;      
       }
     }
+    else {
+      *min = data[ii];
+      *max = data[ii];
+      *mean += data[ii];
+    }
   }
  *mean /= pix;
   for (ii=0; ii<pixel_count; ii++) {
