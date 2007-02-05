@@ -78,7 +78,7 @@ int meta_get_latLon(meta_parameters *meta,
     }
     return 0;
   }
-  else if(meta->sar) {
+  else if(meta->sar && !meta->projection) {
     if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
       /*Slant or ground range.  Use state vectors and doppler.*/
       double slant,doppler,time;
@@ -337,6 +337,8 @@ void meta_get_corner_coords(meta_parameters *meta)
 {
   double lat, lon;
 
+  if (!meta->location)
+    meta->location = meta_location_init();
   meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
   meta->location->lon_start_near_range = lon;
   meta->location->lat_start_near_range = lat;
