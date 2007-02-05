@@ -260,6 +260,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->auto_mask_water = 0;
   cfg->terrain_correct->water_height_cutoff = 1.0;
   cfg->terrain_correct->fill_value = 0;
+  cfg->terrain_correct->do_radiometric = 0;
+  cfg->terrain_correct->smooth_dem_holes = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
   strcpy(cfg->terrain_correct->mask, "");
@@ -375,6 +377,10 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
+      if (strncmp(test, "do radiometric", 12)==0)
+        cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
+      if (strncmp(test, "smooth dem holes", 14)==0)
+        cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem = 
             read_int(line, "save terrcorr dem");
@@ -594,6 +600,10 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->water_height_cutoff = read_double(line, "water height cutoff");
       if (strncmp(test, "fill value", 8)==0)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
+      if (strncmp(test, "do radiometric", 12)==0)
+        cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
+      if (strncmp(test, "smooth dem holes", 14)==0)
+        cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem = 
             read_int(line, "save terrcorr dem");
@@ -869,6 +879,22 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# result.  You can either specify a (non-negative) value of your choosing,or\n"
                 "# if you'd like the SAR data to be kept then use %d as the fill value.\n\n", LEAVE_MASK);
       fprintf(fConfig, "fill value = %d\n", cfg->terrain_correct->fill_value);
+      // In Convert 3.0, only write out this flag if it is already set. (It is a hidden option for 3.0)
+      if (cfg->terrain_correct->do_radiometric) {
+          if (!shortFlag)
+              fprintf(fConfig, "\n# Normally during terrain correction, only geometric terrain is\n"
+                      "# applied.  This option will also turn on radiometric terrain correction.\n"
+                      "# The number specified here is the formula number for the correction.  The\n"
+                      "# benefits/drawbacks of each radiometric terrain correction formula vary\n"
+                      "# with terrain type, and no single formula works best in all cases.  Details\n"
+                      "# on each of the formulae is found in the manual.\n\n");
+          fprintf(fConfig, "do radiometric = %d\n", cfg->terrain_correct->do_radiometric);
+      }
+      if (!shortFlag)
+          fprintf(fConfig, "\n# If your DEM has a number of \"holes\" in it, this can cause streaking\n"
+                  "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"
+                  "# with interpolated values.\n\n");
+      fprintf(fConfig, "smooth dem holes = %d\n", cfg->terrain_correct->smooth_dem_holes);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"
@@ -906,8 +932,8 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# Conic, Lambert Conformal Conic and Lambert Azimuthal Equal Area.\n"
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
-        fprintf(fConfig, "# The projection parameter files are located in\n");
-	fprintf(fConfig, "%s/projections.\n\n", get_asf_share_dir());
+        fprintf(fConfig, "# The projection parameter files are located in:\n");
+	fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)

@@ -84,6 +84,9 @@ typedef struct
   int fill_value;         // a fill value if >=0. LEAVE_MASK means use sar data
   int save_terrcorr_dem;  // if TRUE, save the clipped DEM for the user
   int save_terrcorr_layover_mask; // if TRUE, save the layover/shadow mask
+  int do_radiometric;     // If TRUE, apply radiometric terrain correction in 
+                          // addition to geometric terrain correction
+  int smooth_dem_holes;   // If TRUE, try to smooth over holes in the DEM
 } s_terrain_correct;
 
 typedef struct
