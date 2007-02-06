@@ -157,7 +157,8 @@ void meta_get_timeSlantDop(meta_parameters *meta,
       else
         *dop=meta_get_dop(meta,yLine,xSample);
     }
-  } else  if (meta->sar->image_type=='P') /*Map-projected image.  These are more difficult.*/
+  } else  if (meta->sar->image_type=='P' || 
+	      meta->sar->image_type=='R')
   {
     double lat,lon;
     meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);

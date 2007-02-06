@@ -71,7 +71,8 @@ double meta_get_earth_radius(meta_parameters *meta, long line, long sample)
 	if (meta_is_valid_double(meta->sar->earth_radius)) {
 		earth_rad = meta->sar->earth_radius;
 	}
-        else if (meta->projection == NULL && meta->sar->image_type=='P')
+        else if ((meta->projection && meta->sar->image_type=='P') || 
+		  meta->sar->image_type=='R')
         {
             /* This is a special case situation, sort of a kludge, for ALOS and
                Scansar.  Sometimes we don't have the projection block read in

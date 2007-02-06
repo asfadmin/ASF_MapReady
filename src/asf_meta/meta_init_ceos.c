@@ -391,10 +391,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
 
    // ALOS L1.5 products are currently only georeferenced
-   // Need to set them to projected as it does not fit any other scheme
    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
        meta->general->data_type == INTEGER16) {
-     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
      meta->transform = meta_transform_init();
      meta->transform->parameter_count = 4;
      meta->transform->x[0] = mpdr->a11;
@@ -439,7 +437,12 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 
  /* Fill meta->sar structure */
    if (mpdr || ceos->product==SCN) {
-      meta->sar->image_type = 'P';
+     if (strcmp(meta->general->sensor, "ALOS") == 0)
+       meta->sar->image_type = 'R';
+     else {
+       meta->sar->image_type = 'P';
+       ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
+     }
    }
    else if (asf_facdr) {
      if (0==strncmp(asf_facdr->grndslnt,"GROUND",6))
@@ -657,12 +660,12 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    if (meta->sar->image_type=='P' && mpdr) {
       ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
-      /* Do these again -- can get a better estimate now that we have
-         the projection block figured out. */
-      meta->sar->earth_radius =
-          meta_get_earth_radius(meta, 
-                                meta->general->line_count/2, 
-                                meta->general->sample_count/2);
+     /* Do these again -- can get a better estimate now that we have
+	the projection block figured out. */
+     meta->sar->earth_radius =
+       meta_get_earth_radius(meta, 
+			     meta->general->line_count/2, 
+			     meta->general->sample_count/2);
    }
 
    /* Now the satellite height */
@@ -706,6 +709,27 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    // georeferenced ALOS data
    if (meta->transform) {
      meta->sar->image_type = 'R';
+     meta->location = meta_location_init();
+     if (meta->general->orbit_direction == 'A') {
+       meta->location->lat_start_near_range = mpdr->blclat;
+       meta->location->lon_start_near_range = mpdr->blclong;
+       meta->location->lat_start_far_range = mpdr->brclat;
+       meta->location->lon_start_far_range = mpdr->brclong;
+       meta->location->lat_end_near_range = mpdr->tlclat;
+       meta->location->lon_end_near_range = mpdr->tlclong;
+       meta->location->lat_end_far_range = mpdr->trclat;
+       meta->location->lon_end_far_range = mpdr->trclong;
+     }
+     else {
+       meta->location->lat_start_near_range = mpdr->trclat;
+       meta->location->lon_start_near_range = mpdr->trclong;
+       meta->location->lat_start_far_range = mpdr->tlclat;
+       meta->location->lon_start_far_range = mpdr->tlclong;
+       meta->location->lat_end_near_range = mpdr->brclat;
+       meta->location->lon_end_near_range = mpdr->brclong;
+       meta->location->lat_end_far_range = mpdr->blclat;
+       meta->location->lon_end_far_range = mpdr->blclong;
+     }
    }
 
    FREE(ceos);

@@ -59,7 +59,7 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 	if (meta->sar->image_type=='S' || meta->sar->image_type=='G')
 		return yLine*meta->sar->azimuth_time_per_pixel+meta->sar->time_shift;
     /*Map projected -- not as easy.*/
-	else if (meta->sar->image_type=='P')
+	else if (meta->sar->image_type=='P' || meta->sar->image_type=='R')
 	{
 		double time,slant;
 		meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,NULL);
@@ -95,7 +95,8 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 		double slantRng = sqrt(SQR(ht)+SQR(er)-2.0*ht*er*cos(phi));
 		return slantRng + meta->sar->slant_shift;
 	} 
-	else if (meta->sar->image_type=='P')/*Map projected images are tougher.*/
+	else if (meta->sar->image_type=='P' || 
+		 meta->sar->image_type=='R')
 	{
 		double time,slant;
 		meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,NULL);
