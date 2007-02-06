@@ -687,42 +687,6 @@ static void remove_args(int start, int end, int *argc, char **argv[])
 	*argc -= nargs;
 }
 
-static void extract_double_option(int *argc, char **argv[], double *val,
-                                  char *arg, int *found)
-{
-	int i;
-
-	for (i = 0; i < *argc; ++i)
-	{
-		if (strcmp((*argv)[i], arg) == 0)
-		{
-			if (parse_double_option(&i, *argc, *argv, found, val))
-			{
-				remove_args(i-1, i, argc, argv);
-			}
-		}
-	}
-}
-
-void extract_double_options(int *argc, char **argv[], double *val, ... )
-{
-	va_list ap;
-	char * arg = NULL;
-	int found = FALSE;
-
-	*val = MAGIC_UNSET_DOUBLE;
-
-	va_start(ap, val);
-	do
-	{
-		arg = va_arg(ap, char *);
-
-		if (arg)
-			extract_double_option(argc, argv, val, arg, &found);
-	}
-	while (arg);
-}
-
 static void handle_string_option(int *argc, char **argv[], char *val,
                                  char *arg, int *found, int remove_arg)
 {

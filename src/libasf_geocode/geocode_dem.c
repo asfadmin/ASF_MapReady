@@ -54,9 +54,8 @@ get_pixel_lat_long (const meta_parameters *md, projector_t unproject_input,
     ypc *= D2R;
   }
 
-  project_set_datum (md->projection->datum);
   int return_code = unproject_input (pp, xpc, ypc, ASF_PROJ_NO_HEIGHT,
-				     lat, lon, NULL);
+				     lat, lon, NULL, md->projection->datum);
   g_assert (return_code);
 
   return return_code;
@@ -69,7 +68,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 	     // Pixel size of output image, in output projection units
 	     // (meters or possibly degrees, if we decide to support
 	     // projecting to pseudoprojected form).
-	     double pixel_size,                
+	     double pixel_size,
 	     resample_method_t resample_method,	// How to resample pixels.
 	     const GString *input_image, // Base name of input image.
 	     const meta_parameters *imd, // Input DEM image metadata.
@@ -144,28 +143,28 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
     size_t current_edge_point = 0;
     size_t ii = 0, jj = 0;
     for ( ; ii < ii_size_x - 1 ; ii++ ) {
-      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj, 
+      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj,
 					&(lats[current_edge_point]),
 					&(lons[current_edge_point]));
       g_assert (return_code);
       current_edge_point++;
     }
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
-      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj, 
+      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj,
 					&(lats[current_edge_point]),
 					&(lons[current_edge_point]));
       g_assert (return_code);
       current_edge_point++;
     }
     for ( ; ii > 0 ; ii-- ) {
-      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj, 
+      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj,
 					&(lats[current_edge_point]),
 					&(lons[current_edge_point]));
       g_assert (return_code);
       current_edge_point++;
     }
     for ( ; jj > 0 ; jj-- ) {
-      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj, 
+      return_code = get_pixel_lat_long (imd, unproject_input, ii, jj,
 					&(lats[current_edge_point]),
 					&(lons[current_edge_point]));
       g_assert (return_code);
@@ -176,9 +175,8 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
     // The projection function will allocate this memory itself.
     double *x = NULL, *y = NULL;
     // Project all the edge pixels.
-    project_set_datum (datum);
     return_code = array_project_output (pp, lats, lons, NULL, &x, &y, NULL,
-					edge_point_count);
+					edge_point_count, datum);
     g_assert (return_code == TRUE);
     // Find the extents of the image in projection coordinates.
     for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
@@ -297,23 +295,21 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
       for ( kk = 0 ; kk < ii_size_x ; kk++ ) {
 	size_t current_chunk_pixel = jj * ii_size_x + kk;
 	chunk_x[current_chunk_pixel] = ipb->startX + kk * ipb->perX;
-	chunk_y[current_chunk_pixel] 
+	chunk_y[current_chunk_pixel]
 	  = ipb->startY + current_image_row * ipb->perY;
 	if ( imd->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
 	  chunk_x[current_chunk_pixel] *= D2R;
 	  chunk_y[current_chunk_pixel] *= D2R;
-	}	
+	}
 	chunk_z[current_chunk_pixel]
 	  = float_image_get_pixel (iim, kk, current_image_row);
       }
     }
     long current_chunk_pixels = rows_to_load * ii_size_x;
-    project_set_datum (ipb->datum);
     array_unproject_input (ipp, chunk_x, chunk_y, chunk_z, &lat, &lon,
-			   &height, current_chunk_pixels);
-    project_set_datum (datum);
+			   &height, current_chunk_pixels, ipb->datum);
     array_project_output (pp, lat, lon, height, &chunk_x, &chunk_y, &chunk_z,
-			  current_chunk_pixels);
+			  current_chunk_pixels, datum);
     for ( jj = 0 ; jj < rows_to_load ; jj++ ) {
       size_t current_image_row = ii + jj;
       for ( kk = 0 ; kk < ii_size_x ; kk++ ) {
@@ -335,9 +331,9 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 
 #ifdef DEBUG_GEOCODE_DEM_Z_COORDS_IMAGE_AS_JPEG
   // Take a look at the z_coordinate image (for debugging).
-  float_image_export_as_jpeg_with_mask_interval (z_coords, "z_coords.jpg", 
-						 GSL_MAX (z_coords->size_x, 
-							  z_coords->size_y), 
+  float_image_export_as_jpeg_with_mask_interval (z_coords, "z_coords.jpg",
+						 GSL_MAX (z_coords->size_x,
+							  z_coords->size_y),
 						 -FLT_MAX, -100);
 #endif
 
@@ -383,12 +379,10 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
       }
     }
     long current_chunk_pixels = rows_to_load * oi_size_x;
-    project_set_datum (datum);
     array_unproject_output (pp, chunk_x, chunk_y, NULL, &lat, &lon, NULL,
-			    current_chunk_pixels);
-    project_set_datum (ipb->datum);
+			    current_chunk_pixels, datum);
     array_project_input (ipp, lat, lon, NULL, &chunk_x, &chunk_y, NULL,
-			 current_chunk_pixels);
+			 current_chunk_pixels, ipb->datum);
     if ( imd->projection->type == LAT_LONG_PSEUDO_PROJECTION ) {
       ssize_t ll;     // For (semi)clarity we don't reuse index variable :)
       for ( ll = 0 ; ll < current_chunk_pixels ; ll++ ) {
@@ -403,7 +397,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 	size_t current_chunk_pixel = jj * oi_size_x + kk;
 
 	// Compute pixel coordinates in input image.
-	ssize_t in_x 
+	ssize_t in_x
 	  = (chunk_x[current_chunk_pixel] - ipb->startX) / ipb->perX;
 	ssize_t in_y
 	  = (chunk_y[current_chunk_pixel] - ipb->startY) / ipb->perY;
@@ -433,9 +427,9 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
 
 #ifdef DEBUG_GEOCODE_DEM_OUTPUT_IMAGE_AS_JPEG
   // Take a look at the output image (for debugging).
-  float_image_export_as_jpeg_with_mask_interval (oim, "oim.jpg", 
-						 GSL_MAX (oim->size_x, 
-							  oim->size_y), 
+  float_image_export_as_jpeg_with_mask_interval (oim, "oim.jpg",
+						 GSL_MAX (oim->size_x,
+							  oim->size_y),
 						 -FLT_MAX, -100);
 #endif
 
@@ -466,7 +460,7 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   omd->general->x_pixel_size = pixel_size;
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oi_size_y;
-  omd->general->sample_count = oi_size_x;  
+  omd->general->sample_count = oi_size_x;
 
   // SAR block is not really appropriate for map projected images, but
   // since it ended up with this value that can signify map
@@ -496,14 +490,13 @@ geocode_dem (projection_type_t projection_type,	// What we are projection to.
   // set these relative to the spheroid underlying the datum in use
   // for the projected image.  Yeah, that seems appropriate.
   double lat_0, lon_0;
-  project_set_input_spheroid (datum_spheroid (datum));
   double center_x = omd->projection->startX + (omd->projection->perX
 					       * omd->general->line_count / 2);
   double center_y = (omd->projection->startY
 		     + (omd->projection->perY
 			* omd->general->sample_count / 2));
   unproject_output (pp, center_x, center_y, ASF_PROJ_NO_HEIGHT, &lat_0, &lon_0,
-		    NULL);
+		    NULL, datum);
   omd->general->center_latitude = R2D * lat_0;
   omd->general->center_longitude = R2D * lon_0;
 

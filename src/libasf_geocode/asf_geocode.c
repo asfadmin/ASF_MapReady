@@ -368,7 +368,7 @@ static float dem_sample(FloatImage *dem, float x, float y,
 
 int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     datum_type_t datum, double pixel_size,
-                    char *in_base_name, char *out_base_name,
+                    char *band_id, char *in_base_name, char *out_base_name,
                     float background_val)
 {
   project_parameters_t pp;
@@ -380,14 +380,15 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
   pp.utm.lat0 = MAGIC_UNSET_DOUBLE;
 
   return asf_geocode(&pp, projection_type, FALSE, resample_method,
-		     average_height, datum, pixel_size, in_base_name,
-		     out_base_name, background_val);
+		     average_height, datum, pixel_size, band_id,
+                     in_base_name, out_base_name, background_val);
 }
 
 int asf_geocode_from_proj_file(const char *projection_file,
 		 int force_flag, resample_method_t resample_method,
 		 double average_height, datum_type_t datum, double pixel_size,
-		 char *in_base_name, char *out_base_name, float background_val)
+		 char *band_id, char *in_base_name, char *out_base_name,
+                 float background_val)
 {
   project_parameters_t pp;
   projection_type_t projection_type;
@@ -395,8 +396,8 @@ int asf_geocode_from_proj_file(const char *projection_file,
   parse_proj_args_file(projection_file, &pp, &projection_type);
 
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
-		     average_height, datum, pixel_size, in_base_name,
-		     out_base_name, background_val);
+		     average_height, datum, pixel_size, band_id,
+                     in_base_name, out_base_name, background_val);
 }
 
 int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
@@ -1158,7 +1159,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   if (omd->sar == NULL) {
     omd->sar = meta_sar_init();
   }
-  if (omd->proj == NULL) {
+  if (omd->projection == NULL) {
     omd->projection = meta_projection_init();
   }
   asfRequire(omd->general != NULL && omd->sar != NULL && omd->projection != NULL,
@@ -1425,15 +1426,15 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       if(multiband) {
         // Writing all bands from input file to output file
         if (kk == 0) // Create new output file
-          ret = float_image_band_store (oim, output_data_file, omd, 0);
+          ret = float_image_band_store (oim, output_data_file->str, omd, 0);
         else // Append to existing output file
-          ret = float_image_band_store (oim, output_data_file, omd, 1);
+          ret = float_image_band_store (oim, output_data_file->str, omd, 1);
         asfRequire (ret == 0, "Error saving output image.\n");
       }
       else {
         // Write single band when found...
         if (kk == band_num) { // Create new output file
-          ret = float_image_band_store (oim, output_data_file, omd, 0);
+          ret = float_image_band_store (oim, output_data_file->str, omd, 0);
           asfRequire (ret == 0, "Error saving output image.\n");
         }
       }
