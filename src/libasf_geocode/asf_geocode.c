@@ -487,12 +487,20 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   meta_parameters *imd = meta_read (input_meta_data->str);
   // We can't handle slant range images at the moment.  Happily, there
   // are only a very small number of these products around.
-  if ( imd->sar && imd->sar->image_type == 'S' ) {
-    asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
+  if ( imd->sar )
+    if ( imd->sar->image_type == 'S' ) {
+      asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
 		     "left-looking AMM-1 era images) at present.\n");
+    }
+  if (imd->optical) {
+    if (strcmp(imd->general->mode, "1A") == 0 ||
+        strcmp(imd->general->mode, "1B1") == 0) {
+      asfPrintError("Geocoding %s level %s data is not supported.\n",
+                    imd->general->sensor_name, imd->general->mode);
+    }
   }
 
-  if (imd->projection && imd->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+  if (is_map_projected(imd))
     asfPrintError("Input image already geocoded.  "
                   "Reprojection is not yet supported.\n");
 
