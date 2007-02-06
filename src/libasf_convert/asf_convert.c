@@ -190,7 +190,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
               asf_geocode_from_proj_file(
                   cfg->geocoding->projection, cfg->geocoding->force,
                   RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM, NAN,
-                  imported, geocoded, cfg->geocoding->background),
+                  NULL, imported, geocoded, cfg->geocoding->background),
               status);
       }
       else {
@@ -198,7 +198,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
           sprintf(status, "geocoding GeoTIFF %s (asf_geocode)\n", uc_what);
           check_return(
               asf_geocode_utm(RESAMPLE_NEAREST_NEIGHBOR, 0.0, WGS84_DATUM,
-                              NAN, imported, geocoded, 0.0), status);
+                              NAN, NULL, imported, geocoded, 0.0), status);
       }
     }
     else { // is map projected, so copy the imported file to the geocoded filename for consistency
@@ -478,7 +478,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                   "Ignoring auto water mask -- will use the mask provided.\n");
           }
       }
-    }    
+    }
 
     // Check whether everything in the [Geocoding] block is reasonable
     if (cfg->general->geocoding) {
