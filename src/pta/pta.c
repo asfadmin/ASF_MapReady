@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 	s = (complexFloat *) MALLOC(2*size);
 	readComplexSubset(szImage, srcSize, srcSize, posX-srcSize/2, 
 			  posY-srcSize/2, s);
-	complex2polar(s, srcSize, srcSize, original_amplitude, phase);
+	my_complex2polar(s, srcSize, srcSize, original_amplitude, phase);
 
 	if (debug) { // Store original image for debugging
 	  fp = FOPEN("original.img", "wb");
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 	// the analysis
 	readComplexSubset(szImage, srcSize, srcSize, posX-srcSize+srcPeakY, 
 			  posY-srcSize+srcPeakX, s);
-	complex2polar(s, srcSize, srcSize, original_amplitude, phase);
+	my_complex2polar(s, srcSize, srcSize, original_amplitude, phase);
 	FREE(phase);
 	findPeak(original_amplitude, srcSize, &srcPeakX, &srcPeakY);
 
@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 	t = inverse_fft(trg_fft, bigSize, bigSize);
 	amplitude = (float *) MALLOC(sizeof(float)*bigSize*bigSize);
 	phase = (float *) MALLOC(sizeof(float)*bigSize*bigSize);
-	complex2polar(t, bigSize, bigSize, amplitude, phase);
+	my_complex2polar(t, bigSize, bigSize, amplitude, phase);
 	FREE(phase);
 
 	if (debug) { // Store oversampled image for debugging

@@ -91,7 +91,7 @@ fcpx *oversample(fcpx *in, int srcSize, int oversampling_factor)
   return(out);
 }
 
-void complex2polar(complexFloat *in, int line_count, int sample_count,
+void my_complex2polar(complexFloat *in, int line_count, int sample_count,
 		   float *amplitude, float *phase)
 {
   int i, k, index;

@@ -41,7 +41,7 @@ void pixel_type_flag_looker(int *flag_count, char *flags_used, char *flagName);
 fcpx *forward_fft(complexFloat *image, int line_count, int sample_count);
 complexFloat *inverse_fft(fftwf_complex *fft_cpx, int line_count, int sample_count);
 fcpx *oversample(fcpx *in, int srcSize, int oversampling_factor);
-void complex2polar(complexFloat *in, int line_count, int sample_count,
+void my_complex2polar(complexFloat *in, int line_count, int sample_count,
 		   float *amplitude, float *phase);
 
 /* Prototypes */
