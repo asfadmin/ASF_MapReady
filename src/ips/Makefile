@@ -9,7 +9,8 @@ CFLAGS += \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(SHAPELIB_CFLAGS)
 
 LIBS = 	\
 	$(LIBDIR)/libasf_insar.a \
@@ -31,6 +32,7 @@ LIBS = 	\
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(SHAPELIB_LIBS) \
 	-lm -lz
 
 OBJLIB	= config.o \
