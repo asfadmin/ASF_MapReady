@@ -487,10 +487,14 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   meta_parameters *imd = meta_read (input_meta_data->str);
   // We can't handle slant range images at the moment.  Happily, there
   // are only a very small number of these products around.
-  if ( imd->sar->image_type == 'S' ) {
+  if ( imd->sar && imd->sar->image_type == 'S' ) {
     asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
 		     "left-looking AMM-1 era images) at present.\n");
   }
+
+  if (imd->projection && imd->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+    asfPrintError("Input image already geocoded.  "
+                  "Reprojection is not yet supported.\n");
 
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
@@ -508,14 +512,9 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   int (*unproject_input) (project_parameters_t *pps, double x, double y,
 		double z, double *lat, double *lon, double *height, datum_type_t dtm);
   unproject_input = NULL;	// Silence compiler warnings.
-  if ( (imd->sar->image_type == 'P' || imd->general->image_data_type == DEM)
+  if ( ((imd->sar && imd->sar->image_type == 'P') || imd->general->image_data_type == DEM)
         && imd->projection && imd->projection->type != SCANSAR_PROJECTION ) {
     input_projected = TRUE;
-
-    // don't bail out for the lat/lon pseudoprojection
-    if (imd->projection->type != LAT_LONG_PSEUDO_PROJECTION)
-        asfPrintError("Input image already geocoded.  "
-                      "Reprojection is not yet supported.\n");
 
     switch ( imd->projection->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
