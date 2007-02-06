@@ -5,11 +5,15 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/libasf_insar.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
-	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	-lm
+
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
 
 OBJS  = asf_elevation.o
 
