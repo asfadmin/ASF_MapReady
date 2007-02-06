@@ -8,12 +8,12 @@
 
 // Prototypes
 int calc_utm_zone(double lon);
-void check_parameters(projection_type_t projection_type,
+void check_parameters(projection_type_t projection_type, datum_type_t datum,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag);
 
 // Checking routine for projection parameter input.
-void check_parameters(projection_type_t projection_type,
+void check_parameters(projection_type_t projection_type, datum_type_t datum,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag)
 {
@@ -26,26 +26,71 @@ void check_parameters(projection_type_t projection_type,
     asfPrintStatus("Since the 'force' was specified, projection errors will be "
 		   "reported as warnings.\n\n");
     report_func = asfPrintWarning;
-  } else {
+  }
+  else {
     report_func = asfPrintError;
   }
 
-  switch (projection_type)
-    {
+  switch (projection_type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-      // Debugging print
-//      printf("Projection: UTM\nZone: %i\nLatitude of origin: %.4f\n"
-//	     "Central meridian: %.4f\nFalse easting: %.0f\nFalse northing: %.0f\n"
-//	     "Scale: %.4f\n\n", pp->utm.zone, pp->utm.lat0, pp->utm.lon0,
-//	     pp->utm.false_easting, pp->utm.false_northing, pp->utm.scale_factor);
-        asfPrintStatus("Projection: UTM\n  Zone: %d\n", pp->utm.zone);
-        
-      // Outside range tests
-      if (pp->utm.zone < 1 || pp->utm.zone > 60)
-	report_func("Zone '%i' outside the defined range (1 to 60)\n", pp->utm.zone);
-      if (pp->utm.lat0 < -90 || pp->utm.lat0 > 90)
-	report_func("Latitude of origin '%.4f' outside the defined range "
-		      "(-90 deg to 90 deg)\n", pp->utm.lat0);
+      asfPrintStatus("Projection: UTM\n  Zone: %d\n", pp->utm.zone);
+
+      // Outside range tests:
+      //
+      // Valid UTM projections:
+      //
+      //   WGS84 + zone 1 thru 60 + N or S hemisphere
+      //   NAD83 + zone 2 thru 23 + N hemisphere
+      //   NAD27 + zone 2 thru 22 + N hemisphere
+      //
+      switch(datum) {
+        case NAD27_DATUM:
+          if (pp->utm.zone < 2 || pp->utm.zone > 22)
+            report_func("Zone '%i' outside the supported range (2 to 22) for NAD27...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
+                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
+                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+          pp->utm.zone, !force_flag ?
+              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                  "selected projection parameters to something more appropriate:\n\n" : "");
+          if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
+            report_func("Latitude of origin '%.4f' outside the supported range "
+                "(0 deg to 90 deg) for NAD27...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
+                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
+                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+          pp->utm.lat0, !force_flag ?
+              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                  "selected projection parameters to something more appropriate:\n\n" : "");
+          break;
+        case NAD83_DATUM:
+          if (pp->utm.zone < 2 || pp->utm.zone > 23)
+            report_func("Zone '%i' outside the supported range (2 to 23) for NAD83...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
+                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
+                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+          pp->utm.zone, !force_flag ?
+              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                  "selected projection parameters to something more appropriate:\n\n" : "");
+          if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
+            report_func("Latitude of origin '%.4f' outside the supported range "
+                "(0 deg to 90 deg) for NAD83...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
+                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
+                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+          pp->utm.lat0, !force_flag ?
+              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                  "selected projection parameters to something more appropriate:\n\n" : "");
+          break;
+        case WGS84_DATUM:
+        default:
+          if (pp->utm.zone < 1 || pp->utm.zone > 60)
+            report_func("Zone '%i' outside the valid range of (1 to 60)\n", pp->utm.zone);
+          if (pp->utm.lat0 < -90 || pp->utm.lat0 > 90)
+            report_func("Latitude of origin '%.4f' outside the valid range "
+                "of (-90 deg to 90 deg)\n", pp->utm.lat0);
+          break;
+      }
       if (pp->utm.lon0 < -180 || pp->utm.lon0 > 180)
 	report_func("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->utm.lon0);
@@ -107,7 +152,7 @@ void check_parameters(projection_type_t projection_type,
           "Projection: Polar Stereographic\n"
           "  Standard parallel: %.4f\n"
           "  Central meridian: %.4f\n"
-          "  Hemisphere: %c\n", 
+          "  Hemisphere: %c\n",
           pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S');
 
       // Outside range tests

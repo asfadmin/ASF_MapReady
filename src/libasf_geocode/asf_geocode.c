@@ -430,7 +430,6 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
   // then geocode all available bands, else geocode the selected
   // band
   //if (band_id) band_num = get_band_number(bands, band_count, band_id);
-  printf("strlen = %d\n", strlen(band_id));
   if (band_id == NULL ||
       (band_id && (strlen(band_id) == 0)) ||
       (band_id && strcmp(uc(band_id), "ALL") == 0)
@@ -443,26 +442,26 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
                           out_base_name, background_val);
     asfRequire(ret == 0,
                "Failed to geocode band number %02d\n", i + 1);
-     }
-     else {
+  }
+  else {
     // Geocode a single selected band
 
-       multiband = 0;
-       band_num = get_band_number(bands, band_count, band_id);
-       asfRequire(band_num >= 0 && band_num < MAX_BANDS,
-                  "Selected band number out of range\n");
-       ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
-                             average_height, datum, pixel_size,
-                             multiband, band_num, in_base_name,
-                             out_base_name, background_val);
-       asfRequire(ret == 0,
-                  "Failed to geocode band number 01\n");
-     }
+    multiband = 0;
+    band_num = get_band_number(bands, band_count, band_id);
+    asfRequire(band_num >= 0 && band_num < MAX_BANDS,
+               "Selected band number out of range\n");
+    ret = asf_geocode_ext(pp, projection_type, force_flag, resample_method,
+                          average_height, datum, pixel_size,
+                          multiband, band_num, in_base_name,
+                          out_base_name, background_val);
+    asfRequire(ret == 0,
+               "Failed to geocode band number 01\n");
+  }
 
-     meta_free(imd);
-     FREE(bands);
+  meta_free(imd);
+  FREE(bands);
 
-     return ret;
+  return ret;
 }
 
 int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
@@ -500,9 +499,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (is_map_projected(imd))
+  if (is_map_projected(imd)) {
     asfPrintError("Input image already geocoded.  "
                   "Reprojection is not yet supported.\n");
+  }
 
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
@@ -513,7 +513,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   gboolean input_projected = FALSE;
   // Convenience alias (valid iff input_projected).
   meta_projection *ipb = imd->projection;
-  project_parameters_t *ipp = &imd->projection->param;
+  project_parameters_t *ipp = (ipb) ? &imd->projection->param : NULL;
   int (*project_input) (project_parameters_t *pps, double lat, double lon,
 		double height, double *x, double *y, double *z, datum_type_t dtm);
   project_input = NULL;		// Silence compiler warnings.
