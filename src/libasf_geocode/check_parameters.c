@@ -43,6 +43,12 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       //   NAD83 + zone 2 thru 23 + N hemisphere
       //   NAD27 + zone 2 thru 22 + N hemisphere
       //
+      if (!meta_is_valid_int(pp->utm.zone)) {
+        report_func("Invalid zone number found (%d).\n", pp->utm.zone);
+      }
+      if (!meta_is_valid_double(pp->utm.lat0)) {
+        report_func("Invalid Latitude of Origin found (%.4f).\n", pp->utm.lat0);
+      }
       switch(datum) {
         case NAD27_DATUM:
           if (pp->utm.zone < 2 || pp->utm.zone > 22)
@@ -50,8 +56,8 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
                 "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
                 "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
                 "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-          pp->utm.zone, !force_flag ?
-              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                pp->utm.zone, !force_flag ?
+                  "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
           if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
             report_func("Latitude of origin '%.4f' outside the supported range "
@@ -59,8 +65,8 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
                 "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
                 "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
                 "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-          pp->utm.lat0, !force_flag ?
-              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                pp->utm.lat0, !force_flag ?
+                  "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
           break;
         case NAD83_DATUM:
@@ -69,8 +75,8 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
                 "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
                 "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
                 "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-          pp->utm.zone, !force_flag ?
-              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                pp->utm.zone, !force_flag ?
+                  "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
           if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
             report_func("Latitude of origin '%.4f' outside the supported range "
@@ -78,40 +84,55 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
                 "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
                 "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
                 "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-          pp->utm.lat0, !force_flag ?
-              "\nUse the -force option (Ignore projection errors) or adjust the\n"
+                pp->utm.lat0, !force_flag ?
+                  "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
           break;
         case WGS84_DATUM:
-        default:
           if (pp->utm.zone < 1 || pp->utm.zone > 60)
             report_func("Zone '%i' outside the valid range of (1 to 60)\n", pp->utm.zone);
           if (pp->utm.lat0 < -90 || pp->utm.lat0 > 90)
             report_func("Latitude of origin '%.4f' outside the valid range "
                 "of (-90 deg to 90 deg)\n", pp->utm.lat0);
           break;
+        default:
+          report_func("Unrecognized or unsupported datum found in projection parameters.\n");
+          break;
       }
-      if (pp->utm.lon0 < -180 || pp->utm.lon0 > 180)
-	report_func("Central meridian '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->utm.lon0) || pp->utm.lon0 < -180 || pp->utm.lon0 > 180)
+        report_func("Central meridian (%.4f) undefined or outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->utm.lon0);
-      if (!FLOAT_EQUIVALENT(pp->utm.scale_factor, 0.9996))
-	report_func("Scale factor '%.4f' different from default value (0.9996)\n",
+      if (!meta_is_valid_double(pp->utm.scale_factor) || !FLOAT_EQUIVALENT(pp->utm.scale_factor, 0.9996))
+        report_func("Scale factor (%.4f) undefined or different from default value (0.9996)\n",
 		      pp->utm.scale_factor);
-      if (meta->general->center_latitude >= 0.0 &&
+      if (!meta_is_valid_double(meta->general->center_latitude) ||
+          meta->general->center_latitude < -90.0 ||
+          meta->general->center_latitude > 90.0)
+        report_func("Central latitude (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", meta->general->center_latitude);
+      if (!meta_is_valid_double(pp->utm.false_easting) ||
+          (meta->general->center_latitude >= 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_easting, 500000))
-        report_func("False easting '%.1f' different from default value (500000)\n",
+         )
+        report_func("False easting (%.1f) undefined or different from default value (500000)\n",
                       pp->utm.false_easting);
-      if (meta->general->center_latitude >= 0.0 &&
+      if (!meta_is_valid_double(pp->utm.false_northing) ||
+          (meta->general->center_latitude >= 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_northing, 0))
-        report_func("False northing '%.1f' different from default value (0)\n",
+         )
+        report_func("False northing (%.1f) undefined or different from default value (0)\n",
                       pp->utm.false_northing);
-      if (meta->general->center_latitude < 0.0 &&
+      if (!meta_is_valid_double(pp->utm.false_easting) ||
+          (meta->general->center_latitude < 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_easting, 500000))
-        report_func("False easting '%.1f' different from default value (500000)\n",
+         )
+        report_func("False easting (%.1f) undefined or different from default value (500000)\n",
                       pp->utm.false_easting);
-      if (meta->general->center_latitude < 0.0 &&
+      if (!meta_is_valid_double(pp->utm.false_northing) ||
+          (meta->general->center_latitude < 0.0 &&
           !FLOAT_EQUIVALENT(pp->utm.false_northing, 10000000))
-        report_func("False northing '%.1f' different from default value (10000000)\n",
+         )
+        report_func("False northing (%.1f) undefined or different from default value (10000000)\n",
                       pp->utm.false_northing);
 
       // FIXME: When we are reprojecting an image, meta_get_latLon ends
@@ -121,7 +142,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       // somehow if the input is an already geocoded image which we
       // want to recode.
 
-      // Zone test - The zone must contain some dirt in image.
+      // Zone test - The zone must contain some dirt (or water) in the image.
       meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
@@ -153,18 +174,28 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
           "  Standard parallel: %.4f\n"
           "  Central meridian: %.4f\n"
           "  Hemisphere: %c\n",
-          pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S');
+          pp->ps.slat, pp->ps.slon,
+          !meta_is_valid_double(pp->ps.is_north_pole) ? '?' : pp->ps.is_north_pole ? 'N' : 'S');
 
       // Outside range tests
-      if (pp->ps.slat < -90 || pp->ps.slat > 90)
-	report_func("Latitude of origin '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->ps.slat) || pp->ps.slat < -90 || pp->ps.slat > 90)
+        report_func("Latitude of origin (%.4f) undefined or outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->ps.slat);
-      if (pp->ps.slon < -180 || pp->ps.slon > 180)
-	report_func("Central meridian '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->ps.slon) || pp->ps.slon < -180 || pp->ps.slon > 180)
+        report_func("Central meridian (%.4f) undefined or outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->ps.slon);
 
       // Distortion test - only areas with a latitude above 60 degrees North or
       // below -60 degrees South are permitted
+      if (!meta_is_valid_double(meta->general->center_latitude)) {
+        report_func("Invalid center latitude (%.4f) found.\n",
+                   meta->general->center_latitude);
+      }
+      if (!meta_is_valid_int(pp->ps.is_north_pole) ||
+           (pp->ps.is_north_pole != 0 && pp->ps.is_north_pole != 1))
+        report_func("Invalid north pole flag (%s) found.\n",
+                    pp->ps.is_north_pole == 0 ? "SOUTH" :
+                        pp->ps.is_north_pole == 1 ? "NORTH" : "UNKNOWN");
       if (meta->general->center_latitude < 60.0 && pp->ps.is_north_pole) {
 	if (force_flag)
 	  report_func("Geocoding of areas below 60 degrees latitude in the "
@@ -197,17 +228,25 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
           pp->albers.center_meridian, pp->albers.orig_latitude);
 
       // Outside range tests
-      if (pp->albers.std_parallel1 < -90 || pp->albers.std_parallel1 > 90)
-	report_func("First standard parallel '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->albers.std_parallel1) ||
+           pp->albers.std_parallel1 < -90 ||
+           pp->albers.std_parallel1 > 90)
+        report_func("First standard parallel (%.4f) undefined or outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->albers.std_parallel1);
-      if (pp->albers.std_parallel2 < -90 || pp->albers.std_parallel2 > 90)
-	report_func("Second standard parallel '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->albers.std_parallel2) ||
+           pp->albers.std_parallel2 < -90 ||
+           pp->albers.std_parallel2 > 90)
+        report_func("Second standard parallel (%.4f) undefined or outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->albers.std_parallel2);
-      if (pp->albers.center_meridian < -180 || pp->albers.center_meridian > 180)
-	report_func("Central meridian '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->albers.center_meridian) ||
+           pp->albers.center_meridian < -180 ||
+           pp->albers.center_meridian > 180)
+        report_func("Central meridian (%.4f) undefined or outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->albers.center_meridian);
-      if (pp->albers.orig_latitude < -90 || pp->albers.orig_latitude > 90)
-	report_func("Latitude of origin '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->albers.orig_latitude) ||
+           pp->albers.orig_latitude < -90 ||
+           pp->albers.orig_latitude > 90)
+        report_func("Latitude of origin (%.4f) undefined or outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->albers.orig_latitude);
 
       // Distortion test - only areas with a latitude not more than 30 degrees
@@ -221,6 +260,9 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 	min_lat = pp->albers.std_parallel2 - 30.0;
 	max_lat = pp->albers.std_parallel1 + 30.0;
       }
+      if (!meta_is_valid_double(meta->general->center_latitude))
+        report_func("Invalid center latitude found (%.4f).\n",
+                    meta->general->center_latitude);
       if (meta->general->center_latitude > max_lat ||
 	  meta->general->center_latitude < min_lat) {
 	if (force_flag)
@@ -248,16 +290,20 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
           pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0);
 
       // Outside range tests
-      if (pp->lamcc.plat1 < -90 || pp->lamcc.plat1 > 90)
-	report_func("First standard parallel '%.4f' outside the defined range "
+      if (!meta_is_valid_double(pp->lamcc.plat1) ||
+           pp->lamcc.plat1 < -90 || pp->lamcc.plat1 > 90)
+        report_func("First standard parallel (%.4f) undefined or outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamcc.plat1);
-      if (pp->lamcc.plat2 < -90 || pp->lamcc.plat2 > 90)
+      if (!meta_is_valid_double(pp->lamcc.plat2) ||
+           pp->lamcc.plat2 < -90 || pp->lamcc.plat2 > 90)
 	report_func("Second standard parallel '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamcc.plat2);
-      if (pp->lamcc.lon0 < -180 || pp->lamcc.lon0 > 180)
+      if (!meta_is_valid_double(pp->lamcc.lon0) ||
+           pp->lamcc.lon0 < -180 || pp->lamcc.lon0 > 180)
 	report_func("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->lamcc.lon0);
-      if (pp->lamcc.lat0 < -90 || pp->lamcc.lat0 > 90)
+      if (!meta_is_valid_double(pp->lamcc.lat0) ||
+           pp->lamcc.lat0 < -90 || pp->lamcc.lat0 > 90)
 	report_func("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamcc.lat0);
 
@@ -272,6 +318,9 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 	min_lat = pp->lamcc.plat2 - 30.0;
 	max_lat = pp->lamcc.plat1 + 30.0;
       }
+      if (!meta_is_valid_double(meta->general->center_latitude))
+        report_func("Invalid center latitude found (%.4f).\n",
+                    meta->general->center_latitude);
       if (meta->general->center_latitude > max_lat ||
 	  meta->general->center_latitude < min_lat) {
 	if (force_flag)
@@ -297,10 +346,12 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
           pp->lamaz.center_lat, pp->lamaz.center_lon);
 
       // Outside range tests
-      if (pp->lamaz.center_lon < -180 || pp->lamaz.center_lon > 180)
+      if (!meta_is_valid_double(pp->lamaz.center_lon) ||
+           pp->lamaz.center_lon < -180 || pp->lamaz.center_lon > 180)
 	report_func("Central meridian '%.4f' outside the defined range "
 		      "(-180 deg to 180 deg)\n", pp->lamaz.center_lon);
-      if (pp->lamaz.center_lat < -90 || pp->lamaz.center_lat > 90)
+      if (!meta_is_valid_double(pp->lamaz.center_lat) ||
+           pp->lamaz.center_lat < -90 || pp->lamaz.center_lat > 90)
 	report_func("Latitude of origin '%.4f' outside the defined range "
 		      "(-90 deg to 90 deg)\n", pp->lamaz.center_lat);
 
