@@ -16,10 +16,10 @@ OBJS = \
 	trim.o \
 	fftMatch.o \
 	shaded_relief.o \
-	resample.o
+	resample.o \
+	tile.o
 
 LIBS :=	\
-	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \

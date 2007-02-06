@@ -39,47 +39,63 @@ int data_type2sample_size(int data_type)
  * to the native machine's format. The line_number argument is the zero-indexed
  * line number to get. The dest argument must be a pointer to existing memory.
  * Returns the amount of samples successfully read & converted. */
-int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
-                    int num_lines_to_get, void *dest, int dest_data_type)
+int get_data_lines(FILE *file, meta_parameters *meta, 
+		   int line_number, int num_lines_to_get, 
+		   int sample_number, int num_samples_to_get,
+		   void *dest, int dest_data_type)
 {
   int ii;               /* Sample index.  */
-  int samples_gotten;   /* Number of samples retrieved */
+  int samples_gotten=0; /* Number of samples retrieved */
+  int line_samples_gotten;
   size_t sample_size;   /* Sample size in bytes.  */
   void *temp_buffer;    /* Buffer for unconverted data.  */
   int sample_count = meta->general->sample_count;
+  int line_count = meta->general->line_count;
+  int band_count = meta->general->band_count;
   int data_type    = meta->general->data_type;
-  int num_samples_to_get = num_lines_to_get * sample_count;
+  int num_lines_left = line_count * band_count - line_number;
+  int num_samples_left = sample_count - sample_number;
+  long long offset;
 
-  if ((data_type>=COMPLEX_BYTE) && (dest_data_type<=REAL64)) {
-    printf("\nget_data_lines: Cannot put complex data into a simple data buffer. Exiting.\n\n");
-    exit(EXIT_FAILURE);
-  }
-  if ((data_type<=REAL64) && (dest_data_type>=COMPLEX_BYTE)) {
-    printf("\nget_data_lines: Cannot put simple data into a complex data buffer. Exiting.\n\n");
-    exit(EXIT_FAILURE);
-  }
+  // Check whether data conversion is possible
+  if ((data_type>=COMPLEX_BYTE) && (dest_data_type<=REAL64))
+    asfPrintError("\nget_data_lines: Cannot put complex data"
+		  " into a simple data buffer. Exiting.\n\n");
+  if ((data_type<=REAL64) && (dest_data_type>=COMPLEX_BYTE))
+    asfPrintError("\nget_data_lines: Cannot put simple data"
+		  " into a complex data buffer. Exiting.\n\n");
+  // Make sure not to go outside the image
+  if (line_number > (line_count * band_count))
+    asfPrintError("\nget_data_lines: Cannot read line %d "
+		  "in a file of %d lines. Exiting.\n",
+		  line_number, line_count*band_count);
+  if (sample_number < 0 || sample_number > meta->general->sample_count)
+    asfPrintError("\nget_data_lines: Cannot read sample %d "
+		  "in a file of %d lines. Exiting.\n",
+		  sample_number, sample_count);
+  if (num_lines_to_get > num_lines_left)
+    asfPrintError("\nget_data_lines: Cannot read %d lines. "
+		  "Only %d lines left in file. Exiting.\n",
+		  num_lines_to_get, num_lines_left);
+  if (num_samples_to_get > num_samples_left)
+    asfPrintError("\nget_data_lines: Cannot read %d samples. "
+		  "Only %d samples left in file. Exiting.\n",
+		  num_samples_to_get, num_samples_left);
 
   /* Determine sample size.  */
   sample_size = data_type2sample_size(data_type);
 
-  /* Make sure not to go past the end of file */
-  if (line_number > (meta->general->line_count * meta->general->band_count)) {
-    printf("\nget_data_lines: Cannot read line %d in a file of %d lines. Exiting.\n",
-           line_number, meta->general->line_count*meta->general->band_count);
-    exit(EXIT_FAILURE);
+  temp_buffer = MALLOC( sample_size * num_lines_to_get * num_samples_to_get);
+
+
+  // Scan to the beginning of the line sample.
+  for (ii=0; ii<num_lines_to_get; ii++) {
+    offset = sample_size * (sample_count * (line_number + ii) + sample_number);
+    FSEEK64(file, offset, SEEK_SET);
+    line_samples_gotten = FREAD(temp_buffer+ii*num_samples_to_get*sample_size, 
+				sample_size, num_samples_to_get, file);
+    samples_gotten += line_samples_gotten;
   }
-  if ((line_number+num_lines_to_get) > 
-      (meta->general->line_count * meta->general->band_count)) {
-    num_samples_to_get = 
-      (meta->general->line_count * meta->general->band_count - line_number) * sample_count;
-  }
-
-  /* Scan to the beginning of the line.  */
-  FSEEK64(file, (long long)sample_size*sample_count*line_number, SEEK_SET);
-
-  temp_buffer = MALLOC( sample_size * num_samples_to_get );
-
-  samples_gotten = FREAD(temp_buffer, sample_size, num_samples_to_get, file);
 
   /* Fill in destination array.  */
   switch (data_type) {
@@ -205,17 +221,37 @@ int get_data_lines(FILE *file, meta_parameters *meta, int line_number,
   return samples_gotten;
 }
 
+int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number, 
+			  int sample_number, int num_samples_to_get, 
+			  unsigned char *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, 
+			sample_number, num_samples_to_get, dest, BYTE);
+}
+
+int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number, 
+			   int num_lines_to_get, int sample_number, 
+			   int num_samples_to_get, unsigned char *dest)
+{
+  return get_data_lines(file, meta, line_number, num_lines_to_get, 
+			sample_number, num_samples_to_get, dest, BYTE);
+}
+
+
 int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
                   unsigned char *dest)
 {
-  return get_data_lines(file, meta, line_number, 1, dest, BYTE);
+  return get_data_lines(file, meta, line_number, 1, 
+			0, meta->general->sample_count, dest, BYTE);
 }
 
 int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, unsigned char *dest)
 {
-  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,BYTE);
+  return get_data_lines(file, meta, line_number, num_lines_to_get,
+			0, meta->general->sample_count, dest, BYTE);
 }
+
 
 /*******************************************************************************
  * Get one line of any non-complex data type via get_data_lines and fill a float
@@ -223,7 +259,8 @@ int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
                    float *dest)
 {
-  return get_data_lines(file, meta, line_number, 1, dest, REAL32);
+  return get_data_lines(file, meta, line_number, 1, 
+			0, meta->general->sample_count, dest, REAL32);
 }
 
 /*******************************************************************************
@@ -232,7 +269,25 @@ int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, float *dest)
 {
-  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,REAL32);
+  return get_data_lines(file, meta, line_number, num_lines_to_get,
+			0, meta->general->sample_count, dest, REAL32);
+}
+
+int get_partial_float_line(FILE *file, meta_parameters *meta, int line_number, 
+			   int sample_number, int num_samples_to_get,
+			   float *dest)
+{
+  return get_data_lines(file, meta, line_number, 1, 
+			sample_number, num_samples_to_get, dest, REAL32);
+}
+
+int get_partial_float_lines(FILE *file, meta_parameters *meta, 
+			    int line_number, int num_lines_to_get,
+			    int sample_number, int num_samples_to_get,
+			    float *dest)
+{
+  return get_data_lines(file, meta, line_number, num_lines_to_get, 
+			sample_number, num_samples_to_get, dest, REAL32);
 }
 
 /*******************************************************************************
@@ -243,7 +298,8 @@ int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,
                     double *dest)
 {
-  return get_data_lines(file, meta, line_number, 1, dest, REAL64);
+  return get_data_lines(file, meta, line_number, 1, 
+			0, meta->general->sample_count, dest, REAL64);
 }
 
 /*******************************************************************************
@@ -252,7 +308,8 @@ int get_double_line(FILE *file, meta_parameters *meta, int line_number,
 int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, double *dest)
 {
-  return get_data_lines(file,meta,line_number,num_lines_to_get,dest,REAL64);
+  return get_data_lines(file, meta, line_number, num_lines_to_get,
+			0, meta->general->sample_count, dest, REAL64);
 }
 
 /*******************************************************************************
@@ -261,7 +318,8 @@ int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
 int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
                     complexFloat *dest)
 {
-  return get_data_lines(file, meta, line_number, 1, dest, COMPLEX_REAL32);
+  return get_data_lines(file, meta, line_number, 1, 
+			0, meta->general->sample_count, dest, COMPLEX_REAL32);
 }
 
 /*******************************************************************************
@@ -270,8 +328,8 @@ int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
 int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
                      int num_lines_to_get, complexFloat *dest)
 {
-  return get_data_lines(file, meta, line_number, num_lines_to_get, dest,
-                        COMPLEX_REAL32);
+  return get_data_lines(file, meta, line_number, num_lines_to_get, 
+			0, meta->general->sample_count, dest, COMPLEX_REAL32);
 }
 
 /*******************************************************************************

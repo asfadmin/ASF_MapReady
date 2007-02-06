@@ -214,6 +214,20 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
 		int num_lines_to_put, const complexFloat *source);
 
+int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number, 
+			  int sample_number, int num_samples_to_get, 
+			  unsigned char *dest);
+int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number, 
+			   int num_lines_to_get, int sample_number, 
+			   int num_samples_to_get, unsigned char *dest);
+int get_partial_float_line(FILE *file, meta_parameters *meta, int line_number, 
+			   int sample_number, int num_samples_to_get,
+			   float *dest);
+int get_partial_float_lines(FILE *file, meta_parameters *meta, 
+			    int line_number, int num_lines_to_get,
+			    int sample_number, int num_samples_to_get,
+			    float *dest);
+
 /***************************************************************************
  * Get the location of the ASF Share Directory */
 const char * get_asf_share_dir(void);

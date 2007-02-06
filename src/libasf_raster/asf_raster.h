@@ -123,4 +123,7 @@ int resample_to_pixsiz(char *infile, char *outfile,
 		       double xpixsiz, double ypixsiz);
 int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz);
 
+// Prototypes from tile.c
+void create_image_tiles(char *inFile, char *outBaseName, int tile_size);
+
 #endif
