@@ -81,7 +81,7 @@ double a[];
     return (sum);
 }
 
-void vecNormalize(v)
+void myVecNormalize(v)
 double v[];
 {
     int i;
@@ -90,7 +90,7 @@ double v[];
     for (i=1; i<=3; i++) {v[i]/=vmag;}
 }
 
-void vecCross(a, b, aXb)
+void myVecCross(a, b, aXb)
 double a[], b[], aXb[];
 {
     aXb[1]=a[2]*b[3]-a[3]*b[2];
@@ -249,12 +249,12 @@ double	satsv[],	/* eight element satellite state vector */
     }
     
     /* Calculate u, v, w vectors to define a new coordinate system */
-    vecCross(svv, spv, crossP); vecNormalize(crossP);
+    myVecCross(svv, spv, crossP); myVecNormalize(crossP);
     for (i=1; i<=3; i++) {u[i] = crossP[i];}
-    vecCross(spv, u, crossP); vecNormalize(crossP);
+    myVecCross(spv, u, crossP); myVecNormalize(crossP);
     for (i=1; i<=3; i++) {v[i] = crossP[i];}
     for (i=1; i<=3; i++) {crossP[i] = spv[i];}
-    vecNormalize(crossP);
+    myVecNormalize(crossP);
     for (i=1; i<=3; i++) {w[i] = -1 * crossP[i];}    
     
     /* Convert from degrees to radians for calculations */
@@ -287,7 +287,7 @@ double	satsv[],	/* eight element satellite state vector */
 }
 
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     int     i, j, ch,
             n, sn;		/* counts number of points parsed and written to output*/
@@ -402,4 +402,6 @@ main(int argc, char *argv[])
     printf ("\n");
     fclose (infp2);
     fclose (outfp);
+    
+    exit(EXIT_SUCCESS);
 }

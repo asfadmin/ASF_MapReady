@@ -4,16 +4,9 @@
  
 include ../../make_support/system_rules
 
-LIBS = -lm
- 
-#
-# Object libraries required to load the program
-#
-OBJLIB = \
-	$(LIBDIR)/asf.a 
+LIBS = $(LIBDIR)/asf.a -lm
 
 prop2ll : prop2ll.c
-	$(CC) $(CFLAGS) -o prop2ll prop2ll.c $(OBJLIB) $(LIBS)
-	cp prop2ll$(BIN_POSTFIX) $(BINDIR)
-	mv prop2ll$(BIN_POSTFIX) ../bin/
+	$(CC) $(CFLAGS) -o prop2ll prop2ll.c $(LIBS) $(LDFLAGS)
+	mv prop2ll$(BIN_POSTFIX) $(BINDIR)
 	cp prop2ll.man ../../man/man1/
