@@ -17,7 +17,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 */
 
 #define ASF_NAME_STRING \
-"alos_export"
+"asf_export"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
