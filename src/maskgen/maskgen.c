@@ -120,7 +120,7 @@ double	v1,v2,v3,v4,
 	}
 }
 
-main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     int	i, j,
     	pnum,			/* number of vectors to propagate ahead */
     	numpts,			/* number of points within lat/lon constraints */

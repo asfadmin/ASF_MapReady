@@ -4,15 +4,19 @@
 
 include ../../make_support/system_rules
 
-LIBS = -lm
+LIBS = \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
+	-lm
 
-#
-# Object libraries required to load the program
-#
-OBJLIB = $(LIBDIR)/asf_meta.a
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
 
 maskgen : maskgen.c
-	$(CC) $(CFLAGS) -o maskgen maskgen.c $(OBJLIB) $(LIBS)
-	cp maskgen$(BIN_POSTFIX) $(BINDIR)
-	mv maskgen$(BIN_POSTFIX) ../bin/
+	$(CC) $(CFLAGS) -o maskgen maskgen.c $(LIBS) $(LDFLAGS)
+	mv maskgen$(BIN_POSTFIX) $(BINDIR)
 	cp maskgen.man ../../man/cat1/maskgen.1
