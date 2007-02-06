@@ -17,6 +17,7 @@ LIBS = 	\
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
+	$(SHAPELIB_LIBS) \
 	$(GSL_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
@@ -24,6 +25,16 @@ LIBS = 	\
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	-lm -lz
+
+CFLAGS += \
+	$(SHAPELIB_CFLAGS) \
+	$(GSL_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS)
+
 
 # different procedures for win/unix
 ifeq ($(SYS),win32)
