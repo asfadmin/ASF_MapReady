@@ -4,13 +4,25 @@
  
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
 	-lm
-	
+
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
+
+all: ll2proj clean
+
 ll2proj : ll2proj.c
-	$(CC) $(CFLAGS) -o ll2proj ll2proj.c $(LIBS)
-	cp ll2proj$(BIN_POSTFIX) $(BINDIR)
-	mv ll2proj$(BIN_POSTFIX) ../bin/
+	$(CC) $(CFLAGS) -o ll2proj ll2proj.c $(LIBS) $(LDFLAGS)
+	mv ll2proj$(BIN_POSTFIX) $(BINDIR)
 	cp ll2proj.man ../../man/cat1/ll2proj.1
+
+clean:
+	rm -f *.o *~ core*
