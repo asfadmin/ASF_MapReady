@@ -242,10 +242,8 @@ static void load_images(const char *f1, const char *f2)
     meta_parameters *m2 = meta_read(f2);
     assert(m2);
 
-    int ret,max=1200;
-
-    int lines = imx(m1->general->line_count, m2->general->sample_count);
-    int samps = imx(m1->general->sample_count, m2->general->sample_count);
+    //int lines = imx(m1->general->line_count, m2->general->sample_count);
+    //int samps = imx(m1->general->sample_count, m2->general->sample_count);
     //int max = lines > samps ? lines : samps;
     int max = 1200;
     int ret;
