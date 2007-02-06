@@ -44,8 +44,6 @@
 #
 
 ######################### A listing of libraries (easy). ######################
-LIBS
-{
 # The external libraries are built without the master_program_list
 #@external/work_dir/
 #	libgsl
@@ -55,10 +53,12 @@ LIBS
 #	libtiff
 #	libgeotiff
 #	tcl_tk
-# asf_meta depends on libasf_proj .h files & libasf_reporting.a
+# asf_meta depends on libasf_proj .h files
 # libasf_convert depends on asf_import.h asf_terrcorr.h asf_geocode.h asf_export.h
 # libasf_elevation depends on libasf_sar (asf_sar.h)
 # libasf_igram_coh depends on libasf_raster (asf_raster.h)
+LIBS
+{
 @src/
 	asf
 	asf_concat
@@ -67,10 +67,11 @@ LIBS
 	asf_lt
 	libasf_proj
 	asf_meta
-	libasf_meta
 	asf_odl
 	libasf_sar
+	libasf_elevation
 	libasf_raster
+	libasf_igram_coh
 	libasf_vector
 	libifm
 	libasf_import
@@ -79,9 +80,7 @@ LIBS
 	libasf_geocode
 	libasf_export
 	libasf_convert
-@src_tc/
-	sarmodel
-	tcobj
+	libasf_insar
 }
 ############################### END OF LIBRARIES ##############################
 
@@ -89,137 +88,124 @@ LIBS
 PROGRAMS
 {
 @src/
-	asf_export { }
-	asf_import { }
-        asf_geocode { }
-	asf_convert { PROGRAMS asf_export asf_import asf_geocode }
-	stats { }
-	convert2byte { PROGRAMS stats }
-	convert2geotiff { }
-#	jpeg2asf can be compiled if explicitly told to by the
-#		convert2jpeg Makefile
-	convert2jpeg { }
-	convert2ppm { }
-	corner_coords { }
-	deskew { }
-	dspddr { }
-	fftMatch { }
-	filter { }
-	gr2sr { }
-	image_layers { }
-	makeddr { }
-	meta2ddr { BINS ddr2meta }
-	metadata { }
-	raster_calc { }
-	raster_diff { }
-	remap { }
-	resample { }
-	sarout { }
-	sr2gr { }
-	trim { }
 	accum_offset { }
+	addapole { }
+	airsargeo { BINS projectGeo geocode_airsar }
+	airsarin { }
+	ait { }
+	ardop { BINS calc_deltas spectra }
+	asf_check_geolocation { }
+	asf_convert { }
+	asf_convert_gui { }
+	asf_elevation { }
+	asf_export { }
+	asf_geocode { }
+	asf_import { }
+	asf_terrcorr { }
+	atdp { }
+	auto_refine_base { }
+#	auto_sar_mosaic { } -- see bottom of this list
+#	auto_swath_mosaic { } -- see bottom of this list
+	automg { }
+	avg_in_dop { }
+	baseline { }
+	baseline2html { }
+	baseline_catalog { }
+	baseline_parser { }
+	c2p { }
+	ceos2meta { }
+	coh { }
 	concat { }
 	concat_dem { }
 	concatm { }
-	fit_quadratic { }
-	idimage { BINS idtable }
-	projprm { }
-	libasf_ardop { }
-	ardop { BINS calc_deltas spectra libasf_ardop }
-	asf_check_geolocation { }
-	avg_in_dop { }
-	c2p { }
-	coh { }
-	coregister_coarse { PROGRAMS fftMatch convert2byte c2p }
+#	convert2byte { } -- see bottom of this list
+	convert2jpeg { }
+	convert2vector { }
+#	coregister_coarse { } -- see bottom of this list
 	coregister_fine { }
-	create_dem_grid	{ }
+	corner_coords { }
+#	cpx_autofilter { } -- see bottom of this list
+	cpx_spectrum { }
+	create_dem_grid { }
+	create_man_page { }
 	dem2phase { }
 	dem2seeds { }
-	deskew_dem { }
-	reskew_dem { }
+	dem_diff { }
 	deramp { }
+	deskew { }
+	deskew_dem { }
+	detect_cr { }
+	dspddr { }
+	dumphfa { }
 	elev { }
 	eleverr { }
 	escher { }
+	extract_window { }
+	fftMatch { }
+	filter { }
+	filter_tie_points { }
+	findrsv { }
 	fit_line { }
 	fit_plane { }
+	fit_poly { }
+	fit_quadratic { }
 	fit_warp { }
-	igram  { }
+	flicker { }
+	flip { }
+	geotiffdump { }
+	gr2sr { }
+	hdr2ddr { }
+	idimage { BINS idtable }
+	igram { }
+	image_layers { }
+	image_stats { }
 	ips { }
+	leader2pdf { }
+	ll2proj { }
+	makeddr { }
+	mask_from_dem { }
+	maskgen { }
+	meta2ddr { BINS ddr2meta }
+	meta2envi { }
+	meta2esri { }
+	meta_check { }
+	metadata { }
+	metadata_gui { }
+	mosaic { }
 	multilook { }
+	offset_test { }
 	p2c { }
 	phase_filter { }
+	profile_dump { }
+	projfit { }
+	prop2ll { }
+	pta { }
+	raster_calc { }
+	raster_diff { }
 	refine_base { }
+	refine_geolocation { }
 	refine_offset { }
-	zeroify { }
+	remap { }
+	resample { }
+	reskew_dem { }
 	sarview { BINS sarview_bin support }
-	image_stats { }
-	offset_test { }
-	detect_cr { }
+	shaded_relief { }
+	sr2gr { }
+	srf2shape { }
+	stats { }
+	stp { }
+	tle2equator { }
+	trim { }
 	xpix_ypix { }
-	meta_check { }
-	convert2vector { }
+	zeroify { }
+	
+# 	put programs that depend on other programs at the bottom
 
-@src_tc/
-	2dmap { }
-	demimg { }
-	demclip { }
-	despike { }
-	greycorr { }
-	sargeom { }
-	sarsim { }
-	rtc_add { }
-	tpl_mult { }
-	tpl_search { }
-	correlate
-	{
-		PROGRAMS
-			resample
-			tpl_mult
-			tpl_search
-			greycorr
-			2dmap
-	}
-	terrcorr
-	{
-		PROGRAMS
-			asf_import
-			correlate
-			demimg
-			demclip
-			despike
-			sargeom
-			rtc_add
-			sarsim
-	}
-
-#  -- remove this, as it is now built as part of the main build
-# Build this very last since it depends on the plethora of gtk2 libraries, and
-# tends to kill the build
-#@src/
-#	asf_convert_gui
-#	{
-#		PROGRAMS
-#			asf_convert
-#			asf_export
-#			asf_import
-#			asf_geocode
-#		BINS
-#			projections/albers_equal_area_conic/
-#			projections/lambert_conformal_conic/
-#			projections/polar_stereographic/
-#			projections/utm/
-#	}
-
-# Stuff we don't really care to build
-#@src/
-#	sprocket { BINS complex iq standard vexcel_complex geo target_selector
-#			list_ground_targets.sql list_sites.sql convert_standard
-#			image2pgm image_mask vexcel_complex_metadata
-#			vexcel_complex_data_planes xy_plotter }
-#	cpx_spectrum { }
-#	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
-
+	auto_sar_mosaic { PROGRAMS concat idtable }
+	auto_swath_mosaic { PROGRAMS accum_offset concatm resample }
+	convert2byte { PROGRAMS stats }
+	coregister_coarse { PROGRAMS c2p convert2byte fftMatch }
+	cpx_autofilter { PROGRAMS cpx_spectrum BINS cpx_filter gen_filt_params }
 
 }
 ############################### END OF PROGRAMS ###############################
@@ -229,38 +215,47 @@ PROGRAMS
 # makefile targets.
 CATEGORIES
 {
-# Convert package (BSD license) - get data from asf ceos to whatever you want!
-#                                 (that we can convert to)
-  convert
-  {
-  	asf_convert_gui
-  	asf_convert
-	asf_export
-	asf_import
-	asf_geocode
-	metadata_gui
-	metadata
-  }
-
-# Open - Anybody can get this stuff (BSD license)
-	open
+# Convert package
+	convert
 	{
-		convert
-		stats convert2byte convert2geotiff convert2jpeg convert2ppm
-		deskew dspddr fftMatch makeddr meta2ddr metadata raster_calc
-		raster_diff remap resample sarout sr2gr trim accum_offset
-		concat concat_dem concatm fit_quadratic idimage projprm
-		2dmap demimg demclip despike greycorr sargeom sarsim rtc_add
-		tpl_mult tpl_search correlate terrcorr
+ 		asf_convert_gui
+  		asf_convert
+		asf_export
+		asf_import
+		asf_geocode
+	        asf_terrcorr
+		gr2sr
+		metadata_gui
+		metadata
+		mosaic
+		refine_geolocation
+		sr2gr
 	}
 
-# Sarview needs to be its own category because of its tcl/tk dependency.
-# Just use the prior sarview PROGRAM declaration for autotar or make.
-
-# Restricted - open + ASF controlled + gov't restricted (BSD/ASF license)
-	restricted
+# Data quality tools
+	dq-tools
 	{
-		open
+		detect_cr
+		image_stats
+		meta_check
+		offset_test
+		pta
+	}
+
+# General SAR stuff: importing, geocoding, terrain correcting, exporting, etc
+	general
+	{
+		convert
+		stats convert2byte convert2jpeg
+		deskew dspddr fftMatch makeddr meta2ddr metadata raster_calc
+		raster_diff remap resample sarout sr2gr trim accum_offset
+		concat concat_dem concatm fit_quadratic idimage
+	}
+
+# All the tools including the interferometry tools (old name: restricted)
+	all
+	{
+		general
 		ardop avg_in_dop c2p coh coregister_coarse coregister_fine
 		create_dem_grid dem2phase dem2seeds deskew_dem reskew_dem
 		deramp elev eleverr escher fit_line fit_plane fit_warp igram
