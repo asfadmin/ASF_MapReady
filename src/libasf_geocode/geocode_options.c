@@ -45,12 +45,14 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
     /* here the semantics of the projection parameters are applied */
     sanity_check(*proj_type, pps);
   }
+  else {
+    asfPrintError("Required projection parameters are missing.\n");
+  }
 
   /* Exit now if no input/output files are specified, and the
      "write-proj-file" option was specified */
   if (did_write_proj_file && *argc == 1) {
-    asfPrintStatus("No input files.\n");
-    exit(EXIT_SUCCESS);
+    asfPrintError("No input files.\n");
   }
 
   return pps;
