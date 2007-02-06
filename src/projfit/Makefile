@@ -4,15 +4,9 @@
  
 include ../../make_support/system_rules
 
-LIBS = -lm
-
-#
-# Object libraries required to load the program
-#
-OBJLIB = $(LIBDIR)/asf.a 
+LIBS = $(LIBDIR)/asf.a -lm
 
 projfit : projfit.c
-	$(CC) $(CFLAGS) -o projfit projfit.c $(OBJLIB) $(LIBS)
-	cp projfit$(BIN_POSTFIX) $(BINDIR)
-	mv projfit$(BIN_POSTFIX) ../bin/
+	$(CC) $(CFLAGS) -o projfit projfit.c $(LIBS) $(LDLIBS)
+	mv projfit$(BIN_POSTFIX) $(BINDIR)
 	cp projfit.man ../../man/cat1/projfit.1

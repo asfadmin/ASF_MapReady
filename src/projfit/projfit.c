@@ -107,7 +107,7 @@ ALGORITHM REF:  Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
  return;
 }
 
-main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     int	    i, n;
     double  a1, b1, c1, 
 	    a2, b2, c2;
