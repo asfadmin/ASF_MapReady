@@ -5,10 +5,14 @@ DEBUG_BUILD = 2
 
 include ../../make_support/system_rules
 
-LIBS  = $(LIBDIR)/asf.a \
+LIBS  = \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	-lm
+
+CFLAGS += $(GSL_CFLAGS)
+
 
 OBJS  = prn_facdr.o \
 	prn_raddr.o \
