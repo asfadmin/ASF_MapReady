@@ -93,7 +93,9 @@ fi
 AC_SUBST(ASF_LIB_GSL)
 
 #### libproj check ####
-AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
+##### --> always use our own libproj because we have the NAD27
+#####     grid shift files, a user's install probably does not
+#AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
 if test "$have_proj" = "no" ; then
    ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
    PROJ_LIBS="\$(LIBDIR)/libproj.a"
