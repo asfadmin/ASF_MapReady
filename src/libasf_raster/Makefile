@@ -17,7 +17,8 @@ OBJS = \
 	fftMatch.o \
 	shaded_relief.o \
 	resample.o \
-	tile.o
+	tile.o \
+	look_up_table.o
 
 LIBS :=	\
 	$(LIBDIR)/asf_meta.a \
@@ -33,6 +34,8 @@ LIBS :=	\
 all: build_only
 	cp libasf_raster.a $(LIBDIR)
 	cp asf_raster.h float_image.h banded_float_image.h uint8_image.h $(ASF_INCLUDE_DIR)
+	rm -rf $(SHAREDIR)/look_up_tables
+	cp -R look_up_tables/ $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_raster.a

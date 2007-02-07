@@ -21,7 +21,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
-"              [-rgb <red> <green> <blue> ] [-band <band_id | all> ]\n"\
+"              [-rgb <red> <green> <blue>] [-band <band_id | all>]\n"\
+"              [-lut <look up table file>]\n"\
 "              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
@@ -67,6 +68,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        ex) -rgb HH VH VV, or -rgb 3 2 1\n"\
 "        Currently implemented for GeoTIFF, TIFF and JPEG.\n"\
 "        Cannot be chosen together with the -band option.\n"\
+"   -lut <look up table file>\n"\
+"        Applys a look up table to the image while exporting.\n"\
+"        Only allowd for single-band images.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then export the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -206,8 +210,9 @@ main (int argc, char *argv[])
   strcpy(command_line.green_channel, "");
   strcpy(command_line.blue_channel, "");
   strcpy(command_line.band, "");
+  strcpy(command_line.look_up_table_name, "");
 
-  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag;
+  int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
@@ -226,6 +231,7 @@ main (int argc, char *argv[])
   byteFlag = checkForOption ("-byte", argc, argv);
   rgbFlag = checkForOption ("-rgb", argc, argv);
   bandFlag = checkForOption ("-band", argc, argv);
+  lutFlag = checkForOption ("-lut", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -243,6 +249,9 @@ main (int argc, char *argv[])
     needed_args += 4;           // Option & 3 parameters.
   }
   if ( bandFlag != FLAG_NOT_SET ) {
+    needed_args += 2;           // Option & parameter.
+  }
+  if ( lutFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
   }
 
@@ -280,6 +289,11 @@ main (int argc, char *argv[])
       print_usage ();
     }
   }
+  if ( lutFlag != FLAG_NOT_SET ) {
+    if ( argv[lutFlag + 1][0] == '-' || lutFlag >= argc - 3 ) {
+      print_usage ();
+    }
+  }
   if ( logFlag != FLAG_NOT_SET ) {
     if ( argv[logFlag + 1][0] == '-' || logFlag >= argc - 3 ) {
       print_usage ();
@@ -287,6 +301,9 @@ main (int argc, char *argv[])
   }
   if ( rgbFlag != FLAG_NOT_SET && bandFlag != FLAG_NOT_SET)
     print_help ();
+  if ( rgbFlag != FLAG_NOT_SET && lutFlag != FLAG_NOT_SET)
+    asfPrintError("Look up table option can only be used on single-band "
+		  "images.\n");
 
   if( logFlag != FLAG_NOT_SET ) {
     strcpy(logFile, argv[logFlag+1]);
@@ -362,6 +379,10 @@ main (int argc, char *argv[])
       asfPrintError("Unrecognized byte scaling method '%s'.\n",
                     sample_mapping_string);
   }
+  if ( lutFlag != FLAG_NOT_SET && 
+       command_line.sample_mapping == NONE)
+    asfPrintError("Look up tables can only be applied to byte output"
+		  " images\n");
 
   // Set rgb combination
   if ( rgbFlag != FLAG_NOT_SET ) {
@@ -410,6 +431,12 @@ main (int argc, char *argv[])
                                  &num_bands_found);
   }
 
+  // Read look up table name
+  if ( lutFlag != FLAG_NOT_SET) {
+    strcpy(command_line.look_up_table_name, argv[lutFlag + 1]);
+    rgb = 1;
+  }
+
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET) {
     if (num_bands_found >= 3) {
@@ -423,17 +450,21 @@ main (int argc, char *argv[])
   else if (bandFlag != FLAG_NOT_SET) {
     if (strcmp(uc(command_line.band), "ALL") == 0)
       asfPrintStatus("Exporting all bands as greyscale ...\n\n");
-    else if (num_bands_found == 1)
-      asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
-		     command_line.band);
+    else if (num_bands_found == 1) {
+      if (lutFlag != FLAG_NOT_SET) 
+	asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
+		       command_line.band);
+      else
+	asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
+		       command_line.band);
+    }
     else
       asfPrintError("Band could not be found in the image.\n");
   }
-  else {
+  else if (lutFlag != FLAG_NOT_SET)
+    asfPrintStatus("Exporting applying look up table.\n\n");
+  else
     asfPrintStatus("Exporting as greyscale.\n\n");
-  }
-
-  //Compose input metadata name
 
   //If user added ".img", strip it.
   ext = findExt(in_base_name);
@@ -476,17 +507,20 @@ main (int argc, char *argv[])
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
   md = meta_read (command_line.in_meta_name);
+  /*
   asfRequire (   md->general->data_type == BYTE
               || md->general->data_type == INTEGER16
               || md->general->data_type == INTEGER32
               || md->general->data_type == REAL32
               || md->general->data_type == REAL64,
               "Cannot cope with complex data, exiting...\n");
+  */
   meta_free (md);
 
   // Do that exporting magic!
-  asf_export_bands(format, command_line.sample_mapping, rgb,
-                   in_base_name, command_line.output_name, band_name);
+  asf_export_bands(format, command_line.sample_mapping, rgb, 
+		   command_line.look_up_table_name,
+		   in_base_name, command_line.output_name, band_name);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully

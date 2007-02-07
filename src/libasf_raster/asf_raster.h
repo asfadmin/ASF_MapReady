@@ -125,5 +125,10 @@ int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz);
 
 // Prototypes from tile.c
 void create_image_tiles(char *inFile, char *outBaseName, int tile_size);
+void create_image_hierarchy(char *inFile, char *outBaseName, int tile_size);
+
+// Prototypes from look_up_table.c
+void apply_look_up_table(char *lutFile, unsigned char *in_buffer,
+			 int pixel_count, unsigned char *rgb_buffer);
 
 #endif
