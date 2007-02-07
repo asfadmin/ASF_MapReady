@@ -407,7 +407,6 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
 {
   char input_meta_data[1024];
   char *bands; // A string containing list of available band_id's
-  int i;
   int ret;
   int multiband = 1; // boolean - true means geocode all available bands, false means one band
   int band_count;
@@ -440,8 +439,12 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
                           average_height, datum, pixel_size,
                           multiband, band_num, in_base_name,
                           out_base_name, background_val);
-    asfRequire(ret == 0,
-               "Failed to geocode band number %02d\n", i + 1);
+    if (ret != 0)
+    {
+        char **band_names = extract_band_names(imd->general->bands,
+                                               imd->general->band_count);
+        asfPrintError("Failed to geocode band %s\n", band_names[band_num]);
+    }
   }
   else {
     // Geocode a single selected band
