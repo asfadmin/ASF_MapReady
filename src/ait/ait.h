@@ -38,8 +38,9 @@
 #endif
 #endif /* #if defined(win32) */
 
-#include "ips.h"
-#include "asf_nan.h"
+#include <ips.h>
+#include <asf_nan.h>
+#include <asf_geocode.h>
 
 // Fixed-width font, used in metadata & log areas
 #if defined(win32)
