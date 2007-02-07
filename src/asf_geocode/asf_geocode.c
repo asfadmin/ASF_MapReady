@@ -25,7 +25,8 @@ trouble, and use edit_man_header. :)
 "   "ASF_NAME_STRING" -p <projection name> <<projection parameters>>\n"\
 "               [-force] [-resample-method <method>] [-height <height>]\n"\
 "               [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
-"               [-log <file>] [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
+"               [-log <file>] [-write-proj-file <file>] [-read_proj_file <file>]\n"\
+"               [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
 "               <in_base_name> <out_base_name>\n"\
 "\n"\
 "   Use the -help option for more projection parameter controls.\n"
@@ -65,15 +66,15 @@ trouble, and use edit_man_header. :)
 "               lamaz  - Lambert azimuthal equal area\n"\
 "               albers - Albers conical equal area\n"\
 "\n"\
-"     UTM\n"\
-"     ---\n"\
+"       UTM\n"\
+"       ---\n"\
 "          --zone                      : Zone (optional)\n"\
 "\n"\
-"	  If a zone is not specified, it will be determined from the\n"\
-"         scene's metadata.\n\n"\
+"          If a zone is not specified, it will be determined from the\n"\
+"          scene's metadata.\n\n"\
 "\n"\
-"     POLAR STEREO\n"\
-"     ------------\n"\
+"       POLAR STEREO\n"\
+"       ------------\n"\
 "          --first-standard-parallel    : Latitude of True Scale\n"\
 "          --central-meridian           : Longitude of Central Meridian\n"\
 "          --north-pole                 : Center on North Pole (no argument)\n"\
@@ -81,8 +82,8 @@ trouble, and use edit_man_header. :)
 "          --false-easting              : False Easting (optional)\n"\
 "          --false-northing             : False Northing (optional)\n"\
 "\n"\
-"     LAMBERT CONFORMAL CONIC\n"\
-"     -----------------------\n"\
+"       LAMBERT CONFORMAL CONIC\n"\
+"       -----------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
 "          --latitude-of-origin        : Latitude at projection\"s origin\n"\
@@ -90,21 +91,21 @@ trouble, and use edit_man_header. :)
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
 "\n"\
-"         You may omit the origin (the image center will be used as the\n"\
-"         origin), however the standard parallels are required.\n"\
+"          You may omit the origin (the image center will be used as the\n"\
+"          origin), however the standard parallels are required.\n"\
 "\n"\
-"     LAMBERT AZIMUTHAL EQUAL AREA\n"\
-"     ----------------------------\n"\
+"       LAMBERT AZIMUTHAL EQUAL AREA\n"\
+"       ----------------------------\n"\
 "          --latitude-of-origin        : Latitude at center of projection\n"\
 "          --central-meridian          : Longitude at center of projection\n"\
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
 "\n"\
-"         You may omit the point of tangency (the image center will be\n"\
-"         used).\n"\
+"          You may omit the point of tangency (the image center will be\n"\
+"          used).\n"\
 "\n"\
-"     ALBERS CONICAL EQUAL AREA\n"\
-"     -------------------------\n"\
+"       ALBERS CONICAL EQUAL AREA\n"\
+"       -------------------------\n"\
 "          --first-standard-parallel   : First Standard Parallel\n"\
 "          --second-standard-parallel  : Second Standard Parallel\n"\
 "          --latitude-of-origin        : Latitude of projection\"s origin\n"\
@@ -112,8 +113,8 @@ trouble, and use edit_man_header. :)
 "          --false-easting             : False Easting (optional)\n"\
 "          --false-northing            : False Northing (optional)\n"\
 "\n"\
-"         You may omit the origin (the image center will be used as the\n"\
-"         origin), however the standard parallels are required.\n"\
+"          You may omit the origin (the image center will be used as the\n"\
+"          origin), however the standard parallels are required.\n"\
 "\n"\
 "     Using a Projection Parameters File\n"\
 "     ==================================\n"\
@@ -157,6 +158,12 @@ trouble, and use edit_man_header. :)
 "            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
 "            NAD83  (North American Datum 1983) (GRS 1980)\n"\
 "            WGS84  (World Geodetic System 1984) (default).\n"\
+"          NOTE: When specifying a datum together with a UTM projection\n"\
+"          type, note the following valid zone numbers which may be combined\n"\
+"          with each datum type:\n"\
+"            NAD27  Valid zones are 2 through 22\n"\
+"            NAD83  Valid zones are 2 through 23\n"\
+"            WGS84  Valid zones are 1 through 60\n"\
 "\n"\
 "     -pixel_size <pixel spacing>\n"\
 "          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
