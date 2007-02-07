@@ -12,7 +12,10 @@ meta_parameters *meta_copy(meta_parameters *src)
 
   ret->meta_version = src->meta_version;
   memcpy(ret->general, src->general, sizeof(meta_general));
-  memcpy(ret->sar, src->sar, sizeof(meta_sar));
+  if (src->sar) {
+    ret->sar = meta_sar_init();
+    memcpy(ret->sar, src->sar, sizeof(meta_sar));
+  }
   if (src->projection) {
     ret->projection = (meta_projection*)MALLOC(sizeof(meta_projection));
     memcpy(ret->projection, src->projection, sizeof(meta_projection));
@@ -27,7 +30,7 @@ meta_parameters *meta_copy(meta_parameters *src)
     memcpy(ret->stats, src->stats, sizeof(meta_stats));
   }
 
-/* Copy Depricated structures*/
+/* Copy Depricated structures
   memcpy(ret->geo, src->geo, sizeof(geo_parameters));
   memcpy(ret->ifm, src->ifm, sizeof(ifm_parameters));
   if (src->info) {
@@ -35,8 +38,8 @@ meta_parameters *meta_copy(meta_parameters *src)
     memcpy(ret->info, src->info, sizeof(extra_info));
   }
 
-/* Set depricated redundant stVec to point at new state vectors structure */
-  ret->stVec = ret->state_vectors;
+* Set depricated redundant stVec to point at new state vectors structure *
+ret->stVec = ret->state_vectors;*/
 
   return ret;
 }
