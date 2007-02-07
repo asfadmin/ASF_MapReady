@@ -1163,6 +1163,15 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   double y_scale = pixel_size / y_pixel_size;
 
   // Check metadata ptrs (omd->general is theoretically guaranteed good)
+  if (omd->projection) {
+    if (omd->projection->perY > 0) {
+      g_assert (0);		/* Shouldn't happen.  */
+      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+    }
+    else {
+      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+    }
+  }
   if (omd->sar == NULL) {
     omd->sar = meta_sar_init();
   }
@@ -1174,8 +1183,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
   // Update no data value
   omd->general->no_data = background_val;
-
-  // Fix up the output metadata to match the user's selected pixel size
   omd->general->x_pixel_size = pixel_size;
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
@@ -1187,17 +1194,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
   omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
   omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
-//  if (omd->projection) {
-    if (omd->projection->perY > 0) {
-      g_assert (0);		/* Shouldn't happen.  */
-      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-    }
-    else {
-      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-    }
-//  }
-//  omd->projection = MALLOC(sizeof(meta_projection));
-//  memset (omd->projection, 0, sizeof(meta_projection));
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
