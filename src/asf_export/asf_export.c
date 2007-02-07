@@ -348,7 +348,7 @@ main (int argc, char *argv[])
        || strcmp (command_line.format, "TIF") == 0
        || strcmp (command_line.format, "JPEG") == 0
        || strcmp (command_line.format, "JPG") == 0
-       || strcmp (command_line.format, "PPM") == 0)
+       || strcmp (command_line.format, "PGM") == 0)
     command_line.sample_mapping = SIGMA;
   else if ( strcmp (command_line.format, "GEOTIFF") == 0 )
     command_line.sample_mapping = NONE;
@@ -494,8 +494,8 @@ main (int argc, char *argv[])
             strcmp (command_line.format, "JPG") == 0) {
     format = JPEG;
   }
-  else if ( strcmp (command_line.format, "PPM") == 0 ) {
-    format = PPM;
+  else if ( strcmp (command_line.format, "PGM") == 0 ) {
+    format = PGM;
   }
   else if ( strcmp (command_line.format, "KML") == 0 ) {
     format = KML;
