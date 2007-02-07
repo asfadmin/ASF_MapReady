@@ -131,7 +131,8 @@ resample_impl(char *infile, char *outfile,
     outbuf = (float *) MALLOC (onp*sizeof(float));
  
    /*----------  Open the Input & Output Files ---------------------*/
-    char *imgfile = STRDUP(outfile);
+    char *imgfile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
+    strcpy(imgfile, outfile);
     append_ext_if_needed(imgfile, ".img", NULL);
 
     fpin=fopenImage(infile,"rb");
@@ -154,7 +155,8 @@ resample_impl(char *infile, char *outfile,
       metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
     }
 
-    char *metafile = STRDUP(outfile);
+    char *metafile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
+    strcpy(metafile, outfile);
     append_ext_if_needed(metafile, ".meta", NULL);
     meta_write(metaOut, metafile);
 
