@@ -1,5 +1,4 @@
 #include "asf.h"
-#include "ifm.h"
 
 int complex2polar(char *cpxfile, char *ampfile, char *phsfile)
 {
@@ -70,7 +69,7 @@ int complex2polar(char *cpxfile, char *ampfile, char *phsfile)
   FCLOSE(fdPhase);
   FREE(cpx);
   FREE(amp);
-  FREE(phase);\
+  FREE(phase);
   meta_free(inMeta);
   meta_free(ampMeta);
   meta_free(phsMeta);

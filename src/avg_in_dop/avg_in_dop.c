@@ -57,6 +57,7 @@ BUGS:
 
 #include "asf.h"
 #include "ardop_params.h"
+#include "asf_insar.h"
 
 #define VERSION 1.15
 
@@ -88,12 +89,6 @@ int main(int argc, char *argv[])
 	char dotInFile2[255];		/* second .in file */
 	char goingOut[255];		/* Output file for average */
 
-	float avg_t1, avg_t2, avg_t3;
-
-	FILE *fptr;
-	struct ARDOP_PARAMS ardop1;	/* ardop structure to load .in file */
-	struct ARDOP_PARAMS ardop2;
-
 	logflag=0;
 	currArg=1;
 
@@ -115,30 +110,6 @@ int main(int argc, char *argv[])
 	strcpy(dotInFile2,argv[currArg+1]);
 	strcpy(goingOut,argv[currArg+2]);
 
-/* read first .in file into ardop structure */ 
-	read_params(dotInFile1, &ardop1);
-	read_params(dotInFile2, &ardop2);
-	
-	avg_t1 = (ardop1.fd + ardop2.fd) / 2;
-	avg_t2 = (ardop1.fdd + ardop2.fdd) / 2;
-	avg_t3 = (ardop1.fddd + ardop2.fddd) / 2;
-
-        system("date");
-        printf("Program: avg_in_dop\n\n");
-        printf("   Average: %e %e %e \n\n", avg_t1, avg_t2, avg_t3);
-        if (logflag) {
-	  StartWatchLog(fLog);
-          printLog("Program: avg_in_dop\n\n");
-	  sprintf(logbuf,"   Average: %e %e %e \n\n", avg_t1, avg_t2, avg_t3);
-	  printLog(logbuf);
-	}
-
-/* store result into named file, in the order fd fdd fddd */
-	fptr = FOPEN(goingOut, "w");
-	fprintf(fptr, "%e %e %e", avg_t1, avg_t2, avg_t3);
-
-	FCLOSE(fptr); 
-
-	return(0);
+	return average_in_doppler(dotInFile1, dotInFile2, goingOut);
 }
 

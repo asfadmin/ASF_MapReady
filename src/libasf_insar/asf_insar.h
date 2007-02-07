@@ -17,6 +17,9 @@ typedef struct {
 
 typedef fftwf_complex fcpx;
 
+// Prototypes from coregister.c
+int average_in_doppler(char *inFileMaster, char *inFileSlave, char *outFile);
+
 // Prototypes from complex2polar.c
 int complex2polar(char *cpxfile, char *ampfile, char *phsfile);
 

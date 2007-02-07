@@ -5,6 +5,7 @@ include ../../make_support/system_rules
 CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
+	coregister.o \
 	functions.o \
 	ips_config.o \
 	ips.o \
