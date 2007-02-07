@@ -4,7 +4,13 @@
  
 include ../../make_support/system_rules
 
-LIBS = -lm
+LIBS = \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	-lm
+
+CFLAGS += $(GSL_CFLAGS)
 
 findrsv : findrsv.c
 	$(CC) $(CFLAGS) -o findrsv findrsv.c $(OBJLIB) $(LIBS)

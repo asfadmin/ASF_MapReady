@@ -198,7 +198,7 @@ void testssv(double rsv[], char *datestr, int year, int *itworks_flag)
     
 }
 
-main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     int		i, orbitnum, searchnum, year,
 			found_flag=0, itworks_flag=0;
     char 	inFile[255], datestr[255];
