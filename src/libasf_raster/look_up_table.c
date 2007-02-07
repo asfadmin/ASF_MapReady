@@ -8,10 +8,23 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
   char heading[1024];
   int ii, red, green, blue;
 
-  fp = FOPEN(lutFile, "r");
+  // fill with zeros initially
+  for (ii=0; ii<768; ii++)
+      lut_buffer[ii] = 0;
+
+  fp = fopen(lutFile, "r");
+  if (!fp) {
+      // look in the share dir
+      sprintf(heading, "%s/look_up_tables/%s", get_asf_share_dir(), lutFile);
+      fp = fopen(heading, "r");
+      if (!fp)
+          asfPrintError("Couldn't open look up table file: %s\n", lutFile);
+  }
+
   fgets(heading, 1024, fp);
   for (ii=0; ii<768; ii+=3) {
-    fscanf(fp, "%d,%d,%d", &red, &green, &blue);
+    int n = fscanf(fp, "%d,%d,%d", &red, &green, &blue);
+    if (n != 3) break;
     lut_buffer[ii] = red;
     lut_buffer[ii+1] = green;
     lut_buffer[ii+2] = blue;

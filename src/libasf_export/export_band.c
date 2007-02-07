@@ -540,6 +540,7 @@ export_band_image (const char *metadata_file_name,
   FILE *ojpeg = NULL, *opgm=NULL;
   struct jpeg_compress_struct cinfo;
   ssize_t ii;
+  int free_band_names=FALSE;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
@@ -717,6 +718,17 @@ export_band_image (const char *metadata_file_name,
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
 
+    if (!band_name) {
+        // allow passing in NULL for the band names to mean "who cares!"
+        // when exporting a single band image (mostly useful with a
+        // look up table).
+        band_name = (char **) MALLOC(sizeof(char*)*1);
+        band_name[0] = (char*) MALLOC(sizeof(char)*4);
+        strcpy(band_name[0], "???");
+        free_band_names = TRUE;
+        band_count = 1;
+    }
+
     int kk;
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
@@ -861,6 +873,10 @@ export_band_image (const char *metadata_file_name,
     }
   }
   
+  if (free_band_names) {
+      FREE(band_name[0]); FREE(band_name);
+  }
+
   meta_free (md);
 }
 
