@@ -1027,7 +1027,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     // from getting as good a match as we would like (see below about
     // asymmetry or meta_get_latLon and meta_get_lineSamp).
     // FIXME: Fix the broken scansar crap *HARD*.
-    if (  imd->sar->image_type == 'P' ) {
+    if ( imd->sar && imd->sar->image_type == 'P' ) {
       g_assert (imd->projection->type == SCANSAR_PROJECTION);
       max_corner_error = 3 * max_allowable_error;
     }
@@ -1045,7 +1045,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     // input data, where it is off by 1.5% or so and therefore throws
     // this error check just a bit outside of a pixel.  But if the
     // problem is somewhere else I want to know.
-    if (  imd->sar->image_type != 'P' ) {
+    if ( imd->sar &&  imd->sar->image_type != 'P' ) {
       int ret1, ret2;
       const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
       double st_lat, st_lon;   // Symmetry test lat and long values.
