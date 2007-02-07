@@ -1183,8 +1183,8 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       out_format = GEOTIFF;
     else if (strcmp(uc(cfg->export->format), "JPEG")==0)
       out_format = JPEG;
-    else if (strcmp(uc(cfg->export->format), "PPM")==0)
-      out_format = PPM;
+    else if (strcmp(uc(cfg->export->format), "PGM")==0)
+      out_format = PGM;
     else {
       sprintf(tmp, "export format '%s' not supported", cfg->export->format);
       check_return(1, tmp);
