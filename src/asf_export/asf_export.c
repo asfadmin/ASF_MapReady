@@ -201,7 +201,7 @@ main (int argc, char *argv[])
   output_format_t format = 0;
   meta_parameters *md;
   char *in_base_name, *output_name;
-  char **band_name=NULL;
+  char **band_names=NULL;
   int rgb=0;
   int num_bands_found;
 
@@ -533,7 +533,7 @@ main (int argc, char *argv[])
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
 
-    band_name = find_bands(in_base_name, rgbFlag,
+    band_names = find_bands(in_base_name, rgbFlag,
 			   command_line.red_channel,
 			   command_line.green_channel,
 			   command_line.blue_channel,
@@ -543,14 +543,14 @@ main (int argc, char *argv[])
   // Set band
   if ( bandFlag != FLAG_NOT_SET) {
     strcpy (command_line.band, argv[bandFlag + 1]);
-    band_name = find_single_band(in_base_name, command_line.band,
-				 &num_bands_found);
+    band_names = find_single_band(in_base_name, command_line.band,
+				  &num_bands_found);
   }
   else if (rgbFlag == FLAG_NOT_SET &&
           truecolorFlag == FLAG_NOT_SET &&
           falsecolorFlag == FLAG_NOT_SET) {
-    band_name = find_single_band(in_base_name, "all",
-                                 &num_bands_found);
+    band_names = find_single_band(in_base_name, "all",
+                                  &num_bands_found);
   }
 
   // Read look up table name
@@ -642,7 +642,7 @@ main (int argc, char *argv[])
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, rgb,
 		   command_line.look_up_table_name,
-		   in_base_name, command_line.output_name, band_name);
+		   in_base_name, command_line.output_name, band_names);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully
@@ -652,9 +652,9 @@ main (int argc, char *argv[])
   }
 
   for (ii = 0; ii<num_bands_found; ii++) {
-    FREE(band_name[ii]);
+    FREE(band_names[ii]);
   }
-  FREE(band_name);
+  FREE(band_names);
 
   exit (EXIT_SUCCESS);
 }
