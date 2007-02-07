@@ -410,7 +410,7 @@ export_checkbutton_toggle()
         {
         default:
         case OUTPUT_FORMAT_JPEG:
-        case OUTPUT_FORMAT_PPM:
+        case OUTPUT_FORMAT_PGM:
         case OUTPUT_FORMAT_TIFF:
             show = TRUE;
             break;
@@ -432,7 +432,7 @@ export_checkbutton_toggle()
         {
         default:
         case OUTPUT_FORMAT_JPEG:
-        case OUTPUT_FORMAT_PPM:
+        case OUTPUT_FORMAT_PGM:
         case OUTPUT_FORMAT_TIFF:
         case OUTPUT_FORMAT_ASF_INTERNAL:
         case OUTPUT_FORMAT_CEOS:          
@@ -559,7 +559,7 @@ on_geotiff_activate(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
-on_ppm_activate(GtkWidget *widget)
+on_pgm_activate(GtkWidget *widget)
 {
     output_format_combobox_changed();
     update_summary();

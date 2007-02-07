@@ -243,8 +243,8 @@ void update_summary()
             strcat(text, "JPEG");
             break;
 
-        case OUTPUT_FORMAT_PPM:
-            strcat(text, "PPM");
+        case OUTPUT_FORMAT_PGM:
+            strcat(text, "PGM");
             break;
 
         case OUTPUT_FORMAT_GEOTIFF:

@@ -12,7 +12,7 @@ static int
 settings_get_output_format_allows_size(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
-        s->output_format == OUTPUT_FORMAT_PPM ||
+        s->output_format == OUTPUT_FORMAT_PGM ||
         s->output_format == OUTPUT_FORMAT_TIFF ||
         s->output_format == OUTPUT_FORMAT_GEOTIFF;
 }
@@ -21,7 +21,7 @@ static int
 settings_get_output_format_requires_byte(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
-        s->output_format == OUTPUT_FORMAT_PPM ||
+        s->output_format == OUTPUT_FORMAT_PGM ||
         s->output_format == OUTPUT_FORMAT_TIFF;
 }
 
@@ -1207,8 +1207,8 @@ settings_get_output_format_extension(const Settings *s)
                 out_extension = "jpg";
                 break;
 
-            case OUTPUT_FORMAT_PPM:
-                out_extension = "ppm";
+            case OUTPUT_FORMAT_PGM:
+                out_extension = "pgm";
                 break;
 
             case OUTPUT_FORMAT_GEOTIFF:
@@ -1254,8 +1254,8 @@ settings_get_output_format_string(const Settings *s)
         format_arg_to_export = "jpeg";
         break;
 
-    case OUTPUT_FORMAT_PPM:
-        format_arg_to_export = "ppm";
+    case OUTPUT_FORMAT_PGM:
+        format_arg_to_export = "pgm";
         break;
 
     case OUTPUT_FORMAT_GEOTIFF:
@@ -1332,7 +1332,7 @@ settings_get_output_format_can_be_thumbnailed(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
         s->output_format == OUTPUT_FORMAT_TIFF ||
-        s->output_format == OUTPUT_FORMAT_PPM;
+        s->output_format == OUTPUT_FORMAT_PGM;
 }
 
 void

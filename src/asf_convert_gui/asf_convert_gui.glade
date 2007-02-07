@@ -2260,11 +2260,11 @@
 			      </child>
 
 			      <child>
-				<widget class="GtkMenuItem" id="ppm">
+				<widget class="GtkMenuItem" id="pgm">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">PPM (.ppm)</property>
+				  <property name="label" translatable="yes">PGM (.pgm)</property>
 				  <property name="use_underline">True</property>
-				  <signal name="activate" handler="on_ppm_activate" last_modification_time="Wed, 08 Sep 2004 20:18:12 GMT"/>
+				  <signal name="activate" handler="on_pgm_activate" last_modification_time="Wed, 07 Feb 2007 19:49:05 GMT"/>
 				</widget>
 			      </child>
 
