@@ -22,7 +22,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-format <output_format>] [-byte <sample mapping option>]\n"\
 "              [-rgb <red> <green> <blue>] [-band <band_id | all>]\n"\
-"              [-lut <look up table file>]\n"\
+"              [-lut <look up table file>] [-truecolor] [-falsecolor]\n"\
 "              [-log <log_file>] [-quiet] [-license] [-version] [-help]\n"\
 "              <in_base_name> <out_full_name>\n"
 
@@ -70,7 +70,23 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Cannot be chosen together with the -band option.\n"\
 "   -lut <look up table file>\n"\
 "        Applys a look up table to the image while exporting.\n"\
-"        Only allowd for single-band images.\n"\
+"        Only allowed for single-band images.\n"\
+"   -truecolor\n"\
+"        For 4 band ALOS optical imagery.  Exports the third band as.\n"\
+"        as the red element, the second band as the green element, and\n"\
+"        the first band as the blue element.  Equivalent to using the.\n"\
+"        command line option '-rgb 03 02 01'.\n"\
+"        Only allowed for multi-band images with 3 or more bands.\n"\
+"        Cannot be used together with any of the following: -rgb, -band,\n"\
+"        or -falsecolor.\n"\
+"   -falsecolor\n"\
+"        For 4 band ALOS optical imagery.  Exports the fourth (IR) band as.\n"\
+"        as the red element, the third band as the green element, and\n"\
+"        the second band as the blue element.  Equivalent to using the.\n"\
+"        command line option '-rgb 04 03 02'.\n"\
+"        Only allowed for multi-band images with 4 bands.\n"\
+"        Cannot be used together with any of the following: -rgb, -band,\n"\
+"        or -truecolor.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then export the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -213,6 +229,7 @@ main (int argc, char *argv[])
   strcpy(command_line.look_up_table_name, "");
 
   int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag;
+  int truecolorFlag, falsecolorFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
@@ -232,6 +249,8 @@ main (int argc, char *argv[])
   rgbFlag = checkForOption ("-rgb", argc, argv);
   bandFlag = checkForOption ("-band", argc, argv);
   lutFlag = checkForOption ("-lut", argc, argv);
+  truecolorFlag = checkForOption("-truecolor", argc, argv);
+  falsecolorFlag = checkForOption("-falsecolor", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -253,6 +272,12 @@ main (int argc, char *argv[])
   }
   if ( lutFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
+  }
+  if ( truecolorFlag != FLAG_NOT_SET ) {
+    needed_args += 1;           // Option & parameter.
+  }
+  if ( falsecolorFlag != FLAG_NOT_SET ) {
+    needed_args += 1;           // Option & parameter.
   }
 
   if ( argc != needed_args ) {
@@ -299,9 +324,39 @@ main (int argc, char *argv[])
       print_usage ();
     }
   }
-  if ( rgbFlag != FLAG_NOT_SET && bandFlag != FLAG_NOT_SET)
-    print_help ();
-  if ( rgbFlag != FLAG_NOT_SET && lutFlag != FLAG_NOT_SET)
+
+  // Make sure there are no flag incompatibilities
+  if ( (rgbFlag != FLAG_NOT_SET           &&
+        (bandFlag != FLAG_NOT_SET         ||
+        truecolorFlag != FLAG_NOT_SET     ||
+        falsecolorFlag != FLAG_NOT_SET))    ||
+
+        (bandFlag != FLAG_NOT_SET         &&
+        (rgbFlag != FLAG_NOT_SET          ||
+        truecolorFlag != FLAG_NOT_SET     ||
+        falsecolorFlag != FLAG_NOT_SET))    ||
+
+        (truecolorFlag != FLAG_NOT_SET    &&
+        (bandFlag != FLAG_NOT_SET         ||
+        rgbFlag != FLAG_NOT_SET           ||
+        falsecolorFlag != FLAG_NOT_SET))    ||
+
+        (falsecolorFlag != FLAG_NOT_SET   &&
+        (bandFlag != FLAG_NOT_SET         ||
+        truecolorFlag != FLAG_NOT_SET     ||
+        rgbFlag != FLAG_NOT_SET))
+     )
+  {
+    asfPrintWarning("The following options may only be used one at a time:\n"
+        "    %s\n    %s\n    %s\n    %s\n",
+                   "-rgb", "-truecolor", "-falsecolor", "-band");
+    print_help();
+  }
+  if ( (rgbFlag != FLAG_NOT_SET         ||
+        truecolorFlag != FLAG_NOT_SET   ||
+        falsecolorFlag != FLAG_NOT_SET) &&
+        lutFlag != FLAG_NOT_SET
+     )
     asfPrintError("Look up table option can only be used on single-band "
 		  "images.\n");
 
@@ -379,7 +434,7 @@ main (int argc, char *argv[])
       asfPrintError("Unrecognized byte scaling method '%s'.\n",
                     sample_mapping_string);
   }
-  if ( lutFlag != FLAG_NOT_SET && 
+  if ( lutFlag != FLAG_NOT_SET &&
        command_line.sample_mapping == NONE)
     asfPrintError("Look up tables can only be applied to byte output"
 		  " images\n");
@@ -408,7 +463,72 @@ main (int argc, char *argv[])
       //////////// Alpha channel case /////////////
       ;
     }
+  }
 
+  // Compose input metadata name
+  strcpy (command_line.in_meta_name, in_base_name);
+  strcat (command_line.in_meta_name, ".meta");
+
+  // Set up the bands for true or false color optical data
+  if (truecolorFlag != FLAG_NOT_SET || falsecolorFlag != FLAG_NOT_SET) {
+    md = meta_read (command_line.in_meta_name);
+    int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
+    if (md->optical && truecolorFlag != FLAG_NOT_SET) {
+      if (ALOS_optical) {
+        strcpy(command_line.red_channel, "03");
+        strcpy(command_line.green_channel, "02");
+        strcpy(command_line.blue_channel, "01");
+      }
+      else {
+        char **bands = extract_band_names(md->general->bands, 3);
+        asfRequire(bands != NULL,
+                   "-truecolor option specified for non-true color optical image.\n");
+
+        asfPrintWarning("Attempting to use the -truecolor option with non-ALOS\n"
+            "optical data.\n");
+        strcpy(command_line.red_channel, bands[2]);
+        strcpy(command_line.green_channel, bands[1]);
+        strcpy(command_line.blue_channel, bands[0]);
+        int i;
+        for (i=0; i<3; i++) {
+          FREE(bands[i]);
+        }
+        FREE(bands);
+      }
+    }
+    if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
+      if (ALOS_optical) {
+        strcpy(command_line.red_channel, "04");
+        strcpy(command_line.green_channel, "03");
+        strcpy(command_line.blue_channel, "02");
+      }
+      else {
+        char **bands = extract_band_names(md->general->bands, 4);
+        asfRequire(bands != NULL,
+                   "-falsecolor option specified for an optical image with fewer than 4 bands.\n");
+
+        asfPrintWarning("Attempting to use the -falsecolor option with non-ALOS\n"
+            "optical data.\n");
+        strcpy(command_line.red_channel, bands[3]);
+        strcpy(command_line.green_channel, bands[2]);
+        strcpy(command_line.blue_channel, bands[1]);
+        int i;
+        for (i=0; i<3; i++) {
+          FREE(bands[i]);
+        }
+        FREE(bands);
+      }
+    }
+    if (!ALOS_optical && !md->optical) {
+        asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
+    }
+    meta_free(md);
+  }
+
+  if (rgbFlag != FLAG_NOT_SET ||
+     truecolorFlag != FLAG_NOT_SET ||
+     falsecolorFlag != FLAG_NOT_SET)
+  {
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
@@ -426,7 +546,9 @@ main (int argc, char *argv[])
     band_name = find_single_band(in_base_name, command_line.band,
 				 &num_bands_found);
   }
-  else if (rgbFlag == FLAG_NOT_SET) {
+  else if (rgbFlag == FLAG_NOT_SET &&
+          truecolorFlag == FLAG_NOT_SET &&
+          falsecolorFlag == FLAG_NOT_SET) {
     band_name = find_single_band(in_base_name, "all",
                                  &num_bands_found);
   }
@@ -438,7 +560,9 @@ main (int argc, char *argv[])
   }
 
   // Report what is going to happen
-  if (rgbFlag != FLAG_NOT_SET) {
+  if (rgbFlag != FLAG_NOT_SET ||
+     truecolorFlag != FLAG_NOT_SET ||
+     falsecolorFlag != FLAG_NOT_SET) {
     if (num_bands_found >= 3) {
       asfPrintStatus("Exporting multiband image ...\n\n");
       rgb = 1;
@@ -451,7 +575,7 @@ main (int argc, char *argv[])
     if (strcmp(uc(command_line.band), "ALL") == 0)
       asfPrintStatus("Exporting all bands as greyscale ...\n\n");
     else if (num_bands_found == 1) {
-      if (lutFlag != FLAG_NOT_SET) 
+      if (lutFlag != FLAG_NOT_SET)
 	asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
 		       command_line.band);
       else
@@ -470,9 +594,6 @@ main (int argc, char *argv[])
   ext = findExt(in_base_name);
   if (ext && strcmp(ext, ".img") == 0) *ext = '\0';
 
-  //Compose input metadata name
-  strcpy (command_line.in_meta_name, in_base_name);
-  strcat (command_line.in_meta_name, ".meta");
 
 /***********************END COMMAND LINE PARSING STUFF***********************/
 
@@ -506,19 +627,20 @@ main (int argc, char *argv[])
 
   /* Complex data generally can't be output into meaningful images, so
      we refuse to deal with it.  */
-  md = meta_read (command_line.in_meta_name);
   /*
+  md = meta_read (command_line.in_meta_name);
   asfRequire (   md->general->data_type == BYTE
               || md->general->data_type == INTEGER16
               || md->general->data_type == INTEGER32
               || md->general->data_type == REAL32
               || md->general->data_type == REAL64,
               "Cannot cope with complex data, exiting...\n");
-  */
+
   meta_free (md);
+  */
 
   // Do that exporting magic!
-  asf_export_bands(format, command_line.sample_mapping, rgb, 
+  asf_export_bands(format, command_line.sample_mapping, rgb,
 		   command_line.look_up_table_name,
 		   in_base_name, command_line.output_name, band_name);
 
