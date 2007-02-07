@@ -29,7 +29,7 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe $(BINDIR)/alos_$(TARGET).exe
+	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
@@ -68,7 +68,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
-	mv $(TARGET) $(BINDIR)/alos_$(TARGET)
+	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 #	cp $(TARGET).ico $(SHAREDIR)
 
