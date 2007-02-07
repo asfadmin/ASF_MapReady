@@ -290,7 +290,7 @@ endif
 
 LIBDIR  = ../../lib
 BINDIR  = ../../bin
-SHAREDIR = ../../share/alos_tools
+SHAREDIR = ../../share/asf_tools
 DOCDIR = $(SHAREDIR)/doc
 
 EOF
@@ -368,7 +368,7 @@ if test "${prefix}" = "NONE" ; then
 fi
 AC_DEFINE_UNQUOTED(ASF_INSTALL_PREFIX, "${prefix}")
 
-SHAREDIR="$prefix/share/alos_tools"
+SHAREDIR="$prefix/share/asf_tools"
 AC_SUBST(SHAREDIR)
 
 BINDIR="$prefix/bin"
