@@ -16,7 +16,9 @@ SOURCES := asf_export.c \
 	export_band.c \
 	export_as_envi.c \
 	export_as_esri.c \
-	util.c 
+	util.c \
+	keys.c \
+	write_line.c
 
 ###############################################################################
 #

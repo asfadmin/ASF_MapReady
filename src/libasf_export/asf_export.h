@@ -1,6 +1,9 @@
+#include <tiffio.h>
+#include <geotiffio.h>
+#include <jpeglib.h>
+
 #include "asf_raster.h"
 #include "libasf_proj.h"
-
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
@@ -77,12 +80,14 @@ typedef struct {
   char blue_channel[MAX_CHANNEL_STRING_LENGTH];
   char green_channel[MAX_CHANNEL_STRING_LENGTH];
   char band[MAX_CHANNEL_STRING_LENGTH];
+  char look_up_table_name[MAX_IMAGE_NAME_LENGTH];
 } command_line_parameters_t;
 
 /* Prototypes */
 int asf_export(output_format_t format, scale_t sample_mapping, 
 	       char *in_base_name, char *output_name);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
+		     char *look_up_table_name,
 		     char *in_base_name, char *output_name, char **band_name);
 
 void usage();
@@ -109,9 +114,6 @@ unsigned char pixel_float2byte (float paf, scale_t sample_mapping, float omin,\
 spheroid_type_t axis2spheroid (double semimajor,
                                double semiminor);
 
-FloatImage *
-float_image_new_from_metadata(meta_parameters *meta, const char *file);
-
 void export_as_envi (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name);
@@ -120,35 +122,107 @@ void export_as_esri (const char *metadata_file_name,
                      const char *image_data_file_name,
                      const char *output_file_name);
 
-void export_as_geotiff (const char *metadata_file_name,
-                        const char *image_data_file_name,
-                        char *output_file_name,
-                        scale_t sample_mapping);
-
-void export_rgb_as_geotiff (const char *metadata_file_name,
-			    const char *image_data_file_name,
-			    const char *output_file_name,
-			    scale_t sample_mapping,
-			    char **band_name);
-
-void export_as_jpeg (const char *metadata_file_name,
-                     const char *image_data_file_name,
-                     const char *output_file_name,
-                     scale_t sample_mapping);
-
-void export_as_ppm (const char *metadata_file_name,
-                    const char *image_data_file_name,
-                    const char *output_file_name,
-                    scale_t sample_mapping);
-
-void export_as_tiff (const char *metadata_file_name,
-                     const char *image_data_file_name,
-                     const char *output_file_name,
-                     scale_t sample_mapping);
-
 void export_band_image(const char *metadata_file_name,
 		       const char *image_data_file_name,
 		       char *output_file_name,
 		       scale_t sample_mapping,
 		       char **band_name, int rgb,
+		       char *look_up_table_name,
 		       output_format_t format);
+
+// Prototypes from key.c
+double spheroid_diff_from_axis (spheroid_type_t spheroid,
+                                double n_semi_major, double n_semi_minor);
+spheroid_type_t axis2spheroid (double re_major, double re_minor);
+int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
+void gcs_2_string (char *datum_str, short gcs);
+void pcs_2_string (char *datum_str, short pcs);
+void datum_2_string (char *datum_str, datum_type_t datum);
+void write_datum_key (GTIF *ogtif, datum_type_t datum, double re_major, 
+		      double re_minor);
+
+// Prototypes from write_line.c
+void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line, int line);
+void write_tiff_float2float(TIFF *otif, float *float_line, int line);
+void write_tiff_float2byte(TIFF *otif, float *float_line,
+			   channel_stats_t stats, scale_t sample_mapping,
+			   float no_data, int line, int sample_count);
+void write_rgb_tiff_byte2byte(TIFF *otif,
+			      unsigned char *red_byte_line,
+			      unsigned char *green_byte_line,
+			      unsigned char *blue_byte_line,
+			      int line, int sample_count);
+void write_tiff_byte2lut(TIFF *otif, unsigned char *byte_line,
+			 int line, int sample_count, char *look_up_table_name);
+void write_rgb_tiff_float2float(TIFF *otif,
+				float *red_float_line,
+				float *green_float_line,
+				float *blue_float_line,
+				int line, int sample_count);
+void write_rgb_tiff_float2byte(TIFF *otif,
+			       float *red_float_line,
+			       float *green_float_line,
+			       float *blue_float_line,
+			       channel_stats_t red_stats,
+			       channel_stats_t green_stats,
+			       channel_stats_t blue_stats,
+			       scale_t sample_mapping,
+			       float no_data, int line, int sample_count);
+void write_tiff_float2lut(TIFF *otif, float *float_line,
+			  channel_stats_t stats, scale_t sample_mapping,
+			  float no_data, int line, int sample_count,
+			  char *look_up_table_name);
+
+void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
+			  struct jpeg_compress_struct *cinfo,
+			  int sample_count);
+void write_jpeg_float2byte(FILE *ojpeg, float *float_line,
+			   struct jpeg_compress_struct *cinfo,
+			   channel_stats_t stats,
+			   scale_t sample_mapping,
+			   float no_data, int sample_count);
+void write_rgb_jpeg_byte2byte(FILE *ojpeg,
+			      unsigned char *red_byte_line,
+			      unsigned char *green_byte_line,
+			      unsigned char *blue_byte_line,
+			      struct jpeg_compress_struct *cinfo,
+			      int sample_count);
+void write_jpeg_byte2lut(FILE *ojpeg, unsigned char *byte_line,
+			 struct jpeg_compress_struct *cinfo,
+			 int sample_count, char *look_up_table_name);
+void write_rgb_jpeg_float2byte(FILE *ojpeg,
+			       float *red_float_line,
+			       float *green_float_line,
+			       float *blue_float_line,
+			       struct jpeg_compress_struct *cinfo,
+			       channel_stats_t red_stats,
+			       channel_stats_t green_stats,
+			       channel_stats_t blue_stats,
+			       scale_t sample_mapping,
+			       float no_data, int sample_count);
+void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
+			  struct jpeg_compress_struct *cinfo,
+			  channel_stats_t stats, scale_t sample_mapping,
+			  float no_data, int sample_count,
+			  char *look_up_table_name);
+
+void write_ppm_byte2byte(FILE *oppm,
+			 unsigned char *red_byte_line,
+			 unsigned char *green_byte_line,
+			 unsigned char *blue_byte_line,
+			 int sample_count);
+void write_ppm_byte2lut(FILE *oppm, unsigned char *byte_line,
+			int sample_count, char *look_up_table_name);
+void write_ppm_float2byte(FILE *oppm,
+			  float *red_float_line,
+			  float *green_float_line,
+			  float *blue_float_line,
+			  channel_stats_t red_stats,
+			  channel_stats_t green_stats,
+			  channel_stats_t blue_stats,
+			  scale_t sample_mapping,
+			  float no_data, int sample_count);
+void write_ppm_float2lut(FILE *oppm, float *float_line, 
+			 channel_stats_t stats,
+			 scale_t sample_mapping, float no_data,
+			 int sample_count, char *look_up_table_name);
