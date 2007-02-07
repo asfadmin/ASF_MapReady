@@ -536,12 +536,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Check whether everything in the [Export] block is reasonable
     if (cfg->general->export) {
 
-      // Export format: ASF, TIFF, GEOTIFF, JPEG, PPM
+      // Export format: ASF, TIFF, GEOTIFF, JPEG, PGM
       if (strncmp(uc(cfg->export->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->export->format), "TIFF", 4) != 0 &&
           strncmp(uc(cfg->export->format), "GEOTIFF", 7) != 0 &&
           strncmp(uc(cfg->export->format), "JPEG", 4) != 0 &&
-          strncmp(uc(cfg->export->format), "PPM", 3) != 0) {
+          strncmp(uc(cfg->export->format), "PGM", 3) != 0) {
         asfPrintError("Chosen export format not supported\n");
       }
 
@@ -890,8 +890,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format = GEOTIFF;
       } else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0) {
         format = JPEG;
-      } else if (strncmp(uc(cfg->export->format), "PPM", 3) == 0) {
-        format = PPM;
+      } else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0) {
+        format = PGM;
       }
 
       // Byte scaling
@@ -1069,7 +1069,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(tmp);
 
             check_return(
-                asf_export(format, TRUNCATE, inFile, outFile),
+                asf_export_bands(format, TRUNCATE, 1, "layover_mask.lut",
+                                 inFile, outFile, NULL);
+                //asf_export(format, TRUNCATE, inFile, outFile),
                 "exporting layover mask (asf_export)\n");
         }
         else {
