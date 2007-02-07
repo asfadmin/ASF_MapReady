@@ -568,8 +568,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   to_radians (projection_type, pp);
 
   // Old Scansar data needs a 400m height adjustment.
-  if (imd->sar->image_type == 'P' && imd->projection &&
-      imd->projection->type == SCANSAR_PROJECTION) {
+  if (imd->sar && imd->sar->image_type == 'P' &&
+      imd->projection && imd->projection->type == SCANSAR_PROJECTION) {
       asfPrintStatus("Will apply 400m height correction for SCANSAR data.\n");
       average_height -= 400;
   }
