@@ -1165,7 +1165,15 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
         if (!specified_scale_factor)
           pps->lamcc.scale_factor = MAGIC_UNSET_DOUBLE;
 
-        if (!specified_plat1 || !specified_plat2 ||
+        if (!specified_lat0 && !(specified_plat1 && specified_plat2)) {
+          asfPrintWarning("Latitude of origin not specified.  If the latitude\n"
+              "of origin is not specified, then the image center will be used\n"
+              "instead ...but only if the first and second standard parallels\n"
+              "WERE specified ...and they were not.\n");
+          FREE(pps);
+          return NULL;
+        }
+        else if (!specified_plat1 || !specified_plat2 ||
              !specified_lat0 || !specified_lon0)
         {
           FREE(pps);
@@ -1230,10 +1238,15 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
         if (!specified_false_northing)
           pps->lamaz.false_northing = MAGIC_UNSET_DOUBLE;
 
-        if (!specified_lat0 || !specified_lon0)
+        if (!specified_lon0 ||
+            (!specified_lat0 && !specified_lon0))
         {
           FREE(pps);
           return NULL;
+        }
+        else if (!specified_lat0 && specified_lon0) {
+          asfPrintStatus("Latitude of origin (point of tangency) not specified.  Image\n"
+                        "center will be used instead.\n");
         }
 
         break;
@@ -1312,11 +1325,16 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
         if (!specified_false_northing)
           pps->albers.false_northing = MAGIC_UNSET_DOUBLE;
 
-        if (!specified_plat1 || !specified_plat2 ||
-             !specified_lat0 || !specified_lon0)
+        if (!specified_plat1 ||
+            !specified_plat2 ||
+            !specified_lon0)
         {
           FREE(pps);
           return NULL;
+        }
+        else if (!specified_lat0 && specified_plat1 && specified_plat2) {
+          asfPrintWarning("Latitude of origin not specified.  Image center\n"
+                         "will be utilized instead.\n");
         }
 
 
