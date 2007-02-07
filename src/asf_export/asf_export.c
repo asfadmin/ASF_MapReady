@@ -43,7 +43,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            tiff    - Tagged Image File Format, with byte valued pixels\n"\
 "            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
-"            ppm     - Portable pixmap image, with byte valued pixels\n"\
+"            pgm     - Portable graymap image, with byte valued pixels\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\

@@ -130,7 +130,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
   byte_line = (unsigned char *)  
     MALLOC(sizeof(unsigned char) * sample_count);
   rgb_line = (unsigned char *) 
-    MALLOC(sizeof(unsigned char) * sample_count);
+    MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =
@@ -143,6 +143,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 		      rgb_line);
 
   TIFFWriteScanline (otif, rgb_line, line, 0);
+  FREE(byte_line);
   FREE(rgb_line);
 }
 
@@ -283,7 +284,7 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
   byte_line = (unsigned char *)  
     MALLOC(sizeof(unsigned char) * sample_count);
   rgb_line = (unsigned char *) 
-    MALLOC(sizeof(unsigned char) * sample_count);
+    MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
     byte_line[jj] =

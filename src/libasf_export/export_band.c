@@ -714,8 +714,8 @@ export_band_image (const char *metadata_file_name,
 
     int band_count = md->general->band_count;
     char base_name[25], bands[25];
-    sprintf(bands, md->general->bands);
-    sprintf(base_name, output_file_name);
+    strcpy(bands, md->general->bands);
+    strcpy(base_name, output_file_name);
 
     int kk;
     for (kk=0; kk<band_count; kk++) {
