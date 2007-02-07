@@ -166,7 +166,7 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
        strcmp(uc(ext), ".TIFF") == 0 ||
        strcmp(uc(ext), ".JPG") == 0 ||
        strcmp(uc(ext), ".JPEG") == 0 ||
-       strcmp(uc(ext), ".PPM") == 0))
+       strcmp(uc(ext), ".PGM") == 0))
     base_name = stripExt(inFile);
   else
     strcpy(base_name, inFile);

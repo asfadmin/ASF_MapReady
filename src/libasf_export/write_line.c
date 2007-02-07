@@ -304,101 +304,26 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
   FREE (row_pointer);
 }
 
-void write_ppm_byte2byte(FILE *oppm,
-			 unsigned char *red_byte_line,
-			 unsigned char *green_byte_line,
-			 unsigned char *blue_byte_line,
+void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line, 
 			 int sample_count)
 {
-  int jj;
-  unsigned char *rgb_byte_line;
-
-  rgb_byte_line = (unsigned char *)
-    MALLOC(sizeof(unsigned char) * sample_count * 3);
-
-  for (jj=0; jj<sample_count; jj++) {
-    rgb_byte_line[jj*3] = red_byte_line[jj];
-    rgb_byte_line[(jj*3)+1] = green_byte_line[jj];
-    rgb_byte_line[(jj*3)+2] = blue_byte_line[jj];
-  }
-  FWRITE(rgb_byte_line, sizeof(unsigned char)*3, sample_count, oppm);
-  FREE(rgb_byte_line);
+  FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
 }
 
-void write_ppm_byte2lut(FILE *oppm, unsigned char *byte_line,
-			int sample_count, char *look_up_table_name)
-{
-  unsigned char *rgb_byte_line;
-
-  rgb_byte_line = (unsigned char *)
-    MALLOC(sizeof(unsigned char) * sample_count * 3);
-
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
-		      rgb_byte_line);
-
-  FWRITE(rgb_byte_line, sizeof(unsigned char)*3, sample_count, oppm);
-  FREE(rgb_byte_line);
-}
-
-void write_ppm_float2byte(FILE *oppm,
-			  float *red_float_line,
-			  float *green_float_line,
-			  float *blue_float_line,
-			  channel_stats_t red_stats,
-			  channel_stats_t green_stats,
-			  channel_stats_t blue_stats,
-			  scale_t sample_mapping,
+void write_pgm_float2byte(FILE *opgm, float *float_line,
+			  channel_stats_t stats, scale_t sample_mapping,
 			  float no_data, int sample_count)
 {
   int jj;
-  unsigned char *rgb_byte_line;
+  unsigned char *byte_line;
 
-  rgb_byte_line = (unsigned char *)
-    MALLOC(sizeof(unsigned char) * sample_count * 3);
+  byte_line = (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
   
-  for (jj=0; jj<sample_count; jj++) {
-    rgb_byte_line[jj*3] =
-      pixel_float2byte(red_float_line[jj], sample_mapping,
-		       red_stats.min, red_stats.max, red_stats.hist,
-		       red_stats.hist_pdf, no_data);
-    rgb_byte_line[(jj*3)+1] =
-      pixel_float2byte(green_float_line[jj], sample_mapping,
-		       green_stats.min, green_stats.max, green_stats.hist,
-		       green_stats.hist_pdf, no_data);
-    rgb_byte_line[(jj*3)+2] =
-      pixel_float2byte(blue_float_line[jj], sample_mapping,
-		       blue_stats.min, blue_stats.max, blue_stats.hist,
-		       blue_stats.hist_pdf, no_data);
-  }
-  FWRITE(rgb_byte_line, sizeof(unsigned char)*3, sample_count, oppm);
-  FREE(rgb_byte_line);
-}
-
-void write_ppm_float2lut(FILE *oppm, float *float_line, 
-			 channel_stats_t stats,
-			 scale_t sample_mapping, float no_data,
-			 int sample_count, char *look_up_table_name)
-{
-  int jj;
-  unsigned char *byte_line, *rgb_line;
- 
-  byte_line = (unsigned char *)  
-    MALLOC(sizeof(unsigned char) * sample_count);
-  rgb_line = (unsigned char *) 
-    MALLOC(sizeof(unsigned char) * sample_count);
-  
-  for (jj=0; jj<sample_count; jj++) {
+  for (jj=0; jj<sample_count; jj++)
     byte_line[jj] =
-      pixel_float2byte(float_line[jj], sample_mapping,
-		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, no_data);
-  }
-	  
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
-		      rgb_line);
-   
-  FWRITE(rgb_line, sizeof(unsigned char)*3, sample_count, oppm);
-  FREE(byte_line);
-  FREE(rgb_line);
-}
+      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max, 
+		       stats.hist, stats.hist_pdf, no_data);
 
+  FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
+  FREE(byte_line);
+}

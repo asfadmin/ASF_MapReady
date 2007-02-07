@@ -43,7 +43,7 @@ typedef enum {
   GEOTIFF,                      /* Geotiff.  */
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
-  PPM,                          /* Portable PixMap.  */
+  PGM,                          /* Portable GrayMap.  */
   KML                           // JPEG with GoogleEarth overlay file
 } output_format_t;
 
@@ -206,23 +206,8 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 			  float no_data, int sample_count,
 			  char *look_up_table_name);
 
-void write_ppm_byte2byte(FILE *oppm,
-			 unsigned char *red_byte_line,
-			 unsigned char *green_byte_line,
-			 unsigned char *blue_byte_line,
+void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line, 
 			 int sample_count);
-void write_ppm_byte2lut(FILE *oppm, unsigned char *byte_line,
-			int sample_count, char *look_up_table_name);
-void write_ppm_float2byte(FILE *oppm,
-			  float *red_float_line,
-			  float *green_float_line,
-			  float *blue_float_line,
-			  channel_stats_t red_stats,
-			  channel_stats_t green_stats,
-			  channel_stats_t blue_stats,
-			  scale_t sample_mapping,
+void write_pgm_float2byte(FILE *opgm, float *float_line,
+			  channel_stats_t blue_stats, scale_t sample_mapping,
 			  float no_data, int sample_count);
-void write_ppm_float2lut(FILE *oppm, float *float_line, 
-			 channel_stats_t stats,
-			 scale_t sample_mapping, float no_data,
-			 int sample_count, char *look_up_table_name);
