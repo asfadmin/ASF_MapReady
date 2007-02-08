@@ -6,7 +6,7 @@
 "          [-mask-file <filename> | -auto-water-mask]\n"\
 "          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
-"          [-other-file <basename>]\n"\
+"          [-other-file <basename>] [-do-radiometric]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -35,7 +35,10 @@
 "          User Masked: %d\n"\
 "          Shadow: %d\n"\
 "          Layover: %d\n"\
-"          Invalid: %d\n\n"
+"          Invalid: %d\n\n"\
+"     You may export the layover/shadow mask using asf_export to produce\n"\
+"     a color-coded mask, by using the '-lut layover_mask' option with\n"\
+"     asf_export.\n\n"
 
 #define ASF_OPTIONS_STRING \
 "     -keep (-k)\n"\
@@ -108,6 +111,12 @@
 "          be filled with pixel values from the original SAR image.\n\n"\
 "          This may not work particularly well when the masked regions have high\n"\
 "          elevation.\n"\
+"\n"\
+"     -do-radiometric\n"\
+"          Apply radiometric terrain correction.  Radiometric terrain correction\n"\
+"          is still experimental.  Currently, this option scales values using\n"\
+"          1 - .7*pow(cos(li)),7), where li is the local incidence angle.  In the\n"\
+"          future we expect to support more correction formulae.\n"\
 "\n"\
 "     -update-original-meta (-u)\n"\
 "          The correlation process that is done during the terrain correction\n"\
@@ -317,6 +326,14 @@ main (int argc, char *argv[])
         fill_value = LEAVE_MASK; 
     }
     else if (strmatches(key,"-do-radiometric","--do-radiometric",NULL)) {
+        // for the 3.1 release, we will always do formula #5
+        // it's the only one we've had time to test.  In later releases,
+        // we can switch to the other version ... this does mean
+        // that -do-radiometric will change from a flag to an option with
+        // an argument.
+#ifndef ALLOW_ALL_RADIOMETRIC_TC_FORMULAS
+        doRadiometric = 5;
+#else
         CHECK_ARG(1);
         char *form = strdup(GET_ARG(1));
         doRadiometric = atoi(form);
@@ -339,6 +356,7 @@ main (int argc, char *argv[])
         }
 
         free(form);
+#endif
     }
     else if (strmatches(key,"-smooth-dem-holes","--smooth-dem-holes",NULL)) {
         smooth_dem_holes = TRUE;
@@ -350,7 +368,7 @@ main (int argc, char *argv[])
         CHECK_ARG(1);
         if (n_other == MAX_OTHER)
             asfPrintError("-other-file option only supported %d times.\n", MAX_OTHER);
-        other_files[n_other++] = strdup(GET_ARG(1));
+        other_files[n_other++] = STRDUP(GET_ARG(1));
     }
     else {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
