@@ -255,8 +255,6 @@ void update_summary()
             strcat(text, "TIFF");
             break;
         }
-
-        strcat(text, "\n");
     }
     else
     {
@@ -265,7 +263,7 @@ void update_summary()
 
     if (s->output_bytes)
     {
-        strcat(text, "   Byte Scaling Method: ");
+        strcat(text, " (byte)\n   Scaling Method: ");
         switch (s->scaling_method)
         {
         default:
@@ -286,6 +284,10 @@ void update_summary()
             break;
         }
         //strcat(text, "\n");
+    }
+    else
+    {
+        strcat(text, " (float)\n");
     }
 
     summary_label =
