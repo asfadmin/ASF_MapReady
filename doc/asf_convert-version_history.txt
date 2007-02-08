@@ -1,6 +1,6 @@
 Convert Version History
 
-v3.0.<POINT_RELEASE> (released <RELEASE_DATE>)
+v3.0.21 (released 2007 February 8)
 Improved datum and spheroid support
 Added new metadata values:
   In the "general" block:
