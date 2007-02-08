@@ -108,7 +108,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
 }
 
 void initialize_jpeg_file(const char *output_file_name,
-			  meta_parameters *meta, FILE **ojpeg, 
+			  meta_parameters *meta, FILE **ojpeg,
 			  struct jpeg_compress_struct *cinfo, int rgb)
 {
   struct jpeg_error_mgr *jerr = MALLOC(sizeof(struct jpeg_error_mgr));
@@ -159,7 +159,7 @@ void initialize_jpeg_file(const char *output_file_name,
   return;
 }
 
-void initialize_pgm_file(const char *output_file_name, 
+void initialize_pgm_file(const char *output_file_name,
 			 meta_parameters *meta, FILE **opgm)
 {
   const int max_color_value = 255;
@@ -171,7 +171,7 @@ void initialize_pgm_file(const char *output_file_name,
   fprintf (*opgm, "%ld\n", (long int) meta->general->line_count);
   fprintf (*opgm, "%d\n", max_color_value);
 
-  return;  
+  return;
 }
 
 void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
@@ -546,7 +546,7 @@ export_band_image (const char *metadata_file_name,
   map_projected = is_map_projected(md);
 
   if (rgb && strcmp(look_up_table_name, "") == 0) {
-    
+
     // Initialize the chosen format
     if (format == TIF) {
       is_geotiff = 0;
@@ -616,79 +616,125 @@ export_band_image (const char *metadata_file_name,
       }
     }
 
-    // Write the actual image data
+    // Get channel numbers
+    int ignored[3] = {0, 0, 0};
+    int red_channel, green_channel, blue_channel;
+    for (ii=0; ii<3; ii++) {
+      ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
+    }
+    red_channel = get_band_number(md->general->bands,
+                                  md->general->band_count,
+                                  band_name[0]);
+    if (!ignored[0] && !(red_channel >= 0 && red_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    red_channel, "red");
+    }
+    green_channel = get_band_number(md->general->bands,
+                                  md->general->band_count,
+                                  band_name[1]);
+    if (!ignored[1] && !(green_channel >= 0 && green_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    green_channel, "green");
+    }
+    blue_channel = get_band_number(md->general->bands,
+                                   md->general->band_count,
+                                   band_name[2]);
+    if (!ignored[2] && !(blue_channel >= 0 && blue_channel < MAX_BANDS)) {
+      asfPrintError("Band number (%d) out of range for %s channel.\n",
+                    blue_channel, "blue");
+    }
+
+    // Write the data to the file
     FILE *fp;
     float *red_float_line, *green_float_line, *blue_float_line;
     unsigned char *red_byte_line, *green_byte_line, *blue_byte_line;
 
     fp = FOPEN(image_data_file_name, "rb");
 
-    int red_channel = get_band_number(md->general->bands,
-                                      md->general->band_count,
-                                      band_name[0]);
-    int green_channel = get_band_number(md->general->bands,
-                                        md->general->band_count,
-                                        band_name[1]);
-    int blue_channel = get_band_number(md->general->bands,
-                                       md->general->band_count,
-                                       band_name[2]);
-    asfRequire(red_channel >= 0 && red_channel < MAX_BANDS &&
-               green_channel >= 0 && green_channel < MAX_BANDS &&
-               blue_channel >= 0 && blue_channel < MAX_BANDS,
-               "Band number out of range\n");
-
     int sample_count = md->general->sample_count;
     int offset = md->general->line_count;
 
     // Allocate some memory
     if (md->optical) {
-      red_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
-      green_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
-      blue_byte_line = (unsigned char *) MALLOC(sizeof(char) * sample_count);
+      if (ignored[0])
+        red_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
+      else
+        red_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
+
+      if (ignored[1])
+        green_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
+      else
+        green_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
+
+      if (ignored[2])
+        blue_byte_line = (unsigned char *) CALLOC(sample_count, sizeof(char));
+      else
+        blue_byte_line = (unsigned char *) MALLOC(sample_count * sizeof(char));
     }
     else {
-      red_float_line = (float *) MALLOC(sizeof(float) * sample_count);
-      green_float_line = (float *) MALLOC(sizeof(float) * sample_count);
-      blue_float_line = (float *) MALLOC(sizeof(float) * sample_count);
+      // Not optical data
+      if (ignored[0])
+        red_float_line = (float *) CALLOC(sample_count, sizeof(float));
+      else
+        red_float_line = (float *) MALLOC(sample_count * sizeof(float));
+
+      if (ignored[1])
+        green_float_line = (float *) CALLOC(sample_count, sizeof(float));
+      else
+        green_float_line = (float *) MALLOC(sample_count * sizeof(float));
+
+      if (ignored[2])
+        blue_float_line = (float *) CALLOC(sample_count, sizeof(float));
+      else
+        blue_float_line = (float *) MALLOC(sample_count * sizeof(float));
     }
 
     for (ii=0; ii<md->general->line_count; ii++) {
       if (md->optical) {
-	// Optical images come as byte in the first place
-	get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
-	get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
-	get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
-	if (format == TIF || format == GEOTIFF)
-	  write_rgb_tiff_byte2byte(otif, red_byte_line, green_byte_line,
-				   blue_byte_line, ii, sample_count);
-	else if (format == JPEG)
-	  write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
-				   blue_byte_line, &cinfo, sample_count);
+        // Optical images come as byte in the first place
+        if (!ignored[0])
+          get_byte_line(fp, md, ii+red_channel*offset, red_byte_line);
+        if (!ignored[1])
+          get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
+        if (!ignored[2])
+          get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
+        if (format == TIF || format == GEOTIFF)
+          write_rgb_tiff_byte2byte(otif, red_byte_line, green_byte_line,
+                                   blue_byte_line, ii, sample_count);
+        else if (format == JPEG)
+          write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
+                                   blue_byte_line, &cinfo, sample_count);
       }
       else if (sample_mapping == NONE) {
         // Write float lines if float image
-        get_float_line(fp, md, ii+red_channel*offset, red_float_line);
-        get_float_line(fp, md, ii+green_channel*offset, green_float_line);
-        get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
-	if (format == GEOTIFF)
-	  write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
-				     blue_float_line, ii, sample_count);
+        if (!ignored[0])
+          get_float_line(fp, md, ii+red_channel*offset, red_float_line);
+        if (!ignored[1])
+          get_float_line(fp, md, ii+green_channel*offset, green_float_line);
+        if (!ignored[2])
+          get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
+        if (format == GEOTIFF)
+          write_rgb_tiff_float2float(otif, red_float_line, green_float_line,
+                                     blue_float_line, ii, sample_count);
       }
       else {
         // Write float lines if byte image
-        get_float_line(fp, md, ii+red_channel*offset, red_float_line);
-        get_float_line(fp, md, ii+green_channel*offset, green_float_line);
-        get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
-	if (format == TIF || format == GEOTIFF)
-	  write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
-				    blue_float_line, red_stats, green_stats,
-				    blue_stats, sample_mapping,
-				    md->general->no_data, ii, sample_count);
-	else if (format == JPEG)
-	  write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
-				    blue_float_line, &cinfo, red_stats,
-				    green_stats, blue_stats, sample_mapping,
-				    md->general->no_data, sample_count);
+        if (!ignored[0])
+          get_float_line(fp, md, ii+red_channel*offset, red_float_line);
+        if (!ignored[1])
+          get_float_line(fp, md, ii+green_channel*offset, green_float_line);
+        if (!ignored[2])
+          get_float_line(fp, md, ii+blue_channel*offset, blue_float_line);
+        if (format == TIF || format == GEOTIFF)
+          write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
+                                    blue_float_line, red_stats, green_stats,
+                                    blue_stats, sample_mapping,
+                                    md->general->no_data, ii, sample_count);
+        else if (format == JPEG)
+          write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
+                                    blue_float_line, &cinfo, red_stats,
+                                    green_stats, blue_stats, sample_mapping,
+                                    md->general->no_data, sample_count);
       }
       asfLineMeter(ii, md->general->line_count);
     }
@@ -704,7 +750,7 @@ export_band_image (const char *metadata_file_name,
       if (green_float_line) FREE(green_float_line);
       if (blue_float_line) FREE(blue_float_line);
     }
-    
+
     // Finalize the chosen format
     if (format == TIF || format == GEOTIFF)
       finalize_tiff_file(otif, ogtif, is_geotiff);
@@ -750,13 +796,13 @@ export_band_image (const char *metadata_file_name,
 	}
 	else if (format == GEOTIFF) {
 	  append_ext_if_needed (output_file_name, ".tif", ".tiff");
-	  initialize_tiff_file(&otif, &ogtif, output_file_name, 
+	  initialize_tiff_file(&otif, &ogtif, output_file_name,
 			       metadata_file_name, is_geotiff,
 			       sample_mapping, rgb);
 	}
 	else if (format == JPEG) {
 	  append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
-	  initialize_jpeg_file(output_file_name, md, 
+	  initialize_jpeg_file(output_file_name, md,
 			       &ojpeg, &cinfo, rgb);
 	}
 	else if (format == PGM) {
@@ -770,10 +816,10 @@ export_band_image (const char *metadata_file_name,
 				      band_name[kk]);
 	asfRequire(channel >= 0 && channel <= MAX_BANDS,
 		   "Band number out of range\n");
-	
+
 	int sample_count = md->general->sample_count;
 	int offset = md->general->line_count;
-	
+
 	// Get the statistics if necessary
 	channel_stats_t stats;
 	if (!md->optical && sample_mapping != NONE) {
@@ -782,22 +828,22 @@ export_band_image (const char *metadata_file_name,
 		      "different than expected.\n");
 	  asfPrintStatus("Gathering statistics ...\n");
 	  calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
-			       &stats.min, &stats.max, &stats.mean, 
+			       &stats.min, &stats.max, &stats.mean,
 			       &stats.standard_deviation, stats.hist);
 	  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	    stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	    gsl_histogram_pdf_init (stats.hist_pdf, stats.hist);
 	  }
 	}
-	
+
 	FILE *fp;
 	float *float_line;
 	unsigned char *byte_line;
-	
+
 	// Write the output image
 	fp = FOPEN(image_data_file_name, "rb");
 	float_line = (float *) MALLOC(sizeof(float) * sample_count);
-	byte_line = 
+	byte_line =
 	  (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
 
 	if (strcmp(look_up_table_name, "") != 0) { // Apply look up table
@@ -818,8 +864,8 @@ export_band_image (const char *metadata_file_name,
 				     md->general->no_data, ii, sample_count,
 				     look_up_table_name);
 	      else if (format == JPEG)
-		write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats, 
-				     sample_mapping, md->general->no_data, 
+		write_jpeg_float2lut(ojpeg, float_line, &cinfo, stats,
+				     sample_mapping, md->general->no_data,
 				     sample_count, look_up_table_name);
 	    }
 	    asfLineMeter(ii, md->general->line_count);
@@ -847,8 +893,8 @@ export_band_image (const char *metadata_file_name,
 		write_tiff_float2byte(otif, float_line, stats, sample_mapping,
 				      md->general->no_data, ii, sample_count);
 	      else if (format == JPEG)
-		write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats, 
-				      sample_mapping, md->general->no_data, 
+		write_jpeg_float2byte(ojpeg, float_line, &cinfo, stats,
+				      sample_mapping, md->general->no_data,
 				      sample_count);
 	      else if (format == PGM)
 		write_pgm_float2byte(opgm, float_line, stats, sample_mapping,
@@ -857,7 +903,7 @@ export_band_image (const char *metadata_file_name,
 	    asfLineMeter(ii, md->general->line_count);
 	  }
 	}
-	
+
 	// Free memory
 	if (float_line) FREE(float_line);
 	if (byte_line) FREE(byte_line);
@@ -872,7 +918,7 @@ export_band_image (const char *metadata_file_name,
       }
     }
   }
-  
+
   if (free_band_names) {
       FREE(band_name[0]); FREE(band_name);
   }
