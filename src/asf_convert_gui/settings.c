@@ -11,10 +11,12 @@ settings_get_input_data_format_allows_latitude(const Settings *s)
 static int
 settings_get_output_format_allows_size(const Settings *s)
 {
-    return s->output_format == OUTPUT_FORMAT_JPEG ||
-        s->output_format == OUTPUT_FORMAT_PGM ||
-        s->output_format == OUTPUT_FORMAT_TIFF ||
-        s->output_format == OUTPUT_FORMAT_GEOTIFF;
+    // no longer support sizing for any format
+    return FALSE;
+    //return s->output_format == OUTPUT_FORMAT_JPEG ||
+    //    s->output_format == OUTPUT_FORMAT_PGM ||
+    //    s->output_format == OUTPUT_FORMAT_TIFF ||
+    //    s->output_format == OUTPUT_FORMAT_GEOTIFF;
 }
 
 static int

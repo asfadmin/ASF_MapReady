@@ -256,21 +256,6 @@ void update_summary()
             break;
         }
 
-        if (s->apply_scaling)
-        {
-            GtkWidget *longest_dimension_spinbutton;
-            gdouble d;
-
-            longest_dimension_spinbutton = 
-                glade_xml_get_widget(glade_xml, 
-                "longest_dimension_spinbutton");
-
-            d = gtk_spin_button_get_value(
-                GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-
-            sprintf(text, "%s (size %d)", text, (int)floor(d + 0.5));
-        }
-
         strcat(text, "\n");
     }
     else

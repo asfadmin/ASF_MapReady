@@ -350,10 +350,6 @@ export_checkbutton_toggle()
 {
     GtkWidget *export_checkbutton,
         *output_format_combobox,
-        *longest_dimension_label,
-        *longest_dimension_label2,
-        *longest_dimension_spinbutton,
-        *scale_checkbutton,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *scaling_method_label,
@@ -361,7 +357,7 @@ export_checkbutton_toggle()
         *rgb_hbox;
     
     gint output_format;
-    gboolean export_checked, show;
+    gboolean export_checked;
 
     export_checkbutton =
         glade_xml_get_widget(glade_xml, "export_checkbutton");
@@ -372,18 +368,6 @@ export_checkbutton_toggle()
 
     output_format_combobox = 
         glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-    longest_dimension_label =
-        glade_xml_get_widget(glade_xml, "longest_dimension_label");
-
-    longest_dimension_label2 =
-        glade_xml_get_widget(glade_xml, "longest_dimension_label2");
-
-    longest_dimension_spinbutton =
-        glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
-    scale_checkbutton =
-        glade_xml_get_widget(glade_xml, "scale_checkbutton");
 
     output_bytes_checkbutton =
         glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
@@ -412,28 +396,6 @@ export_checkbutton_toggle()
         case OUTPUT_FORMAT_JPEG:
         case OUTPUT_FORMAT_PGM:
         case OUTPUT_FORMAT_TIFF:
-            show = TRUE;
-            break;
-        case OUTPUT_FORMAT_GEOTIFF:
-        case OUTPUT_FORMAT_ASF_INTERNAL:
-        case OUTPUT_FORMAT_CEOS:  
-            show = FALSE;
-            break;
-        }
-
-        gtk_widget_set_sensitive(longest_dimension_label, show);
-        gtk_widget_set_sensitive(longest_dimension_spinbutton, show);
-        gtk_widget_set_sensitive(scale_checkbutton, show);
-
-        if (show)
-            scale_checkbutton_toggle();
-
-        switch (output_format)
-        {
-        default:
-        case OUTPUT_FORMAT_JPEG:
-        case OUTPUT_FORMAT_PGM:
-        case OUTPUT_FORMAT_TIFF:
         case OUTPUT_FORMAT_ASF_INTERNAL:
         case OUTPUT_FORMAT_CEOS:          
             gtk_toggle_button_set_active(
@@ -452,10 +414,6 @@ export_checkbutton_toggle()
                 GTK_TOGGLE_BUTTON(output_bytes_checkbutton), FALSE);
 
             output_bytes_checkbutton_toggle();
-
-	    gtk_toggle_button_set_active(
-	      GTK_TOGGLE_BUTTON(scale_checkbutton), FALSE);
-
             break;
         }
 
@@ -465,9 +423,6 @@ export_checkbutton_toggle()
     else
     {
         gtk_widget_set_sensitive(output_format_combobox, FALSE);
-        gtk_widget_set_sensitive(longest_dimension_label, FALSE);
-        gtk_widget_set_sensitive(longest_dimension_spinbutton, FALSE);
-        gtk_widget_set_sensitive(scale_checkbutton, FALSE);
         gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
         gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
         gtk_widget_set_sensitive(scaling_method_label, FALSE);
