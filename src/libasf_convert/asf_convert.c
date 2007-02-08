@@ -1069,7 +1069,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(tmp);
 
             check_return(
-                asf_export(format, TRUNCATE, inFile, outFile),
+                asf_export_bands(format, TRUNCATE, 1, "layover_mask.lut",
+                                 inFile, outFile, NULL),
+                //asf_export(format, TRUNCATE, inFile, outFile),
                 "exporting layover mask (asf_export)\n");
         }
         else {

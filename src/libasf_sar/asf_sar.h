@@ -4,11 +4,11 @@
 #define MAX_IMG_SIZE 100000
 
 /* values for the layover/shadow mask*/
-#define MASK_NORMAL 1.0
-#define MASK_USER_MASK 64.0
-#define MASK_SHADOW 128.0
-#define MASK_LAYOVER 192.0
-#define MASK_INVALID_DATA 255
+#define MASK_NORMAL 1
+#define MASK_USER_MASK 2
+#define MASK_SHADOW 3
+#define MASK_LAYOVER 4
+#define MASK_INVALID_DATA 5
 
 /* At the moment, changing this to something other than 0 doesn't work.
    Needs to be investigated. */

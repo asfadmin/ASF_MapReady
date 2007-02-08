@@ -23,7 +23,8 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
 
   fgets(heading, 1024, fp);
   for (ii=0; ii<768; ii+=3) {
-    int n = fscanf(fp, "%d,%d,%d", &red, &green, &blue);
+    fgets(heading, 1024, fp);
+    int n = sscanf(heading, "%d,%d,%d", &red, &green, &blue);
     if (n != 3) break;
     lut_buffer[ii] = red;
     lut_buffer[ii+1] = green;
