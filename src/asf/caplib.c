@@ -71,13 +71,11 @@ void bail(const char *mess, ...)
 }
 
 /* MALLOC ignores behavior_on_error -- if out of memory, we should quit */
-size_t bytes_mallocked=0;
 void *MALLOC(size_t size)
 {
-	void *ret = malloc(size);
+  void *ret = malloc(size);
 	char error_message[1024];
 
-	bytes_mallocked += size;
 	if (ret==NULL)
 	{
 #ifdef ENOMEM
@@ -144,6 +142,80 @@ void *MALLOC(size_t size)
                 exit(202);
 	}
 	return ret;
+}
+
+/* CALLOC ignores behavior_on_error -- if out of memory, we should quit */
+void *CALLOC(size_t nmemb, size_t size)
+{
+  void *ret = calloc(nmemb, size);
+  char error_message[1024];
+
+  if (ret==NULL)
+  {
+#ifdef ENOMEM
+    if (errno==ENOMEM) /*There will never be enough memory.*/
+    {
+      sprintf(error_message,
+              "*****  ERROR!  Out of Memory *******\n"
+              "* \n"
+              "*    This program needs more memory than your\n"
+              "* system has.  It was asking for %i bytes of memory.\n"
+              "*    You might ask your system administrator to\n"
+              "* increase the size of your swap partition, or add\n"
+              "* more real memory to your system.\n"
+              "**    Program terminating... Out of memory.\n",
+              (int)size * (int)nmemb);
+      fprintf(stderr,error_message);
+      if (fLog!=NULL)
+        fprintf(fLog,error_message);
+
+      exit(200);
+    }
+#endif
+#ifdef EAGAIN
+    if (errno==EAGAIN) /*There's not enough memory now.*/
+    {
+      sleep(2); /*Wait 2 seconds...*/
+      ret=calloc(nmemb, size); /*... try again.*/
+      if (ret==NULL)
+      { /*If the call failed again, we just bail.*/
+        sprintf(error_message,
+                "*****  ERROR!  Out of Memory *******\n"
+                "* \n"
+                "*    This program needs more memory than your\n"
+                "* system has free at this moment.  It was \n"
+                "* asking for %i bytes of memory.\n"
+                "*    You might try running the program again\n"
+                "* later, when there are fewer people on.\n"
+                "**    Program terminating... Out of memory.\n",
+                (int)size * (int)nmemb);
+        fprintf(stderr,error_message);
+        if (fLog!=NULL)
+          fprintf(fLog,error_message);
+
+        exit(201);
+      }
+      else return ret;
+    }
+#endif
+    /*An unknown memory error might cause us to get here.*/
+    sprintf(error_message,
+            "*****  ERROR!  Out of Memory *******\n"
+            "* \n"
+            "*    This program needs more memory than your\n"
+            "* system has.  It was asking for %i bytes of memory.\n"
+            "*    You might ask your system administrator to\n"
+            "* increase the size of your swap partition, or add\n"
+            "* more real memory to your system.\n"
+            "**    Program terminating... Out of memory.\n",
+            (int)size * (int)nmemb);
+    fprintf(stderr,error_message);
+    if (fLog!=NULL)
+      fprintf(fLog,error_message);
+
+    exit(202);
+  }
+  return ret;
 }
 
 void FREE(void *ptr)
@@ -255,7 +327,7 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
                         else
                             return ret;
 		}
-		
+
 		sprintf(error_message,
 			"*****  ERROR!  Error reading file! *******\n"
 			"* \n"
@@ -276,7 +348,7 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
 
 		fprintf(stderr,error_message);
 		if (fLog!=NULL) fprintf(fLog,error_message);
-		
+
                 if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
                     exit(205);
 	}
@@ -286,7 +358,7 @@ size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
 {
 	size_t ret;
 	char error_message[1024];
-	
+
 	if (ptr==NULL)
 		programmer_error("NULL data buffer passed to FWRITE.\n");
 	if (stream==NULL)
@@ -327,7 +399,7 @@ int FSEEK(FILE *stream,int offset,int ptrname)
 	if (stream==NULL)
 		programmer_error("NULL file pointer passed to FSEEK.\n");
 	ret=fseek(stream,offset,ptrname);
-	if (ret==-1) 
+	if (ret==-1)
 		programmer_error("Stream passed to FSEEK is not seekable.\n");
 	return ret;
 }
