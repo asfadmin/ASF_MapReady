@@ -360,6 +360,7 @@ settings_apply_to_gui(const Settings * s)
         {
             GtkWidget *save_dem_checkbutton;
             GtkWidget *layover_mask_checkbutton;
+            GtkWidget *radiometric_checkbutton;
 
             tc_pixel_size_checkbutton =
                 glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
@@ -400,6 +401,13 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(layover_mask_checkbutton),
                 s->generate_layover_mask);
+
+            radiometric_checkbutton =
+                glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(radiometric_checkbutton),
+                s->do_radiometric);
         }
 
 
@@ -760,8 +768,6 @@ settings_get_from_gui()
         GtkWidget *dem_entry;
         GtkWidget *tc_pixel_size_checkbutton;
         GtkWidget *interpolate_checkbutton;
-        GtkWidget *layover_mask_checkbutton;
-        GtkWidget *save_dem_checkbutton;
 
         rb_terrcorr =
             glade_xml_get_widget(glade_xml, "rb_terrcorr");
@@ -804,19 +810,26 @@ settings_get_from_gui()
 
             ret->refine_geolocation_is_checked = FALSE;
             
-            save_dem_checkbutton =
+            GtkWidget *save_dem_checkbutton =
                 glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
             
             ret->generate_dem =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(save_dem_checkbutton));
             
-            layover_mask_checkbutton =
+            GtkWidget *layover_mask_checkbutton =
                 glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
             
             ret->generate_layover_mask =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(layover_mask_checkbutton));
+
+            GtkWidget *radiometric_checkbutton =
+                glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
+
+            ret->do_radiometric =
+                gtk_toggle_button_get_active(
+                    GTK_TOGGLE_BUTTON(radiometric_checkbutton));
         }
         else
         {
@@ -1543,6 +1556,7 @@ settings_to_config_file(const Settings *s,
                 fprintf(cf, "pixel spacing = %.2lf\n", s->pixel_size);
             fprintf(cf, "refine geolocation only = 0\n");
             fprintf(cf, "interpolate = %d\n", s->interp);
+            fprintf(cf, "do radiometric = %d\n", s->do_radiometric);
             fprintf(cf, "save terrcorr dem = %d\n", s->generate_dem);
             fprintf(cf, "save terrcorr layover mask = %d\n",
                     s->generate_layover_mask);

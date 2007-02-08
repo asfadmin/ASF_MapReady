@@ -149,6 +149,7 @@ typedef struct
   char mask_file[2048];
   int generate_layover_mask;
   int generate_dem;
+  int do_radiometric;
 
   /* misc */
   int keep_files;

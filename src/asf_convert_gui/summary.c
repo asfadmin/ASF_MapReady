@@ -96,6 +96,11 @@ void update_summary()
         else
             strcat(text, "\nRefine Geolocation: Yes");
 
+        if (s->do_radiometric)
+            strcat(text, "\n   Geometric & Radiometric correction");
+        else
+            strcat(text, "\n   Geometric correction only");
+
 	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
 	dem = strdup(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
 

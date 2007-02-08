@@ -28,11 +28,6 @@ void terrcorr_options_changed()
 {
   GtkWidget *terrcorr_vbox;
   GtkWidget *dem_checkbutton;
-  GtkWidget *mask_checkbutton;
-  GtkWidget *mask_entry;
-  GtkWidget *rb_terrcorr, *rb_refine_geolocation;
-  GtkWidget *tc_pixel_size_checkbutton;
-  GtkWidget *interpolate_checkbutton;
   GtkWidget *hbox_terrcorr_items;
 
   hbox_terrcorr_items =
@@ -49,24 +44,14 @@ void terrcorr_options_changed()
 
   gtk_widget_set_sensitive(terrcorr_vbox, dem_is_checked);
 
-  mask_checkbutton =
-      glade_xml_get_widget(glade_xml, "mask_checkbutton");
-  mask_entry =
-      glade_xml_get_widget(glade_xml, "mask_entry");
-  rb_terrcorr =
-      glade_xml_get_widget(glade_xml, "rb_terrcorr");
-  tc_pixel_size_checkbutton =
-      glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
-  rb_refine_geolocation =
-      glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
-  interpolate_checkbutton =
-      glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
-
   if (dem_is_checked) {
+      GtkWidget *rb_terrcorr;
       GtkWidget *hbox_tc_pixel_size;
       GtkWidget *rb_mask_file, *rb_auto_water_mask;
       GtkWidget *tc_pixel_size_checkbutton;
       GtkWidget *interpolate_checkbutton;
+      GtkWidget *mask_checkbutton, *mask_entry;
+      GtkWidget *radiometric_checkbutton;
       GtkWidget *layover_mask_checkbutton;
       GtkWidget *save_dem_checkbutton;
 
@@ -76,6 +61,8 @@ void terrcorr_options_changed()
 
       gtk_widget_set_sensitive(hbox_terrcorr_items, TRUE);
 
+      rb_terrcorr =
+          glade_xml_get_widget(glade_xml, "rb_terrcorr");
       terrcorr_is_checked =
           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_terrcorr));
 
@@ -83,6 +70,10 @@ void terrcorr_options_changed()
           glade_xml_get_widget(glade_xml, "rb_mask_file");
       rb_auto_water_mask =
           glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
+      mask_checkbutton =
+          glade_xml_get_widget(glade_xml, "mask_checkbutton");
+      mask_entry =
+          glade_xml_get_widget(glade_xml, "mask_entry");
 
       mask_is_checked =
           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mask_checkbutton));
@@ -109,6 +100,8 @@ void terrcorr_options_changed()
 
       interpolate_checkbutton =
           glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+      radiometric_checkbutton =
+          glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
       layover_mask_checkbutton =
           glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
       save_dem_checkbutton =
@@ -116,6 +109,7 @@ void terrcorr_options_changed()
 
       gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
+      gtk_widget_set_sensitive(radiometric_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(layover_mask_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(save_dem_checkbutton, terrcorr_is_checked);
   }
