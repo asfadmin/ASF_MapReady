@@ -63,9 +63,13 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "                over the entire brightness scale which increases contrast.\n"\
 "   -rgb <red> <green> <blue>\n"\
 "        Converts output image into a color RGB image.\n"\
-"        <red>, <green>, and <blue> specify which channel\n"\
+"        <red>, <green>, and <blue> specify which band (channel)\n"\
 "        is assigned to color planes red, green, or blue,\n"\
-"        ex) -rgb HH VH VV, or -rgb 3 2 1\n"\
+"        ex) '-rgb HH VH VV', or '-rgb 3 2 1'.  If the word 'ignore' is\n"\
+"        provided as one or more bands, then the associated color plane\n"\
+"        will not be exported, e.g. '-rgb ignore 2 1' will result in an\n"\
+"        RGB file that has a zero in each RGB pixel's red component.\n"\
+"        The result will be an image with only greens and blues in it.\n"\
 "        Currently implemented for GeoTIFF, TIFF and JPEG.\n"\
 "        Cannot be chosen together with the -band option.\n"\
 "   -lut <look up table file>\n"\
@@ -152,6 +156,9 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 #include <asf_contact.h>
 #include <asf_license.h>
 
+// Local prototypes
+int is_numeric(char *str);
+
 // Print minimalistic usage info & exit
 static void print_usage(void)
 {
@@ -204,6 +211,8 @@ main (int argc, char *argv[])
   char **band_names=NULL;
   int rgb=0;
   int num_bands_found;
+  int ignored[3] = {0, 0, 0};
+  int num_ignored = 0;
 
   in_base_name = (char *) MALLOC(sizeof(char)*255);
   output_name = (char *) MALLOC(sizeof(char)*255);
@@ -441,27 +450,38 @@ main (int argc, char *argv[])
 
   // Set rgb combination
   if ( rgbFlag != FLAG_NOT_SET ) {
-    strcpy (command_line.red_channel, argv[rgbFlag + 1]);
-    strcpy (command_line.green_channel, argv[rgbFlag + 2]);
-    strcpy (command_line.blue_channel, argv[rgbFlag + 3]);
+    int i;
+
+    for (i=0, num_ignored = 0; i<3; i++) {
+      ignored[i] = strncmp("IGNORE", uc(argv[rgbFlag + i + 1]), 6) == 0 ? 1 : 0;
+      num_ignored += ignored[i] ? 1 : 0;
+    }
+    asfRequire(num_ignored < 3,
+               "Cannot ignore all bands.  Exported image would be blank.\n");
+
+    strcpy (command_line.red_channel, ignored[0] ? "Ignored" : argv[rgbFlag + 1]);
+    strcpy (command_line.green_channel, ignored[1] ? "Ignored" : argv[rgbFlag + 2]);
+    strcpy (command_line.blue_channel, ignored[2] ? "Ignored" : argv[rgbFlag + 3]);
 
     // Check to see if the bands are numeric and in range
     int r_channel = atoi(command_line.red_channel);
     int g_channel = atoi(command_line.green_channel);
     int b_channel = atoi(command_line.blue_channel);
-    if (r_channel >= 1 && r_channel <= MAX_BANDS &&
-        g_channel >= 1 && g_channel <= MAX_BANDS &&
-        b_channel >= 1 && b_channel <= MAX_BANDS) {
-      /////////// Numeric channel case ////////////
-      // Remove trailing non-numeric characters from the channel number
-      // string
+
+    /////////// Numeric channel case ////////////
+    // Remove trailing non-numeric characters from the channel number
+    // string and pad front end nicely with a zero
+    if (!ignored[0] && is_numeric(command_line.red_channel) &&
+        r_channel >= 1 && r_channel <= MAX_BANDS) {
       sprintf(command_line.red_channel, "%02d", atoi(command_line.red_channel));
-      sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
-      sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
     }
-    else {
-      //////////// Alpha channel case /////////////
-      ;
+    if (!ignored[1] && is_numeric(command_line.green_channel) &&
+        g_channel >= 1 && g_channel <= MAX_BANDS) {
+      sprintf(command_line.green_channel, "%02d", atoi(command_line.green_channel));
+    }
+    if (!ignored[2] && is_numeric(command_line.blue_channel) &&
+        b_channel >= 1 && b_channel <= MAX_BANDS) {
+      sprintf(command_line.blue_channel, "%02d", atoi(command_line.blue_channel));
     }
   }
 
@@ -475,9 +495,9 @@ main (int argc, char *argv[])
     int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
     if (md->optical && truecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel, "03");
+        strcpy(command_line.red_channel,   "03");
         strcpy(command_line.green_channel, "02");
-        strcpy(command_line.blue_channel, "01");
+        strcpy(command_line.blue_channel,  "01");
       }
       else {
         char **bands = extract_band_names(md->general->bands, 3);
@@ -498,9 +518,9 @@ main (int argc, char *argv[])
     }
     if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel, "04");
+        strcpy(command_line.red_channel,   "04");
         strcpy(command_line.green_channel, "03");
-        strcpy(command_line.blue_channel, "02");
+        strcpy(command_line.blue_channel,  "02");
       }
       else {
         char **bands = extract_band_names(md->general->bands, 4);
@@ -573,7 +593,7 @@ main (int argc, char *argv[])
   }
   else if (bandFlag != FLAG_NOT_SET) {
     if (strcmp(uc(command_line.band), "ALL") == 0)
-      asfPrintStatus("Exporting all bands as greyscale ...\n\n");
+      asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
     else if (num_bands_found == 1) {
       if (lutFlag != FLAG_NOT_SET)
 	asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
@@ -659,3 +679,15 @@ main (int argc, char *argv[])
   exit (EXIT_SUCCESS);
 }
 
+int is_numeric(char *str)
+{
+  char *s = str;
+  int numericness = 1;
+
+  while (*s != '\0') {
+    if (!isdigit(*s)) numericness = 0;
+    s++;
+  }
+
+  return numericness;
+}
