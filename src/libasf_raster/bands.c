@@ -79,7 +79,8 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
   char **rgb=NULL;
   meta_parameters *meta;
   int ii;
-  int red=0, green=0, blue=0;
+  int ignored[3];
+  //int red=0, green=0, blue=0;
 
   // ALOS fix... ALOS basenames can contain a '.' and the appendExt()
   // in meta_read() ends up truncating the basename at that point
@@ -92,6 +93,9 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
   meta = meta_read(meta_name);
   //meta = meta_read(in_base_name);
   // Check for bands
+  ignored[0] = (strncmp("IGNORED", uc(red_channel), 6) == 0 && rgb_flag) ? 1 : 0;
+  ignored[1] = (strncmp("IGNORED", uc(green_channel), 6) == 0 && rgb_flag) ? 1 : 0;
+  ignored[2] = (strncmp("IGNORED", uc(blue_channel), 6) == 0 && rgb_flag) ? 1 : 0;
   *num_found = 0;
   rgb = (char **) MALLOC(MAX_BANDS*sizeof(char *));
   for (ii=0; ii<MAX_BANDS; ii++) {
@@ -99,38 +103,58 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
     strcpy(rgb[ii],"");
   }
   if (strcmp(meta->general->bands, "???") != 0) {
-    if (strlen(red_channel) && strstr(meta->general->bands, red_channel)) {
-      red = 1;
-      strcpy(rgb[*num_found], red_channel);
+    if (!ignored[0]) {
+      if (red_channel && strlen(red_channel) && strstr(meta->general->bands, red_channel)) {
+        //red = 1;
+        strcpy(rgb[*num_found], red_channel);
+        (*num_found)++;
+      }
+      else if (rgb_flag) {
+        asfPrintWarning("Channel specified for RED (\"%s\")"
+                        " not found in image file.\n"
+                        "Available channels are %s\n", red_channel,
+                        meta->general->bands);
+      }
+    }
+    else {
+      strcpy(rgb[*num_found], "Ignored");
       (*num_found)++;
     }
-    else if (rgb_flag) {
-      asfPrintWarning("Channel specified for RED (\"%s\")"
-                      " not found in image file.\n"
-                      "Available channels are %s\n", red_channel,
-                      meta->general->bands);
+
+    if (!ignored[1]) {
+      if (green_channel && strlen(green_channel) && strstr(meta->general->bands, green_channel)) {
+        //green = 1;
+        strcpy(rgb[*num_found], green_channel);
+        (*num_found)++;
+      }
+      else if (rgb_flag) {
+        asfPrintWarning("Channel specified for GREEN (\"%s\")"
+                        " not found in image file.\n"
+                        "Available channels are %s\n", green_channel,
+                        meta->general->bands);
+      }
     }
-    if (strlen(green_channel) && strstr(meta->general->bands, green_channel)) {
-      green = 1;
-      strcpy(rgb[*num_found], green_channel);
+    else {
+      strcpy(rgb[*num_found], "Ignored");
       (*num_found)++;
     }
-    else if (rgb_flag) {
-      asfPrintWarning("Channel specified for GREEN (\"%s\")"
-                      " not found in image file.\n"
-                      "Available channels are %s\n", green_channel,
-                      meta->general->bands);
+
+    if (!ignored[2]) {
+      if (blue_channel && strlen(blue_channel) && strstr(meta->general->bands, blue_channel)) {
+        //blue = 1;
+        strcpy(rgb[*num_found], blue_channel);
+        (*num_found)++;
+      }
+      else if (rgb_flag) {
+        asfPrintWarning("Channel specified for BLUE (\"%s\")"
+                        " not found in image file.\n"
+                        "Available channels are %s\n", blue_channel,
+                        meta->general->bands);
+      }
     }
-    if (strlen(blue_channel) && strstr(meta->general->bands, blue_channel)) {
-      blue = 1;
-      strcpy(rgb[*num_found], blue_channel);
+    else {
+      strcpy(rgb[*num_found], "Ignored");
       (*num_found)++;
-    }
-    else if (rgb_flag) {
-      asfPrintWarning("Channel specified for BLUE (\"%s\")"
-                      " not found in image file.\n"
-                      "Available channels are %s\n", blue_channel,
-                      meta->general->bands);
     }
   }
 
@@ -151,8 +175,8 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
   // Check for band
   *num_found = 0;
   band_name = (char **) MALLOC(meta->general->band_count*sizeof(char *));
-  if (strcmp(uc(band), "ALL") == 0) 
-    band_name = extract_band_names(meta->general->bands, 
+  if (strcmp(uc(band), "ALL") == 0)
+    band_name = extract_band_names(meta->general->bands,
 				   meta->general->band_count);
   else {
     int ii;
