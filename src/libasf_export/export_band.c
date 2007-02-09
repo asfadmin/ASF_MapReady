@@ -760,7 +760,7 @@ export_band_image (const char *metadata_file_name,
   else { // Single-band image output
 
     int band_count = md->general->band_count;
-    char base_name[25], bands[25];
+    char base_name[255], bands[25];
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
 
@@ -846,7 +846,8 @@ export_band_image (const char *metadata_file_name,
 	byte_line =
 	  (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
 
-	if (strcmp(look_up_table_name, "") != 0) { // Apply look up table
+	if (look_up_table_name &&
+            strcmp(look_up_table_name, "") != 0) { // Apply look up table
 	  for (ii=0; ii<md->general->line_count; ii++ ) {
 	    if (md->optical) {
 	      get_byte_line(fp, md, ii+channel*offset, byte_line);
