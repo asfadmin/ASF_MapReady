@@ -34,7 +34,7 @@ const char * resample_method_string(int resample_method)
 static int entry_has_text(const char * entry_name)
 {
     GtkEntry * entry;
-    entry = GTK_ENTRY(glade_xml_get_widget(glade_xml, entry_name));
+    entry = GTK_ENTRY(get_widget_checked(entry_name));
     return strlen(gtk_entry_get_text(entry)) > 0;
 }
 
@@ -257,49 +257,49 @@ void geocode_options_changed()
     gboolean enable_force_checkbutton = FALSE;
 
     table_utm_projection_options =
-        glade_xml_get_widget(glade_xml, "table_utm_projection_options");
+        get_widget_checked("table_utm_projection_options");
 
     table_nonutm_projection_options =
-        glade_xml_get_widget(glade_xml, "table_nonutm_projection_options");
+        get_widget_checked("table_nonutm_projection_options");
 
     geocode_checkbutton =
-        glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+        get_widget_checked("geocode_checkbutton");
 
     geocode_projection_is_checked =
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geocode_checkbutton));
 
     average_height_checkbutton =
-        glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+        get_widget_checked("average_height_checkbutton");
 
     pixel_size_checkbutton =
-        glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+        get_widget_checked("pixel_size_checkbutton");
 
     projection_option_menu =
-        glade_xml_get_widget(glade_xml, "projection_option_menu");
+        get_widget_checked("projection_option_menu");
 
     predefined_projection_option_menu =
-        glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
+        get_widget_checked("predefined_projection_option_menu");
 
     utm_zone_entry =
-        glade_xml_get_widget(glade_xml, "utm_zone_entry");
+        get_widget_checked("utm_zone_entry");
 
     central_meridian_entry =
-        glade_xml_get_widget(glade_xml, "central_meridian_entry");
+        get_widget_checked("central_meridian_entry");
 
     latitude_of_origin_entry =
-        glade_xml_get_widget(glade_xml, "latitude_of_origin_entry");
+        get_widget_checked("latitude_of_origin_entry");
 
     first_standard_parallel_entry =
-        glade_xml_get_widget(glade_xml, "first_standard_parallel_entry");
+        get_widget_checked("first_standard_parallel_entry");
 
     second_standard_parallel_entry =
-        glade_xml_get_widget(glade_xml, "second_standard_parallel_entry");
+        get_widget_checked("second_standard_parallel_entry");
 
     false_northing_entry =
-        glade_xml_get_widget(glade_xml, "false_northing_entry");
+        get_widget_checked("false_northing_entry");
 
     false_easting_entry =
-        glade_xml_get_widget(glade_xml, "false_easting_entry");
+        get_widget_checked("false_easting_entry");
 
     projection =
         gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
@@ -471,10 +471,8 @@ void geocode_options_changed()
 
         // turn off the average height checkbutton if terrain correction
         // is selected
-        GtkWidget * dem_checkbutton = glade_xml_get_widget(
-            glade_xml, "dem_checkbutton");
-        GtkWidget * rb_terrcorr = glade_xml_get_widget(
-            glade_xml, "rb_terrcorr");
+        GtkWidget * dem_checkbutton = get_widget_checked("dem_checkbutton");
+        GtkWidget * rb_terrcorr = get_widget_checked("rb_terrcorr");
 
         if (gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(dem_checkbutton)) &&
@@ -527,41 +525,20 @@ void geocode_options_changed()
         enable_predefined_projection_option_menu &&
         !enable_table_utm_projection_options);
 
-    utm_zone_label =
-        glade_xml_get_widget(glade_xml, "utm_zone_label");
-
-    central_meridian_label =
-        glade_xml_get_widget(glade_xml, "central_meridian_label");
-
-    latitude_of_origin_label =
-        glade_xml_get_widget(glade_xml, "latitude_of_origin_label");
-
+    utm_zone_label = get_widget_checked("utm_zone_label");
+    central_meridian_label = get_widget_checked("central_meridian_label");
+    latitude_of_origin_label = get_widget_checked("latitude_of_origin_label");
     first_standard_parallel_label =
-        glade_xml_get_widget(glade_xml, "first_standard_parallel_label");
-
+        get_widget_checked("first_standard_parallel_label");
     second_standard_parallel_label =
-        glade_xml_get_widget(glade_xml, "second_standard_parallel_label");
-
-    false_northing_label =
-        glade_xml_get_widget(glade_xml, "false_northing_label");
-
-    false_easting_label =
-        glade_xml_get_widget(glade_xml, "false_easting_label");
-
-    hbox_average_height =
-        glade_xml_get_widget(glade_xml, "hbox_average_height");
-
-    hbox_pixel_size =
-        glade_xml_get_widget(glade_xml, "hbox_pixel_size");
-
-    datum_hbox =
-        glade_xml_get_widget(glade_xml, "datum_hbox");
-
-    resample_hbox =
-        glade_xml_get_widget(glade_xml, "resample_hbox");
-
-    force_checkbutton =
-        glade_xml_get_widget(glade_xml, "force_checkbutton");
+        get_widget_checked("second_standard_parallel_label");
+    false_northing_label = get_widget_checked("false_northing_label");
+    false_easting_label = get_widget_checked("false_easting_label");
+    hbox_average_height = get_widget_checked("hbox_average_height");
+    hbox_pixel_size = get_widget_checked("hbox_pixel_size");
+    datum_hbox = get_widget_checked("datum_hbox");
+    resample_hbox = get_widget_checked("resample_hbox");
+    force_checkbutton = get_widget_checked("force_checkbutton");
 
     gtk_widget_set_sensitive(utm_zone_entry,
         enable_utm_zone);

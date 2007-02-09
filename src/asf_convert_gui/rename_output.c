@@ -8,7 +8,7 @@ change_output_name_dialog_hide()
     GtkWidget *change_output_name_dialog;
 
     change_output_name_dialog =
-        glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+        get_widget_checked("change_output_name_dialog");
 
     gtk_widget_hide(change_output_name_dialog);  
 }
@@ -112,7 +112,7 @@ do_rename_selected(const gchar *new_name)
     GtkWidget * files_list;
     GtkTreeIter iter;
 
-    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    files_list = get_widget_checked("files_list");
 
     if (get_iter_to_first_selected_row(files_list, &iter))
     {
@@ -126,7 +126,7 @@ rename_selected_output_filename()
     GtkWidget *files_list;
     GtkTreeIter iter;
 
-    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    files_list = get_widget_checked("files_list");
 
     if (get_iter_to_first_selected_row(files_list, &iter))
     {
@@ -138,13 +138,13 @@ rename_selected_output_filename()
             *entry_new_output_filename;
 
         change_output_name_dialog =
-            glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+            get_widget_checked("change_output_name_dialog");
 
         label_current_output_filename =
-            glade_xml_get_widget(glade_xml, "label_current_output_filename");
+            get_widget_checked("label_current_output_filename");
 
         entry_new_output_filename =
-            glade_xml_get_widget(glade_xml, "entry_new_output_filename");
+            get_widget_checked("entry_new_output_filename");
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
             COL_OUTPUT_FILE, &current_output_name, -1);
@@ -185,10 +185,10 @@ static void change_output_name_button_ok_clicked()
     const gchar * new_name;
 
     change_output_name_dialog =
-        glade_xml_get_widget(glade_xml, "change_output_name_dialog");
+        get_widget_checked("change_output_name_dialog");
 
     entry_new_output_filename =
-        glade_xml_get_widget(glade_xml, "entry_new_output_filename");
+        get_widget_checked("entry_new_output_filename");
 
     new_name = gtk_entry_get_text(GTK_ENTRY(entry_new_output_filename));
 

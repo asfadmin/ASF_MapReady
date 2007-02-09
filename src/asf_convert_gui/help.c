@@ -85,10 +85,10 @@ on_help_button_clicked(GtkWidget *widget)
     gchar * help_filename;
 
     help_dialog =
-        glade_xml_get_widget(glade_xml, "help_dialog");
+        get_widget_checked("help_dialog");
 
     help_text =
-        glade_xml_get_widget(glade_xml, "help_text");
+        get_widget_checked("help_text");
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(help_text));
 
@@ -134,7 +134,7 @@ void
 help_hide()
 {
     GtkWidget *help_dialog =
-        glade_xml_get_widget(glade_xml, "help_dialog");
+        get_widget_checked("help_dialog");
 
     gtk_widget_hide(help_dialog);
 }

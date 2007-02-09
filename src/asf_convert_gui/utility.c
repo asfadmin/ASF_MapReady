@@ -2,7 +2,7 @@
 
 static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
 {
-    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkWidget *w = get_widget_checked(widget_name);
     GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
     gtk_entry_set_max_length(e, maxlen);
 }
@@ -105,4 +105,15 @@ getPath(const char *in)
       dir[strlen(dir) - 1] = '\0';
 
   return dir;
+}
+
+GtkWidget *get_widget_checked(const char *widget_name)
+{
+    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    if (!w)
+    {
+        asfPrintError("get_widget_checked() failed: "
+            "The widget %s was not found.\n", widget_name);
+    }
+    return w;
 }

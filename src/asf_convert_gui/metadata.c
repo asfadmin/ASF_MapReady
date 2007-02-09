@@ -61,14 +61,10 @@ void show_asf_meta_data(gchar * out_name)
     gchar * label_text;
     const int use_fixed_width = TRUE;
 
-    metadata_dialog =
-        glade_xml_get_widget(glade_xml, "metadata_dialog");
-
-    metadata_text =
-        glade_xml_get_widget(glade_xml, "metadata_text");
+    metadata_dialog = get_widget_checked("metadata_dialog");
+    metadata_text = get_widget_checked("metadata_text");
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(metadata_text));
-
     gtk_text_buffer_set_text(text_buffer, "", -1);
 
     metadata_filename = build_asf_metadata_filename(out_name);
@@ -121,7 +117,7 @@ void show_asf_meta_data(gchar * out_name)
         }
 
         metadata_label =
-            glade_xml_get_widget(glade_xml, "metadata_label");
+            get_widget_checked("metadata_label");
 
         sprintf(label_text, "Meta Data File: %s", metadata_filename);
         gtk_label_set_text(GTK_LABEL(metadata_label), label_text);
@@ -204,7 +200,7 @@ void
 metadata_hide()
 {
     GtkWidget *metadata_dialog =
-        glade_xml_get_widget(glade_xml, "metadata_dialog");
+        get_widget_checked("metadata_dialog");
 
     gtk_widget_hide(metadata_dialog);
 }

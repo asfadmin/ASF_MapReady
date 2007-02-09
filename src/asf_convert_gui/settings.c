@@ -9,17 +9,6 @@ settings_get_input_data_format_allows_latitude(const Settings *s)
 }
 
 static int
-settings_get_output_format_allows_size(const Settings *s)
-{
-    // no longer support sizing for any format
-    return FALSE;
-    //return s->output_format == OUTPUT_FORMAT_JPEG ||
-    //    s->output_format == OUTPUT_FORMAT_PGM ||
-    //    s->output_format == OUTPUT_FORMAT_TIFF ||
-    //    s->output_format == OUTPUT_FORMAT_GEOTIFF;
-}
-
-static int
 settings_get_output_format_requires_byte(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
@@ -30,7 +19,7 @@ settings_get_output_format_requires_byte(const Settings *s)
 static void
 set_combo_box_entry_item(const char *widget_name, const char *entry_text)
 {
-    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkWidget *w = get_widget_checked(widget_name);
     GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
     gtk_entry_set_text(e, entry_text);
 }
@@ -38,7 +27,7 @@ set_combo_box_entry_item(const char *widget_name, const char *entry_text)
 static void
 get_combo_box_entry_item(const char *widget_name, char *dest)
 {
-    GtkWidget *w = glade_xml_get_widget(glade_xml, widget_name);
+    GtkWidget *w = get_widget_checked(widget_name);
     GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
     strcpy(dest, gtk_entry_get_text(e));
 }
@@ -51,32 +40,28 @@ settings_apply_to_gui(const Settings * s)
         *input_data_format_combobox,
         *export_checkbutton,
         *output_format_combobox,
-        *scale_checkbutton,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *keep_files_checkbutton,
         *apply_metadata_fix_checkbutton;
 
     input_data_type_combobox = 
-        glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+        get_widget_checked("input_data_type_combobox");
 
     input_data_format_combobox = 
-        glade_xml_get_widget(glade_xml, "input_data_format_combobox");
+        get_widget_checked("input_data_format_combobox");
 
     export_checkbutton =
-        glade_xml_get_widget(glade_xml, "export_checkbutton");
+        get_widget_checked("export_checkbutton");
 
     output_format_combobox = 
-        glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-    scale_checkbutton = 
-        glade_xml_get_widget(glade_xml, "scale_checkbutton");
+        get_widget_checked("output_format_combobox");
 
     keep_files_checkbutton = 
-        glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
+        get_widget_checked("keep_files_checkbutton");
 
     apply_metadata_fix_checkbutton = 
-        glade_xml_get_widget(glade_xml, "apply_metadta_fix_checkbutton");
+        get_widget_checked("apply_metadta_fix_checkbutton");
 
     set_combo_box_item(input_data_format_combobox, s->input_data_format);
     set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -84,7 +69,7 @@ settings_apply_to_gui(const Settings * s)
     if (s->process_to_level1)
     {
         GtkWidget *process_to_level1_checkbutton =
-            glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+            get_widget_checked("process_to_level1_checkbutton");
 
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(process_to_level1_checkbutton),
@@ -94,30 +79,12 @@ settings_apply_to_gui(const Settings * s)
     if (s->output_db)
     {
         GtkWidget *checkbutton_db =
-	  glade_xml_get_widget(glade_xml, "checkbutton_db");
+	  get_widget_checked("checkbutton_db");
 
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
     }
 
     input_data_type_changed();
-
-    if (settings_get_output_format_allows_size(s))
-    {
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(scale_checkbutton),
-            s->apply_scaling);
-
-        if (s->apply_scaling)
-        {
-            GtkWidget *longest_dimension_spinbutton;
-
-            longest_dimension_spinbutton = 
-                glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
-            gtk_spin_button_set_value(GTK_SPIN_BUTTON(longest_dimension_spinbutton),
-                s->longest_dimension);
-
-        }
-    }
 
     if (settings_get_input_data_format_allows_latitude(s))
     {
@@ -127,7 +94,7 @@ settings_apply_to_gui(const Settings * s)
             *latitude_hi_entry;
 
         latitude_checkbutton =
-            glade_xml_get_widget(glade_xml, "latitude_checkbutton");
+            get_widget_checked("latitude_checkbutton");
 
         if (s->latitude_checked)
         {
@@ -137,10 +104,10 @@ settings_apply_to_gui(const Settings * s)
                 TRUE);
 
             latitude_low_entry =
-                glade_xml_get_widget(glade_xml, "latitude_low_entry");
+                get_widget_checked("latitude_low_entry");
 
             latitude_hi_entry =
-                glade_xml_get_widget(glade_xml, "latitude_hi_entry");
+                get_widget_checked("latitude_hi_entry");
 
             sprintf(tmp, "%f", s->latitude_low);
             gtk_entry_set_text(GTK_ENTRY(latitude_low_entry), tmp);
@@ -166,14 +133,14 @@ settings_apply_to_gui(const Settings * s)
     if (s->export_is_checked)
     {
         output_bytes_checkbutton =
-            glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
+            get_widget_checked("output_bytes_checkbutton");
 
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(output_bytes_checkbutton),
             s->output_bytes);
 
         scaling_method_combobox =
-            glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+            get_widget_checked("scaling_method_combobox");
 
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
 
@@ -195,7 +162,7 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget * geocode_checkbutton;
 
         geocode_checkbutton =
-            glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+            get_widget_checked("geocode_checkbutton");
 
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(geocode_checkbutton), s->geocode_is_checked);
@@ -217,32 +184,31 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget * force_checkbutton;
 
             projection_option_menu =
-                glade_xml_get_widget(glade_xml, "projection_option_menu");
+                get_widget_checked("projection_option_menu");
 
             set_combo_box_item(projection_option_menu, s->projection);
             geocode_options_changed();
 
             utm_zone_entry =
-                glade_xml_get_widget(glade_xml, "utm_zone_entry");
+                get_widget_checked("utm_zone_entry");
 
             central_meridian_entry =
-                glade_xml_get_widget(glade_xml, "central_meridian_entry");
+                get_widget_checked("central_meridian_entry");
 
             latitude_of_origin_entry =
-                glade_xml_get_widget(glade_xml, "latitude_of_origin_entry");
+                get_widget_checked("latitude_of_origin_entry");
 
             first_standard_parallel_entry =
-                glade_xml_get_widget(glade_xml, "first_standard_parallel_entry");
+                get_widget_checked("first_standard_parallel_entry");
 
             second_standard_parallel_entry =
-                glade_xml_get_widget(glade_xml,
-                "second_standard_parallel_entry");
+                get_widget_checked("second_standard_parallel_entry");
 
             false_northing_entry =
-                glade_xml_get_widget(glade_xml, "false_northing_entry");
+                get_widget_checked("false_northing_entry");
 
             false_easting_entry =
-                glade_xml_get_widget(glade_xml, "false_easting_entry");
+                get_widget_checked("false_easting_entry");
 
             if (s->projection == UNIVERSAL_TRANSVERSE_MERCATOR)
             {
@@ -273,7 +239,7 @@ settings_apply_to_gui(const Settings * s)
             gtk_entry_set_text(GTK_ENTRY(false_northing_entry), tmp);
 
             average_height_checkbutton =
-                glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+                get_widget_checked("average_height_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(average_height_checkbutton), 
@@ -284,14 +250,14 @@ settings_apply_to_gui(const Settings * s)
                 GtkWidget * average_height_entry;
 
                 average_height_entry =
-                    glade_xml_get_widget(glade_xml, "average_height_entry");
+                    get_widget_checked("average_height_entry");
 
                 sprintf(tmp, "%f", s->height);
                 gtk_entry_set_text(GTK_ENTRY(average_height_entry), tmp);
             }
 
             pixel_size_checkbutton =
-                glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+                get_widget_checked("pixel_size_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(pixel_size_checkbutton), 
@@ -302,24 +268,24 @@ settings_apply_to_gui(const Settings * s)
                 GtkWidget * pixel_size_entry;
 
                 pixel_size_entry =
-                    glade_xml_get_widget(glade_xml, "pixel_size_entry");
+                    get_widget_checked("pixel_size_entry");
 
                 sprintf(tmp, "%f", s->pixel_size);
                 gtk_entry_set_text(GTK_ENTRY(pixel_size_entry), tmp);
             }
 
             datum_option_menu =
-                glade_xml_get_widget(glade_xml, "datum_option_menu");
+                get_widget_checked("datum_option_menu");
 
             set_combo_box_item(datum_option_menu, s->datum);
 
             resample_option_menu =
-                glade_xml_get_widget(glade_xml, "resample_option_menu");
+                get_widget_checked("resample_option_menu");
 
             set_combo_box_item(resample_option_menu, s->resample_method);
 
 	    force_checkbutton =
-	        glade_xml_get_widget(glade_xml, "force_checkbutton");
+	        get_widget_checked("force_checkbutton");
 
 	    gtk_toggle_button_set_active(
 	        GTK_TOGGLE_BUTTON(force_checkbutton),
@@ -338,16 +304,16 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *rb_refine_geolocation;
         GtkWidget *mask_checkbutton;
 
-        dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
+        dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
 
-	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	dem_entry = get_widget_checked("dem_entry");
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
 
         rb_terrcorr =
-            glade_xml_get_widget(glade_xml, "rb_terrcorr");
+            get_widget_checked("rb_terrcorr");
         rb_refine_geolocation =
-            glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
+            get_widget_checked("rb_refine_geolocation");
 
         if (s->refine_geolocation_is_checked)
             gtk_toggle_button_set_active(
@@ -363,14 +329,14 @@ settings_apply_to_gui(const Settings * s)
             GtkWidget *radiometric_checkbutton;
 
             tc_pixel_size_checkbutton =
-                glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+                get_widget_checked("tc_pixel_size_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton),
                 s->specified_tc_pixel_size);
 
             tc_pixel_size_entry =
-                glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+                get_widget_checked("tc_pixel_size_entry");
 
             if (s->specified_tc_pixel_size)
             {
@@ -384,26 +350,26 @@ settings_apply_to_gui(const Settings * s)
             }
             
             interpolate_checkbutton =
-                glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+                get_widget_checked("interpolate_checkbutton");
             
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
 
             save_dem_checkbutton =
-                glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+                get_widget_checked("save_dem_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(save_dem_checkbutton), s->generate_dem);
 
             layover_mask_checkbutton =
-                glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
+                get_widget_checked("layover_mask_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(layover_mask_checkbutton),
                 s->generate_layover_mask);
 
             radiometric_checkbutton =
-                glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
+                get_widget_checked("radiometric_checkbutton");
 
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(radiometric_checkbutton),
@@ -412,7 +378,7 @@ settings_apply_to_gui(const Settings * s)
 
 
         mask_checkbutton =
-            glade_xml_get_widget(glade_xml, "mask_checkbutton");
+            get_widget_checked("mask_checkbutton");
         
         if (s->auto_water_mask_is_checked || s->mask_file_is_checked)
         {
@@ -423,21 +389,21 @@ settings_apply_to_gui(const Settings * s)
                 GTK_TOGGLE_BUTTON(mask_checkbutton), TRUE);
             
             rb_auto_water_mask =
-                glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
+                get_widget_checked("rb_auto_water_mask");
             
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(rb_auto_water_mask), 
                 s->auto_water_mask_is_checked);
             
             rb_mask_file =
-                glade_xml_get_widget(glade_xml, "rb_mask_file");
+                get_widget_checked("rb_mask_file");
             
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(rb_mask_file), 
                 s->mask_file_is_checked);
             
             mask_entry =
-                glade_xml_get_widget(glade_xml, "mask_entry");
+                get_widget_checked("mask_entry");
             
             gtk_entry_set_text(GTK_ENTRY(mask_entry), s->mask_file);
         }
@@ -452,10 +418,10 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *dem_entry;
         GtkWidget *dem_checkbutton;
 
-	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	dem_entry = get_widget_checked("dem_entry");
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), "");
 
-        dem_checkbutton = glade_xml_get_widget(glade_xml, "dem_checkbutton");
+        dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(
             GTK_TOGGLE_BUTTON(dem_checkbutton), FALSE);
     }
@@ -479,7 +445,6 @@ settings_get_from_gui()
         *process_to_level1_checkbutton,
         *export_checkbutton,
         *output_format_combobox,
-        *scale_checkbutton,
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *geocode_checkbutton,
@@ -492,31 +457,28 @@ settings_get_from_gui()
     ret = (Settings *) g_malloc0 (sizeof(Settings));
 
     input_data_type_combobox = 
-        glade_xml_get_widget(glade_xml, "input_data_type_combobox");
+        get_widget_checked("input_data_type_combobox");
 
     input_data_format_combobox = 
-        glade_xml_get_widget(glade_xml, "input_data_format_combobox");
+        get_widget_checked("input_data_format_combobox");
 
     export_checkbutton = 
-        glade_xml_get_widget(glade_xml, "export_checkbutton");
+        get_widget_checked("export_checkbutton");
 
     output_format_combobox = 
-        glade_xml_get_widget(glade_xml, "output_format_combobox");
-
-    scale_checkbutton = 
-        glade_xml_get_widget(glade_xml, "scale_checkbutton");
+        get_widget_checked("output_format_combobox");
 
     keep_files_checkbutton = 
-        glade_xml_get_widget(glade_xml, "keep_files_checkbutton");
+        get_widget_checked("keep_files_checkbutton");
 
     apply_metadata_fix_checkbutton = 
-        glade_xml_get_widget(glade_xml, "apply_metadata_fix_checkbutton");
+        get_widget_checked("apply_metadata_fix_checkbutton");
 
     checkbutton_db =
-        glade_xml_get_widget(glade_xml, "checkbutton_db");
+        get_widget_checked("checkbutton_db");
 
     process_to_level1_checkbutton =
-        glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+        get_widget_checked("process_to_level1_checkbutton");
 
     ret->data_type = get_combo_box_item(input_data_type_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
@@ -533,21 +495,7 @@ settings_get_from_gui()
         gtk_toggle_button_get_active(
             GTK_TOGGLE_BUTTON(process_to_level1_checkbutton));
 
-    ret->apply_scaling =
-        settings_get_output_format_allows_size(ret) &&
-        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(scale_checkbutton));
-
-    if (ret->apply_scaling)
-    {
-        GtkWidget *longest_dimension_spinbutton;
-
-        longest_dimension_spinbutton = 
-            glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
-
-        ret->longest_dimension = (float) gtk_spin_button_get_value(
-            GTK_SPIN_BUTTON(longest_dimension_spinbutton));
-    }
-
+    ret->apply_scaling = FALSE;
     ret->latitude_low = -99;
     ret->latitude_hi = -99;
 
@@ -559,7 +507,7 @@ settings_get_from_gui()
             *latitude_hi_entry;
 
         latitude_checkbutton =
-            glade_xml_get_widget(glade_xml, "latitude_checkbutton");
+            get_widget_checked("latitude_checkbutton");
 
         ret->latitude_checked =
             gtk_toggle_button_get_active(
@@ -568,10 +516,10 @@ settings_get_from_gui()
         if (ret->latitude_checked)
         {
             latitude_low_entry =
-                glade_xml_get_widget(glade_xml, "latitude_low_entry");
+                get_widget_checked("latitude_low_entry");
 
             latitude_hi_entry =
-                glade_xml_get_widget(glade_xml, "latitude_hi_entry");
+                get_widget_checked("latitude_hi_entry");
 
             ret->latitude_low = atof(
                 gtk_entry_get_text(GTK_ENTRY(latitude_low_entry)));
@@ -589,7 +537,7 @@ settings_get_from_gui()
         if (settings_get_output_format_requires_byte(ret))
         {
             scaling_method_combobox =
-                glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+                get_widget_checked("scaling_method_combobox");
 
             ret->output_bytes = TRUE;
             ret->scaling_method = get_combo_box_item(scaling_method_combobox);
@@ -597,7 +545,7 @@ settings_get_from_gui()
         else
         {
             output_bytes_checkbutton =
-                glade_xml_get_widget(glade_xml, "output_bytes_checkbutton");
+                get_widget_checked("output_bytes_checkbutton");
 
             ret->output_bytes =
                 gtk_toggle_button_get_active(
@@ -606,7 +554,7 @@ settings_get_from_gui()
             if (ret->output_bytes)
             {
                 scaling_method_combobox =
-                    glade_xml_get_widget(glade_xml, "scaling_method_combobox");
+                    get_widget_checked("scaling_method_combobox");
 
                 ret->scaling_method =
                     get_combo_box_item(scaling_method_combobox);
@@ -614,7 +562,7 @@ settings_get_from_gui()
         }
 
         GtkWidget * rgb_checkbutton =
-            glade_xml_get_widget(glade_xml, "rgb_checkbutton");
+            get_widget_checked("rgb_checkbutton");
         ret->export_bands = gtk_toggle_button_get_active(
             GTK_TOGGLE_BUTTON(rgb_checkbutton));
 
@@ -630,7 +578,7 @@ settings_get_from_gui()
     }
 
     geocode_checkbutton =
-        glade_xml_get_widget(glade_xml, "geocode_checkbutton");
+        get_widget_checked("geocode_checkbutton");
 
     ret->geocode_is_checked =
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geocode_checkbutton));
@@ -655,32 +603,32 @@ settings_get_from_gui()
             *force_checkbutton;
 
         projection_option_menu =
-            glade_xml_get_widget(glade_xml, "projection_option_menu");
+            get_widget_checked("projection_option_menu");
 
         ret->projection =
             gtk_option_menu_get_history(
             GTK_OPTION_MENU(projection_option_menu));
 
         utm_zone_entry =
-            glade_xml_get_widget(glade_xml, "utm_zone_entry");
+            get_widget_checked("utm_zone_entry");
 
         central_meridian_entry =
-            glade_xml_get_widget(glade_xml, "central_meridian_entry");
+            get_widget_checked("central_meridian_entry");
 
         latitude_of_origin_entry =
-            glade_xml_get_widget(glade_xml, "latitude_of_origin_entry");
+            get_widget_checked("latitude_of_origin_entry");
 
         first_standard_parallel_entry =
-            glade_xml_get_widget(glade_xml, "first_standard_parallel_entry");
+            get_widget_checked("first_standard_parallel_entry");
 
         second_standard_parallel_entry =
-            glade_xml_get_widget(glade_xml, "second_standard_parallel_entry");
+            get_widget_checked("second_standard_parallel_entry");
 
         false_northing_entry =
-            glade_xml_get_widget(glade_xml, "false_northing_entry");
+            get_widget_checked("false_northing_entry");
 
         false_easting_entry =
-            glade_xml_get_widget(glade_xml, "false_easting_entry");
+            get_widget_checked("false_easting_entry");
 
         ret->zone = atoi(gtk_entry_get_text(
             GTK_ENTRY(utm_zone_entry)));
@@ -698,7 +646,7 @@ settings_get_from_gui()
             GTK_ENTRY(false_easting_entry)));
 
         average_height_checkbutton =
-            glade_xml_get_widget(glade_xml, "average_height_checkbutton");
+            get_widget_checked("average_height_checkbutton");
 
         ret->specified_height = 
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -707,14 +655,14 @@ settings_get_from_gui()
         if (ret->specified_height)
         {
             average_height_entry =
-                glade_xml_get_widget(glade_xml, "average_height_entry");
+                get_widget_checked("average_height_entry");
 
             ret->height =
                 atof(gtk_entry_get_text(GTK_ENTRY(average_height_entry)));
         }
 
         pixel_size_checkbutton =
-            glade_xml_get_widget(glade_xml, "pixel_size_checkbutton");
+            get_widget_checked("pixel_size_checkbutton");
 
         ret->specified_pixel_size = 
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -723,27 +671,27 @@ settings_get_from_gui()
         if (ret->specified_pixel_size)
         {
             pixel_size_entry =
-                glade_xml_get_widget(glade_xml, "pixel_size_entry");
+                get_widget_checked("pixel_size_entry");
 
             ret->pixel_size =
                 atof(gtk_entry_get_text(GTK_ENTRY(pixel_size_entry)));
         }
 
         datum_option_menu =
-            glade_xml_get_widget(glade_xml, "datum_option_menu");
+            get_widget_checked("datum_option_menu");
 
         ret->datum =
             gtk_option_menu_get_history(
             GTK_OPTION_MENU(datum_option_menu));
 
         resample_option_menu =
-            glade_xml_get_widget(glade_xml, "resample_option_menu");
+            get_widget_checked("resample_option_menu");
 
         ret->resample_method =
             gtk_option_menu_get_history(GTK_OPTION_MENU(resample_option_menu));
 
 	force_checkbutton =
-	    glade_xml_get_widget(glade_xml, "force_checkbutton");
+	    get_widget_checked("force_checkbutton");
 
 	ret->geocode_force =
 	    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
@@ -759,7 +707,7 @@ settings_get_from_gui()
         GTK_TOGGLE_BUTTON(apply_metadata_fix_checkbutton));
 
     dem_checkbutton =
-        glade_xml_get_widget(glade_xml, "dem_checkbutton");
+        get_widget_checked("dem_checkbutton");
 
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton)))
     {        
@@ -770,21 +718,21 @@ settings_get_from_gui()
         GtkWidget *interpolate_checkbutton;
 
         rb_terrcorr =
-            glade_xml_get_widget(glade_xml, "rb_terrcorr");
+            get_widget_checked("rb_terrcorr");
         rb_refine_geolocation =
-            glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
+            get_widget_checked("rb_refine_geolocation");
 
         ret->terrcorr_is_checked =
             gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(rb_terrcorr));
 
-        dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+        dem_entry = get_widget_checked("dem_entry");
         strcpy(ret->dem_file, gtk_entry_get_text(GTK_ENTRY(dem_entry)));
 
         if (ret->terrcorr_is_checked)
         {
             tc_pixel_size_checkbutton =
-                glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+                get_widget_checked("tc_pixel_size_checkbutton");
 
             ret->specified_tc_pixel_size =
                 gtk_toggle_button_get_active(
@@ -795,14 +743,14 @@ settings_get_from_gui()
                 GtkWidget *tc_pixel_size_entry;
                 
                 tc_pixel_size_entry =
-                    glade_xml_get_widget(glade_xml, "tc_pixel_size_entry");
+                    get_widget_checked("tc_pixel_size_entry");
                 
                 ret->tc_pixel_size =
                     atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
             }
             
             interpolate_checkbutton =
-                glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
+                get_widget_checked("interpolate_checkbutton");
 
             ret->interp =
                 gtk_toggle_button_get_active(
@@ -811,21 +759,21 @@ settings_get_from_gui()
             ret->refine_geolocation_is_checked = FALSE;
             
             GtkWidget *save_dem_checkbutton =
-                glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+                get_widget_checked("save_dem_checkbutton");
             
             ret->generate_dem =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(save_dem_checkbutton));
             
             GtkWidget *layover_mask_checkbutton =
-                glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
+                get_widget_checked("layover_mask_checkbutton");
             
             ret->generate_layover_mask =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(layover_mask_checkbutton));
 
             GtkWidget *radiometric_checkbutton =
-                glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
+                get_widget_checked("radiometric_checkbutton");
 
             ret->do_radiometric =
                 gtk_toggle_button_get_active(
@@ -836,7 +784,7 @@ settings_get_from_gui()
             GtkWidget *rb_refine_geolocation;
 
             rb_refine_geolocation =
-                glade_xml_get_widget(glade_xml, "rb_refine_geolocation");
+                get_widget_checked("rb_refine_geolocation");
 
             // this should be checked if we aren't terrain correcting
             ret->refine_geolocation_is_checked =
@@ -846,12 +794,12 @@ settings_get_from_gui()
         }
 
         rb_auto_water_mask =
-            glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
+            get_widget_checked("rb_auto_water_mask");
         rb_mask_file =
-            glade_xml_get_widget(glade_xml, "rb_mask_file");
+            get_widget_checked("rb_mask_file");
         
         GtkWidget *mask_checkbutton;
-        mask_checkbutton = glade_xml_get_widget(glade_xml, 
+        mask_checkbutton = get_widget_checked(
                                                 "mask_checkbutton");
         if (gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(mask_checkbutton)))
@@ -860,7 +808,7 @@ settings_get_from_gui()
                     GTK_TOGGLE_BUTTON(rb_mask_file)))
             {
                 GtkWidget *mask_entry;
-                mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+                mask_entry = get_widget_checked("mask_entry");
                 strcpy(ret->mask_file, 
                        gtk_entry_get_text(GTK_ENTRY(mask_entry)));
                 ret->mask_file_is_checked = TRUE;
@@ -924,7 +872,7 @@ settings_get_size_argument(const Settings *s)
         gdouble d;
 
         longest_dimension_spinbutton = 
-            glade_xml_get_widget(glade_xml, "longest_dimension_spinbutton");
+            get_widget_checked("longest_dimension_spinbutton");
 
         d = gtk_spin_button_get_value(
             GTK_SPIN_BUTTON(longest_dimension_spinbutton));

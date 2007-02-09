@@ -19,8 +19,7 @@ void default_to_terrcorr_on()
 // The "initially on" value on the .glade file for the terrain correction
 // radio button doesn't seem to be working... turn it on manually.
   GtkWidget *rb_terrcorr;
-  rb_terrcorr =
-      glade_xml_get_widget(glade_xml, "rb_terrcorr");
+  rb_terrcorr = get_widget_checked("rb_terrcorr");
   gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_terrcorr), TRUE);
 }
 
@@ -30,14 +29,12 @@ void terrcorr_options_changed()
   GtkWidget *dem_checkbutton;
   GtkWidget *hbox_terrcorr_items;
 
-  hbox_terrcorr_items =
-      glade_xml_get_widget(glade_xml, "hbox_terrcorr_items");
+  hbox_terrcorr_items = get_widget_checked("hbox_terrcorr_items");
 
   gboolean dem_is_checked;
 
-  terrcorr_vbox = glade_xml_get_widget(glade_xml, "terrcorr_vbox");
-  dem_checkbutton =
-    glade_xml_get_widget(glade_xml, "dem_checkbutton");
+  terrcorr_vbox = get_widget_checked("terrcorr_vbox");
+  dem_checkbutton = get_widget_checked("dem_checkbutton");
 
   dem_is_checked =
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton));
@@ -61,19 +58,14 @@ void terrcorr_options_changed()
 
       gtk_widget_set_sensitive(hbox_terrcorr_items, TRUE);
 
-      rb_terrcorr =
-          glade_xml_get_widget(glade_xml, "rb_terrcorr");
+      rb_terrcorr = get_widget_checked("rb_terrcorr");
       terrcorr_is_checked =
           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_terrcorr));
 
-      rb_mask_file =
-          glade_xml_get_widget(glade_xml, "rb_mask_file");
-      rb_auto_water_mask =
-          glade_xml_get_widget(glade_xml, "rb_auto_water_mask");
-      mask_checkbutton =
-          glade_xml_get_widget(glade_xml, "mask_checkbutton");
-      mask_entry =
-          glade_xml_get_widget(glade_xml, "mask_entry");
+      rb_mask_file = get_widget_checked("rb_mask_file");
+      rb_auto_water_mask = get_widget_checked("rb_auto_water_mask");
+      mask_checkbutton = get_widget_checked("mask_checkbutton");
+      mask_entry = get_widget_checked("mask_entry");
 
       mask_is_checked =
           gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(mask_checkbutton));
@@ -83,14 +75,13 @@ void terrcorr_options_changed()
               GTK_TOGGLE_BUTTON(rb_mask_file));
 
       tc_pixel_size_checkbutton =
-          glade_xml_get_widget(glade_xml, "tc_pixel_size_checkbutton");
+          get_widget_checked("tc_pixel_size_checkbutton");
 
       tc_pixel_size_is_checked = terrcorr_is_checked &&
           gtk_toggle_button_get_active(
               GTK_TOGGLE_BUTTON(tc_pixel_size_checkbutton));
 
-      hbox_tc_pixel_size =
-          glade_xml_get_widget(glade_xml, "hbox_tc_pixel_size");
+      hbox_tc_pixel_size = get_widget_checked("hbox_tc_pixel_size");
 
       gtk_widget_set_sensitive(hbox_tc_pixel_size, tc_pixel_size_is_checked);
       gtk_widget_set_sensitive(mask_entry, mask_file_is_checked);
@@ -98,14 +89,11 @@ void terrcorr_options_changed()
       gtk_widget_set_sensitive(rb_auto_water_mask, mask_is_checked);
       gtk_widget_set_sensitive(rb_mask_file, mask_is_checked);
 
-      interpolate_checkbutton =
-          glade_xml_get_widget(glade_xml, "interpolate_checkbutton");
-      radiometric_checkbutton =
-          glade_xml_get_widget(glade_xml, "radiometric_checkbutton");
+      interpolate_checkbutton = get_widget_checked("interpolate_checkbutton");
+      radiometric_checkbutton = get_widget_checked("radiometric_checkbutton");
+      save_dem_checkbutton = get_widget_checked("save_dem_checkbutton");
       layover_mask_checkbutton =
-          glade_xml_get_widget(glade_xml, "layover_mask_checkbutton");
-      save_dem_checkbutton =
-          glade_xml_get_widget(glade_xml, "save_dem_checkbutton");
+          get_widget_checked("layover_mask_checkbutton");
 
       gtk_widget_set_sensitive(tc_pixel_size_checkbutton, terrcorr_is_checked);
       gtk_widget_set_sensitive(interpolate_checkbutton, terrcorr_is_checked);
@@ -154,7 +142,7 @@ on_tc_pixel_size_checkbutton_toggled(GtkWidget *widget)
 int set_dem_file(const char *file)
 {
     GtkWidget *dem_entry;
-    dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+    dem_entry = get_widget_checked("dem_entry");
     gtk_entry_set_text(GTK_ENTRY(dem_entry), file);
     return TRUE;
 }
@@ -162,7 +150,7 @@ int set_dem_file(const char *file)
 int set_mask_file(const char *file)
 {
     GtkWidget *mask_entry;
-    mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+    mask_entry = get_widget_checked("mask_entry");
     gtk_entry_set_text(GTK_ENTRY(mask_entry), file);
     return TRUE;
 }
@@ -228,7 +216,7 @@ on_dem_browse_button_clicked(GtkWidget *widget)
 
 #else
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "dem_file_selection");
+        get_widget_checked("dem_file_selection");
 
     gtk_widget_show(file_selection_dialog);
 #endif
@@ -238,7 +226,7 @@ static void
 hide_dem_file_selection_dialog()
 {
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "dem_file_selection");
+        get_widget_checked("dem_file_selection");
 
     gtk_widget_hide(file_selection_dialog);
 }
@@ -278,8 +266,7 @@ on_dem_file_selection_ok_button_clicked(GtkWidget *widget)
     gchar **current;
     int i, n;
 
-    file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "dem_file_selection");
+    file_selection_dialog = get_widget_checked("dem_file_selection");
 
     selections = gtk_file_selection_get_selections(
         GTK_FILE_SELECTION(file_selection_dialog));
@@ -303,9 +290,7 @@ on_dem_file_selection_ok_button_clicked(GtkWidget *widget)
 void
 hide_dem_file_chooser_dialog()
 {
-    GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "dem_file_chooser");
-
+    GtkWidget *file_selection_dialog = get_widget_checked("dem_file_chooser");
     gtk_widget_hide(file_selection_dialog);
 }
 
@@ -344,8 +329,7 @@ on_dem_file_chooser_ok_button_clicked(GtkWidget *widget)
     GSList *current;
     int i, n;
 
-    file_chooser_dialog =
-        glade_xml_get_widget(glade_xml, "dem_file_chooser");
+    file_chooser_dialog = get_widget_checked("dem_file_chooser");
 
     selections =
         gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(file_chooser_dialog));
@@ -431,7 +415,7 @@ on_mask_browse_button_clicked(GtkWidget *widget)
 
 #else
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "mask_file_selection");
+        get_widget_checked("mask_file_selection");
 
     gtk_widget_show(file_selection_dialog);
 #endif
@@ -441,7 +425,7 @@ static void
 hide_mask_file_selection_dialog()
 {
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "mask_file_selection");
+        get_widget_checked("mask_file_selection");
 
     gtk_widget_hide(file_selection_dialog);
 }
@@ -481,8 +465,7 @@ on_mask_file_selection_ok_button_clicked(GtkWidget *widget)
     gchar **current;
     int i, n;
 
-    file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "mask_file_selection");
+    file_selection_dialog = get_widget_checked("mask_file_selection");
 
     selections = gtk_file_selection_get_selections(
         GTK_FILE_SELECTION(file_selection_dialog));
@@ -506,9 +489,7 @@ on_mask_file_selection_ok_button_clicked(GtkWidget *widget)
 void
 hide_mask_file_chooser_dialog()
 {
-    GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "mask_file_chooser");
-
+    GtkWidget *file_selection_dialog = get_widget_checked("mask_file_chooser");
     gtk_widget_hide(file_selection_dialog);
 }
 
@@ -547,8 +528,7 @@ on_mask_file_chooser_ok_button_clicked(GtkWidget *widget)
     GSList *current;
     int i, n;
 
-    file_chooser_dialog =
-        glade_xml_get_widget(glade_xml, "mask_file_chooser");
+    file_chooser_dialog = get_widget_checked("mask_file_chooser");
 
     selections =
         gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(file_chooser_dialog));

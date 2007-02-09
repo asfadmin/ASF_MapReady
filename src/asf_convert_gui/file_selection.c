@@ -79,7 +79,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
 #else
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "input_file_selection");
+        get_widget_checked("input_file_selection");
 
     gtk_widget_show(file_selection_dialog);
 #endif
@@ -89,7 +89,7 @@ void
 hide_input_file_selection_dialog()
 {
     GtkWidget *file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "input_file_selection");
+        get_widget_checked("input_file_selection");
 
     gtk_widget_hide(file_selection_dialog);
 }
@@ -130,7 +130,7 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     int i, n;
 
     file_selection_dialog =
-        glade_xml_get_widget(glade_xml, "input_file_selection");
+        get_widget_checked("input_file_selection");
 
     selections = gtk_file_selection_get_selections(
         GTK_FILE_SELECTION(file_selection_dialog));

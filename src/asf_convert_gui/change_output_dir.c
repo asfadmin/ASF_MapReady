@@ -20,7 +20,7 @@ change_output_output_directory_hide()
     GtkWidget *change_output_directory_dialog;
 
     change_output_directory_dialog =
-        glade_xml_get_widget(glade_xml, "change_output_directory_dialog");
+        get_widget_checked("change_output_directory_dialog");
 
     gtk_widget_hide(change_output_directory_dialog);
 }
@@ -94,13 +94,13 @@ prepare_change_output_directory_dialog()
         *entry_new_output_directory;
 
     change_output_directory_dialog =
-        glade_xml_get_widget(glade_xml, "change_output_directory_dialog");
+        get_widget_checked("change_output_directory_dialog");
 
     label_current_output_directory =
-        glade_xml_get_widget(glade_xml, "label_current_output_directory");
+        get_widget_checked("label_current_output_directory");
 
     entry_new_output_directory =
-        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+        get_widget_checked("entry_new_output_directory");
 
     /* go through all of the output files... if only 1 directory is being
     used, can report it -- otherwise, we'll just say "Multiple" */
@@ -190,10 +190,10 @@ static void change_output_directory_button_ok_clicked()
     const gchar * new_dir;
 
     change_output_directory_dialog =
-        glade_xml_get_widget(glade_xml, "change_output_directory_dialog");
+        get_widget_checked("change_output_directory_dialog");
 
     entry_new_output_directory =
-        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+        get_widget_checked("entry_new_output_directory");
 
     new_dir = gtk_entry_get_text(GTK_ENTRY(entry_new_output_directory));
 
@@ -253,7 +253,7 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
     GtkWidget *entry_new_output_directory;
 
     entry_new_output_directory =
-        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+        get_widget_checked("entry_new_output_directory");
     
     BROWSEINFO bi = { 0 };
     bi.lpszTitle = "Select Output Directory";
@@ -268,7 +268,7 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
     }
 #else
     GtkWidget *output_directory_selection_dialog =
-        glade_xml_get_widget(glade_xml, "output_directory_selection");
+        get_widget_checked("output_directory_selection");
 
     gtk_widget_show(output_directory_selection_dialog);
 #endif
@@ -278,7 +278,7 @@ void
 hide_output_directory_selection_dialog()
 {
     GtkWidget *output_directory_selection_dialog =
-        glade_xml_get_widget(glade_xml, "output_directory_selection");
+        get_widget_checked("output_directory_selection");
 
     gtk_widget_hide(output_directory_selection_dialog);
 }
@@ -292,7 +292,7 @@ on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
     int i, n;
 
     output_directory_selection_dialog =
-        glade_xml_get_widget(glade_xml, "output_directory_selection");
+        get_widget_checked("output_directory_selection");
 
     selections = gtk_file_selection_get_selections(
         GTK_FILE_SELECTION(output_directory_selection_dialog));
@@ -305,7 +305,7 @@ on_output_directory_selection_ok_button_clicked(GtkWidget *widget)
         GtkWidget *entry_new_output_directory;
 
 	    entry_new_output_directory =
-	        glade_xml_get_widget(glade_xml, "entry_new_output_directory");
+	        get_widget_checked("entry_new_output_directory");
 
         if (g_file_test(*current, G_FILE_TEST_IS_DIR))
         {

@@ -6,6 +6,7 @@ tool.  */
 
 GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
+GtkListStore *completed_list_store = NULL;
 gboolean processing;
 Settings *settings_on_execute;
 gchar * output_directory = NULL;
@@ -62,23 +63,23 @@ main(int argc, char **argv)
         "Alaska Satellite Facility Data Conversion Tool: Version %s",
         CONVERT_PACKAGE_VERSION_STRING);
 
-    widget = glade_xml_get_widget (glade_xml, "asf_convert");
+    widget = get_widget_checked("asf_convert");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
     /* select defaults for dropdowns */
-    widget = glade_xml_get_widget (glade_xml, "scaling_method_combobox");
+    widget = get_widget_checked("scaling_method_combobox");
     set_combo_box_item(widget, SCALING_METHOD_SIGMA);
 
-    widget = glade_xml_get_widget (glade_xml, "input_data_format_combobox");
+    widget = get_widget_checked("input_data_format_combobox");
     set_combo_box_item(widget, INPUT_FORMAT_CEOS_LEVEL1);
 
-    widget = glade_xml_get_widget (glade_xml, "input_data_type_combobox");
+    widget = get_widget_checked("input_data_type_combobox");
     set_combo_box_item(widget, INPUT_TYPE_AMP);
 
-    widget = glade_xml_get_widget (glade_xml, "resample_option_menu");
+    widget = get_widget_checked("resample_option_menu");
     set_combo_box_item(widget, RESAMPLE_BILINEAR);
 
-    widget = glade_xml_get_widget (glade_xml, "output_format_combobox");
+    widget = get_widget_checked("output_format_combobox");
     set_combo_box_item(widget, OUTPUT_FORMAT_JPEG);
 
     /* fire handlers for hiding/showing stuff */
@@ -92,7 +93,7 @@ main(int argc, char **argv)
     setup_files_list(argc, argv);
 
     /* allow multiple selects */
-    widget = glade_xml_get_widget(glade_xml, "input_file_selection");
+    widget = get_widget_checked("input_file_selection");
     gtk_file_selection_set_select_multiple(GTK_FILE_SELECTION(widget), TRUE);
 
     /* drag-n-drop setup */
@@ -107,7 +108,7 @@ main(int argc, char **argv)
     current_naming_scheme = naming_scheme_default();
 
     /* set initial vpanel setting */
-    widget = glade_xml_get_widget(glade_xml, "vertical_pane");
+    widget = get_widget_checked("vertical_pane");
     gtk_paned_set_position(GTK_PANED(widget), 240);
 
     /* Connect signal handlers.  */

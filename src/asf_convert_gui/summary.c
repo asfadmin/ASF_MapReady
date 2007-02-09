@@ -48,7 +48,7 @@ void update_summary()
     case INPUT_FORMAT_CEOS_LEVEL0:
     {
         GtkWidget *process_to_level1_checkbutton =
-            glade_xml_get_widget(glade_xml, "process_to_level1_checkbutton");
+            get_widget_checked("process_to_level1_checkbutton");
 
         gboolean process_to_level1_is_checked =
             gtk_toggle_button_get_active(
@@ -101,7 +101,7 @@ void update_summary()
         else
             strcat(text, "\n   Geometric correction only");
 
-	dem_entry = glade_xml_get_widget(glade_xml, "dem_entry");
+	dem_entry = get_widget_checked("dem_entry");
 	dem = strdup(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
 
 	if (!dem || strlen(dem) == 0)
@@ -138,7 +138,7 @@ void update_summary()
             GtkWidget *mask_entry;
             char *mask;
 
-            mask_entry = glade_xml_get_widget(glade_xml, "mask_entry");
+            mask_entry = get_widget_checked("mask_entry");
             mask = strdup(gtk_entry_get_text(GTK_ENTRY(mask_entry)));
 
             if (!mask || strlen(mask) == 0)
@@ -295,9 +295,7 @@ void update_summary()
         strcat(text, " (float)\n");
     }
 
-    summary_label =
-        glade_xml_get_widget(glade_xml, "summary_label");
-
+    summary_label = get_widget_checked("summary_label");
     gtk_label_set_text(GTK_LABEL(summary_label), text);
 
     settings_delete(s);

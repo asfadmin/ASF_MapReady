@@ -8,8 +8,14 @@
 int COL_DATA_FILE;
 int COL_INPUT_THUMBNAIL;
 int COL_OUTPUT_FILE;
-int COL_OUTPUT_THUMBNAIL;
 int COL_STATUS;
+int COL_LOG;
+
+int COMP_COL_DATA_FILE;
+int COMP_COL_OUTPUT_FILE;
+int COMP_COL_OUTPUT_THUMBNAIL;
+int COMP_COL_STATUS;
+int COMP_COL_LOG;
 
 /* Returns the length of the prepension if there is an allowed
    prepension, otherwise returns 0 (no prepension -> chceck extensions) */
@@ -207,6 +213,45 @@ add_to_files_list(const gchar * data_file)
     return ret;
 }
 
+void
+move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
+                             const gchar *log_txt)
+{
+    // iter: points into "files_list"
+    // completed_iter: (returned) points into "completed_files_list"    
+    gchar *output_file, *data_file;
+
+    GtkTreeModel *model = GTK_TREE_MODEL(list_store);
+    gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file,
+                       COL_OUTPUT_FILE, &output_file, -1);
+
+    gtk_list_store_append(completed_list_store, completed_iter);
+    gtk_list_store_set(completed_list_store, completed_iter,
+                       COMP_COL_DATA_FILE, data_file,
+                       COMP_COL_OUTPUT_FILE, output_file,
+                       COMP_COL_STATUS, "Done",
+                       COMP_COL_LOG, log_txt,
+                       -1);
+
+    gtk_list_store_remove(GTK_LIST_STORE(model), iter);
+
+    g_free(data_file);
+    g_free(output_file);
+}
+
+void
+move_from_completed_files_list(GtkTreeIter *iter)
+{
+    gchar *data_file;
+    GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
+    gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file, -1);
+
+    printf("Moving back: %s\n", data_file);
+    add_to_files_list(data_file);
+    gtk_list_store_remove(GTK_LIST_STORE(model), iter);
+    g_free(data_file);
+}
+
 // The thumbnailing works like this: When a user adds a file, or a bunch of
 // files, the file names are added immediately to the list, and each data
 // file name is added to this global thumbnailing queue.  (It isn't really
@@ -274,12 +319,14 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
         GtkWidget *files_list;
         gchar * out_name_full;
         
-        files_list = glade_xml_get_widget(glade_xml, "files_list");
+        files_list = get_widget_checked("files_list");
         
         gtk_list_store_append(list_store, iter_p);
         gtk_list_store_set(list_store, iter_p,
                            COL_DATA_FILE, data_file,
-                           COL_STATUS, "-", -1);
+                           COL_STATUS, "-",
+                           COL_LOG, "Has not been processed yet.",
+                           -1);
         
         out_name_full = determine_default_output_file_name(data_file);
         set_output_name(iter_p, out_name_full);
@@ -486,7 +533,7 @@ static GtkTreeViewColumn *
 output_thumbnail_column (GtkWidget *widget, GdkEventMotion *event)
 {
     return gtk_tree_view_get_column (GTK_TREE_VIEW (widget), 
-        COL_OUTPUT_THUMBNAIL);
+        COMP_COL_OUTPUT_THUMBNAIL);
 }
 
 static gboolean
@@ -748,6 +795,9 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     }
 }
 
+typedef gboolean motion_notify_event_handler(GtkWidget *widget,
+                                             GdkEventMotion *event,
+                                             gpointer user_data);
 typedef struct {
     GdkWindow *popup;
     GtkTreeView *tree_view;
@@ -757,11 +807,15 @@ typedef struct {
 static maybe_clear_popup_image_args_t maybe_clear_popup_image_args 
 = {NULL, NULL, NULL};
 
-/* Forward declaration.  */
+/* Forward declarations.  */
 static gboolean
 files_list_motion_notify_event_handler (GtkWidget *widget,
                                         GdkEventMotion *event,
                                         gpointer user_data);
+//static gboolean
+//completed_files_list_motion_notify_event_handler (GtkWidget *widget,
+//                                                  GdkEventMotion *event,
+//                                                  gpointer user_data);
 
 /* Forward declaration.  */
 static void
@@ -992,48 +1046,46 @@ files_list_scroll_event_handler (GtkWidget *widget, GdkEventScroll *event,
 void
 setup_files_list(int argc, char *argv[])
 {
-    gint i;
-    GtkWidget *files_list;
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    if (use_thumbnails)
-    {
-        list_store = gtk_list_store_new(5, 
-            G_TYPE_STRING, 
-            GDK_TYPE_PIXBUF,
-            G_TYPE_STRING, 
-            GDK_TYPE_PIXBUF,
-            G_TYPE_STRING);
+    list_store = gtk_list_store_new(5, 
+                                    G_TYPE_STRING, 
+                                    GDK_TYPE_PIXBUF,
+                                    G_TYPE_STRING, 
+                                    G_TYPE_STRING,
+                                    G_TYPE_STRING);
+    
+    COL_DATA_FILE = 0;
+    COL_INPUT_THUMBNAIL = 1;
+    COL_OUTPUT_FILE = 2;
+    COL_STATUS = 3;
+    COL_LOG = 4;
 
-        COL_DATA_FILE = 0;
-        COL_INPUT_THUMBNAIL = 1;
-        COL_OUTPUT_FILE = 2;
-        COL_OUTPUT_THUMBNAIL = 3;
-        COL_STATUS = 4;
-    }
-    else
-    {
-        list_store = gtk_list_store_new(3, 
-            G_TYPE_STRING, 
-            G_TYPE_STRING, 
-            G_TYPE_STRING);
+    completed_list_store = gtk_list_store_new(5,
+                                              G_TYPE_STRING, 
+                                              G_TYPE_STRING, 
+                                              GDK_TYPE_PIXBUF,
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING);
+    
+    COMP_COL_DATA_FILE = 0;
+    COMP_COL_OUTPUT_FILE = 1;
+    COMP_COL_OUTPUT_THUMBNAIL = 2;
+    COMP_COL_STATUS = 3;
+    COMP_COL_LOG = 4;
 
-        COL_DATA_FILE = 0;
-        COL_INPUT_THUMBNAIL = -999;
-        COL_OUTPUT_FILE = 1;
-        COL_OUTPUT_THUMBNAIL = -999;
-        COL_STATUS = 2;
-    }
-
+    int i;
     for (i = 1; i < argc; ++i)
         add_to_files_list(argv[i]);
-	show_queued_thumbnails();
+    show_queued_thumbnails();
 
-    files_list =
-        glade_xml_get_widget(glade_xml, "files_list");
+    GtkWidget *files_list = get_widget_checked("files_list");
+    GtkWidget *completed_files_list =
+        get_widget_checked("completed_files_list");
 
+/*** First, the "pending" files list ****/
     /* First Column: Input File Name */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Data File");
@@ -1044,31 +1096,26 @@ setup_files_list(int argc, char *argv[])
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE);
 
-    if (use_thumbnails)
-    {
-        /* Next Column: thumbnail of input image.  */
-        col = gtk_tree_view_column_new ();
-        gtk_tree_view_column_set_title (col, "Input Thumbnail");
-        gtk_tree_view_column_set_resizable (col, FALSE);
-        gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
-        renderer = gtk_cell_renderer_pixbuf_new ();
-        gtk_tree_view_column_pack_start (col, renderer, FALSE);
-        gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
-            COL_INPUT_THUMBNAIL);
+    /* Next Column: thumbnail of input image.  */
+    col = gtk_tree_view_column_new ();
+    gtk_tree_view_column_set_title (col, "Input Thumbnail");
+    gtk_tree_view_column_set_resizable (col, FALSE);
+    gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
+    renderer = gtk_cell_renderer_pixbuf_new ();
+    gtk_tree_view_column_pack_start (col, renderer, FALSE);
+    gtk_tree_view_column_add_attribute (col, renderer, "pixbuf",
+                                        COL_INPUT_THUMBNAIL);
 
-#ifdef THUMBNAILS
-        g_signal_connect (files_list, "motion-notify-event",
-            G_CALLBACK (files_list_motion_notify_event_handler), 
-            NULL);
-
-        g_signal_connect (files_list, "leave-notify-event",
-            G_CALLBACK (files_list_leave_notify_event_handler), 
-            files_list);
-
-        g_signal_connect (files_list, "scroll-event",
-            G_CALLBACK (files_list_scroll_event_handler), NULL);
-#endif
-    }
+    g_signal_connect (files_list, "motion-notify-event",
+                      G_CALLBACK (files_list_motion_notify_event_handler), 
+                      NULL);
+    
+    g_signal_connect (files_list, "leave-notify-event",
+                      G_CALLBACK (files_list_leave_notify_event_handler), 
+                      files_list);
+    
+    g_signal_connect (files_list, "scroll-event",
+                      G_CALLBACK (files_list_scroll_event_handler), NULL);
 
     /* Next Column: Output File Name */
     col = gtk_tree_view_column_new();
@@ -1093,19 +1140,6 @@ setup_files_list(int argc, char *argv[])
     gtk_tree_view_column_set_cell_data_func(col, renderer,
         render_output_name, NULL, NULL);
 
-    if (use_thumbnails)
-    {
-        /* Next Column: Pixbuf of output image */
-        col = gtk_tree_view_column_new();
-        gtk_tree_view_column_set_title(col, "Output Thumbnail");
-        gtk_tree_view_column_set_resizable(col, FALSE);
-        gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
-        renderer = gtk_cell_renderer_pixbuf_new();
-        gtk_tree_view_column_pack_start(col, renderer, FALSE);
-        gtk_tree_view_column_add_attribute(col, renderer, "pixbuf",
-            COL_OUTPUT_THUMBNAIL);
-    }
-
     /* Next Column: Current Status */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Status");
@@ -1115,9 +1149,14 @@ setup_files_list(int argc, char *argv[])
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_STATUS);
 
-    /* add our custom renderer (turns stale "Done" entries gray) */
-    gtk_tree_view_column_set_cell_data_func(col, renderer,
-        render_status, NULL, NULL);
+    /* Next Column: Log Info (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Log Info");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_LOG);
 
     gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
         GTK_TREE_MODEL(list_store));  
@@ -1126,6 +1165,77 @@ setup_files_list(int argc, char *argv[])
 
     gtk_tree_selection_set_mode(
         gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
+        GTK_SELECTION_MULTIPLE);
+
+/*** Second, the "pending" files list ****/
+    /* First Column: Input File Name */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Data File");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    g_object_set(renderer, "text", "?", NULL);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_DATA_FILE);
+
+    /* Next Column: Output File Name */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Output File");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text",
+                                       COMP_COL_OUTPUT_FILE);
+
+    /* Next Column: Pixbuf of output image */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Output Thumbnail");
+    gtk_tree_view_column_set_resizable(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_pixbuf_new();
+    gtk_tree_view_column_pack_start(col, renderer, FALSE);
+    gtk_tree_view_column_add_attribute(col, renderer, "pixbuf",
+                                       COMP_COL_OUTPUT_THUMBNAIL);
+/*
+    g_signal_connect (completed_files_list, "motion-notify-event",
+                G_CALLBACK (completed_files_list_motion_notify_event_handler), 
+                NULL);
+    
+    g_signal_connect (completed_files_list, "leave-notify-event",
+                G_CALLBACK (completed_files_list_leave_notify_event_handler), 
+                completed_files_list);
+    
+    g_signal_connect (completed_files_list, "scroll-event",
+                G_CALLBACK (completed_files_list_scroll_event_handler),
+                NULL);
+*/
+    /* Next Column: Current Status */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Status");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COMP_COL_STATUS);
+
+    /* Next Column: Log Info (hidden) */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Log Info");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COMP_COL_LOG);
+
+    gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list), 
+        GTK_TREE_MODEL(completed_list_store));  
+
+    g_object_unref(completed_list_store);
+
+    gtk_tree_selection_set_mode(
+        gtk_tree_view_get_selection(GTK_TREE_VIEW(completed_files_list)),
         GTK_SELECTION_MULTIPLE);
 }
 

@@ -17,7 +17,8 @@ static void show_it(const gchar * filename, int is_new)
     static GdkPixbuf *shown_pixbuf = NULL;
 
     GtkWidget *scrolled_window =
-        glade_xml_get_widget(glade_xml, "view_output_scrolledwindow");
+        get_widget_checked("view_output_scrolledwindow");
+
     GtkAdjustment *hadjust = gtk_scrolled_window_get_hadjustment(
         GTK_SCROLLED_WINDOW(scrolled_window));
     GtkAdjustment *vadjust = gtk_scrolled_window_get_vadjustment(
@@ -83,18 +84,14 @@ static void show_it(const gchar * filename, int is_new)
     gdk_pixbuf_scale(output_pixbuf, shown_pixbuf, 0, 0, scaled_w, scaled_h,
                      0, 0, s, s, interp);
 
-    output_image_dialog =
-        glade_xml_get_widget(glade_xml, "output_image_dialog");
-
-    output_image =
-        glade_xml_get_widget(glade_xml, "output_image");
+    output_image_dialog = get_widget_checked("output_image_dialog");
+    output_image = get_widget_checked("output_image");
 
     gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), shown_pixbuf);
 
     if (is_new)
     {
-        GtkWidget *widget =
-            glade_xml_get_widget (glade_xml, "zoom_level_optionmenu");
+        GtkWidget *widget = get_widget_checked("zoom_level_optionmenu");
         set_combo_box_item(widget, 9);
 
         snprintf(title, sizeof(title), "Output Image - %s", filename);
@@ -136,9 +133,7 @@ static void update_image()
 static void
 output_image_hide()
 {
-    GtkWidget *output_image_dialog =
-        glade_xml_get_widget(glade_xml, "output_image_dialog");
-
+    GtkWidget *output_image_dialog = get_widget_checked("output_image_dialog");
     gtk_widget_hide(output_image_dialog);
 }
 

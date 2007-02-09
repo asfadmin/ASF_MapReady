@@ -73,7 +73,7 @@ static gboolean confirm_overwrite()
         gint result;
 
         dialog_confirm_overwrite =
-            glade_xml_get_widget(glade_xml, "dialog_confirm_overwrite");
+            get_widget_checked("dialog_confirm_overwrite");
 
         result = gtk_dialog_run( GTK_DIALOG(dialog_confirm_overwrite) );
         gtk_widget_hide( dialog_confirm_overwrite );
@@ -290,92 +290,6 @@ gboolean check_for_error(gchar * txt)
     return FALSE;
 }
 
-void
-append_output(const gchar * txt)
-{
-    GtkWidget * textview_output;
-    GtkTextBuffer * text_buffer;
-    GtkTextIter end;
-
-    textview_output = glade_xml_get_widget(glade_xml, "textview_output");
-    text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
-    gtk_text_buffer_get_end_iter(text_buffer, &end);
-    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
-
-    /* taking this out... annoying to have the window scrolling all the time
-    gtk_text_buffer_get_end_iter(text_buffer, &end);
-    gtk_text_view_scroll_to_iter(GTK_TEXT_VIEW(textview_output),
-    &end, 0, TRUE, 0.0, 1.0);
-    */
-}
-
-static void
-append_begin_processing_tag(const gchar * input_filename)
-{
-    static GtkTextTag * tt = NULL;
-
-    GtkWidget * textview_output;
-    GtkTextBuffer * text_buffer;
-    GtkTextMark * mark;
-    GtkTextIter end, line_begin;
-    gchar * txt;
-    const gchar * tag = "Processing Input File: ";
-
-    textview_output = glade_xml_get_widget(glade_xml, "textview_output");
-    text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
-    gtk_text_buffer_get_end_iter(text_buffer, &end);
-
-    /* mark the location of this file -- remove any existing mark */
-    mark = gtk_text_buffer_get_mark(text_buffer, input_filename);
-    if (mark)
-        gtk_text_buffer_delete_mark(text_buffer, mark);
-
-    mark = gtk_text_buffer_create_mark(text_buffer, input_filename,
-        &end, TRUE);
-
-    txt = (gchar *) g_malloc( sizeof(gchar) *
-        (strlen(input_filename) + strlen(tag) + 2) );
-
-    sprintf(txt, "%s%s\n", tag, input_filename);
-    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
-
-    line_begin = end;
-    gtk_text_iter_backward_line(&line_begin);
-
-    if (!tt)
-    {
-        /*
-        tt = gtk_text_buffer_create_tag(text_buffer, "blue_foreground",
-        "foreground", "blue", NULL);
-        */
-
-        tt = gtk_text_buffer_create_tag(text_buffer, "bold",
-            "weight", PANGO_WEIGHT_BOLD,
-            "foreground", "blue",
-            NULL);
-    }
-
-    gtk_text_buffer_apply_tag(text_buffer, tt, &line_begin, &end);
-
-    g_free(txt);
-}
-
-void
-invalidate_progress()
-{
-    gboolean valid;
-    GtkTreeIter iter;
-
-    assert (list_store);
-
-    valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
-    while (valid)
-    {
-        gtk_list_store_set(list_store, &iter, COL_STATUS, "-", -1);
-        valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
-    }
-}
-
 static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                           const gchar *out_full)
 {
@@ -395,6 +309,8 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
             }
         }
 
+        printf("Thumb: %s\nscale= %d\n", thumbnail_name, scaling_required);
+
         GError * err = NULL;
         GdkPixbuf * pb;
 
@@ -409,16 +325,18 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
 
             if (!err)
             {
-                gtk_list_store_set(list_store, iter, COL_OUTPUT_THUMBNAIL,
-                                   pb, -1);
+                gtk_list_store_set(completed_list_store, iter,
+                                   COMP_COL_OUTPUT_THUMBNAIL, pb, -1);
             }
             else
             {
                 g_warning("Error loading image '%s': %s\n",
                           thumbnail_name, err->message);
                 g_error_free(err);
-	   }
+            }
 	}
+        
+        free(thumbnail_name);
     }
 }
 
@@ -642,26 +560,26 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             return;
         }
 
-	append_begin_processing_tag(in_data);
-	cmd_output = do_convert(pid, iter, config_file, TRUE, user_settings->keep_files);
+	cmd_output = do_convert(pid, iter, config_file, TRUE,
+                                user_settings->keep_files);
 	err = check_for_error(cmd_output);
-	append_output(cmd_output);
+        if (err) {
+            // unsuccessful
+            gtk_list_store_set(list_store, iter, COL_STATUS, "Error", 
+                               COL_LOG, cmd_output, -1);
+        }
+        else {
+            // successful -- move to "completed" list
+            GtkTreeIter completed_iter;
+            move_to_completed_files_list(iter, &completed_iter, cmd_output);
+            set_thumbnail(&completed_iter, tmp_dir, out_full);
+        }
 
 	free(config_file);
 	free(out_basename);
 	free(output_dir);
-	//free(in_basename);
-        free(out_nameonly);
         free(out_nameonly);
 	g_free(cmd_output);
-
-	if (use_thumbnails)
-	{
-            set_thumbnail(iter, tmp_dir, out_full);
-	}
-
-	char *done = err ? "Error" : "Done";
-	gtk_list_store_set(list_store, iter, COL_STATUS, done, -1);
 
         if (!user_settings->keep_files)
             remove_dir(tmp_dir);
@@ -702,9 +620,6 @@ process_items_from_list(GList * list_of_row_refs, gboolean skip_done)
         while (gtk_events_pending())
             gtk_main_iteration();
 
-        if (!keep_going)
-            append_output("Processing stopped by user.\n");
-
         i = g_list_next(i);
         is_first = FALSE;
     }
@@ -732,15 +647,6 @@ on_execute_button_clicked (GtkWidget *button)
     if (confirm_overwrite())
     {
         user_settings = settings_get_from_gui();
-
-        if (settings_on_execute &&
-            !settings_equal(user_settings, settings_on_execute))
-        {
-            /* settings have changed since last time clicked execute,
-            or loaded settings from a file - must clear progress so far */
-            invalidate_progress();
-        }
-
         settings_on_execute = settings_copy(user_settings);
 
         rows = NULL;
@@ -769,7 +675,6 @@ on_execute_button_clicked (GtkWidget *button)
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget * widget)
 {
-    append_output("Stopping...\n");
     keep_going = FALSE;
 
     const char *tmp_dir = get_asf_tmp_dir();

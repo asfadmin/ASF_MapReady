@@ -65,9 +65,7 @@ static GtkTargetEntry target_table[] = {
 void
 setup_dnd()
 {
-    GtkWidget *widget;
-
-    widget = glade_xml_get_widget(glade_xml, "files_list");
+    GtkWidget *widget= get_widget_checked("files_list");
 
     gtk_drag_dest_set (widget, GTK_DEST_DEFAULT_ALL, 
         target_table, 1, GDK_ACTION_COPY);

@@ -277,7 +277,7 @@ void set_predefined_projections(int projection)
     }
 
     predefined_projection_option_menu =
-        glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
+        get_widget_checked("predefined_projection_option_menu");
     g_assert(predefined_projection_option_menu);
 
     switch (projection)
@@ -541,7 +541,7 @@ load_selected_predefined_projection_parameters(int projection)
     projection_type_t type;
 
     predefined_projection_option_menu =
-        glade_xml_get_widget(glade_xml, "predefined_projection_option_menu");
+        get_widget_checked("predefined_projection_option_menu");
 
     menu =
         gtk_option_menu_get_menu(

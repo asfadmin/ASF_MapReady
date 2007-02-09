@@ -164,16 +164,17 @@ typedef struct
     gchar * scheme;
 } NamingScheme;
 
-/*
-  Imporant: If you update the columns (reorder, or add new ones) you must
-  also update the list store create call, in file_list.c:setup_files_list().
-*/
-
 extern int COL_DATA_FILE;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_OUTPUT_FILE;
-extern int COL_OUTPUT_THUMBNAIL;
 extern int COL_STATUS;
+extern int COL_LOG;
+
+extern int COMP_COL_DATA_FILE;
+extern int COMP_COL_OUTPUT_FILE;
+extern int COMP_COL_OUTPUT_THUMBNAIL;
+extern int COMP_COL_STATUS;
+extern int COMP_COL_LOG;
 
 /********************************** Prototypes ******************************/
 
@@ -213,7 +214,6 @@ gchar *find_dir_in_path(gchar * file);
 /* execute.c */
 int do_system_exec(const char *cmd);
 void process_items_from_list(GList *, gboolean);
-void append_output(const gchar *text);
 
 /* callbacks.c */
 void output_format_combobox_changed();
@@ -229,6 +229,7 @@ gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
 gchar * meta_file_name(const gchar *);
 char *getPath(const char *);
+GtkWidget *get_widget_checked(const char *widget_name);
 
 /* dnd.c */
 void setup_dnd();
@@ -248,6 +249,8 @@ void set_output_name(GtkTreeIter *, const gchar *);
 gboolean is_L_file(const gchar *);
 void show_queued_thumbnails();
 int has_prepension(const gchar *);
+void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *);
+void move_from_completed_files_list(GtkTreeIter *);
 
 /* help.c */
 char * escapify(const char * s);
@@ -307,6 +310,9 @@ void terrcorr_options_changed();
 const char * terrcorr_options_string(const Settings *settings);
 void default_to_terrcorr_on();
 
+/* log.c */
+void show_log(gchar * log_txt, gchar * data_file);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
@@ -321,8 +327,9 @@ extern const char PATH_SEPATATOR;
 /* xml version of the .glade file */
 extern GladeXML *glade_xml;
 
-/* The files listing */
+/* The files listings */
 extern GtkListStore *list_store;
+extern GtkListStore *completed_list_store;
 
 /* TRUE during processing */
 extern gboolean processing;

@@ -149,13 +149,13 @@ static void set_vbox_advanced_visibility(const gboolean show_it)
     GtkWidget * dialog_cons;
 
     dialog_cons_vbox_advanced =
-        glade_xml_get_widget(glade_xml, "dialog_cons_vbox_advanced");
+        get_widget_checked("dialog_cons_vbox_advanced");
 
     dialog_cons_button_advanced =
-        glade_xml_get_widget(glade_xml, "dialog_cons_button_advanced");
+        get_widget_checked("dialog_cons_button_advanced");
 
     dialog_cons =
-        glade_xml_get_widget(glade_xml, "dialog_cons");
+        get_widget_checked("dialog_cons");
 
     if (show_it)
     {
@@ -187,7 +187,7 @@ static gboolean advanced_is_shown()
     const gchar * current_text;
 
     dialog_cons_button_advanced =
-        glade_xml_get_widget(glade_xml, "dialog_cons_button_advanced");
+        get_widget_checked("dialog_cons_button_advanced");
 
     current_text =
         gtk_button_get_label(GTK_BUTTON(dialog_cons_button_advanced));
@@ -205,7 +205,7 @@ static void dialog_cons_hide()
     GtkWidget *dialog_cons;
 
     dialog_cons =
-        glade_xml_get_widget(glade_xml, "dialog_cons");
+        get_widget_checked("dialog_cons");
 
     gtk_widget_hide(dialog_cons);
 }
@@ -219,16 +219,16 @@ static void prepare_dialog_cons()
     GtkWidget * dialog_cons_scheme_entry;
 
     dialog_cons =
-        glade_xml_get_widget(glade_xml, "dialog_cons");
+        get_widget_checked("dialog_cons");
 
     dialog_cons_prefix_entry =
-        glade_xml_get_widget(glade_xml, "dialog_cons_prefix_entry");
+        get_widget_checked("dialog_cons_prefix_entry");
 
     dialog_cons_suffix_entry =
-        glade_xml_get_widget(glade_xml, "dialog_cons_suffix_entry");
+        get_widget_checked("dialog_cons_suffix_entry");
 
     dialog_cons_scheme_entry =
-        glade_xml_get_widget(glade_xml, "dialog_cons_scheme_entry");
+        get_widget_checked("dialog_cons_scheme_entry");
 
     gtk_entry_set_text(GTK_ENTRY(dialog_cons_prefix_entry),
         current_naming_scheme->prefix);
@@ -375,10 +375,10 @@ static void dialog_cons_button_ok_clicked()
     current_naming_scheme = naming_scheme_default();
 
     dialog_cons_prefix_entry =
-        glade_xml_get_widget(glade_xml, "dialog_cons_prefix_entry");
+        get_widget_checked("dialog_cons_prefix_entry");
 
     dialog_cons_suffix_entry =
-        glade_xml_get_widget(glade_xml, "dialog_cons_suffix_entry");
+        get_widget_checked("dialog_cons_suffix_entry");
 
     current_naming_scheme->prefix = g_strdup( (gchar *)
         gtk_entry_get_text(GTK_ENTRY(dialog_cons_prefix_entry)));
@@ -391,7 +391,7 @@ static void dialog_cons_button_ok_clicked()
         GtkWidget * dialog_cons_scheme_entry;
 
         dialog_cons_scheme_entry =
-            glade_xml_get_widget(glade_xml, "dialog_cons_scheme_entry");
+            get_widget_checked("dialog_cons_scheme_entry");
 
         current_naming_scheme->scheme = g_strdup( (gchar *)
             gtk_entry_get_text(GTK_ENTRY(dialog_cons_scheme_entry)));
@@ -404,7 +404,7 @@ static void dialog_cons_button_ok_clicked()
     naming_scheme_delete(old_naming_scheme);
 
     /* refresh the grid */
-    files_list = glade_xml_get_widget(glade_xml, "files_list");
+    files_list = get_widget_checked("files_list");
     gtk_widget_queue_draw(files_list);
 }
 
