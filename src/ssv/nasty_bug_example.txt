@@ -1,0 +1,9 @@
+I forgot the line
+
+	ec_lock_writer_unlock (field_lock);
+
+near the end of table_file_field_writer_trylock() method in
+table_file.c (the return case where the intraprocess lock worked and
+the file lock didn't, so we have to unwind).  This was very hard to
+detect and would have been far easier with the graphical system I'm
+contemplating.
