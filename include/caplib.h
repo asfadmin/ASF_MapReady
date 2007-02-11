@@ -19,6 +19,7 @@ typedef enum {
 extern behavior_on_error_t caplib_behavior_on_error;
 
 void *MALLOC(size_t size);
+void *CALLOC(size_t nmemb, size_t size);
 void FREE(void *ptr);
 void FREE_BANDS(char **ptr);
 FILE *FOPEN(const char *file,const char *mode);
