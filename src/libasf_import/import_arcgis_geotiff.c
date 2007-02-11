@@ -1227,7 +1227,7 @@ short getArcgisProjType(const char *auxFile) {
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
              "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
@@ -1247,8 +1247,8 @@ short getArcgisProjType(const char *auxFile) {
     /* "EPRJ_EXTERNAL" in an enumerated type.  The proNumber name      */
     /* however is the projection type, by numerical ID, that we want.  */
     /* NOTE: I used the Eprj_ProParameters data element naming here... */
-    DHFAGetIntegerValFromOffset(fp, foundNode.data, &proType, _EMIF_T_ENUM);
-    DHFAGetIntegerVal(fp, &proNumber, _EMIF_T_LONG);
+    DHFAGetIntegerValFromOffset(fp, foundNode.data, (long*)&proType, _EMIF_T_ENUM);
+    DHFAGetIntegerVal(fp, (long*)&proNumber, _EMIF_T_LONG);
     projType = (short)proNumber;
   }
 
@@ -1503,10 +1503,12 @@ void GetNode(FILE *fp, unsigned long nodeOffset, _Ehfa_Entry *nodeEntry)
   nodeEntry->dataSize = *((long*)pTmpLong);
 
   /* Read 'node name' string */
-  DHFAGetString(fp, MAX_EHFA_ENTRY_NAMESTRING_LEN, nodeEntry->name);
+  DHFAGetString(fp, MAX_EHFA_ENTRY_NAMESTRING_LEN,
+                (unsigned char*)nodeEntry->name);
 
   /* Read 'data type' string */
-  DHFAGetString(fp, MAX_EHFA_ENTRY_TYPESTRING_LEN, nodeEntry->type);
+  DHFAGetString(fp, MAX_EHFA_ENTRY_TYPESTRING_LEN,
+                (unsigned char*)nodeEntry->type);
 
   /* Read 'time node last modified' */
   DHFAfread(pTmpUlong, EMIF_T_ULONG_LEN, fp);
@@ -2432,7 +2434,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
              "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
@@ -2448,7 +2450,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
   nodeFound = FindNode (fp, &rootNode, EPRJ_PROPARAMETERS, &foundNode); // do a get, but via a search
   if (nodeFound) {
     // Get proType (enum idx, 0 == 'EPRJ_INTERNAL' and 1 == 'EPRJ_EXTERNAL'
-    DHFAGetIntegerValFromOffset(fp, foundNode.data, &proType, _EMIF_T_ENUM);
+    DHFAGetIntegerValFromOffset(fp, foundNode.data, (long*)&proType, _EMIF_T_ENUM);
 
     // Get proNumber, e.g. 4 => Lambert Conformal Conic
     DHFAGetIntegerVal(fp, &proNumber, _EMIF_T_LONG);
@@ -2461,7 +2463,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to CHAR-p
     if (offset > 0) {
       fseek(fp, offset, SEEK_SET);
-      DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG);
+      DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG);
       if (strLen > 0) {
         DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to str itself
         if (offset > 0) {
@@ -2479,7 +2481,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to CHAR-p
     if (offset > 0) {
       fseek(fp, offset, SEEK_SET);
-      DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG);
+      DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG);
       if (strLen > 0) {
         DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to str itself
         if (offset > 0) {
@@ -2495,7 +2497,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
 
     // Get the proParams, the array of projection parameters (always
     // exists in the file), DOUBLE-p
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get num of elements in array
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG); // Get num of elements in array
     if (nElements > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Get offset to array
       if (offset > 0) {
@@ -2507,12 +2509,12 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
     }
 
     // Get proSpheroid data from file (CHAR-*)
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get number of spheroids (should be 1)
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG); // Get number of spheroids (should be 1)
     if (nElements > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Get offset to spheroid name
       if (offset > 0) {
         fseek(fp, offset, SEEK_SET);
-        DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG); // Get length of spheroid name
+        DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG); // Get length of spheroid name
         if (strLen > 0) {
           DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG);
           if (offset > 0) {
@@ -2680,7 +2682,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
              "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
@@ -2698,7 +2700,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
     // Get datumname, first val is a ushort string length and
     // if greater than zero, immediately followed by an offset to
     // the string of characters (otherwise followed by next data item)
-    DHFAGetIntegerValFromOffset(fp, foundNode.data, &strLen, _EMIF_T_ULONG);
+    DHFAGetIntegerValFromOffset(fp, foundNode.data, (long*)&strLen, _EMIF_T_ULONG);
     if (strLen > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to str itself
       if (offset > 0) {
@@ -2709,11 +2711,11 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
 
     // Get type (enum idx, 0 == 'EPRJ_DATUM_PARAMETRIC',
     // 1 == 'EPRJ_DATUM_GRID', and 2 == 'EPRJ_DATUM_REGRESSION'
-    DHFAGetIntegerVal(fp, &type, _EMIF_T_ENUM);
+    DHFAGetIntegerVal(fp, (long*)&type, _EMIF_T_ENUM);
 
     // Get the datum double params, the array of datum parameters (always
     // exists in the file), DOUBLE-p
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG); // Get num of elements in array
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG); // Get num of elements in array
     if (nElements > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Get offset to array
       if (offset > 0) {
@@ -2730,7 +2732,7 @@ void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms)
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to CHAR-p
     if (offset > 0) {
       fseek(fp, offset, SEEK_SET);
-      DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG);
+      DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG);
       if (strLen > 0) {
         DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to str itself
         if (offset > 0) {
@@ -2801,7 +2803,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
              "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
@@ -2819,7 +2821,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
     // Get proName, first val is a ushort string length and
     // if greater than zero, immediately followed by an offset to
     // the string of characters (otherwise followed by next data item)
-    DHFAGetIntegerValFromOffset(fp, foundNode.data, &strLen, _EMIF_T_ULONG);
+    DHFAGetIntegerValFromOffset(fp, foundNode.data, (long*)&strLen, _EMIF_T_ULONG);
     if (strLen > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to str itself
       if (offset > 0) {
@@ -2832,21 +2834,21 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
     // ...read number of Eprj_Coordinate elements and offset to first one,
     // then read the doubles.  No need to loop here since the Eprj_MapInfo
     // by default only defines a single upperLeftCenter coordinate
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG);
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG);
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG);
     fseek(fp, offset, SEEK_SET);
     DHFAGetDoubleVal(fp, &upperLeftCenter.x);
     DHFAGetDoubleVal(fp, &upperLeftCenter.y);
 
     // Get lowerRightCenter coordinates
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG);
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG);
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG);
     fseek(fp, offset, SEEK_SET);
     DHFAGetDoubleVal(fp, &lowerRightCenter.x);
     DHFAGetDoubleVal(fp, &lowerRightCenter.y);
 
     // Get pixelSize
-    DHFAGetIntegerVal(fp, &nElements, _EMIF_T_ULONG);
+    DHFAGetIntegerVal(fp, (long*)&nElements, _EMIF_T_ULONG);
     DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG);
     fseek(fp, offset, SEEK_SET);
     DHFAGetDoubleVal(fp, &pixelSize.width);
@@ -2857,7 +2859,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
     // the string of characters (otherwise followed by next data item)
     // NOTE: This is a CHAR-* not a CHAR-p, so the first element is
     // the number of characters (followed by an offset to the string)
-    DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG); // Length of units str
+    DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG); // Length of units str
     if (strLen > 0) {
       DHFAGetIntegerVal(fp, &offset, _EMIF_T_ULONG); // Offset to CHAR-*
       if (offset > 0) {
@@ -3000,7 +3002,7 @@ void getArcgisEimg_MapInformation (char *infile,
   /***** Parse header and data dictionary *****/
   /*                                          */
   GetAuxHeader(fp, &hdr);
-  asfRequire(strncmp(hdr.label, "EHFA_HEADER_TAG", 15) == 0,
+  asfRequire(strncmp((char*)hdr.label, "EHFA_HEADER_TAG", 15) == 0,
              "ArcGIS metadata (.aux) file invalid\n");
   GetDataHeader(fp, &dhdr, &hdr);
   asfRequire(dhdr.version == 1,
@@ -3053,7 +3055,7 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   // Get projection string, first val is a ushort string length and
   // if greater than zero, immediately followed by an offset to
   // the string of characters (otherwise followed by next data item)
-  DHFAGetIntegerValFromOffset(fp, offset, &strLen, _EMIF_T_ULONG);
+  DHFAGetIntegerValFromOffset(fp, offset, (long*)&strLen, _EMIF_T_ULONG);
   if (strLen > 0) {
     DHFAGetIntegerVal(fp, &strOffset, _EMIF_T_ULONG); // Offset to str itself
     if (strOffset > 0) {
@@ -3067,7 +3069,7 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   // the string of characters (otherwise followed by next data item)
   // NOTE: This is a CHAR-* not a CHAR-p, so the first element is
   // the number of characters (followed by an offset to the string)
-  DHFAGetIntegerVal(fp, &strLen, _EMIF_T_ULONG); // Length of units str
+  DHFAGetIntegerVal(fp, (long*)&strLen, _EMIF_T_ULONG); // Length of units str
   if (strLen > 0) {
     DHFAGetIntegerVal(fp, &strOffset, _EMIF_T_ULONG); // Offset to CHAR-*
     if (strOffset > 0) {

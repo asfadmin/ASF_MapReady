@@ -23,7 +23,7 @@
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"
 
-// Import a USGS seamless server digital elevation model (a 
+// Import a USGS seamless server digital elevation model (a
 // pseudoprojected GeoTIFF flavor) into our own ASF Tools format.
 void
 import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
@@ -41,7 +41,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   // Open the structure that contains the geotiff keys.
   GTIF *input_gtif = GTIFNew (input_tiff);
-  asfRequire (input_gtif != NULL, 
+  asfRequire (input_gtif != NULL,
 	      "Error reading GeoTIFF keys from input TIFF file.\n");
 
   // Counts holding the size of the returns from gt_methods.get method
@@ -65,7 +65,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // points don't make sense with the pixel scale option, which we
   // need).
   double *tie_point;
-  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count, 
+  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
 			       &tie_point);
   assert (count == 6);
   //  TIFFGetField (input_tiff, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
@@ -82,7 +82,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   short model_type;
   int read_count
     = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
+  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
   asfRequire (model_type == ModelTypeGeographic, "Input GeoTIFF key "
 	      "GTModelTypeGeoKey does not have the value "
 	      "'ModelTypeGeographic' expected for this input file type.\n");
@@ -109,7 +109,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   // Essentially, get the earth model on which the lat/long are defined.
   short geographic_type;
-  read_count 
+  read_count
     = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geographic_type, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
 
@@ -140,9 +140,11 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 	      "GeogAngularUnitsGeoKey does not have the value 'Angular_Degree "
 	      "expected for this input file type.\n");
 
+  asfPrintStatus("\nConverting GeoTIFF to float image...\n");
   FloatImage *image = tiff_to_float_image (input_tiff);
 
-  float_image_export_as_jpeg 
+  asfPrintStatus("Storing pre-bad data scan jpeg image...\n");
+  float_image_export_as_jpeg
     (image, "pre_bad_data_remap.jpeg",
      image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
 
@@ -151,13 +153,14 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // with this by mapping these values to a less negative magic number
   // of our own that still lets things work somewhat (assuming the bad
   // data values are rare at least).
+  asfPrintStatus("Checking for bad data values...\n");
   const float bad_data_ceiling = -10e10;
   const float new_bad_data_magic_number = -999.0;
   size_t ii, jj;
   for ( ii = 0 ; ii < image->size_y ; ii++ ) {
     for ( jj = 0 ; jj < image->size_x ; jj++ ) {
       if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
-	float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
+        float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
       }
     }
   }
@@ -180,7 +183,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   meta_out->info = NULL;
 
   // Fill in metadata as best we can.
-  
+
   meta_general *mg = meta_out->general;	// Convenience alias.
 
   char *sensor_string = "USGS Seamless data (e.g., NED, SRTM)";
@@ -203,6 +206,10 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   char *system = "big_ieee";
   assert (strlen (system) < FIELD_STRING_MAX);
   strcpy (mg->system, system);
+
+  strcpy(mg->basename, inFileName);
+
+  mg->band_count = 1;
 
   mg->line_count = height;
   mg->sample_count = width;
@@ -233,11 +240,12 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   double tp_lon = tie_point[3];
   double tp_lat = tie_point[4];
 
-  mg->center_latitude 
+  mg->center_latitude
     = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
   mg->center_longitude
     = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
 
+  asfPrintStatus("Gathering image statistics...\n");
   float min, max, mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
 			  FLOAT_IMAGE_DEFAULT_MASK);
@@ -255,7 +263,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   mp->perX = mg->x_pixel_size;
   mp->perY = -mg->y_pixel_size;
-  
+
   strcpy (mp->units, "degrees");
 
   mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
@@ -295,9 +303,11 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   ml->lat_end_far_range = mp->startX + mp->perX * width;
   ml->lon_end_far_range = mp->startY + mp->perY * height;
 
+  asfPrintStatus("Writing ASF .img and .meta output files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
-  asfRequire (return_code == 0, 
+  asfRequire (return_code == 0,
 	      "Failed to write new '.meta' and '.img' files.");
+  asfPrintStatus("\n");
 
 #ifdef DEBUG_IMPORT_USGS_SEAMLESS_JPEG_OUTPUT
   {
@@ -313,7 +323,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 						   "_debug.jpeg");
     g_print ("Making JPEG of output image named %s for debugging...\n",
 	     out_data_file_jpeg->str);
-    float_image_export_as_jpeg_with_mask_interval 
+    float_image_export_as_jpeg_with_mask_interval
       (image, out_data_file_jpeg->str, width > height ? width : height,
        -FLT_MAX, -1e16);
     g_string_free (out_data_file_jpeg, TRUE);
