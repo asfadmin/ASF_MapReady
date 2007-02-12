@@ -4,7 +4,6 @@ LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
