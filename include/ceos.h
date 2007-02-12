@@ -1560,6 +1560,17 @@ struct alos_map_proj_rec {
   int j_ccd[10][8];           // line transformation coefficients (CCDs)
 };
 
+// Radiometric Data Record - ALOS style
+struct alos_rad_data_rec {
+  short sequence_num;            // RDR sequence number
+  short number_rec;              // Number of Radiometric Data Record fields
+  double calibration_factor;     // Calibration factor
+  double delta_trans_real[4];    // Transmission distortion matrix - real
+  double delta_trans_imag[4];    // Transmission distortion matrix - imaginary
+  double delta_receive_real[4];  // Reception distortion matrix - real
+  double delta_receive_imag[4];  // Reception distortion matrix - imaginary
+};
+
 /*Prototypes for converting character buffers to records, and back again.*/
 typedef enum {toASCII,fromASCII} codingDir;
 void   Code_FDR_common(unsigned char *bf, struct FDR* q,codingDir dir);
@@ -1582,6 +1593,7 @@ void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
 void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
 void   Code_AMPR(unsigned char *bf, struct alos_map_proj_rec *q, codingDir dir);
+void   Code_ARDR(unsigned char *bf, struct alos_rad_data_rec* q,codingDir dir);
 
 void   Code_VDR(unsigned char *bf, struct VDREC *q, codingDir dir);
 void   Code_LFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
@@ -1612,6 +1624,7 @@ int get_ppr(const char *filename,struct PPREC *rec);
 int get_rcdr(const char *filename,struct radio_comp_data_rec *rcdr);
 int get_shr(const char *filename, struct scene_header_rec *shr);
 int get_ampr(const char *filename, struct alos_map_proj_rec *ampr);
+int get_ardr(const char *filename, struct alos_rad_data_rec *ardr);
 
 int get_vdr(char *filename,struct VDREC *rec);
 int get_lfpr(char *filename,struct FPREC *rec);

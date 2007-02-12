@@ -30,6 +30,7 @@ typedef enum {
 	CEOS_PPR=120,         /* Processing Parameter Record - CDPF defined.*/
 	CEOS_SHR=18,          // Scene Header Record - ALOS
 	CEOS_AMPR=36,         // Map Projection Record - ALOS
+	CEOS_ARDR=50,         // Radiometric Data Record - ALOS
 	CEOS_RCDR=51          // Radiometric Compensation Data Record - RSI
 } CEOS_RECORD_TYPE;
 
@@ -290,6 +291,17 @@ int get_ampr(const char *filename, struct alos_map_proj_rec *ampr)
 		FREE(buff);
 	}
 	return(era);
+}
+
+int get_ardr(const char *filename, struct alos_rad_data_rec *ardr)
+{
+  unsigned char *buff;
+  int era;
+  if ( (era = getCeosRecord(filename, CEOS_ARDR, 1, &buff)) != -1) {
+    Code_ARDR(buff,ardr,fromASCII);
+    FREE(buff);
+  }
+  return(era);
 }
 
 /*

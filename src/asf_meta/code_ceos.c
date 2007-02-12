@@ -1209,3 +1209,19 @@ void Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir)
     fltV(beam_tab_inc[i],off,16);
   }
 }
+
+void Code_ARDR(unsigned char *bf, struct alos_rad_data_rec* q,codingDir dir)
+{
+  int off = 12, ii;
+  shrtV(sequence_num,off,4);
+  shrtV(number_rec,off,4);
+  fltV(calibration_factor,off,16);
+  for (ii=0; ii<4; ii++) {
+    fltV(delta_trans_real[ii],off,16);
+    fltV(delta_trans_imag[ii],off,16);
+  }
+  for (ii=0; ii<4; ii++) {
+    fltV(delta_receive_real[ii],off,16);
+    fltV(delta_receive_imag[ii],off,16);
+  }
+}

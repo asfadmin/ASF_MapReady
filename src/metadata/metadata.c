@@ -80,6 +80,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
   struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
   struct PPREC *ppr;                    // Processing Parameter record
+  struct alos_rad_data_rec *ardr;       // Radiometric Data record
 
   char **dataNames, leaderName[512];
   int ii,nBands,dataNameExists, leaderNameExists;
@@ -162,6 +163,11 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists && get_raddr(leaderName,raddr) >= 0)
 	ret = sprn_raddr(raddr);
       FREE(raddr);
+      ardr = (struct alos_rad_data_rec *) 
+	MALLOC(sizeof(struct alos_rad_data_rec));
+      if (leaderNameExists && get_ardr(leaderName,ardr) >= 0)
+	ret = sprn_ardr(ardr);
+      FREE(ardr);
       break;
     case (51):
       rcdr = (struct radio_comp_data_rec *) 

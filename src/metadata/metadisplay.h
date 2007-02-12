@@ -56,3 +56,6 @@ void prn_ppr(FILE *fp, struct PPREC *p);
 
 char *sprn_ampr(struct alos_map_proj_rec *mp);
 void prn_ampr(FILE *fp, struct alos_map_proj_rec *mp);
+
+char *sprn_ardr(struct alos_rad_data_rec *dr);
+void prn_ardr(FILE *fp, struct alos_rad_data_rec *dr);

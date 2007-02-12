@@ -140,6 +140,7 @@ void usage(char *name)
    fprintf(stderr,"  -atdr        Attitude Data record\n");
    fprintf(stderr,"  -ampr        ALOS Map Projection Data\n");
    fprintf(stderr,"  -radr        Radiometric Data record\n");
+   fprintf(stderr,"  -ardr        ALOS Radiometric Data record\n");
    fprintf(stderr,"  -rcdr        Radiometric Compensation Data record\n");
    fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
    fprintf(stderr,"  -pdhr        Processed Data Histograms record\n");
@@ -172,6 +173,7 @@ int main(int argc, char **argv)
   int atdr_flag = extract_flag_options(&argc, &argv, "-atdr", "--atdr", NULL);
   int ampr_flag = extract_flag_options(&argc, &argv, "-ampr", "--ampr", NULL);
   int radr_flag = extract_flag_options(&argc, &argv, "-radr", "--radr", NULL);
+  int ardr_flag = extract_flag_options(&argc, &argv, "-ardr", "--ardr", NULL);
   int rcdr_flag = extract_flag_options(&argc, &argv, "-rcdr", "--rcdr", NULL);
   int dqsr_flag = extract_flag_options(&argc, &argv, "-dqsr", "--dqsr", NULL);
   int pdhr_flag = extract_flag_options(&argc, &argv, "-pdhr", "--pdhr", NULL);
@@ -191,7 +193,7 @@ int main(int argc, char **argv)
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag || 
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
-      asf_facdr_flag || esa_facdr_flag || lfdr_flag || all_flag)
+      asf_facdr_flag || esa_facdr_flag || lfdr_flag || ardr_flag || all_flag)
     found = 1;
 
   if (argc == 1 || !found)
@@ -214,6 +216,8 @@ int main(int argc, char **argv)
     output_record(fileName, ".ampr", 44, save);
   if (radr_flag || all_flag)
     output_record(fileName, ".radr", 50, save);
+  if (ardr_flag || all_flag)
+    output_record(fileName, ".ardr", 50, save);
   if (rcdr_flag || all_flag)
     output_record(fileName, ".rcdr", 51, save);
   if (dqsr_flag || all_flag)
