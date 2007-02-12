@@ -6,6 +6,7 @@ These are called by the "routing" routines in tkCommand.c.
 #include "main.h"
 #include "image.h"
 #include "proj.h"
+#include "libasf_proj.h"
 
 /**********************************************
  * cproc_polyinfo:
@@ -129,14 +130,11 @@ void image_describePixel(char *dest,double x,double y)
 		/*Print projection information*/
 		if (image_projOK())
 		{
-			double projX,projY,lat,lon;
+			double projX,projY,projZ, lat,lon;
 			int iflg;
-			inverse_transform proj2LatLon[100];
-			
-			inv_init(ddr->proj_code,ddr->zone_code,ddr->proj_coef,ddr->datum_code,NULL,NULL,&iflg,proj2LatLon);
-			image_point2proj(x,y,&projX,&projY);
-			proj2LatLon[ddr->proj_code](projX,projY,&lon,&lat);			
 
+			meta_get_latLon(meta, y, x, 0.0, &lat, &lon);
+			latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, &projX, &projY, &projZ);
 			sprintf(&dest[strlen(dest)],"ProjX: %.1f m,ProjY: %.1f m\n",projX,projY);
 			if(iflg==0 && meta==NULL)
 				sprintf(&dest[strlen(dest)],"Latitude: %.3f Longitude: %.3f (decimal)\n",lat*R2D,lon*R2D);

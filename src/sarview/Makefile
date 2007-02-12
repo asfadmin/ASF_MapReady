@@ -11,11 +11,10 @@ LDFLAGS := -L$(XHOME) $(LDFLAGS)
 SOLARIS_LIBS = -ldl -lsocket -lnsl
 REQUIRED_LIBS = \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
-	$(LIBDIR)/asf_geolib.a \
 	$(JPEG_LIBS) \
 	$(TCL_TK_LIBS) \
 	-lX11 -lm
