@@ -4,7 +4,6 @@
 include ../../make_support/system_rules
 
 LIBS =  \
-	$(LIBDIR)/asf_geolib.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
