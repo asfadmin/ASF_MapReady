@@ -92,6 +92,7 @@ cal_params *create_cal_params(const char *inSAR)
         struct VRADDR          rdr;     /* Radiometric data record      */
         struct dataset_sum_rec dssr;    /* Data set summary record.     */
         struct VMPDREC         mpdr;    /* Map projection data record.  */
+	struct alos_rad_data_rec ardr;  // ALOS Radiometric Data record
         double  *noise_vector;          /* Noise vector pointer         */
         char sarName[512];
 
@@ -104,20 +105,6 @@ cal_params *create_cal_params(const char *inSAR)
 
         p->meta=meta_init(sarName);
 
-        /* Get values for calibration coefficients and LUT */
-        get_raddr(sarName, &rdr);
-
-        /* hardcodings for not-yet-calibrated fields */
-        if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
-                p->a0 = 1.1E4;
-                p->a1 = 2.2E-5;
-                p->a2 = 0.0;
-        } else {
-                p->a0 = rdr.a[0];
-                p->a1 = rdr.a[1];
-                p->a2 = rdr.a[2];
-        }
-
         /* Set Default values
          --------------------*/
         p->Dmax = 0.0;
@@ -125,7 +112,31 @@ cal_params *create_cal_params(const char *inSAR)
         p->noise_len=256;
         p->output_type=sigma_naught;
 
-        get_dssr(sarName, &dssr);
+	// Check which satellite the data is from
+	if (strncmp(dssr.mission_id, "ALOS", 4) == 0) {
+	  get_ardr(sarName, &ardr);
+	  p->a0 = 0.0;
+	  p->a1 = pow(10, ardr.calibration_factor/10);
+	  p->a2 = 0.0;
+	  p->noise_type=by_pixel;
+
+	  return p;
+	}
+	else { // ASF original style calibration parameters
+	  /* Get values for calibration coefficients and LUT */
+	  get_raddr(sarName, &rdr);
+	  
+	  /* hardcodings for not-yet-calibrated fields */
+	  if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+	    p->a0 = 1.1E4;
+	    p->a1 = 2.2E-5;
+	    p->a2 = 0.0;
+	  } else {
+	    p->a0 = rdr.a[0];
+	    p->a1 = rdr.a[1];
+	    p->a2 = rdr.a[2];
+	  }
+	}
 
         /* Set the Noise Correction Vector to correct version
          -------------------------------------0--------------*/
@@ -252,37 +263,46 @@ check_cal
 #include "ceos.h"
 int check_cal(char *filename)
 {
-        struct qual_sum_rec    *dqsr;
-
-        dqsr=(struct qual_sum_rec*)MALLOC(sizeof(struct qual_sum_rec));
-        if (get_dqsr(filename,dqsr) == -1) return(1);
-
-        if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
-        {
-          asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
-          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-          FREE(dqsr);
-          return(1);
-        }
-        else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
-        {
-          asfPrintStatus("   INFERRED CALIBRATION DATA\n");
-          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-          FREE(dqsr);
-          return(1);
-        }
-        else if (strncmp(dqsr->cal_status,"CALIBRA",7)==0)
-        {
-          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-          FREE(dqsr);
-          return(1);
-        }
-        else
-        {
-          asfPrintStatus("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
-          asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-          FREE(dqsr);
-          return(0);
-        }
+  struct qual_sum_rec    *dqsr;
+  struct dataset_sum_rec dssr;
+  
+  // Check for ALOS data first. Ignore reading the comments field
+  // since the ALOS style data quality summary record does not have
+  // such field.
+  get_dssr(filename, &dssr);
+  if (strncmp(dssr.mission_id, "ALOS", 4) == 0) 
+    return 1;
+  else{
+    dqsr=(struct qual_sum_rec*)MALLOC(sizeof(struct qual_sum_rec));
+    if (get_dqsr(filename,dqsr) == -1) return(1);
+    
+    if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
+      {
+	asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
+	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
+	FREE(dqsr);
+	return(1);
+      }
+    else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
+      {
+	asfPrintStatus("   INFERRED CALIBRATION DATA\n");
+	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
+	FREE(dqsr);
+	return(1);
+      }
+    else if (strncmp(dqsr->cal_status,"CALIBRA",7)==0)
+      {
+	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
+	FREE(dqsr);
+	return(1);
+      }
+    else
+      {
+	asfPrintStatus("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
+	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
+	FREE(dqsr);
+	return(0);
+      }
+  }
 }
 
