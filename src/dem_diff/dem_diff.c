@@ -48,10 +48,10 @@ BUGS:
 *									      *
 ******************************************************************************/
 #include "asf.h"
-#include "ddr.h"
 #include "cproj.h"
 #include "proj.h"                   
-#include "asf_meta.h"                             
+#include "asf_meta.h"
+#include "libasf_proj.h"                             
 
 #define  VERSION 0.0
 #define  DPR    57.2957795 		/* Degrees per Radian */
@@ -59,27 +59,25 @@ BUGS:
 #define MIN(a,b)        ((a)<(b) ? (a) : (b))
 #define MAX(a,b)        ((a)<(b) ? (b) : (a))
 
-short int getRefValue(int rline,int rsamp, struct DDR *refddr);
+short int getRefValue(int rline,int rsamp, int sample_count);
 
 FILE *fpRefIn;
 
-main(int argc,char *argv[])
+int main(int argc,char *argv[])
 {
-	struct DDR ddr;
-	struct DDR ddr2;
+	meta_parameters *metaSource, *metaTarget;
 	char  	inName[256];
 	char 	inRefName[256];
 	char  	outName[256];
 	int   	line, samp;
 	FILE  	*fpIn, *fpOut;
-	inverse_transform proj2Latlon[100];/* function array for projection   */            
-	forward_transform LatLon2Proj[100];/* function array for projection   */            
+	//inverse_transform proj2Latlon[100];/* function array for projection   */            
+	//forward_transform LatLon2Proj[100];/* function array for projection   */            
 	float   *inBuf;
 	float   *outBuf;
 	char 	command[256];
-	int 	iflag = 0;
-	float 	proj_y, proj_x;
-	int	i,j;
+	double 	proj_y, proj_x;
+	int	i,j,sample_count;
 
         float   average;                                /* Average Correlation */
         double  hist_sum = 0.0;                         /* Histogram sum */
@@ -90,8 +88,6 @@ main(int argc,char *argv[])
 
 	float  min = 1000000.0;
 	float  max = -1000000.0;
-
-	int	next_print=5;
 
 	if (argc != 4)
 	  {
@@ -121,7 +117,7 @@ main(int argc,char *argv[])
 	sprintf(command,"cp %s.ddr %s.ddr",inName,outName);
 	system(command);
 
-	/* Read ddr files */
+	/* Read ddr files 
 	if (c_getddr(inName,&ddr) != 0)
           {
             printf("Error returned from c_getddr:  unable to read file %s\n",inName);
@@ -132,17 +128,20 @@ main(int argc,char *argv[])
           {
             printf("Error returned from c_getddr:  unable to read file %s\n",inRefName);
             exit(1);
-          }
+	    }*/
+	metaSource = meta_read(inName);
+	metaTarget = meta_read(inRefName);
+	sample_count = metaSource->general->sample_count;
 
-	/* Initialize transformation package */
+	/* Initialize transformation package *
 	inv_init(ddr.proj_code, ddr.zone_code, ddr.proj_coef, ddr.datum_code,
 		NULL, NULL, &iflag, proj2Latlon);
 
 	for_init(ddr2.proj_code, ddr2.zone_code, ddr2.proj_coef, ddr2.datum_code,
-		NULL, NULL, &iflag, LatLon2Proj);
+	NULL, NULL, &iflag, LatLon2Proj);*/
 
-	inBuf = (float *) MALLOC (sizeof(float) * ddr.ns);
-	outBuf = (float *) MALLOC (sizeof(float) * ddr.ns);
+	inBuf = (float *) MALLOC (sizeof(float) * sample_count);
+	outBuf = (float *) MALLOC (sizeof(float) * sample_count);
 
 	strcat(inName,".img");
 	strcat(inRefName,".img");
@@ -152,34 +151,40 @@ main(int argc,char *argv[])
 	fpOut = FOPEN(outName,"wb");
 
 	/* Loop through each line of the input file */
-	proj_y = ddr.upleft[0];
-	for (line = 0; line < ddr.nl; line++, proj_y-=ddr.pdist_y)
+	proj_y = metaSource->projection->startY;
+	for (line = 0; line < metaSource->general->line_count; 
+	     line++, proj_y+=metaSource->projection->perY)
 	  {
-		double		lat, lon;
-		double		rproj_x, rproj_y;
+		double		lat, lon, height;
+		double		rproj_x, rproj_y, rproj_z;
 		int		rline, rsamp;
 		short int	refVal;
 
-		proj_x = ddr.upleft[1];
-		FREAD(inBuf, ddr.ns*sizeof(float),1, fpIn);
+		proj_x = metaSource->projection->startX;
+		FREAD(inBuf, sample_count*sizeof(float),1, fpIn);
 
 		/* For each sample in this line */
-		for (samp = 0; samp < ddr.ns; samp++,proj_x += ddr.pdist_x)
+		for (samp = 0; samp < sample_count; 
+		     samp++,proj_x += metaSource->projection->perX)
 		  {
 		    if (inBuf[samp] != 0.0)
 		      {	
 			/* Convert the projection x,y to geographic lat,lon */
-			proj2Latlon[ddr.proj_code](proj_x,proj_y,&lon,&lat); 
+			proj_to_latlon(metaSource->projection, 'R', proj_x, proj_y, 0.0, 
+				       &lon, &lat, &height); 
 
 			/* Convert the lat,lon to Ref projection */
-			LatLon2Proj[ddr2.proj_code](lon,lat,&rproj_x,&rproj_y); 
+			latlon_to_proj(metaTarget->projection, 'R', lon, lat, 0.0,
+				       &rproj_x, &rproj_y, &rproj_z); 
 
 			/* Determine line,sample in Ref dem */
-			rline = (int) ((fabs(ddr2.upleft[0] - rproj_y))/ddr2.pdist_y +0.5);
-			rsamp = (int) ((fabs(ddr2.upleft[1] - rproj_x))/ddr2.pdist_x +0.5);
+			rline = (int) ((fabs(metaTarget->projection->startY - rproj_y))/
+				       -metaTarget->projection->perY +0.5);
+			rsamp = (int) ((fabs(metaTarget->projection->startX - rproj_x))/
+				       metaTarget->projection->perX +0.5);
 
 			/* Get the value from the reference DEM */
-			refVal = getRefValue(rline, rsamp, &ddr2);
+			refVal = getRefValue(rline, rsamp, metaTarget->general->sample_count);
 
 			/* Set the output pixel value */
 			outBuf[samp] = inBuf[samp] - refVal;
@@ -196,10 +201,10 @@ main(int argc,char *argv[])
 		  }
 
 		/* Write modified data to output file */
-		FWRITE(outBuf, ddr.ns*sizeof(float),1, fpOut);
+		FWRITE(outBuf, sample_count*sizeof(float),1, fpOut);
 
 		/* Calculate statistics for this line */
-		for (samp = 0; samp < ddr.ns; samp++)
+		for (samp = 0; samp < sample_count; samp++)
 		  {
 			if (outBuf[samp]!=0.0)
 			  {
@@ -228,11 +233,7 @@ main(int argc,char *argv[])
 		  }
 
 
-		if ((int)(100.0*line/ddr.nl)>next_print) 
-		  {
-			printf("\tCompleted %.2i percent\n",next_print);
-			next_print += 5;
-		  }
+		asfLineMeter(line, metaSource->general->line_count);
 	  }
 
 	FREE(inBuf);
@@ -256,7 +257,8 @@ main(int argc,char *argv[])
 	    percent = (float) tmp_sum / (float) hist_cnt;
 	    percent_sum += (float) 100 * percent;
 
-	    if (tmp_sum) printf(" %.4i -> %.4i :\t%i\t%2.3f \n",bin_low,bin_high,tmp_sum,100*percent);
+	    if (tmp_sum) 
+	      printf(" %.4i -> %.4i :\t%i\t%2.3f \n",bin_low,bin_high,tmp_sum,100*percent);
 	  }
 
 
@@ -284,7 +286,7 @@ main(int argc,char *argv[])
 
 #define	bufSize 512
 
-short int getRefValue(int rline,int rsamp, struct DDR *refddr)
+short int getRefValue(int rline,int rsamp, int sample_count)
  {
     	long long   	file_offset;
 	short int   	refVal;
@@ -294,23 +296,23 @@ short int getRefValue(int rline,int rsamp, struct DDR *refddr)
 	
 	if (!dataValues) 
 	  {
-		dataValues = (short int *) MALLOC (sizeof(short int) * refddr->ns * bufSize); 
+		dataValues = (short int *) MALLOC (sizeof(short int) * sample_count * bufSize); 
  	  }
 
 	/* If we don't have the data in the buffer */
 	if (rline < start_line || rline >= start_line+bufSize)
 	  {
-	    file_offset = (long long) ((rline-bufSize/2)*refddr->ns*2);
+	    file_offset = (long long) ((rline-bufSize/2)*sample_count*2);
 	    if (file_offset < 0)
 	      {
 		printf("Illegal file offset %lli (line %i, sample %i)\n",file_offset, rline, rsamp);
 		exit(1);
 	      }
 	    FSEEK64(fpRefIn,file_offset,SEEK_SET);
-	    FREAD(dataValues,bufSize*refddr->ns*sizeof(short int),1,fpRefIn);
+	    FREAD(dataValues,bufSize*sample_count*sizeof(short int),1,fpRefIn);
 	    start_line = rline-bufSize/2;
 	  }
 	line_off = rline - start_line;
-	refVal = dataValues[line_off*refddr->ns+rsamp];
+	refVal = dataValues[line_off*sample_count+rsamp];
 	return(refVal);
  }
