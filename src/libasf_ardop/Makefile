@@ -5,7 +5,6 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
 	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS)
 LIBC = $(LIBS) -lm 
