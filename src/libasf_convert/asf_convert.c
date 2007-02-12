@@ -477,7 +477,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                   "and also request an automatically generated mask.\n"
                   "Ignoring auto water mask -- will use the mask provided.\n");
           }
-      }
+      }      
     }
 
     // Check whether everything in the [Geocoding] block is reasonable
@@ -972,7 +972,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	meta = meta_read(inFile);
 	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
-	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 48;
+	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 256;
 
         // Pass in command line
         if (!cfg->general->export)
