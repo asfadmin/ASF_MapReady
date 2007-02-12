@@ -63,7 +63,6 @@ LIBS
 	asf
 	asf_concat
 	asf_fft
-	asf_lt
 	libasf_proj
 	asf_meta
 	asf_odl
