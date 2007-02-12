@@ -90,11 +90,11 @@ PROGRAMS
 	addapole { }
 	airsargeo { BINS projectGeo geocode_airsar }
 	airsarin { }
-	ait { }
+#	ait { }
 	ardop { BINS calc_deltas spectra }
 	asf_check_geolocation { }
 	asf_convert { }
-	asf_convert_gui { }
+#	asf_convert_gui { }
 	asf_elevation { }
 	asf_export { }
 	asf_geocode { }
@@ -104,7 +104,7 @@ PROGRAMS
 	auto_refine_base { }
 #	auto_sar_mosaic { } -- see bottom of this list
 #	auto_swath_mosaic { } -- see bottom of this list
-	automg { }
+#	automg { }
 	avg_in_dop { }
 	baseline { }
 	baseline2html { }
@@ -148,7 +148,7 @@ PROGRAMS
 	fit_poly { }
 	fit_quadratic { }
 	fit_warp { }
-	flicker { }
+#	flicker { }
 	flip { }
 	geotiffdump { }
 	gr2sr { }
@@ -159,7 +159,7 @@ PROGRAMS
 	image_stats { }
 	ips { }
 	leader2pdf { }
-	ll2proj { }
+#	ll2proj { }
 	makeddr { }
 	mask_from_dem { }
 	maskgen { }
@@ -168,7 +168,7 @@ PROGRAMS
 	meta2esri { }
 	meta_check { }
 	metadata { }
-	metadata_gui { }
+#	metadata_gui { }
 	mosaic { }
 	multilook { }
 	offset_test { }
@@ -191,8 +191,8 @@ PROGRAMS
 	sr2gr { }
 	srf2shape { }
 	stats { }
-	stp { }
-	tle2equator { }
+#	stp { }
+#	tle2equator { }
 	trim { }
 	xpix_ypix { }
 	zeroify { }
