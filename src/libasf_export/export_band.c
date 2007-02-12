@@ -541,11 +541,12 @@ export_band_image (const char *metadata_file_name,
   struct jpeg_compress_struct cinfo;
   ssize_t ii;
   int free_band_names=FALSE;
+  int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
 
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
-  if (rgb && strcmp(look_up_table_name, "") == 0) {
+  if (rgb && !have_look_up_table) {
 
     // Initialize the chosen format
     if (format == TIF) {
@@ -846,8 +847,7 @@ export_band_image (const char *metadata_file_name,
 	byte_line =
 	  (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
 
-	if (look_up_table_name &&
-            strcmp(look_up_table_name, "") != 0) { // Apply look up table
+        if (have_look_up_table) { // Apply look up table
 	  for (ii=0; ii<md->general->line_count; ii++ ) {
 	    if (md->optical) {
 	      get_byte_line(fp, md, ii+channel*offset, byte_line);
