@@ -311,22 +311,42 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
 
         printf("Thumb: %s\nscale= %d\n", thumbnail_name, scaling_required);
 
-        GError * err = NULL;
-        GdkPixbuf * pb;
+        GError *err = NULL, *err_big = NULL;
+        GdkPixbuf *pb, *pb_big;
 
 	if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
 	{
-            if (scaling_required)
+            if (scaling_required) {
                 pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
-                                                      THUMB_SIZE, THUMB_SIZE,
-                                                      &err);
-            else
-                pb = gdk_pixbuf_new_from_file(thumbnail_name, &err);
+                                              THUMB_SIZE, THUMB_SIZE,
+                                              &err);
+                pb_big = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
+                                              THUMB_SIZE_BIG, THUMB_SIZE_BIG,
+                                              &err_big);
+            }
+            else {
+                pb_big = gdk_pixbuf_new_from_file(thumbnail_name, &err);
+                pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
+                                              THUMB_SIZE, THUMB_SIZE, &err);
+            }
 
             if (!err)
             {
                 gtk_list_store_set(completed_list_store, iter,
                                    COMP_COL_OUTPUT_THUMBNAIL, pb, -1);
+
+                if (!err_big)
+                {
+                    gtk_list_store_set(completed_list_store, iter,
+                                       COMP_COL_OUTPUT_THUMBNAIL_BIG,
+                                       pb_big, -1);
+                }
+                else
+                {
+                    g_warning("Error loading image '%s': %s\n",
+                              thumbnail_name, err->message);
+                    g_error_free(err);
+                }
             }
             else
             {

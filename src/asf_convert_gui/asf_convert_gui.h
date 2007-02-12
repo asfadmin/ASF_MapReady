@@ -16,11 +16,9 @@
 
 #include "asf.h"
 
-#if ( GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 4 \
-      && GDK_PIXBUF_MAJOR >= 2 && GDK_PIXBUF_MINOR >= 4 )
-#  define THUMBNAILS
-#  define THUMB_SIZE 48
-#endif
+#define THUMB_SIZE 48
+#define THUMB_SIZE_BIG 256
+#define THUMBNAILS
 
 enum OutputFormat
 {
@@ -173,6 +171,7 @@ extern int COL_LOG;
 extern int COMP_COL_DATA_FILE;
 extern int COMP_COL_OUTPUT_FILE;
 extern int COMP_COL_OUTPUT_THUMBNAIL;
+extern int COMP_COL_OUTPUT_THUMBNAIL_BIG;
 extern int COMP_COL_STATUS;
 extern int COMP_COL_LOG;
 
@@ -312,6 +311,28 @@ void default_to_terrcorr_on();
 
 /* log.c */
 void show_log(gchar * log_txt, gchar * data_file);
+
+/* blow_up.c */
+typedef struct {        // for the fake motion signal callback
+    gboolean is_valid;
+    GtkWidget *widget;
+    GdkEventMotion *event;
+    gdouble x, y;			/* x and y of fake event.  */
+} fake_motion_signal_args_t;
+
+gboolean files_list_motion_notify_event_handler(GtkWidget *,
+             GdkEventMotion *, gpointer user_data);
+gboolean files_list_leave_notify_event_handler(GtkWidget *widget,
+             GdkEventCrossing *, GtkWidget *);
+gboolean files_list_scroll_event_handler (GtkWidget *, GdkEventScroll *,
+             gpointer user_data);
+
+gboolean completed_files_list_motion_notify_event_handler(GtkWidget *,
+             GdkEventMotion *, gpointer user_data);
+gboolean completed_files_list_leave_notify_event_handler(GtkWidget *widget,
+             GdkEventCrossing *, GtkWidget *);
+gboolean completed_files_list_scroll_event_handler (GtkWidget *,
+             GdkEventScroll *, gpointer user_data);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

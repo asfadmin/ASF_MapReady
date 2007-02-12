@@ -43,9 +43,7 @@ void set_toolbar_images()
 void
 show_please_select_message()
 {
-    static const char *msg = 
-      "Please select a file first!\n";
-
+    static const char *msg = "Please select a file first!\n";
     message_box(msg);
 }
 
@@ -235,10 +233,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 event_button->x, event_button->y,
                 &path, NULL, NULL, NULL))
             {
-                gchar * status,
-                    * out_name,
-                    * in_name,
-                    * ceos_meta_name;
+                gchar *status, *out_name, *in_name, *ceos_meta_name;
 
                 gtk_tree_selection_unselect_all(selection);
                 gtk_tree_selection_select_path(selection, path);
