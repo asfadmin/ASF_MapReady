@@ -126,7 +126,7 @@ satellite *newSatellite(void)
 	int my_precomp; /* far range precompensation value */
 	int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
 	satellite *s=(satellite *)MALLOC(sizeof(satellite));
-	ODL odl;
+	//ODL odl;
 /*Copy over a few parameters.*/
 	s->wavl=g.wavl;
 	s->vel=g.vel;
@@ -214,9 +214,9 @@ satellite *newSatellite(void)
 		   255 was chosen as an arbitrary length, I think that they are less than 100 entries but...*/
 		s->ang_vec=(double *)MALLOC(sizeof(double)*255);
 		s->gain_vec=(double *)MALLOC(sizeof(double)*255);
-		
-		/* Check to see if we have any trouble opening the CAL_PARAMS file */
-		if((/*errI=*/ODLinit())!=0) {
+		/*		
+		* Check to see if we have any trouble opening the CAL_PARAMS file *
+		if((*errI=*ODLinit())!=0) {
 		  sprintf(errbuf, "   ERROR: Cannot Initialize ODL Structure, exiting\n");
 		  printErr(errbuf);
 		}
@@ -226,12 +226,13 @@ satellite *newSatellite(void)
 		  printErr(errbuf);
 		}
 
-		/* We opened the CAL_PARAMS file, read in the vectors */
+		* We opened the CAL_PARAMS file, read in the vectors *
 		s->ang_vec=(double *)ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.ELEVANG_VEC",0,&cols,&s->vecLen);
 		s->gain_vec=(double *)ODLGetArrayDouble(odl,"CAL_PARAM.DETAILED_METADATA.ANTPTN_OBJ.GAIN_VEC",0,&cols,&s->vecLen);
 		s->noise=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.NOISE_FACT",&err);
 		s->gain=(double)ODLGetDouble(odl,"CAL_PARAM.DETAILED_METADATA.CALIB_FAC.LINEAR_CONV_FACT",&err);
-		/* Convert the look angle to radians to match the output of meta_look */
+		* Convert the look angle to radians to match the output of meta_look */
+
 		for(cols=0;cols<s->vecLen;cols++)
 		{
 			s->ang_vec[cols]=(s->ang_vec[cols]/180)*pi;
