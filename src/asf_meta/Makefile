@@ -71,6 +71,7 @@ LAS_OBJS = allocbuf.o \
 
 OBJS =  $(LEX_YACC_OBJS) \
 	ardop_params.o \
+	c_degdms.o \
 	ceos_io.o \
 	code_ceos.o \
 	coniFetch.o \
