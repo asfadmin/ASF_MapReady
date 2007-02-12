@@ -22,7 +22,6 @@ LIBS = 	\
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
