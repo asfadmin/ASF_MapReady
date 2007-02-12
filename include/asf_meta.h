@@ -734,5 +734,6 @@ typedef struct {
 #define NUM_META_DDR_STRUCTS 10
 extern META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS];
 
+double unpacked_deg(double angle);
 
 #endif

@@ -18,7 +18,6 @@ MODULES = \
 	src/libasf_ardop \
 	src/asf_meta \
 	src/asf_lt \
-	src/asf_geolib \
 	src/asf_odl \
 	src/asf_fft \
 	src/libasf_raster \
