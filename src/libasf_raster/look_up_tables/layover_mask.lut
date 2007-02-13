@@ -1,4 +1,4 @@
-Layover/shadow mask look up table
+# Layover/shadow mask look up table
 0,0,0        # NOT USED! (the values are numbered starting at 1)
 0,0,0        # normal
 0,0,153      # user masked (e.g., water)
