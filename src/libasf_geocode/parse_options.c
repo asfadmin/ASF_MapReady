@@ -2,6 +2,7 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
+#include "libasf_proj.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -287,7 +288,7 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
   FILE * fp;
   char buf[256];
 
-  fp = fopen(file, "rt");
+  fp = fopen_proj_file(file, "r");
   if (!fp)
   {
     asfPrintError("Couldn't open projection file: %s\n", file);

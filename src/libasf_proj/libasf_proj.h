@@ -21,6 +21,8 @@ void project_set_avg_height(double height);
 */
 int is_map_projected(meta_parameters *md);
 
+/* open a projection file */
+FILE *fopen_proj_file(const char *file, const char *mode);
 
 #define ASF_PROJ_NO_HEIGHT -100000.0
 

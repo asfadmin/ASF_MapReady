@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <unistd.h>
+#include <dirent.h>
 
 // To avoid having to change link flags around or link against glib we
 // have this compatability function.
@@ -183,18 +185,83 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
     }
 }
 
+static FILE *Fopen(const char *file, const char *mode)
+{
+    //printf("fopen: %s\n", file);
+    return fopen(file, mode);
+}
+
+FILE *fopen_proj_file(const char *file, const char *mode)
+{
+    FILE *fp;
+
+    // first, just try opening the file as-is
+    fp = Fopen(file, mode);
+    if (fp) return fp;
+
+    char filename[1024];
+
+    // failed -- try with a ".proj" extension
+    sprintf(filename, "%s.proj", file);
+    fp = Fopen(filename, mode);
+    if (fp) return fp;
+
+    char share_dir[1024];
+
+    // go through files in the share dir
+    sprintf(share_dir, "%s/projections", get_asf_share_dir());
+
+    struct dirent *dp;
+    DIR *dfd;
+
+    if ((dfd = opendir(share_dir)) == NULL)
+        return NULL; // couldn't open share dir
+
+    while ((dp = readdir(dfd)) != NULL) {
+        if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
+            continue;
+
+        if (strlen(share_dir)+strlen(dp->d_name)+2 > sizeof(filename)) {
+            asfPrintWarning("fopen_proj_file> buffersize exceeded.\n");
+            return NULL;
+        }
+
+        sprintf(filename, "%s/%s/%s", share_dir, dp->d_name, file);
+        fp = Fopen(filename, mode);
+        if (fp) {
+            closedir(dfd);
+            //printf("Found proj file: %s\n", filename);
+            return fp; // found!
+        }
+            
+        // failed, try adding extension
+        sprintf(filename, "%s/%s/%s.proj", share_dir, dp->d_name, file);
+        fp = Fopen(filename, mode);
+        if (fp) {
+            closedir(dfd);
+            //printf("Found proj file: %s\n", filename);
+            return fp;
+        }
+    }
+
+    closedir(dfd);
+    
+    // failed
+    return NULL;
+}
+
 void read_proj_file(char * file, project_parameters_t * pps,
 		    projection_type_t * proj_type)
 {
   FILE * fp;
   char buf[256];
   
-  fp = fopen(file, "rt");
+  fp = fopen_proj_file(file, "r");
   if (!fp)
-    {
+  {
       asfPrintError("Couldn't open projection file: %s\n", file);
       return; /* not reached */
-    }
+  }
   
   readline(fp, buf, sizeof(buf));
   
