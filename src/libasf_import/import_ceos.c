@@ -316,10 +316,17 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
     strcat(outDataName,TOOLS_IMAGE_EXT);
 
-    if (check_cal(inMetaName)==0 &&
-        ( (radiometry == r_SIGMA) || (radiometry == r_GAMMA) ||
-          (radiometry == r_BETA) ) ) {
-      asfPrintError("Unable to find calibration parameters in the metadata.\n");
+    if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
+	radiometry == r_BETA) {
+      if (meta->optical) {
+	asfPrintWarning("Cannot apply SIGMA, GAMMA or BETA radiometry "
+			"to optical data.\n"
+			"Set radiometry to the default amplitude\n");
+	radiometry = r_AMP;
+      }
+      else if (check_cal(inMetaName)==0)
+	  asfPrintError("Unable to find calibration parameters "
+			"in the metadata.\n");
     }
 
     /* Let the user know what format we are working on */
