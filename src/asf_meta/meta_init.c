@@ -47,7 +47,7 @@ meta_general *meta_general_init(void)
   general->orbit = MAGIC_UNSET_INT;
   general->orbit_direction = MAGIC_UNSET_CHAR;
   general->frame = MAGIC_UNSET_INT;
-  general->band_count = MAGIC_UNSET_INT;
+  general->band_count = 1;
   general->line_count = MAGIC_UNSET_INT;
   general->sample_count = MAGIC_UNSET_INT;
   general->start_line = MAGIC_UNSET_INT;
@@ -60,7 +60,7 @@ meta_general *meta_general_init(void)
   general->re_minor = MAGIC_UNSET_DOUBLE;
   general->bit_error_rate = MAGIC_UNSET_DOUBLE;
   general->missing_lines = MAGIC_UNSET_INT;
-  general->no_data = DEFAULT_NO_DATA_VALUE;
+  general->no_data = MAGIC_UNSET_DOUBLE;
   return general;
 }
 
