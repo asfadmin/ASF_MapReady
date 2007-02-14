@@ -61,7 +61,6 @@ LIB = \
 	$(ASF_LIB)/libasf_vector.a \
 	$(ASF_LIB)/libshp.a \
 	$(ASF_LIB)/asf_meta.a \
-	$(ASF_LIB)/asf_odl.a \
 	$(ASF_LIB)/asf.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/libasf_raster.a \
@@ -127,7 +126,6 @@ LDLIBS = \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
