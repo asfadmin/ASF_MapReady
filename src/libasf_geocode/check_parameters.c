@@ -135,32 +135,60 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
         report_func("False northing (%.1f) undefined or different from default value (10000000)\n",
                       pp->utm.false_northing);
 
-      // FIXME: When we are reprojecting an image, meta_get_latLon ends
-      // up calling proj_to_ll, which I don't think we are sure works
-      // right (we redid geocode partly because it is known to fail
-      // for some projections).  So we should probably change this
-      // somehow if the input is an already geocoded image which we
-      // want to recode.
+      //// Zone test - The zone must contain some dirt (or water) in the image.
+      // FIXME: meta_get_latLon() really should handle the LAT_LONG_PSEUDO_PROJECTION
+      // case rather than kludging it in here...
 
-      // Zone test - The zone must contain some dirt (or water) in the image.
-      meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+      // Top left zone
+      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+      }
+      else {
+        meta_general *mg = meta->general;
+        lon = mg->center_longitude - ((mg->sample_count - 1)/2) * mg->y_pixel_size;
+      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
+
+      // Top right zone
+      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
 		      &lon);
+      }
+      else {
+        meta_general *mg = meta->general;
+        lon = mg->center_longitude + ((mg->sample_count - 1)/2) * mg->y_pixel_size;
+      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
+
+      // Bottom left zone
+      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
+      }
+      else {
+        meta_general *mg = meta->general;
+        lon = mg->center_longitude - ((mg->sample_count - 1)/2) * mg->y_pixel_size;
+      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
-      meta_get_latLon(meta, meta->general->line_count - 1,
+
+      // Bottom right zone
+      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+        meta_get_latLon(meta, meta->general->line_count - 1,
 		      meta->general->sample_count - 1, 0.0, &lat, &lon);
+      }
+      else {
+        meta_general *mg = meta->general;
+        lon = mg->center_longitude + ((mg->sample_count - 1)/2) * mg->y_pixel_size;
+      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
+
       if (pp->utm.zone < min_zone || pp->utm.zone > max_zone + 1) {
         report_func("Zone '%i' outside the range of corresponding image "
 		      "coordinates (%i to %i)\n", pp->utm.zone, min_zone,
