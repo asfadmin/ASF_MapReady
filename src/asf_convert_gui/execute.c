@@ -309,8 +309,6 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
             }
         }
 
-        printf("Thumb: %s\nscale= %d\n", thumbnail_name, scaling_required);
-
         GError *err = NULL, *err_big = NULL;
         GdkPixbuf *pb, *pb_big;
 

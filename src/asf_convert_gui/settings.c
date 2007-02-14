@@ -1370,19 +1370,19 @@ settings_to_config_file(const Settings *s,
 
     output_basename = get_basename(output_file);
 
+    char *base = get_filename(input_file);
+    char *path = g_path_get_dirname(input_file);
+    input_basename = MALLOC(sizeof(char)*(strlen(base)+strlen(path)+2));
+
     // handle prepensions in the input filename
     int prepension = has_prepension(input_file);
-    if (prepension > 0) {
-        char *base = get_filename(input_file);
-        char *path = g_path_get_dirname(input_file);
-        printf("base: %s\n", base);
-        input_basename = MALLOC(sizeof(char)*(strlen(base)+strlen(path)+2));
+    if (prepension > 0)
         sprintf(input_basename, "%s/%s", path, base+prepension);
-        FREE(base);
-        g_free(path);
-    } else {
-        input_basename = get_basename(input_file);
-    }
+    else
+        sprintf(input_basename, "%s/%s", path, base);
+
+    FREE(base);
+    g_free(path);
 
     if (s->geocode_is_checked) {
 

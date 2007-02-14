@@ -247,7 +247,6 @@ move_from_completed_files_list(GtkTreeIter *iter)
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
     gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file, -1);
 
-    printf("Moving back: %s\n", data_file);
     add_to_files_list(data_file);
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
     g_free(data_file);
@@ -315,8 +314,6 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 
     if (valid)
     {
-        printf("Adding: %s\n", data_file);
-
         GtkWidget *files_list;
         gchar * out_name_full;
         
