@@ -70,16 +70,17 @@ static void read_lut(char *lutFile, unsigned char *lut_buffer)
         ++l;
     }
 
-    // style==1 --> 4 values per line: dn red,green,blue
-    // style==2 --> 3 values per line: red,green,blue
-    // we don't allow mixing of the styles
+    // style==1 --> 4 values per line: dn red green blue
+    // style==2 --> 3 values per line: red green blue
+    // we don't allow mixing of the styles, first line checks
 
     if (!style)
     {
         // on the non-comment line, figure out which style of lutFile this is.
-        n = sscanf(heading, "%d %d,%d,%d", &dn, &red, &green, &blue);
+        n = sscanf(heading, "%d %d %d %d",
+                   &dn, &red, &green, &blue);
         if (n != 4) {
-            n = sscanf(heading, "%d,%d,%d", &red, &green, &blue);
+            n = sscanf(heading, "%d %d %d", &red, &green, &blue);
             if (n != 3) {
                 asfPrintError("Line %d of lutFile appears invalid:\n%s\n",
                               l, heading);
@@ -94,10 +95,11 @@ static void read_lut(char *lutFile, unsigned char *lut_buffer)
     {
         // subsequent lines must follow first valid line's style
         if (style == 1) {
-            n = sscanf(heading, "%d %d,%d,%d", &dn, &red, &green, &blue);
+            n = sscanf(heading, "%d %d %d %d",
+                       &dn, &red, &green, &blue);
             if (n != 4) break;
         } else if (style == 2) {
-            n = sscanf(heading, "%d,%d,%d", &red, &green, &blue);
+            n = sscanf(heading, "%d %d %d", &red, &green, &blue);
             if (n != 3) break;
             dn = vl;
         } else
@@ -131,11 +133,6 @@ static void read_lut(char *lutFile, unsigned char *lut_buffer)
     dn_prev=dn;
   }
   FCLOSE(fp);
-
-  // FIXME: remove this debug junk
-  //printf("Read: %s\n", lutFile);
-  //for (ii=0; ii<768; ii+=3)
-  //    printf("%d: %d,%d,%d\n", ii/3, lut_buffer[ii], lut_buffer[ii+1], lut_buffer[ii+2]);
 }
 
 void apply_look_up_table(char *lutFile, unsigned char *in_buffer,

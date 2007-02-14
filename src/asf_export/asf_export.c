@@ -74,7 +74,11 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Cannot be chosen together with the -band option.\n"\
 "   -lut <look up table file>\n"\
 "        Applys a look up table to the image while exporting.\n"\
-"        Only allowed for single-band images.\n"\
+"        Only allowed for single-band images.  Some look up\n"\
+"        table files are in the look_up_tables subdirectory in\n"\
+"        the asf_tools share directory.  The tool will look in\n"\
+"        this directory for the specified file if it isn't found\n"\
+"        in the current directory.\n"\
 "   -truecolor\n"\
 "        For 4 band ALOS optical imagery.  Exports the third band as.\n"\
 "        as the red element, the second band as the green element, and\n"\
