@@ -1932,7 +1932,7 @@ float_image_band_store(FloatImage *self, const char *file,
       // Floats better be four bytes for this to work.
       g_assert (sizeof (float) == 4);
       int jj;
-      for ( jj = 0 ; jj < meta->general->line_count ; jj++ ) {
+      for ( jj = 0 ; jj < meta->general->sample_count ; jj++ ) {
         swap_bytes_32 ((unsigned char *) &(line_buffer[jj]));
       }
     }
