@@ -369,6 +369,9 @@ int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
 ***************************************************************************/
 void proj_to_latlon(meta_projection *proj, double x, double y, double z,
 		    double *lat, double *lon, double *height);
+void scan_to_latlon(meta_parameters *meta,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height);
 void latlon_to_proj(meta_projection *proj, char look_dir,
 		    double lat, double lon, double height,
                     double *x, double *y, double *z);

@@ -14,6 +14,10 @@
 
 #define DEFAULT_AVERAGE_HEIGHT 0.0;
 
+#define SQR(A)	((A)*(A))
+#define ecc2 (sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)) \
+            * sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)))
+
 /* WGS84 is hard-coded on the lat/lon side for now! */
 static const char *latlon_description = "+proj=latlong +datum=WGS84";
 
@@ -853,6 +857,10 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
 		    "Use 'scan_latlon' instead.\n");
       break;
+    case LAT_LONG_PSEUDO_PROJECTION: 
+      *lat = y; 
+      *lon = x; 
+      break;
     default:
       printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
 	     proj->type);
@@ -860,6 +868,86 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
     }
 }
 
+void rotate_z(vector *v,double theta)
+{
+	double xNew,yNew;
+	
+	xNew = v->x*cosd(theta)+v->y*sind(theta);
+	yNew = -v->x*sind(theta)+v->y*cosd(theta);
+	v->x = xNew; v->y = yNew;
+}
+
+void rotate_y(vector *v,double theta)
+{
+	double xNew,zNew;
+	
+	zNew = v->z*cosd(theta)+v->x*sind(theta);
+	xNew = -v->z*sind(theta)+v->x*cosd(theta);
+	v->x = xNew; v->z = zNew;
+}
+
+void scan_to_latlon(meta_parameters *meta,
+		    double x, double y, double z,
+		    double *lat_d, double *lon, double *height)
+{
+	double qlat, qlon;
+	double lat,radius;
+	vector pos;
+        meta_projection *proj = meta->projection;
+
+        if (z != 0.0) {
+            // height correction applies directly to y (range direction)
+            double line, samp;
+            line = (y-proj->startY)/proj->perY - meta->general->start_line;
+            samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
+            double sr = meta_get_slant(meta,line,samp);
+            double er = proj->param.atct.rlocal;
+            double ht = meta_get_sat_height(meta,line,samp);
+            double incid = PI-acos((SQR(sr) + SQR(er) - SQR(ht))/(2.0*sr*er));
+            x += z*tan(PI/2-incid);
+        }
+
+	if (meta->sar->look_direction=='R')
+		qlat = -x/proj->param.atct.rlocal; /* Right looking sar */
+	else
+		qlat =  x/proj->param.atct.rlocal; /* Left looking sar */
+	qlon = y/(proj->param.atct.rlocal*cos(qlat));
+	
+	sph2cart(proj->param.atct.rlocal, qlat, qlon, &pos);
+	
+	rotate_z(&pos,-proj->param.atct.alpha3);
+	rotate_y(&pos,-proj->param.atct.alpha2);
+	rotate_z(&pos,-proj->param.atct.alpha1);
+	
+	cart2sph(pos,&radius,&lat,lon);
+	*lon *= R2D;
+	lat *= R2D;
+	*lat_d = atand(tand(lat) / (1-ecc2));
+        *height = z; // FIXME
+}
+
+
+void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, double *c1, double *c2)
+{
+	double qlat, qlon;
+	double lat,radius;
+	vector pos;
+	
+	lat= atand(tand(lat_d)*(1 - ecc2));
+	sph2cart(proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
+	
+	rotate_z(&pos,proj->param.atct.alpha1);
+	rotate_y(&pos,proj->param.atct.alpha2);
+	rotate_z(&pos,proj->param.atct.alpha3);
+	
+	cart2sph(pos,&radius,&qlat,&qlon);
+	
+	*c1 = qlon*proj->param.atct.rlocal*cos(qlat);
+	if (look_dir=='R')
+		*c2 = -1.0*qlat*proj->param.atct.rlocal;  /* right looking */
+	else
+		*c2 = qlat * proj->param.atct.rlocal;   /* left looking */
+}
 
 
 /*Convert projection units (meters) from geodetic latitude and longitude (degrees).*/
