@@ -5,6 +5,10 @@
 #include "asf_nan.h"
 #include "caplib.h"
 #include "err_die.h"
+#include "envi.h"
+
+// Global flag for writing ENVI header files for all viewable images
+int dump_envi_header = 0;
 
 void meta_put_string(FILE *meta_file,char *name,char  *value,char *comment);
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment);
@@ -21,6 +25,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
   char *file_name_with_extension = appendExt(file_name, ".meta");
   FILE *fp = FOPEN(file_name_with_extension, "w");
   char comment[256];
+
+  if (dump_envi_header) {
+    file_name_with_extension = appendExt(file_name, ".hdr");
+    envi_header *envi = meta2envi(meta);
+    write_envi_header(file_name_with_extension, meta, envi);
+  }
 
   FREE(file_name_with_extension);
 
@@ -327,6 +337,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
 			 "Projection Type");
 	break;
+      case UNKNOWN_PROJECTION:
+        meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
+	break;
     }
     meta_put_double(fp,"startX:",meta->projection->startX,
 		    "Projection Coordinate at top-left, X direction");
@@ -503,6 +516,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"}","","End state");
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
+    case UNKNOWN_PROJECTION:
       /* This projection type doesn't need its own parameter block,
 	 since all its values are specified in the main projection
 	 structure.  */
@@ -863,4 +877,3 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 	if (is_empty(param)) { strcpy(param,"?"); }
 	meta_put_string(meta_file,name,param,comment);
 }
-

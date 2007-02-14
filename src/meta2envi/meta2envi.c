@@ -73,9 +73,6 @@ int main(int argc, char **argv)
   char envi_name[255];
   meta_parameters *meta=NULL;
   envi_header *envi=NULL;
-  FILE *fp;
-  time_t t;
-  char t_stamp[15];
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
   logflag = 0;
 
@@ -102,103 +99,10 @@ int main(int argc, char **argv)
   create_name(envi_name, argv[currArg+1], ".hdr");
 
   asfSplashScreen(argc, argv);
-  t = time(NULL);
-  strftime(t_stamp, 12, "%d-%b-%Y", localtime(&t));
   
-  /* Read .meta and fill meta structures */ 
   meta = meta_read(meta_name);
-
-  /* Fill ENVI header struct with valid data */
   envi = meta2envi(meta);
-  
-  /* Write ENVI header file */
-  fp = FOPEN(envi_name, "w");
-  fprintf(fp, "ENVI\n");
-  fprintf(fp, "description = {\n"
-	      "  Created by meta2envi (%s)}\n", t_stamp);
-  fprintf(fp, "samples = %i\n", envi->samples);
-  fprintf(fp, "lines = %i\n", envi->lines);
-  fprintf(fp, "bands = %i\n", envi->bands);
-  fprintf(fp, "header offset = %i\n", envi->header_offset);
-  fprintf(fp, "file type = %s\n", envi->file_type);
-  fprintf(fp, "data type = %i\n", envi->data_type);
-  fprintf(fp, "interleave = %s\n", envi->interleave);
-  fprintf(fp, "sensor type = %s\n", envi->sensor_type);
-  fprintf(fp, "byte order = %i\n", envi->byte_order);
-  if (meta->projection) {
-    switch (meta->projection->type)
-      {
-      case UNIVERSAL_TRANSVERSE_MERCATOR:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %i, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->projection_zone, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {3, %.3f, %.3f, %.4f, %.4f, " 
-                "0.0, 0.0, 0.99996, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case POLAR_STEREOGRAPHIC:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {31, %.3f, %.3f, %.4f, %.4f, " 
-                "0.0, 0.0, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case ALBERS_EQUAL_AREA:
-	fprintf(fp, 
-		"map info = {%s, %i, %i  , %.3f, %.3f, %.3f, %.3f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {9, %.3f, %.3f, %.4f, %.4f, " 
-                "0.0, 0.0, %.4f, %.4f, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->standard_parallel1, 
-		envi->standard_parallel2, envi->projection);
-	break;
-      case LAMBERT_CONFORMAL_CONIC:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {4, %.3f, %.3f, %.4f, %.4f, " 
-                "0.0, 0.0, %.4f, %.4f, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->standard_parallel1,
-		envi->standard_parallel2, envi->projection);
-	break;
-      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-	fprintf(fp, 
-		"map info = {%s, %i, %i, %.3f, %.3f, %.3f, %.3f, %s}\n", 
-		envi->projection, envi->ref_pixel_x, envi->ref_pixel_y, 
-		envi->pixel_easting, envi->pixel_northing, envi->proj_dist_x,
-		envi->proj_dist_y, envi->hemisphere);
-	fprintf(fp, 
-		"projection info = {11, %.3f, %.3f, %.4f, %.4f, " 
-                "0.0, 0.0, %s}\n", 
-		envi->semimajor_axis, envi->semiminor_axis, envi->center_lat,
-		envi->center_lon, envi->projection);
-	break;
-      case STATE_PLANE:
-      case SCANSAR_PROJECTION: 
-      case LAT_LONG_PSEUDO_PROJECTION:
-	break;
-      }
-  }
-  fprintf(fp, "wavelength units = %s\n", envi->wavelength_units);
-  /*** wavelength, data ignore and default stretch currently not used ***/
-  FCLOSE(fp);
+  write_envi_header(envi_name, meta, envi);
 
   /* Clean and report */
   meta_free(meta);

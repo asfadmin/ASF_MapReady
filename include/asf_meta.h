@@ -59,6 +59,9 @@
 /* Default value of a pixel which indicates "NO DATA" */
 #define DEFAULT_NO_DATA_VALUE 0
 
+// Flag to write ENVI header files for all viewable images
+extern int dump_envi_header;
+
 /* general->data_type values */
 typedef enum {
   BYTE=1,
