@@ -577,6 +577,12 @@ export_band_image (const char *metadata_file_name,
                              md->general->no_data,
 			     &red_stats.min, &red_stats.max, &red_stats.mean,
 			     &red_stats.standard_deviation, red_stats.hist);
+	if (sample_mapping == SIGMA) {
+	  double omin = red_stats.mean - 2*red_stats.standard_deviation;
+	  double omax = red_stats.mean + 2*red_stats.standard_deviation;
+	  if (omin > red_stats.min) red_stats.min = omin;
+	  if (omax < red_stats.max) red_stats.max = omax;
+	}
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	  red_stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	  gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
@@ -595,6 +601,12 @@ export_band_image (const char *metadata_file_name,
 			     &green_stats.mean,
 			     &green_stats.standard_deviation,
 			     green_stats.hist);
+	if (sample_mapping == SIGMA) {
+	  double omin = green_stats.mean - 2*green_stats.standard_deviation;
+	  double omax = green_stats.mean + 2*green_stats.standard_deviation;
+	  if (omin > green_stats.min) green_stats.min = omin;
+	  if (omax < green_stats.max) green_stats.max = omax;
+	}
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	  green_stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	  gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
@@ -613,6 +625,12 @@ export_band_image (const char *metadata_file_name,
 			     &blue_stats.mean,
 			     &blue_stats.standard_deviation,
 			     blue_stats.hist);
+	if (sample_mapping == SIGMA) {
+	  double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+	  double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+	  if (omin > blue_stats.min) blue_stats.min = omin;
+	  if (omax < blue_stats.max) blue_stats.max = omax;
+	}
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	  blue_stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	  gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
@@ -835,6 +853,12 @@ export_band_image (const char *metadata_file_name,
                                md->general->no_data,
 			       &stats.min, &stats.max, &stats.mean,
 			       &stats.standard_deviation, stats.hist);
+	  if (sample_mapping == SIGMA) {
+	    double omin = stats.mean - 2*stats.standard_deviation;
+	    double omax = stats.mean + 2*stats.standard_deviation;
+	    if (omin > stats.min) stats.min = omin;
+	    if (omax < stats.max) stats.max = omax;
+	  }
 	  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
 	    stats.hist_pdf = gsl_histogram_pdf_alloc (NUM_HIST_BINS);
 	    gsl_histogram_pdf_init (stats.hist_pdf, stats.hist);

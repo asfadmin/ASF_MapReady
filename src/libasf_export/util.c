@@ -343,6 +343,7 @@ pixel_float2byte(float paf, scale_t sample_mapping,
   const unsigned char max_brightness=UCHAR_MAX;  // Maximum brightess via byte
   unsigned char pab = 0;                         // Pixel As Byte.
   size_t hist_bin;                       // histogram bin for given float value
+  double slope, offset;
 
   // This case is easy -- always map the "no data" value to 0.
   if (paf == no_data_value)
@@ -362,15 +363,14 @@ pixel_float2byte(float paf, scale_t sample_mapping,
     break;
   case MINMAX:
   case SIGMA:
-    if ( paf < omin ) {
+    slope = max_brightness / (omax-omin);
+    offset = -slope * omin;
+    if ((slope * paf + offset) < (float)min_brightness)
       pab = min_brightness;
-    }
-    else if ( paf > omax ) {
+    else if ((slope * paf + offset) > (float)max_brightness)
       pab = max_brightness;
-    }
-    else {
-      pab = round (((paf - omin) / (omax - omin)) * max_brightness);
-    }
+    else 
+      pab = slope * paf + offset;
     break;
   case HISTOGRAM_EQUALIZE:
     // Since we used a mask when we called float_image_statistics() earlier,
