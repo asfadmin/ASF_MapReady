@@ -125,7 +125,7 @@ cal_params *create_cal_params(const char *inSAR)
 	else { // ASF original style calibration parameters
 	  /* Get values for calibration coefficients and LUT */
 	  get_raddr(sarName, &rdr);
-	  
+
 	  /* hardcodings for not-yet-calibrated fields */
 	  if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
 	    p->a0 = 1.1E4;
@@ -181,7 +181,8 @@ cal_params *create_cal_params(const char *inSAR)
         else if (1)
           {
                 p->noise_type=by_pixel;
-                p->ns=p->meta->ifm->orig_nSamples;
+                //p->ns=p->meta->ifm->orig_nSamples;
+                p->ns=p->meta->sar->original_sample_count;
           }
 
         /* For Future Use:: Most other images are indexed by slant range.*/
@@ -265,17 +266,17 @@ int check_cal(char *filename)
 {
   struct qual_sum_rec    *dqsr;
   struct dataset_sum_rec dssr;
-  
+
   // Check for ALOS data first. Ignore reading the comments field
   // since the ALOS style data quality summary record does not have
   // such field.
   get_dssr(filename, &dssr);
-  if (strncmp(dssr.mission_id, "ALOS", 4) == 0) 
+  if (strncmp(dssr.mission_id, "ALOS", 4) == 0)
     return 1;
   else{
     dqsr=(struct qual_sum_rec*)MALLOC(sizeof(struct qual_sum_rec));
     if (get_dqsr(filename,dqsr) == -1) return(1);
-    
+
     if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
       {
 	asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
