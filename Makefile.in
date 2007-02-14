@@ -38,6 +38,7 @@ MODULES = \
 	src/sr2gr \
 	src/gr2sr \
 	src/metadata \
+	src/meta2envi \
 	src/mosaic \
 	@ASF_GUI@
 # src_x/sarview
