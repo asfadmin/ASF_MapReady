@@ -88,7 +88,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	get_ceos.o \
 	heading.o \
 	interp_stVec.o \
-	jpl_proj.o \
 	latLon2timeSlant.o \
 	lzFetch.o \
 	meta_complex2polar.o \

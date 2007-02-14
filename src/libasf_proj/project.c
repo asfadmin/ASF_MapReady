@@ -1247,3 +1247,41 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                           "Geocode tab to geocode the image file before proceeding.\n");
     }
 }
+
+/**************************************************************************
+ * atct_init:
+ * calculates alpha1, alpha2, and alpha3, which are some sort of coordinate
+ * rotation amounts, in degrees.  This creates a latitude/longitude-style
+ * coordinate system centered under the satellite at the start of imaging.
+ * You must pass it a state vector from the start of imaging.            */
+void atct_init(meta_projection *proj,stateVector st)
+{
+  vector up={0.0,0.0,1.0};
+  vector z_orbit, y_axis, a, nd;
+  double alpha3_sign;
+  double alpha1,alpha2,alpha3;
+  
+  vecCross(st.pos,st.vel,&z_orbit);vecNormalize(&z_orbit);
+  
+  vecCross(z_orbit,up,&y_axis);vecNormalize(&y_axis);
+  
+  vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
+  
+  alpha1 = atan2_check(a.y,a.x)*R2D;
+  alpha2 = -1.0 * asind(a.z);
+  if (z_orbit.z < 0.0) 
+    {
+      alpha1 +=  180.0;
+      alpha2 = -1.0*(180.0-fabs(alpha2));
+    }
+  
+  vecCross(a,st.pos,&nd);vecNormalize(&nd);
+  alpha3_sign = vecDot(nd,z_orbit);
+  alpha3 = acosd(vecDot(a,st.pos)/vecMagnitude(st.pos));
+  if (alpha3_sign<0.0) 
+    alpha3 *= -1.0;
+  
+  proj->param.atct.alpha1=alpha1;
+  proj->param.atct.alpha2=alpha2;
+  proj->param.atct.alpha3=alpha3;
+}

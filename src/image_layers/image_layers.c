@@ -48,7 +48,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "lzFetch.h"
-#include "jpl_proj.h"
+#include "libasf_proj.h"
 #include "least_squares.h"
 #include "matrix.h"
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   float *outBuf=NULL, *bufLook=NULL, *bufIncid=NULL, *bufLat=NULL, *bufLon=NULL;
   float *bufRange=NULL;
   double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
-  double look_angle, incidence_angle;
+  double look_angle, incidence_angle, height;
   double ignored, re=6378144.0, rp=6356754.9, px, py;
   double *l, *s, *value, line, sample, firstLook=0.0, firstIncid=0.0, firstLat=0.0;
   double firstLon=0.0, firstRange=0.0;
@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
 	for (kk=0; kk<ns; kk++) {
 	  px = meta->projection->startX + meta->projection->perX * kk;
 	  py = meta->projection->startY + meta->projection->perY * (ii+ll);
-	  proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-		     &latitude, &longitude);
+	  proj_to_latlon(meta->projection, px, py, 0.0,
+		     &latitude, &longitude, &height);
 	  latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
 	  stVec = meta_get_stVec(meta, time);
 	  earth_radius = get_earth_radius(time, stVec, re, rp);

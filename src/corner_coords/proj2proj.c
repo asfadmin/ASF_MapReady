@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   project_parameters_t ppsIn, ppsOut;
   projection_type_t proj_typeIn, proj_typeOut;
   meta_projection *meta_projIn, *meta_projOut;
-  double lat, lon, projXIn, projYIn, projXOut, projYOut;
+  double lat, lon, height, projXIn, projYIn, projXOut, projYOut, projZOut;
   int listFlag = FALSE;
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
 
@@ -187,8 +187,10 @@ int main(int argc, char **argv)
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
 	sscanf(line, "%lf %lf", &projXIn, &projYIn);   
-	proj_to_latlon(meta_projIn, projXIn, projYIn, &lat, &lon);
-	latlon_to_proj(meta_projOut, 'R', lat, lon, &projXOut, &projYOut);
+	proj_to_latlon(meta_projIn, projXIn, projYIn, 0.0, 
+		       &lat, &lon, &height);
+	latlon_to_proj(meta_projOut, 'R', lat, lon, 0.0, 
+		       &projXOut, &projYOut, &projZOut);
 	printf("%.3lf\t%.3lf\t%.3lf\t%.3lf\n", 
 	       projXIn, projYIn, projXOut, projYOut);
       }
@@ -196,8 +198,9 @@ int main(int argc, char **argv)
     FCLOSE(fp);
   }
   else {
-    proj_to_latlon(meta_projIn, projXIn, projYIn, &lat, &lon);
-    latlon_to_proj(meta_projOut, 'R', lat, lon, &projXOut, &projYOut);
+    proj_to_latlon(meta_projIn, projXIn, projYIn, 0.0, &lat, &lon, &height);
+    latlon_to_proj(meta_projOut, 'R', lat, lon, 0.0, 
+		   &projXOut, &projYOut, &projZOut);
     printf("%.3lf\t%.3lf\t%.3lf\t%.3lf\n", projXIn, projYIn, projXOut, projYOut);
   }
 

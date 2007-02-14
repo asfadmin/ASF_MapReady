@@ -339,7 +339,7 @@ void create_sprocket_layers(const char *asfName, char *leaderName)
                + metaIn->projection->perX * xx;
           py = metaIn->projection->startY
                 + metaIn->projection->perY * (chunk+yy);
-          proj_to_ll(metaIn->projection, metaIn->sar->look_direction, px, py,
+          proj_to_latlon(metaIn->projection, px, py,
                      &latitude, &longitude);
           latLon2timeSlant(metaIn, latitude, longitude, &time, &range, &doppler);
           stVec = meta_get_stVec(metaIn, time);

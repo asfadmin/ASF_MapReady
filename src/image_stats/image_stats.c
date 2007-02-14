@@ -107,7 +107,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "asf.h"
 #include "asf_meta.h"
 #include "lzFetch.h"
-#include "jpl_proj.h"
+#include "libasf_proj.h"
 #include "image_stats.h"
 
 #define VERSION 1.0
@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   char cmd[255], *bufMask=NULL;
   float *bufImage=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
   double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
-  double look_angle, incidence_angle;
+  double look_angle, incidence_angle, height;
   double line, sample, re=6378144.0, rp=6356754.9, px, py;
   double firstLook=0.0, firstIncid=0.0, firstRange=0.0;
   flag_indices_t flags[NUM_FLAGS];
@@ -358,8 +358,8 @@ int main(int argc, char *argv[])
 	if (meta->sar->image_type=='P') {
 	  px = meta->projection->startX + meta->projection->perX * sample;
 	  py = meta->projection->startY + meta->projection->perY * line;
-	  proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-		     &latitude, &longitude);
+	  proj_to_latlon(meta->projection, px, py, 0.0,
+		     &latitude, &longitude, &height);
 	  latLon2timeSlant(meta, latitude, longitude, &time, &range, &doppler);
 	}
 	else
