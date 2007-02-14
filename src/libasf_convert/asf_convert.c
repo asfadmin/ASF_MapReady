@@ -575,6 +575,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(cfg->general->out_name, "%s", cfg->general->in_name);
     }
 
+    // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
+    dump_envi_header = cfg->general->dump_envi;
+
     if (cfg->general->import) {
 
       update_status(cfg, "Importing...");

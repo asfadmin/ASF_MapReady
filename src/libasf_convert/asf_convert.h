@@ -19,6 +19,7 @@ typedef struct
   int intermediates;      // flag to keep intermediates
   int quiet;              // quiet flag
   int short_config;       // short configuration file flag;
+  int dump_envi;          // true if we should dump .hdr files
   char *defaults;         // default values file
   char *batchFile;        // batch file name
   char *prefix;           // prefix for output file naming scheme

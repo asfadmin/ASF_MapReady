@@ -153,6 +153,11 @@ int init_convert_config(char *configFile)
           "# the parameters in the configuration file (1 for a configuration without comments,\n"
           "# 0 for a configuration file with verbose comments)\n\n");
   fprintf(fConfig, "short configuration file = 0\n\n");
+  // dump envi header flag
+  fprintf(fConfig, "# If you would like to view intermediate imagery, you may wish to turn this\n"
+          "# option on -- it dumps an ENVI-compatible .hdr file, that will allow ENVI to view\n"
+          "# ASF Internal format .img files.  These files are not used by the ASF Tools.\n\n");
+  fprintf(fConfig, "dump envi header = 1\n\n");
   // batch file
   fprintf(fConfig, "# This parameter looks for the location of the batch file\n");
   fprintf(fConfig, "# asf_convert can be used in a batch mode to run a large number of data\n"
@@ -224,6 +229,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->intermediates = 0;
   cfg->general->quiet = 1;
   cfg->general->short_config = 0;
+  cfg->general->dump_envi = 1;
   cfg->general->tmp_dir = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->tmp_dir, "");
   cfg->general->thumbnail = 0;
@@ -332,6 +338,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
         cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "dump envi header", 16)==0)
+        cfg->general->dump_envi = read_int(line, "dump envi header");
       if (strncmp(test, "tmp dir", 7)==0)
         strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
       if (strncmp(test, "status file", 11)==0)
@@ -455,6 +463,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
         cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "dump envi header", 16)==0)
+        cfg->general->dump_envi = read_int(line, "dump envi header");
       if (strncmp(test, "tmp dir", 7)==0)
         strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
       if (strncmp(test, "status file", 11)==0)
@@ -517,6 +527,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->quiet = read_int(line, "quiet");
       if (strncmp(test, "short configuration file", 24)==0)
         cfg->general->short_config = read_int(line, "short configuration file");
+      if (strncmp(test, "dump envi header", 16)==0)
+        cfg->general->dump_envi = read_int(line, "dump envi header");
       if (strncmp(test, "tmp dir", 7)==0)
         strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
       if (strncmp(test, "status file", 11)==0)
@@ -768,6 +780,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# entries for the parameters in the configuration file (1 for a configuration\n"
               "# without comments, 0 for a configuration file with verbose comments)\n\n");
     fprintf(fConfig, "short configuration file = %i\n", cfg->general->short_config);
+    if (!shortFlag)
+      fprintf(fConfig, "# If you would like to view intermediate imagery, you may wish to turn this\n"
+              "# option on -- it dumps an ENVI-compatible .hdr file, that will allow ENVI to view\n"
+              "# ASF Internal format .img files.  These files are not used by the ASF Tools.\n\n");
+    fprintf(fConfig, "dump envi header = %i\n", cfg->general->dump_envi);
     if (!shortFlag)
       fprintf(fConfig, "\n# The tmp dir is where temporary files used during processing will\n"
               "# be kept until processing is completed. Then the entire directory and its\n"
