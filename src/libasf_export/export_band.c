@@ -573,7 +573,8 @@ export_band_image (const char *metadata_file_name,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
 	asfPrintStatus("Gathering red channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
+	calc_stats_from_file(image_data_file_name, band_name[0],
+                             md->general->no_data,
 			     &red_stats.min, &red_stats.max, &red_stats.mean,
 			     &red_stats.standard_deviation, red_stats.hist);
 	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
@@ -588,7 +589,8 @@ export_band_image (const char *metadata_file_name,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
 	asfPrintStatus("Gathering green channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[1], 0.0,
+	calc_stats_from_file(image_data_file_name, band_name[1],
+                             md->general->no_data,
 			     &green_stats.min, &green_stats.max,
 			     &green_stats.mean,
 			     &green_stats.standard_deviation,
@@ -605,7 +607,8 @@ export_band_image (const char *metadata_file_name,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
 	asfPrintStatus("Gathering blue channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[2], 0.0,
+	calc_stats_from_file(image_data_file_name, band_name[2],
+                             md->general->no_data,
 			     &blue_stats.min, &blue_stats.max,
 			     &blue_stats.mean,
 			     &blue_stats.standard_deviation,
@@ -828,7 +831,8 @@ export_band_image (const char *metadata_file_name,
 		      "Size of the unsigned char data type on this machine is "
 		      "different than expected.\n");
 	  asfPrintStatus("Gathering statistics ...\n");
-	  calc_stats_from_file(image_data_file_name, band_name[0], 0.0,
+	  calc_stats_from_file(image_data_file_name, band_name[0],
+                               md->general->no_data,
 			       &stats.min, &stats.max, &stats.mean,
 			       &stats.standard_deviation, stats.hist);
 	  if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
