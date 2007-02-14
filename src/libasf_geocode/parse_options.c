@@ -79,8 +79,6 @@ void set_options_testing(int is_testing)
 static void readline(FILE * f, char * buffer, size_t n)
 {
   char * p;
-  char * newline;
-
   p = fgets(buffer, n, f);
 
   if (!p)
@@ -89,9 +87,8 @@ static void readline(FILE * f, char * buffer, size_t n)
   }
   else
   {
-    newline = strrchr(buffer, '\n');
-    if (newline)
-      *newline = '\0';
+    p = buffer+strlen(buffer)-1;
+    while (isspace(*p)) *p-- = '\0';
   }
 }
 
@@ -296,7 +293,7 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
   }
 
   readline(fp, buf, sizeof(buf));
-
+  
   if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
     strcmp(buf, "[Albers Equal Area Conic]") == 0)
   {

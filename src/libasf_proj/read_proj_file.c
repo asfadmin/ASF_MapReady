@@ -41,20 +41,17 @@ static_strcaseneq (const char *s1, const char *s2)
 static void readline(FILE * f, char * buffer, size_t n)
 {
   char * p;
-  char * newline;
-  
   p = fgets(buffer, n, f);
   
   if (!p)
-    {
+  {
       strcpy(buffer, "");
-    }
+  }
   else
-    {
-      newline = strrchr(buffer, '\n');
-      if (newline)
-	*newline = '\0';
-    }
+  {
+      p = buffer + strlen(buffer) - 1;
+      while(isspace(*p)) *p-- = '\0';
+  }
 }
 
 static int parse_double(const char * str, double * val)
@@ -185,25 +182,19 @@ static const char * bracketed_projection_name(projection_type_t proj_type)
     }
 }
 
-static FILE *Fopen(const char *file, const char *mode)
-{
-    //printf("fopen: %s\n", file);
-    return fopen(file, mode);
-}
-
 FILE *fopen_proj_file(const char *file, const char *mode)
 {
     FILE *fp;
 
     // first, just try opening the file as-is
-    fp = Fopen(file, mode);
+    fp = fopen(file, mode);
     if (fp) return fp;
 
     char filename[1024];
 
     // failed -- try with a ".proj" extension
     sprintf(filename, "%s.proj", file);
-    fp = Fopen(filename, mode);
+    fp = fopen(filename, mode);
     if (fp) return fp;
 
     char share_dir[1024];
@@ -227,7 +218,7 @@ FILE *fopen_proj_file(const char *file, const char *mode)
         }
 
         sprintf(filename, "%s/%s/%s", share_dir, dp->d_name, file);
-        fp = Fopen(filename, mode);
+        fp = fopen(filename, mode);
         if (fp) {
             closedir(dfd);
             //printf("Found proj file: %s\n", filename);
@@ -236,7 +227,7 @@ FILE *fopen_proj_file(const char *file, const char *mode)
             
         // failed, try adding extension
         sprintf(filename, "%s/%s/%s.proj", share_dir, dp->d_name, file);
-        fp = Fopen(filename, mode);
+        fp = fopen(filename, mode);
         if (fp) {
             closedir(dfd);
             //printf("Found proj file: %s\n", filename);
