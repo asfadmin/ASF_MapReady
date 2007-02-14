@@ -278,7 +278,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->geocoding->resampling = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->geocoding->resampling, "BILINEAR");
   cfg->geocoding->force = 0;
-  cfg->geocoding->background = 0;
+  cfg->geocoding->background = DEFAULT_NO_DATA_VALUE;
 
   cfg->export->format = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->format, "GEOTIFF");
