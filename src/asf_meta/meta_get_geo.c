@@ -16,7 +16,8 @@ PROGRAM HISTORY:
 #include <assert.h>
 #include "asf.h"
 #include "asf_meta.h"
-#include "jpl_proj.h"
+#include <libasf_proj.h>
+//#include "jpl_proj.h"
 
 /*Geolocation Calls:*/
 
@@ -65,7 +66,7 @@ int meta_get_latLon(meta_parameters *meta,
     i = xSample;
     j = yLine;
     // optical data transformation
-    if (meta->transform->parameter_count == 10) { 
+    if (meta->transform->parameter_count == 10) {
       *lat = y[0] + y[1]*i + y[2]*j + y[3]*i*j + y[4]*i*i + y[5]*j*j +
 	y[6]*i*i*j + y[7]*i*j*j + y[8]*i*i*i + y[9]*j*j*j;
       *lon = x[0] + x[1]*i + x[2]*j + x[3]*i*j + x[4]*i*i + x[5]*j*j +
@@ -79,7 +80,7 @@ int meta_get_latLon(meta_parameters *meta,
     return 0;
   }
   else if(meta->sar && !meta->projection) {
-    if (meta->sar->image_type=='S' || meta->sar->image_type=='G') { 
+    if (meta->sar->image_type=='S' || meta->sar->image_type=='G') {
       /*Slant or ground range.  Use state vectors and doppler.*/
       double slant,doppler,time;
       meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
@@ -88,11 +89,12 @@ int meta_get_latLon(meta_parameters *meta,
       return meta_timeSlantDop2latLon(meta,
 				      time,slant,doppler,elev,
 				      lat,lon);
-    } 
+    }
   }
   else if (meta->projection) {
     /*Map-Projected. Use projection information to calculate lat & lon.*/
-    double px,py;
+    double px,py,pz=0.0;
+    double hgt;
     px = meta->projection->startX + ((xSample + meta->general->start_sample)
              * meta->projection->perX);
     py = meta->projection->startY + ((yLine + meta->general->start_line)
@@ -100,11 +102,10 @@ int meta_get_latLon(meta_parameters *meta,
     /*Currently have to handle scansar separately, because it depends on
       a lot more info than the other projections */
     if (meta->projection->type == SCANSAR_PROJECTION) {
-        double h;
-        scan_to_latlon(meta, px, py, elev, lat, lon, &h);
+        scan_to_latlon(meta, px, py, elev, lat, lon, &hgt);
     } else {
-        proj_to_ll(meta->projection, meta->sar->look_direction, px, py,
-                   lat,lon);
+        proj_to_latlon(meta, px, py, pz,
+                       lat, lon, &hgt);
     }
     return 0;
   } else { /*Bogus image type.*/
@@ -157,7 +158,7 @@ void meta_get_timeSlantDop(meta_parameters *meta,
       else
         *dop=meta_get_dop(meta,yLine,xSample);
     }
-  } else  if (meta->sar->image_type=='P' || 
+  } else  if (meta->sar->image_type=='P' ||
 	      meta->sar->image_type=='R')
   {
     double lat,lon;

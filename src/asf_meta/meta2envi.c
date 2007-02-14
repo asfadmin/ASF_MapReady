@@ -196,7 +196,7 @@ meta_parameters* envi2meta(envi_header *envi)
     meta->projection->param.lamcc.plat1 = envi->standard_parallel1;
     meta->projection->param.lamcc.plat2 = envi->standard_parallel2;
     meta->projection->param.lamcc.lat0 = envi->center_lat;
-    meta->prpalsarojection->param.lamcc.lon0 = envi->center_lon;
+    meta->projection->param.lamcc.lon0 = envi->center_lon;
     meta->projection->param.lamcc.false_easting = envi->ref_pixel_x;
     meta->projection->param.lamcc.false_northing = envi->ref_pixel_y;
   } 
