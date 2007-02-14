@@ -67,7 +67,8 @@ envi_header* meta2envi(meta_parameters *meta)
     sprintf(envi->sensor_type, "%s", meta->general->sensor);
   // All the data we generate now is big_endian by default
   envi->byte_order = 1;
-  if (meta->projection) {
+  if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+  {
     switch (meta->projection->type)
       {
       case UNIVERSAL_TRANSVERSE_MERCATOR: 
