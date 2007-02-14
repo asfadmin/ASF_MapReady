@@ -55,17 +55,14 @@ void usage(char *name)
 	"REQUIRED ARGUMENTS:\n"
 	"   meta_name   Base name of the new style meta data.  I.E. if <meta_name> is\n"
 	"                \"test1\", then \"test1.meta\" must be in the working directory\n"
- 	"   las_name    Base name of the old style meta data.  I.E. if <las_name> is\n"
-	"                \"test2\", then both \"test2.ddr\" and \"test2.meta\" must be\n"
-	"                in the working directory\n");
+ 	"   las_name    Base name of the old style ddr data.  I.E. if <las_name> is\n"
+	"                \"test2\", then \"test2.ddr\" must be in the working directory\n");
 printf("\n"
 	"DESCRIPTION:\n"
 	"   %s coverts new ASF style metadata to old ASF style metadata.\n"
-	"   Old metadata being a LAS DDR file and a pre-version 1.10 meta file.\n"
+	"   Old metadata being a LAS DDR file.\n\n"
 	"   New metadata is a meta file that is version 1.10 or greater. Current\n"
-	"   version is %.2f. Make sure that <las_name> and <meta_name> are\n"
-	"   different. Otherwise the meta file that was read in will get written\n"
-	"   over.\n",name,META_VERSION);
+	"   version is %.2f.",name,META_VERSION);
  printf("\n"
 	"Version %.2f, ASF SAR Tools\n"
 	"\n",VERSION);
@@ -98,12 +95,12 @@ int main(int argc, char **argv)
 
 /* Write stuff out old style */
 	c_putddr(las_nameDDR, &ddr);
-	meta_write_old(meta, las_nameMeta);
+	//meta_write_old(meta, las_nameMeta);
 
 /* Clean and report */
 	meta_free(meta);
-	printf("***Wrote %s and %s from %s.\n",
-	       las_nameDDR, las_nameMeta, meta_name);
+	printf("***Wrote %s from %s.\n",
+	       las_nameDDR, meta_name);
 
 	return 0;
 }
