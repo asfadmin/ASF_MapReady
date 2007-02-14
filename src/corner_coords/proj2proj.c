@@ -39,6 +39,7 @@
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "libasf_proj.h"
 
 #define VERSION 1.0
 
@@ -186,7 +187,7 @@ int main(int argc, char **argv)
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
 	sscanf(line, "%lf %lf", &projXIn, &projYIn);   
-	proj_to_latlon(meta_projIn, 'R', projXIn, projYIn, &lat, &lon);
+	proj_to_latlon(meta_projIn, projXIn, projYIn, &lat, &lon);
 	latlon_to_proj(meta_projOut, 'R', lat, lon, &projXOut, &projYOut);
 	printf("%.3lf\t%.3lf\t%.3lf\t%.3lf\n", 
 	       projXIn, projYIn, projXOut, projYOut);
@@ -195,7 +196,7 @@ int main(int argc, char **argv)
     FCLOSE(fp);
   }
   else {
-    proj_to_latlon(meta_projIn, 'R', projXIn, projYIn, &lat, &lon);
+    proj_to_latlon(meta_projIn, projXIn, projYIn, &lat, &lon);
     latlon_to_proj(meta_projOut, 'R', lat, lon, &projXOut, &projYOut);
     printf("%.3lf\t%.3lf\t%.3lf\t%.3lf\n", projXIn, projYIn, projXOut, projYOut);
   }

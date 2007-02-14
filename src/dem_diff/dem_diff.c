@@ -170,7 +170,7 @@ int main(int argc,char *argv[])
 		    if (inBuf[samp] != 0.0)
 		      {	
 			/* Convert the projection x,y to geographic lat,lon */
-			proj_to_latlon(metaSource->projection, 'R', proj_x, proj_y, 0.0, 
+			proj_to_latlon(metaSource->projection, proj_x, proj_y, 0.0, 
 				       &lon, &lat, &height); 
 
 			/* Convert the lat,lon to Ref projection */

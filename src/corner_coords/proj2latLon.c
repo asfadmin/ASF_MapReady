@@ -157,14 +157,14 @@ int main(int argc, char **argv)
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
 	sscanf(line, "%lf %lf", &projX, &projY);   
-	proj_to_latlon(meta_proj, 'R', projX, projY, &lat, &lon);
+	proj_to_latlon(meta_proj, projX, projY, &lat, &lon);
 	printf("%.3lf\t%.3lf\t%.4lf\t%.4lf\n", projX, projY, lat*R2D, lon*R2D);
       }
     }
     FCLOSE(fp);
   }
   else {
-    proj_to_latlon(meta_proj, 'R', projX, projY, &lat, &lon);
+    proj_to_latlon(meta_proj, projX, projY, &lat, &lon);
     printf("%.3lf\t%.3lf\t%.4lf\t%.4lf\n", projX, projY, lat*R2D, lon*R2D);
   }
 

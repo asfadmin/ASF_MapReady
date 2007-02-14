@@ -874,9 +874,8 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Copy all fields just in case of future code rearrangements...
   copy_proj_parms (&proj, mp);
-  proj_to_latlon(&proj, 'R',
-                  center_x, center_y, 0.0,
-                  &center_latitude, &center_longitude, &dummy_var);
+  proj_to_latlon(&proj,center_x, center_y, 0.0,
+		 &center_latitude, &center_longitude, &dummy_var);
   mg->center_latitude = R2D*center_latitude;
   mg->center_longitude = R2D*center_longitude;
   mp->hem = mg->center_latitude >= 0.0 ? 'N' : 'S';

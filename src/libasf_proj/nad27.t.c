@@ -339,7 +339,7 @@ test_p2ll(meta_projection *mp, const char *proj_name,
           double lon, double lat, datum_type_t datum)
 {
     double testLat, testLon, z;
-    proj_to_latlon(mp, '?', projX, projY, height, &testLat, &testLon, &z);
+    proj_to_latlon(mp, projX, projY, height, &testLat, &testLon, &z);
     
     testLat *= R2D;
     testLon *= R2D;

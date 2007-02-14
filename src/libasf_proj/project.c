@@ -826,18 +826,14 @@ int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
 }
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
-void proj_to_latlon(meta_projection *proj, char look_dir,
-		    double x, double y, double z,
+void proj_to_latlon(meta_projection *proj, double x, double y, double z,
 		    double *lat, double *lon, double *height)
 {
   if (proj==NULL)
-    bail("NULL projection parameter structure passed to proj_to_ll!\n");
+    bail("NULL projection parameter structure passed to proj_to_latlon!\n");
 
   switch(proj->type)
     {
-    case SCANSAR_PROJECTION: 
-      ac_ll(proj,look_dir, y, x, lat, lon); 
-      break;
     case ALBERS_EQUAL_AREA:
       project_albers_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
@@ -852,6 +848,10 @@ void proj_to_latlon(meta_projection *proj, char look_dir,
       break;
     case UNIVERSAL_TRANSVERSE_MERCATOR: 
       project_utm_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum); 
+      break;
+    case SCANSAR_PROJECTION: 
+      asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
+		    "Use 'scan_latlon' instead.\n");
       break;
     default:
       printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
@@ -1038,7 +1038,7 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   meta_proj->datum = WGS84_DATUM; // assumed...
   meta_proj->param = pps;
   
-  proj_to_latlon(meta_proj, 'R', projX, projY, elev, lat, lon, &h);
+  proj_to_latlon(meta_proj, projX, projY, elev, lat, lon, &h);
 
   *lat *= R2D;
   *lon *= R2D;

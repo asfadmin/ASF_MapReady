@@ -367,8 +367,7 @@ int project_pseudo_arr_inv (project_parameters_t *pps, double *x, double *y,
   General conversion functions between projection coordinates and geographic
   coordinates.
 ***************************************************************************/
-void proj_to_latlon(meta_projection *proj, char look_dir,
-		    double x, double y, double z,
+void proj_to_latlon(meta_projection *proj, double x, double y, double z,
 		    double *lat, double *lon, double *height);
 void latlon_to_proj(meta_projection *proj, char look_dir,
 		    double lat, double lon, double height,
