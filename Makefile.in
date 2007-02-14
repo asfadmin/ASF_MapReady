@@ -17,7 +17,6 @@ MODULES = \
 	src/libasf_proj \
 	src/libasf_ardop \
 	src/asf_meta \
-	src/asf_odl \
 	src/asf_fft \
 	src/libasf_raster \
 	src/libasf_vector \
