@@ -231,9 +231,7 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
 
   if (md->projection) {
     if (!(meta_is_valid_double(md->projection->startX) &&
-          meta_is_valid_double(md->projection->startY)) ||
-        md->projection->startX < 0 ||
-        md->projection->startY < 0
+          meta_is_valid_double(md->projection->startY))
        )
     {
       asfPrintWarning("Metadata projection block contains invalid startX "
