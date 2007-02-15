@@ -1141,7 +1141,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   mg->center_longitude = R2D*center_longitude;
   mp->hem = mg->center_latitude >= 0.0 ? 'N' : 'S';
 
-  msar->image_type = 'P'; // Map Projected
+  if (msar)
+      msar->image_type = 'P'; // Map Projected
+
   ms->mean = mean;
   // The root mean square error and standard deviation are very close
   // by definition when the number of samples is large, there seems to
