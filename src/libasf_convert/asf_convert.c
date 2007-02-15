@@ -560,6 +560,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintError("Chosen scaling method not supported\n");
         }
       }
+
+      // If RGB Banding option is "ignore,ignore,ignore" then the
+      // user has probably been using the gui, and didn't pick
+      // anything for any of the RGB channels.
+      if (strlen(cfg->export->rgb)>0 &&
+          strcmp(uc(cfg->export->rgb), "IGNORE,IGNORE,IGNORE") == 0)
+      {
+          asfPrintError(
+              "Exporting as RGB was selected, but no values for each RGB\n"
+              "channels were selected.  Please choose which bands you wish\n"
+              "to have placed into at least one of the RGB channels.\n");
+      }
     }
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
