@@ -143,10 +143,10 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus("\nConverting GeoTIFF to float image...\n");
   FloatImage *image = tiff_to_float_image (input_tiff);
 
-  asfPrintStatus("Storing pre-bad data scan jpeg image...\n");
-  float_image_export_as_jpeg
-    (image, "pre_bad_data_remap.jpeg",
-     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
+  //asfPrintStatus("Storing pre-bad data scan jpeg image...\n");
+  //float_image_export_as_jpeg
+  //  (image, "pre_bad_data_remap.jpeg",
+  //   image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
 
   // DEMs of this flavor tend to be full of bad data values that make
   // the statistics hopeless, saturate output, etc.  For now we deal
