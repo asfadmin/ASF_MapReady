@@ -83,7 +83,7 @@ unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 /* Prototypes from stats.c ***************************************************/
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
-			  gsl_histogram *histogram);
+			  gsl_histogram **histogram);
 gsl_histogram *calc_histogram (float *data, long long pixel_count,
 			       double min, double max, size_t num_bins);
 void calc_stats(float *data, long long pixel_count, double mask, double *min,

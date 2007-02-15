@@ -6,7 +6,7 @@
 
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
-			  gsl_histogram *histogram)
+			  gsl_histogram **histogram)
 {
   FILE *fp;
   meta_parameters *meta;
@@ -27,7 +27,7 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
   fp = FOPEN(inFile, "rb");
   get_float_lines(fp, meta, offset, meta->general->line_count, data);
   calc_stats(data, pixel_count, mask, min, max, mean, stdDev);
-  histogram = calc_histogram(data, pixel_count, *min, *max, 256);
+  *histogram = calc_histogram(data, pixel_count, *min, *max, 256);
   FCLOSE(fp);
   FREE(data);
   
