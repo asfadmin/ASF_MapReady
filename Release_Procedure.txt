@@ -31,16 +31,7 @@
 
  6. ** KLUDGE #1 **
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
-      src/asf_lt
-      src/asf_geolib
       src/ardop
-
-    ALOS release, 3.1: also eliminate:
-      src/asf_terrcorr
-      src/refine_geolocation
-      src/sr2gr
-      src/gr2sr
-      src/mosaic
 
  7. Check out the important parts of the release directory:
       svn co https://lindon/svn/repos/release/trunk/autotar release/autotar
@@ -67,14 +58,13 @@ src/sr2gr
 src/mosaic
 src/refine_geolocation
 src/asf_terrcorr
+src/meta2envi
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
 
 11. Run the rpmprep script:
       ./rpmprep convert asf_convert
-    ALOS:
-      ./rpmprep convert alos_convert
 
 12. Edit the .spec file in ../rpmbuild to use the correct version,
     then rename the file to match.
@@ -88,8 +78,6 @@ src/asf_terrcorr
 14. Create tarballs of the rpms.  The binary rpm will also contain the
     README_rpm.txt file from ../../asf_tools.
       ./tarrpms asf_convert
-    ALOS:
-      ./tarrpms alos_convert
 
 15. Put the built files on quantum or someplace:
       scp RPMS/asf_convert-X.X.X-rpm.*
