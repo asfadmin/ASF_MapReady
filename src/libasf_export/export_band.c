@@ -564,11 +564,17 @@ export_band_image (const char *metadata_file_name,
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
     }
 
+    int ignored[3] = {0, 0, 0};
+    int red_channel, green_channel, blue_channel;
+    for (ii=0; ii<3; ii++) {
+      ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
+    }
+
     channel_stats_t red_stats, blue_stats, green_stats;
 
     if (!md->optical) {
       // Red channel statistics
-      if (sample_mapping != NONE) { // byte image
+      if (sample_mapping != NONE && !ignored[0]) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
@@ -590,7 +596,7 @@ export_band_image (const char *metadata_file_name,
       }
 
       // Green channel statistics
-      if (sample_mapping != NONE) { // byte image
+      if (sample_mapping != NONE && !ignored[1]) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
@@ -614,7 +620,7 @@ export_band_image (const char *metadata_file_name,
       }
 
       // Blue channel statistics
-      if (sample_mapping != NONE) { // byte image
+      if (sample_mapping != NONE && !ignored[2]) { // byte image
 	asfRequire (sizeof(unsigned char) == 1,
 		    "Size of the unsigned char data type on this machine is "
 		    "different than expected.\n");
@@ -639,11 +645,6 @@ export_band_image (const char *metadata_file_name,
     }
 
     // Get channel numbers
-    int ignored[3] = {0, 0, 0};
-    int red_channel, green_channel, blue_channel;
-    for (ii=0; ii<3; ii++) {
-      ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
-    }
     red_channel = get_band_number(md->general->bands,
                                   md->general->band_count,
                                   band_name[0]);
