@@ -1922,20 +1922,7 @@ float_image_band_store(FloatImage *self, const char *file,
   int ii;
   for ( ii = 0 ; ii < meta->general->line_count ; ii++ ) {
     float_image_get_row (self, ii, line_buffer);
-    // Convert from the host byte order to the byte order specified
-    // for the disk file, if necessary.  Doing this with floats is
-    // somewhat questionable apparently: major libraries don't seem to
-    // support it with their macros, and the perl documentation says
-    // it can't be done in a truly portable way... but it seems to
-    // work.
-    if ( non_native_byte_order (byte_order) ) {
-      // Floats better be four bytes for this to work.
-      g_assert (sizeof (float) == 4);
-      int jj;
-      for ( jj = 0 ; jj < meta->general->sample_count ; jj++ ) {
-        swap_bytes_32 ((unsigned char *) &(line_buffer[jj]));
-      }
-    }
+
     // Write the data.
     put_float_line(fp, meta, ii, line_buffer);
   }
