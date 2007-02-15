@@ -34,7 +34,7 @@
 
 #define FLAG_NOT_SET -1
 
-#define NUM_HIST_BINS UCHAR_MAX
+#define NUM_HIST_BINS UCHAR_MAX + 1
 
 /* Output format to use.  */
 typedef enum {
