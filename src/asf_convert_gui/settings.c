@@ -1545,7 +1545,12 @@ settings_to_config_file(const Settings *s,
           fprintf(cf, "byte conversion = none\n");
       }
       if (s->export_bands)
-          fprintf(cf, "rgb banding = %s,%s,%s\n", s->red, s->green, s->blue);
+      {
+          const char *r = strlen(s->red)   > 0 ? s->red   : "ignore";
+          const char *g = strlen(s->green) > 0 ? s->green : "ignore";
+          const char *b = strlen(s->blue)  > 0 ? s->blue  : "ignore";
+          fprintf(cf, "rgb banding = %s,%s,%s\n", r, g, b);
+      }
       fprintf(cf, "\n");
     }
 
