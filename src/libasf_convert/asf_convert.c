@@ -477,7 +477,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                   "and also request an automatically generated mask.\n"
                   "Ignoring auto water mask -- will use the mask provided.\n");
           }
-      }      
+      }
     }
 
     // Check whether everything in the [Geocoding] block is reasonable
@@ -542,7 +542,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->export->format), "GEOTIFF", 7) != 0 &&
           strncmp(uc(cfg->export->format), "JPEG", 4) != 0 &&
           strncmp(uc(cfg->export->format), "PGM", 3) != 0) {
-        asfPrintError("Chosen export format not supported\n");
+        asfPrintError("Chosen export format (%s) not supported\n",
+                     cfg->export->format);
       }
 
       // Unset export flag when export format is ASF
@@ -557,7 +558,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             strncmp(uc(cfg->export->byte), "MINMAX", 6) != 0 &&
             strncmp(uc(cfg->export->byte), "TRUNCATE", 8) != 0 &&
             strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) != 0) {
-          asfPrintError("Chosen scaling method not supported\n");
+          asfPrintError("Chosen scaling method (%s) not supported\n",
+                        cfg->export->byte);
         }
       }
 
