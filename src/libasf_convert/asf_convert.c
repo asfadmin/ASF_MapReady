@@ -1077,12 +1077,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         if (cfg->general->export) {
             update_status(cfg, "Exporting layover mask...");
-            sprintf(inFile, "%s", outFile);
-            char *tmp =
-                appendToBasename(cfg->general->out_name, "_layover_mask");
-            strcpy(outFile, tmp);
-            free(tmp);
-
             check_return(
                 asf_export_bands(format, TRUNCATE, 1, "layover_mask.lut",
                                  inFile, outFile, NULL),
