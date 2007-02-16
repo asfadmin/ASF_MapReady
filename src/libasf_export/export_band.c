@@ -37,7 +37,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping, int rgb);
-void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name);
+GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
@@ -97,13 +97,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = GTIFNew (*otif);
-    asfRequire (*ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
-
-    write_tags_for_geotiff (*ogtif, metadata_file_name);
-  }
-  else {
-    *ogtif = NULL;
+    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name);
   }
 }
 
@@ -174,13 +168,13 @@ void initialize_pgm_file(const char *output_file_name,
   return;
 }
 
-void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
+GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
   int map_projected = is_map_projected(md);
   int is_slant_range_image = is_slant_range(md);
-  TIFF *otif;
+  GTIF *ogtif;
 
   /* Semi-major and -minor ellipse axis lengths.  This shows up in two
   different places in our metadata, we want the projected one if
@@ -208,6 +202,9 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
 
   /******************************************/
   /* Set the GeoTIFF extension image tags.  */
+  ogtif = GTIFNew (otif);
+  asfRequire (ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
+
   if (map_projected)
   {
     // Write common tags for map-projected GeoTIFFs
@@ -491,6 +488,8 @@ void write_tags_for_geotiff (GTIF *ogtif, const char *metadata_file_name)
   // to GTIFWriteKeys() here plz.
 
   meta_free (md);
+
+  return ogtif;
 }
 
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff)
