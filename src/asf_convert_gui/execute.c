@@ -1,4 +1,4 @@
-
+#include <ctype.h>
 #include <unistd.h>
 #include "asf_convert_gui.h"
 #include <asf.h>
@@ -258,7 +258,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     return the_output;
 }
 
-gboolean check_for_error(gchar * txt)
+static char *check_for_error(gchar * txt)
 {
     /* kludge */
     gchar *p, *q;
@@ -278,7 +278,30 @@ gboolean check_for_error(gchar * txt)
                 strstr(p, "ERROR") != NULL))
             {
                 *q = '\n';
-                return TRUE;
+               
+                // grab the next non-empty line
+                int n = 0;
+                do {
+                    p = q + 1;
+                    q = strchr(p, '\n') - 1;
+                    while (isspace(*q)) --q;
+                    if (q - p > 2) {
+                        char *err_string = MALLOC(sizeof(char)*64);
+
+                        // first 50 characters of the error string, unless line ends first
+                        // don't cut off in the middle of a word, though
+                        strcpy(err_string, "Error: ");
+                        strncat(err_string, p, 50);
+                        while (isalnum(err_string[strlen(err_string)-1]))
+                            err_string[strlen(err_string)-1] = '\0';
+                        strcat(err_string, " ...");
+                        for (n=0; n<strlen(err_string); ++n)
+                            if (err_string[n] == '\n') err_string[n] = '\0';
+
+                        return err_string;
+                    }
+                }
+                while (*p != '*' && ++n<5); // * flags the end of the error message
             }
 
             *q = '\n';
@@ -287,7 +310,7 @@ gboolean check_for_error(gchar * txt)
         p = q;
     }
 
-    return FALSE;
+    return NULL;
 }
 
 static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
@@ -543,7 +566,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 	char *output_dir = getPath(out_full);
 	char *config_file, *cmd_output, *tmp_dir;
 	gchar *err_string;
-	int err;
 
         /* Ensure we have access to the output directory */
         if (!have_access_to_dir(output_dir, &err_string))
@@ -580,10 +602,10 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
 	cmd_output = do_convert(pid, iter, config_file, TRUE,
                                 user_settings->keep_files);
-	err = check_for_error(cmd_output);
-        if (err) {
+	err_string = check_for_error(cmd_output);
+        if (err_string) {
             // unsuccessful
-            gtk_list_store_set(list_store, iter, COL_STATUS, "Error", 
+            gtk_list_store_set(list_store, iter, COL_STATUS, err_string, 
                                COL_LOG, cmd_output, -1);
         }
         else {
@@ -593,6 +615,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             set_thumbnail(&completed_iter, tmp_dir, out_full);
         }
 
+    FREE(err_string);
 	free(config_file);
 	free(out_basename);
 	free(output_dir);
