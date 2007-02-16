@@ -88,7 +88,9 @@ static void readline(FILE * f, char * buffer, size_t n)
   else
   {
     p = buffer+strlen(buffer)-1;
-    while (isspace(*p)) *p-- = '\0';
+
+    while (isspace((int)(*p)))
+        *p-- = '\0';
   }
 }
 
