@@ -1274,6 +1274,9 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
   meta_write (omd, output_meta_data->str);
 
+  // Back to radians... for the subsequent calculations
+  to_radians (projection_type, pp);
+
   // Now we are ready to produce our output image.
   asfPrintStatus ("Resampling input image into output image coordinate space...\n");
 
