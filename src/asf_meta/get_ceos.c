@@ -60,6 +60,10 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
                 recordType=CEOS_IFILEDR;
 	}
 
+	for (ii=0; ii<MAX_BANDS; ii++)
+            FREE(dataName[ii]);
+        FREE(dataName);
+
 	fp=FOPEN(metaRecordName, "r");
 	while (1==fread(&bufhdr, 12, 1, fp))
 	{

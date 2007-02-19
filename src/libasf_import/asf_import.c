@@ -349,6 +349,10 @@ int asf_import(radiometry_t radiometry, int db_flag,
     //    create_sprocket_layers(outBaseName, inMetaName);
     //}
 
+    for (ii=0; ii<MAX_BANDS; ii++)
+      FREE(inBandName[ii]);
+    FREE(inBandName);
+
     asfPrintStatus("Import complete.\n");
     return 0;
 }

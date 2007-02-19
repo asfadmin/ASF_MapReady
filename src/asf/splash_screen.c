@@ -18,6 +18,5 @@ void asfSplashScreen(int argc, char* argv[])
                 "PID:  %i\n"
                 "\n",
                 logbuf, date_time, (int)getpid());
-  free (date_time);
 }
 

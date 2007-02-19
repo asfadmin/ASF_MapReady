@@ -95,6 +95,9 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      ceos_init_optical(in_fName, meta);
 
    FREE(ceos);
+   for (ii=0; ii<MAX_BANDS; ii++)
+     FREE(dataName[ii]);
+   FREE(dataName);
 }
 
 
@@ -127,6 +130,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
    for (ii=0; ii<MAX_BANDS; ii++)
      dataName[ii] = (char *) MALLOC(512*sizeof(char));
+
+   for (ii=0; ii<32; ii++)
+     beamname[ii] = '\0';
 
    /* Allocate & fetch CEOS records. If its not there, free & nullify pointer
       ----------------------------------------------------------------------*/
@@ -207,8 +213,6 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
      /* probably need to check incidence angle to figure out what is going on */
-      int ii;
-      for (ii=0; ii<32; ii++) { beamname[ii] = '\0'; }
       strcpy(meta->general->sensor,"RSAT-1");
       if (strncmp(dssr->product_type,"SCANSAR",7)==0) {
 	if (ceos->facility == RSI) {
@@ -741,6 +745,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    FREE(ppr);
    FREE(asf_facdr);
    FREE(esa_facdr);
+   for (ii=0; ii<MAX_BANDS; ii++)
+     FREE(dataName[ii]);
+   FREE(dataName);
 }
 
 /*******************************************************************************

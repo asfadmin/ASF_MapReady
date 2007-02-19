@@ -57,12 +57,9 @@ void StopWatchLog(FILE *log_fp)
 char* date_time_stamp(void)
 {
   time_t t;
-  char *t_stamp;
-
-  t_stamp = (char*) MALLOC(25*sizeof(char));
+  static char t_stamp[25];
   t = time(NULL);
   strftime(t_stamp, 22, "%d-%b-%Y, %H:%M:%S", localtime(&t));
-
   return t_stamp;
 }
 

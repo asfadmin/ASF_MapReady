@@ -658,7 +658,7 @@ int main(int argc, char *argv[])
         if (flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)
             p_azimuth_scale = &azimuth_scale;
 
-        radiometry_t radiometry;
+        radiometry_t radiometry = r_AMP;
         if(flags[f_AMP] != FLAG_NOT_SET)      radiometry = r_AMP;
         if(flags[f_SIGMA] != FLAG_NOT_SET)    radiometry = r_SIGMA;
         if(flags[f_BETA] != FLAG_NOT_SET)     radiometry = r_BETA;

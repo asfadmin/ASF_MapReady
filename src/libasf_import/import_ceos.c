@@ -800,6 +800,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
     if (out_buf)
       FREE(out_buf);
+    if (short_buf)
+      FREE(short_buf);
   }
   /************************ END DETECTED DATA SECTION ************************/
 
