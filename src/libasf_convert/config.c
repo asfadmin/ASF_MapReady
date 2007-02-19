@@ -181,13 +181,68 @@ int init_convert_config(char *configFile)
   return(0);
 }
 
+void free_convert_config(convert_config *cfg)
+{
+    if (cfg) {
+        if (cfg->general) {
+            FREE(cfg->general->in_name);
+            FREE(cfg->general->out_name);
+            FREE(cfg->general->batchFile);
+            FREE(cfg->general->defaults);
+            FREE(cfg->general->prefix);
+            FREE(cfg->general->suffix);
+            FREE(cfg->general->status_file);
+            FREE(cfg->general->tmp_dir);
+            FREE(cfg->general);
+        }
+        if (cfg->import) {
+            FREE(cfg->import->format);
+            FREE(cfg->import->radiometry);
+            FREE(cfg->import->lut);
+            FREE(cfg->import->prc);
+            FREE(cfg->import);
+        }
+        if (cfg->sar_processing) {
+            FREE(cfg->sar_processing->radiometry);
+            FREE(cfg->sar_processing);
+        }
+        if (cfg->image_stats) {
+            FREE(cfg->image_stats->values);
+            FREE(cfg->image_stats);
+        }
+        if (cfg->detect_cr) {
+            FREE(cfg->detect_cr->cr_location);
+            FREE(cfg->detect_cr);
+        }
+        if (cfg->terrain_correct) {
+            FREE(cfg->terrain_correct->dem);
+            FREE(cfg->terrain_correct->mask);
+            FREE(cfg->terrain_correct);
+        }
+        if (cfg->geocoding) {
+            FREE(cfg->geocoding->projection);
+            FREE(cfg->geocoding->datum);
+            FREE(cfg->geocoding->resampling);
+            FREE(cfg->geocoding);
+        }
+        if (cfg->export) {
+            FREE(cfg->export->format);
+            FREE(cfg->export->byte);
+            FREE(cfg->export->rgb);
+            FREE(cfg->export);
+        }
+        FREE(cfg);
+
+    }
+}
+
 convert_config *init_fill_convert_config(char *configFile)
 {
 #define newStruct(type) (type *)MALLOC(sizeof(type))
 
   FILE *fConfig, *fDefaults;
   char line[255], params[25];
-  char *test=(char *)MALLOC(sizeof(char)*255);
+  char *test;
   int i;
 
   // Create structure

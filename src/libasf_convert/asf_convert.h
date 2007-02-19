@@ -127,6 +127,7 @@ void check_return(int ret, char *msg);
 
 // configuration functions
 int init_convert_config(char *configFile);
+void free_convert_config(convert_config *cfg);
 convert_config *init_fill_convert_config(char *configFile);
 convert_config *read_convert_config(char *configFile);
 int write_convert_config(char *configFile, convert_config *cfg);

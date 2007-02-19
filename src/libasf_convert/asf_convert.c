@@ -1097,6 +1097,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
   }
 
+  free_convert_config(cfg);
   return(EXIT_SUCCESS);
 }
 
