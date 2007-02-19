@@ -568,9 +568,9 @@ export_band_image (const char *metadata_file_name,
     }
 
     channel_stats_t red_stats, blue_stats, green_stats;
-    red_stats.hist = red_stats.hist_pdf = NULL;
-    green_stats.hist = green_stats.hist_pdf = NULL;
-    blue_stats.hist = blue_stats.hist_pdf = NULL;
+    red_stats.hist = NULL; red_stats.hist_pdf = NULL;
+    green_stats.hist = NULL; green_stats.hist_pdf = NULL;
+    blue_stats.hist = NULL; blue_stats.hist_pdf = NULL;
 
     if (!md->optical) {
       // Red channel statistics
@@ -852,6 +852,8 @@ export_band_image (const char *metadata_file_name,
 
 	// Get the statistics if necessary
 	channel_stats_t stats;
+        stats.hist = NULL; stats.hist_pdf = NULL;
+
 	if (!md->optical && sample_mapping != NONE) {
 	  asfRequire (sizeof(unsigned char) == 1,
 		      "Size of the unsigned char data type on this machine is "
@@ -944,6 +946,8 @@ export_band_image (const char *metadata_file_name,
 	// Free memory
 	if (float_line) FREE(float_line);
 	if (byte_line) FREE(byte_line);
+        if (stats.hist) gsl_histogram_free(stats.hist);
+        if (stats.hist_pdf) gsl_histogram_free(stats.hist_pdf);
 
 	// Finalize the chosen format
 	if (format == TIF || format == GEOTIFF)

@@ -305,6 +305,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
       put_complexFloat_line(fpOut, meta, ii, out_cpx_buf);
       asfLineMeter(ii,nl);
     }
+    FREE(out_cpx_buf);
+    FREE(cpx_buf);
   }
   /******************* END COMPLEX (level 1) DATA SECTION ********************/
 
