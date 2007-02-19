@@ -3,6 +3,23 @@
 #include "asf_nan.h"
 #include "asf_raster.h"
 
+static gsl_histogram *calc_histogram (float *data, long long pixel_count,
+                                      double min, double max, size_t num_bins)
+{
+  // Guard against weird data
+  if(!(min<max)) max = min + 1;
+
+  // Initialize the histogram.
+  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+  gsl_histogram_set_ranges_uniform (hist, min, max);
+
+  // Populate the histogram over every sample in the image.
+  long long ii;
+  for (ii=0; ii<pixel_count; ii++)
+    gsl_histogram_increment (hist, data[ii]);
+
+  return hist;
+}
 
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
@@ -32,21 +49,6 @@ void calc_stats_from_file(const char *inFile, char *band, double mask, double *m
   FREE(data);
   
   return;
-}
-
-gsl_histogram *calc_histogram (float *data, long long pixel_count,
-			       double min, double max, size_t num_bins)
-{
-  // Initialize the histogram.
-  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
-  gsl_histogram_set_ranges_uniform (hist, min, max);
-
-  // Populate the histogram over every sample in the image.
-  long long ii;
-  for (ii=0; ii<pixel_count; ii++)
-    gsl_histogram_increment (hist, data[ii]);
-
-  return hist;
 }
 
 /* Calculate minimum, maximum, mean and standard deviation for a floating point

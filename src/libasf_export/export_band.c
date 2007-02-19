@@ -568,6 +568,9 @@ export_band_image (const char *metadata_file_name,
     }
 
     channel_stats_t red_stats, blue_stats, green_stats;
+    red_stats.hist = red_stats.hist_pdf = NULL;
+    green_stats.hist = green_stats.hist_pdf = NULL;
+    blue_stats.hist = blue_stats.hist_pdf = NULL;
 
     if (!md->optical) {
       // Red channel statistics
@@ -776,6 +779,13 @@ export_band_image (const char *metadata_file_name,
       finalize_tiff_file(otif, ogtif, is_geotiff);
     else if (format == JPEG)
       finalize_jpeg_file(ojpeg, &cinfo);
+
+    if (red_stats.hist) gsl_histogram_free(red_stats.hist);
+    if (red_stats.hist_pdf) gsl_histogram_free(red_stats.hist_pdf);
+    if (green_stats.hist) gsl_histogram_free(green_stats.hist);
+    if (green_stats.hist_pdf) gsl_histogram_free(green_stats.hist_pdf);
+    if (blue_stats.hist) gsl_histogram_free(blue_stats.hist);
+    if (blue_stats.hist_pdf) gsl_histogram_free(blue_stats.hist_pdf);
   }
   else { // Single-band image output
 

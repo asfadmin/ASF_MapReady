@@ -191,6 +191,8 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
       }
     }
   }
+  meta_free(meta);
+  FREE(meta_name);
   return band_name;
 }
 
