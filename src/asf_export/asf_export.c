@@ -679,7 +679,8 @@ main (int argc, char *argv[])
     FREE(band_names[ii]);
   }
   FREE(band_names);
-
+  FREE(in_base_name);
+  FREE(output_name);
   exit (EXIT_SUCCESS);
 }
 
