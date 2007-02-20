@@ -982,11 +982,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	meta_parameters *meta;
 	double in_side_length, out_pixel_size;
 	char *tmpFile;
+        int i,n;
 
 	tmpFile = (char *) MALLOC(sizeof(char)*512);
 
 	// Calculate pixel size for generating right size thumbnail
 	meta = meta_read(inFile);
+
 	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
 	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 256;
@@ -1014,9 +1016,25 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
 	check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
 		     "resampling data to thumbnail size (resample)\n");
-        check_return(asf_export(format, scale, tmpFile, outFile),
-                     "exporting thumbnail data file (asf_export)\n");
 
+        if (strlen(cfg->export->rgb) > 0) {
+           char *red, *green, *blue;
+           if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
+               char **bands = find_bands(inFile, 1, red, green, blue, &n);
+               if (n > 0) {
+                   check_return(asf_export_bands(format, scale, TRUE, NULL,
+                                                 tmpFile, outFile, bands),
+                     "exporting thumbnail data file (asf_export), banded\n");
+                   for (i=0; i<n; ++i) FREE(bands[i]);
+                   FREE(bands);
+               }
+           }
+        } else {
+           check_return(asf_export(format, scale, tmpFile, outFile),
+                        "exporting thumbnail data file (asf_export)\n");
+        }
+
+        meta_free(meta);
         free(basename);
     }
 

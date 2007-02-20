@@ -135,7 +135,6 @@ resample_impl(char *infile, char *outfile,
     append_ext_if_needed(imgfile, ".img", NULL);
 
     fpin=fopenImage(infile,"rb");
-    fpout=fopenImage(imgfile,"wb");
 
     metaOut->general->line_count = onl;
     metaOut->general->sample_count = onp;
@@ -168,6 +167,8 @@ resample_impl(char *infile, char *outfile,
     {
         asfPrintStatus("Resampling band: %s\n", band_name[k]);
 
+        fpout=fopenImage(imgfile, k==0 ? "wb" : "ab");
+
         /*--------  Process inbuf to give outbuf ------------------------*/
         for (i = 0; i < onl; i++)
         {
@@ -188,9 +189,11 @@ resample_impl(char *infile, char *outfile,
                 outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk);
             }
 
-            put_float_line(fpout, metaOut, i + k*onl, outbuf);
+            put_float_line(fpout, metaOut, i, outbuf);
             asfLineMeter(i, onl);
         }
+
+        FCLOSE(fpout);
     }
 
     for (i=0; i < metaIn->general->band_count; i++)
@@ -201,7 +204,6 @@ resample_impl(char *infile, char *outfile,
     meta_free(metaIn);
 
     FCLOSE(fpin);                 
-    FCLOSE(fpout);
 
     FREE(inbuf);
     FREE(outbuf);
