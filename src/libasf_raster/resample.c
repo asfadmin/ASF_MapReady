@@ -147,12 +147,17 @@ resample_impl(char *infile, char *outfile,
       /* Write output metadata file */ 
       metaOut->general->x_pixel_size = xpixsiz;
       metaOut->general->y_pixel_size = ypixsiz;
-      metaOut->sar->range_time_per_pixel /= xscalfact;
-      metaOut->sar->azimuth_time_per_pixel /= yscalfact;
-      metaOut->sar->range_doppler_coefficients[1] /= xscalfact;
-      metaOut->sar->range_doppler_coefficients[2] /= xscalfact / xscalfact;
-      metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
-      metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
+      if (metaOut->sar) {
+        metaOut->sar->range_time_per_pixel /= xscalfact;
+        metaOut->sar->azimuth_time_per_pixel /= yscalfact;
+        metaOut->sar->range_doppler_coefficients[1] /= xscalfact;
+        metaOut->sar->range_doppler_coefficients[2] /= xscalfact / xscalfact;
+        metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
+        metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
+      }
+// FIXME: Resample doesn't yet support multi-band!!
+      metaOut->general->band_count = 1;
+      strcpy(metaOut->general->bands, "???");
     }
 
     char *metafile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
@@ -179,7 +184,7 @@ resample_impl(char *infile, char *outfile,
          }
        
        put_float_line(fpout, metaOut, i, outbuf);
-       //asfLineMeter(i, onl);
+       asfLineMeter(i, onl);
       }
        
     //asfPrintStatus("Finished.\n");
