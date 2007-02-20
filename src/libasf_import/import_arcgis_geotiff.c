@@ -1169,6 +1169,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 	      "Failed to write new '.meta' and '.img' files.\n");
 
   // We're now done with the data and metadata.
+  GTIFFree(input_gtif);
+  XTIFFClose(input_tiff);
   meta_free (meta_out);
   float_image_free (image);
 
