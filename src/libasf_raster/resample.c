@@ -138,7 +138,9 @@ resample_impl(char *infile, char *outfile,
 
     metaOut->general->line_count = onl;
     metaOut->general->sample_count = onp;
-    metaOut->general->data_type = REAL32;
+    
+    if (!metaOut->optical)
+        metaOut->general->data_type = REAL32;
 
     if (update_meta)
     {
@@ -168,6 +170,7 @@ resample_impl(char *infile, char *outfile,
         asfPrintStatus("Resampling band: %s\n", band_name[k]);
 
         fpout=fopenImage(imgfile, k==0 ? "wb" : "ab");
+        n_lines = ynsk;
 
         /*--------  Process inbuf to give outbuf ------------------------*/
         for (i = 0; i < onl; i++)
