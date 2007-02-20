@@ -933,7 +933,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           char *red,  *green, *blue;
           if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
               int num_found;
-              char **bands = find_bands(inFile, TRUE, red, green, blue, &num_found);
+              char **bands = find_bands(inFile, TRUE, red, green, blue,
+                                        &num_found);
               if (num_found > 0) {
 		check_return(asf_export_bands(format, scale, TRUE, NULL,
                                                 inFile, outFile, bands),
@@ -944,16 +945,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                   }
                   FREE(bands);
               } else {
-                  asfPrintWarning("The requested bands: %s\n"
-                                  "Were not available in the file: %s\n"
-                                  "Exporting without banding...\n",
-                                  cfg->export->rgb, inFile);
+                  asfPrintError("The requested bands (%s) "
+                                "were not available in the file: %s\n",
+                                cfg->export->rgb, inFile);
                   strcpy(cfg->export->rgb, "");
               }
               FREE(red); FREE(green); FREE(blue);
           } else {
-              asfPrintWarning("Invalid listing of RGB bands: %s\n"
-                              "Exporting without banding...\n", cfg->export->rgb);
+              asfPrintError("Invalid listing of RGB bands: %s\n",
+                            cfg->export->rgb);
               strcpy(cfg->export->rgb, "");
           }
       }
