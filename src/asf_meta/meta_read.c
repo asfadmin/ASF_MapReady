@@ -55,7 +55,7 @@ meta_parameters *meta_read(const char *inName)
 
   FREE(ddr_name);
   FREE(meta_name);
-  
+
   return meta;
 }
 
@@ -66,9 +66,9 @@ meta_parameters *meta_read(const char *inName)
 int meta_is_new_style(const char *file_name)
 {
  /* Maximum line length.  */
-#define MAX_METADATA_LINE 1024 
+#define MAX_METADATA_LINE 1024
  /* Version where new metadata was adopted.  */
-#define NEW_FORMAT_VERSION 1.0 
+#define NEW_FORMAT_VERSION 1.0
   int return_value;		/* Value to be returned.  */
   char *meta_name = appendExt(file_name, ".meta");
   FILE *meta_file = FOPEN(meta_name, "r");
@@ -89,7 +89,7 @@ int meta_is_new_style(const char *file_name)
       }
       /* Note: whitespace in a scanf conversion matches zero or more
          white space characters, %s matches non-white-space.  */
-    } while ( (return_count = sscanf (line, " meta_version: %s \n", 
+    } while ( (return_count = sscanf (line, " meta_version: %s \n",
 				      version_string)) != 1 );
     version = strtod (version_string, &end_ptr);
     if ( *end_ptr != '\0' ) {
@@ -109,7 +109,7 @@ int meta_is_new_style(const char *file_name)
 
   return return_value;
 }
-  
+
 /***************************************************************
  * meta_io_state:
  * Called by meta_io, below, this routine reads/writes
@@ -174,29 +174,29 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		meta_projection *projection = meta->projection = meta_projection_init();
 		coniIO_structOpen(coni,"proj {","Map Projection parameters");
 		coniIO_str  (coni,"geo.proj.","type:",  projection_type,  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
-		if ( !strcmp(projection_type, "UNIVERSAL_TRANSVERSE_MERCATOR") ) 
+		if ( !strcmp(projection_type, "UNIVERSAL_TRANSVERSE_MERCATOR") )
 			projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-		else if ( !strcmp(projection_type, "POLAR_STEREOGRAPHIC") ) 
+		else if ( !strcmp(projection_type, "POLAR_STEREOGRAPHIC") )
 			projection->type = POLAR_STEREOGRAPHIC;
 		else if ( !strcmp(projection_type, "ALBERS_EQUAL_AREA") )
 			projection->type = ALBERS_EQUAL_AREA;
-		else if ( !strcmp(projection_type, "LAMBERT_CONFORMAL_CONIC") ) 
+		else if ( !strcmp(projection_type, "LAMBERT_CONFORMAL_CONIC") )
 			projection->type = LAMBERT_CONFORMAL_CONIC;
-		else if ( !strcmp(projection_type, "LAMBERT_AZIMUTHAL_EQUAL_AREA") ) 
+		else if ( !strcmp(projection_type, "LAMBERT_AZIMUTHAL_EQUAL_AREA") )
 			projection->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
-		else if ( !strcmp(projection_type, "STATE_PLANE") ) 
+		else if ( !strcmp(projection_type, "STATE_PLANE") )
 			projection->type = STATE_PLANE;
-		else if ( !strcmp(projection_type, "SCANSAR_PROJECTION") ) 
+		else if ( !strcmp(projection_type, "SCANSAR_PROJECTION") )
 			projection->type = SCANSAR_PROJECTION;
-		else if ( !strcmp(projection_type, "U") ) 
+		else if ( !strcmp(projection_type, "U") )
 			projection->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-		else if ( !strcmp(projection_type, "P") ) 
+		else if ( !strcmp(projection_type, "P") )
 			projection->type = POLAR_STEREOGRAPHIC;
-		else if ( !strcmp(projection_type, "L") ) 
+		else if ( !strcmp(projection_type, "L") )
 			projection->type = LAMBERT_CONFORMAL_CONIC;
-		else if ( !strcmp(projection_type, "A") ) 
+		else if ( !strcmp(projection_type, "A") )
 			projection->type = SCANSAR_PROJECTION;
-		else if ( !strcmp(projection_type, "G") ) 
+		else if ( !strcmp(projection_type, "G") )
 			projection->type = LAT_LONG_PSEUDO_PROJECTION;
 		else  projection->type = -1;
 		coniIO_double(coni,"geo.proj.","startX:",&projection->startX,"Projection Coordinate at top-left, X direction");
@@ -235,6 +235,13 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		  break;
 		case LAT_LONG_PSEUDO_PROJECTION:
 		  break;
+    // The following several cases get rid of compiler warnings
+                case ALBERS_EQUAL_AREA:
+                case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+                case STATE_PLANE:
+                case UNKNOWN_PROJECTION:
+                default:
+                  break;
 		/*
 		default:
 		  printf("ERROR! Unrecognized map projection code '%c!'\n",projection->type);
@@ -303,7 +310,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 		}
 	    }
 	}
-	
+
 /* Info from ddr (if its there) */
 	if (fileExists(ddrName)) {
 		c_getddr(ddrName, &ddr);
@@ -352,7 +359,7 @@ void meta_read_old(meta_parameters *meta, char *fileName)
 	}
 	general->re_major = (meta->projection) ? meta->projection->re_major : 6378144.0;
 	general->re_minor = (meta->projection) ? meta->projection->re_minor : 6356754.9;
-	
+
 /* Close coni structure */
 	coniClose(coni);
 
@@ -368,7 +375,7 @@ void meta_read_only_ddr(meta_parameters *meta, const char *ddr_name)
 {
 	struct DDR ddr;
 	c_getddr(ddr_name, &ddr);
-	
+
         ddr2meta(&ddr, meta);
 } /* End function meta_read_only_ddr() */
 
@@ -493,7 +500,7 @@ void ddr2meta(struct DDR *ddr, meta_parameters *meta)
 	if (meta->projection && (meta->projection->type != MAGIC_UNSET_CHAR) &&
             meta->sar)
 		meta->sar->image_type = 'P';
-} 
+}
 
 
 
@@ -567,7 +574,7 @@ void meta_new2old(meta_parameters *meta)
  *		else
  *			meta->ifm->lookCenter = MAGIC_UNSET_DOUBLE;
  *	}
- *	else 
+ *	else
  *	{ *Image *is* map projected-- compute earth's eccentricity*
  *		double re = meta->general->re_major;
  *		double rp = meta->general->re_minor;
