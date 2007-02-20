@@ -11,7 +11,7 @@ struct pp_erfin_params {
     double satellite_height; /* earth center to satellite height (PP "rsc") */
     double slant_first; /* slant range to first pixel */
     double slant_last; /* slant range to last pixel */
-    double nominal_pixsize_range;        
+    double nominal_pixsize_range;
 };
 
 static double getObjective(double R, void *params)
@@ -23,13 +23,13 @@ static double getObjective(double R, void *params)
     double sf=p->slant_first;
     double HHRR=H*H + R*R;
     /* Convert slant_first to ground range */
-    double g=R*acos( (HHRR - sf*sf) / (2*H*R)); 
+    double g=R*acos( (HHRR - sf*sf) / (2*H*R));
     /* Add width of CEOS image in ground range */
     g += (p->npixels-1) * p->nominal_pixsize_range;
     /* Compute slant range to last pixel */
     double slant_last_R=sqrt(HHRR - 2*H*R*cos(g/R));
     /* Compare with slant_last from CEOS */
-    return slant_last_R-p->slant_last;   
+    return slant_last_R-p->slant_last;
 }
 
 void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
@@ -93,7 +93,7 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
                         "Proceeding using the nadir radius: %.3f m\n"
                         "Starting points were: lo: %.3f -> %.4f\n"
                         "                      hi: %.3f -> %.4f\n",
-                        iter, pp_earth_radius, 
+                        iter, pp_earth_radius,
                         getObjective(pp_earth_radius, (void*)&params),
                         nadir_radius,
                         lo, getObjective(lo, (void*)&params),
@@ -108,16 +108,19 @@ void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
     //printf("PP seconds per azimuth line: %.9f s/line\n",seconds_per_azimuth_line);
     //printf("   (for comparison) PP interpolated lines per second: %.3f lines/s\n",1.0/seconds_per_azimuth_line);
     //printf("   (for comparison) FACDR swath velocity: %.3f m/s\n",facdr.swathvel);
-    
+
     //double R=pp_earth_radius;
     //double H=params.satellite_height;
     //double HHRR=H*H + R*R;
     //double slant=0.5*(params.slant_first+params.slant_last);
-    //double rg_center=R*acos( (HHRR - slant*slant) / (2*H*R)); 
+    //double rg_center=R*acos( (HHRR - slant*slant) / (2*H*R));
     //double vs=sqrt(facdr.scxvel*facdr.scxvel + facdr.scyvel*facdr.scyvel + facdr.sczvel*facdr.sczvel);
     //double vsg = vs * pp_earth_radius/params.satellite_height*cos(rg_center/pp_earth_radius);
-    
+
     //printf("   (for comparison) PP-style recalc velocity: %.3f m/s\n",vsg);
 
-    *corrected_azimuth_time_per_pixel = seconds_per_azimuth_line;  
+    *corrected_azimuth_time_per_pixel = seconds_per_azimuth_line;
+
+    // Free the solver
+    gsl_root_fsolver_free(s);
 }
