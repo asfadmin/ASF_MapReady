@@ -40,9 +40,9 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Open the structure that contains the geotiff keys.
   GTIF *input_gtif = GTIFNew (input_tiff);
-  asfRequire (input_gtif != NULL, 
+  asfRequire (input_gtif != NULL,
 	      "Error reading GeoTIFF keys from input TIFF file.\n");
- 
+
   // Counts holding the size of the returns from gt_methods.get method
   // calls.  The geo_keyp.h header has the interface specification for
   // this method.  gt_methods.get doesn't seem to be documented as
@@ -64,7 +64,7 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
   // points don't make sense with the pixel scale option, which we
   // need).
   double *tie_point;
-  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count, 
+  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
 			       &tie_point);
   assert (count == 6);
 
@@ -79,7 +79,7 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
   short model_type;
   int read_count
     = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");  
+  asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
   asfRequire (model_type == ModelTypeProjected, "Input GeoTIFF key "
 	      "GTModelTypeGeoKey does not have the value "
 	      "'ModelTypeProjected' expected for this input file type.\n");
@@ -98,10 +98,10 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
   GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, max_citation_length);
   // Ensure the citation is at least eventually terminated somewhere.
   citation[max_citation_length] = '\0';
- 
+
   // Verify that the linear units are as expected for this projection type.
   short unit_type;
-  read_count 
+  read_count
     = GTIFKeyGet (input_gtif, GeogLinearUnitsGeoKey, &unit_type, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
   asfRequire (unit_type == Linear_Meter, "Input GeoTIFF key "
@@ -184,12 +184,12 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
   mg->center_longitude = MAGIC_UNSET_DOUBLE;
 
   // We confirmed above that the GEOID model used is WGS84.
-  spheroid_axes_lengths (WGS84_SPHEROID, &mg->re_major, &mg->re_minor);  
+  spheroid_axes_lengths (WGS84_SPHEROID, &mg->re_major, &mg->re_minor);
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
 
   mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-  
+
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_map_x;
   mp->startY = (0.0 - raster_tp_y) * mg->y_pixel_size + tp_map_y;
 
@@ -210,7 +210,7 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // No way to tell.
   mp->height = MAGIC_UNSET_DOUBLE;
-  
+
   mp->param.utm.zone = zone_number;
   mp->param.utm.false_easting = 500000.0;
   if ( hemisphere_code == 'N' ) {
@@ -234,10 +234,10 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
   ml->lat_end_near_range = MAGIC_UNSET_DOUBLE;
   ml->lon_end_near_range = MAGIC_UNSET_DOUBLE;
   ml->lat_end_far_range = MAGIC_UNSET_DOUBLE;
-  ml->lon_end_far_range = MAGIC_UNSET_DOUBLE;  
+  ml->lon_end_far_range = MAGIC_UNSET_DOUBLE;
 
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
-  asfRequire (return_code == 0, 
+  asfRequire (return_code == 0,
 	      "Failed to write new '.meta' and '.img' files.");
 
 #ifdef DEBUG_IMPORT_ASF_UTM_GEOTIFF_JPEG_OUTPUT
@@ -254,17 +254,19 @@ import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...)
 						   "_debug.jpeg");
     g_print ("Making JPEG of output image named %s for debugging...\n",
 	     out_data_file_jpeg->str);
-    float_image_export_as_jpeg_with_mask_interval 
+    float_image_export_as_jpeg_with_mask_interval
       (image, out_data_file_jpeg->str, width > height ? width : height,
        -FLT_MAX, -1e16);
     g_string_free (out_data_file_jpeg, TRUE);
   }
-#endif  
+#endif
 
   // We're now done with the data and metadata.
+  GTIFFree(input_gtif);
+  XTIFFClose(input_tiff);
   meta_free (meta_out);
   float_image_free (image);
 
   // We must be done with the citation string too :)
-  FREE (citation);  
+  FREE (citation);
 }
