@@ -211,24 +211,30 @@ do_thumbnail (const gchar *file)
 static char *build_band_list(const char *file)
 {
     // this only applies to ALOS data -- other types we'll just return "-"
-    if (has_prepension(file))
+    int pre = has_prepension(file);
+    if (pre > 0)
     {
         int ii,nBands;
         char *ret;
+        char filename[255], dirname[255];
 
         char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
         for (ii=0; ii<MAX_BANDS; ++ii)
-            dataName[nBands] = MALLOC(sizeof(char)*255);
-        
-        get_ceos_data_name(file, dataName, &nBands);
+            dataName[ii] = MALLOC(sizeof(char)*255);
+
+        split_dir_and_file(file, dirname, filename);
+        char *s = MALLOC(sizeof(char)*(strlen(file)+1));
+        sprintf(s, "%s%s", dirname, filename + pre);
+        get_ceos_data_name(s, dataName, &nBands);
         
         if (nBands <= 1) {
             // not multiband
             ret = STRDUP("-");
         }
         else {
-            // 8 characters per band, plus ", " means 10 characters allocated per band
-            char *ret = MALLOC(sizeof(char)*(nBands*10+2));
+            // 8 characters per band, plus ", " means 10 characters
+            // allocated per band, plus 2 extra just for fun
+            ret = MALLOC(sizeof(char)*(nBands*10+2));
 
             // kludge: assume that band names come between 1st & 2nd dashes (-)
             for (ii=0; ii<nBands; ++ii) {
@@ -247,9 +253,9 @@ static char *build_band_list(const char *file)
                 *q = '\0';
 
                 if (ii==0)
-                    strcpy(ret, p);
+                    strcpy(ret, p+1);
                 else
-                    strcat(ret, p);
+                    strcat(ret, p+1);
                 
                 if (ii < nBands - 1)
                     strcat(ret, ", ");
@@ -258,7 +264,10 @@ static char *build_band_list(const char *file)
             }
         }
 
-        FREE_BANDS(dataName);
+        for (ii=0; ii<MAX_BANDS; ++ii)
+            FREE(dataName[ii]);
+        FREE(dataName);
+
         return ret;
     }
     else
