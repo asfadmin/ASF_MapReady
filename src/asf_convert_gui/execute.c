@@ -277,6 +277,18 @@ static char *check_for_error(gchar * txt)
                 (strstr(p, "Error") != NULL ||
                 strstr(p, "ERROR") != NULL))
             {
+                // some of the more common cases here
+                if (strstr(p, "Out of Memory") != NULL)
+                   return STRDUP("Error: Out of Memory");
+                else if (strstr(p, "Cannot Open File") != NULL)
+                   return STRDUP("Error: Cannot Open File");
+                else if (strstr(p, "Read past end of file") != NULL)
+                   return STRDUP("Error: Read past end of file");
+                else if (strstr(p, "Error reading file") != NULL)
+                   return STRDUP("Error reading file"); 
+                else if (strstr(p, "writing file") != NULL)
+                   return STRDUP("Error writing file");
+
                 *q = '\n';
                
                 // grab the next non-empty line
@@ -302,6 +314,9 @@ static char *check_for_error(gchar * txt)
                     }
                 }
                 while (*p != '*' && ++n<5); // * flags the end of the error message
+
+                // coudln't pull out more error infomation...
+                return STRDUP("Error");
             }
 
             *q = '\n';
