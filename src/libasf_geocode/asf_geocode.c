@@ -1075,7 +1075,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
                         ret2 ? "meta_get_lineSamp returned error" : "");
       }
       if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
-          printf("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
+          asfPrintWarning("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
                    "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                  strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
 
