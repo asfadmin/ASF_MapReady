@@ -93,8 +93,7 @@ resample_impl(char *infile, char *outfile,
 	     s_line,		    /* start line for input file      */
              xi = 0,                /* inbuf int x sample #           */
              yi = 0,                /* inbuf int y line #             */
-             j;                     /* loop counters                  */
-    int      i;
+             i,j,k;                 /* loop counters                  */
     float    xpixsiz,               /* range pixel size               */
              ypixsiz,               /* azimuth pixel size             */
              xbase,ybase,           /* base sample/line               */
@@ -155,39 +154,48 @@ resample_impl(char *infile, char *outfile,
         metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
         metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
       }
-// FIXME: Resample doesn't yet support multi-band!!
-      metaOut->general->band_count = 1;
-      strcpy(metaOut->general->bands, "???");
     }
+
+    char **band_name = extract_band_names(metaIn->general->bands,
+                                          metaIn->general->band_count);
 
     char *metafile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
     strcpy(metafile, outfile);
     append_ext_if_needed(metafile, ".meta", NULL);
     meta_write(metaOut, metafile);
 
-  /*--------  Process inbuf to give outbuf ------------------------*/
-    for (i = 0; i < onl; i++)
-      {
-       /*--------- Read next set of lines for kernel ---------------*/
-       yi = i * yrate + ybase + 0.5;
-       s_line = yi-yhalf;
-       if (s_line < 0) s_line = 0;
-       if (nl < ynsk+s_line) n_lines = nl-s_line;
-      
-       get_float_lines(fpin, metaIn, s_line, n_lines, inbuf);
+    for (k = 0; k < metaIn->general->band_count; ++k)
+    {
+        asfPrintStatus("Resampling band: %s\n", band_name[k]);
 
-       /*--------- Produce the output line and write to disk -------*/ 
-       for (j = 0; j < onp; j++)
-         {
-          xi = j * xrate + xbase + 0.5;
-          outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk);
-         }
-       
-       put_float_line(fpout, metaOut, i, outbuf);
-       asfLineMeter(i, onl);
-      }
-       
-    //asfPrintStatus("Finished.\n");
+        /*--------  Process inbuf to give outbuf ------------------------*/
+        for (i = 0; i < onl; i++)
+        {
+            /*--------- Read next set of lines for kernel ---------------*/
+            yi = i * yrate + ybase + 0.5;
+            s_line = yi-yhalf;
+            if (s_line < 0) s_line = 0;
+            if (nl < ynsk+s_line) n_lines = nl-s_line;
+
+            s_line += k*nl;
+
+            get_float_lines(fpin, metaIn, s_line, n_lines, inbuf);
+
+            /*--------- Produce the output line and write to disk -------*/ 
+            for (j = 0; j < onp; j++)
+            {
+                xi = j * xrate + xbase + 0.5;
+                outbuf[j] = filter(inbuf,n_lines,np,xi,xnsk);
+            }
+
+            put_float_line(fpout, metaOut, i + k*onl, outbuf);
+            asfLineMeter(i, onl);
+        }
+    }
+
+    for (i=0; i < metaIn->general->band_count; i++)
+        FREE(band_name[i]);
+    FREE(band_name);
 
     meta_free(metaOut);
     meta_free(metaIn);
