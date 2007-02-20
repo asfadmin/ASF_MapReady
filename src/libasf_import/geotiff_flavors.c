@@ -50,6 +50,8 @@ detect_geotiff_flavor (const char *file)
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
     if ( model_type == ModelTypeGeographic ) {
+      GTIFFree(gtif);
+      XTIFFClose(tiff);
       return import_usgs_seamless;
     }
     // If the TIFF claims that a projection exists OR if the projection type
@@ -82,6 +84,8 @@ detect_geotiff_flavor (const char *file)
           case PS:      // Polar Stereographic
           case LAMAZ:   // Lambert Azimuthal Equal Area
             g_string_free(inGeotiffAuxName, TRUE);
+            GTIFFree(gtif);
+            XTIFFClose(tiff);
             return import_arcgis_geotiff;
             break;
           case DHFA_UNKNOWN_PROJECTION:
@@ -89,6 +93,8 @@ detect_geotiff_flavor (const char *file)
             asfPrintWarning("\nUnable to determine projection type from\n"
                 "ArcGIS metadata (.aux) file.\n");
             g_string_free(inGeotiffAuxName, TRUE);
+            GTIFFree(gtif);
+            XTIFFClose(tiff);
             return import_arcgis_geotiff;
             break;
         }
@@ -119,9 +125,13 @@ detect_geotiff_flavor (const char *file)
   assert (return_code == 0);
   return_code = regexec (&asf_utm_citation_regex, citation, 0, NULL, 0);
   if ( return_code == 0 ) {
+    GTIFFree(gtif);
+    XTIFFClose(tiff);
     return import_asf_utm_geotiff;
   }
 
   // Couldn't determine any flavor we know.
+  GTIFFree(gtif);
+  XTIFFClose(tiff);
   return NULL;
 }
