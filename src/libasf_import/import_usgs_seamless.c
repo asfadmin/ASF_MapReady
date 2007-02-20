@@ -331,6 +331,8 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 #endif
 
   // We're now done with the data and metadata.
+  GTIFFree(input_gtif);
+  XTIFFClose(input_tiff);
   meta_free (meta_out);
   float_image_free (image);
 
