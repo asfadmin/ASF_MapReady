@@ -164,6 +164,7 @@ typedef struct
 
 extern int COL_DATA_FILE;
 extern int COL_INPUT_THUMBNAIL;
+extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
 extern int COL_STATUS;
 extern int COL_LOG;

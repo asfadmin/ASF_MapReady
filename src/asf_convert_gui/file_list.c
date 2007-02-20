@@ -4,9 +4,11 @@
 #include "asf_convert_gui.h"
 #include "ceos_thumbnail.h"
 #include "asf.h"
+#include "get_ceos_names.h"
 
 int COL_DATA_FILE;
 int COL_INPUT_THUMBNAIL;
+int COL_BAND_LIST;
 int COL_OUTPUT_FILE;
 int COL_STATUS;
 int COL_LOG;
@@ -206,6 +208,65 @@ do_thumbnail (const gchar *file)
 
 #endif
 
+static char *build_band_list(const char *file)
+{
+    // this only applies to ALOS data -- other types we'll just return "-"
+    if (has_prepension(file))
+    {
+        int ii,nBands;
+        char *ret;
+
+        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
+        for (ii=0; ii<MAX_BANDS; ++ii)
+            dataName[nBands] = MALLOC(sizeof(char)*255);
+        
+        get_ceos_data_name(file, dataName, &nBands);
+        
+        if (nBands <= 1) {
+            // not multiband
+            ret = STRDUP("-");
+        }
+        else {
+            // 8 characters per band, plus ", " means 10 characters allocated per band
+            char *ret = MALLOC(sizeof(char)*(nBands*10+2));
+
+            // kludge: assume that band names come between 1st & 2nd dashes (-)
+            for (ii=0; ii<nBands; ++ii) {
+                char *basename = get_basename(dataName[ii]);
+                
+                // point to first -, or the start of the string
+                char *p = strchr(basename, '-');
+                if (!p) p = basename;
+
+                // point to second -, or the end of the string
+                char *q = strchr(p + 1, '-');
+                if (!q) q = basename + strlen(basename);
+
+                // if more than 8 characters, just use the first 8.
+                if (q-p > 8) q = p + 8;
+                *q = '\0';
+
+                if (ii==0)
+                    strcpy(ret, p);
+                else
+                    strcat(ret, p);
+                
+                if (ii < nBands - 1)
+                    strcat(ret, ", ");
+
+                FREE(basename);
+            }
+        }
+
+        FREE_BANDS(dataName);
+        return ret;
+    }
+    else
+    {
+        return STRDUP("-");
+    }
+}
+
 gboolean
 add_to_files_list(const gchar * data_file)
 {
@@ -318,10 +379,12 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
         gchar * out_name_full;
         
         files_list = get_widget_checked("files_list");
-        
+        char *bands = build_band_list(data_file);
+
         gtk_list_store_append(list_store, iter_p);
         gtk_list_store_set(list_store, iter_p,
                            COL_DATA_FILE, data_file,
+                           COL_BAND_LIST, bands,
                            COL_STATUS, "-",
                            COL_LOG, "Has not been processed yet.",
                            -1);
@@ -329,7 +392,8 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
         out_name_full = determine_default_output_file_name(data_file);
         set_output_name(iter_p, out_name_full);
         g_free(out_name_full);
-        
+        FREE(bands);
+
         queue_thumbnail(data_file);
         
         /* Select the file automatically if this is the first
@@ -506,18 +570,20 @@ setup_files_list(int argc, char *argv[])
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    list_store = gtk_list_store_new(5, 
+    list_store = gtk_list_store_new(6, 
                                     G_TYPE_STRING, 
                                     GDK_TYPE_PIXBUF,
+                                    G_TYPE_STRING, 
                                     G_TYPE_STRING, 
                                     G_TYPE_STRING,
                                     G_TYPE_STRING);
     
     COL_DATA_FILE = 0;
     COL_INPUT_THUMBNAIL = 1;
-    COL_OUTPUT_FILE = 2;
-    COL_STATUS = 3;
-    COL_LOG = 4;
+    COL_BAND_LIST = 2;
+    COL_OUTPUT_FILE = 3;
+    COL_STATUS = 4;
+    COL_LOG = 5;
 
     completed_list_store = gtk_list_store_new(6,
                                               G_TYPE_STRING, 
@@ -573,6 +639,15 @@ setup_files_list(int argc, char *argv[])
     g_signal_connect (files_list, "scroll-event",
                       G_CALLBACK (files_list_scroll_event_handler), NULL);
 
+    /* Next Column: Band List */
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Bands");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
+    renderer = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, renderer, TRUE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_BAND_LIST);
+
     /* Next Column: Output File Name */
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Output File");
@@ -623,7 +698,7 @@ setup_files_list(int argc, char *argv[])
         gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list)),
         GTK_SELECTION_MULTIPLE);
 
-/*** Second, the "pending" files list ****/
+/*** Second, the "completed" files list ****/
     GtkWidget *completed_files_list =
         get_widget_checked("completed_files_list");
 
