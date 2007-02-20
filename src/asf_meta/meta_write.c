@@ -30,6 +30,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
     file_name_with_extension = appendExt(file_name, ".hdr");
     envi_header *envi = meta2envi(meta);
     write_envi_header(file_name_with_extension, meta, envi);
+    FREE(envi);
   }
 
   FREE(file_name_with_extension);
@@ -187,7 +188,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
   /* SAR block.  */
   if (meta->sar) {
     meta_put_string(fp,"sar {","","Begin parameters used specifically in SAR imaging");
-    meta_put_string(fp,"polarization:",meta->sar->polarization, 
+    meta_put_string(fp,"polarization:",meta->sar->polarization,
 		    "Signal polarization");
     meta_put_char  (fp,"image_type:", meta->sar->image_type,
 		    "[S=slant range; G=ground range; P=map projected; R=georeferenced]");
@@ -252,15 +253,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
     }
     meta_put_string(fp,"}","","End sar");
   }
-  
+
   if (meta->optical) {
     meta_put_string(fp,"optical {","","Begin parameters used specifically in "
 		    "optical imaging");
-    meta_put_string(fp,"pointing_direction:",meta->optical->pointing_direction, 
+    meta_put_string(fp,"pointing_direction:",meta->optical->pointing_direction,
 		    "Pointing direction of the sensor");
     meta_put_double(fp,"off_nadir_angle:",meta->optical->off_nadir_angle,
 		    "Off-nadir angle of the sensor [degrees]");
-    meta_put_string(fp,"correction_level:",meta->optical->correction_level, 
+    meta_put_string(fp,"correction_level:",meta->optical->correction_level,
 		    "N - uncorr, R - georef, G - geocoded, D - DEM corr");
     meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,
 		    "Cloud cover percentage [%]");
@@ -472,7 +473,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_double(fp,"false_northing:",
 			meta->projection->param.lamcc.false_northing,
 			"False northing [m]");
-	meta_put_double(fp,"scale_factor:", 
+	meta_put_double(fp,"scale_factor:",
 			meta->projection->param.lamcc.scale_factor,
 			"Scaling factor");
       }
@@ -486,7 +487,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
 	meta_put_double(fp,"false_easting:",
 			meta->projection->param.ps.false_easting, "False easting [m]");
 	meta_put_double(fp,"false_northing:",
-			meta->projection->param.ps.false_northing, 
+			meta->projection->param.ps.false_northing,
 			"False northing [m]");
       }
       meta_put_string(fp,"}","","End ps");
@@ -688,7 +689,7 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
         oldproj='G';
         break;
       default: ; /* Don't worry about missing projection types--just leave field blank */
-      /* 
+      /*
         printf("ERROR! Unrecognized map projection code '%c' in function '%s'; program exitting.\n",
                 proj->type, "meta_write_old");
         exit(EXIT_FAILURE);*/

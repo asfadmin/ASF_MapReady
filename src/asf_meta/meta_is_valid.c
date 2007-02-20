@@ -33,6 +33,8 @@ int meta_is_valid_int(int value)
 /*******************************************************************************
  * meta_is_valid_double:
  *   tests to see if the value is real (not nan or +/- inf) */
+ // FIXME:  Using isfinite() rather than finite() would probably get rid of the
+ // compiler warning and would work as well...
 int meta_is_valid_double(double value)
 {
 	return finite(value);
