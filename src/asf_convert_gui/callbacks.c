@@ -218,21 +218,6 @@ input_data_format_combobox_changed()
 }
 
 void
-rgb_checkbutton_toggle()
-{
-    GtkWidget *rgb_checkbutton, *rgb_hbox;
-    gboolean is_checked;
-
-    rgb_checkbutton = get_widget_checked("rgb_checkbutton");
-    rgb_hbox = get_widget_checked("rgb_hbox");
-
-    is_checked =
-        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rgb_checkbutton));
-
-    gtk_widget_set_sensitive(rgb_hbox, is_checked);
-}
-
-void
 output_bytes_checkbutton_toggle()
 {
     GtkWidget *output_bytes_checkbutton,
@@ -274,43 +259,32 @@ export_checkbutton_toggle()
         *output_bytes_checkbutton,
         *scaling_method_combobox,
         *scaling_method_label,
-        *rgb_checkbutton,
-        *rgb_hbox;
+        *rb_all,
+        *rb_rgb,
+        *rgb_vbox;
     
     gint output_format;
-    gboolean export_checked;
 
-    export_checkbutton =
-        get_widget_checked("export_checkbutton");
+    export_checkbutton = get_widget_checked("export_checkbutton");
 
-    export_checked =
+    gboolean export_checked =
         gtk_toggle_button_get_active(
-        GTK_TOGGLE_BUTTON(export_checkbutton));
+            GTK_TOGGLE_BUTTON(export_checkbutton));
 
-    output_format_combobox = 
-        get_widget_checked("output_format_combobox");
-
-    output_bytes_checkbutton =
-        get_widget_checked("output_bytes_checkbutton");
-
-    scaling_method_combobox =
-        get_widget_checked("scaling_method_combobox");
-
-    scaling_method_label =
-        get_widget_checked("scaling_method_label");
-
-    rgb_checkbutton =
-        get_widget_checked("rgb_checkbutton");
-
-    rgb_hbox =
-        get_widget_checked("rgb_hbox");
+    output_format_combobox = get_widget_checked("output_format_combobox");
+    output_bytes_checkbutton = get_widget_checked("output_bytes_checkbutton");
+    scaling_method_combobox = get_widget_checked("scaling_method_combobox");
+    scaling_method_label = get_widget_checked("scaling_method_label");
+    rb_rgb = get_widget_checked("rb_rgb");
+    rb_all = get_widget_checked("rb_all");
+    rgb_vbox = get_widget_checked("rgb_vbox");
 
     if (export_checked)
     {
         gtk_widget_set_sensitive(output_format_combobox, TRUE);
-
+        
         output_format = get_combo_box_item(output_format_combobox);
-
+        
         switch (output_format)
         {
         default:
@@ -337,9 +311,6 @@ export_checkbutton_toggle()
             output_bytes_checkbutton_toggle();
             break;
         }
-
-        gtk_widget_set_sensitive(rgb_checkbutton, TRUE);
-        rgb_checkbutton_toggle();
     }
     else
     {
@@ -347,9 +318,11 @@ export_checkbutton_toggle()
         gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
         gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
         gtk_widget_set_sensitive(scaling_method_label, FALSE);
-        gtk_widget_set_sensitive(rgb_checkbutton, FALSE);
-        gtk_widget_set_sensitive(rgb_hbox, FALSE);
     }
+
+    gtk_widget_set_sensitive(rb_all, export_checked);
+    gtk_widget_set_sensitive(rb_rgb, export_checked);
+    gtk_widget_set_sensitive(rgb_vbox, export_checked);
 
     update_all_extensions();
 }
@@ -444,13 +417,6 @@ on_pgm_activate(GtkWidget *widget)
 #endif
 
 SIGNAL_CALLBACK void
-on_rgb_checkbutton_toggled(GtkWidget *widget)
-{
-    rgb_checkbutton_toggle();
-    update_summary();
-}
-
-SIGNAL_CALLBACK void
 on_latitude_checkbutton_toggled(GtkWidget *widget)
 {
     latitude_checkbutton_toggle();
@@ -530,3 +496,126 @@ on_clear_button_clicked(GtkWidget *widget)
 {
     gtk_list_store_clear(completed_list_store);
 }
+
+void rgb_combo_box_setup()
+{
+    rb_select("rb_truecolor", TRUE);
+    rb_select("rb_falsecolor", FALSE);
+    rb_select("rb_user_defined", FALSE);
+
+    rb_select("rb_radar", TRUE);
+    rb_select("rb_optical", FALSE);
+
+    rb_select("rb_all", TRUE);
+    rb_select("rb_rgb", FALSE);
+
+    rgb_settings_changed();
+}
+
+void rgb_settings_changed()
+{
+    GtkWidget *rb_rgb = get_widget_checked("rb_rgb");
+    GtkWidget *rgb_vbox = get_widget_checked("rgb_vbox");
+
+    gboolean is_rgb = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_rgb));
+    gtk_widget_set_sensitive(rgb_vbox, is_rgb);
+
+    if (is_rgb)
+    {
+        // "Export Multiple Bands in a single RGB Image"
+        GtkWidget *rb_radar = get_widget_checked("rb_radar");
+        GtkWidget *radar_vbox = get_widget_checked("radar_vbox");
+        GtkWidget *optical_vbox = get_widget_checked("optical_vbox");
+        
+        gboolean is_radar = gtk_toggle_button_get_active(
+            GTK_TOGGLE_BUTTON(rb_radar));
+
+        gtk_widget_set_sensitive(radar_vbox, is_radar);
+        gtk_widget_set_sensitive(optical_vbox, !is_radar);
+
+        if (!is_radar)
+        {
+            GtkWidget *rb_user_defined = get_widget_checked("rb_user_defined");
+            GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
+            GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
+
+            int is_user_defined = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_user_defined));
+            int is_truecolor = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_truecolor));
+            int is_falsecolor = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_falsecolor));
+            g_assert(is_user_defined + is_truecolor + is_falsecolor == 1);
+
+            GtkWidget *optical_bands_hbox =
+                get_widget_checked("optical_bands_hbox");
+
+            gtk_widget_set_sensitive(optical_bands_hbox, is_user_defined);
+
+            if (is_truecolor) {
+                set_combo_box_item_checked("red_optical_combo", 2);
+                set_combo_box_item_checked("green_optical_combo", 1);
+                set_combo_box_item_checked("blue_optical_combo", 0);
+            } else if (is_falsecolor) {
+                set_combo_box_item_checked("red_optical_combo", 3);
+                set_combo_box_item_checked("green_optical_combo", 2);
+                set_combo_box_item_checked("blue_optical_combo", 1);
+            }
+        }
+    }
+    else
+    {
+        // "Export All Bands as Separate Images"
+        // don't need to do anything, leave settings as they are (disabled)
+    }
+}
+
+SIGNAL_CALLBACK void
+on_rb_all_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_rgb_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_radar_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_optical_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_truecolor_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_falsecolor_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_user_defined_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+

@@ -124,6 +124,9 @@ main(int argc, char **argv)
     default_to_terrcorr_on();
     terrcorr_options_changed();
 
+    /* set up the rgb stuff on the export tab */
+    rgb_combo_box_setup();
+
     gtk_main ();
 
     if (settings_on_execute)

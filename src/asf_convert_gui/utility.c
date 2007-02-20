@@ -9,9 +9,13 @@ static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
 
 void setup_band_comboboxes()
 {
-    set_combobox_entry_maxlen("rgb_band1_comboboxentry", 8);
-    set_combobox_entry_maxlen("rgb_band2_comboboxentry", 8);
-    set_combobox_entry_maxlen("rgb_band3_comboboxentry", 8);
+    set_combobox_entry_maxlen("red_optical_combo", 8);
+    set_combobox_entry_maxlen("green_optical_combo", 8);
+    set_combobox_entry_maxlen("blue_optical_combo", 8);
+
+    set_combobox_entry_maxlen("red_radar_combo", 8);
+    set_combobox_entry_maxlen("green_radar_combo", 8);
+    set_combobox_entry_maxlen("blue_radar_combo", 8);
 }
 
 void
@@ -22,6 +26,20 @@ set_combo_box_item(GtkWidget * drop_down_list, gint index)
 #else
     gtk_combo_box_set_active(GTK_COMBO_BOX(drop_down_list), index);
 #endif
+}
+
+void
+set_combo_box_item_checked(const char *widget_name, gint index)
+{
+    GtkWidget *ddl = get_widget_checked(widget_name);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(ddl), index);
+}
+
+void
+rb_select(const char *widget_name, gboolean is_on)
+{
+    GtkWidget *rb = get_widget_checked(widget_name);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb), is_on);
 }
 
 gint

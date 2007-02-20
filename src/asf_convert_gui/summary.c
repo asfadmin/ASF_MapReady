@@ -260,39 +260,48 @@ void update_summary()
             strcat(text, "TIFF");
             break;
         }
+
+        if (s->output_bytes)
+        {
+            strcat(text, " (byte)\n   Scaling Method: ");
+            switch (s->scaling_method)
+            {
+                default:
+                case SCALING_METHOD_SIGMA:
+                    strcat(text, "Sigma");
+                    break;
+                    
+                case SCALING_METHOD_MINMAX:
+                    strcat(text, "MinMax");
+                    break;
+                    
+                case SCALING_METHOD_TRUNCATE:
+                    strcat(text, "Truncate");
+                    break;
+                    
+                case SCALING_METHOD_HISTOGRAM_EQUALIZE:
+                    strcat(text, "Histogram Equalize");
+                    break;
+            }
+            //strcat(text, "\n");
+        }
+        else
+        {
+            strcat(text, " (float)\n");
+        }
+
+        if (s->export_bands)
+        {
+            sprintf(text, "%s\n   RGB Banding: %s,%s,%s\n", text,
+                    strlen(s->red) > 0 ? s->red : "-",
+                    strlen(s->green) > 0 ? s->green : "-",
+                    strlen(s->blue) > 0 ? s->blue : "-");
+        }
+
     }
     else
     {
         strcat(text, "<none>\n");
-    }
-
-    if (s->output_bytes)
-    {
-        strcat(text, " (byte)\n   Scaling Method: ");
-        switch (s->scaling_method)
-        {
-        default:
-        case SCALING_METHOD_SIGMA:
-            strcat(text, "Sigma");
-            break;
-
-        case SCALING_METHOD_MINMAX:
-            strcat(text, "MinMax");
-            break;
-
-        case SCALING_METHOD_TRUNCATE:
-            strcat(text, "Truncate");
-            break;
-
-        case SCALING_METHOD_HISTOGRAM_EQUALIZE:
-            strcat(text, "Histogram Equalize");
-            break;
-        }
-        //strcat(text, "\n");
-    }
-    else
-    {
-        strcat(text, " (float)\n");
     }
 
     summary_label = get_widget_checked("summary_label");

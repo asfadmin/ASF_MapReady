@@ -145,13 +145,55 @@ settings_apply_to_gui(const Settings * s)
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
 
         if (s->export_bands) {
-            set_combo_box_entry_item("rgb_band1_comboboxentry", s->red);
-            set_combo_box_entry_item("rgb_band2_comboboxentry", s->green);
-            set_combo_box_entry_item("rgb_band3_comboboxentry", s->blue);
+            if (strcmp(s->red, "3") == 0 &&
+                strcmp(s->green, "2") == 0 &&
+                strcmp(s->blue, "1") == 0)
+            {
+                // true color
+                rb_select("rb_truecolor", TRUE);
+                rb_select("rb_optical", TRUE);
+                rb_select("rb_rgb", TRUE);
+                rgb_settings_changed();
+            }
+            else if (strcmp(s->red, "4") == 0 &&
+                strcmp(s->green, "3") == 0 &&
+                strcmp(s->blue, "2") == 0)
+            {
+                // false color
+                rb_select("rb_falsecolor", TRUE);
+                rb_select("rb_optical", TRUE);
+                rb_select("rb_rgb", TRUE);
+                rgb_settings_changed();
+            }
+            else if (strcmp(s->red, "1") == 0 ||
+                     strcmp(s->red, "2") == 0 ||
+                     strcmp(s->red, "3") == 0 ||
+                     strcmp(s->red, "4") == 0)
+            {
+                // optical
+                rb_select("rb_user_defined", TRUE);
+                rb_select("rb_optical", TRUE);
+                rb_select("rb_rgb", TRUE);
+                
+                set_combo_box_entry_item("red_optical_combo", s->red);
+                set_combo_box_entry_item("green_optical_combo", s->green);
+                set_combo_box_entry_item("blue_optical_combo", s->blue);
+            }
+            else
+            {
+                // radar
+                set_combo_box_entry_item("red_radar_combo", s->red);
+                set_combo_box_entry_item("green_radar_combo", s->green);
+                set_combo_box_entry_item("blue_radar_combo", s->blue);
+            }
         } else {
-            set_combo_box_entry_item("rgb_band1_comboboxentry", "");
-            set_combo_box_entry_item("rgb_band2_comboboxentry", "");
-            set_combo_box_entry_item("rgb_band3_comboboxentry", "");
+            set_combo_box_entry_item("red_radar_combo", "");
+            set_combo_box_entry_item("green_radar_combo", "");
+            set_combo_box_entry_item("blue_radar_combo", "");
+            set_combo_box_entry_item("red_optical_combo", "");
+            set_combo_box_entry_item("green_optical_combo", "");
+            set_combo_box_entry_item("blue_optical_combo", "");
+            rb_select("rb_all", TRUE);
         }
     }        
 
@@ -561,15 +603,44 @@ settings_get_from_gui()
             }
         }
 
-        GtkWidget * rgb_checkbutton =
-            get_widget_checked("rgb_checkbutton");
+        GtkWidget * rb_rgb = get_widget_checked("rb_rgb");
         ret->export_bands = gtk_toggle_button_get_active(
-            GTK_TOGGLE_BUTTON(rgb_checkbutton));
+            GTK_TOGGLE_BUTTON(rb_rgb));
 
         if (ret->export_bands) {
-            get_combo_box_entry_item("rgb_band1_comboboxentry", ret->red);
-            get_combo_box_entry_item("rgb_band2_comboboxentry", ret->green);
-            get_combo_box_entry_item("rgb_band3_comboboxentry", ret->blue);
+            GtkWidget *rb_radar = get_widget_checked("rb_radar");
+            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_radar))) {
+                get_combo_box_entry_item("red_radar_combo", ret->red);
+                get_combo_box_entry_item("green_radar_combo", ret->green);
+                get_combo_box_entry_item("blue_radar_combo", ret->blue);
+            } else {
+                GtkWidget *rb_user_defined =
+                    get_widget_checked("rb_user_defined");
+                GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
+                GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
+
+                if (gtk_toggle_button_get_active(
+                        GTK_TOGGLE_BUTTON(rb_user_defined)))
+                {
+                    get_combo_box_entry_item("red_optical_combo",ret->red);
+                    get_combo_box_entry_item("green_optical_combo",ret->green);
+                    get_combo_box_entry_item("blue_optical_combo",ret->blue);
+                }
+                else if (gtk_toggle_button_get_active(
+                             GTK_TOGGLE_BUTTON(rb_truecolor)))
+                {
+                    strcpy(ret->red, "3");
+                    strcpy(ret->green, "2");
+                    strcpy(ret->blue, "1");
+                }
+                else if (gtk_toggle_button_get_active(
+                             GTK_TOGGLE_BUTTON(rb_falsecolor)))
+                {
+                    strcpy(ret->red, "4");
+                    strcpy(ret->green, "3");
+                    strcpy(ret->blue, "2");
+                }
+            }
         } else {
             strcpy(ret->red, "");
             strcpy(ret->green, "");

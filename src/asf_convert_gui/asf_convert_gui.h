@@ -220,6 +220,7 @@ void input_data_format_combobox_changed();
 void show_execute_button(gboolean);
 void latitude_checkbutton_toggle();
 void input_data_type_changed();
+void rgb_settings_changed();
 
 /* utility.c */
 void setup_band_comboboxes();
@@ -229,6 +230,9 @@ void message_box(const gchar *);
 gchar * meta_file_name(const gchar *);
 char *getPath(const char *);
 GtkWidget *get_widget_checked(const char *widget_name);
+void set_combo_box_item_checked(const char *, gint);
+void rgb_combo_box_setup();
+void rb_select(const char *, gboolean);
 
 /* dnd.c */
 void setup_dnd();
