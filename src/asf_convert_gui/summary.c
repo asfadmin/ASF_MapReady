@@ -287,7 +287,7 @@ void update_summary()
         }
         else
         {
-            strcat(text, " (float)\n");
+            strcat(text, " (float)");
         }
 
         if (s->export_bands)

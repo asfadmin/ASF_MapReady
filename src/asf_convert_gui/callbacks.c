@@ -322,7 +322,10 @@ export_checkbutton_toggle()
 
     gtk_widget_set_sensitive(rb_all, export_checked);
     gtk_widget_set_sensitive(rb_rgb, export_checked);
-    gtk_widget_set_sensitive(rgb_vbox, export_checked);
+    if (!export_checked)
+        gtk_widget_set_sensitive(rgb_vbox, FALSE);
+    else
+        rgb_settings_changed();
 
     update_all_extensions();
 }
