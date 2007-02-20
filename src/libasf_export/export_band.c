@@ -781,11 +781,11 @@ export_band_image (const char *metadata_file_name,
       finalize_jpeg_file(ojpeg, &cinfo);
 
     if (red_stats.hist) gsl_histogram_free(red_stats.hist);
-    if (red_stats.hist_pdf) gsl_histogram_free(red_stats.hist_pdf);
+    if (red_stats.hist_pdf) gsl_histogram_pdf_free(red_stats.hist_pdf);
     if (green_stats.hist) gsl_histogram_free(green_stats.hist);
-    if (green_stats.hist_pdf) gsl_histogram_free(green_stats.hist_pdf);
+    if (green_stats.hist_pdf) gsl_histogram_pdf_free(green_stats.hist_pdf);
     if (blue_stats.hist) gsl_histogram_free(blue_stats.hist);
-    if (blue_stats.hist_pdf) gsl_histogram_free(blue_stats.hist_pdf);
+    if (blue_stats.hist_pdf) gsl_histogram_pdf_free(blue_stats.hist_pdf);
   }
   else { // Single-band image output
 
@@ -947,7 +947,7 @@ export_band_image (const char *metadata_file_name,
 	if (float_line) FREE(float_line);
 	if (byte_line) FREE(byte_line);
         if (stats.hist) gsl_histogram_free(stats.hist);
-        if (stats.hist_pdf) gsl_histogram_free(stats.hist_pdf);
+        if (stats.hist_pdf) gsl_histogram_pdf_free(stats.hist_pdf);
 
 	// Finalize the chosen format
 	if (format == TIF || format == GEOTIFF)
