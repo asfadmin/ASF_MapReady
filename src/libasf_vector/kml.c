@@ -187,8 +187,8 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
             meta->general->center_latitude);
     fprintf(kml_file, "    <range>400000</range>\n");
-    fprintf(kml_file, "    <tilt>45</tilt>\n");
-    fprintf(kml_file, "    <heading>50</heading>\n");
+    //fprintf(kml_file, "    <tilt>45</tilt>\n");
+    //fprintf(kml_file, "    <heading>50</heading>\n");
     fprintf(kml_file, "  </LookAt>\n");
     fprintf(kml_file, "  <visibility>1</visibility>\n");
     fprintf(kml_file, "  <open>1</open>\n");
