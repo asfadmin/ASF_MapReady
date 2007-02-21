@@ -11,7 +11,7 @@
 
  2. Tag the repository:
       svn copy https://lindon/svn/repos/asf_tools/trunk
-               https://lindon/svn/repos/asf_tools/tags/convert_vX-X-X
+               https://lindon/svn/repos/asf_tools/tags/convert_v3-1-X
 
     [[ tagging a branched revision --
       svn copy https://lindon/svn/repos/asf_tools/branches/convert_vX-X-X
@@ -27,7 +27,7 @@
 
  5. Export the tagged repository:
       svn export
-      https://lindon/svn/repos/asf_tools/tags/convert_vX-X-X asf_tools
+      https://lindon/svn/repos/asf_tools/tags/convert_v3-1-X asf_tools
 
  6. ** KLUDGE #1 **
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
@@ -48,7 +48,6 @@
  9. ** KLUDGE #3 **
       cd release/autotar
     Edit release/autotar/source.convert, adding these items:
-src/libasf_sar
 src/libasf_insar
 external
 src/asf_convert_gui
@@ -69,21 +68,21 @@ src/meta2envi
 12. Edit the .spec file in ../rpmbuild to use the correct version,
     then rename the file to match.
       cd ../rpmbuild
-      vi asf_convert-3.0.0-1.spec
-      mv asf_convert-3.0.0-1.spec asf_convert-X.X.X-1.spec
+      vi asf_convert-3.1.0-1.spec
+      mv asf_convert-3.1.0-1.spec asf_convert-3.1.X-1.spec
 
 13. Build the rpm:
-      rpmbuild -ba asf_convert-X.X.X-1.spec
+      rpmbuild -ba asf_convert-3.1.X-1.spec
 
 14. Create tarballs of the rpms.  The binary rpm will also contain the
     README_rpm.txt file from ../../asf_tools.
       ./tarrpms asf_convert
 
 15. Put the built files on quantum or someplace:
-      scp RPMS/asf_convert-X.X.X-rpm.*
+      scp RPMS/asf_convert-3.1.X-rpm.*
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       #We aren't actually putting the source rpms anywhere now
-      #scp SRPMS/asf_convert-X.X.X-rpm-src.*
+      #scp SRPMS/asf_convert-3.1.X-rpm-src.*
       #    'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       scp Source/* 'quantum://shares/utd/Releases\ for\ Data\ Quality/Source'
 
