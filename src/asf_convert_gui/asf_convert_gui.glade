@@ -2732,7 +2732,8 @@ VV</property>
 					  <property name="items" translatable="yes">HH
 HV
 VH
-VV</property>
+VV
+</property>
 					  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:37 GMT"/>
 					</widget>
 					<packing>
@@ -4339,7 +4340,6 @@ Export: JPEG (size 1000)
 
 		  <child>
 		    <widget class="GtkButton" id="save_button">
-		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Save the current settings.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label">gtk-save</property>
@@ -4378,7 +4378,6 @@ Export: JPEG (size 1000)
 
 		  <child>
 		    <widget class="GtkButton" id="load_button">
-		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Load settings that you've previously saved.</property>
 		      <property name="can_focus">True</property>
 		      <property name="label" translatable="yes">  _Load  </property>
