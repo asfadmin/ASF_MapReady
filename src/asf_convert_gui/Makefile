@@ -73,7 +73,7 @@ LIB = \
 	-lglib-2.0 \
 	-lcomdlg32
 
-CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
+CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
