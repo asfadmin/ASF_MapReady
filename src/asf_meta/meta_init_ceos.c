@@ -24,6 +24,7 @@ PROGRAM HISTORY:
 #include "asf_endian.h"
 #include "dateUtil.h"
 #include "get_ceos_names.h"
+#include "libasf_proj.h"
 
 // ALOS beam modes
 char *alos_beam_mode[132]={
@@ -898,18 +899,10 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 
   // Projection block
   if (meta->projection) {
-    if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
-      meta->projection->startX = 
-	ampr->sc_cen_easting*1000 - ampr->sample_count/2*ampr->x_pixel_size2; 
-      meta->projection->startY =
-	ampr->sc_cen_northing*1000 - ampr->line_count/2*ampr->y_pixel_size2; 
-    }
-    else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
-      meta->projection->startX =
-	ampr->sc_center_x*1000 - ampr->sample_count/2*ampr->x_pixel_size2; 
-      meta->projection->startY =
-	ampr->sc_center_y*1000 - ampr->line_count/2*ampr->y_pixel_size2; 
-    }
+    double lat = meta->location->lat_start_near_range;
+    double lon = meta->location->lon_start_near_range;
+    double projZ;
+
     // If the image is georeferenced set the upper left corner to unknown
     // This is the safest way to convey that this image has some projection
     // information but only for the corners
@@ -931,6 +924,9 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     if (strncmp(ampr->geod_coord_name, "ITRF97", 6) == 0)
       meta->projection->datum = ITRF97_DATUM;
     meta->projection->height = 0.0;
+    latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0, 
+		   &meta->projection->startX, &meta->projection->startY, 
+		   &projZ);
   }
 
   // Map transformation coefficients
