@@ -36,11 +36,11 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 static void print_large_error_blurb(int force_flag)
 {
   if (!force_flag) {
-    asfPrintStatus(
-      "\nLarge projection errors can result if your projection parameters do\n"
-      "not accurately represent the scene you are geocoding.  You can either\n"
-      "re-run geocode using the '--force' option, or adjust your projection\n"
-      "parameters to better reflect the scene.\n");
+    asfPrintWarning(
+      "Large projection errors occurred!\n\nLarge projection errors can result\n"
+      "if your projection parameters do not accurately represent the scene you\n"
+      "are geocoding.  You can either re-run geocode using the '--force' option,\n"
+      "or adjust your projection parameters to better reflect the scene.\n");
   }
 }
 
@@ -972,9 +972,9 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       gsl_vector_set (model_y_errors, ii, y_error);
       gsl_vector_set (model_errors, ii, error_distance);
     }
-    // Uncomment this line to get an image showing the distribution of
-    // errors in the approximating grid.
-    // float_image_export_as_jpeg (error_map, "error_map.jpeg", grid_size);
+    // Uncomment the following 2 lines to get an image showing the
+    // distribution of errors in the approximating grid.
+    //float_image_export_as_jpeg (error_map, "error_map.jpg", grid_size, 0);
     float_image_free (error_map);
     double mean_error
       = gsl_stats_mean (model_errors->data, model_errors->stride,

@@ -140,51 +140,27 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       // case rather than kludging it in here...
 
       // Top left zone
-      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-        meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
-      }
-      else {
-        meta_general *mg = meta->general;
-        lon = mg->center_longitude - ((mg->sample_count - 1)/2) * mg->y_pixel_size;
-      }
+      meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Top right zone
-      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-        meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
+      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
 		      &lon);
-      }
-      else {
-        meta_general *mg = meta->general;
-        lon = mg->center_longitude + ((mg->sample_count - 1)/2) * mg->y_pixel_size;
-      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom left zone
-      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-        meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
-      }
-      else {
-        meta_general *mg = meta->general;
-        lon = mg->center_longitude - ((mg->sample_count - 1)/2) * mg->y_pixel_size;
-      }
+      meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom right zone
-      if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
-        meta_get_latLon(meta, meta->general->line_count - 1,
+      meta_get_latLon(meta, meta->general->line_count - 1,
 		      meta->general->sample_count - 1, 0.0, &lat, &lon);
-      }
-      else {
-        meta_general *mg = meta->general;
-        lon = mg->center_longitude + ((mg->sample_count - 1)/2) * mg->y_pixel_size;
-      }
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
