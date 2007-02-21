@@ -1267,6 +1267,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // file
   char **band_name;
   band_name = extract_band_names(imd->general->bands, imd->general->band_count);
+
   if (!multiband) {
     sprintf(omd->general->bands, "%s", band_name[band_num]);
     omd->general->band_count = 1;
@@ -1462,12 +1463,16 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   } // End of 'for each band' in the file, 'map-project the data into the file'
 
 
-  // Done with the metadata.
-  int i;
-  for (i=0; i < imd->general->band_count; i++) {
-    FREE(band_name[i]);
+  if (band_name) {
+      int i;
+      for (i=0; i < imd->general->band_count; i++) {
+          printf("Band: %s\n", band_name[i]);
+          FREE(band_name[i]);
+      }
+      FREE(band_name);
   }
-  FREE(band_name);
+
+  // Done with the metadata.
   meta_free (imd);
   meta_free (omd);
 
