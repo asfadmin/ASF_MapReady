@@ -167,7 +167,8 @@ resample_impl(char *infile, char *outfile,
 
     for (k = 0; k < metaIn->general->band_count; ++k)
     {
-        asfPrintStatus("Resampling band: %s\n", band_name[k]);
+        if (metaIn->general->band_count != 1)
+            asfPrintStatus("Resampling band: %s\n", band_name[k]);
 
         fpout=fopenImage(imgfile, k==0 ? "wb" : "ab");
         n_lines = ynsk;
