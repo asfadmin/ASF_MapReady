@@ -267,6 +267,7 @@ static char *build_band_list(const char *file)
         for (ii=0; ii<MAX_BANDS; ++ii)
             FREE(dataName[ii]);
         FREE(dataName);
+        FREE(s);
 
         return ret;
     }
