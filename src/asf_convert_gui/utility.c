@@ -79,6 +79,12 @@ message_box(const gchar * message)
 gchar *
 meta_file_name(const gchar * data_file_name)
 {
+    if (has_prepension(data_file_name))
+    {
+        // data file is really the meta file, for ALOS
+        return g_strdup(data_file_name);
+    }
+
     gchar * p = strrchr(data_file_name, '.');
     if (!p)
     {

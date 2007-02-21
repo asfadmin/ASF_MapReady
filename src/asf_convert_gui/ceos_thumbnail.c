@@ -6,6 +6,10 @@
 
 #include <asf_nan.h>
 #include "ceos_thumbnail.h"
+#include "asf_convert_gui.h"
+#include "get_ceos_names.h"
+#include "asf_import.h"
+#include "asf_endian.h"
 
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
@@ -23,33 +27,64 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     if (!fileExists(input_metadata))
         return NULL;
 
-    meta_parameters *imd = meta_create (input_metadata); // Input metadata.
-    /* Make a copy of one of the arguments so the compilers doesn't
-    complain about us ignoring the const qualifier when we pass it fo
-    fopenCeos().  */
+    // Input metadata
+    meta_parameters *imd;
+    char *data_name, *met;
+
+    int pre = has_prepension(input_metadata);
+    if (pre > 0)
+    {
+        int ii, nBands;
+        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
+        for (ii=0; ii<MAX_BANDS; ++ii)
+            dataName[ii] = MALLOC(sizeof(char)*255);
+        char filename[255], dirname[255];
+        split_dir_and_file(input_metadata, dirname, filename);
+        met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
+        sprintf(met, "%s%s", dirname, filename + pre);
+
+        get_ceos_data_name(met, dataName, &nBands);
+
+        imd = meta_create(met);
+        data_name = STRDUP(dataName[0]);
+
+        for (ii=0; ii<MAX_BANDS; ++ii)
+            FREE(dataName[ii]);
+        FREE(dataName);
+    }
+    else
+    {
+        imd = meta_create (input_metadata);
+        data_name = STRDUP(input_data);
+        met = STRDUP(input_metadata);
+    }
 
     if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16 &&
-        imd->general->data_type != INTEGER32 &&
-        imd->general->data_type != REAL32 &&
-        imd->general->data_type != REAL64)
+        imd->general->data_type != INTEGER16) 
+// Turning off support for these guys for now.
+//        imd->general->data_type != INTEGER32 &&
+//        imd->general->data_type != REAL32 &&
+//        imd->general->data_type != REAL64)
     {
         /* don't know how to make a thumbnail for this type ... */
         return NULL;
     }
 
-    gchar *tmp = g_strdup (input_data);
-    g_assert (tmp != NULL);
-    CEOS_FILE *id = fopenCeos (tmp); // Input data file.
-    g_free (tmp);
-
-    if (!id->f_in) {
-        // failed for some reason, just quit without thumbnailing...
-        // possibly the file is bad, or perhaps it was removed from the
-        // file list before we could get around to thumbnailing it.
+    FILE *fpIn = fopen(data_name, "rb");
+    if (!fpIn)
+    {
+        // failed for some reason, quit without thumbnailing
         meta_free(imd);
         return NULL;
     }
+
+    struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
+    get_ifiledr(met, &image_fdr);
+    int leftFill = image_fdr.lbrdrpxl;
+    int rightFill = image_fdr.rbrdrpxl;
+    int headerBytes = firstRecordLen(data_name) +
+        (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
+         * image_fdr.bytgroup);
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
@@ -76,15 +111,37 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
     size_t ii;
-    int *line = g_new (int, imd->general->sample_count);
+    unsigned short *line = g_new (unsigned short, imd->general->sample_count);
+    unsigned char *bytes = g_new (unsigned char, imd->general->sample_count);
 
     // Keep track of the average pixel value, so later we can do a 2-sigma
     // scaling - makes the thumbnail look a little nicer and more like what
     // they'd get if they did the default jpeg export.
     double avg = 0.0;
     for ( ii = 0 ; ii < tsy ; ii++ ) {
-        readCeosLine (line, ii * sf, id);
+
         size_t jj;
+        long long offset =
+            (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
+
+        FSEEK64(fpIn, offset, SEEK_SET);
+        if (imd->general->data_type == INTEGER16)
+        {
+            FREAD(line, sizeof(unsigned short), imd->general->sample_count,
+                  fpIn);
+
+            for (jj = 0; jj < imd->general->sample_count; ++jj)
+                big16(line[jj]);
+        }
+        else if (imd->general->data_type == BYTE)
+        {
+            FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
+                  fpIn);
+
+            for (jj = 0; jj < imd->general->sample_count; ++jj)
+                line[jj] = (unsigned short)bytes[jj];
+        }
+
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.
             double csv;		
@@ -102,7 +159,8 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         }
     }
     g_free (line);
-    closeCeos(id);
+    g_free (bytes);
+    fclose(fpIn);
 
     // Compute the std devation
     avg /= tsx*tsy;
@@ -141,7 +199,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
     
     if (!pb) {
-        printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
+        printf("Failed to create the thumbnail pixbuf: %s\n", data_name);
         meta_free(imd);
         g_free(data);
         return NULL;
@@ -155,11 +213,13 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     gdk_pixbuf_unref(pb);
     
     if (!pb_s) {
-        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
+        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", data_name);
         meta_free(imd);
         return NULL;
     }
 
     meta_free(imd);
+    FREE(data_name);
+    FREE(met);
     return pb_s;
 }
