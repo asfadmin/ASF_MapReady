@@ -110,7 +110,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
         (*num_found)++;
       }
       else if (rgb_flag) {
-        asfPrintWarning("Channel specified for RED (\"%s\")"
+        asfPrintError("Channel specified for RED (\"%s\")"
                         " not found in image file.\n"
                         "Available channels are %s\n", red_channel,
                         meta->general->bands);
@@ -128,7 +128,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
         (*num_found)++;
       }
       else if (rgb_flag) {
-        asfPrintWarning("Channel specified for GREEN (\"%s\")"
+        asfPrintError("Channel specified for GREEN (\"%s\")"
                         " not found in image file.\n"
                         "Available channels are %s\n", green_channel,
                         meta->general->bands);
@@ -146,7 +146,7 @@ char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *gre
         (*num_found)++;
       }
       else if (rgb_flag) {
-        asfPrintWarning("Channel specified for BLUE (\"%s\")"
+        asfPrintError("Channel specified for BLUE (\"%s\")"
                         " not found in image file.\n"
                         "Available channels are %s\n", blue_channel,
                         meta->general->bands);

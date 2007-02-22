@@ -331,6 +331,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 			"in the metadata.\n");
     }
 
+    /* FIXME! Temporary warning about unsupported ALOS radiometries */
+    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+        (radiometry == r_BETA || radiometry == r_GAMMA || radiometry == r_POWER)) {
+            asfPrintError("Unsupported radiometry!\n"
+                "In this release, only AMPLITUDE and SIGMA radiometries "
+                "are supported\nfor ALOS data.\n");
+    }
+
     /* Let the user know what format we are working on */
     if (meta->projection!=NULL && meta->projection->type!=MAGIC_UNSET_CHAR) {
       /* This must be ScanSAR */

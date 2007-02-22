@@ -163,12 +163,14 @@ int asf_import(radiometry_t radiometry, int db_flag,
         for (ii=0; ii<nBands; ii++) {
           // Determine the band extension (band ID)
           strcpy(bandExt, "");
+
           // p will point to the beginning of the actual file (past the path)
-          char *p = strrchr(inBandName[ii], DIR_SEPARATOR);
+          char *p = strrchr(inBandName[ii], '/');
           if (!p)
               p = inBandName[ii];
           else
               ++p;
+
           if (strncmp(p, "IMG-HH", 6)==0)
             strcpy(bandExt, "HH");
           if (strncmp(p, "IMG-HV", 6)==0)
