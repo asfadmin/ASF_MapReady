@@ -268,8 +268,7 @@ void do_rename_selected(const gchar *new_name);
 /* state.c */
 
 /* naming_scheme.c */
-NamingScheme * naming_scheme_new(const gchar *, const gchar *,
-                                 const gchar *);
+NamingScheme * naming_scheme_new(const gchar *, const gchar *, const gchar *);
 NamingScheme * naming_scheme_default();
 void naming_scheme_delete(NamingScheme *);
 gchar * naming_scheme_apply(const NamingScheme *, const gchar *);

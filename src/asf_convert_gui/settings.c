@@ -1534,8 +1534,9 @@ settings_to_config_file(const Settings *s,
         FCLOSE(fpDefs);
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
-    fprintf(cf, "thumbnail = %d\n", 
-            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
+//    fprintf(cf, "thumbnail = %d\n", 
+//            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
+    fprintf(cf, "thumbnail = 1\n");
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
