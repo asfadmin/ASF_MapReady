@@ -99,7 +99,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then export the band identified by 'band_id' (only).  If 'all' is\n"\
 "        specified rather than a band_id, then export all available bands into\n"\
-"        a single ASF-format file.  Default is '-band all'.\n"\
+"        individual files, one for each band.  Default is '-band all'.\n"\
 "        Cannot be chosen together with the -rgb option.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
