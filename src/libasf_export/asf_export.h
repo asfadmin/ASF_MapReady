@@ -4,6 +4,7 @@
 
 #include "asf_raster.h"
 #include "libasf_proj.h"
+#include "asf_nan.h"
 
 /* Evaluate to true if floats are within tolerance of each other.  */
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
