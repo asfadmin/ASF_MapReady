@@ -83,14 +83,15 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct alos_rad_data_rec *ardr;       // Radiometric Data record
 
   char **dataNames, leaderName[512];
-  int ii,nBands,dataNameExists, leaderNameExists;
+  int pre=0,ii,nBands,dataNameExists, leaderNameExists;
   char *ret=NULL;
 
   dataNames = MALLOC(sizeof(char*)*MAX_BANDS);
   for (ii=0; ii<MAX_BANDS; ++ii)
       dataNames[ii] = MALLOC(sizeof(char*)*512);
 
-  get_ceos_names(fileName, dataNames, leaderName, &nBands);
+  if (strncmp(fileName, "LED-", 4) == 0) pre = 4; // ALOS kludge
+  get_ceos_names(fileName + pre, dataNames, leaderName, &nBands);
 
   FILE *fp_tmp = fopen(dataNames[0], "r");
   if (fp_tmp != NULL) {
@@ -208,7 +209,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (192): 
       vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
-      if (dataNameExists && get_ifiledr(dataNames[0],vfdr) >= 0)
+      if (dataNameExists && get_ifiledr(dataNames[0]+pre,vfdr) >= 0)
 	ret = sprn_ifiledr(vfdr);
       FREE(vfdr);
       break;
