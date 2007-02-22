@@ -787,7 +787,7 @@ export_band_image (const char *metadata_file_name,
     if (blue_stats.hist) gsl_histogram_free(blue_stats.hist);
     if (blue_stats.hist_pdf) gsl_histogram_pdf_free(blue_stats.hist_pdf);
   }
-  else { // Single-band image output
+  else { // Single-band image output (one grayscale file for each available band)
 
     int band_count = md->general->band_count;
     char base_name[255], bands[25];
@@ -854,7 +854,7 @@ export_band_image (const char *metadata_file_name,
 	channel_stats_t stats;
         stats.hist = NULL; stats.hist_pdf = NULL;
 
-	if (!md->optical && sample_mapping != NONE) {
+	if (!md->optical || sample_mapping != NONE) {
 	  asfRequire (sizeof(unsigned char) == 1,
 		      "Size of the unsigned char data type on this machine is "
 		      "different than expected.\n");
@@ -912,14 +912,30 @@ export_band_image (const char *metadata_file_name,
 	}
 	else { // Regular old single band image
 	  for (ii=0; ii<md->general->line_count; ii++ ) {
-	    if (md->optical) {
-	      get_byte_line(fp, md, ii+channel*offset, byte_line);
-	      if (format == TIF || format == GEOTIFF)
-		write_tiff_byte2byte(otif, byte_line, ii);
-	      else if (format == JPEG)
-		write_jpeg_byte2byte(ojpeg, byte_line, &cinfo, sample_count);
-	      else if (format == PGM)
-		write_pgm_byte2byte(opgm, byte_line, sample_count);
+            if (md->optical) {
+             get_byte_line(fp, md, ii+channel*offset, byte_line);
+             if (strncmp(md->general->sensor_name, "PRISM", 5) == 0) {
+	       if (format == TIF || format == GEOTIFF)
+                write_tiff_byte2byte(otif, byte_line, stats, sample_mapping,
+                                     sample_count, ii);
+	       else if (format == JPEG)
+                write_jpeg_byte2byte(ojpeg, byte_line, stats, sample_mapping,
+                                      &cinfo, sample_count);
+	       else if (format == PGM)
+                 write_pgm_byte2byte(opgm, byte_line, stats, sample_mapping,
+                                    sample_count);
+             }
+             else { // Not Prism
+               if (format == TIF || format == GEOTIFF)
+                 write_tiff_byte2byte(otif, byte_line, stats, NONE,
+                                      sample_count, ii);
+               else if (format == JPEG)
+                 write_jpeg_byte2byte(ojpeg, byte_line, stats, NONE,
+                                      &cinfo, sample_count);
+               else if (format == PGM)
+                 write_pgm_byte2byte(opgm, byte_line, stats, NONE,
+                                     sample_count);
+             }
 	    }
 	    else if (sample_mapping == NONE) {
 	      get_float_line(fp, md, ii+channel*offset, float_line);

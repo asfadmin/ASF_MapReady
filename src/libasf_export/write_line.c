@@ -1,8 +1,18 @@
 #include "asf.h"
 #include "asf_export.h"
 
-void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line, int line)
+void write_tiff_byte2byte(TIFF *otif, unsigned char *byte_line,
+                          channel_stats_t stats, scale_t sample_mapping,
+                          int sample_count, int line)
 {
+  int jj;
+  if (sample_mapping != NONE) {
+    for (jj=0; jj<sample_count; jj++) {
+      byte_line[jj] =
+          pixel_float2byte((float)byte_line[jj], sample_mapping, stats.min, stats.max,
+                           stats.hist, stats.hist_pdf, NAN);
+    }
+  }
   TIFFWriteScanline (otif, byte_line, line, 0);
 }
 
@@ -127,9 +137,9 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
   int jj;
   unsigned char *byte_line, *rgb_line;
 
-  byte_line = (unsigned char *)  
+  byte_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count);
-  rgb_line = (unsigned char *) 
+  rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
@@ -138,7 +148,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 		       stats.min, stats.max, stats.hist,
 		       stats.hist_pdf, no_data);
   }
-	  
+
   apply_look_up_table(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
@@ -148,6 +158,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 }
 
 void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
+                          channel_stats_t stats, scale_t sample_mapping,
 			  struct jpeg_compress_struct *cinfo,
 			  int sample_count)
 {
@@ -155,6 +166,14 @@ void write_jpeg_byte2byte(FILE *ojpeg, unsigned char *byte_line,
 
   JSAMPLE *jsample_row = g_new (JSAMPLE, sample_count);
   JSAMPROW *row_pointer = MALLOC (sizeof (JSAMPROW));
+
+  if (sample_mapping != NONE) {
+    for (jj=0; jj<sample_count; jj++) {
+      byte_line[jj] =
+          pixel_float2byte((float)byte_line[jj], sample_mapping, stats.min, stats.max,
+                            stats.hist, stats.hist_pdf, NAN);
+    }
+  }
 
   for (jj=0; jj<sample_count; jj++) {
     jsample_row[jj] = (JSAMPLE) byte_line[jj];
@@ -281,9 +300,9 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 
   JSAMPLE *jsample_row = g_new (JSAMPLE, sample_count * 3);
   JSAMPROW *row_pointer = MALLOC (sizeof (JSAMPROW));
-  byte_line = (unsigned char *)  
+  byte_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count);
-  rgb_line = (unsigned char *) 
+  rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
   for (jj=0; jj<sample_count; jj++) {
@@ -292,7 +311,7 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 		       stats.min, stats.max, stats.hist,
 		       stats.hist_pdf, no_data);
   }
-	  
+
   apply_look_up_table(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
@@ -305,9 +324,19 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
   FREE (row_pointer);
 }
 
-void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line, 
+void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line,
+                         channel_stats_t stats, scale_t sample_mapping,
 			 int sample_count)
 {
+  int jj;
+  if (sample_mapping != NONE) {
+    for (jj=0; jj<sample_count; jj++) {
+      byte_line[jj] =
+          pixel_float2byte((float)byte_line[jj], sample_mapping, stats.min, stats.max,
+                            stats.hist, stats.hist_pdf, NAN);
+    }
+  }
+
   FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
 }
 
@@ -319,10 +348,10 @@ void write_pgm_float2byte(FILE *opgm, float *float_line,
   unsigned char *byte_line;
 
   byte_line = (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
-  
+
   for (jj=0; jj<sample_count; jj++)
     byte_line[jj] =
-      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max, 
+      pixel_float2byte(float_line[jj], sample_mapping, stats.min, stats.max,
 		       stats.hist, stats.hist_pdf, no_data);
 
   FWRITE(byte_line, sizeof(unsigned char), sample_count, opgm);
