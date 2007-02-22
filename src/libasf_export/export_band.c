@@ -543,6 +543,15 @@ export_band_image (const char *metadata_file_name,
   meta_parameters *md = meta_read (metadata_file_name);
   map_projected = is_map_projected(md);
 
+  asfRequire( !(sample_mapping == TRUNCATE &&
+                (md->general->image_data_type == SIGMA_IMAGE ||
+                 md->general->image_data_type == BETA_IMAGE  ||
+                 md->general->image_data_type == GAMMA_IMAGE)
+               ),
+              "Remapping a power (sigma, beta, or gamma) type image into\n"
+              "a byte image using truncation is not supported.  All values\n"
+              "would map to black...\n");
+
   if (rgb && !have_look_up_table) {
 
     // Initialize the chosen format
@@ -863,6 +872,18 @@ export_band_image (const char *metadata_file_name,
                                md->general->no_data,
 			       &stats.min, &stats.max, &stats.mean,
 			       &stats.standard_deviation, &stats.hist);
+          if (sample_mapping == TRUNCATE) {
+            if (stats.mean >= 255)
+              asfPrintWarning("The image contains HIGH values and will turn out very\n"
+                            "bright or all-white.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
+                            "=> Consider using a sample mapping method other than TRUNCATE\n",
+                            stats.min, stats.max, stats.mean);
+            if (stats.mean < 10)
+              asfPrintWarning("The image contains LOW values and will turn out very\n"
+                  "dark or all-black.\n  Min : %f\n  Max : %f\n  Mean: %f\n"
+                  "=> Consider using a sample mapping method other than TRUNCATE\n",
+                  stats.min, stats.max, stats.mean);
+          }
 	  if (sample_mapping == SIGMA) {
 	    double omin = stats.mean - 2*stats.standard_deviation;
 	    double omax = stats.mean + 2*stats.standard_deviation;
