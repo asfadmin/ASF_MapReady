@@ -960,9 +960,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       if (strlen(cfg->export->rgb) == 0)
       {
-          // no banding
-          check_return(asf_export(format, scale, inFile, outFile),
-                       "exporting data file (asf_export)\n");
+          meta_parameters *meta = meta_read(inFile);
+          if (meta->general->band_count != 1) {
+              // multi-band, exporting as separate files
+              asfPrintStatus("Exporting %d bands as separate files...\n",
+                             meta->general->band_count);
+              check_return(asf_export_bands(format, scale, FALSE, NULL,
+                                            inFile, outFile, NULL),
+                           "export data file (asf_export), banded.\n");
+          }
+          else {
+              // single band
+              check_return(asf_export(format, scale, inFile, outFile),
+                           "exporting data file (asf_export)\n");
+          }
+          meta_free(meta);
       }
 
       // Move the .meta file out of temporary status: <out basename>.meta
