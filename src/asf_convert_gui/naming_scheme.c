@@ -268,59 +268,35 @@ static void apply_naming_scheme(const NamingScheme * new,
     while (valid)
     {
         gchar * current_output_name;
-        gchar * current_output_basename;
-        gchar * old_output_basename;
         gchar * input_file_name;
-        gchar * input_basename;
+        gchar * old_output_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
             COL_DATA_FILE, &input_file_name,
             COL_OUTPUT_FILE, &current_output_name, -1);
 
-        input_basename = g_path_get_basename(input_file_name);
-        chop_ext(input_basename);
+        old_output_name =
+            determine_default_output_file_name_schemed(input_file_name, old);
 
-        current_output_basename = g_path_get_basename(current_output_name);
-        chop_ext(current_output_basename);
-
-        old_output_basename = naming_scheme_apply(old, input_basename);
-
-        if (strcmp(current_output_basename, old_output_basename) == 0)
+        if (strcmp(current_output_name, old_output_name) == 0)
         {
-            gchar * path = g_path_get_dirname(current_output_name);
-
-            /* current name is using default scheme - apply */
-            gchar * new_output_name;
-            gchar * new_output_basename;
-
-            new_output_basename =
-                naming_scheme_apply(new, input_basename);
-
-            /* put the path & extension back on */
-            new_output_name = (gchar *) g_malloc( sizeof(gchar) *
-                (strlen(new_output_basename) +
-                strlen(path) +
-                strlen(ext) + 4) );
-
-            sprintf(new_output_name, "%s%c%s.%s", path, DIR_SEPARATOR,
-                new_output_basename, ext);
+            /* Matches what was produced by the old naming scheme --
+               generate new name based on the new naming scheme */
+            gchar *new_output_name =
+              determine_default_output_file_name_schemed(input_file_name, new);
 
             set_output_name(&iter, new_output_name);
 
             g_free(new_output_name);
-            g_free(new_output_basename);
-            g_free(path);
         }
         else
         {
             /* user has customized this output name -- ignore */
         }
 
-        g_free(old_output_basename);
-        g_free(current_output_basename);
-        g_free(input_basename);
         g_free(input_file_name);
         g_free(current_output_name);
+        g_free(old_output_name);
 
         valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(list_store), &iter);
     }
@@ -431,4 +407,76 @@ on_dialog_cons_key_press_event(GtkWidget * widget, GdkEventKey * event,
     }
 
     return FALSE;
+}
+
+gchar *
+determine_default_output_file_name_schemed(const gchar *data_file_name,
+                                           const NamingScheme *scheme)
+{
+    Settings * user_settings;
+    const gchar * ext;
+    gchar * output_name_full;
+    gchar * path;
+    gchar * basename;
+    gchar * filename;
+    gchar * schemed_filename;
+    gchar * p;
+
+    int prepension = has_prepension(data_file_name);
+    if (prepension > 0) {
+        basename = g_path_get_basename(data_file_name);
+        filename = g_strdup(basename + prepension);
+        //printf("Filename: %s\n", filename);
+    } else { 
+        basename = g_strdup(data_file_name);
+        p = findExt(basename);
+        if (p)
+            *p = '\0';
+
+        filename = g_path_get_basename(basename);
+    }
+
+    schemed_filename = naming_scheme_apply(scheme, filename);
+
+    if (output_directory && strlen(output_directory) > 0)
+    {
+        path = g_strdup(output_directory);
+    }
+    else
+    {
+        gchar * tmp = g_path_get_dirname(data_file_name);
+        path = g_malloc( sizeof(gchar) * (strlen(tmp) + 4) );
+        g_sprintf(path, "%s%c", tmp, DIR_SEPARATOR);
+        g_free(tmp);
+    }
+
+    basename = (gchar *) 
+        g_realloc(basename,
+        sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
+
+    sprintf(basename, "%s%s", path, schemed_filename);
+
+    g_free(schemed_filename);
+    g_free(filename);
+    g_free(path);
+
+    user_settings = settings_get_from_gui();
+    ext = settings_get_output_format_extension(user_settings);
+
+    output_name_full = 
+        (gchar *) g_malloc(sizeof(gchar) * 
+        (strlen(basename) + strlen(ext) + 10));
+
+    g_sprintf(output_name_full, "%s.%s", basename, ext);
+
+    // CEOS Level 0 uses RAW and raw as default extensions...
+    // so we have this kludge to avoid constant Errors due to the same
+    // input and output filename.
+    if (strcmp_case(output_name_full, data_file_name) == 0)
+        g_sprintf(output_name_full, "%s_out.%s", basename, ext);
+
+    g_free(basename);
+    settings_delete(user_settings);
+
+    return output_name_full;
 }

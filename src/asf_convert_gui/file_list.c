@@ -34,72 +34,8 @@ int has_prepension(const gchar * data_file_name)
 static gchar *
 determine_default_output_file_name(const gchar * data_file_name)
 {
-    Settings * user_settings;
-    const gchar * ext;
-    gchar * output_name_full;
-    gchar * path;
-    gchar * basename;
-    gchar * filename;
-    gchar * schemed_filename;
-    gchar * p;
-
-    int prepension = has_prepension(data_file_name);
-    if (prepension > 0) {
-        basename = g_path_get_basename(data_file_name);
-        filename = g_strdup(basename + prepension);
-        printf("Filename: %s\n", filename);
-    } else { 
-        basename = g_strdup(data_file_name);
-        p = findExt(basename);
-        if (p)
-            *p = '\0';
-
-        filename = g_path_get_basename(basename);
-    }
-
-    schemed_filename = naming_scheme_apply(current_naming_scheme, filename);
-
-    if (output_directory && strlen(output_directory) > 0)
-    {
-        path = g_strdup(output_directory);
-    }
-    else
-    {
-        gchar * tmp = g_path_get_dirname(data_file_name);
-        path = g_malloc( sizeof(gchar) * (strlen(tmp) + 4) );
-        g_sprintf(path, "%s%c", tmp, DIR_SEPARATOR);
-        g_free(tmp);
-    }
-
-    basename = (gchar *) 
-        g_realloc(basename,
-        sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
-
-    sprintf(basename, "%s%s", path, schemed_filename);
-
-    g_free(schemed_filename);
-    g_free(filename);
-    g_free(path);
-
-    user_settings = settings_get_from_gui();
-    ext = settings_get_output_format_extension(user_settings);
-
-    output_name_full = 
-        (gchar *) g_malloc(sizeof(gchar) * 
-        (strlen(basename) + strlen(ext) + 10));
-
-    g_sprintf(output_name_full, "%s.%s", basename, ext);
-
-    // CEOS Level 0 uses RAW and raw as default extensions...
-    // so we have this kludge to avoid constant Errors due to the same
-    // input and output filename.
-    if (strcmp_case(output_name_full, data_file_name) == 0)
-        g_sprintf(output_name_full, "%s_out.%s", basename, ext);
-
-    g_free(basename);
-    settings_delete(user_settings);
-
-    return output_name_full;
+    return determine_default_output_file_name_schemed(data_file_name,
+                                                      current_naming_scheme);
 }
 
 gboolean is_L_file(const gchar * data_file)
