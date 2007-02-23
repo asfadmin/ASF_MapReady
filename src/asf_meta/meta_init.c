@@ -36,6 +36,7 @@ meta_general *meta_general_init(void)
   meta_general *general = (meta_general *)MALLOC(sizeof(meta_general));
 
   /* Fill with ludicrous values.  */
+  strcpy(general->basename, MAGIC_UNSET_STRING);
   strcpy(general->sensor, MAGIC_UNSET_STRING);
   strcpy(general->sensor_name, MAGIC_UNSET_STRING);
   strcpy(general->mode, MAGIC_UNSET_STRING);
