@@ -62,7 +62,7 @@ static char* gnuify(const char *s)
         return NULL;
 }
 
-static void remove_args(int start, int end, int *argc, char **argv[])
+void remove_args(int start, int end, int *argc, char **argv[])
 {
     int i, j, nargs;
 
@@ -82,6 +82,10 @@ static void remove_args(int start, int end, int *argc, char **argv[])
     
     *argc -= nargs;
 }
+
+//
+// Functions for dealing with parsing flags
+//
 
 static void detect_flag_option(int argc, char *argv[], char *arg, int *found)
 {
@@ -170,14 +174,18 @@ int extract_flag_options(int *argc, char ***argv, ... )
     return found;
 }
 
-static int parse_double(const char * str, double * val)
+//
+// Functions for dealing with parsing doubles
+//
+
+int parse_double(const char * str, double * val)
 {
     char *p;
     *val = strtod(str, &p);
     return !(*str == '\0' || *p != '\0');
 }
 
-static int parse_double_option(int *i, int argc, char *argv[], int *specified,
+int parse_double_option(int *i, int argc, char *argv[], int *specified,
                         double *value)
 {
     double val;
@@ -265,3 +273,210 @@ int extract_double_options(int *argc, char **argv[], double *val, ... )
     return found;
 }
 
+//
+// Functions for dealing with parsing integers
+//
+
+int parse_int(const char * str, int * val)
+{
+  char *p;
+  *val = (int) strtol(str, &p, 10);
+
+  if (*str == '\0' || *p != '\0')
+  {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+int parse_int_option(int *i, int argc, char *argv[], int *specified,
+		     int *value)
+{
+  int val;
+  int ok;
+
+  ++(*i);
+  if (*i == argc)
+  {
+    no_arg(argv[*i-1]);
+    ok = FALSE;
+  }
+  else if (*specified)
+  {
+    double_arg(argv[*i]);
+    ok = FALSE;
+  }
+  else
+  {
+    *specified = TRUE;
+    if (parse_int(argv[*i], &val))
+    {
+      *value = val;
+      ok = TRUE;
+    }
+    else
+    {
+      bad_arg(argv[*i-1], argv[*i]);
+      ok = FALSE;
+    }
+  }
+
+  return ok;
+}
+
+static void extract_int_option(int *argc, char **argv[], int *val,
+			       char *arg, int *found)
+{
+    int i;
+ 
+    if (!arg)
+        return;
+
+    for (i=0; i<*argc; ++i)
+        if (strcmp((*argv)[i], arg) == 0)
+            if (parse_int_option(&i, *argc, *argv, found, val))
+                remove_args(i-1, i, argc, argv);
+}
+
+int extract_int_options(int *argc, char **argv[], int *val, ... )
+{
+    va_list ap;
+    char * arg = NULL;
+    int found = FALSE;
+    
+    *val = MAGIC_UNSET_INT;
+
+    va_start(ap, val);
+    do
+    {
+        arg = va_arg(ap, char *);
+        extract_int_option(argc, argv, val, arg, &found);
+        extract_int_option(argc, argv, val, gnuify(arg), &found);
+    }
+    while (arg);
+    return found;
+}
+
+//
+// Functions for dealing with parsing strings
+//
+
+int parse_string_option(int *i, int argc, char *argv[], int *specified,
+			char *value)
+{
+  int ok;
+
+  ++(*i);
+  if (*i == argc)
+  {
+    no_arg(argv[*i-1]);
+    ok = FALSE;
+  }
+  else if (*specified)
+  {
+    double_arg(argv[*i]);
+    ok = FALSE;
+  }
+  else
+  {
+    *specified = TRUE;
+    strcpy(value, argv[*i]);
+    ok = TRUE;
+  }
+
+  return ok;
+}
+
+static void handle_string_option(int *argc, char **argv[], char *val,
+                                 char *arg, int *found, int remove_arg)
+{
+  int i;
+
+  for (i = 0; i < *argc; ++i)
+  {
+    if (strcmp((*argv)[i], arg) == 0)
+    {
+      if (parse_string_option(&i, *argc, *argv, found, val))
+      {
+        if (remove_arg)
+        {
+          remove_args(i-1, i, argc, argv);
+        }
+      }
+    }
+  }
+}
+
+static void detect_string_option(int argc, char *argv[], char *val,
+                                 char *arg, int *found)
+{
+  handle_string_option(&argc, &argv, val, arg, found, FALSE);
+}
+
+static void extract_string_option(int *argc, char **argv[], char *val,
+                                  char *arg, int *found)
+{
+  handle_string_option(argc, argv, val, arg, found, TRUE);
+}
+
+/* assumes the space has been allocated by caller */
+int extract_string_options(int *argc, char **argv[], char *val, ... )
+{
+  va_list ap;
+  char * arg = NULL;
+  int found = FALSE;
+
+  *val = '\0';
+
+  va_start(ap, val);
+  do
+  {
+    arg = va_arg(ap, char *);
+
+    if (arg)
+      extract_string_option(argc, argv, val, arg, &found);
+  }
+  while (arg);
+ // FIXME: Needs a va_end()... in several functions here (parse_options.c)
+  return found;
+}
+
+/* assumes the space has been allocated by caller */
+int detect_string_options(int argc, char *argv[], char *val, ... )
+{
+  va_list ap;
+  char * arg = NULL;
+  int found = FALSE;
+
+  *val = '\0';
+
+  va_start(ap, val);
+  do
+  {
+    arg = va_arg(ap, char *);
+
+    if (arg)
+      detect_string_option(argc, argv, val, arg, &found);
+  }
+  while (arg);
+
+  return found;
+}
+
+//
+// Function for dealing with parsing logs
+//
+
+void parse_log_options(int *argc, char **argv[])
+{
+  if (extract_string_options(argc, argv, logFile, "--log", "-log", NULL))
+    logflag = 1;
+  else
+    logflag = 0;
+
+  if (extract_flag_options(argc, argv, "--quiet", "-quiet", NULL))
+    quietflag = 1;
+  else
+    quietflag = 0;
+}

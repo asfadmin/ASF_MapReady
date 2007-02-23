@@ -9,8 +9,31 @@
 extern int currArg;
 
 int strmatch(const char *key, const char *match);
+void remove_args(int start, int end, int *argc, char **argv[]);
+
+// flags
 int detect_flag_options(int argc, char **argv, ...);
 int extract_flag_options(int *argc, char ***argv, ... );
+
+// doubles
+int parse_double(const char * str, double * val);
+int parse_double_option(int *i, int argc, char *argv[], int *specified,
+                        double *value);
 int extract_double_options(int *argc, char **argv[], double *val, ... );
+
+// integers
+int parse_int(const char * str, int * val);
+int parse_int_option(int *i, int argc, char *argv[], int *specified,
+		     int *value);
+int extract_int_options(int *argc, char **argv[], int *val, ... );
+
+// strings
+int parse_string_option(int *i, int argc, char *argv[], int *specified,
+			char *value);
+int detect_string_options(int argc, char *argv[], char *val, ... );
+int extract_string_options(int *argc, char **argv[], char *val, ... );
+
+// log
+void parse_log_options(int *argc, char **argv[]);
 
 #endif

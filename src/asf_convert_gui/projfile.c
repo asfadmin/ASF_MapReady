@@ -1,6 +1,7 @@
 #include "asf_convert_gui.h"
 #include <ctype.h>
 #include "asf_nan.h"
+#include "cla.h"
 
 static GtkWidget * utm_menu = NULL;
 static GtkWidget * ps_menu = NULL;
@@ -333,19 +334,6 @@ static void readline(FILE * f, char * buffer, size_t n)
         if (newline)
             *newline = '\0';
     }
-}
-
-static int parse_double(const char * str, double * val)
-{
-    char *p;
-    *val = strtod(str, &p);
-
-    if (*str == '\0' || *p != '\0')
-    {
-        return FALSE;
-    }
-
-    return TRUE;
 }
 
 static int parse_val(char * inbuf, char * key, double * val)

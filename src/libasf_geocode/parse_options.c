@@ -1,5 +1,6 @@
 #include "asf_geocode.h"
 #include "asf.h"
+#include "cla.h"
 #include "asf_nan.h"
 #include "asf_meta.h"
 #include "libasf_proj.h"
@@ -13,43 +14,10 @@
 
 static int print_warn = 1;
 
-static int parse_double(const char * str, double * val)
-{
-  char *p;
-  *val = strtod(str, &p);
-
-  if (*str == '\0' || *p != '\0')
-  {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-static int parse_int(const char * str, int * val)
-{
-  char *p;
-  *val = (int) strtol(str, &p, 10);
-
-  if (*str == '\0' || *p != '\0')
-  {
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
 static void no_arg(char * option)
 {
   if (print_warn)
     asfPrintWarning("No argument specified for option: %s\n", option);
-}
-
-static void bad_arg(char * option, char * arg)
-{
-  if (print_warn)
-    asfPrintWarning("Bad argument specified for option %s: %s\n",
-    option, arg);
 }
 
 static void pole_arg(void)
@@ -394,102 +362,6 @@ static int matches_read_proj_file(char * param)
     || strcmp(param, "--read-proj-file") == 0;
 }
 
-static int parse_double_option(int *i, int argc, char *argv[], int *specified,
-                               double *value)
-{
-  double val;
-  int ok;
-
-  ++(*i);
-  if (*i == argc)
-  {
-    no_arg(argv[*i-1]);
-    ok = FALSE;
-  }
-  else if (*specified)
-  {
-    double_arg(argv[*i]);
-    ok = FALSE;
-  }
-  else
-  {
-    *specified = TRUE;
-    if (parse_double(argv[*i], &val))
-    {
-      *value = val;
-      ok = TRUE;
-    }
-    else
-    {
-      bad_arg(argv[*i-1], argv[*i]);
-      ok = FALSE;
-    }
-  }
-
-  return ok;
-}
-
-static int parse_string_option(int *i, int argc, char *argv[], int *specified,
-                               char *value)
-{
-  int ok;
-
-  ++(*i);
-  if (*i == argc)
-  {
-    no_arg(argv[*i-1]);
-    ok = FALSE;
-  }
-  else if (*specified)
-  {
-    double_arg(argv[*i]);
-    ok = FALSE;
-  }
-  else
-  {
-    *specified = TRUE;
-    strcpy(value, argv[*i]);
-    ok = TRUE;
-  }
-
-  return ok;
-}
-
-static int parse_int_option(int *i, int argc, char *argv[], int *specified,
-                            int *value)
-{
-  int val;
-  int ok;
-
-  ++(*i);
-  if (*i == argc)
-  {
-    no_arg(argv[*i-1]);
-    ok = FALSE;
-  }
-  else if (*specified)
-  {
-    double_arg(argv[*i]);
-    ok = FALSE;
-  }
-  else
-  {
-    *specified = TRUE;
-    if (parse_int(argv[*i], &val))
-    {
-      *value = val;
-      ok = TRUE;
-    }
-    else
-    {
-      bad_arg(argv[*i-1], argv[*i]);
-      ok = FALSE;
-    }
-  }
-
-  return ok;
-}
-
 static int parse_zone_option(int *i, int argc,
                              char *argv[], int *specified,
                              int *value, int *ok)
@@ -666,103 +538,6 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
   }
 }
 
-static void remove_args(int start, int end, int *argc, char **argv[])
-{
-  int i, j, nargs;
-
-  nargs = end - start + 1;
-  i = start;
-  j = start + nargs;
-
-  while (j < *argc)
-  {
-    char * tmp = (*argv)[i];
-    (*argv)[i] = (*argv)[j];
-    (*argv)[j] = tmp;
-
-    ++i;
-    ++j;
-  }
-
-  *argc -= nargs;
-}
-
-static void handle_string_option(int *argc, char **argv[], char *val,
-                                 char *arg, int *found, int remove_arg)
-{
-  int i;
-
-  for (i = 0; i < *argc; ++i)
-  {
-    if (strcmp((*argv)[i], arg) == 0)
-    {
-      if (parse_string_option(&i, *argc, *argv, found, val))
-      {
-        if (remove_arg)
-        {
-          remove_args(i-1, i, argc, argv);
-        }
-      }
-    }
-  }
-}
-
-static void detect_string_option(int argc, char *argv[], char *val,
-                                 char *arg, int *found)
-{
-  handle_string_option(&argc, &argv, val, arg, found, FALSE);
-}
-
-static void extract_string_option(int *argc, char **argv[], char *val,
-                                  char *arg, int *found)
-{
-  handle_string_option(argc, argv, val, arg, found, TRUE);
-}
-
-/* assumes the space has been allocated by caller */
-static int extract_string_options(int *argc, char **argv[], char *val, ... )
-{
-  va_list ap;
-  char * arg = NULL;
-  int found = FALSE;
-
-  *val = '\0';
-
-  va_start(ap, val);
-  do
-  {
-    arg = va_arg(ap, char *);
-
-    if (arg)
-      extract_string_option(argc, argv, val, arg, &found);
-  }
-  while (arg);
- // FIXME: Needs a va_end()... in several functions here (parse_options.c)
-  return found;
-}
-
-/* assumes the space has been allocated by caller */
-int detect_string_options(int argc, char *argv[], char *val, ... )
-{
-  va_list ap;
-  char * arg = NULL;
-  int found = FALSE;
-
-  *val = '\0';
-
-  va_start(ap, val);
-  do
-  {
-    arg = va_arg(ap, char *);
-
-    if (arg)
-      detect_string_option(argc, argv, val, arg, &found);
-  }
-  while (arg);
-
-  return found;
-}
-
 static void extract_flag(int *argc, char **argv[],
                          char *arg, int *found)
 {
@@ -797,18 +572,6 @@ static int extract_flags(int *argc, char ***argv, ... )
   return found;
 }
 
-void parse_log_options(int *argc, char **argv[])
-{
-  if (extract_string_options(argc, argv, logFile, "--log", "-log", NULL))
-    logflag = 1;
-  else
-    logflag = 0;
-
-  if (extract_flags(argc, argv, "--quiet", "-quiet", NULL))
-    quietflag = 1;
-  else
-    quietflag = 0;
-}
 
 static datum_type_t parse_datum_option(int *argc, char **argv[])
 {
