@@ -174,9 +174,11 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
 
   // Check for band
   *num_found = 0;
-  if (strcmp(uc(band), "ALL") == 0)
+  if (strcmp(uc(band), "ALL") == 0) {
     band_name = extract_band_names(meta->general->bands,
 				   meta->general->band_count);
+    *num_found = meta->general->band_count;
+  }
   else {
     int ii;
     band_name = (char **) MALLOC(meta->general->band_count*sizeof(char *));

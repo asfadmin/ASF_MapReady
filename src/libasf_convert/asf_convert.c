@@ -1042,8 +1042,19 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                }
            }
         } else {
-           check_return(asf_export(format, scale, tmpFile, outFile),
-                        "exporting thumbnail data file (asf_export)\n");
+            if (meta->general->band_count == 1)
+                check_return(asf_export(format, scale, tmpFile, outFile),
+                             "exporting thumbnail data file (asf_export)\n");
+            else {
+                // just the first band -- set the others to NULL
+                char **bands = find_single_band(tmpFile, "all", &n);
+                for (i=1; i<n; ++i) {
+                    FREE(bands[i]); bands[i] = NULL;
+                }
+                check_return(asf_export_bands(format, scale, FALSE, NULL,
+                                              tmpFile, outFile, bands),
+                             "exporting thumbnail data file (asf_export)\n");
+            }
         }
 
         meta_free(meta);

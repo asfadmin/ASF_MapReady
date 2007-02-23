@@ -537,7 +537,6 @@ export_band_image (const char *metadata_file_name,
   FILE *ojpeg = NULL, *opgm=NULL;
   struct jpeg_compress_struct cinfo;
   ssize_t ii;
-  int free_band_names=FALSE;
   int have_look_up_table = look_up_table_name && strlen(look_up_table_name)>0;
 
   meta_parameters *md = meta_read (metadata_file_name);
@@ -798,20 +797,32 @@ export_band_image (const char *metadata_file_name,
   }
   else { // Single-band image output (one grayscale file for each available band)
 
+      int free_band_names=FALSE;
     int band_count = md->general->band_count;
     char base_name[255], bands[25];
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
 
     if (!band_name) {
-        // allow passing in NULL for the band names to mean "who cares!"
-        // when exporting a single band image (mostly useful with a
-        // look up table).
-        band_name = (char **) MALLOC(sizeof(char*)*1);
-        band_name[0] = (char*) MALLOC(sizeof(char)*4);
-        strcpy(band_name[0], "???");
-        free_band_names = TRUE;
-        band_count = 1;
+        if (band_count == 1) {
+            // allow passing in NULL for the band names to mean "who cares!"
+            // when exporting a single band image (mostly useful with a
+            // look up table).
+            band_name = (char **) MALLOC(sizeof(char*)*1);
+            band_name[0] = (char*) MALLOC(sizeof(char)*4);
+            strcpy(band_name[0], "???");
+            free_band_names = TRUE;
+        } 
+        else {
+            // caller did not pass the band names -- get them ourselves
+            int n;
+            char *b = stripExt(image_data_file_name);
+            band_name = find_single_band(b, "all", &n);
+            asfRequire (n == band_count, "Band count inconsistent: %d != %d\n",
+                        n, band_count);
+            free_band_names = TRUE;
+            FREE(b);
+        }
     }
 
     int kk;
@@ -1004,10 +1015,12 @@ export_band_image (const char *metadata_file_name,
 	  finalize_ppm_file(opgm);
       }
     }
-  }
 
-  if (free_band_names) {
-      FREE(band_name[0]); FREE(band_name);
+    if (free_band_names) {
+        for (ii=0; ii<band_count; ++ii)
+            FREE(band_name[ii]);
+        FREE(band_name);
+    }
   }
 
   meta_free (md);
