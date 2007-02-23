@@ -1269,7 +1269,11 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   band_name = extract_band_names(imd->general->bands, imd->general->band_count);
 
   if (!multiband) {
-    sprintf(omd->general->bands, "%s", band_name[band_num]);
+    if (band_name)
+      sprintf(omd->general->bands, "%s", band_name[band_num]);
+    else
+      strcpy(omd->general->bands, MAGIC_UNSET_STRING);
+
     omd->general->band_count = 1;
   }
 
