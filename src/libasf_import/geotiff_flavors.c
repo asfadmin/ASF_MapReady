@@ -1,6 +1,7 @@
 // Implementation of the interface described in geotiff_flavors.h.
 
 #include <assert.h>
+#include <sys/types.h>
 #include <regex.h>
 
 #include <geokeys.h>
