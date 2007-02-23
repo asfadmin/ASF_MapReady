@@ -1054,6 +1054,27 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 check_return(asf_export_bands(format, scale, FALSE, NULL,
                                               tmpFile, outFile, bands),
                              "exporting thumbnail data file (asf_export)\n");
+                // strip off the band name at the end!
+                char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
+                if (cfg->general->intermediates) {
+                    sprintf(banded_name, "%s/%s_thumb_%s.jpg",
+                            cfg->general->tmp_dir, basename, bands[0]);
+                    sprintf(outFile, "%s/%s_thumb.jpg",
+                            cfg->general->tmp_dir, basename);
+                } else {
+                    sprintf(banded_name, "%s_thumb_%s.jpg",
+                            cfg->general->out_name, bands[0]);
+                    char *tmp =
+                        appendToBasename(cfg->general->out_name, "_thumb");
+                    strcpy(outFile, tmp);
+                    strcat(outFile, ".jpg");
+                    free(tmp);
+                }
+                printf("Renaming: %s -> %s\n", banded_name, outFile);
+                fileRename(banded_name, outFile);
+                FREE(bands[0]);
+                FREE(bands);
+                FREE(banded_name);
             }
         }
 
