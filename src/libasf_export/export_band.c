@@ -948,10 +948,13 @@ export_band_image (const char *metadata_file_name,
              }
              else { // Not Prism
                if (sample_mapping != NONE) {
+                   static int warned_just_once = FALSE;
+                   if (!warned_just_once)
                  asfPrintWarning("Byte to byte sample remapping not supported for\n"
                                  "exporting multi-band optical images into individual\n"
                                  "output files.\n"
                                  " ...defaulting to no remapping.\n");
+                   warned_just_once = TRUE;
                }
                if (format == TIF || format == GEOTIFF)
                  write_tiff_byte2byte(otif, byte_line, stats, NONE,
