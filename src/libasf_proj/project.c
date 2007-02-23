@@ -222,7 +222,7 @@ static int project_worker_arr(const char * projection_description,
     // probably a mistake.
     if ( !(*projected_x) || !(*projected_y) ) {
       assert (!(*projected_x) && !(*projected_y));
-    
+
       *projected_x = (double *) MALLOC (sizeof(double) * length);
       *projected_y = (double *) MALLOC (sizeof(double) * length);
     }
@@ -231,7 +231,7 @@ static int project_worker_arr(const char * projection_description,
       projected_z = (double **) MALLOC (sizeof (double *));
     }
     *projected_z = (double *) MALLOC (sizeof(double) * length);
-  } 
+  }
 
   else {
     if (!(*projected_x) || !(*projected_y) || !(*projected_z)) {
@@ -258,7 +258,7 @@ static int project_worker_arr(const char * projection_description,
   {
     px[i] = lon[i];
     py[i] = lat[i];
-    
+
     // If user passed height values, use those, otherwise, use the
     // average height or the default average height.
     if ( !dcah ) {
@@ -281,35 +281,35 @@ static int project_worker_arr(const char * projection_description,
       asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
       ok = FALSE;
   }
-  
+
   if (ok)
   {
       assert (geographic_projection != NULL);
-      
+
       output_projection = pj_init_plus (projection_description);
-      
+
       if (pj_errno != 0)
       {
 	  asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
 	  ok = FALSE;
       }
-  
+
       if (ok)
       {
 	  assert (output_projection != NULL);
-	  
-	  pj_transform (geographic_projection, output_projection, length, 1, 
+
+	  pj_transform (geographic_projection, output_projection, length, 1,
 			px, py, pz);
-	  
+
 	  if (pj_errno != 0)
 	  {
 	      asfPrintWarning("libproj error: %s\n", pj_strerrno(pj_errno));
 	      ok = FALSE;
 	  }
-	  
+
 	  pj_free(output_projection);
       }
-      
+
       pj_free(geographic_projection);
   }
 
@@ -365,7 +365,7 @@ project_worker_arr_inv(const char * projection_description,
     // probably a mistake.
     if ( !(*lat) || !(*lon) ) {
       assert (!(*lat) && !(*lon));
-    
+
       *lat = (double *) MALLOC (sizeof(double) * length);
       *lon = (double *) MALLOC (sizeof(double) * length);
     }
@@ -374,7 +374,7 @@ project_worker_arr_inv(const char * projection_description,
       height = (double **) MALLOC (sizeof (double *));
     }
     *height = (double *) MALLOC (sizeof(double) * length);
-  } 
+  }
 
   else {
     if (!(*lat) || !(*lon) || !(*height)) {
@@ -424,32 +424,32 @@ project_worker_arr_inv(const char * projection_description,
       asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
       ok = FALSE;
   }
-  
+
   if (ok)
   {
       assert (geographic_projection != NULL);
-  
+
       output_projection = pj_init_plus (projection_description);
-      
+
       if (pj_errno != 0)
       {
 	  asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
 	  ok = FALSE;
       }
-      
+
       if (ok)
       {
 	  assert (output_projection != NULL);
-	  
-	  pj_transform (output_projection, geographic_projection, length, 1, 
+
+	  pj_transform (output_projection, geographic_projection, length, 1,
 			plon, plat, pheight);
-	  	  
+
 	  if (pj_errno != 0)
 	  {
 	      asfPrintWarning("libproj error: %s\n", pj_strerrno(pj_errno));
 	      ok = FALSE;
 	  }
-	  
+
 	  pj_free(output_projection);
       }
 
@@ -491,7 +491,7 @@ static double utm_nudge(double lon_0)
   return lon_0;
 }
 
-static const char * 
+static const char *
 utm_projection_description(project_parameters_t * pps, datum_type_t datum)
 {
   static char utm_projection_description[128];
@@ -507,7 +507,7 @@ utm_projection_description(project_parameters_t * pps, datum_type_t datum)
   {
       sprintf(utm_projection_description,
 	      "+proj=utm +zone=%d %s+datum=%s",
-	      pps->utm.zone, pps->utm.lat0 < 0 ? "+south " : "", 
+	      pps->utm.zone, pps->utm.false_northing == 10000000 ? "+south " : "",
           datum_str(datum));
   }
 
@@ -523,9 +523,9 @@ project_utm (project_parameters_t * pps, double lat, double lon, double height,
 }
 
 int
-project_utm_arr (project_parameters_t * pps, 
+project_utm_arr (project_parameters_t * pps,
 		 double *lat, double *lon, double *height,
-		 double **projected_x, double **projected_y, 
+		 double **projected_x, double **projected_y,
 		 double **projected_z, long length,
          datum_type_t datum)
 {
@@ -558,7 +558,7 @@ project_utm_arr_inv (project_parameters_t * pps,
 /****************************************************************************
  Polar Sterographic (PS)
 ****************************************************************************/
-static const char * 
+static const char *
 ps_projection_desc(project_parameters_t * pps, datum_type_t datum)
 {
   static char ps_projection_description[128];
@@ -590,7 +590,7 @@ project_ps_arr(project_parameters_t * pps,
 	       double **projected_x, double **projected_y,
 	       double **projected_z, long length, datum_type_t datum)
 {
-  return project_worker_arr(ps_projection_desc(pps, datum), lat, lon, height, 
+  return project_worker_arr(ps_projection_desc(pps, datum), lat, lon, height,
 			    projected_x, projected_y, projected_z, length);
 }
 
@@ -608,7 +608,7 @@ project_ps_arr_inv(project_parameters_t * pps,
 		   double **lat, double **lon, double **height,
 		   long length, datum_type_t datum)
 {
-    return project_worker_arr_inv(ps_projection_desc(pps, datum), 
+    return project_worker_arr_inv(ps_projection_desc(pps, datum),
 				  x, y, z, lat, lon, height, length);
 }
 
@@ -641,7 +641,7 @@ project_lamaz(project_parameters_t * pps,
 
 int
 project_lamaz_arr(project_parameters_t *pps,
-		  double *lat, double *lon, double *height, 
+		  double *lat, double *lon, double *height,
 		  double **projected_x, double **projected_y,
 		  double **projected_z, long length, datum_type_t datum)
 {
@@ -659,7 +659,7 @@ project_lamaz_inv(project_parameters_t *pps, double x, double y, double z,
 
 int
 project_lamaz_arr_inv(project_parameters_t *pps,
-		      double *x, double *y, double *z, 
+		      double *x, double *y, double *z,
 		      double **lat, double **lon, double **height,
 		      long length, datum_type_t datum)
 {
@@ -717,7 +717,7 @@ project_lamcc_inv(project_parameters_t *pps, double x, double y, double z,
 int
 project_lamcc_arr_inv(project_parameters_t *pps,
 		      double *x, double *y, double *z,
-		      double **lat, double **lon, double **height, 
+		      double **lat, double **lon, double **height,
 		      long length, datum_type_t datum)
 {
   return project_worker_arr_inv(lamcc_projection_desc(pps, datum),
@@ -778,7 +778,7 @@ project_albers_arr_inv(project_parameters_t *pps,
 		       double **lat, double **lon, double **height,
 		       long length, datum_type_t datum)
 {
-    return project_worker_arr_inv(albers_projection_desc(pps, datum), 
+    return project_worker_arr_inv(albers_projection_desc(pps, datum),
                   x, y, z, lat, lon, height, length);
 }
 
@@ -844,22 +844,22 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       project_lamaz_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
-    case LAMBERT_CONFORMAL_CONIC: 
-      project_lamcc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum); 
+    case LAMBERT_CONFORMAL_CONIC:
+      project_lamcc_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
-    case POLAR_STEREOGRAPHIC: 
-      project_ps_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum); 
+    case POLAR_STEREOGRAPHIC:
+      project_ps_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR: 
-      project_utm_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum); 
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      project_utm_inv(&(proj->param), x, y, z, lat, lon, height, proj->datum);
       break;
-    case SCANSAR_PROJECTION: 
+    case SCANSAR_PROJECTION:
       asfPrintError("'proj_to_latlon' not defined for SCANSAR_PROJECTION.\n"
 		    "Use 'scan_latlon' instead.\n");
       break;
-    case LAT_LONG_PSEUDO_PROJECTION: 
-      *lat = y; 
-      *lon = x; 
+    case LAT_LONG_PSEUDO_PROJECTION:
+      *lat = y;
+      *lon = x;
       break;
     default:
       printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
@@ -871,7 +871,7 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
 void rotate_z(vector *v,double theta)
 {
 	double xNew,yNew;
-	
+
 	xNew = v->x*cosd(theta)+v->y*sind(theta);
 	yNew = -v->x*sind(theta)+v->y*cosd(theta);
 	v->x = xNew; v->y = yNew;
@@ -880,7 +880,7 @@ void rotate_z(vector *v,double theta)
 void rotate_y(vector *v,double theta)
 {
 	double xNew,zNew;
-	
+
 	zNew = v->z*cosd(theta)+v->x*sind(theta);
 	xNew = -v->z*sind(theta)+v->x*cosd(theta);
 	v->x = xNew; v->z = zNew;
@@ -912,13 +912,13 @@ void scan_to_latlon(meta_parameters *meta,
 	else
 		qlat =  x/proj->param.atct.rlocal; /* Left looking sar */
 	qlon = y/(proj->param.atct.rlocal*cos(qlat));
-	
+
 	sph2cart(proj->param.atct.rlocal, qlat, qlon, &pos);
-	
+
 	rotate_z(&pos,-proj->param.atct.alpha3);
 	rotate_y(&pos,-proj->param.atct.alpha2);
 	rotate_z(&pos,-proj->param.atct.alpha1);
-	
+
 	cart2sph(pos,&radius,&lat,lon);
 	*lon *= R2D;
 	lat *= R2D;
@@ -932,16 +932,16 @@ void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, doubl
 	double qlat, qlon;
 	double lat,radius;
 	vector pos;
-	
+
 	lat= atand(tand(lat_d)*(1 - ecc2));
 	sph2cart(proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
-	
+
 	rotate_z(&pos,proj->param.atct.alpha1);
 	rotate_y(&pos,proj->param.atct.alpha2);
 	rotate_z(&pos,proj->param.atct.alpha3);
-	
+
 	cart2sph(pos,&radius,&qlat,&qlon);
-	
+
 	*c1 = qlon*proj->param.atct.rlocal*cos(qlat);
 	if (look_dir=='R')
 		*c2 = -1.0*qlat*proj->param.atct.rlocal;  /* right looking */
@@ -960,8 +960,8 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
 
   switch (proj->type)
     {
-    case SCANSAR_PROJECTION: 
-      ll_ac(proj, look_dir, lat, lon, y, x); 
+    case SCANSAR_PROJECTION:
+      ll_ac(proj, look_dir, lat, lon, y, x);
       break;
     case ALBERS_EQUAL_AREA:
       project_albers(&(proj->param), lat, lon, height, x, y, z, proj->datum);
@@ -969,14 +969,14 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       project_lamaz(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
-    case LAMBERT_CONFORMAL_CONIC: 
-      project_lamcc(&(proj->param), lat, lon, height, x, y, z, proj->datum); 
+    case LAMBERT_CONFORMAL_CONIC:
+      project_lamcc(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
-    case POLAR_STEREOGRAPHIC: 
-      project_ps(&(proj->param), lat, lon, height, x, y, z, proj->datum); 
+    case POLAR_STEREOGRAPHIC:
+      project_ps(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
-    case UNIVERSAL_TRANSVERSE_MERCATOR: 
-      project_utm(&(proj->param), lat, lon, height, x, y, z, proj->datum); 
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      project_utm(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
     default:
       printf("Unrecognized map projection '%c' passed to latlon_to_proj!\n",
@@ -1004,7 +1004,7 @@ void fill_in_utm(double lat, double lon, project_parameters_t *pps)
     pps->utm.false_northing = 10000000.0;
 }
 
-static void latLon2proj_imp(double lat, double lon, double elev, 
+static void latLon2proj_imp(double lat, double lon, double elev,
                             char *projFile, double *projX, double *projY)
 {
   project_parameters_t pps;
@@ -1016,9 +1016,9 @@ static void latLon2proj_imp(double lat, double lon, double elev,
   {
       // Read projection file
       read_proj_file(projFile, &pps, &proj_type);
-      
+
       // Report the conversion type
-      switch(proj_type) 
+      switch(proj_type)
       {
           case ALBERS_EQUAL_AREA:
               printf("Lat/Lon to Albers Equal Area\n\n");
@@ -1096,7 +1096,7 @@ void latLon2UTM_zone(double lat, double lon, double elev, int zone,
   latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, elev, projX, projY, &projZ);
 }
 
-void latLon2proj(double lat, double lon, double elev, char *projFile, 
+void latLon2proj(double lat, double lon, double elev, char *projFile,
 		 double *projX, double *projY)
 {
     asfRequire(projFile != NULL, "A projection file is required.\n");
@@ -1125,7 +1125,7 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   meta_proj->type = proj_type;
   meta_proj->datum = WGS84_DATUM; // assumed...
   meta_proj->param = pps;
-  
+
   proj_to_latlon(meta_proj, projX, projY, elev, lat, lon, &h);
 
   *lat *= R2D;
@@ -1141,17 +1141,17 @@ void to_radians(projection_type_t pt, project_parameters_t * pps)
                 pps->utm.lon0 *= DEG_TO_RAD;
             if (!ISNAN(pps->utm.lat0))
                 pps->utm.lat0 *= DEG_TO_RAD;
-            
+
             break;
-            
+
 	case POLAR_STEREOGRAPHIC:
             if (!ISNAN(pps->ps.slon))
                 pps->ps.slon *= DEG_TO_RAD;
             if (!ISNAN(pps->ps.slat))
                 pps->ps.slat *= DEG_TO_RAD;
-            
+
             break;
-            
+
 	case ALBERS_EQUAL_AREA:
             if (!ISNAN(pps->albers.center_meridian))
                 pps->albers.center_meridian *= DEG_TO_RAD;
@@ -1161,17 +1161,17 @@ void to_radians(projection_type_t pt, project_parameters_t * pps)
                 pps->albers.std_parallel1 *= DEG_TO_RAD;
             if (!ISNAN(pps->albers.std_parallel2))
                 pps->albers.std_parallel2 *= DEG_TO_RAD;
-            
+
             break;
-            
+
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
             if (!ISNAN(pps->lamaz.center_lat))
                 pps->lamaz.center_lat *= DEG_TO_RAD;
             if (!ISNAN(pps->lamaz.center_lon))
                 pps->lamaz.center_lon *= DEG_TO_RAD;
-            
+
             break;
-            
+
 	case LAMBERT_CONFORMAL_CONIC:
             if (!ISNAN(pps->lamcc.plat1))
                 pps->lamcc.plat1 *= DEG_TO_RAD;
@@ -1181,9 +1181,9 @@ void to_radians(projection_type_t pt, project_parameters_t * pps)
                 pps->lamcc.lat0 *= DEG_TO_RAD;
             if (!ISNAN(pps->lamcc.lon0))
                 pps->lamcc.lon0 *= DEG_TO_RAD;
-            
+
             break;
-            
+
 	default:
             asfPrintError("Image file is not map-projected.  Use asf_geocode or\n"
                           "Geocode tab to geocode the image file before proceeding.\n");
@@ -1199,9 +1199,9 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                 pps->utm.lon0 *= RAD_TO_DEG;
             if (!ISNAN(pps->utm.lat0))
                 pps->utm.lat0 *= RAD_TO_DEG;
-            
+
             break;
-            
+
 	case POLAR_STEREOGRAPHIC:
             if (!ISNAN(pps->ps.slon))
                 pps->ps.slon *= RAD_TO_DEG;
@@ -1209,7 +1209,7 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                 pps->ps.slat *= RAD_TO_DEG;
 
             break;
-            
+
 	case ALBERS_EQUAL_AREA:
             if (!ISNAN(pps->albers.center_meridian))
                 pps->albers.center_meridian *= RAD_TO_DEG;
@@ -1219,17 +1219,17 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                 pps->albers.std_parallel1 *= RAD_TO_DEG;
             if (!ISNAN(pps->albers.std_parallel2))
                 pps->albers.std_parallel2 *= RAD_TO_DEG;
-            
+
             break;
-            
+
 	case LAMBERT_AZIMUTHAL_EQUAL_AREA:
             if (!ISNAN(pps->lamaz.center_lat))
                 pps->lamaz.center_lat *= RAD_TO_DEG;
             if (!ISNAN(pps->lamaz.center_lon))
                 pps->lamaz.center_lon *= RAD_TO_DEG;
-            
+
             break;
-            
+
 	case LAMBERT_CONFORMAL_CONIC:
             if (!ISNAN(pps->lamcc.plat1))
                 pps->lamcc.plat1 *= RAD_TO_DEG;
@@ -1239,9 +1239,9 @@ void to_degrees(projection_type_t pt, project_parameters_t * pps)
                 pps->lamcc.lat0 *= RAD_TO_DEG;
             if (!ISNAN(pps->lamcc.lon0))
                 pps->lamcc.lon0 *= RAD_TO_DEG;
-            
+
             break;
-            
+
 	default:
             asfPrintError("Image file is not map-projected.  Use asf_geocode or\n"
                           "Geocode tab to geocode the image file before proceeding.\n");
@@ -1260,27 +1260,27 @@ void atct_init(meta_projection *proj,stateVector st)
   vector z_orbit, y_axis, a, nd;
   double alpha3_sign;
   double alpha1,alpha2,alpha3;
-  
+
   vecCross(st.pos,st.vel,&z_orbit);vecNormalize(&z_orbit);
-  
+
   vecCross(z_orbit,up,&y_axis);vecNormalize(&y_axis);
-  
+
   vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
-  
+
   alpha1 = atan2_check(a.y,a.x)*R2D;
   alpha2 = -1.0 * asind(a.z);
-  if (z_orbit.z < 0.0) 
+  if (z_orbit.z < 0.0)
     {
       alpha1 +=  180.0;
       alpha2 = -1.0*(180.0-fabs(alpha2));
     }
-  
+
   vecCross(a,st.pos,&nd);vecNormalize(&nd);
   alpha3_sign = vecDot(nd,z_orbit);
   alpha3 = acosd(vecDot(a,st.pos)/vecMagnitude(st.pos));
-  if (alpha3_sign<0.0) 
+  if (alpha3_sign<0.0)
     alpha3 *= -1.0;
-  
+
   proj->param.atct.alpha1=alpha1;
   proj->param.atct.alpha2=alpha2;
   proj->param.atct.alpha3=alpha3;
