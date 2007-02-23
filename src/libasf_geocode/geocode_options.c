@@ -14,6 +14,8 @@ static const double DEFAULT_POLAR_STERO_SOUTH_CENTRAL_MERIDIAN = -90;
 static const double DEFAULT_POLAR_STERO_NORTH_STANDARD_PARALLEL = 70;
 static const double DEFAULT_POLAR_STERO_SOUTH_STANDARD_PARALLEL = -70;
 
+double zone_to_central_meridian (int zone);
+
 project_parameters_t * get_geocode_options(int *argc, char **argv[],
                                            projection_type_t * proj_type,
                                            double *height, double *pixel_size,
@@ -178,28 +180,16 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
 
   switch (pt) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-//          meta_get_latLon(meta, meta->general->line_count/2,
-//                          meta->general->sample_count/2, 0, &lat, &lon);
-//          fill_in_utm(lat, lon, pps);
-      if (ISNAN(pps->utm.lon0)) {
-        if (ISNAN(meta->general->center_longitude)) {
-          double lat, lon;
-          meta_get_latLon(meta, meta->general->line_count/2,
-                          meta->general->sample_count/2, 0,
-                          &lat, &lon);
-          meta->general->center_longitude = lon;
-        }
-        pps->utm.lon0 = meta->general->center_longitude;
-      }
-      if (ISNAN(pps->utm.lat0)) {
-        if (ISNAN(meta->general->center_latitude)) {
-          double lat, lon;
-          meta_get_latLon(meta, meta->general->line_count/2,
-                          meta->general->sample_count/2, 0,
-                          &lat, &lon);
-          meta->general->center_latitude = lat;
-        }
-        pps->utm.lat0 = meta->general->center_latitude;
+      // set the center_longitude and center_latitude if necessary
+      if (ISNAN(meta->general->center_longitude) ||
+          ISNAN(meta->general->center_latitude)
+         ) {
+        double lat, lon;
+        meta_get_latLon(meta, meta->general->line_count/2,
+                        meta->general->sample_count/2, 0,
+                        &lat, &lon);
+        meta->general->center_longitude = lon;
+        meta->general->center_latitude = lat;
       }
 
       /* set the zone based on the specified longitude */
@@ -208,17 +198,28 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
         // get a longitude that puts us on a zone boundry --
         // such an argument is essentially ambiguous, and the
         // user must resolve it.
-        if ( pps->utm.lon0 / 6.0 - floor (pps->utm.lon0 / 6.0) == 0.0 ) {
-          asfPrintError ("Longitude %.6f lies on a UTM zone boundry, "
-                         "(i.e. is ambiguous as to which UTM zone "
-                         "should be used for geocoding)\n",
-          pps->utm.lon0);
+        if ( meta->general->center_longitude / 6.0 -
+             floor (meta->general->center_longitude / 6.0) == 0.0 )
+        {
+          asfPrintError ("Center of Scene Longitude (%.6f) lies on a UTM\n"
+              "zone boundry, (i.e. is ambiguous as to which UTM zone\n"
+              "should be used for geocoding.)  Please select which zone\n"
+              "you prefer (via user interface or .proj definition file.)\n",
+          meta->general->center_longitude);
         }
-        pps->utm.zone = calc_utm_zone(pps->utm.lon0);
+        pps->utm.zone = calc_utm_zone(meta->general->center_longitude);
+      }
+
+      // Set the latitude/longitude of origin
+      if (ISNAN(pps->utm.lon0)) {
+        pps->utm.lon0 = zone_to_central_meridian(pps->utm.zone);
+      }
+      if (ISNAN(pps->utm.lat0)) {
+        pps->utm.lat0 = 0;
       }
 
       /* false easting & false northing are fixed for utm */
-      pps->utm.false_northing = pps->utm.lat0 >= 0 ? 0 : 10000000;
+      pps->utm.false_northing = meta->general->center_latitude >= 0 ? 0 : 10000000;
       pps->utm.false_easting = 500000;
       pps->utm.scale_factor = 0.9996;
       break;
@@ -283,3 +284,7 @@ void apply_defaults(projection_type_t pt, project_parameters_t * pps,
   }
 }
 
+double zone_to_central_meridian (int zone)
+{
+  return -177.0 + (zone - 1) * 6.0;
+}

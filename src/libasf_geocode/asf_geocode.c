@@ -637,16 +637,16 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
   // The latitude and longitude of the center of the image.
   double lat_0, lon_0;
-  if (imd->projection && imd->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
+//  if (imd->projection && imd->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
     ret = meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height,
                            &lat_0, &lon_0);
-  }
+/*  }
   else {
     ret=0;
     lat_0 = imd->general->center_latitude;
     lon_0 = imd->general->center_longitude;
   }
-  g_assert(ret == 0);
+    g_assert(ret == 0);*/
 
   // If the user's selected datum is NAD27 -- test it out to make sure we
   // have the capability of using it.  If we don't we'll fall back to WGS84.
