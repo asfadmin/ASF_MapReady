@@ -375,6 +375,24 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 		"   Output data type: geocoded amplitude image\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
+      else if (radiometry == r_SIGMA) {
+	sprintf(logbuf,
+		"   Input data type: level one data\n"
+		"   Output data type: calibrated image (sigma power scale values)\n");
+	meta->general->image_data_type = SIGMA_IMAGE;
+      }
+      else if (radiometry == r_GAMMA) {
+	sprintf(logbuf,
+		"   Input data type: level one data\n"
+		"   Output data type: calibrated image (gamma power scale values)\n");
+	meta->general->image_data_type = GAMMA_IMAGE;
+      }
+      else if (radiometry == r_BETA) {
+	sprintf(logbuf,
+		"   Input data type: level one data\n"
+		"   Output data type: calibrated image (beta power scale values)\n");
+	meta->general->image_data_type = BETA_IMAGE;
+      }
       else {
         sprintf(logbuf,
                 "   Input data type: level one data\n"
