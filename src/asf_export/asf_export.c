@@ -572,8 +572,11 @@ main (int argc, char *argv[])
   }
   else if (rgbFlag == FLAG_NOT_SET &&
           truecolorFlag == FLAG_NOT_SET &&
-          falsecolorFlag == FLAG_NOT_SET) {
-    band_names = find_single_band(in_base_name, "all",
+          falsecolorFlag == FLAG_NOT_SET &&
+          bandFlag == FLAG_NOT_SET) {
+    bandFlag=1; // For proper messaging to the user
+    strcpy (command_line.band, "all");
+    band_names = find_single_band(in_base_name, command_line.band,
                                   &num_bands_found);
   }
 
