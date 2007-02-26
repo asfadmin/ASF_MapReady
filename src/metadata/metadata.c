@@ -62,6 +62,28 @@ void print_record(FILE *fp, char *fileName, int reqrec)
     FREE(rec);
 }
 
+static char *get_base_name(const char *fileName)
+{
+    char *dir = MALLOC(sizeof(char)*(strlen(fileName)+1));
+    char *file = MALLOC(sizeof(char)*(strlen(fileName)+1));
+
+    split_dir_and_file(fileName, dir, file);
+
+    char *s;
+    if (strncmp(file, "LED-", 4) == 0 || strncmp(file, "IMG-", 4) == 0)
+        s = file + 4;
+    else
+        s = file;
+
+    char *ret = MALLOC(sizeof(char)*(strlen(fileName)+1));
+    sprintf(ret, "%s%s", dir, s);
+
+    FREE(file);
+    FREE(dir);
+
+    return ret;
+}
+
 char *get_record_as_string(char *fileName, int reqrec)
 {
   struct VFDRECV *facdr;                // Facility Related Data record
@@ -90,17 +112,25 @@ char *get_record_as_string(char *fileName, int reqrec)
   for (ii=0; ii<MAX_BANDS; ++ii)
       dataNames[ii] = MALLOC(sizeof(char*)*512);
 
-  if (strncmp(fileName, "LED-", 4) == 0) pre = 4; // ALOS kludge
-  get_ceos_names(fileName + pre, dataNames, leaderName, &nBands);
+  char *baseName = get_base_name(fileName);
+  get_ceos_names(baseName, dataNames, leaderName, &nBands);
 
+  //printf("fileName: %s\n", fileName);
+  //printf("base: %s\n", baseName);
+
+  //for (ii=0; ii<nBands; ++ii)
+  //    printf("DataName[%d] = %s\n", ii, dataNames[ii]);
+  //printf("leaderName: %s\n", leaderName);
+ 
   FILE *fp_tmp = fopen(dataNames[0], "r");
   if (fp_tmp != NULL) {
       dataNameExists = 1;
       fclose(fp_tmp);
   }
   else {
-      asfPrintWarning("Data file missing.\n"
-                      "Unable to extract Image File Descriptor Record.\n");
+      asfPrintWarning("Data file (%s) missing.\n"
+                      "Unable to extract Image File Descriptor Record.\n",
+                      dataNames[0]);
       dataNameExists = 0;
   }
   fp_tmp = fopen(leaderName, "r");
@@ -209,8 +239,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (192): 
       vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
-      if (dataNameExists && get_ifiledr(dataNames[0]+pre,vfdr) >= 0)
+      char *s = get_base_name(dataNames[0]);
+      if (dataNameExists && get_ifiledr(s,vfdr) >= 0)
 	ret = sprn_ifiledr(vfdr);
+      FREE(s);
       FREE(vfdr);
       break;
     case (200):
@@ -237,6 +269,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     }
   FREE_BANDS(dataNames);
+  FREE(baseName);
   if (!ret)
       return STRDUP("Record not found.\n");
   return ret;

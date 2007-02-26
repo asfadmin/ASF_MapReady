@@ -254,7 +254,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 }
 
                 /* check if we should disable "Display CEOS Metadata" */
-                ceos_meta_name = build_ceos_metadata_filename(in_name);
+                ceos_meta_name = meta_file_name(in_name);
                 gboolean show_display_ceos_metadata_menu_item =
                     g_file_test(ceos_meta_name, G_FILE_TEST_EXISTS);
                 g_free(ceos_meta_name);

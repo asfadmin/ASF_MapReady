@@ -27,29 +27,6 @@ gchar * build_asf_metadata_filename(gchar * name)
     }
 }
 
-gchar * build_ceos_metadata_filename(gchar * name)
-{
-    gchar * p;
-
-    p = strrchr(name, '.');
-    if (!p)
-    {
-        return g_strdup(name);
-    }
-    else
-    {
-        gchar * ret;	
-        ret = (gchar *) g_malloc( sizeof(gchar) * (strlen(name) + 5) );
-
-        strcpy(ret, name);
-        *(ret + (p - name + 1)) = '\0';
-
-        strcat(ret, "L");
-
-        return ret;
-    }
-}
-
 void show_asf_meta_data(gchar * out_name)
 {
     GtkWidget *metadata_dialog;
@@ -168,7 +145,7 @@ void show_ceos_meta_data(gchar * in_name)
     gchar * mdv = find_in_bin("mdv");
 #endif
 
-    gchar * ceos_file = build_ceos_metadata_filename(in_name);
+    gchar * ceos_file = meta_file_name(in_name);
 
     // use_thumbnails should always be true here, since
     // we disable the option in the case where it is false
