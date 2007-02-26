@@ -90,8 +90,8 @@ int is_slant_range(meta_parameters *md)
 
 double spheroid_diff_from_axis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor)
 {
-  double s_semi_major;
-  double s_semi_minor;
+  double s_semi_major = 0.0;
+  double s_semi_minor = 0.0;
 
   asfRequire(n_semi_major >= 0.0 && n_semi_minor >= 0,
              "Negative semi-major or semi-minor values found\n");

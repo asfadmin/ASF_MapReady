@@ -22,7 +22,7 @@ export_as_esri (const char *metadata_file_name,
   char projection[100], datum[100], spheroid_str[100]="", semimajor[25]="";
   char flattening[25];
   double central_meridian;
-  spheroid_type_t spheroid;
+  spheroid_type_t spheroid = UNKNOWN_SPHEROID;
   char esri_data_file_name[2 * MAX_IMAGE_NAME_LENGTH];
 
   /* Complex data generally can't be output into meaningful images, so

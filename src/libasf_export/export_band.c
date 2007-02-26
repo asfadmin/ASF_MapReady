@@ -677,8 +677,12 @@ export_band_image (const char *metadata_file_name,
 
     // Write the data to the file
     FILE *fp;
-    float *red_float_line, *green_float_line, *blue_float_line;
-    unsigned char *red_byte_line, *green_byte_line, *blue_byte_line;
+    float *red_float_line = NULL;
+    float *green_float_line = NULL;
+    float *blue_float_line = NULL;
+    unsigned char *red_byte_line = NULL;
+    unsigned char *green_byte_line = NULL;
+    unsigned char *blue_byte_line = NULL;
 
     fp = FOPEN(image_data_file_name, "rb");
 
@@ -812,7 +816,7 @@ export_band_image (const char *metadata_file_name,
             band_name[0] = (char*) MALLOC(sizeof(char)*4);
             strcpy(band_name[0], "???");
             free_band_names = TRUE;
-        } 
+        }
         else {
             // caller did not pass the band names -- get them ourselves
             int n;
@@ -879,7 +883,7 @@ export_band_image (const char *metadata_file_name,
 		      "Size of the unsigned char data type on this machine is "
 		      "different than expected.\n");
 	  asfPrintStatus("Gathering statistics ...\n");
-	  calc_stats_from_file(image_data_file_name, band_name[0],
+	  calc_stats_from_file(image_data_file_name, band_name[kk],
                                md->general->no_data,
 			       &stats.min, &stats.max, &stats.mean,
 			       &stats.standard_deviation, &stats.hist);
