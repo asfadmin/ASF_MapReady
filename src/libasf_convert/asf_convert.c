@@ -1126,7 +1126,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     cfg->geocoding->projection, cfg->geocoding->force,
                     RESAMPLE_NEAREST_NEIGHBOR, cfg->geocoding->height,
                     datum, cfg->geocoding->pixel, NULL, inFile, outFile,
-                    cfg->geocoding->background),
+                    MASK_INVALID_DATA),
                 "geocoding clipped DEM (asf_geocode)\n");
         }
         else {

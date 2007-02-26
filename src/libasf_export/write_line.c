@@ -146,7 +146,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
 		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, no_data);
+		       stats.hist_pdf, NAN);
   }
 
   apply_look_up_table(look_up_table_name, byte_line, sample_count,
@@ -309,7 +309,7 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
     byte_line[jj] =
       pixel_float2byte(float_line[jj], sample_mapping,
 		       stats.min, stats.max, stats.hist,
-		       stats.hist_pdf, no_data);
+		       stats.hist_pdf, NAN);
   }
 
   apply_look_up_table(look_up_table_name, byte_line, sample_count,
