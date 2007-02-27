@@ -3,54 +3,6 @@
 #include "asf_nan.h"
 #include "asf_raster.h"
 
-static gsl_histogram *calc_histogram (float *data, long long pixel_count,
-                                      double min, double max, size_t num_bins)
-{
-  // Guard against weird data
-  if(!(min<max)) max = min + 1;
-
-  // Initialize the histogram.
-  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
-  gsl_histogram_set_ranges_uniform (hist, min, max);
-
-  // Populate the histogram over every sample in the image.
-  long long ii;
-  for (ii=0; ii<pixel_count; ii++)
-    gsl_histogram_increment (hist, data[ii]);
-
-  return hist;
-}
-
-void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
-			  double *max, double *mean, double *stdDev,
-			  gsl_histogram **histogram)
-{
-  FILE *fp;
-  meta_parameters *meta;
-  //char dataFile[255], metaFile[255];
-  float *data;
-  int band_number;
-  long long pixel_count;
-  long offset;
-
-  //sprintf(dataFile, "%s.img", inFile);
-  //sprintf(metaFile, "%s.meta", inFile);
-  meta = meta_read(inFile);
-  band_number = (!band || strlen(band) == 0 || strcmp(band, "???")==0) ? 0 :
-    get_band_number(meta->general->bands, meta->general->band_count, band);
-  pixel_count = meta->general->line_count * meta->general->sample_count;
-  offset = meta->general->line_count * band_number;
-  data = (float *) MALLOC(sizeof(float) * pixel_count);
-  fp = FOPEN(inFile, "rb");
-  get_float_lines(fp, meta, offset, meta->general->line_count, data);
-  calc_stats(data, pixel_count, mask, min, max, mean, stdDev);
-  *histogram = calc_histogram(data, pixel_count, *min, *max, 256);
-  FCLOSE(fp);
-  FREE(data);
-  
-  return;
-}
-
 /* Calculate minimum, maximum, mean and standard deviation for a floating point
    image. A mask value can be defined that is excluded from this calculation.
    If no mask value is supposed to be used, pass the mask value as NAN. */
@@ -155,3 +107,68 @@ void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
   return;
 }
 
+void
+calc_stats_from_file(const char *inFile, char *band, double mask,
+                     double *min, double *max, double *mean,
+                     double *stdDev, gsl_histogram **histogram)
+{
+    int ii,jj;
+    
+    *min = 999999;
+    *max = -999999;
+    *mean = 0.0;
+    
+    meta_parameters *meta = meta_read(inFile);
+    int band_number =
+        (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
+        get_band_number(meta->general->bands, meta->general->band_count, band);
+    long offset = meta->general->line_count * band_number;
+    float *data = MALLOC(sizeof(float) * meta->general->sample_count);
+    
+    // pass 1 -- calculate mean, min & max
+    FILE *fp = FOPEN(inFile, "rb");
+    long long pixel_count=0;
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        get_float_line(fp, meta, ii + offset, data);
+        
+        for (jj=0; jj<meta->general->sample_count; ++jj) {
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
+                if (data[jj] < *min) *min = data[jj];
+                if (data[jj] > *max) *max = data[jj];
+                *mean += data[jj];
+                ++pixel_count;
+            }
+        }        
+    }
+    FCLOSE(fp);
+    
+    *mean /= pixel_count;
+
+    // Guard against weird data
+    if(!(*min<*max)) *max = *min + 1;
+
+    // Initialize the histogram.
+    const int num_bins = 256;
+    gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+    gsl_histogram_set_ranges_uniform (hist, *min, *max);
+    *stdDev = 0.0;
+
+    // pass 2 -- update histogram, calculate standard deviation
+    fp = FOPEN(inFile, "rb");
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        get_float_line(fp, meta, ii + offset, data);
+
+        for (jj=0; jj<meta->general->sample_count; ++jj) {
+            if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
+                *stdDev += (data[jj] - *mean) * (data[jj] - *mean);
+                gsl_histogram_increment (hist, data[jj]);
+            }
+        }
+    }
+    FCLOSE(fp);
+    *stdDev = sqrt(*stdDev/(pixel_count - 1));
+
+    FREE(data);
+
+    *histogram = hist;
+}
