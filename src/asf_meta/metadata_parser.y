@@ -11,6 +11,8 @@
 #include "caplib.h"
 #include "lex_yacc.h"
 
+  extern report_level_t level; // default: WARNING
+
 /* We don't always have strdup() around.  */
 static char *
 strdup (const char *s)
@@ -87,39 +89,15 @@ void warning_message(const char *warn_msg, ...)
 {
 #define MAX_MESSAGE_LENGTH 4096
   va_list ap;
-  char message_to_print[MAX_MESSAGE_LENGTH];
-  char temp1[MAX_MESSAGE_LENGTH];
-  char temp2[MAX_MESSAGE_LENGTH];
-  int ii;
+  char buffer[MAX_MESSAGE_LENGTH];
+  char temp[MAX_MESSAGE_LENGTH];
 
-  /* Format string for pretty terminal display */
-  strncpy (message_to_print, warn_msg, MAX_MESSAGE_LENGTH);
-  message_to_print[MAX_MESSAGE_LENGTH-1] = '\0';
-  for (ii=0; ii<MAX_MESSAGE_LENGTH || message_to_print[ii]=='\0'; ii++) {
-    if (message_to_print[ii] == '\n') {
-      int num_appended = 0;
-      strncpy (temp1, message_to_print, ii);
-      temp1[ii] = '\0';
-      num_appended = strlen(temp1)+13 < MAX_MESSAGE_LENGTH ? 12 :
-          strlen(temp1)+2 < MAX_MESSAGE_LENGTH ? 1 : 0;
-      strncat(temp1, "\n         * ", num_appended);
-      strncpy(temp2, (message_to_print+ii+1), MAX_MESSAGE_LENGTH-ii-1);
-      strncat(temp1, temp2,
-              strlen(temp1)+strlen(temp2) < MAX_MESSAGE_LENGTH ? strlen(temp2) :
-                  MAX_MESSAGE_LENGTH-strlen(temp1)-1);
-      strncpy(message_to_print, temp1, MAX_MESSAGE_LENGTH);
-      ii += num_appended;
-    }
-  }
-
-  /* Print warning with some diagnostics */
-  printf("\n");
-  printf("WARNING: * Parsing %s around line %d:\n"
-      "         * ", current_file, line_number);
+  sprintf(buffer, "Parsing %s around line %d:\n", current_file, line_number);
   va_start(ap, warn_msg);
-  vprintf(message_to_print, ap);
+  vsprintf(temp, warn_msg, ap);
+  strcat(buffer, temp);
   va_end(ap);
-  printf("\n");
+  asfReport(level, buffer);
 }
 
 /* Have parser choke on bad metadata values.  */
@@ -392,7 +370,7 @@ void fill_structure_field(char *field_name, void *valp)
         return;
       }
       else {
-        warning_message("Bad value: orbit_direction = '%s'.",
+        warning_message("Bad value: orbit_direction = '%s'.\n",
 			VALP_AS_CHAR_POINTER);
         return;
       }
@@ -470,7 +448,8 @@ void fill_structure_field(char *field_name, void *valp)
         return;
       }
       else {
-        warning_message("Bad value: image_type = '%s'.",VALP_AS_CHAR_POINTER);
+        warning_message("Bad value: image_type = '%s'.\n",
+			VALP_AS_CHAR_POINTER);
         sar_projected = 0;
         return;
       }
@@ -486,7 +465,7 @@ void fill_structure_field(char *field_name, void *valp)
        /* if its a question mark don't bother the user with a warning, this happens often with DDRs */
         MSAR->look_direction = '?'; return;
       }
-      warning_message("Bad value: look_direction = '%c'.",
+      warning_message("Bad value: look_direction = '%c'.\n",
 		      VALP_AS_CHAR_POINTER[0]);
       return;
     }
@@ -642,7 +621,7 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->type = UNKNOWN_PROJECTION;
         // Only complain if the image is truly map projected
         if (sar_projected && map_projection_type) {
-          warning_message("Bad value: type = '%s'.",VALP_AS_CHAR_POINTER);
+          warning_message("Bad value: type = '%s'.\n",VALP_AS_CHAR_POINTER);
         }
       }
       return;
@@ -686,7 +665,8 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->spheroid = UNKNOWN_SPHEROID;
         // Only complain if the image is truly map projected
         if (sar_projected && map_projection_type) {
-          warning_message("Bad value: spheroid = '%s'.",VALP_AS_CHAR_POINTER);
+          warning_message("Bad value: spheroid = '%s'.\n",
+			  VALP_AS_CHAR_POINTER);
         }
       }
       return;
@@ -718,7 +698,7 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->datum = UNKNOWN_DATUM;
         // Only complain if the mage is truly map projected
         if (sar_projected && map_projection_type) {
-          warning_message("Bad value: datum = '%s'.", VALP_AS_CHAR_POINTER);
+          warning_message("Bad value: datum = '%s'.\n", VALP_AS_CHAR_POINTER);
         }
       }
       return;

@@ -55,6 +55,14 @@
 /* Speed of light */
 #define SPD_LIGHT 2.997924562e8
 
+typedef enum {
+  NOREPORT=1,
+  LOG,
+  STATUS,
+  WARNING,
+  ERROR
+} report_level_t;
+
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
@@ -267,6 +275,8 @@ void asfForcePrintStatus(const char *format, ...);
 void asfPrintWarning(const char *format, ...);
 /* Report to user & logfile, then die  */
 void asfPrintError(const char *format, ...);
+// Report at the different levels
+void asfReport(report_level_t level, const char *format, ...);
 
 /* Prototype from splash_screen.c ********************************************/
 /* Print the commandline captured, date, and PID to screen & logfile */

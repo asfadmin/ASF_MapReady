@@ -10,6 +10,8 @@ Currently, LAS and CEOS images are supported.
 
 #include <limits.h>
 
+extern report_level_t level;
+
 image_info image;/*Global image info structure*/
 image_type type=image_none;
 struct DDR *ddr=NULL;
@@ -49,6 +51,9 @@ void image_delete(void)
  * link_imagewidth and height. Return 0 on failure.*/
 int image_loadLas(char *fileName)
 {
+  // Makes sure that metadata parser does not issue any warnings
+  level =NOREPORT; 
+  
 	type=image_ddr;
 
 /* Get DDR structure (will created from meta if there is no DDR) */

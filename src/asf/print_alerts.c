@@ -7,6 +7,8 @@ DESCRIPTION:
 ******************************************************************************/
 #include "asf.h"
 
+report_level_t level=WARNING;
+
 static void check_stop()
 {
     char stop_file[255];
@@ -138,6 +140,26 @@ void asfPrintError(const char *format, ...)
   // presumably do it for us.
 
   exit(EXIT_FAILURE);
+}
+
+// Report with the appriate level
+void asfReport(report_level_t level, const char *format, ...)
+{
+  char buffer[4096];
+  va_list ap;
+  va_start(ap, format);
+  vsprintf(buffer, format, ap);
+
+  if (level == LOG)
+    asf_print_to_log_only(buffer);
+  else if (level == STATUS)
+    asfPrintStatus(buffer);
+  else if (level == WARNING)
+    asfPrintWarning(buffer);
+  else if (level == ERROR)
+    asfPrintError(buffer);
+
+  va_end(ap);
 }
 
 /******************************************************************************
