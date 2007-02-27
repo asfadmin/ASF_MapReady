@@ -928,6 +928,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
 
+      // Move the .meta file out of temporary status
+      copy_meta(inFile, outFile);
+
       if (strlen(cfg->export->rgb) > 0) {
           // user has requested banding
           char *red,  *green, *blue;
@@ -976,9 +979,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
           meta_free(meta);
       }
-
-      // Move the .meta file out of temporary status: <out basename>.meta
-      copy_meta(inFile, outFile);
     }
 
     //---------------------------------------------------------------------
@@ -1070,7 +1070,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     strcat(outFile, ".jpg");
                     free(tmp);
                 }
-                printf("Renaming: %s -> %s\n", banded_name, outFile);
                 fileRename(banded_name, outFile);
                 FREE(bands[0]);
                 FREE(bands);
