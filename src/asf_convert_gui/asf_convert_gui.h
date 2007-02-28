@@ -57,7 +57,7 @@ enum ScalingMethod
     SCALING_METHOD_TRUNCATE = 2,
     SCALING_METHOD_HISTOGRAM_EQUALIZE = 3
 };
-    
+
 enum ProjectionOptions
 {
   PROJ_UTM = 0,
@@ -80,7 +80,7 @@ enum
   RESAMPLE_BILINEAR = 1,
   RESAMPLE_BICUBIC = 2
 };
-  
+
 
 /* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
@@ -111,6 +111,9 @@ typedef struct
   int longest_dimension;
   int output_bytes;
   int scaling_method;
+  int truecolor_is_checked;
+  int falsecolor_is_checked;
+  int user_defined_is_checked;
   int export_bands;
   char red[10];
   char green[10];
@@ -295,7 +298,7 @@ const char * resample_method_string(int resample_method);
 void set_font();
 
 /* projfile.c */
-project_parameters_t * 
+project_parameters_t *
   load_selected_predefined_projection_parameters(int projection);
 
 void set_predefined_projections(int projection);

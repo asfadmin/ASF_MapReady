@@ -8,7 +8,7 @@
 static GtkTreePath *
 thumbnail_path (GtkWidget *widget, GdkEventMotion *event)
 {
-    GtkTreePath *path;
+    GtkTreePath *path=NULL;
     gboolean row_exists = gtk_tree_view_get_path_at_pos (GTK_TREE_VIEW (widget),
         event->x,
         event->y,

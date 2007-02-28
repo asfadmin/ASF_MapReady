@@ -141,7 +141,7 @@ int init_convert_config(char *configFile)
   // intermediates flag
   fprintf(fConfig, "# The intermediates flag indicates whether the intermediate processing\n"
           "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
-          "# processing).\n\n");    
+          "# processing).\n\n");
   fprintf(fConfig, "intermediates = 0\n\n");
   // quiet flag
   fprintf(fConfig, "# The quiet flag determines how much information is reported by the\n"
@@ -173,7 +173,7 @@ int init_convert_config(char *configFile)
           "# files (e.g when running the same data sets through the processing flow\n"
           "# with different map projection parameters\n\n");
   fprintf(fConfig, "suffix = \n\n");
-  
+
   FCLOSE(fConfig);
 
   asfPrintStatus("   Initialized basic configuration file\n\n");
@@ -313,7 +313,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->detect_cr->cr_location, "");
   cfg->detect_cr->chips = 0;
   cfg->detect_cr->text = 0;
-  
+
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->terrain_correct->dem, "");
@@ -330,7 +330,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->interp = 1;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
-  sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj", 
+  sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
           get_asf_share_dir());
   cfg->geocoding->pixel = -99;
   cfg->geocoding->height = 0.0;
@@ -347,6 +347,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->byte, "SIGMA");
   cfg->export->rgb = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->export->rgb, "");
+  cfg->export->truecolor = 0;
+  cfg->export->falsecolor = 0;
 
   // Check for a default values file
   fConfig = FOPEN(configFile, "r");
@@ -430,7 +432,7 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "pixel spacing", 13)==0)
         cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
       if (strncmp(test, "digital elevation model", 23)==0)
-        strcpy(cfg->terrain_correct->dem, 
+        strcpy(cfg->terrain_correct->dem,
                read_str(line, "digital elevation model"));
       if (strncmp(test, "mask", 4)==0)
         strcpy(cfg->terrain_correct->mask, read_str(line, "mask"));
@@ -445,13 +447,13 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "smooth dem holes", 14)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
-        cfg->terrain_correct->save_terrcorr_dem = 
+        cfg->terrain_correct->save_terrcorr_dem =
             read_int(line, "save terrcorr dem");
       if (strncmp(test, "save terrcorr layover mask", 26)==0)
-        cfg->terrain_correct->save_terrcorr_layover_mask = 
+        cfg->terrain_correct->save_terrcorr_layover_mask =
             read_int(line, "save terrcorr layover mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
-        cfg->terrain_correct->refine_geolocation_only = 
+        cfg->terrain_correct->refine_geolocation_only =
           read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
         cfg->terrain_correct->interp = read_int(line, "interpolate");
@@ -471,6 +473,7 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->geocoding->background = read_int(line, "background");
       if (strncmp(test, "force", 5)==0)
         cfg->geocoding->force = read_int(line, "force");
+
       // Export
       if (strncmp(test, "output format", 13)==0)
         strcpy(cfg->export->format, read_str(line, "output format"));
@@ -478,6 +481,10 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
       if (strncmp(test, "rgb banding", 11)==0)
         strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
+      if (strncmp(test, "truecolor", 9)==0)
+        cfg->export->truecolor = read_int(line, "truecolor");
+      if (strncmp(test, "falsecolor", 9)==0)
+        cfg->export->falsecolor = read_int(line, "falsecolor");
       FREE(test);
     }
   }
@@ -637,7 +644,7 @@ convert_config *read_convert_config(char *configFile)
       FREE(test);
     }
 
-    if (strncmp(line, "[Detect corner reflectors]", 26)==0) 
+    if (strncmp(line, "[Detect corner reflectors]", 26)==0)
       strcpy(params, "Detect corner reflectors");
     if (strncmp(params, "Detect corner reflectors", 24)==0) {
       test = read_param(line);
@@ -650,7 +657,7 @@ convert_config *read_convert_config(char *configFile)
       FREE(test);
     }
 
-    if (strncmp(line, "[Terrain correction]", 20)==0) 
+    if (strncmp(line, "[Terrain correction]", 20)==0)
       strcpy(params, "Terrain correction");
     if (strncmp(params, "Terrain correction", 18)==0) {
       test = read_param(line);
@@ -672,10 +679,10 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "smooth dem holes", 14)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
-        cfg->terrain_correct->save_terrcorr_dem = 
+        cfg->terrain_correct->save_terrcorr_dem =
             read_int(line, "save terrcorr dem");
       if (strncmp(test, "save terrcorr layover mask", 26)==0)
-        cfg->terrain_correct->save_terrcorr_layover_mask = 
+        cfg->terrain_correct->save_terrcorr_layover_mask =
             read_int(line, "save terrcorr layover mask");
       if (strncmp(test, "refine geolocation only", 23)==0)
         cfg->terrain_correct->refine_geolocation_only =
@@ -714,6 +721,10 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
       if (strncmp(test, "rgb banding", 11)==0)
         strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
+      if (strncmp(test, "truecolor", 9)==0)
+        cfg->export->truecolor = read_int(line, "truecolor");
+      if (strncmp(test, "falsecolor", 10)==0)
+        cfg->export->falsecolor = read_int(line, "falsecolor");
       FREE(test);
     }
   }
@@ -827,7 +838,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# The intermediates flag indicates whether the intermediate processing\n"
               "# results are kept (1 for keeping them, 0 for deleting them at the end of the\n"
-              "# processing).\n\n");    
+              "# processing).\n\n");
     fprintf(fConfig, "intermediates = %i\n", cfg->general->intermediates);
     if (!shortFlag)
       fprintf(fConfig, "\n# The short configuration file flag allows the experienced user to\n"
@@ -836,7 +847,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# without comments, 0 for a configuration file with verbose comments)\n\n");
     fprintf(fConfig, "short configuration file = %i\n", cfg->general->short_config);
     if (!shortFlag)
-      fprintf(fConfig, "# If you would like to view intermediate imagery, you may wish to turn this\n"
+      fprintf(fConfig, "\n# If you would like to view intermediate imagery, you may wish to turn this\n"
               "# option on -- it dumps an ENVI-compatible .hdr file, that will allow ENVI to view\n"
               "# ASF Internal format .img files.  These files are not used by the ASF Tools.\n\n");
     fprintf(fConfig, "dump envi header = %i\n", cfg->general->dump_envi);
@@ -1041,7 +1052,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n[Export]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
-                "# JPEG and PGM.\n" 
+                "# JPEG and PGM.\n"
                 "# In the same way as for the import block, ASF as an export option results in\n"
                 "# skipping the export step entirely. All other formats, with the exception of\n"
                 "# GeoTIFF, require the scaling of the internal ASF format from floating point\n"
@@ -1055,8 +1066,25 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# If you have more than one band available in your data, you can\n"
                 "# create the exported file using the different bands for the R, G, and B\n"
                 "# channels in the output image.  List the R, G, and B channels in that order\n"
-                "# separated by commas.  E.g.  HH,HV,VV\n\n");
-      fprintf(fConfig, "rgb banding = %s\n\n", cfg->export->rgb);
+                "# separated by commas.  E.g.  HH,HV,VV.  Note that no contrast expansion or\n"
+                "# other modification of the data will be applied.\n\n");
+      fprintf(fConfig, "rgb banding = %s\n", cfg->export->rgb);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have 3+ bands available in your optical data,\n"
+                "# you can create the exported file using a standard selection of bands for\n"
+                "# the R, G, and B channels in the output image.  By setting the truecolor\n"
+                "# flag, band assignments will be R = 3, G = 2, and B = 1 and each band\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization (use rgb banding if you desire raw data assignments.)\n\n");
+      fprintf(fConfig, "truecolor = %i\n", cfg->export->truecolor);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have 4 bands available in your optical data,\n"
+                "# you can create the exported file using a standard selection of bands for\n"
+                "# the R, G, and B channels in the output image.  By setting the falsecolor\n"
+                "# flag, band assignments will be R = 4, G = 3, and B = 2 and each band\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization (use rgb banding if you desire raw data assignments.)\n\n");
+      fprintf(fConfig, "falsecolor = %i\n\n", cfg->export->falsecolor);
     }
   }
   else {

@@ -88,7 +88,7 @@ typedef struct {
 int asf_export(output_format_t format, scale_t sample_mapping,
 	       char *in_base_name, char *output_name);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
-		     char *look_up_table_name,
+                     int true_color, int false_color, char *look_up_table_name,
 		     char *in_base_name, char *output_name, char **band_name);
 
 void usage();
@@ -124,12 +124,13 @@ void export_as_esri (const char *metadata_file_name,
                      const char *output_file_name);
 
 void export_band_image(const char *metadata_file_name,
-		       const char *image_data_file_name,
-		       char *output_file_name,
-		       scale_t sample_mapping,
-		       char **band_name, int rgb,
-		       char *look_up_table_name,
-		       output_format_t format);
+                       const char *image_data_file_name,
+                       char *output_file_name,
+                       scale_t sample_mapping,
+                       char **band_name, int rgb,
+                       int true_color, int false_color,
+                       char *look_up_table_name,
+                       output_format_t format);
 
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,

@@ -311,6 +311,22 @@ export_checkbutton_toggle()
             output_bytes_checkbutton_toggle();
             break;
         }
+
+        gtk_widget_set_sensitive(rb_all, export_checked);
+        gtk_widget_set_sensitive(rb_rgb, export_checked);
+
+        // turn off the RGB selection for greyscale only output formats
+        int output_format_supports_color = output_format != OUTPUT_FORMAT_PGM;
+
+        if (!output_format_supports_color) {
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_all), TRUE);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_rgb), FALSE);
+        }
+
+        gtk_widget_set_sensitive(rb_all, output_format_supports_color);
+        gtk_widget_set_sensitive(rb_rgb, output_format_supports_color);
+
+        rgb_settings_changed();
     }
     else
     {
@@ -318,14 +334,8 @@ export_checkbutton_toggle()
         gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
         gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
         gtk_widget_set_sensitive(scaling_method_label, FALSE);
-    }
-
-    gtk_widget_set_sensitive(rb_all, export_checked);
-    gtk_widget_set_sensitive(rb_rgb, export_checked);
-    if (!export_checked)
         gtk_widget_set_sensitive(rgb_vbox, FALSE);
-    else
-        rgb_settings_changed();
+    }
 
     update_all_extensions();
 }
@@ -413,6 +423,9 @@ on_geotiff_activate(GtkWidget *widget)
 SIGNAL_CALLBACK void
 on_pgm_activate(GtkWidget *widget)
 {
+    GtkWidget *rb_all = get_widget_checked("rb_all");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb_all), TRUE);
+
     output_format_combobox_changed();
     update_summary();
 }

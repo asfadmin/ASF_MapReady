@@ -15,7 +15,7 @@ static void check_stop()
     sprintf(stop_file, "%s/stop.txt", get_asf_tmp_dir());
     if (fileExists(stop_file)) {
         remove(stop_file);
-        asfPrintError("Processing stopped by user!\n");
+        asfPrintError("Interrupted by user.\n");
     }
 }
 

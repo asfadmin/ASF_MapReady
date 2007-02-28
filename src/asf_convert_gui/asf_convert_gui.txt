@@ -3,91 +3,16 @@ The ASF Data Conversion Tool
      _________________________________________________________
 
    Table of Contents
-   Obtaining and Installing the Tool
-   Getting Started
-
-        Converting Data to JPG
-        Converting Data to GeoTIFF
-        Converting Data to GeoTIFF, geocoding with an Albers projection
-
    Choosing Input Files
    Import Options
    Radiometry
+   DEM
    Geocode
    Export
    The "Files" Section
    Execute
-   Right-Click Menu
+   Toolbar Buttons
    Contacting Us
-     _________________________________________________________
-
-Obtaining and Installing the Tool
-
-   The  latest  ASF  Data Conversion Tool can be downloaded from:
-   https://software.asf.alaska.edu. Select the "Download Page" link for
-   the Convert Tool, and download the latest stable version.
-     _________________________________________________________
-
-Getting Started
-
-   This section is a basic walk through the tool, containing the steps
-   needed to do some common tasks.
-     _________________________________________________________
-
-Converting Data to JPG
-
-   What You Have: .D and .L files.
-   What You Want: JPEG files.
-
-    1. Run the ASF Convert Tool.
-    2. Click the "Browse" button, and find the location of your .D
-       files. You may use ctrl-click or shift-click to select multiple
-       .D files to convert.
-    3. Click "Execute".
-    4. After processing is complete, you can right-click on a file's
-       entry, and select "View Output" to pull up the generated .JPG
-       file. You can do this for any completed file, even if processing
-       is still going on for other files.
-
-   In this example, we didn't have to change any of the options, we
-   were able to go with all of the defaults.
-     _________________________________________________________
-
-Converting Data to GeoTIFF
-
-   What You Have: .D and .L files.
-   What You Want: GeoTIFF files.
-
-    1. Run the ASF Convert Tool.
-    2. Click the "Browse" button, and find the location of your .D
-       files. You may use ctrl-click or shift-click to select multiple
-       .D files to convert.
-    3. Click  on  the "Export" tab, and select "GeoTIFF" from the
-       "Format" dropdown list.
-    4. Click "Execute".
-    5. In this case, the "View Output" option is not available.
-     _________________________________________________________
-
-Converting Data to GeoTIFF, geocoding with an Albers projection
-
-   What You Have: .D and .L files.
-   What You Want: GeoTIFF files, geocoded using an Albers projection.
-
-    1. Run the ASF Convert Tool.
-    2. Click the "Browse" button, and find the location of your .D
-       files. You may use ctrl-click or shift-click to select multiple
-       .D files to convert.
-    3. Click on the "Geocode" tab:
-         a. Check the box to turn on geocoding.
-         b. Select the "Albers" projection from the list of available
-            projections.
-         c. A few predefined projections are available, which use good
-            projection parameters for different parts of the world. If
-            none of the predefined projections suit your needs, you'll
-            need to specify your projection parameters mansually.
-    4. Click  on  the "Export" tab, and select "GeoTIFF" from the
-       "Format" dropdown list.
-    5. Click "Execute".
      _________________________________________________________
 
 Choosing Input Files
@@ -100,6 +25,9 @@ Choosing Input Files
    be located in the same directory as the data file, and use the same
    base name.
 
+   For ALOS data, you should choose the leader file (starts with LED-),
+   instead of choosing an individual band data file.
+
     1. Specify the source files on the command line.
        When  you  run the utility, you can put a list of files as
        arguments on the command line. For example:
@@ -107,40 +35,40 @@ Choosing Input Files
        asf_convert_gui file1.D
        Select all .D files in the current directory:
        asf_convert_gui *.D
+       Select all LED-* files in the current directory:
+       asf_convert_gui LED-*
        Select all .D files in the "data" directory:
        asf_convert_gui data/*.D
-    2. Use the "Add" button.
-       After you've run the utility, you can add additional files by
-       typing the name in the textbox next to the "Add" button, and
-       clicking "Add".
-    3. Use the "Browse" button.
+       Select all LED- files in the "data" directory:
+       asf_convert_gui data/LED-*
+    2. Use the "Browse" button.
        You can also click "Browse" to pull up a file selection dialog.
        Use ctrl-click or shift-click to select more than one file.
+       Files exist in data and metadata pairs. The file you should
+       select is the data file (such as .D), and not the metadata (such
+       as .L).
+       For ALOS data, there is one metadata file (LED-*) and one or
+       more image files (IMG-*). There is one image file for each band
+       in the input data.
      _________________________________________________________
 
 Import Options
 
-   There are 4 tabs of options. The first specifies the options to use
-   during Import, when the data is converted from the source format to
-   an ASF internal format.
+   There are five tabs of options. The first specifies the options to
+   use during Import, when the data is converted from the source format
+   to an ASF internal format.
 
     1. Data Format
        This is where you select the type of data that you have. The
        default, "CEOS (Level 1)" is the most common format. For the STF
        format, you have the option of restricting the import to a
        subset of the latitude range in the source data.
-    2. Process to Level 1
-       Level 0 data needs to be processed to Level 1 before any terrain
-       correction, geocoding, or exporting may be done. Checking this
-       option  will  use the ASF SAR processor (ARDoP) to do this
-       processing. If you don't process to level 1, then the terrain
-       correction, geocode, and export sections will be disabled.
-    3. Latitude
+    2. Latitude
        This option is only available for the "STF" data format. Here
        you may specify a range of latitudes that is smaller than that
        of the original data. Please make sure that both the Low and Hi
        values are actually contained in the image.
-    4. Keep Files
+    3. Keep Intermediate Files
        With this option checked, the intermediate files generated
        during the processing will not be deleted after successful
        conversion. Normally, these files are temporary and are deleted
@@ -148,19 +76,6 @@ Import Options
        them around you may by turning on this option.
        If a file fails to process, any intermediate files that were
        generated are not deleted, even with this option turned off.
-    5. Apply Azimuth Pixel Size Metadata Fix
-       This option turns on a correction to the Y pixel size value in
-       the metadata, caused by an error in the Precision Processor.
-       The error results from using an incorrect relative velocity
-       between the satellite, and the surface of the Earth at the
-       center of the scene. The velocity used is the relative velocity
-       between the satellite, and the surface of the Earth directly
-       below the satellite (at nadir). This leads to pixel sizes that
-       are slightly off in the azimuth direction. The size of the error
-       varies with latitude (least at the equator). In Alaska, it is
-       about 0.5%.
-       If you use data obtained from the PP, then you will probably
-       want to turn this option on.
      _________________________________________________________
 
 Radiometry
@@ -186,6 +101,109 @@ Radiometry
    When either of sigma, gamma, or beta is selected, you can choose to
    output  the  result  in  decibles  (the  resulting  values are
    logarithmically scaled).
+
+   In this release, with ALOS data the only supported options are
+   amplitude and sigma.
+     _________________________________________________________
+
+DEM
+
+   If you have a digital elevation model (DEM) available for the scene,
+   you can use this DEM to refine the geolocation of the SAR data, or
+   to perform terrain correction.
+
+   Terrain correction necessarily involves geolocation refinement as
+   well. The terrain correction process alters the data in the SAR
+   image, attempting to correct for the side-looking geometry of SAR.
+
+   Geolocation refinement doesn't affect the image data, however the
+   image's  metadata  values  are  adjusted  in  order to improve
+   geolocation. The specific metadata fields that are updated are
+   "slant_shift" and "time_shift".
+
+   DEMs may be provided in either the ASF internal format, or as a
+   GeoTIFF. If the given DEM is a GeoTIFF, it is converted into ASF
+   internal format prior to terrain correction.
+
+   GeoTIFF  DEMs  can  be downloaded from the USGS Seamless site,
+   http://seamless.usgs.gov. You will need to change the format of the
+   downloaded DEM to GeoTIFF. ASF provides a command-line utility
+   "akdem_grab" which will download GeoTIFFs from the seamless site for
+   you.
+
+   Checking the DEM checkbox indicates that you do have a DEM available
+   for the scene(s) you are processing. Note that at this time a single
+   DEM must apply to all of the scenes.
+
+   NOTE: In this release, terrain correction of ALOS data or ScanSAR
+   data is not supported.
+
+    1. DEM
+       Use the "Browse" button to select the DEM. The DEM should be
+       either in GeoTIFF or ASF internal format.
+    2. Geolocation Refinement, or Terrain Correction
+       With a DEM, you can either select the "Refine Geolocation" radio
+       button, or the "Apply Terrain Correction" radio button. Refining
+       the geolocation doesn't change the image data, only the metadata
+       is  adjusted.  Terrain correction also applies geolocation
+       refinement, and corrects the image data for the side-looking SAR
+       geometry.
+       The default is terrain correction. Some of the following options
+       are only available if you've selected terrain correction.
+    3. Masking
+       If  you  wish,  you may use masking to improve geolocation
+       refinement and/or terrain correction. For many scenes this won't
+       be necessary; in general, it is only necessary if the scene
+       contains large areas that won't correlate well with the DEM. For
+       example, water bodies provide very poor correlation.
+       Using a mask means that the geolocation refinement only utilizes
+       portions of the image you think will yield good correlation.
+       You  can  either provide a mask file yourself, or have one
+       automatically generated for you. An automatically generated mask
+       masks out regions of the DEM at 1m or less (the water regions).
+       A mask that you provide should have the value 0 in regions that
+       provide good correlation, and 1 (or any positive value) where
+       the correlation is expected to be poor.
+    4. Specify Pixel Size
+       Enter in the desired pixel size of the terrain corrected image.
+       This option doesn't apply to geolocation refinement without
+       terrain correction, since in this case the image data is not
+       changed.
+       If you do not enter a pixel size, the pixel size in the input
+       SAR image will be retained -- unless the DEM image has a much
+       larger pixel size than the SAR image, in which case your SAR
+       image will be downsampled to have a pixel size of half that of
+       the DEM. For example, if the SAR image has 12.5 meter pixels,
+       and  the  DEM  has 60 meter pixels, the terrain correction
+       processing will downsample your SAR data to 30 meters.
+       If you do specify a pixel size, your requested value will be
+       used even though you are limited to the accuracy of the DEM. For
+       example, if the SAR image has 12.5 meter pixels, and the DEM has
+       60 meter pixels, and you specify a 12.5 meter pixel size, that
+       value will be used even though your terrain corrected result
+       will be oversampled.
+       This value differs from the value specified in on the geocoding
+       section in that here your main concern is the difference between
+       the SAR and DEM pixel sizes, whereas the pixel size specified on
+       the geocode tab is the pixel size you want in the output data.
+    5. Interpolate Layover
+       By default, regions of layover in the output are filled in with
+       values, however these values will not be scientifically valid
+       since it isn't possible to recover the actual backscatter values
+       in the layover regions. However, doing so does produce a nicer
+       looking result. You may wish to leave the layover regions blank
+       instead.
+    6. Save Layover/Shadow Mask
+       If you wish, a copy of the layover/shadow mask generated during
+       the terrain correction process can be saved, and then geocoded
+       and exported using the same parameters as the SAR scene.
+    7. Save DEM
+       If you wish, a copy of the clipped DEM generated during the
+       terrain correction process can be saved, and then geocoded and
+       exported using the same parameters as the SAR scene.
+       The DEM will cover a larger area than the SAR image and the
+       layover/shadow mask, since a little extra is clipped in order to
+       account for relief near the edges.
      _________________________________________________________
 
 Geocode
@@ -275,6 +293,10 @@ Geocode
        size, in projection coordinates (i.e. meters) on a side.
        The geocoding process won't work if you select a pixel size that
        will result in severely oversampled data.
+       This value differs from the value specified in on the terrain
+       correction tab in that there your main concern is the difference
+       between the SAR and DEM pixel sizes, whereas the pixel size
+       specified here is the pixel size you want in the output data.
     3. Datum
        Specifies the datum that is used when projecting. The datum
        applies to the target coordinate system.
@@ -335,12 +357,44 @@ Export
             distributed brightness levels over the entire brightness
             scale, which increases contrast.
        The default is "sigma".
+    3. Export All Bands as Separate Images
+       This is the default option, and the only option that applies to
+       single-band data. (At this point, all non-ALOS data is single
+       band.)
+       With this option selected, each input band will be exported into
+       a  different file. The band name is appended to the output
+       filename, just before the extension. So, for example, if you've
+       set your output filename to "test", and you are processing
+       quad-pole data to geotiff, you will get four greyscale files:
+       test_HH.tif, test_HV.tif, test_VH.tif, and test_VV.tif
+    4. Export Multiple Bands in a Single RGB Image
+       Turning on this option outputs the image into a color RGB image.
+       The selected bands are assigned to the color planes red, green,
+       or blue.
+       Radar and Optical data are separated. If you have Radar data,
+       your band options are HH, HV, VH, VV. For optical data, the
+       bands are 1-4.
+       The Truecolor option exports the third band as red, second as
+       green,  and third as blue, and performs a 2-sigma contrast
+       expansion on each band. This is different than if you choose
+       "User Defined" and select 3,2,1 -- in that case, the 2-sigma
+       contrast expansion is not done.
+       The Falsecolor option exports the fourth (IR) band as red, third
+       as green, and second as blue, and performs a 2-sigma contrast
+       expansion on each band. This is different than if you choose
+       "User Defined" and select 4,3,2 -- in that case, the 2-sigma
+       contrast expansion is not done.
      _________________________________________________________
 
 The "Files" Section
 
    This section lists all of the file you've selected (as described
    above in Section 3).
+
+   There are two file lists. The upper list, where files are first
+   placed after being added, is the list of files that have yet to be
+   processed. The lower list is where files that have been successfully
+   processed are put.
 
     1. Thumbnails
        If possible, thumbnails of the input images are generated and
@@ -351,11 +405,8 @@ The "Files" Section
        you'll get an enlarged view of the input data.
        The  output image, for all types except GeoTIFF, will also
        produce a thumbnail, and you can view an enlarged version by
-       right-clicking and selecting "View Image". Generally the input
-       thumbnail and the output thumbnail won't differ significantly.
-       (However, when geocoding the image will likely be rotated, and
-       if poor projection parameters are chosen some distortion could
-       occur.)
+       right-clicking and selecting "View Image". The output image will
+       also enlarge when hovered over with the mouse.
     2. Change Output Directory
        By default, the tool stores the generated files in the same
        directory as the input files. Here you may specify a different
@@ -376,22 +427,6 @@ The "Files" Section
        "_amp", and then a second time with another set of settings
        (i.e., "Power" selected in the Radiometry section) using the
        suffix "_pwr".
-    4. "Save" and "Load" Buttons
-       If you are processing a large number of files, you may wish to
-       stop processing and resume it later.
-       To do this, you should "Save" after you've processed the first
-       batch of files, and then exit the program.
-       Then, when you are ready to resume processing, click "Load"
-       after running the tool. When you click "Execute", processing
-       will continue from where you left off.
-       Please note that if you change any options, clicking "Execute"
-       will start processing over again from the first file. You can
-       exit without saving if you accidentally change an option, and
-       then re-process any files that were erroneously processed with
-       the new options. (When you select "Process" from the right-click
-       pop-up menu, the file will always be processed even if it has
-       already been marked "Done". In this situation, the word "Done"
-       will appear in gray instead of black.)
      _________________________________________________________
 
 Execute
@@ -408,12 +443,8 @@ Execute
    the "Summary" section) the processing will again start from the
    beginning.
 
-   If  you use the right-click menu option to process a file (See
-   Section 10), then the file will always be processed even if it has
-   already been marked "Done".
-
-   Clicking "Stop" will stop processing after the current conversion
-   finishes.
+   Clicking "Stop" will stop processing. It may take a moment or two
+   for the processing to stop.
 
    If any of the output files already exist (i.e., they are shown in
    red in the files list), you will need to confirm that you don't mind
@@ -421,44 +452,51 @@ Execute
    file name before starting processing, or rename the original output
    file.
 
-   As  the  processing  proceeds, the asf_import, asf_geocode (if
-   appropriate), and asf_export tools are invoked for each file. These
-   tools generate output messages which are captured by the tool and
-   placed  in the output window. (On some systems, this window is
-   completely collapsed on startup -- use the mouse to grab the bar
-   right above the row of buttons at the bottom, and move it up to
-   reveal the output window.)
+   As  the  processing  proceeds,  the  asf_import, asf_terrcorr,
+   asf_geocode, and asf_export tools are invoked for each file. (Unless
+   the tool hasn't been selected, of course.) These tools generate
+   output messages which are captured by the tool and displayed in the
+   terminal window that is opened along with the GUI. This logging
+   information is also available by clicking the "View Log" option.
 
    If an error occurs during the processing of a file, instead of
    "Done"  in the status column, you'll see "Error". You can then
-   right-click and select "Jump To Log", to read the details of the
-   error.
+   right-click and select "View Log", to read the details of the error.
      _________________________________________________________
 
-Right-Click Menu
+Toolbar Buttons
+
+   Just above each files section is a set of toolbar buttons. To use
+   the buttons, select one or more files in the files grid, and then
+   click on the button you wish to use. Some button work with only one
+   file, others work with more than one selected.
 
    If you right-click on a row in the files grid, a menu will appear
-   with some options. These options will apply to the file in the row
-   that  is  selected.  Some  options  may  be  disabled, in some
-   circumstances.
+   with the same options available in the toolbar. These options will
+   apply to the file in the row that is selected. Some options may be
+   disabled, in some circumstances.
 
     1. Remove
        This will remove the entry from the files grid. The files on
        disk are not affected.
     2. Process
        This processes the file, just as if you'd click execute with
-       only this file in the grid.
-    3. Rename Output
+       only this file in the grid. After completion, the file is moved
+       to  the  "Completed  Files"  list,  assuming  it processed
+       successfully.
+    3. Queue for Re-Processing
+       Moves the file from the "Completed Files" section back to the
+       yet-to-be-processed list.
+    4. Rename Output
        Change  the  name of the output file. You can't change the
-       directory, use the "Change Output Directory" option (see Section
-       8) to do that.
+       directory, use the "Change Output Directory" option to do that.
        You  can  also  change  the  name  of  the  output file by
        double-clicking on the "Output File" column.
-    4. Jump To Log
-       This option will move the scrollbar in the output messages
-       window (See Section 9) to the messages for the selected row's
-       file.
-    5. Display CEOS Metadata
+    5. View Log
+       This  will pull up the messages that were generated during
+       processing. If a file fails to process, you can get the detailed
+       error information in the log.
+    6. Display CEOS Metadata
        The ASF CEOS Metadata Viewer program will be used to view the
        metadata for the file. It operates on the CEOS .L file instead
        of ASF's .meta file.
@@ -468,13 +506,13 @@ Right-Click Menu
        This option is also disabled if you don't have the Metadata
        Viewer  installed. (Starting with ASF Convert 2.1, the two
        utilities are bundled together.)
-    6. Display ASF Metadata
+    7. Display ASF Metadata
        Open  up a new window, containing the ASF Metadata for the
        selected file. The metadata file is generated by the import
        procedure,  so  if the file hasn't been processed yet, the
        metadata file won't have been generated. In this situation, this
        option will be greyed out.
-    7. View Output
+    8. View Output
        Open up a new window, containing the generated output file. This
        option is not yet able to display GeoTIFF data, so if this
        Format has been selected, the right-click option will not be
@@ -486,11 +524,11 @@ Contacting Us
    If you have any questions or comments about this software, we would
    love to hear from you!
 
-         http://www.asf.alaska.edu
-         <uso@asf.alaska.edu>
+               http://www.asf.alaska.edu
+               <uso@asf.alaska.edu>
 
-         Alaska Satellite Facility
-         Geophysical Institute
-         University of Alaska Fairbanks
-         P.O. Box 757320
-         Fairbanks, AK 99775-7320
+               Alaska Satellite Facility
+               Geophysical Institute
+               University of Alaska Fairbanks
+               P.O. Box 757320
+               Fairbanks, AK 99775-7320

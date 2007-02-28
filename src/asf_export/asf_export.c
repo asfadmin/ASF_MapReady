@@ -82,16 +82,22 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -truecolor\n"\
 "        For 4 band ALOS optical imagery.  Exports the third band as.\n"\
 "        as the red element, the second band as the green element, and\n"\
-"        the first band as the blue element.  Equivalent to using the.\n"\
-"        command line option '-rgb 03 02 01'.\n"\
+"        the first band as the blue element.  Performs a 2-sigma constrast\n"\
+"        expansion on the individual bands during the export.  To export a\n"\
+"        true-color image WITHOUT the contrast expansion, use the -rgb flag\n"\
+"        to directly assign the available bands to the RGB color channels, e.g.\n\n"\
+"          'asf_export -rgb 03 02 01 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 3 or more bands.\n"\
 "        Cannot be used together with any of the following: -rgb, -band,\n"\
 "        or -falsecolor.\n"\
 "   -falsecolor\n"\
 "        For 4 band ALOS optical imagery.  Exports the fourth (IR) band as.\n"\
 "        as the red element, the third band as the green element, and\n"\
-"        the second band as the blue element.  Equivalent to using the.\n"\
-"        command line option '-rgb 04 03 02'.\n"\
+"        the second band as the blue element.  Performs a 2-sigma constrast\n"\
+"        expansion on the individual bands during the export.  To export a\n"\
+"        false-color image WITHOUT the contrast expansion, use the -rgb flag\n"\
+"        to directly assign the available bands to the RGB color channels, e.g.\n\n"\
+"          'asf_export -rgb 04 03 02 <infile> <outfile>'.\n\n"\
 "        Only allowed for multi-band images with 4 bands.\n"\
 "        Cannot be used together with any of the following: -rgb, -band,\n"\
 "        or -truecolor.\n"\
@@ -214,6 +220,8 @@ main (int argc, char *argv[])
   char *in_base_name, *output_name;
   char **band_names=NULL;
   int rgb=0;
+  int true_color;
+  int false_color;
   int num_bands_found;
   int ignored[3] = {0, 0, 0};
   int num_ignored = 0;
@@ -494,14 +502,17 @@ main (int argc, char *argv[])
   strcat (command_line.in_meta_name, ".meta");
 
   // Set up the bands for true or false color optical data
+  true_color = false_color = 0;
   if (truecolorFlag != FLAG_NOT_SET || falsecolorFlag != FLAG_NOT_SET) {
     md = meta_read (command_line.in_meta_name);
     int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
     if (md->optical && truecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel,   "03");
-        strcpy(command_line.green_channel, "02");
-        strcpy(command_line.blue_channel,  "01");
+        strcpy(command_line.red_channel,   "03 w/sigma");
+        strcpy(command_line.green_channel, "02 w/sigma");
+        strcpy(command_line.blue_channel,  "01 w/sigma");
+        true_color = 1;
+        asfPrintStatus("Applying True Color contrast expansion to following channels:");
       }
       else {
         char **bands = extract_band_names(md->general->bands, 3);
@@ -522,9 +533,11 @@ main (int argc, char *argv[])
     }
     if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel,   "04");
-        strcpy(command_line.green_channel, "03");
-        strcpy(command_line.blue_channel,  "02");
+        strcpy(command_line.red_channel,   "04 w/sigma");
+        strcpy(command_line.green_channel, "03 w/sigma");
+        strcpy(command_line.blue_channel,  "02 w/sigma");
+        false_color = 1;
+        asfPrintStatus("Applying False Color contrast expansion to the following channels:");
       }
       else {
         char **bands = extract_band_names(md->general->bands, 4);
@@ -544,7 +557,7 @@ main (int argc, char *argv[])
       }
     }
     if (!ALOS_optical && !md->optical) {
-        asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
+      asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
     }
     meta_free(md);
   }
@@ -553,15 +566,20 @@ main (int argc, char *argv[])
      truecolorFlag != FLAG_NOT_SET ||
      falsecolorFlag != FLAG_NOT_SET)
   {
+    char red_band[3], green_band[3], blue_band[3];
+
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
 
+    sprintf(red_band, "%02d", atoi(command_line.red_channel));
+    sprintf(green_band, "%02d", atoi(command_line.green_channel));
+    sprintf(blue_band, "%02d", atoi(command_line.blue_channel));
     band_names = find_bands(in_base_name, rgbFlag,
-			   command_line.red_channel,
-			   command_line.green_channel,
-			   command_line.blue_channel,
-			   &num_bands_found);
+                            red_band,
+                            green_band,
+                            blue_band,
+                            &num_bands_found);
   }
 
   // Set band
@@ -668,8 +686,8 @@ main (int argc, char *argv[])
 
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, rgb,
-		   command_line.look_up_table_name,
-		   in_base_name, command_line.output_name, band_names);
+                   true_color, false_color, command_line.look_up_table_name,
+                   in_base_name, command_line.output_name, band_names);
 
   // If the user didn't ask for a log file then nuke the one that's been kept
   // since everything has finished successfully

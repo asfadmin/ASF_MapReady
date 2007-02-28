@@ -107,6 +107,8 @@ typedef struct
   char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE, 
                           // HISTOGRAM_EQUALIZE
   char *rgb;              // RGB banding setting
+  int truecolor;          // True color flag (bands 3-2-1 w/2-sigma contrast expansion)
+  int falsecolor;         // False color flag (ditto, but bands 4-3-2)
 } s_export;
 
 typedef struct

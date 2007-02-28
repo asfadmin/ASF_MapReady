@@ -3,15 +3,15 @@
 #include <asf_vector.h>
 
 
-int asf_export(output_format_t format, scale_t sample_mapping, 
+int asf_export(output_format_t format, scale_t sample_mapping,
                char *in_base_name, char *output_name)
 {
-  return asf_export_bands(format, sample_mapping, 0, NULL,
+  return asf_export_bands(format, sample_mapping, 0, 0, 0, NULL,
 			  in_base_name, output_name, NULL);
 }
 
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
-		     char *look_up_table_name,
+                     int true_color, int false_color, char *look_up_table_name,
 		     char *in_base_name, char *output_name, char **band_name)
 {
   char in_meta_name[255], in_data_name[255];
@@ -36,33 +36,37 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".tif", ".tiff");
-    export_band_image(in_meta_name, in_data_name, output_name, 
-		      sample_mapping, band_name, rgb, 
-		      look_up_table_name, TIF); 
+    export_band_image(in_meta_name, in_data_name, output_name,
+		      sample_mapping, band_name, rgb,
+                      true_color, false_color,
+		      look_up_table_name, TIF);
   }
   else if ( format == GEOTIFF ) {
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".tif", ".tiff");
-    export_band_image(in_meta_name, in_data_name, output_name, 
-		      sample_mapping, band_name, rgb, 
+    export_band_image(in_meta_name, in_data_name, output_name,
+		      sample_mapping, band_name, rgb,
+                      true_color, false_color,
 		      look_up_table_name, GEOTIFF);
   }
   else if ( format == JPEG ) {
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".jpg", ".jpeg");
-    export_band_image(in_meta_name, in_data_name, output_name, 
-		      sample_mapping, band_name, rgb, 
-		      look_up_table_name, JPEG);
+    export_band_image(in_meta_name, in_data_name, output_name,
+		      sample_mapping, band_name, rgb,
+                      true_color, false_color,
+                      look_up_table_name, JPEG);
   }
   else if ( format == PGM ) {
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".pgm", ".pgm");
-    export_band_image(in_meta_name, in_data_name, output_name, 
-		      sample_mapping, band_name, rgb, 
-		      look_up_table_name, PGM);
+    export_band_image(in_meta_name, in_data_name, output_name,
+		      sample_mapping, band_name, rgb,
+                      true_color, false_color,
+                      look_up_table_name, PGM);
   }
   else if ( format == KML ) {
     sprintf(in_data_name, "%s.img", in_base_name);

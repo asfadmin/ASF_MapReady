@@ -3,152 +3,10 @@
    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
     <bookinfo>
-        <date>2005-01-07</date>
+        <date>2007-02-27</date>
         <title>The ASF Data Conversion Tool</title>
     </bookinfo>
     <toc></toc>
-    <chapter id="getting-started">
-        <title>Getting Started</title>
-        <para>
-            This section is a basic walk through the tool, containing
-            the steps needed to do some common tasks.
-        </para>
-        <sect1 id="ex1">
-            <title>Converting Data to JPG</title>
-            <simplelist>
-                <member>
-                    What You Have: CEOS .D and .L files.
-                </member>
-                <member>
-                    What You Want: JPEG files.
-                </member>
-            </simplelist>
-            <orderedlist>
-                <listitem>
-                    <para>Run the ASF Convert Tool.</para>
-                </listitem>
-                <listitem>
-                    <para>
-                        Click the "Browse" button, and find the location of your .D
-                        files.  You may use ctrl-click or shift-click to select
-                        multiple .D files to convert.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>Click "Execute".</para>
-                </listitem>
-                <listitem>
-                    <para>
-                        After processing is complete, you can right-click on a
-                        file's entry, and select "View Output" to pull up the
-                        generated .JPG file.  You can do this for any completed
-                        file, even if processing is still going on for other
-                        files.
-                    </para>
-                </listitem>
-            </orderedlist>
-            <para>
-                In this example, we didn't have to change any of the
-                options, we were able to go with all of the defaults.
-            </para>
-        </sect1>
-        <sect1 id="ex2">
-            <title>Converting Data to GeoTIFF</title>
-            <simplelist>
-                <member>
-                    What You Have: .D and .L files.
-                </member>
-                <member>
-                    What You Want: GeoTIFF files.
-                </member>
-            </simplelist>
-            <orderedlist>
-                <listitem>
-                    <para>Run the ASF Convert Tool.</para>
-                </listitem>
-                <listitem>
-                    <para>
-                        Click the "Browse" button, and find the location of your .D
-                        files.  You may use ctrl-click or shift-click to select
-                        multiple .D files to convert.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>
-                        Click on the "Export" tab, and select "GeoTIFF" from
-                        the "Format" dropdown list.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>Click "Execute".</para>
-                </listitem>
-                <listitem>
-                    <para>
-                        In this case, the "View Output" option is not
-                        available.
-                    </para>
-                </listitem>
-            </orderedlist>
-        </sect1>
-        <sect1 id="ex3">
-            <title>
-                Converting Data to GeoTIFF, geocoding with an Albers
-                projection
-            </title>
-            <simplelist>
-                <member>
-                    What You Have: .D and .L files.
-                </member>
-                <member>
-                    What You Want: GeoTIFF files, geocoded using an Albers projection.
-                </member>
-            </simplelist>
-            <orderedlist>
-                <listitem>
-                    <para>Run the ASF Convert Tool.</para>
-                </listitem>
-                <listitem>
-                    <para>
-                        Click the "Browse" button, and find the location of your .D
-                        files.  You may use ctrl-click or shift-click to select
-                        multiple .D files to convert.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>Click on the "Geocode" tab:</para>
-                    <orderedlist>
-                        <listitem>
-                            <para>Check the box to turn on geocoding.</para>
-                        </listitem>
-                        <listitem>
-                            <para>
-                                Select the "Albers" projection from the list of
-                                available projections.
-                            </para>
-                        </listitem>
-                        <listitem>
-                            <para>
-                                A few predefined projections are available, which
-                                use good projection parameters for different parts of
-                                the world.  If none of the predefined projections suit
-                                your needs, you'll need to specify your projection
-                                parameters mansually.
-                            </para>
-                        </listitem>
-                    </orderedlist>
-                </listitem>
-                <listitem>
-                    <para>
-                        Click on the "Export" tab, and select "GeoTIFF" from
-                        the "Format" dropdown list.
-                    </para>
-                </listitem>
-                <listitem>
-                    <para>Click "Execute".</para>
-                </listitem>
-            </orderedlist>
-        </sect1>
-    </chapter>
     <chapter id="input-files">
         <title>Choosing Input Files</title>
         <para>There several ways you can add files to the utility.</para>
@@ -158,6 +16,11 @@
             meta-data files -- just the data files.  The meta-data files
             should be located in the same directory as the data file, and use
             the same base name.
+        </para>
+        <para>
+            For ALOS data, you should choose the leader file (starts
+            with LED-), instead of choosing an individual band data
+            file.
         </para>
         <orderedlist>
             <listitem>
@@ -174,8 +37,14 @@
                 <para>Select all .D files in the current directory:</para>
                 <para>asf_convert_gui *.D</para>
 
+                <para>Select all LED-* files in the current directory:</para>
+                <para>asf_convert_gui LED-*</para>
+
                 <para>Select all .D files in the "data" directory:</para>
                 <para>asf_convert_gui data/*.D</para>
+
+                <para>Select all LED- files in the "data" directory:</para>
+                <para>asf_convert_gui data/LED-*</para>
             </listitem>
             <listitem>
                 <para>Use the "Browse" button.</para>
@@ -188,6 +57,11 @@
                     Files exist in data and metadata pairs.  The file you
                     should select is the data file (such as .D), and
                     not the metadata (such as .L).
+                </para>
+                <para>
+                    For ALOS data, there is one metadata file (LED-*)
+                    and one or more image files (IMG-*).  There is one
+                    image file for each band in the input data.
                 </para>
             </listitem>
         </orderedlist>
@@ -212,18 +86,6 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Process to Level 1</para>
-                <para>
-                    Level 0 data needs to be processed to Level 1 before
-                    any terrain correction, geocoding, or exporting may
-                    be done.  Checking this option will use the ASF SAR
-                    processor (ARDoP) to do this processing.  If you
-                    don't process to level 1, then the terrain
-                    correction, geocode, and export sections will be
-                    disabled.
-                </para>
-            </listitem>
-            <listitem>
                 <para>Latitude</para>
                 <para>
                     This option is only available for the "STF" data format.
@@ -233,7 +95,7 @@
                 </para>
             </listitem>
             <listitem>
-                <para>Keep Files</para>
+                <para>Keep Intermediate Files</para>
                 <para>
                     With this option checked, the intermediate files generated
                     during the processing will not be deleted after successful
@@ -245,27 +107,6 @@
                     If a file fails to process, any intermediate files that
                     were generated are not deleted, even with this option
                     turned off.
-                </para>
-            </listitem>
-            <listitem>
-                <para>Apply Azimuth Pixel Size Metadata Fix</para>
-                <para>
-                    This option turns on a correction to the Y pixel size value
-                    in the metadata, caused by an error in the Precision Processor.
-                </para>
-                <para>
-                    The error results from using an incorrect relative velocity
-                    between the satellite, and the surface of the Earth at the
-                    center of the scene.  The velocity used is the relative velocity
-                    between the satellite, and the surface of the Earth directly
-                    below the satellite (at nadir).  This leads to pixel sizes
-                    that are slightly off in the azimuth direction.  The size
-                    of the error varies with latitude (least at the equator).  In
-                    Alaska, it is about 0.5%.
-                </para>
-                <para>
-                    If you use data obtained from the PP, then you will probably
-                    want to turn this option on.
                 </para>
             </listitem>
         </orderedlist>
@@ -308,6 +149,10 @@
             choose to output the result in decibles (the resulting values
             are logarithmically scaled).
         </para>
+        <para>
+            In this release, with ALOS data the only supported options
+            are amplitude and sigma.
+        </para>
     </chapter>
     <chapter id="dem">
         <title>DEM</title>
@@ -345,6 +190,10 @@
             Checking the DEM checkbox indicates that you do have a DEM
             available for the scene(s) you are processing.  Note that at
             this time a single DEM must apply to all of the scenes.
+        </para>
+        <para>
+            NOTE: In this release, terrain correction of ALOS data or
+            ScanSAR data is not supported.
         </para>
         <orderedlist>
             <listitem>
@@ -771,29 +620,55 @@
 
             </listitem>
             <listitem>
-                <para>Export Multiple Bands as RGB</para>
+                <para>Export All Bands as Separate Images</para>
 
                 <para>
-                    If your data has multiple bands, you can export
-                    them separately (each a greyscale image) by
-                    leaving this option unchecked.
+                    This is the default option, and the only option
+                    that applies to single-band data.  (At this point,
+                    all non-ALOS data is single band.)
                 </para>
                 <para>
-                    Turning on this option output the image into a 
+                    With this option selected, each input band will
+                    be exported into a different file.  The band
+                    name is appended to the output filename, just
+                    before the extension.  So, for example, if you've
+                    set your output filename to "test", and you are
+                    processing quad-pole data to geotiff, you will
+                    get four greyscale files: test_HH.tif, test_HV.tif,
+                    test_VH.tif, and test_VV.tif
+                </para>
+            </listitem>
+            <listitem>
+                <para>Export Multiple Bands in a Single RGB Image</para>
+
+                <para>
+                    Turning on this option outputs the image into a 
                     color RGB image.  The selected bands are
                     assigned to the color planes red, green, or
                     blue.
                 </para>
+                <para>
+                    Radar and Optical data are separated.  If you have
+                    Radar data, your band options are HH, HV, VH, VV.
+                    For optical data, the bands are 1-4.
+                </para>
+                <para>
+                    The Truecolor option exports the third band as
+                    red, second as green, and third as blue, and
+                    performs a 2-sigma contrast expansion on each
+                    band.  This is different than if you choose "User
+                    Defined" and select 3,2,1 -- in that case, the
+                    2-sigma contrast expansion is not done.
+                </para>                    
+                <para>
+                    The Falsecolor option exports the fourth (IR) band as
+                    red, third as green, and second as blue, and
+                    performs a 2-sigma contrast expansion on each
+                    band.  This is different than if you choose "User
+                    Defined" and select 4,3,2 -- in that case, the
+                    2-sigma contrast expansion is not done.
+                </para>
             </listitem>
-            <!-- take this out for 3.0, probably can be removed permanently
-      <listitem>
-	<para>Scale output image</para>
-
-	<para>Will reduce the size of the output image, so that its
-          largest dimension is at most the given size.  This option
-          isn't available when exporting to GeoTIFF.</para>
-      </listitem>
--->
         </orderedlist>
     </chapter>
     <chapter id="files">
@@ -803,7 +678,12 @@
             This section lists all of the file you've selected (as
             described above in Section 3).
         </para>
-
+        <para>
+            There are two file lists.  The upper list, where files are
+            first placed after being added, is the list of files that
+            have yet to be processed.  The lower list is where files
+            that have been successfully processed are put.
+        </para>
         <orderedlist>
             <listitem>
                 <para>Thumbnails</para>
@@ -824,11 +704,9 @@
                 <para>
                     The output image, for all types except GeoTIFF, will
                     also produce a thumbnail, and you can view an enlarged
-                    version by right-clicking and selecting "View Image".
-                    Generally the input thumbnail and the output thumbnail won't
-                    differ significantly. (However, when geocoding the image
-                    will likely be rotated, and if poor projection parameters
-                    are chosen some distortion could occur.)
+                    version by right-clicking and selecting "View
+                    Image".  The output image will also enlarge when
+                    hovered over with the mouse.
                 </para>
 
             </listitem>
@@ -873,39 +751,6 @@
                     Radiometry section) using the suffix "_pwr".
                 </para>
             </listitem>
-
-            <listitem>
-                <para>"Save" and "Load" Buttons</para>
-
-                <para>
-                    If you are processing a large number of files, you may
-                    wish to stop processing and resume it later.
-                </para>
-
-                <para>
-                    To do this, you should "Save" after you've processed the
-                    first batch of files, and then exit the program.
-                </para>
-
-                <para>
-                    Then, when you are ready to resume processing, click
-                    "Load" after running the tool.  When you click "Execute",
-                    processing will continue from where you left off.
-                </para>
-
-                <para>
-                    Please note that if you change any options, clicking
-                    "Execute" will start processing over again from the first
-                    file.  You can exit without saving if you accidentally
-                    change an option, and then re-process any files that were
-                    erroneously processed with the new options.  (When you
-                    select "Process" from the right-click pop-up menu, the file
-                    will always be processed even if it has already been marked
-                    "Done".  In this situation, the word "Done" will appear in
-                    gray instead of black.)
-                </para>
-
-            </listitem>
         </orderedlist>
     </chapter>
 
@@ -929,14 +774,8 @@
         </para>
 
         <para>
-            If you use the right-click menu option to process a file
-            (See Section 10), then the file will always be processed even if
-            it has already been marked "Done".
-        </para>
-
-        <para>
-            Clicking "Stop" will stop processing after the current
-            conversion finishes.
+            Clicking "Stop" will stop processing.  It may take a
+            moment or two for the processing to stop.
         </para>
 
         <para>
@@ -948,19 +787,19 @@
         </para>
 
         <para>
-            As the processing proceeds, the asf_import, asf_geocode (if
-            appropriate), and asf_export tools are invoked for each file.
+            As the processing proceeds, the asf_import, asf_terrcorr,
+            asf_geocode, and asf_export tools are invoked for each
+            file. (Unless the tool hasn't been selected, of course.)
             These tools generate output messages which are captured by the
-            tool and placed in the output window.  (On some systems, this
-            window is completely collapsed on startup -- use the mouse to
-            grab the bar right above the row of buttons at the bottom, and
-            move it up to reveal the output window.)
+            tool and displayed in the terminal window that is opened
+            along with the GUI.  This logging information is also
+            available by clicking the "View Log" option.
         </para>
 
         <para>
             If an error occurs during the processing of a file, instead
             of "Done" in the status column, you'll see "Error".  You can
-            then right-click and select "Jump To Log", to read the details
+            then right-click and select "View Log", to read the details
             of the error.
         </para>
 
@@ -969,7 +808,7 @@
         <title>Toolbar Buttons</title>
 
         <para>
-            Just above the files section is a set of toolbar buttons.
+            Just above each files section is a set of toolbar buttons.
             To use the buttons, select one or more files in the files
             grid, and then click on the button you wish to use.  Some
             button work with only one file, others work with more than
@@ -997,7 +836,18 @@
 
                 <para>
                     This processes the file, just as if you'd click execute
-                    with only this file in the grid.
+                    with only this file in the grid.  After
+                    completion, the file is moved to the "Completed
+                    Files" list, assuming it processed successfully.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>Queue for Re-Processing</para>
+
+                <para>
+                     Moves the file from the "Completed Files" section
+                     back to the yet-to-be-processed list.
                 </para>
             </listitem>
 
@@ -1006,8 +856,8 @@
 
                 <para>
                     Change the name of the output file.  You can't change
-                    the directory, use the "Change Output Directory" option (see
-                    Section 8) to do that.
+                    the directory, use the "Change Output Directory"
+                    option to do that.
                 </para>
 
                 <para>
@@ -1017,12 +867,13 @@
             </listitem>
 
             <listitem>
-                <para>Jump To Log</para>
+                <para>View Log</para>
 
                 <para>
-                    This option will move the scrollbar in the output
-                    messages window (See Section 9) to the messages for the
-                    selected row's file.
+                    This will pull up the messages that were generated
+                    during processing.  If a file fails to process,
+                    you can get the detailed error information in the
+                    log.
                 </para>
 
             </listitem>
@@ -1072,14 +923,6 @@
                     will not be available.
                 </para>
 
-            </listitem>
-            <listitem>
-                <para>Display with Google Earth</para>
-                <para>
-                    If Google Earth is installed, the original CEOS file is
-                    exported as JPEG, a google-earth KML file is generated, and
-                    the Google Earth application is started with the file.
-                </para>
             </listitem>
         </orderedlist>
     </chapter>

@@ -566,7 +566,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // If RGB Banding option is "ignore,ignore,ignore" then the
       // user has probably been using the gui, and didn't pick
       // anything for any of the RGB channels.
-      if (strlen(cfg->export->rgb)>0 &&
+      int rgbBanding = strlen(cfg->export->rgb) > 0 ? 1 : 0;
+      if (rgbBanding &&
           strcmp(uc(cfg->export->rgb), "IGNORE,IGNORE,IGNORE") == 0)
       {
           asfPrintError(
@@ -574,7 +575,26 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               "channels were selected.  Please choose which bands you wish\n"
               "to have placed into at least one of the RGB channels.\n");
       }
+
+      // RGB Banding, True Color, and False Color are mutually-exclusive
+      // options.  Check to make sure the config doesn't spec more than
+      // one of these.
     }
+    int rgbBanding = strlen(cfg->export->rgb) > 0 ? 1 : 0;
+    int truecolor = cfg->export->truecolor == 0 ? 0 : 1;
+    int falsecolor = cfg->export->falsecolor == 0 ? 0 : 1;
+    if (rgbBanding + truecolor + falsecolor > 1)
+    {
+      asfPrintError("More than one color export mode was selected (rgb banding, truecolor,\n"
+          "or falsecolor.)  Only one of these options may be selected\n"
+          "at a time.\n");
+    }
+    // Make sure truecolor/falsecolor are only specified for optical data
+    meta_parameters *meta = meta_read(inFile);
+    if (!meta->optical && (truecolor || falsecolor)) {
+      asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
+    }
+    meta_free(meta);
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
         !cfg->general->terrain_correct && !cfg->general->geocoding &&
@@ -896,6 +916,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     output_format_t format = JPEG;
 
     if (cfg->general->export) {
+      int true_color = cfg->export->truecolor == 0 ? 0 : 1;
+      int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
 
       scale_t scale = SIGMA;
       update_status(cfg, "Exporting...");
@@ -939,7 +961,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               char **bands = find_bands(inFile, TRUE, red, green, blue,
                                         &num_found);
               if (num_found > 0) {
-		check_return(asf_export_bands(format, scale, TRUE, NULL,
+                asfPrintStatus("\nExporting RGB bands into single color file:\n"
+                    "Red band  : %s\n"
+                    "Green band: %s\n"
+                    "Blue band : %s\n\n",
+                              red, green, blue);
+		check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
                                                 inFile, outFile, bands),
                                "export data file (asf_export), banded.\n");
                   int i;
@@ -963,21 +990,82 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       if (strlen(cfg->export->rgb) == 0)
       {
-          meta_parameters *meta = meta_read(inFile);
+        meta_parameters *meta = meta_read(inFile);
+        if (meta->optical && (true_color || false_color)) {
+          // Multi-band optical data, exporting as true or false color single file
+          asfPrintStatus("\nExporting %s file...\n\n\n",
+                         true_color ? "True Color" : false_color ? "False Color" : "Unknown");
+          if (true_color &&
+              (strstr(meta->general->bands, "01") == NULL ||
+               strstr(meta->general->bands, "02") == NULL ||
+               strstr(meta->general->bands, "03") == NULL)
+             )
+          {
+            asfPrintError("Imported file does not contain required color bands\n"
+                "necessary for true color output (03, 02, 01)\n");
+          }
+          if (false_color &&
+              (strstr(meta->general->bands, "02") == NULL ||
+               strstr(meta->general->bands, "03") == NULL ||
+               strstr(meta->general->bands, "04") == NULL)
+             )
+          {
+            asfPrintError("Imported file does not contain required color bands\n"
+                "necessary for false color output (04, 03, 02)\n");
+          }
+          if (scale != NONE) {
+            asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
+                "True Color or False Color output was selected, the byte conversion\n"
+                "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
+          }
+          char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+          if (meta->general->band_count >= 4 && bands != NULL) {
+            // The imported file IS a multiband file with enough bands,
+            // but the extract bands need to be ordered correctly
+            if (true_color) {
+              strcpy(bands[0], "03");
+              strcpy(bands[1], "02");
+              strcpy(bands[2], "01");
+              strcpy(bands[3], "");
+            }
+            else {
+              strcpy(bands[0], "04");
+              strcpy(bands[1], "03");
+              strcpy(bands[2], "02");
+              strcpy(bands[3], "");
+            }
+            check_return(asf_export_bands(format, NONE, TRUE,
+                        true_color, false_color, NULL,
+                        inFile, outFile, bands),
+            "exporting data file (asf_export), color banded.\n");
+            int i;
+            for (i=0; i < meta->general->band_count; i++) {
+              FREE (bands[i]);
+            }
+            FREE(bands);
+          }
+          else {
+            asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
+                          inFile);
+          }
+        }
+        else {
           if (meta->general->band_count != 1) {
-              // multi-band, exporting as separate files
-              asfPrintStatus("Exporting %d bands as separate files...\n",
+              // multi-band, exporting as separate greyscale files
+              asfPrintStatus("Exporting %d bands as separate greyscale files...\n",
                              meta->general->band_count);
-              check_return(asf_export_bands(format, scale, FALSE, NULL,
+              check_return(asf_export_bands(format, scale, FALSE,
+                                            0, 0, NULL,
                                             inFile, outFile, NULL),
-                           "export data file (asf_export), banded.\n");
+                           "exporting data file (asf_export), greyscale bands.\n");
           }
           else {
               // single band
               check_return(asf_export(format, scale, inFile, outFile),
-                           "exporting data file (asf_export)\n");
+                           "exporting data file (asf_export), single band.\n");
           }
-          meta_free(meta);
+        }
+        meta_free(meta);
       }
     }
 
@@ -1034,47 +1122,86 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
            if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
                char **bands = find_bands(inFile, 1, red, green, blue, &n);
                if (n > 0) {
-                   check_return(asf_export_bands(format, scale, TRUE, NULL,
+                   check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
                                                  tmpFile, outFile, bands),
                      "exporting thumbnail data file (asf_export), banded\n");
                    for (i=0; i<n; ++i) FREE(bands[i]);
                    FREE(bands);
                }
            }
-        } else {
-            if (meta->general->band_count == 1)
-                check_return(asf_export(format, scale, tmpFile, outFile),
-                             "exporting thumbnail data file (asf_export)\n");
-            else {
-                // just the first band -- set the others to NULL
-                char **bands = find_single_band(tmpFile, "all", &n);
-                for (i=1; i<n; ++i) {
-                    FREE(bands[i]); bands[i] = NULL;
+        }
+        else { // no rgb bands selected
+          int true_color = cfg->export->truecolor == 0 ? 0 : 1;
+          int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+          if (meta->optical && (true_color || false_color))
+          {
+            if (meta->optical && (true_color || false_color)) {
+              // Multi-band optical data, exporting as true or false color single file
+              char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+              if (meta->general->band_count >= 4 && bands != NULL) {
+              // The imported file IS a multiband file with enough bands,
+              // but the extract bands need to be ordered correctly
+                if (true_color) {
+                  strcpy(bands[0], "03");
+                  strcpy(bands[1], "02");
+                  strcpy(bands[2], "01");
+                  strcpy(bands[3], "");
                 }
-                check_return(asf_export_bands(format, scale, FALSE, NULL,
-                                              tmpFile, outFile, bands),
-                             "exporting thumbnail data file (asf_export)\n");
-                // strip off the band name at the end!
-                char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
-                if (cfg->general->intermediates) {
-                    sprintf(banded_name, "%s/%s_thumb_%s.jpg",
-                            cfg->general->tmp_dir, basename, bands[0]);
-                    sprintf(outFile, "%s/%s_thumb.jpg",
-                            cfg->general->tmp_dir, basename);
-                } else {
-                    sprintf(banded_name, "%s_thumb_%s.jpg",
-                            cfg->general->out_name, bands[0]);
-                    char *tmp =
-                        appendToBasename(cfg->general->out_name, "_thumb");
-                    strcpy(outFile, tmp);
-                    strcat(outFile, ".jpg");
-                    free(tmp);
+                else {
+                  strcpy(bands[0], "04");
+                  strcpy(bands[1], "03");
+                  strcpy(bands[2], "02");
+                  strcpy(bands[3], "");
                 }
-                fileRename(banded_name, outFile);
-                FREE(bands[0]);
+                check_return(asf_export_bands(format, NONE, TRUE,
+                             true_color, false_color, NULL,
+                             tmpFile, outFile, bands),
+                             "exporting thumbnail data file (asf_export), color banded.\n");
+                int i;
+                for (i=0; i < meta->general->band_count; i++) {
+                  FREE (bands[i]);
+                }
                 FREE(bands);
-                FREE(banded_name);
+              }
             }
+          }
+          else { // not a true or false color optical image
+            if (meta->general->band_count == 1) {
+              check_return(asf_export(format, scale, tmpFile, outFile),
+                           "exporting thumbnail data file (asf_export)\n");
+            }
+            else {
+              // just the first band -- set the others to NULL
+              char **bands = find_single_band(tmpFile, "all", &n);
+              for (i=1; i<n; ++i) {
+                FREE(bands[i]); bands[i] = NULL;
+              }
+              check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
+                                            tmpFile, outFile, bands),
+                           "exporting thumbnail data file (asf_export)\n");
+              // strip off the band name at the end!
+              char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
+              if (cfg->general->intermediates) {
+                sprintf(banded_name, "%s/%s_thumb_%s.jpg",
+                        cfg->general->tmp_dir, basename, bands[0]);
+                sprintf(outFile, "%s/%s_thumb.jpg",
+                        cfg->general->tmp_dir, basename);
+              }
+              else {
+                sprintf(banded_name, "%s_thumb_%s.jpg",
+                        cfg->general->out_name, bands[0]);
+                char *tmp =
+                    appendToBasename(cfg->general->out_name, "_thumb");
+                strcpy(outFile, tmp);
+                strcat(outFile, ".jpg");
+                free(tmp);
+              }
+              fileRename(banded_name, outFile);
+              FREE(bands[0]);
+              FREE(bands);
+              FREE(banded_name);
+            }
+          }
         }
 
         meta_free(meta);
@@ -1141,7 +1268,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->export) {
             update_status(cfg, "Exporting layover mask...");
             check_return(
-                asf_export_bands(format, TRUNCATE, 1, "layover_mask.lut",
+                asf_export_bands(format, TRUNCATE, 1, 0, 0, "layover_mask.lut",
                                  inFile, outFile, NULL),
                 //asf_export(format, TRUNCATE, inFile, outFile),
                 "exporting layover mask (asf_export)\n");

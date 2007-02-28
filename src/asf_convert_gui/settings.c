@@ -45,22 +45,22 @@ settings_apply_to_gui(const Settings * s)
         *keep_files_checkbutton,
         *apply_metadata_fix_checkbutton;
 
-    input_data_type_combobox = 
+    input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
 
-    input_data_format_combobox = 
+    input_data_format_combobox =
         get_widget_checked("input_data_format_combobox");
 
     export_checkbutton =
         get_widget_checked("export_checkbutton");
 
-    output_format_combobox = 
+    output_format_combobox =
         get_widget_checked("output_format_combobox");
 
-    keep_files_checkbutton = 
+    keep_files_checkbutton =
         get_widget_checked("keep_files_checkbutton");
 
-    apply_metadata_fix_checkbutton = 
+    apply_metadata_fix_checkbutton =
         get_widget_checked("apply_metadta_fix_checkbutton");
 
     set_combo_box_item(input_data_format_combobox, s->input_data_format);
@@ -88,7 +88,7 @@ settings_apply_to_gui(const Settings * s)
 
     if (settings_get_input_data_format_allows_latitude(s))
     {
-        GtkWidget 
+        GtkWidget
             *latitude_checkbutton,
             *latitude_low_entry,
             *latitude_hi_entry;
@@ -145,9 +145,10 @@ settings_apply_to_gui(const Settings * s)
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
 
         if (s->export_bands) {
-            if (strcmp(s->red, "3") == 0 &&
-                strcmp(s->green, "2") == 0 &&
-                strcmp(s->blue, "1") == 0)
+//            if (strcmp(s->red, "3") == 0 &&
+//                strcmp(s->green, "2") == 0 &&
+//                strcmp(s->blue, "1") == 0)
+            if (s->truecolor_is_checked)
             {
                 // true color
                 rb_select("rb_truecolor", TRUE);
@@ -155,9 +156,10 @@ settings_apply_to_gui(const Settings * s)
                 rb_select("rb_rgb", TRUE);
                 rgb_settings_changed();
             }
-            else if (strcmp(s->red, "4") == 0 &&
-                strcmp(s->green, "3") == 0 &&
-                strcmp(s->blue, "2") == 0)
+//            else if (strcmp(s->red, "4") == 0 &&
+//                strcmp(s->green, "3") == 0 &&
+//                strcmp(s->blue, "2") == 0)
+            else if (s->falsecolor_is_checked)
             {
                 // false color
                 rb_select("rb_falsecolor", TRUE);
@@ -174,7 +176,7 @@ settings_apply_to_gui(const Settings * s)
                 rb_select("rb_user_defined", TRUE);
                 rb_select("rb_optical", TRUE);
                 rb_select("rb_rgb", TRUE);
-                
+
                 set_combo_box_entry_item("red_optical_combo", s->red);
                 set_combo_box_entry_item("green_optical_combo", s->green);
                 set_combo_box_entry_item("blue_optical_combo", s->blue);
@@ -195,7 +197,7 @@ settings_apply_to_gui(const Settings * s)
             set_combo_box_entry_item("blue_optical_combo", "");
             rb_select("rb_all", TRUE);
         }
-    }        
+    }
 
     if (s->geocode_is_checked)
     {
@@ -284,7 +286,7 @@ settings_apply_to_gui(const Settings * s)
                 get_widget_checked("average_height_checkbutton");
 
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(average_height_checkbutton), 
+                GTK_TOGGLE_BUTTON(average_height_checkbutton),
                 s->specified_height);
 
             if (s->specified_height)
@@ -302,7 +304,7 @@ settings_apply_to_gui(const Settings * s)
                 get_widget_checked("pixel_size_checkbutton");
 
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(pixel_size_checkbutton), 
+                GTK_TOGGLE_BUTTON(pixel_size_checkbutton),
                 s->specified_pixel_size);
 
             if (s->specified_pixel_size)
@@ -390,10 +392,10 @@ settings_apply_to_gui(const Settings * s)
             {
                 gtk_entry_set_text(GTK_ENTRY(tc_pixel_size_entry), "");
             }
-            
+
             interpolate_checkbutton =
                 get_widget_checked("interpolate_checkbutton");
-            
+
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(interpolate_checkbutton), s->interp);
 
@@ -421,32 +423,32 @@ settings_apply_to_gui(const Settings * s)
 
         mask_checkbutton =
             get_widget_checked("mask_checkbutton");
-        
+
         if (s->auto_water_mask_is_checked || s->mask_file_is_checked)
         {
             GtkWidget *mask_entry;
             GtkWidget *rb_auto_water_mask, *rb_mask_file;
-            
+
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(mask_checkbutton), TRUE);
-            
+
             rb_auto_water_mask =
                 get_widget_checked("rb_auto_water_mask");
-            
+
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(rb_auto_water_mask), 
+                GTK_TOGGLE_BUTTON(rb_auto_water_mask),
                 s->auto_water_mask_is_checked);
-            
+
             rb_mask_file =
                 get_widget_checked("rb_mask_file");
-            
+
             gtk_toggle_button_set_active(
-                GTK_TOGGLE_BUTTON(rb_mask_file), 
+                GTK_TOGGLE_BUTTON(rb_mask_file),
                 s->mask_file_is_checked);
-            
+
             mask_entry =
                 get_widget_checked("mask_entry");
-            
+
             gtk_entry_set_text(GTK_ENTRY(mask_entry), s->mask_file);
         }
         else
@@ -498,22 +500,22 @@ settings_get_from_gui()
 
     ret = (Settings *) g_malloc0 (sizeof(Settings));
 
-    input_data_type_combobox = 
+    input_data_type_combobox =
         get_widget_checked("input_data_type_combobox");
 
-    input_data_format_combobox = 
+    input_data_format_combobox =
         get_widget_checked("input_data_format_combobox");
 
-    export_checkbutton = 
+    export_checkbutton =
         get_widget_checked("export_checkbutton");
 
-    output_format_combobox = 
+    output_format_combobox =
         get_widget_checked("output_format_combobox");
 
-    keep_files_checkbutton = 
+    keep_files_checkbutton =
         get_widget_checked("keep_files_checkbutton");
 
-    apply_metadata_fix_checkbutton = 
+    apply_metadata_fix_checkbutton =
         get_widget_checked("apply_metadata_fix_checkbutton");
 
     checkbutton_db =
@@ -543,7 +545,7 @@ settings_get_from_gui()
 
     if (settings_get_input_data_format_allows_latitude(ret))
     {
-        GtkWidget 
+        GtkWidget
             *latitude_checkbutton,
             *latitude_low_entry,
             *latitude_hi_entry;
@@ -622,6 +624,7 @@ settings_get_from_gui()
                 if (gtk_toggle_button_get_active(
                         GTK_TOGGLE_BUTTON(rb_user_defined)))
                 {
+                    ret->user_defined_is_checked = 1;
                     get_combo_box_entry_item("red_optical_combo",ret->red);
                     get_combo_box_entry_item("green_optical_combo",ret->green);
                     get_combo_box_entry_item("blue_optical_combo",ret->blue);
@@ -629,6 +632,7 @@ settings_get_from_gui()
                 else if (gtk_toggle_button_get_active(
                              GTK_TOGGLE_BUTTON(rb_truecolor)))
                 {
+                    ret->truecolor_is_checked = 1;
                     strcpy(ret->red, "3");
                     strcpy(ret->green, "2");
                     strcpy(ret->blue, "1");
@@ -636,6 +640,7 @@ settings_get_from_gui()
                 else if (gtk_toggle_button_get_active(
                              GTK_TOGGLE_BUTTON(rb_falsecolor)))
                 {
+                    ret->falsecolor_is_checked = 1;
                     strcpy(ret->red, "4");
                     strcpy(ret->green, "3");
                     strcpy(ret->blue, "2");
@@ -656,7 +661,7 @@ settings_get_from_gui()
 
     if (ret->geocode_is_checked)
     {
-        GtkWidget 
+        GtkWidget
             *projection_option_menu,
             *utm_zone_entry,
             *central_meridian_entry,
@@ -664,7 +669,7 @@ settings_get_from_gui()
             *first_standard_parallel_entry,
             *second_standard_parallel_entry,
             *false_northing_entry,
-            *false_easting_entry, 
+            *false_easting_entry,
             *average_height_checkbutton,
             *average_height_entry,
             *pixel_size_checkbutton,
@@ -719,7 +724,7 @@ settings_get_from_gui()
         average_height_checkbutton =
             get_widget_checked("average_height_checkbutton");
 
-        ret->specified_height = 
+        ret->specified_height =
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
             average_height_checkbutton));
 
@@ -735,7 +740,7 @@ settings_get_from_gui()
         pixel_size_checkbutton =
             get_widget_checked("pixel_size_checkbutton");
 
-        ret->specified_pixel_size = 
+        ret->specified_pixel_size =
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
             pixel_size_checkbutton));
 
@@ -769,11 +774,11 @@ settings_get_from_gui()
 					   force_checkbutton));
     }
 
-    ret->keep_files = 
+    ret->keep_files =
         gtk_toggle_button_get_active(
             GTK_TOGGLE_BUTTON(keep_files_checkbutton));
 
-    ret->apply_metadata_fix = 
+    ret->apply_metadata_fix =
         gtk_toggle_button_get_active(
         GTK_TOGGLE_BUTTON(apply_metadata_fix_checkbutton));
 
@@ -781,7 +786,7 @@ settings_get_from_gui()
         get_widget_checked("dem_checkbutton");
 
     if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton)))
-    {        
+    {
         GtkWidget *rb_terrcorr, *rb_refine_geolocation;
         GtkWidget *rb_auto_water_mask, *rb_mask_file;
         GtkWidget *dem_entry;
@@ -812,14 +817,14 @@ settings_get_from_gui()
             if (ret->specified_tc_pixel_size)
             {
                 GtkWidget *tc_pixel_size_entry;
-                
+
                 tc_pixel_size_entry =
                     get_widget_checked("tc_pixel_size_entry");
-                
+
                 ret->tc_pixel_size =
                     atof(gtk_entry_get_text(GTK_ENTRY(tc_pixel_size_entry)));
             }
-            
+
             interpolate_checkbutton =
                 get_widget_checked("interpolate_checkbutton");
 
@@ -828,17 +833,17 @@ settings_get_from_gui()
                     GTK_TOGGLE_BUTTON(interpolate_checkbutton));
 
             ret->refine_geolocation_is_checked = FALSE;
-            
+
             GtkWidget *save_dem_checkbutton =
                 get_widget_checked("save_dem_checkbutton");
-            
+
             ret->generate_dem =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(save_dem_checkbutton));
-            
+
             GtkWidget *layover_mask_checkbutton =
                 get_widget_checked("layover_mask_checkbutton");
-            
+
             ret->generate_layover_mask =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(layover_mask_checkbutton));
@@ -868,7 +873,7 @@ settings_get_from_gui()
             get_widget_checked("rb_auto_water_mask");
         rb_mask_file =
             get_widget_checked("rb_mask_file");
-        
+
         GtkWidget *mask_checkbutton;
         mask_checkbutton = get_widget_checked(
                                                 "mask_checkbutton");
@@ -880,7 +885,7 @@ settings_get_from_gui()
             {
                 GtkWidget *mask_entry;
                 mask_entry = get_widget_checked("mask_entry");
-                strcpy(ret->mask_file, 
+                strcpy(ret->mask_file,
                        gtk_entry_get_text(GTK_ENTRY(mask_entry)));
                 ret->mask_file_is_checked = TRUE;
                 ret->auto_water_mask_is_checked = FALSE;
@@ -899,12 +904,12 @@ settings_get_from_gui()
                 strcpy(ret->mask_file, "");
         }
     }
-    else 
+    else
     {
         ret->terrcorr_is_checked = FALSE;
         ret->refine_geolocation_is_checked = FALSE;
     }
-    
+
     return ret;
 }
 
@@ -942,14 +947,14 @@ settings_get_size_argument(const Settings *s)
         GtkWidget *longest_dimension_spinbutton;
         gdouble d;
 
-        longest_dimension_spinbutton = 
+        longest_dimension_spinbutton =
             get_widget_checked("longest_dimension_spinbutton");
 
         d = gtk_spin_button_get_value(
             GTK_SPIN_BUTTON(longest_dimension_spinbutton));
 
-        g_snprintf(size_arg, sizeof(size_arg), 
-            "-size %d", (int)floor(d + 0.5));    
+        g_snprintf(size_arg, sizeof(size_arg),
+            "-size %d", (int)floor(d + 0.5));
     }
     else
     {
@@ -966,13 +971,13 @@ static const gchar * scaling_method_string(int scaling_method)
     default:
     case SCALING_METHOD_SIGMA:
       return "sigma";
-      
+
     case SCALING_METHOD_MINMAX:
       return "minmax";
-      
+
     case SCALING_METHOD_TRUNCATE:
       return "truncate";
-      
+
     case SCALING_METHOD_HISTOGRAM_EQUALIZE:
       return "histogram_equalize";
   }
@@ -1188,7 +1193,7 @@ settings_equal(const Settings *s1, const Settings *s2)
 
         g_free(lat1);
         g_free(lat2);
-    }      
+    }
 
     /* printf("Equal = %s\n", equal ? "yes" : "no"); */
     return equal;
@@ -1216,7 +1221,7 @@ settings_get_output_format_extension(const Settings *s)
     {
     default:
     case INPUT_FORMAT_CEOS_LEVEL0:
-        if (!s->process_to_level1) 
+        if (!s->process_to_level1)
         {
             out_extension = "raw";
             break;
@@ -1354,14 +1359,14 @@ settings_get_run_import(const Settings *s)
     return s->output_format != OUTPUT_FORMAT_ASF_INTERNAL;
 }
 
-int 
+int
 settings_get_run_export(const Settings *s)
 {
     return s->export_is_checked &&
         s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1;
 }
 
-int 
+int
 settings_get_output_format_can_be_thumbnailed(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
@@ -1469,14 +1474,14 @@ settings_to_config_file(const Settings *s,
 	  fprintf(pf, "[Universal Transverse Mercator]\n");
 	  fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
 	  break;
-	  
+
 	case PROJ_PS:
 	  fprintf(pf, "[Polar Stereographic]\n");
 	  fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
 	  fprintf(pf, "Northern Projection=%d\n", s->lat0 >=0 ? 1 : 0);
 	  break;
-	  
+
 	case PROJ_ALBERS:
 	  fprintf(pf, "[Albers Conical Equal Area]\n");
 	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
@@ -1484,13 +1489,13 @@ settings_to_config_file(const Settings *s,
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
 	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
 	  break;
-	  
+
 	case PROJ_LAMAZ:
 	  fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
 	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
 	  break;
-	  
+
 	case PROJ_LAMCC:
 	  fprintf(pf, "[Lambert Conformal Conic]\n");
 	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
@@ -1519,7 +1524,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
-    fprintf(cf, "terrain correction = %d\n", 
+    fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
@@ -1534,7 +1539,7 @@ settings_to_config_file(const Settings *s,
         FCLOSE(fpDefs);
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
-//    fprintf(cf, "thumbnail = %d\n", 
+//    fprintf(cf, "thumbnail = %d\n",
 //            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
     fprintf(cf, "thumbnail = 1\n");
     fprintf(cf, "\n");
@@ -1542,7 +1547,7 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "[Import]\n");
     fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
     if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
-        fprintf(cf, "radiometry = %s_image\n", 
+        fprintf(cf, "radiometry = %s_image\n",
                 settings_get_data_type_string(s));
     // fprintf(cf, "look up table = \n");
     if (settings_get_input_data_format_allows_latitude(s)) {
@@ -1555,7 +1560,7 @@ settings_to_config_file(const Settings *s,
 
     if (s->process_to_level1) {
         fprintf(cf, "[SAR processing]\n");
-        fprintf(cf, "radiometry = %s_image\n", 
+        fprintf(cf, "radiometry = %s_image\n",
                 settings_get_data_type_string(s));
         fprintf(cf, "\n");
     }
@@ -1607,18 +1612,25 @@ settings_to_config_file(const Settings *s,
     if (s->export_is_checked) {
       fprintf(cf, "[Export]\n");
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
-      if (s->output_bytes) {
-          fprintf(cf, "byte conversion = %s\n", 
+      if (s->output_bytes && !s->truecolor_is_checked && !s->falsecolor_is_checked) {
+          fprintf(cf, "byte conversion = %s\n",
             scaling_method_string(s->scaling_method));
       } else {
           fprintf(cf, "byte conversion = none\n");
       }
       if (s->export_bands)
       {
+        if (!s->truecolor_is_checked && !s->falsecolor_is_checked) {
           const char *r = strlen(s->red)   > 0 ? s->red   : "ignore";
           const char *g = strlen(s->green) > 0 ? s->green : "ignore";
           const char *b = strlen(s->blue)  > 0 ? s->blue  : "ignore";
           fprintf(cf, "rgb banding = %s,%s,%s\n", r, g, b);
+        }
+        else {
+          fprintf(cf, "rgb banding = \n");
+        }
+        fprintf(cf, "truecolor = %d\n", s->truecolor_is_checked ? 1 : 0);
+        fprintf(cf, "falsecolor = %d\n\n", s->falsecolor_is_checked ? 1 : 0);
       }
       fprintf(cf, "\n");
     }

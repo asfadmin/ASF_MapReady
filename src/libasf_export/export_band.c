@@ -527,6 +527,7 @@ export_band_image (const char *metadata_file_name,
 		   char *output_file_name,
 		   scale_t sample_mapping,
 		   char **band_name, int rgb,
+                   int true_color, int false_color,
 		   char *look_up_table_name,
 		   output_format_t format)
 {
@@ -551,6 +552,11 @@ export_band_image (const char *metadata_file_name,
               "a byte image using truncation is not supported.  All values\n"
               "would map to black...\n");
 
+  // NOTE: if the truecolorFlag or falsecolorFlag was set, then 'rgb' is true
+  // and the band assignments are in the band_name[] array already.  The true_color
+  // and false_color parameters are provided separately just in case we decide
+  // to do anything different, e.g. normal rgb processing plus something specific
+  // to true_color or false_color (like contrast expansion)
   if (rgb && !have_look_up_table) {
 
     // Initialize the chosen format
@@ -724,6 +730,48 @@ export_band_image (const char *metadata_file_name,
         blue_float_line = (float *) MALLOC(sample_count * sizeof(float));
     }
 
+    double r_omin;
+    double r_omax;
+    double g_omin;
+    double g_omax;
+    double b_omin;
+    double b_omax;
+    if (md->optical && (true_color || false_color)) {
+      asfPrintStatus("\nSampling color channels for contrast-expanded %s output...\n",
+                     true_color ? "True Color" : false_color ? "False Color" : "Unknown");
+      asfPrintStatus("Gathering red channel statistics...\n");
+      calc_stats_from_file(image_data_file_name, band_name[0],
+                           md->general->no_data,
+                           &red_stats.min, &red_stats.max, &red_stats.mean,
+                           &red_stats.standard_deviation, &red_stats.hist);
+      r_omin = red_stats.mean - 2*red_stats.standard_deviation;
+      r_omax = red_stats.mean + 2*red_stats.standard_deviation;
+      if (r_omin < red_stats.min) r_omin = red_stats.min;
+      if (r_omax > red_stats.max) r_omax = red_stats.max;
+
+      asfPrintStatus("Gathering green channel statistics...\n");
+      calc_stats_from_file(image_data_file_name, band_name[1],
+                           md->general->no_data,
+                           &green_stats.min, &green_stats.max, &green_stats.mean,
+                           &green_stats.standard_deviation, &green_stats.hist);
+      g_omin = green_stats.mean - 2*green_stats.standard_deviation;
+      g_omax = green_stats.mean + 2*green_stats.standard_deviation;
+      if (g_omin < green_stats.min) g_omin = green_stats.min;
+      if (g_omax > green_stats.max) g_omax = green_stats.max;
+
+      asfPrintStatus("Gathering blue channel statistics...\n\n");
+      calc_stats_from_file(image_data_file_name, band_name[2],
+                           md->general->no_data,
+                           &blue_stats.min, &blue_stats.max, &blue_stats.mean,
+                           &blue_stats.standard_deviation, &blue_stats.hist);
+      b_omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+      b_omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+      if (b_omin < blue_stats.min) b_omin = blue_stats.min;
+      if (b_omax > blue_stats.max) b_omax = blue_stats.max;
+
+      asfPrintStatus("Applying 2-sigma contrast expansion to color bands...\n\n");
+    }
+
     for (ii=0; ii<md->general->line_count; ii++) {
       if (md->optical) {
         // Optical images come as byte in the first place
@@ -733,6 +781,25 @@ export_band_image (const char *metadata_file_name,
           get_byte_line(fp, md, ii+green_channel*offset, green_byte_line);
         if (!ignored[2])
           get_byte_line(fp, md, ii+blue_channel*offset, blue_byte_line);
+        // If true or false color flag was set, then (re)sample with 2-sigma
+        // contrast expansion
+        if (true_color || false_color) {
+          int jj;
+          for (jj=0; jj<sample_count; jj++) {
+            red_byte_line[jj] =
+                pixel_float2byte((float)red_byte_line[jj], SIGMA,
+                                  r_omin, r_omax,
+                                  red_stats.hist, red_stats.hist_pdf, NAN);
+            green_byte_line[jj] =
+                pixel_float2byte((float)green_byte_line[jj], SIGMA,
+                                  g_omin, g_omax,
+                                  green_stats.hist, green_stats.hist_pdf, NAN);
+            blue_byte_line[jj] =
+                pixel_float2byte((float)blue_byte_line[jj], SIGMA,
+                                  b_omin, b_omax,
+                                  blue_stats.hist, blue_stats.hist_pdf, NAN);
+          }
+        }
         if (format == TIF || format == GEOTIFF)
           write_rgb_tiff_byte2byte(otif, red_byte_line, green_byte_line,
                                    blue_byte_line, ii, sample_count);
@@ -801,7 +868,7 @@ export_band_image (const char *metadata_file_name,
   }
   else { // Single-band image output (one grayscale file for each available band)
 
-      int free_band_names=FALSE;
+    int free_band_names=FALSE;
     int band_count = md->general->band_count;
     char base_name[255], bands[25];
     strcpy(bands, md->general->bands);
