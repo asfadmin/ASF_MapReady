@@ -284,8 +284,8 @@ int meta_get_lineSamp(meta_parameters *meta,
 
   if (meta->transform) {
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
-      p[ii] = meta->transform->x[ii];
-      l[ii] = meta->transform->y[ii];
+      p[ii] = meta->transform->l[ii];
+      l[ii] = meta->transform->s[ii];
     }
     i = lat;
     j = lon;
