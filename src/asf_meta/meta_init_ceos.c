@@ -57,6 +57,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 ceos_description *get_ceos_description(const char *fName);
 ceos_description *get_sensor(const char *fName);
 double get_firstTime(const char *fName);
+void get_alos_delta_time (const char *fileName, double *delta);
 void get_polarization (const char *fName, char *polarization, double *chirp);
 
 /* Prototypes from meta_init_stVec.c */
@@ -530,6 +531,12 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size
                                           / asf_facdr->swathvel;
     }
+   else if (strcmp(meta->general->sensor, "ALOS") == 0) {
+     double delta;
+     get_alos_delta_time (in_fName, &delta);
+     meta->sar->azimuth_time_per_pixel = 
+       delta / meta->sar->original_line_count;
+   }
    else {
       firstTime = get_firstTime(dataName[0]);
       if (ceos->facility == ESA || ceos->processor == FOCUS) {
@@ -1514,4 +1521,50 @@ void get_polarization (const char *fName, char *polarization, double *chirp)
    // determine chirp rate
    chirp_rate = linehdr.chirp_linear * 1000.0;
    *chirp = chirp_rate;
+}
+
+
+// Get the delta image time for ALOS data out of the summary file
+void get_alos_delta_time (const char *fileName, double *delta)
+{
+  FILE *fp;
+  struct dataset_sum_rec dssr;
+  hms_time dssr_time, summary_time, start_time, end_time;
+  ymd_date dssr_date, summary_date, start_date, end_date;
+  char *summaryFile, line[512], dateStr[30], *str;
+  
+  get_dssr(fileName, &dssr);
+  date_dssr2date(dssr.inp_sctim, &dssr_date, &dssr_time);
+  summaryFile = (char *) MALLOC(sizeof(char)*255);
+  // Assume that workreport is following the basename paradigm
+  sprintf(summaryFile, "%s.txt", fileName);
+  if (!fileExists(summaryFile))
+    asfPrintError("Summary file '%s' does not exist.\nMight need to rename "
+		  "'workreport' file to follow basename scheme.\n");
+  fp = FOPEN(summaryFile, "r");
+  while (fgets(line, 512, fp)) {
+    if (strstr(line, "Img_SceneCenterDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &summary_date, &summary_time);
+      if (date_difference(&dssr_date, &dssr_time, 
+			  &summary_date, &summary_time) > 0.0)
+	asfPrintError("Summary file does not correspond to leader file.\n\n"
+		      "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
+    }
+    else if (strstr(line, "Img_SceneStartDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &start_date, &start_time);
+    }
+    else if (strstr(line, "Img_SceneEndDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &end_date, &end_time);
+    }
+  }
+  *delta = date_difference(&start_date, &start_time, &end_date, &end_time);  
 }
