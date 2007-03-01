@@ -482,7 +482,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
          break;
       case ALOS: 
 	if (mpdr) // geocoded image have look count information
-	  meta->sar->look_count = (int) (dssr->n_rnglok + 0.5);
+	  meta->sar->look_count = (int) (dssr->n_azilok + 0.5);
 	break;
       case unknownSatellite:
 	assert (0);
