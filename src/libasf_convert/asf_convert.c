@@ -273,6 +273,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     cfg = read_convert_config(configFileName);
   }
 
+  // Check for greyscale output versus selection of a color option
+  if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
+      (strlen(cfg->export->rgb) > 0 ||
+      cfg->export->truecolor        ||
+      cfg->export->falsecolor)
+     )
+  {
+    asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
+        "(RGB, True Color, or False Color)  ...Defaulting to producing\n"
+        "separate greyscale PGM files for available band.\n");
+    strcpy(cfg->export->rgb, "");
+    cfg->export->truecolor = 0;
+    cfg->export->falsecolor = 0;
+  }
+
   // Batch mode processing
   if (strlen(cfg->general->batchFile) > 0) {
     convert_config *tmp_cfg=NULL;

@@ -1523,7 +1523,6 @@ void get_polarization (const char *fName, char *polarization, double *chirp)
    *chirp = chirp_rate;
 }
 
-
 // Get the delta image time for ALOS data out of the summary file
 void get_alos_delta_time (const char *fileName, double *delta)
 {
@@ -1540,7 +1539,8 @@ void get_alos_delta_time (const char *fileName, double *delta)
   sprintf(summaryFile, "%s.txt", fileName);
   if (!fileExists(summaryFile))
     asfPrintError("Summary file '%s' does not exist.\nMight need to rename "
-		  "'workreport' file to follow basename scheme.\n");
+		  "'workreport' file to follow basename scheme.\n",
+                  summaryFile);
   fp = FOPEN(summaryFile, "r");
   while (fgets(line, 512, fp)) {
     if (strstr(line, "Img_SceneCenterDateTime")) {

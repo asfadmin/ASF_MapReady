@@ -886,6 +886,48 @@ void rotate_y(vector *v,double theta)
 	v->x = xNew; v->z = zNew;
 }
 
+void alos_to_latlon(meta_parameters *meta,
+		    double xSample, double yLine, double z,
+		    double *lat, double *lon, double *height)
+{
+    assert(meta->transform);
+    assert(meta->transform->parameter_count == 4 ||
+           meta->transform->parameter_count == 10);
+
+    double x[10], y[10];
+    int ii;
+
+    for (ii=0; ii<meta->transform->parameter_count; ii++) {
+      x[ii] = meta->transform->x[ii];
+      y[ii] = meta->transform->y[ii];
+    }
+
+    if (z != 0.0) {
+        // height correction applies directly to y (range direction)
+        assert(meta->transform->parameter_count == 4);
+        double incid = meta_incid(meta, yLine, xSample);
+        xSample += z*tan(PI/2-incid)/meta->general->x_pixel_size;
+    }
+
+    double i = xSample + 1;
+    double j = yLine + 1;
+
+    // optical data transformation
+    if (meta->transform->parameter_count == 10) {
+        *lat = y[0] + y[1]*i + y[2]*j + y[3]*i*j + y[4]*i*i + y[5]*j*j +
+            y[6]*i*i*j + y[7]*i*j*j + y[8]*i*i*i + y[9]*j*j*j;
+        *lon = x[0] + x[1]*i + x[2]*j + x[3]*i*j + x[4]*i*i + x[5]*j*j +
+            x[6]*i*i*j + x[7]*i*j*j + x[8]*i*i*i + x[9]*j*j*j;
+    }
+    // SAR data transformation
+    else if (meta->transform->parameter_count == 4) {
+        *lat = y[0] + y[1]*j + y[2]*i + y[3]*i*j;
+        *lon = x[0] + x[1]*j + x[2]*i + x[3]*i*j;
+    }
+
+    *height = z;  // FIXME: Do we need to correct the height at all?
+}
+
 void scan_to_latlon(meta_parameters *meta,
 		    double x, double y, double z,
 		    double *lat_d, double *lon, double *height)
@@ -923,7 +965,7 @@ void scan_to_latlon(meta_parameters *meta,
 	*lon *= R2D;
 	lat *= R2D;
 	*lat_d = atand(tand(lat) / (1-ecc2));
-        *height = z; // FIXME
+        *height = z;  // FIXME: Do we need to correct the height at all?
 }
 
 

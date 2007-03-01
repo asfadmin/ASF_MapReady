@@ -60,6 +60,14 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                       look_up_table_name, JPEG);
   }
   else if ( format == PGM ) {
+    if (rgb || true_color || false_color) {
+      asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
+          "(RGB, True Color, or False Color)  ...Defaulting to producing\n"
+          "separate greyscale PGM files for available band.\n");
+      rgb = 0;
+      true_color = 0;
+      false_color = 0;
+    }
     sprintf(in_data_name, "%s.img", in_base_name);
     sprintf(in_meta_name, "%s.meta", in_base_name);
     append_ext_if_needed (output_name, ".pgm", ".pgm");

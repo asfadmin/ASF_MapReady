@@ -418,6 +418,19 @@ main (int argc, char *argv[])
   for ( ii = 0 ; ii < strlen (command_line.format) ; ++ii ) {
     command_line.format[ii] = toupper (command_line.format[ii]);
   }
+  if (strcmp (command_line.format, "PGM") == 0 &&
+      (rgbFlag != FLAG_NOT_SET      ||
+      truecolorFlag != FLAG_NOT_SET ||
+      falsecolorFlag != FLAG_NOT_SET)
+     )
+  {
+    asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
+                    "(RGB, True Color, or False Color)  ...Defaulting to producing\n"
+                    "separate greyscale PGM files for available band.\n");
+    rgbFlag = FLAG_NOT_SET;
+    truecolorFlag = FLAG_NOT_SET;
+    falsecolorFlag = FLAG_NOT_SET;
+  }
 
   // Set the default byte scaling mechanisms
   if ( strcmp (command_line.format, "TIFF") == 0
@@ -566,20 +579,32 @@ main (int argc, char *argv[])
      truecolorFlag != FLAG_NOT_SET ||
      falsecolorFlag != FLAG_NOT_SET)
   {
-    char red_band[3], green_band[3], blue_band[3];
+    char red_band[16], green_band[16], blue_band[16];
 
     asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
     asfPrintStatus("Green channel: %s\n", command_line.green_channel);
     asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
 
-    sprintf(red_band, "%02d", atoi(command_line.red_channel));
-    sprintf(green_band, "%02d", atoi(command_line.green_channel));
-    sprintf(blue_band, "%02d", atoi(command_line.blue_channel));
-    band_names = find_bands(in_base_name, rgbFlag,
-                            red_band,
-                            green_band,
-                            blue_band,
-                            &num_bands_found);
+    if (is_numeric(command_line.red_channel) &&
+        is_numeric(command_line.green_channel) &&
+        is_numeric(command_line.blue_channel))
+    {
+      sprintf(red_band, "%02d", atoi(command_line.red_channel));
+      sprintf(green_band, "%02d", atoi(command_line.green_channel));
+      sprintf(blue_band, "%02d", atoi(command_line.blue_channel));
+      band_names = find_bands(in_base_name, rgbFlag,
+                              red_band,
+                              green_band,
+                              blue_band,
+                              &num_bands_found);
+    }
+    else {
+      band_names = find_bands(in_base_name, rgbFlag,
+                              command_line.red_channel,
+                              command_line.green_channel,
+                              command_line.blue_channel,
+                              &num_bands_found);
+    }
   }
 
   // Set band

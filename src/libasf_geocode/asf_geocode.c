@@ -1059,11 +1059,11 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       int ret1, ret2;
       const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
       double st_lat, st_lon;   // Symmetry test lat and long values.
-      ret1 = meta_get_latLon (imd, stpx, stpy, average_height,
+      ret1 = meta_get_latLon (imd, stpy, stpx, average_height,
                               &st_lat, &st_lon);
       double strx, stry;       // Symmetry test result values.
       ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height,
-                                &strx, &stry);
+                                &stry, &strx);
 
       // We will insist that the results are symmetric to within this
       // fraction after transforming out and back.
@@ -1081,7 +1081,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
           // Abort if the error is "horrible" (more than a pixel)
           if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
-              asfPrintError("Aborting... symmetry testing error too large.");
+              asfPrintError("Aborting... symmetry testing error too large.\n");
           }
       } else {
           printf ("good to within %lf pixels.\n", sym_th);

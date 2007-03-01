@@ -714,20 +714,27 @@ export_band_image (const char *metadata_file_name,
     }
     else {
       // Not optical data
-      if (ignored[0])
-        red_float_line = (float *) CALLOC(sample_count, sizeof(float));
-      else
-        red_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      int i;
+      red_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      if (ignored[0]){
+        for (i=0; i<sample_count; i++) {
+          red_float_line[i] = md->general->no_data;
+        }
+      }
 
-      if (ignored[1])
-        green_float_line = (float *) CALLOC(sample_count, sizeof(float));
-      else
-        green_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      green_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      if (ignored[1]) {
+        for (i=0; i<sample_count; i++) {
+          green_float_line[i] = md->general->no_data;
+        }
+      }
 
-      if (ignored[2])
-        blue_float_line = (float *) CALLOC(sample_count, sizeof(float));
-      else
-        blue_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      blue_float_line = (float *) MALLOC(sample_count * sizeof(float));
+      if (ignored[2]) {
+        for (i=0; i<sample_count; i++) {
+          blue_float_line[i] = md->general->no_data;
+        }
+      }
     }
 
     double r_omin;
