@@ -1,5 +1,22 @@
 Convert Version History
 
+v3.1.x (released YYYY Month DD)
+-- started at revision 4998, still need to go back to 3.0.21 tag
+Retired ability to export PPM files
+Added ability to export PGM files
+ALOS Support: Can now import, geocode, and export PalSAR standard beams, AVNIR2, and PRISM
+r4999 allow dos style line endings in projection files
+New tool: 'meta2envi' for easy viewing while the data is still in asf format
+r5002 fix crash when no 'sar' block is in the meta file
+Several minor bug fixes (memory leaks, indexing errors, etc)
+Some libraries removed from build system (asf_odl, asf_lt, asf_geolib)
+Change GUI panes to input & output from input/output & log
+New tool: resample <reason & functionality)
+Inconsistency fix for masking in terrain correction & geocoding
+Improved status reporting in the GUI
+Various build system improvements
+-- stop at revision 5188
+
 v3.0.21 (released 2007 February 8)
 Improved datum and spheroid support
 Added new metadata values:
