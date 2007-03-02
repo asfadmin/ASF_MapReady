@@ -10,7 +10,7 @@ char logbuf[4096];   /* buffer for log file output */
 int logflag=FALSE;   /* flag for log file output */
 int quietflag=FALSE; /* flag for short or long output */
 
-void printLog(char *msg)
+void printLog(const char *msg)
 {
   fprintf(fLog, "%s", msg);
 }

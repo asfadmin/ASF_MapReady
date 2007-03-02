@@ -11,10 +11,9 @@ report_level_t level=WARNING;
 
 static void check_stop()
 {
-    char stop_file[255];
-    sprintf(stop_file, "%s/stop.txt", get_asf_tmp_dir());
-    if (fileExists(stop_file)) {
-        remove(stop_file);
+    snprintf(logbuf, sizeof(logbuf), "%s/stop.txt", get_asf_tmp_dir());
+    if (fileExists(logbuf)) {
+        remove(logbuf);
         asfPrintError("Interrupted by user.\n");
     }
 }
@@ -75,15 +74,12 @@ void asfForcePrintStatus(const char *format, ...)
 void asfPrintWarning(const char *format, ...)
 {
   va_list ap;
-  char warningBegin[64];
-  char warningEnd[64];
+  const char *warningBegin = "\n** Warning: ********\n";
+  const char *warningEnd = "** End of warning **\n\n";
 
-  sprintf(warningBegin,"\n** Warning: ********\n");
-  sprintf(warningEnd,"** End of warning **\n\n");
-
-  printf(warningBegin);
+  printf("%s", warningBegin);
   if (logflag) {
-    fprintf(fLog, warningBegin);
+    fprintf(fLog, "%s", warningBegin);
   }
 
   va_start(ap, format);
@@ -99,7 +95,7 @@ void asfPrintWarning(const char *format, ...)
   printf(warningEnd);
   fflush (stdout);
   if (logflag) {
-    fprintf(fLog, warningEnd);
+    fprintf(fLog, "%s", warningEnd);
     fflush (fLog);
   }
 }
@@ -109,14 +105,13 @@ void asfPrintWarning(const char *format, ...)
 void asfPrintError(const char *format, ...)
 {
   va_list ap;
-  char errorBegin[64];
-  char errorEnd[64];
+  const char *errorBegin = "\n** Error: ********\n";
+  const char *errorEnd = "** End of error **\n\n";
 
-  sprintf(errorBegin,"\n** Error: ********\n");
-  sprintf(errorEnd,"** End of error **\n\n");
-
-  printf(errorBegin);
-  if (logflag) fprintf(fLog, errorBegin);
+  printf("%s", errorBegin);
+  if (logflag) {
+    fprintf(fLog, "%s", errorBegin);
+  }
 
   va_start(ap, format);
   vprintf(format, ap);
@@ -131,7 +126,7 @@ void asfPrintError(const char *format, ...)
   printf(errorEnd);
 
   if (logflag) {
-    fprintf(fLog, errorEnd);
+    fprintf(fLog, "%s", errorEnd);
     FCLOSE(fLog);
   }
 
@@ -145,19 +140,18 @@ void asfPrintError(const char *format, ...)
 // Report with the appriate level
 void asfReport(report_level_t level, const char *format, ...)
 {
-  char buffer[4096];
   va_list ap;
   va_start(ap, format);
-  vsprintf(buffer, format, ap);
+  vsprintf(logbuf, format, ap);
 
   if (level == LOG)
-    asf_print_to_log_only(buffer);
+    asf_print_to_log_only("%s", logbuf);
   else if (level == STATUS)
-    asfPrintStatus(buffer);
+    asfPrintStatus("%s", logbuf);
   else if (level == WARNING)
-    asfPrintWarning(buffer);
+    asfPrintWarning("%s", logbuf);
   else if (level == ERROR)
-    asfPrintError(buffer);
+    asfPrintError("%s", logbuf);
 
   va_end(ap);
 }
@@ -174,8 +168,7 @@ void asfLineMeter(int currentLine, int totalLines)
   currentLine++;
 
   /* Flag to report every 128 lines */
-  blather = ((currentLine%128==0)||(currentLine==1)||(currentLine==totalLines))
-            ? TRUE : FALSE;
+  blather = currentLine%128==0 || currentLine==1 || currentLine==totalLines;
 
   /* Leave if we're not going to blather at the user (or log) */
   if (!blather) return;
@@ -215,7 +208,7 @@ void asfPercentMeter(double inPercent)
   newPercent = (int)(inPercent * 100.0);
 
   /* Flag to report every 1% */
-  blather = (newPercent-oldPercent == 1) ? TRUE : FALSE;
+  blather = newPercent-oldPercent == 1;
   oldPercent = newPercent;
 
   /* Quit now if we're not going to blather at the user */
