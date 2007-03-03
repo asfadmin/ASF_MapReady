@@ -15,7 +15,8 @@ build: build_stamp
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	gunzip $(ZIPFILE)
+	tar xvf gsl-1.6.tar
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \
