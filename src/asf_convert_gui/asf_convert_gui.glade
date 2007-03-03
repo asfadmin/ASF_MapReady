@@ -2559,6 +2559,134 @@
 				  <property name="spacing">0</property>
 
 				  <child>
+				    <widget class="GtkHBox" id="hbox55">
+				      <property name="visible">True</property>
+				      <property name="homogeneous">False</property>
+				      <property name="spacing">0</property>
+
+				      <child>
+					<widget class="GtkLabel" id="label110">
+					  <property name="width_request">50</property>
+					  <property name="visible">True</property>
+					  <property name="label" translatable="yes">     </property>
+					  <property name="use_underline">False</property>
+					  <property name="use_markup">False</property>
+					  <property name="justify">GTK_JUSTIFY_LEFT</property>
+					  <property name="wrap">False</property>
+					  <property name="selectable">False</property>
+					  <property name="xalign">0.5</property>
+					  <property name="yalign">0.5</property>
+					  <property name="xpad">0</property>
+					  <property name="ypad">0</property>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">False</property>
+					  <property name="fill">False</property>
+					</packing>
+				      </child>
+
+				      <child>
+					<widget class="GtkVBox" id="vbox66">
+					  <property name="visible">True</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkHBox" id="hbox56">
+					      <property name="visible">True</property>
+					      <property name="homogeneous">False</property>
+					      <property name="spacing">0</property>
+
+					      <child>
+						<widget class="GtkRadioButton" id="rb_pauli">
+						  <property name="width_request">186</property>
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Pauli Decomposition.  Red: HH-VV, Green: HV, Blue: HH+VV</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Pauli</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <signal name="toggled" handler="on_rb_pauli_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:12 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkRadioButton" id="rb_sinclair">
+						  <property name="width_request">177</property>
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Sinclair Decomposition.  Red: VV, Green: (HV+VH)/2, Blue: HH</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">Sinclair</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <property name="group">rb_pauli</property>
+						  <signal name="toggled" handler="on_rb_sinclair_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:20 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkRadioButton" id="rb_user_defined_radar">
+						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Manually specify how the radar bands map to the color channels.</property>
+						  <property name="can_focus">True</property>
+						  <property name="label" translatable="yes">User Defined</property>
+						  <property name="use_underline">True</property>
+						  <property name="relief">GTK_RELIEF_NORMAL</property>
+						  <property name="focus_on_click">True</property>
+						  <property name="active">False</property>
+						  <property name="inconsistent">False</property>
+						  <property name="draw_indicator">True</property>
+						  <property name="group">rb_pauli</property>
+						  <signal name="toggled" handler="on_rb_user_defined_radar_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:28 GMT"/>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">True</property>
+					  <property name="fill">True</property>
+					</packing>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">True</property>
+				      <property name="fill">True</property>
+				    </packing>
+				  </child>
+
+				  <child>
 				    <widget class="GtkHBox" id="radar_bands_hbox">
 				      <property name="visible">True</property>
 				      <property name="homogeneous">False</property>
@@ -2589,7 +2717,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label103">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">Red Band: </property>
+					  <property name="label" translatable="yes">     Red Band: </property>
 					  <property name="use_underline">False</property>
 					  <property name="use_markup">False</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -2611,7 +2739,8 @@
 					<widget class="GtkComboBoxEntry" id="red_radar_combo">
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
-					  <property name="items" translatable="yes">HH
+					  <property name="items" translatable="yes">-
+HH
 HV
 VH
 VV
@@ -2672,7 +2801,8 @@ VV
 					<widget class="GtkComboBoxEntry" id="green_radar_combo">
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
-					  <property name="items" translatable="yes">HH
+					  <property name="items" translatable="yes">-
+HH
 HV
 VH
 VV
@@ -2733,11 +2863,11 @@ VV
 					<widget class="GtkComboBoxEntry" id="blue_radar_combo">
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
-					  <property name="items" translatable="yes">HH
+					  <property name="items" translatable="yes">-
+HH
 HV
 VH
-VV
-</property>
+VV</property>
 					  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:37 GMT"/>
 					</widget>
 					<packing>
@@ -2908,7 +3038,7 @@ VV
 						    <widget class="GtkRadioButton" id="rb_truecolor">
 						      <property name="width_request">186</property>
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">True-color output.  Note that this will produce a different result then manually selecting 3-2-1; this option performs band scaling.</property>
+						      <property name="tooltip" translatable="yes">True-color output.  Note that this will produce a different result then manually selecting 3-2-1; this option performs a contrast expansion on each band.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">True Color (3, 2, 1)        </property>
 						      <property name="use_underline">True</property>
@@ -2930,7 +3060,7 @@ VV
 						    <widget class="GtkRadioButton" id="rb_falsecolor">
 						      <property name="width_request">177</property>
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">False-color output.  Note that this will produce a different result then manually selecting 4-3-2; this option performs band scaling.</property>
+						      <property name="tooltip" translatable="yes">False-color output.  Note that this will produce a different result then manually selecting 4-3-2; this option performs a contrast expansion on each band.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">False Color (4, 3, 2)</property>
 						      <property name="use_underline">True</property>
@@ -2952,7 +3082,7 @@ VV
 						  <child>
 						    <widget class="GtkRadioButton" id="rb_user_defined">
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">Manually specify how the optical bands map to the color channels.</property>
+						      <property name="tooltip" translatable="yes">Manually specify how the optical bands map to the color channels.  No contrast expansion.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">User Defined</property>
 						      <property name="use_underline">True</property>
@@ -3046,7 +3176,8 @@ VV
 					    <widget class="GtkComboBoxEntry" id="red_optical_combo">
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
-					      <property name="items" translatable="yes">1
+					      <property name="items" translatable="yes">-
+1
 2
 3
 4
@@ -3108,7 +3239,8 @@ VV
 					    <widget class="GtkComboBoxEntry" id="green_optical_combo">
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
-					      <property name="items" translatable="yes">1
+					      <property name="items" translatable="yes">-
+1
 2
 3
 4
@@ -3169,7 +3301,8 @@ VV
 					    <widget class="GtkComboBoxEntry" id="blue_optical_combo">
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
-					      <property name="items" translatable="yes">1
+					      <property name="items" translatable="yes">-
+1
 2
 3
 4

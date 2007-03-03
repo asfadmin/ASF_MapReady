@@ -145,34 +145,59 @@ settings_apply_to_gui(const Settings * s)
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
 
         if (s->export_bands) {
-//            if (strcmp(s->red, "3") == 0 &&
-//                strcmp(s->green, "2") == 0 &&
-//                strcmp(s->blue, "1") == 0)
             if (s->truecolor_is_checked)
             {
                 // true color
                 rb_select("rb_truecolor", TRUE);
                 rb_select("rb_optical", TRUE);
                 rb_select("rb_rgb", TRUE);
-                rgb_settings_changed();
             }
-//            else if (strcmp(s->red, "4") == 0 &&
-//                strcmp(s->green, "3") == 0 &&
-//                strcmp(s->blue, "2") == 0)
             else if (s->falsecolor_is_checked)
             {
                 // false color
                 rb_select("rb_falsecolor", TRUE);
                 rb_select("rb_optical", TRUE);
                 rb_select("rb_rgb", TRUE);
-                rgb_settings_changed();
             }
-            else if (strcmp(s->red, "1") == 0 ||
-                     strcmp(s->red, "2") == 0 ||
-                     strcmp(s->red, "3") == 0 ||
-                     strcmp(s->red, "4") == 0)
+            else if (s->pauli_is_checked)
             {
-                // optical
+                // Pauli decomposition
+                rb_select("rb_pauli", TRUE);
+                rb_select("rb_radar", TRUE);
+                rb_select("rb_rgb", TRUE);
+            }
+            else if (s->pauli_is_checked)
+            {
+                // Sinclair decomposition
+                rb_select("rb_sinclair", TRUE);
+                rb_select("rb_radar", TRUE);
+                rb_select("rb_rgb", TRUE);
+            }
+            else if (strcmp(s->red, "HH") == 0 ||
+                     strcmp(s->red, "HV") == 0 ||
+                     strcmp(s->red, "VH") == 0 ||
+                     strcmp(s->red, "VV") == 0 ||
+                     strcmp(s->green, "HH") == 0 ||
+                     strcmp(s->green, "HV") == 0 ||
+                     strcmp(s->green, "VH") == 0 ||
+                     strcmp(s->green, "VV") == 0 ||
+                     strcmp(s->blue, "HH") == 0 ||
+                     strcmp(s->blue, "HV") == 0 ||
+                     strcmp(s->blue, "VH") == 0 ||
+                     strcmp(s->blue, "VV") == 0)
+            {
+                // radar -- user defined
+                rb_select("rb_user_defined_radar", TRUE);
+                rb_select("rb_radar", TRUE);
+                rb_select("rb_rgb", TRUE);
+
+                set_combo_box_entry_item("red_radar_combo", s->red);
+                set_combo_box_entry_item("green_radar_combo", s->green);
+                set_combo_box_entry_item("blue_radar_combo", s->blue);
+            }
+            else
+            {
+                // optical -- user defined
                 rb_select("rb_user_defined", TRUE);
                 rb_select("rb_optical", TRUE);
                 rb_select("rb_rgb", TRUE);
@@ -181,13 +206,8 @@ settings_apply_to_gui(const Settings * s)
                 set_combo_box_entry_item("green_optical_combo", s->green);
                 set_combo_box_entry_item("blue_optical_combo", s->blue);
             }
-            else
-            {
-                // radar
-                set_combo_box_entry_item("red_radar_combo", s->red);
-                set_combo_box_entry_item("green_radar_combo", s->green);
-                set_combo_box_entry_item("blue_radar_combo", s->blue);
-            }
+
+            rgb_settings_changed();
         } else {
             set_combo_box_entry_item("red_radar_combo", "");
             set_combo_box_entry_item("green_radar_combo", "");
@@ -472,11 +492,6 @@ settings_apply_to_gui(const Settings * s)
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(keep_files_checkbutton),
         s->keep_files);
-
-    //  This widget was removed
-    //gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(
-    //    apply_metadata_fix_checkbutton),
-    //    s->apply_metadata_fix);
 }
 
 Settings *
@@ -612,9 +627,35 @@ settings_get_from_gui()
         if (ret->export_bands) {
             GtkWidget *rb_radar = get_widget_checked("rb_radar");
             if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_radar))) {
-                get_combo_box_entry_item("red_radar_combo", ret->red);
-                get_combo_box_entry_item("green_radar_combo", ret->green);
-                get_combo_box_entry_item("blue_radar_combo", ret->blue);
+                GtkWidget *rb_user_defined =
+                    get_widget_checked("rb_user_defined_radar");
+                GtkWidget *rb_pauli = get_widget_checked("rb_pauli");
+                GtkWidget *rb_sinclair = get_widget_checked("rb_sinclair");
+
+                if (gtk_toggle_button_get_active(
+                        GTK_TOGGLE_BUTTON(rb_user_defined)))
+                {
+                    ret->user_defined_is_checked = 1;
+                    get_combo_box_entry_item("red_radar_combo",ret->red);
+                    get_combo_box_entry_item("green_radar_combo",ret->green);
+                    get_combo_box_entry_item("blue_radar_combo",ret->blue);
+                }
+                else if (gtk_toggle_button_get_active(
+                             GTK_TOGGLE_BUTTON(rb_pauli)))
+                {
+                    ret->pauli_is_checked = 1;
+                    strcpy(ret->red, "-");
+                    strcpy(ret->green, "-");
+                    strcpy(ret->blue, "-");
+                }
+                else if (gtk_toggle_button_get_active(
+                             GTK_TOGGLE_BUTTON(rb_sinclair)))
+                {
+                    ret->sinclair_is_checked = 1;
+                    strcpy(ret->red, "-");
+                    strcpy(ret->green, "-");
+                    strcpy(ret->blue, "-");
+                }
             } else {
                 GtkWidget *rb_user_defined =
                     get_widget_checked("rb_user_defined");
@@ -1612,7 +1653,10 @@ settings_to_config_file(const Settings *s,
     if (s->export_is_checked) {
       fprintf(cf, "[Export]\n");
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
-      if (s->output_bytes && !s->truecolor_is_checked && !s->falsecolor_is_checked) {
+      if (s->output_bytes && !s->truecolor_is_checked &&
+          !s->falsecolor_is_checked && !s->pauli_is_checked &&
+          !s->sinclair_is_checked)
+      {
           fprintf(cf, "byte conversion = %s\n",
             scaling_method_string(s->scaling_method));
       } else {
@@ -1620,7 +1664,9 @@ settings_to_config_file(const Settings *s,
       }
       if (s->export_bands)
       {
-        if (!s->truecolor_is_checked && !s->falsecolor_is_checked) {
+        if (!s->truecolor_is_checked && !s->falsecolor_is_checked &&
+            !s->pauli_is_checked && !s->sinclair_is_checked)
+        {
           const char *r = strlen(s->red)   > 0 ? s->red   : "ignore";
           const char *g = strlen(s->green) > 0 ? s->green : "ignore";
           const char *b = strlen(s->blue)  > 0 ? s->blue  : "ignore";
@@ -1630,7 +1676,9 @@ settings_to_config_file(const Settings *s,
           fprintf(cf, "rgb banding = \n");
         }
         fprintf(cf, "truecolor = %d\n", s->truecolor_is_checked ? 1 : 0);
-        fprintf(cf, "falsecolor = %d\n\n", s->falsecolor_is_checked ? 1 : 0);
+        fprintf(cf, "falsecolor = %d\n", s->falsecolor_is_checked ? 1 : 0);
+        fprintf(cf, "pauli = %d\n", s->pauli_is_checked ? 1 : 0);
+        fprintf(cf, "sinclair = %d\n\n", s->sinclair_is_checked ? 1 : 0);
       }
       fprintf(cf, "\n");
     }

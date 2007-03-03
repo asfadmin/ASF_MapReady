@@ -113,6 +113,8 @@ typedef struct
   int scaling_method;
   int truecolor_is_checked;
   int falsecolor_is_checked;
+  int pauli_is_checked;
+  int sinclair_is_checked;
   int user_defined_is_checked;
   int export_bands;
   char red[10];

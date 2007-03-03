@@ -262,6 +262,7 @@ static char *check_for_error(gchar * txt)
 {
     /* kludge */
     gchar *p, *q;
+    int success = FALSE;
 
     p = txt;
 
@@ -319,13 +320,22 @@ static char *check_for_error(gchar * txt)
                 return STRDUP("Error");
             }
 
+            if (strstr(p,"Successful completion!") != NULL)
+                success = TRUE;
+
             *q = '\n';
         }
 
         p = q;
     }
 
-    return NULL;
+    // if we found the "Successful completion!" message, return NULL (no
+    // error string), otherwise we couldn't figure out what the actual
+    // error was, so just return a generic "Error"
+    if (success)
+        return NULL;
+    else
+        return STRDUP("Error");
 }
 
 static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,

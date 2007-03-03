@@ -16,6 +16,17 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     g_free(pixels);
 }
 
+static meta_parameters * silent_meta_create(const char *filename)
+{
+    report_level_t prev = g_report_level;
+
+    g_report_level = NOREPORT;
+    meta_parameters *ret = meta_create(filename);
+
+    g_report_level = prev;
+    return ret;
+}
+
 GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata, 
                                    const char *input_data,
@@ -45,7 +56,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
         get_ceos_data_name(met, dataName, &nBands);
 
-        imd = meta_create(met);
+        imd = silent_meta_create(met);
         data_name = STRDUP(dataName[0]);
 
         for (ii=0; ii<MAX_BANDS; ++ii)
@@ -54,7 +65,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     }
     else
     {
-        imd = meta_create (input_metadata);
+        imd = silent_meta_create (input_metadata);
         data_name = STRDUP(input_data);
         met = STRDUP(input_metadata);
     }
@@ -204,12 +215,19 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         g_free(data);
         return NULL;
     }
-    
+
     // Scale down to the size we actually want, using the built-in Gdk
     // scaling method, much nicer than what we did above
+
+    // Must ensure we scale the same in each direction
+    double scale_y = tsy / max_thumbnail_dimension;
+    double scale_x = tsx / max_thumbnail_dimension;
+    double scale = scale_y > scale_x ? scale_y : scale_x;
+    int x_dim = tsx / scale;
+    int y_dim = tsy / scale;
+
     GdkPixbuf *pb_s =
-        gdk_pixbuf_scale_simple(pb, max_thumbnail_dimension, 
-                                max_thumbnail_dimension, GDK_INTERP_BILINEAR);
+        gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
     gdk_pixbuf_unref(pb);
     
     if (!pb_s) {

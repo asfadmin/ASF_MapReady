@@ -292,10 +292,19 @@ void update_summary()
 
         if (s->export_bands)
         {
-            sprintf(text, "%s\n   RGB Banding: %s,%s,%s\n", text,
-                    strlen(s->red) > 0 ? s->red : "-",
-                    strlen(s->green) > 0 ? s->green : "-",
-                    strlen(s->blue) > 0 ? s->blue : "-");
+            if (s->truecolor_is_checked)
+                strcat(text, "\n   RGB Banding: True Color\n");
+            else if (s->falsecolor_is_checked)
+                strcat(text, "\n   RGB Banding: False Color\n");
+            else if (s->pauli_is_checked)
+                strcat(text, "\n   RGB Banding: Pauli Decomposition\n");
+            else if (s->sinclair_is_checked)
+                strcat(text, "\n   RGB Banding: Sinclair Decomposition\n");
+            else
+                sprintf(text, "%s\n   RGB Banding: %s,%s,%s\n", text,
+                        strlen(s->red) > 0 ? s->red : "-",
+                        strlen(s->green) > 0 ? s->green : "-",
+                        strlen(s->blue) > 0 ? s->blue : "-");
         }
 
     }

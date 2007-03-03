@@ -549,7 +549,31 @@ void rgb_settings_changed()
         gtk_widget_set_sensitive(radar_vbox, is_radar);
         gtk_widget_set_sensitive(optical_vbox, !is_radar);
 
-        if (!is_radar)
+        if (is_radar)
+        {
+            GtkWidget *rb_user_defined =
+                get_widget_checked("rb_user_defined_radar");
+            GtkWidget *rb_pauli = get_widget_checked("rb_pauli");
+            GtkWidget *rb_sinclair = get_widget_checked("rb_sinclair");
+
+            int is_user_defined = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_user_defined));
+            int is_pauli = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_pauli));
+            int is_sinclair = gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_sinclair));
+            g_assert(is_user_defined + is_pauli + is_sinclair == 1);
+
+            GtkWidget *radar_bands_hbox =
+                get_widget_checked("radar_bands_hbox");
+
+            gtk_widget_set_sensitive(radar_bands_hbox, is_user_defined);
+
+            set_combo_box_item_checked("red_optical_combo", 0);
+            set_combo_box_item_checked("green_optical_combo", 0);
+            set_combo_box_item_checked("blue_optical_combo", 0);
+        }
+        else
         {
             GtkWidget *rb_user_defined = get_widget_checked("rb_user_defined");
             GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
@@ -569,13 +593,13 @@ void rgb_settings_changed()
             gtk_widget_set_sensitive(optical_bands_hbox, is_user_defined);
 
             if (is_truecolor) {
-                set_combo_box_item_checked("red_optical_combo", 2);
-                set_combo_box_item_checked("green_optical_combo", 1);
-                set_combo_box_item_checked("blue_optical_combo", 0);
-            } else if (is_falsecolor) {
                 set_combo_box_item_checked("red_optical_combo", 3);
                 set_combo_box_item_checked("green_optical_combo", 2);
                 set_combo_box_item_checked("blue_optical_combo", 1);
+            } else if (is_falsecolor) {
+                set_combo_box_item_checked("red_optical_combo", 4);
+                set_combo_box_item_checked("green_optical_combo", 3);
+                set_combo_box_item_checked("blue_optical_combo", 2);
             }
         }
     }
@@ -630,6 +654,27 @@ on_rb_falsecolor_toggled(GtkWidget *widget)
 
 SIGNAL_CALLBACK void
 on_rb_user_defined_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_pauli_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_sinclair_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_user_defined_radar_toggled(GtkWidget *widget)
 {
     rgb_settings_changed();
     update_summary();
