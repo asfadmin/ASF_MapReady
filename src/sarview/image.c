@@ -52,7 +52,7 @@ void image_delete(void)
 int image_loadLas(char *fileName)
 {
   // Makes sure that metadata parser does not issue any warnings
-  level =NOREPORT; 
+  g_report_level = NOREPORT; 
   
 	type=image_ddr;
 
