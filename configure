@@ -2571,13 +2571,13 @@ done
 test -n "$YACC" || YACC="yacc"
 
 
-cc="cc"
+CC="gcc"
 osType=`uname`
 versMajor=`uname -r | awk -F. '{print $1}'`
 versMinor=`uname -r | awk -F. '{print $2}'`
 
 ranlib="@echo do not need to run ranlib on this system on file: "
-optFlag="-O"
+optFlag="-O4"
 case "${osType}:${versMajor}:${versMinor}" in
 	SunOS:*:*)
 		sys="solaris" ;;
@@ -2589,7 +2589,7 @@ case "${osType}:${versMajor}:${versMinor}" in
 	IRIX*:*:*)
 		sys="irix"
 		if  "$CC" == "cc" ; then
-			optFlag="-O -n32"
+			optFlag="$optFlag -n32"
 		fi ;;
 	*:*:*)
 		echo "ASF tools are only supported on Solaris, Linux, and Windows (Cygwin)"
@@ -3540,6 +3540,7 @@ fi
 ##### --> always use our own libproj because we have the NAD27
 #####     grid shift files, a user's install probably does not
 #AC_CHECK_LIB(proj,pj_transform,have_proj="yes",have_proj="no")
+have_proj="no"
 if test "$have_proj" = "no" ; then
    ASF_LIB_PROJ="${ext_lib_src_dir}/libproj"
    PROJ_LIBS="\$(LIBDIR)/libproj.a"
@@ -4366,8 +4367,8 @@ $CC -o endian endian.c
 cat <<EOF >system_rules
 ############### System_rules: ###############
 # Contains information about the current machine.
-# This file was automatically created by 'asf_tools/config'
-# And is included by each program's Makefile.
+# This file was automatically created by the ASF tools 'configure' script
+# It is included by each program's Makefile.
 #
 
 EOF
@@ -4382,31 +4383,35 @@ SYS     = $sys
 CC      = $CC
 RANLIB  = $ranlib
 OPTFLAG = $optFlag
-
-LDFLAGS = $LDFLAGS
-
 EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
 ASF_INCLUDE_DIR = ../../include
-INCLUDE = -I. -I$(ASF_INCLUDE_DIR)
-# Flags to support large (> 2GB) files.  These must precede all include options.
+
+# LARGEFILE_FLAGS must precede all include options.
 LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
-FLAGS   = -D_ISOC99_SOURCE $(LARGEFILE_FLAGS) $(INCLUDE) $(OPTFLAG) -D$(SYS) $(ENDIAN_FLAGS)
+INCLUDE_FLAGS   = -I. -I$(ASF_INCLUDE_DIR)
+C99_FLAGS       = -D_ISOC99_SOURCE
+SYS_FLAGS       = -D$(SYS)
+
 # If compiler is gcc we're going to add some debugging flags/libraries
 #   if <make 'DEBUG_BUILD=1'>  apply debugging tags and show all compiler warnings
 #   if <make 'DEBUG_BUILD=2'>  do the same and add the electric fence library
-OPTFLAG = -O4
+#   if <make 'DEBUG_BUILD=3'>  apply debugging tags, show compiler warnings, and use the typical optflag
 ifeq ($(CC),gcc)
   ifeq ($(DEBUG_BUILD),1)
-    OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3 -O0
+    OPTFLAG    = -O0
+    DEBUGFLAGS = -Wall -g3
+    DEBUGLIBS  =
   endif
   ifeq ($(DEBUG_BUILD),2)
-    OPTFLAG    =
-    DEBUGFLAGS = -Wall -g3 -O0
+    OPTFLAG    = -O0
+    DEBUGFLAGS = -Wall -g3
     DEBUGLIBS  = -lefence
+  endif
+  ifeq ($(DEBUG_BUILD),3)
+    DEBUGFLAGS = -Wall -g3
   endif
 endif
 
@@ -4455,7 +4460,7 @@ EOF
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
 cat <<'EOF' >>system_rules
 
-CFLAGS  := $(CFLAGS) $(FLAGS) $(DEBUGFLAGS)
+CFLAGS  := $(OPTFLAG) $(DEBUGFLAGS) $(LARGEFILE_FLAGS) $(C99_FLAGS) $(SYS_FLAGS) $(ENDIAN_FLAGS) $(INCLUDE_FLAGS) $(CFLAGS)
 LDFLAGS := $(LDFLAGS) $(DEBUGLIBS) -lm
 
 EOF
@@ -4480,8 +4485,6 @@ done
 
 
 #echo "########### Building the Makefile ###############"
-#make CC=$cc
-#./makemake $sys
 cd ..
 
 # determine installation prefix
