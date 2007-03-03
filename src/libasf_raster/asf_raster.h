@@ -68,6 +68,9 @@ typedef struct {
   gsl_histogram_pdf *hist_pdf;
 } channel_stats_t;
 
+typedef double calc_stats_formula_t(double band1_val, double band2_val,
+                                    double no_data_value);
+
 // Prototypes from bands.c
 char **extract_band_names(char *bands, int band_count);
 char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel, 
@@ -89,6 +92,13 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
 void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
 		    double mask, double *min, double *max, double *mean,
 		    double *stdDev);
+void
+calc_stats_from_file_with_formula(const char *inFile, char *first_band,
+                                  char *second_band,
+                                  calc_stats_formula_t formula_callback,
+                                  double mask, double *min, double *max,
+                                  double *mean, double *stdDev,
+                                  gsl_histogram **histogram);
 
 /* Prototypes from kernel.c **************************************************/
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,

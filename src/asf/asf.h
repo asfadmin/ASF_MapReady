@@ -63,6 +63,8 @@ typedef enum {
   ERROR
 } report_level_t;
 
+extern report_level_t g_report_level;
+
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
@@ -275,6 +277,9 @@ void asfForcePrintStatus(const char *format, ...);
 void asfPrintWarning(const char *format, ...);
 /* Report to user & logfile, then die  */
 void asfPrintError(const char *format, ...);
+/* Report to user & logfile, then die -- unless user has set g_report_level
+   to NOREPORT, in which case we silently continue without saying anything */
+void asfPrintErrorMaybe(const char *format, ...);
 // Report at the different levels
 void asfReport(report_level_t level, const char *format, ...);
 

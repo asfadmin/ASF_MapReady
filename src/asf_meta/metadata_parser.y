@@ -97,7 +97,7 @@ void warning_message(const char *warn_msg, ...)
   vsprintf(temp, warn_msg, ap);
   strcat(buffer, temp);
   va_end(ap);
-  asfReport(level, buffer);
+  asfReport(g_report_level, buffer);
 }
 
 /* Have parser choke on bad metadata values.  */

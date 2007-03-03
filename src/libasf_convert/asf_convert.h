@@ -109,6 +109,8 @@ typedef struct
   char *rgb;              // RGB banding setting
   int truecolor;          // True color flag (bands 3-2-1 w/2-sigma contrast expansion)
   int falsecolor;         // False color flag (ditto, but bands 4-3-2)
+  int pauli;              // Pauli decomposition for quad-pole data
+  int sinclair;           // Sinclair decomposition for quad-pole data
 } s_export;
 
 typedef struct

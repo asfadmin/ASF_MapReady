@@ -277,15 +277,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
       (strlen(cfg->export->rgb) > 0 ||
       cfg->export->truecolor        ||
-      cfg->export->falsecolor)
+      cfg->export->falsecolor       ||
+      cfg->export->pauli            ||
+      cfg->export->sinclair)
      )
   {
     asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
-        "(RGB, True Color, or False Color)  ...Defaulting to producing\n"
-        "separate greyscale PGM files for available band.\n");
+        "(RGB, True Color, False Color, Pauli, or Sinclair) ...\n"
+        "Defaulting to producing separate greyscale PGM files for each\n"
+        "available band.\n");
     strcpy(cfg->export->rgb, "");
     cfg->export->truecolor = 0;
     cfg->export->falsecolor = 0;
+    cfg->export->pauli = 0;
+    cfg->export->sinclair = 0;
   }
 
   // Batch mode processing
@@ -598,17 +603,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     int rgbBanding = strlen(cfg->export->rgb) > 0 ? 1 : 0;
     int truecolor = cfg->export->truecolor == 0 ? 0 : 1;
     int falsecolor = cfg->export->falsecolor == 0 ? 0 : 1;
-    if (rgbBanding + truecolor + falsecolor > 1)
+    int pauli = cfg->export->pauli == 0 ? 0 : 1;
+    int sinclair = cfg->export->sinclair == 0 ? 0 : 1;
+    if (rgbBanding + truecolor + falsecolor + pauli + sinclair > 1)
     {
       asfPrintError("More than one color export mode was selected (rgb banding, truecolor,\n"
-          "or falsecolor.)  Only one of these options may be selected\n"
-          "at a time.\n");
+          "falsecolor, pauli, or sinclair.)  Only one of these options may\n"
+          "be selected at a time.\n");
     }
     // Make sure truecolor/falsecolor are only specified for optical data
     meta_parameters *meta = meta_read(inFile);
     if (!meta->optical && (truecolor || falsecolor)) {
       asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
     }
+
     meta_free(meta);
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
@@ -981,7 +989,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     "Green band: %s\n"
                     "Blue band : %s\n\n",
                               red, green, blue);
-		check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+		check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
                                                 inFile, outFile, bands),
                                "export data file (asf_export), banded.\n");
                   int i;
@@ -1006,7 +1014,35 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strlen(cfg->export->rgb) == 0)
       {
         meta_parameters *meta = meta_read(inFile);
-        if (meta->optical && (true_color || false_color)) {
+        if (cfg->export->pauli || cfg->export->sinclair) {
+            asfPrintStatus("\nExporting %s-decomposition file...\n\n\n",
+                           pauli ? "Pauli" : sinclair ? "Sinclair" : "Unknown");
+          if (strstr(meta->general->bands, "HH") == NULL ||
+              strstr(meta->general->bands, "VV") == NULL ||
+              strstr(meta->general->bands, "VH") == NULL ||
+              strstr(meta->general->bands, "VV") == NULL)
+          {
+            asfPrintError("Imported file does not contain required bands\n"
+                "necessary for pauli or sinclair output (HH, VV, HV, VH)\n");
+          } 
+          char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+          if (meta->general->band_count >= 4 && bands != NULL) {
+            check_return(asf_export_bands(format, SIGMA, TRUE,
+                        0, 0, pauli, sinclair, NULL,
+                        inFile, outFile, bands),
+            "exporting data file (asf_export), color banded.\n");
+            int i;
+            for (i=0; i < meta->general->band_count; i++) {
+              FREE (bands[i]);
+            }
+            FREE(bands);
+          }
+          else {
+            asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
+                          inFile);
+          }
+        }
+        else if (meta->optical && (true_color || false_color)) {
           // Multi-band optical data, exporting as true or false color single file
           asfPrintStatus("\nExporting %s file...\n\n\n",
                          true_color ? "True Color" : false_color ? "False Color" : "Unknown");
@@ -1050,7 +1086,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               strcpy(bands[3], "");
             }
             check_return(asf_export_bands(format, NONE, TRUE,
-                        true_color, false_color, NULL,
+                        true_color, false_color, 0, 0, NULL,
                         inFile, outFile, bands),
             "exporting data file (asf_export), color banded.\n");
             int i;
@@ -1070,7 +1106,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               asfPrintStatus("Exporting %d bands as separate greyscale files...\n",
                              meta->general->band_count);
               check_return(asf_export_bands(format, scale, FALSE,
-                                            0, 0, NULL,
+                                            0, 0, 0, 0, NULL,
                                             inFile, outFile, NULL),
                            "exporting data file (asf_export), greyscale bands.\n");
           }
@@ -1137,7 +1173,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
            if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
                char **bands = find_bands(inFile, 1, red, green, blue, &n);
                if (n > 0) {
-                   check_return(asf_export_bands(format, scale, TRUE, 0, 0, NULL,
+                   check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
                                                  tmpFile, outFile, bands),
                      "exporting thumbnail data file (asf_export), banded\n");
                    for (i=0; i<n; ++i) FREE(bands[i]);
@@ -1148,7 +1184,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         else { // no rgb bands selected
           int true_color = cfg->export->truecolor == 0 ? 0 : 1;
           int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
-          if (meta->optical && (true_color || false_color))
+          if (cfg->export->pauli || cfg->export->sinclair) {
+              char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+              if (meta->general->band_count >= 4 && bands != NULL) {
+                  check_return(asf_export_bands(format, SIGMA, TRUE,
+                                                0, 0, cfg->export->pauli, cfg->export->sinclair, NULL,
+                                                tmpFile, outFile, bands),
+                               "exporting thumbnail data file (asf_export), color banded.\n");
+                  int i;
+                  for (i=0; i < meta->general->band_count; i++) {
+                      FREE (bands[i]);
+                  }
+                  FREE(bands);
+              }
+          }
+          else if (meta->optical && (true_color || false_color))
           {
             if (meta->optical && (true_color || false_color)) {
               // Multi-band optical data, exporting as true or false color single file
@@ -1169,7 +1219,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                   strcpy(bands[3], "");
                 }
                 check_return(asf_export_bands(format, NONE, TRUE,
-                             true_color, false_color, NULL,
+                             true_color, false_color, 0, 0, NULL,
                              tmpFile, outFile, bands),
                              "exporting thumbnail data file (asf_export), color banded.\n");
                 int i;
@@ -1191,8 +1241,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               for (i=1; i<n; ++i) {
                 FREE(bands[i]); bands[i] = NULL;
               }
-              check_return(asf_export_bands(format, scale, FALSE, 0, 0, NULL,
-                                            tmpFile, outFile, bands),
+              check_return(asf_export_bands(format, scale, FALSE, 0, 0,
+                                            0, 0, NULL, tmpFile, outFile, bands),
                            "exporting thumbnail data file (asf_export)\n");
               // strip off the band name at the end!
               char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
@@ -1283,9 +1333,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->export) {
             update_status(cfg, "Exporting layover mask...");
             check_return(
-                asf_export_bands(format, TRUNCATE, 1, 0, 0, "layover_mask.lut",
-                                 inFile, outFile, NULL),
-                //asf_export(format, TRUNCATE, inFile, outFile),
+                asf_export_bands(format, TRUNCATE, 1, 0, 0, 0, 0,
+                                 "layover_mask.lut", inFile, outFile, NULL),
                 "exporting layover mask (asf_export)\n");
         }
         else {
@@ -1301,6 +1350,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   }
 
   free_convert_config(cfg);
+
+  // Don't change this message unless you also change the code in
+  // asf_convert_gui/execute.c to look for a different successful
+  // completion string.  GUI currently detects successful processing
+  // by looking for this message in the log file.... (yeah, I know.)
+  asfPrintStatus("Successful completion!\n\n");
+
   return(EXIT_SUCCESS);
 }
 

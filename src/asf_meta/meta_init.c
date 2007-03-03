@@ -49,6 +49,7 @@ meta_general *meta_general_init(void)
   general->orbit_direction = MAGIC_UNSET_CHAR;
   general->frame = MAGIC_UNSET_INT;
   general->band_count = 1;
+  strcpy(general->bands, MAGIC_UNSET_STRING);
   general->line_count = MAGIC_UNSET_INT;
   general->sample_count = MAGIC_UNSET_INT;
   general->start_line = MAGIC_UNSET_INT;

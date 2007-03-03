@@ -108,6 +108,148 @@ void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
 }
 
 void
+calc_stats_from_file_with_formula(const char *inFile, char *first_band,
+                                  char *second_band,
+                                  calc_stats_formula_t formula_callback,
+                                  double mask, double *min, double *max,
+                                  double *mean, double *stdDev,
+                                  gsl_histogram **histogram)
+{
+    int ii,jj;
+    int first_band_number, second_band_number;
+    
+    *min = 999999;
+    *max = -999999;
+    *mean = 0.0;
+    
+    meta_parameters *meta = meta_read(inFile);
+
+    if (!first_band ||
+        strlen(first_band) == 0 ||
+        strcmp(first_band, "???") == 0)
+    {
+        first_band_number = 0;
+    } 
+    else
+    {
+        first_band_number =
+            get_band_number(meta->general->bands, meta->general->band_count,
+                            first_band);
+    }
+
+    if (!second_band ||
+        strlen(second_band) == 0 ||
+        strcmp(second_band, "???") == 0)
+    {
+        second_band_number = 0;
+    }
+    else
+    {
+        second_band_number =
+            get_band_number(meta->general->bands, meta->general->band_count,
+                            second_band);
+    }
+
+    long first_offset = meta->general->line_count * first_band_number;
+    long second_offset = meta->general->line_count * second_band_number;
+
+    float *band1_data = MALLOC(sizeof(float) * meta->general->sample_count);
+    float *band2_data = NULL;
+    if (second_band_number)
+        band2_data = MALLOC(sizeof(float) * meta->general->sample_count);
+    
+    // pass 1 -- calculate mean, min & max
+    FILE *fp = FOPEN(inFile, "rb");
+    long long pixel_count=0;
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        get_float_line(fp, meta, ii + first_offset, band1_data);
+        if (band2_data)
+        {
+            get_float_line(fp, meta, ii + second_offset, band2_data);
+        
+            for (jj=0; jj<meta->general->sample_count; ++jj) {
+                if (ISNAN(mask) || 
+                    (!FLOAT_EQUIVALENT(band1_data[jj], mask) &&
+                     !FLOAT_EQUIVALENT(band2_data[jj], mask)))
+                {
+                    double val =
+                        formula_callback(band1_data[jj], band2_data[jj], mask);
+
+                    if (val < *min) *min = val;
+                    if (val > *max) *max = val;
+                    *mean += val;
+                    
+                    ++pixel_count;
+                }
+            }
+        }
+        else
+        {
+            for (jj=0; jj<meta->general->sample_count; ++jj) {
+                if (ISNAN(mask) || !FLOAT_EQUIVALENT(band1_data[jj], mask)) {
+                    double val = formula_callback(band1_data[jj], 0, mask);
+                    if (val < *min) *min = val;
+                    if (val > *max) *max = val;
+                    *mean += val;
+                    ++pixel_count;
+                }
+            }
+        }
+    }
+    FCLOSE(fp);
+    
+    *mean /= pixel_count;
+
+    // Guard against weird data
+    if(!(*min<*max)) *max = *min + 1;
+
+    // Initialize the histogram.
+    const int num_bins = 256;
+    gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+    gsl_histogram_set_ranges_uniform (hist, *min, *max);
+    *stdDev = 0.0;
+
+    // pass 2 -- update histogram, calculate standard deviation
+    fp = FOPEN(inFile, "rb");
+    for (ii=0; ii<meta->general->line_count; ++ii) {
+        get_float_line(fp, meta, ii + first_offset, band1_data);
+        if (band2_data)
+        {
+            get_float_line(fp, meta, ii + second_offset, band2_data);
+            for (jj=0; jj<meta->general->sample_count; ++jj) {
+                if (ISNAN(mask) || 
+                    (!FLOAT_EQUIVALENT(band1_data[jj], mask) &&
+                     !FLOAT_EQUIVALENT(band2_data[jj], mask)))
+                {
+                    double val =
+                        formula_callback(band1_data[jj], band2_data[jj], mask);
+
+                    *stdDev += (val - *mean) * (val - *mean);
+                    gsl_histogram_increment (hist, val);
+                }
+            }
+        }
+        else
+        {
+            for (jj=0; jj<meta->general->sample_count; ++jj) {
+                if (ISNAN(mask) || !FLOAT_EQUIVALENT(band1_data[jj], mask)) {
+                    double val = formula_callback(band1_data[jj], 0, mask);
+                    *stdDev += (val - *mean) * (val - *mean);
+                    gsl_histogram_increment (hist, val);
+                }
+            }
+        }
+    }
+    FCLOSE(fp);
+    *stdDev = sqrt(*stdDev/(pixel_count - 1));
+
+    FREE(band1_data);
+    FREE(band2_data);
+
+    *histogram = hist;
+}
+
+void
 calc_stats_from_file(const char *inFile, char *band, double mask,
                      double *min, double *max, double *mean,
                      double *stdDev, gsl_histogram **histogram)

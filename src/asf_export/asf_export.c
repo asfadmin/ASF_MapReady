@@ -101,6 +101,14 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Only allowed for multi-band images with 4 bands.\n"\
 "        Cannot be used together with any of the following: -rgb, -band,\n"\
 "        or -truecolor.\n"\
+"   -pauli\n"\
+"        For 4-band (quad-pole) polarimetric data.  Exports the data using\n"\
+"        the Pauli decomposition, where the red channel is HH-VV, green is\n"\
+"        HV, and blue is HH+VV.  This cannot be used with the -rgb option.\n"\
+"   -sinclair\n"\
+"        For 4-band (quad-pole) polarimetric data.  Exports the data using\n"\
+"        the Sinclair decomposition, where the red channel is VV, green is\n"\
+"        (HV+HV)/2, and blue is HH.  This cannot be used with the -rgb option.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then export the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -222,6 +230,8 @@ main (int argc, char *argv[])
   int rgb=0;
   int true_color;
   int false_color;
+  int pauli=0;
+  int sinclair=0;
   int num_bands_found;
   int ignored[3] = {0, 0, 0};
   int num_ignored = 0;
@@ -251,6 +261,7 @@ main (int argc, char *argv[])
 
   int formatFlag, logFlag, quietFlag, byteFlag, rgbFlag, bandFlag, lutFlag;
   int truecolorFlag, falsecolorFlag;
+  int pauliFlag, sinclairFlag;
   int needed_args = 3;  //command & argument & argument
   int ii;
   char sample_mapping_string[25];
@@ -272,6 +283,8 @@ main (int argc, char *argv[])
   lutFlag = checkForOption ("-lut", argc, argv);
   truecolorFlag = checkForOption("-truecolor", argc, argv);
   falsecolorFlag = checkForOption("-falsecolor", argc, argv);
+  pauliFlag = checkForOption("-pauli", argc, argv);
+  sinclairFlag = checkForOption("-sinclair", argc, argv);
 
   if ( formatFlag != FLAG_NOT_SET ) {
     needed_args += 2;           // Option & parameter.
@@ -295,10 +308,16 @@ main (int argc, char *argv[])
     needed_args += 2;           // Option & parameter.
   }
   if ( truecolorFlag != FLAG_NOT_SET ) {
-    needed_args += 1;           // Option & parameter.
+    needed_args += 1;           // Option only
   }
   if ( falsecolorFlag != FLAG_NOT_SET ) {
-    needed_args += 1;           // Option & parameter.
+    needed_args += 1;           // Option only
+  }
+  if ( pauliFlag != FLAG_NOT_SET ) {
+    needed_args += 1;           // Option only
+  }
+  if ( sinclairFlag != FLAG_NOT_SET ) {
+    needed_args += 1;           // Option only
   }
 
   if ( argc != needed_args ) {
@@ -349,33 +368,58 @@ main (int argc, char *argv[])
   // Make sure there are no flag incompatibilities
   if ( (rgbFlag != FLAG_NOT_SET           &&
         (bandFlag != FLAG_NOT_SET         ||
-        truecolorFlag != FLAG_NOT_SET     ||
-        falsecolorFlag != FLAG_NOT_SET))    ||
+         truecolorFlag != FLAG_NOT_SET    ||
+         falsecolorFlag != FLAG_NOT_SET   ||
+         pauliFlag != FLAG_NOT_SET        ||
+         sinclairFlag != FLAG_NOT_SET))
+     ||
+       (bandFlag != FLAG_NOT_SET         &&
+        (rgbFlag != FLAG_NOT_SET         ||
+         truecolorFlag != FLAG_NOT_SET   ||
+         falsecolorFlag != FLAG_NOT_SET  ||
+         pauliFlag != FLAG_NOT_SET       ||
+         sinclairFlag != FLAG_NOT_SET))
+     ||  
+       (truecolorFlag != FLAG_NOT_SET    &&
+        (bandFlag != FLAG_NOT_SET        ||
+         rgbFlag != FLAG_NOT_SET         ||
+         pauliFlag != FLAG_NOT_SET       ||
+         sinclairFlag != FLAG_NOT_SET    ||
+         falsecolorFlag != FLAG_NOT_SET))
+     ||  
+       (falsecolorFlag != FLAG_NOT_SET   &&
+        (bandFlag != FLAG_NOT_SET        ||
+         truecolorFlag != FLAG_NOT_SET   ||
+         pauliFlag != FLAG_NOT_SET       ||
+         sinclairFlag != FLAG_NOT_SET    ||
+         rgbFlag != FLAG_NOT_SET))
+     ||  
+       (pauliFlag != FLAG_NOT_SET   &&
+        (bandFlag != FLAG_NOT_SET        ||
+         truecolorFlag != FLAG_NOT_SET   ||
+         falsecolorFlag != FLAG_NOT_SET  ||
+         sinclairFlag != FLAG_NOT_SET    ||
+         rgbFlag != FLAG_NOT_SET))
+     ||  
+       (sinclairFlag != FLAG_NOT_SET   &&
+        (bandFlag != FLAG_NOT_SET        ||
+         truecolorFlag != FLAG_NOT_SET   ||
+         pauliFlag != FLAG_NOT_SET       ||
+         falsecolorFlag != FLAG_NOT_SET  ||
+         rgbFlag != FLAG_NOT_SET))
 
-        (bandFlag != FLAG_NOT_SET         &&
-        (rgbFlag != FLAG_NOT_SET          ||
-        truecolorFlag != FLAG_NOT_SET     ||
-        falsecolorFlag != FLAG_NOT_SET))    ||
-
-        (truecolorFlag != FLAG_NOT_SET    &&
-        (bandFlag != FLAG_NOT_SET         ||
-        rgbFlag != FLAG_NOT_SET           ||
-        falsecolorFlag != FLAG_NOT_SET))    ||
-
-        (falsecolorFlag != FLAG_NOT_SET   &&
-        (bandFlag != FLAG_NOT_SET         ||
-        truecolorFlag != FLAG_NOT_SET     ||
-        rgbFlag != FLAG_NOT_SET))
      )
   {
     asfPrintWarning("The following options may only be used one at a time:\n"
-        "    %s\n    %s\n    %s\n    %s\n",
-                   "-rgb", "-truecolor", "-falsecolor", "-band");
+        "    %s\n    %s\n    %s\n    %s\n    %s\n    %s\n",
+        "-rgb", "-truecolor", "-falsecolor", "-band", "-pauli", "-sinclair");
     print_help();
   }
   if ( (rgbFlag != FLAG_NOT_SET         ||
         truecolorFlag != FLAG_NOT_SET   ||
-        falsecolorFlag != FLAG_NOT_SET) &&
+        falsecolorFlag != FLAG_NOT_SET   ||
+        pauliFlag != FLAG_NOT_SET   ||
+        sinclairFlag != FLAG_NOT_SET) &&
         lutFlag != FLAG_NOT_SET
      )
     asfPrintError("Look up table option can only be used on single-band "
@@ -421,6 +465,8 @@ main (int argc, char *argv[])
   if (strcmp (command_line.format, "PGM") == 0 &&
       (rgbFlag != FLAG_NOT_SET      ||
       truecolorFlag != FLAG_NOT_SET ||
+      pauliFlag != FLAG_NOT_SET ||
+      sinclairFlag != FLAG_NOT_SET ||
       falsecolorFlag != FLAG_NOT_SET)
      )
   {
@@ -430,6 +476,8 @@ main (int argc, char *argv[])
     rgbFlag = FLAG_NOT_SET;
     truecolorFlag = FLAG_NOT_SET;
     falsecolorFlag = FLAG_NOT_SET;
+    pauliFlag = FLAG_NOT_SET;
+    sinclairFlag = FLAG_NOT_SET;
   }
 
   // Set the default byte scaling mechanisms
@@ -607,6 +655,21 @@ main (int argc, char *argv[])
     }
   }
 
+  if (pauliFlag != FLAG_NOT_SET) {
+    asfPrintStatus("\nExporting with the Pauli decomposition:\n");
+    asfPrintStatus("Red channel  : HH-VV\n");
+    asfPrintStatus("Green channel: HV\n");
+    asfPrintStatus("Blue channel : HH+VV\n\n");
+    pauli = 1;
+  }
+  else if (sinclairFlag != FLAG_NOT_SET) {
+    asfPrintStatus("\nExporting with the Sinclair decomposition:\n");
+    asfPrintStatus("Red channel  : VV\n");
+    asfPrintStatus("Green channel: (HV+VH)/2\n");
+    asfPrintStatus("Blue channel : HH\n\n");
+    sinclair = 1;
+  }
+
   // Set band
   if ( bandFlag != FLAG_NOT_SET) {
     strcpy (command_line.band, argv[bandFlag + 1]);
@@ -632,7 +695,10 @@ main (int argc, char *argv[])
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET ||
      truecolorFlag != FLAG_NOT_SET ||
-     falsecolorFlag != FLAG_NOT_SET) {
+     falsecolorFlag != FLAG_NOT_SET ||
+     pauliFlag != FLAG_NOT_SET ||
+     sinclairFlag != FLAG_NOT_SET)
+  {
     if (num_bands_found >= 3) {
       asfPrintStatus("Exporting multiband image ...\n\n");
       rgb = 1;
@@ -711,7 +777,8 @@ main (int argc, char *argv[])
 
   // Do that exporting magic!
   asf_export_bands(format, command_line.sample_mapping, rgb,
-                   true_color, false_color, command_line.look_up_table_name,
+                   true_color, false_color, pauli, sinclair,
+                   command_line.look_up_table_name,
                    in_base_name, command_line.output_name, band_names);
 
   // If the user didn't ask for a log file then nuke the one that's been kept

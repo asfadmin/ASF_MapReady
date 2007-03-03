@@ -521,6 +521,60 @@ void finalize_ppm_file(FILE *oppm)
   FCLOSE(oppm);
 }
 
+static double pauli_red(double HH, double VV, double no_data)
+{
+    if (!meta_is_valid_double(no_data))
+    {
+        if (meta_is_valid_double(HH) && meta_is_valid_double(VV))
+            return HH-VV;
+        else
+            return no_data;
+    }
+    else
+    {
+        if (HH==no_data || VV==no_data)
+            return no_data;
+        else
+            return HH-VV;
+    }
+}
+
+static double pauli_blue(double HH, double VV, double no_data)
+{
+    if (!meta_is_valid_double(no_data))
+    {
+        if (meta_is_valid_double(HH) && meta_is_valid_double(VV))
+            return HH+VV;
+        else
+            return no_data;
+    }
+    else
+    {
+        if (HH==no_data || VV==no_data)
+            return no_data;
+        else
+            return HH+VV;
+    }
+}
+
+static double sinclair_green(double HV, double VH, double no_data)
+{
+    if (!meta_is_valid_double(no_data))
+    {
+        if (meta_is_valid_double(HV) && meta_is_valid_double(VH))
+            return .5*(HV+VH);
+        else
+            return no_data;
+    }
+    else
+    {
+        if (HV==no_data || VH==no_data)
+            return no_data;
+        else
+            return .5*(HV+VH);
+    }
+}
+
 void
 export_band_image (const char *metadata_file_name,
 		   const char *image_data_file_name,
@@ -528,6 +582,7 @@ export_band_image (const char *metadata_file_name,
 		   scale_t sample_mapping,
 		   char **band_name, int rgb,
                    int true_color, int false_color,
+                   int pauli, int sinclair,
 		   char *look_up_table_name,
 		   output_format_t format)
 {
@@ -581,104 +636,242 @@ export_band_image (const char *metadata_file_name,
       ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
     }
 
+    // these are used only in the pauli & sinclair decompositions
+    int HH_channel=0, VV_channel=0, HV_channel=0, VH_channel=0;
+
     channel_stats_t red_stats, blue_stats, green_stats;
     red_stats.hist = NULL; red_stats.hist_pdf = NULL;
     green_stats.hist = NULL; green_stats.hist_pdf = NULL;
     blue_stats.hist = NULL; blue_stats.hist_pdf = NULL;
 
     if (!md->optical) {
-      // Red channel statistics
-      if (sample_mapping != NONE && !ignored[0]) { // byte image
-	asfRequire (sizeof(unsigned char) == 1,
-		    "Size of the unsigned char data type on this machine is "
-		    "different than expected.\n");
+      asfRequire (sizeof(unsigned char) == 1,
+                  "Size of the unsigned char data type on this machine is "
+                  "different than expected.\n");
+
+      if (pauli || sinclair)
+      {
+          // Sanity checks -- require quad-pole data
+          asfRequire(strcmp(band_name[0], "HH") == 0 &&
+                     strcmp(band_name[1], "HV") == 0 &&
+                     strcmp(band_name[2], "VH") == 0 &&
+                     strcmp(band_name[3], "VV") == 0,
+              "Attempted to apply Pauli or Sinclair to non-quad pole data.\n");
+      }
+
+      if (pauli && sample_mapping != NONE)
+      {
+        // Red channel statistics
 	asfPrintStatus("Gathering red channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[0],
-                             md->general->no_data,
-			     &red_stats.min, &red_stats.max, &red_stats.mean,
-			     &red_stats.standard_deviation, &red_stats.hist);
-	if (sample_mapping == SIGMA) {
-	  double omin = red_stats.mean - 2*red_stats.standard_deviation;
-	  double omax = red_stats.mean + 2*red_stats.standard_deviation;
-	  if (omin > red_stats.min) red_stats.min = omin;
-	  if (omax < red_stats.max) red_stats.max = omax;
-	}
-	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-	  red_stats.hist_pdf = gsl_histogram_pdf_alloc (256); //NUM_HIST_BINS);
-	  gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
-	}
-      }
+        calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
+                             pauli_red, md->general->no_data,
+                             &red_stats.min, &red_stats.max, &red_stats.mean,
+                             &red_stats.standard_deviation, &red_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = red_stats.mean - 2*red_stats.standard_deviation;
+            double omax = red_stats.mean + 2*red_stats.standard_deviation;
+            if (omin > red_stats.min) red_stats.min = omin;
+            if (omax < red_stats.max) red_stats.max = omax;
+        }
+        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
+        }
 
-      // Green channel statistics
-      if (sample_mapping != NONE && !ignored[1]) { // byte image
-	asfRequire (sizeof(unsigned char) == 1,
-		    "Size of the unsigned char data type on this machine is "
-		    "different than expected.\n");
-	asfPrintStatus("Gathering green channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[1],
+        // Green channel statistics
+        asfPrintStatus("Gathering green channel statistics ...\n");
+        calc_stats_from_file(image_data_file_name, "HV",
                              md->general->no_data,
-			     &green_stats.min, &green_stats.max,
-			     &green_stats.mean,
-			     &green_stats.standard_deviation,
-			     &green_stats.hist);
-	if (sample_mapping == SIGMA) {
-	  double omin = green_stats.mean - 2*green_stats.standard_deviation;
-	  double omax = green_stats.mean + 2*green_stats.standard_deviation;
-	  if (omin > green_stats.min) green_stats.min = omin;
-	  if (omax < green_stats.max) green_stats.max = omax;
-	}
-	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-	  green_stats.hist_pdf = gsl_histogram_pdf_alloc (256); //NUM_HIST_BINS);
-	  gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
-	}
-      }
+                             &green_stats.min, &green_stats.max,
+                             &green_stats.mean,
+                             &green_stats.standard_deviation,
+                             &green_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = green_stats.mean - 2*green_stats.standard_deviation;
+            double omax = green_stats.mean + 2*green_stats.standard_deviation;
+            if (omin > green_stats.min) green_stats.min = omin;
+            if (omax < green_stats.max) green_stats.max = omax;
+        }
+        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
+            gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
+        }
 
-      // Blue channel statistics
-      if (sample_mapping != NONE && !ignored[2]) { // byte image
-	asfRequire (sizeof(unsigned char) == 1,
-		    "Size of the unsigned char data type on this machine is "
-		    "different than expected.\n");
-	asfPrintStatus("Gathering blue channel statistics ...\n");
-	calc_stats_from_file(image_data_file_name, band_name[2],
+        // Blue channel statistics
+        asfPrintStatus("Gathering blue channel statistics ...\n");
+        calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
+                               pauli_blue, md->general->no_data,
+                               &blue_stats.min, &blue_stats.max,
+                               &blue_stats.mean,
+                               &blue_stats.standard_deviation,
+                               &blue_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+            if (omin > blue_stats.min) blue_stats.min = omin;
+            if (omax < blue_stats.max) blue_stats.max = omax;
+        }
+        if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
+        }
+      }
+      else if (sinclair && sample_mapping != NONE)
+      {
+        // Red channel statistics
+	asfPrintStatus("Gathering red channel statistics ...\n");
+        calc_stats_from_file(image_data_file_name, "VV",
                              md->general->no_data,
-			     &blue_stats.min, &blue_stats.max,
-			     &blue_stats.mean,
-			     &blue_stats.standard_deviation,
-			     &blue_stats.hist);
-	if (sample_mapping == SIGMA) {
-	  double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
-	  double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
-	  if (omin > blue_stats.min) blue_stats.min = omin;
-	  if (omax < blue_stats.max) blue_stats.max = omax;
-	}
-	if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
-	  blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256); //NUM_HIST_BINS);
-	  gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
-	}
+                             &red_stats.min, &red_stats.max, &red_stats.mean,
+                             &red_stats.standard_deviation, &red_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = red_stats.mean - 2*red_stats.standard_deviation;
+            double omax = red_stats.mean + 2*red_stats.standard_deviation;
+            if (omin > red_stats.min) red_stats.min = omin;
+            if (omax < red_stats.max) red_stats.max = omax;
+        }
+        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
+            red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
+        }
+
+        // Green channel statistics
+        asfPrintStatus("Gathering green channel statistics ...\n");
+        calc_stats_from_file_with_formula(image_data_file_name, "HV", "VH",
+                             sinclair_green, md->general->no_data,
+                             &green_stats.min, &green_stats.max,
+                             &green_stats.mean,
+                             &green_stats.standard_deviation,
+                             &green_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = green_stats.mean - 2*green_stats.standard_deviation;
+            double omax = green_stats.mean + 2*green_stats.standard_deviation;
+            if (omin > green_stats.min) green_stats.min = omin;
+            if (omax < green_stats.max) green_stats.max = omax;
+        }
+        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
+            green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
+            gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
+        }
+
+        // Blue channel statistics
+        asfPrintStatus("Gathering blue channel statistics ...\n");
+        calc_stats_from_file(image_data_file_name, "HH",
+                             md->general->no_data,
+                             &blue_stats.min, &blue_stats.max,
+                             &blue_stats.mean,
+                             &blue_stats.standard_deviation,
+                             &blue_stats.hist);
+        if (sample_mapping == SIGMA) {
+            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+            if (omin > blue_stats.min) blue_stats.min = omin;
+            if (omax < blue_stats.max) blue_stats.max = omax;
+        }
+        if (sample_mapping == HISTOGRAM_EQUALIZE ) {
+            blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
+        }
+      }
+      else
+      {
+          /*** Normal straight per-channel stats (no combined-band stats) */
+
+        // Red channel statistics
+        if (sample_mapping != NONE && !ignored[0]) { // byte image
+	  asfPrintStatus("Gathering red channel statistics ...\n");
+	  calc_stats_from_file(image_data_file_name, band_name[0],
+                               md->general->no_data,
+                               &red_stats.min, &red_stats.max, &red_stats.mean,
+                               &red_stats.standard_deviation, &red_stats.hist);
+          if (sample_mapping == SIGMA) {
+            double omin = red_stats.mean - 2*red_stats.standard_deviation;
+            double omax = red_stats.mean + 2*red_stats.standard_deviation;
+            if (omin > red_stats.min) red_stats.min = omin;
+            if (omax < red_stats.max) red_stats.max = omax;
+          }
+          if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            red_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (red_stats.hist_pdf, red_stats.hist);
+          }
+        }
+
+        // Green channel statistics
+        if (sample_mapping != NONE && !ignored[1]) { // byte image
+          asfPrintStatus("Gathering green channel statistics ...\n");
+          calc_stats_from_file(image_data_file_name, band_name[1],
+                               md->general->no_data,
+                               &green_stats.min, &green_stats.max,
+                               &green_stats.mean,
+                               &green_stats.standard_deviation,
+                               &green_stats.hist);
+          if (sample_mapping == SIGMA) {
+            double omin = green_stats.mean - 2*green_stats.standard_deviation;
+            double omax = green_stats.mean + 2*green_stats.standard_deviation;
+            if (omin > green_stats.min) green_stats.min = omin;
+            if (omax < green_stats.max) green_stats.max = omax;
+          }
+          if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            green_stats.hist_pdf = gsl_histogram_pdf_alloc(256);
+            gsl_histogram_pdf_init (green_stats.hist_pdf, green_stats.hist);
+          }
+        }
+
+        // Blue channel statistics
+        if (sample_mapping != NONE && !ignored[2]) { // byte image
+          asfPrintStatus("Gathering blue channel statistics ...\n");
+          calc_stats_from_file(image_data_file_name, band_name[2],
+                               md->general->no_data,
+                               &blue_stats.min, &blue_stats.max,
+                               &blue_stats.mean,
+                               &blue_stats.standard_deviation,
+                               &blue_stats.hist);
+          if (sample_mapping == SIGMA) {
+            double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
+            double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
+            if (omin > blue_stats.min) blue_stats.min = omin;
+            if (omax < blue_stats.max) blue_stats.max = omax;
+          }
+          if ( sample_mapping == HISTOGRAM_EQUALIZE ) {
+            blue_stats.hist_pdf = gsl_histogram_pdf_alloc (256);
+            gsl_histogram_pdf_init (blue_stats.hist_pdf, blue_stats.hist);
+          }
+        }
       }
     }
 
     // Get channel numbers
-    red_channel = get_band_number(md->general->bands,
-                                  md->general->band_count,
-                                  band_name[0]);
-    if (!ignored[0] && !(red_channel >= 0 && red_channel < MAX_BANDS)) {
-      asfPrintError("Band number (%d) out of range for %s channel.\n",
-                    red_channel, "red");
-    }
-    green_channel = get_band_number(md->general->bands,
-                                  md->general->band_count,
-                                  band_name[1]);
-    if (!ignored[1] && !(green_channel >= 0 && green_channel < MAX_BANDS)) {
-      asfPrintError("Band number (%d) out of range for %s channel.\n",
-                    green_channel, "green");
-    }
-    blue_channel = get_band_number(md->general->bands,
-                                   md->general->band_count,
-                                   band_name[2]);
-    if (!ignored[2] && !(blue_channel >= 0 && blue_channel < MAX_BANDS)) {
-      asfPrintError("Band number (%d) out of range for %s channel.\n",
-                    blue_channel, "blue");
+    if (pauli || sinclair) {
+        HH_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "HH");
+        HV_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "HV");
+        VH_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "VH");
+        VV_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "VV");
+    } else {
+        red_channel = get_band_number(md->general->bands,
+                                      md->general->band_count,
+                                      band_name[0]);
+        if (!ignored[0] && !(red_channel >= 0 && red_channel < MAX_BANDS)) {
+            asfPrintError("Band number (%d) out of range for %s channel.\n",
+                          red_channel, "red");
+        }
+        green_channel = get_band_number(md->general->bands,
+                                        md->general->band_count,
+                                        band_name[1]);
+        if (!ignored[1] && !(green_channel >= 0 && green_channel < MAX_BANDS)) {
+            asfPrintError("Band number (%d) out of range for %s channel.\n",
+                          green_channel, "green");
+        }
+        blue_channel = get_band_number(md->general->bands,
+                                       md->general->band_count,
+                                       band_name[2]);
+        if (!ignored[2] && !(blue_channel >= 0 && blue_channel < MAX_BANDS)) {
+            asfPrintError("Band number (%d) out of range for %s channel.\n",
+                          blue_channel, "blue");
+        }
     }
 
     // Write the data to the file
@@ -813,6 +1006,63 @@ export_band_image (const char *metadata_file_name,
         else if (format == JPEG)
           write_rgb_jpeg_byte2byte(ojpeg, red_byte_line, green_byte_line,
                                    blue_byte_line, &cinfo, sample_count);
+      }
+      else if (pauli) {
+        // first need HH-VV && HH+VV
+        // => load HH into red, VV into blue
+        // => then HH-VV into red, at the same time as HH+VV into blue
+        get_float_line(fp, md, ii+HH_channel*offset, red_float_line);
+        get_float_line(fp, md, ii+VV_channel*offset, blue_float_line);
+        int jj;
+        for (jj=0; jj<md->general->sample_count; ++jj) {
+          double HH = red_float_line[jj];
+          double VV = blue_float_line[jj];
+          red_float_line[jj] = pauli_red(HH, VV, md->general->no_data);
+          blue_float_line[jj] = pauli_blue(HH, VV, md->general->no_data);
+        }
+        
+        // now HV into green
+        get_float_line(fp, md, ii+HV_channel*offset, green_float_line);
+
+        // write out as normal
+        if (format == TIF || format == GEOTIFF)
+          write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
+                                    blue_float_line, red_stats, green_stats,
+                                    blue_stats, sample_mapping,
+                                    md->general->no_data, ii, sample_count);
+        else if (format == JPEG)
+          write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
+                                    blue_float_line, &cinfo, red_stats,
+                                    green_stats, blue_stats, sample_mapping,
+                                    md->general->no_data, sample_count);
+      }
+      else if (sinclair) {
+        // temporary, load HV & VH into red & blue
+        get_float_line(fp, md, ii+HV_channel*offset, red_float_line);
+        get_float_line(fp, md, ii+VH_channel*offset, blue_float_line);
+
+        int jj;
+        for (jj=0; jj<md->general->sample_count; ++jj) {
+          double HV = red_float_line[jj];
+          double VH = blue_float_line[jj];
+          green_float_line[jj] = sinclair_green(HV, VH, md->general->no_data);
+        }
+
+        // now VV into red, and HH into blue
+        get_float_line(fp, md, ii+HH_channel*offset, blue_float_line);
+        get_float_line(fp, md, ii+VV_channel*offset, red_float_line);
+        
+        // write out as normal
+        if (format == TIF || format == GEOTIFF)
+          write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
+                                    blue_float_line, red_stats, green_stats,
+                                    blue_stats, sample_mapping,
+                                    md->general->no_data, ii, sample_count);
+        else if (format == JPEG)
+          write_rgb_jpeg_float2byte(ojpeg, red_float_line, green_float_line,
+                                    blue_float_line, &cinfo, red_stats,
+                                    green_stats, blue_stats, sample_mapping,
+                                    md->general->no_data, sample_count);
       }
       else if (sample_mapping == NONE) {
         // Write float lines if float image

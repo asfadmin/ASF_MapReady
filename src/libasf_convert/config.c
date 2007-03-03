@@ -349,6 +349,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->rgb, "");
   cfg->export->truecolor = 0;
   cfg->export->falsecolor = 0;
+  cfg->export->pauli = 0;
+  cfg->export->sinclair = 0;
 
   // Check for a default values file
   fConfig = FOPEN(configFile, "r");
@@ -485,6 +487,10 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->export->truecolor = read_int(line, "truecolor");
       if (strncmp(test, "falsecolor", 9)==0)
         cfg->export->falsecolor = read_int(line, "falsecolor");
+      if (strncmp(test, "pauli", 5)==0)
+        cfg->export->pauli = read_int(line, "pauli");
+      if (strncmp(test, "sinclair", 8)==0)
+        cfg->export->sinclair = read_int(line, "sinclair");
       FREE(test);
     }
   }
@@ -725,6 +731,10 @@ convert_config *read_convert_config(char *configFile)
         cfg->export->truecolor = read_int(line, "truecolor");
       if (strncmp(test, "falsecolor", 10)==0)
         cfg->export->falsecolor = read_int(line, "falsecolor");
+      if (strncmp(test, "pauli", 5)==0)
+        cfg->export->pauli = read_int(line, "pauli");
+      if (strncmp(test, "sinclair", 8)==0)
+        cfg->export->sinclair = read_int(line, "sinclair");
       FREE(test);
     }
   }
@@ -1085,6 +1095,22 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
                 "# visualization (use rgb banding if you desire raw data assignments.)\n\n");
       fprintf(fConfig, "falsecolor = %i\n\n", cfg->export->falsecolor);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
+                "# you can use the standard Pauli decomposition to map the 4 bands to\n"
+                "# the R, G, and B channels in the output image.  In this decomposition,\n"
+                "# red is HH-VV, green is HV, and blue is HH+VV.  In addition, each channel\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization.\n\n");
+      fprintf(fConfig, "pauli = %i\n\n", cfg->export->pauli);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
+                "# you can use the standard Sinclair decomposition to map the 4 bands to\n"
+                "# the R, G, and B channels in the output image.  In this decomposition,\n"
+                "# red is VV, green is (HV+VH)/2, and blue is HH.  In addition, each channel\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization.\n\n");
+      fprintf(fConfig, "sinclair = %i\n\n", cfg->export->sinclair);
     }
   }
   else {
