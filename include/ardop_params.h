@@ -44,9 +44,9 @@ struct ARDOP_PARAMS {
   int	nlooks;		     /* Number of looks in the azimuth		   */
   int	nbytes;		     /* Number of input bytes per line (w/ header) */
   int	ngood;		     /* Number of input bytes per line (no header) */
-  float	fd;		     /* Doppler centroid quadratic coefs (Hz/prf)  */
-  float	fdd;		     /* Doppler centroid quadratic coefs (Hz/prf)  */
-  float	fddd;	             /* Doppler centroid quadratic coefs (Hz/prf)  */
+  float	fd;		     /* Doppler centroid quadratic coefs (PRFs)    */
+  float	fdd;		     /* Doppler centroid quadratic coefs (PRFs/rangepixel) */
+  float	fddd;	             /* Doppler centroid quadratic coefs (PRFs/(rangepixel^2)) */
   float	re;		     /* Earth Radius (m)			   */
   float	vel;		     /* Body fixed S/C velocity (m/s)		   */
   float	ht;		     /* Spacecraft height (m)			   */
