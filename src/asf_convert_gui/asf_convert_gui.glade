@@ -2599,19 +2599,19 @@
 					      <property name="spacing">0</property>
 
 					      <child>
-						<widget class="GtkRadioButton" id="rb_pauli">
+						<widget class="GtkRadioButton" id="rb_user_defined_radar">
 						  <property name="width_request">186</property>
 						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Pauli Decomposition.  Red: HH-VV, Green: HV, Blue: HH+VV</property>
+						  <property name="tooltip" translatable="yes">Manually specify how the radar bands map to the color channels.</property>
 						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">Pauli</property>
+						  <property name="label" translatable="yes">User Defined</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
 						  <property name="focus_on_click">True</property>
-						  <property name="active">False</property>
+						  <property name="active">True</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
-						  <signal name="toggled" handler="on_rb_pauli_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:12 GMT"/>
+						  <signal name="toggled" handler="on_rb_user_defined_radar_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:28 GMT"/>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -2633,7 +2633,7 @@
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
-						  <property name="group">rb_pauli</property>
+						  <property name="group">rb_user_defined_radar</property>
 						  <signal name="toggled" handler="on_rb_sinclair_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:20 GMT"/>
 						</widget>
 						<packing>
@@ -2644,19 +2644,19 @@
 					      </child>
 
 					      <child>
-						<widget class="GtkRadioButton" id="rb_user_defined_radar">
+						<widget class="GtkRadioButton" id="rb_pauli">
 						  <property name="visible">True</property>
-						  <property name="tooltip" translatable="yes">Manually specify how the radar bands map to the color channels.</property>
+						  <property name="tooltip" translatable="yes">Pauli Decomposition.  Red: HH-VV, Green: HV, Blue: HH+VV</property>
 						  <property name="can_focus">True</property>
-						  <property name="label" translatable="yes">User Defined</property>
+						  <property name="label" translatable="yes">Pauli</property>
 						  <property name="use_underline">True</property>
 						  <property name="relief">GTK_RELIEF_NORMAL</property>
 						  <property name="focus_on_click">True</property>
 						  <property name="active">False</property>
 						  <property name="inconsistent">False</property>
 						  <property name="draw_indicator">True</property>
-						  <property name="group">rb_pauli</property>
-						  <signal name="toggled" handler="on_rb_user_defined_radar_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:28 GMT"/>
+						  <property name="group">rb_user_defined_radar</property>
+						  <signal name="toggled" handler="on_rb_pauli_toggled" last_modification_time="Fri, 02 Mar 2007 23:13:12 GMT"/>
 						</widget>
 						<packing>
 						  <property name="padding">0</property>
@@ -2716,6 +2716,7 @@
 
 				      <child>
 					<widget class="GtkLabel" id="label103">
+					  <property name="width_request">86</property>
 					  <property name="visible">True</property>
 					  <property name="label" translatable="yes">     Red Band: </property>
 					  <property name="use_underline">False</property>
@@ -2740,10 +2741,6 @@
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
 					  <property name="items" translatable="yes">-
-HH
-HV
-VH
-VV
 </property>
 					  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:16 GMT"/>
 					</widget>
@@ -2802,10 +2799,6 @@ VV
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
 					  <property name="items" translatable="yes">-
-HH
-HV
-VH
-VV
 </property>
 					  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:26 GMT"/>
 					</widget>
@@ -2864,10 +2857,7 @@ VV
 					  <property name="width_request">80</property>
 					  <property name="visible">True</property>
 					  <property name="items" translatable="yes">-
-HH
-HV
-VH
-VV</property>
+</property>
 					  <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:37 GMT"/>
 					</widget>
 					<packing>
@@ -3044,7 +3034,7 @@ VV</property>
 						      <property name="use_underline">True</property>
 						      <property name="relief">GTK_RELIEF_NORMAL</property>
 						      <property name="focus_on_click">True</property>
-						      <property name="active">False</property>
+						      <property name="active">True</property>
 						      <property name="inconsistent">False</property>
 						      <property name="draw_indicator">True</property>
 						      <signal name="toggled" handler="on_rb_truecolor_toggled" last_modification_time="Tue, 20 Feb 2007 02:56:58 GMT"/>
@@ -3177,10 +3167,6 @@ VV</property>
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
 					      <property name="items" translatable="yes">-
-1
-2
-3
-4
 </property>
 					      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:46:04 GMT"/>
 					    </widget>
@@ -3240,10 +3226,6 @@ VV</property>
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
 					      <property name="items" translatable="yes">-
-1
-2
-3
-4
 </property>
 					      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:45:40 GMT"/>
 					    </widget>
@@ -3302,10 +3284,6 @@ VV</property>
 					      <property name="width_request">80</property>
 					      <property name="visible">True</property>
 					      <property name="items" translatable="yes">-
-1
-2
-3
-4
 </property>
 					      <signal name="changed" handler="update_summary" last_modification_time="Tue, 20 Feb 2007 03:45:51 GMT"/>
 					    </widget>

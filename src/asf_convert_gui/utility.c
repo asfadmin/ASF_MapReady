@@ -7,8 +7,40 @@ static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
     gtk_entry_set_max_length(e, maxlen);
 }
 
+static void set_combobox_items_radar(const char *widget_name)
+{
+    GtkComboBox *w = GTK_COMBO_BOX(get_widget_checked(widget_name));
+    
+    gtk_combo_box_remove_text(w, 0);
+    gtk_combo_box_append_text(w, "-");
+    gtk_combo_box_append_text(w, "HH");
+    gtk_combo_box_append_text(w, "HV");
+    gtk_combo_box_append_text(w, "VH");
+    gtk_combo_box_append_text(w, "VV");
+}
+
+static void set_combobox_items_optical(const char *widget_name)
+{
+    GtkComboBox *w = GTK_COMBO_BOX(get_widget_checked(widget_name));
+
+    gtk_combo_box_remove_text(w, 0);
+    gtk_combo_box_append_text(w, "-");
+    gtk_combo_box_append_text(w, "1");
+    gtk_combo_box_append_text(w, "2");
+    gtk_combo_box_append_text(w, "3");
+    gtk_combo_box_append_text(w, "4");
+}
+
 void setup_band_comboboxes()
 {
+    set_combobox_items_radar("red_radar_combo");
+    set_combobox_items_radar("green_radar_combo");
+    set_combobox_items_radar("blue_radar_combo");
+
+    set_combobox_items_optical("red_optical_combo");
+    set_combobox_items_optical("green_optical_combo");
+    set_combobox_items_optical("blue_optical_combo");
+
     set_combobox_entry_maxlen("red_optical_combo", 8);
     set_combobox_entry_maxlen("green_optical_combo", 8);
     set_combobox_entry_maxlen("blue_optical_combo", 8);
