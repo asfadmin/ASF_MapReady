@@ -121,8 +121,6 @@ in a structure based on the globals above.
 satellite *newSatellite(void)
 {
 	float slantToLast;
-	int err=0; /* Error codes for the ODL interface */
-	char errC=0;
 	int my_precomp; /* far range precompensation value */
 	int cols; /* Dummy Variable to hold the number of columns in the antenna pattern correction vector */
 	satellite *s=(satellite *)MALLOC(sizeof(satellite));
@@ -419,16 +417,14 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 
 	/* Add secondary range compression */
         {
-          float r1, fr1, dp1;
-          /*float slope;*/
+          float r1 = g.r00 + rngpix*(g.nla/2.0);
+          float fr1 = -2.0 *g.vel*g.vel / (g.wavl*r1);
+          float middlepix = g.nla/2.0;      /* pixel number of center of swath*/
+          /* doppler in center of swath (Hz) */
+          float middledop = g.prf*(g.fd + g.fdd*middlepix + g.fddd*middlepix*middlepix);
 
-          if (!quietflag) printf("   Applying secondary range migration\n");
-
-          r1 = g.r00 + rngpix*(g.nla/2.0);
-          fr1 = -2.0 *g.vel*g.vel / (g.wavl*r1);
-          dp1 = g.fd + g.fdd*r1 + g.fddd * r1*r1;
-
-          g.slope = g.slope / (1.0 + g.slope * g.wavl*g.wavl*dp1*dp1 / fr1 / pow(speedOfLight,2.0)); 
+          asfPrintStatus("   Applying secondary range migration\n");
+	  g.slope = g.slope / (1.0 + g.slope * g.wavl*g.wavl*middledop*middledop / fr1 / pow(speedOfLight,2.0));
         }
 	
 /*Print out the parameters to .in and .meta files*/
