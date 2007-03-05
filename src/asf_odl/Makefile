@@ -5,7 +5,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS = -Iinclude $(FLAGS)
+CFLAGS := -Iinclude $(CFLAGS)
 
 OBJS = \
 	odl_api.o \
@@ -31,7 +31,7 @@ OBJS = \
 	y.tab.o \
 	Lexer.o
 
-asf_odl.a:	$(OBJS)
+asf_odl.a: $(OBJS)
 	ar rcv asf_odl.a $(OBJS)
 	$(RANLIB) asf_odl.a
 	rm $(OBJS)
