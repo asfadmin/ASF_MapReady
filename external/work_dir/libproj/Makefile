@@ -17,7 +17,8 @@ endif
 
 # These variables specify the tarball and what it unpacks into.
 UNPACK_DIR := proj-4.4.8
-ZIPFILE := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 # NAD27 grid shifts file
 NAD27FILE := proj-nad27-1.1.tar.gz
@@ -29,7 +30,9 @@ build: build_stamp
 #   don't include 'void'.
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
+	rm -f $(TARFILE)
 	(   cp $(NAD27FILE) $(UNPACK_DIR)/nad; \
 	    cd $(UNPACK_DIR) ; \
 	    perl -p -i -e 's{\(\);}{(void);}' src/proj_api.h ; \

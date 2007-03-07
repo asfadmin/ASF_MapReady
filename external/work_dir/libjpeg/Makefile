@@ -12,9 +12,11 @@ UNPACK_DIR := jpeg-6b
 # On Windows, use patched version to match binary version bundled
 # with GTK.  Patch is the lossless compression patch (checked in)
 ifeq ($(SYS),win32)
-ZIPFILE := jpegsrc.v6b.patched.tar.gz
+TARFILE := jpegsrc.v6b.patched.tar
+ZIPFILE := $(TARFILE).gz
 else
-ZIPFILE := jpegsrc.v6b.tar.gz
+TARFILE := jpegsrc.v6b.tar
+ZIPFILE := $(TARFILE).gz
 endif
 
 build: build_stamp
@@ -22,7 +24,9 @@ build: build_stamp
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
+	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \

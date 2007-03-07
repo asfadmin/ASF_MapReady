@@ -8,10 +8,12 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the tarball and what it unpacks into.
 TCL_UNPACK_DIR := tcl8.1.1
-TCL_ZIPFILE := $(TCL_UNPACK_DIR).tar.gz
+TCL_TARFILE := $(TCL_UNPACK_DIR).tar
+TCL_ZIPFILE := $(TCL_TARFILE).gz
 
 TK_UNPACK_DIR := tk8.1.1
-TK_ZIPFILE := $(TK_UNPACK_DIR).tar.gz
+TK_TARFILE := $(TK_UNPACK_DIR).tar
+TK_ZIPFILE := $(TK_TARFILE).gz
 
 # build the TCL for the main build system to nab
 build: build_tcl_stamp build_tk_stamp
@@ -20,7 +22,10 @@ build: build_tcl_stamp build_tk_stamp
 # If zip file not present, skip.
 build_tcl_stamp:
 	if [ -f $(TCL_ZIPFILE) ]; then \
-	  gunzip --to-stdout $(TCL_ZIPFILE) | tar xv; \
+	  mkdir -p $(LIB_DIR) $(INCLUDE_DIR); \
+	  gunzip --to-stdout $(TCL_ZIPFILE) > $(TCL_TARFILE) ; \
+	  tar xvf $(TCL_TARFILE) ; \
+	  rm -f $(TCL_TARFILE) ; \
 	  (   cd $(TCL_UNPACK_DIR)/unix ; \
 	      ./configure --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
 	      $(MAKE) ; \
@@ -36,7 +41,9 @@ build_tcl_stamp:
 build_tk_stamp: build_tcl_stamp
 	if [ -f $(TK_ZIPFILE) ]; then \
 	  mkdir -p $(LIB_DIR) $(INCLUDE_DIR); \
-	  gunzip --to-stdout $(TK_ZIPFILE) | tar xv; \
+	  gunzip --to-stdout $(TK_ZIPFILE) > $(TK_TARFILE) ; \
+	  tar xvf $(TK_TARFILE) ; \
+	  rm -f $(TK_TARFILE) ; \
 	  (   cd $(TK_UNPACK_DIR)/unix ; \
 	      ./configure  --enable-gcc --disable-load --prefix=$(ROOT_DIR) ; \
 	      $(MAKE) ; \

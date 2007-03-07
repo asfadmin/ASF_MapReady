@@ -8,14 +8,17 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the tiff tarball and what it unpacks into.
 UNPACK_DIR := tiff-3.7.4
-ZIPFILE := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
+	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) --disable-jpeg --disable-zlib --disable-shared; \
 	    $(MAKE) ; \

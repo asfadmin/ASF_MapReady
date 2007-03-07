@@ -8,14 +8,17 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the tarball and what it unpacks into.
 UNPACK_DIR := fftw-3.1.2
-ZIPFILE := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) |	tar xv
+	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
+	rm -f $(TARFILE)
 	(	cd $(UNPACK_DIR) ; \
 		LDFLAGS="-L$(LIB_DIR)" \
 		CFLAGS="-I$(INCLUDE_DIR)" \

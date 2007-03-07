@@ -8,15 +8,17 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the GSL tarball and what it unpacks into.
 UNPACK_DIR := gsl-1.6
-ZIPFILE := $(UNPACK_DIR).tar.gz
+TARFILE := $(UNPACK_DIR).tar
+ZIPFILE := $(TARFILE).gz
 
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip $(ZIPFILE)
-	tar xvf gsl-1.6.tar
+	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
+	tar xvf $(TARFILE)
+	rm -f $(TARFILE)
 	(   cd $(UNPACK_DIR) ; \
 	    ./configure --prefix=$(ROOT_DIR) ; \
 	    make ; \
