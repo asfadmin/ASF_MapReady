@@ -611,13 +611,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           "falsecolor, pauli, or sinclair.)  Only one of these options may\n"
           "be selected at a time.\n");
     }
-    // Make sure truecolor/falsecolor are only specified for optical data
-    meta_parameters *meta = meta_read(inFile);
-    if (!meta->optical && (truecolor || falsecolor)) {
-      asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
-    }
-
-    meta_free(meta);
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
         !cfg->general->terrain_correct && !cfg->general->geocoding &&
@@ -686,6 +679,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->general->in_name, outFile),
                    "ingesting data file (asf_import)\n");
     }
+    // Make sure truecolor/falsecolor are only specified for optical data
+    meta_parameters *meta = meta_read(outFile);
+    if (!meta->optical && (truecolor || falsecolor)) {
+      asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
+    }
+    meta_free(meta);
 
     if (cfg->general->sar_processing) {
       meta_parameters *meta;
@@ -1024,7 +1023,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           {
             asfPrintError("Imported file does not contain required bands\n"
                 "necessary for pauli or sinclair output (HH, VV, HV, VH)\n");
-          } 
+          }
           char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
           if (meta->general->band_count >= 4 && bands != NULL) {
             check_return(asf_export_bands(format, SIGMA, TRUE,
