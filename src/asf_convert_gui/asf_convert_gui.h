@@ -20,6 +20,12 @@
 #define THUMB_SIZE_BIG 256
 #define THUMBNAILS
 
+/* Gtk 2.6 has a very nice file chooser */
+/* On Windows, though, we'll still use the native one */
+#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 6 && defined(win32)
+#define USE_GTK_FILE_CHOOSER
+#endif
+
 enum OutputFormat
 {
     OUTPUT_FORMAT_JPEG = 0,

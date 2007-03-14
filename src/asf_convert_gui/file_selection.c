@@ -14,6 +14,86 @@
 
 #include "asf_convert_gui.h"
 
+#ifdef USE_GTK_FILE_CHOOSER
+
+/* If the GtkFileChooser is available -- we'll use that instead of
+   GtkFileSelection
+*/
+static GtkWidget *browse_widget = NULL;
+
+// called when "cancel" clicked on the GtkFileChooser
+static SIGNAL_CALLBACK void cancel_clicked()
+{
+    gtk_widget_hide(browse_widget);
+}
+
+// called when "ok" clicked on the GtkFileChooser
+static SIGNAL_CALLBACK void ok_clicked()
+{
+    char *selected_file = gtk_file_chooser_get_filename(
+        GTK_FILE_CHOOSER(browse_widget));
+
+    gtk_widget_hide(browse_widget);
+
+    if (selected_file)
+    {
+        add_to_files_list(selected_file);
+        g_free(selected_file);
+    }
+}
+
+// sets up the file chooser dialog
+static void create_file_chooser_dialogs() 
+{
+    GtkWidget *parent = get_widget_checked("ait_main");
+
+    browse_widget = gtk_file_chooser_dialog_new(
+        "Open Image File", GTK_WINDOW(parent),
+        GTK_FILE_CHOOSER_ACTION_OPEN,
+        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+        GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+        NULL);
+
+    // we need to extract the buttons, so we can connect them to our
+    // button handlers, above
+    GtkHButtonBox *box = 
+        (GtkHButtonBox*)(((GtkDialog*)browse_widget)->action_area);
+    GList *buttons = box->button_box.box.children;
+
+    GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+    GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+    g_signal_connect((gpointer)cancel_btn, "clicked",
+        G_CALLBACK(cancel_clicked), NULL);
+    g_signal_connect((gpointer)ok_btn, "clicked",
+        G_CALLBACK(ok_clicked), NULL);
+
+    // add the filters
+    GtkFileFilter *D_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(D_filt, "CEOS Data Files (*.D)");
+    gtk_file_filter_add_pattern(D_filt, "*.D");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
+
+    GtkFileFilter *alos_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
+    gtk_file_filter_add_pattern(alos_filt, "LED-*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
+
+    GtkFileFilter *all_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+    gtk_file_filter_add_pattern(all_filt, "*.*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), all_filt);
+
+    // we need to make these modal -- if the user opens multiple "open"
+    // dialogs, we'll get confused on the callbacks
+    gtk_window_set_modal(GTK_WINDOW(browse_widget), TRUE);
+    gtk_window_set_destroy_with_parent(GTK_WINDOW(browse_widget), TRUE);
+    gtk_dialog_set_default_response(GTK_DIALOG(browse_widget),
+                                    GTK_RESPONSE_OK);
+}
+
+#endif // #ifdef USE_GTK_FILE_CHOOSER
+
 SIGNAL_CALLBACK void
 on_browse_input_files_button_clicked(GtkWidget *widget)
 {
@@ -77,12 +157,26 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     free(dir);
 	show_queued_thumbnails();
 
-#else
+#else // #ifdef win32
+
+    /* Linux version -- use GtkFileChooser if possible */
+
+#ifdef USE_GTK_FILE_CHOOSER
+
+    if (!browse_widget)
+        create_file_chooser_dialog();
+
+    gtk_widget_show(browse_widget);
+
+#else // #ifdef USE_GTK_FILE_CHOOSER
+
     GtkWidget *file_selection_dialog =
         get_widget_checked("input_file_selection");
 
     gtk_widget_show(file_selection_dialog);
-#endif
+
+#endif // #ifdef USE_GTK_FILE_CHOOSER
+#endif // #ifdef win32
 }
 
 void
