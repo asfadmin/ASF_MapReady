@@ -75,4 +75,8 @@ int is_masked(double value);
 float masked_value();
 float unmasked_value();
 
+/* Prototypes from to_sr.c */
+int to_sr(const char *infile, const char *outfile);
+int to_sr_pixsiz(const char *infile, const char *outfile, double pixel_size);
+
 #endif

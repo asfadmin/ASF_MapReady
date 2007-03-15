@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS)
+CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
 	gr2sr.o \
@@ -16,6 +16,7 @@ OBJS = \
 	fetcher.o \
 	remap_poly.o \
 	mfd.o \
+	to_sr.o \
 	refine_offset.o
 
 LIBS = \
