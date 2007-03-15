@@ -606,7 +606,8 @@ void rgb_settings_changed()
     else
     {
         // "Export All Bands as Separate Images"
-        // don't need to do anything, leave settings as they are (disabled)
+        // don't need to do anything further -- we've already disabled the
+        // whole "RGB" options section
     }
 }
 

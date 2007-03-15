@@ -323,7 +323,9 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
     {
         GtkWidget *files_list;
         gchar * out_name_full;
-        
+
+        //printf("Adding: %s\n", data_file);
+
         files_list = get_widget_checked("files_list");
         char *bands = build_band_list(data_file);
 
@@ -510,7 +512,23 @@ void render_output_name(GtkTreeViewColumn *tree_column,
 }
 
 void
-setup_files_list(int argc, char *argv[])
+populate_files_list(int argc, char *argv[])
+{
+    int i;
+    for (i = 1; i < argc; ++i)
+    {
+        char *ext = findExt(argv[i]);
+        if (ext && (strcmp(ext, ".cfg") == 0 || strcmp(ext, ".config") == 0))
+            apply_settings_from_config_file(argv[i]);
+        else
+            add_to_files_list(argv[i]);
+    }
+
+    show_queued_thumbnails();
+}
+
+void
+setup_files_list()
 {
     GtkTreeViewColumn *col;
     GtkCellRenderer *renderer;
@@ -545,11 +563,6 @@ setup_files_list(int argc, char *argv[])
     COMP_COL_OUTPUT_THUMBNAIL_BIG = 3;
     COMP_COL_STATUS = 4;
     COMP_COL_LOG = 5;
-
-    int i;
-    for (i = 1; i < argc; ++i)
-        add_to_files_list(argv[i]);
-    show_queued_thumbnails();
 
 /*** First, the "pending" files list ****/
     GtkWidget *files_list = get_widget_checked("files_list");

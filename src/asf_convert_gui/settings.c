@@ -1,5 +1,10 @@
 #include "asf_convert_gui.h"
-#include <asf.h>
+#include "asf_convert.h"
+#include "asf_raster.h"
+#include "libasf_proj.h"
+#include "asf.h"
+#include "asf_meta.h"
+#include "get_ceos_names.h"
 
 static int
 settings_get_input_data_format_allows_latitude(const Settings *s)
@@ -61,7 +66,7 @@ settings_apply_to_gui(const Settings * s)
         get_widget_checked("keep_files_checkbutton");
 
     apply_metadata_fix_checkbutton =
-        get_widget_checked("apply_metadta_fix_checkbutton");
+        get_widget_checked("apply_metadata_fix_checkbutton");
 
     set_combo_box_item(input_data_format_combobox, s->input_data_format);
     set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -145,34 +150,33 @@ settings_apply_to_gui(const Settings * s)
         set_combo_box_item(scaling_method_combobox, s->scaling_method);
 
         if (s->export_bands) {
+            rb_select("rb_rgb", TRUE);
             if (s->truecolor_is_checked)
             {
                 // true color
                 rb_select("rb_truecolor", TRUE);
                 rb_select("rb_optical", TRUE);
-                rb_select("rb_rgb", TRUE);
             }
             else if (s->falsecolor_is_checked)
             {
                 // false color
                 rb_select("rb_falsecolor", TRUE);
                 rb_select("rb_optical", TRUE);
-                rb_select("rb_rgb", TRUE);
             }
             else if (s->pauli_is_checked)
             {
                 // Pauli decomposition
                 rb_select("rb_pauli", TRUE);
                 rb_select("rb_radar", TRUE);
-                rb_select("rb_rgb", TRUE);
             }
-            else if (s->pauli_is_checked)
+            else if (s->sinclair_is_checked)
             {
                 // Sinclair decomposition
                 rb_select("rb_sinclair", TRUE);
                 rb_select("rb_radar", TRUE);
-                rb_select("rb_rgb", TRUE);
             }
+            // we don't know whether to choose "user defined" for
+            // radar or optical -- so we have this kludge
             else if (strcmp(s->red, "HH") == 0 ||
                      strcmp(s->red, "HV") == 0 ||
                      strcmp(s->red, "VH") == 0 ||
@@ -189,7 +193,6 @@ settings_apply_to_gui(const Settings * s)
                 // radar -- user defined
                 rb_select("rb_user_defined_radar", TRUE);
                 rb_select("rb_radar", TRUE);
-                rb_select("rb_rgb", TRUE);
 
                 set_combo_box_entry_item("red_radar_combo", s->red);
                 set_combo_box_entry_item("green_radar_combo", s->green);
@@ -200,23 +203,22 @@ settings_apply_to_gui(const Settings * s)
                 // optical -- user defined
                 rb_select("rb_user_defined", TRUE);
                 rb_select("rb_optical", TRUE);
-                rb_select("rb_rgb", TRUE);
 
                 set_combo_box_entry_item("red_optical_combo", s->red);
                 set_combo_box_entry_item("green_optical_combo", s->green);
                 set_combo_box_entry_item("blue_optical_combo", s->blue);
             }
-
-            rgb_settings_changed();
-        } else {
-            set_combo_box_entry_item("red_radar_combo", "");
-            set_combo_box_entry_item("green_radar_combo", "");
-            set_combo_box_entry_item("blue_radar_combo", "");
-            set_combo_box_entry_item("red_optical_combo", "");
-            set_combo_box_entry_item("green_optical_combo", "");
-            set_combo_box_entry_item("blue_optical_combo", "");
+        } 
+        else {
+            set_combo_box_entry_item("red_radar_combo", "-");
+            set_combo_box_entry_item("green_radar_combo", "-");
+            set_combo_box_entry_item("blue_radar_combo", "-");
+            set_combo_box_entry_item("red_optical_combo", "-");
+            set_combo_box_entry_item("green_optical_combo", "-");
+            set_combo_box_entry_item("blue_optical_combo", "-");
             rb_select("rb_all", TRUE);
         }
+        rgb_settings_changed();
     }
 
     if (s->geocode_is_checked)
@@ -276,7 +278,11 @@ settings_apply_to_gui(const Settings * s)
 
             if (s->projection == UNIVERSAL_TRANSVERSE_MERCATOR)
             {
-                sprintf(tmp, "%d", s->zone);
+                if (s->zone != MAGIC_UNSET_INT && s->zone != 0)
+                    sprintf(tmp, "%d", s->zone);
+                else
+                    strcpy(tmp, "");
+
                 gtk_entry_set_text(GTK_ENTRY(utm_zone_entry), tmp);
             }
             else
@@ -1586,7 +1592,13 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
-    fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
+    if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
+        fprintf(cf, "format = CEOS (1)\n");
+    else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
+        fprintf(cf, "format = CEOS (0)\n");
+    else    
+        fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
+
     if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
         fprintf(cf, "radiometry = %s_image\n",
                 settings_get_data_type_string(s));
@@ -1691,4 +1703,230 @@ settings_to_config_file(const Settings *s,
     free(output_basename);
     free(input_basename);
     return tmp_cfgfile;
+}
+
+void apply_settings_from_config_file(char *configFile)
+{
+    convert_config *cfg = read_convert_config(configFile);
+
+    Settings s;
+
+    s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
+    if (strncmp(uc(cfg->import->format), "CEOS (1)", 8) == 0)
+        s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
+    if (strncmp(uc(cfg->import->format), "CEOS (0)", 8) == 0)
+        s.input_data_format = INPUT_FORMAT_CEOS_LEVEL0;
+    if (strncmp(uc(cfg->import->format), "CEOS", 4) == 0)
+        s.input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
+    else if (strncmp(uc(cfg->import->format), "STF", 3) == 0)
+        s.input_data_format = INPUT_FORMAT_STF;
+    else if (strncmp(uc(cfg->import->format), "ASF", 3) == 0)
+        s.input_data_format = INPUT_FORMAT_ASF_INTERNAL;
+
+    s.data_type = INPUT_TYPE_AMP;
+    if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0)
+        s.data_type = INPUT_TYPE_AMP;
+    else if (strncmp(uc(cfg->import->radiometry), "POWER_IMAGE", 11) == 0)
+        s.data_type = INPUT_TYPE_POWER;
+    else if (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0)
+        s.data_type = INPUT_TYPE_SIGMA;
+    else if (strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0)
+        s.data_type = INPUT_TYPE_GAMMA;
+    else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0)
+        s.data_type = INPUT_TYPE_BETA;
+
+    s.process_to_level1 = cfg->general->sar_processing;
+    s.output_db = cfg->import->output_db;
+    s.latitude_checked = s.input_data_format == INPUT_FORMAT_STF &&
+        (cfg->import->lat_begin != -99 || cfg->import->lat_end != -99);
+    s.latitude_low = cfg->import->lat_begin;
+    s.latitude_hi = cfg->import->lat_end;
+    
+    /* export */
+    s.export_is_checked = cfg->general->export;
+
+    if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0)
+        s.output_format = OUTPUT_FORMAT_TIFF;
+    else if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0)
+        s.output_format = OUTPUT_FORMAT_GEOTIFF;
+    else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0)
+        s.output_format = OUTPUT_FORMAT_JPEG;
+    else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0)
+        s.output_format = OUTPUT_FORMAT_PGM;
+
+    s.apply_scaling = 0;
+    s.longest_dimension = 0;
+    s.output_bytes = strlen(cfg->export->byte) > 0;
+
+    s.scaling_method = SCALING_METHOD_SIGMA;
+    if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0)
+        s.scaling_method = SCALING_METHOD_TRUNCATE;
+    else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0)
+        s.scaling_method = SCALING_METHOD_MINMAX;
+    else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0)
+        s.scaling_method = SCALING_METHOD_SIGMA;
+    else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0)
+        s.scaling_method = SCALING_METHOD_HISTOGRAM_EQUALIZE;
+
+    s.truecolor_is_checked = cfg->export->truecolor;
+    s.falsecolor_is_checked = cfg->export->falsecolor;
+    s.pauli_is_checked = cfg->export->pauli;
+    s.sinclair_is_checked = cfg->export->sinclair;
+    s.user_defined_is_checked = strlen(cfg->export->rgb) > 0 &&
+        ! (s.truecolor_is_checked ||
+           s.falsecolor_is_checked ||
+           s.pauli_is_checked ||
+           s.sinclair_is_checked );
+    s.export_bands = s.truecolor_is_checked ||
+        s.falsecolor_is_checked ||
+        s.pauli_is_checked ||
+        s.sinclair_is_checked ||
+        s.user_defined_is_checked;
+
+    if (strlen(cfg->export->rgb) > 0) {
+        int i;
+        for (i=0; i<10; ++i) {
+            s.red[i] = s.green[i] = s.blue[i] = '\0';
+        }
+        char *red, *green, *blue;
+        split3(cfg->export->rgb, &red, &green, &blue, ',');
+        strncpy(s.red, red, 9);
+        strncpy(s.green, green, 9);
+        strncpy(s.blue, blue, 9);
+        FREE(red);
+        FREE(green);
+        FREE(blue);
+    }
+
+    /* geocode */
+    s.geocode_is_checked = cfg->general->geocoding && cfg->geocoding;
+    s.projection = PROJ_UTM;
+    s.plat1 = s.plat2 = s.lat0 = s.lon0 = 0;
+    s.false_easting = s.false_northing = 0;
+
+    if (s.geocode_is_checked) {
+        project_parameters_t pps;
+        projection_type_t type;
+        read_proj_file(cfg->geocoding->projection, &pps, &type);
+
+        if (type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+            s.projection = PROJ_UTM;
+            s.zone = pps.utm.zone;
+        } else if (type == POLAR_STEREOGRAPHIC) {
+            s.projection = PROJ_PS;
+            s.lat0 = pps.ps.slat;
+            s.lon0 = pps.ps.slon;
+        } else if (type == ALBERS_EQUAL_AREA) {
+            s.projection = PROJ_ALBERS;
+            s.plat1 = pps.albers.std_parallel1;
+            s.plat2 = pps.albers.std_parallel2;
+            s.lat0 = pps.albers.orig_latitude;
+            s.lon0 = pps.albers.center_meridian;
+        } else if (type == LAMBERT_CONFORMAL_CONIC) {
+            s.projection = PROJ_LAMCC;
+            s.plat1 = pps.lamcc.plat1;
+            s.plat2 = pps.lamcc.plat2;
+            s.lat0 = pps.lamcc.lat0;
+            s.lon0 = pps.lamcc.lon0;
+        } else if (type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+            s.projection = PROJ_LAMAZ;
+            s.lat0 = pps.lamaz.center_lat;
+            s.lon0 = pps.lamaz.center_lon;
+        }
+    
+        s.specified_height = cfg->geocoding->height != -99 &&
+            cfg->geocoding->height != 0;
+        s.height = cfg->geocoding->height;
+        s.specified_pixel_size = cfg->geocoding->pixel > 0;
+        s.pixel_size = cfg->geocoding->pixel;
+        s.geocode_force = cfg->geocoding->force;
+
+        s.datum = DATUM_WGS84;
+        if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0)
+            s.datum = DATUM_WGS84;
+        else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0)
+            s.datum = DATUM_NAD27;
+        else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0)
+            s.datum = DATUM_NAD83;
+        //else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0)
+        //    s.datum = DATUM_HUGHES;
+
+        s.resample_method = RESAMPLE_BILINEAR;
+        if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
+            s.resample_method = RESAMPLE_NEAREST_NEIGHBOR;
+        if (strncmp(uc(cfg->geocoding->resampling),"BILINEAR", 8) == 0)
+            s.resample_method = RESAMPLE_BILINEAR;
+        if (strncmp(uc(cfg->geocoding->resampling),"BICUBIC", 7) == 0)
+            s.resample_method = RESAMPLE_BICUBIC;
+    }
+
+    /* terrcorr options */
+    s.terrcorr_is_checked = cfg->general->terrain_correct &&
+        strlen(cfg->terrain_correct->dem) > 0;
+    s.refine_geolocation_is_checked = cfg->general->terrain_correct &&
+        strlen(cfg->terrain_correct->dem) > 0;
+
+    strcpy(s.dem_file, "");
+    strcpy(s.mask_file, "");
+
+    if (s.terrcorr_is_checked) {
+        s.refine_geolocation_is_checked =
+            cfg->terrain_correct->refine_geolocation_only;
+        s.terrcorr_is_checked = !s.refine_geolocation_is_checked;
+        strcpy(s.dem_file, cfg->terrain_correct->dem);
+        s.specified_tc_pixel_size = cfg->terrain_correct->pixel != -99;
+        s.tc_pixel_size = cfg->terrain_correct->pixel;
+        s.interp = cfg->terrain_correct->interp;
+        s.auto_water_mask_is_checked = cfg->terrain_correct->auto_mask_water;
+        s.mask_file_is_checked = strlen(cfg->terrain_correct->mask) > 0;
+        strcpy(s.mask_file, cfg->terrain_correct->mask);
+        s.generate_layover_mask =
+            cfg->terrain_correct->save_terrcorr_layover_mask;
+        s.generate_dem = cfg->terrain_correct->save_terrcorr_dem;
+        s.do_radiometric = cfg->terrain_correct->do_radiometric;
+    }
+
+    /* misc */
+    s.keep_files = cfg->general->intermediates;
+    s.apply_metadata_fix = 1;
+
+    settings_apply_to_gui(&s);
+
+    /* Files from the config file */
+    GtkTreeIter iter;
+
+    /* The config file contains the basename -- we must pass the actual
+     * data file name (CEOS), or leader file name (ALOS) to add_to_files_list
+     */
+    char *metaName = MALLOC(sizeof(char)*(strlen(cfg->general->in_name)+25));
+    ceos_metadata_ext_t ext_type =
+        get_ceos_metadata_name(cfg->general->in_name, metaName);
+
+    if (ext_type == CEOS_LED)
+    {
+        // alos -- pass in metadata name
+        add_to_files_list_iter(metaName, &iter);
+    }
+    else
+    {
+        // regular ceos -- determine data file name
+        int i,nBands;
+        char **dataNames = MALLOC(sizeof(char*)*MAX_BANDS);
+        for (i=0; i<MAX_BANDS; ++i)
+            dataNames[i] = MALLOC(sizeof(char)*256);
+        
+        add_to_files_list_iter(metaName, &iter);
+        get_ceos_data_name(cfg->general->in_name, dataNames, &nBands);
+        assert(nBands == 1);
+
+        add_to_files_list_iter(dataNames[0], &iter);
+
+        FREE_BANDS(dataNames);
+    }
+
+    FREE(metaName);
+
+    set_output_name(&iter, cfg->general->out_name);
+
+    FREE(cfg);
 }

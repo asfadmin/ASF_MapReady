@@ -90,7 +90,7 @@ main(int argc, char **argv)
     show_execute_button(TRUE);
 
     /* build columns in the files section */
-    setup_files_list(argc, argv);
+    setup_files_list();
 
     /* allow multiple selects */
     widget = get_widget_checked("input_file_selection");
@@ -123,6 +123,9 @@ main(int argc, char **argv)
     /* initially in there                                         */
     default_to_terrcorr_on();
     terrcorr_options_changed();
+
+    /* put files on the command-line into the files section */
+    populate_files_list(argc, argv);
 
     /* set up the rgb stuff on the export tab */
     rgb_combo_box_setup();

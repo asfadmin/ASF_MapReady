@@ -70,7 +70,7 @@ enum ProjectionOptions
   PROJ_PS = 1,
   PROJ_ALBERS = 2,
   PROJ_LAMAZ = 3,
-  PROJ_LAMCC = 4 // currently unavailable through GUI
+  PROJ_LAMCC = 4
 };
 
 enum Datums
@@ -217,6 +217,7 @@ void settings_update_mask(Settings *s, const char *output_path, int is_first);
 char * settings_to_config_file(const Settings *s,
 			     const gchar *input_file, const gchar *output_file,
 			     const gchar *output_path, const gchar *tmp_dir);
+void apply_settings_from_config_file(char *configFile);
 
 /* find_in_path.c */
 gchar *find_in_path(gchar * file);
@@ -256,7 +257,8 @@ void show_please_select_message();
 void set_toolbar_images();
 
 /* file_list.c */
-void setup_files_list(int, char **);
+void setup_files_list();
+void populate_files_list(int, char **);
 gboolean add_to_files_list(const gchar *);
 gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
 void update_all_extensions();
@@ -266,6 +268,7 @@ void show_queued_thumbnails();
 int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *);
 void move_from_completed_files_list(GtkTreeIter *);
+void populate_files_list(int, char **);
 
 /* help.c */
 char * escapify(const char * s);
