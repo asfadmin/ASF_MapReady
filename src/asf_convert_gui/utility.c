@@ -106,6 +106,10 @@ message_box(const gchar * message)
     gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialog)->vbox), label);
 
     gtk_widget_show_all(dialog);
+
+    // Seems that sometimes the message box ends up hidden behind other
+    // windows... this might bring it to the front
+    gtk_window_present(GTK_WINDOW(dialog));
 }
 
 gchar *
