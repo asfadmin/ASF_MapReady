@@ -507,14 +507,14 @@ swap_bytes_32 (unsigned char *in)
 
 // Swap the byte order of a 16 bit value, hopefully converting from
 // big endian to little endian or vice versa.
-static void
-swap_bytes_16 (unsigned char *in)
-{
-  g_assert (sizeof (unsigned char) == 1);
-  int tmp = in[0];
-  in[0] = in[1];
-  in[1] = tmp;
-}
+//static void
+//swap_bytes_16 (unsigned char *in)
+//{
+//  g_assert (sizeof (unsigned char) == 1);
+//  int tmp = in[0];
+//  in[0] = in[1];
+//  in[1] = tmp;
+//}
 
 FloatImage *
 float_image_new_from_memory (ssize_t size_x, ssize_t size_y, float *buffer)
@@ -1918,9 +1918,20 @@ float_image_band_store(FloatImage *self, const char *file,
   // We will write the image data in horizontal stips one line at a time.
   float *line_buffer = g_new (float, self->size_x);
 
+  // Sanity check
+  if (meta->general->line_count != (int)self->size_y ||
+      meta->general->sample_count != (int)self->size_x)
+  {
+      asfPrintError("Inconsistency between metadata and image!\n"
+                    "Metadata says: %dx%d LxS, image has %dx%d\n"
+                    "Possibly did not write metadata before storing image.\n",
+                    meta->general->line_count, meta->general->sample_count,
+                    self->size_y, self->size_x);
+  }
+
   // Reorganize data into tiles in tile oriented disk file.
   int ii;
-  for ( ii = 0 ; ii < meta->general->line_count ; ii++ ) {
+  for ( ii = 0 ; ii < (int)self->size_y ; ii++ ) {
     float_image_get_row (self, ii, line_buffer);
 
     // Write the data.
@@ -1940,11 +1951,24 @@ float_image_band_store(FloatImage *self, const char *file,
 
 int
 float_image_store (FloatImage *self, const char *file,
-                   float_image_byte_order_t byte_order) 
+                   float_image_byte_order_t byte_order)
 {
   meta_parameters *meta;
   meta = meta_read(file);
-  return float_image_band_store(self, file, meta, 0);
+
+  //float_image_byte_order_t meta_byte_order = 0;
+  //if (strcmp(meta->general->system, "big_ieee") == 0)
+  //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN;
+  //else if (strcmp(meta->general->system, "lil_ieee") == 0)
+  //  meta_byte_order = FLOAT_IMAGE_BYTE_ORDER_LITTLE_ENDIAN;
+
+  //if (meta_byte_order != byte_order)
+  //    asfPrintWarning("Passed-in byte order overriden by metadata!\n");
+
+  int ret = float_image_band_store(self, file, meta, 0);
+  meta_free(meta);
+
+  return ret;
 }
 
 /*
