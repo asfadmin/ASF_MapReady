@@ -41,7 +41,8 @@ static double max4(double a, double b, double c, double d)
     return max2(max2(a,b), max2(c,d));
 }
 
-int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
+static int
+proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 {
     int ii, jj, ret;
     const float_image_sample_method_t sampling_method =
@@ -56,7 +57,10 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int ns = inMeta->general->sample_count;
 
     if (!inMeta->projection && !inMeta->transform)
-        asfPrintError("Expected a projection block!\n");
+        asfPrintError("Expected a projection/transform block!\n");
+
+/*
+    // This is how gr2sr calculated the default slant range pixel size...
 
     if (pixel_size < 0) {
         if (inMeta->sar) {
@@ -71,9 +75,9 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
             pixel_size = inMeta->general->x_pixel_size;
         }
     }
+*/
 
     asfPrintStatus("Converting %s to slant range...\n", infile);
-    asfPrintStatus("  Slant range pixel size: %f\n", pixel_size);
 
     // first, find extents in time/slant space
     // do this by projecting image corners to time/slant
@@ -87,11 +91,13 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // find top left pixel -- TOP-most non-no-data pixel in the image
     for (ii=0; ii<nl; ++ii)
-        for (jj=0; jj<ns; ++jj)
-            if (float_image_get_pixel(in,jj,ii) != inMeta->general->no_data) {
+        for (jj=0; jj<ns; ++jj) {
+            double val = float_image_get_pixel(in, jj, ii);
+            if (val != inMeta->general->no_data && val != 0.0) {
                 tl_x = jj; tl_y = ii;
                 goto found_tl;
             }
+        }
 
     asfPrintError("Couldn't find top-left pixel! Entire image no data?\n");
 
@@ -99,11 +105,13 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // find top right pixel -- RIGHT-most non-no-data pixel in the image
     for (jj=ns-1; jj>=0; --jj)
-        for (ii=0; ii<nl; ++ii)
-            if (float_image_get_pixel(in,jj,ii) != inMeta->general->no_data) {
+        for (ii=0; ii<nl; ++ii) {
+            double val = float_image_get_pixel(in, jj, ii);
+            if (val != inMeta->general->no_data && val != 0.0) {
                 tr_x = jj; tr_y = ii;
                 goto found_tr;
             }
+        }
 
     asfPrintError("Couldn't find top-right pixel! Entire image no data?\n");
 
@@ -111,11 +119,13 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // find bottom left pixel -- LEFT-most non-no-data pixel in the image
     for (jj=0; jj<ns; ++jj)
-        for (ii=nl-1; ii>=0; --ii)
-            if (float_image_get_pixel(in,jj,ii) != inMeta->general->no_data) {
+        for (ii=nl-1; ii>=0; --ii) {
+            double val = float_image_get_pixel(in, jj, ii);
+            if (val != inMeta->general->no_data && val != 0.0) {
                 bl_x = jj; bl_y = ii;
                 goto found_bl;
             }
+        }
 
     asfPrintError("Couldn't find bottom-left pixel! Entire image no data?\n");
 
@@ -123,11 +133,13 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // find bottom right pixel -- BOTTOM-most non-no-data pixel in the image
     for (ii=nl-1; ii>=0; --ii)
-        for (jj=ns-1; jj>=0; --jj)
-            if (float_image_get_pixel(in,jj,ii) != inMeta->general->no_data) {
+        for (jj=ns-1; jj>=0; --jj) {
+            double val = float_image_get_pixel(in, jj, ii);
+            if (val != inMeta->general->no_data && val != 0.0) {
                 br_x = jj; br_y = ii;
                 goto found_br;
             }
+        }
 
     asfPrintError("Couldn't find bottom-right pixel! Entire image no data?\n");
 
@@ -159,44 +171,58 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     double time_min = min4(tl_time, tr_time, bl_time, br_time);
     double time_max = max4(tl_time, tr_time, bl_time, br_time);
 
-    double slant_incr = pixel_size;
-    int ons = (slant_end - slant_start) / slant_incr;
-
+    double slant_incr;
     double time_start, time_end, time_incr;
-    int onl;
+    int onl, ons;
 
-    if (inMeta->sar) {
-        // in this case, we original data has a SAR block, we will use the
-        // same azimuth time per pixel.
-        time_incr = inMeta->sar->azimuth_time_per_pixel;
-        if (time_incr > 0) {
-            onl = (time_max - time_min) / time_incr;
+    if (pixel_size > 0) {
+        slant_incr = pixel_size;
+        ons = (slant_end - slant_start) / slant_incr;
+
+        if (inMeta->sar) {
+            // in this case, the original data has a SAR block, we will use the
+            // same azimuth time per pixel.
+            time_incr = inMeta->sar->azimuth_time_per_pixel;
+            if (time_incr > 0) {
+                time_start = time_min;
+                time_end = time_max;
+            }
+            else {
+                time_start = time_max;
+                time_end = time_min;
+            }
+            onl = (time_end - time_start) / time_incr;
+        }
+        else {
+            // here, no sar block in the original data, just make a square
+            // image with increasing time
+            onl = ons;
+            time_incr = (time_max - time_min) / (double)onl;
             time_start = time_min;
             time_end = time_max;
         }
-        else {
-            onl = (time_min - time_max) / time_incr;
-            time_start = time_max;
-            time_end = time_min;
-        }
     }
     else {
-        // here, no sar block in the original data, just make a square image
-        // with increasing time
-        onl = ons;
+        // not provided a slant range pixel size... make a square image,
+        // with the same height as the input image
+        onl = nl;
         time_incr = (time_max - time_min) / (double)onl;
         time_start = time_min;
         time_end = time_max;
+
+        ons = onl;
+        pixel_size = slant_incr = (slant_end - slant_start) / (double)ons;
     }
 
     asfPrintStatus("  Slant range values: %f -> %f\n", slant_start, slant_end);
+    asfPrintStatus("  Slant range pixel size: %f\n", pixel_size);
     asfPrintStatus("  Time values: %f -> %f\n", time_start, time_end);
     asfPrintStatus("  Output Image will be %dx%d LxS\n", onl, ons);
 
     FloatImage *out = float_image_new(ons, onl);
 
     // now, we're on to the resampling stage.. loop through output pixels
-    asfPrintStatus("Generating output image...\n");
+    asfPrintStatus("Generating slant range image...\n");
 
     for (ii=0; ii<onl; ++ii) {
         asfLineMeter(ii,onl);
@@ -220,17 +246,6 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         }
     }
 
-    char *img_file = appendExt(outfile, ".img");
-    asfPrintStatus("Writing %s...\n", img_file);
-    ret = float_image_store(out, img_file, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-    free(img_file);
-
-    if (!ret)
-        asfPrintError("Error storing output image!\n");
-
-    float_image_free(in);
-    float_image_free(out);
-
     // set up output metadata
     meta_parameters *outMeta = meta_read(infile);
 
@@ -247,9 +262,20 @@ int proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     outMeta->general->start_sample = outMeta->general->start_line = 0;
     
     char *meta_file = appendExt(outfile, ".meta");
-    asfPrintStatus("Writing %s...\n", meta_file);
+    asfPrintStatus("Writing %s\n", meta_file);
     meta_write(outMeta, meta_file);
     free(meta_file);
+
+    char *img_file = appendExt(outfile, ".img");
+    asfPrintStatus("Writing %s\n", img_file);
+    ret = float_image_store(out, img_file, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    free(img_file);
+
+    if (ret != 0)
+        asfPrintError("Error storing output image!\n");
+
+    float_image_free(in);
+    float_image_free(out);
 
     meta_free(outMeta);
     meta_free(inMeta);
@@ -292,5 +318,12 @@ int to_sr_pixsiz(const char *infile, const char *outfile, double pixel_size)
 
 int to_sr(const char *infile, const char *outfile)
 {
-    return to_sr_pixsiz(infile, outfile, -1);
+    char *img_in = MALLOC(sizeof(char)*(strlen(infile)+10));
+    char *img_out = MALLOC(sizeof(char)*(strlen(outfile)+10));
+    create_name(img_in, infile, ".img");
+    create_name(img_out, outfile, ".img");
+    int ret = to_sr_pixsiz(img_in, img_out, -1);
+    FREE(img_in);
+    FREE(img_out);
+    return ret;
 }

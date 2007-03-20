@@ -917,18 +917,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // all temporary files are going to be placed in the output directory
   output_dir = getOutputDir(outFile);
 
-  asfPrintStatus("Reading SAR metadata from: %s", sarFile);
+  asfPrintStatus("Reading SAR metadata from: %s\n", sarFile);
   asfRequire(extExists(sarFile, ".meta") || extExists(sarFile, ".ddr"),
              "\nSAR metadata file missing or cannot be opened\n");
   metaSAR = meta_read(sarFile);
 
-  if (is_alos(metaSAR))
-      asfPrintError("Terrain correction of ALOS data is not yet supported.\n");
-  if (is_scansar(metaSAR))
-      asfPrintError("Terrain correction of ScanSar data is not yet "
-                    "supported.\n");
+  //if (is_alos(metaSAR))
+  //    asfPrintError("Terrain correction of ALOS data is not yet supported.\n");
+  //if (is_scansar(metaSAR))
+  //    asfPrintError("Terrain correction of ScanSar data is not yet "
+  //                  "supported.\n");
 
-  asfPrintStatus("Reading DEM metadata from: %s", demFile);
+  asfPrintStatus("Reading DEM metadata from: %s\n", demFile);
   asfRequire(extExists(demFile, ".meta") || extExists(demFile, ".ddr"),
              "\nDEM metadata file missing or cannot be opened\n");
   metaDEM = meta_read(demFile);
@@ -964,7 +964,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   }
 
   if (userMaskFile) {
-    asfPrintStatus("Reading MASK metadata from: %s", userMaskFile);
+    asfPrintStatus("Reading MASK metadata from: %s\n", userMaskFile);
     asfRequire(extExists(userMaskFile, ".meta") || extExists(userMaskFile, ".ddr"),
                "\nMASK metadata file missing or cannot be opened\n");
     metamask = meta_read(userMaskFile);
@@ -1081,25 +1081,18 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		   metaSAR->general->line_count,
 		   metaSAR->general->sample_count,
 		   metaSAR->general->x_pixel_size);
-  } else if (metaSAR->sar->image_type == 'P') {
+  }
+  else if (metaSAR->sar->image_type == 'P' ||
+           metaSAR->sar->image_type == 'G')
+  {
     // map projected... at the moment, just support scansar projection
     srFile = appendSuffix(sarFile, "_slant");
     //double sr_pixel_size =
     //  (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
     //   meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
 
-    if (metaSAR->projection->type != SCANSAR_PROJECTION) {
-        asfPrintError("Terrain correction of projected data is not "
-                      "supported.\n");
-    } else {
-        // error out for now, but we intend to get this working in 3.1 or so
-        asfPrintError("Terrain correction of SCANSAR data is not "
-                      "supported, yet.\n");
-    }
-
-    asfPrintStatus("Converting SCANSAR projected data to Slant Range...\n");
-
-    //atct_to_sr(resampleFile, srFile, sr_pixel_size);
+    asfPrintStatus("Converting projected data to Slant Range...\n");
+    to_sr(resampleFile, srFile);
 
     meta_free(metaSAR);
     metaSAR = meta_read(srFile);
