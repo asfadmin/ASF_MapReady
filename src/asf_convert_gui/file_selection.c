@@ -41,7 +41,7 @@ static SIGNAL_CALLBACK void ok_clicked()
 
         do {
             gchar *s = (gchar *) iter->data;
-            printf("Adding: %s\n", s);
+            //printf("Adding: %s\n", s);
             add_to_files_list(s);
             g_free(s);
             iter =  iter->next;
@@ -192,7 +192,6 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
 #ifdef USE_GTK_FILE_CHOOSER
 
-        printf("File chooser!\n");
     if (!browse_widget)
         create_file_chooser_dialog();
 
