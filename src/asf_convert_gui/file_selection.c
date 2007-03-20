@@ -30,15 +30,25 @@ static SIGNAL_CALLBACK void cancel_clicked()
 // called when "ok" clicked on the GtkFileChooser
 static SIGNAL_CALLBACK void ok_clicked()
 {
-    char *selected_file = gtk_file_chooser_get_filename(
+    GSList *files = gtk_file_chooser_get_filenames(
         GTK_FILE_CHOOSER(browse_widget));
 
     gtk_widget_hide(browse_widget);
 
-    if (selected_file)
+    if (files)
     {
-        add_to_files_list(selected_file);
-        g_free(selected_file);
+        GSList *iter = files;
+
+        do {
+            gchar *s = (gchar *) iter->data;
+            printf("Adding: %s\n", s);
+            add_to_files_list(s);
+            g_free(s);
+            iter =  iter->next;
+        } 
+        while(iter);
+ 
+        g_slist_free(files);
     }
 }
 
@@ -74,6 +84,21 @@ static void create_file_chooser_dialogs()
     gtk_file_filter_add_pattern(D_filt, "*.D");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
 
+    GtkFileFilter *stf_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(stf_filt, "STF Files (*.000)");
+    gtk_file_filter_add_pattern(stf_filt, "*.000");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), stf_filt);
+
+    GtkFileFilter *raw_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(raw_filt, "RAW Files (*.raw)");
+    gtk_file_filter_add_pattern(raw_filt, "*.raw");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), raw_filt);
+    
+    GtkFileFilter *cpx_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(cpx_filt, "Complex Files (*.cpx)");
+    gtk_file_filter_add_pattern(cpx_filt, "*.cpx");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), cpx_filt);
+
     GtkFileFilter *alos_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
     gtk_file_filter_add_pattern(alos_filt, "LED-*");
@@ -81,8 +106,11 @@ static void create_file_chooser_dialogs()
 
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
-    gtk_file_filter_add_pattern(all_filt, "*.*");
+    gtk_file_filter_add_pattern(all_filt, "*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), all_filt);
+
+    // allow multi-select
+    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(browse_widget), TRUE);
 
     // we need to make these modal -- if the user opens multiple "open"
     // dialogs, we'll get confused on the callbacks
