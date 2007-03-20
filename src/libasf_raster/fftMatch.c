@@ -82,7 +82,7 @@ static void findPeak(float *corrImage,float *dx,float *dy,float *doubt,
   int closeX=5+chipX/16,closeY=5+chipY/16;
   
   /*Search for the peak with the highest correlation strength*/
-  int x,y,bestX,bestY;
+  int x,y,bestX=0,bestY=0;
   float bestMatch=-100000000000.0;
   float bestLocX=delX,bestLocY=delY;
   //asfPrintStatus("   Searching for Peak (largest offset=%d lines "
