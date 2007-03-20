@@ -1644,7 +1644,6 @@ settings_to_config_file(const Settings *s,
         if (s->mask_file_is_checked) {
             fprintf(cf, "mask = %s\n", s->mask_file);
         }
-        fprintf(cf, "fill value = -1\n");
         fprintf(cf, "\n");
     }
 
