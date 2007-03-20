@@ -22,7 +22,7 @@
 
 /* Gtk 2.6 has a very nice file chooser */
 /* On Windows, though, we'll still use the native one */
-#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 6 && defined(win32)
+#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 4 && !defined(win32)
 #define USE_GTK_FILE_CHOOSER
 #endif
 

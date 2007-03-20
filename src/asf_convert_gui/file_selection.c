@@ -49,13 +49,14 @@ static SIGNAL_CALLBACK void ok_clicked()
         while(iter);
  
         g_slist_free(files);
+        show_queued_thumbnails();
     }
 }
 
 // sets up the file chooser dialog
-static void create_file_chooser_dialogs() 
+static void create_file_chooser_dialog() 
 {
-    GtkWidget *parent = get_widget_checked("ait_main");
+    GtkWidget *parent = get_widget_checked("asf_convert");
 
     browse_widget = gtk_file_chooser_dialog_new(
         "Open Image File", GTK_WINDOW(parent),
@@ -191,6 +192,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
 #ifdef USE_GTK_FILE_CHOOSER
 
+        printf("File chooser!\n");
     if (!browse_widget)
         create_file_chooser_dialog();
 

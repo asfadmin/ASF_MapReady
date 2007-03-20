@@ -155,6 +155,150 @@ int set_mask_file(const char *file)
     return TRUE;
 }
 
+#ifdef USE_GTK_FILE_CHOOSER
+
+static GtkWidget *dem_browse_widget = NULL;
+static GtkWidget *mask_browse_widget = NULL;
+
+static SIGNAL_CALLBACK void dem_cancel_clicked()
+{
+    gtk_widget_hide(dem_browse_widget);
+}
+
+static SIGNAL_CALLBACK void mask_cancel_clicked()
+{
+    gtk_widget_hide(mask_browse_widget);
+}
+
+static SIGNAL_CALLBACK void dem_ok_clicked()
+{
+    gchar *file = gtk_file_chooser_get_filename(
+        GTK_FILE_CHOOSER(dem_browse_widget));
+
+    gtk_widget_hide(dem_browse_widget);
+
+    if (file)
+        set_dem_file(file);
+}
+
+static SIGNAL_CALLBACK void mask_ok_clicked()
+{
+    gchar *file = gtk_file_chooser_get_filename(
+        GTK_FILE_CHOOSER(mask_browse_widget));
+
+    gtk_widget_hide(mask_browse_widget);
+
+    if (file)
+        set_mask_file(file);
+}
+
+static void create_file_chooser_dialogs() 
+{
+    GtkWidget *parent = get_widget_checked("asf_convert");
+
+    {
+        dem_browse_widget = gtk_file_chooser_dialog_new(
+            "Open DEM", GTK_WINDOW(parent),
+            GTK_FILE_CHOOSER_ACTION_OPEN,
+            GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+            GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+            NULL);
+        
+        // we need to extract the buttons, so we can connect them to our
+        // button handlers, above
+        GtkHButtonBox *box = 
+            (GtkHButtonBox*)(((GtkDialog*)dem_browse_widget)->action_area);
+        GList *buttons = box->button_box.box.children;
+        
+        GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+        GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+        
+        g_signal_connect((gpointer)cancel_btn, "clicked",
+                         G_CALLBACK(dem_cancel_clicked), NULL);
+        g_signal_connect((gpointer)ok_btn, "clicked",
+                         G_CALLBACK(dem_ok_clicked), NULL);
+        
+        // add the filters
+        GtkFileFilter *img_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(img_filt, "DEM Image Files (*.img)");
+        gtk_file_filter_add_pattern(img_filt, "*.img");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dem_browse_widget),
+                                    img_filt);
+
+        GtkFileFilter *tif_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(tif_filt, "GeoTIFF Files (*.tif)");
+        gtk_file_filter_add_pattern(tif_filt, "*.tif");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dem_browse_widget),
+                                    tif_filt);
+
+        GtkFileFilter *all_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+        gtk_file_filter_add_pattern(all_filt, "*");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(dem_browse_widget),
+                                    all_filt);
+
+        // we need to make these modal -- if the user opens multiple "open"
+        // dialogs, we'll get confused on the callbacks
+        gtk_window_set_modal(GTK_WINDOW(dem_browse_widget), TRUE);
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(dem_browse_widget),
+                                           TRUE);
+        gtk_dialog_set_default_response(GTK_DIALOG(dem_browse_widget),
+                                        GTK_RESPONSE_OK);
+    }
+
+    {
+        mask_browse_widget = gtk_file_chooser_dialog_new(
+            "Open DEM", GTK_WINDOW(parent),
+            GTK_FILE_CHOOSER_ACTION_OPEN,
+            GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
+            GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
+            NULL);
+        
+        // we need to extract the buttons, so we can connect them to our
+        // button handlers, above
+        GtkHButtonBox *box = 
+            (GtkHButtonBox*)(((GtkDialog*)mask_browse_widget)->action_area);
+        GList *buttons = box->button_box.box.children;
+        
+        GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+        GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+        
+        g_signal_connect((gpointer)cancel_btn, "clicked",
+                         G_CALLBACK(mask_cancel_clicked), NULL);
+        g_signal_connect((gpointer)ok_btn, "clicked",
+                         G_CALLBACK(mask_ok_clicked), NULL);
+        
+        // add the filters
+        GtkFileFilter *img_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(img_filt, "DEM Image Files (*.img)");
+        gtk_file_filter_add_pattern(img_filt, "*.img");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(mask_browse_widget),
+                                    img_filt);
+
+        GtkFileFilter *tif_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(tif_filt, "GeoTIFF Files (*.tif)");
+        gtk_file_filter_add_pattern(tif_filt, "*.tif");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(mask_browse_widget),
+                                    tif_filt);
+
+        GtkFileFilter *all_filt = gtk_file_filter_new();
+        gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+        gtk_file_filter_add_pattern(all_filt, "*");
+        gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(mask_browse_widget),
+                                    all_filt);
+
+        // we need to make these modal -- if the user opens multiple "open"
+        // dialogs, we'll get confused on the callbacks
+        gtk_window_set_modal(GTK_WINDOW(mask_browse_widget), TRUE);
+        gtk_window_set_destroy_with_parent(GTK_WINDOW(mask_browse_widget),
+                                           TRUE);
+        gtk_dialog_set_default_response(GTK_DIALOG(mask_browse_widget),
+                                        GTK_RESPONSE_OK);
+    }
+}
+
+#endif
+
 SIGNAL_CALLBACK void
 on_dem_browse_button_clicked(GtkWidget *widget)
 {
@@ -214,12 +358,26 @@ on_dem_browse_button_clicked(GtkWidget *widget)
 
     free(dir);
 
-#else
+#else // #ifdef win32
+
+    /* Linux version -- use GtkFileChooser if possible */
+
+#ifdef USE_GTK_FILE_CHOOSER
+
+    if (!dem_browse_widget)
+        create_file_chooser_dialogs();
+
+    gtk_widget_show(dem_browse_widget);
+
+#else // #ifdef USE_GTK_FILE_CHOOSER
+
     GtkWidget *file_selection_dialog =
         get_widget_checked("dem_file_selection");
 
     gtk_widget_show(file_selection_dialog);
-#endif
+
+#endif // #ifdef USE_GTK_FILE_CHOOSER
+#endif // #ifdef win32
 }
 
 static void
@@ -413,12 +571,26 @@ on_mask_browse_button_clicked(GtkWidget *widget)
 
     free(dir);
 
-#else
+#else // #ifdef win32
+
+    /* Linux version -- use GtkFileChooser if possible */
+
+#ifdef USE_GTK_FILE_CHOOSER
+
+    if (!mask_browse_widget)
+        create_file_chooser_dialogs();
+
+    gtk_widget_show(mask_browse_widget);
+
+#else // #ifdef USE_GTK_FILE_CHOOSER
+
     GtkWidget *file_selection_dialog =
         get_widget_checked("mask_file_selection");
 
     gtk_widget_show(file_selection_dialog);
-#endif
+
+#endif // #ifdef USE_GTK_FILE_CHOOSER
+#endif // #ifdef win32
 }
 
 static void
