@@ -125,12 +125,12 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 
   out=FOPEN(outName,"w");
 
-  asfPrintStatus("\nReading metadata from:\n%s\n\n", sarName);
+  //asfPrintStatus("Reading metadata from: %s\n", sarName);
   asfRequire(extExists(sarName, ".meta") || extExists(sarName, ".ddr"),
              "\nSAR metadata file missing or cannot be opened\n");
   metaSar = meta_read(sarName);
 
-  asfPrintStatus("\nReading metadata from:\n%s\n\n", demName);
+  //asfPrintStatus("Reading metadata from: %s\n", demName);
   asfRequire(extExists(demName, ".meta") || extExists(demName, ".ddr"),
              "\nDEM (or mask) metadata file missing or cannot be opened\n");
   metaDem = meta_read(demName);

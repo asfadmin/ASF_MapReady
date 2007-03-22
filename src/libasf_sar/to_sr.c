@@ -209,13 +209,31 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         }
     }
     else {
-        // not provided a slant range pixel size... make a square image,
-        // with the same height as the input image
-        onl = nl;
-        time_incr = (time_max - time_min) / (double)onl;
-        time_start = time_min;
-        time_end = time_max;
+        // not provided a slant range pixel size, we'll figure something out
 
+        if (inMeta->sar) {
+            // use the same azimuth time per pixel.
+            time_incr = inMeta->sar->azimuth_time_per_pixel;
+            if (time_incr > 0) {
+                time_start = time_min;
+                time_end = time_max;
+            }
+            else {
+                time_start = time_max;
+                time_end = time_min;
+            }
+            onl = (time_end - time_start) / time_incr;
+        }
+        else {
+            // no info... determine azimuth time per pixel by keeping
+            // the height the same as in the original image
+            onl = nl;
+            time_incr = (time_max - time_min) / (double)onl;
+            time_start = time_min;
+            time_end = time_max;
+        }
+
+        // make it square, to get the slant range pixel size
         ons = onl;
         pixel_size = slant_incr = (slant_end - slant_start) / (double)ons;
     }
@@ -223,7 +241,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     asfPrintStatus("  Slant range values: %f -> %f\n", slant_start, slant_end);
     asfPrintStatus("  Slant range pixel size: %f\n", pixel_size);
     asfPrintStatus("  Time values: %f -> %f\n", time_start, time_end);
-    asfPrintStatus("  Output Image will be %dx%d LxS\n", onl, ons);
+    asfPrintStatus("  Output Image will be %5d x %5d LxS\n", onl, ons);
+    asfPrintStatus("      (Input Image was %5d x %5d LxS)\n", nl, ns);
 
     FloatImage *out = float_image_new(ons, onl);
 
@@ -289,7 +308,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int jj_n2 = jj_n/2;
 
     for (ii=0; ii<onl; ++ii) {
-        //asfLineMeter(ii,onl);
+        asfLineMeter(ii,onl);
         double time = time_start + ii * time_incr;
 
         // set up horizontal splines for this row
@@ -332,7 +351,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
                 avg_error += err;
                 ++count;
             }
-
+/*
             // right on our grid points, the error should be zero
             // can delete this stuff, probably, once this is all debugged
             if (ii%ii_n == 0 && jj%jj_n == 0) {
@@ -345,8 +364,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
                 //printf("(%d,%d)--%f [[Actual: (%f,%f) Splined: (%f,%f)]]\n",
                 //       ii, jj, err, line_real, samp_real, line, samp);
-
-                if (err > .002)
+                if (err > .03)
                 {
                     asfPrintError("Large error on a grid point!\n"
                                   "Grid Point: (%d,%d) (%f,%f) (%f,%f)\n"
@@ -355,7 +373,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
                                   line_real, samp_real, line, samp, err);
                 }
             }
-
+*/
             // now interpolate within the original image
             // if we are outside, use "no_data" from metadata
             double val = inMeta->general->no_data;
@@ -405,6 +423,16 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     // set up output metadata
     meta_parameters *outMeta = meta_read(infile);
 
+    if (outMeta->transform) {
+        FREE(outMeta->transform);
+        outMeta->transform = NULL;
+    }
+
+    if (outMeta->projection) {
+        FREE(outMeta->projection);
+        outMeta->projection = NULL;
+    }
+
     outMeta->general->line_count = onl;
     outMeta->general->sample_count = ons;
 
@@ -412,8 +440,16 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         outMeta->sar = meta_sar_init();
 
     outMeta->sar->image_type = 'S';
+
     outMeta->sar->azimuth_time_per_pixel = time_incr;
+    outMeta->sar->time_shift = time_start;
+
+    outMeta->general->y_pixel_size = inMeta->sar->azimuth_time_per_pixel / 
+                                     time_incr * inMeta->general->y_pixel_size;
+
     outMeta->sar->slant_range_first_pixel = slant_start;
+    outMeta->general->x_pixel_size = slant_incr;
+
     outMeta->sar->line_increment = outMeta->sar->sample_increment = 1;
     outMeta->general->start_sample = outMeta->general->start_line = 0;
     

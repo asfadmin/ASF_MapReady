@@ -118,6 +118,8 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
   int qf_saved = quietflag;
   quietflag = 1;
   fftMatch(file1, file2, NULL, dx, dy, cert);
+  if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0)
+      fftMatch(file2, file1, NULL, dx, dy, cert);
   quietflag = qf_saved;
 }
 
@@ -715,7 +717,6 @@ int match_dem(meta_parameters *metaSAR,
     }
     else {
       // Match the real and simulated SAR image to determine the offset.
-      // Read the offset out of the offset file.
       fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
     }
 
@@ -814,7 +815,7 @@ int match_dem(meta_parameters *metaSAR,
                         " Original fftMatch offset: "
                         "(dx,dy) = %14.9f,%14.9f\n"
                         "   After shift, offset is: "
-                            "(dx,dy) = %14.9f,%14.9f\n",
+                        "(dx,dy) = %14.9f,%14.9f\n",
                         dx, dy, dx2, dy2);
       }
   }
@@ -1083,7 +1084,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		   metaSAR->general->x_pixel_size);
   }
   else if (metaSAR->sar->image_type == 'P' ||
-           metaSAR->sar->image_type == 'G')
+           metaSAR->sar->image_type == 'R')
   {
     // map projected... at the moment, just support scansar projection
     srFile = appendSuffix(sarFile, "_slant");
