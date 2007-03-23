@@ -41,6 +41,7 @@ void vecNormalize(vector *v);
 double vecDot(const vector a,const vector b);
 void vecCross(const vector a,const vector b,vector *aXb);
 void vecMul(const vector *matrix,const vector src,vector *dest);
+double vecAngle(const vector a, const vector b);
 
 /************** Big Routines *****************
 	The below routines form the bulk of the geolocation
