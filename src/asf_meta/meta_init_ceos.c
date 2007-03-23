@@ -57,7 +57,8 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 ceos_description *get_ceos_description(const char *fName);
 ceos_description *get_sensor(const char *fName);
 double get_firstTime(const char *fName);
-void get_alos_delta_time (const char *fileName, double *delta);
+int get_alos_delta_time (const char *fileName, meta_parameters *meta,
+                         double *delta);
 void get_polarization (const char *fName, char *polarization, double *chirp);
 
 /* Prototypes from meta_init_stVec.c */
@@ -533,9 +534,13 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
     }
    else if (strcmp(meta->general->sensor, "ALOS") == 0) {
      double delta;
-     get_alos_delta_time (in_fName, &delta);
-     meta->sar->azimuth_time_per_pixel = 
-       delta / meta->sar->original_line_count;
+     if (get_alos_delta_time (in_fName, meta, &delta)) {
+         meta->sar->azimuth_time_per_pixel = 
+             delta / meta->sar->original_line_count;
+     } else {
+         // this isn't actually a fatal problem, for ALOS data...
+         meta->sar->azimuth_time_per_pixel = MAGIC_UNSET_DOUBLE;
+     }
    }
    else {
       firstTime = get_firstTime(dataName[0]);
@@ -1523,8 +1528,58 @@ void get_polarization (const char *fName, char *polarization, double *chirp)
    *chirp = chirp_rate;
 }
 
+// This is experimental code... not used in 3.1
+static double calc_delta_time(const char *fileName, meta_parameters *meta)
+{
+    //  1) Get lat/lon coordinates for the center/top and center/bottom points
+    //  2) Get those into UTM
+    //  3) Calculate distance between them
+    //  4) Use satellite velocity to calculate the image acquisition length
+
+    // At this point, we should have enough of the metadata populated to
+    // successfully call meta_get_latLon
+
+    double lat_tc, lon_tc, x_tc, y_tc, z_tc; // top-center
+    double lat_bc, lon_bc, x_bc, y_bc, z_bc; // bottom-center
+
+    int samp = meta->general->sample_count / 2;
+    int line_top = 317;  //0
+    int line_bot = 9665; //meta->general->line_count - 1;
+
+    meta_get_latLon(meta, line_top, samp, 0, &lat_tc, &lon_tc);
+    meta_get_latLon(meta, line_bot, samp, 0, &lat_bc, &lon_bc);
+
+    // straight-line calculation
+    int zone = utm_zone(lon_tc); // ensure same zone for each
+
+    latLon2UTM_zone(lat_tc, lon_tc, 0, zone, &x_tc, &y_tc);
+    latLon2UTM_zone(lat_bc, lon_bc, 0, zone, &x_bc, &y_bc);
+
+    double d = hypot(x_tc-x_bc, y_tc-y_bc);
+
+    // spherical model calculation
+    double R = meta_get_earth_radius(meta, (line_bot-line_top)/2, samp);
+    vector v_tc, v_bc;
+    sph2cart(R,lat_tc*D2R,lon_tc*D2R,&v_tc);
+    sph2cart(R,lat_bc*D2R,lon_bc*D2R,&v_bc);
+
+    double ang = vecAngle(v_tc, v_bc);
+    double d1 = R*ang;
+
+    // nadir velocity is in the map projection data record
+    struct VMPDREC mpdr;
+    get_mpdr(fileName, &mpdr);
+    double v = mpdr.velnadir;
+
+    printf("top-center: (%f,%f)\n", lat_tc, lon_tc);
+    printf("bottom-center: (%f,%f)\n", lat_bc, lon_bc);
+    printf("d=%f\nv=%f\nd1=%f\nt=%f\n", d, v, d1, d1/v);
+    return d/v;
+}
+
 // Get the delta image time for ALOS data out of the summary file
-void get_alos_delta_time (const char *fileName, double *delta)
+int get_alos_delta_time (const char *fileName, meta_parameters *meta,
+                         double *delta)
 {
   FILE *fp;
   struct dataset_sum_rec dssr;
@@ -1538,12 +1593,30 @@ void get_alos_delta_time (const char *fileName, double *delta)
   // Assume that workreport is following the basename paradigm
   sprintf(summaryFile, "%s.txt", fileName);
   if (!fileExists(summaryFile)) {
-    asfPrintErrorMaybe("Summary file '%s' does not exist.\nMight need to "
-                       "rename 'workreport' file to follow basename scheme.\n",
-                       summaryFile);
-    FREE(summaryFile);
-    *delta = 0;
-    return;
+
+      asfPrintWarning("Summary file '%s' not found.  Will try 'workreport'\n",
+                      summaryFile);
+
+      // try "path/workreport"
+      char *path = getPath(fileName);
+      if (strlen(path) > 0)
+          sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
+      else
+          strcpy(summaryFile, "workreport");
+      FREE(path);
+
+      if (!fileExists(summaryFile)) {
+
+        asfPrintWarning("Summary file '%s' does not exist.\n"
+                        "If you received a 'workreport' file with this data "
+                        "please make sure it is\nin the same directory as "
+                        "the data file.\n",
+                        summaryFile);
+        FREE(summaryFile);
+        *delta = 0;
+        return 0;
+      } else
+          asfPrintStatus("Summary file 'workreport' found.\n");
   }
 
   fp = FOPEN(summaryFile, "r");
@@ -1555,12 +1628,12 @@ void get_alos_delta_time (const char *fileName, double *delta)
       date_alos2date(dateStr, &summary_date, &summary_time);
       if (date_difference(&dssr_date, &dssr_time,
 			  &summary_date, &summary_time) > 0.0) {
-	asfPrintErrorMaybe("Summary file does not correspond to leader file.\n"
-		      "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
+	asfPrintWarning("Summary file does not correspond to leader file.\n"
+                        "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
         *delta = 0;
         FCLOSE(fp);
         FREE(summaryFile);
-        return;
+        return 0;
       }
     }
     else if (strstr(line, "Img_SceneStartDateTime")) {
@@ -1576,7 +1649,14 @@ void get_alos_delta_time (const char *fileName, double *delta)
       date_alos2date(dateStr, &end_date, &end_time);
     }
   }
+
   *delta = date_difference(&start_date, &start_time, &end_date, &end_time);
   FREE(summaryFile);
   FCLOSE(fp);
+  return 1;
+  // FIXME: for comparison, let's see what our calculation would have gotten
+  //asfPrintStatus(" From workreport: %f\n", *delta);
+  //double delta2 = calc_delta_time(fileName, meta);
+  //asfPrintStatus("From calculation: %f\n", delta2);
+  //asfPrintStatus("         %% Error: %f%%\n", (*delta-delta2)/(*delta)*100);
 }

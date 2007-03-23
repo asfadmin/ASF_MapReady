@@ -332,9 +332,19 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     }
 
     /* FIXME! Temporary warning about unsupported ALOS radiometries */
-    if (strcmp(meta->general->sensor, "ALOS") == 0 &&
-        (radiometry == r_POWER)) {
+    if (strcmp(meta->general->sensor, "ALOS") == 0)
+    {
+        if (radiometry == r_POWER)
             asfPrintError("Currently unsupported radiometry for ALOS!\n");
+
+        /* If the azimuth time per pixel calculation failed (presumably
+           because of a missing "workreport" file), error out on gamma/beta */
+        if (!meta_is_valid_double(meta->sar->azimuth_time_per_pixel) &&
+            (radiometry == r_GAMMA || radiometry == r_BETA))
+            asfPrintError("Without an ALOS 'workreport' file, cannot output "
+                          "GAMMA or BETA.\nCheck if you received a workreport "
+                          "file with your data, and ensure it is\nin the same "
+                          "directory as the data file.\n");
     }
 
     /* Let the user know what format we are working on */

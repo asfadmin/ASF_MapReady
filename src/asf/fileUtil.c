@@ -518,3 +518,17 @@ remove_dir(const char *name)
   return remove(name);
 }
 
+char *
+getPath(const char *in)
+{
+  char *dir = malloc(sizeof(char)*(strlen(in) + 2));
+  char *file = malloc(sizeof(char)*(strlen(in) + 2));
+
+  split_dir_and_file(in, dir, file);
+  free(file);
+
+  if (dir[strlen(dir) - 1] == DIR_SEPARATOR)
+      dir[strlen(dir) - 1] = '\0';
+
+  return dir;
+}

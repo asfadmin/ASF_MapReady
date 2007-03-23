@@ -186,6 +186,9 @@ void fileCopy(const char *src, const char *dst);
 int create_dir(const char *dir);
 int create_clean_dir(const char *dir);
 int remove_dir(const char *dir);
+/* return newly allocated string, with just the path of the given
+   file.  returns empty if no dir info given.  */
+char * getPath(const char *in);
 
 /******************************************************************************
  * ioLine: Grab any data type and fill a buffer of _type_ data.
