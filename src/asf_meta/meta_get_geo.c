@@ -58,7 +58,14 @@ int meta_get_latLon(meta_parameters *meta,
   double hgt;
 
   if (meta->transform) {
-      alos_to_latlon(meta, xSample, yLine, elev, lat, lon, &hgt);
+      double l = yLine, s = xSample;
+      if (meta->sar) {
+          l = (double)meta->sar->original_line_count/
+              (double)meta->general->line_count * yLine;
+          s = (double)meta->sar->original_sample_count/
+              (double)meta->general->sample_count * xSample;
+      }
+      alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
   }
   else if(meta->sar && !meta->projection) {
     if (meta->sar->image_type=='S' || meta->sar->image_type=='G') {

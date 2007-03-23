@@ -117,9 +117,21 @@ fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
 {
   int qf_saved = quietflag;
   quietflag = 1;
+
   fftMatch(file1, file2, NULL, dx, dy, cert);
-  if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0)
+
+  if (!meta_is_valid_double(*dx) || !meta_is_valid_double(*dy) || cert==0) {
+      // bad match the first way, sometimes we can get a good match by
+      // reversing the order (chips are taken from the other file)
+      // in this case, any valid offsets will need to be flipped
       fftMatch(file2, file1, NULL, dx, dy, cert);
+
+      if (meta_is_valid_double(*dx))
+          *dx = -(*dx);
+      if (meta_is_valid_double(*dy))
+          *dy = -(*dy);
+  }
+
   quietflag = qf_saved;
 }
 

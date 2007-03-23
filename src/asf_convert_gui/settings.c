@@ -1678,9 +1678,12 @@ settings_to_config_file(const Settings *s,
         if (!s->truecolor_is_checked && !s->falsecolor_is_checked &&
             !s->pauli_is_checked && !s->sinclair_is_checked)
         {
-          const char *r = strlen(s->red)   > 0 ? s->red   : "ignore";
-          const char *g = strlen(s->green) > 0 ? s->green : "ignore";
-          const char *b = strlen(s->blue)  > 0 ? s->blue  : "ignore";
+          const char *r =
+            strlen(s->red)>0 && strcmp(s->red,"-")!=0 ? s->red : "ignore";
+          const char *g =
+            strlen(s->green)>0 && strcmp(s->green,"-")!=0 ? s->green : "ignore";
+          const char *b =
+            strlen(s->blue)>0 && strcmp(s->blue,"-")!=0 ? s->blue : "ignore";
           fprintf(cf, "rgb banding = %s,%s,%s\n", r, g, b);
         }
         else {
