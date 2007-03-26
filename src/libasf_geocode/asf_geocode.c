@@ -888,6 +888,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       // Projection coordinates for the current grid point.
       double cxproj = min_x + x_spacing * jj;
       double cyproj = min_y + y_spacing * ii;
+
       // Corresponding latitude and longitude.
       double lat, lon;
       ret = unproject (pp, cxproj, cyproj, ASF_PROJ_NO_HEIGHT,
@@ -896,8 +897,16 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	// Details of the error should have already been printed.
 	asfPrintError ("Projection Error!\n");
       }
+
       lat *= R2D;
       lon *= R2D;
+
+      // here we have some kludgery to handle crossing the meridian
+      if (fabs(lon-lon_0) > 300) {
+          if (lon_0 < 0 && lon > 0) lon -= 360;
+          if (lon_0 > 0 && lon < 0) lon += 360;
+      }
+
       // Corresponding pixel indicies in input image.
       double x_pix, y_pix;
       if ( input_projected ) {
