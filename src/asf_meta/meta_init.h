@@ -26,14 +26,16 @@ typedef struct {
     ESA,
     CDPF,
     EOC,
-    RSI
+    RSI,
+    JPL
   } facility;
   enum {
     unknownSatellite,
     ERS,
     JERS,
     RSAT,
-    ALOS
+    ALOS,
+    SIR_C
   } satellite;
   enum {
     unknownSensor,
