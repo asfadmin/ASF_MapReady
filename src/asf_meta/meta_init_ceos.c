@@ -188,6 +188,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    /* Determine satellite and beam mode */
    strcpy(meta->general->sensor, dssr->mission_id);
    strtok(meta->general->sensor," ");/*Remove spaces from field.*/
+   if (strcmp(meta->general->sensor, "STS-68")==0)
+     sprintf(meta->general->sensor, "SIR-C");
    sprintf(meta->general->sensor_name,"SAR");
    if (strlen(dssr->beam1) <= (MODE_FIELD_STRING_MAX)) {
       strcpy(meta->general->mode, dssr->beam1);
@@ -213,6 +215,11 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      strcpy(meta->general->sensor,"ALOS");
      strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
      get_polarization(dataName[0], meta->sar->polarization, &meta->sar->chirp_rate);
+   }
+   else if (strncmp(dssr->sensor_id,"SIR-C",6)==0) {
+      strcpy(meta->general->sensor,"SIR_C");
+      strcpy(meta->general->mode, "STD");
+      sprintf(meta->sar->polarization, "VV");
    }
    else if (strncmp(dssr->sensor_id,"RSAT-1",6)==0) {
      /* probably need to check incidence angle to figure out what is going on */
@@ -355,6 +362,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      meta->general->line_count   = dssr->sc_lin*2;
      meta->general->sample_count = dssr->sc_pix*2;
    }
+   // SIR-C seems to have a 12 byte line header that is not reported
+   if (strcmp(meta->general->sensor,"SIR-C")==0)
+     meta->general->sample_count += 12;
 
    /* simple parameters used below */
    meta->sar->wavelength = dssr->wave_length *
@@ -485,6 +495,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
 	if (mpdr) // geocoded image have look count information
 	  meta->sar->look_count = (int) (dssr->n_azilok + 0.5);
 	break;
+      case SIR_C:
+        break;
       case unknownSatellite:
 	assert (0);
 	break;
@@ -541,6 +553,11 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
          // this isn't actually a fatal problem, for ALOS data...
          meta->sar->azimuth_time_per_pixel = MAGIC_UNSET_DOUBLE;
      }
+   }
+   else if (strcmp(meta->general->sensor, "SIR-C") == 0) {
+     double delta = 15;
+     meta->sar->azimuth_time_per_pixel = 
+       delta / meta->sar->original_line_count;
    }
    else {
       firstTime = get_firstTime(dataName[0]);
@@ -633,6 +650,10 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    strcpy(meta->sar->satellite_clock_time, dssr->sat_clktim);
    strtok(meta->sar->satellite_clock_time, " ");/*Remove spaces from field*/
 
+   // FIXME: Need to sort out state vectors. Cannot do anything afterwards.
+   if (strcmp(meta->general->sensor,"SIR-C") == 0)
+     return;
+
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
   * meta->state_vectors structure be filled */
    ceos_init_stVec(in_fName,ceos,meta);
@@ -711,7 +732,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
 
    /* Lets fill in the location block */
-   if (asf_facdr && meta->location) {
+   if (!meta->location)
+     meta->location = meta_location_init();
+   if (asf_facdr) {
      meta->location->lat_start_near_range = asf_facdr->nearslat;
      meta->location->lon_start_near_range = asf_facdr->nearslon;
      meta->location->lat_start_far_range = asf_facdr->farslat;
@@ -720,6 +743,30 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      meta->location->lon_end_near_range = asf_facdr->nearelon;
      meta->location->lat_end_far_range = asf_facdr->farelat;
      meta->location->lon_end_far_range = asf_facdr->farelon;
+   }
+   else {
+     double line_count = meta->general->line_count;
+     double sample_count = meta->general->sample_count;
+     meta_get_latLon(meta, 0, 0, 0, 
+		     &meta->location->lat_start_near_range, 
+		     &meta->location->lon_start_near_range);
+     meta->location->lat_start_near_range *= R2D;
+     meta->location->lon_start_near_range *= R2D;
+     meta_get_latLon(meta, line_count, 0, 0, 
+		     &meta->location->lat_end_near_range, 
+		     &meta->location->lon_end_near_range);
+     meta->location->lat_end_near_range *= R2D;
+     meta->location->lon_end_near_range *= R2D;
+     meta_get_latLon(meta, line_count, sample_count, 0, 
+		     &meta->location->lat_end_far_range, 
+		     &meta->location->lon_end_far_range);
+     meta->location->lat_end_far_range *= R2D;
+     meta->location->lon_end_far_range *= R2D;
+     meta_get_latLon(meta, 0, sample_count, 0, 
+		     &meta->location->lat_start_far_range, 
+		     &meta->location->lon_start_far_range);
+     meta->location->lat_start_far_range *= R2D;
+     meta->location->lon_start_far_range *= R2D;
    }
 
    // Now that everything is calculated we can set the image type for
@@ -1204,6 +1251,7 @@ ceos_description *get_ceos_description(const char *fName)
     else if (0==strncmp(satStr,"J",1)) ceos->satellite=JERS;
     else if (0==strncmp(satStr,"R",1)) ceos->satellite=RSAT;
     else if (0==strncmp(satStr,"A",1)) ceos->satellite=ALOS;
+    else if (0==strncmp(satStr,"S",1)) ceos->satellite=SIR_C;
     else {
       printf("get_ceos_description Warning! Unknown satellite '%s'!\n",satStr);
       ceos->satellite=unknownSatellite;
@@ -1326,7 +1374,7 @@ ceos_description *get_ceos_description(const char *fName)
       ceos->facility=ESA;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
       else {
-	printf("Get_ceos_description Warning! Unknown i-PAF product type '%s'!\n",
+	printf("Get_ceos_description Warning! Unknown I-PAF product type '%s'!\n",
 	       prodStr);
 	ceos->product=unknownProduct;
       }
@@ -1361,6 +1409,11 @@ ceos_description *get_ceos_description(const char *fName)
 	       prodStr);
 	ceos->product=unknownProduct;
       }
+    }
+    else if (0==strncmp(ceos->dssr.fac_id,"JPL",3)) {
+      printf("   Data set processed by JPL\n");
+      ceos->facility=JPL;
+      if (0==strncmp(prodStr, "REFORMATTED SIGNAL DATA", 23)) ceos->product=RAW;
     }
     else {
       printf( "****************************************\n"
