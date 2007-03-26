@@ -28,6 +28,7 @@ int fileExists(const char *name)
 
 char *findExt(const char *name)
 {
+  char *ext;
   int ii;
   ii = strlen(name) - 1;		/* Start at end of name.  */
   while ( (ii>0) && (name[ii] != '.') && !IS_DIR_SEPARATOR(name[ii]) ) {
@@ -35,9 +36,22 @@ char *findExt(const char *name)
        separator.*/
     ii--;
   }
-  if ( (ii>0) && (name[ii]=='.') )
-    /* We found an extension!  */
-    return (char *) &name[ii];
+  if ( (ii>0) && (name[ii]=='.') ) {
+    /* We found an extension! (maybe) */
+    ext = (char *) &name[ii];
+    if (strcmp(uc(ext), ".META") == 0 ||
+	strcmp(uc(ext), ".DDR") == 0 ||
+	strcmp(uc(ext), ".IMG") == 0 ||
+	strcmp(uc(ext), ".DEM") == 0 ||
+	strcmp(uc(ext), ".TIF") == 0 ||
+	strcmp(uc(ext), ".TIFF") == 0 ||
+	strcmp(uc(ext), ".JPG") == 0 ||
+	strcmp(uc(ext), ".JPEG") == 0 ||
+	strcmp(uc(ext), ".PGM") == 0)
+      return (char *) &name[ii];
+    else
+      return NULL;
+  }
   else
     /* We couldn't find an extension.  */
     return NULL;
