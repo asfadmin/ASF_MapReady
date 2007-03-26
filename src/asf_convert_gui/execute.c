@@ -351,7 +351,9 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         sprintf(thumbnail_name, "%s/%s_thumb.jpg", tmp_dir, basename);
 
         if (!fileExists(thumbnail_name)) {
-            if (strcmp(findExt(out_full), ".jpg") == 0) {
+            if (strcmp_case(findExt(out_full), ".jpg") == 0 ||
+                strcmp_case(findExt(out_full), ".jpeg") == 0)
+            {
                 scaling_required = TRUE;
                 strcpy(thumbnail_name, out_full);
             }
