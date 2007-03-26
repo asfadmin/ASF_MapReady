@@ -1176,10 +1176,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // start with the metadata from the input image and add the
   // geocoding parameters.
   meta_parameters *omd = meta_read (input_meta_data->str);
-  double x_pixel_size = omd->general->x_pixel_size;
   double y_pixel_size = omd->general->y_pixel_size;
-  double x_scale = pixel_size / x_pixel_size;
-  double y_scale = pixel_size / y_pixel_size;
 
   // Check metadata ptrs (omd->general is theoretically guaranteed good)
   if (omd->projection) {
@@ -1191,13 +1188,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
     }
   }
-  if (omd->sar == NULL) {
-    omd->sar = meta_sar_init();
-  }
   if (omd->projection == NULL) {
     omd->projection = meta_projection_init();
   }
-  asfRequire(omd->general != NULL && omd->sar != NULL && omd->projection != NULL,
+  asfRequire(omd->general != NULL && omd->projection != NULL,
              "Could not initialize output metadata structures.\n");
 
   // Update no data value
@@ -1206,13 +1200,19 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
   omd->general->sample_count = oix_max + 1;
-  omd->sar->image_type = 'P';
-  omd->sar->range_time_per_pixel *= x_scale;
-  omd->sar->azimuth_time_per_pixel *= y_scale;
-  omd->sar->range_doppler_coefficients[1] *= x_scale;
-  omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
-  omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
-  omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+  if (omd->sar) {
+      omd->sar->image_type = 'P';
+      // It doesn't make sense to update these, we're just keeping them
+      // for 'historical' info ...
+      //double x_scale = pixel_size / omd->general->x_pixel_size;
+      //double y_scale = pixel_size / y_pixel_size;
+      //omd->sar->range_time_per_pixel *= x_scale;
+      //omd->sar->azimuth_time_per_pixel *= y_scale;
+      //omd->sar->range_doppler_coefficients[1] *= x_scale;
+      //omd->sar->range_doppler_coefficients[2] *= x_scale * x_scale;
+      //omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
+      //omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
+  }
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
