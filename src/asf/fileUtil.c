@@ -39,15 +39,18 @@ char *findExt(const char *name)
   if ( (ii>0) && (name[ii]=='.') ) {
     /* We found an extension! (maybe) */
     ext = (char *) &name[ii];
-    if (strcmp(uc(ext), ".META") == 0 ||
-	strcmp(uc(ext), ".DDR") == 0 ||
-	strcmp(uc(ext), ".IMG") == 0 ||
-	strcmp(uc(ext), ".DEM") == 0 ||
-	strcmp(uc(ext), ".TIF") == 0 ||
-	strcmp(uc(ext), ".TIFF") == 0 ||
-	strcmp(uc(ext), ".JPG") == 0 ||
-	strcmp(uc(ext), ".JPEG") == 0 ||
-	strcmp(uc(ext), ".PGM") == 0)
+    if (strcmp_case(ext, ".META") == 0 ||
+	strcmp_case(ext, ".DDR") == 0 ||
+	strcmp_case(ext, ".IMG") == 0 ||
+	strcmp_case(ext, ".DEM") == 0 ||
+	strcmp_case(ext, ".TIF") == 0 ||
+	strcmp_case(ext, ".TIFF") == 0 ||
+	strcmp_case(ext, ".JPG") == 0 ||
+	strcmp_case(ext, ".JPEG") == 0 ||
+	strcmp_case(ext, ".PGM") == 0 ||
+	strcmp_case(ext, ".CFG") == 0 ||
+	strcmp_case(ext, ".D") == 0 ||
+	strcmp_case(ext, ".L") == 0)
       return (char *) &name[ii];
     else
       return NULL;
@@ -175,12 +178,12 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
   ext = findExt(inFile);
 
   if (ext && 
-      (strcmp(uc(ext), ".IMG") == 0 ||
-       strcmp(uc(ext), ".TIF") == 0 ||
-       strcmp(uc(ext), ".TIFF") == 0 ||
-       strcmp(uc(ext), ".JPG") == 0 ||
-       strcmp(uc(ext), ".JPEG") == 0 ||
-       strcmp(uc(ext), ".PGM") == 0))
+      (strcmp_case(ext, ".IMG") == 0 ||
+       strcmp_case(ext, ".TIF") == 0 ||
+       strcmp_case(ext, ".TIFF") == 0 ||
+       strcmp_case(ext, ".JPG") == 0 ||
+       strcmp_case(ext, ".JPEG") == 0 ||
+       strcmp_case(ext, ".PGM") == 0))
     base_name = stripExt(inFile);
   else
     strcpy(base_name, inFile);
