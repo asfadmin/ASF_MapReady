@@ -1575,8 +1575,7 @@ settings_to_config_file(const Settings *s,
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
     fprintf(cf, "export = %d\n", s->export_is_checked);
-    // fprintf(cf, "default values =\n");
-    fprintf(cf, "intermediates = 1\n"); //, s->keep_files);
+    fprintf(cf, "intermediates = 1\n");
     fprintf(cf, "status file = %s\n", tmp_statfile);
     fprintf(cf, "short configuration file = 0\n");
     FILE *fpDefs = fopen_share_file("asf_convert/asf_convert.defaults", "rt");
@@ -1586,8 +1585,6 @@ settings_to_config_file(const Settings *s,
         FCLOSE(fpDefs);
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
-//    fprintf(cf, "thumbnail = %d\n",
-//            s->output_format == OUTPUT_FORMAT_GEOTIFF ? 1 : 0);
     fprintf(cf, "thumbnail = 1\n");
     fprintf(cf, "\n");
 
@@ -1710,6 +1707,7 @@ settings_to_config_file(const Settings *s,
 void apply_settings_from_config_file(char *configFile)
 {
     convert_config *cfg = read_convert_config(configFile);
+    if (!cfg) return 1;
 
     Settings s;
 

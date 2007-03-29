@@ -353,21 +353,23 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->export->sinclair = 0;
 
   // Check for a default values file
-  fConfig = FOPEN(configFile, "r");
-  i=0;
-  while (fgets(line, 255, fConfig) != NULL) {
-    if (i==0) strcpy(cfg->comment, line);
-    i++;
+  fConfig = fopen(configFile, "r");
+  if (fConfig) {
+    i=0;
+    while (fgets(line, 255, fConfig) != NULL) {
+        if (i==0) strcpy(cfg->comment, line);
+        i++;
 
-    if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
-    if (strcmp(params, "general")==0) {
-      test = read_param(line);
-      if (strncmp(test, "default values", 14)==0)
-        strcpy(cfg->general->defaults, read_str(line, "default values"));
-      FREE(test);
+        if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
+        if (strcmp(params, "general")==0) {
+        test = read_param(line);
+        if (strncmp(test, "default values", 14)==0)
+            strcpy(cfg->general->defaults, read_str(line, "default values"));
+        FREE(test);
+        }
     }
+    FCLOSE(fConfig);
   }
-  FCLOSE(fConfig);
 
   // Read default values file if there is one
   if (strcmp(cfg->general->defaults, "") != 0) {
@@ -496,59 +498,61 @@ convert_config *init_fill_convert_config(char *configFile)
   }
 
   // Read in parameters
-  fConfig = FOPEN(configFile, "r");
-  i=0;
-  while (fgets(line, 255, fConfig) != NULL) {
-    if (i==0) strcpy(cfg->comment, line);
-    i++;
+  fConfig = fopen(configFile, "r");
+  if (fConfig) {
+    i=0;
+    while (fgets(line, 255, fConfig) != NULL) {
+        if (i==0) strcpy(cfg->comment, line);
+        i++;
 
-    if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
-    if (strcmp(params, "general")==0) {
-      test = read_param(line);
-      if (strncmp(test, "input file", 10)==0)
-        strcpy(cfg->general->in_name, read_str(line, "input file"));
-      if (strncmp(test, "output file", 11)==0)
-        strcpy(cfg->general->out_name, read_str(line, "output file"));
-      if (strncmp(test, "import", 6)==0)
-        cfg->general->import = read_int(line, "import");
-      if (strncmp(test, "sar processing", 14)==0)
-        cfg->general->sar_processing = read_int(line, "sar processing");
-      if (strncmp(test, "image stats", 11)==0)
-        cfg->general->image_stats = read_int(line, "image stats");
-      if (strncmp(test, "detect corner reflectors", 24)==0)
-        cfg->general->detect_cr = read_int(line, "detect corner reflectors");
-      if (strncmp(test, "terrain correction", 18)==0)
-        cfg->general->terrain_correct = read_int(line, "terrain correction");
-      if (strncmp(test, "geocoding", 9)==0)
-        cfg->general->geocoding = read_int(line, "geocoding");
-      if (strncmp(test, "export", 6)==0)
-        cfg->general->export = read_int(line, "export");
-      if (strncmp(test, "default values", 14)==0)
-        strcpy(cfg->general->defaults, read_str(line, "default values"));
-      if (strncmp(test, "intermediates", 13)==0)
-        cfg->general->intermediates = read_int(line, "intermediates");
-      if (strncmp(test, "quiet", 13)==0)
-        cfg->general->quiet = read_int(line, "quiet");
-      if (strncmp(test, "short configuration file", 24)==0)
-        cfg->general->short_config = read_int(line, "short configuration file");
-      if (strncmp(test, "dump envi header", 16)==0)
-        cfg->general->dump_envi = read_int(line, "dump envi header");
-      if (strncmp(test, "tmp dir", 7)==0)
-        strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
-      if (strncmp(test, "status file", 11)==0)
-        strcpy(cfg->general->status_file, read_str(line, "status file"));
-      if (strncmp(test, "batch file", 10)==0)
-        strcpy(cfg->general->batchFile, read_str(line, "batch file"));
-      if (strncmp(test, "prefix", 6)==0)
-        strcpy(cfg->general->prefix, read_str(line, "prefix"));
-      if (strncmp(test, "suffix", 6)==0)
-        strcpy(cfg->general->suffix, read_str(line, "suffix"));
-      if (strncmp(test, "thumbnail", 9)==0)
-        cfg->general->thumbnail = read_int(line, "thumbnail");
-      FREE(test);
+        if (strncmp(line, "[General]", 9)==0) strcpy(params, "general");
+        if (strcmp(params, "general")==0) {
+        test = read_param(line);
+        if (strncmp(test, "input file", 10)==0)
+            strcpy(cfg->general->in_name, read_str(line, "input file"));
+        if (strncmp(test, "output file", 11)==0)
+            strcpy(cfg->general->out_name, read_str(line, "output file"));
+        if (strncmp(test, "import", 6)==0)
+            cfg->general->import = read_int(line, "import");
+        if (strncmp(test, "sar processing", 14)==0)
+            cfg->general->sar_processing = read_int(line, "sar processing");
+        if (strncmp(test, "image stats", 11)==0)
+            cfg->general->image_stats = read_int(line, "image stats");
+        if (strncmp(test, "detect corner reflectors", 24)==0)
+            cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+        if (strncmp(test, "terrain correction", 18)==0)
+            cfg->general->terrain_correct = read_int(line, "terrain correction");
+        if (strncmp(test, "geocoding", 9)==0)
+            cfg->general->geocoding = read_int(line, "geocoding");
+        if (strncmp(test, "export", 6)==0)
+            cfg->general->export = read_int(line, "export");
+        if (strncmp(test, "default values", 14)==0)
+            strcpy(cfg->general->defaults, read_str(line, "default values"));
+        if (strncmp(test, "intermediates", 13)==0)
+            cfg->general->intermediates = read_int(line, "intermediates");
+        if (strncmp(test, "quiet", 13)==0)
+            cfg->general->quiet = read_int(line, "quiet");
+        if (strncmp(test, "short configuration file", 24)==0)
+            cfg->general->short_config = read_int(line, "short configuration file");
+        if (strncmp(test, "dump envi header", 16)==0)
+            cfg->general->dump_envi = read_int(line, "dump envi header");
+        if (strncmp(test, "tmp dir", 7)==0)
+            strcpy(cfg->general->tmp_dir, read_str(line, "tmp dir"));
+        if (strncmp(test, "status file", 11)==0)
+            strcpy(cfg->general->status_file, read_str(line, "status file"));
+        if (strncmp(test, "batch file", 10)==0)
+            strcpy(cfg->general->batchFile, read_str(line, "batch file"));
+        if (strncmp(test, "prefix", 6)==0)
+            strcpy(cfg->general->prefix, read_str(line, "prefix"));
+        if (strncmp(test, "suffix", 6)==0)
+            strcpy(cfg->general->suffix, read_str(line, "suffix"));
+        if (strncmp(test, "thumbnail", 9)==0)
+            cfg->general->thumbnail = read_int(line, "thumbnail");
+        FREE(test);
+        }
     }
+    FCLOSE(fConfig);
   }
-  FCLOSE(fConfig);
 
   return cfg;
 }
@@ -563,7 +567,8 @@ convert_config *read_convert_config(char *configFile)
   strcpy(params, "");
   cfg = init_fill_convert_config(configFile);
   if (cfg == NULL) check_return(1, "Creating configuration structure.\n");
-  fConfig = FOPEN(configFile, "r");
+  fConfig = fopen(configFile, "r");
+  if (!fConfig) return NULL;
   while (fgets(line, 255, fConfig) != NULL) {
 
     if (strncmp(line, "[General]", 9)==0) strcpy(params, "General");

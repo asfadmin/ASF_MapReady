@@ -844,7 +844,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                  cfg->terrain_correct->mask, outFile, FALSE,
                                  cfg->terrain_correct->auto_mask_water,
                                  cfg->terrain_correct->water_height_cutoff,
-                                 NULL),
+                                 !cfg->general->intermediates, NULL),
             "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {

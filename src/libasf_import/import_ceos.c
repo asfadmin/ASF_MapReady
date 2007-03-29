@@ -854,6 +854,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
   //} else {
   strcpy(meta->general->basename, inDataName);
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
+  if (nBands == 1 && meta->sar)
+	  strcpy(meta->general->bands, meta->sar->polarization);
   meta_write(meta,outMetaName);
   //}
 

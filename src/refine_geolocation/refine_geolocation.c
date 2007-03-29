@@ -255,7 +255,7 @@ main (int argc, char *argv[])
 
   int ret = refine_geolocation(inFile, demFile, maskFile, outFile, 
                                update_flag, auto_water_mask,
-                               mask_height_cutoff, other_files);
+                               mask_height_cutoff, TRUE, other_files);
 
   if (update_flag) {
       char *meta = appendExt(outFile, ".meta");

@@ -276,12 +276,11 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        char *outFile, int update_flag, int auto_water_mask,
-                       float mask_height_cutoff,
+                       float mask_height_cutoff, int clean_files,
                        char **other_files_to_update_with_offsets)
 {
   double pixel_size = -1;
   int dem_grid_size = 20;
-  int clean_files = TRUE;
   int do_resample = TRUE;
   int do_interp = FALSE;
   int do_fftMatch_verification = TRUE;
