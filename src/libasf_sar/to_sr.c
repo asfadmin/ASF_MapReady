@@ -402,8 +402,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // see how bad our errors were
     avg_error /= (double)count;
-    asfPrintStatus("Spline Maximum Error: %f\n"
-                   "       Average Error: %f\n",
+    asfPrintStatus("Model max error: %f, avg: %f\n"
                    max_error, avg_error);
 
     double thresh = 0.1;
