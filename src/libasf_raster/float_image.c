@@ -2153,7 +2153,11 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
                                              ii * sample_stride,
                                              averaging_kernel);
       unsigned char oval;       // Output value.
-      if ( ival < lin_min ) {
+
+      if (!meta_is_valid_double(ival)) {
+        oval = 0;
+      }
+      else if ( ival < lin_min ) {
         oval = 0;
       }
       else if ( ival > lin_max) {
@@ -2161,7 +2165,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
       }
       else {
         int oval_int
-          = round (((ival - lin_min) / (lin_max - lin_min)) * UCHAR_MAX);
+            = round (((ival - lin_min) / (lin_max - lin_min)) * UCHAR_MAX);
         // Make sure we haven't screwed up the scaling.
         g_assert (oval_int >= 0 && oval_int <= UCHAR_MAX);
         oval = oval_int;
