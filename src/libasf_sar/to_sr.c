@@ -296,6 +296,9 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     // now, we're on to the resampling stage.. loop through output pixels
     asfPrintStatus("Generating slant range image...\n");
 
+    double no_data_value = meta_is_valid_double(inMeta->general->no_data) ?
+        inMeta->general->no_data : 0;
+
     // keep track of error sizes
     double max_error = 0;
     double avg_error = 0;
@@ -376,7 +379,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 */
             // now interpolate within the original image
             // if we are outside, use "no_data" from metadata
-            double val = inMeta->general->no_data;
+            double val = no_data_value;
             if (line > 0 && line < nl-1 && samp > 0 && samp < ns-1)
                 val = float_image_sample(in, samp, line, sampling_method);
 
@@ -451,7 +454,9 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     outMeta->sar->line_increment = outMeta->sar->sample_increment = 1;
     outMeta->general->start_sample = outMeta->general->start_line = 0;
-    
+
+    outMeta->general->no_data = no_data_value;
+
     char *meta_file = appendExt(outfile, ".meta");
     asfPrintStatus("Writing %s\n", meta_file);
     meta_write(outMeta, meta_file);
