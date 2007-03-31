@@ -20,7 +20,7 @@
 
 #define ASF_OPTIONS_STRING \
 "     -size <size>\n"\
-"          Generate thumbnails of the given size.  The default is 48.\n"\
+"          Generate thumbnails of the given size.  The default is %d.\n"\
 "          If the input image isn't square, the longer side will be\n"\
 "          scaled to the given size, the other dimension will be\n"\
 "          determined so as to keep the same aspect ratio.\n"\
@@ -32,16 +32,16 @@
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
-"     -quiet\n"\
+"     -quiet (-q)\n"\
 "          Supresses all non-essential output.\n"\
 "\n"\
-"     -verbose\n"\
+"     -verbose (-v)\n"\
 "          Prints out files that were ignored (i.e., not CEOS files).\n"\
 "\n"\
 "     -license\n"\
 "          Print copyright and license for this software then exit.\n"\
 "\n"\
-"     -version\n"\
+"     -version (-v)\n"\
 "          Print version and copyright then exit.\n"\
 "\n"\
 "     -help\n"\
@@ -86,6 +86,7 @@
 #include "float_image.h"
 
 int verbose = 0;
+const int default_thumbnail_size = 256;
 
 // Print minimalistic usage info & exit
 static void usage(const char *name)
@@ -112,7 +113,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      default_thumbnail_size);
   exit(EXIT_SUCCESS);
 }
 
@@ -138,8 +140,8 @@ int strmatches(const char *key, ...)
 
 char *spaces(int n)
 {
-    static char buf[256];
     int i;
+    static char buf[256];
     for (i=0; i<256; ++i)
         buf[i] = i<n*3 ? ' ' : '\0';
     return buf;
@@ -161,7 +163,6 @@ char *meta_file_name(const char * data_file_name)
     free(basename);
 
     if (is_alos) {
-        // alos
         char *meta_name = MALLOC(sizeof(char) * (strlen(data_file_name) + 5));
         char *dir = get_dirname(data_file_name);
         strcpy(meta_name, dir);
@@ -310,15 +311,15 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
     size_t ii, jj;
-    unsigned short *line = g_new (unsigned short, imd->general->sample_count);
-    unsigned char *bytes = g_new (unsigned char, imd->general->sample_count);
+    unsigned short *line =
+        MALLOC (sizeof(unsigned short) * imd->general->sample_count);
+    unsigned char *bytes =
+        MALLOC (sizeof(unsigned char) * imd->general->sample_count);
 
     // Here's where we're putting all this data
     FloatImage *img = float_image_new(tsx, tsy);
 
-    // Keep track of the average pixel value, so later we can do a 2-sigma
-    // scaling - makes the thumbnail look a little nicer and more like what
-    // they'd get if they did the default jpeg export.
+    // Read in data line-by-line
     for ( ii = 0 ; ii < tsy ; ii++ ) {
 
         long long offset =
@@ -357,15 +358,15 @@ int generate_ceos_thumbnail(const char *input_data, int size)
             float_image_set_pixel(img, jj, ii, csv);
         }
     }
-    g_free (line);
-    g_free (bytes);
+    FREE (line);
+    FREE (bytes);
     fclose(fpIn);
 
+    // currently use hard-coded output file name
     char *thumb_file = appendToBasename(input_data, "_thumb");
     char *out_file = appendExt(thumb_file, ".jpg");
     
     // Create the jpeg
-    printf("Creating thumb file: %s\n", out_file);
     float_image_export_as_jpeg(img, out_file, size, NAN);
 
     meta_free(imd);
@@ -373,8 +374,8 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     FREE(met);
     FREE(thumb_file);
     FREE(out_file);
-
     FREE(input_metadata);
+
     return TRUE;
 }
 
@@ -428,7 +429,7 @@ int main(int argc, char *argv[])
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
   int recursive = FALSE;
-  int size = 48;
+  int size = default_thumbnail_size;
 
   if (argc<=1)
       usage(ASF_NAME_STRING);
