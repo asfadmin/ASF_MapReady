@@ -538,9 +538,9 @@ Here's what it looked like before optimization:
      For 3.1, we force the user to use correction formula #5
      That's the only one that's been tested... */
     if (form > 0) form = 5;
-    if (strncmp(CONVERT_PACKAGE_VERSION_STRING, "3.1", 3) != 0)
-        asfPrintWarning("Radiometric terrain correction formula "
-                        "is forced to #5!\n");
+    //if (strncmp(CONVERT_PACKAGE_VERSION_STRING, "3.1", 3) != 0)
+    //    asfPrintWarning("Radiometric terrain correction formula "
+    //                    "is forced to #5!\n");
 
     int x;
     for (x=1;x<ns;x++)
