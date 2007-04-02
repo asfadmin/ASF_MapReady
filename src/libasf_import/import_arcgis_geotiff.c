@@ -2916,9 +2916,10 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   // NOTE: For NAD27 and NAD83, only the restricted range of zones
   // above is supported by the GeoTIFF standard.
   //
-  const short NNN_NAD27 = 367;
-  const short NNN_NAD83 = 269;
-  const short NNN_WGS84 = 326;
+  const short NNN_NAD27  = 367;
+  const short NNN_NAD83  = 269;
+  const short NNN_WGS84N = 326;
+  const short NNN_WGS84S = 327;
   const short NNN_USER_DEFINED_NORTH = 160;
   const short NNN_USER_DEFINED_SOUTH = 161;
   int isUTM = 0;
@@ -2945,7 +2946,8 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
         isUTM = 0;
       }
   }
-  else if (datumClassifierNNN == NNN_WGS84) {
+  else if (datumClassifierNNN == NNN_WGS84N ||
+           datumClassifierNNN == NNN_WGS84S) {
       *datum = WGS84_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
