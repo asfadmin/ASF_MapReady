@@ -1704,7 +1704,7 @@ settings_to_config_file(const Settings *s,
     return tmp_cfgfile;
 }
 
-void apply_settings_from_config_file(char *configFile)
+int apply_settings_from_config_file(char *configFile)
 {
     convert_config *cfg = read_convert_config(configFile);
     if (!cfg) return 1;
@@ -1929,4 +1929,5 @@ void apply_settings_from_config_file(char *configFile)
     set_output_name(&iter, cfg->general->out_name);
 
     FREE(cfg);
+    return 0;
 }
