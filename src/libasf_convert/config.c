@@ -448,7 +448,7 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "do radiometric", 12)==0)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
-      if (strncmp(test, "smooth dem holes", 14)==0)
+      if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem =
@@ -687,7 +687,7 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->fill_value = read_int(line, "fill value");
       if (strncmp(test, "do radiometric", 12)==0)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
-      if (strncmp(test, "smooth dem holes", 14)==0)
+      if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem =

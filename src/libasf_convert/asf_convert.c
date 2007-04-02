@@ -1355,6 +1355,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // completion string.  GUI currently detects successful processing
   // by looking for this message in the log file.... (yeah, I know.)
   asfPrintStatus("Successful completion!\n\n");
+  update_status(cfg, "Done");
 
   return(EXIT_SUCCESS);
 }
