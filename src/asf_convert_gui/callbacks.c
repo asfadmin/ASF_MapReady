@@ -3,24 +3,13 @@
 void
 show_execute_button(gboolean show)
 {
-    GtkWidget 
-      *execute_button,
-      *stop_button,
-      *load_button,
-      *process_button,
-      *remove_button,
-      *rename_button,
-      *google_earth_button,
-      *view_output_button;
-
-    execute_button = get_widget_checked("execute_button");
-    stop_button = get_widget_checked("stop_button");
-    load_button = get_widget_checked("load_button");
-    process_button = get_widget_checked("process_button");
-    remove_button = get_widget_checked("remove_button");
-    rename_button = get_widget_checked("rename_button");
-    google_earth_button = get_widget_checked("google_earth_button");
-    view_output_button = get_widget_checked("view_output_button");
+    GtkWidget *execute_button = get_widget_checked("execute_button");
+    GtkWidget *stop_button = get_widget_checked("stop_button");
+    GtkWidget *load_button = get_widget_checked("load_button");
+    GtkWidget *process_button = get_widget_checked("process_button");
+    GtkWidget *remove_button = get_widget_checked("remove_button");
+    GtkWidget *rename_button = get_widget_checked("rename_button");
+    GtkWidget *google_earth_button = get_widget_checked("google_earth_button");
 
     gtk_widget_set_sensitive(execute_button, show);
     gtk_widget_set_sensitive(stop_button, !show);
@@ -29,7 +18,6 @@ show_execute_button(gboolean show)
     gtk_widget_set_sensitive(remove_button, show);
     gtk_widget_set_sensitive(rename_button, show);
     gtk_widget_set_sensitive(google_earth_button, show);
-    gtk_widget_set_sensitive(view_output_button, show);
 }
 
 void latitude_checkbutton_toggle()
