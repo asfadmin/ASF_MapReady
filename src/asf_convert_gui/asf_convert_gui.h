@@ -217,7 +217,7 @@ void settings_update_mask(Settings *s, const char *output_path, int is_first);
 char * settings_to_config_file(const Settings *s,
 			     const gchar *input_file, const gchar *output_file,
 			     const gchar *output_path, const gchar *tmp_dir);
-void apply_settings_from_config_file(char *configFile);
+int apply_settings_from_config_file(char *configFile);
 
 /* find_in_path.c */
 gchar *find_in_path(gchar * file);
