@@ -23,6 +23,7 @@ main(int argc, char **argv)
     set_font();
 
     glade_xml_file = (gchar *)find_in_share("asf_convert_gui.glade");
+    asfPrintStatus("Found share dir: %s\n", get_asf_share_dir());
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
     g_free(glade_xml_file);
