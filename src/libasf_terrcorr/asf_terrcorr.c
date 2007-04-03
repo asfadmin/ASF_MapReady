@@ -975,6 +975,21 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       madssap = TRUE;
   }
 
+  // create a smoothed dem if asked to do so
+  if (smooth_dem_holes) {
+      char *smoothedDem = outputName(output_dir, demFile, "_tc_smooth");
+
+      const float cutoff = -900; // seems to work for most DEMs
+      asfPrintStatus("Interpolating DEM Holes.\n");
+      asfPrintStatus("Height cutoff: %.2fm.\n", cutoff);
+
+      interp_dem_holes_file(demFile, smoothedDem, cutoff, FALSE);
+
+      // now tell the rest of the code that the smoothedDem is the actual DEM
+      // we don't need to re-read the metadata, it will not have changed
+      demFile = smoothedDem;
+  }
+
   if (userMaskFile) {
     asfPrintStatus("Reading MASK metadata from: %s\n", userMaskFile);
     asfRequire(extExists(userMaskFile, ".meta") || extExists(userMaskFile, ".ddr"),
@@ -1127,7 +1142,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification, FALSE,
-            TRUE, TRUE, madssap, clean_files, smooth_dem_holes,
+            TRUE, TRUE, madssap, clean_files, /*smooth_dem_holes*/ FALSE,
             &t_offset, &x_offset);
 
   if (update_original_metadata_with_offsets)
@@ -1221,7 +1236,19 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     clean(srFile);
     clean(resampleFile_2);
     clean(userMaskClipped);
+
+    // if we smoothed the DEM, then "demFile" doesn't point to the user's
+    // DEM, it points to our smoothed version of it ...
+    if (smooth_dem_holes) {
+        // ... but we have some code in here just to make sure, wouldn't
+        // want to delete the user's DEM!!
+        if (strstr(demFile, "_tc_smooth"))
+            clean(demFile);
+    }
   }
+
+  if (smooth_dem_holes)
+    FREE(demFile);
 
   // if we generated the mask, we should clean it up
   //  ... actually, keep the auto-generated mask.  If user is using

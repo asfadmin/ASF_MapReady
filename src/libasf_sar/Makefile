@@ -17,7 +17,8 @@ OBJS = \
 	remap_poly.o \
 	mfd.o \
 	to_sr.o \
-	refine_offset.o
+	refine_offset.o \
+	interp_dem_holes.o
 
 LIBS = \
 	$(LIBDIR)/asf.a \

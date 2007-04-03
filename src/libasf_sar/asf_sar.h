@@ -79,4 +79,10 @@ float unmasked_value();
 int to_sr(const char *infile, const char *outfile);
 int to_sr_pixsiz(const char *infile, const char *outfile, double pixel_size);
 
+/* Prototypes from interp_dem_holes.c */
+void interp_dem_holes_data(meta_parameters *meta, float *data, float cutoff,
+                           int verbose);
+void interp_dem_holes_file(const char *infile, const char *outfile,
+                           float cutoff, int verbose);
+
 #endif
