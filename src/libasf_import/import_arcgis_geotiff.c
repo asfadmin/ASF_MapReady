@@ -33,6 +33,7 @@
 #include "asf_nan.h"
 #include "asf_import.h"
 
+#include "projected_image_import.h"
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"
 
@@ -141,7 +142,7 @@ void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
                                 unsigned long strLen, char *str);
 void DHFAGetStringVal(FILE *fp, unsigned long strLen, char *str);
 spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName);
-int PCS_2_UTM (short pcs, datum_type_t *datum, unsigned long *zone);
+int PCS_2_UTM (short pcs, char *hem, datum_type_t *datum, unsigned long *zone);
 void copy_proj_parms(meta_projection *dest, meta_projection *src);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
@@ -303,6 +304,13 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                   (linear_units == Linear_Meter) ?
                       "meters" : "(Unsupported type)");
+  if (model_type != ModelTypeProjected) {
+    // FIXME: For now, we only import map-projected images in linear meters.  If
+    // the image was a lat/long image, then the angular units would be set AND
+    // the model_type would be ModelType_Geographic ...but oh well.
+    asfPrintError("Only map-projected ArcGIS/Imagine type images using linear units\n"
+        "are supported.  Geographic (lat/long) ArcGIS/Imagine type images are not.\n");
+  }
 
   /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
   /***** THEN READ THEM FROM THE METADATA (.AUX) FILE TO SUPERCEDE IF THEY EXIST *****/
@@ -317,6 +325,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   // unknown, but could possibly be ModelTypeProjection
   //
   // Start of reading projection parameters from geotiff ...if it exists //
+  char hemisphere;
   if (geotiff_data_exists) {
     // Init ArcGIS projection parameters
     // NOTE: A direct copy from these into the meta data occurs below, so we
@@ -350,8 +359,15 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
     // Get datum and zone as appropriate
     read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
-    if (read_count == 1 && PCS_2_UTM(pcs, &datum, &arcgisProjParms.proZone)) {
+    if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &arcgisProjParms.proZone)) {
       proj_coords_trans = CT_TransverseMercator;
+      arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = 500000.0;
+      if (hemisphere == 'N') {
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 0.0;
+      }
+      else {
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 10000000.0;
+      }
     }
     else {
       // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
@@ -364,8 +380,15 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
       // Check for a user-defined UTM projection
       read_count = GTIFKeyGet (input_gtif, ProjectionGeoKey, &pcs, 0, 0);
-      if (read_count == 1 && PCS_2_UTM(pcs, &datum, &arcgisProjParms.proZone)) {
+      if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &arcgisProjParms.proZone)) {
         proj_coords_trans = CT_TransverseMercator;
+        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = 500000.0;
+        if (hemisphere == 'N') {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 0.0;
+        }
+        else {
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 10000000.0;
+        }
       }
       else { // Some other type of projection may exist
         read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
@@ -433,7 +456,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 //                   "using ProjFalseEastingGeoKey\n");
         }
         else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = false_easting;
         }
         read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
         if (read_count != 1) {
@@ -442,7 +465,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 //                   "using ProjFalseNorthingGeoKey\n");
         }
         else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = false_northing;
         }
         read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
         if (read_count != 1) {
@@ -900,6 +923,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   }
   // else leave it at the initialized value
 
+  //strcpy(mg->bands, MAGIC_UNSET_STRING);
   mg->line_count = height;
   mg->sample_count = width;
 
@@ -930,15 +954,25 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Image raster coordinates of tie point.
   double raster_tp_x = tie_point[0];
-  double raster_tp_y = tie_point[1]; // [2] is zero for 2D space
+  double raster_tp_y = tie_point[1]; // Note: [2] is zero for 2D space
 
   // Coordinates of tie point in pseudoprojection space.
-  double tp_lon = tie_point[3];
-  double tp_lat = tie_point[4]; // [5] is zero for 2D space
+  // NOTE: These are called tp_lon and tp_lat ...but the tie points
+  // will be in either linear units (meters typ.) *OR* lat/long depending
+  // on what type of image data is in the file, e.g. map-projected or
+  // geographic respectively.
+  double tp_lon = tie_point[3]; // x
+  double tp_lat = tie_point[4]; // y, Note: [5] is zero for 2D space
 
-  // Center latitude and longitude of image data
-  double center_x = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-  double center_y = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  // Center latitude and longitude of image data (the following works for
+  // linear or angular units since pixel sizes should be in the same units
+  // as the tie points
+  double center_x;
+  double center_y;
+
+  center_x = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  center_y = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
+
   // converts to center_latitude and center_longitude below...
 
   if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
@@ -964,11 +998,11 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
       mp->param.utm.zone = arcgisProjParms.proZone;
       mp->param.utm.false_easting =
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
           MAGIC_UNSET_DOUBLE;
       mp->param.utm.false_northing =
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
           MAGIC_UNSET_DOUBLE;
       mp->param.utm.lat0 =
           (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
@@ -1120,6 +1154,7 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   mp->datum = datum; // NOTE: This is not actually written to the .meta file
 
+  asfPrintStatus("\nGathering image statistics...\n");
   float min, max;
   float mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
@@ -1139,7 +1174,9 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
 		 &center_latitude, &center_longitude, &dummy_var);
   mg->center_latitude = R2D*center_latitude;
   mg->center_longitude = R2D*center_longitude;
-  mp->hem = mg->center_latitude >= 0.0 ? 'N' : 'S';
+  mp->param.utm.lat0 = 0.0;
+  mp->param.utm.lon0 = utm_zone_to_central_meridian(mp->param.utm.zone);
+  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
 
   if (msar)
       msar->image_type = 'P'; // Map Projected
@@ -1154,14 +1191,26 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   ms->std_deviation = standard_deviation;
   ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
 
-  ml->lat_start_near_range = mp->startX;
-  ml->lon_start_near_range = mp->startY;
-  ml->lat_start_far_range = mp->startX + mp->perX * width;
-  ml->lon_start_far_range = mp->startY;
-  ml->lat_end_near_range = mp->startX;
-  ml->lon_end_near_range = mp->startY + mp->perY * height;
-  ml->lat_end_far_range = mp->startX + mp->perX * width;
-  ml->lon_end_far_range = mp->startY + mp->perY * height;
+  double lat, lon;
+  proj_to_latlon(&proj, mp->startX, mp->startY, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_start_near_range = R2D*lat; //mp->startX;
+  ml->lon_start_near_range = R2D*lon; //mp->startY;
+
+  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_start_far_range = R2D*lat; //mp->startX + mp->perX * width;
+  ml->lon_start_far_range = R2D*lon; //mp->startY;
+
+  proj_to_latlon(&proj, mp->startX, mp->startY + mp->perY * height, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_end_near_range = R2D*lat; //mp->startX;
+  ml->lon_end_near_range = R2D*lon; //mp->startY + mp->perY * height;
+
+  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY + mp->perY * height, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_end_far_range = R2D*lat; //mp->startX + mp->perX * width;
+  ml->lon_end_far_range = R2D*lon; //mp->startY + mp->perY * height;
 
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
@@ -2895,7 +2944,7 @@ void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo)
   fclose(fp);
 }
 
-int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
+int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
 {
   // The GeoTIFF standard defines the UTM zones numerically in a way that
   // let's us pick off the data mathematically (NNNzz where zz is the zone
@@ -2927,6 +2976,7 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
 
   datumClassifierNNN = pcs / 100;
   if (datumClassifierNNN == NNN_NAD27) {
+      *hem = 'N';
       *datum = NAD27_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
@@ -2937,6 +2987,7 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
       }
   }
   else if (datumClassifierNNN == NNN_NAD83) {
+      *hem = 'N';
       *datum = NAD83_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
@@ -2948,6 +2999,7 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   }
   else if (datumClassifierNNN == NNN_WGS84N ||
            datumClassifierNNN == NNN_WGS84S) {
+      *hem = datumClassifierNNN == NNN_WGS84N ? 'N' : 'S';
       *datum = WGS84_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
@@ -2966,6 +3018,7 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
         PCS_2_UTM(), therefore *datum is not assigned anything
         here.
     */
+    *hem = datumClassifierNNN == NNN_USER_DEFINED_NORTH ? 'N' : 'S';
     *zone = pcs - (pcs / 100)*100;
     isUTM = 1;
     if (*zone < 1 || *zone > 60) {
@@ -2975,6 +3028,7 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
     }
   }
   else {
+      *hem = '\0';
       *datum = UNKNOWN_DATUM;
       *zone = 0;
       isUTM = 0;
