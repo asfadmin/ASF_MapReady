@@ -4,6 +4,7 @@ include ../../make_support/system_rules
 
 OBJS  = gr2sr.o
 
+CFLAGS += $(GLIB_CFLAGS)
 REQUIRED_LIBS = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \

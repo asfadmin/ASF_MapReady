@@ -4,6 +4,8 @@
 
 include ../../make_support/system_rules
 
+CFLAGS += $(GLIB_CFLAGS)
+
 LIBS  = $(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_meta.a \
 	$(GSL_LIBS) \
