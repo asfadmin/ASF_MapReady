@@ -7,6 +7,8 @@
 #include <asf_license.h>
 #include <asf_contact.h>
 
+#include "float_image.h"
+
 #define ASF_NAME_STRING "fill_holes"
 
 #define VERSION 0.2
@@ -103,39 +105,18 @@ int main(int argc,char *argv[])
   create_name(outfile,argv[currArg+1],".img");
 
   meta_parameters *meta = meta_read(infile);
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
 
-  float *data = MALLOC(sizeof(float)*nl*ns);
-  FILE *fp = fopenImage(infile,"rb");
-
-  asfPrintStatus("Reading DEM %s\n", infile);
-
-  int i;
-  for (i=0; i<nl; ++i) {
-      asfLineMeter(i,nl);
-      get_float_line(fp, meta, i, &data[i*ns]);
-  }
-
-  fclose(fp);
+  asfPrintStatus("Reading DEM: %s\n", infile);
+  FloatImage *img = float_image_new_from_metadata(meta, infile);
 
   asfPrintStatus("Interpolating DEM holes...\n");
-  interp_dem_holes_data(meta, data, cutoff, TRUE);
+  interp_dem_holes_float_image(img, cutoff, TRUE);
 
   asfPrintStatus("Writing smoothed dem: %s\n", outfile);
-
-  fp = fopenImage(outfile,"wb");
-  for (i=0; i<nl; ++i) {
-      asfLineMeter(i,nl);
-      put_float_line(fp, meta, i, &data[i*ns]);
-  }
-  fclose(fp);
-
-  asfPrintStatus("Writing metadata...\n");
+  float_image_store(img, outfile, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+  float_image_free(img);
   meta_write(meta, outfile);
   meta_free(meta);
-  
-  FREE(data);
 
   asfPrintStatus("Done.\n");
   if (fLog) fclose(fLog);

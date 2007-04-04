@@ -17,6 +17,8 @@ REQUIRED_LIBS = \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS)
 
+CFLAGS += $(GLIB_CFLAGS)
+
 CEDAR_LIBS = $(LIBDIR)/asf_las.a
 LIBS = \
 	$(shell \

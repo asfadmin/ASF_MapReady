@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include "poly.h"
 #include "asf_meta.h"
+#include "float_image.h"
 
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
@@ -84,5 +85,6 @@ void interp_dem_holes_data(meta_parameters *meta, float *data, float cutoff,
                            int verbose);
 void interp_dem_holes_file(const char *infile, const char *outfile,
                            float cutoff, int verbose);
+void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
 
 #endif
