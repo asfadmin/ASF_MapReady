@@ -478,5 +478,7 @@ int main(int argc, char *argv[])
   for (i=currArg; i<argc; ++i)
       process(argv[i], 0, recursive, size);
 
+  if (fLog) fclose(fLog);
+
   exit(EXIT_SUCCESS);
 }
