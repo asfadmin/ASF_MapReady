@@ -3060,7 +3060,7 @@
 						    <widget class="GtkRadioButton" id="rb_truecolor">
 						      <property name="width_request">186</property>
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">True-color output.  Note that this will produce a different result then manually selecting 3-2-1; this option performs a contrast expansion on each band.</property>
+						      <property name="tooltip" translatable="yes">True-color output.  Note that this will produce a different result than manually selecting 3-2-1; this option performs a contrast expansion on each band.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">True Color (3, 2, 1)        </property>
 						      <property name="use_underline">True</property>
@@ -3082,7 +3082,7 @@
 						    <widget class="GtkRadioButton" id="rb_falsecolor">
 						      <property name="width_request">177</property>
 						      <property name="visible">True</property>
-						      <property name="tooltip" translatable="yes">False-color output.  Note that this will produce a different result then manually selecting 4-3-2; this option performs a contrast expansion on each band.</property>
+						      <property name="tooltip" translatable="yes">False-color output.  Note that this will produce a different result than manually selecting 4-3-2; this option performs a contrast expansion on each band.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">False Color (4, 3, 2)</property>
 						      <property name="use_underline">True</property>
