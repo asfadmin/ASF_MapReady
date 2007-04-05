@@ -6,7 +6,7 @@
 "          [-mask-file <filename> | -auto-water-mask]\n"\
 "          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
-"          [-other-file <basename>] [-do-radiometric]\n"\
+"          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -115,8 +115,17 @@
 "     -do-radiometric\n"\
 "          Apply radiometric terrain correction.  Radiometric terrain correction\n"\
 "          is still experimental.  Currently, this option scales values using\n"\
-"          1 - .7*pow(cos(li)),7), where li is the local incidence angle.  In the\n"\
-"          future we expect to support more correction formulae.\n"\
+"          1 - .7*pow(cos(li)),7), where li is the local incidence angle.  In\n"\
+"          the future we expect to support more correction formulae.\n"\
+"\n"\
+"     -smooth-dem-holes\n"\
+"          Some DEMs have holes in them, this is particularly a problem with\n"\
+"          SRTM DEMs.  If this is the case, the terrain corrected product will\n"\
+"          often contain streaks in the areas near the holes.  You can fill\n"\
+"          the holes with interpolated values prior to terrain correction with\n"\
+"          this option, which will reduce or even eliminate these streaks.\n"\
+"          However, you should still expect suboptimal results within the\n"\
+"          holes.\n"\
 "\n"\
 "     -update-original-meta (-u)\n"\
 "          The correlation process that is done during the terrain correction\n"\
