@@ -204,6 +204,20 @@
                     Use the "Browse" button to select the DEM.  The DEM
                     should be either in GeoTIFF or ASF internal format.
                 </para>
+                <para>
+                    Fill DEM holes with interpolated values
+                </para>
+                <para>
+                    Some DEMs have holes in them; this is particularly
+                    a problem with SRTM DEMs.  If this is the case,
+                    the terrain corrected product will often contain
+                    streaks in the areas near the holes.  You can fill
+                    the holes with interpolated values prior to
+                    terrain correction with this option, which will
+                    reduce or even eliminate these streaks. However,
+                    you should still expect suboptimal results within
+                    the holes.
+                </para>
             </listitem>
             <listitem>
                 <para>Geolocation Refinement, or Terrain Correction</para>
