@@ -339,7 +339,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
         /* If the azimuth time per pixel calculation failed (presumably
            because of a missing "workreport" file), error out on gamma/beta */
-        if (!meta_is_valid_double(meta->sar->azimuth_time_per_pixel) &&
+        if (meta->sar &&
+            !meta_is_valid_double(meta->sar->azimuth_time_per_pixel) &&
             (radiometry == r_GAMMA || radiometry == r_BETA))
             asfPrintError("Without an ALOS 'workreport' file, cannot output "
                           "GAMMA or BETA.\nCheck if you received a workreport "
