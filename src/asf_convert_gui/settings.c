@@ -373,12 +373,15 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *rb_terrcorr;
         GtkWidget *rb_refine_geolocation;
         GtkWidget *mask_checkbutton;
+        GtkWidget *interp_dem_holes_checkbutton;
 
         dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
 
 	dem_entry = get_widget_checked("dem_entry");
 	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
+        interp_dem_holes_checkbutton =
+            get_widget_checked("interp_dem_holes_checkbutton");
 
         rb_terrcorr =
             get_widget_checked("rb_terrcorr");
@@ -444,6 +447,10 @@ settings_apply_to_gui(const Settings * s)
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(radiometric_checkbutton),
                 s->do_radiometric);
+
+            gtk_toggle_button_set_active(
+                GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton),
+                s->interp_dem_holes);
         }
 
 
@@ -916,14 +923,21 @@ settings_get_from_gui()
             assert(ret->refine_geolocation_is_checked);
         }
 
+        GtkWidget *interp_dem_holes_checkbutton =
+            get_widget_checked("interp_dem_holes_checkbutton");
+        
+        ret->interp_dem_holes =
+            gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton));
+
         rb_auto_water_mask =
             get_widget_checked("rb_auto_water_mask");
         rb_mask_file =
             get_widget_checked("rb_mask_file");
 
         GtkWidget *mask_checkbutton;
-        mask_checkbutton = get_widget_checked(
-                                                "mask_checkbutton");
+        mask_checkbutton = get_widget_checked("mask_checkbutton");
+
         if (gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(mask_checkbutton)))
         {
@@ -1641,6 +1655,7 @@ settings_to_config_file(const Settings *s,
         if (s->mask_file_is_checked) {
             fprintf(cf, "mask = %s\n", s->mask_file);
         }
+        fprintf(cf, "smooth dem holes = %d\n", s->interp_dem_holes);
         fprintf(cf, "\n");
     }
 
@@ -1884,6 +1899,7 @@ int apply_settings_from_config_file(char *configFile)
             cfg->terrain_correct->save_terrcorr_layover_mask;
         s.generate_dem = cfg->terrain_correct->save_terrcorr_dem;
         s.do_radiometric = cfg->terrain_correct->do_radiometric;
+        s.interp_dem_holes = cfg->terrain_correct->smooth_dem_holes;
     }
 
     /* misc */

@@ -614,17 +614,51 @@
 				  <property name="spacing">0</property>
 
 				  <child>
-				    <widget class="GtkCheckButton" id="dem_checkbutton">
+				    <widget class="GtkHBox" id="hbox59">
 				      <property name="visible">True</property>
-				      <property name="can_focus">True</property>
-				      <property name="label" translatable="yes">Digital Elevation Model (DEM) available</property>
-				      <property name="use_underline">True</property>
-				      <property name="relief">GTK_RELIEF_NORMAL</property>
-				      <property name="focus_on_click">True</property>
-				      <property name="active">False</property>
-				      <property name="inconsistent">False</property>
-				      <property name="draw_indicator">True</property>
-				      <signal name="toggled" handler="on_dem_checkbutton_toggled" last_modification_time="Wed, 02 Aug 2006 22:17:58 GMT"/>
+				      <property name="homogeneous">False</property>
+				      <property name="spacing">0</property>
+
+				      <child>
+					<widget class="GtkCheckButton" id="dem_checkbutton">
+					  <property name="visible">True</property>
+					  <property name="can_focus">True</property>
+					  <property name="label" translatable="yes">Digital Elevation Model (DEM) available</property>
+					  <property name="use_underline">True</property>
+					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
+					  <property name="active">False</property>
+					  <property name="inconsistent">False</property>
+					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="on_dem_checkbutton_toggled" last_modification_time="Wed, 02 Aug 2006 22:17:58 GMT"/>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">True</property>
+					  <property name="fill">True</property>
+					</packing>
+				      </child>
+
+				      <child>
+					<widget class="GtkCheckButton" id="interp_dem_holes_checkbutton">
+					  <property name="visible">True</property>
+					  <property name="tooltip" translatable="yes">If your DEM has holes (SRTM DEMs often do), you may get streaks in the terrain corrected image.  Turning this on will fill the holes with interpolated values which will reduce the presence of streaks.</property>
+					  <property name="can_focus">True</property>
+					  <property name="label" translatable="yes">Fill DEM holes with interpolated values</property>
+					  <property name="use_underline">True</property>
+					  <property name="relief">GTK_RELIEF_NORMAL</property>
+					  <property name="focus_on_click">True</property>
+					  <property name="active">False</property>
+					  <property name="inconsistent">False</property>
+					  <property name="draw_indicator">True</property>
+					  <signal name="toggled" handler="update_summary" last_modification_time="Thu, 05 Apr 2007 00:28:37 GMT"/>
+					</widget>
+					<packing>
+					  <property name="padding">0</property>
+					  <property name="expand">False</property>
+					  <property name="fill">False</property>
+					</packing>
+				      </child>
 				    </widget>
 				    <packing>
 				      <property name="padding">8</property>

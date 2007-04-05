@@ -116,6 +116,9 @@ void update_summary()
 
 	free(dem);
 
+        if (s->interp_dem_holes)
+            strcat(text, "\n   Fill DEM Holes: Yes");
+
         if (s->terrcorr_is_checked)
         {
             if (s->specified_tc_pixel_size)

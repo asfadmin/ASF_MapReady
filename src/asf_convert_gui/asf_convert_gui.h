@@ -159,6 +159,7 @@ typedef struct
   int generate_layover_mask;
   int generate_dem;
   int do_radiometric;
+  int interp_dem_holes;
 
   /* misc */
   int keep_files;

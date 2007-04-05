@@ -28,6 +28,7 @@ void terrcorr_options_changed()
   GtkWidget *terrcorr_vbox;
   GtkWidget *dem_checkbutton;
   GtkWidget *hbox_terrcorr_items;
+  GtkWidget *interp_dem_holes_checkbutton;
 
   hbox_terrcorr_items = get_widget_checked("hbox_terrcorr_items");
 
@@ -35,11 +36,14 @@ void terrcorr_options_changed()
 
   terrcorr_vbox = get_widget_checked("terrcorr_vbox");
   dem_checkbutton = get_widget_checked("dem_checkbutton");
+  interp_dem_holes_checkbutton =
+      get_widget_checked("interp_dem_holes_checkbutton");
 
   dem_is_checked =
     gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(dem_checkbutton));
 
   gtk_widget_set_sensitive(terrcorr_vbox, dem_is_checked);
+  gtk_widget_set_sensitive(interp_dem_holes_checkbutton, dem_is_checked);
 
   if (dem_is_checked) {
       GtkWidget *rb_terrcorr;
