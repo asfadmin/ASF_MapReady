@@ -1079,6 +1079,7 @@
 					      <child>
 						<widget class="GtkCheckButton" id="radiometric_checkbutton">
 						  <property name="visible">True</property>
+						  <property name="tooltip" translatable="yes">Radiometric terrain correction attempts to correct for backscatter variations caused by terrain geometry.</property>
 						  <property name="can_focus">True</property>
 						  <property name="label" translatable="yes">Also apply radiometric Terrain Correction</property>
 						  <property name="use_underline">True</property>
@@ -1944,6 +1945,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="pixel_size_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Specify the size of each pixel in the resulting image.  If not specified, the pixel size will be left unchanged.</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">Specify Pixel Size</property>
 				  <property name="use_underline">True</property>
@@ -1993,6 +1995,7 @@
 				    <widget class="GtkEntry" id="pixel_size_entry">
 				      <property name="width_request">120</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Output pixels will be square, with the specified size, in meters.</property>
 				      <property name="can_focus">True</property>
 				      <property name="editable">True</property>
 				      <property name="visibility">True</property>
@@ -2150,6 +2153,7 @@
 				  <child>
 				    <widget class="GtkOptionMenu" id="resample_option_menu">
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Method used to resample the data.  Nearest neighbor uses the nearest point in the input image.  Bilinear uses linear interpolation.  Bicubic uses cubic splines.  You will probably want to use bilinear.</property>
 				      <property name="can_focus">True</property>
 				      <property name="history">0</property>
 
@@ -2679,7 +2683,6 @@
 
 					      <child>
 						<widget class="GtkRadioButton" id="rb_pauli">
-						  <property name="visible">True</property>
 						  <property name="tooltip" translatable="yes">Pauli Decomposition.  Red: HH-VV, Green: HV, Blue: HH+VV</property>
 						  <property name="can_focus">True</property>
 						  <property name="label" translatable="yes">Pauli</property>
