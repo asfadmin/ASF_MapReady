@@ -18,6 +18,11 @@
 #include <process.h>
 #endif
 
+#ifdef linux
+#include <sys/types.h>
+#include <signal.h>
+#endif
+
 #include "asf.h"
 
 static gboolean keep_going = TRUE;
@@ -518,7 +523,6 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
                          // likely reason is that the waitpid() detection
                          // failed.  (I say "much more likely" because waitpid
                          // is checked 400x more often than the status file)
-
 
 #ifdef linux
                          // On Linux (which is actually the only platform
