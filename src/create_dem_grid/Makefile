@@ -12,7 +12,7 @@ LIBS  = \
 	-lm
 OBJS = create_dem_grid.o
 
-CFLAGS += -Wall
+CFLAGS += -Wall $(GLIB_CFLAGS)
 
 all: create_dem_grid
 	rm *.o
