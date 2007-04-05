@@ -66,14 +66,35 @@ get_string_from_registry_ex(const char *folder, const char * key, char * str_val
     return rv;
 }
 
+static char *form_asf_application_key()
+{
+    // form the registry key entry:
+    //   \SOFTWARE\ASF_Tools\<version>
+    char *ver = STRDUP(CONVERT_PACKAGE_VERSION_STRING);
+
+    // strip out all but "major.minor"
+    char *p = strchr(ver, '.');
+    if (p) p = strchr(p+1, '.');
+    if (p) *p = '\0';
+
+    char *app_key =
+        MALLOC(sizeof(char)*(strlen(s_asf_application_key)+10));
+    sprintf(app_key, "%s%s\\", s_asf_application_key, ver);
+
+    return app_key;
+}
+
 LONG 
 get_string_from_registry(const char * key, char * str_value)
 {
     HKEY Hkey;
     unsigned long read_size;
     LONG rv;
+    char *app_key;
 
-    rv = RegOpenKeyEx(HKEY_LOCAL_MACHINE, s_asf_application_key, 0,
+    app_key = form_asf_application_key();
+
+    rv = RegOpenKeyEx(HKEY_LOCAL_MACHINE, app_key, 0,
                       KEY_QUERY_VALUE, &Hkey);
     
     read_size = REG_VALUE_SIZE;
@@ -83,8 +104,7 @@ get_string_from_registry(const char * key, char * str_value)
     if (rv == ERROR_PATH_NOT_FOUND || rv == ERROR_FILE_NOT_FOUND ||
         rv == ERROR_INVALID_HANDLE) {
       RegCloseKey(Hkey);
-      rv = RegOpenKeyEx(HKEY_CURRENT_USER, s_asf_application_key, 0,
-                        KEY_QUERY_VALUE, &Hkey);
+      rv = RegOpenKeyEx(HKEY_CURRENT_USER, app_key, 0, KEY_QUERY_VALUE, &Hkey);
       rv = RegQueryValueEx(Hkey, s_asf_share_dir_key, 0, 0, (BYTE*)str_value, 
                            &read_size);
     }
@@ -101,6 +121,7 @@ get_string_from_registry(const char * key, char * str_value)
     }
     RegCloseKey(Hkey);
 
+    free(app_key);
     return rv;
 }
 
@@ -115,32 +136,35 @@ print_all_reg_vals()
     DWORD BuffSize;
     DWORD VarType;
     HKEY Hkey;
+    char *app_key;
+
+    app_key = form_asf_application_key();
 
     size = 512;
     BuffSize = 512;
 
-    RegOpenKeyEx(HKEY_CURRENT_USER, s_asf_application_key, 0,
-                 KEY_QUERY_VALUE, &Hkey);
+    RegOpenKeyEx(HKEY_CURRENT_USER, app_key, 0, KEY_QUERY_VALUE, &Hkey);
 
     do {
         Err = RegEnumValue(Hkey, ValEnumIndex, ValName, &size, NULL, &VarType,
-                           Buff, &BuffSize);
-	if (Err == ERROR_NO_MORE_ITEMS) break;
+            Buff, &BuffSize);
+        if (Err == ERROR_NO_MORE_ITEMS) break;
         if (Err == ERROR_SUCCESS) {
-	  printf("%s : %s\n", ValName, Buff);
+            printf("%s : %s\n", ValName, Buff);
         } else {
-          LPVOID ErrBuf;
-          DWORD dw = GetLastError();
-          FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                        FORMAT_MESSAGE_FROM_SYSTEM,
-                        0, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                        (LPTSTR) &ErrBuf, 0, 0);
-          printf("ouch, got an error! %d: %s\n", dw, ErrBuf);
-	  break;
+            LPVOID ErrBuf;
+            DWORD dw = GetLastError();
+            FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                FORMAT_MESSAGE_FROM_SYSTEM,
+                0, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR) &ErrBuf, 0, 0);
+            printf("ouch, got an error! %d: %s\n", dw, ErrBuf);
+            break;
         }
-	++ValEnumIndex;
+        ++ValEnumIndex;
     } while (1);
 
+    free(app_key);
     sleep(10);
     RegCloseKey(Hkey);
 }
