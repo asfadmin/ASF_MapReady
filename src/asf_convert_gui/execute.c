@@ -207,7 +207,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
     }
     else
     {
-        while (waitpid(-1, NULL, WNOHANG) == 0)
+        while (waitpid(pid, NULL, WNOHANG) == 0)
         {
             while (gtk_events_pending())
                 gtk_main_iteration();
@@ -496,7 +496,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 	char *statFile = appendExt(cfg_file, ".status");
 	char *projFile = appendExt(cfg_file, ".proj");
 
-        while (waitpid(-1, NULL, WNOHANG) == 0)
+        while (waitpid(pid, NULL, WNOHANG) == 0)
 	{
 	    while (gtk_events_pending())
 	      gtk_main_iteration();
