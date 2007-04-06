@@ -775,6 +775,9 @@ on_stop_button_clicked(GtkWidget * widget)
 
 void set_stop()
 {
+    if (!processing)
+        return;
+
     keep_going = FALSE;
 
     const char *tmp_dir = get_asf_tmp_dir();
