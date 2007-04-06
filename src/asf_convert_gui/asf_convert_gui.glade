@@ -2,7 +2,6 @@
 <!DOCTYPE glade-interface SYSTEM "http://glade.gnome.org/glade-2.0.dtd">
 
 <glade-interface>
-<requires lib="gnome"/>
 
 <widget class="GtkWindow" id="asf_convert">
   <property name="width_request">928</property>
@@ -4012,8 +4011,7 @@ Export: JPEG (size 1000)
 				  <child>
 				    <widget class="GtkImage" id="image2">
 				      <property name="visible">True</property>
-				      <property name="stock">gnome-stock-text-numbered-list</property>
-				      <property name="icon_size">4</property>
+				      <property name="pixbuf">gnome-stock-text-numbered-list</property>
 				      <property name="xalign">0.5</property>
 				      <property name="yalign">0.5</property>
 				      <property name="xpad">0</property>
@@ -4066,7 +4064,7 @@ Export: JPEG (size 1000)
 		  </child>
 
 		  <child>
-		    <widget class="GtkScrolledWindow" id="scrolledwindow1">
+		    <widget class="GtkScrolledWindow" id="scrolledwindow_in">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
 		      <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>
@@ -4399,7 +4397,7 @@ Export: JPEG (size 1000)
 		  </child>
 
 		  <child>
-		    <widget class="GtkScrolledWindow" id="scrolledwindow6">
+		    <widget class="GtkScrolledWindow" id="scrolledwindow_out">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
 		      <property name="hscrollbar_policy">GTK_POLICY_ALWAYS</property>

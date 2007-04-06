@@ -166,7 +166,7 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     /* We want to center the popup over the original thumbnail.  Since
     we know the original thumbnail is square, the clipbox corresponds
     to the region, so we can just get the clipbox of the thumbnail
-    and take the center of that as the center of our popum image.  */
+    and take the center of that as the center of our popup image.  */
     GdkRectangle tn_rec;	
     gdk_region_get_clipbox (tr, &tn_rec); 
 
@@ -178,15 +178,26 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
 
     GdkWindowAttr nwa;
     nwa.event_mask = GDK_ALL_EVENTS_MASK;
+
+    // popup must take into account any horizontal scrolling
+    // that has taken place in the tree view
+    GtkScrolledWindow *s =
+       GTK_SCROLLED_WINDOW(get_widget_checked("scrolledwindow_out"));
+    GtkAdjustment *adj = gtk_scrolled_window_get_hadjustment(s);
+    gint h_adj = (gint)(.5 + gtk_adjustment_get_value(adj));
+
     // FIXME: when the pointer is over the popup itself,
     // maybe_clear_popup_image doesn't notice that we are still over the
     // thumbnail below and so clears things!  FIXME: I don't understand
-    // wy this code puts the popup image top left corner only halfway
+    // why this code puts the popup image top left corner only halfway
     // down the thumbnail edge.  It looks fine this way actually, but as
-    // I understande this code it should put popup top left an thumbnail
+    // I understand this code it should put popup top left at thumbnail
     // bottom right.
-    nwa.x = tree_view_x + tn_rec.x + tn_rec.width;
-    nwa.y = tree_view_y + tn_rec.y + tn_rec.height;
+    // 4/5/07-- make the popup appear from the thumbnail upwards -- in
+    // the output section, too near the bottom of the screen, it often
+    // will go off the bottom and the user would have to adjust windows, etc
+    nwa.x = tree_view_x + tn_rec.x + tn_rec.width - h_adj;
+    nwa.y = tree_view_y + tn_rec.y + tn_rec.height - popup_size;
     nwa.width = popup_size;
     nwa.height = popup_size;
     nwa.wclass = GDK_INPUT_OUTPUT;
