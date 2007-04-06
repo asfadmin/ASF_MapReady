@@ -8,9 +8,15 @@ LIBS  = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	-lm
+
+CFLAGS += \
+	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS)
 
 OBJS  = deskew_dem.o
 
