@@ -227,6 +227,7 @@ gchar *find_dir_in_path(gchar * file);
 /* execute.c */
 int do_system_exec(const char *cmd);
 void process_items_from_list(GList *, gboolean);
+void set_stop();
 
 /* callbacks.c */
 void output_format_combobox_changed();

@@ -770,6 +770,11 @@ on_execute_button_clicked (GtkWidget *button)
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget * widget)
 {
+  set_stop();
+}
+
+void set_stop()
+{
     keep_going = FALSE;
 
     const char *tmp_dir = get_asf_tmp_dir();
@@ -786,3 +791,4 @@ on_stop_button_clicked(GtkWidget * widget)
     }
     free(stop_file);
 }
+

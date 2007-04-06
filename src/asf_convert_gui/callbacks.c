@@ -331,6 +331,7 @@ export_checkbutton_toggle()
 SIGNAL_CALLBACK void
 on_asf_convert_destroy(GtkWidget *widget, gpointer data)
 {
+    set_stop();
     gtk_main_quit();
 }
 
