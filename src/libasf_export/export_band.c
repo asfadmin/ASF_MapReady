@@ -662,7 +662,7 @@ export_band_image (const char *metadata_file_name,
       if (pauli && sample_mapping != NONE)
       {
         // Red channel statistics
-	asfPrintStatus("Gathering red channel statistics ...\n");
+	asfPrintStatus("\nGathering red channel statistics ...\n");
         calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
                              pauli_red, md->general->no_data,
                              &red_stats.min, &red_stats.max, &red_stats.mean,
@@ -679,7 +679,7 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Green channel statistics
-        asfPrintStatus("Gathering green channel statistics ...\n");
+        asfPrintStatus("\nGathering green channel statistics ...\n");
         calc_stats_from_file(image_data_file_name, "HV",
                              md->general->no_data,
                              &green_stats.min, &green_stats.max,
@@ -698,7 +698,7 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Blue channel statistics
-        asfPrintStatus("Gathering blue channel statistics ...\n");
+        asfPrintStatus("\nGathering blue channel statistics ...\n");
         calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
                                pauli_blue, md->general->no_data,
                                &blue_stats.min, &blue_stats.max,
@@ -719,7 +719,7 @@ export_band_image (const char *metadata_file_name,
       else if (sinclair && sample_mapping != NONE)
       {
         // Red channel statistics
-	asfPrintStatus("Gathering red channel statistics ...\n");
+	asfPrintStatus("\nGathering red channel statistics ...\n");
         calc_stats_from_file(image_data_file_name, "VV",
                              md->general->no_data,
                              &red_stats.min, &red_stats.max, &red_stats.mean,
@@ -736,7 +736,7 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Green channel statistics
-        asfPrintStatus("Gathering green channel statistics ...\n");
+        asfPrintStatus("\nGathering green channel statistics ...\n");
         calc_stats_from_file_with_formula(image_data_file_name, "HV", "VH",
                              sinclair_green, md->general->no_data,
                              &green_stats.min, &green_stats.max,
@@ -755,7 +755,7 @@ export_band_image (const char *metadata_file_name,
         }
 
         // Blue channel statistics
-        asfPrintStatus("Gathering blue channel statistics ...\n");
+        asfPrintStatus("\nGathering blue channel statistics ...\n");
         calc_stats_from_file(image_data_file_name, "HH",
                              md->general->no_data,
                              &blue_stats.min, &blue_stats.max,
@@ -779,7 +779,7 @@ export_band_image (const char *metadata_file_name,
 
         // Red channel statistics
         if (sample_mapping != NONE && !ignored[0]) { // byte image
-	  asfPrintStatus("Gathering red channel statistics ...\n");
+	  asfPrintStatus("\nGathering red channel statistics ...\n");
 	  calc_stats_from_file(image_data_file_name, band_name[0],
                                md->general->no_data,
                                &red_stats.min, &red_stats.max, &red_stats.mean,
@@ -798,7 +798,7 @@ export_band_image (const char *metadata_file_name,
 
         // Green channel statistics
         if (sample_mapping != NONE && !ignored[1]) { // byte image
-          asfPrintStatus("Gathering green channel statistics ...\n");
+          asfPrintStatus("\nGathering green channel statistics ...\n");
           calc_stats_from_file(image_data_file_name, band_name[1],
                                md->general->no_data,
                                &green_stats.min, &green_stats.max,
@@ -819,7 +819,7 @@ export_band_image (const char *metadata_file_name,
 
         // Blue channel statistics
         if (sample_mapping != NONE && !ignored[2]) { // byte image
-          asfPrintStatus("Gathering blue channel statistics ...\n");
+          asfPrintStatus("\nGathering blue channel statistics ...\n");
           calc_stats_from_file(image_data_file_name, band_name[2],
                                md->general->no_data,
                                &blue_stats.min, &blue_stats.max,
@@ -939,7 +939,7 @@ export_band_image (const char *metadata_file_name,
     if (md->optical && (true_color || false_color)) {
       asfPrintStatus("\nSampling color channels for contrast-expanded %s output...\n",
                      true_color ? "True Color" : false_color ? "False Color" : "Unknown");
-      asfPrintStatus("Gathering red channel statistics...\n");
+      asfPrintStatus("\nGathering red channel statistics...\n");
       calc_stats_from_file(image_data_file_name, band_name[0],
                            md->general->no_data,
                            &red_stats.min, &red_stats.max, &red_stats.mean,
@@ -949,7 +949,7 @@ export_band_image (const char *metadata_file_name,
       if (r_omin < red_stats.min) r_omin = red_stats.min;
       if (r_omax > red_stats.max) r_omax = red_stats.max;
 
-      asfPrintStatus("Gathering green channel statistics...\n");
+      asfPrintStatus("\nGathering green channel statistics...\n");
       calc_stats_from_file(image_data_file_name, band_name[1],
                            md->general->no_data,
                            &green_stats.min, &green_stats.max, &green_stats.mean,
@@ -959,7 +959,7 @@ export_band_image (const char *metadata_file_name,
       if (g_omin < green_stats.min) g_omin = green_stats.min;
       if (g_omax > green_stats.max) g_omax = green_stats.max;
 
-      asfPrintStatus("Gathering blue channel statistics...\n\n");
+      asfPrintStatus("\nGathering blue channel statistics...\n\n");
       calc_stats_from_file(image_data_file_name, band_name[2],
                            md->general->no_data,
                            &blue_stats.min, &blue_stats.max, &blue_stats.mean,
@@ -1020,7 +1020,7 @@ export_band_image (const char *metadata_file_name,
           red_float_line[jj] = pauli_red(HH, VV, md->general->no_data);
           blue_float_line[jj] = pauli_blue(HH, VV, md->general->no_data);
         }
-        
+
         // now HV into green
         get_float_line(fp, md, ii+HV_channel*offset, green_float_line);
 
@@ -1051,7 +1051,7 @@ export_band_image (const char *metadata_file_name,
         // now VV into red, and HH into blue
         get_float_line(fp, md, ii+HH_channel*offset, blue_float_line);
         get_float_line(fp, md, ii+VV_channel*offset, red_float_line);
-        
+
         // write out as normal
         if (format == TIF || format == GEOTIFF)
           write_rgb_tiff_float2byte(otif, red_float_line, green_float_line,
@@ -1245,6 +1245,7 @@ export_band_image (const char *metadata_file_name,
 	byte_line =
 	  (unsigned char *) MALLOC(sizeof(unsigned char) * sample_count);
 
+        asfPrintStatus("\nWriting output file...\n");
         if (have_look_up_table) { // Apply look up table
 	  for (ii=0; ii<md->general->line_count; ii++ ) {
 	    if (md->optical) {

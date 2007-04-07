@@ -18,15 +18,17 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
   *stdDev = 0.0;
   pix = 0;
 
+  asfPrintStatus("\nFinding min, max, and mean...\n");
   for (ii=0; ii<pixel_count; ii++) {
+    asfPercentMeter(((double)ii/(double)pixel_count));
     if (!ISNAN(mask)) {
-      if (data[ii] < *min && !FLOAT_EQUIVALENT(data[ii], mask)) 
+      if (data[ii] < *min && !FLOAT_EQUIVALENT(data[ii], mask))
 	*min = data[ii];
-      if (data[ii] > *max && !FLOAT_EQUIVALENT(data[ii], mask)) 
+      if (data[ii] > *max && !FLOAT_EQUIVALENT(data[ii], mask))
 	*max = data[ii];
       if (!FLOAT_EQUIVALENT(data[ii], mask)) {
 	*mean += data[ii];
-	pix++;      
+	pix++;
       }
     }
     else {
@@ -36,26 +38,31 @@ void calc_stats(float *data, long long pixel_count, double mask, double *min,
         ++pix;
     }
   }
+  asfPercentMeter(1.0);
  *mean /= pix;
+
+ asfPrintStatus("\nCalculating standard deviation...\n");
   for (ii=0; ii<pixel_count; ii++) {
+    asfPercentMeter(((double)ii/(double)pixel_count));
     if (!ISNAN(mask)) {
-      if (!FLOAT_EQUIVALENT(data[ii], mask)) 
+      if (!FLOAT_EQUIVALENT(data[ii], mask))
 	*stdDev += (data[ii] - *mean) * (data[ii] - *mean);
     }
     else
       *stdDev += (data[ii] - *mean) * (data[ii] - *mean);
   }
-  *stdDev = sqrt(*stdDev/(pix - 1)); 
-  
+  *stdDev = sqrt(*stdDev/(pix - 1));
+  asfPercentMeter(1.0);
+
   return;
 }
 
 /* Estimate mean and standard deviation of an image by taking regular
-   sampling points and doing the math with those. A mask value can be 
+   sampling points and doing the math with those. A mask value can be
    defined that is excluded from this calculation. If no mask value is
    supposed to be used, pass the mask value as NAN. */
-void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples, 
-		    double mask, double *min, double *max, double *mean, 
+void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
+		    double mask, double *min, double *max, double *mean,
 		    double *stdDev)
 {
   float *imgLine = (float *) MALLOC(sizeof(float) * samples);
@@ -93,7 +100,7 @@ void estimate_stats(FILE *fpIn, meta_parameters *meta, int lines, int samples,
   /* Estimate min, max, mean and standard deviation */
   *min = 99999;
   *max = -99999;
-  for (ii=0; ii<grid*grid; ii++) 
+  for (ii=0; ii<grid*grid; ii++)
     if (!ISNAN(stats[ii])) {
       if (stats[ii] < *min) *min = stats[ii];
       if (stats[ii] > *max) *max = stats[ii];
@@ -117,11 +124,11 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
 {
     int ii,jj;
     int first_band_number, second_band_number;
-    
+
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
-    
+
     meta_parameters *meta = meta_read(inFile);
 
     if (!first_band ||
@@ -129,7 +136,7 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
         strcmp(first_band, "???") == 0)
     {
         first_band_number = 0;
-    } 
+    }
     else
     {
         first_band_number =
@@ -157,18 +164,20 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
     float *band2_data = NULL;
     if (second_band_number)
         band2_data = MALLOC(sizeof(float) * meta->general->sample_count);
-    
+
     // pass 1 -- calculate mean, min & max
     FILE *fp = FOPEN(inFile, "rb");
     long long pixel_count=0;
+    asfPrintStatus("\nCalculating min, max, and mean...\n");
     for (ii=0; ii<meta->general->line_count; ++ii) {
+      asfPercentMeter((double)ii/(double)meta->general->line_count);
         get_float_line(fp, meta, ii + first_offset, band1_data);
         if (band2_data)
         {
             get_float_line(fp, meta, ii + second_offset, band2_data);
-        
+
             for (jj=0; jj<meta->general->sample_count; ++jj) {
-                if (ISNAN(mask) || 
+                if (ISNAN(mask) ||
                     (!FLOAT_EQUIVALENT(band1_data[jj], mask) &&
                      !FLOAT_EQUIVALENT(band2_data[jj], mask)))
                 {
@@ -178,7 +187,7 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
                     if (val < *min) *min = val;
                     if (val > *max) *max = val;
                     *mean += val;
-                    
+
                     ++pixel_count;
                 }
             }
@@ -196,8 +205,9 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
             }
         }
     }
+    asfPercentMeter(1.0);
     FCLOSE(fp);
-    
+
     *mean /= pixel_count;
 
     // Guard against weird data
@@ -211,13 +221,15 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
 
     // pass 2 -- update histogram, calculate standard deviation
     fp = FOPEN(inFile, "rb");
+    asfPrintStatus("\nCalculating standard deviation and histogram...\n");
     for (ii=0; ii<meta->general->line_count; ++ii) {
+      asfPercentMeter((double)ii/(double)meta->general->line_count);
         get_float_line(fp, meta, ii + first_offset, band1_data);
         if (band2_data)
         {
             get_float_line(fp, meta, ii + second_offset, band2_data);
             for (jj=0; jj<meta->general->sample_count; ++jj) {
-                if (ISNAN(mask) || 
+                if (ISNAN(mask) ||
                     (!FLOAT_EQUIVALENT(band1_data[jj], mask) &&
                      !FLOAT_EQUIVALENT(band2_data[jj], mask)))
                 {
@@ -240,6 +252,7 @@ calc_stats_from_file_with_formula(const char *inFile, char *first_band,
             }
         }
     }
+    asfPercentMeter(1.0);
     FCLOSE(fp);
     *stdDev = sqrt(*stdDev/(pixel_count - 1));
 
@@ -255,24 +268,26 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
                      double *stdDev, gsl_histogram **histogram)
 {
     int ii,jj;
-    
+
     *min = 999999;
     *max = -999999;
     *mean = 0.0;
-    
+
     meta_parameters *meta = meta_read(inFile);
     int band_number =
         (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
         get_band_number(meta->general->bands, meta->general->band_count, band);
     long offset = meta->general->line_count * band_number;
     float *data = MALLOC(sizeof(float) * meta->general->sample_count);
-    
+
     // pass 1 -- calculate mean, min & max
     FILE *fp = FOPEN(inFile, "rb");
     long long pixel_count=0;
+    asfPrintStatus("\nCalculating min, max, and mean...\n");
     for (ii=0; ii<meta->general->line_count; ++ii) {
+      asfPercentMeter(((double)ii/(double)meta->general->line_count));
         get_float_line(fp, meta, ii + offset, data);
-        
+
         for (jj=0; jj<meta->general->sample_count; ++jj) {
             if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
                 if (data[jj] < *min) *min = data[jj];
@@ -280,10 +295,11 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
                 *mean += data[jj];
                 ++pixel_count;
             }
-        }        
+        }
     }
+    asfPercentMeter(1.0);
     FCLOSE(fp);
-    
+
     *mean /= pixel_count;
 
     // Guard against weird data
@@ -297,7 +313,9 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
 
     // pass 2 -- update histogram, calculate standard deviation
     fp = FOPEN(inFile, "rb");
+    asfPrintStatus("\nCalculating standard deviation and histogram...\n");
     for (ii=0; ii<meta->general->line_count; ++ii) {
+      asfPercentMeter(((double)ii/(double)meta->general->line_count));
         get_float_line(fp, meta, ii + offset, data);
 
         for (jj=0; jj<meta->general->sample_count; ++jj) {
@@ -307,6 +325,7 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
             }
         }
     }
+    asfPercentMeter(1.0);
     FCLOSE(fp);
     *stdDev = sqrt(*stdDev/(pixel_count - 1));
 
