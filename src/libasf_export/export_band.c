@@ -212,7 +212,6 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
     GTIFKeySet (ogtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelTypeProjected);
     GTIFKeySet (ogtif, GeogLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
     GTIFKeySet (ogtif, ProjLinearUnitsGeoKey, TYPE_SHORT, 1, Linear_Meter);
-    GTIFKeySet (ogtif, GeogAngularUnitsGeoKey, TYPE_SHORT, 1, Angular_Degree);
 
     re_major = md->projection->re_major;
     re_minor = md->projection->re_minor;
