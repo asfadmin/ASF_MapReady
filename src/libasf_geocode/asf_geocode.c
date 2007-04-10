@@ -1158,6 +1158,12 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
+  // If the input metadata is byte, we will store everything as bytes,
+  // in order to save memory.  (But the math will use floating point.)
+  int process_as_byte = imd->general->data_type == BYTE;
+  if (process_as_byte)
+    asfPrintStatus("Internally storing data as byte.\n");
+
   // Projection coordinates per pixel in output image.  There is a
   // significant assumption being made here: we assume that the
   // projection coordinates (which are in meters) come at least
@@ -1196,8 +1202,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
              "Could not initialize output metadata structures.\n");
 
   // Update no data value
-  if (imd->optical && background_val < 0) background_val = 0;
-  if (imd->optical && background_val > 255) background_val = 255;
+  if (process_as_byte && background_val < 0) background_val = 0;
+  if (process_as_byte && background_val > 255) background_val = 255;
   omd->general->no_data = background_val;
 
   omd->general->x_pixel_size = pixel_size;
@@ -1310,8 +1316,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
         asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
       // Translate the command line notion of the resampling method into
-      // the lingo known by the float_image class.  The compiler is
-      // reassured with a default.
+      // the lingo known by the float_image and uint8_image classes.
+      // The compiler is reassured with a default.
       float_image_sample_method_t float_image_sample_method
         = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
       uint8_image_sample_method_t uint8_image_sample_method
@@ -1348,7 +1354,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       FloatImage *iim = NULL, *oim = NULL;
       UInt8Image *iim_b = NULL, *oim_b = NULL;
 
-      if (imd->optical)
+      if (process_as_byte)
       {
         iim_b = uint8_image_band_new_from_metadata(imd, kk, input_file->str);
         oim_b = uint8_image_new (oix_max + 1, oiy_max + 1);
@@ -1394,7 +1400,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
               || input_y_pixel < 0
               || input_y_pixel > (ssize_t) ii_size_y - 1.0 )
           {
-            if (imd->optical)
+            if (process_as_byte)
               uint8_image_set_pixel (oim_b, oix, oiy, (uint8_t)background_val);
             else
               float_image_set_pixel (oim, oix, oiy, (float)background_val);
@@ -1403,7 +1409,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
           // the input image.
           else
           {
-            if (imd->optical) {
+            if (process_as_byte) {
               uint8_image_set_pixel(oim_b, oix, oiy,
                 uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
                                    uint8_image_sample_method));
@@ -1482,7 +1488,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       
       if (y_pixel_size < 0 && omd->projection == NULL) {
         g_assert (0); 		/* Shouldn't be here.  */
-        if (!imd->optical) {
+        if (!process_as_byte) {
           float_image_flip_y (oim);
           y_pixel_size = -y_pixel_size;
         }
@@ -1493,7 +1499,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       g_string_append (output_file, ".img");
 
       ret = 1;
-      if (imd->optical) {
+      if (process_as_byte) {
         if(multiband) {
           // Writing all bands from input file to output file
           ret = uint8_image_band_store (oim_b, output_file->str, omd, kk>0);
@@ -1519,7 +1525,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       asfRequire (ret == 0, "Error saving byte output image.\n");
       g_string_free (output_file, TRUE);
 
-      if (imd->optical) {
+      if (process_as_byte) {
         uint8_image_free (iim_b);
         uint8_image_free (oim_b);
       }
