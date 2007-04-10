@@ -21,6 +21,7 @@
 #ifndef solaris
 #  include <stdint.h>
 #endif
+#include "asf_meta.h"
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -130,6 +131,16 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
 				  ssize_t original_size_x,
 				  ssize_t original_size_y,
 				  const char *file, off_t offset);
+
+// The function that does it all, generating an instance of UInt8Image
+// from a file and the metadata
+UInt8Image *
+uint8_image_new_from_metadata(meta_parameters *meta, const char *file);
+
+// For multi-band imagery the previous function needs to be more specific.
+UInt8Image *
+uint8_image_band_new_from_metadata(meta_parameters *meta, 
+				   int band, const char *file);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -249,7 +260,7 @@ uint8_image_gsl_histogram (UInt8Image *self, double min, double max,
 // is used.
 double
 uint8_image_apply_kernel (UInt8Image *self, ssize_t x, ssize_t y,
-			  gsl_matrix *kernel);
+			  gsl_matrix *kern);
 
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
@@ -298,6 +309,13 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer);
 // byte_order.  Returns 0 on success, nonzero on error.
 int
 uint8_image_store (UInt8Image *self, const char *file);
+
+int
+uint8_image_store_ext(UInt8Image *self, const char *file, int append_flag);
+
+int
+uint8_image_band_store(UInt8Image *self, const char *file,
+		       meta_parameters *meta, int append_flag);
 
 ///////////////////////////////////////////////////////////////////////////////
 //

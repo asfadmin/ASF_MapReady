@@ -22,6 +22,7 @@
 
 #include <jpeglib.h>
 #include "uint8_image.h"
+#include "asf.h"
 
 #ifndef linux
 #ifndef win32
@@ -40,13 +41,13 @@ static const size_t default_cache_size = 16 * 1048576;
 // unique names.
 static unsigned long current_tile_file_number = 0;
 // We need to ensure that multiple threads trying to create their own
-// images concurently don't end up with the sampe temporary file
+// images concurently don't end up with the same temporary file
 // names.
 G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
 // We don't want to let multiple threads twiddle the signal block mask
 // concurrently, or we might end up with the wrong set of signals
-// blocked.  This lock is used to gaurantee this can't happen (see the
+// blocked.  This lock is used to guarantee this can't happen (see the
 // usage for a better explanation).
 G_LOCK_DEFINE_STATIC (signal_block_activity);
 
@@ -126,7 +127,7 @@ initialize_tile_cache_file (void)
 }
 
 // This routine does the work common to several of the differenct
-// creation routines.  Basicly, it does everything but fill in the
+// creation routines.  Basically, it does everything but fill in the
 // contents of the disk tile store.
 static UInt8Image *
 initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
@@ -979,6 +980,39 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   return self;
 }
 
+// Returns a new UInt8Image, for the image corresponding to the given metadata.
+UInt8Image *
+uint8_image_new_from_metadata(meta_parameters *meta, const char *file)
+{
+  return uint8_image_band_new_from_metadata(meta, 0, file);
+}
+
+// Returns a new UInt8Image, for the image band corresponding to the 
+// given metadata.
+UInt8Image *
+uint8_image_band_new_from_metadata(meta_parameters *meta, 
+				   int band, const char *file)
+{
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+
+    FILE * fp = FOPEN(file, "rb");
+    UInt8Image * bi = uint8_image_new(ns, nl);
+
+    int i,j;
+    unsigned char *buf = MALLOC(sizeof(unsigned char)*ns);
+    for (i = 0; i < nl; ++i) {
+        get_byte_line(fp, meta, i+band*nl, buf);
+        for (j = 0; j < ns; ++j)
+            uint8_image_set_pixel(bi, j, i, buf[j]);
+    }
+
+    free(buf);
+    fclose(fp);
+
+    return bi;
+}
+
 // Copy the contents of tile with flattened offset tile_offset from
 // the memory cache to the disk file.  Its probably easiest to
 // understand this function by looking at how its used.
@@ -1144,10 +1178,6 @@ void
 uint8_image_get_region (UInt8Image *self, ssize_t x, ssize_t y, ssize_t size_x,
                         ssize_t size_y, uint8_t *buffer)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   g_assert (size_x >= 0);
   g_assert (x >= 0);
   g_assert ((size_t) x + (size_t) size_x - 1 < self->size_x);
@@ -1453,7 +1483,7 @@ uint8_image_gsl_histogram (UInt8Image *self, double min, double max,
 
 double
 uint8_image_apply_kernel (UInt8Image *self, ssize_t x, ssize_t y,
-			  gsl_matrix *kernel)
+			  gsl_matrix *kern)
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
@@ -1461,20 +1491,20 @@ uint8_image_apply_kernel (UInt8Image *self, ssize_t x, ssize_t y,
 
   g_assert (x >= 0 && (size_t) x < self->size_x);
   g_assert (y >= 0 && (size_t) y < self->size_y);
-  g_assert (kernel->size2 % 2 == 1);
-  g_assert (kernel->size2 == kernel->size1);
+  g_assert (kern->size2 % 2 == 1);
+  g_assert (kern->size2 == kern->size1);
 
-  size_t ks = kernel->size2;    // Kernel size.
+  size_t ks = kern->size2;    // Kernel size.
 
   double sum = 0;                // Result.
 
   size_t ii;
-  for ( ii = 0 ; ii < kernel->size1 ; ii++ ) {
+  for ( ii = 0 ; ii < kern->size1 ; ii++ ) {
     ssize_t iy = y - ks / 2 + ii; // Current image y pixel index.
     size_t jj;
-    for ( jj = 0 ; jj < kernel->size2 ; jj++ ) {
+    for ( jj = 0 ; jj < kern->size2 ; jj++ ) {
       ssize_t ix = x - ks / 2 + jj; // Current image x pixel index
-      sum += (gsl_matrix_get (kernel, jj, ii)
+      sum += (gsl_matrix_get (kern, jj, ii)
               * uint8_image_get_pixel_with_reflection (self, ix, iy));
     }
   }
@@ -1486,10 +1516,6 @@ double
 uint8_image_sample (UInt8Image *self, double x, double y,
                     uint8_image_sample_method_t sample_method)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
-
   g_assert (x >= 0.0 && x <= (double) self->size_x - 1.0);
   g_assert (y >= 0.0 && y <= (double) self->size_y - 1.0);
 
@@ -1743,39 +1769,52 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
 }
 
 int
-uint8_image_store (UInt8Image *self, const char *file)
+uint8_image_band_store(UInt8Image *self, const char *file,
+		       meta_parameters *meta, int append_flag)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
-  // tested yet.
-  g_assert_not_reached ();
+  // Give status
+  if (meta->general->band_count == 1)
+    asfPrintStatus("Storing image ...\n");
+  else
+    asfPrintStatus("Storing band ...\n");
 
   // Open the file to write to.
-  FILE *fp = fopen (file, "w");
+  FILE *fp = fopen (file, append_flag ? "a" : "w");
   // FIXME: we need some error handling and propagation here.
   g_assert (fp != NULL);
 
-  // We will write the image data in horizontal stips one line at a
-  // time.
+  // We will write the image data in horizontal stips one line at a time.
   uint8_t *line_buffer = g_new (uint8_t, self->size_x);
 
+  // Sanity check
+  if (meta->general->line_count != (int)self->size_y ||
+      meta->general->sample_count != (int)self->size_x)
+  {
+      asfPrintError("Inconsistency between metadata and image!\n"
+                    "Metadata says: %dx%d LxS, image has %dx%d\n"
+                    "Possibly did not write metadata before storing image.\n",
+                    meta->general->line_count, meta->general->sample_count,
+                    self->size_y, self->size_x);
+  }
+
   // Reorganize data into tiles in tile oriented disk file.
-  size_t ii;
-  for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+  int ii;
+  for ( ii = 0 ; ii < (int)self->size_y ; ii++ ) {
     uint8_image_get_row (self, ii, line_buffer);
-    // Write the data.
-    size_t write_count = fwrite (line_buffer, sizeof (uint8_t), self->size_x,
-                                 fp);
-    // If we wrote less than expected,
-    if ( write_count < self->size_x ) {
-      // it must have been a write error (probably no space left),
-      g_assert (ferror (self->tile_file));
-      // so print an error message,
-      fprintf (stderr, "Error writing file %s: %s\n", file, strerror (errno));
-      // and exit.
+
+    size_t write_count =
+      fwrite(line_buffer, sizeof(uint8_t), self->size_x, fp);
+
+    if (write_count < self->size_x) {
+      // it must have been a write error (no space left, possibly)
+      g_assert(ferror(self->tile_file));
+      // so print an error message
+      fprintf(stderr, "Error writing file %s: %s\n", file, strerror(errno));
+      // and exit
       exit (EXIT_FAILURE);
     }
 
-    g_assert (write_count == self->size_x);
+    g_assert(write_count == self->size_x);
   }
 
   // Done with the line buffer.
@@ -1785,8 +1824,20 @@ uint8_image_store (UInt8Image *self, const char *file)
   int return_code = fclose (fp);
   g_assert (return_code == 0);
 
-  // Return succes code.
+  // Return success code.
   return 0;
+}
+
+int
+uint8_image_store (UInt8Image *self, const char *file)
+{
+  meta_parameters *meta;
+  meta = meta_read(file);
+
+  int ret = uint8_image_band_store(self, file, meta, 0);
+  meta_free(meta);
+
+  return ret;
 }
 
 int
