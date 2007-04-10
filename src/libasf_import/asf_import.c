@@ -267,17 +267,6 @@ int asf_import(radiometry_t radiometry, int db_flag,
                        "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
                        "corresponding to specified inBaseName");
       }
-      // At the moment, we are set up to ingest only a GeoTIFF
-      // variants, and no general GeoTIFF handler is implemented
-      // (rationale: it would stand an excellent chance of not working
-      // on a random flavor we haven't tested).  The idea is to keep
-      // adding flavors as needed by teaching detect_geotiff_flavor
-      // about them and adding a specialized inport functions capable
-      // of ingesting them.  Eventually we might feel comfortable
-      // taking a crack at a catch-all importer, but I think its
-      // probably better just to have a few generalized detectable
-      // flavors at the end of detect_geotiff_flavor, and for the
-      // really weird stuff go ahead and throw an exception.
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
         if (importer == import_arcgis_geotiff     &&
@@ -302,13 +291,14 @@ int asf_import(radiometry_t radiometry, int db_flag,
           importer (inGeotiffName->str, outBaseName);
         }
       } else {
-//        asfPrintWarning ("Couldn't identify the flavor of the GeoTIFF, "
-//                         "falling back to the generic GeoTIFF importer (cross "
-//                         "fingers)... \n");
-        // Haven't written import-generic_geotiff yet...
-
-        asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
-        //import_generic_geotiff (inGeotiffName->str, outBaseName);
+        asfPrintStatus("\nFound GENERIC type of GeoTIFF...\n");
+        //asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
+        if (strlen(image_data_type) && strncmp(image_data_type, "???", 3) != 0) {
+          import_generic_geotiff (inGeotiffName->str, outBaseName, image_data_type);
+        }
+        else {
+          import_generic_geotiff (inGeotiffName->str, outBaseName);
+        }
       }
       g_string_free (inGeotiffName, TRUE);
     }
