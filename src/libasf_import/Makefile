@@ -58,6 +58,7 @@ OBJS  = ardop_write.o \
 	find_geotiff_name.o \
 	frame.o \
 	geotiff_flavors.o \
+	geotiff_support.o \
 	import_arcgis_geotiff.o \
 	import_asf_utm_geotiff.o \
 	import_generic_geotiff.o \

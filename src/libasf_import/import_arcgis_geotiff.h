@@ -1,5 +1,5 @@
 #ifndef _IMPORT_ARCGIS_GEOTIFF_H_
-#define _IMPORT_ARCGIS_GEOTIFF_
+#define _IMPORT_ARCGIS_GEOTIFF_H
 
 
 /***** ERDAS MIF data types & lengths, in bytes (below)                 *****/
