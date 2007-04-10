@@ -1374,8 +1374,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
         iim_b = uint8_image_band_new_from_metadata(imd, kk, input_file->str);
       else
         iim = float_image_band_new_from_metadata(imd, kk, input_file->str);
-      
-      g_string_free (input_file, TRUE);
 
       // Open the output image
       // (for append, if multiband, and this isn't the first band)
@@ -1508,6 +1506,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   free(projY);
   free(output_line);
 
+  g_string_free (input_file, TRUE);
   g_string_free (output_file, TRUE);
 
   if (band_name) {
