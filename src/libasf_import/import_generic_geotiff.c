@@ -902,27 +902,6 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   FREE (citation);
 }
 
-/******************** local_machine_is_little_endian() ********************/
-/*  COMMENTS:                                                             */
-/*    - Returns non-zero if the local machine architecture/OS writes      */
-/*      data to memory/disk in little-endian order, e.g. Intel format     */
-/*      else returns zero                                                 */
-/*    - 'testlong' is a multi-byte unsigned integer with a non-zero value */
-/*      stored in its least-significant byte (LSB).  If the local machine */
-/*      writes in big-endian format, then '*(unsigned char*)&testlong' (the byte  */
-/*      at the lowest address in memory where 'testlong' is written) will */
-/*      be zero.  But if the local machine is writing in little-endian    */
-/*      format, then the bytes of 'testlong' will be in reverse order     */
-/*      and the LSB will be located at the lowest byte address, e.g.      */
-/*      '*(unsigned char*)&testlong' will return the LSB ...non-zero in this case */
-unsigned char local_machine_is_little_endian()
-{
-  unsigned long testlong=1L;
-  unsigned char rtn = *(unsigned char*)&testlong;
-
-  return rtn;
-}
-
 // Checking routine for projection parameter input.
 void check_projection_parameters(meta_projection *mp)
 {
