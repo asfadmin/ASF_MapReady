@@ -488,13 +488,15 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 
   // Input metadata.
   meta_parameters *imd = meta_read (input_meta_data->str);
+
   // We can't handle slant range images at the moment.  Happily, there
   // are only a very small number of these products around.
   if ( imd->sar )
     if ( imd->sar->image_type == 'S' ) {
       asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
-		     "left-looking AMM-1 era images) at present.\n");
+                     "left-looking AMM-1 era images) at present.\n");
     }
+
   if (imd->optical) {
     if (strcmp(imd->general->mode, "1A") == 0 ||
         strcmp(imd->general->mode, "1B1") == 0) {
@@ -687,7 +689,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // This lets us determine the exact extent of the projected image in
   // projection coordinates.
   asfPrintStatus ("Determining input image extent in projection coordinate "
-		  "space... ");
+		  "space... \n");
 
   double min_x = DBL_MAX;
   double max_x = -DBL_MAX;
@@ -722,6 +724,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
+
+      asfPercentMeter((float)current_edge_point / (float)edge_point_count);
     }
     for ( ; jj < ii_size_y - 1 ; jj++ ) {
       if ( input_projected ) {
@@ -742,6 +746,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
+
+      asfPercentMeter((float)current_edge_point / (float)edge_point_count);
     }
     for ( ; ii > 0 ; ii-- ) {
       if ( input_projected ) {
@@ -762,6 +768,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
+
+      asfPercentMeter((float)current_edge_point / (float)edge_point_count);
     }
     for ( ; jj > 0 ; jj-- ) {
       if ( input_projected ) {
@@ -782,6 +790,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	lons[current_edge_point] *= D2R;
       }
       current_edge_point++;
+
+      asfPercentMeter((float)current_edge_point / (float)edge_point_count);
     }
     g_assert (current_edge_point == edge_point_count);
     // Pointers to arrays of projected coordinates to be filled in.
@@ -805,8 +815,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     g_free (lons);
     g_free (lats);
   }
-
-  asfPrintStatus ("done.\n");
 
   if (pixel_size < 0)
   {
@@ -841,7 +849,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // compute transformations for points on a grid_size * grid_size
   // grid and a sparse_grid_size * sparse_grid_size grid.
   asfPrintStatus ("Performing analytical projection of a spatially "
-		  "distributed\nsubset of input image pixels... ");
+		  "distributed\nsubset of input image pixels...\n");
   fflush (stdout);
   double x_range_size = max_x - min_x, y_range_size = max_y - min_y;
   // This grid size seems to work pretty well in general for our
@@ -945,10 +953,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	current_sparse_mapping++;
       }
       current_mapping++;
+
+      asfPercentMeter((float)current_mapping / (float)(grid_size*grid_size));
     }
   }
-
-  asfPrintStatus ("done.\n");
 
   // Here are some convenience macros for the spline model.
 #define X_PIXEL(x, y) reverse_map_x (&dtf, x, y)
@@ -1202,6 +1210,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
              "Could not initialize output metadata structures.\n");
 
   // Update no data value
+  if (!meta_is_valid_double(background_val)) background_val = 0;
   if (process_as_byte && background_val < 0) background_val = 0;
   if (process_as_byte && background_val > 255) background_val = 255;
   omd->general->no_data = background_val;
@@ -1301,8 +1310,49 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // Back to radians... for the subsequent calculations
   to_radians (projection_type, pp);
 
-  // Now we are ready to produce our output image.
-  asfPrintStatus ("Resampling input image into output image coordinate space...\n");
+  // Translate the command line notion of the resampling method into
+  // the lingo known by the float_image and uint8_image classes.
+  // The compiler is reassured with a default.
+  float_image_sample_method_t float_image_sample_method
+    = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+  uint8_image_sample_method_t uint8_image_sample_method
+    = UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
+  
+  switch ( resample_method ) {
+    case RESAMPLE_NEAREST_NEIGHBOR:
+      float_image_sample_method =
+        FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+      uint8_image_sample_method =
+        UINT8_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+      break;
+    case RESAMPLE_BILINEAR:
+      float_image_sample_method =
+        FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+      uint8_image_sample_method =
+        UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
+      break;
+    case RESAMPLE_BICUBIC:
+      float_image_sample_method =
+        FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
+      uint8_image_sample_method =
+        UINT8_IMAGE_SAMPLE_METHOD_BICUBIC;
+      break;
+    default:
+      g_assert_not_reached ();
+  }
+
+  // Input file name
+  GString *input_file = g_string_new (input_image->str);
+  g_string_append (input_file, ".img");
+
+  // Generate the output filename
+  GString *output_file = g_string_new (output_image->str);
+  g_string_append (output_file, ".img");
+
+  // here is where we will store the line-by-line info
+  double *projX = MALLOC(sizeof(double)*(oix_max+1));
+  double *projY = MALLOC(sizeof(double)*(oix_max+1));
+  float *output_line = MALLOC(sizeof(float)*(oix_max+1));
 
   // Now the mapping function is calculated and we can apply that to
   // all the bands in the file (or to the single band selected with
@@ -1315,61 +1365,22 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       else
         asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
-      // Translate the command line notion of the resampling method into
-      // the lingo known by the float_image and uint8_image classes.
-      // The compiler is reassured with a default.
-      float_image_sample_method_t float_image_sample_method
-        = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-      uint8_image_sample_method_t uint8_image_sample_method
-        = UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
-
-      switch ( resample_method ) {
-        case RESAMPLE_NEAREST_NEIGHBOR:
-          float_image_sample_method =
-            FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-          uint8_image_sample_method =
-            UINT8_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-          break;
-        case RESAMPLE_BILINEAR:
-          float_image_sample_method =
-            FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-          uint8_image_sample_method =
-            UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
-          break;
-        case RESAMPLE_BICUBIC:
-          float_image_sample_method =
-            FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
-          uint8_image_sample_method =
-            UINT8_IMAGE_SAMPLE_METHOD_BICUBIC;
-          break;
-        default:
-          g_assert_not_reached ();
-      }
-
-      // Input file name
-      GString *input_file = g_string_new (input_image->str);
-      g_string_append (input_file, ".img");
-
-      // For optical data -- do processing as BYTE, to save memory
-      FloatImage *iim = NULL, *oim = NULL;
-      UInt8Image *iim_b = NULL, *oim_b = NULL;
-
+      // For optical data -- we'll do processing as BYTE, to save memory
+      FloatImage *iim = NULL;
+      UInt8Image *iim_b = NULL;
+      
+      // open up the input image
       if (process_as_byte)
-      {
         iim_b = uint8_image_band_new_from_metadata(imd, kk, input_file->str);
-        oim_b = uint8_image_new (oix_max + 1, oiy_max + 1);
-      }
       else
-      {
         iim = float_image_band_new_from_metadata(imd, kk, input_file->str);
-        oim = float_image_new (oix_max + 1, oiy_max + 1);
-      }
-
+      
       g_string_free (input_file, TRUE);
 
-      double *projX = MALLOC(sizeof(double)*(oix_max+1));
-      double *projY = MALLOC(sizeof(double)*(oix_max+1));
-        
+      // Open the output image
+      // (for append, if multiband, and this isn't the first band)
+      FILE *outFp = FOPEN(output_file->str, multiband && kk>0 ? "a" : "w");
+
       // Set the pixels of the output image.
       size_t oix, oiy;		// Output image pixel indicies.
       for (oiy = 0 ; oiy <= oiy_max ; oiy++) {
@@ -1383,6 +1394,9 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
           // We want projection coordinates to increase as we move from
           // the bottom of the image to the top, so that north ends up up.
           double oiy_pc = (1.0-(double)oiy/oiy_max) * (max_y-min_y) + min_y;
+
+          projX[oix] = oix_pc;
+          projY[oix] = oiy_pc;
           
           // Determine pixel of interest in input image.  The fractional
           // part is desired, we will use some sampling method to
@@ -1400,38 +1414,31 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
               || input_y_pixel < 0
               || input_y_pixel > (ssize_t) ii_size_y - 1.0 )
           {
-            if (process_as_byte)
-              uint8_image_set_pixel (oim_b, oix, oiy, (uint8_t)background_val);
-            else
-              float_image_set_pixel (oim, oix, oiy, (float)background_val);
+            output_line[oix] = background_val;
           }
           // Otherwise, set to the value from the appropriate position in
           // the input image.
           else
           {
             if (process_as_byte) {
-              uint8_image_set_pixel(oim_b, oix, oiy,
+              output_line[oix] = 
                 uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
-                                   uint8_image_sample_method));
+                                   uint8_image_sample_method);
+            }
+            else if ( imd->general->image_data_type == DEM ) {
+              output_line[oix] =
+                dem_sample(iim, input_x_pixel, input_y_pixel,
+                           float_image_sample_method);
             }
             else {
-              float value;
-              if ( imd->general->image_data_type == DEM )
-                value = dem_sample(iim, input_x_pixel, input_y_pixel,
+              output_line[oix] =
+                float_image_sample(iim, input_x_pixel, input_y_pixel,
                                    float_image_sample_method);
-              else
-                value = float_image_sample(iim, input_x_pixel, input_y_pixel,
-                                           float_image_sample_method);
-              
-              float_image_set_pixel (oim, oix, oiy, value);
             }
 
             oix_last_valid = oix;
             if (oix_first_valid == -1) oix_first_valid = oix;
           }
-            
-          projX[oix] = oix_pc;
-          projY[oix] = oiy_pc;
         } // end of for-each-sample-in-line set output values
           
         // If we are reprojecting a DEM, need to account for the height
@@ -1463,11 +1470,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
           // on this line (i.e., both are -1)
           if (oix_first_valid > 0 && oix_last_valid > 0) {
             for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
-
-              float val = float_image_get_pixel(oim, oix, oiy);
-              val += get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
-              float_image_set_pixel(oim, oix, oiy, val);
-
+              output_line[oix] += get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
             }
           }
           
@@ -1475,12 +1478,19 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
           free(lon);
         }
         
+        // write the line
+        put_float_line(outFp, omd, oiy, output_line);
+
         asfLineMeter(oiy, oiy_max + 1 );
       } // End of for-each-line set output values
       
-      free(projX);
-      free(projY);
-      
+      fclose(outFp);
+
+      if (process_as_byte)
+        uint8_image_free (iim_b);
+      else
+        float_image_free (iim);
+
       if (imd->general->band_count == 1)
         asfPrintStatus("Done resampling image.\n");
       else
@@ -1488,66 +1498,24 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       
       if (y_pixel_size < 0 && omd->projection == NULL) {
         g_assert (0); 		/* Shouldn't be here.  */
-        if (!process_as_byte) {
-          float_image_flip_y (oim);
-          y_pixel_size = -y_pixel_size;
-        }
-      }
-      
-      // Store the output image, and free image resources.
-      GString *output_file = g_string_new (output_image->str);
-      g_string_append (output_file, ".img");
-
-      ret = 1;
-      if (process_as_byte) {
-        if(multiband) {
-          // Writing all bands from input file to output file
-          ret = uint8_image_band_store (oim_b, output_file->str, omd, kk>0);
-        }
-        else {
-          // Write single band
-          g_assert (kk == band_num);
-          ret = uint8_image_band_store (oim_b, output_file->str, omd, 0);
-        }
-      }
-      else {
-        if(multiband) {
-          // Writing all bands from input file to output file
-          ret = float_image_band_store (oim, output_file->str, omd, kk>0);
-        }
-        else {
-          // Write single band
-          g_assert (kk == band_num);
-          ret = float_image_band_store (oim, output_file->str, omd, 0);
-        }
-      }
-
-      asfRequire (ret == 0, "Error saving byte output image.\n");
-      g_string_free (output_file, TRUE);
-
-      if (process_as_byte) {
-        uint8_image_free (iim_b);
-        uint8_image_free (oim_b);
-      }
-      else {
-        float_image_free (oim);
-        float_image_free (iim);
       }
       
     } // End of 'if multiband or single band and current band is requested band'
   } // End of 'for each band' in the file, 'map-project the data into the file'
 
+  // Free up a bunch of stuff used during the resampling
+  free(projX);
+  free(projY);
+  free(output_line);
+
+  g_string_free (output_file, TRUE);
 
   if (band_name) {
-      int i;
-      for (i=0; i < imd->general->band_count; i++) {
-          //printf("Band: %s\n", band_name[i]);
-          FREE(band_name[i]);
-      }
+      for (kk=0; kk < imd->general->band_count; ++kk)
+          FREE(band_name[kk]);
       FREE(band_name);
   }
 
-  // Done with the metadata.
   meta_free (imd);
   meta_free (omd);
 
