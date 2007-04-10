@@ -1,13 +1,14 @@
-// Import a generic GeoTIFF (a projected GeoTIFF flavor) into
+// Import a generic GeoTIFF (a projected GeoTIFF flavor), including
+// projection data from its metadata file (ERDAS MIF HFA .aux file) into
 // our own ASF Tools format (.img, .meta)
 //
 // NOTE:
 // 1. At this time, only supports Albers Equal Area Conic, Lambert Azimuthal
 //    Equal Area, Lambert Conformal Conic, Polar Stereographic, and UTM
-// 2. Some GeoTIFF files do not store the projection paremeters in geokeys
-//    as is usual, but store the information in the (type) double and (type)
-//    ASCII arrays and/or one of two citation strings.  This import tool
-//    currently only supports projection data stored in the standard geokeys
+// 2. There may be some data duplication between the GeoTIFF tag contents
+//    in the TIFF file and the data contents of the metadata (.aux) file.
+// 3. Data and parameters found in the metadata (.aux) file supercede the
+//    data and parameter values found in the TIFF file
 //
 
 #include <assert.h>
@@ -32,52 +33,62 @@
 #include "asf_nan.h"
 #include "asf_import.h"
 
+#include "projected_image_import.h"
 #include "tiff_to_float_image.h"
 #include "write_meta_and_img.h"
 
 #include "import_generic_geotiff.h"
 
+#define BAD_VALUE_SCAN
+
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define IMPORT_GENERIC_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, IMPORT_GENERIC_FLOAT_MICRON))
+
 #define DEFAULT_UTM_SCALE_FACTOR     0.9996
+
 #define DEFAULT_SCALE_FACTOR         1.0
+#define UNKNOWN_PROJECTION_TYPE       -1
 
-#define GEOTIFF_NAD27_DATUM                  "NAD27"
-#define GEOTIFF_NAD83_DATUM                  "NAD83"
-#define GEOTIFF_HARN_DATUM                   "HARN"
-#define GEOTIFF_WGS84_DATUM                  "WGS 84"
+#define NAD27_DATUM_STR   "NAD27"
+#define NAD83_DATUM_STR   "NAD83"
+#define HARN_DATUM_STR    "HARN"
+#define WGS84_DATUM_STR   "WGS 84"
+#define HUGHES_DATUM_STR  "HUGHES"
 
-#define UNKNOWN_PROJECTION_TYPE             -1
-
-#define GEOTIFF_NUM_PROJDPARAMS              8
-#define GEOTIFF_PROJPARAMS_STATE_PLANE       0
-#define GEOTIFF_PROJPARAMS_USER_INDEX1       1
-#define GEOTIFF_PROJPARAMS_STD_PARALLEL1     2
-#define GEOTIFF_PROJPARAMS_STD_PARALLEL2     3
-#define GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN  4
-#define GEOTIFF_PROJPARAMS_LAT_ORIGIN        5
-#define GEOTIFF_PROJPARAMS_FALSE_EASTING     6
-#define GEOTIFF_PROJPARAMS_FALSE_NORTHING    7
-
-#define MAX_NAME_LEN                         256
+#define USER_DEFINED_PCS             32767
 
 spheroid_type_t SpheroidName2spheroid(char *sphereName);
-int PCS_2_UTM (short pcs, datum_type_t *datum, unsigned long *zone);
+int PCS_2_UTM (short pcs, char *hem, datum_type_t *datum, unsigned long *zone);
 void copy_proj_parms(meta_projection *dest, meta_projection *src);
+void check_projection_parameters(meta_projection *mp);
 
-// Import a generic GeoTIFF (a projected GeoTIFF flavor) into
+// Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
+// projection data from its metadata file (ERDAS MIF HFA .aux file) into
 // our own ASF Tools format (.img, .meta)
 //
-void
-import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
+void import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 {
+  // Counts holding the size of the returns from gt_methods.get method
+  // calls.  The geo_keyp.h header has the interface specification for
+  // this method.  gt_methods.get doesn't seem to be documented as
+  // part of the public GeoTIFF API, however, it works, unlike the
+  // TIFFGetField call, which seg faults.  Maybe I'm missing some
+  // setup call that I need, but: a. I can't find anything in the
+  // incomplete API documentation telling me what that might be, and
+  // b. I'm using a sequence of calls analogous to that use in
+  // export_as_geotiff, which works, and c. suspiciously, the listgeo
+  // program that comes with libgeotiff also uses this gt_methods.get
+  // approach and doesn't use TIFFGetField at all so far as I can
+  // tell.
+  int geotiff_data_exists;
   int count;
   int read_count;
-  int i;
   short model_type;
-  short projection_type;
   short raster_type;
   short linear_units;
   double scale_factor;
-  double proParams[GEOTIFF_NUM_PROJDPARAMS];
   TIFF *input_tiff;
   GTIF *input_gtif;
   meta_parameters *meta_out;
@@ -110,9 +121,9 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Let the user know what format we are working on.
   asfPrintStatus
-      ("   Input data type: GeoTIFF (ASF generic importer)\n");
+    ("\n   Input data type: Generic GeoTIFF\n");
   asfPrintStatus
-      ("   Output data type: ASF format\n");
+    ("   Output data type: ASF format\n");
 
   // Open the input tiff file.
   input_tiff = XTIFFOpen (inFileName, "r");
@@ -124,36 +135,20 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 	      "Error reading GeoTIFF keys from input TIFF file.\n");
 
 
-  /***** READ TIFF TAGS AND GEOKEYS *****/
+  /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
   /*                                            */
   // Read GeoTIFF file citation (general info from the maker of the file)
-  // NOTE: The citation may or may not exist ...
-  char *citation;
+  // NOTE: The citation may or may not exist ...it is not required by the
+  // file standard but we need it to help check for ERDAS IMAGINE type format
   int citation_length;
   int typeSize;
   tagtype_t citation_type;
   citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
-  if (citation_length <= 0) {
-    asfPrintWarning("\nMissing GT citation string in GeoTIFF file\n");
-    citation = NULL;
-  }
-  else {
-    citation = MALLOC ((citation_length) * typeSize);
-    GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
-    asfPrintStatus("GT Citation: %s\n", citation);
-  }
-
-  char *PCScitation;
-  citation_length = GTIFKeyInfo(input_gtif, PCSCitationGeoKey, &typeSize, &citation_type);
-  if (citation_length <= 0) {
-    asfPrintWarning("\nMissing PCS citation string in GeoTIFF file\n");
-    PCScitation = NULL;
-  }
-  else {
-    PCScitation = MALLOC ((citation_length) * typeSize);
-    GTIFKeyGet (input_gtif, PCSCitationGeoKey, citation, 0, citation_length);
-    asfPrintStatus("PCS Citation: %s\n", citation);
-  }
+  asfRequire (citation_length > 0,
+              "Missing citation string in GeoTIFF file\n");
+  char *citation = MALLOC ((citation_length) * typeSize);
+  GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
+  asfPrintStatus("\nCitation: %s\n", citation);
 
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
@@ -161,26 +156,30 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
   // (rationale: ArcView currently doesn't either, and multiple tie
   // points don't make sense with the pixel scale option, which we
   // need).
+  // NOTE: Since neither ERDAS or ESRI store tie points in the .aux
+  // file associated with their geotiffs, it is _required_ that they
+  // are found in their tiff files.
   double *tie_point;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
-  &tie_point);
+                               &tie_point);
   asfRequire (count == 6,
-              "\nGeoTIFF file does not contain tie points\n");
+              "GeoTIFF file does not contain tie points\n");
   // Get the scale factors which define the scale relationship between
   // raster pixels and geographic coordinate space.
   double *pixel_scale;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
-  &pixel_scale);
+                               &pixel_scale);
   asfRequire (count == 3,
-              "\nGeoTIFF file does not contain pixel scale parameters\n");
+              "GeoTIFF file does not contain pixel scale parameters\n");
   asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
-              "\nGeoTIFF file contains invalid pixel scale parameters\n");
+              "GeoTIFF file contains invalid pixel scale parameters\n");
 
-  // CHECK TO SEE IF THE GEOTIFF DOES CONTAIN USEFUL DATA:
+  // CHECK TO SEE IF THE GEOTIFF CONTAINS USEFUL DATA:
   //  If the tiff file contains geocoded information, then the model type
   // will be ModelTypeProjected.  We add the requirement that pixels
   // represent area and that the units are in meters because that's what
-  // we support to date.
+  // we support to date.  FIXME: For now, ignore other model types and ignore
+  // lat/long (geographic) type geotiffs ...maybe add later.
 
   read_count
       = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
@@ -188,14 +187,20 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
       += GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, &raster_type, 0, 0);
   read_count
       += GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
-  asfRequire (read_count == 3           &&
+  if (read_count == 3                   &&
       model_type == ModelTypeProjected  &&
       raster_type == RasterPixelIsArea  &&
-      linear_units == Linear_Meter,
-      "Missing or unsupported model type, raster type,\nor linear unit information in GeoTIFF.\n"
-      "Model type must be ModelTypeProjected, raster type RasterPixelIsArea,\n"
-      "and linear units equal to Linear_Meter\n");
-
+      linear_units == Linear_Meter      )
+  {
+    // GeoTIFF appears to contain the projection parameters, but note that
+    // (ProjectedCSTypeGeoKey must either be a UTM type) -or-
+    // (ProjectedCSTypeGeoKey is not UTM and ProjCoordTransGeoKey is a supported
+    // type).  See the if(geotiff_data_exists) section on reading parameters below.
+    geotiff_data_exists = 1;
+  }
+  else {
+    geotiff_data_exists = 0;
+  }
   asfPrintStatus ("Input GeoTIFF key GTModelTypeGeoKey is %s\n",
                   (model_type == ModelTypeGeographic) ?
                       "ModelTypeGeographic" :
@@ -210,412 +215,500 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                   (linear_units == Linear_Meter) ?
                       "meters" : "(Unsupported type)");
+  if (model_type != ModelTypeProjected) {
+    // FIXME: For now, we only import map-projected images in linear meters.  If
+    // the image was a lat/long image, then the angular units would be set AND
+    // the model_type would be ModelTypeGeographic ...but oh well.
+    asfPrintError("Only map-projected images using linear units are supported.\n"
+        "Geographic (lat/long) images are not.\n");
+  }
 
   /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
+  /***** THEN READ THEM FROM THE METADATA (.AUX) FILE TO SUPERCEDE IF THEY EXIST *****/
   /*                                                                                 */
-  // Init projection parameters
-  for (i=0; i<GEOTIFF_NUM_PROJDPARAMS; i++) {
-    proParams[i] = MAGIC_UNSET_DOUBLE;
-  }
+  /*                                                */
+  // import_arcgis_geotiff() would not be called (see detect_geotiff_flavor())
+  // unless the model_type is either unknown or is ModelTypeProjected.  If
+  // ModelTypeProjected, then there are projection parameters inside the
+  // GeoTIFF file.  If not, then they must be parsed from the complementary
+  // ArcGIS metadata (.aux) file
+  // Read the model type from the GeoTIFF file ...expecting that it is
+  // unknown, but could possibly be ModelTypeProjection
+  //
+  // Start of reading projection parameters from geotiff
+  if (geotiff_data_exists) {
+    char hemisphere;
+    projection_type_t projection_type;
+    unsigned long pro_zone; // UTM zone (UTM only)
+    short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
+    short pcs;
+    short geokey_datum;
+    double false_easting;
+    double false_northing;
+    double lonOrigin;
+    double latOrigin;
+    double stdParallel1;
+    double stdParallel2;
+    double lonPole;
 
-  short proj_coords_trans;
-  short pcs;
-  short geokey_datum;
-  long proZone;
-  double false_easting;
-  double false_northing;
-  double lonOrigin;
-  double latOrigin;
-  double stdParallel1;
-  double stdParallel2;
-  double lonPole;
-
-  // Get datum and zone as appropriate
-  read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
-  if (read_count == 1 && PCS_2_UTM(pcs, &datum, &proZone)) {
-    proj_coords_trans = CT_TransverseMercator;
-  }
-  else {
-    // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
-    //
-    // The ProjCoordTransGeoKey will be true if the PCS was user-defined or if the PCS was
-    // not in the geotiff file... or so the standard says.  If the ProjCoordTransGeoKey is
-    // false, it means that an unsupported (by us) UTM or State Plane projection was
-    // discovered (above.)  All other projection types make use of the ProjCoordTransGeoKey
-    // geokey.
-    read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-    asfRequire(read_count == 1,
-               "\nUnable to determine type of projection coordinate system in GeoTIFF file\n");
-    datum = UNKNOWN_DATUM;
-    read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
-    if (read_count == 1) {
-      switch(geokey_datum){
-        case Datum_WGS84:
-          datum = WGS84_DATUM;
-          break;
-        case Datum_North_American_Datum_1927:
-          datum = NAD27_DATUM;
-          break;
-        case Datum_North_American_Datum_1983:
-          datum = NAD83_DATUM;
-          break;
-        default:
-          break;
-      }
+    //////// ALL PROJECTIONS /////////
+    // Set the projection block data that we know at this point
+    if (tie_point[0] != 0 || tie_point[1] != 0 || tie_point[2] != 0) {
+      // NOTE: To support tie points at other locations, or a set of other locations,
+      // then things rapidly get more complex ...and a transformation must either be
+      // derived or provided (and utilized etc).  We're not at that point yet...
+      //
+      asfPrintError("Unsupported initial tie point type.  Initial tie point must be for\n"
+          "raster location (0,0) in the image.\n");
     }
-    if (datum == UNKNOWN_DATUM) {
-      read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
-      if (read_count == 1) {
-        switch(geokey_datum){
-          case GCS_WGS_84:
-            datum = WGS84_DATUM;
+    mp->startX = tie_point[3];
+    mp->startY = tie_point[4];
+    if (pixel_scale[0] < 0 ||
+        pixel_scale[1] < 0) {
+      asfPrintWarning("Unexpected negative pixel scale values found in GeoTIFF file.\n"
+          "Continuing ingest, but defaulting perX to fabs(x pixel scale) and\n"
+          "perY to (-1)*fabs(y pixel scale)... Results may vary.");
+    }
+    mp->perX = fabs(pixel_scale[0]);
+    mp->perY = -(fabs(pixel_scale[1]));
+    mp->height = 0.0;
+    if (linear_units == Linear_Meter) {
+      strcpy(mp->units, "meters");
+    }
+    else {
+      asfPrintError("Unsupported linear unit found in GeoTIFF.  Only meters is currently supported.\n");
+    }
+
+    ///////// STANDARD UTM (PCS CODE) //////////
+    // Get datum and zone as appropriate
+    read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
+    if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &pro_zone)) {
+      mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      mp->hem = hemisphere;
+      mp->param.utm.zone = pro_zone;
+      mp->param.utm.false_easting = 500000.0;
+      if (hemisphere == 'N') {
+        mp->param.utm.false_northing = 0.0;
+      }
+      else {
+        mp->param.utm.false_northing = 10000000.0;
+      }
+      mp->param.utm.lat0 = utm_zone_to_central_meridian(pro_zone);
+      mp->param.utm.lon0 = 0.0;
+      if (datum != UNKNOWN_DATUM) {
+        mp->datum = datum;
+      }
+      else {
+        asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
+      }
+      char msg[256];
+      sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", DEFAULT_UTM_SCALE_FACTOR);
+      asfPrintStatus(msg);
+      mp->param.utm.scale_factor = DEFAULT_UTM_SCALE_FACTOR;
+    }
+    ////////// ALL OTHER PROJECTION TYPES - INCLUDING GCS/USER-DEFINED UTMS /////////
+    else {
+      // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
+      //
+      // The ProjCoordTransGeoKey will be true if the PCS was user-defined or if the PCS was
+      // not in the geotiff file... or so the standard says.  If the ProjCoordTransGeoKey is
+      // false, it means that an unsupported (by us) UTM or State Plane projection was
+      // discovered (above.)  All other projection types make use of the ProjCoordTransGeoKey
+      // geokey.
+
+      ////// GCS-CODE DEFINED UTM ///////
+      // Check for a user-defined UTM projection (A valid UTM code may be in
+      // ProjectionGeoKey, although this is not typical)
+      read_count = GTIFKeyGet (input_gtif, ProjectionGeoKey, &pcs, 0, 0);
+      if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &pro_zone)) {
+        mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+        mp->hem = hemisphere;
+        mp->param.utm.zone = pro_zone;
+        mp->param.utm.false_easting = 500000.0;
+        if (hemisphere == 'N') {
+          mp->param.utm.false_northing = 0.0;
+        }
+        else {
+          mp->param.utm.false_northing = 10000000.0;
+        }
+        mp->param.utm.lat0 = utm_zone_to_central_meridian(pro_zone);
+        mp->param.utm.lon0 = 0.0;
+        if (datum != UNKNOWN_DATUM) {
+          mp->datum = datum;
+        }
+        else {
+          asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
+        }
+        char msg[256];
+        sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", DEFAULT_UTM_SCALE_FACTOR);
+        asfPrintStatus(msg);
+        mp->param.utm.scale_factor = DEFAULT_UTM_SCALE_FACTOR;
+      }
+      /////// OTHER PROJECTION DEFINITIONS - INCLUDING USER-DEFINED UTMS///////
+      else {
+        // Some other type of projection may exist, including a projection-coordinate-transformation
+        // UTM (although that is not typical)
+
+        // Get the projection coordinate transformation key (identifies the projection type)
+        read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
+        asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
+                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
+
+        // Attempt to find a defined datum (the standard says to store it in GeographicTypeGeoKey)
+        read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
+        if (read_count == 1) {
+          switch(geokey_datum){
+            case GCS_WGS_84:
+            case GCSE_WGS84:
+              datum = WGS84_DATUM;
+              break;
+            case GCS_NAD27:
+              datum = NAD27_DATUM;
+              break;
+            case GCS_NAD83:
+              datum = NAD83_DATUM;
+              break;
+            default:
+              datum = UNKNOWN_DATUM;
+              break;
+          }
+        }
+        if (datum == UNKNOWN_DATUM) {
+          // The datum is not typically stored in GeogGeodeticDatumGeoKey, but some s/w
+          // does put it there
+          read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
+          if (read_count == 1) {
+            switch(geokey_datum){
+              case Datum_WGS84:
+                datum = WGS84_DATUM;
+                break;
+              case Datum_North_American_Datum_1927:
+                datum = NAD27_DATUM;
+                break;
+              case Datum_North_American_Datum_1983:
+                datum = NAD83_DATUM;
+                break;
+              default:
+                datum = UNKNOWN_DATUM;
+                break;
+            }
+          }
+        }
+        // FIXME: Hughes datum support... need it!
+        if (datum == UNKNOWN_DATUM) {
+          asfPrintWarning("Unable to determine datum type from GeoTIFF file\n"
+                        "Defaulting to WGS-84 ...This may result in projection errors\n");
+          datum = WGS84_DATUM;
+        }
+        // Take whatever datum we have at this point
+        mp->datum = datum;
+
+        // Base on the type of projection coordinate transformation, e.g. type of projection,
+        // retrieve the rest of the projection parameters
+        projection_type = UNKNOWN_PROJECTION;
+        scale_factor = DEFAULT_SCALE_FACTOR;
+        switch(proj_coords_trans) {
+          case CT_TransverseMercator:
+          case CT_TransvMercator_Modified_Alaska:
+          case CT_TransvMercator_SouthOriented:
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+    //          asfPrintWarning(
+    //                   "Unable to determine false easting from GeoTIFF file\n"
+    //                   "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+    //          asfPrintWarning(
+    //                   "Unable to determine false northing from GeoTIFF file\n"
+    //                   "using ProjFalseNorthingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+    //          asfPrintWarning(
+    //              "Unable to determine center longitude from GeoTIFF file\n"
+    //              "using ProjNatOriginLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+    //          asfPrintWarning(
+    //              "Unable to determine center latitude from GeoTIFF file\n"
+    //              "using ProjNatOriginLatGeoKey\n");
+            }
+            else {
+              latOrigin = 0.0;
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
+            if (read_count == 0) {
+              scale_factor = DEFAULT_UTM_SCALE_FACTOR;
+
+              char msg[256];
+    //          sprintf(msg,
+    //                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+    //                  scale_factor);
+    //          asfPrintWarning(msg);
+              sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", scale_factor);
+              asfPrintStatus(msg);
+            }
+            mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+            mp->hem = (false_northing == 0.0) ? 'N' : (false_northing == 10000000.0) ? 'S' : '?';
+            mp->param.utm.zone = utm_zone(lonOrigin);
+            mp->param.utm.false_easting = false_easting;
+            mp->param.utm.false_northing = false_northing;
+            mp->param.utm.lat0 = latOrigin;
+            mp->param.utm.lon0 = lonOrigin;
+            mp->param.utm.scale_factor = scale_factor;
+            check_projection_parameters(mp);
             break;
-          case GCS_NAD27:
-            datum = NAD27_DATUM;
+          // Albers Conical Equal Area case IS tested
+          case CT_AlbersEqualArea:
+            read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine first standard parallel from GeoTIFF file\n"
+                  "using ProjStdParallel1GeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine second standard parallel from GeoTIFF file\n"
+                  "using ProjStdParallel2GeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjNatOriginLongGeoKey.  Trying ProjCenterLongGeoKey...\n");
+              read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+              if (read_count != 1) {
+                asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
+                    "using ProjCenterLongGeoKey as well...\n");
+              }
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjNatOriginLatGeoKey\n");
+            }
+            mp->type = ALBERS;
+            mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
+            mp->param.albers.std_parallel1 = stdParallel1;
+            mp->param.albers.std_parallel2 = stdParallel2;
+            mp->param.albers.center_meridian = lonOrigin;
+            mp->param.albers.orig_latitude = latOrigin;
+            mp->param.albers.false_easting = false_easting;
+            mp->param.albers.false_northing = false_northing;
+            check_projection_parameters(mp);
             break;
-          case GCS_NAD83:
-            datum = NAD83_DATUM;
+          // FIXME: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
+          case CT_LambertConfConic_1SP:
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                        "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjNatOriginLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjNatOriginLatGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
+            if (read_count != 1) {
+              scale_factor = DEFAULT_SCALE_FACTOR;
+
+              char msg[256];
+              sprintf(msg,
+                      "Lambert Conformal Conic scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
+                      scale_factor);
+              asfPrintWarning(msg);
+            }
+            mp->type = LAMCC;
+            mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
+            mp->param.lamcc.plat1 = latOrigin;
+            mp->param.lamcc.plat2 = latOrigin;
+            mp->param.lamcc.lat0 = latOrigin;
+            mp->param.lamcc.lon0 = lonOrigin;
+            mp->param.lamcc.false_easting = false_easting;
+            mp->param.lamcc.false_northing = false_northing;
+            mp->param.lamcc.scale_factor = scale_factor;
+            check_projection_parameters(mp);
+            break;
+          case CT_LambertConfConic_2SP:
+            read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine first standard parallel from GeoTIFF file\n"
+                  "using ProjStdParallel1GeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine second standard parallel from GeoTIFF file\n"
+                  "using ProjStdParallel2GeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjFalseOriginLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjFalseOriginLatGeoKey\n");
+            }
+            mp->type = LAMCC;
+            mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
+            mp->param.lamcc.plat1 = stdParallel1;
+            mp->param.lamcc.plat2 = stdParallel2;
+            mp->param.lamcc.lat0 = latOrigin;
+            mp->param.lamcc.lon0 = lonOrigin;
+            mp->param.lamcc.false_easting = false_easting;
+            mp->param.lamcc.false_northing = false_northing;
+            mp->param.lamcc.scale_factor = scale_factor;
+            check_projection_parameters(mp);
+            break;
+          case CT_PolarStereographic:
+            read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjNatOriginLatGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine vertical pole longitude from GeoTIFF file\n"
+                  "using ProjStraightVertPoleLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
+            // use it, e.g. it is not current written to the meta data file with meta_write().
+            mp->type = PS;
+            mp->hem = (latOrigin > 0) ? 'N' : 'S';
+            mp->param.ps.slat = latOrigin;
+            mp->param.ps.slon = lonPole;
+            mp->param.ps.is_north_pole = (mp->hem == 'N') ? 1 : 0;
+            mp->param.ps.false_easting = false_easting;
+            mp->param.ps.false_northing = false_northing;
+            check_projection_parameters(mp);
+            break;
+          case CT_LambertAzimEqualArea:
+            read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false easting from GeoTIFF file\n"
+                  "using ProjFalseEastingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine false northing from GeoTIFF file\n"
+                  "using ProjFalseNorthingGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center longitude from GeoTIFF file\n"
+                  "using ProjCenterLongGeoKey\n");
+            }
+            read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
+            if (read_count != 1) {
+              asfPrintWarning(
+                      "Unable to determine center latitude from GeoTIFF file\n"
+                  "using ProjCenterLatGeoKey\n");
+            }
+            mp->type = LAMAZ;
+            mp->hem = (latOrigin > 0) ? 'N' : 'S';
+            mp->param.lamaz.center_lon = lonOrigin;
+            mp->param.lamaz.center_lat = latOrigin;
+            mp->param.lamaz.false_easting = false_easting;
+            mp->param.lamaz.false_northing = false_northing;
+            check_projection_parameters(mp);
             break;
           default:
+            asfPrintWarning(
+                "Unable to determine projection type from GeoTIFF file\n"
+                "using ProjectedCSTypeGeoKey or ProjCoordTransGeoKey\n");
+            asfPrintWarning("Projection parameters missing in the GeoTIFF\n"
+                "file.  Projection parameters will be incomplete.\n");
             break;
         }
       }
-    }
-    if (geokey_datum == UNKNOWN_DATUM) {
-      asfPrintWarning("\nUnable to determine datum type from GeoTIFF file\n"
-          "...Will try to select a datum based on spheroid\n");
-    }
-  }
-
-  char proName[MAX_NAME_LEN];
-  long proNumber;
-  projection_type = UNKNOWN_PROJECTION_TYPE;
-  scale_factor = DEFAULT_SCALE_FACTOR;
-  switch(proj_coords_trans) {
-    case CT_TransverseMercator:
-    case CT_TransvMercator_Modified_Alaska:
-    case CT_TransvMercator_SouthOriented:
-      // Zone, and usually the datum, should already be defined at this point (see above.)
-      strcpy(proName, "UTM");
-      asfPrintStatus("Found %s projection type\n", proName);
-      asfRequire(proZone >= 1 && proZone <= 60,
-                 "Missing zone in UTM-geocoded GeoTIFF\n");
-      projection_type = UTM;
-      proNumber = projection_type;
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false easting from GeoTIFF file\n"
-                 "using ProjFalseEastingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                 "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-            "\nUnable to determine center longitude from GeoTIFF file\n"
-            "using ProjNatOriginLongGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-      }
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-            "\nUnable to determine center latitude from GeoTIFF file\n"
-            "using ProjNatOriginLatGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-      }
-      read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
-      if (read_count == 0) {
-        scale_factor = DEFAULT_UTM_SCALE_FACTOR;
-
-        char msg[256];
-        sprintf(msg,
-                "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-                scale_factor);
-        asfPrintWarning(msg);
-        //asfPrintWarning("UTM scale factor not found in GeoTIFF ...defaulting to 0.9996\n");
-      }
-      break;
-    // Albers Conical Equal Area case IS tested
-    case CT_AlbersEqualArea:
-      projection_type = ALBERS;
-      proNumber = projection_type;
-      strcpy(proName, "Albers Conical Equal Area");
-      asfPrintStatus("Found %s projection type\n", proName);
-
-      read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-      asfRequire(read_count == 1,
-               "\nUnable to determine first standard parallel from GeoTIFF file\n"
-               "using ProjStdParallel1GeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
-
-      read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-      asfRequire(read_count == 1,
-             "\nUnable to determine second standard parallel from GeoTIFF file\n"
-             "using ProjStdParallel2GeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false easting from GeoTIFF file\n"
-                     "using ProjStdParallel2GeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                     "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-      if (read_count != 1) {
-        read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
-      }
-      asfRequire (read_count == 1,
-           "\nUnable to determine center longitude from GeoTIFF file\n"
-           "using ProjNatOriginLongGeoKey or ProjCenterLongGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-      asfRequire(read_count != 1,
-           "\nUnable to determine center latitude from GeoTIFF file\n"
-           "using ProjNatOriginLatGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-      break;
-    case CT_LambertConfConic_1SP:
-      projection_type = LAMCC;
-      proNumber = projection_type;
-      strcpy(proName, "Lambert Conformal Conic");
-      asfPrintStatus("Found %s projection type, single standard parallel type\n", proName);
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                   "\nUnable to determine false easting from GeoTIFF file\n"
-                     "using ProjFalseEastingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                     "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center longitude from GeoTIFF file\n"
-           "using ProjNatOriginLongGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center latitude from GeoTIFF file\n"
-           "using ProjNatOriginLatGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
-      if (read_count != 1) {
-        scale_factor = DEFAULT_SCALE_FACTOR;
-
-        char msg[256];
-        sprintf(msg,
-                "%s scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-                proName, scale_factor);
-        asfPrintWarning(msg);
-      }
-      break;
-    case CT_LambertConfConic_2SP:
-      projection_type = LAMCC;
-      proNumber = projection_type;
-      strcpy(proName, "Lambert Conformal Conic");
-      asfPrintStatus("Found %s projection type, 2 standard parallels\n", proName);
-
-      read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine first standard parallel from GeoTIFF file\n"
-           "using ProjStdParallel1GeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
-
-      read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine second standard parallel from GeoTIFF file\n"
-           "using ProjStdParallel2GeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false easting from GeoTIFF file\n"
-                     "using ProjFalseEastingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                     "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center longitude from GeoTIFF file\n"
-           "using ProjFalseOriginLongGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center latitude from GeoTIFF file\n"
-           "using ProjFalseOriginLatGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-      break;
-    case CT_PolarStereographic:
-      projection_type = PS;
-      proNumber = projection_type;
-      strcpy(proName, "Polar Stereographic");
-      asfPrintStatus("Found %s projection type\n", proName);
-
-      read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center latitude from GeoTIFF file\n"
-           "using ProjNatOriginLatGeoKey\n");
-      // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
-      // alignment with where this value is found when coming from the .aux file.
-      // These values are copied to the meta data parameters later on and the assumption
-      // is made that THIS is where this data item will be...
-      proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] = D2R*latOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine vertical pole longitude from GeoTIFF file\n"
-           "using ProjStraightVertPoleLongGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonPole;
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false easting from GeoTIFF file\n"
-                     "using ProjFalseEastingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                     "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-      // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
-      // use it, e.g. it is not current written to the meta data file with meta_write().
-      break;
-    case CT_LambertAzimEqualArea:
-      projection_type = LAMAZ;
-      proNumber = projection_type;
-      strcpy(proName, "Lambert Azimuthal Equal-area");
-      asfPrintStatus("Found %s projection type\n", proName);
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false easting from GeoTIFF file\n"
-                     "using ProjFalseEastingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-      if (read_count != 1) {
-        asfPrintWarning(
-                 "\nUnable to determine false northing from GeoTIFF file\n"
-                     "using ProjFalseNorthingGeoKey\n");
-      }
-      else {
-        proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-      }
-
-      read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center longitude from GeoTIFF file\n"
-           "using ProjCenterLongGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-
-      read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
-      asfRequire(read_count == 1,
-           "\nUnable to determine center latitude from GeoTIFF file\n"
-           "using ProjCenterLatGeoKey\n");
-      proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-      break;
-    default:
-      break;
+    } // End of if UTM else OTHER projection type
+  } // End of reading projection parameters from geotiff ...if it existed
+  else {
+    asfPrintWarning("Projection parameters missing in the GeoTIFF\n"
+                "file.  Projection parameters will be incomplete.\n");
   }
 
   /***** CONVERT TIFF TO FLOAT IMAGE *****/
   /*                                     */
   // Note to self:  tiff_to_float_image gets height/width from TIFF tags,
   // and asserts if width and height not greater than zero
-  asfPrintStatus("\nConverting input GeoTIFF image into float image...\n");
+  // FIXME: Read pertinent TIFF tags, convert to byte or float image, and
+  // repeat for each available band.
+  asfPrintStatus("\nConverting input TIFF image into float image...\n");
   FloatImage *image = tiff_to_float_image (input_tiff);
-
-  /***** EXPORT FLOAT IMAGE AS JPEG *****/
-  /*                                    */
-  // Note to self:  float_image_export_as_jpeg asserts if it fails
-  //
-//  asfPrintStatus("\nConverting original image to jpeg format and saving to disk...\n");
-//  float_image_export_as_jpeg
-//    (image, "pre_bad_data_remap.jpeg",
-//     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
 
   /***** FIX DEM IMAGE'S BAD DATA *****/
   /*                                  */
-  // Since the import could be a DEM, and DEMs of this flavor tend to be full
-  // of bad data values that make the statistics hopeless, saturate output, etc.
-  // For now we deal with this by mapping these values to a less negative magic number
-  // of our own that still lets things work somewhat (assuming the bad
-  // data values are rare at least).
+  // Since the import could be a DEM, and certain DEMs may have bad (way negative)
+  // data values that make the statistics hopeless, saturate output, etc.,
+  // map these bad values to a less negative magic number of our own making
+  // that still lets things work somewhat (assumes the bad data values are rare).
   //
-  // UPDATE: I'm leaving this scan in for now (11-1-06) ...but if it never issues
-  // any warnings when ingesting geotiffs then it's probably not necessary
-  // to scan for 'bad data'.  AND, it's possible that the stats calculations can handle
-  // the bad data now ...needs testing.
+#ifdef BAD_VALUE_SCAN
   asfPrintStatus("\nScanning image for bad data values...\n");
   const float bad_data_ceiling = -10e10;
   const float new_bad_data_magic_number = -999.0;
@@ -631,19 +724,22 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
   }
   if (bad_values_existed) {
     asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
-        "result in inaccurate image statistics.\n\n");
-    asfPrintStatus("Extra-negative values found within the float image have been removed\n\n");
+        "result in inaccurate image statistics.\n");
+    asfPrintStatus("Extra-negative values found within the float image have been removed\n");
   }
+#endif
 
   // Get the raster width and height of the image.
   uint32 width = image->size_x;
   uint32 height = image->size_y;
 
 
-  /***** FILL IN THE META DATA *****/
+  /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
   /*                               */
 
   // Data type is REAL32 because the image is converted to float
+  // FIXME: Need to set the data type based upon the info from the TIFF file...
+  // it'll either be byte, float
   mg->data_type = REAL32;
 
   // Get the image data type from the variable arguments list
@@ -658,17 +754,18 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
     strcpy(image_data_type, MAGIC_UNSET_STRING);
   }
   va_end(ap);
-  if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
+  if (strncmp(uc(image_data_type), "GEOCODED_IMAGE", 14) == 0) {
     mg->image_data_type = GEOCODED_IMAGE;
   }
-  else if (strncmp(image_data_type, "DEM", 3) == 0) {
+  else if (strncmp(uc(image_data_type), "DEM", 3) == 0) {
     mg->image_data_type = DEM;
   }
-  else if (strncmp(image_data_type, "MASK", 4) == 0) {
+  else if (strncmp(uc(image_data_type), "MASK", 4) == 0) {
     mg->image_data_type = MASK;
   }
   // else leave it at the initialized value
 
+  //strcpy(mg->bands, MAGIC_UNSET_STRING);
   mg->line_count = height;
   mg->sample_count = width;
 
@@ -693,177 +790,51 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 
   // Image raster coordinates of tie point.
   double raster_tp_x = tie_point[0];
-  double raster_tp_y = tie_point[1]; // [2] is zero for 2D space
+  double raster_tp_y = tie_point[1]; // Note: [2] is zero for 2D space
 
-  // Coordinates of tie point in pseudoprojection space.
-  double tp_lon = tie_point[3];
-  double tp_lat = tie_point[4]; // [5] is zero for 2D space
+  // Coordinates of tie point in projection space.
+  // NOTE: These are called tp_lon and tp_lat ...but the tie points
+  // will be in either linear units (meters typ.) *OR* lat/long depending
+  // on what type of image data is in the file, e.g. map-projected or
+  // geographic respectively (but we only support map-projected at this point.)
+  double tp_lon = tie_point[3]; // x
+  double tp_lat = tie_point[4]; // y, Note: [5] is zero for 2D space
 
-  // Center latitude and longitude of image data
-  double center_x = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-  double center_y = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  // Center latitude and longitude of image data (the following works for
+  // linear or angular units since pixel sizes should be in the same units
+  // as the tie points
+  double center_x;
+  double center_y;
+  center_x = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
+  center_y = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
+
   // converts to center_latitude and center_longitude below...
 
-  if (datum != UNKNOWN_DATUM) { // Data came successfully from TIFF file
-    spheroid_type_t spheroid = datum_spheroid (datum);
-    spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
+  if (datum != UNKNOWN_DATUM) {
+    mp->spheroid = datum_spheroid(mp->datum);
+    spheroid_axes_lengths (mp->spheroid, &mg->re_major, &mg->re_minor);
   }
   else {
     mg->re_major = MAGIC_UNSET_DOUBLE;
     mg->re_minor = MAGIC_UNSET_DOUBLE;
   }
 
-  switch (projection_type) {
-    case UTM:     // Universal Transverse Mercator (UTM)
-      mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-      mp->param.utm.zone = proZone;
-      mp->param.utm.false_easting =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.false_northing =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.lat0 =
-          (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.lon0 =
-          (proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.scale_factor = scale_factor;
-      break;
-    case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
-      mp->type = ALBERS_EQUAL_AREA;
-      mp->param.albers.std_parallel1 =
-          (proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.std_parallel2 =
-          (proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.center_meridian =
-          (proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.orig_latitude =
-          (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.false_easting =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.false_northing =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      break;
-    case LAMCC:   // Lambert Conformal Conic
-      mp->type = LAMBERT_CONFORMAL_CONIC;
-      mp->param.lamcc.plat1 =
-          (proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.plat2 =
-          (proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL2] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.lat0 =
-          (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.lon0 =
-          (proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.false_easting =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.false_northing =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.scale_factor = scale_factor;
-      break;
-    case PS:      // Polar Stereographic
-      mp->type = POLAR_STEREOGRAPHIC;
-      mp->param.ps.slat =
-          (proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.slon =
-          (proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.is_north_pole =
-          (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          (  (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] > 0) ? 1 : 0)   :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.false_easting =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.false_northing =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      // Note: A GeoTIFF (.tif) file does have a scale factor tag in it for Polar Stereographic.
-      // We do not use it however.  It does not exist in the meta data struct and is also
-      // not written to the meta data file with meta_write().  See the GeoTIFF
-      // Standard, key ProjScaleAtNatOriginGeoKey for polar stereographic.
-      break;
-    case LAMAZ:   // Lambert Azimuthal Equal Area
-      mp->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
-      mp->param.lamaz.center_lon =
-          (proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.center_lat =
-          (proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.false_easting =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.false_northing =
-          (proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*proParams[GEOTIFF_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      break;
-    default:
-      break;
-  }
-
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
   mp->startY = (0.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-
   mp->perX = mg->x_pixel_size;
   mp->perY = -mg->y_pixel_size;
-
-  char *units = (linear_units == Linear_Meter) ? "meters" : MAGIC_UNSET_STRING;
-  strcpy (mp->units, units);
-
-  if (datum != UNKNOWN_DATUM) {
-    mp->spheroid = datum_spheroid (datum);
-  } // else leave it at initial value
 
   // These fields should be the same as the ones in the general block.
   mp->re_major = mg->re_major;
   mp->re_minor = mg->re_minor;
 
-  mp->datum = datum;
-
+  asfPrintStatus("\nGathering image statistics...\n");
   float min, max;
   float mean, standard_deviation;
+  // FIXME: byte image stats if necessary... see TIFF tags!
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
                           FLOAT_IMAGE_DEFAULT_MASK);
-  mp->height = mean;
+  mp->height = mean; // Overrides the default value of 0.0 set earlier
 
   // Calculate the center latitude and longitude now that the projection
   // parameters are stored.
@@ -878,9 +849,10 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 		 &center_latitude, &center_longitude, &dummy_var);
   mg->center_latitude = R2D*center_latitude;
   mg->center_longitude = R2D*center_longitude;
-  mp->hem = mg->center_latitude >= 0.0 ? 'N' : 'S';
 
-  msar->image_type = 'P'; // Map Projected
+  if (msar)
+      msar->image_type = 'P'; // Map Projected
+
   ms->mean = mean;
   // The root mean square error and standard deviation are very close
   // by definition when the number of samples is large, there seems to
@@ -889,33 +861,47 @@ import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
   // to do.
   ms->rmse = standard_deviation;
   ms->std_deviation = standard_deviation;
+
+  // FIXME: Byte image something here?
   ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
 
-  ml->lat_start_near_range = mp->startX;
-  ml->lon_start_near_range = mp->startY;
-  ml->lat_start_far_range = mp->startX + mp->perX * width;
-  ml->lon_start_far_range = mp->startY;
-  ml->lat_end_near_range = mp->startX;
-  ml->lon_end_near_range = mp->startY + mp->perY * height;
-  ml->lat_end_far_range = mp->startX + mp->perX * width;
-  ml->lon_end_far_range = mp->startY + mp->perY * height;
+  // Set up the location block
+  double lat, lon;
+  proj_to_latlon(&proj, mp->startX, mp->startY, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_start_near_range = R2D*lat; //mp->startX;
+  ml->lon_start_near_range = R2D*lon; //mp->startY;
+
+  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_start_far_range = R2D*lat; //mp->startX + mp->perX * width;
+  ml->lon_start_far_range = R2D*lon; //mp->startY;
+
+  proj_to_latlon(&proj, mp->startX, mp->startY + mp->perY * height, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_end_near_range = R2D*lat; //mp->startX;
+  ml->lon_end_near_range = R2D*lon; //mp->startY + mp->perY * height;
+
+  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY + mp->perY * height, 0.0,
+                 &lat, &lon, &dummy_var);
+  ml->lat_end_far_range = R2D*lat; //mp->startX + mp->perX * width;
+  ml->lon_end_far_range = R2D*lon; //mp->startY + mp->perY * height;
 
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
+
+  // FIXME: Does this write byte images OK???
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
   asfRequire (return_code == 0,
-	      "Failed to write new '.meta' and '.img' files.");
+	      "Failed to write new '.meta' and '.img' files.\n");
 
   // We're now done with the data and metadata.
+  GTIFFree(input_gtif);
+  XTIFFClose(input_tiff);
   meta_free (meta_out);
   float_image_free (image);
 
   // We must be done with the citation string too :)
-  if (citation) {
-    FREE (citation);
-  }
-  if (PCScitation) {
-    FREE (PCScitation);
-  }
+  FREE (citation);
 }
 
 /******************** local_machine_is_little_endian() ********************/
@@ -939,7 +925,7 @@ unsigned char local_machine_is_little_endian()
   return rtn;
 }
 
-int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
+int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
 {
   // The GeoTIFF standard defines the UTM zones numerically in a way that
   // let's us pick off the data mathematically (NNNzz where zz is the zone
@@ -951,35 +937,79 @@ int PCS_2_UTM(short pcs, datum_type_t *datum, unsigned long *zone)
   // For WGS72 datums, Zones 1S through 60S, NNN == 323
   // For WGS84 datums, Zones 1N through 60N, NNN == 326
   // For WGS84 datums, Zones 1S through 60S, NNN == 327
-  // For user-defined and unsupported UTM projections, NNN can be
-  //   a variety of other numbers (see the GeoTIFF Standard)
+  // For user-defined UTMs, Northern Hemisphere, NNN == 160
+  // For user-defined UTMs, Southern Hemisphere, NNN == 161
+  // For other user-defined and/or unsupported UTM projections,
+  //   then NNN can be a variety of other numbers (see the
+  //   GeoTIFF Standard)
   //
   // NOTE: For NAD27 and NAD83, only the restricted range of zones
   // above is supported by the GeoTIFF standard.
   //
-  const short NNN_NAD27 = 367;
-  const short NNN_NAD83 = 269;
-  const short NNN_WGS84 = 326;
+  const short NNN_NAD27  = 367;
+  const short NNN_NAD83  = 269;
+  const short NNN_WGS84N = 326;
+  const short NNN_WGS84S = 327;
+  const short NNN_USER_DEFINED_NORTH = 160;
+  const short NNN_USER_DEFINED_SOUTH = 161;
   int isUTM = 0;
   short datumClassifierNNN;
 
   datumClassifierNNN = pcs / 100;
   if (datumClassifierNNN == NNN_NAD27) {
+      *hem = 'N';
       *datum = NAD27_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 3 || *zone > 22) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
   }
   else if (datumClassifierNNN == NNN_NAD83) {
+      *hem = 'N';
       *datum = NAD83_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 3 || *zone > 23) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
   }
-  else if (datumClassifierNNN == NNN_WGS84) {
+  else if (datumClassifierNNN == NNN_WGS84N ||
+           datumClassifierNNN == NNN_WGS84S) {
+      *hem = datumClassifierNNN == NNN_WGS84N ? 'N' : 'S';
       *datum = WGS84_DATUM;
       *zone = pcs - (pcs / 100)*100;
       isUTM = 1;
+      if (*zone < 1 || *zone > 60) {
+        *datum = UNKNOWN_DATUM;
+        *zone = 0;
+        isUTM = 0;
+      }
+  }
+  else if (datumClassifierNNN == NNN_USER_DEFINED_NORTH ||
+           datumClassifierNNN == NNN_USER_DEFINED_SOUTH) {
+    /*
+        NOTE: For the user-defined cases, the datum should be set
+        from the geokey GeographicTypeGeoKey (or possibly
+        GeogGeodeticDatumGeoKey) before or after the calling of
+        PCS_2_UTM(), therefore *datum is not assigned anything
+        here.
+    */
+    *hem = datumClassifierNNN == NNN_USER_DEFINED_NORTH ? 'N' : 'S';
+    *zone = pcs - (pcs / 100)*100;
+    isUTM = 1;
+    if (*zone < 1 || *zone > 60) {
+      *datum = UNKNOWN_DATUM;
+      *zone = 0;
+      isUTM = 0;
+    }
   }
   else {
+      *hem = '\0';
       *datum = UNKNOWN_DATUM;
       *zone = 0;
       isUTM = 0;
@@ -1043,8 +1073,196 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
       break;
     default:
-      asfPrintError("Unsupported projection type found.\n");
-      exit(EXIT_FAILURE);
+      asfRequire(0,"Unsupported projection type found.\n");
+      break;
+  }
+}
+
+// Checking routine for projection parameter input.
+void check_projection_parameters(meta_projection *mp)
+{
+  project_parameters_t *pp = &mp->param;
+
+// FIXME: Hughes datum stuff commented out for now ...until Hughes is implemented in the trunk
+//  asfRequire(!(datum == HUGHES_DATUM && projection_type != POLAR_STEREOGRAPHIC),
+//               "Hughes ellipsoid is only supported for polar stereographic projections.\n");
+
+  switch (mp->type) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      // Tests for outside of allowed ranges errors:
+      //
+      // Valid UTM projections:
+      //
+      //   WGS84 + zone 1 thru 60 + N or S hemisphere
+      //   NAD83 + zone 2 thru 23 + N hemisphere
+      //   NAD27 + zone 2 thru 22 + N hemisphere
+      //
+      if (!meta_is_valid_int(pp->utm.zone)) {
+        asfPrintError("Invalid zone number found (%d).\n", pp->utm.zone);
+      }
+      if (!meta_is_valid_double(pp->utm.lat0) || pp->utm.lat0 != 0.0) {
+        asfPrintWarning("Invalid Latitude of Origin found (%.4f).\n"
+            "Setting Latitude of Origin to 0.0\n", pp->utm.lat0);
+        pp->utm.lat0 = 0.0;
+      }
+      if (pp->utm.lon0 != utm_zone_to_central_meridian(pp->utm.zone)) {
+        asfPrintWarning("Invalid Longitude of Origin (%.4f) found\n"
+            "for the given zone (%d).\n"
+            "Setting Longitude of Origin to %f for zone %d\n",
+            utm_zone_to_central_meridian(pp->utm.zone),
+            pp->utm.zone);
+        pp->utm.lon0 = utm_zone_to_central_meridian(pp->utm.zone);
+      }
+      switch(mp->datum) {
+        case NAD27_DATUM:
+          if (pp->utm.zone < 2 || pp->utm.zone > 22) {
+            asfPrintError("Zone '%d' outside the supported range (2 to 22) for NAD27...\n"
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
+                pp->utm.zone);
+          }
+          break;
+        case NAD83_DATUM:
+          if (pp->utm.zone < 2 || pp->utm.zone > 23) {
+            asfPrintError("Zone '%d' outside the supported range (2 to 23) for NAD83...\n"
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
+                pp->utm.zone);
+          }
+          break;
+        case WGS84_DATUM:
+          if (pp->utm.zone < 1 || pp->utm.zone > 60) {
+            asfPrintError("Zone '%d' outside the valid range of (1 to 60) for WGS-84\n", pp->utm.zone);
+          }
+          break;
+        case ITRF97_DATUM:
+          if (pp->utm.zone < 1 || pp->utm.zone > 60) {
+            asfPrintError("Zone '%d' outside the valid range of (1 to 60) for ITRF-97\n", pp->utm.zone);
+          }
+          break;
+        default:
+          asfPrintError("Unrecognized or unsupported datum found in projection parameters.\n");
+          break;
+      }
+      if (!meta_is_valid_double(pp->utm.lon0) || pp->utm.lon0 < -180 || pp->utm.lon0 > 180) {
+        asfPrintError("Longitude of Origin (%.4f) undefined or outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->utm.lon0);
+      }
+      if (!meta_is_valid_double(pp->utm.lat0) || pp->utm.lat0 != 0.0) {
+        asfPrintError("Latitude of Origin (%.4f) undefined or invalid (should be 0.0)\n",
+            pp->utm.lat0);
+      }
+      if (!meta_is_valid_double(pp->utm.scale_factor) || !FLOAT_EQUIVALENT(pp->utm.scale_factor, 0.9996)) {
+        asfPrintError("Scale factor (%.4f) undefined or different from default value (0.9996)\n",
+                    pp->utm.scale_factor);
+      }
+      if (!meta_is_valid_double(pp->utm.false_easting) || !FLOAT_EQUIVALENT(pp->utm.false_easting, 500000)) {
+        asfPrintError("False easting (%.1f) undefined or different from default value (500000)\n",
+                    pp->utm.false_easting);
+      }
+      if (mp->hem == 'N') {
+        if (!meta_is_valid_double(pp->utm.false_northing) || !FLOAT_EQUIVALENT(pp->utm.false_northing, 0)) {
+          asfPrintError("False northing (%.1f) undefined or different from default value (0)\n",
+                      pp->utm.false_northing);
+        }
+      }
+      else {
+        if (!meta_is_valid_double(pp->utm.false_northing) || !FLOAT_EQUIVALENT(pp->utm.false_northing, 10000000)) {
+          asfPrintError("False northing (%.1f) undefined or different from default value (10000000)\n",
+                        pp->utm.false_northing);
+        }
+      }
+      break;
+
+    case POLAR_STEREOGRAPHIC:
+      // Outside range tests
+      if (!meta_is_valid_double(pp->ps.slat) || pp->ps.slat < -90 || pp->ps.slat > 90) {
+        asfPrintError("Latitude of origin (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->ps.slat);
+      }
+      if (!meta_is_valid_double(pp->ps.slon) || pp->ps.slon < -180 || pp->ps.slon > 180) {
+        asfPrintError("Central meridian (%.4f) undefined or outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->ps.slon);
+      }
+
+      // Distortion test - only areas with a latitude above 60 degrees North or
+      // below -60 degrees South are permitted
+      if (!meta_is_valid_int(pp->ps.is_north_pole) ||
+           (pp->ps.is_north_pole != 0 && pp->ps.is_north_pole != 1)) {
+        asfPrintError("Invalid north pole flag (%s) found.\n",
+                    pp->ps.is_north_pole == 0 ? "SOUTH" :
+                        pp->ps.is_north_pole == 1 ? "NORTH" : "UNKNOWN");
+      }
+      break;
+
+    case ALBERS_EQUAL_AREA:
+      // Outside range tests
+      if (!meta_is_valid_double(pp->albers.std_parallel1) ||
+           pp->albers.std_parallel1 < -90 ||
+           pp->albers.std_parallel1 > 90) {
+        asfPrintError("First standard parallel (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->albers.std_parallel1);
+      }
+      if (!meta_is_valid_double(pp->albers.std_parallel2) ||
+           pp->albers.std_parallel2 < -90 ||
+           pp->albers.std_parallel2 > 90) {
+        asfPrintError("Second standard parallel (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->albers.std_parallel2);
+      }
+      if (!meta_is_valid_double(pp->albers.center_meridian) ||
+           pp->albers.center_meridian < -180 ||
+           pp->albers.center_meridian > 180) {
+        asfPrintError("Central meridian (%.4f) undefined or outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->albers.center_meridian);
+      }
+      if (!meta_is_valid_double(pp->albers.orig_latitude) ||
+           pp->albers.orig_latitude < -90 ||
+           pp->albers.orig_latitude > 90) {
+        asfPrintError("Latitude of origin (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->albers.orig_latitude);
+      }
+      break;
+
+    case LAMBERT_CONFORMAL_CONIC:
+      // Outside range tests
+      if (!meta_is_valid_double(pp->lamcc.plat1) ||
+           pp->lamcc.plat1 < -90 || pp->lamcc.plat1 > 90) {
+        asfPrintError("First standard parallel (%.4f) undefined or outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->lamcc.plat1);
+      }
+      if (!meta_is_valid_double(pp->lamcc.plat2) ||
+           pp->lamcc.plat2 < -90 || pp->lamcc.plat2 > 90) {
+        asfPrintError("Second standard parallel '%.4f' outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->lamcc.plat2);
+      }
+      if (!meta_is_valid_double(pp->lamcc.lon0) ||
+           pp->lamcc.lon0 < -180 || pp->lamcc.lon0 > 180) {
+        asfPrintError("Central meridian '%.4f' outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->lamcc.lon0);
+      }
+      if (!meta_is_valid_double(pp->lamcc.lat0) ||
+           pp->lamcc.lat0 < -90 || pp->lamcc.lat0 > 90) {
+        asfPrintError("Latitude of origin '%.4f' outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->lamcc.lat0);
+      }
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      // Outside range tests
+      if (!meta_is_valid_double(pp->lamaz.center_lon) ||
+           pp->lamaz.center_lon < -180 || pp->lamaz.center_lon > 180) {
+        asfPrintError("Central meridian '%.4f' outside the defined range "
+            "(-180 deg to 180 deg)\n", pp->lamaz.center_lon);
+      }
+      if (!meta_is_valid_double(pp->lamaz.center_lat) ||
+           pp->lamaz.center_lat < -90 || pp->lamaz.center_lat > 90) {
+        asfPrintError("Latitude of origin '%.4f' outside the defined range "
+            "(-90 deg to 90 deg)\n", pp->lamaz.center_lat);
+      }
+      break;
+
+    default:
       break;
   }
 }

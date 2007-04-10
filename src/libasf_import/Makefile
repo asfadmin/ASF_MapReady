@@ -60,6 +60,7 @@ OBJS  = ardop_write.o \
 	geotiff_flavors.o \
 	import_arcgis_geotiff.o \
 	import_asf_utm_geotiff.o \
+	import_generic_geotiff.o \
 	import_ceos.o \
 	import_envi.o \
 	import_esri.o \
