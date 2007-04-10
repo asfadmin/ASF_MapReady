@@ -23,7 +23,6 @@
 #include <spheroids.h>
 #include <typlim.h>
 
-#define ASF_NAME_STRING "asf_export"
 #define PGM_MAGIC_NUMBER "P5"
 
 /* This constant is from the GeoTIFF spec.  It basically means that
@@ -1064,7 +1063,7 @@ export_band_image (const char *metadata_file_name,
                                     md->general->no_data, sample_count);
       }
       else if (sample_mapping == NONE) {
-        // Write float lines if float image
+        // Write float->float lines if float image
         if (!ignored[0])
           get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         if (!ignored[1])
@@ -1076,7 +1075,7 @@ export_band_image (const char *metadata_file_name,
                                      blue_float_line, ii, sample_count);
       }
       else {
-        // Write float lines if byte image
+        // Write float->byte lines if byte image
         if (!ignored[0])
           get_float_line(fp, md, ii+red_channel*offset, red_float_line);
         if (!ignored[1])
@@ -1160,10 +1159,11 @@ export_band_image (const char *metadata_file_name,
 	  asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
 
 	// Initialize the chosen format
-	if (strcmp(band_name[0], "???") != 0)
+	if (strcmp(band_name[0], "???") != 0 && band_count > 1)
 	  append_band_ext(base_name, output_file_name, band_name[kk]);
 	else
 	  append_band_ext(base_name, output_file_name, NULL);
+
 	if (format == TIF) {
 	  is_geotiff = 0;
 	  append_ext_if_needed (output_file_name, ".tif", ".tiff");

@@ -708,8 +708,10 @@ main (int argc, char *argv[])
     }
   }
   else if (bandFlag != FLAG_NOT_SET) {
-    if (strcmp(uc(command_line.band), "ALL") == 0)
-      asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
+    if (strcmp(uc(command_line.band), "ALL") == 0) {
+      if (num_bands_found > 1)
+        asfPrintStatus("Exporting each band into individual greyscale files ...\n\n");
+    }
     else if (num_bands_found == 1) {
       if (lutFlag != FLAG_NOT_SET)
 	asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
