@@ -16,6 +16,7 @@
 #include <asf_meta.h>
 #include <asf_raster.h>
 #include <float_image.h>
+#include <uint8_image.h>
 #include <libasf_proj.h>
 #include <spheroids.h>
 #include <asf_contact.h>
@@ -1195,7 +1196,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
              "Could not initialize output metadata structures.\n");
 
   // Update no data value
+  if (imd->optical && background_val < 0) background_val = 0;
+  if (imd->optical && background_val > 255) background_val = 255;
   omd->general->no_data = background_val;
+
   omd->general->x_pixel_size = pixel_size;
   omd->general->y_pixel_size = pixel_size;
   omd->general->line_count = oiy_max + 1;
@@ -1305,65 +1309,84 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
       else
         asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
-      // Input image.
-      GString *input_data_file = g_string_new (input_image->str);
-      g_string_append (input_data_file, ".img");
-      FloatImage *iim
-          = float_image_band_new_from_metadata(imd, kk, input_data_file->str);
-      g_string_free (input_data_file, TRUE);
-
-      // Output image.
-      FloatImage *oim = float_image_new (oix_max + 1, oiy_max + 1);
-
-      // Convenience macros for getting/setting a pixel.
-    #define GET_PIXEL(x, y) float_image_get_pixel (oim, x, y)
-    #define SET_PIXEL(x, y, value) float_image_set_pixel (oim, x, y, value)
-
       // Translate the command line notion of the resampling method into
       // the lingo known by the float_image class.  The compiler is
       // reassured with a default.
       float_image_sample_method_t float_image_sample_method
         = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+      uint8_image_sample_method_t uint8_image_sample_method
+        = UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
+
       switch ( resample_method ) {
-      case RESAMPLE_NEAREST_NEIGHBOR:
-        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
-        break;
-      case RESAMPLE_BILINEAR:
-        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
-        break;
-      case RESAMPLE_BICUBIC:
-        float_image_sample_method = FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
-        break;
-      default:
-        g_assert_not_reached ();
+        case RESAMPLE_NEAREST_NEIGHBOR:
+          float_image_sample_method =
+            FLOAT_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+          uint8_image_sample_method =
+            UINT8_IMAGE_SAMPLE_METHOD_NEAREST_NEIGHBOR;
+          break;
+        case RESAMPLE_BILINEAR:
+          float_image_sample_method =
+            FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
+          uint8_image_sample_method =
+            UINT8_IMAGE_SAMPLE_METHOD_BILINEAR;
+          break;
+        case RESAMPLE_BICUBIC:
+          float_image_sample_method =
+            FLOAT_IMAGE_SAMPLE_METHOD_BICUBIC;
+          uint8_image_sample_method =
+            UINT8_IMAGE_SAMPLE_METHOD_BICUBIC;
+          break;
+        default:
+          g_assert_not_reached ();
       }
+
+      // Input file name
+      GString *input_file = g_string_new (input_image->str);
+      g_string_append (input_file, ".img");
+
+      // For optical data -- do processing as BYTE, to save memory
+      FloatImage *iim = NULL, *oim = NULL;
+      UInt8Image *iim_b = NULL, *oim_b = NULL;
+
+      if (imd->optical)
+      {
+        iim_b = uint8_image_band_new_from_metadata(imd, kk, input_file->str);
+        oim_b = uint8_image_new (oix_max + 1, oiy_max + 1);
+      }
+      else
+      {
+        iim = float_image_band_new_from_metadata(imd, kk, input_file->str);
+        oim = float_image_new (oix_max + 1, oiy_max + 1);
+      }
+
+      g_string_free (input_file, TRUE);
 
       double *projX = MALLOC(sizeof(double)*(oix_max+1));
       double *projY = MALLOC(sizeof(double)*(oix_max+1));
-
+        
       // Set the pixels of the output image.
       size_t oix, oiy;		// Output image pixel indicies.
       for (oiy = 0 ; oiy <= oiy_max ; oiy++) {
-
+          
         int oix_first_valid = -1;
         int oix_last_valid = -1;
-
+          
         for ( oix = 0 ; oix <= oix_max ; oix++ ) {
           // Projection coordinates for the center of this pixel.
-          double oix_pc = ((double) oix / oix_max) * (max_x - min_x) + min_x;
-        // We want projection coordinates to increase as we move from
-        // the bottom of the image to the top, so that north ends up up.
-          double oiy_pc = (1.0 - (double) oiy / oiy_max) * (max_y - min_y) + min_y;
-
+          double oix_pc = ((double) oix/oix_max) * (max_x-min_x) + min_x;
+          // We want projection coordinates to increase as we move from
+          // the bottom of the image to the top, so that north ends up up.
+          double oiy_pc = (1.0-(double)oiy/oiy_max) * (max_y-min_y) + min_y;
+          
           // Determine pixel of interest in input image.  The fractional
           // part is desired, we will use some sampling method to
           // interpolate between pixel values.
           double input_x_pixel = X_PIXEL (oix_pc, oiy_pc);
           double input_y_pixel = Y_PIXEL (oix_pc, oiy_pc);
-
+          
           g_assert (ii_size_x <= SSIZE_MAX);
           g_assert (ii_size_y <= SSIZE_MAX);
-
+          
           // If we are outside the extent of the input image, set to the
           // fill value.
           if (   input_x_pixel < 0
@@ -1371,107 +1394,140 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
               || input_y_pixel < 0
               || input_y_pixel > (ssize_t) ii_size_y - 1.0 )
           {
-              SET_PIXEL (oix, oiy, (float)background_val);
+            if (imd->optical)
+              uint8_image_set_pixel (oim_b, oix, oiy, (uint8_t)background_val);
+            else
+              float_image_set_pixel (oim, oix, oiy, (float)background_val);
           }
           // Otherwise, set to the value from the appropriate position in
           // the input image.
           else
           {
+            if (imd->optical) {
+              uint8_image_set_pixel(oim_b, oix, oiy,
+                uint8_image_sample(iim_b, input_x_pixel, input_y_pixel,
+                                   uint8_image_sample_method));
+            }
+            else {
               float value;
               if ( imd->general->image_data_type == DEM )
-                  value = dem_sample(iim, input_x_pixel, input_y_pixel,
-                                    float_image_sample_method);
+                value = dem_sample(iim, input_x_pixel, input_y_pixel,
+                                   float_image_sample_method);
               else
-                  value = float_image_sample(iim, input_x_pixel, input_y_pixel,
-                                            float_image_sample_method);
+                value = float_image_sample(iim, input_x_pixel, input_y_pixel,
+                                           float_image_sample_method);
+              
+              float_image_set_pixel (oim, oix, oiy, value);
+            }
 
-              SET_PIXEL (oix, oiy, value);
-
-              oix_last_valid = oix;
-              if (oix_first_valid == -1) oix_first_valid = oix;
+            oix_last_valid = oix;
+            if (oix_first_valid == -1) oix_first_valid = oix;
           }
-
+            
           projX[oix] = oix_pc;
           projY[oix] = oiy_pc;
-        } // end of for-each-sample-in-line set output float values
-
+        } // end of for-each-sample-in-line set output values
+          
         // If we are reprojecting a DEM, need to account for the height
         // difference between the vertical datum (NGVD27) and our WGS84
         // ellipsoid. Since geoid heights closely match vertical datum
         // heights, this will work for SAR imagery
         if ( imd->general->image_data_type == DEM ) {
 
-            double *lat, *lon;
-            lat = lon = NULL; // => libproj will allocate for us
+          // At present, don't handle byte DEMs.  Don't think such a thing
+          // is even possible, really.
+          g_assert(iim && !iim_b);
 
-            // Need to get each pixel's location in lat/lon in order to get
-            // the geoid height.  We saved each pixel's projection coordinates,
-            // above, so we just to need to convert those, then use the
-            // lat/lon values to get the required geoid height correction,
-            // add it to the height at the pixel.
+          double *lat, *lon;
+          lat = lon = NULL; // => libproj will allocate for us
+          
+          // Need to get each pixel's location in lat/lon in order to get
+          // the geoid height.  We saved each pixel's projection coordinates,
+          // above, so we just to need to convert those, then use the
+          // lat/lon values to get the required geoid height correction,
+          // add it to the height at the pixel.
+          
+          // Doing it like this (instead of pixel-by-pixel) allows us to
+          // use the array version of libproj, which is *much* faster.
+          
+          unproject_arr(pp, projX, projY, NULL, &lat, &lon, NULL,
+                        oix_max + 1, datum);
+          
+          // the if guards against the case where no valid pixels were
+          // on this line (i.e., both are -1)
+          if (oix_first_valid > 0 && oix_last_valid > 0) {
+            for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
 
-            // Doing it like this (instead of pixel-by-pixel) allows us to
-            // use the array version of libproj, which is *much* faster.
+              float val = float_image_get_pixel(oim, oix, oiy);
+              val += get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
+              float_image_set_pixel(oim, oix, oiy, val);
 
-            unproject_arr(pp, projX, projY, NULL, &lat, &lon, NULL,
-                          oix_max + 1, datum);
-
-            // the if guards against the case where no valid pixels were
-            // on this line (i.e., both are -1)
-            if (oix_first_valid > 0 && oix_last_valid > 0) {
-                for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
-                    float val = GET_PIXEL(oix, oiy);
-                    val += get_geoid_height(lat[oix]*R2D, lon[oix]*R2D);
-                    SET_PIXEL(oix, oiy, val);
-                }
             }
-
-            free(lat);
-            free(lon);
+          }
+          
+          free(lat);
+          free(lon);
         }
-
+        
         asfLineMeter(oiy, oiy_max + 1 );
-      } // End of for-each-line set output float values
-
+      } // End of for-each-line set output values
+      
       free(projX);
       free(projY);
-
+      
       if (imd->general->band_count == 1)
         asfPrintStatus("Done resampling image.\n");
       else
         asfPrintStatus("Done resampling band.\n");
-
-      // Flip the non-reprojected image if the y pixel size is negative.
-      if ( y_pixel_size < 0 && omd->projection == NULL ) {
-        asfPrintStatus ("Found negative y pixel size ...flipping output image.\n");
+      
+      if (y_pixel_size < 0 && omd->projection == NULL) {
         g_assert (0); 		/* Shouldn't be here.  */
-        float_image_flip_y (oim);
-        y_pixel_size = -y_pixel_size;
-      }
-
-      // Store the output image, and free image resources.
-      GString *output_data_file = g_string_new (output_image->str);
-      g_string_append (output_data_file, ".img");
-
-      if(multiband) {
-        // Writing all bands from input file to output file
-        if (kk == 0) // Create new output file
-          ret = float_image_band_store (oim, output_data_file->str, omd, 0);
-        else // Append to existing output file
-          ret = float_image_band_store (oim, output_data_file->str, omd, 1);
-        asfRequire (ret == 0, "Error saving output image.\n");
-      }
-      else {
-        // Write single band when found...
-        if (kk == band_num) { // Create new output file
-          ret = float_image_band_store (oim, output_data_file->str, omd, 0);
-          asfRequire (ret == 0, "Error saving output image.\n");
+        if (!imd->optical) {
+          float_image_flip_y (oim);
+          y_pixel_size = -y_pixel_size;
         }
       }
-      g_string_free (output_data_file, TRUE);
+      
+      // Store the output image, and free image resources.
+      GString *output_file = g_string_new (output_image->str);
+      g_string_append (output_file, ".img");
 
-      float_image_free (oim);
-      float_image_free (iim);
+      ret = 1;
+      if (imd->optical) {
+        if(multiband) {
+          // Writing all bands from input file to output file
+          ret = uint8_image_band_store (oim_b, output_file->str, omd, kk>0);
+        }
+        else {
+          // Write single band
+          g_assert (kk == band_num);
+          ret = uint8_image_band_store (oim_b, output_file->str, omd, 0);
+        }
+      }
+      else {
+        if(multiband) {
+          // Writing all bands from input file to output file
+          ret = float_image_band_store (oim, output_file->str, omd, kk>0);
+        }
+        else {
+          // Write single band
+          g_assert (kk == band_num);
+          ret = float_image_band_store (oim, output_file->str, omd, 0);
+        }
+      }
+
+      asfRequire (ret == 0, "Error saving byte output image.\n");
+      g_string_free (output_file, TRUE);
+
+      if (imd->optical) {
+        uint8_image_free (iim_b);
+        uint8_image_free (oim_b);
+      }
+      else {
+        float_image_free (oim);
+        float_image_free (iim);
+      }
+      
     } // End of 'if multiband or single band and current band is requested band'
   } // End of 'for each band' in the file, 'map-project the data into the file'
 
@@ -1479,7 +1535,7 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   if (band_name) {
       int i;
       for (i=0; i < imd->general->band_count; i++) {
-          printf("Band: %s\n", band_name[i]);
+          //printf("Band: %s\n", band_name[i]);
           FREE(band_name[i]);
       }
       FREE(band_name);
