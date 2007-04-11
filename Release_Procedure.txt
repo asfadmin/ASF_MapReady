@@ -58,6 +58,8 @@ src/mosaic
 src/refine_geolocation
 src/asf_terrcorr
 src/meta2envi
+src/resample
+src/fill_holes
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
