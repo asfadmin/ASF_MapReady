@@ -1349,8 +1349,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
   }
 
-  free_convert_config(cfg);
   update_status(cfg, "Done");
+  free_convert_config(cfg);
 
   // Don't change this message unless you also change the code in
   // asf_convert_gui/execute.c to look for a different successful
