@@ -312,7 +312,7 @@ float_image_thaw (FILE *file_pointer)
   self->cache = g_new (float, self->cache_area);
 
   self->tile_addresses = g_new0 (float *, self->tile_count);
-  
+
   // We don't actually keep the tile queue in the serialized instance,
   // but if the serialized pointer to it is NULL, we know we aren't
   // using a tile cache file (i.e. the whole image fits in the memory
@@ -327,14 +327,14 @@ float_image_thaw (FILE *file_pointer)
     // we restore the file directly into the first and only tile (see
     // the end of the float_image_new method).
     self->tile_addresses[0] = self->cache;
-    read_count = fread (self->tile_addresses[0], sizeof (float), 
+    read_count = fread (self->tile_addresses[0], sizeof (float),
 			self->tile_area, fp);
     g_assert (read_count == self->tile_area);
   }
   // otherwise, an empty tile queue needs to be initialized, and the
   // remainder of the serialized version is the tile block cache.
   else {
-    self->tile_queue = g_queue_new (); 
+    self->tile_queue = g_queue_new ();
     self->tile_file = initialize_tile_cache_file ();
     float *buffer = g_new (float, self->tile_area);
     size_t ii;
@@ -353,7 +353,7 @@ float_image_thaw (FILE *file_pointer)
 	  g_assert (ferror (self->tile_file));
 	  fprintf (stderr,
 		   "Error writing tile cache file for FloatImage instance "
-		   "during thaw: %s\n", strerror (errno));	
+		   "during thaw: %s\n", strerror (errno));
 	}
 	exit (EXIT_FAILURE);
       }
@@ -543,7 +543,7 @@ float_image_copy (FloatImage *model)
   // FIXME: this could obviously be optimized a lot by copying the
   // existed tile file, etc.
   FloatImage *self = float_image_new (model->size_x, model->size_y);
-  
+
   size_t ii, jj;
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
@@ -578,7 +578,7 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
   g_assert (scale_factor > 0);
   g_assert (scale_factor % 2 == 1);
 
-  FloatImage *self 
+  FloatImage *self
     = float_image_new (round ((double) model->size_x / scale_factor),
 		       round ((double) model->size_y / scale_factor));
 
@@ -1103,10 +1103,10 @@ float_image_new_from_metadata(meta_parameters *meta, const char *file)
   return float_image_band_new_from_metadata(meta, 0, file);
 }
 
-// Returns a new FloatImage, for the image band corresponding to the 
+// Returns a new FloatImage, for the image band corresponding to the
 // given metadata.
 FloatImage *
-float_image_band_new_from_metadata(meta_parameters *meta, 
+float_image_band_new_from_metadata(meta_parameters *meta,
 				   int band, const char *file)
 {
     int nl = meta->general->line_count;
@@ -1371,6 +1371,7 @@ float_image_statistics (FloatImage *self, float *min, float *max,
   size_t sample_count = 0;      // Samples considered so far.
   size_t ii, jj;
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+    asfPercentMeter((double)ii/(double)(self->size_y));
     float_image_get_row (self, ii, row_buffer);
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float cs = row_buffer[jj];   // Current sample.
@@ -1384,12 +1385,13 @@ float_image_statistics (FloatImage *self, float *min, float *max,
       sample_count++;
     }
   }
+  asfPercentMeter(1.0);
 
   g_free (row_buffer);
 
   if (*min == FLT_MAX || *max == -FLT_MAX)
       asfPrintError ("Image did not contain any valid data!\n");
-      
+
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
 
   g_assert (fabs (mean_as_double) <= FLT_MAX);
@@ -1400,10 +1402,10 @@ float_image_statistics (FloatImage *self, float *min, float *max,
 }
 
 void
-float_image_statistics_with_mask_interval (FloatImage *self, float *min, 
-					   float *max, float *mean, 
-					   float *standard_deviation, 
-					   double interval_start, 
+float_image_statistics_with_mask_interval (FloatImage *self, float *min,
+					   float *max, float *mean,
+					   float *standard_deviation,
+					   double interval_start,
 					   double interval_end)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
@@ -1494,8 +1496,8 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
 }
 
 void
-float_image_approximate_statistics_with_mask_interval 
-  (FloatImage *self, size_t stride, float *mean, float *standard_deviation, 
+float_image_approximate_statistics_with_mask_interval
+  (FloatImage *self, size_t stride, float *mean, float *standard_deviation,
    double interval_start, double interval_end)
 {
   // This method is a trivial clone-and-modify of
@@ -1533,7 +1535,7 @@ float_image_approximate_statistics_with_mask_interval
   // it, even though we don't do anything with them (since they are
   // inaccurate).
   float min, max;
-  float_image_statistics_with_mask_interval (sample_image, &min, &max, 
+  float_image_statistics_with_mask_interval (sample_image, &min, &max,
 					     mean, standard_deviation,
 					     interval_start, interval_end);
 
@@ -1802,7 +1804,7 @@ synchronize_tile_file_with_memory_cache (FloatImage *self)
 
   guint ii;
   for ( ii = 0 ; ii < self->tile_queue->length ; ii++ ) {
-    size_t tile_offset = GPOINTER_TO_INT (g_queue_peek_nth (self->tile_queue, 
+    size_t tile_offset = GPOINTER_TO_INT (g_queue_peek_nth (self->tile_queue,
 							    ii));
     cached_tile_to_disk (self, tile_offset);
   }
@@ -1859,7 +1861,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
   // If there was no cache file...
   if ( self->tile_queue == NULL ) {
     // We store the contents of the first tile and are done.
-    write_count = fwrite (self->tile_addresses[0], sizeof (float), 
+    write_count = fwrite (self->tile_addresses[0], sizeof (float),
 			  self->tile_area, fp);
     if ( write_count < self->tile_area ) {
       if ( ferror (fp) ) {
@@ -1880,7 +1882,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
     int return_code = fseeko (self->tile_file, 0, SEEK_SET);
     g_assert (return_code == 0);
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
-      size_t read_count = fread (buffer, sizeof (float), self->tile_area, 
+      size_t read_count = fread (buffer, sizeof (float), self->tile_area,
 				 self->tile_file);
       g_assert (read_count == self->tile_area);
       write_count = fwrite (buffer, sizeof (float), self->tile_area, fp);
@@ -1975,8 +1977,8 @@ float_image_store (FloatImage *self, const char *file,
 /*
  * JPEG ERROR HANDLING:
  *
- * Override the "error_exit" method so that control is returned to the 
- * library's caller when a fatal error occurs, rather than calling exit() 
+ * Override the "error_exit" method so that control is returned to the
+ * library's caller when a fatal error occurs, rather than calling exit()
  * as the standard error_exit method does.
  *
  * We use C's setjmp/longjmp facility to return control.  This means that the
@@ -2199,9 +2201,9 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 }
 
 int
-float_image_export_as_jpeg_with_mask_interval (FloatImage *self, 
+float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       const char *file,
-					       ssize_t max_dimension, 
+					       ssize_t max_dimension,
 					       double interval_start,
 					       double interval_end)
 {
@@ -2267,7 +2269,7 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   // Gather image statistics so we know how to map image values into
   // the output.
   float min, max, mean, standard_deviation;
-  float_image_statistics_with_mask_interval (self, &min, &max, &mean, 
+  float_image_statistics_with_mask_interval (self, &min, &max, &mean,
 					     &standard_deviation,
 					     interval_start,
 					     interval_end);
