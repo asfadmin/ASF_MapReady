@@ -37,6 +37,7 @@ tiff_to_float_image (TIFF *tif)
 
   uint32 current_row;
   for ( current_row = 0 ; current_row < height ; current_row++ ) {
+    asfLineMeter(current_row, height);
     TIFFReadScanline (tif, buf, current_row, 0);
     uint32 current_column;
     for ( current_column = 0 ; current_column < width ; current_column++ ) {

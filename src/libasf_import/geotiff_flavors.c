@@ -109,27 +109,27 @@ detect_geotiff_flavor (const char *file)
   } // strncmp on citation, tmp looking for IMAGINE GeoTIFF type
 
   // Test for a particular flavor.
-  GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
+  //GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);
   // Ensure the citation is at least eventually terminated somewhere.
-  citation[max_citation_length] = '\0';
-  regex_t asf_utm_citation_regex;
+  //citation[max_citation_length] = '\0';
+  //regex_t asf_utm_citation_regex;
   /*
   int return_code
     = regcomp (&asf_utm_citation_regex,
 	       "UTM zone ? projected GeoTIFF on WGS84 ellipsoid datum written "
 	       "by Alaska Satellite Facility tools.", REG_NOSUB);
   */
-  int return_code
-    = regcomp (&asf_utm_citation_regex,
-	       "UTM zone [[:digit:]]+ [NS]", REG_EXTENDED | REG_NOSUB);
+  //int return_code
+    //= regcomp (&asf_utm_citation_regex,
+	//       "UTM zone [[:digit:]]+ [NS]", REG_EXTENDED | REG_NOSUB);
   //[[:digit:]]+ [NS]
-  assert (return_code == 0);
-  return_code = regexec (&asf_utm_citation_regex, citation, 0, NULL, 0);
-  if ( return_code == 0 ) {
-    GTIFFree(gtif);
-    XTIFFClose(tiff);
-    return import_asf_utm_geotiff;
-  }
+  //assert (return_code == 0);
+  //return_code = regexec (&asf_utm_citation_regex, citation, 0, NULL, 0);
+  //if ( return_code == 0 ) {
+    //GTIFFree(gtif);
+    //XTIFFClose(tiff);
+    //return import_asf_utm_geotiff;
+  //}
 
   // Couldn't determine any flavor we know.
   GTIFFree(gtif);

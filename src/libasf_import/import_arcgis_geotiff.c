@@ -907,11 +907,23 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
     strcpy(image_data_type, pTmpChar);
   }
   else {
-    strcpy(image_data_type, MAGIC_UNSET_STRING);
+    if (geotiff_data_exists) {
+      strcpy(image_data_type, "GEOCODED_IMAGE");
+    }
+    else if ((tie_point[0] || tie_point[1]) &&
+              pixel_scale[0] && pixel_scale[1]) {
+      strcpy(image_data_type, "GEOREFERENCED_IMAGE");
+    }
+    else {
+      strcpy(image_data_type, MAGIC_UNSET_STRING);
+    }
   }
   va_end(ap);
   if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
     mg->image_data_type = GEOCODED_IMAGE;
+  }
+  else if (strncmp(image_data_type, "GEOREFERENCED_IMAGE", 19) == 0) {
+    mg->image_data_type = GEOREFERENCED_IMAGE;
   }
   else if (strncmp(image_data_type, "DEM", 3) == 0) {
     mg->image_data_type = DEM;
@@ -1188,6 +1200,8 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
   ms->rmse = standard_deviation;
   ms->std_deviation = standard_deviation;
   ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
+  ms->min = min;
+  ms->max = max;
 
   double lat, lon;
   proj_to_latlon(&proj, mp->startX, mp->startY, 0.0,

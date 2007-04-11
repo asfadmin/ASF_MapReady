@@ -135,18 +135,27 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
   /*                                            */
-  // Read GeoTIFF file citation (general info from the maker of the file)
-  // NOTE: The citation may or may not exist ...it is not required by the
-  // file standard but we need it to help check for ERDAS IMAGINE type format
+  char *citation = NULL;
   int citation_length;
   int typeSize;
   tagtype_t citation_type;
   citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
-  asfRequire (citation_length > 0,
-              "Missing citation string in GeoTIFF file\n");
-  char *citation = MALLOC ((citation_length) * typeSize);
-  GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
-  asfPrintStatus("\nCitation: %s\n", citation);
+  if (citation_length > 0) {
+    citation = MALLOC ((citation_length) * typeSize);
+    GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
+    asfPrintStatus("\nCitation: %s\n", citation);
+  }
+  else {
+    citation_length = GTIFKeyInfo(input_gtif, PCSCitationGeoKey, &typeSize, &citation_type);
+    if (citation_length > 0) {
+      citation = MALLOC ((citation_length) * typeSize);
+      GTIFKeyGet (input_gtif, PCSCitationGeoKey, citation, 0, citation_length);
+      asfPrintStatus("\nCitation: %s\n", citation);
+    }
+    else {
+      asfPrintStatus("\nCitation: MISSING\n");
+    }
+  }
 
   // Get the tie point which defines the mapping between raster
   // coordinate space and geographic coordinate space.  Although
@@ -241,13 +250,13 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
     short pcs;
     short geokey_datum;
-    double false_easting;
-    double false_northing;
-    double lonOrigin;
-    double latOrigin;
-    double stdParallel1;
-    double stdParallel2;
-    double lonPole;
+    double false_easting = MAGIC_UNSET_DOUBLE;
+    double false_northing = MAGIC_UNSET_DOUBLE;
+    double lonOrigin = MAGIC_UNSET_DOUBLE;
+    double latOrigin = MAGIC_UNSET_DOUBLE;
+    double stdParallel1 = MAGIC_UNSET_DOUBLE;
+    double stdParallel2 = MAGIC_UNSET_DOUBLE;
+    double lonPole = MAGIC_UNSET_DOUBLE;
 
     //////// ALL PROJECTIONS /////////
     // Set the projection block data that we know at this point
@@ -500,7 +509,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                       "Unable to determine center latitude from GeoTIFF file\n"
                   "using ProjNatOriginLatGeoKey\n");
             }
-            mp->type = ALBERS;
+            mp->type = ALBERS_EQUAL_AREA;
             mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
             mp->param.albers.std_parallel1 = stdParallel1;
             mp->param.albers.std_parallel2 = stdParallel2;
@@ -546,7 +555,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                       scale_factor);
               asfPrintWarning(msg);
             }
-            mp->type = LAMCC;
+            mp->type = LAMBERT_CONFORMAL_CONIC;
             mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
             mp->param.lamcc.plat1 = latOrigin;
             mp->param.lamcc.plat2 = latOrigin;
@@ -594,7 +603,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                       "Unable to determine center latitude from GeoTIFF file\n"
                   "using ProjFalseOriginLatGeoKey\n");
             }
-            mp->type = LAMCC;
+            mp->type = LAMBERT_CONFORMAL_CONIC;
             mp->hem = (latOrigin > 0.0) ? 'N' : 'S';
             mp->param.lamcc.plat1 = stdParallel1;
             mp->param.lamcc.plat2 = stdParallel2;
@@ -632,7 +641,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
             }
             // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
             // use it, e.g. it is not current written to the meta data file with meta_write().
-            mp->type = PS;
+            mp->type = POLAR_STEREOGRAPHIC;
             mp->hem = (latOrigin > 0) ? 'N' : 'S';
             mp->param.ps.slat = latOrigin;
             mp->param.ps.slon = lonPole;
@@ -666,7 +675,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                       "Unable to determine center latitude from GeoTIFF file\n"
                   "using ProjCenterLatGeoKey\n");
             }
-            mp->type = LAMAZ;
+            mp->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
             mp->hem = (latOrigin > 0) ? 'N' : 'S';
             mp->param.lamaz.center_lon = lonOrigin;
             mp->param.lamaz.center_lat = latOrigin;
@@ -713,6 +722,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   size_t ii, jj;
   char bad_values_existed = 0;
   for ( ii = 0 ; ii < image->size_y ; ii++ ) {
+    asfPercentMeter((double)ii/(double)(image->size_y));
     for ( jj = 0 ; jj < image->size_x ; jj++ ) {
       if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
 	float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
@@ -720,6 +730,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       }
     }
   }
+  asfPercentMeter(1.0);
   if (bad_values_existed) {
     asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
         "result in inaccurate image statistics.\n");
@@ -749,16 +760,28 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     strcpy(image_data_type, pTmpChar);
   }
   else {
-    strcpy(image_data_type, MAGIC_UNSET_STRING);
+    if (geotiff_data_exists) {
+      strcpy(image_data_type, "GEOCODED_IMAGE");
+    }
+    else if ((tie_point[0] || tie_point[1]) &&
+              pixel_scale[0] && pixel_scale[1]) {
+      strcpy(image_data_type, "GEOREFERENCED_IMAGE");
+    }
+    else {
+      strcpy(image_data_type, MAGIC_UNSET_STRING);
+    }
   }
   va_end(ap);
-  if (strncmp(uc(image_data_type), "GEOCODED_IMAGE", 14) == 0) {
+  if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
     mg->image_data_type = GEOCODED_IMAGE;
   }
-  else if (strncmp(uc(image_data_type), "DEM", 3) == 0) {
+  else if (strncmp(image_data_type, "GEOREFERENCED_IMAGE", 19) == 0) {
+    mg->image_data_type = GEOREFERENCED_IMAGE;
+  }
+  else if (strncmp(image_data_type, "DEM", 3) == 0) {
     mg->image_data_type = DEM;
   }
-  else if (strncmp(uc(image_data_type), "MASK", 4) == 0) {
+  else if (strncmp(image_data_type, "MASK", 4) == 0) {
     mg->image_data_type = MASK;
   }
   // else leave it at the initialized value
@@ -833,6 +856,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
                           FLOAT_IMAGE_DEFAULT_MASK);
   mp->height = mean; // Overrides the default value of 0.0 set earlier
+  ms->min = min;
+  ms->max = max;
 
   // Calculate the center latitude and longitude now that the projection
   // parameters are stored.
