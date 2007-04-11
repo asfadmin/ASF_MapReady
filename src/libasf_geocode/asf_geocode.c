@@ -489,14 +489,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // Input metadata.
   meta_parameters *imd = meta_read (input_meta_data->str);
 
-  // We can't handle slant range images at the moment.  Happily, there
-  // are only a very small number of these products around.
-  if ( imd->sar )
-    if ( imd->sar->image_type == 'S' ) {
-      asfPrintError ("Can't handle slant range images (i.e. almost certainly \n"
-                     "left-looking AMM-1 era images) at present.\n");
-    }
-
   if (imd->optical) {
     if (strcmp(imd->general->mode, "1A") == 0 ||
         strcmp(imd->general->mode, "1B1") == 0) {
@@ -1293,8 +1285,8 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // Adjust bands and band_count for the case where the user
   // selected to geocode only a single band out of a multi-band
   // file
-  char **band_name;
-  band_name = extract_band_names(imd->general->bands, imd->general->band_count);
+  char **band_name =
+    extract_band_names(imd->general->bands, imd->general->band_count);
 
   if (!multiband) {
     if (band_name)
@@ -1361,27 +1353,35 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   for (kk=0; kk<imd->general->band_count; kk++) {
     if (multiband || kk == band_num) {
       if (imd->general->band_count == 1)
-        asfPrintStatus("Geocoding image ...\n");
+        asfPrintStatus("\nGeocoding image.\n");
       else
         asfPrintStatus("Geocoding band: %s\n", band_name[kk]);
 
       // For optical data -- we'll do processing as BYTE, to save memory
+      // So, only one of the {Float/UInt8}Image will be non-null
       FloatImage *iim = NULL;
       UInt8Image *iim_b = NULL;
-      
+
+      asfPrintStatus("Creating tiles for the input image ...\n");
+
       // open up the input image
       if (process_as_byte)
         iim_b = uint8_image_band_new_from_metadata(imd, kk, input_file->str);
       else
         iim = float_image_band_new_from_metadata(imd, kk, input_file->str);
 
+      asfPrintStatus("Resampling input image into output image "
+                     "coordinate space...\n");
+
       // Open the output image
-      // (for append, if multiband, and this isn't the first band)
+      // (for append, if multiband && this isn't the first band)
       FILE *outFp = FOPEN(output_file->str, multiband && kk>0 ? "a" : "w");
 
       // Set the pixels of the output image.
       size_t oix, oiy;		// Output image pixel indicies.
       for (oiy = 0 ; oiy <= oiy_max ; oiy++) {
+
+        asfLineMeter(oiy, oiy_max + 1 );
           
         int oix_first_valid = -1;
         int oix_last_valid = -1;
@@ -1479,11 +1479,11 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
         // write the line
         put_float_line(outFp, omd, oiy, output_line);
 
-        asfLineMeter(oiy, oiy_max + 1 );
       } // End of for-each-line set output values
       
       fclose(outFp);
 
+      g_assert(!iim_b || !iim);
       if (process_as_byte)
         uint8_image_free (iim_b);
       else

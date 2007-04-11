@@ -1121,6 +1121,7 @@ float_image_band_new_from_metadata(meta_parameters *meta,
         get_float_line(fp, meta, i+band*nl, buf);
         for (j = 0; j < ns; ++j)
             float_image_set_pixel(fi, j, i, buf[j]);
+        asfPercentMeter((float)i/(float)(nl-1));
     }
 
     free(buf);
