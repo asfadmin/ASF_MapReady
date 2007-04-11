@@ -93,6 +93,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int br_x=ns-1, br_y=nl-1;
 
     // we have to find the "real" corners of the image
+    asfPrintStatus("Tiling the input image...\n");
     FloatImage *in = float_image_new_from_metadata(inMeta, infile);
 
     // find top left pixel -- TOP-most non-no-data pixel in the image

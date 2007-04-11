@@ -169,7 +169,10 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
 */
                 // HACK: save the pixel value in the incoming array
                 // do this without screwing up the hole detection
-                // by setting to a value below the cutoff
+                // by setting to a value below the cutoff using a kludgey
+                // formula.  This way, we will still have the real hole
+                // boundaries intact for more interpolations within this
+                // hole
 
                 float_image_set_pixel(img, j, i, cutoff - pad - pixel_value);
                 ++count;
@@ -185,6 +188,8 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
         for (j=0; j<ns; ++j) {
             float v = float_image_get_pixel(img,j,i);
             if (v < cutoff) {
+                // undo the kludgey formula from the above "HACK"
+                // to get the actual interpolated value in the DEM
                 float_image_set_pixel(img, j, i, cutoff - pad - v);
                 --count;
             }
@@ -203,7 +208,11 @@ void interp_dem_holes_file(const char *infile, const char *outfile,
     create_name(outFile, outfile, ".img");
 
     meta_parameters *meta = meta_read(inFile);
+    if (verbose) asfPrintStatus("Tiling input image...\n");
+    int oldQuietFlag = quietflag;
+    if (!verbose) quietflag = TRUE;
     FloatImage *fi = float_image_new_from_metadata(meta, inFile);
+    quietflag = oldQuietFlag;
 
     meta_write(meta, outFile);
     meta_free(meta);
