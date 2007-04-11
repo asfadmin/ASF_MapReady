@@ -238,6 +238,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
       FCLOSE(fout);
     }
 
+    meta_free(mp);
     free(uc_what);
     free(tiff_basename);
 
