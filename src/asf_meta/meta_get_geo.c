@@ -91,8 +91,8 @@ int meta_get_latLon(meta_parameters *meta,
     if (meta->projection->type == SCANSAR_PROJECTION) {
         scan_to_latlon(meta, px, py, elev, lat, lon, &hgt);
     } else {
-        proj_to_latlon(meta->projection, px, py, pz,
-                       lat, lon, &hgt);
+        proj_to_latlon(meta->projection, px, py, pz, lat, lon, &hgt);
+        *lat *= R2D; *lon *= R2D;
     }
     return 0;
   } else { /*Bogus image type.*/
