@@ -497,11 +497,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     }
   }
 
-  if (is_map_projected(imd)) {
-    asfPrintError("Input image already geocoded.  "
-                  "Reprojection is not yet supported.\n");
-  }
-
   // If we have an already projected image as input, we will need to
   // be able to unproject its coordinates back to lat long before we
   // can reproject them into the desired projection, so here we select
