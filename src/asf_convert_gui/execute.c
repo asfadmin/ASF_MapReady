@@ -503,7 +503,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 
             g_usleep(50);
 
-	    if (++counter % 400 == 0)
+	    if (++counter % 200 == 0)
 	    {
 	        /* check status file */
 	        char buf[256];
@@ -515,14 +515,26 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 
 		    gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
 
-                     if (strcmp(buf, "Done") == 0) {
+                     if (strcmp(buf, "Done")==0 || strcmp(buf, "Error")==0) {
                          // kludge:
                          // Status file says "Done" but we're still here.
                          // This could happen because it *just* finished
                          // during the most recent g_usleep(), but a much more
                          // likely reason is that the waitpid() detection
                          // failed.  (I say "much more likely" because waitpid
-                         // is checked 400x more often than the status file)
+                         // is checked 200x more often than the status file)
+
+                         // UPDATE!
+                         // We figured out why this is occurring on Linux,
+                         // it is a bug in the GtkFileChooser.  Since the
+                         // chooser is much nicer than the older FileSelector,
+                         // we'll keep this kludge... seems to be no other
+                         // side effects... hopefully...
+
+                         // Expanded the kludge to update the status file
+                         // with "Error", so that even if the process exits
+                         // with an error we'll still be ok.  This only
+                         // leaves the core-dump case as a loose end.
 
 #ifdef linux
                          // On Linux (which is actually the only platform

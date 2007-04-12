@@ -13,4 +13,10 @@ extern FILE *fLog;          /* file pointer for log file */
 
 void printLog(const char *msg);
 
+/* Stuff related to the "status" file -- used by the GUI to update the
+   "status" column during processing. */
+void set_status_file(const char *status_file);
+void update_status(const char *format, ...);
+void clear_status_file(void);
+
 #endif

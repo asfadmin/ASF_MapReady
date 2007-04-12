@@ -73,21 +73,6 @@ void check_return(int ret, char *msg)
     asfPrintError(msg);
 }
 
-void update_status(convert_config *cfg, const char *format, ...)
-{
-  if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
-  {
-    FILE *fStat = fopen(cfg->general->status_file, "wt");
-    if (fStat) {
-      va_list ap;
-      va_start(ap, format);
-      vfprintf(fStat, format, ap);
-      va_end(ap);
-      fclose(fStat);
-    }
-  }
-}
-
 // If a temporary directory has not been specified, create one using the time
 // stamp as the name of the temporary directory
 static void create_and_set_tmp_dir(char *basename, char *tmp_dir)
@@ -160,7 +145,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     }
 
     sprintf(status, "Importing %s...", uc_what);
-    update_status(cfg, status);
+    update_status(status);
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
@@ -169,7 +154,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
                    imported), status);
 
     sprintf(status, "Geocoding %s...", uc_what);
-    update_status(cfg, status);
+    update_status(status);
 
     // Check to see if the TIFF is map-projected or not, and if not
     // then geocode it.  ALSO set the image_data_type field while
@@ -340,7 +325,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // Regular processing
   else {
 
-    update_status(cfg, "Processing...");
+    if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
+      set_status_file(cfg->general->status_file);
+
+    update_status("Processing...");
 
     create_and_set_tmp_dir(cfg->general->in_name, cfg->general->tmp_dir);
 
@@ -631,7 +619,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     if (cfg->general->import) {
 
-      update_status(cfg, "Importing...");
+      update_status("Importing...");
 
       radiometry_t radiometry;
       int db_flag = FALSE;
@@ -690,7 +678,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->sar_processing) {
       meta_parameters *meta;
 
-      update_status(cfg, "Running ArDop...");
+      update_status("Running ArDop...");
 
       // Check whether the input file is a raw image.
       // If not, skip the SAR processing step
@@ -762,7 +750,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->image_stats) {
       char values[255];
 
-      update_status(cfg, "Running Image Stats...");
+      update_status("Running Image Stats...");
 
       // Values for statistics
       if (strncmp(uc(cfg->image_stats->values), "LOOK", 4) == 0) {
@@ -791,7 +779,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     if (cfg->general->detect_cr) {
 
-      update_status(cfg, "Detecting Corner Reflectors...");
+      update_status("Detecting Corner Reflectors...");
 
       // Intermediate results
       if (cfg->general->intermediates) {
@@ -839,7 +827,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Call asf_terrcorr!  Or refine_geolocation!
       if (cfg->terrain_correct->refine_geolocation_only) {
-          update_status(cfg, "Refining Geolocation...");
+          update_status("Refining Geolocation...");
           check_return(
               refine_geolocation(inFile, cfg->terrain_correct->dem,
                                  cfg->terrain_correct->mask, outFile, FALSE,
@@ -849,7 +837,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             "refining geolocation of the data file (refine_geolocation)\n");
       }
       else {
-          update_status(cfg, "Terrain Correcting...");
+          update_status("Terrain Correcting...");
           check_return(
             asf_terrcorr_ext(inFile, cfg->terrain_correct->dem,
                              cfg->terrain_correct->mask, outFile,
@@ -877,7 +865,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     if (cfg->general->geocoding) {
 
-      update_status(cfg, "Geocoding...");
+      update_status("Geocoding...");
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
       double average_height = cfg->geocoding->height;
@@ -943,7 +931,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
 
       scale_t scale = SIGMA;
-      update_status(cfg, "Exporting...");
+      update_status("Exporting...");
 
       // Format
       if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
@@ -1293,7 +1281,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         //DEMs be geocoded for terrain correction ingest).  So, proceed
         //directly to export.
         if (cfg->general->export) {
-            update_status(cfg, "Exporting clipped DEM...");
+            update_status("Exporting clipped DEM...");
 
             check_return(
                 asf_export(format, SIGMA, inFile, outFile),
@@ -1309,7 +1297,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Process the layover/shadow mask if requested
     if (cfg->terrain_correct->save_terrcorr_layover_mask) {
         if (cfg->general->geocoding) {
-            update_status(cfg, "Geocoding layover mask...");
+            update_status("Geocoding layover mask...");
             sprintf(inFile, "%s/terrain_correct_mask",cfg->general->tmp_dir);
             sprintf(outFile, "%s/layover_mask_geocoded",cfg->general->tmp_dir);
             check_return(
@@ -1331,7 +1319,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         free(tmp);
 
         if (cfg->general->export) {
-            update_status(cfg, "Exporting layover mask...");
+            update_status("Exporting layover mask...");
             check_return(
                 asf_export_bands(format, TRUNCATE, 1, 0, 0, 0, 0,
                                  "layover_mask.lut", inFile, outFile, NULL),
@@ -1349,8 +1337,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
   }
 
-  update_status(cfg, "Done");
+  update_status("Done");
   free_convert_config(cfg);
+  clear_status_file();
 
   // Don't change this message unless you also change the code in
   // asf_convert_gui/execute.c to look for a different successful

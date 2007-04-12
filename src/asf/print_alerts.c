@@ -130,6 +130,9 @@ void asfPrintError(const char *format, ...)
     FCLOSE(fLog);
   }
 
+  update_status("Error");
+  clear_status_file();
+
   // Note that we don't have to worry about flushing output in this
   // function since its fatal and the operating system will therefore
   // presumably do it for us.
