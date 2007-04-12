@@ -24,4 +24,4 @@ sr2gr : $(OBJS)
 	cp sr2gr.1 ../../man/cat1
 
 clean:
-	rm *.o
+	rm -f *.o

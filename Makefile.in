@@ -79,6 +79,7 @@ external_libs:
 
 clean:
 	rm -rf bin/* lib/* share/*
+	$(foreach MODULE, $(MODULES), $(MAKE) clean -C $(MODULE) &&) true
 
 release:
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..

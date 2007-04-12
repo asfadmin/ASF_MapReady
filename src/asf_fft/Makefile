@@ -19,4 +19,4 @@ asf_fft.a:	$(OBJS)
 	rm $(OBJS)
 
 clean:
-	rm *.o ../fft.a
+	-rm -f *.o ../fft.a
