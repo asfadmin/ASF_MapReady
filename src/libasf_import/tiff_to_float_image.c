@@ -13,7 +13,7 @@ tiff_to_float_image (TIFF *tif)
   uint16  bitsPerSample;
   uint16  sampleFormat;
   float   sample;
-  
+
   // Get TIFF image boundary, planar configuration, and data type info
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
@@ -31,7 +31,7 @@ tiff_to_float_image (TIFF *tif)
   // float_image.
   FloatImage *fim = float_image_new (width, height);
 
-  // Allocate a buffer for a line of pixels.NAD27_DATUM
+  // Allocate a buffer for a line of pixels.
   scanlineSize = TIFFScanlineSize(tif);
   tdata_t buf = _TIFFmalloc (scanlineSize);
 
@@ -54,11 +54,10 @@ tiff_to_float_image (TIFF *tif)
         default:
           asfRequire(0,"\nUnsupported TIFF pixel data type\n");
       }
-      float_image_set_pixel (fim, current_column, current_row, 
+      float_image_set_pixel (fim, current_column, current_row,
                              sample);
     }
   }
 
   return fim;
 }
-
