@@ -143,6 +143,7 @@ void trim_zeros(char *infile, char *outfile, int * startX, int * endX)
 
   *endX -= *startX;
 
+  fclose(in);
   free(buf);
   meta_free(metaIn);
 
