@@ -773,28 +773,22 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   //
   if (data_type == REAL32) {
     asfPrintStatus("\nScanning float image for bad data values...\n");
-    int band;
     int offset;
     char bad_values_existed = 0;
     const float bad_data_ceiling = -10e10;
     const float new_bad_data_magic_number = -999.0;
     size_t ii, jj;
     offset = oim->size_y;
-    for (band=0; band < num_bands; band++) {
-      if (num_bands > 1) {
-        asfPrintStatus("\nScanning band %02d\n", band+1);
-      }
-      for ( ii = 0 ; ii < oim->size_y ; ii++ ) {
-        asfPercentMeter((double)ii / (double)(oim->size_y));
-        for ( jj = 0 ; jj < oim->size_x ; jj++ ) {
-          if ( float_image_get_pixel (oim, jj, ii + (offset*band)) < bad_data_ceiling ) {
-            float_image_set_pixel (oim, jj, ii + (offset*band), new_bad_data_magic_number);
-            bad_values_existed = 1;
-          }
+    for ( ii = 0 ; ii < oim->size_y ; ii++ ) {
+      asfPercentMeter((double)ii / (double)(oim->size_y));
+      for ( jj = 0 ; jj < oim->size_x ; jj++ ) {
+        if ( float_image_get_pixel (oim, jj, ii) < bad_data_ceiling ) {
+          float_image_set_pixel (oim, jj, ii, new_bad_data_magic_number);
+          bad_values_existed = 1;
         }
       }
-      asfPercentMeter(1.0);
     }
+    asfPercentMeter(1.0);
     if (bad_values_existed) {
       asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
           "result in inaccurate image statistics.\n");
@@ -808,11 +802,11 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   uint32 height;
   if (data_type == BYTE) {
     width = oim_b->size_x;
-    height = oim_b->size_y;
+    height = oim_b->size_y / num_bands;
   }
   else {
     width = oim->size_x;
-    height = oim->size_y;
+    height = oim->size_y / num_bands;
   }
 
   /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
@@ -1299,7 +1293,8 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
     for (row=0; row < omd->general->line_count; row++){
       asfLineMeter(row, omd->general->line_count);
       for (col=0; col < omd->general->sample_count; col++) {
-        buf[col] = (float)uint8_image_get_pixel(oim_b, col, row+(offset*band));
+        int curr_row = row+(offset*band);
+        buf[col] = (float)uint8_image_get_pixel(oim_b, col, curr_row); //row+(offset*band));
       }
       put_float_line(fp, omd, row, buf);
     }

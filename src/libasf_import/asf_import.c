@@ -264,7 +264,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
       GString *inGeotiffName = find_geotiff_name (inBaseName);
       if ( inGeotiffName == NULL ) {
         asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
-                       "extension '.tif', '.tiff', '.TIF', or '.TIFF') "
+                       "extension '.tif', '.tiff',\n'.TIF', or '.TIFF') "
                        "corresponding to specified inBaseName");
       }
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
