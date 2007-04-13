@@ -112,10 +112,10 @@ int main(int argc,char *argv[])
   asfPrintStatus("Interpolating DEM holes...\n");
   interp_dem_holes_float_image(img, cutoff, TRUE);
 
+  meta_write(meta, outfile);
   asfPrintStatus("Writing smoothed dem: %s\n", outfile);
   float_image_store(img, outfile, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
   float_image_free(img);
-  meta_write(meta, outfile);
   meta_free(meta);
 
   asfPrintStatus("Done.\n");
