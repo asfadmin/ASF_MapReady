@@ -133,9 +133,9 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
 
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
+  nBands = inMeta->general->band_count;
 
-  char **band_name = extract_band_names(inMeta->general->bands,
-                                        inMeta->general->band_count);
+  char **band_name = extract_band_names(inMeta->general->bands, nBands);
 
   onl=nl;
   gr2sr_vec(inMeta, srPixSize, gr2sr, apply_pp_earth_radius_fix);
@@ -157,7 +157,6 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
      if (upper[ii]>=np) upper[ii]=np-1; /* range clip */
   }
   
-  //outMeta = meta_copy(inMeta);
   outMeta = meta_read(infile);
   outMeta->sar->slant_shift += ((inMeta->general->start_sample)
                                 * inMeta->general->x_pixel_size);
@@ -177,7 +176,7 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
 
   for (band = 0; band < nBands; band++) {
     if (inMeta->general->band_count != 1)
-      asfPrintStatus("Working on band: %s\n", band_name[band]);
+      asfPrintStatus("Converting to slant range: band %s\n", band_name[band]);
     for (line = 0; line < onl; line++) {
       get_float_line(fpi, inMeta, line + band*onl, inBuf);
       for (ii=0; ii<onp; ii++) { /* resample to slant range */
