@@ -1243,7 +1243,7 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
-  g_assert_not_reached ();
+  //g_assert_not_reached ();
 
   // Minimum and maximum sample values as integers.
   int imin = INT_MAX, imax = INT_MIN;
@@ -1283,6 +1283,7 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
       uint8_image_get_row (self, ii, row_buffer);
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+        asfPercentMeter((double)ii/(double)(self->size_y));
       	uint8_t cs = row_buffer[jj];   // Current sample.
       	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
       	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
