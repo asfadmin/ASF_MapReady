@@ -23,6 +23,7 @@ BUGS:
 
 ******************************************************************************/
 #include "asf_sar.h"
+#include "asf_raster.h"
 #include <asf.h>
 #include <asf_meta.h>
 
@@ -88,8 +89,9 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
 {
   meta_parameters *inMeta, *outMeta;
 
-  int   np, nl;         /* in number of pixels,lines      */
-  int   onp, onl;       /* out number of pixels,lines     */
+  int   np, nl;         /* in number of pixels,lines       */
+  int   onp, onl;       /* out number of pixels,lines      */
+  int   nBands;         /* number of bands in input/output */
   int   ii;
   float *gr2sr;    /* GR 2 SR resampling vector for Range  */
   int   *lower;    /* floor of gr2sr vector                */
@@ -101,6 +103,7 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
   float *outBuf;         /* Output buffer                 */
   FILE  *fpi, *fpo;      /* File pointers                 */
   int   line;            /* Loop counter                  */
+  int   band;            /* Loop counter                  */
   char  *iimgfile;       /* .img input file               */
   char  *oimgfile;       /* .img output file              */
  
@@ -130,6 +133,9 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
 
   nl = inMeta->general->line_count;
   np = inMeta->general->sample_count;
+
+  char **band_name = extract_band_names(inMeta->general->bands,
+                                        inMeta->general->band_count);
 
   onl=nl;
   gr2sr_vec(inMeta, srPixSize, gr2sr, apply_pp_earth_radius_fix);
@@ -169,13 +175,22 @@ static int gr2sr_pixsiz_imp(const char *infile, const char *outfile,
   inBuf = (float *) MALLOC (np*sizeof(float));
   outBuf = (float *) MALLOC (onp*sizeof(float));
 
-  for (line = 0; line < onl; line++) {
-    get_float_line(fpi, inMeta, line, inBuf);
-    for (ii=0; ii<onp; ii++) { /* resample to slant range */
-       outBuf[ii] = inBuf[lower[ii]]*lfrac[ii]+inBuf[upper[ii]]*ufrac[ii];
+  for (band = 0; band < nBands; band++) {
+    if (inMeta->general->band_count != 1)
+      asfPrintStatus("Working on band: %s\n", band_name[band]);
+    for (line = 0; line < onl; line++) {
+      get_float_line(fpi, inMeta, line + band*onl, inBuf);
+      for (ii=0; ii<onp; ii++) { /* resample to slant range */
+         outBuf[ii] = inBuf[lower[ii]]*lfrac[ii]+inBuf[upper[ii]]*ufrac[ii];
+      }
+      put_float_line(fpo,outMeta,line + band*onl,outBuf);
+      asfLineMeter(line,onl);
     }
-    put_float_line(fpo,outMeta,line,outBuf);
   }
+
+  for (ii=0; ii < inMeta->general->band_count; ii++)
+    FREE(band_name[ii]);
+  FREE(band_name);
 
   meta_write(outMeta, outfile);
   meta_free(inMeta);
