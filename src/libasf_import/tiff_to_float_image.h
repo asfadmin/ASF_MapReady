@@ -12,7 +12,8 @@
 
 // Produce a new FloatImage insance from tif.  It is assumed that tif
 // consists of floating point data (probably it is a GeoTIFF).
-FloatImage *
-tiff_to_float_image (TIFF *tif);
+FloatImage *tiff_to_float_image (TIFF *tif);
+
+FloatImage *tiff_to_band_float_image (TIFF *tif, int num_bands);
 
 #endif // TIFF_TO_FLOAT_IMAGE_H

@@ -71,6 +71,7 @@ OBJS  = ardop_write.o \
 	missing.o \
 	projected_image_import.o \
 	sprocket_layers.o \
+        tiff_to_byte_image.o \
         tiff_to_float_image.o \
 	unpack.o \
 	utilities_ceos.o \

@@ -1,6 +1,9 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
 
 int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
 {
@@ -155,4 +158,62 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       asfRequire(0,"Unsupported projection type found.\n");
       break;
   }
+}
+
+int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
+{
+  int ret = 0;
+  uint16  planarConfiguration = 0;
+  uint16  bitsPerSample = 0;
+  uint16  sampleFormat = 0;
+  uint16  samplesPerPixel = 0;
+
+  *data_type = -1;
+  *num_bands = 0;
+
+  TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
+  if (ret == 0) {
+    if (planarConfiguration != PLANARCONFIG_CONTIG) {
+      // Only support [rgbrgbrgb...] format, not separately-stored color bands
+      ret = -1;
+    }
+  }
+
+  TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+  if (ret == 0) {
+    if (bitsPerSample != 8 && bitsPerSample != 32) {
+      // Only support byte and 32-bit floats
+      ret = -1;
+    }
+  }
+
+  TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
+  if (ret == 0) {
+    if (sampleFormat != SAMPLEFORMAT_UINT  &&
+        sampleFormat != SAMPLEFORMAT_INT   &&
+        sampleFormat != SAMPLEFORMAT_IEEEFP) {
+      // Data type must be one of the above
+      ret = -1;
+    }
+    else if ((sampleFormat == SAMPLEFORMAT_UINT && bitsPerSample == 8) ||
+              (sampleFormat == SAMPLEFORMAT_INT && bitsPerSample == 8)) {
+      *data_type = BYTE;
+    }
+    else if (sampleFormat == SAMPLEFORMAT_IEEEFP && bitsPerSample == 32) {
+      *data_type = REAL32;
+    }
+  }
+
+  TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
+  if (ret == 0) {
+    if (samplesPerPixel < 1 || samplesPerPixel > MAX_BANDS) {
+      // Only support 1 through MAX_BANDS bands in the image
+      ret = -1;
+    }
+    else {
+      *num_bands = samplesPerPixel;
+    }
+  }
+
+  return ret;
 }
