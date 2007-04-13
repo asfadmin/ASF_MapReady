@@ -50,7 +50,7 @@ static double max4(double a, double b, double c, double d)
 static int
 proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 {
-    int ii, jj, ret;
+    int ii, jj, kk;
     const float_image_sample_method_t sampling_method =
         FLOAT_IMAGE_SAMPLE_METHOD_BILINEAR;
 
@@ -93,7 +93,12 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int br_x=ns-1, br_y=nl-1;
 
     // we have to find the "real" corners of the image
-    asfPrintStatus("Tiling the input image...\n");
+    // do this using the first band of the input image as a reference
+    if (inMeta->general->band_count == 1)
+        asfPrintStatus("Tiling the input image...\n");
+    else
+        asfPrintStatus("Tiling the reference band of the input image...\n");
+
     FloatImage *in = float_image_new_from_metadata(inMeta, infile);
 
     // find top left pixel -- TOP-most non-no-data pixel in the image
@@ -245,8 +250,6 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     asfPrintStatus("  Output Image will be %5d x %5d LxS\n", onl, ons);
     asfPrintStatus("      (Input Image was %5d x %5d LxS)\n", nl, ns);
 
-    FloatImage *out = float_image_new(ons, onl);
-
     // generate a grid over the image, to generate our splines
     // this grid size seems to work pretty well...
     int n = 100;
@@ -311,118 +314,6 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     int ii_n2 = ii_n/2;
     int jj_n2 = jj_n/2;
 
-    for (ii=0; ii<onl; ++ii) {
-        asfLineMeter(ii,onl);
-        double time = time_start + ii * time_incr;
-
-        // set up horizontal splines for this row
-        gsl_interp_accel *samp_accel = gsl_interp_accel_alloc();
-        gsl_spline *samp_spline = gsl_spline_alloc(gsl_interp_cspline, n);
-
-        gsl_interp_accel *line_accel = gsl_interp_accel_alloc();
-        gsl_spline *line_spline = gsl_spline_alloc(gsl_interp_cspline, n);
-
-        for (jj=0; jj<n; ++jj) {
-            slant_in[jj] = slant_start + jj * slant_grid_incr;
-            samp_out[jj] = gsl_spline_eval(samp_splines[jj], time,
-                                           samp_accels[jj]);
-            line_out[jj] = gsl_spline_eval(line_splines[jj], time,
-                                           line_accels[jj]);
-        }
-
-        gsl_spline_init(samp_spline, slant_in, samp_out, n);
-        gsl_spline_init(line_spline, slant_in, line_out, n);
-
-        // use the splines to produce output pixels
-        for (jj=0; jj<ons; ++jj) {
-            double slant = slant_start + jj * slant_incr;
-            double samp = gsl_spline_eval(samp_spline, slant, samp_accel);
-            double line = gsl_spline_eval(line_spline, slant, line_accel);
-
-            // check the spline every so often (halfway between grid points)
-            if (ii%ii_n2==0 && ii%ii_n!=0 && jj%jj_n2==0 && jj%jj_n!=0) {
-                double lat, lon, samp_real, line_real;
-                meta_timeSlantDop2latLon(inMeta, time, slant, 0,0, &lat, &lon);
-                meta_get_lineSamp(inMeta, lat, lon, 0, &line_real, &samp_real);
-                
-                double err = (line-line_real) * (line-line_real) +
-                             (samp-samp_real) * (samp-samp_real);
-
-                //printf("(%d,%d) -- Actual: (%f,%f) Splined: (%f,%f)\n",
-                //       ii, jj, line_real, samp_real, line, samp);
-
-                if (err > max_error) max_error = err;
-                avg_error += err;
-                ++count;
-            }
-/*
-            // right on our grid points, the error should be zero
-            // can delete this stuff, probably, once this is all debugged
-            if (ii%ii_n == 0 && jj%jj_n == 0) {
-                double lat, lon, samp_real, line_real;
-                meta_timeSlantDop2latLon(inMeta, time, slant, 0,0, &lat, &lon);
-                meta_get_lineSamp(inMeta, lat, lon, 0, &line_real, &samp_real);
-
-                double err = (line-line_real) * (line-line_real) +
-                             (samp-samp_real) * (samp-samp_real);
-
-                //printf("(%d,%d)--%f [[Actual: (%f,%f) Splined: (%f,%f)]]\n",
-                //       ii, jj, err, line_real, samp_real, line, samp);
-                if (err > .03)
-                {
-                    asfPrintError("Large error on a grid point!\n"
-                                  "Grid Point: (%d,%d) (%f,%f) (%f,%f)\n"
-                                  "Real: (%f,%f) Splined: (%f,%f)\n"
-                                  "Err: %f\n", ii, jj, time, slant, lat, lon,
-                                  line_real, samp_real, line, samp, err);
-                }
-            }
-*/
-            // now interpolate within the original image
-            // if we are outside, use "no_data" from metadata
-            double val = no_data_value;
-            if (line > 0 && line < nl-1 && samp > 0 && samp < ns-1)
-                val = float_image_sample(in, samp, line, sampling_method);
-
-            float_image_set_pixel(out, jj, ii, val);
-        }
-
-        gsl_interp_accel_free(samp_accel);
-        gsl_spline_free(samp_spline);
-
-        gsl_interp_accel_free(line_accel);
-        gsl_spline_free(line_spline);
-    }
-
-    FREE(slant_in);
-    FREE(line_out);
-    FREE(samp_out);
-
-    FREE(samp_accels);
-    FREE(samp_splines);
-
-    FREE(line_accels);
-    FREE(line_splines);
-
-    // see how bad our errors were
-    avg_error /= (double)count;
-    asfPrintStatus("Model max error: %f, avg: %f\n",
-                   max_error, avg_error);
-
-    double thresh = 0.1;
-    if (max_error > 100*thresh)
-        asfPrintError("Maximum error exceeded threshold: %f > %f\n",
-                      max_error, 100*thresh);
-    else if (avg_error > 10*thresh)
-        asfPrintError("Average error exceeded threshold: %f > %f\n",
-                      avg_error, 10*thresh);
-    if (max_error > 10*thresh)
-        asfPrintWarning("Maximum error exceeds threshold: %f > %f\n",
-                        max_error, 10*thresh);
-    if (avg_error > thresh)
-        asfPrintWarning("Average error exceeds threshold: %f > %f\n",
-                        avg_error, thresh);
-
     // set up output metadata
     meta_parameters *outMeta = meta_read(infile);
 
@@ -458,21 +349,137 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     outMeta->general->no_data = no_data_value;
 
+    char **band_name = extract_band_names(inMeta->general->bands,
+                                          inMeta->general->band_count);
+
+    // now generate output image
+    char *img_file = appendExt(outfile, ".img");
+    float *out = MALLOC(sizeof(float) * ons);
+
+    for (kk=0; kk<inMeta->general->band_count; ++kk) {
+        if (inMeta->general->band_count != 1)
+            asfPrintStatus("Working on band: %s\n", band_name[kk]);
+
+        // for the 2nd and higher bands, free the band from the previous iteration,
+        // and read in the next band from the input image
+        if (kk>0) {
+            float_image_free(in);
+            asfPrintStatus("Loading input...\n");
+            in = float_image_band_new_from_metadata(inMeta, kk, infile);
+        }
+
+        FILE *ofp = FOPEN(img_file, kk==0 ? "wb" : "ab");
+        asfPrintStatus("Generating output...\n");
+        for (ii=0; ii<onl; ++ii) {
+            asfLineMeter(ii,onl);
+            double time = time_start + ii * time_incr;
+
+            // set up horizontal splines for this row
+            gsl_interp_accel *samp_accel = gsl_interp_accel_alloc();
+            gsl_spline *samp_spline = gsl_spline_alloc(gsl_interp_cspline, n);
+
+            gsl_interp_accel *line_accel = gsl_interp_accel_alloc();
+            gsl_spline *line_spline = gsl_spline_alloc(gsl_interp_cspline, n);
+
+            for (jj=0; jj<n; ++jj) {
+                slant_in[jj] = slant_start + jj * slant_grid_incr;
+                samp_out[jj] = gsl_spline_eval(samp_splines[jj], time,
+                                               samp_accels[jj]);
+                line_out[jj] = gsl_spline_eval(line_splines[jj], time,
+                                               line_accels[jj]);
+            }
+
+            gsl_spline_init(samp_spline, slant_in, samp_out, n);
+            gsl_spline_init(line_spline, slant_in, line_out, n);
+
+            // use the splines to produce output pixels
+            for (jj=0; jj<ons; ++jj) {
+                double slant = slant_start + jj * slant_incr;
+                double samp = gsl_spline_eval(samp_spline, slant, samp_accel);
+                double line = gsl_spline_eval(line_spline, slant, line_accel);
+
+                // check the spline every so often (halfway between grid points)
+                // only do this on band #1 (the reference band)
+                if (kk==0 && ii%ii_n2==0 && ii%ii_n!=0 && jj%jj_n2==0 && jj%jj_n!=0) {
+                    double lat, lon, samp_real, line_real;
+                    meta_timeSlantDop2latLon(inMeta, time, slant, 0,0, &lat, &lon);
+                    meta_get_lineSamp(inMeta, lat, lon, 0, &line_real, &samp_real);
+                    
+                    double err = (line-line_real) * (line-line_real) +
+                                 (samp-samp_real) * (samp-samp_real);
+
+                    //printf("(%d,%d) -- Actual: (%f,%f) Splined: (%f,%f)\n",
+                    //       ii, jj, line_real, samp_real, line, samp);
+
+                    if (err > max_error) max_error = err;
+                    avg_error += err;
+                    ++count;
+                }
+
+                // now interpolate within the original image
+                // if we are outside, use "no_data" from metadata
+                double val = no_data_value;
+                if (line > 0 && line < nl-1 && samp > 0 && samp < ns-1)
+                    val = float_image_sample(in, samp, line, sampling_method);
+
+                out[jj] = (float)val;
+            }
+
+            gsl_interp_accel_free(samp_accel);
+            gsl_spline_free(samp_spline);
+
+            gsl_interp_accel_free(line_accel);
+            gsl_spline_free(line_spline);
+
+            put_float_line(ofp, outMeta, ii, out);
+        }
+
+        fclose(ofp);
+    }
+
+    // free the last band of the input
+    float_image_free(in);
+
+    FREE(slant_in);
+    FREE(line_out);
+    FREE(samp_out);
+
+    FREE(samp_accels);
+    FREE(samp_splines);
+
+    FREE(line_accels);
+    FREE(line_splines);
+
+    FREE(out);
+
+    for (kk=0; kk<inMeta->general->band_count; ++kk)
+        FREE(band_name[kk]);
+    FREE(band_name);
+
+    // see how bad our errors were
+    avg_error /= (double)count;
+    asfPrintStatus("Model max error: %f, avg: %f\n",
+                   max_error, avg_error);
+
+    double thresh = 0.1;
+    if (max_error > 100*thresh)
+        asfPrintError("Maximum error exceeded threshold: %f > %f\n",
+                      max_error, 100*thresh);
+    else if (avg_error > 10*thresh)
+        asfPrintError("Average error exceeded threshold: %f > %f\n",
+                      avg_error, 10*thresh);
+    if (max_error > 10*thresh)
+        asfPrintWarning("Maximum error exceeds threshold: %f > %f\n",
+                        max_error, 10*thresh);
+    if (avg_error > thresh)
+        asfPrintWarning("Average error exceeds threshold: %f > %f\n",
+                        avg_error, thresh);
+
     char *meta_file = appendExt(outfile, ".meta");
     asfPrintStatus("Writing %s\n", meta_file);
     meta_write(outMeta, meta_file);
     free(meta_file);
-
-    char *img_file = appendExt(outfile, ".img");
-    asfPrintStatus("Writing %s\n", img_file);
-    ret = float_image_store(out, img_file, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
     free(img_file);
-
-    if (ret != 0)
-        asfPrintError("Error storing output image!\n");
-
-    float_image_free(in);
-    float_image_free(out);
 
     meta_free(outMeta);
     meta_free(inMeta);
