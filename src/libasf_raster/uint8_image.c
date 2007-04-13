@@ -1260,20 +1260,22 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
   if ( use_mask_value ) {
     // iterate over all pixels, skipping pixels equal to mask value.
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
+      asfPercentMeter((double)ii/(double)(self->size_y));
       uint8_image_get_row (self, ii, row_buffer);
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-	uint8_t cs = row_buffer[jj];   // Current sample.
-	if ( cs == mask_value ) {
-	  continue;
-	}
-	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
-	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-	double old_mean = *mean;
-	*mean += (cs - *mean) / (sample_count + 1);
-	s += (cs - old_mean) * (cs - *mean);
-	sample_count++;
+      	uint8_t cs = row_buffer[jj];   // Current sample.
+      	if ( cs == mask_value ) {
+      	  continue;
+      	}
+      	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+      	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+      	double old_mean = *mean;
+      	*mean += (cs - *mean) / (sample_count + 1);
+      	s += (cs - old_mean) * (cs - *mean);
+      	sample_count++;
       }
     }
+    asfPercentMeter(1.0);
   }
   else {
     // There is no mask value to ignore, so we do the same as the
@@ -1281,15 +1283,16 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
     for ( ii = 0 ; ii < self->size_y ; ii++ ) {
       uint8_image_get_row (self, ii, row_buffer);
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-	uint8_t cs = row_buffer[jj];   // Current sample.
-	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
-	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-	double old_mean = *mean;
-	*mean += (cs - *mean) / (sample_count + 1);
-	s += (cs - old_mean) * (cs - *mean);
-	sample_count++;
+      	uint8_t cs = row_buffer[jj];   // Current sample.
+      	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+      	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+      	double old_mean = *mean;
+      	*mean += (cs - *mean) / (sample_count + 1);
+      	s += (cs - old_mean) * (cs - *mean);
+      	sample_count++;
       }
     }
+    asfPercentMeter(1.0);
   }  
 
   g_free (row_buffer);
