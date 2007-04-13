@@ -7,6 +7,7 @@ OBJS  = gr2sr.o
 CFLAGS += $(GLIB_CFLAGS)
 REQUIRED_LIBS = \
 	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
