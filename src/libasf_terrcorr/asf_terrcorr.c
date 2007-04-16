@@ -945,11 +945,17 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
              "\nDEM metadata file missing or cannot be opened\n");
   metaDEM = meta_read(demFile);
 
-  if (metaDEM->general->image_data_type != DEM) {
+  // GEOCODED_IMAGE -- probably a non-usgs imported geotiff
+  // We don't update the metadata in this case - would be bad if the
+  // user put the DEM on the command-line by mistake, and we updated
+  // the metadata from a correct value, to an incorrect one!
+  if (metaDEM->general->image_data_type != DEM ||
+      metaDEM->general->image_data_type != GEOCODE_IMAGE) {
       // not a DEM?
       if (metaDEM->general->image_data_type == MAGIC_UNSET_INT ||
-          metaDEM->general->image_data_type == 0) {
-          // unknown image type -- probably came directly from a .ddr
+          metaDEM->general->image_data_type == 0)
+      {
+          // MAGIC_UNSET_INT -- probably came directly from a .ddr
           // write a metadata file with the proper image_data_type.
           metaDEM->general->image_data_type = DEM;
           meta_write(metaDEM, demFile);
