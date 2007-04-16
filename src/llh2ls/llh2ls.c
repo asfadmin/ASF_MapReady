@@ -39,10 +39,12 @@ int main(int argc,char *argv[])
   else
     meta = meta_create(argv[1]);
 
-  meta_get_lineSamp(meta, lat, lon, height, &line, &samp);
-
-  printf("Line:   %f\n", line);
-  printf("Sample: %f\n", samp);
+  if (!meta_get_lineSamp(meta, lat, lon, height, &line, &samp)) {
+    printf("Line:   %f\n", line);
+    printf("Sample: %f\n", samp);
+  } else {
+    printf("Couldn't determine line/sample values.\n");
+  }
 
   meta_free(meta);
   exit(EXIT_SUCCESS);
