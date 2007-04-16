@@ -152,20 +152,6 @@ static void update_meta_offsets(const char *filename, double t_offset,
     meta_free(meta);
 }
 
-static int is_alos(meta_parameters *meta)
-{
-    return
-        meta && meta->general && 
-        strstr(uc(meta->general->sensor), "ALOS") != NULL;
-}
-
-static int is_scansar(meta_parameters *meta)
-{
-    return
-        meta && meta->projection &&
-        meta->projection->type == SCANSAR_PROJECTION;
-}
-
 static void
 fftMatch_atCorners(char *output_dir, char *sar, char *dem, const int size)
 {
@@ -950,7 +936,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // user put the DEM on the command-line by mistake, and we updated
   // the metadata from a correct value, to an incorrect one!
   if (metaDEM->general->image_data_type != DEM ||
-      metaDEM->general->image_data_type != GEOCODE_IMAGE) {
+      metaDEM->general->image_data_type != GEOCODED_IMAGE) {
       // not a DEM?
       if (metaDEM->general->image_data_type == MAGIC_UNSET_INT ||
           metaDEM->general->image_data_type == 0)
