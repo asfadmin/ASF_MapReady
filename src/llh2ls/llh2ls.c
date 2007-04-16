@@ -9,8 +9,8 @@
 static void usage(char *progname)
 {
     asfPrintStatus("\n");
-    asfPrintStatus("Usage: %s <ceos basename> <lat> <lon> [height]\n",progname);
-    asfPrintStatus("   ceos basename  Name of a CEOS file\n");
+    asfPrintStatus("Usage: %s <image file> <lat> <lon> [height]\n",progname);
+    asfPrintStatus("   image file     Name of a CEOS or ASF Internal file\n");
     asfPrintStatus("   lat            Latitude (in degrees)\n");
     asfPrintStatus("   lon            Longitude (in degrees)\n");
     asfPrintStatus("   height         Height (in meters), optional with default 0\n");
@@ -32,7 +32,12 @@ int main(int argc,char *argv[])
   lon = atof(argv[3]);
   if (argc == 5) height = atof(argv[4]);
 
-  meta_parameters *meta = meta_create(argv[1]);
+  meta_parameters *meta;
+  char *meta_file = appendExt(argv[1], ".meta");
+  if (fileExists(meta_file))
+    meta = meta_read(meta_file);
+  else
+    meta = meta_create(argv[1]);
 
   meta_get_lineSamp(meta, lat, lon, height, &line, &samp);
 
