@@ -41,6 +41,7 @@ MODULES = \
 	src/fill_holes \
 	src/meta2envi \
 	src/mosaic \
+	src/create_thumbs \
 	@ASF_GUI@
 # src_x/sarview
 
