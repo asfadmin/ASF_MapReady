@@ -42,6 +42,7 @@ MODULES = \
 	src/meta2envi \
 	src/mosaic \
 	src/create_thumbs \
+	src/llh2ls \
 	@ASF_GUI@
 # src_x/sarview
 
