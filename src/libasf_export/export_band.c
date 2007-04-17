@@ -38,6 +38,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            int is_geotiff, scale_t sample_mapping, int rgb);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
+void append_band_names(meta_parameters *md, char *citation);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -268,7 +269,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
 
   // Write geocode (map projection) parameters
   if (map_projected) {
-    int max_citation_length = 512;
+    int max_citation_length = 2048;
     char *citation;
     int citation_length;
 
@@ -290,11 +291,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
             pcs_2_string (datum_str, pcs);
           }
           citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-          citation_length = snprintf (citation, max_citation_length + 1,
-                                      "UTM zone %d %c projected GeoTIFF on %s "
-                                      "datum written by Alaska Satellite Facility tools.",
-                                      md->projection->param.utm.zone, md->projection->hem,
-                                      datum_str);
+          snprintf (citation, max_citation_length + 1,
+                    "UTM zone %d %c projected GeoTIFF on %s "
+                    "datum written by Alaska Satellite Facility tools.",
+                    md->projection->param.utm.zone, md->projection->hem,
+                    datum_str);
+          append_band_names(md, citation);
+          citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
           GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
@@ -339,11 +342,12 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-        citation_length =
-            snprintf (citation, max_citation_length + 1,
-                      "Albers equal-area conic projected GeoTIFF using %s "
-                      "datum written by Alaska Satellite Facility "
-                      "tools.", datum_str);
+        snprintf (citation, max_citation_length + 1,
+                  "Albers equal-area conic projected GeoTIFF using %s "
+                  "datum written by Alaska Satellite Facility "
+                  "tools.", datum_str);
+        append_band_names(md, citation);
+        citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
         // The following is not needed for any but UTM (according to the standard)
@@ -381,11 +385,12 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-        citation_length =
-            snprintf (citation, max_citation_length + 1,
-                      "Lambert conformal conic projected GeoTIFF using %s "
-                      "datum written by Alaska Satellite Facility "
-                      "tools.", datum_str);
+        snprintf (citation, max_citation_length + 1,
+                  "Lambert conformal conic projected GeoTIFF using %s "
+                  "datum written by Alaska Satellite Facility "
+                  "tools.", datum_str);
+        append_band_names(md, citation);
+        citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
         // The following is not needed for any but UTM (according to the standard)
@@ -419,11 +424,12 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-        citation_length =
-            snprintf (citation, max_citation_length + 1,
-                      "Polar stereographic projected GeoTIFF using %s "
-                      "datum written by Alaska Satellite Facility "
-                      "tools.", datum_str);
+        snprintf (citation, max_citation_length + 1,
+                  "Polar stereographic projected GeoTIFF using %s "
+                  "datum written by Alaska Satellite Facility "
+                  "tools.", datum_str);
+        append_band_names(md, citation);
+        citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
             "bad citation length");
@@ -458,14 +464,15 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-        citation_length =
-            snprintf (citation, max_citation_length + 1,
-                      "Lambert azimuthal equal area projected GeoTIFF using "
-                      "%s datum written by Alaska Satellite "
-                      "Facility tools.", datum_str);
-            asfRequire (citation_length >= 0 &&
-                citation_length <= max_citation_length,
-                "bad citation length");
+        snprintf (citation, max_citation_length + 1,
+                  "Lambert azimuthal equal area projected GeoTIFF using "
+                  "%s datum written by Alaska Satellite "
+                  "Facility tools.", datum_str);
+        append_band_names(md, citation);
+        citation_length = strlen(citation);
+        asfRequire (citation_length >= 0 &&
+                    citation_length <= max_citation_length,
+                    "bad citation length");
         // The following is not needed for any but UTM (according to the standard)
         // but it appears that everybody uses it anyway... so we'll write it
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
@@ -1352,5 +1359,12 @@ export_band_image (const char *metadata_file_name,
   }
 
   meta_free (md);
+}
+
+void append_band_names(meta_parameters *md, char *citation)
+{
+  // The only reason this is in a separate function is just in
+  // case we add more descriptive information later...
+  sprintf(citation, "%s,  Bands %s", citation, md->general->bands);
 }
 
