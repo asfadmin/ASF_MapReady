@@ -306,8 +306,8 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
-	FILE *inDEM,*outDEM,*outAmp,*inMask;
-	meta_parameters *metaIn, *metaDEM, *metaInMask;
+	FILE *inDEM,*outDEM,*outAmp,*inMask=NULL;
+	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL;
 
 /* Get metadata */
 	metaIn = meta_read(inMetafile);

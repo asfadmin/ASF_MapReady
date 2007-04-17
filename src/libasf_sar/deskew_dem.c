@@ -169,38 +169,6 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
     }
 }
 
-static void dem_interp_col(float *demLine,int ns,int nl)
-{
-#define buf(y) (demLine[ns*(y)])
-  int y,lastOutY=0;
-  float lastOutVal=badDEMht;
-  for (y=0;y<nl;y++)
-  {
-      float height=buf(y);
-      if (height!=badDEMht)
-      {
-          if (lastOutY!=(y-1))
-  	  {
-              int yInterp;
-              if (lastOutY&&(y-lastOutY<maxBreakLen))
-              {
-                  float curr=lastOutVal;
-                  float delt=(height-lastOutVal)/(y-lastOutY);
-                  curr+=delt;
-                  for (yInterp=lastOutY+1;yInterp<=y;yInterp++)
-                  {
-                      buf(yInterp)=curr;
-                      curr+=delt;
-                  }
-              }	
-          }
-          lastOutY=y;
-          lastOutVal=height;
-      }
-  }
-#undef buf
-}
-
 static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 {
     int x;
@@ -262,7 +230,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     return er/d->phiMul;
 }
 
-static eq(float a, float b, float tol)
+static int eq(float a, float b, float tol)
 {
     return fabs(a-b)<tol;
 }
@@ -282,12 +250,10 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
             if (fill_value != LEAVE_MASK)
                 in[x] = fill_value;
         }
-        else 
-        {
-            // where we have no DEM data, set output to 0
-            if (eq(grDEM[x],NO_DEM_DATA,.000001)) {
-                in[x] = 0.0;
-            }
+
+        // where we have no DEM data, set output to 0
+        if (eq(grDEM[x],NO_DEM_DATA,.000001)) {
+          in[x] = 0.0;
         }
     }
 }
@@ -321,7 +287,7 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
     }
 
     // height of the satellite at this line
-    double sat_ht = meta_get_sat_height(d->meta, line, grX);
+    double sat_ht = meta_get_sat_height(d->meta, line, d->numSamples/2);
 
     // shadow tracker -- this is the negative cosine of the biggest look
     // angle found so far.  As we move across we image, this should increase
@@ -618,10 +584,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	       int doRadiometric, char *inMaskName, char *outMaskName,
                int fill_holes, int fill_value)
 {
-	float *srDEMline,*grDEM,*grDEMline,*grDEMlast,*inSarLine,*outLine;
-        float *mask;
-	FILE *inDemFp,*inSarFp,*outFp,*maskFp;
-	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta;
+	float *srDEMline,*grDEMline,*grDEMlast,*inSarLine,*outLine,*maskLine;
+	FILE *inDemFp,*inSarFp,*outFp,*inMaskFp=NULL,*outMaskFp=NULL;
+	meta_parameters *inDemMeta, *outMeta, *inSarMeta, *inMaskMeta=NULL;
 	char msg[256];
 	int inSarFlag,inMaskFlag,outMaskFlag;
 	int dem_is_ground_range=FALSE;
@@ -638,11 +603,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /*Extract metadata*/
 	inDemMeta = meta_read(inDemName);
 	outMeta = meta_read(inDemName);
-
-//	if (inDemMeta->general->image_data_type != DEM) {
-//            asfPrintError("DEM is not a DEM!\n");
-//            return FALSE;
-//        }
 
         if (doRadiometric)
             asfPrintWarning("Radiometric terrain correction is still "
@@ -733,105 +693,89 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /*Allocate input buffers.*/
 	if (inSarFlag) {
 	   inSarLine = (float *)MALLOC(sizeof(float)*d.numSamples);
-	   mask = (float *)MALLOC(sizeof(float)*d.numSamples*d.numLines);
         } else {
-	   inSarLine = mask = NULL;
+	   inSarLine = NULL;
         }
+
 	outLine   = (float *)MALLOC(sizeof(float)*d.numSamples);
 	srDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
-
-/*Map DEM to ground range if necessary.*/
-	/*It's much simpler if the DEM is already in ground range.*/
-	if (dem_is_ground_range)
-		grDEM=(float *)MALLOC(sizeof(float)*d.numSamples);
-	/*If the dem is slant range, then we need to map it to ground range,
-	 *all at once-- we have to read it ALL in to interpolate the columns.*/
-	else {
-		grDEM=(float *)MALLOC(sizeof(float)*d.numSamples*d.numLines);
-		for (y=0;y<d.numLines;y++)
-		{
-			get_float_line(inDemFp,inDemMeta,y,srDEMline);
-			dem_sr2gr(&d,srDEMline,&grDEM[y*d.numSamples],
-                                  d.numSamples,fill_holes);
-		}
-		/*Close gaps in y direction.*/
-		for (x=0;x<d.numSamples;x++)
-			dem_interp_col(&grDEM[x],d.numSamples,d.numLines);
-	}
+        grDEMline = (float *)MALLOC(sizeof(float)*d.numSamples);
+        grDEMlast = (float *)MALLOC(sizeof(float)*d.numSamples);
+        maskLine  = (float *)MALLOC(sizeof(float)*d.numSamples);
 
         n_layover = n_shadow = n_user = 0;
 
-/*Read in the entire mask*/
-        if (inMaskFlag) {
-            maskFp = fopenImage(inMaskName, "rb");
-            for (y=0;y<d.numLines;y++) {
-                get_float_line(maskFp,inMaskMeta,y,mask+y*d.numSamples);
-                for (x=0;x<d.numLines;++x) {
-                    if (mask[x+y*d.numSamples]==2.0) {
-                        mask[x+y*d.numSamples] = MASK_INVALID_DATA;
-                    }
-                    else if (is_masked(mask[x+y*d.numSamples])) {
-                        mask[x+y*d.numSamples] = MASK_USER_MASK;
-                    }
-                }
-            }
-            FCLOSE(maskFp);
-        }
+/*Open the mask, if we have one*/
+        if (inMaskFlag)
+            inMaskFp = fopenImage(inMaskName, "rb");
+        if (outMaskFlag)
+            outMaskFp = fopenImage(outMaskName, "wb");
+
+/* Make an empty mask */
+        for (x=0; x<d.numSamples; ++x)
+            maskLine[x] = 1;
 
 /*Rectify data.*/
 	for (y=0;y<d.numLines;y++) {
 
-		if (inSarFlag) {
-                    /*Read in DEM line-by-line (keeping two lines buffered)*/
-                    if (dem_is_ground_range) {
-                        float *tmp=srDEMline;
-                        srDEMline=grDEM;
-                        grDEM=tmp;
-                        get_float_line(inDemFp,inDemMeta,y,grDEM);
-                        grDEMline=grDEM;
-                        grDEMlast=srDEMline;
-                    }
-                    /*Fetch the appropriate lines from the big buffer.*/
-                    else {
-                        grDEMline=&grDEM[y*d.numSamples];
-                        grDEMlast=&grDEM[(y-1)*d.numSamples];
-                    }
-                    get_float_line(inSarFp,inSarMeta,y,inSarLine);
+            /*Read in DEM line-by-line (keeping two lines buffered)*/
+            float *tmp=grDEMline;
+            grDEMline=grDEMlast;
+            grDEMline=tmp;
+            if (dem_is_ground_range) {
+                get_float_line(inDemFp,inDemMeta,y,grDEMline);
+            } else {
+                get_float_line(inDemFp,inDemMeta,y,srDEMline);
+                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
+            }
 
-                    if (inMaskFlag) {
-			    geo_compensate(&d,grDEMline,mask+y*d.numSamples,
-					    outLine,d.numSamples,0,NULL,y);
-                        for (x=0; x<d.numSamples; ++x)
-                            mask[y*d.numSamples+x] = outLine[x];
-                    }
+            /*Fetch the appropriate lines from the big buffer.*/
+            get_float_line(inSarFp,inSarMeta,y,inSarLine);
+            
+            if (inMaskFlag) {
+                /* Read in the next line of the mask, update the values */
+                get_float_line(inMaskFp,inMaskMeta,y,maskLine);
+                for (x=0; x<d.numSamples; ++x) {
+                    if (maskLine[x]==2.0)
+                        maskLine[x] = MASK_INVALID_DATA;
+                    else if (is_masked(maskLine[x]))
+                        maskLine[x] = MASK_USER_MASK;
+                }
 
-                    geo_compensate(&d,grDEMline,inSarLine,outLine,d.numSamples,
-				    1,mask+y*d.numSamples,y);
+                geo_compensate(&d,grDEMline,maskLine,outLine,
+                               d.numSamples,0,NULL,y);
 
-                    if (y>0&&doRadiometric)
-                        radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                         d.numSamples,y,doRadiometric);
+                for (x=0; x<d.numSamples; ++x)
+                    maskLine[x] = outLine[x];
+            }
 
-		    // subtract away the masked region
-                    mask_float_line(d.numSamples,fill_value,outLine,
-                                    mask+y*d.numSamples,grDEMline,&d);
+            geo_compensate(&d,grDEMline,inSarLine,outLine,
+                           d.numSamples,1,maskLine,y);
 
-                    put_float_line(outFp,outMeta,y,outLine);
-		}
-		else
-                    put_float_line(outFp,outMeta,y,&grDEM[y*d.numSamples]);
+            if (y>0&&doRadiometric)
+                radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                                 d.numSamples,y,doRadiometric);
 
-                asfLineMeter(y,d.numLines);
+            // subtract away the masked region
+            mask_float_line(d.numSamples,fill_value,outLine,
+                            maskLine,grDEMline,&d);
+
+            put_float_line(outFp,outMeta,y,outLine);
+            if (outMaskFlag)
+                put_float_line(outMaskFp,outMeta,y,maskLine);
+
+            asfLineMeter(y,d.numLines);
 	}
+
+        if (inMaskFlag) {
+            FCLOSE(inMaskFp);
+            meta_free(inMaskMeta);
+        }
 
 /*Write the updated mask*/
         if (outMaskFlag) {
-            maskFp = fopenImage(outMaskName, "wb");
-            for (y=0;y<d.numLines;y++)
-                put_float_line(maskFp,outMeta,y,mask+y*d.numSamples);
-            FCLOSE(maskFp);
+            FCLOSE(outMaskFp);
             meta_write(outMeta, outMaskName);
-
             int tot=d.numSamples*d.numLines;
             printf("Mask Statistics:\n"
                    "    Layover Pixels: %9d/%d (%f%%)\n"
@@ -843,20 +787,17 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         }
 
 /* Clean up & skidattle */
-        FREE(grDEM);
 	if (inSarFlag) {
 	   FREE(inSarLine);
 	   FCLOSE(inSarFp);
 	   meta_free(inSarMeta);
 	}
 	FREE(srDEMline);
+	FREE(grDEMlast);
+	FREE(grDEMline);
 	FREE(outLine);
 	FCLOSE(inDemFp);
 	FCLOSE(outFp);
-        if (inMaskFlag) {
-            FREE(mask);
-            meta_free(inMaskMeta);
-        }
 	meta_free(inDemMeta);
 	meta_free(outMeta);
 	FREE(d.slantGR);
