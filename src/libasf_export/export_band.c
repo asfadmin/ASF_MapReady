@@ -293,7 +293,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
           citation = MALLOC ((max_citation_length + 1) * sizeof (char));
           snprintf (citation, max_citation_length + 1,
                     "UTM zone %d %c projected GeoTIFF on %s "
-                    "datum written by Alaska Satellite Facility tools.",
+                    "datum written by Alaska Satellite Facility tools",
                     md->projection->param.utm.zone, md->projection->hem,
                     datum_str);
           append_band_names(md, citation);
@@ -345,7 +345,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         snprintf (citation, max_citation_length + 1,
                   "Albers equal-area conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
-                  "tools.", datum_str);
+                  "tools", datum_str);
         append_band_names(md, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
@@ -388,7 +388,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         snprintf (citation, max_citation_length + 1,
                   "Lambert conformal conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
-                  "tools.", datum_str);
+                  "tools", datum_str);
         append_band_names(md, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
@@ -427,7 +427,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         snprintf (citation, max_citation_length + 1,
                   "Polar stereographic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
-                  "tools.", datum_str);
+                  "tools", datum_str);
         append_band_names(md, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
@@ -467,7 +467,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
         snprintf (citation, max_citation_length + 1,
                   "Lambert azimuthal equal area projected GeoTIFF using "
                   "%s datum written by Alaska Satellite "
-                  "Facility tools.", datum_str);
+                  "Facility tools", datum_str);
         append_band_names(md, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
@@ -1365,6 +1365,6 @@ void append_band_names(meta_parameters *md, char *citation)
 {
   // The only reason this is in a separate function is just in
   // case we add more descriptive information later...
-  sprintf(citation, "%s,  Bands %s", citation, md->general->bands);
+  sprintf(citation, "%s,  Exported Bands: %s", citation, md->general->bands);
 }
 
