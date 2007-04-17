@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
   logflag = TRUE;
   fLog = FOPEN(logFile, "a");
   // Set old school quiet flag (for use in our libraries)
-  quietflag = (quiet_f!=FLAG_NOT_SET) ? TRUE : FALSE;
+  quietflag = quiet_f != FLAG_NOT_SET;
 
   // Fetch required arguments
   strcpy(configFileName, argv[argc-1]);
@@ -199,6 +199,10 @@ int main(int argc, char *argv[])
   // End command line parsing *************************************************
 
   asf_convert(createflag, configFileName);
+
+  // remove log file if we created it (leave it if the user asked for it)
+  if (log_f == FLAG_NOT_SET)
+    remove(logFile);
 
   return(EXIT_SUCCESS);
 }
