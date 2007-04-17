@@ -935,7 +935,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // We don't update the metadata in this case - would be bad if the
   // user put the DEM on the command-line by mistake, and we updated
   // the metadata from a correct value, to an incorrect one!
-  if (metaDEM->general->image_data_type != DEM ||
+  if (metaDEM->general->image_data_type != DEM &&
       metaDEM->general->image_data_type != GEOCODED_IMAGE) {
       // not a DEM?
       if (metaDEM->general->image_data_type == MAGIC_UNSET_INT ||
