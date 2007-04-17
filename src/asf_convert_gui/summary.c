@@ -43,10 +43,9 @@ void update_summary()
             break;
     }
     
-    switch (s->input_data_format)
-    {
-    case INPUT_FORMAT_CEOS_LEVEL0:
-    {
+    switch (s->input_data_format) {
+      case INPUT_FORMAT_CEOS_LEVEL0:
+      {
         GtkWidget *process_to_level1_checkbutton =
             get_widget_checked("process_to_level1_checkbutton");
 
@@ -61,17 +60,17 @@ void update_summary()
             sprintf(text, "%s\n   Process to Level 1\nData Type: %s",
                     text, type);
         }
-    }    
-    break;
+      }    
+      break;
 
-    default:
-    case INPUT_FORMAT_CEOS_LEVEL1:
+      default:
+      case INPUT_FORMAT_CEOS_LEVEL1:
         strcat(text, "CEOS Level One");
         sprintf(text, "%s\nData type: %s", text, type);
 
         break;
 
-    case INPUT_FORMAT_STF:
+      case INPUT_FORMAT_STF:
         strcat(text, "STF");
         if (s->latitude_checked)
         {
@@ -80,8 +79,12 @@ void update_summary()
         }
         break;
 
-    case INPUT_FORMAT_COMPLEX:
+      case INPUT_FORMAT_COMPLEX:
         strcat(text, "Complex");
+        break;
+
+      case INPUT_FORMAT_GEOTIFF:
+        strcat(text, "Geocoded GeoTIFF");
         break;
     }
 

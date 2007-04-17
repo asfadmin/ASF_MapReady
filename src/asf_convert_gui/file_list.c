@@ -80,7 +80,8 @@ static gboolean file_is_valid(const gchar * data_file)
             /*strcmp_case(p, "L") == 0 ||*/
             /*strcmp_case(p, "meta") == 0 ||*/
             strcmp_case(p, "raw") == 0 ||
-            strcmp_case(p, "000") == 0)
+            strcmp_case(p, "000") == 0 ||
+            (strcmp_case(p, "tif") == 0 || strcmp_case(p, "tiff")))
         {
             return TRUE;
         }
@@ -93,7 +94,7 @@ static gboolean file_is_valid(const gchar * data_file)
 
 #ifdef THUMBNAILS
 
-static void set_input_image_thumbnail(GtkTreeIter *iter, 
+static void set_input_image_thumbnail(GtkTreeIter *iter,
                                       const gchar *metadata_file,
                                       const gchar *data_file)
 {
@@ -115,22 +116,22 @@ do_thumbnail (const gchar *file)
         GtkTreeIter iter;
         gboolean valid;
         /* Get the first iter in the list */
-        valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store), 
+        valid = gtk_tree_model_get_iter_first (GTK_TREE_MODEL (list_store),
                                                &iter);
         while ( valid ) {
             /* Walk through the list, reading each row */
             gchar *data_file;
-            
-            gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter, 
+
+            gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
                                 COL_DATA_FILE, &data_file, -1);
-            
+
             if ( strcmp (data_file, file) == 0 ) {
                 /* We found it, so load the thumbnail.  */
                 set_input_image_thumbnail (&iter, metadata_file, data_file);
                 g_free (metadata_file);
                 return;
             }
-            
+
             valid = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
                                               &iter);
         }
@@ -162,7 +163,7 @@ static char *build_band_list(const char *file)
         char *s = MALLOC(sizeof(char)*(strlen(file)+1));
         sprintf(s, "%s%s", dirname, filename + pre);
         get_ceos_data_name(s, dataName, &nBands);
-        
+
         if (nBands <= 1) {
             // not multiband
             ret = STRDUP("-");
@@ -175,7 +176,7 @@ static char *build_band_list(const char *file)
             // kludge: assume that band names come between 1st & 2nd dashes (-)
             for (ii=0; ii<nBands; ++ii) {
                 char *basename = get_basename(dataName[ii]);
-                
+
                 // point to first -, or the start of the string
                 char *p = strchr(basename, '-');
                 if (!p) p = basename;
@@ -192,7 +193,7 @@ static char *build_band_list(const char *file)
                     strcpy(ret, p+1);
                 else
                     strcat(ret, p+1);
-                
+
                 if (ii < nBands - 1)
                     strcat(ret, ", ");
 
@@ -226,7 +227,7 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
                              const gchar *log_txt)
 {
     // iter: points into "files_list"
-    // completed_iter: (returned) points into "completed_files_list"    
+    // completed_iter: (returned) points into "completed_files_list"
     gchar *output_file, *data_file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
@@ -297,16 +298,16 @@ show_queued_thumbnails()
         if (thumb_files[i]) {
             // do a gtk main loop iteration
             while (gtk_events_pending())
-                gtk_main_iteration();    
-            
+                gtk_main_iteration();
+
             // must check files[i]!=NULL again, since gtk_main_iteration could
-            // have processed a "Browse..." event and thus already processed 
+            // have processed a "Browse..." event and thus already processed
             // this item.  The alternative would be to move the above while()
             // loop below the statements below, however that makes the app feel
             // a little less responsive.
             if (thumb_files[i]) {
                 do_thumbnail(thumb_files[i]);
-                
+
                 g_free(thumb_files[i]);
                 thumb_files[i] = NULL;
             }
@@ -318,7 +319,6 @@ gboolean
 add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
 {
     gboolean valid = file_is_valid(data_file);
-
     if (valid)
     {
         GtkWidget *files_list;
@@ -336,18 +336,18 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
                            COL_STATUS, "-",
                            COL_LOG, "Has not been processed yet.",
                            -1);
-        
+
         out_name_full = determine_default_output_file_name(data_file);
         set_output_name(iter_p, out_name_full);
         g_free(out_name_full);
         FREE(bands);
 
         queue_thumbnail(data_file);
-        
+
         /* Select the file automatically if this is the first
            file that was added (this makes the toolbar buttons
            immediately useful)                                 */
-        if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store), 
+        if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store),
                                                 NULL))
         {
             GtkTreeSelection *selection =
@@ -380,7 +380,7 @@ update_all_extensions()
             gchar * basename;
             gchar * p;
 
-            gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+            gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                 COL_OUTPUT_FILE, &current_output_name, -1);
 
             basename = g_strdup(current_output_name);
@@ -388,13 +388,13 @@ update_all_extensions()
             if (p)
                 *p = '\0';
 
-            new_output_name = 
+            new_output_name =
                 (gchar *) g_malloc(sizeof(gchar) * (strlen(basename) +
                 strlen(ext) + 2));
 
             g_sprintf(new_output_name, "%s.%s", basename, ext);
 
-            set_output_name(&iter, new_output_name);      
+            set_output_name(&iter, new_output_name);
 
             g_free(basename);
             g_free(new_output_name);
@@ -408,7 +408,7 @@ update_all_extensions()
 }
 
 void
-edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2, 
+edited_handler(GtkCellRendererText *ce, gchar *arg1, gchar *arg2,
                gpointer user_data)
 {
     /* arg1 indicates which row -- should assert() that it matches
@@ -468,8 +468,8 @@ void render_output_name(GtkTreeViewColumn *tree_column,
     gboolean done;
     gboolean processing;
 
-    gtk_tree_model_get (tree_model, iter, 
-        COL_OUTPUT_FILE, &output_file, 
+    gtk_tree_model_get (tree_model, iter,
+        COL_OUTPUT_FILE, &output_file,
         COL_STATUS, &status, -1);
 
     /* Do not mark the file in red if the item has been marked "Done"
@@ -534,14 +534,14 @@ setup_files_list()
     GtkCellRenderer *renderer;
     GValue val = {0,};
 
-    list_store = gtk_list_store_new(6, 
-                                    G_TYPE_STRING, 
+    list_store = gtk_list_store_new(6,
+                                    G_TYPE_STRING,
                                     GDK_TYPE_PIXBUF,
-                                    G_TYPE_STRING, 
-                                    G_TYPE_STRING, 
+                                    G_TYPE_STRING,
+                                    G_TYPE_STRING,
                                     G_TYPE_STRING,
                                     G_TYPE_STRING);
-    
+
     COL_DATA_FILE = 0;
     COL_INPUT_THUMBNAIL = 1;
     COL_BAND_LIST = 2;
@@ -550,13 +550,13 @@ setup_files_list()
     COL_LOG = 5;
 
     completed_list_store = gtk_list_store_new(6,
-                                              G_TYPE_STRING, 
-                                              G_TYPE_STRING, 
+                                              G_TYPE_STRING,
+                                              G_TYPE_STRING,
                                               GDK_TYPE_PIXBUF,
                                               GDK_TYPE_PIXBUF,
                                               G_TYPE_STRING,
                                               G_TYPE_STRING);
-    
+
     COMP_COL_DATA_FILE = 0;
     COMP_COL_OUTPUT_FILE = 1;
     COMP_COL_OUTPUT_THUMBNAIL = 2;
@@ -588,13 +588,13 @@ setup_files_list()
                                         COL_INPUT_THUMBNAIL);
 
     g_signal_connect (files_list, "motion-notify-event",
-                      G_CALLBACK (files_list_motion_notify_event_handler), 
+                      G_CALLBACK (files_list_motion_notify_event_handler),
                       NULL);
-    
+
     g_signal_connect (files_list, "leave-notify-event",
-                      G_CALLBACK (files_list_leave_notify_event_handler), 
+                      G_CALLBACK (files_list_leave_notify_event_handler),
                       files_list);
-    
+
     g_signal_connect (files_list, "scroll-event",
                       G_CALLBACK (files_list_scroll_event_handler), NULL);
 
@@ -648,8 +648,8 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COL_LOG);
 
-    gtk_tree_view_set_model(GTK_TREE_VIEW(files_list), 
-        GTK_TREE_MODEL(list_store));  
+    gtk_tree_view_set_model(GTK_TREE_VIEW(files_list),
+        GTK_TREE_MODEL(list_store));
 
     g_object_unref(list_store);
 
@@ -693,13 +693,13 @@ setup_files_list()
                                        COMP_COL_OUTPUT_THUMBNAIL);
 
     g_signal_connect (completed_files_list, "motion-notify-event",
-                G_CALLBACK (completed_files_list_motion_notify_event_handler), 
+                G_CALLBACK (completed_files_list_motion_notify_event_handler),
                 NULL);
-    
+
     g_signal_connect (completed_files_list, "leave-notify-event",
-                G_CALLBACK (completed_files_list_leave_notify_event_handler), 
+                G_CALLBACK (completed_files_list_leave_notify_event_handler),
                 completed_files_list);
-    
+
     g_signal_connect (completed_files_list, "scroll-event",
                 G_CALLBACK (completed_files_list_scroll_event_handler),
                 NULL);
@@ -733,8 +733,8 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     gtk_tree_view_column_add_attribute(col, renderer, "text", COMP_COL_LOG);
 
-    gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list), 
-        GTK_TREE_MODEL(completed_list_store));  
+    gtk_tree_view_set_model(GTK_TREE_VIEW(completed_files_list),
+        GTK_TREE_MODEL(completed_list_store));
 
     g_object_unref(completed_list_store);
 

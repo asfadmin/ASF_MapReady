@@ -68,7 +68,39 @@ settings_apply_to_gui(const Settings * s)
     apply_metadata_fix_checkbutton =
         get_widget_checked("apply_metadata_fix_checkbutton");
 
-    set_combo_box_item(input_data_format_combobox, s->input_data_format);
+    // Note: The second arg in set_combo_box_item() must match the zero-ordered position
+    // of the input data type format items in the input data format combo box
+    switch (s->input_data_format) {
+      case INPUT_FORMAT_CEOS_LEVEL0:
+        set_combo_box_item(input_data_format_combobox, 0);
+        break;
+      default:
+      case INPUT_FORMAT_CEOS_LEVEL1:
+        set_combo_box_item(input_data_format_combobox, 1);
+        break;
+      case INPUT_FORMAT_STF:
+        set_combo_box_item(input_data_format_combobox, 2);
+        break;
+      case INPUT_FORMAT_GEOTIFF:
+        set_combo_box_item(input_data_format_combobox, 3);
+        break;
+      case INPUT_FORMAT_COMPLEX:
+        set_combo_box_item(input_data_format_combobox, 4);
+        break;
+      case INPUT_FORMAT_ESRI:
+        // Caution: Not implemented in the GUI
+        set_combo_box_item(input_data_format_combobox, 5);
+        break;
+      case INPUT_FORMAT_ENVI:
+        // Caution: Not implemented in the GUI
+        set_combo_box_item(input_data_format_combobox, 6);
+        break;
+      case INPUT_FORMAT_ASF_INTERNAL:
+        // Caution: Not implemented in the GUI
+        set_combo_box_item(input_data_format_combobox, 7);
+        break;
+    }
+
     set_combo_box_item(input_data_type_combobox, s->data_type);
 
     if (s->process_to_level1)
@@ -208,7 +240,7 @@ settings_apply_to_gui(const Settings * s)
                 set_combo_box_entry_item("green_optical_combo", s->green);
                 set_combo_box_entry_item("blue_optical_combo", s->blue);
             }
-        } 
+        }
         else {
             set_combo_box_entry_item("red_radar_combo", "-");
             set_combo_box_entry_item("green_radar_combo", "-");
@@ -554,7 +586,39 @@ settings_get_from_gui()
 
     ret->data_type = get_combo_box_item(input_data_type_combobox);
     ret->output_format = get_combo_box_item(output_format_combobox);
-    ret->input_data_format = get_combo_box_item(input_data_format_combobox);
+
+    // Switch statement must match order of items in the input data format combobox
+    gint input_data_format_selection = get_combo_box_item(input_data_format_combobox);
+    switch (input_data_format_selection) {
+      case 0:
+        ret->input_data_format = INPUT_FORMAT_CEOS_LEVEL0;
+        break;
+      default:
+      case 1:
+        ret->input_data_format = INPUT_FORMAT_CEOS_LEVEL1;
+        break;
+      case 2:
+        ret->input_data_format = INPUT_FORMAT_STF;
+        break;
+      case 3:
+        ret->input_data_format = INPUT_FORMAT_GEOTIFF;
+        break;
+      case 4:
+        ret->input_data_format = INPUT_FORMAT_COMPLEX;
+        break;
+      case 5:
+        // Caution: Not implemented in the GUI
+        ret->input_data_format = INPUT_FORMAT_ESRI;
+        break;
+      case 6:
+        // Caution: Not implemented in the GUI
+        ret->input_data_format = INPUT_FORMAT_ENVI;
+        break;
+      case 7:
+        // Caution: Not implemented in the GUI
+        ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
+        break;
+    }
 
     ret->output_db =
         (ret->data_type == INPUT_TYPE_SIGMA ||
@@ -925,7 +989,7 @@ settings_get_from_gui()
 
         GtkWidget *interp_dem_holes_checkbutton =
             get_widget_checked("interp_dem_holes_checkbutton");
-        
+
         ret->interp_dem_holes =
             gtk_toggle_button_get_active(
                 GTK_TOGGLE_BUTTON(interp_dem_holes_checkbutton));
@@ -1161,6 +1225,10 @@ settings_get_input_data_format_string(const Settings *s)
     case INPUT_FORMAT_ASF_INTERNAL:
         format_arg_to_import = "";
         break;
+
+    case INPUT_FORMAT_GEOTIFF:
+        format_arg_to_import = "geotiff";
+        break;
     }
 
     return format_arg_to_import;
@@ -1277,7 +1345,6 @@ const gchar *
 settings_get_output_format_extension(const Settings *s)
 {
     const gchar * out_extension;
-
     switch (s->input_data_format)
     {
     default:
@@ -1289,6 +1356,7 @@ settings_get_output_format_extension(const Settings *s)
         }
         /* else, fall through */
 
+    case INPUT_FORMAT_GEOTIFF:
     case INPUT_FORMAT_CEOS_LEVEL1:
         if (s->export_is_checked)
         {
@@ -1607,7 +1675,7 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "format = CEOS (1)\n");
     else if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL0)
         fprintf(cf, "format = CEOS (0)\n");
-    else    
+    else
         fprintf(cf, "format = %s\n", settings_get_input_data_format_string(s));
 
     if (s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1)
@@ -1737,6 +1805,8 @@ int apply_settings_from_config_file(char *configFile)
         s.input_data_format = INPUT_FORMAT_STF;
     else if (strncmp(uc(cfg->import->format), "ASF", 3) == 0)
         s.input_data_format = INPUT_FORMAT_ASF_INTERNAL;
+    else if (strncmp(uc(cfg->import->format), "GEOTIFF", 3) == 0)
+      s.input_data_format = INPUT_FORMAT_GEOTIFF;
 
     s.data_type = INPUT_TYPE_AMP;
     if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0)
@@ -1756,7 +1826,7 @@ int apply_settings_from_config_file(char *configFile)
         (cfg->import->lat_begin != -99 || cfg->import->lat_end != -99);
     s.latitude_low = cfg->import->lat_begin;
     s.latitude_hi = cfg->import->lat_end;
-    
+
     /* export */
     s.export_is_checked = cfg->general->export;
 
@@ -1848,7 +1918,7 @@ int apply_settings_from_config_file(char *configFile)
             s.lat0 = pps.lamaz.center_lat;
             s.lon0 = pps.lamaz.center_lon;
         }
-    
+
         s.specified_height = cfg->geocoding->height != -99 &&
             cfg->geocoding->height != 0;
         s.height = cfg->geocoding->height;
@@ -1930,7 +2000,7 @@ int apply_settings_from_config_file(char *configFile)
         char **dataNames = MALLOC(sizeof(char*)*MAX_BANDS);
         for (i=0; i<MAX_BANDS; ++i)
             dataNames[i] = MALLOC(sizeof(char)*256);
-        
+
         add_to_files_list_iter(metaName, &iter);
         get_ceos_data_name(cfg->general->in_name, dataNames, &nBands);
         assert(nBands == 1);

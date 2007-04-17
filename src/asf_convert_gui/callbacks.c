@@ -44,7 +44,7 @@ void latitude_checkbutton_toggle()
     gtk_widget_set_sensitive(latitude_hi_entry, is_checked);
 }
 
-void 
+void
 input_data_format_combobox_changed()
 {
     GtkWidget *input_data_type_combobox,
@@ -94,6 +94,7 @@ input_data_format_combobox_changed()
         case INPUT_FORMAT_CEOS_LEVEL1:
         case INPUT_FORMAT_ESRI:
         case INPUT_FORMAT_ENVI:
+        case INPUT_FORMAT_GEOTIFF:
             show_data_type_combobox = TRUE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
@@ -125,7 +126,7 @@ input_data_format_combobox_changed()
     show_geocode_section = TRUE;
     show_terrain_correction_section = TRUE;
 
-    if (show_process_to_level1_checkbutton) 
+    if (show_process_to_level1_checkbutton)
     {
         gboolean process_to_level1_checkbutton_is_checked =
             gtk_toggle_button_get_active(
@@ -176,7 +177,7 @@ input_data_format_combobox_changed()
     }
 
     vbox_terrain_correction = get_widget_checked("vbox_terrain_correction");
-    gtk_widget_set_sensitive(vbox_terrain_correction, 
+    gtk_widget_set_sensitive(vbox_terrain_correction,
                              show_terrain_correction_section);
 
     if (!show_terrain_correction_section)
@@ -250,7 +251,7 @@ export_checkbutton_toggle()
         *rb_all,
         *rb_rgb,
         *rgb_vbox;
-    
+
     gint output_format;
 
     export_checkbutton = get_widget_checked("export_checkbutton");
@@ -270,9 +271,9 @@ export_checkbutton_toggle()
     if (export_checked)
     {
         gtk_widget_set_sensitive(output_format_combobox, TRUE);
-        
+
         output_format = get_combo_box_item(output_format_combobox);
-        
+
         switch (output_format)
         {
         default:
@@ -280,7 +281,7 @@ export_checkbutton_toggle()
         case OUTPUT_FORMAT_PGM:
         case OUTPUT_FORMAT_TIFF:
         case OUTPUT_FORMAT_ASF_INTERNAL:
-        case OUTPUT_FORMAT_CEOS:          
+        case OUTPUT_FORMAT_CEOS:
             gtk_toggle_button_set_active(
                 GTK_TOGGLE_BUTTON(output_bytes_checkbutton), TRUE);
 
@@ -369,6 +370,13 @@ on_complex_activate(GtkWidget *widget)
 {
     input_data_format_combobox_changed();
     update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_geotiff_input_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+  update_summary();
 }
 #endif
 
@@ -531,7 +539,7 @@ void rgb_settings_changed()
         GtkWidget *rb_radar = get_widget_checked("rb_radar");
         GtkWidget *radar_vbox = get_widget_checked("radar_vbox");
         GtkWidget *optical_vbox = get_widget_checked("optical_vbox");
-        
+
         gboolean is_radar = gtk_toggle_button_get_active(
             GTK_TOGGLE_BUTTON(rb_radar));
 

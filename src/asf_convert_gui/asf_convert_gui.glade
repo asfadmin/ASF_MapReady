@@ -91,7 +91,7 @@
 			  <property name="visible">True</property>
 			  <property name="tooltip" translatable="yes">Format of the input data.</property>
 			  <property name="can_focus">True</property>
-			  <property name="history">0</property>
+			  <property name="history">3</property>
 
 			  <child>
 			    <widget class="GtkMenu" id="menu1">
@@ -120,6 +120,15 @@
 				  <property name="label" translatable="yes">STF</property>
 				  <property name="use_underline">True</property>
 				  <signal name="activate" handler="on_stf_activate" last_modification_time="Wed, 08 Sep 2004 19:31:17 GMT"/>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="geotiff">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">GeoTIFF</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_geotiff_input_activate" last_modification_time="Tue, 17 Apr 2007 18:55:23 GMT"/>
 				</widget>
 			      </child>
 

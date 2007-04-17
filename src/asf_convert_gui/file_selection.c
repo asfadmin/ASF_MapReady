@@ -34,27 +34,25 @@ static SIGNAL_CALLBACK void ok_clicked()
         GTK_FILE_CHOOSER(browse_widget));
 
     gtk_widget_hide(browse_widget);
-
     if (files)
     {
         GSList *iter = files;
 
         do {
-            gchar *s = (gchar *) iter->data;
-            //printf("Adding: %s\n", s);
-            add_to_files_list(s);
-            g_free(s);
-            iter =  iter->next;
-        } 
+          gchar *s = (gchar *) iter->data;
+          add_to_files_list(s);
+          g_free(s);
+          iter =  iter->next;
+        }
         while(iter);
- 
+
         g_slist_free(files);
         show_queued_thumbnails();
     }
 }
 
 // sets up the file chooser dialog
-static void create_file_chooser_dialog() 
+static void create_file_chooser_dialog()
 {
     GtkWidget *parent = get_widget_checked("asf_convert");
 
@@ -67,7 +65,7 @@ static void create_file_chooser_dialog()
 
     // we need to extract the buttons, so we can connect them to our
     // button handlers, above
-    GtkHButtonBox *box = 
+    GtkHButtonBox *box =
         (GtkHButtonBox*)(((GtkDialog*)browse_widget)->action_area);
     GList *buttons = box->button_box.box.children;
 
@@ -94,7 +92,12 @@ static void create_file_chooser_dialog()
     gtk_file_filter_set_name(raw_filt, "RAW Files (*.raw)");
     gtk_file_filter_add_pattern(raw_filt, "*.raw");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), raw_filt);
-    
+
+    GtkFileFilter *geotiff_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(geotiff_filt, "GeoTIFF Files (*.tif)");
+    gtk_file_filter_add_pattern(geotiff_filt, "*.tif");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), geotiff_filt);
+
     GtkFileFilter *cpx_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(cpx_filt, "Complex Files (*.cpx)");
     gtk_file_filter_add_pattern(cpx_filt, "*.cpx");
@@ -145,6 +148,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
         "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
         "STF Files (*.000)\0*.000\0"
+        "GeoTIFF Files (*.tif)\0*.tif\0"
         "Complex Files (*.cpx)\0*.cpx\0"
         "ALOS Files (LED-*)\0LED-*\0"
         "All Files\0*\0";
@@ -167,11 +171,11 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     }
 
     /* the returned "fname" has the following form:            */
-    /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+    /*   <directory>\0<first file>\0<second file>\0<third ...  */
     char * dir = strdup(fname);
     char * p = fname + strlen(dir) + 1;
 
-    if (*p) { 
+    if (*p) {
         while (*p) {
             char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
             sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
