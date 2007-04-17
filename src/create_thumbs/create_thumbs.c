@@ -2,7 +2,7 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
-"                 [-recursive] <files>\n"
+"                 [-recursive] [-out-dir <dir>] <files>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program takes any number of CEOS files and generates\n"\
@@ -28,6 +28,11 @@
 "     -recursive (-R, -r)\n"\
 "          Recurse into subdirectories, looking for additional CEOS files\n"\
 "          to generate thumbnails for.\n"\
+"\n"\
+"     -out-dir (-output-dir, -o)\n"\
+"          Specify a directory where all thumbnails are placed.  Without\n"\
+"          this option, all thumbnails are placed in the same directory as\n"\
+"          the CEOS file.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -70,23 +75,25 @@
 #include <asf_license.h>
 #include <asf_contact.h>
 
+#ifdef linux
+#include <unistd.h>
+#endif
+
 #include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <dirent.h>
-
-#include <gtk/gtk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #include "asf.h"
 #include "get_ceos_names.h"
 #include "asf_endian.h"
 #include "asf_import.h"
 #include "float_image.h"
+#include "asf_nan.h"
 
 int verbose = 0;
 const int default_thumbnail_size = 256;
+char *out_dir = NULL;
 
 // Print minimalistic usage info & exit
 static void usage(const char *name)
@@ -362,17 +369,24 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     FREE (bytes);
     fclose(fpIn);
 
-    // currently use hard-coded output file name
+    char *out_file;
     char *thumb_file = appendToBasename(input_data, "_thumb");
-    char *out_file = appendExt(thumb_file, ".jpg");
-    
+
+    if (out_dir && strlen(out_dir) > 0) {
+        char *basename = get_basename(thumb_file);
+        out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
+        sprintf(out_file, "%s/%s.jpg", out_dir, basename);
+    } else {
+        out_file = appendExt(thumb_file, ".jpg");
+    }
+
     // Create the jpeg
     float_image_export_as_jpeg(img, out_file, size, NAN);
 
     meta_free(imd);
     FREE(data_name);
-    FREE(met);
     FREE(thumb_file);
+    FREE(met);
     FREE(out_file);
     FREE(input_metadata);
 
@@ -453,6 +467,14 @@ int main(int argc, char *argv[])
     else if (strmatches(key,"-recursive","--recursive","-r","-R",NULL)) {
         recursive = TRUE;
     }
+    else if (strmatches(key,"-out-dir","--out-dir","--output-dir",
+                            "-output-dir","-o",NULL)) {
+        CHECK_ARG(1);
+        char tmp[1024];
+        strcpy(tmp,GET_ARG(1));
+        out_dir = MALLOC(sizeof(char)*(strlen(tmp)+1));
+        strcpy(out_dir, tmp);
+    }
     else if (strmatches(key,"--size","-size","-s",NULL)) {
         CHECK_ARG(1);
         size = atoi(GET_ARG(1));
@@ -474,11 +496,14 @@ int main(int argc, char *argv[])
   if (!quietflag)
       asfSplashScreen(argc, argv);
 
+  if (out_dir) asfPrintStatus("Output directory is: %s\n", out_dir);
+
   int i;
   for (i=currArg; i<argc; ++i)
       process(argv[i], 0, recursive, size);
 
   if (fLog) fclose(fLog);
+  if (out_dir) free(out_dir);
 
   exit(EXIT_SUCCESS);
 }
