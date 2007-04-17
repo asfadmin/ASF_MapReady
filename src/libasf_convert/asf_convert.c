@@ -355,10 +355,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
 
-      // Import format: ASF, CEOS or STF
+      // Import format: ASF, CEOS or STF, GeoTIFF
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
-          strncmp(uc(cfg->import->format), "STF", 3) != 0) {
+          strncmp(uc(cfg->import->format), "STF", 3) != 0 &&
+          strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Chosen import format not supported\n");
       }
 
