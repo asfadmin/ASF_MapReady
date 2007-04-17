@@ -261,11 +261,16 @@ int asf_import(radiometry_t radiometry, int db_flag,
     }
     else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
       asfPrintStatus("   Data format: %s\n", format_type);
+      char *ext = findExt(inBaseName);
+      if (ext != NULL) {
+        *ext = '\0';
+      }
       GString *inGeotiffName = find_geotiff_name (inBaseName);
       if ( inGeotiffName == NULL ) {
         asfPrintError ("Couldn't find a GeoTIFF file (i.e. a file with "
                        "extension '.tif', '.tiff',\n'.TIF', or '.TIFF') "
-                       "corresponding to specified inBaseName");
+                       "corresponding to specified inBaseName:\n"
+                       "%s\n", inBaseName);
       }
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {

@@ -727,7 +727,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   /***** CONVERT TIFF TO BYTE or FLOAT IMAGE *****/
   /*                                     */
-  asfPrintStatus("\nConverting input TIFF image into %d-banded %s image...\n",
+  asfPrintStatus("\nConverting input TIFF image into %d-banded %s image...\n\n",
                  num_bands,
                  (data_type == BYTE) ? "byte" : (data_type == REAL32) ? "float" : "unknown data type");
   UInt8Image *oim_b = NULL;
@@ -851,18 +851,6 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   }
   // else leave it at the initialized value
 
-  mg->band_count = num_bands;
-  if (num_bands == 1) {
-    strcpy(mg->bands, MAGIC_UNSET_STRING);
-  }
-  else {
-    int i;
-    strcpy(mg->bands, "");
-    for (i=0; i<num_bands-1; i++) {
-      sprintf(mg->bands, "%s%s,", mg->bands, bands[i]);
-    }
-    sprintf(mg->bands, "%s%s", mg->bands, bands[i]);
-  }
   mg->line_count = height;
   mg->sample_count = width;
 
@@ -948,6 +936,20 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   mp->height = mean; // Overrides the default value of 0.0 set earlier
   ms->min = min;
   ms->max = max;
+
+  // Fill out the number of bands and the band names
+  mg->band_count = num_bands;
+  if (num_bands == 1) {
+    strcpy(mg->bands, MAGIC_UNSET_STRING);
+  }
+  else {
+    int i;
+    strcpy(mg->bands, "");
+    for (i=0; i<num_bands-1; i++) {
+      sprintf(mg->bands, "%s%s,", mg->bands, bands[i]);
+    }
+    sprintf(mg->bands, "%s%s", mg->bands, bands[i]);
+  }
 
   // Calculate the center latitude and longitude now that the projection
   // parameters are stored.
