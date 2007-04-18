@@ -25,6 +25,10 @@
 
 #define PGM_MAGIC_NUMBER "P5"
 
+// If you change the BAND_ID_STRING here, make sure you make an identical
+// change in the import library ...the defs must match
+#define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order"
+
 /* This constant is from the GeoTIFF spec.  It basically means that
    the system which would normally be specified by the field
    (projected coordinate system, datum, ellipsoid, whatever), in
@@ -35,15 +39,18 @@ int is_slant_range(meta_parameters *md);
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
-                           int is_geotiff, scale_t sample_mapping, int rgb);
-GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name);
+                           int is_geotiff, scale_t sample_mapping,
+                           int rgb, char **band_names);
+GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
+                              char **band_names);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
-void append_band_names(meta_parameters *md, char *citation);
+void append_band_names(char **band_names, char *citation);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
-                           int is_geotiff, scale_t sample_mapping, int rgb)
+                           int is_geotiff, scale_t sample_mapping,
+                           int rgb, char **band_names)
 {
   unsigned short sample_size;
   unsigned short sample_format;
@@ -97,7 +104,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name);
+    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, band_names);
   }
 }
 
@@ -168,7 +175,8 @@ void initialize_pgm_file(const char *output_file_name,
   return;
 }
 
-GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
+GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
+                             char **band_names)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -296,7 +304,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
                     "datum written by Alaska Satellite Facility tools",
                     md->projection->param.utm.zone, md->projection->hem,
                     datum_str);
-          append_band_names(md, citation);
+          append_band_names(band_names, citation);
           citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
@@ -346,7 +354,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
                   "Albers equal-area conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(md, citation);
+        append_band_names(band_names, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -389,7 +397,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
                   "Lambert conformal conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(md, citation);
+        append_band_names(band_names, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -428,7 +436,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
                   "Polar stereographic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(md, citation);
+        append_band_names(band_names, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
@@ -468,7 +476,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name)
                   "Lambert azimuthal equal area projected GeoTIFF using "
                   "%s datum written by Alaska Satellite "
                   "Facility tools", datum_str);
-        append_band_names(md, citation);
+        append_band_names(band_names, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
                     citation_length <= max_citation_length,
@@ -624,12 +632,12 @@ export_band_image (const char *metadata_file_name,
       is_geotiff = 0;
       initialize_tiff_file(&otif, &ogtif, output_file_name,
 			   metadata_file_name, is_geotiff,
-			   sample_mapping, rgb);
+			   sample_mapping, rgb, band_name);
     }
     else if (format == GEOTIFF) {
       initialize_tiff_file(&otif, &ogtif, output_file_name,
 			   metadata_file_name, is_geotiff,
-			   sample_mapping, rgb);
+			   sample_mapping, rgb, band_name);
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
@@ -1176,13 +1184,13 @@ export_band_image (const char *metadata_file_name,
 	  append_ext_if_needed (output_file_name, ".tif", ".tiff");
 	  initialize_tiff_file(&otif, &ogtif, output_file_name,
 			       metadata_file_name, is_geotiff,
-			       sample_mapping, rgb);
+			       sample_mapping, rgb, band_name);
 	}
 	else if (format == GEOTIFF) {
 	  append_ext_if_needed (output_file_name, ".tif", ".tiff");
 	  initialize_tiff_file(&otif, &ogtif, output_file_name,
 			       metadata_file_name, is_geotiff,
-			       sample_mapping, rgb);
+			       sample_mapping, rgb, band_name);
 	}
 	else if (format == JPEG) {
 	  append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
@@ -1361,10 +1369,15 @@ export_band_image (const char *metadata_file_name,
   meta_free (md);
 }
 
-void append_band_names(meta_parameters *md, char *citation)
+void append_band_names(char **band_names, char *citation)
 {
-  // The only reason this is in a separate function is just in
-  // case we add more descriptive information later...
-  ; //sprintf(citation, "%s,  Exported Bands: %s", citation, md->general->bands);
+  char band_name[256];
+  int i;
+  sprintf(citation, "%s, %s: ", citation, BAND_ID_STRING);
+  for (i=0; i<2; i++) {
+    sprintf(band_name, "%s,", strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+    strcat(citation, band_name);
+  }
+  strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
 }
 
