@@ -1365,6 +1365,6 @@ void append_band_names(meta_parameters *md, char *citation)
 {
   // The only reason this is in a separate function is just in
   // case we add more descriptive information later...
-  sprintf(citation, "%s,  Exported Bands: %s", citation, md->general->bands);
+  ; //sprintf(citation, "%s,  Exported Bands: %s", citation, md->general->bands);
 }
 
