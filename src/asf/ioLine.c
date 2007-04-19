@@ -337,9 +337,9 @@ int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
  * by the meta structure. It is always written in big endian format. Returns the
  * amount of samples successfully converted & written. Will not write more lines
  * than specified in the supplied meta struct. */
-int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
-                   int num_lines_to_put, const void *source,
-                   int source_data_type)
+static int put_data_lines(FILE *file, meta_parameters *meta, int band_number,
+                          int line_number_in_band, int num_lines_to_put,
+                          const void *source, int source_data_type)
 {
   int ii;               /* Sample index.                       */
   int samples_put;      /* Number of samples written           */
@@ -348,6 +348,8 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
   int sample_count       = meta->general->sample_count;
   int data_type          = meta->general->data_type;
   int num_samples_to_put = num_lines_to_put * sample_count;
+  int line_number        = meta->general->line_count * band_number +
+                               line_number_in_band;
 
   if ((source_data_type>=COMPLEX_BYTE) && (data_type<=REAL64)) {
     printf("\nput_data_lines: Cannot put complex data into a simple data file. Exiting.\n\n");
@@ -367,12 +369,16 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
   sample_size = data_type2sample_size(data_type);
 
   /* Make sure not to make file bigger than meta says it should be */
-  if (line_number > meta->general->line_count) {
-    printf("\nput_data_lines: Cannot write line %d in a file that should be %d lines. Exiting.\n",
-           line_number, meta->general->line_count);
+  if (line_number > meta->general->line_count * meta->general->band_count) {
+    printf("\nput_data_lines: Cannot write line %d of band %d in a\n"
+           "file that should be %d lines. Exiting.\n",
+           line_number, band_number,
+           meta->general->line_count * meta->general->band_count);
     exit(EXIT_FAILURE);
   }
-  if ((line_number+num_lines_to_put) > meta->general->line_count) {
+  if ((line_number+num_lines_to_put) >
+      meta->general->line_count * meta->general->band_count)
+  {
     num_samples_to_put = (meta->general->line_count - line_number)
                           * sample_count;
   }
@@ -516,7 +522,13 @@ int put_data_lines(FILE *file, meta_parameters *meta, int line_number,
 int put_float_line(FILE *file, meta_parameters *meta, int line_number,
                    const float *source)
 {
-  return put_data_lines(file, meta, line_number, 1, source, REAL32);
+  return put_data_lines(file, meta, 0, line_number, 1, source, REAL32);
+}
+
+int put_band_float_line(FILE *file, meta_parameters *meta, int band_number,
+                        int line_number, const float *source)
+{
+  return put_data_lines(file, meta, band_number, line_number, 1, source, REAL32);
 }
 
 /*******************************************************************************
@@ -526,7 +538,15 @@ int put_float_line(FILE *file, meta_parameters *meta, int line_number,
 int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
                     int num_lines_to_put, const float *source)
 {
-  return put_data_lines(file,meta,line_number,num_lines_to_put,source,REAL32);
+  return put_data_lines(file,meta,0,line_number,num_lines_to_put,source,REAL32);
+}
+
+int put_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
+                         int line_number, int num_lines_to_put,
+                         const float *source)
+{
+  return put_data_lines(file,meta,band_number,line_number,
+                        num_lines_to_put,source,REAL32);
 }
 
 /*******************************************************************************
@@ -538,7 +558,7 @@ int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
 int put_double_line(FILE *file, meta_parameters *meta, int line_number,
                     const double *source)
 {
-  return put_data_lines(file, meta, line_number, 1, source, REAL64);
+  return put_data_lines(file, meta, 0, line_number, 1, source, REAL64);
 }
 
 /*******************************************************************************
@@ -550,7 +570,7 @@ int put_double_line(FILE *file, meta_parameters *meta, int line_number,
 int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
                      int num_lines_to_put, const double *source)
 {
-  return put_data_lines(file,meta,line_number,num_lines_to_put,source,REAL64);
+  return put_data_lines(file,meta,0,line_number,num_lines_to_put,source,REAL64);
 }
 
 /*******************************************************************************
@@ -560,7 +580,7 @@ int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
 int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
                     const complexFloat *source)
 {
-  return put_data_lines(file, meta, line_number, 1, source, COMPLEX_REAL32);
+  return put_data_lines(file, meta, 0, line_number, 1, source, COMPLEX_REAL32);
 }
 
 /*******************************************************************************
@@ -570,6 +590,6 @@ int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
                      int num_lines_to_put, const complexFloat *source)
 {
-  return put_data_lines(file,meta,line_number,num_lines_to_put,source,
+  return put_data_lines(file,meta,0,line_number,num_lines_to_put,source,
                         COMPLEX_REAL32);
 }

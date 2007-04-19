@@ -216,8 +216,13 @@ int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
 		int num_lines_to_get, complexFloat *dest);
 int put_float_line(FILE *file, meta_parameters *meta, int line_number,
 		const float *source);
+int put_band_float_line(FILE *file, meta_parameters *meta, int band_number,
+                        int line_number, const float *source);
 int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
 		int num_lines_to_put, const float *source);
+int put_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
+                         int line_number, int num_lines_to_put,
+                         const float *source);
 int put_double_line(FILE *file, meta_parameters *meta, int line_number,
 		const double *source);
 int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
