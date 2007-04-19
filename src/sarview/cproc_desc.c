@@ -130,7 +130,7 @@ void image_describePixel(char *dest,double x,double y)
 		/*Print projection information*/
 		if (image_projOK())
 		{
-			double projX,projY,projZ, lat,lon;
+			double projX,projY,projZ;
 			int iflg;
 
 			meta_get_latLon(meta, y, x, 0.0, &lat, &lon);
@@ -149,10 +149,11 @@ void image_describePixel(char *dest,double x,double y)
 		}
                 /* Incidence angle */
                 if (meta && meta->state_vectors) {
+                    double s,t;
+                    meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
                     sprintf(&dest[strlen(dest)],
-                            "Incid: %f (deg), Look: %f (deg)\n",
-                            R2D*meta_incid(meta, y, x), 
-                            R2D*meta_look(meta, y, x));
+                            "Incid: %f (deg), Slant: %f m\n",
+                            R2D*meta_incid(meta, y, x), s);
                 }
 	}
 }
