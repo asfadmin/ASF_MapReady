@@ -155,14 +155,14 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
       dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
       break;
     default:
-      asfRequire(0,"Unsupported projection type found.\n");
+      asfPrintError("Unsupported projection type found.\n");
       break;
   }
 }
 
 int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
 {
-  int ret = 0;
+  int     ret = 0;
   uint16  planarConfiguration = 0;
   uint16  bitsPerSample = 0;
   uint16  sampleFormat = 0;
@@ -171,47 +171,82 @@ int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
   *data_type = -1;
   *num_bands = 0;
 
-  TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
-  if (ret == 0) {
-    if (planarConfiguration != PLANARCONFIG_CONTIG) {
-      // Only support [rgbrgbrgb...] format, not separately-stored color bands
-      ret = -1;
-    }
-  }
-
+  // Required tag for all images
+  ret = 0;
   TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
-  if (ret == 0) {
-    if (bitsPerSample != 8 && bitsPerSample != 32) {
-      // Only support byte and 32-bit floats
-      ret = -1;
-    }
+  if (bitsPerSample != 8  &&
+      bitsPerSample != 16 &&
+      bitsPerSample != 32)
+  {
+    // Only support byte, integer16, and 32-bit floats
+    ret = -1;
   }
 
-  TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
+  // Required tag for all images
   if (ret == 0) {
-    if (sampleFormat != SAMPLEFORMAT_UINT  &&
-        sampleFormat != SAMPLEFORMAT_INT   &&
-        sampleFormat != SAMPLEFORMAT_IEEEFP) {
-      // Data type must be one of the above
-      ret = -1;
-    }
-    else if ((sampleFormat == SAMPLEFORMAT_UINT && bitsPerSample == 8) ||
-              (sampleFormat == SAMPLEFORMAT_INT && bitsPerSample == 8)) {
-      *data_type = BYTE;
-    }
-    else if (sampleFormat == SAMPLEFORMAT_IEEEFP && bitsPerSample == 32) {
-      *data_type = REAL32;
-    }
-  }
-
-  TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
-  if (ret == 0) {
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
     if (samplesPerPixel < 1 || samplesPerPixel > MAX_BANDS) {
       // Only support 1 through MAX_BANDS bands in the image
       ret = -1;
     }
     else {
       *num_bands = samplesPerPixel;
+    }
+  }
+
+  // Required tag only for color (multi-band) images
+  if (ret == 0 && samplesPerPixel > 1) {
+    TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
+    if (planarConfiguration != PLANARCONFIG_CONTIG) {
+      // Only support [rgbrgbrgb...] format, not separately-stored color bands
+      ret = -1;
+    }
+  }
+
+  // Required tag for all images
+  //
+  // Only support BYTE, INTEGER16, and REAL32 at this time...
+  if (ret == 0) {
+    TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
+    if (sampleFormat == SAMPLEFORMAT_UINT || sampleFormat == SAMPLEFORMAT_INT) {
+      switch (bitsPerSample) {
+        case 8:
+          *data_type = BYTE;
+          break;
+        case 16:
+          *data_type = INTEGER16;
+          break;
+        default:
+          ret = -1;
+          break;
+      }
+    }
+    else if (sampleFormat == SAMPLEFORMAT_IEEEFP) {
+      switch (bitsPerSample) {
+        case 32:
+          *data_type = REAL32;
+          break;
+        default:
+          ret = -1;
+          break;
+      }
+    }
+    else {
+      // Unknown or missing sample format, so let's take a guess and let the processing fly...
+      switch (bitsPerSample) {
+        case 8:
+          *data_type = BYTE;
+          break;
+        case 16:
+          *data_type = INTEGER16;
+          break;
+        case 32:
+          *data_type = REAL32;
+          break;
+        default:
+          ret = -1;
+          break;
+      }
     }
   }
 

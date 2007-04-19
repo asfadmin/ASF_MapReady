@@ -175,7 +175,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %s type data\n"
       "        (Note: Empty or missing bands will be ignored)\n",
                  num_bands,
-                 (data_type == BYTE) ? "BYTE" : (data_type == REAL32) ? "FLOAT" : "UNKNOWN");
+                 (data_type == BYTE) ? "8-BIT BYTE" :
+                     (data_type == INTEGER16) ? "16-BIT INTEGER" :
+                          (data_type == REAL32) ? "32-BIT FLOAT" : "UNKNOWN");
   asfPrintStatus
       ("   Output data type: ASF format\n");
 
@@ -746,8 +748,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   /***** CONVERT TIFF TO BYTE or FLOAT IMAGE *****/
   /*                                             */
   asfPrintStatus("\nConverting input TIFF image into %d-banded %s image...\n\n",
-                 num_bands,
-                 (data_type == BYTE) ? "byte" : (data_type == REAL32) ? "float" : "unknown data type");
+                 num_bands, (data_type == BYTE) ? "byte" : "float");
   UInt8Image *oim_b = NULL;
   FloatImage *oim = NULL;
   if (data_type == BYTE) {
@@ -794,9 +795,6 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   /***** FILL IN THE REST OF THE META DATA (Projection parms should already exist) *****/
   /*                               */
   mg->data_type = data_type;
-  if (data_type == BYTE) {
-    mg->no_data = 0;
-  }
 
   // Get the image data type from the variable arguments list
   char image_data_type[256];
@@ -995,12 +993,18 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   // Fill out the number of bands and the band names
   strcpy(mg->bands, "");
-  mg->band_count = 0;
+  mg->band_count = num_bands;
   int *empty = (int*)CALLOC(num_bands, sizeof(int)); // Defaults to 'no empty bands'
   char *band_str;
   band_str = (char*)MALLOC(25*sizeof(char)); // '25' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
-  int found_bands = get_bands_from_citation(&(mg->band_count), &band_str, empty, citation);
-  if ( found_bands > 0) {
+  int num_found_bands;
+  int found_bands = get_bands_from_citation(&num_found_bands, &band_str, empty, citation);
+  if (num_bands != num_found_bands) {
+    asfPrintWarning("TIFF contains %d bands, but the citation lists %d bands!  Identifying which\n"
+        "band in this list of bands (%s) is correct is not possible.\n"
+        "Does the filename help?\n", num_bands, num_found_bands, band_str);
+  }
+  if ( found_bands > 0 && num_bands == num_found_bands) {
     // If a valid list of bands were in the citation string, then let the empty[] array,
     // which indicates which bands in the TIFF were listed as 'empty' overrule the
     // ignore[] array since it was just a best-guess based on band statistics

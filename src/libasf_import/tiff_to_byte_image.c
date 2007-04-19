@@ -28,8 +28,10 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
   TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
   TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
   TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
-  asfRequire(planarConfiguration == PLANARCONFIG_CONTIG,
-             "\nTIFFs with multi-plane data not supported\n");
+  if (num_bands > 1) {
+    asfRequire(planarConfiguration == PLANARCONFIG_CONTIG,
+              "\nTIFFs with multi-plane data not supported\n");
+  }
   asfRequire(sampleFormat == SAMPLEFORMAT_UINT  ||
              sampleFormat == SAMPLEFORMAT_INT   ||
              sampleFormat == SAMPLEFORMAT_IEEEFP,

@@ -28,12 +28,22 @@ FloatImage *tiff_to_band_float_image (TIFF *tif, int num_bands)
   TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
   TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
   TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
-  asfRequire(planarConfiguration == PLANARCONFIG_CONTIG,
-             "\nTIFFs with multi-plane data not supported\n");
-  asfRequire(sampleFormat == SAMPLEFORMAT_UINT  ||
-             sampleFormat == SAMPLEFORMAT_INT   ||
-             sampleFormat == SAMPLEFORMAT_IEEEFP,
-             "\nFound unsupported TIFF data type\n");
+  if (num_bands > 1) {
+    asfRequire(planarConfiguration == PLANARCONFIG_CONTIG,
+              "\nTIFFs with multi-plane data not supported\n");
+  }
+  if (sampleFormat != SAMPLEFORMAT_UINT  &&
+      sampleFormat != SAMPLEFORMAT_INT   &&
+      sampleFormat != SAMPLEFORMAT_IEEEFP)
+  {
+    asfPrintWarning("TIFFTAG_SAMPLEFORMAT is missing or an unsupported type.  The import\n"
+        "will continue but the data type will be assumed according to how many\n"
+        "bits per sample exist.  This may cause unexpected results:\n"
+        "    8-bits: Unsigned Integer8 (uint8) data is assumed.\n"
+        "   16-bits: Signed Integer16 (int16) data is assumed.\n"
+        "   32-bits: IEEE 32-Bit Floating Point (float) is assumed.\n"
+        "     Other: Unsupported.\n");
+  }
 
   // Pull the actual image data out of the TIFF and store it as a
   // float_image.  Note: float_image_new() asserts if it fails on a g_new()
