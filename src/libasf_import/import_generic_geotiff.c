@@ -62,12 +62,17 @@
 #define USER_DEFINED_PCS             32767
 #define BAND_NAME_LENGTH  12
 
+// If you change the BAND_ID_STRING here, make sure you make an identical
+// change in the export library ...the defs must match
+#define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order"
+
 spheroid_type_t SpheroidName2spheroid(char *sphereName);
 void check_projection_parameters(meta_projection *mp);
-int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
-                           const char *outBaseName);
 int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
-                           const char *outBaseName);
+                            const char *outBaseName, int num_bands, int *ignore);
+int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
+                           const char *outBaseName, int num_bands, int *ignore);
+int  get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -141,13 +146,25 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
   /*                                            */
+  // Malloc the band names and give them numeric names as defaults
+  // (Updated from citation string later ...if the info exists)
   for (band_num = 0; band_num < MAX_BANDS; band_num++) {
     bands[band_num] = MALLOC(sizeof(char) * (BAND_NAME_LENGTH+1));
     sprintf (bands[band_num], "%02d", band_num+1);
   }
+
+  // The data type returned is an ASF data type, e.g. BYTE or REAL32 etc
+  //
+  // The number of bands returned is based on the samples (values) per
+  // pixel stored in the TIFF tags ...but some bands may be blank or ignored.
+  // Later on, band-by-band statistics will determine if individual bands should
+  // be ignored (not imported to an img file) and if the citation string contains
+  // a band ID list, then any band marked with the word 'Empty' will also be ignored.
+  // the number of bands will be updated to reflect these findings.
+  //
   ret = get_tiff_data_config(input_tiff,
                              &data_type, // ASF datatype, e.g. BYTE or REAL32 etc
-                             &num_bands);
+                             &num_bands); // Initial number of bands
   if (ret != 0) {
     asfPrintError("Unsupported TIFF type found or required TIFF tags are missing\n"
         "in TIFF File %s\n"
@@ -155,7 +172,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         "format rather than having color planes stored separately, and contain\n"
         "no more than %d samples per pixel.\n", inFileName, MAX_BANDS);
   }
-  asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %s type data\n",
+  asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %s type data\n"
+      "        (Note: Empty or missing bands will be ignored)\n",
                  num_bands,
                  (data_type == BYTE) ? "BYTE" : (data_type == REAL32) ? "FLOAT" : "UNKNOWN");
   asfPrintStatus
@@ -169,17 +187,17 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   if (citation_length > 0) {
     citation = MALLOC ((citation_length) * typeSize);
     GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
-    asfPrintStatus("\nCitation: %s\n", citation);
+    asfPrintStatus("\nCitation: %s\n\n", citation);
   }
   else {
     citation_length = GTIFKeyInfo(input_gtif, PCSCitationGeoKey, &typeSize, &citation_type);
     if (citation_length > 0) {
       citation = MALLOC ((citation_length) * typeSize);
       GTIFKeyGet (input_gtif, PCSCitationGeoKey, citation, 0, citation_length);
-      asfPrintStatus("\nCitation: %s\n", citation);
+      asfPrintStatus("\nCitation: %s\n\n", citation);
     }
     else {
-      asfPrintStatus("\nCitation: MISSING\n");
+      asfPrintStatus("\nCitation: MISSING\n\n");
     }
   }
 
@@ -726,7 +744,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   }
 
   /***** CONVERT TIFF TO BYTE or FLOAT IMAGE *****/
-  /*                                     */
+  /*                                             */
   asfPrintStatus("\nConverting input TIFF image into %d-banded %s image...\n\n",
                  num_bands,
                  (data_type == BYTE) ? "byte" : (data_type == REAL32) ? "float" : "unknown data type");
@@ -760,42 +778,6 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       asfPrintError("Could not create float image\n");
     }
   }
-
-#ifdef BAD_VALUE_SCAN_ON
-  /***** FIX DEM IMAGE'S BAD DATA *****/
-  /*                                  */
-  // Since the import could be a DEM, and certain DEMs may have bad (way negative)
-  // data values that make the statistics hopeless, saturate output, etc.,
-  // map these bad values to a less negative magic number of our own making
-  // that still lets things work somewhat (assumes the bad data values are rare).
-  //
-  // Note to you: We only support BYTE and REAL32 geotiff imports...
-  //
-  if (data_type == REAL32) {
-    asfPrintStatus("\nScanning float image for bad data values...\n");
-    int offset;
-    char bad_values_existed = 0;
-    const float bad_data_ceiling = -10e10;
-    const float new_bad_data_magic_number = -999.0;
-    size_t ii, jj;
-    offset = oim->size_y;
-    for ( ii = 0 ; ii < oim->size_y ; ii++ ) {
-      asfPercentMeter((double)ii / (double)(oim->size_y));
-      for ( jj = 0 ; jj < oim->size_x ; jj++ ) {
-        if ( float_image_get_pixel (oim, jj, ii) < bad_data_ceiling ) {
-          float_image_set_pixel (oim, jj, ii, new_bad_data_magic_number);
-          bad_values_existed = 1;
-        }
-      }
-    }
-    asfPercentMeter(1.0);
-    if (bad_values_existed) {
-      asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
-          "result in inaccurate image statistics.\n");
-      asfPrintStatus("Extra-negative values found within the float image have been removed\n");
-    }
-  }
-#endif
 
   // Get the raster width and height of the image.
   uint32 width;
@@ -913,16 +895,74 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   mp->re_major = mg->re_major;
   mp->re_minor = mg->re_minor;
 
-  asfPrintStatus("\nGathering image statistics...\n");
+#ifdef BAD_VALUE_SCAN_ON
+  /***** FIX DEM IMAGE'S BAD DATA *****/
+  /*                                  */
+  // Since the import could be a DEM, and certain DEMs may have bad (way negative)
+  // data values that make the statistics hopeless, saturate output, etc.,
+  // map these bad values to a less negative magic number of our own making
+  // that still lets things work somewhat (assumes the bad data values are rare).
+  //
+  // Note to you: We only support BYTE and REAL32 geotiff imports...
+  //
+  if (data_type == REAL32 && mg->image_data_type == DEM) {
+    asfPrintStatus("\nScanning float image for bad data values...\n");
+    int offset;
+    char bad_values_existed = 0;
+    const float bad_data_ceiling = -10e10;
+    const float new_bad_data_magic_number = -999.0;
+    size_t ii, jj;
+    offset = oim->size_y;
+    for ( ii = 0 ; ii < oim->size_y ; ii++ ) {
+      asfPercentMeter((double)ii / (double)(oim->size_y));
+      for ( jj = 0 ; jj < oim->size_x ; jj++ ) {
+        if ( float_image_get_pixel (oim, jj, ii) < bad_data_ceiling ) {
+          float_image_set_pixel (oim, jj, ii, new_bad_data_magic_number);
+          bad_values_existed = 1;
+        }
+      }
+    }
+    asfPercentMeter(1.0);
+    if (bad_values_existed) {
+      asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
+          "result in inaccurate image statistics.\n");
+      asfPrintStatus("Extra-negative values found within the float image have been removed\n");
+    }
+  }
+#endif
+
+  asfPrintStatus("\nGathering image statistics (per available band)...\n");
+  int *ignore;
   float min, max;
   float mean, standard_deviation;
-
+  meta_stats *band_stats[MAX_BANDS]; // min, max, mean, rmse, std_deviation, mask: all doubles
+  int ii;
+  for (ii=0; ii<MAX_BANDS; ii++) {
+    band_stats[ii] = meta_stats_init();
+  }
+  ignore = CALLOC(MAX_BANDS, sizeof(int)); // Contains '1' if a band is to be ignored (empty band)
   if (data_type == BYTE) {
     uint8 b_min, b_max;
     double b_mean, b_standard_deviation;
 
+    // FIXME: We should not calc statistics on an entire multi-band image at once since
+    // each band (radar polarization, color, etc) will be different.  The metadata structure
+    // needs to be modified so that multiple stats blocks can exist, similar to satellite
+    // state vectors, and then write the band stats into the individual blocks...
+    // ...but for now, since we've already been committing this sin, keep on calculating
+    // the stats for the whole image (sigh.)
     uint8_image_statistics (oim_b, &b_min, &b_max, &b_mean, &b_standard_deviation,
                             0, UINT8_IMAGE_DEFAULT_MASK);
+    for (ii=0; ii<num_bands; ii++) {
+      int ret;
+      ret = uint8_image_band_statistics(oim_b, band_stats[ii],
+                                        mg->line_count, ii,
+                                        0, UINT8_IMAGE_DEFAULT_MASK);
+      if (ret != 0) {
+        // Band data is blank, e.g. no variation ...all pixels the same
+        ignore[ii] = 1;
+      }
+    }
 
     min = (float)b_min;
     max = (float)b_max;
@@ -930,25 +970,83 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     standard_deviation = (float)b_standard_deviation;
   }
   else {
+    // FIXME: We should not calc statistics on an entire multi-band image at once since
+    // each band (radar polarization, color, etc) will be different.  The metadata structure
+    // needs to be modified so that multiple stats blocks can exist, similar to satellite
+    // state vectors, and then write the band stats into the individual blocks...
+    // ...but for now, since we've already been committing this sin, keep on calculating
+    // the stats for the whole image (sigh.)
     float_image_statistics (oim, &min, &max, &mean, &standard_deviation,
                             FLOAT_IMAGE_DEFAULT_MASK);
+    for (ii=0; ii<num_bands; ii++) {
+      int ret;
+      ret = float_image_band_statistics(oim, band_stats[ii],
+                                        mg->line_count, ii,
+                                        FLOAT_IMAGE_DEFAULT_MASK);
+      if (ret != 0) {
+        // Band data is blank, e.g. no variation ...all pixels the same
+        ignore[ii] = 1;
+      }
+    }
   }
   mp->height = mean; // Overrides the default value of 0.0 set earlier
   ms->min = min;
   ms->max = max;
 
   // Fill out the number of bands and the band names
-  mg->band_count = num_bands;
-  if (num_bands == 1) {
-    strcpy(mg->bands, MAGIC_UNSET_STRING);
+  strcpy(mg->bands, "");
+  mg->band_count = 0;
+  int *empty = (int*)CALLOC(num_bands, sizeof(int)); // Defaults to 'no empty bands'
+  char *band_str;
+  band_str = (char*)MALLOC(25*sizeof(char)); // '25' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
+  int found_bands = get_bands_from_citation(&(mg->band_count), &band_str, empty, citation);
+  if ( found_bands > 0) {
+    // If a valid list of bands were in the citation string, then let the empty[] array,
+    // which indicates which bands in the TIFF were listed as 'empty' overrule the
+    // ignore[] array since it was just a best-guess based on band statistics
+    //
+    // Note:  The ignore[] array will be used when writing the binary file so that empty
+    // bands in the TIFF won't be written to the output file
+    int band_no;
+    for (band_no=0; band_no<num_bands; band_no++) {
+      ignore[band_no] = empty[band_no];
+    }
+    strcpy(mg->bands, band_str);
   }
   else {
-    int i;
-    strcpy(mg->bands, "");
-    for (i=0; i<num_bands-1; i++) {
-      sprintf(mg->bands, "%s%s,", mg->bands, bands[i]);
+    // Use the default band names if none were found in the citation string
+    // Note: For the case where there is no list of band names
+    // in the citation string, we are either importing somebody
+    // else's geotiff, or we are importing one of our older ones.
+    // The only way, in that case, to know if a band is empty is
+    // to rely on the band statistics from above.  The results
+    // of this analysis is stored in the 'ignore[<band_no>]' array.
+    int band_no;
+
+    // Note: num_bands is from the samples per pixel TIFF tag and is
+    // the maximum number of valid (non-ignored) bands in the file
+    for (band_no=0; band_no<num_bands-1; band_no++) {
+      if (ignore[band_no]) {
+        // Decrement the band count for each ignored band
+        num_bands--;
+      }
+      else {
+        // Band is not ignored, so give it a band name
+        sprintf(mg->bands, "%s%s,", mg->bands, bands[band_no]);
+      }
     }
-    sprintf(mg->bands, "%s%s", mg->bands, bands[i]);
+    if (ignore[band_no]) {
+      // Decrement the band count for each ignored band
+      num_bands--;
+    }
+    else {
+      // Band is not ignored, so give it a band name
+      sprintf(mg->bands, "%s%s", mg->bands, bands[band_no]);
+    }
+    mg->band_count = num_bands;
+  }
+  if (mg->band_count <= 0 || strlen(mg->bands) <= 0) {
+    asfPrintError("GeoTIFF file must contain at least one color channel (band)\n");
   }
 
   // Calculate the center latitude and longitude now that the projection
@@ -1008,17 +1106,20 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
 
+  // Write the Metadata file
   meta_write(meta_out, outBaseName);
+
+  // Write the binary file
   if (data_type == BYTE) {
     int ret;
-    ret = band_byte_image_write(oim_b, meta_out, outBaseName);
+    ret = band_byte_image_write(oim_b, meta_out, outBaseName, num_bands, ignore);
     if (ret != 0) {
       asfPrintError("Unable to write binary byte image...\n");
     }
   }
   else {
     int ret;
-    ret = band_float_image_write(oim, meta_out, outBaseName);
+    ret = band_float_image_write(oim, meta_out, outBaseName, num_bands, ignore);
     if (ret != 0) {
       asfPrintError("Unable to write binary float image...\n");
     }
@@ -1031,6 +1132,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   GTIFFree(input_gtif);
   XTIFFClose(input_tiff);
   meta_free (meta_out);
+  for (ii=0; ii<MAX_BANDS; ii++) {
+    FREE(band_stats[ii]);
+  }
+  FREE(ignore);
   if (data_type == BYTE) {
     uint8_image_free(oim_b);
   }
@@ -1232,7 +1337,8 @@ void check_projection_parameters(meta_projection *mp)
 }
 
 int  band_float_image_write(FloatImage *oim, meta_parameters *omd,
-                            const char *outBaseName)
+                            const char *outBaseName, int num_bands,
+                            int *ignore)
 {
   char *outName;
   int row, col, band, offset;
@@ -1244,8 +1350,8 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *omd,
   append_ext_if_needed(outName, ".img", ".img");
   offset = omd->general->line_count;
 
-  for (band=0; band < omd->general->band_count; band++) {
-    if (omd->general->band_count > 1) {
+  for (band=0; band < num_bands; band++) {
+    if (num_bands > 1) {
       asfPrintStatus("Writing band %02d...\n", band+1);
     }
     else
@@ -1254,12 +1360,17 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *omd,
     }
     FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
     if (fp == NULL) return 1;
-    for (row=0; row < omd->general->line_count; row++){
-      asfLineMeter(row, omd->general->line_count);
-      for (col=0; col < omd->general->sample_count; col++) {
-        buf[col] = float_image_get_pixel(oim, col, row+(offset*band));
+    if (!ignore[band]) {
+      for (row=0; row < omd->general->line_count; row++) {
+        asfLineMeter(row, omd->general->line_count);
+        for (col=0; col < omd->general->sample_count; col++) {
+          buf[col] = float_image_get_pixel(oim, col, row+(offset*band));
+        }
+        put_float_line(fp, omd, row, buf);
       }
-      put_float_line(fp, omd, row, buf);
+    }
+    else {
+      asfPrintStatus("  Empty band found ...ignored\n");
     }
     FCLOSE(fp);
   }
@@ -1270,7 +1381,8 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *omd,
 }
 
 int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
-                           const char *outBaseName)
+                           const char *outBaseName, int num_bands,
+                           int *ignore)
 {
   char *outName;
   int row, col, band, offset;
@@ -1282,8 +1394,8 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
   append_ext_if_needed(outName, ".img", ".img");
   offset = omd->general->line_count;
 
-  for (band=0; band < omd->general->band_count; band++) {
-    if (omd->general->band_count > 1) {
+  for (band=0; band < num_bands; band++) {
+    if (num_bands > 1) {
       asfPrintStatus("Writing band %02d...\n", band+1);
     }
     else
@@ -1292,13 +1404,18 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
     }
     FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
     if (fp == NULL) return 1;
-    for (row=0; row < omd->general->line_count; row++){
-      asfLineMeter(row, omd->general->line_count);
-      for (col=0; col < omd->general->sample_count; col++) {
-        int curr_row = row+(offset*band);
-        buf[col] = (float)uint8_image_get_pixel(oim_b, col, curr_row); //row+(offset*band));
+    if (!ignore[band]) {
+      for (row=0; row < omd->general->line_count; row++) {
+        asfLineMeter(row, omd->general->line_count);
+        for (col=0; col < omd->general->sample_count; col++) {
+          int curr_row = row+(offset*band);
+          buf[col] = (float)uint8_image_get_pixel(oim_b, col, curr_row); //row+(offset*band));
+        }
+        put_float_line(fp, omd, row, buf);
       }
-      put_float_line(fp, omd, row, buf);
+    }
+    else {
+      asfPrintStatus("  Empty band found ...ignored\n");
     }
     FCLOSE(fp);
   }
@@ -1308,6 +1425,54 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
   return 0;
 }
 
+int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation)
+{
+  char *s;
+  int band_no;
+  *num_bands = 0;
+  strcpy(*band_str, "");
+
+  s = strstr(citation, BAND_ID_STRING);
+  if (s != NULL) {
+    // Found a band ID string in the citation
+    char *pcTmp, *pcTmp2;
+
+    // Get the first band (token)
+    band_no = 0;
+    s += strlen(BAND_ID_STRING) + 2;
+    if (s > citation + strlen(citation)) {
+      return 0;
+    }
+    pcTmp = strtok_r(s, ",", &pcTmp2);
+    if (pcTmp != NULL) {
+      if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
+        *num_bands += 1;
+        strcat(*band_str, pcTmp);
+        empty[band_no] = 0;
+      }
+      else {
+        empty[band_no] = 1;
+      }
+    }
+
+    // Get subsequent bands (tokens)
+    pcTmp = strtok_r(NULL, ",", &pcTmp2);
+    while (pcTmp != NULL) {
+      band_no++;
+      if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
+        *num_bands += 1;
+        sprintf(*band_str, "%s,%s", *band_str, pcTmp);
+        empty[band_no] = 0;
+      }
+      else {
+        empty[band_no] = 1;
+      }
+      pcTmp = strtok_r(NULL, ",", &pcTmp2);
+    }
+  }
+
+  return *num_bands;
+}
 
 
 

@@ -139,7 +139,7 @@ uint8_image_new_from_metadata(meta_parameters *meta, const char *file);
 
 // For multi-band imagery the previous function needs to be more specific.
 UInt8Image *
-uint8_image_band_new_from_metadata(meta_parameters *meta, 
+uint8_image_band_new_from_metadata(meta_parameters *meta,
 				   int band, const char *file);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -206,17 +206,26 @@ uint8_image_get_pixel_with_reflection (UInt8Image *self, ssize_t x, ssize_t y);
 // all values within .00000000001 of the mask
 void
 uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
-			double *mean, double *standard_deviation, 
+			double *mean, double *standard_deviation,
 			gboolean use_mask_value, uint8_t mask_value);
+
+// Does the same thing as uint8_image_statistics() except that the
+// statistics are calculated for a particular band selection within
+// a UInt8Image which contains multiple bands or channels in sequential
+// order.  Returns 1 on error, otherwise 0
+int
+uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
+                             int line_count, int band_no,
+                             gboolean use_mask_value, uint8_t mask_value);
 
 // This method works like the statistics method, except values in the
 // interval [interval_start, interval_end] are not considered at all
 // for the purposes of determining any of the outputs.
 void
-uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min, 
-					   uint8_t *max, double *mean, 
-					   double *standard_deviation, 
-					   uint8_t interval_start, 
+uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min,
+					   uint8_t *max, double *mean,
+					   double *standard_deviation,
+					   uint8_t interval_start,
 					   uint8_t interval_end);
 
 // Compute an efficient estimate of the mean and standard deviation of
@@ -227,14 +236,14 @@ uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min,
 void
 uint8_image_approximate_statistics (UInt8Image *self, size_t stride,
                                     double *mean, double *standard_deviation,
-				    gboolean use_mask_value, 
+				    gboolean use_mask_value,
 				    uint8_t mask_value);
 
 // This method is a logical combination of the
 // statistics_with_mask_interval and approximate_statistics methods.
 void
-uint8_image_approximate_statistics_with_mask_interval 
-  (UInt8Image *self, size_t stride, double *mean, double *standard_deviation, 
+uint8_image_approximate_statistics_with_mask_interval
+  (UInt8Image *self, size_t stride, double *mean, double *standard_deviation,
    uint8_t interval_start, uint8_t interval_end);
 
 // Creates a gsl_histogram with bin_count bins evenly spaced over the

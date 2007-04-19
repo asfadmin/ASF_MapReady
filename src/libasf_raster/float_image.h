@@ -148,7 +148,7 @@ float_image_new_from_metadata(meta_parameters *meta, const char *file);
 
 // For multi-band imagery the previous function needs to be more specific.
 FloatImage *
-float_image_band_new_from_metadata(meta_parameters *meta, 
+float_image_band_new_from_metadata(meta_parameters *meta,
 				   int band, const char *file);
 
 // Sample type of an image that is to be used to create a float_image
@@ -243,14 +243,21 @@ void
 float_image_statistics (FloatImage *self, float *min, float *max, float *mean,
                         float *standard_deviation, float mask);
 
+//  Does the same thing as float_image_statistics() but for only one selected
+// band within a multi-band float image.  Returns 1 on error, otherwise 0
+int
+float_image_band_statistics(FloatImage *self, meta_stats *stats,
+                            int line_count, int band_no,
+                            float mask);
+
 // This method works like the statistics method, except values in the
 // interval [interval_start, interval_end] are not considered at all
 // for the purposes of determining any of the outputs.
 void
-float_image_statistics_with_mask_interval (FloatImage *self, float *min, 
-					   float *max, float *mean, 
-					   float *standard_deviation, 
-					   double interval_start, 
+float_image_statistics_with_mask_interval (FloatImage *self, float *min,
+					   float *max, float *mean,
+					   float *standard_deviation,
+					   double interval_start,
 					   double interval_end);
 
 // Compute an efficient estimate of the mean and standard deviation of
@@ -266,8 +273,8 @@ float_image_approximate_statistics (FloatImage *self, size_t stride,
 // This method is a logical combination of the
 // statistics_with_mask_interval and approximate_statistics methods.
 void
-float_image_approximate_statistics_with_mask_interval 
-  (FloatImage *self, size_t stride, float *mean, float *standard_deviation, 
+float_image_approximate_statistics_with_mask_interval
+  (FloatImage *self, size_t stride, float *mean, float *standard_deviation,
    double interval_start, double interval_end);
 
 // Creates a gsl_histogram with 'num_bins' bins evenly spaced between
@@ -407,7 +414,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 // land areas from being driven into saturation in the generated
 // image.
 int
-float_image_export_as_jpeg_with_mask_interval (FloatImage *self, 
+float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
 					       const char *file,
 					       ssize_t max_dimension,
 					       double interval_start,

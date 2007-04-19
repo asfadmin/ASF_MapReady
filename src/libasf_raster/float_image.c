@@ -1401,6 +1401,62 @@ float_image_statistics (FloatImage *self, float *min, float *max,
   *standard_deviation = standard_deviation_as_double;
 }
 
+int
+float_image_band_statistics (FloatImage *self, meta_stats *stats,
+                             int line_count, int band_no, float mask)
+{
+  g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
+  stats->min = FLT_MAX;
+  stats->max = -FLT_MAX;
+
+  // Buffer for one row of samples.
+  float *row_buffer = g_new (float, self->size_x);
+
+  // Its best to keep track of things internally using doubles in
+  // order to minimize error buildup.
+  double mean_as_double = 0;
+  double s = 0;
+
+  size_t sample_count = 0;      // Samples considered so far.
+  size_t ii, jj;
+  for ( ii = (band_no * line_count); // 0-ordered band number times lines is offset into image
+        ii < ((size_t)band_no+1) * line_count && ii < self->size_y;
+        ii++ )
+  {
+    asfPercentMeter( (double)(ii - band_no*line_count)/(double)line_count );
+    float_image_get_row (self, ii, row_buffer);
+    for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+      float cs = row_buffer[jj];   // Current sample.
+      if ( !isnan (mask) && (gsl_fcmp (cs, mask, 0.00000000001) == 0) )
+        continue;
+      if ( G_UNLIKELY (cs < stats->min) ) { stats->min = cs; }
+      if ( G_UNLIKELY (cs > stats->max) ) { stats->max = cs; }
+      double old_mean = mean_as_double;
+      mean_as_double += (cs - mean_as_double) / (sample_count + 1);
+      s += (cs - old_mean) * (cs - mean_as_double);
+      sample_count++;
+    }
+  }
+  asfPercentMeter(1.0);
+
+  g_free (row_buffer);
+
+  if (stats->min == FLT_MAX || stats->max == -FLT_MAX)
+    return 1;
+
+  double standard_deviation_as_double = sqrt (s / (sample_count - 1));
+
+  if (fabs (mean_as_double) > FLT_MAX ||
+      fabs (standard_deviation_as_double) > FLT_MAX)
+    return 1;
+
+  stats->mean = mean_as_double;
+  stats->std_deviation = standard_deviation_as_double;
+
+  return 0;
+}
+
 void
 float_image_statistics_with_mask_interval (FloatImage *self, float *min,
 					   float *max, float *mean,
