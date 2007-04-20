@@ -346,8 +346,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       else {
         mp->param.utm.false_northing = 10000000.0;
       }
-      mp->param.utm.lat0 = utm_zone_to_central_meridian(pro_zone);
-      mp->param.utm.lon0 = 0.0;
+      mp->param.utm.lat0 = 0.0;
+      mp->param.utm.lon0 = utm_zone_to_central_meridian(pro_zone);
       if (datum != UNKNOWN_DATUM) {
         mp->datum = datum;
       }
