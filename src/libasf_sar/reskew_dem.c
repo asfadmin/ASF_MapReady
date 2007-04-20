@@ -364,6 +364,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	}
 
 /* Write meta files */
+        metaIn->general->band_count = 1; // always just write 1 band
 	meta_write(metaIn, outDEMfile);
 	meta_write(metaIn, outAmpFile);
 

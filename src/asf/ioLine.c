@@ -263,6 +263,18 @@ int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 			0, meta->general->sample_count, dest, REAL32);
 }
 
+int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
+                        int line_number_in_band, float *dest)
+{
+  if (band_number > meta->general->band_count)
+    asfPrintError("Requested a band (%d) larger than the number of bands in\n"
+                  "the file (%d).\n", band_number, meta->general->band_count);
+  int line_number = meta->general->line_count * band_number +
+                        line_number_in_band;
+  return get_data_lines(file, meta, line_number, 1, 
+			0, meta->general->sample_count, dest, REAL32);
+}
+
 /*******************************************************************************
  * Get num_lines_to_get lines of any non-complex data type via get_data_lines
  * and fill a float buffer with it. Returns number of samples gotten          */

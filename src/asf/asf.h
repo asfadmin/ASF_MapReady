@@ -204,6 +204,8 @@ int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, unsigned char *dest);
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
 		float *dest);
+int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
+                        int line_number_in_band, float *dest);
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
 		int num_lines_to_get, float *dest);
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,

@@ -590,7 +590,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	char msg[256];
 	int inSarFlag,inMaskFlag,outMaskFlag;
 	int dem_is_ground_range=FALSE;
-	register int x,y;
+	register int x,y,b;
         struct deskew_dem_data d;
 
 	inSarFlag = inSarName != NULL;
@@ -646,12 +646,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	d.grPixelSize = calc_ranges(&d,inDemMeta);
 	outMeta->sar->image_type='G';
 	outMeta->general->x_pixel_size = d.grPixelSize;
-	meta_write(outMeta, outName);
 
 /*Open files.*/
 	inDemFp = fopenImage(inDemName,"rb");
 	outFp   = fopenImage(outName,"wb");
-	if (inSarFlag) inSarFp = fopenImage(inSarName,"rb");
+	if (inSarFlag) {
+          inSarFp = fopenImage(inSarName,"rb");
+          outMeta->general->band_count = inSarMeta->general->band_count;
+        }
         if (inMaskFlag) {
             if (!inSarFlag)
                 asfPrintError("Cannot produce a mask without a SAR!\n");
@@ -670,6 +672,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                               "same size.\n");
             }
         }
+        
+        // output file's metadata is all set, now
+	meta_write(outMeta, outName);
 
 /* Blather at user about what is going on */
 	strcpy(msg,"");
@@ -728,9 +733,6 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 get_float_line(inDemFp,inDemMeta,y,srDEMline);
                 dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
             }
-
-            /*Fetch the appropriate lines from the big buffer.*/
-            get_float_line(inSarFp,inSarMeta,y,inSarLine);
             
             if (inMaskFlag) {
                 /* Read in the next line of the mask, update the values */
@@ -749,18 +751,23 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     maskLine[x] = outLine[x];
             }
 
-            geo_compensate(&d,grDEMline,inSarLine,outLine,
-                           d.numSamples,1,maskLine,y);
+            // do this line in all of the bands
+            for (b=0; b<inSarMeta->general->band_count; ++b) {
+                get_band_float_line(inSarFp,inSarMeta,b,y,inSarLine);
 
-            if (y>0&&doRadiometric)
-                radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                 d.numSamples,y,doRadiometric);
+                geo_compensate(&d,grDEMline,inSarLine,outLine,
+                               d.numSamples,1,maskLine,y);
 
-            // subtract away the masked region
-            mask_float_line(d.numSamples,fill_value,outLine,
-                            maskLine,grDEMline,&d);
+                if (y>0&&doRadiometric)
+                  radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                                   d.numSamples,y,doRadiometric);
 
-            put_float_line(outFp,outMeta,y,outLine);
+                // subtract away the masked region
+                mask_float_line(d.numSamples,fill_value,outLine,
+                                maskLine,grDEMline,&d);
+
+                put_band_float_line(outFp,outMeta,b,y,outLine);
+            }
             if (outMaskFlag)
                 put_float_line(outMaskFp,outMeta,y,maskLine);
 
@@ -775,6 +782,12 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 /*Write the updated mask*/
         if (outMaskFlag) {
             FCLOSE(outMaskFp);
+
+            // the mask has just 1 band, regardless of how many input has
+            outMeta->general->band_count = 1;
+            strcpy(outMeta->general->bands, "");
+
+            // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
             int tot=d.numSamples*d.numLines;
             printf("Mask Statistics:\n"
