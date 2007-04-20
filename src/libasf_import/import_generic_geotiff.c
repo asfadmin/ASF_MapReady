@@ -1001,8 +1001,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   int found_bands = get_bands_from_citation(&num_found_bands, &band_str, empty, citation);
   if (num_bands != num_found_bands) {
     asfPrintWarning("TIFF contains %d bands, but the citation lists %d bands!  Identifying which\n"
-        "band in this list of bands (%s) is correct is not possible.\n"
-        "Does the filename help?\n", num_bands, num_found_bands, band_str);
+        "band in this list of bands is the right one is not possible.\n"
+        "Does the filename help?\n", num_bands, num_found_bands);
   }
   if ( found_bands > 0 && num_bands == num_found_bands) {
     // If a valid list of bands were in the citation string, then let the empty[] array,
