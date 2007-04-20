@@ -32,10 +32,19 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
     asfRequire(planarConfiguration == PLANARCONFIG_CONTIG,
               "\nTIFFs with multi-plane data not supported\n");
   }
-  asfRequire(sampleFormat == SAMPLEFORMAT_UINT  ||
-             sampleFormat == SAMPLEFORMAT_INT   ||
-             sampleFormat == SAMPLEFORMAT_IEEEFP,
-             "\nFound unsupported TIFF data type\n");
+  if (sampleFormat != SAMPLEFORMAT_UINT  &&
+      sampleFormat != SAMPLEFORMAT_INT   &&
+      sampleFormat != SAMPLEFORMAT_IEEEFP)
+  {
+    asfPrintWarning("TIFFTAG_SAMPLEFORMAT is missing or an unsupported type.  The import\n"
+        "will continue but the data type will be assumed according to how many\n"
+        "bits per sample exist.  This may cause unexpected results:\n"
+        "    8-bits: Unsigned Integer8 (uint8) data is assumed.\n"
+        "   16-bits: Signed Integer16 (int16) data is assumed.\n"
+        "   32-bits: IEEE 32-Bit Floating Point (float) is assumed.\n"
+        "     Other: Unsupported.\n");
+  }
+
   // FIXME: Use resampling to reduce 16- and 32-bit data down to 8-bit byte data...
   // This situation/need is not expected to happen, or at least very rarely.
   if (bitsPerSample > 8) {
