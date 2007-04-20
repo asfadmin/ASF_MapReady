@@ -949,8 +949,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // state vectors, and then write the band stats into the individual blocks...
     // ...but for now, since we've already been committing this sin, keep on calculating
     // the stats for the whole image (sigh.)
-    uint8_image_statistics (oim_b, &b_min, &b_max, &b_mean, &b_standard_deviation,
-                            0, UINT8_IMAGE_DEFAULT_MASK);
+    //uint8_image_statistics (oim_b, &b_min, &b_max, &b_mean, &b_standard_deviation,
+                            //0, UINT8_IMAGE_DEFAULT_MASK);
     for (ii=0; ii<num_bands; ii++) {
       int ret;
       ret = uint8_image_band_statistics(oim_b, band_stats[ii],
@@ -962,10 +962,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       }
     }
 
-    min = (float)b_min;
-    max = (float)b_max;
-    mean = (float)b_mean;
-    standard_deviation = (float)b_standard_deviation;
+    min = band_stats[0]->min; //(float)b_min;
+    max = band_stats[0]->max; //(float)b_max;
+    mean = band_stats[0]->mean; //(float)b_mean;
+    standard_deviation = band_stats[0]->std_deviation; //(float)b_standard_deviation;
   }
   else {
     // FIXME: We should not calc statistics on an entire multi-band image at once since
@@ -974,8 +974,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // state vectors, and then write the band stats into the individual blocks...
     // ...but for now, since we've already been committing this sin, keep on calculating
     // the stats for the whole image (sigh.)
-    float_image_statistics (oim, &min, &max, &mean, &standard_deviation,
-                            FLOAT_IMAGE_DEFAULT_MASK);
+    //float_image_statistics (oim, &min, &max, &mean, &standard_deviation,
+                            //FLOAT_IMAGE_DEFAULT_MASK);
     for (ii=0; ii<num_bands; ii++) {
       int ret;
       ret = float_image_band_statistics(oim, band_stats[ii],
@@ -986,6 +986,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         ignore[ii] = 1;
       }
     }
+    min = band_stats[0]->min;
+    max = band_stats[0]->max;
+    mean = band_stats[0]->mean;
+    standard_deviation = band_stats[0]->std_deviation; //(float)b_standard_deviation;
   }
   mp->height = mean; // Overrides the default value of 0.0 set earlier
   ms->min = min;
@@ -999,10 +1003,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   band_str = (char*)MALLOC(25*sizeof(char)); // '25' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
   int num_found_bands;
   int found_bands = get_bands_from_citation(&num_found_bands, &band_str, empty, citation);
-  if (num_bands != num_found_bands) {
-    asfPrintWarning("TIFF contains %d bands, but the citation lists %d bands!  Identifying which\n"
-        "band in this list of bands is the right one is not possible.\n"
-        "Does the filename help?\n", num_bands, num_found_bands);
+  if (num_found_bands < 1) {
+    asfPrintWarning("No ASF-exported band names found in GeoTIFF citation tag.\n"
+       "Band names will be assigned in numerical order.\n");
   }
   if ( found_bands > 0 && num_bands == num_found_bands) {
     // If a valid list of bands were in the citation string, then let the empty[] array,
