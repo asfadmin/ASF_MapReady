@@ -42,9 +42,9 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            int is_geotiff, scale_t sample_mapping,
                            int rgb, char **band_names);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              char **band_names);
+                              int rgb, char **band_names);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
-void append_band_names(char **band_names, char *citation);
+void append_band_names(char **band_names, int rgb, char *citation);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
@@ -104,7 +104,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, band_names);
+    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names);
   }
 }
 
@@ -176,7 +176,7 @@ void initialize_pgm_file(const char *output_file_name,
 }
 
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                             char **band_names)
+                             int rgb, char **band_names)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -304,7 +304,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     "datum written by Alaska Satellite Facility tools",
                     md->projection->param.utm.zone, md->projection->hem,
                     datum_str);
-          append_band_names(band_names, citation);
+          append_band_names(band_names, rgb, citation);
           citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
@@ -354,7 +354,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "Albers equal-area conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(band_names, citation);
+        append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -397,7 +397,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "Lambert conformal conic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(band_names, citation);
+        append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -436,7 +436,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "Polar stereographic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
                   "tools", datum_str);
-        append_band_names(band_names, citation);
+        append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
@@ -476,7 +476,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "Lambert azimuthal equal area projected GeoTIFF using "
                   "%s datum written by Alaska Satellite "
                   "Facility tools", datum_str);
-        append_band_names(band_names, citation);
+        append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
                     citation_length <= max_citation_length,
@@ -1369,15 +1369,71 @@ export_band_image (const char *metadata_file_name,
   meta_free (md);
 }
 
-void append_band_names(char **band_names, char *citation)
+void append_band_names(char **band_names, int rgb, char *citation)
 {
   char band_name[256];
   int i;
   sprintf(citation, "%s, %s: ", citation, BAND_ID_STRING);
-  for (i=0; i<2; i++) {
-    sprintf(band_name, "%s,", strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
-    strcat(citation, band_name);
+  if (rgb) {
+    for (i=0; i<2; i++) {
+      if (band_names[i] != NULL && strlen(band_names[i]) > 0) {
+        sprintf(band_name, "%s,", strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+        strcat(citation, band_name);
+      }
+    }
+    if (band_names[i] != NULL && strlen(band_names[i]) > 0) {
+      strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+    }
   }
-  strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+  else {
+    if (band_names[0] != NULL && strlen(band_names[i]) > 0) {
+      strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+    }
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
