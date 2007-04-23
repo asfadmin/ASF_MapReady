@@ -653,6 +653,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	if (inSarFlag) {
           inSarFp = fopenImage(inSarName,"rb");
           outMeta->general->band_count = inSarMeta->general->band_count;
+          strcpy(outMeta->general->bands, inSarMeta->general->bands);
         }
         if (inMaskFlag) {
             if (!inSarFlag)
