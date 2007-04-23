@@ -522,7 +522,6 @@ int match_dem(meta_parameters *metaSAR,
 	      int apply_dem_padding,
               int mask_dem_same_size_and_projection,
               int clean_files,
-              int interp_holes,
               double *t_offset,
 	      double *x_offset)
 {
@@ -577,12 +576,9 @@ int match_dem(meta_parameters *metaSAR,
     // Generate a slant range DEM and a simulated amplitude image.
     asfPrintStatus("Generating slant range DEM and "
 		   "simulated sar image...\n");
-    if (interp_holes)
-        asfPrintStatus("Will attempt to smooth over DEM holes.\n");
     demSlant = outputName(output_dir, demFile, "_slant");
     demSimAmp = outputName(output_dir, demFile, "_sim_amp");
-    reskew_dem(srFile, demClipped, demSlant, demSimAmp, userMaskClipped,
-               interp_holes);
+    reskew_dem(srFile, demClipped, demSlant, demSimAmp, userMaskClipped);
 
     // Resize the simulated amplitude to match the slant range SAR image.
     asfPrintStatus("Resizing simulated sar image...\n");
@@ -870,7 +866,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 	    simAmpFile, demSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, FALSE, &t_offset, &x_offset);
+            madssap, clean_files, &t_offset, &x_offset);
 
   if (clean_files)
       clean(userMaskClipped);
@@ -1134,8 +1130,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification, FALSE,
-            TRUE, TRUE, madssap, clean_files, /*smooth_dem_holes*/ FALSE,
-            &t_offset, &x_offset);
+            TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
 
   if (update_original_metadata_with_offsets)
   {
@@ -1175,9 +1170,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      clean(padFile);
-      clean(deskewDemFile);
-      clean(deskewDemMask);
+      //clean(padFile);
+      //clean(deskewDemFile);
+      //clean(deskewDemMask);
 
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);
@@ -1197,7 +1192,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
               outputName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
           resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
-          clean(lsMaskFile_2);
+          //clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }

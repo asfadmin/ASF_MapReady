@@ -128,8 +128,7 @@ static float *createSpeckle(void)
 
 /*dem_gr2sr: map one line of a ground range DEM into
 one line of a slant range DEM && one line of simulated amplitude image.*/
-static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask,
-                      int interp_holes)
+static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
 {
     int x,grX;
     double lastSrX=-1;/*Slant range pixels up to (and including) here 
@@ -152,44 +151,6 @@ static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask,
         amp[x]=0;
         srDEM[x]=unInitDEM;
 	outmask[x]=MASK_NORMAL;
-    }
-
-/*Detect holes in the DEM, plug with linearly interpolated vals*/
-    if (interp_holes) {
-        // how much of a drop in elevation flags a hole
-        const double tol = 150;
-        for (grX=1;grX<gr_ns;grX++)
-        {
-            if (grDEM[grX-1] - grDEM[grX] > tol) {
-                int hole_start = grX;
-                int hole_end = hole_start + 1;
-                // look ahead to a corresponding rise in elevation
-                while (grDEM[hole_end]-grDEM[hole_end-1]<tol && hole_end<gr_ns)
-                    ++hole_end;
-                // go all the way up the rises
-                while (grDEM[hole_end]-grDEM[hole_end-1]>tol && hole_end<gr_ns)
-                    ++hole_end;
-                --hole_end;
-                // to be a "hole", most of the heights should be negative
-                int neg = 0;
-                for (iX=hole_start; iX<hole_end; ++iX)
-                    if (grDEM[iX] < 0) ++neg;
-                float pct = (float)neg/(hole_end-hole_start);
-
-                // also, holes shouldn't be wider than 200 pixels...
-                if (pct>.8 && hole_end<gr_ns-1 && hole_end-hole_start<200) {
-                    // interpolate within the hole
-                    double step = (grDEM[hole_end]-grDEM[hole_start-1])/
-                        (hole_end-hole_start+1);
-                    for (iX=hole_start; iX<hole_end; ++iX) {
-                        grDEM[iX] = grDEM[hole_start-1]+(iX-hole_start+1)*step;
-                    }
-
-                    // skip ahead past the hole
-                    grX = hole_end + 1;
-                }
-            }
-        }
     }
 
 /*Step through the ground range line using grX.
@@ -302,7 +263,7 @@ Diffuse (lambertian) reflection:
 */
 
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-               char *outAmpFile, char *inMaskFile, int interp_holes)
+               char *outAmpFile, char *inMaskFile)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
@@ -356,15 +317,17 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 		if (inMaskFile)
 			get_float_line(inMask,metaInMask,line,inMaskLine);
 		
-		dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine,
-                          interp_holes);
+		dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
 
 		put_float_line(outDEM,metaIn,line,srDEMline);
 		put_float_line(outAmp,metaIn,line,outAmpLine);	
 	}
 
 /* Write meta files */
-        metaIn->general->band_count = 1; // always just write 1 band
+        // we only put in one band into the DEM & Sim Amp
+        metaIn->general->band_count = 1; 
+        strcpy(metaIn->general->bands, "");
+
 	meta_write(metaIn, outDEMfile);
 	meta_write(metaIn, outAmpFile);
 
