@@ -25,6 +25,8 @@ LIBS = \
 	fi \
 	)
 
+CFLAGS += $(GLIB_CFLAGS)
+
 all: to_sr clean
 
 to_sr: $(OBJS)
