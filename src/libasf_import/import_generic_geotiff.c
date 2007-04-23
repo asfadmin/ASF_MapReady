@@ -73,6 +73,13 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
 int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
                            const char *outBaseName, int num_bands, int *ignore);
 int  get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation);
+int geotiff_byte_image_band_statistics(TIFF *input_tiff, meta_stats *stats,
+                                       uint32 height, uint32 width,
+                                       int num_bands, int band_no,
+                                       gboolean use_mask_value, uint8_t mask_value);
+int geotiff_band_byte_image_write(TIFF *tif, meta_parameters *omd,
+                                  const char *outBaseName, int num_bands,
+                                  int *ignore);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -749,8 +756,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   /*                                             */
   asfPrintStatus("\nConverting input TIFF image into %d-banded %s image...\n\n",
                  num_bands, (data_type == BYTE) ? "byte" : "float");
-  UInt8Image *oim_b = NULL;
   FloatImage *oim = NULL;
+/*
+  UInt8Image *oim_b = NULL;
   if (data_type == BYTE) {
     // Create byte image
     if (num_bands == 1) {
@@ -766,6 +774,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     }
   }
   else {
+*/
+  if (data_type != BYTE) {
     // Create float image
     if (num_bands == 1) {
       // Single-band float image
@@ -783,9 +793,16 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Get the raster width and height of the image.
   uint32 width;
   uint32 height;
+
   if (data_type == BYTE) {
-    width = oim_b->size_x;
-    height = oim_b->size_y / num_bands;
+    TIFFGetField(input_tiff, TIFFTAG_IMAGELENGTH, &height);
+    TIFFGetField(input_tiff, TIFFTAG_IMAGEWIDTH, &width);
+    if (height <= 0 || width <= 0) {
+      asfPrintError("Invalid height and width parameters in TIFF file,\n"
+          "Height = %ld, Width = %ld\n", height, width);
+    }
+    //width = oim_b->size_x;
+    //height = oim_b->size_y / num_bands;
   }
   else {
     width = oim->size_x;
@@ -940,8 +957,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   }
   ignore = CALLOC(MAX_BANDS, sizeof(int)); // Contains '1' if a band is to be ignored (empty band)
   if (data_type == BYTE) {
-    uint8 b_min, b_max;
-    double b_mean, b_standard_deviation;
+//    uint8 b_min, b_max;
+//    double b_mean, b_standard_deviation;
 
     // FIXME: We should not calc statistics on an entire multi-band image at once since
     // each band (radar polarization, color, etc) will be different.  The metadata structure
@@ -953,9 +970,12 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                             //0, UINT8_IMAGE_DEFAULT_MASK);
     for (ii=0; ii<num_bands; ii++) {
       int ret;
-      ret = uint8_image_band_statistics(oim_b, band_stats[ii],
-                                        mg->line_count, ii,
-                                        0, UINT8_IMAGE_DEFAULT_MASK);
+//      ret = uint8_image_band_statistics(oim_b, band_stats[ii],
+//                                        mg->line_count, ii,
+//                                        0, UINT8_IMAGE_DEFAULT_MASK);
+      ret = geotiff_byte_image_band_statistics(input_tiff, band_stats[ii],
+                                               (uint32) mg->line_count, (uint32) mg->sample_count,
+                                               num_bands, ii, 0, UINT8_IMAGE_DEFAULT_MASK);
       if (ret != 0) {
         // Band data is blank, e.g. no variation ...all pixels the same
         ignore[ii] = 1;
@@ -1093,23 +1113,23 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   double lat, lon;
   proj_to_latlon(&proj, mp->startX, mp->startY, 0.0,
                  &lat, &lon, &dummy_var);
-  ml->lat_start_near_range = R2D*lat; //mp->startX;
-  ml->lon_start_near_range = R2D*lon; //mp->startY;
+  ml->lat_start_near_range = R2D*lat;
+  ml->lon_start_near_range = R2D*lon;
 
   proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY, 0.0,
                  &lat, &lon, &dummy_var);
-  ml->lat_start_far_range = R2D*lat; //mp->startX + mp->perX * width;
-  ml->lon_start_far_range = R2D*lon; //mp->startY;
+  ml->lat_start_far_range = R2D*lat;
+  ml->lon_start_far_range = R2D*lon;
 
   proj_to_latlon(&proj, mp->startX, mp->startY + mp->perY * height, 0.0,
                  &lat, &lon, &dummy_var);
-  ml->lat_end_near_range = R2D*lat; //mp->startX;
-  ml->lon_end_near_range = R2D*lon; //mp->startY + mp->perY * height;
+  ml->lat_end_near_range = R2D*lat;
+  ml->lon_end_near_range = R2D*lon;
 
   proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY + mp->perY * height, 0.0,
                  &lat, &lon, &dummy_var);
-  ml->lat_end_far_range = R2D*lat; //mp->startX + mp->perX * width;
-  ml->lon_end_far_range = R2D*lon; //mp->startY + mp->perY * height;
+  ml->lat_end_far_range = R2D*lat;
+  ml->lon_end_far_range = R2D*lon;
 
   asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
 
@@ -1119,7 +1139,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Write the binary file
   if (data_type == BYTE) {
     int ret;
-    ret = band_byte_image_write(oim_b, meta_out, outBaseName, num_bands, ignore);
+    //ret = band_byte_image_write(oim_b, meta_out, outBaseName, num_bands, ignore);
+    ret = geotiff_band_byte_image_write(input_tiff, meta_out, outBaseName, num_bands, ignore);
     if (ret != 0) {
       asfPrintError("Unable to write binary byte image...\n");
     }
@@ -1143,10 +1164,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     FREE(band_stats[ii]);
   }
   FREE(ignore);
-  if (data_type == BYTE) {
-    uint8_image_free(oim_b);
-  }
-  else {
+//  if (data_type == BYTE) {
+//    uint8_image_free(oim_b);
+//  }
+  if (data_type == REAL32) {
     float_image_free(oim);
   }
 
@@ -1481,32 +1502,138 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
   return *num_bands;
 }
 
+int geotiff_byte_image_band_statistics (TIFF *tif, meta_stats *stats,
+                                        uint32 height, uint32 width, int num_bands,
+                                        int band_no, gboolean use_mask_value, uint8_t mask_value)
+{
+  tsize_t scanlineSize;
 
+  // Minimum and maximum sample values as integers.
+  int imin = INT_MAX, imax = INT_MIN;
 
+  stats->mean = 0.0;
+  double s = 0.0;
 
+  uint32 sample_count = 0;      // Samples considered so far.
+  uint32 ii, jj;
+  scanlineSize = TIFFScanlineSize(tif);
+  if (scanlineSize <= 0) {
+    return 1;
+  }
+  tdata_t *buf = _TIFFmalloc(scanlineSize);
 
+  // If there is a mask value we are supposed to ignore,
+  if ( use_mask_value ) {
+    // iterate over all rows in the TIFF
+    for ( ii = 0; ii < height; ii++ )
+    {
+      asfPercentMeter((double)ii/(double)height);
+      TIFFReadScanline(tif, buf, ii, 0);
+      for (jj = 0 ; jj < width; jj++ ) {
+        // iterate over each pixel sample in the scanline
+        uint8 cs = ((uint8*)(buf))[(jj*num_bands)+band_no];   // Current sample.
+        if ( cs == mask_value ) {
+          continue;
+        }
+        if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+        if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+        double old_mean = stats->mean;
+        stats->mean += (cs - stats->mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->mean);
+        sample_count++;
+      }
+    }
+    asfPercentMeter(1.0);
+  }
+  else {
+    // There is no mask value to ignore, so we do the same as the
+    // above loop, but without the possible continue statement.
+    for ( ii = 0;ii < height; ii++ )
+    {
+      asfPercentMeter((double)ii/(double)height);
+      if (TIFFReadScanline(tif, buf, ii, 0) < 0) return 1;
+      for (jj = 0 ; jj < width; jj++) {
+        // iterate over each pixel sample in the scanline
+        uint8 cs = ((uint8*)(buf))[(jj*num_bands)+band_no];   // Current sample.
+        if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+        if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+        double old_mean = stats->mean;
+        stats->mean += (cs - stats->mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->mean);
+        sample_count++;
+      }
+    }
+    asfPercentMeter(1.0);
+  }
+  if (buf) _TIFFfree(buf);
 
+  // Verify the new extrema have been found.
+  if (imin == INT_MAX || imax == INT_MIN)
+    return 1;
 
+  // The new extrema had better be in the range supported by uint8_t.
+  if (imin < 0 || imax > UINT8_MAX)
+    return 1;
 
+  stats->min = imin;
+  stats->max = imax;
+  stats->std_deviation = sqrt (s / (sample_count - 1));
 
+  return 0;
+}
 
+int geotiff_band_byte_image_write(TIFF *tif, meta_parameters *omd,
+                           const char *outBaseName, int num_bands,
+                           int *ignore)
+{
+  char *outName;
+  int row, col, band, offset;
+  float *buf;
+  tsize_t scanlineSize;
 
+  buf = (float*)MALLOC(sizeof(float)*omd->general->sample_count);
+  outName = (char*)MALLOC(sizeof(char)*strlen(outBaseName) + 5);
+  strcpy(outName, outBaseName);
+  append_ext_if_needed(outName, ".img", ".img");
+  offset = omd->general->line_count;
 
+  scanlineSize = TIFFScanlineSize(tif);
+  if (scanlineSize <= 0) {
+    return 1;
+  }
+  tdata_t *tif_buf = _TIFFmalloc(scanlineSize);
 
+  for (band=0; band < num_bands; band++) {
+    if (num_bands > 1) {
+      asfPrintStatus("Writing band %02d...\n", band+1);
+    }
+    else
+    {
+      asfPrintStatus("Writing binary image...\n");
+    }
+    FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
+    if (fp == NULL) return 1;
+    if (!ignore[band]) {
+      for (row=0; row < omd->general->line_count; row++) {
+        asfLineMeter(row, omd->general->line_count);
+        if (TIFFReadScanline(tif, tif_buf, row, 0) < 0) return 1;
+        for (col=0; col < omd->general->sample_count; col++) {
+          buf[col] = (float)(((uint8*)tif_buf)[(col*num_bands)+band]);
+        }
+        put_band_float_line(fp, omd, band, row, buf);
+      }
+    }
+    else {
+      asfPrintStatus("  Empty band found ...ignored\n");
+    }
+    FCLOSE(fp);
+  }
+  FREE(buf);
+  FREE(outName);
+  if (tif_buf) _TIFFfree(tif_buf);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return 0;
+}
 
 
 

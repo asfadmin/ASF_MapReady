@@ -19,7 +19,7 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
   uint16  bitsPerSample;
   uint16  sampleFormat;
   int band;
-  int offset;
+  uint32  offset;
   uint8   *sample;
 
   // Get TIFF image boundary, planar configuration, and data type info
@@ -53,7 +53,7 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
   }
 
   // Pull the actual image data out of the TIFF and store it as a
-  // float_image.
+  // byte image.
   UInt8Image *bim = uint8_image_new (width, height * num_bands);
   if (bim == NULL) return bim; // But note to you: uint8_image_new() asserts on a g_new() if it fails
   offset = height;
@@ -61,7 +61,7 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
   // Allocate a buffer for a line of pixels.
   scanlineSize = TIFFScanlineSize(tif);
   tdata_t buf = _TIFFmalloc (scanlineSize);
-  sample = (uint8*)MALLOC(sizeof(uint8*)*num_bands);
+  sample = (uint8*)MALLOC(sizeof(uint8)*num_bands);
 
   uint32 current_row;
   for (current_row = 0 ; current_row < height; current_row++) {
@@ -99,6 +99,8 @@ UInt8Image *tiff_to_band_byte_image (TIFF *tif, int num_bands)
       }
     }
   }
+  if (buf) _TIFFfree(buf);
+  FREE(sample);
 
   return bim;
 }
