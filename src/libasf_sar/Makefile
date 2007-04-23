@@ -9,6 +9,7 @@ OBJS = \
 	sr2gr.o \
 	reskew_dem.o \
 	deskew_dem.o \
+	deskew.o \
 	create_dem_grid.o \
 	matrix.o \
 	poly.o \

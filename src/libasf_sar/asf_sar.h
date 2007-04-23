@@ -87,4 +87,7 @@ void interp_dem_holes_file(const char *infile, const char *outfile,
                            float cutoff, int verbose);
 void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
 
+/* Prototypes from deskew.c */
+void deskew(const char *infile, const char *outfile);
+
 #endif

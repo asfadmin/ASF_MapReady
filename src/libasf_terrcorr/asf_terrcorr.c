@@ -1122,6 +1122,29 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     image_was_ground_range = FALSE;
   }
 
+  if (!metaSAR->sar->deskewed) {
+    // input data is not moved to zero doppler - we need to do this
+    asfPrintStatus("Moving input data to zero doppler...\n");
+
+    if (strcmp(sarFile, srFile) != 0)
+    {
+      // normal case, deskew in-place
+      deskew(srFile, srFile);
+      metaSAR->sar->deskewed = 1;
+    }
+    else
+    {
+      // user gave us a slant-range image that didn't require resampling
+      // but does require deskewing.  In this case don't want to deskew
+      // in place, because that would modify the original data
+      free(srFile);
+      srFile = appendSuffix(sarFile, "_deskewed");
+      deskew(sarFile, srFile);
+      meta_free(metaSAR);
+      metaSAR = meta_read(srFile);
+    }
+  }
+
   lsMaskFile = appendToBasename(outFile, "_mask");
 
   // Assign a couple of file names and match the DEM
