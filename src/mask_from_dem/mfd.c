@@ -15,7 +15,7 @@ float version=0.1;
 #define MASK_VALUE 	1
 
 void usage();
-char mask_expression(int op, float value1, float value2, float value3);
+float mask_expression(int op, float value1, float value2, float value3);
 		
 void usage()
 {
@@ -33,10 +33,10 @@ void usage()
 }
 
 
-char mask_expression(int op, float value1, float lower, float higher)
+float mask_expression(int op, float value1, float lower, float higher)
 { // returns a suitably created byte mask depending on the value of op.
 	
-	char me;
+	float me;
 	me = 0;
 	
 	switch (op)
@@ -91,8 +91,8 @@ main(int argc, char *argv[])
 //  printf(" x_size = %d y_size = %d \n \n ", x_size, y_size);
 //  printf("target line is number %d \n",tline);
   
-  floatbuffer = (float *) MALLOC (sizeof(float) * inMeta->general->sample_count  * 1 );
-  maskbuffer = (char *) MALLOC (sizeof(char) * inMeta->general->sample_count * 1);
+  floatbuffer = MALLOC (sizeof(float) * inMeta->general->sample_count  * 1);
+  maskbuffer = MALLOC (sizeof(float) * inMeta->general->sample_count * 1);
   
 //  printf(" created memory buffer \n");
   in = fopenImage(infile, "rb");
@@ -143,7 +143,7 @@ main(int argc, char *argv[])
 	   printf(".");
 	   for (xpos=0; xpos < x_size; xpos++)
 		   maskbuffer[xpos] = mask_expression(op, floatbuffer[xpos], arga, argb); // does the actual data validation
-	   blockSize = put_data_lines(out, outMeta,  line, 1, maskbuffer, BYTE); 
+           put_float_line(out, outMeta, line, maskbuffer);
 
 	   // blockSize = put_float_line(out,outMeta,line,maskbuffer);
   	}
