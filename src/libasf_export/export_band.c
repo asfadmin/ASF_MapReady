@@ -1386,8 +1386,8 @@ void append_band_names(char **band_names, int rgb, char *citation)
     }
   }
   else {
-    if (band_names[0] != NULL && strlen(band_names[i]) > 0) {
-      strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+    if (band_names[0] != NULL && strlen(band_names[0]) > 0) {
+      strcat(citation, strncmp("IGNORE", uc(band_names[0]), 6) == 0 ? "Empty" : band_names[0]);
     }
   }
 }
