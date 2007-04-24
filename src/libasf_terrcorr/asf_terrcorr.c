@@ -543,7 +543,7 @@ int match_dem(meta_parameters *metaSAR,
   do // matches: while (redo_clipping);
   {
     ++num_attempts;
-    asfPrintStatus("Using DEM '%s' for refining geolocation ... "
+    asfPrintStatus("\nUsing DEM '%s' for refining geolocation ... "
                    "(iteration #%d)\n", demFile, num_attempts);
 
     demClipped = outputName(output_dir, demFile, "_clip");
@@ -764,7 +764,7 @@ int match_dem(meta_parameters *metaSAR,
 
             if (!do_refine_geolocation) {
                 asfPrintStatus("Found a large offset (%dx%d LxS pixels).\n"
-                    "Adjusting SAR image and re-clipping DEM.\n\n",
+                    "Adjusting SAR image and re-clipping DEM.\n",
                     idy, idx);
 
                 redo_clipping = TRUE;
@@ -897,6 +897,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   int madssap = FALSE; // mask and dem same size and projection
   int clean_resample_file = TRUE;
   int image_was_ground_range = TRUE;
+
+  asfPrintStatus("Starting terrain correction pre-processing.\n");
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -1174,11 +1176,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (do_terrain_correction)
   {
       // Terrain correct the slant range image while bringing it back to
-      // ground range geometry. This is done without radiometric correction
-      // of the values.
+      // ground range geometry.
       ensure_ext(&demTrimSlant, "img");
       ensure_ext(&srFile, "img");
-      asfPrintStatus("Terrain correcting slant range image...\n");
+      asfPrintStatus("\nTerrain correcting slant range image...\n");
       padFile = outputName(output_dir, srFile, "_pad");
       deskewDemFile = outputName(output_dir, srFile, "_dd");
       deskewDemMask = outputName(output_dir, srFile, "_ddm");
@@ -1193,9 +1194,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      //clean(padFile);
-      //clean(deskewDemFile);
-      //clean(deskewDemMask);
+      clean(padFile);
+      clean(deskewDemFile);
+      clean(deskewDemMask);
 
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);
@@ -1207,15 +1208,17 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
       if (image_was_ground_range &&
           fabs(metaSAR->general->x_pixel_size - pixel_size) > 0.01)
       {
-          asfPrintStatus("Resampling to proper range pixel size...\n");
+          asfPrintStatus("Resampling to proper range pixel size.\n");
           resampleFile_2 = outputName(output_dir, outFile, "_resample");
           renameImgAndMeta(outFile, resampleFile_2);
+          asfPrintStatus("Output image...\n");
           resample_to_square_pixsiz(resampleFile_2, outFile, pixel_size);
           char *lsMaskFile_2 =
               outputName(output_dir, lsMaskFile, "_resample");
           renameImgAndMeta(lsMaskFile, lsMaskFile_2);
+          asfPrintStatus("Layover/shadow mask...\n");
           resample_to_square_pixsiz(lsMaskFile_2, lsMaskFile, pixel_size);
-          //clean(lsMaskFile_2);
+          clean(lsMaskFile_2);
       } else {
           resampleFile_2 = NULL;
       }

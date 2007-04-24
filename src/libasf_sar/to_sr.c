@@ -47,6 +47,16 @@ static double max4(double a, double b, double c, double d)
     return max2(max2(a,b), max2(c,d));
 }
 
+static void ts2ls(meta_parameters *meta, double time, double slant,
+                  double *pLine, double *pSamp)
+{
+  double lat, lon, line, samp;
+  meta_timeSlantDop2latLon(meta, time, slant, 0, 0, &lat, &lon);
+  meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
+  *pLine = line;
+  *pSamp = samp;
+}
+
 static int
 proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 {
@@ -65,25 +75,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     if (!inMeta->projection && !inMeta->transform)
         asfPrintError("Expected a projection/transform block!\n");
 
-/*
-    // This is how gr2sr calculated the default slant range pixel size...
-
-    if (pixel_size < 0) {
-        if (inMeta->sar) {
-            pixel_size =
-                SPD_LIGHT / ((2.0 * inMeta->sar->range_sampling_rate) *
-                             inMeta->general->sample_count /
-                             inMeta->sar->original_sample_count);
-        }
-        else {
-            // no sar block... how can we get a slant range pixel size?
-            // does it even make sense???
-            pixel_size = inMeta->general->x_pixel_size;
-        }
-    }
-*/
-
-    asfPrintStatus("Converting %s to slant range...\n", infile);
+    //asfPrintStatus("Converting %s to slant range...\n", infile);
 
     // first, find extents in time/slant space
     // do this by projecting image corners to time/slant
@@ -157,10 +149,11 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
   found_br:
 
-    asfPrintStatus("Corners are at: TL (%d,%d)\n", tl_y, tl_x);
-    asfPrintStatus(" (line,sample)  TR (%d,%d)\n", tr_y, tr_x);
-    asfPrintStatus("                BL (%d,%d)\n", bl_y, bl_x);
-    asfPrintStatus("                BR (%d,%d)\n", br_y, br_x);
+    asfPrintStatus("Determining image extents in time/slant coordinates.\n");
+    //asfPrintStatus("Corners are at: TL (%d,%d)\n", tl_y, tl_x);
+    //asfPrintStatus(" (line,sample)  TR (%d,%d)\n", tr_y, tr_x);
+    //asfPrintStatus("                BL (%d,%d)\n", bl_y, bl_x);
+    //asfPrintStatus("                BR (%d,%d)\n", br_y, br_x);
 
     double tl_time, tl_slant;
     double tr_time, tr_slant;
@@ -172,10 +165,10 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     meta_get_timeSlantDop(inMeta, bl_y, bl_x, &bl_time, &bl_slant, NULL);
     meta_get_timeSlantDop(inMeta, br_y, br_x, &br_time, &br_slant, NULL);
 
-    asfPrintStatus("Corners are at: TL (%f,%f)\n", tl_time, tl_slant);
-    asfPrintStatus(" (time,slant)   TR (%f,%f)\n", tr_time, tr_slant);
-    asfPrintStatus("                BL (%f,%f)\n", bl_time, bl_slant);
-    asfPrintStatus("                BR (%f,%f)\n", br_time, br_slant);
+    //asfPrintStatus("Corners are at: TL (%f,%f)\n", tl_time, tl_slant);
+    //asfPrintStatus(" (time,slant)   TR (%f,%f)\n", tr_time, tr_slant);
+    //asfPrintStatus("                BL (%f,%f)\n", bl_time, bl_slant);
+    //asfPrintStatus("                BR (%f,%f)\n", br_time, br_slant);
 
     double slant_start = min4(tl_slant, tr_slant, bl_slant, br_slant);
     double slant_end = max4(tl_slant, tr_slant, bl_slant, br_slant);
@@ -252,7 +245,7 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     // generate a grid over the image, to generate our splines
     // this grid size seems to work pretty well...
-    int n = 100;
+    int n = 120;
 
     asfPrintStatus("Creating %dx%d mapping grid...\n", n, n);
 
@@ -270,7 +263,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     double *line_out = MALLOC(sizeof(double)*n);
     double *samp_out = MALLOC(sizeof(double)*n);
 
-    // alias -- use the same array, but call it what it is not to be confusing
+    // an alias -- use the same array (to save memory -- these are not used
+    // at the same time), but create an alias for it, so it is not so confusing
     double *time_in = slant_in;
 
     // set up the vertical splines
@@ -278,14 +272,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         double slant = slant_start + jj*slant_grid_incr;
 
         for (ii=0; ii<n; ++ii) {
-            double time = time_start + ii*time_grid_incr;
-            time_in[ii] = time;
-
-            double lat, lon;
-            meta_timeSlantDop2latLon(inMeta, time_in[ii], slant, 0, 0, 
-                                     &lat, &lon);
-            meta_get_lineSamp(inMeta, lat, lon, 0,
-                              &line_out[ii], &samp_out[ii]);
+            time_in[ii] = time_start + ii*time_grid_incr;
+            ts2ls(inMeta, time_in[ii], slant, &line_out[ii], &samp_out[ii]);
         }
 
         samp_accels[jj] = gsl_interp_accel_alloc();
