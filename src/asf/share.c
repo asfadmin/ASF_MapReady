@@ -174,6 +174,31 @@ print_all_reg_vals()
 #include <stdio.h>
 #include <stdlib.h>
 
+static int check_for_version_file_in_share_dir(const char *dir)
+{
+  const char *version_file = "convert_version.txt";
+
+  int len = strlen(dir) + strlen(version_file) + 3;
+  if (len < 256) len = 256;
+
+  char *file = MALLOC(len * sizeof(char));
+  sprintf(file, "%s/%s", dir, version_file);
+
+  int found = 0;
+  char *ver = CONVERT_PACKAGE_VERSION_STRING;
+
+  FILE *f = fopen(file, "r");
+  if (f) {
+    fgets(file, len, f);
+    if (strncmp(file, ver, strlen(ver)) == 0)
+      found = 1;
+    fclose(f);
+  }
+
+  FREE(file);
+  return found;
+}
+
 static int check_for_known_file_in_dir(const char *dir, const char *known_file)
 {
     char * file = (char *)MALLOC(strlen(dir) + strlen(known_file) + 3);
@@ -193,8 +218,7 @@ static int check_for_known_file_in_dir(const char *dir, const char *known_file)
 
 static int check_for_known_file_in_share_dir(const char *dir)
 {
-    const char * known_file = "LICENSE.txt";
-    return check_for_known_file_in_dir(dir, known_file);
+    return check_for_version_file_in_share_dir(dir);
 }
 
 static int check_for_known_file_in_bin_dir(const char *dir)
