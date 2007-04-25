@@ -36,6 +36,8 @@ MODULES = \
 	src/refine_geolocation \
 	src/sr2gr \
 	src/gr2sr \
+	src/to_sr \
+	src/deskew \
 	src/metadata \
 	src/resample \
 	src/fill_holes \
@@ -52,6 +54,7 @@ S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 all: external_libs
 	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
 	cp LICENSE.txt $(S_SHAREDIR)
+	echo "@VERSION@" > $(S_SHAREDIR)/convert_version.txt
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX All ASF Tools Compiled Successfully! XXXXXXXXXXX"
