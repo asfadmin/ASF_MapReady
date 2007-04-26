@@ -7,8 +7,6 @@
 #include "ceos.h"
 #include "decoder.h"
 #include "find_geotiff_name.h"
-#include "find_arcgis_geotiff_aux_name.h"
-#include "import_arcgis_geotiff.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
 #include "asf_raster.h"
@@ -261,6 +259,17 @@ int asf_import(radiometry_t radiometry, int db_flag,
     }
     else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
       asfPrintStatus("   Data format: %s\n", format_type);
+      if (band_id != NULL &&
+          strlen(band_id) > 0 &&
+          strncmp(uc(band_id), "ALL", 3) != 0)
+      {
+        asfPrintWarning("The -band option is not supported for data files containing\n"
+                        "multiple bands within a single file (such as GeoTIFF or TIFF)\n"
+                        "rather than in individual band files (such as ALOS etc).\n"
+                        "\nThe import will continue, but all available bands will be\n"
+                        "imported into a single ASF-format file.  You may select any\n"
+                        "individual band for export however.\n");
+      }
       char *ext = findExt(inBaseName);
       if (ext != NULL) {
         *ext = '\0';
@@ -274,38 +283,17 @@ int asf_import(radiometry_t radiometry, int db_flag,
       }
       geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
       if ( importer != NULL ) {
-        if (importer == import_arcgis_geotiff     &&
+        if (importer == import_generic_geotiff    &&
             strlen(image_data_type)               &&
             strncmp(image_data_type, "???", 3) != 0
            )
         {
-          // NOTE: The following importers are declared with ", ..." for a
-          // variable number of arguments, but only import_arcgis_geotiff()
-          // uses an extra argument:
-          //
-          // import_arcgis_geotiff()
-          // import_usgs_seamless()
-          // import_asf_utm_geotiff()
-          //
-          // NOTE: Any of these three importers may be returned by
-          // the detect_geotiff_flavor() function above
-          //
           importer (inGeotiffName->str, outBaseName, image_data_type);
         }
         else {
           importer (inGeotiffName->str, outBaseName);
         }
-      } else {
-        asfPrintStatus("\nFound GENERIC type of GeoTIFF...\n");
-        //asfPrintError ("\nTried to import a GeoTIFF of unrecognized flavor\n\n");
-        if (strlen(image_data_type) && strncmp(image_data_type, "???", 3) != 0) {
-          import_generic_geotiff (inGeotiffName->str, outBaseName, image_data_type);
-        }
-        else {
-          import_generic_geotiff (inGeotiffName->str, outBaseName);
-        }
       }
-      g_string_free (inGeotiffName, TRUE);
     }
     /* Don't recognize this data format; report & quit */
     else {

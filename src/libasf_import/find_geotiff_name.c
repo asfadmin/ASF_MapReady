@@ -11,7 +11,7 @@ find_geotiff_name (const char *inBaseName)
   GString *p3 = g_string_append (g_string_new (inBaseName), ".TIF");
   GString *p4 = g_string_append (g_string_new (inBaseName), ".TIFF");
 
-  // Result tp return.
+  // Result to return.
   GString *result = NULL;
 
   // Find firs possibility which exists.

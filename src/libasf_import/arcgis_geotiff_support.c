@@ -1,14 +1,16 @@
-// Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
-// projection data from its metadata file (ERDAS MIF HFA .aux file) into
-// our own ASF Tools format (.img, .meta)
+// Read ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor) projection data from
+// its auxiliary metadata file (ERDAS MIF HFA .aux file) into our ASF metadata
+// projection info struct
 //
 // NOTE:
 // 1. At this time, only supports Albers Equal Area Conic, Lambert Azimuthal
 //    Equal Area, Lambert Conformal Conic, Polar Stereographic, and UTM
 // 2. There may be some data duplication between the GeoTIFF tag contents
 //    in the TIFF file and the data contents of the metadata (.aux) file.
-// 3. Data and parameters found in the metadata (.aux) file supercede the
-//    data and parameter values found in the TIFF file
+//    Since ArcGIS and IMAGINE both use the aux file for projection information,
+//    we also 'prefer' the aux file.  The projection parameters are first
+//    retrieved from the GeoTIFF itself, but then if the aux file contains
+//    them, they are allowed to override.
 //
 
 #include <assert.h>
@@ -38,8 +40,11 @@
 #include "write_meta_and_img.h"
 #include "geotiff_support.h"
 #include "arcgis_spheroids.h"
+#include "find_geotiff_name.h"
 #include "find_arcgis_geotiff_aux_name.h"
-#include "import_arcgis_geotiff.h"
+#include "arcgis_geotiff_support.h"
+
+#define ARCGIS_CITATION_MAGIC_STRING        "IMAGINE GeoTIFF Support"
 
 #define ARCGIS_DEFAULT_UTM_SCALE_FACTOR     0.9996
 #define ARCGIS_DEFAULT_SCALE_FACTOR         1.0
@@ -78,6 +83,239 @@
 #define ARCGIS_USER_DEFINED_PCS             32767
 
 #define UNKNOWN_PROJECTION_TYPE             -1
+
+/***** ERDAS MIF data types & lengths, in bytes (below)                 *****/
+/*                                                                          */
+/* NOTE: The entire MIF file contains only little-endian data (LSB at       */
+/* lowest address), e.g. Intel little-endian byte order                     */
+/* NOTE: Please refer to document iau_docu1.pdf from ERDAS for more         */
+/* information on their machine independent format (MIF) files.             */
+/* NOTE: The MIF formatted hierarchical file archive (HFA) is               */
+/* used for Imagine (.img) and other binary files coming from ERDAS         */
+/* such as the ArcGIS auxiliary metadata file (.aux or .tif.aux)            */
+/* NOTE: The iau_docu1.pdf document sometimes refers to the MIF types       */
+/* with the "a.k.a. <type name>" shown in the comments below, but uses      */
+/* the single-character name when describing data in the data               */
+/* dictionary (in the file) format.                                         */
+/* NOTE: "EMIF_T_" means "ERDAS MIF type" and reflects std ERDAS naming.    */
+/* NOTE: A length of zero (0) means 'dynamically defined'.  In other words  */
+/* the actual data element itself will have 'count' and 'number of bytes    */
+/* per item' information associated with it in the data store itself.       */
+/*                                                                          */
+
+/* ERDAS MIF data types */
+#define _EMIF_T_U1            '1'
+#define _EMIF_T_U2            '2'
+#define _EMIF_T_U4            '4'
+#define _EMIF_T_UCHAR         'c'
+#define _EMIF_T_CHAR          'C'
+#define _EMIF_T_ENUM          'e'
+#define _EMIF_T_USHORT        's'
+#define _EMIF_T_SHORT         'S'
+#define _EMIF_T_TIME          't'
+#define _EMIF_T_ULONG         'l'
+#define _EMIF_T_LONG          'L'
+#define _EMIF_T_FLOAT         'f'
+#define _EMIF_T_DOUBLE        'd'
+#define _EMIF_T_COMPLEX       'm'
+#define _EMIF_T_DCOMPLEX      'M'
+#define _EMIF_T_BASEDATA      'b'
+#define _EMIF_T_PREDEFINED    'o'
+#define _EMIF_T_DEFINED       'x'
+
+/* Length of ERDAS MIF data types, in bytes */
+#define EMIF_T_U1_LEN          1
+#define EMIF_T_U2_LEN          1
+#define EMIF_T_U4_LEN          1
+#define EMIF_T_UCHAR_LEN       1
+#define EMIF_T_CHAR_LEN        1
+#define EMIF_T_ENUM_LEN        2
+#define EMIF_T_USHORT_LEN      2
+#define EMIF_T_SHORT_LEN       2
+#define EMIF_T_TIME_LEN        4
+#define EMIF_T_ULONG_LEN       4
+#define EMIF_T_LONG_LEN        4
+#define EMIF_T_FLOAT_LEN       4
+#define EMIF_T_DOUBLE_LEN      8
+#define EMIF_T_COMPLEX_LEN     8
+#define EMIF_T_DCOMPLEX_LEN    16
+#define EMIF_T_BASEDATA_LEN    0
+#define EMIF_T_PREDEFINED_LEN  0
+#define EMIF_T_DEFINED_LEN     0
+
+/* String representations of ERDAS MIF data types */
+#define EMIF_T_U1_STR          "EMIF_T_U1"
+#define EMIF_T_U2_STR          "EMIF_T_U2"
+#define EMIF_T_U4_STR          "EMIF_T_U4"
+#define EMIF_T_UCHAR_STR       "EMIF_T_UCHAR"
+#define EMIF_T_CHAR_STR        "EMIF_T_CHAR"
+#define EMIF_T_ENUM_STR        "EMIF_T_ENUM"
+#define EMIF_T_USHORT_STR      "EMIF_T_USHORT"
+#define EMIF_T_SHORT_STR       "EMIF_T_SHORT"
+#define EMIF_T_TIME_STR        "EMIF_T_TIME"
+#define EMIF_T_ULONG_STR       "EMIF_T_ULONG"
+#define EMIF_T_LONG_STR        "EMIF_T_LONG"
+#define EMIF_T_FLOAT_STR       "EMIF_T_FLOAT"
+#define EMIF_T_DOUBLE_STR      "EMIF_T_DOUBLE"
+#define EMIF_T_COMPLEX_STR     "EMIF_T_COMPLEX"
+#define EMIF_T_DCOMPLEX_STR    "EMIF_T_DCOMPLEX"
+#define EMIF_T_BASEDATA_STR    "EMIF_T_BASEDATA"
+#define EMIF_T_PREDEFINED_STR  "EMIF_T_PREDEFINED"
+#define EMIF_T_DEFINED_STR     "EMIF_T_DEFINED"
+
+/* ERDAS MIF data object types, each containing ERDAS MIF data items.       */
+/* This data type structure is analogous to a "typedef struct" where        */
+/* the name of the type is the data object name, e.g. "Eprj_ProParameters", */
+/* and the elements of the typed struct are the data items, e.g.            */
+/* "ProType" (type EMIF_T_ULONG), "proNAME" (type EMIF_T_UCHAR, an array)   */
+/* etcetera                                                                 */
+/*                                                                          */
+#define EIMG_LAYER                "Eimg_Layer"
+#define EIMG_LAYER_SUBSAMPLE      "Eimg_Layer_SubSample"
+#define EIMG_NONINITIALIZEDVALUE  "Eimg_NonInitializedValue"
+
+#define EHFA_LAYER                "Ehfa_Layer"
+
+#define EDMS_VIRTUALBLOCKINFO     "Edms_VirtualBlockInfo"
+#define EDMS_FREEIDLIST           "Edms_FreeIDList"
+#define EDMS_STATE                "Edms_State"
+
+#define EDSC_TABLE                "Edsc_Table"
+#define EDSC_BINFUNCTION          "Edsc_BinFunction"
+#define EDSC_COLUMN               "Edsc_Column"
+
+#define EDED_COLUMNATTRIBUTES_1   "Eded_ColumnAttributes_1"
+
+#define ESTA_STATISTICS           "Esta_Statistics"
+#define ESTA_COVARIANCE           "Esta_Covariance"
+#define ESTA_SKIPFACTORS          "Esta_SkipFactors"
+#define ESTA_EXCLUDEDVALUES       "Esta_ExcludedValues"
+
+#define EPRJ_DATUM                "Eprj_Datum"
+#define EPRJ_SPHEROID             "Eprj_Spheroid"
+#define EPRJ_PROPARAMETERS        "Eprj_ProParameters"
+#define EPRJ_COORDINATE           "Eprj_Coordinate"
+#define EPRJ_SIZE                 "Eprj_Size"
+#define EPRJ_MAPINFO              "Eprj_MapInfo"
+
+#define EIMG_MAPINFORMATION       "Eimg_MapInformation"
+
+#define EFGA_POLYNOMIAL           "Efga_Polynomial"
+#define CALIBRATION_NODE          "Calibration_Node"
+#define EMIF_ROOTNODE             "root"
+
+
+/* ERDAS MIF file header string and length & misc other MIF constants */
+#define EHFA_HEADER_TAG                 "EHFA_HEADER_TAG"
+#define EHFA_HEADER_TAG_LEN             16
+#define MAX_EHFA_ENTRY_NAMESTRING_LEN   64
+#define MAX_EHFA_ENTRY_TYPESTRING_LEN   32
+#define MAX_EHFA_ITEMS_PER_OBJECT       64
+#define MAX_EHFA_NESTEDITEMS_PER_ITEM   MAX_EHFA_OBJECTS_PER_DICTIONARY
+#define MAX_EHFA_OBJECTS_PER_DICTIONARY 64
+#define MAX_EHFA_ITEMSTRING_LEN         MAX_EHFA_ENTRY_NAMESTRING_LEN
+#define MAX_EHFA_OBJECTSTRING_LEN       ((MAX_EHFA_ITEMSTRING_LEN+5)*MAX_EHFA_ITEMS_PER_OBJECT)
+#define DELIM_TYPENAME                  "},"
+
+/* Other defines */
+#ifndef BOOL
+# define BOOL char
+#endif
+#define MAX_FILENAME_LEN 256
+/* ASCII Codes for '{' and '}' */
+#define OPEN_BRACE              (123)
+#define CLOSE_BRACE             (125)
+#define MISSING_ASCII_DATA      "???"
+#ifndef DHFA_UNKNOWN_PROJECTION
+  #define DHFA_UNKNOWN_PROJECTION (-1)
+#endif
+
+/* Defines for output to stdio etc */
+#define TABSTRING "                                                                                          "
+#define TABSTRING_LEN 80
+#define TAB_LEN 2
+
+
+/***** ERDAS MIF HFA related typedefs                                  *****/
+/*                                                                         */
+/* ERDAS MIF Ehfa_HeaderTag                                                */
+/* {16:clabel,1:lheaderPtr,}Ehfa_HeaderTag                                 */
+/*                                                                         */
+typedef struct {
+  unsigned char label[EHFA_HEADER_TAG_LEN]; /* Label of file type.  Should always be "EHFA_HEADER_TAG" */
+  unsigned long headerPtr; /* Pointer to header data.  See _Ehfa_File. */
+} _Ehfa_HeaderTag;
+
+/* ERDAS MIF Ehfa_File */
+/* {1:Lversion,1:lfreeList,1:lrootEntryPtr,1:SentryHeaderLength,1:ldictionaryPtr,} */
+/* NOTE: Each node in the data tree consists of 2 parts.  The first part is the    */
+/*       entry portion (node name, node type, parent/child info).  The second      */
+/*       portion is the data for the node.                                         */
+typedef struct {
+  long version; /* ERDAS MIF version.  Should always be '1' */
+  unsigned long freeList; /* Offset to freed blocks list within file */
+  unsigned long rootEntryPtr; /* Offset to root entry of data tree */
+  short int entryHeaderLength; /* Length of entry portion of a tree node */
+  unsigned long dictionaryPtr; /* Offset to data dictionary at end of file */
+} _Ehfa_File;
+
+/* ERDAS MIF Ehfa_Entry */
+/* {1:lnext,1:lprev,1:lparent,1:lchild,1:ldata,1:LdataSize,64:cname,32:ctype, */
+/*  1:tmodTime,}Ehfa_Entry                                                    */
+/* NOTE: See the note for _Ehfa_File typedef above.                           */
+/* NOTE: 1) Child nodes are oriented horizontally within a level, 2) Each     */
+/* child has next and prev pointers to access other children to the right and */
+/* left of itself respectively, 3) If a node has children, then the child     */
+/* pointer points to the left-most child in the next level down, while 4) the */
+/* parent pointer within any node (any child etc) points to the parent node   */
+/* which owns the children. 5) A zero (0) in any next/prev/parent/child node  */
+/* indicates that the current node is the last in that particular direction.  */
+/*                                                                            */
+typedef struct {
+  char name[MAX_EHFA_ENTRY_NAMESTRING_LEN]; /* Name of this node */
+  char type[MAX_EHFA_ENTRY_TYPESTRING_LEN]; /* Type of data in this node */
+  long dataSize; /* Number of bytes in data record for this node */
+  unsigned long data; /* Offset to data record for this node */
+  unsigned long modTime; /* Time of last modification of this node */
+  unsigned long parent; /* Offset to parent node in data tree */
+  unsigned long child; /* Offset to first child node */
+  unsigned long next; /* Offset to next node in data tree */
+  unsigned long prev; /* Offset to previous node in data tree */
+} _Ehfa_Entry;
+
+/* The terms 'object' and 'item' etc are defined in the ERDAS MIF HFA */
+/* document iau_docu1.pdf.  The following typedefs are named to       */
+/* reflect these definitions (even though the names are somewhat      */
+/* ambiguous)                                                         */
+/*                                                                    */
+/* The data dictionary is an ASCII string containing a list (unknown  */
+/* length) of 'object's, and each 'object' in the list contains a     */
+/* list (unknown length) of 'item's.  Each 'item' contains some basic */
+/* info associated with data such as counts, pointers to data, the    */
+/* data type associated with the data type name, etcetera (see ddItem */
+/* type below)                                                        */
+/*                                                                    */
+typedef struct {
+  int number; /* Number of data elements in the data store */
+  char indirectData; /* Optional - '*' or 'p' indirection indicator */
+  char name[MAX_EHFA_ITEMSTRING_LEN]; /* Name of this item */
+  char dataType; /* Character indicating the data type */
+  char definedTypeName[MAX_EHFA_ITEMSTRING_LEN]; /* Name of 'defined' type if applicable */
+  char **enumNames; /* Array of enum names (strings) */
+  int numEnums; /* Number of enum names */
+  char prevTypeName[MAX_EHFA_ITEMSTRING_LEN];
+  void *nestedItems; /* a (nested) array of ddItems for type 'x' */
+  int numNestedItems;
+} ddItem;
+
+typedef struct {
+  ddItem ddItems[MAX_EHFA_ITEMS_PER_OBJECT]; /* Data items (struct elements) in the data object (struct) */
+  int numItems;
+  char objStr[MAX_EHFA_OBJECTSTRING_LEN]; /* TODO: Refine later ...no need to store this string in each object once the Items are parsed out */
+  char objName[MAX_EHFA_ENTRY_NAMESTRING_LEN];
+  void *prev; /* Previous object in the list of objects */
+  void *next; /* Next object in the list of objects */
+} ddObject;
 
 typedef struct {
   char sphereName[MAX_EHFA_ENTRY_NAMESTRING_LEN]; // Spheroid name
@@ -127,6 +365,36 @@ typedef struct {
   char units[MAX_EHFA_ENTRY_NAMESTRING_LEN];
 } arcgisEimg_MapInformation_t;
 
+
+/***** ERDAS MIF HFA related Prototypes                         *****/
+/*                                                                  */
+void GetAuxHeader(FILE *fp, _Ehfa_HeaderTag* hdr);
+void GetDataHeader(FILE *fp, _Ehfa_File* dhdr, _Ehfa_HeaderTag* hdr);
+void GetDataDictionary(FILE *fp, unsigned long ddOffset,char **dd);
+void GetNode(FILE *fp, unsigned long nodeOffset, _Ehfa_Entry *nodeEntry);
+short FindNode (FILE *fp, _Ehfa_Entry *rootNode, char *type, _Ehfa_Entry *foundNode);
+void printDataNode(_Ehfa_Entry *node, unsigned long nodeOffset);
+void traverseNodes(FILE *fp, _Ehfa_Entry *node,unsigned long nodeOffset, BOOL dumpFlag);
+void ParseDictionary(char *dd, ddObject ddObjects[], int lim);
+BOOL getObjectToken(char **tdd, ddObject *tmpObj);
+void ParseDictionaryToObjectStrs(char *dd, ddObject Objects[], int *count, int lim);
+int  validDataType(char dataType);
+void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems);
+void PrintDictionary(ddObject *ddObjects, char *dd);
+void PrintItems(ddItem *items, int numItems, int tabLevel);
+void DHFAswab(char *from, char *to, unsigned int numBytes);
+void DHFAfread(char *ptr, size_t size, FILE *stream);
+void DHFAGetIntegerVal(FILE *fp, long *val, char type);
+void DHFAGetIntegerValFromOffset(FILE *fp, unsigned long offset,
+                                 long *val, char type);
+void DHFAGetString(FILE *fp, unsigned int maxSize, unsigned char *str);
+void DHFAGetStringFromOffset(FILE *fp, unsigned char strOffset,
+                             unsigned int maxSize, unsigned char *str);
+void freeItems(ddItem *items, int numItems);
+void freeOneItem(ddItem *item);
+void usage (const char *name);
+unsigned char local_machine_is_little_endian();
+
 void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms);
 void getArcgisDatumParameters(char *infile, arcgisDatumParms_t *datumParms);
 void getArcgisMapInfo(char *infile, arcgisMapInfo_t *arcgisMapInfo);
@@ -142,1102 +410,6 @@ void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
                                 unsigned long strLen, char *str);
 void DHFAGetStringVal(FILE *fp, unsigned long strLen, char *str);
 spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName);
-
-// Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
-// projection data from its metadata file (ERDAS MIF HFA .aux file) into
-// our own ASF Tools format (.img, .meta)
-//
-void
-import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...)
-{
-  // Counts holding the size of the returns from gt_methods.get method
-  // calls.  The geo_keyp.h header has the interface specification for
-  // this method.  gt_methods.get doesn't seem to be documented as
-  // part of the public GeoTIFF API, however, it works, unlike the
-  // TIFFGetField call, which seg faults.  Maybe I'm missing some
-  // setup call that I need, but: a. I can't find anything in the
-  // incomplete API documentation telling me what that might be, and
-  // b. I'm using a sequence of calls analogous to that use in
-  // export_as_geotiff, which works, and c. suspiciously, the listgeo
-  // program that comes with libgeotiff also uses this gt_methods.get
-  // approach and doesn't use TIFFGetField at all so far as I can
-  // tell.
-  int geotiff_data_exists;
-  int auxDataExists;
-  int count;
-  int read_count;
-  int i;
-  short model_type;
-  short projection_type;
-  short raster_type;
-  short linear_units;
-  double scale_factor;
-  GString *inGeotiffAuxName;
-  arcgisProjParms_t arcgisProjParms;
-  arcgisDatumParms_t arcgisDatumParms;
-  arcgisMapInfo_t arcgisMapInfo;
-  TIFF *input_tiff;
-  GTIF *input_gtif;
-  meta_parameters *meta_out;
-  datum_type_t datum;
-  va_list ap;
-
-  /***** INITIALIZE PARAMETERS *****/
-  /*                               */
-  // Create a new metadata object for the image.
-  meta_out = raw_init ();
-  meta_out->optical = NULL;
-  meta_out->thermal = NULL;
-  meta_out->projection = meta_projection_init ();
-  meta_out->stats = meta_stats_init ();
-  meta_out->state_vectors = NULL;
-  meta_out->location = meta_location_init ();
-  // Don't set any of the deprecated structure elements.
-  meta_out->stVec = NULL;
-  meta_out->geo = NULL;
-  meta_out->ifm = NULL;
-  meta_out->info = NULL;
-  datum = UNKNOWN_DATUM;
-
-  // Set up convenience pointers
-  meta_general *mg = meta_out->general;
-  meta_projection *mp = meta_out->projection;
-  meta_sar *msar = meta_out->sar;
-  meta_stats *ms = meta_out->stats; // Convenience alias.
-  meta_location *ml = meta_out->location; // Convenience alias.
-
-  // Let the user know what format we are working on.
-  asfPrintStatus
-    ("\n   Input data type: GeoTIFF (ArcGIS "
-      "flavor with ArcGIS metadata (.aux) file)\n");
-  asfPrintStatus
-    ("   Output data type: ASF format\n");
-
-  // Open the input tiff file.
-  input_tiff = XTIFFOpen (inFileName, "r");
-  asfRequire (input_tiff != NULL, "Error opening input TIFF file.\n");
-
-  // Open the structure that contains the geotiff keys.
-  input_gtif = GTIFNew (input_tiff);
-  asfRequire (input_gtif != NULL,
-	      "Error reading GeoTIFF keys from input TIFF file.\n");
-
-
-  /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
-  /*                                            */
-  // Read GeoTIFF file citation (general info from the maker of the file)
-  // NOTE: The citation may or may not exist ...it is not required by the
-  // file standard but we need it to help check for ERDAS IMAGINE type format
-  int citation_length;
-  int typeSize;
-  tagtype_t citation_type;
-  citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
-  asfRequire (citation_length > 0,
-              "Missing citation string in GeoTIFF file\n");
-  char *citation = MALLOC ((citation_length) * typeSize);
-  GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
-  asfPrintStatus("\nCitation: %s\n", citation);
-
-  // Get the tie point which defines the mapping between raster
-  // coordinate space and geographic coordinate space.  Although
-  // geotiff theoretically supports multiple tie points, we don't
-  // (rationale: ArcView currently doesn't either, and multiple tie
-  // points don't make sense with the pixel scale option, which we
-  // need).
-  // NOTE: Since neither ERDAS or ESRI store tie points in the .aux
-  // file associated with their geotiffs, it is _required_ that they
-  // are found in their tiff files.
-  double *tie_point;
-  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
-  &tie_point);
-  asfRequire (count == 6,
-              "GeoTIFF file does not contain tie points\n");
-  // Get the scale factors which define the scale relationship between
-  // raster pixels and geographic coordinate space.
-  double *pixel_scale;
-  (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
-  &pixel_scale);
-  asfRequire (count == 3,
-              "GeoTIFF file does not contain pixel scale parameters\n");
-  asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
-              "GeoTIFF file contains invalid pixel scale parameters\n");
-
-  // CHECK TO SEE IF THE GEOTIFF DOES CONTAIN USEFUL DATA:
-  //  If the tiff file contains geocoded information, then the model type
-  // will be ModelTypeProjected.  We add the requirement that pixels
-  // represent area and that the units are in meters because that's what
-  // we support to date.
-
-  read_count
-      = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
-  read_count
-      += GTIFKeyGet (input_gtif, GTRasterTypeGeoKey, &raster_type, 0, 0);
-  read_count
-      += GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
-  if (read_count == 3                   &&
-      model_type == ModelTypeProjected  &&
-      raster_type == RasterPixelIsArea  &&
-      linear_units == Linear_Meter      )
-  {
-    // GeoTIFF appears to contain the projection parameters, but note that
-    // (ProjectedCSTypeGeoKey must either be a UTM type) -or-
-    // (ProjectedCSTypeGeoKey is not UTM and ProjCoordTransGeoKey is a supported
-    // type).  See the if(geotiff_data_exists) section on reading parameters below.
-    geotiff_data_exists = 1;
-  }
-  else {
-    geotiff_data_exists = 0;
-  }
-  asfPrintStatus ("Input GeoTIFF key GTModelTypeGeoKey is %s\n",
-                  (model_type == ModelTypeGeographic) ?
-                      "ModelTypeGeographic" :
-                      (model_type == ModelTypeGeocentric) ?
-                      "ModelTypeGeocentric" :
-                      (model_type == ModelTypeProjected) ?
-                      "ModelTypeProjected" :
-                      "Unknown");
-  asfPrintStatus ("Input GeoTIFF key GTRasterTypeGeoKey is %s\n",
-                  (raster_type == RasterPixelIsArea) ?
-                      "RasterPixelIsArea" : "(Unsupported type)");
-  asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
-                  (linear_units == Linear_Meter) ?
-                      "meters" : "(Unsupported type)");
-  if (model_type != ModelTypeProjected) {
-    // FIXME: For now, we only import map-projected images in linear meters.  If
-    // the image was a lat/long image, then the angular units would be set AND
-    // the model_type would be ModelType_Geographic ...but oh well.
-    asfPrintError("Only map-projected ArcGIS/Imagine type images using linear units\n"
-        "are supported.  Geographic (lat/long) ArcGIS/Imagine type images are not.\n");
-  }
-
-  /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
-  /***** THEN READ THEM FROM THE METADATA (.AUX) FILE TO SUPERCEDE IF THEY EXIST *****/
-  /*                                                                                 */
-  /*                                                */
-  // import_arcgis_geotiff() would not be called (see detect_geotiff_flavor())
-  // unless the model_type is either unknown or is ModelTypeProjected.  If
-  // ModelTypeProjected, then there are projection parameters inside the
-  // GeoTIFF file.  If not, then they must be parsed from the complementary
-  // ArcGIS metadata (.aux) file
-  // Read the model type from the GeoTIFF file ...expecting that it is
-  // unknown, but could possibly be ModelTypeProjection
-  //
-  // Start of reading projection parameters from geotiff ...if it exists //
-  char hemisphere;
-  if (geotiff_data_exists) {
-    // Init ArcGIS projection parameters
-    // NOTE: A direct copy from these into the meta data occurs below, so we
-    // should write into them whether geocode data exists in the tiff or not.
-    // If the .aux file exists, then anything read there will supercede these
-    // values as well.
-    arcgisProjParms.proType = 0;
-    arcgisProjParms.proNumber = 0L;
-    strcpy(arcgisProjParms.proExeName, MAGIC_UNSET_STRING);
-    strcpy(arcgisProjParms.proName, MAGIC_UNSET_STRING);
-    arcgisProjParms.proZone = 0L;
-    for (i=0; i<ARCGIS_NUM_PROJDPARAMS; i++) {
-      arcgisProjParms.proParams[i] = MAGIC_UNSET_DOUBLE;
-    }
-    strcpy(arcgisProjParms.proSpheroid.sphereName, MAGIC_UNSET_STRING);
-    arcgisProjParms.proSpheroid.a = MAGIC_UNSET_DOUBLE;
-    arcgisProjParms.proSpheroid.b = MAGIC_UNSET_DOUBLE;
-    arcgisProjParms.proSpheroid.eSquared = MAGIC_UNSET_DOUBLE;
-    arcgisProjParms.proSpheroid.radius = MAGIC_UNSET_DOUBLE;
-
-    short proj_coords_trans = UNKNOWN_PROJECTION_TYPE;
-    short pcs;
-    short geokey_datum;
-    double false_easting;
-    double false_northing;
-    double lonOrigin;
-    double latOrigin;
-    double stdParallel1;
-    double stdParallel2;
-    double lonPole;
-
-    // Get datum and zone as appropriate
-    read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
-    if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &arcgisProjParms.proZone)) {
-      proj_coords_trans = CT_TransverseMercator;
-      arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = 500000.0;
-      if (hemisphere == 'N') {
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 0.0;
-      }
-      else {
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 10000000.0;
-      }
-    }
-    else {
-      // Not recognized as a supported UTM PCS or was a user-defined or unknown type of PCS...
-      //
-      // The ProjCoordTransGeoKey will be true if the PCS was user-defined or if the PCS was
-      // not in the geotiff file... or so the standard says.  If the ProjCoordTransGeoKey is
-      // false, it means that an unsupported (by us) UTM or State Plane projection was
-      // discovered (above.)  All other projection types make use of the ProjCoordTransGeoKey
-      // geokey.
-
-      // Check for a user-defined UTM projection
-      read_count = GTIFKeyGet (input_gtif, ProjectionGeoKey, &pcs, 0, 0);
-      if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &arcgisProjParms.proZone)) {
-        proj_coords_trans = CT_TransverseMercator;
-        arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = 500000.0;
-        if (hemisphere == 'N') {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 0.0;
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = 10000000.0;
-        }
-      }
-      else { // Some other type of projection may exist
-        read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-      }
-      asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
-                 "Unable to determine type of projection coordinate system in GeoTIFF file\n");
-
-      datum = UNKNOWN_DATUM;
-      read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
-      if (read_count == 1) {
-        switch(geokey_datum){
-          case Datum_WGS84:
-            datum = WGS84_DATUM;
-            break;
-          case Datum_North_American_Datum_1927:
-            datum = NAD27_DATUM;
-            break;
-          case Datum_North_American_Datum_1983:
-            datum = NAD83_DATUM;
-            break;
-          default:
-            break;
-        }
-      }
-      if (datum == UNKNOWN_DATUM) {
-        read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
-        if (read_count == 1) {
-          switch(geokey_datum){
-            case GCS_WGS_84:
-            case GCSE_WGS84:
-              datum = WGS84_DATUM;
-              break;
-            case GCS_NAD27:
-              datum = NAD27_DATUM;
-              break;
-            case GCS_NAD83:
-              datum = NAD83_DATUM;
-              break;
-            default:
-              break;
-          }
-        }
-      }
-      if (datum == UNKNOWN_DATUM) {
-        asfPrintWarning("Unable to determine datum type from GeoTIFF file\n");
-      }
-    }
-    //asfPrintWarning("GeoTIFF projection data found in ArcGIS GeoTIFF ...Data will be over-written\n"
-        //"with data found in the ArcGIS metadata (.aux) file.\n");
-
-    projection_type = UNKNOWN_PROJECTION_TYPE;
-    scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
-    switch(proj_coords_trans) {
-      case CT_TransverseMercator:
-      case CT_TransvMercator_Modified_Alaska:
-      case CT_TransvMercator_SouthOriented:
-        // Zone and datum should already be defined at this point (see above.)
-        projection_type = UTM;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "UTM");
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-//          asfPrintWarning(
-//                   "Unable to determine false easting from GeoTIFF file\n"
-//                   "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-//          asfPrintWarning(
-//                   "Unable to determine false northing from GeoTIFF file\n"
-//                   "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = false_northing;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        if (read_count != 1) {
-//          asfPrintWarning(
-//              "Unable to determine center longitude from GeoTIFF file\n"
-//              "using ProjNatOriginLongGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-//          asfPrintWarning(
-//              "Unable to determine center latitude from GeoTIFF file\n"
-//              "using ProjNatOriginLatGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
-        if (read_count == 0) {
-          scale_factor = ARCGIS_DEFAULT_UTM_SCALE_FACTOR;
-
-          char msg[256];
-//          sprintf(msg,
-//                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-//                  scale_factor);
-//          asfPrintWarning(msg);
-          sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", scale_factor);
-          asfPrintStatus(msg);
-        }
-        break;
-      // Albers Conical Equal Area case IS tested
-      case CT_AlbersEqualArea:
-        projection_type = ALBERS;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "Albers Conical Equal Area");
-        read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine first standard parallel from GeoTIFF file\n"
-              "using ProjStdParallel1GeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine second standard parallel from GeoTIFF file\n"
-              "using ProjStdParallel2GeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false easting from GeoTIFF file\n"
-              "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false northing from GeoTIFF file\n"
-              "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
-              "using ProjNatOriginLongGeoKey.  Trying ProjCenterLongGeoKey...\n");
-          read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
-          if (read_count != 1) {
-            asfPrintWarning("Unable to determine center longitude from GeoTIFF file\n"
-                "using ProjCenterLongGeoKey as well...\n");
-          }
-        }
-        if (read_count == 1) {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center latitude from GeoTIFF file\n"
-              "using ProjNatOriginLatGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        }
-        break;
-      // FIXME: The Lambert Conformal Conic 1-Std Parallel case is UNTESTED
-      case CT_LambertConfConic_1SP:
-        projection_type = LAMCC;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "Lambert Conformal Conic");
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                     "Unable to determine false easting from GeoTIFF file\n"
-              "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false northing from GeoTIFF file\n"
-              "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center longitude from GeoTIFF file\n"
-              "using ProjNatOriginLongGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center latitude from GeoTIFF file\n"
-              "using ProjNatOriginLatGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjScaleAtNatOriginGeoKey, &scale_factor, 0, 1);
-        if (read_count != 1) {
-          scale_factor = ARCGIS_DEFAULT_SCALE_FACTOR;
-
-          char msg[256];
-          sprintf(msg,
-                  "Lambert Conformal Conic scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-                  scale_factor);
-          asfPrintWarning(msg);
-        }
-        break;
-      case CT_LambertConfConic_2SP:
-        projection_type = LAMCC;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "Lambert Conformal Conic");
-        read_count = GTIFKeyGet (input_gtif, ProjStdParallel1GeoKey, &stdParallel1, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine first standard parallel from GeoTIFF file\n"
-              "using ProjStdParallel1GeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*stdParallel1;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjStdParallel2GeoKey, &stdParallel2, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine second standard parallel from GeoTIFF file\n"
-              "using ProjStdParallel2GeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] = D2R*stdParallel2;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false easting from GeoTIFF file\n"
-              "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false northing from GeoTIFF file\n"
-              "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center longitude from GeoTIFF file\n"
-              "using ProjFalseOriginLongGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center latitude from GeoTIFF file\n"
-              "using ProjFalseOriginLatGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        }
-        break;
-      case CT_PolarStereographic:
-        projection_type = PS;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "Polar Stereographic");
-        read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center latitude from GeoTIFF file\n"
-              "using ProjNatOriginLatGeoKey\n");
-        }
-        else {
-          // NOTE: Storing the latitude of origin in the Std Parallel #1 element is in
-          // alignment with where this value is found when coming from the .aux file.
-          // These values are copied to the meta data parameters later on and the assumption
-          // is made that THIS is where this data item will be...
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] = D2R*latOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjStraightVertPoleLongGeoKey, &lonPole, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine vertical pole longitude from GeoTIFF file\n"
-              "using ProjStraightVertPoleLongGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonPole;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false easting from GeoTIFF file\n"
-              "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false northing from GeoTIFF file\n"
-              "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        }
-        // NOTE: The scale_factor exists in the ProjScaleAtNatOriginGeoKey, but we do not
-        // use it, e.g. it is not current written to the meta data file with meta_write().
-        break;
-      case CT_LambertAzimEqualArea:
-        projection_type = LAMAZ;
-        arcgisProjParms.proNumber = projection_type;
-        strcpy(arcgisProjParms.proName, "Lambert Azimuthal Equal-area");
-        read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false easting from GeoTIFF file\n"
-              "using ProjFalseEastingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] = D2R*false_easting;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine false northing from GeoTIFF file\n"
-              "using ProjFalseNorthingGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] = D2R*false_northing;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjCenterLongGeoKey, &lonOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center longitude from GeoTIFF file\n"
-              "using ProjCenterLongGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] = D2R*lonOrigin;
-        }
-        read_count = GTIFKeyGet (input_gtif, ProjCenterLatGeoKey, &latOrigin, 0, 1);
-        if (read_count != 1) {
-          asfPrintWarning(
-                   "Unable to determine center latitude from GeoTIFF file\n"
-              "using ProjCenterLatGeoKey\n");
-        }
-        else {
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] = D2R*latOrigin;
-        }
-        break;
-      default:
-        asfPrintWarning(
-            "Unable to determine projection type from GeoTIFF file\n"
-            "using ProjectedCSTypeGeoKey or ProjCoordTransGeoKey\n");
-        geotiff_data_exists = 0;
-        break;
-    }
-  } // End of reading projection parameters from geotiff ...if it existed
-
-  /***** GET ALL VALUES THAT ARE IN THE ARCGIS METADATA FILE (.aux)  *****/
-  /*     IF THE FILE EXISTS.                                             */
-  char inBaseName[256];
-  strcpy(inBaseName, inFileName);
-  *(findExt(inBaseName)) = '\0';
-  inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
-  if ( inGeotiffAuxName == NULL) {
-    asfPrintWarning("No ArcGIS metadata (.aux) file was found using <basename>.\n"
-        "Meta data may be incomplete.\n");
-    auxDataExists = 0;
-  }
-  if ( inGeotiffAuxName != NULL ) { // ArcGIS metadata file (.aux) exists
-    short proj_type;
-    auxDataExists = 1;
-    proj_type = getArcgisProjType (inGeotiffAuxName->str);
-    if (  proj_type != UTM    &&
-          proj_type != ALBERS &&
-          proj_type != LAMCC  &&
-          proj_type != PS     &&
-          proj_type != LAMAZ)
-    {
-      //asfPrintWarning ("Missing or unsupported projection parameters found in\n"
-          //"ArcGIS metadata (.aux) file\n");
-      auxDataExists = 0;
-    }
-    else {
-      if ( proj_type == UTM     ||
-           proj_type == ALBERS  ||
-           proj_type == LAMCC   ||
-           proj_type == PS      ||
-           proj_type == LAMAZ   )
-      {
-        projection_type = proj_type;
-      }
-      // Read projection parameters from .aux file
-      getArcgisProjParameters(inGeotiffAuxName->str,
-                              &arcgisProjParms);
-      // Try to get datum record from .aux file
-      getArcgisDatumParameters(inGeotiffAuxName->str, &arcgisDatumParms);
-      if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD27_DATUM, strlen(ARCGIS_NAD27_DATUM)) == 0) {
-        datum = NAD27_DATUM;
-      }
-      else if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD83_DATUM, strlen(ARCGIS_NAD83_DATUM)) == 0) {
-        datum = NAD83_DATUM;
-      }
-      else if (strncmp(arcgisDatumParms.datumname, ARCGIS_WGS84_DATUM, strlen(ARCGIS_WGS84_DATUM)) == 0) {
-        datum = WGS84_DATUM;
-      }
-      else if (!geotiff_data_exists) {
-        asfPrintWarning("Couldn't identify datum in GeoTIFF or ArcGIS metadata (.aux) file...\n");
-        // NOTE: The ArcGIS .aux file may have contained "HARN" for High Accuracy Reference Network
-        // (a GPS-enhanced NAD83), but we don't separately support it at this time and I'm not sure
-        // if it's OK to just call it NAD83 ...
-      }
-      // Read map info data from .aux file
-      getArcgisMapInfo(inGeotiffAuxName->str, &arcgisMapInfo);
-    }
-  }
-  g_string_free (inGeotiffAuxName, TRUE);
-
-  // If at this point, the projection parameters were found in neither file
-  // then quit ...
-  asfRequire(geotiff_data_exists || auxDataExists,
-              "Projection parameters missing in both the GeoTIFF\n"
-              "file and the ArcGIS metadata (.aux) file.  Projection\n"
-              "parameters will be incomplete.\n");
-
-  /***** CONVERT TIFF TO FLOAT IMAGE *****/
-  /*                                     */
-  // Note to self:  tiff_to_float_image gets height/width from TIFF tags,
-  // and asserts if width and height not greater than zero
-  asfPrintStatus("\nConverting input TIFF image into float image...\n");
-  FloatImage *image = tiff_to_float_image (input_tiff);
-
-  /***** EXPORT FLOAT IMAGE AS JPEG *****/
-  /*                                    */
-  // Note to self:  float_image_export_as_jpeg asserts if it fails
-  //
-  // UPDATE: I'm commenting out the creation of a pre-bad data scan jpeg because
-  // for now it doesn't seem likely that ArcGIS geotiffs will have problems
-//  asfPrintStatus("\nConverting original image to jpeg format and saving to disk...\n");
-//  float_image_export_as_jpeg
-//    (image, "pre_bad_data_remap.jpeg",
-//     image->size_x > image->size_y ? image->size_x : image->size_y, NAN);
-
-  /***** FIX DEM IMAGE'S BAD DATA *****/
-  /*                                  */
-  // Since the import could be a DEM, and DEMs of this flavor tend to be full
-  // of bad data values that make the statistics hopeless, saturate output, etc.
-  // For now we deal with this by mapping these values to a less negative magic number
-  // of our own that still lets things work somewhat (assuming the bad
-  // data values are rare at least).
-  //
-  // UPDATE: I'm leaving this scan in for now (11-1-06) ...but if it never issues
-  // any warnings when ingesting ArcGIS geotiffs then it's probably not necessary
-  // to scan for 'bad data'.  AND, it's possible that the stats calculations can handle
-  // the bad data now ...needs testing.
-
-  // UPDATE: I'm taking this scan out for now (01-25-07)
-  //
-  //asfPrintStatus("\nScanning image for bad data values...\n");
-  //const float bad_data_ceiling = -10e10;
-  //const float new_bad_data_magic_number = -999.0;
-  //size_t ii, jj;
-  //char bad_values_existed = 0;
-  //for ( ii = 0 ; ii < image->size_y ; ii++ ) {
-    //for ( jj = 0 ; jj < image->size_x ; jj++ ) {
-      //if ( float_image_get_pixel (image, jj, ii) < bad_data_ceiling ) {
-	//float_image_set_pixel (image, jj, ii, new_bad_data_magic_number);
-        //bad_values_existed = 1;
-      //}
-    //}
-  //}
-  //if (bad_values_existed) {
-    //asfPrintWarning("Float image contained extra-negative values (< -10e10) that may\n"
-        //"result in inaccurate image statistics.\n");
-    //asfPrintStatus("Extra-negative values found within the float image have been removed\n");
-  //}
-
-  // Get the raster width and height of the image.
-  uint32 width = image->size_x;
-  uint32 height = image->size_y;
-
-
-  /***** FILL IN THE META DATA *****/
-  /*                               */
-
-  // Data type is REAL32 because the image is converted to float
-  mg->data_type = REAL32;
-
-  // Get the image data type from the variable arguments list
-  char image_data_type[256];
-  char *pTmpChar;
-  va_start(ap, outBaseName); // outBaseName is the last argument before ", ..."
-  pTmpChar = (char *)va_arg(ap, char *);
-  if (pTmpChar != NULL) {
-    strcpy(image_data_type, pTmpChar);
-  }
-  else {
-    if (geotiff_data_exists) {
-      strcpy(image_data_type, "GEOCODED_IMAGE");
-    }
-    else if ((tie_point[0] || tie_point[1]) &&
-              pixel_scale[0] && pixel_scale[1]) {
-      strcpy(image_data_type, "GEOREFERENCED_IMAGE");
-    }
-    else {
-      strcpy(image_data_type, MAGIC_UNSET_STRING);
-    }
-  }
-  va_end(ap);
-  if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
-    mg->image_data_type = GEOCODED_IMAGE;
-  }
-  else if (strncmp(image_data_type, "GEOREFERENCED_IMAGE", 19) == 0) {
-    mg->image_data_type = GEOREFERENCED_IMAGE;
-  }
-  else if (strncmp(image_data_type, "DEM", 3) == 0) {
-    mg->image_data_type = DEM;
-  }
-  else if (strncmp(image_data_type, "MASK", 4) == 0) {
-    mg->image_data_type = MASK;
-  }
-  // else leave it at the initialized value
-
-  //strcpy(mg->bands, MAGIC_UNSET_STRING);
-  mg->line_count = height;
-  mg->sample_count = width;
-
-  mg->start_line = 0;
-  mg->start_sample = 0;
-
-  if (!geotiff_data_exists && auxDataExists) { // If the data was read from the aux file
-    mg->x_pixel_size = arcgisMapInfo.pixelSize.width;
-    mg->y_pixel_size = arcgisMapInfo.pixelSize.height;
-  }
-  else {
-    mg->x_pixel_size = pixel_scale[0];
-    mg->y_pixel_size = pixel_scale[1];
-  }
-
-  // For now we are going to insist that the meters per pixel in the
-  // X and Y directions are identical(ish).  I believe asf_geocode at
-  // least would work for non-square pixel dimensions, with the
-  // caveats that output pixels would still be square, and would have
-  // default size derived solely from the input pixel size
-  if (fabs (mg->x_pixel_size - mg->y_pixel_size) > 0.0001) {
-    char msg[256];
-    sprintf(msg, "Pixel size is (x,y): (%lf, %lf)\n", mg->x_pixel_size, mg->y_pixel_size);
-    asfPrintStatus(msg);
-    asfPrintWarning("Found non-square pixels: x versus y pixel size differs\n"
-        "by more than 0.0001 <units>\n");
-  }
-
-  // Image raster coordinates of tie point.
-  double raster_tp_x = tie_point[0];
-  double raster_tp_y = tie_point[1]; // Note: [2] is zero for 2D space
-
-  // Coordinates of tie point in pseudoprojection space.
-  // NOTE: These are called tp_lon and tp_lat ...but the tie points
-  // will be in either linear units (meters typ.) *OR* lat/long depending
-  // on what type of image data is in the file, e.g. map-projected or
-  // geographic respectively.
-  double tp_lon = tie_point[3]; // x
-  double tp_lat = tie_point[4]; // y, Note: [5] is zero for 2D space
-
-  // Center latitude and longitude of image data (the following works for
-  // linear or angular units since pixel sizes should be in the same units
-  // as the tie points
-  double center_x;
-  double center_y;
-
-  center_x = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-  center_y = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-
-  // converts to center_latitude and center_longitude below...
-
-  if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
-    mg->re_major = arcgisProjParms.proSpheroid.a;
-    mg->re_minor = arcgisProjParms.proSpheroid.b;
-  }
-  else {
-    if (datum != UNKNOWN_DATUM) { // Data came successfully from TIFF file
-      spheroid_type_t spheroid = datum_spheroid (datum);
-      spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
-    }
-    else {
-      mg->re_major = MAGIC_UNSET_DOUBLE;
-      mg->re_minor = MAGIC_UNSET_DOUBLE;
-    }
-  }
-
-  // NOTE: The arcgisProjParms structure is populated either from the GeoTIFF or
-  // the .aux file at this point, so no need to check geotiff_data_exists etc
-  switch (projection_type) {
-    case UTM:     // Universal Transverse Mercator (UTM)
-      mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
-      mp->param.utm.zone = arcgisProjParms.proZone;
-      mp->param.utm.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.false_northing =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.lat0 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.lon0 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.utm.scale_factor = scale_factor;
-      break;
-    case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
-      mp->type = ALBERS_EQUAL_AREA;
-      mp->param.albers.std_parallel1 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.std_parallel2 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.center_meridian =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.orig_latitude =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.albers.false_northing =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      break;
-    case LAMCC:   // Lambert Conformal Conic
-      mp->type = LAMBERT_CONFORMAL_CONIC;
-      mp->param.lamcc.plat1 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.plat2 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.lat0 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.lon0 =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.false_northing =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamcc.scale_factor = scale_factor;
-      break;
-    case PS:      // Polar Stereographic
-      mp->type = POLAR_STEREOGRAPHIC;
-      mp->param.ps.slat =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.slon =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.is_north_pole =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          (  (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] > 0) ? 1 : 0)   :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.ps.false_northing =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      // Note: A GeoTIFF (.tif) file, if that's where the parameters came from,
-      // does have a scale factor tag in it for Polar Stereographic.  We do not
-      // use it however.  It does not exist in the meta data struct and is also
-      // not written to the meta data file with meta_write().  See the GeoTIFF
-      // Standard, key ProjScaleAtNatOriginGeoKey for polar stereographic.
-      break;
-    case LAMAZ:   // Lambert Azimuthal Equal Area
-      mp->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
-      mp->param.lamaz.center_lon =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.center_lat =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.false_easting =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
-          MAGIC_UNSET_DOUBLE;
-      mp->param.lamaz.false_northing =
-          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
-          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
-          MAGIC_UNSET_DOUBLE;
-      break;
-    default:
-      break;
-  }
-
-  if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
-    mp->startX = arcgisMapInfo.upperLeftCenter.x - (arcgisMapInfo.pixelSize.width / 2.0);
-    mp->startY = arcgisMapInfo.upperLeftCenter.y + (arcgisMapInfo.pixelSize.height / 2.0);
-  }
-  else {
-    mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-    mp->startY = (0.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-  }
-  mp->perX = mg->x_pixel_size;
-  mp->perY = -mg->y_pixel_size;
-
-  if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
-    strcpy (mp->units, arcgisMapInfo.units);
-  }
-  else {
-    char *units = (linear_units == Linear_Meter) ? "meters" : MAGIC_UNSET_STRING;
-    strcpy (mp->units, units);
-  }
-
-  if (!geotiff_data_exists && auxDataExists) { // Data came from .aux file
-    mp->spheroid = arcgisSpheroidName2spheroid(arcgisProjParms.proSpheroid.sphereName);
-  }
-  else {
-    if (datum != UNKNOWN_DATUM) {
-      mp->spheroid = datum_spheroid (datum);
-    } // else leave it at initial value
-  }
-
-  // These fields should be the same as the ones in the general block.
-  mp->re_major = mg->re_major;
-  mp->re_minor = mg->re_minor;
-
-  mp->datum = datum; // NOTE: This is not actually written to the .meta file
-
-  asfPrintStatus("\nGathering image statistics...\n");
-  float min, max;
-  float mean, standard_deviation;
-  float_image_statistics (image, &min, &max, &mean, &standard_deviation,
-                          FLOAT_IMAGE_DEFAULT_MASK);
-  mp->height = mean;
-
-  // Calculate the center latitude and longitude now that the projection
-  // parameters are stored.
-  double center_latitude;
-  double center_longitude;
-  double dummy_var;
-  meta_projection proj;
-
-  // Copy all fields just in case of future code rearrangements...
-  copy_proj_parms (&proj, mp);
-  proj_to_latlon(&proj,center_x, center_y, 0.0,
-		 &center_latitude, &center_longitude, &dummy_var);
-  mg->center_latitude = R2D*center_latitude;
-  mg->center_longitude = R2D*center_longitude;
-  mp->param.utm.lat0 = 0.0;
-  mp->param.utm.lon0 = utm_zone_to_central_meridian(mp->param.utm.zone);
-  mp->hem = mg->center_latitude > 0.0 ? 'N' : 'S';
-
-  if (msar)
-      msar->image_type = 'P'; // Map Projected
-
-  ms->mean = mean;
-  // The root mean square error and standard deviation are very close
-  // by definition when the number of samples is large, there seems to
-  // be some confusion about the definitions of one relative to the
-  // other, and I don't think its worth agonizing about the best thing
-  // to do.
-  ms->rmse = standard_deviation;
-  ms->std_deviation = standard_deviation;
-  ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
-  ms->min = min;
-  ms->max = max;
-
-  double lat, lon;
-  proj_to_latlon(&proj, mp->startX, mp->startY, 0.0,
-                 &lat, &lon, &dummy_var);
-  ml->lat_start_near_range = R2D*lat; //mp->startX;
-  ml->lon_start_near_range = R2D*lon; //mp->startY;
-
-  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY, 0.0,
-                 &lat, &lon, &dummy_var);
-  ml->lat_start_far_range = R2D*lat; //mp->startX + mp->perX * width;
-  ml->lon_start_far_range = R2D*lon; //mp->startY;
-
-  proj_to_latlon(&proj, mp->startX, mp->startY + mp->perY * height, 0.0,
-                 &lat, &lon, &dummy_var);
-  ml->lat_end_near_range = R2D*lat; //mp->startX;
-  ml->lon_end_near_range = R2D*lon; //mp->startY + mp->perY * height;
-
-  proj_to_latlon(&proj, mp->startX + mp->perX * width, mp->startY + mp->perY * height, 0.0,
-                 &lat, &lon, &dummy_var);
-  ml->lat_end_far_range = R2D*lat; //mp->startX + mp->perX * width;
-  ml->lon_end_far_range = R2D*lon; //mp->startY + mp->perY * height;
-
-  asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
-  int return_code = write_meta_and_img (outBaseName, meta_out, image);
-  asfRequire (return_code == 0,
-	      "Failed to write new '.meta' and '.img' files.\n");
-
-  // We're now done with the data and metadata.
-  GTIFFree(input_gtif);
-  XTIFFClose(input_tiff);
-  meta_free (meta_out);
-  float_image_free (image);
-
-  // We must be done with the citation string too :)
-  FREE (citation);
-}
 
 /***** Returns a numeric value that represents the type of projection *****/
 /*     coordinate system exists in the ArcGIS geotiff file, according     */
@@ -3015,8 +2187,9 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
                                     arcgisEimg_MapInformation_t *arcgisEimg_MapInformation)
 {
   // TODO:  This code is UNTESTED ...so far, I have not been able
-  // to find an HFA file that contains a Eimg_MapInformation node
-  // in it
+  // to find an HFA file that contains a non-empty Eimg_MapInformation
+  // node in it.  I doubt anybody uses this, or it's possible that this
+  // node type has been deprecated ...cruft in an aux file!
   long strOffset;
   unsigned long strLen;
   char  projection[MAX_EHFA_ENTRY_NAMESTRING_LEN];
@@ -3059,4 +2232,347 @@ void readArcgisEimg_MapInformation (FILE *fp, unsigned long offset,
   // Populate return struct
   strcpy(arcgisEimg_MapInformation->projection, projection);
   strcpy(arcgisEimg_MapInformation->units, units);
+}
+
+// This function returns true only if a) the citation string is a
+// valid ArcGIS/IMAGINE type of citation string, b) the aux file
+// exists, c) the aux file is the right type of aux file, and
+// d) the aux file contains projection parameters that can be
+// read.
+int isArcgisGeotiff(const char *inFile)
+{
+  TIFF *input_tiff;
+  GTIF *input_gtif;
+  int citation_length;
+  int typeSize;
+  tagtype_t citation_type;
+  char *citation;
+  GString *inGeotiffAuxName;
+  char *inBaseName;
+
+  // Open the input tiff file.
+  input_tiff = XTIFFOpen (inFile, "r");
+  if (input_tiff == NULL) {
+    return 0;
+  }
+
+  // Open the structure that contains the geotiff keys.
+  input_gtif = GTIFNew (input_tiff);
+  if (input_gtif == NULL) {
+    return 0;
+  }
+
+  // Get and check the citation
+  citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
+  if (citation_length < strlen(ARCGIS_CITATION_MAGIC_STRING) ||
+      citation_length < 1)
+  {
+    return 0;
+  }
+  citation = MALLOC ((citation_length) * typeSize);
+  GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
+  if (strncmp(citation, ARCGIS_CITATION_MAGIC_STRING, strlen(ARCGIS_CITATION_MAGIC_STRING)) != 0) {
+    // The citation is not an ArcGIS / IMAGINE type of citation string
+    return 0;
+  }
+
+  // Find aux file, if it exists
+  inBaseName = (char*)MALLOC((strlen(inFile)+16)*sizeof(char));
+  strcpy(inBaseName, inFile);
+  *(findExt(inBaseName)) = '\0';
+  inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
+  if ( inGeotiffAuxName == NULL) {
+    // No aux file means we can't read the parms, eh?
+    return 0;
+  }
+  else {
+    // ArcGIS metadata file (.aux) exists ...check for existence of
+    // projection information (if the projection type exists, the rest
+    // will also).  getArcgisProjType() first checks to see if the aux
+    // file is a valid ArcGIS / IMAGINE type of aux file, THEN finds
+    // the projection type data node and returns it's value (if it
+    // exists)
+    //
+    // NOTE: Even if the aux file meets all requirements, we only support
+    // the following 5 types of projections, so we return false if some
+    // other type exists ...
+    //
+    short proj_type;
+    proj_type = getArcgisProjType (inGeotiffAuxName->str);
+    if (  proj_type == UTM    ||
+          proj_type == ALBERS ||
+          proj_type == LAMCC  ||
+          proj_type == PS     ||
+          proj_type == LAMAZ)
+    {
+      return 1;
+    }
+    else {
+      return 0;
+    }
+  }
+
+  return 0; // Shouldn't reach here
+}
+
+void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
+{
+  short projection_type;
+  double scale_factor;
+  GString *inTiffName;
+  GString *inGeotiffAuxName;
+  arcgisProjParms_t arcgisProjParms; // Keep this
+  arcgisDatumParms_t arcgisDatumParms; // Keep this
+  arcgisMapInfo_t arcgisMapInfo;
+  TIFF *input_tiff;
+  GTIF *input_gtif;
+  datum_type_t datum;
+
+  // Initialize...
+  datum = UNKNOWN_DATUM;
+
+  // Open the input tiff file.
+  inTiffName = find_geotiff_name(inFile);
+  if (inTiffName == NULL) {
+    asfPrintError("Cannot find TIFF file\n");
+  }
+  input_tiff = XTIFFOpen (inTiffName->str, "r");
+  if (input_tiff == NULL) {
+    asfPrintError ("Error opening input TIFF file.\n");
+  }
+  g_string_free (inTiffName, TRUE);
+
+  // Open the structure that contains the geotiff keys.
+  input_gtif = GTIFNew (input_tiff);
+  if (input_gtif == NULL) {
+    asfPrintError ("Error reading GeoTIFF keys from input TIFF file.\n");
+  }
+
+  /***** GET ALL VALUES THAT ARE IN THE ARCGIS METADATA FILE (.aux)  *****/
+  /*     IF THE FILE EXISTS.                                             */
+  char inBaseName[256];
+  strcpy(inBaseName, inFile);
+  *(findExt(inBaseName)) = '\0';
+  inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
+  if ( inGeotiffAuxName == NULL) {
+    asfPrintWarning("Cannot find ArcGIS / IMAGINE type metadata (.aux) file\n"
+        "Only the projection parameters available in the GeoTIFF will\n"
+        "be utilized.  For ArcGIS / IMAGINE type GeoTIFFs, this may result\n"
+        "in incomplete projection descriptions.\n");
+    return;
+  }
+  if ( inGeotiffAuxName != NULL ) { // ArcGIS metadata file (.aux) exists
+    asfPrintStatus("Found ArcGIS / IMAGINE type metadata (.aux) file.\n"
+        "Reading projection parameters ...\n");
+    short proj_type;
+    proj_type = getArcgisProjType (inGeotiffAuxName->str);
+    if (  proj_type != UTM    &&
+          proj_type != ALBERS &&
+          proj_type != LAMCC  &&
+          proj_type != PS     &&
+          proj_type != LAMAZ)
+    {
+      //asfPrintWarning ("Missing or unsupported projection parameters found in\n"
+          //"ArcGIS metadata (.aux) file\n");
+      return;
+    }
+    else {
+      if ( proj_type == UTM     ||
+           proj_type == ALBERS  ||
+           proj_type == LAMCC   ||
+           proj_type == PS      ||
+           proj_type == LAMAZ   )
+      {
+        projection_type = proj_type;
+      }
+      // Read projection parameters from .aux file
+      getArcgisProjParameters(inGeotiffAuxName->str,
+                              &arcgisProjParms);
+      if (arcgisProjParms.proNumber == MAGIC_UNSET_INT) {
+        // Failed to read projection parameters
+        return;
+      }
+      // Try to get datum record from .aux file
+      getArcgisDatumParameters(inGeotiffAuxName->str, &arcgisDatumParms);
+      if (strlen(arcgisDatumParms.datumname) < 5 ||
+          strncmp(arcgisDatumParms.datumname, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
+      {
+        // Failed to read valid datum name
+        return;
+      }
+      if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD27_DATUM, strlen(ARCGIS_NAD27_DATUM)) == 0) {
+        datum = NAD27_DATUM;
+      }
+      else if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD83_DATUM, strlen(ARCGIS_NAD83_DATUM)) == 0) {
+        datum = NAD83_DATUM;
+      }
+      else if (strncmp(arcgisDatumParms.datumname, ARCGIS_WGS84_DATUM, strlen(ARCGIS_WGS84_DATUM)) == 0) {
+        datum = WGS84_DATUM;
+      }
+      else {
+        datum = UNKNOWN_DATUM;
+        asfPrintWarning("Couldn't identify datum in GeoTIFF or ArcGIS metadata (.aux) file...\n");
+        // NOTE: The ArcGIS .aux file may have contained "HARN" for High Accuracy Reference Network
+        // (a GPS-enhanced NAD83), but we don't separately support it at this time and I'm not sure
+        // if it's OK to just call it NAD83 ...
+      }
+      // Read map info data from .aux file
+      getArcgisMapInfo(inGeotiffAuxName->str, &arcgisMapInfo);
+      if (strlen(arcgisMapInfo.proName) < 2 ||
+          strncmp(arcgisMapInfo.proName, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
+      {
+        // Failed to read valid map info (projection name, tie point, pixel size, units, etc)
+        return;
+      }
+    }
+  }
+  g_string_free (inGeotiffAuxName, TRUE);
+
+  /***** FILL IN THE META DATA *****/
+  /*                               */
+  mp->re_major = arcgisProjParms.proSpheroid.a;
+  mp->re_minor = arcgisProjParms.proSpheroid.b;
+  mp->startX = arcgisMapInfo.upperLeftCenter.x - (arcgisMapInfo.pixelSize.width / 2.0);
+  mp->startY = arcgisMapInfo.upperLeftCenter.y + (arcgisMapInfo.pixelSize.height / 2.0);
+  mp->perX = arcgisMapInfo.pixelSize.width;
+  mp->perY = -arcgisMapInfo.pixelSize.height;
+  strcpy (mp->units, arcgisMapInfo.units);
+  mp->spheroid = arcgisSpheroidName2spheroid(arcgisProjParms.proSpheroid.sphereName);
+  if (datum != UNKNOWN_DATUM) {
+    mp->datum = datum;
+  }
+
+  // NOTE: The arcgisProjParms structure is populated either from the GeoTIFF or
+  // the .aux file at this point, so no need to check geotiff_data_exists etc
+  switch (projection_type) {
+    case UTM:     // Universal Transverse Mercator (UTM)
+      mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+      mp->param.utm.zone = arcgisProjParms.proZone;
+      mp->param.utm.false_easting =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.utm.false_northing =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
+          arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.utm.lat0 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.utm.lon0 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.utm.scale_factor = scale_factor;
+      break;
+    case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
+      mp->type = ALBERS_EQUAL_AREA;
+      mp->param.albers.std_parallel1 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.albers.std_parallel2 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.albers.center_meridian =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.albers.orig_latitude =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.albers.false_easting =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.albers.false_northing =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          MAGIC_UNSET_DOUBLE;
+      break;
+    case LAMCC:   // Lambert Conformal Conic
+      mp->type = LAMBERT_CONFORMAL_CONIC;
+      mp->param.lamcc.plat1 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.plat2 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL2] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.lat0 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.lon0 =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.false_easting =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.false_northing =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamcc.scale_factor = scale_factor;
+      break;
+    case PS:      // Polar Stereographic
+      mp->type = POLAR_STEREOGRAPHIC;
+      mp->param.ps.slat =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_STD_PARALLEL1] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.ps.slon =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.ps.is_north_pole =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
+          (  (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] > 0) ? 1 : 0)   :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.ps.false_easting =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.ps.false_northing =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          MAGIC_UNSET_DOUBLE;
+      // Note: A GeoTIFF (.tif) file, if that's where the parameters came from,
+      // does have a scale factor tag in it for Polar Stereographic.  We do not
+      // use it however.  It does not exist in the meta data struct and is also
+      // not written to the meta data file with meta_write().  See the GeoTIFF
+      // Standard, key ProjScaleAtNatOriginGeoKey for polar stereographic.
+      break;
+    case LAMAZ:   // Lambert Azimuthal Equal Area
+      mp->type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+      mp->param.lamaz.center_lon =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_CENTRAL_MERIDIAN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamaz.center_lat =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_LAT_ORIGIN] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamaz.false_easting =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_EASTING] :
+          MAGIC_UNSET_DOUBLE;
+      mp->param.lamaz.false_northing =
+          (arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] != MAGIC_UNSET_DOUBLE) ?
+          R2D*arcgisProjParms.proParams[ARCGIS_PROJPARAMS_FALSE_NORTHING] :
+          MAGIC_UNSET_DOUBLE;
+      break;
+    default:
+      break;
+  }
+
+  // Clean up
+  GTIFFree(input_gtif);
+  XTIFFClose(input_tiff);
 }

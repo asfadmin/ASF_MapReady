@@ -17,7 +17,7 @@
 #include <proj.h>
 #include "asf_import.h"
 #include "geotiff_flavors.h"
-#include "import_arcgis_geotiff.h"
+#include "arcgis_geotiff_support.h"
 #include "import_generic_geotiff.h"
 #include "find_arcgis_geotiff_aux_name.h"
 
@@ -72,12 +72,8 @@ detect_geotiff_flavor (const char *file)
       }
       inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
       if ( inGeotiffAuxName != NULL ) {
-        // If an aux file is found, then return import_arcgis_geotiff() regardless,
-        // but warn if it does not contain projection information.  import_arcgis_geotiff()
-        // handles this case and looks for the info in the TIFF instead...
-        asfPrintStatus("\nFound IMAGINE GeoTIFF (ArcGIS etc) type of GeoTIFF "
-            "metadata\n  (.AUX or .aux) file.\n");
         proj_type = getArcgisProjType (inGeotiffAuxName->str);
+        asfPrintStatus("Found ERDAS IMAGINE / ESRI ArcGIS type of GeoTIFF\n");
         switch (proj_type) {
           case UTM:     // Universal Transverse Mercator (UTM)
           case ALBERS:  // Albers Equal Area Conic (aka Albers Conical Equal Area)
@@ -87,26 +83,30 @@ detect_geotiff_flavor (const char *file)
             g_string_free(inGeotiffAuxName, TRUE);
             GTIFFree(gtif);
             XTIFFClose(tiff);
-            return import_arcgis_geotiff;
+            return import_generic_geotiff;
             break;
           case DHFA_UNKNOWN_PROJECTION:
           default:      // Else cont...
             asfPrintWarning("\nUnable to determine projection type from\n"
-                "ArcGIS metadata (.aux) file.\n");
+                "ArcGIS metadata (.aux) file.  Attempting the ingest without it...\n");
             g_string_free(inGeotiffAuxName, TRUE);
             GTIFFree(gtif);
             XTIFFClose(tiff);
-            return import_arcgis_geotiff;
+            return import_generic_geotiff;
             break;
         }
       }
       else {
-        asfPrintWarning("\nFound IMAGINE GeoTIFF (ArcGIS etc) type GeoTIFF but the\n"
+        asfPrintWarning("Found ERDAS IMAGINE / ESRI ArcGIS type GeoTIFF but the\n"
             "associated metadata (.aux) file appears to be missing.  The TIFF file\n"
-            "will be examined for this data...\n");
+            "will be examined for this data instead...\n");
+        return import_generic_geotiff;
       }
     }
   } // strncmp on citation, tmp looking for IMAGINE GeoTIFF type
+  else {
+    return import_generic_geotiff;
+  }
 
   // Test for a particular flavor.
   //GTIFKeyGet (gtif, PCSCitationGeoKey, citation, 0, max_citation_length);

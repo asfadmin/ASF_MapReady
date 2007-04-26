@@ -4,6 +4,7 @@
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
+#include "geotiff_support.h"
 
 int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
 {
@@ -160,7 +161,9 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
   }
 }
 
-int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
+int get_tiff_data_config(TIFF *tif,
+                         short *sample_format, short *bits_per_sample, short *planar_config,
+                         data_type_t *data_type, int *num_bands)
 {
   int     ret = 0;
   uint16  planarConfiguration = 0;
@@ -178,8 +181,11 @@ int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
       bitsPerSample != 16 &&
       bitsPerSample != 32)
   {
-    // Only support byte, integer16, and 32-bit floats
+    // Only support byte, integer16, integer32, and 32-bit floats
     ret = -1;
+  }
+  else {
+    *bits_per_sample = (short)bitsPerSample;
   }
 
   // Required tag for all images
@@ -197,56 +203,95 @@ int get_tiff_data_config(TIFF *tif, data_type_t *data_type, int *num_bands)
   // Required tag only for color (multi-band) images
   if (ret == 0 && samplesPerPixel > 1) {
     TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
-    if (planarConfiguration != PLANARCONFIG_CONTIG) {
+    if (planarConfiguration != PLANARCONFIG_CONTIG &&
+        planarConfiguration != PLANARCONFIG_SEPARATE)
+    {
       // Only support [rgbrgbrgb...] format, not separately-stored color bands
       ret = -1;
+    }
+    else {
+      *planar_config = planarConfiguration;
     }
   }
 
   // Required tag for all images
   //
-  // Only support BYTE, INTEGER16, and REAL32 at this time...
+  // Only support BYTE, INTEGER16, INTEGER32, and REAL32 at this time...
   if (ret == 0) {
     TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
-    if (sampleFormat == SAMPLEFORMAT_UINT || sampleFormat == SAMPLEFORMAT_INT) {
-      switch (bitsPerSample) {
-        case 8:
-          *data_type = BYTE;
-          break;
-        case 16:
-          *data_type = INTEGER16;
-          break;
-        default:
-          ret = -1;
-          break;
-      }
-    }
-    else if (sampleFormat == SAMPLEFORMAT_IEEEFP) {
-      switch (bitsPerSample) {
-        case 32:
+    switch (sampleFormat) {
+      case SAMPLEFORMAT_UINT:
+        {
+          *sample_format = sampleFormat;
+          switch (bitsPerSample) {
+            case 8:
+              *data_type = BYTE;
+              break;
+            case 16:
+              *data_type = INTEGER32;
+              break;
+            case 32:
+              *data_type = REAL32;
+              break;
+            default:
+              ret = -1;
+              break;
+          }
+        }
+        break;
+      case SAMPLEFORMAT_INT:
+        {
+          *sample_format = sampleFormat;
+          switch (bitsPerSample) {
+            case 8:
+            case 16:
+              *data_type = INTEGER16;
+              break;
+            case 32:
+              *data_type = INTEGER32;
+              break;
+            default:
+              ret = -1;
+              break;
+          }
+        }
+        break;
+      case SAMPLEFORMAT_IEEEFP:
+        {
+          *sample_format = sampleFormat;
           *data_type = REAL32;
-          break;
-        default:
-          ret = -1;
-          break;
-      }
-    }
-    else {
-      // Unknown or missing sample format, so let's take a guess and let the processing fly...
-      switch (bitsPerSample) {
-        case 8:
-          *data_type = BYTE;
-          break;
-        case 16:
-          *data_type = INTEGER16;
-          break;
-        case 32:
-          *data_type = REAL32;
-          break;
-        default:
-          ret = -1;
-          break;
-      }
+        }
+        break;
+      default:
+        {
+          // Either the sample format is unknown or it's one of the complex types
+          // Since a complex type would be rare in a TIFF, we assume it isn't and
+          // then guess what the data type is based on how many bits are in the
+          // samples ...only the results of the ingest will indicate whether this is
+          // a good idea or not.
+          *sample_format = UNKNOWN_SAMPLE_FORMAT;
+          switch (bitsPerSample) {
+            case 8:
+              // Most likely unsigned 8-bit byte
+              *sample_format = SAMPLEFORMAT_UINT;
+              *data_type = BYTE;
+              break;
+            case 16:
+              // Most likely 16-bit integer
+              *sample_format = SAMPLEFORMAT_INT;
+              *data_type = INTEGER16;
+              break;
+            case 32:
+              // Most likely 32-bot float
+              *sample_format = SAMPLEFORMAT_IEEEFP;
+              *data_type = REAL32;
+              break;
+            default:
+              ret = -1;
+              break;
+          }
+        }
+        break;
     }
   }
 
