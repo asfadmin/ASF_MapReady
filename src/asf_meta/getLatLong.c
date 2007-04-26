@@ -81,6 +81,7 @@ GEOLOCATE_REC *init_geolocate(const stateVector *stVec)
 	g->angularVelocity=(366.225/365.225)*2*PI/g->dayLength;
 	g->gxMe=3.986005e14; /*Gravitational constant times mass of Earth (g times Me, or gxMe) */
 	g->re=6378137.0000; /*Equatorial Radius (m) WGS-84*/
+        g->earth_radius = MAGIC_UNSET_DOUBLE;
 	g->rp=g->re-g->re/298.257223563; 
 		/*Polar Radius (m) WGS-84*/
 	return g;
