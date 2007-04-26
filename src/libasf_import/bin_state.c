@@ -210,6 +210,7 @@ void addStateVector(bin_state *s,stateVector *stVec)
    ------------------------------------------*/
   if (!s->zeroDopSteered) {
     GEOLOCATE_REC *g=init_geolocate(stVec);
+    g->earth_radius=er;
     g->side=s->lookDir;
     g->lambda=speedOfLight/s->frequency;
     s->estDop=yaw2doppler(g,s->range_gate*speedOfLight/2.0,1.10)/s->prf;
