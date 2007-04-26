@@ -71,7 +71,7 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
     double tCenter=meta_get_time(meta, p->fromLine+p->n_az/2 ,0);
     stateVector centerSt=meta_get_stVec(meta,tCenter);
     fixed2gei(&centerSt,0.0);/*Puts state vector in inertial frame*/	
-    p->g=init_geolocate(&centerSt);
+    p->g=init_geolocate_meta(&centerSt,meta);
   }
 }
 
