@@ -309,6 +309,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
           GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
+          GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
           FREE(citation);
         }
         else {
