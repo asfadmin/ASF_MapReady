@@ -77,16 +77,39 @@ void shape_init(char *inFile, format_type_t format)
 	asfPrintError("Could not add 'Vertices' field to database file\n");
       if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
 	asfPrintError("Could not add 'Date' field to database file\n");
-      if (DBFAddField(dbase, "Time_lag", FTInteger, 1, 0) == -1)
-	asfPrintError("Could not add 'Time_lag' field to database file\n");
       if (DBFAddField(dbase, "Image", FTString, 25, 0) == -1)
 	asfPrintError("Could not add 'Image' field to database file\n");
       if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
 	asfPrintError("Could not add 'Stream' field to database file\n");
       if (DBFAddField(dbase, "Cycle", FTString, 10, 0) == -1)
 	asfPrintError("Could not add 'Cycle' field to database file\n");
+      if (DBFAddField(dbase, "Area", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'Area' field to database file\n");
+      if (DBFAddField(dbase, "MY_ice", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'MY_ice' field to database file\n");
+      if (DBFAddField(dbase, "OpenWater", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'OpenWater' field to database file\n");
+      if (DBFAddField(dbase, "IncidAngle", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add 'IncidAngle' field to database file\n");
+      if (DBFAddField(dbase, "Cell_x", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'Cell_x' field to database file\n");
+      if (DBFAddField(dbase, "Cell_y", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'Cell_y' field to database file\n");
+      if (DBFAddField(dbase, "dudx", FTDouble, 12, 6) == -1)
+	asfPrintError("Could not add 'dudx' field to database file\n");
+      if (DBFAddField(dbase, "dudy", FTDouble, 12, 6) == -1)
+	asfPrintError("Could not add 'dudy' field to database file\n");
+      if (DBFAddField(dbase, "dvdx", FTDouble, 12, 6) == -1)
+	asfPrintError("Could not add 'dvdx' field to database file\n");
+      if (DBFAddField(dbase, "dvdy", FTDouble, 12, 6) == -1)
+	asfPrintError("Could not add 'dvdy' field to database file\n");
+      if (DBFAddField(dbase, "dtp", FTDouble, 12, 6) == -1)
+	asfPrintError("Could not add 'dtp' field to database file\n");
+      if (DBFAddField(dbase, "Temp", FTDouble, 12, 3) == -1)
+	asfPrintError("Could not add 'Temp' field to database file\n");
       break;
     case TEXT:
+    case URSA:
     case KMLFILE:
     case SHAPEFILE:
       break;
@@ -161,6 +184,7 @@ void convert2shape(char *line, format_type_t format,
       rgps2shape(line, dbase, shape, n);
       break;
     case TEXT:
+    case URSA:
     case KMLFILE:
     case SHAPEFILE:
       break;
@@ -173,8 +197,11 @@ void convert_from_shape(char *inFile, format_type_t format, FILE *fp)
 {
   if (format == TEXT)
     shape2text(inFile, fp);
-  else if (format == KMLFILE) 
+  else if (format == KMLFILE) {
+    kml_header(fp);
     shape2kml(inFile, fp, inFile);
+    kml_footer(fp);
+  }
 
   return;
 }
@@ -218,7 +245,7 @@ int read_shape(char *inFile, char *outFile, format_type_t format, int list)
   FILE *fpIn, *fpOut;
   char *line;
 
-  if (format == TEXT)
+  if (format == TEXT || format == URSA)
     append_ext_if_needed(outFile, ".txt", ".txt");
   else if (format == KMLFILE)
     append_ext_if_needed(outFile, ".kml", ".kml");

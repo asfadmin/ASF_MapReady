@@ -148,9 +148,17 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     }
     else {
       meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+      lat_UL *= R2D;
+      lon_UL *= R2D;
       meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+      lat_LL *= R2D;
+      lon_LL *= R2D;
       meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+      lat_LR *= R2D;
+      lon_LR *= R2D;
       meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+      lat_UR *= R2D;
+      lon_UR *= R2D;
     }
 
     fprintf(kml_file, "<Placemark>\n");
@@ -195,15 +203,15 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  <Style>\n");
     fprintf(kml_file, "    <LineStyle>\n");
     fprintf(kml_file, "      <color>ff00ffff</color>\n");
+    fprintf(kml_file, "      <width>3</width>\n");
     fprintf(kml_file, "    </LineStyle>\n");
     fprintf(kml_file, "    <PolyStyle>\n");
-    fprintf(kml_file, "      <color>7f00ff00</color>\n");
+    fprintf(kml_file, "      <color>00ffffff</color>\n");
     fprintf(kml_file, "    </PolyStyle>\n");
     fprintf(kml_file, "  </Style>\n");
-    fprintf(kml_file, "  <LineString>\n");
-    fprintf(kml_file, "    <extrude>1</extrude>\n");
-    fprintf(kml_file, "    <tessellate>1</tessellate>\n");
-    fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+    fprintf(kml_file, "  <Polygon>\n");
+    fprintf(kml_file, "  <outerBoundaryIs>\n");
+    fprintf(kml_file, "  <LinearRing>\n");
     fprintf(kml_file, "    <coordinates>\n");
     
     update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
@@ -218,7 +226,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
     
     fprintf(kml_file, "    </coordinates>\n");
-    fprintf(kml_file, "  </LineString>\n");
+    fprintf(kml_file, "  </LinearRing>\n");
+    fprintf(kml_file, "  </outerBoundaryIs>\n");
+    fprintf(kml_file, "  </Polygon>\n");
     fprintf(kml_file, "</Placemark>\n");
 
     if (ceos_filename)
@@ -522,6 +532,7 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
       rgps2kml(line, fp, name);
       break;
     case TEXT:
+    case URSA:
     case KMLFILE:
     case SHAPEFILE:
       break;

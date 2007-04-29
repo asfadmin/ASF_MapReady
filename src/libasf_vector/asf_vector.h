@@ -19,7 +19,9 @@ typedef enum {
   TEXT,
   POINT,
   POLYGON,
-  RGPS
+  RGPS,
+  URSA,
+  BASELINE
 } format_type_t;
 
 // Prototypes from convert_kml.c

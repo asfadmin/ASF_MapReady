@@ -13,8 +13,6 @@ void meta2kml(char *line, FILE *fp)
   return;
 }
 
-// Convert shape to kml
-
 // Convert point to kml
 void point2kml(char *line, FILE *fp)
 {
@@ -123,7 +121,7 @@ void polygon2kml(char *line, FILE *fp, char *name)
 // Convert RGPS to kml
 void rgps2kml(char *line, FILE *fp, char *name)
 {
-  int ii, cell, vertices, time_lag;
+  int ii, cell, vertices, quality;
   char date[25], image[25], stream[3], cycle[10];
   double *lat, *lon;
   char *p, *p_lat, *p_lon;
@@ -137,21 +135,21 @@ void rgps2kml(char *line, FILE *fp, char *name)
   *p = '\0';
   sprintf(date, "%s", line+1);
   *p = ',';
-  sscanf(p+1, "%d", &time_lag);
-  line = strchr(p+1, ',');
-  p = strchr(line+1, ',');
-  *p = '\0';
-  sprintf(image, "%s", line+1);
-  *p = ',';
   line = strchr(p+1, ',');
   *line = '\0';
-  sprintf(stream, "%s", p+1);
+  sprintf(image, "%s", p+1);
   *line = ',';
   p = strchr(line+1, ',');
   *p = '\0';
-  sprintf(cycle, "%s", line+1);
+  sprintf(stream, "%s", line+1);
   *p = ',';
-
+  line = strchr(p+1, ',');
+  *line = '\0';
+  sprintf(cycle, "%s", p+1);
+  *line = ',';
+  sscanf(line+1, "%d", &quality);
+  p = strchr(line+1, ',');
+  
   // Read coordinates of the vertices
   lat = (double *) MALLOC(sizeof(double)*(vertices+1));
   lon = (double *) MALLOC(sizeof(double)*(vertices+1));
@@ -176,10 +174,10 @@ void rgps2kml(char *line, FILE *fp, char *name)
     fprintf(fp, "<strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
   }
   fprintf(fp, "<strong>Date</strong>: %s<br>\n", date);
-  fprintf(fp, "<strong>Time lag</strong>: %d<br>\n", time_lag);
   fprintf(fp, "<strong>Image</strong>: %s<br>\n", image);
   fprintf(fp, "<strong>Stream</strong>: %s<br>\n", stream);
   fprintf(fp, "<strong>Cycle</strong>: %s<br>\n", cycle);
+  fprintf(fp, "<strong>Quality</strong>: %d<br>\n", quality);
   fprintf(fp, "]]></description>\n");
   fprintf(fp, "<name>%s</name>\n", name);
   fprintf(fp, "<LookAt>\n");
@@ -189,9 +187,9 @@ void rgps2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "<heading>-90</heading>\n");
   fprintf(fp, "</LookAt>\n");
   fprintf(fp, "<Style>\n");
-  fprintf(fp, "<LineStyle><color>ff00ffff</color>"
-	  "<width>10</width></LineStyle>\n");
-  fprintf(fp, "<PolyStyle><color>7f00ff00</color></PolyStyle>\n");
+  fprintf(fp, "<LineStyle><color>00000ff</color>"
+	  "<width>3</width></LineStyle>\n");
+  //fprintf(fp, "<PolyStyle><color>7f0000ff</color></PolyStyle>\n");
   fprintf(fp, "</Style>\n");
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
@@ -243,6 +241,36 @@ void write_dbase_field_to_kml(DBFHandle dbase, int record,
     }
 }
 
+void write_name_field_to_kml(DBFHandle dbase, int record, FILE *fp)
+{
+  DBFFieldType dbaseType;
+  char fieldName[25], str[50];
+  int nWidth, nDecimals, nValue;
+  double fValue;
+  const char *sValue;
+
+  dbaseType = DBFGetFieldInfo(dbase, 0, fieldName, &nWidth, &nDecimals);
+  switch (dbaseType)
+    {
+    case FTString:
+      sValue = DBFReadStringAttribute(dbase, record, 0);
+      fprintf(fp, "<name>%s</name>\n", sValue);
+      break;
+    case FTInteger:
+      nValue = DBFReadIntegerAttribute(dbase, record, 0);
+      fprintf(fp, "<name>%d</name>\n", nValue);
+      break;
+    case FTDouble:
+      fValue = DBFReadDoubleAttribute(dbase, record, 0);
+      sprintf(str, "<name>%%%d.%dlf</name>\n", nWidth, nDecimals);
+      fprintf(fp, str, fValue);
+      break;
+    case FTLogical:
+    case FTInvalid:
+      break;
+    }
+}
+
 // Convert shape to kml
 // In this conversion we only deal with point and polygon shapes 
 // that don't have multiple parts. All other cases error out.
@@ -251,7 +279,7 @@ void shape2kml(char *line, FILE *fp, char *name)
   DBFHandle dbase;
   SHPHandle shape;
   SHPObject *shapeObject;
-  int ii, kk, nEntities, nVertices, nParts;
+  int ii, kk, ll, nEntities, nVertices, nParts, *part;
   int nFields, pointType;
   double *lat, *lon;
 
@@ -279,10 +307,6 @@ void shape2kml(char *line, FILE *fp, char *name)
 
     // Read lat/lon from shape object
     shapeObject = SHPReadObject(shape, ii);
-    nParts = shapeObject->nParts;
-    if (nParts != 1)
-      asfPrintError
-	("Conversion does not support multi-part structures\n");
     nVertices = shapeObject->nVertices;
     lat = (double *) MALLOC(sizeof(double)*(nVertices+1));
     lon = (double *) MALLOC(sizeof(double)*(nVertices+1));
@@ -292,51 +316,147 @@ void shape2kml(char *line, FILE *fp, char *name)
     }
     lat[nVertices] = lat[0];
     lon[nVertices] = lon[0];
+    nParts = shapeObject->nParts;
+    part = (int *) MALLOC(sizeof(int)*(nParts+1));
+    for (kk=0; kk<nParts; kk++)
+      part[kk] = shapeObject->panPartStart[kk];
+    part[nParts] = nVertices;
     SHPDestroyObject(shapeObject);
+    if (nParts == 0)
+      nParts++;
 
     // Extract the attributes out of the database file
     nFields = DBFGetFieldCount(dbase);
 
-    // Write information in kml file
-    fprintf(fp, "<Placemark>\n");
-    fprintf(fp, "<description><![CDATA[\n");
-    for (kk=0; kk<nFields; kk++)
-      write_dbase_field_to_kml(dbase, ii, kk, fp);
-    fprintf(fp, "]]></description>\n");
-    fprintf(fp, "<name>%s</name>\n", name);
-    fprintf(fp, "<LookAt>\n");
-    fprintf(fp, "<longitude>%9.4f</longitude>\n", lon[0]);
-    fprintf(fp, "<latitude>%9.4f</latitude>\n", lat[0]);
-    fprintf(fp, "<range>400000</range>\n");
-    fprintf(fp, "</LookAt>\n");
-    if (pointType == SHPT_POLYGON) {
-      fprintf(fp, "<Style>\n");
-      fprintf(fp, "<LineStyle><color>ff00ffff</color>"
-	      "<width>3</width></LineStyle>\n");
-      fprintf(fp, "<PolyStyle><color>00fffff</color></PolyStyle>\n");
-      fprintf(fp, "</Style>\n");
-      fprintf(fp, "<Polygon>\n");
-      fprintf(fp, "<outerBoundaryIs>\n");
-      fprintf(fp, "<LinearRing>\n");
-      fprintf(fp, "<coordinates>\n");
-      for (kk=0; kk<nVertices; kk++)
-	fprintf(fp, "%.12f,%.12f,4000\n", lon[kk], lat[kk]);
-      fprintf(fp, "</coordinates>\n");
-      fprintf(fp, "</LinearRing>\n");
-      fprintf(fp, "</outerBoundaryIs>\n");
-      fprintf(fp, "</Polygon>\n");
+    for (ll=0; ll<nParts; ll++) {
+
+      // Write information in kml file
+      fprintf(fp, "<Placemark>\n");
+      fprintf(fp, "<description><![CDATA[\n");
+      for (kk=1; kk<nFields; kk++)
+	write_dbase_field_to_kml(dbase, ii, kk, fp);
+      fprintf(fp, "]]></description>\n");
+      write_name_field_to_kml(dbase, ii, fp);
+      fprintf(fp, "<LookAt>\n");
+      fprintf(fp, "<longitude>%9.4f</longitude>\n", lon[0]);
+      fprintf(fp, "<latitude>%9.4f</latitude>\n", lat[0]);
+      fprintf(fp, "<range>400000</range>\n");
+      fprintf(fp, "</LookAt>\n");
+      if (pointType == SHPT_POLYGON) {
+	fprintf(fp, "<Style>\n");
+	fprintf(fp, "<LineStyle><color>ff00ffff</color>"
+		"<width>3</width></LineStyle>\n");
+	fprintf(fp, "<PolyStyle><color>00fffff</color></PolyStyle>\n");
+	fprintf(fp, "</Style>\n");
+	fprintf(fp, "<Polygon>\n");
+	fprintf(fp, "<outerBoundaryIs>\n");
+	fprintf(fp, "<LinearRing>\n");
+	fprintf(fp, "<coordinates>\n");
+	for (kk=part[ll]; kk<part[ll+1]; kk++)
+	  fprintf(fp, "%.12f,%.12f,4000\n", lon[kk], lat[kk]);
+	fprintf(fp, "</coordinates>\n");
+	fprintf(fp, "</LinearRing>\n");
+	fprintf(fp, "</outerBoundaryIs>\n");
+	fprintf(fp, "</Polygon>\n");
+      }
+      else if (pointType == SHPT_POINT) {
+	fprintf(fp, "<Point>\n");
+	fprintf(fp, "<coordinates>%.12lf,%.12lf,4000</coordinates>",
+		lon[0], lat[0]);
+	fprintf(fp, "</Point>\n");
+      }
+      fprintf(fp, "</Placemark>\n");
     }
-    else if (pointType == SHPT_POINT) {
-      fprintf(fp, "<Point>\n");
-      fprintf(fp, "<coordinates>%.12lf,%.12lf,4000</coordinates>",
-	      lon[0], lat[0]);
-      fprintf(fp, "</Point>\n");
-    }
-    fprintf(fp, "</Placemark>\n");
   }
 
   // Close shapefile
   close_shape(dbase, shape);
+
+  return;
+}
+
+// Convert baselines to kml
+void baseline2kml(struct base_pair *pairs, int nPairs, FILE *fp)
+{
+  int ii, kk, vertices=4;
+  double *lat, *lon;
+  julian_date jd;
+  ymd_date ymd;
+  char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+  for (ii=0; ii<nPairs; ii++) {
+
+    // Read coordinates of the vertices
+    lat = (double *) MALLOC(sizeof(double)*(vertices+1));
+    lon = (double *) MALLOC(sizeof(double)*(vertices+1));
+    lat[0] = pairs[ii].ns_lat;
+    lon[0] = pairs[ii].ns_lon;
+    lat[1] = pairs[ii].fs_lat;
+    lon[1] = pairs[ii].fs_lon;
+    lat[2] = pairs[ii].fe_lat;
+    lon[2] = pairs[ii].fe_lon;
+    lat[3] = pairs[ii].ne_lat;
+    lon[3] = pairs[ii].ne_lon;
+    lat[vertices] = lat[0];
+    lon[vertices] = lon[0];
+    
+    // Write information in kml file
+    fprintf(fp, "<Placemark>\n");
+    fprintf(fp, "  <description><![CDATA[\n");
+    fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", pairs[ii].sensor);
+    fprintf(fp, "<strong>Mode</strong>: %s<br>\n", pairs[ii].mode);
+    fprintf(fp, "<strong>Frame</strong>: %s<br>\n", pairs[ii].frame);
+    fprintf(fp, "<strong>Orbit direction</strong>: %s<br>\n", 
+	    pairs[ii].orbit_dir);
+    fprintf(fp, "<strong>Master</strong>: %s<br>\n", pairs[ii].master);
+    fprintf(fp, "<strong>Master sequence</strong>: %s<br>\n", pairs[ii].m_seq);
+    sscanf(pairs[ii].m_time, "%4d-%3dT", &jd.year, &jd.jd);
+    date_jd2ymd(&jd, &ymd);
+    fprintf(fp, "<strong>Master acquisition</strong>: %d-%s-%d<br>\n",
+	    ymd.day, mon[ymd.month], ymd.year);
+    fprintf(fp, "<strong>Slave</strong>: %d<br>\n", pairs[ii].slave);
+    fprintf(fp, "<strong>Slave sequence</strong>: %d<br>\n", pairs[ii].s_seq);
+    sscanf(pairs[ii].s_time, "%4d-%3dT", &jd.year, &jd.jd);
+    date_jd2ymd(&jd, &ymd);
+    fprintf(fp, "<strong>Slave acquisition</strong>: %d-%s-%d<br>\n", 
+	    ymd.day, mon[ymd.month], ymd.year);
+    fprintf(fp, "<strong>Parallel baseline</strong>: %d<br>\n", 
+	    pairs[ii].b_par);
+    fprintf(fp, "<strong>Perpendicular baseline</strong>: %d<br>\n", 
+	    pairs[ii].b_perp);
+    fprintf(fp, "<strong>Temporal baseline</strong>: %d<br>\n", 
+	    pairs[ii].b_time);
+    for (kk=0; kk<vertices; kk++) {
+      fprintf(fp, "<strong>%d</strong> - ", kk+1);
+      fprintf(fp, "<strong>Lat</strong>: %9.4f, ", lat[kk]);
+      fprintf(fp, "<strong>Lon</strong>: %9.4f<br>\n", lon[kk]);
+    }
+    fprintf(fp, "]]></description>\n");
+    fprintf(fp, "<name>%s %s %d baselines</name>\n", 
+	    pairs[ii].sensor, pairs[ii].mode, pairs[ii].master);
+    fprintf(fp, "<LookAt>\n");
+    fprintf(fp, "<longitude>%.4f</longitude>\n", pairs[ii].c_lon);
+    fprintf(fp, "<latitude>%.4f</latitude>\n", pairs[ii].c_lat);
+    fprintf(fp, "<range>400000</range>\n");
+    fprintf(fp, "<heading>0</heading>\n");
+    fprintf(fp, "</LookAt>\n");
+    fprintf(fp, "<Style>\n");
+    fprintf(fp, "<LineStyle><color>00000ff</color>"
+	    "<width>3</width></LineStyle>\n");
+    fprintf(fp, "</Style>\n");
+    fprintf(fp, "<Polygon>\n");
+    fprintf(fp, "<outerBoundaryIs>\n");
+    fprintf(fp, "<LinearRing>\n");
+    fprintf(fp, "<coordinates>\n");
+    for (kk=0; kk<=vertices; kk++)
+      fprintf(fp, "%.12f,%.12f,4000\n", lon[kk], lat[kk]);
+    fprintf(fp, "</coordinates>\n");
+    fprintf(fp, "</LinearRing>\n");
+    fprintf(fp, "</outerBoundaryIs>\n");
+    fprintf(fp, "</Polygon>\n");
+    fprintf(fp, "</Placemark>\n");
+  }
 
   return;
 }
