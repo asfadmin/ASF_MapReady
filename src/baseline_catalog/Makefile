@@ -39,7 +39,7 @@ lib: $(OBJLIB)
 exe: baseline_catalog
 
 baseline_catalog: baseline_catalog_main.c lib
-	$(CC) $(CFLAGS) -o baseline_catalog $(LIBDIR)/libasf_baseline.a $(LIBS)
+	$(CC) $(CFLAGS) -o baseline_catalog baseline_catalog_main.c $(LIBDIR)/libasf_baseline.a $(LIBS)
 	rm *.o
 	mv baseline_catalog$(BIN_POSTFIX) $(BINDIR)
 
