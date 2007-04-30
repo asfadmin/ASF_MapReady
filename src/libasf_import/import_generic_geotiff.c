@@ -79,11 +79,12 @@ int geotiff_image_band_statistics(TIFF *input_tiff, meta_parameters *omd,
                                   meta_stats *stats,
                                   int num_bands, int band_no,
                                   short bits_per_sample, short sample_format,
+                                  short planar_config,
                                   gboolean use_mask_value, double mask_value);
 int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                              const char *outBaseName, int num_bands,
                              int *ignore, short bits_per_sample,
-                             short sample_format);
+                             short sample_format, short planar_config);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -179,43 +180,50 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   short sample_format;    // TIFFTAG_SAMPLEFORMAT
   short bits_per_sample;  // TIFFTAG_BITSPERSAMPLE
   short planar_config;    // TIFFTAG_PLANARCONFIG
+  int is_scanline_format; // False if tiled or strips > 1 TIFF file format
   ret = get_tiff_data_config(input_tiff,
                              &sample_format, // TIFF type (uint, int, float)
                              &bits_per_sample, // 8, 16, or 32
                              &planar_config, // Contiguous (RGB or RGBA) or separate (band sequential, not interlaced)
                              &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
-                             &num_bands); // Initial number of bands
+                             &num_bands, // Initial number of bands
+                             &is_scanline_format);
+
   // FIXME: Modify the band stats functions and image writing functions to support separate bands instead
   // of requiring interlaced bands (which is really only good for up to 4 bands...)
-  if (ret != 0 || planar_config == PLANARCONFIG_SEPARATE) {
+  if (ret != 0) {
     asfPrintStatus("\n\nFOUND TIFF tag data as follows:\n"
         "         Sample Format: %s\n"
         "       Bits per Sample: %d\n"
         "  Planar Configuration: %s\n"
-        "       Number of Bands: %d\n\n",
-        (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned integer" :
-          (sample_format == SAMPLEFORMAT_INT) ? "Signed integer" :
-            (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating point" : "Unknown or unsupported",
+        "       Number of Bands: %d\n"
+        "    Is Scanline Format: %s\n\n",
+        (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
+          (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
+            (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported",
         bits_per_sample,
         (planar_config == PLANARCONFIG_CONTIG) ? "Contiguous (chunky RGB or RGBA etc) / Interlaced" :
           (planar_config == PLANARCONFIG_SEPARATE) ? "Separate planes (band-sequential)" :
             "Unknown or unrecognized",
-        num_bands);
+        num_bands,
+        (is_scanline_format) ? "YES" : "NO");
     asfPrintError("  Unsupported TIFF type found or required TIFF tags are missing\n"
         "    in TIFF File \"%s\"\n\n"
         "  TIFFs must contain the following:\n"
-        "      Sample format: Unsigned or signed integer or IEEE floating point data\n"
+        "        Sample format: Unsigned or signed integer or IEEE floating point data\n"
         "                       (ASF is not yet supporting TIFF files with complex number type data),\n"
-        "      Planar config: Contiguous (Greyscale, RGB, or RGBA).  Band-sequential TIFFs not currently supported.\n"
-        "      Bits per samp: 8, 16, or 32\n"
-        "    Number of bands: 1 through %d bands allowed.\n", inFileName, MAX_BANDS);
+        "        Planar config: Contiguous (Greyscale, RGB, or RGBA) or separate planes (band-sequential.)\n"
+        "      Bits per sample: 8, 16, or 32\n"
+        "      Number of bands: 1 through %d bands allowed.\n"
+        "               Format: Scanline format TIFF req'd (Tiled TIFF format not supported.)\n",
+        inFileName, MAX_BANDS);
   }
-  asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %s type data\n"
+  asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %d-bit %s type data\n"
       "        (Note: Empty or missing bands will be ignored)\n",
-                 num_bands,
-                 (data_type == BYTE) ? "8-BIT BYTE" :
-                     (data_type == INTEGER16) ? "16-BIT INTEGER" :
-                          (data_type == REAL32) ? "32-BIT FLOAT" : "UNKNOWN");
+                 num_bands, bits_per_sample,
+      (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
+          (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
+              (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported");
   asfPrintStatus
       ("   Output data type: ASF format\n");
 
@@ -237,7 +245,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       asfPrintStatus("\nCitation: %s\n\n", citation);
     }
     else {
-      asfPrintStatus("\nCitation: MISSING\n\n");
+      asfPrintStatus("\nCitation: The GeoTIFF citation string is MISSING (Not req'd)\n\n");
     }
   }
 
@@ -292,6 +300,15 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   else {
     geotiff_data_exists = 0;
   }
+  if (model_type == ModelTypeProjected && linear_units != Linear_Meter) {
+    read_count
+        = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
+    if (read_count == 0) {
+      asfPrintWarning("Map-Projected GeoTIFF found, but the linear units GeoKey is not set.\n"
+          "Continuing ...but assuming Linear Meters.\n");
+      linear_units = Linear_Meter;
+    }
+  }
   asfPrintStatus ("Input GeoTIFF key GTModelTypeGeoKey is %s\n",
                   (model_type == ModelTypeGeographic) ?
                       "ModelTypeGeographic" :
@@ -305,13 +322,18 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                       "RasterPixelIsArea" : "(Unsupported type)");
   asfPrintStatus ("Input GeoTIFF key ProjLinearUnitsGeoKey is %s\n",
                   (linear_units == Linear_Meter) ?
-                      "meters" : "(Unsupported type)");
-  if (model_type != ModelTypeProjected) {
+                      "Linear_Meters" : "(Unsupported type)");
+  if (model_type != ModelTypeProjected ||
+      raster_type != RasterPixelIsArea ||
+      linear_units != Linear_Meter) {
     // FIXME: For now, we only import map-projected images in linear meters.  If
     // the image was a lat/long image, then the angular units would be set AND
     // the model_type would be ModelTypeGeographic ...but oh well.
     asfPrintError("Geographic (ModelTypeGeographic), linear units other than meters,\n"
                  "and raster types other than RasterPixelIsArea are not supported.\n");
+  }
+  else {
+    geotiff_data_exists = 1;
   }
 
   /***** READ PROJECTION PARAMETERS FROM TIFF IF GEO DATA EXISTS                 *****/
@@ -799,9 +821,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   /*****************************************************/
 
   asfPrintStatus("\nConverting input TIFF image into %d-banded %s ASF-format image...\n\n",
-                 num_bands, (data_type == BYTE) ? "byte" :
-                                (data_type == INTEGER16) ? "integer" :
-                                    (data_type == REAL32) ? "float" : "unknown(?)");
+                 num_bands, (data_type == BYTE) ? "8-bit byte" :
+                                (data_type == INTEGER16) ? "16-bit integer" :
+                                    (data_type == INTEGER32) ? "32-bit integer" :
+                                        (data_type == REAL32) ? "32-bit float" : "unknown(?)");
 
   // Get the raster width and height of the image.
   uint32 width;
@@ -1012,7 +1035,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                                         band_stats[ii],
                                         num_bands, ii,
                                         bits_per_sample, sample_format,
-                                        0, mask_value);
+                                        planar_config, 0, mask_value);
     if (ret != 0 ||
         (band_stats[ii]->mean == band_stats[ii]->min &&
          band_stats[ii]->mean == band_stats[ii]->max &&
@@ -1029,7 +1052,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   char *band_str;
   band_str = (char*)MALLOC(25*sizeof(char)); // '25' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
   int num_found_bands;
-  char *tmp_citation = STRDUP(citation);
+  char *tmp_citation = (citation != NULL) ? STRDUP(citation) : NULL;
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation);
   if (num_found_bands < 1) {
     asfPrintWarning("No ASF-exported band names found in GeoTIFF citation tag.\n"
@@ -1131,7 +1154,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   // Write the binary file
   ret = geotiff_band_image_write(input_tiff, meta_out, outBaseName, num_bands, ignore,
-                                 bits_per_sample, sample_format);
+                                 bits_per_sample, sample_format, planar_config);
   // Write the Metadata file
   if ( num_found_bands > 0 && strlen(band_str) > 0) {
     mg->band_count = num_found_bands;
@@ -1441,7 +1464,12 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
   *num_bands = 0;
   strcpy(*band_str, "");
 
-  s = strstr(citation, BAND_ID_STRING);
+  if (citation == NULL || strlen(citation) < 1) {
+    s = NULL;
+  }
+  else {
+    s = strstr(citation, BAND_ID_STRING);
+  }
   if (s != NULL) {
     // Found a band ID string in the citation
     char *pcTmp, *pcTmp2;
@@ -1487,6 +1515,7 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                                    meta_stats *stats,
                                    int num_bands, int band_no,
                                    short bits_per_sample, short sample_format,
+                                   short planar_config,
                                    gboolean use_mask_value, double mask_value)
 {
   tsize_t scanlineSize;
@@ -1505,6 +1534,11 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
   if (scanlineSize <= 0) {
     return 1;
   }
+  if (planar_config != PLANARCONFIG_CONTIG &&
+      planar_config != PLANARCONFIG_SEPARATE)
+  {
+    return 1;
+  }
   tdata_t *buf = _TIFFmalloc(scanlineSize);
 
   // If there is a mask value we are supposed to ignore,
@@ -1513,22 +1547,34 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      TIFFReadScanline(tif, buf, ii, 0);
+      if (planar_config == PLANARCONFIG_CONTIG) {
+        TIFFReadScanline(tif, buf, ii, 0);
+      }
+      else {
+        // Planar configuration is band-sequential
+        TIFFReadScanline(tif, buf, ii, band_no);
+      }
       for (jj = 0 ; jj < omd->general->sample_count; jj++ ) {
         // iterate over each pixel sample in the scanline
         switch(bits_per_sample) {
           case 8:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint8*)(buf))[jj]);
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((int8*)(buf))[jj]);   // Current sample.
                 }
                 break;
               default:
@@ -1537,19 +1583,28 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                 return 1;
                 break;
             }
+            if ( !isnan(mask_value) && (gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
+              continue;
+            }
             break;
           case 16:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
               default:
@@ -1558,25 +1613,37 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                 return 1;
                 break;
             }
+            if ( !isnan(mask_value) && (gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
+              continue;
+            }
             break;
           case 32:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint32*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((long*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_IEEEFP:
-                cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
-                if ( !isnan(mask_value) &&(gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
-                  continue;
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((float*)(buf))[jj]);   // Current sample.
                 }
                 break;
               default:
@@ -1584,10 +1651,9 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                 return 1;
                 break;
             }
-            break;
-          default:
-            asfPrintError("Unexpected data type in GeoTIFF ...Cannot calculate statistics.\n");
-            return 1;
+            if ( !isnan(mask_value) && (gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
+              continue;
+            }
             break;
         }
         if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
@@ -1606,17 +1672,35 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      TIFFReadScanline(tif, buf, ii, 0);
+      if (planar_config == PLANARCONFIG_CONTIG) {
+        TIFFReadScanline(tif, buf, ii, 0);
+      }
+      else {
+        // Planar configuration is band-sequential
+        TIFFReadScanline(tif, buf, ii, band_no);
+      }
       for (jj = 0 ; jj < omd->general->sample_count; jj++ ) {
         // iterate over each pixel sample in the scanline
         switch(bits_per_sample) {
           case 8:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint8*)(buf))[jj]);
+                }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((int8*)(buf))[jj]);   // Current sample.
+                }
                 break;
               default:
                 // There is no such thing as an IEEE 8-bit floating point
@@ -1628,10 +1712,22 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 16:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
+                }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
+                }
                 break;
               default:
                 // There is no such thing as an IEEE 16-bit floating point
@@ -1643,13 +1739,31 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 32:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((uint32*)(buf))[jj]);   // Current sample.
+                }
                 break;
               case SAMPLEFORMAT_INT:
-                cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((long*)(buf))[jj]);   // Current sample.
+                }
                 break;
               case SAMPLEFORMAT_IEEEFP:
-                cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                if (planar_config == PLANARCONFIG_CONTIG) {
+                  cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
+                }
+                else {
+                  // Planar configuration is band-sequential
+                  cs = (double)(((float*)(buf))[jj]);   // Current sample.
+                }
                 break;
               default:
                 asfPrintError("Unexpected data type in GeoTIFF ...Cannot calculate statistics.\n");
@@ -1694,10 +1808,10 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
 int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                               const char *outBaseName, int num_bands,
                               int *ignore, short bits_per_sample,
-                              short sample_format)
+                              short sample_format, short planar_config)
 {
   char *outName;
-  int row, col, band, offset;
+  uint32 row, col, band;
   float *buf;
   tsize_t scanlineSize;
 
@@ -1705,7 +1819,11 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
   outName = (char*)MALLOC(sizeof(char)*strlen(outBaseName) + 5);
   strcpy(outName, outBaseName);
   append_ext_if_needed(outName, ".img", ".img");
-  offset = omd->general->line_count;
+  if (planar_config != PLANARCONFIG_CONTIG &&
+      planar_config != PLANARCONFIG_SEPARATE)
+  {
+    asfPrintError("Unexpected planar configuration found in TIFF file\n");
+  }
 
   scanlineSize = TIFFScanlineSize(tif);
   if (scanlineSize <= 0) {
@@ -1726,16 +1844,33 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
     if (!ignore[band]) {
       for (row=0; row < omd->general->line_count; row++) {
         asfLineMeter(row, omd->general->line_count);
-        if (TIFFReadScanline(tif, tif_buf, row, 0) < 0) return 1;
+        if (planar_config == PLANARCONFIG_CONTIG) {
+          TIFFReadScanline(tif, tif_buf, row, 0);
+        }
+        else {
+          TIFFReadScanline(tif, tif_buf, row, band);
+        }
         for (col=0; col < omd->general->sample_count; col++) {
           switch (bits_per_sample) {
             case 8:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint8*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((uint8*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((uint8*)tif_buf)[col]);
+                  }
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((int8*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((int8*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((int8*)tif_buf)[col]);
+                  }
                   break;
                 default:
                   // No such thing as an 8-bit IEEE float
@@ -1747,10 +1882,22 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 16:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint16*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((uint16*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((uint16*)tif_buf)[col]);
+                  }
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((int16*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((int16*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((int16*)tif_buf)[col]);
+                  }
                   break;
                 default:
                   // No such thing as an 16-bit IEEE float
@@ -1762,13 +1909,31 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 32:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint32*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((uint32*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((uint32*)tif_buf)[col]);
+                  }
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((long*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((long*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((long*)tif_buf)[col]);
+                  }
                   break;
                 case SAMPLEFORMAT_IEEEFP:
-                  buf[col] = (float)(((float*)tif_buf)[(col*num_bands)+band]);
+                  if (planar_config == PLANARCONFIG_CONTIG) {
+                    buf[col] = (float)(((float*)tif_buf)[(col*num_bands)+band]);
+                  }
+                  else {
+                    // Planar configuration is band-sequential
+                    buf[col] = (float)(((float*)tif_buf)[col]);
+                  }
                   break;
                 default:
                   asfPrintError("Unexpected data type in TIFF file ...cannot write ASF-internal\n"

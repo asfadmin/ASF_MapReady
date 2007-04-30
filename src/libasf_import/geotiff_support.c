@@ -163,7 +163,8 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
 
 int get_tiff_data_config(TIFF *tif,
                          short *sample_format, short *bits_per_sample, short *planar_config,
-                         data_type_t *data_type, int *num_bands)
+                         data_type_t *data_type, int *num_bands,
+                         int *is_scanline_format)
 {
   int     ret = 0;
   uint16  planarConfiguration = 0;
@@ -292,6 +293,20 @@ int get_tiff_data_config(TIFF *tif,
           }
         }
         break;
+    }
+  }
+
+  // Required to have scanline format
+  if (ret == 0) {
+    short tile_width;
+    TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tile_width);
+    if (tile_width > 0)
+    {
+      // Only support true scanline format TIFFs
+      ret = -1;
+    }
+    else {
+      *is_scanline_format = 1;
     }
   }
 
