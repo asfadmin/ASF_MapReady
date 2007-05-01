@@ -1175,7 +1175,7 @@ export_band_image (const char *metadata_file_name,
 	  asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
 
 	// Initialize the chosen format
-	if (strcmp(band_name[0], "???") != 0 && band_count > 1)
+	if (band_count > 1)
 	  append_band_ext(base_name, output_file_name, band_name[kk]);
 	else
 	  append_band_ext(base_name, output_file_name, NULL);
