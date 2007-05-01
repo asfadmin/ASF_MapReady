@@ -87,7 +87,7 @@ detect_geotiff_flavor (const char *file)
             break;
           case DHFA_UNKNOWN_PROJECTION:
           default:      // Else cont...
-            asfPrintWarning("\nUnable to determine projection type from\n"
+            asfPrintWarning("Unable to determine projection type from\n"
                 "ArcGIS metadata (.aux) file.  Attempting the ingest without it...\n");
             g_string_free(inGeotiffAuxName, TRUE);
             GTIFFree(gtif);

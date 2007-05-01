@@ -6,6 +6,8 @@
 #include <xtiffio.h>
 #include "geotiff_support.h"
 
+int guess_planar_configuration(TIFF *tif, short *planar_config);
+
 int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
 {
   // The GeoTIFF standard defines the UTM zones numerically in a way that
@@ -207,8 +209,18 @@ int get_tiff_data_config(TIFF *tif,
     if (planarConfiguration != PLANARCONFIG_CONTIG &&
         planarConfiguration != PLANARCONFIG_SEPARATE)
     {
-      // Only support [rgbrgbrgb...] format, not separately-stored color bands
-      ret = -1;
+      ret = guess_planar_configuration(tif, planar_config);
+      if (ret == 0) {
+        asfPrintWarning("Found multi-band TIFF but the planar configuration TIFF tag\n"
+            "is not populated ...GUESSING the planar configuration to be %s\n"
+            "based on calculated scanline lengths for interlaced and band-sequential\n"
+            "TIFFs v. the actual scanline length derived from the TIFF file itself.\n",
+            (*planar_config == PLANARCONFIG_CONTIG) ?
+                "Contiguous Planes (interlaced)" :
+                (*planar_config == PLANARCONFIG_SEPARATE) ?
+                    "Separate Planes (band-sequential)" :
+                    "Unknown Planar Config (?)");
+      }
     }
     else {
       *planar_config = planarConfiguration;
@@ -312,3 +324,71 @@ int get_tiff_data_config(TIFF *tif,
 
   return ret;
 }
+
+int guess_planar_configuration(TIFF *tif, short *planar_config)
+{
+  int     ret = 0;
+  uint16  planarConfiguration = 0;
+  uint16  bitsPerSample = 0;  // Data width
+  uint16  samplesPerPixel = 0; // Number of bands
+  uint16  width = 0; // Image width (num columns)
+
+  // Required tag for all images
+  ret = 0;
+  TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+  if (bitsPerSample != 8  &&
+      bitsPerSample != 16 &&
+      bitsPerSample != 32)
+  {
+    // Only support byte, integer16, integer32, and 32-bit floats
+    ret = -1;
+  }
+
+  // Required tag for all images
+  if (ret == 0) {
+    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+    if (width <= 0) {
+      ret = -1;
+    }
+  }
+
+  // Required tag for all images
+  if (ret == 0) {
+    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
+    if (samplesPerPixel < 1 || samplesPerPixel > MAX_BANDS) {
+      // Only support 1 through MAX_BANDS bands in the image
+      ret = -1;
+    }
+  }
+
+  // Required tag only for color (multi-band) images
+  if (ret == 0 && samplesPerPixel > 1) {
+    TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
+    if (planarConfiguration != PLANARCONFIG_CONTIG &&
+        planarConfiguration != PLANARCONFIG_SEPARATE)
+    {
+      // Compare calculated scanline length to actual and then
+      // guess what the planar config is, e.g. interlaced
+      // band storage results in scanlines being num_bits*num_bands*width
+      // while band-sequential has a scanline length of num_bits*width
+      uint16 interlaced_scanline_len;
+      uint16 actual_scanline_len = TIFFScanlineSize(tif);
+
+      interlaced_scanline_len = bitsPerSample * samplesPerPixel * width;
+      if (interlaced_scanline_len > actual_scanline_len) {
+        // Band-sequential
+        *planar_config = PLANARCONFIG_SEPARATE;
+      }
+      else {
+        // Interlaced
+        *planar_config = PLANARCONFIG_CONTIG;
+      }
+    }
+    else {
+      *planar_config = planarConfiguration;
+    }
+  }
+
+  return ret;
+}
+

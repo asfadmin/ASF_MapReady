@@ -1041,7 +1041,28 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
          band_stats[ii]->mean == band_stats[ii]->max &&
          band_stats[ii]->mean == band_stats[ii]->std_deviation)) {
       // Band data is blank, e.g. no variation ...all pixels the same
+      asfPrintStatus("\nFound empty band (see statistics below):\n"
+          "   min = %f\n"
+          "   max = %f\n"
+          "  mean = %f\n"
+          "  sdev = %f\n\n",
+          band_stats[ii]->min,
+          band_stats[ii]->max,
+          band_stats[ii]->mean,
+          band_stats[ii]->std_deviation);
+
       ignore[ii] = 1;
+    }
+    else {
+      asfPrintStatus("\nBand Statistics:\n"
+          "   min = %f\n"
+          "   max = %f\n"
+          "  mean = %f\n"
+          "  sdev = %f\n\n",
+          band_stats[ii]->min,
+          band_stats[ii]->max,
+          band_stats[ii]->mean,
+          band_stats[ii]->std_deviation);
     }
   }
 
@@ -1534,7 +1555,8 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
   if (scanlineSize <= 0) {
     return 1;
   }
-  if (planar_config != PLANARCONFIG_CONTIG &&
+  if (num_bands > 1 &&
+      planar_config != PLANARCONFIG_CONTIG &&
       planar_config != PLANARCONFIG_SEPARATE)
   {
     return 1;
@@ -1547,7 +1569,7 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      if (planar_config == PLANARCONFIG_CONTIG) {
+      if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
         TIFFReadScanline(tif, buf, ii, 0);
       }
       else {
@@ -1560,20 +1582,20 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 8:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint8*)(buf))[jj]);
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((int8*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1590,20 +1612,20 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 16:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1620,29 +1642,29 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 32:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint32*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((long*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_IEEEFP:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((float*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1672,7 +1694,7 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      if (planar_config == PLANARCONFIG_CONTIG) {
+      if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
         TIFFReadScanline(tif, buf, ii, 0);
       }
       else {
@@ -1685,20 +1707,20 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 8:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint8*)(buf))[jj]);
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((int8*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((int8*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1712,20 +1734,20 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 16:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((int16*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint16*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1739,29 +1761,29 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           case 32:
             switch(sample_format) {
               case SAMPLEFORMAT_UINT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((uint32*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((uint32*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_INT:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((long*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((long*)(buf))[jj]);   // Current sample.
                 }
                 break;
               case SAMPLEFORMAT_IEEEFP:
-                if (planar_config == PLANARCONFIG_CONTIG) {
+                if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                   cs = (double)(((float*)(buf))[(jj*num_bands)+band_no]);   // Current sample.
                 }
                 else {
-                  // Planar configuration is band-sequential
+                  // Planar configuration is band-sequential or single-banded
                   cs = (double)(((float*)(buf))[jj]);   // Current sample.
                 }
                 break;
@@ -1819,7 +1841,8 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
   outName = (char*)MALLOC(sizeof(char)*strlen(outBaseName) + 5);
   strcpy(outName, outBaseName);
   append_ext_if_needed(outName, ".img", ".img");
-  if (planar_config != PLANARCONFIG_CONTIG &&
+  if (num_bands > 1 &&
+      planar_config != PLANARCONFIG_CONTIG &&
       planar_config != PLANARCONFIG_SEPARATE)
   {
     asfPrintError("Unexpected planar configuration found in TIFF file\n");
@@ -1844,7 +1867,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
     if (!ignore[band]) {
       for (row=0; row < omd->general->line_count; row++) {
         asfLineMeter(row, omd->general->line_count);
-        if (planar_config == PLANARCONFIG_CONTIG) {
+        if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
           TIFFReadScanline(tif, tif_buf, row, 0);
         }
         else {
@@ -1855,20 +1878,20 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 8:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((uint8*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((uint8*)tif_buf)[col]);
                   }
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((int8*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((int8*)tif_buf)[col]);
                   }
                   break;
@@ -1882,20 +1905,20 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 16:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((uint16*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((uint16*)tif_buf)[col]);
                   }
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((int16*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((int16*)tif_buf)[col]);
                   }
                   break;
@@ -1909,29 +1932,29 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 32:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((uint32*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((uint32*)tif_buf)[col]);
                   }
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((long*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((long*)tif_buf)[col]);
                   }
                   break;
                 case SAMPLEFORMAT_IEEEFP:
-                  if (planar_config == PLANARCONFIG_CONTIG) {
+                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
                     buf[col] = (float)(((float*)tif_buf)[(col*num_bands)+band]);
                   }
                   else {
-                    // Planar configuration is band-sequential
+                    // Planar configuration is band-sequential or single-banded
                     buf[col] = (float)(((float*)tif_buf)[col]);
                   }
                   break;
