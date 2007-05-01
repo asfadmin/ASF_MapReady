@@ -200,7 +200,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
               int alpha = 0;
               char *s = band_id;
               while (*s != '\0') {
-                if (isalpha(*s)) alpha = 1;
+                if (isalpha((int)*s)) alpha = 1;
                 s++;
               }
               if (!alpha)

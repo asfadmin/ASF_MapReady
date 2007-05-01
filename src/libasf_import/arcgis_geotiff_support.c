@@ -16,6 +16,8 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <string.h>
+#include <strings.h>
 
 #include <geokeys.h>
 #include <geo_tiffp.h>
@@ -1181,11 +1183,11 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     item->indirectData = ' ';
 
     /* Parse out the number of items for this item type */
-    while (!isdigit(*pcTmp) && *pcTmp != '\0') pcTmp++;
+    while (!isdigit((int)*pcTmp) && *pcTmp != '\0') pcTmp++;
     pcTmp2 = pcTmp;
     numChars = 0;
     /*   ...Normally the following stops on ':' */
-    while (isdigit(*pcTmp2) && *pcTmp2 != '\0') {
+    while (isdigit((int)*pcTmp2) && *pcTmp2 != '\0') {
       numChars++;
       pcTmp2++;
     }
@@ -1216,11 +1218,11 @@ void Parse_ObjectString_to_Items (char objString[], ddItem *items, int *numItems
     {
       case _EMIF_T_ENUM:
         /* Parse out the number of items for this item type */
-        while (!isdigit(*pcTmp) && *pcTmp != '\0') pcTmp++;
+        while (!isdigit((int)*pcTmp) && *pcTmp != '\0') pcTmp++;
         pcTmp2 = pcTmp; /* pcTmp and pcTmp2 point at num of enums */
         numChars = 0;
         /*   ...Normally the following stops on ':' */
-        while (isdigit(*pcTmp2) && *pcTmp2 != '\0') {
+        while (isdigit((int)*pcTmp2) && *pcTmp2 != '\0') {
           numChars++;
           pcTmp2++;
         }

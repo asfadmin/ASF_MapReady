@@ -369,7 +369,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   date_printDate(&ymdDate,'\0',ymdStr);
   date_printTime(&hmsTime,3,'\0',hmsStr);
   for (i=0; i<strlen(hmsStr); i++)
-    if (isdigit(hmsStr[i])) sprintf(tmp, "%s%c", tmp, hmsStr[i]);
+    if (isdigit((int)hmsStr[i])) sprintf(tmp, "%s%c", tmp, hmsStr[i]);
   sprintf(imgTimeStr, "%s%s", ymdStr, tmp);
 
   *nVec = (lowerVec < upperVec) ? lowerVec : upperVec;

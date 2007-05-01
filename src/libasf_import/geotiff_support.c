@@ -309,18 +309,20 @@ int get_tiff_data_config(TIFF *tif,
   }
 
   // Required to have scanline format
-  if (ret == 0) {
+  /*if (ret == 0) {
     short tile_width;
     TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tile_width);
     if (tile_width > 0)
     {
       // Only support true scanline format TIFFs
+      *is_scanline_format = 0;
       ret = -1;
     }
     else {
       *is_scanline_format = 1;
     }
-  }
+  }*/
+  *is_scanline_format = 1;
 
   return ret;
 }
