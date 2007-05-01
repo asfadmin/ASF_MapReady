@@ -45,6 +45,7 @@ c*/
 #include "asf.h"
 #include "earthloc.h"
 #include "asf_meta.h"
+#include "asf_nan.h"
 
 /*
 	MakeMatrix:
