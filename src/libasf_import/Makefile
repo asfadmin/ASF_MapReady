@@ -20,6 +20,7 @@ CFLAGS += \
 	$(JPEG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
+	-D_REENTRANT \
 	$(GSL_CFLAGS)
 
 # These defines enable various debugging behavior and output.  Leaving
