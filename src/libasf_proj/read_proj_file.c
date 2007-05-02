@@ -54,19 +54,6 @@ static void readline(FILE * f, char * buffer, size_t n)
   }
 }
 
-static int parse_double(const char * str, double * val)
-{
-	char *p;
-	*val = strtod(str, &p);
-
-	if (*str == '\0' || *p != '\0')
-	{
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static int parse_val(char * inbuf, char * key, double * val)
 {
   char * p, * eq, * buf;

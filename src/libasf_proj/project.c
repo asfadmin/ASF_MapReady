@@ -1,3 +1,4 @@
+
 #include "projects.h"
 #include "libasf_proj.h"
 #include "asf.h"
@@ -5,9 +6,9 @@
 #include "asf_nan.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "proj_api.h"
 #include "spheroids.h"
@@ -31,60 +32,11 @@ round (double arg)
 #endif /* #ifndef win32 */
 #endif /* #ifndef linux */
 
-// Fill in major and minor with the axes lenghts of spheroid.  This is
-// a cut-and-paste implementation of a function defined in asf_meta.h,
-// that we can't actually use here because we don't actually link
-// against that library (only include the header).
-static void
-project_spheroid_axes_lengths (spheroid_type_t spheroid, double *major,
-			       double *minor)
-{
-  switch ( spheroid ) {
-  case BESSEL_SPHEROID:
-    *major = BESSEL_SEMIMAJOR;
-    *minor = *major - (1.0 / BESSEL_INV_FLATTENING) * *major;
-    break;
-  case CLARKE1866_SPHEROID:
-    *major = CLARKE1866_SEMIMAJOR;
-    *minor = *major - (1.0 / CLARKE1866_INV_FLATTENING) * *major;
-    break;
-  case CLARKE1880_SPHEROID:
-    *major = CLARKE1880_SEMIMAJOR;
-    *minor = *major - (1.0 / CLARKE1880_INV_FLATTENING) * *major;
-    break;
-  case GEM6_SPHEROID:
-    *major = GEM6_SEMIMAJOR;
-    *minor = *major - (1.0 / GEM6_INV_FLATTENING) * *major;
-    break;
-  case GEM10C_SPHEROID:
-    *major = GEM10C_SEMIMAJOR;
-    *minor = *major - (1.0 / GEM10C_INV_FLATTENING) * *major;
-    break;
-  case GRS1980_SPHEROID:
-    *major = GRS1980_SEMIMAJOR;
-    *minor = *major - (1.0 / GRS1980_INV_FLATTENING) * *major;
-    break;
-  case INTERNATIONAL1924_SPHEROID:
-    *major = INTERNATIONAL1924_SEMIMAJOR;
-    *minor = *major - (1.0 / INTERNATIONAL1924_INV_FLATTENING) * *major;
-    break;
-  case INTERNATIONAL1967_SPHEROID:
-    *major = INTERNATIONAL1967_SEMIMAJOR;
-    *minor = *major - (1.0 / INTERNATIONAL1967_INV_FLATTENING) * *major;
-    break;
-  case WGS72_SPHEROID:
-    *major = WGS72_SEMIMAJOR;
-    *minor = *major - (1.0 / WGS72_INV_FLATTENING) * *major;
-    break;
-  case WGS84_SPHEROID:
-    *major = WGS84_SEMIMAJOR;
-    *minor = *major - (1.0 / WGS84_INV_FLATTENING) * *major;
-    break;
-  default:
-    assert (0);
-    break;
-  }
-}
+#ifdef linux
+/* Some missing prototypes */
+int putenv(char *);
+int setenv(const char *, const char *, int);
+#endif
 
 static void set_proj_lib_path(datum_type_t datum)
 {
@@ -95,6 +47,8 @@ static void set_proj_lib_path(datum_type_t datum)
             char proj_putenv[255];
             sprintf(proj_putenv, "PROJ_LIB=%s/proj", get_asf_share_dir());
             putenv(proj_putenv);
+            //sprintf(proj_putenv, "%s/proj", get_asf_share_dir());
+            //setenv("PROJ_LIB", proj_putenv, TRUE);
             set_path_already = TRUE;
         }
     }
@@ -274,6 +228,9 @@ static int project_worker_arr(const char * projection_description,
     }
   }
 
+  //printf("proj: +from %s +to %s\n",
+  //       latlon_description, projection_description);
+
   geographic_projection = pj_init_plus (latlon_description);
 
   if (pj_errno != 0)
@@ -417,6 +374,9 @@ project_worker_arr_inv(const char * projection_description,
     }
   }
 
+  //printf("proj: +from %s +to %s\n",
+  //       projection_description, latlon_description);
+
   geographic_projection = pj_init_plus ( latlon_description );
 
   if (pj_errno != 0)
@@ -501,7 +461,7 @@ utm_projection_description(project_parameters_t * pps, datum_type_t datum)
   {
       sprintf(utm_projection_description,
 	      "+proj=utm +lon_0=%f +datum=%s",
-	      utm_nudge(pps->utm.lon0 * RAD_TO_DEG), datum_str(datum));
+	      utm_nudge(pps->utm.lon0), datum_str(datum));
   }
   else
   {
@@ -568,8 +528,8 @@ ps_projection_desc(project_parameters_t * pps, datum_type_t datum)
 	  "+proj=stere +lat_0=%s +lat_ts=%f +lon_0=%f "
       "+k_0=%f +datum=%s",
 	  pps->ps.is_north_pole ? "90" : "-90",
-	  pps->ps.slat * RAD_TO_DEG,
-	  pps->ps.slon * RAD_TO_DEG,
+	  pps->ps.slat,
+	  pps->ps.slon,
 	  1.0 /* pps->ps.scale_factor */,
 	  datum_str(datum));
 
@@ -623,8 +583,8 @@ static char * lamaz_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   sprintf(lamaz_projection_description,
 	  "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
-	  pps->lamaz.center_lat * RAD_TO_DEG,
-	  pps->lamaz.center_lon * RAD_TO_DEG,
+	  pps->lamaz.center_lat,
+	  pps->lamaz.center_lon,
 	  datum_str(datum));
 
   return lamaz_projection_description;
@@ -678,10 +638,10 @@ static char * lamcc_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   sprintf(lamcc_projection_description,
 	  "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-	  pps->lamcc.plat1 * RAD_TO_DEG,
-	  pps->lamcc.plat2 * RAD_TO_DEG,
-	  pps->lamcc.lat0 * RAD_TO_DEG,
-	  pps->lamcc.lon0 * RAD_TO_DEG,
+	  pps->lamcc.plat1,
+	  pps->lamcc.plat2,
+	  pps->lamcc.lat0,
+	  pps->lamcc.lon0,
 	  datum_str(datum));
 
   return lamcc_projection_description;
@@ -735,10 +695,10 @@ static char * albers_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   sprintf(albers_projection_description,
 	  "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-	  pps->albers.std_parallel1 * RAD_TO_DEG,
-	  pps->albers.std_parallel2 * RAD_TO_DEG,
-	  pps->albers.orig_latitude * RAD_TO_DEG,
-	  pps->albers.center_meridian * RAD_TO_DEG,
+	  pps->albers.std_parallel1,
+	  pps->albers.std_parallel2,
+	  pps->albers.orig_latitude,
+	  pps->albers.center_meridian,
 	  datum_str(datum));
 
   return albers_projection_description;
