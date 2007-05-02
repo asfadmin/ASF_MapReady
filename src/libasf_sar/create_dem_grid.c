@@ -140,10 +140,6 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
   if (gridResX < 0) gridResX = 20;
   if (gridResY < 0) gridResY = 20;
 
-  /* Convert all angles in projection part of metadata into radians -
-     latlon_to_proj needs that later on */
-  to_radians(metaDem->projection->type, &metaDem->projection->param);
-
   /* Counters for the coverage report at the end */
   pixels_in_dem = pixels_out_dem = 0;
 
