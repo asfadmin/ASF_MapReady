@@ -61,6 +61,8 @@ all: external_libs
 	@ echo ""
 
 install: all
+	mkdir -p $(S_SHAREDIR)/doc
+	cp doc/*.pdf doc/asf_convert-version_history.txt $(S_SHAREDIR)/doc
 	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
 	cp -R $(S_BINDIR)/* @BINDIR@
 	cp -R lib/* @prefix@/lib
