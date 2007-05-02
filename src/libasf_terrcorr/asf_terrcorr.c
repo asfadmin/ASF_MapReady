@@ -377,7 +377,6 @@ static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
     line_max = 0;
     samp_max = 0;
 
-    to_radians(metaDEM->projection->type, &metaDEM->projection->param);
     update_extents(0,    0,    metaDEM, metaSAR,
                    &line_min, &line_max, &samp_min, &samp_max);
     update_extents(nl-1, 0,    metaDEM, metaSAR,

@@ -557,9 +557,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // with an error if they aren't.
   check_parameters (projection_type, datum, pp, imd, force_flag);
 
-  // Convert all angle measures in the project_parameters to radians.
-  to_radians (projection_type, pp);
-
   // Old Scansar data needs a 400m height adjustment.
   if (imd->sar && imd->sar->image_type == 'P' &&
       imd->projection && imd->projection->type == SCANSAR_PROJECTION) {
@@ -923,8 +920,10 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
 	ret = meta_get_lineSamp (imd, lat, lon, average_height,
                                  &y_pix, &x_pix);
         //g_assert (ret == 0);
-        asfRequire(ret == 0,
-                   "Failed to determine line and sample from latitude and longitude\n");
+        if (ret != 0) {
+          asfPrintError("Failed to determine line and sample from latitude "
+                        "and longitude\nLat: %f, Lon: %f\n", lat, lon);
+        }
       }
       dtf.x_proj[current_mapping] = cxproj;
       dtf.y_proj[current_mapping] = cyproj;
@@ -1272,9 +1271,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
     omd->projection->spheroid = datum_spheroid(datum);
   }
 
-  // We need to convert things in this structure back to degrees
-  // before storing the metadata (according to file format).
-  to_degrees (projection_type, pp);
   omd->projection->param = *pp;
 
   // Adjust bands and band_count for the case where the user
@@ -1293,9 +1289,6 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   meta_write (omd, output_meta_data->str);
-
-  // Back to radians... for the subsequent calculations
-  to_radians (projection_type, pp);
 
   // Translate the command line notion of the resampling method into
   // the lingo known by the float_image and uint8_image classes.
