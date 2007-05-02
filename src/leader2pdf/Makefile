@@ -1,8 +1,6 @@
 # Makefile for:   leader2pdf
 # Module Author:  Rudi Gens
 
-DEBUG_BUILD = 2
-
 include ../../make_support/system_rules
 
 LIBS  = \
