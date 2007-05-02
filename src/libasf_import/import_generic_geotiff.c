@@ -1970,7 +1970,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
               break;
           }
         }
-        put_band_float_line(fp, omd, band, row, buf);
+        put_band_float_line(fp, omd, band, (int)row, buf);
       }
     }
     else {
