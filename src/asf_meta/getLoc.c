@@ -57,7 +57,7 @@ int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
 	int iterations=0,err=0,max_iter=10000;
 	double yaw=0,deltaAz;
 	double look=0;
-	double dopGuess,dopDotGuess,deltaDop;
+	double dopGuess,dopDotGuess,deltaDop,prevDeltaDop=-9999999;
 	vector target,vRel;
 
         while (1)
@@ -70,12 +70,16 @@ int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
 		deltaDop=dop-dopGuess;
 		relativeVelocity=vecMagnitude(vRel);
 		deltaAz=deltaDop*(g->lambda/(2*relativeVelocity));
+                // handle the zero doppler case -- without this, we will
+                // sometimes flip back&forth accross zero doppler, until max_iter
+                if (fabs(deltaDop+prevDeltaDop)<.000001) deltaAz/=2.;
 		if (fabs(deltaAz*range)<0.1)/*Require decimeter convergence*/
 			break;
 		yaw+=deltaAz;
                 if (++iterations>max_iter) { /* Failed to converge */
                     err=1; break;
                 }
+                prevDeltaDop=deltaDop;
 	}
 	*out_look=look;
 	*out_yaw=yaw;
