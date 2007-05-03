@@ -249,6 +249,12 @@ GtkWidget *get_widget_checked(const char *widget_name);
 void set_combo_box_item_checked(const char *, gint);
 void rgb_combo_box_setup();
 void rb_select(const char *, gboolean);
+double get_double_from_entry(const char *widget_name);
+void put_double_to_entry(const char *widget_name, double val);
+int get_int_from_entry(const char *widget_name);
+void put_int_to_entry(const char *widget_name, int val);
+int get_checked(const char *widget_name);
+void set_checked(const char *widget_name, int checked);
 
 /* dnd.c */
 void setup_dnd();

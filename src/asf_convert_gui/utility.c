@@ -74,6 +74,51 @@ rb_select(const char *widget_name, gboolean is_on)
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb), is_on);
 }
 
+double get_double_from_entry(const char *widget_name)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    return atof(gtk_entry_get_text(GTK_ENTRY(e)));
+}
+
+void put_double_to_entry(const char *widget_name, double val)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    
+    char tmp[64];
+    sprintf(tmp, "%f", val);
+
+    gtk_entry_set_text(GTK_ENTRY(e), tmp);
+}
+
+int get_int_from_entry(const char *widget_name)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    return atoi(gtk_entry_get_text(GTK_ENTRY(e)));
+}
+
+void put_int_to_entry(const char *widget_name, int val)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    
+    char tmp[64];
+    sprintf(tmp, "%d", val);
+
+    gtk_entry_set_text(GTK_ENTRY(e), tmp);
+}
+
+
+int get_checked(const char *widget_name)
+{
+    GtkWidget *cb = get_widget_checked(widget_name);
+    return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(cb));
+}
+
+void set_checked(const char *widget_name, int checked)
+{
+    GtkWidget *cb = get_widget_checked(widget_name);
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(cb), checked);
+}
+
 gint
 get_combo_box_item(GtkWidget * drop_down_list)
 {
