@@ -488,4 +488,9 @@ void handle_common_asf_args(int *argc, char **argv[], const char *prog_name)
 {
   handle_license_and_version_args(*argc, *argv, prog_name);
   parse_log_options(argc, argv);
+
+  if (logflag)
+    fLog = FOPEN(logFile, "a");
+  else
+    fLog = NULL;
 }

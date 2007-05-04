@@ -266,7 +266,7 @@ main (int argc, char *argv[])
   // -1 -> no masking, other values mean fill it with that value
   int fill_value = 0; 
 
-  handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+  handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
   inMaskFile = NULL;
 
@@ -277,16 +277,7 @@ main (int argc, char *argv[])
 
   while (currArg < (argc-NUM_ARGS)) {
     char *key = argv[currArg++];
-    if (strmatches(key,"-log","--log",NULL)) {
-        CHECK_ARG(1);
-        strcpy(logFile,GET_ARG(1));
-        fLog = FOPEN(logFile, "a");
-        logflag = TRUE;
-    }
-    else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
-        quietflag = TRUE;
-    }
-    else if (strmatches(key,"-keep","--keep","-k",NULL)) {
+    if (strmatches(key,"-keep","--keep","-k",NULL)) {
         clean_files = FALSE;
     }
     else if (strmatches(key,"-no-resample","--no-resample",NULL)) {

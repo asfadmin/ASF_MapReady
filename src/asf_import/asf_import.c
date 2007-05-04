@@ -177,6 +177,7 @@ typedef enum {
     f_METADATA_FILE,
     f_LOG,
     f_QUIET,
+    f_REAL_QUIET,
     f_RANGE_SCALE,
     f_AZIMUTH_SCALE,
     f_FIX_META_YPIX,
@@ -339,6 +340,7 @@ int main(int argc, char *argv[])
     /* checkForOption("-metadata", argc, argv); */
     flags[f_LOG] = checkForOption("-log", argc, argv);
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
+    flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
@@ -419,6 +421,7 @@ int main(int argc, char *argv[])
         if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
         if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
         if(flags[f_QUIET] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+        if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
@@ -488,7 +491,8 @@ int main(int argc, char *argv[])
         logflag = FALSE;
     }
     /* Set old school quiet flag (for use in our libraries) */
-    quietflag = (flags[f_QUIET]!=FLAG_NOT_SET) ? TRUE : FALSE;
+    quietflag = flags[f_QUIET] != FLAG_NOT_SET;
+    if (flags[f_REAL_QUIET] != FLAG_NOT_SET) quietflag = 2;
 
     /*We must be close to good enough at this point... log & quiet flags are set
     Report what was retrieved at the command line */

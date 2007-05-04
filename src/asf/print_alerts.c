@@ -42,6 +42,10 @@ void asfPrintStatus(const char *format, ...)
     fflush (stdout);
   }
   if (logflag) {
+    if (!fLog) {
+      logflag = FALSE;
+      asfPrintWarning("Error writing to log file: invalid file pointer\n");
+    }
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
@@ -62,6 +66,10 @@ void asfForcePrintStatus(const char *format, ...)
   va_end(ap);
 
   if (logflag) {
+    if (!fLog) {
+      logflag = FALSE;
+      asfPrintWarning("Error writing to log file: invalid file pointer\n");
+    }
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
@@ -73,9 +81,16 @@ void asfForcePrintStatus(const char *format, ...)
 /* Report warning to user & log file, then continue the program  */
 void asfPrintWarning(const char *format, ...)
 {
-  va_list ap;
   const char *warningBegin = "\n** Warning: ********\n";
   const char *warningEnd = "** End of warning **\n\n";
+
+  if (logflag && !fLog) {
+    // re-entry here, but it's ok since we change the flag...
+    logflag = FALSE;
+    asfPrintWarning("Error writing to log file: invalid file pointer\n");
+  }
+
+  va_list ap;
 
   if (quietflag < 2)
     printf("%s", warningBegin);
@@ -107,9 +122,15 @@ void asfPrintWarning(const char *format, ...)
 /* Report to user & logfile, then die  */
 void asfPrintError(const char *format, ...)
 {
-  va_list ap;
   const char *errorBegin = "\n** Error: ********\n";
   const char *errorEnd = "** End of error **\n\n";
+
+  if (logflag && !fLog) {
+    logflag = FALSE;
+    asfPrintWarning("Error writing to log file: invalid file pointer\n");
+  }
+
+  va_list ap;
 
   printf("%s", errorBegin);
   if (logflag) {
