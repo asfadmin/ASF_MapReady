@@ -144,7 +144,6 @@ resample_impl(char *infile, char *outfile,
 
     if (update_meta)
     {
-      /* Write output metadata file */ 
       metaOut->general->x_pixel_size = xpixsiz;
       metaOut->general->y_pixel_size = ypixsiz;
       if (metaOut->sar) {
@@ -155,15 +154,20 @@ resample_impl(char *infile, char *outfile,
         metaOut->sar->azimuth_doppler_coefficients[1] /= yscalfact;
         metaOut->sar->azimuth_doppler_coefficients[2] /= yscalfact * yscalfact;
       }
+      if (metaOut->projection) {
+        metaOut->projection->perX = xpixsiz;
+        metaOut->projection->perY = ypixsiz;
+      }
     }
 
-    char **band_name = extract_band_names(metaIn->general->bands,
-                                          metaIn->general->band_count);
-
+    /* Write output metadata file */ 
     char *metafile = MALLOC(sizeof(char) * (10 + strlen(outfile)));
     strcpy(metafile, outfile);
     append_ext_if_needed(metafile, ".meta", NULL);
     meta_write(metaOut, metafile);
+
+    char **band_name = extract_band_names(metaIn->general->bands,
+                                          metaIn->general->band_count);
 
     for (k = 0; k < metaIn->general->band_count; ++k)
     {
