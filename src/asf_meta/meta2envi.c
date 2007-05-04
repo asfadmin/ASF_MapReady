@@ -86,8 +86,8 @@ envi_header* meta2envi(meta_parameters *meta)
 	sprintf(envi->projection, "Albers Conical Equal Area"); 
 	envi->standard_parallel1 = meta->projection->param.albers.std_parallel1;
 	envi->standard_parallel2 = meta->projection->param.albers.std_parallel2;
-	envi->center_lat = meta->projection->param.albers.center_meridian;
-	envi->center_lon = meta->projection->param.albers.orig_latitude;
+	envi->center_lat = meta->projection->param.albers.orig_latitude;
+	envi->center_lon = meta->projection->param.albers.center_meridian;
 	break;
       case LAMBERT_CONFORMAL_CONIC: 
 	sprintf(envi->projection, "Lambert Conformal Conic"); 
