@@ -75,13 +75,17 @@ void deskew(const char *infile, const char *outfile)
   // (the amount of shift is row-independent)
   int *lower = MALLOC(np * sizeof(int));
   for (samp=0; samp<np; ++samp)
-    lower[samp] = (int) (fac*(double)samp);
+    lower[samp] = (int) floor(fac*(double)samp);
 
-  asfPrintStatus("Far-range shift amount: ");
-  if (lower[np-1] > 0)
-    asfPrintStatus("%d pixels down.\n", lower[np-1]);
-  else
-    asfPrintStatus("%d pixels up.\n", -lower[np-1]);
+  if (meta->sar->deskewed) {
+    asfPrintStatus("Data is already deskewed.\n");
+  } else {
+    asfPrintStatus("Far-range shift amount: ");
+    if (lower[np-1] > 0)
+      asfPrintStatus("%d pixels down.\n", lower[np-1]);
+    else
+      asfPrintStatus("%d pixels up.\n", -lower[np-1]);
+  }
 
   float *ibuf = MALLOC(np * sizeof(float));
   float *obuf = CALLOC(np*nl, sizeof(float));
@@ -117,8 +121,14 @@ void deskew(const char *infile, const char *outfile)
   FREE(lower);
 
   // if we output to a temporary file, clobber the input
-  if (do_rename)
-    rename(tmp_outfile, outfile);
+  if (do_rename) {
+    char *tmp_outfile_img = appendExt(tmp_outfile, ".img");
+    char *outfile_img = appendExt(outfile, ".img");
+    printf("Renaming: %s -> %s\n", tmp_outfile_img, outfile_img);
+    rename(tmp_outfile_img, outfile_img);
+    FREE(tmp_outfile_img);
+    FREE(outfile_img);
+  }
   FREE(tmp_outfile);
 
   // only need to update the deskewed flag in the metadata
