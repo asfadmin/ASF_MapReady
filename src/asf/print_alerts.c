@@ -77,23 +77,26 @@ void asfPrintWarning(const char *format, ...)
   const char *warningBegin = "\n** Warning: ********\n";
   const char *warningEnd = "** End of warning **\n\n";
 
-  printf("%s", warningBegin);
-  if (logflag) {
+  if (quietflag < 2)
+    printf("%s", warningBegin);
+  if (logflag)
     fprintf(fLog, "%s", warningBegin);
+
+  if (quietflag < 2) {
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
   }
-
-  va_start(ap, format);
-  vprintf(format, ap);
-  va_end(ap);
-
   if (logflag) {
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
   }
-
-  printf(warningEnd);
-  fflush (stdout);
+  
+  if (quietflag < 2) {
+    printf(warningEnd);
+    fflush (stdout);
+  }
   if (logflag) {
     fprintf(fLog, "%s", warningEnd);
     fflush (fLog);
@@ -209,7 +212,8 @@ void asfLineMeter(int currentLine, int totalLines)
     printLog(logbuf);
   }
 
-  check_stop();
+  if (currentLine%640==0 || currentLine==totalLines)
+    check_stop();
 }
 
 /******************************************************************************
@@ -248,5 +252,6 @@ void asfPercentMeter(double inPercent)
     printLog(logbuf);
   }
 
-  check_stop();
+  if (newPercent%25==0)
+    check_stop();
 }
