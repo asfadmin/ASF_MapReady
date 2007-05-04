@@ -470,13 +470,22 @@ int detect_string_options(int argc, char *argv[], char *val, ... )
 
 void parse_log_options(int *argc, char **argv[])
 {
-  if (extract_string_options(argc, argv, logFile, "--log", "-log", NULL))
-    logflag = 1;
-  else
-    logflag = 0;
+  logflag = 
+    extract_string_options(argc, argv, logFile, "--log", "-log", NULL);
 
-  if (extract_flag_options(argc, argv, "--quiet", "-quiet", NULL))
-    quietflag = 1;
-  else
-    quietflag = 0;
+  // quietflag == 1 ==> no status messages
+  quietflag =
+    extract_flag_options(argc, argv, "--quiet", "-quiet", "-q", NULL);
+
+  // quietflag == 2 (really quiet) ==> warnings won't show up, either
+  if (extract_flag_options(argc, argv, "--real-quiet", "-real-quiet",
+                           "-qq", NULL))
+    quietflag = 2;
+}
+
+// One stop shopping for common args
+void handle_common_asf_args(int *argc, char **argv[], const char *prog_name)
+{
+  handle_license_and_version_args(*argc, *argv, prog_name);
+  parse_log_options(argc, argv);
 }

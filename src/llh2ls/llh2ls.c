@@ -24,6 +24,8 @@ int main(int argc,char *argv[])
   double height = 0;
   double line, samp;
 
+  handle_common_asf_args(&argc, &argv, "llh2ls");
+
   if (argc != 4 && argc != 5) {
     usage(argv[0]);
   }

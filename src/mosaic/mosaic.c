@@ -365,7 +365,7 @@ static void add_pixels(FloatImage *out, char *file,
 
 int main(int argc, char *argv[])
 {
-    handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+    handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
     if (argc>1 && (strcmp(argv[1], "-help")==0 || strcmp(argv[1],"--help")==0))
         help();
     if (argc<3) usage();
