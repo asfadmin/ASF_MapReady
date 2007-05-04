@@ -183,8 +183,15 @@ int getLook(GEOLOCATE_REC *g,double range,double yaw,double *plook)
 
   /* Calculate look angle */
   coslook = (ht*ht+range*range-earth_radius*earth_radius)/(2.0*range*ht);
-  asfRequire(coslook <= 1.0,
-    "getLook() cosine(look angle) resulted in a value larger than 1.0\n");
+  if (!meta_is_valid_double(coslook)) {
+      asfPrintWarning("getLook(): coslook was NaN!\n");
+      return 1;
+  }
+  if (coslook > 1.0) {
+      asfPrintWarning("getLook(): cosine(look angle) resulted in a value "
+                      "larger than 1.0!\n");
+      return 1;
+  }
   look = acos(coslook);
 
   /* For a left-looking SAR, we define the look angle to be negative.*/
