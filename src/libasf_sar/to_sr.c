@@ -50,48 +50,10 @@ static double max4(double a, double b, double c, double d)
 static void ts2ls(meta_parameters *meta, double time, double slant,
                   double *pLine, double *pSamp)
 {
-  double lat, lon, line, samp;
+  double lat, lon;
+
   meta_timeSlantDop2latLon(meta, time, slant, 0, 0, &lat, &lon);
-  meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
-  *pLine = line; *pSamp = samp;
-  return;
-
-  // a check to see how much of a difference the doppler makes
-  double dop = meta_get_dop(meta, line, samp);
-  if (fabs(dop) < .01) {
-    // looks like this data has already been deskewed, whew!
-    *pLine = line;
-    *pSamp = samp;
-    return;
-  }
-
-  // iterate!
-  double prev_line = line;
-  double prev_samp = samp;
-  int n_iter = 0;
-
-  printf("Iterating...\n");
-  while (1) {
-    printf("%5d %5d %5d\n", n_iter, (int)prev_line, (int)prev_samp);
-    //meta_get_timeSlantDop(meta, prev_line, prev_samp, &time, &slant, &dop);
-    //meta_timeSlantDop2latLon(meta, time, slant, dop, 0, &lat, &lon);
-    meta_get_latLon(meta, prev_line, prev_samp, 0, &lat, &lon);
-    double lat2, lon2;
-    latLon2timeSlant(meta, lat, lon, &time, &slant, &dop);
-    meta_timeSlantDop2latLon(meta, time, slant, dop, 0, &lat2, &lon2);
-    meta_get_lineSamp(meta, lat2, lon2, 0, &line, &samp);
-    double err = hypot(line-prev_line, samp-prev_samp);
-    if (err < .1) break;
-    if (++n_iter > 100) {
-      printf("Failing to converge!\n");
-    }
-    prev_line = line;
-    prev_samp = samp;
-  }
-
-  printf("Converged after: %d\n", n_iter);
-  *pLine = line;
-  *pSamp = samp;
+  meta_get_lineSamp(meta, lat, lon, 0, pLine, pSamp);
 }
 
 static int
