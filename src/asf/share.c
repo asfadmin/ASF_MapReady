@@ -458,3 +458,47 @@ fopen_share_file(const char * filename, const char * mode)
   return fp;
 }
 
+const char *get_asf_share_dir_with_argv0(const char *argv0)
+{
+#ifndef win32
+    // If the user specified a path on the command line, we want to
+    // try that directory first, when searching for the share dir.
+    // If this doesn't work, in get_asf_share_dir(), called below, we will
+    // use the normal path-searching method to find the share dir.  If this
+    // does work, then the call below will just return what we've already
+    // found.
+    if (!s_share_dir) {
+        // obtain what needs to be pasted on to the location of the bin dir
+        // to get to the share dir (i.e. "share/asf_tools")
+        char *share = strstr(ASF_SHARE_DIR, "share");
+        if (share) {
+            // strip off the executable, leaving just the path info
+            char *argv0_path = get_dirname(argv0);
+            if (argv0_path && strlen(argv0_path) == 0) {
+                // a copy for us to change "whatever/bin" to "whatever/share/asf_tools"
+                char *buf = MALLOC(sizeof(char)*(strlen(argv0_path) + strlen(share) + 5));
+                strcpy(buf, argv0_path);
+
+                // If path item ends with a separator, pop that off
+                // note that this code is unix-only
+                if (buf[strlen(buf) - 1] == '/') buf[strlen(buf) - 1] = '\0';
+
+                // only try this if it ends with 'bin'
+                if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
+                    // strip off "bin" - add "share/asf_tools"
+                    *(buf + strlen(buf) - 4) = '\0';
+                    strcat(buf, share);
+                    if (check_for_known_file_in_share_dir(buf)) {
+                        // this is the one!
+                        s_share_dir = STRDUP(buf);
+                    }
+                }
+                FREE(buf);
+            }
+            FREE(argv0_path);
+        }
+    }
+#endif
+
+    return get_asf_share_dir();
+}

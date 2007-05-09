@@ -493,4 +493,6 @@ void handle_common_asf_args(int *argc, char **argv[], const char *prog_name)
     fLog = FOPEN(logFile, "a");
   else
     fLog = NULL;
+
+  (void)get_asf_share_dir_with_argv0((*argv)[0]);
 }
