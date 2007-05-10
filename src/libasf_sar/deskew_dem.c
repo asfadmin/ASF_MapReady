@@ -103,6 +103,11 @@ static int n_user=0;
 #define phi2grX(phi) (((phi)-d->minPhi)*d->phiMul)
 #define grX2phi(gr) (d->minPhi+(gr)/d->phiMul)
 
+static int eq(float a, float b, float tol)
+{
+    return fabs(a-b)<tol;
+}
+
 static float SR2GR(struct deskew_dem_data *d, float srX, float height)
 {
 	double dx,srXSeaLevel=srX-height*d->heightShiftSR[(int)srX];
@@ -141,9 +146,17 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
         float height=inBuf[inX];
         outX=(int)SR2GR(d,(float)inX,height);
 
-        if ((height!=badDEMht)/*&&(height!=-1)*/&&(outX>=0)&&(outX<ns))
+        if ((height!=badDEMht)&&(outX>=0)&&(outX<ns))
         {
-            if (lastOutValue!=badDEMht &&
+            // if either end is NO_DEM_DATA, fill the range with that value
+            if (eq(lastOutValue,NO_DEM_DATA,.0001) ||
+                eq(height,NO_DEM_DATA,.0001))
+            {
+                for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
+                    outBuf[xInterp]=NO_DEM_DATA;                
+            }
+            // normal case: two valid slant range value to interpolate through
+            else if (lastOutValue!=badDEMht &&
                 (fill_holes || outX-lastOutX<maxBreakLen))
             {
                 float curr=lastOutValue;
@@ -154,15 +167,15 @@ static void dem_sr2gr(struct deskew_dem_data *d,float *inBuf,float *outBuf,
                     outBuf[xInterp]=curr;
                     curr+=delt;
                 }
-            } else {
+            }
+            // last resort - fill with badDEMht
+            else {
                 for (xInterp=lastOutX+1;xInterp<=outX;xInterp++)
                     outBuf[xInterp]=badDEMht;
             }
             lastOutValue=height;
             lastOutX=outX;
         }
-        //lastOutValue=height;
-        //lastOutX=outX;
     }
     for (outX=lastOutX+1;outX<ns;outX++) {
         outBuf[outX]=badDEMht;
@@ -173,9 +186,10 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 {
     int x;
     double slantFirst,slantPer;
-    double er=meta_get_earth_radius(meta, meta->general->line_count/2, meta->general->sample_count/2);
-    //double er=meta_get_earth_radius_pp(meta);
-    double satHt=meta_get_sat_height(meta, meta->general->line_count/2, meta->general->sample_count/2);
+    double er=meta_get_earth_radius(meta, meta->general->line_count/2,
+                                    meta->general->sample_count/2);
+    double satHt=meta_get_sat_height(meta, meta->general->line_count/2,
+                                     meta->general->sample_count/2);
     double saved_ER=er;
     double er2her2,phi,phiAtSeaLevel,slantRng;
     int ns = meta->general->sample_count;
@@ -230,11 +244,6 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
     return er/d->phiMul;
 }
 
-static int eq(float a, float b, float tol)
-{
-    return fabs(a-b)<tol;
-}
-
 static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
                             float *grDEM, struct deskew_dem_data *d)
 {
@@ -252,7 +261,7 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
         }
 
         // where we have no DEM data, set output to 0
-        if (eq(grDEM[x],NO_DEM_DATA,.000001)) {
+        if (eq(grDEM[x],NO_DEM_DATA,.0001)) {
           in[x] = 0.0;
         }
     }

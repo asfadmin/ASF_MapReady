@@ -126,6 +126,10 @@ static float *createSpeckle(void)
 	return speckle;
 }
 
+static int eq(double a, double b, double tol) {
+  return fabs(a-b)<tol;
+}
+
 /*dem_gr2sr: map one line of a ground range DEM into
 one line of a slant range DEM && one line of simulated amplitude image.*/
 static void dem_gr2sr(float *grDEM, float *srDEM, float *amp, float *inMask)
@@ -175,7 +179,15 @@ Convert each grX to an srX.  Update amplitude and height images.*/
 	{
             double runLen=srX-lastSrX;
             int intRun=(int)runLen;
-            if ((runLen<maxBreakLen)&&(lastOutValue!=badDEMht))
+
+            if (eq(lastOutValue,NO_DEM_DATA,.0001) ||
+                eq(height,NO_DEM_DATA,.0001))
+            {
+              for (x=lastSrX+1;x<=sriX;x++) {
+                srDEM[x]=NO_DEM_DATA;
+              }
+            }
+            else if ((runLen<maxBreakLen)&&(lastOutValue!=badDEMht))
             {
                 double currAmp;
                 /*Update the amplitude image.*/
@@ -193,20 +205,20 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     for (x=lastSrX+1;x<=sriX;x++)
                     {
                         if (srDEM[x]==unInitDEM || maxval > srDEM[x]) {
-                            //if (outmask[x]!=MASK_USER_MASK)
-                                srDEM[x]=maxval;
-                                //else
-                                //srDEM[x]=badDEMht;
+                            srDEM[x]=maxval;
                         }
                     }
                 } else {
                     int ind = (int)lastSrX+1;
-                    if (ind < sr_ns && srDEM[ind]==unInitDEM) {
+                    if (ind < sr_ns &&
+                        (eq(srDEM[ind],unInitDEM,.0001) ||
+                         eq(srDEM[ind],NO_DEM_DATA,.0001) ||
+                         eq(srDEM[ind],badDEMht,.0001))) {
                         srDEM[ind]=height;
                     }
                 }
             } else {
-                for (x=lastSrX+1;x<=sriX;x++) {
+                for (x=lastSrX+1;x<=sriX;x++) {                  
                     srDEM[x]=badDEMht;
                 }
             }
@@ -270,6 +282,7 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	FILE *inDEM,*outDEM,*outAmp,*inMask=NULL;
 	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL;
 
+        //printf("%s -> %s\n", inDEMfile, outDEMfile);
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
 	metaDEM = meta_read(inDEMfile);
@@ -313,14 +326,14 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 /* Read deskewed data, write out reskewed data */
 	for (line=0; line<nl; line++)
 	{
-		get_float_line(inDEM,metaDEM,line,grDEMline);
-		if (inMaskFile)
-			get_float_line(inMask,metaInMask,line,inMaskLine);
-		
-		dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
+            get_float_line(inDEM,metaDEM,line,grDEMline);
+            if (inMaskFile)
+                get_float_line(inMask,metaInMask,line,inMaskLine);
 
-		put_float_line(outDEM,metaIn,line,srDEMline);
-		put_float_line(outAmp,metaIn,line,outAmpLine);	
+            dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
+
+            put_float_line(outDEM,metaIn,line,srDEMline);
+            put_float_line(outAmp,metaIn,line,outAmpLine);	
 	}
 
 /* Write meta files */

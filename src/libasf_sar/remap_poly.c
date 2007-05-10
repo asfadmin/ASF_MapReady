@@ -66,7 +66,6 @@ static void calc_extents(polyMapRec *map, meta_parameters *in_meta,
   or Y axis into negative coordinates.*/
 
   fPoint max={-1000000000,-1000000000},min={1000000000,1000000000},cur;
-//  updateDDR(map,inDDR,outDDR);
   
   forwardPolyMap(map,makePoint(0,0),&cur);
   grow(&min,&max,cur);
@@ -85,18 +84,31 @@ static void calc_extents(polyMapRec *map, meta_parameters *in_meta,
   *samples = (int)ceil(max.x);
 }
 
-static float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt)
+static int eq(double a, double b, double tol) {
+  return fabs(a-b)<tol;
+}
+
+static float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt,float mask)
 {
   /*ix and iy used to be computed as floor(inPt); but this is 
     much faster and gives the same results for inPt>-9*/
   int ix=(int)(inPt.x+10)-10,iy=(int)(inPt.y+10)-10;
   register float dx=inPt.x-ix,dy=inPt.y-iy;
-  float tl=fetchPixelValue(getRec,ix,iy),
-    tr=fetchPixelValue(getRec,ix+1,iy);
-  float bl=fetchPixelValue(getRec,ix,iy+1),
-    br=fetchPixelValue(getRec,ix+1,iy+1);
+
+  /*if any of the 4 corner pixels is equal to the masked value,
+    we'll return the masked value */
+  float tl=fetchPixelValue(getRec,ix,iy);
+  if (eq(tl,mask,.0001)) return mask;
+  float tr=fetchPixelValue(getRec,ix+1,iy);
+  if (eq(tr,mask,.0001)) return mask;
+  float bl=fetchPixelValue(getRec,ix,iy+1);
+  if (eq(bl,mask,.0001)) return mask;
+  float br=fetchPixelValue(getRec,ix+1,iy+1);
+  if (eq(br,mask,.0001)) return mask;
+
   float tc=tl+(tr-tl)*dx;
   float bc=bl+(br-bl)*dx;
+
   return tc+(bc-tc)*dy;
 }
 
@@ -113,7 +125,7 @@ static float bilinear_doSamp(pixelFetcher *getRec,fPoint inPt)
 */
 static void perform_mapping(FILE *in, meta_parameters *meta_in,
 			    FILE *out, meta_parameters *meta_out,
-			    polyMapRec *map)
+			    polyMapRec *map, float background_value)
 {
   int x,y;
   int maxOutX,maxOutY;
@@ -138,11 +150,10 @@ static void perform_mapping(FILE *in, meta_parameters *meta_in,
 			
       /*Now read that pixel's value and put it in the "thisLine" array 
 	as a float...*/
-      thisLine[x]=bilinear_doSamp(getRec,inPt);
+      thisLine[x]=bilinear_doSamp(getRec,inPt,background_value);
     }
 	
     put_float_line(out,meta_out,y,thisLine);
-    //writePixelLine(out,outDDR,y,bandNo,thisLine,outBuf);
 
     asfLineMeter(y,maxOutY);
   }
@@ -166,10 +177,11 @@ getProjection(float x,float y,cornerCoords *cc,int val,int ns, int nl)
 }
 
 /*UpdateProjection:
-	Updates the projection corner coordinates for the new 
-DDR.  It does so by reverse-projecting the corners of the new, output DDR
-into the old, trusted, input DDR space.  The coordinates of the corners of the
-output DDR are computed in input space using getProjection.	
+	Updates the projection corner coordinates for the new metadata
+It does so by reverse-projecting the corners of the new, output metadata
+into the old, trusted, input space.  The coordinates of the corners of the
+output are computed in input space using getProjection.	 After the corners
+are computed, we can get the projection parameters.
 */
 static void update_projection(meta_parameters *in_meta, polyMapRec *map,
 			      meta_parameters *out_meta)
@@ -231,6 +243,9 @@ static void update_projection(meta_parameters *in_meta, polyMapRec *map,
   proj->hem = (out_meta->general->center_latitude>0) ? 'N' : 'S';
 }
 
+/* External entry point
+   Remaps an image using the given polynomials.
+*/
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
 	       int outWidth, int outHeight, char *infile, char *outfile,
                float background_value)
@@ -260,7 +275,7 @@ int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
   update_projection(meta_in, map, meta_out);
   meta_write(meta_out, outfile);
 
-  perform_mapping(in, meta_in, out, meta_out, map);
+  perform_mapping(in, meta_in, out, meta_out, map, background_value);
   FCLOSE(in);
   FCLOSE(out);
   meta_free(meta_in);
