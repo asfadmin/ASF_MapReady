@@ -557,7 +557,10 @@ void write_kml(char *inFile, char *basename, format_type_t format, int list)
   if (list) {
     line = (char *) MALLOC(sizeof(char)*1024);
     fpIn = FOPEN(inFile, "r");
-    while (fgets(line, 1024, fpIn)) {      
+    while (fgets(line, 1024, fpIn)) {
+      // strip whitespace from the end of the line
+      while (isspace(line[strlen(line)-1])) line[strlen(line)-1] = '\0';
+
       convert2kml(line, fpOut, basename, format);
       n++;
     }
