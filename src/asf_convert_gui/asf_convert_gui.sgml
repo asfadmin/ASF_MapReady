@@ -483,6 +483,14 @@
                     the terrain and the given height, assuming a satellite look
                     angle 45 degrees from horizontal.
                 </para>
+                <para>
+                    This height value is ignored if you've performed
+                    terrain correction (which, in effect, applies a
+                    height correction to every pixel individually.)
+                    When using "refine geolocation" in the terrain
+                    correction section, however, it is a good idea to
+                    apply a height correction.
+                </para>
             </listitem>
             <listitem>
                 <para>Specify Pixel Size</para>
