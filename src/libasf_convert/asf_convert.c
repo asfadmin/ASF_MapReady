@@ -517,7 +517,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Check that the user didn't specify an average height, and
       // also is doing terrain correction
-      if (cfg->general->terrain_correct && cfg->geocoding->height != 0) {
+      if (cfg->general->terrain_correct &&
+          !cfg->terrain_correct->refine_geolocation_only &&
+          cfg->geocoding->height != 0)
+      {
           asfPrintWarning("Since terrain correction is being applied, "
                           "asf_geocode will ignore the\nspecified "
                           "average height.\n");
@@ -875,7 +878,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // When terrain correcting, ignore average height -- the height
       // has already been corrected for.
-      if (cfg->general->terrain_correct && cfg->geocoding->height != 0) {
+      if (cfg->general->terrain_correct &&
+          !cfg->terrain_correct->refine_geolocation_only &&
+          cfg->geocoding->height != 0)
+      {
           asfPrintWarning("Since terrain correction was applied, ignoring "
                           "average height specification\nfor geocoding.\n");
           average_height = 0.0;
