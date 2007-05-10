@@ -21,8 +21,10 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
     set_font();
+    get_asf_share_dir_with_argv0(argv[0]);
 
     glade_xml_file = (gchar *)find_in_share("asf_convert_gui.glade");
+
     asfPrintStatus("\n\nASF Convert:\n");
     asfPrintStatus("Using share files directory: %s\n\n", get_asf_share_dir());
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);

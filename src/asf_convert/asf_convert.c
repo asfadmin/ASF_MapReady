@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
       || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
       print_help();
   }
+  get_asf_share_dir_with_argv0(argv[0]);
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
   // Check which options were provided
