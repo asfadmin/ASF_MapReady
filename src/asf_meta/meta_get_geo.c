@@ -96,9 +96,14 @@ int meta_get_latLon(meta_parameters *meta,
     }
     return 0;
   } else { /*Bogus image type.*/
-    printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
-     meta->sar->image_type);
-    exit(1);
+    asfPrintError(
+      "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
+      "meta->transform = %p, so it isn't ALOS.\n"
+      "meta->sar = %p, so it isn't Slant/Ground range.\n"
+      "meta->projection = %p, so it isn't Projected, or Scansar.\n"
+      "meta->general->name: %s\n",
+      meta->transform, meta->sar, meta->projection,
+      meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }
   return 0;
