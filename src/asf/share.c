@@ -474,17 +474,13 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
         if (share) {
             // strip off the executable, leaving just the path info
             char *argv0_path = get_dirname(argv0);
-            if (argv0_path && strlen(argv0_path) == 0) {
+            if (argv0_path && strlen(argv0_path) > 0) {
                 // a copy for us to change "whatever/bin" to "whatever/share/asf_tools"
                 char *buf = MALLOC(sizeof(char)*(strlen(argv0_path) + strlen(share) + 5));
                 strcpy(buf, argv0_path);
 
-                // If path item ends with a separator, pop that off
-                // note that this code is unix-only
-                if (buf[strlen(buf) - 1] == '/') buf[strlen(buf) - 1] = '\0';
-
-                // only try this if it ends with 'bin'
-                if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
+                // only try this if the binary location ends with 'bin'
+                if (strcmp(buf + strlen(buf) - 4, "bin/") == 0) {
                     // strip off "bin" - add "share/asf_tools"
                     *(buf + strlen(buf) - 4) = '\0';
                     strcat(buf, share);
