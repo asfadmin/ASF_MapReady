@@ -3,6 +3,7 @@
 #include "asf_nan.h"
 #include "assert.h"
 #include <stdarg.h>
+#include "asf_license.h"
 
 int currArg=1;   /* Points to current command line arg */
 
