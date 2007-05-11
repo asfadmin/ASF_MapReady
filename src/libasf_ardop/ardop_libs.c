@@ -115,14 +115,13 @@ HISTORY: 1.0 - Tom Logan   4/97  Modified from stopwatch functions
 void elapse(int fnc)
   {
     struct timeval tp2;
-    struct timezone tzp2,tzp1;
     static struct timeval tp1;
 
     if (fnc == 0)
-      gettimeofday(&tp1,&tzp1);
+      gettimeofday(&tp1,NULL);
     else
       { 
-	gettimeofday(&tp2,&tzp2);
+	gettimeofday(&tp2,NULL);
         printf("   elapsed time = %i seconds.\n\n",(int)(tp2.tv_sec-tp1.tv_sec));
       }
   }
