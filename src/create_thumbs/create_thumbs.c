@@ -302,14 +302,23 @@ int generate_ceos_thumbnail(const char *input_data, int size)
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
-    int larger_dim = 1024;
+    int sf;
+    if (size > 1024)
+    {
+        sf = 1; // read in the whole thing
+    }
+    else
+    {
+        int larger_dim = size*4;
+        if (larger_dim < 1024) larger_dim = 1024;
 
-    // Vertical and horizontal scale factors required to meet the
-    // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (imd->general->line_count / larger_dim);
-    int hsf = ceil (imd->general->sample_count / larger_dim);
-    // Overall scale factor to use is the greater of vsf and hsf.
-    int sf = (hsf > vsf ? hsf : vsf);
+        // Vertical and horizontal scale factors required to meet the
+        // max_thumbnail_dimension part of the interface contract.
+        int vsf = ceil (imd->general->line_count / larger_dim);
+        int hsf = ceil (imd->general->sample_count / larger_dim);
+        // Overall scale factor to use is the greater of vsf and hsf.
+        sf = (hsf > vsf ? hsf : vsf);
+    }
 
     // Thumbnail image sizes.
     size_t tsx = imd->general->sample_count / sf;
@@ -354,12 +363,16 @@ int generate_ceos_thumbnail(const char *input_data, int size)
             // Current sampled value.
             double csv;		
 
-            // We will average a couple pixels together.
-            if ( jj * sf < imd->general->line_count - 1 ) {
-                csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
-            }
-            else {
-                csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+            if (sf == 1) {
+                csv = line[jj];
+            } else {
+                // We will average a couple pixels together.
+                if ( jj * sf < imd->general->line_count - 1 ) {
+                    csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
+                }
+                else {
+                    csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+                }
             }
 
             float_image_set_pixel(img, jj, ii, csv);
