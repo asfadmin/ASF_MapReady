@@ -29,6 +29,15 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_histogram.h>
 
+// sometimes we don't have these - choose conservative values
+#ifndef SSIZE_MAX
+#define SSIZE_MAX 32767
+#endif
+
+#ifndef UINT8_MAX
+#define UINT8_MAX 255
+#endif
+
 // Instance structure.  Everything here is private and need not be
 // used or understood by client code, except for the size_x and size_y
 // fields.
