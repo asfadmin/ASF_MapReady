@@ -105,7 +105,7 @@ void update_summary()
             strcat(text, "\n   Geometric correction only");
 
 	dem_entry = get_widget_checked("dem_entry");
-	dem = strdup(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+	dem = STRDUP(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
 
 	if (!dem || strlen(dem) == 0)
 	{
@@ -145,7 +145,7 @@ void update_summary()
             char *mask;
 
             mask_entry = get_widget_checked("mask_entry");
-            mask = strdup(gtk_entry_get_text(GTK_ENTRY(mask_entry)));
+            mask = STRDUP(gtk_entry_get_text(GTK_ENTRY(mask_entry)));
 
             if (!mask || strlen(mask) == 0)
             {

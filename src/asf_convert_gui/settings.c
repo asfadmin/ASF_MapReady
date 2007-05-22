@@ -1324,7 +1324,7 @@ settings_to_config_file(const Settings *s,
     char *input_basename;
 
     if (s->export_is_checked) {
-        output_file = strdup(output_full);
+        output_file = STRDUP(output_full);
     } else {
         output_file = stripExt(output_full);
     }

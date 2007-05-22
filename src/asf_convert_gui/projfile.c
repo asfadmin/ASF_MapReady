@@ -162,7 +162,7 @@ static GtkWidget * populate_predefined_projections(int projection)
                     char * name_dup;
                     char * p;
 
-                    name_dup = strdup(name);
+                    name_dup = STRDUP(name);
                     p = strrchr(name_dup, '.');
 
                     if (p && strcmp(p, ".proj") == 0)
