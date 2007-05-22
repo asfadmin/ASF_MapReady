@@ -16,7 +16,7 @@ OBJS = airsarin.o \
 
 airsarin: $(OBJS)
 	$(CC) $(CFLAGS) -o airsarin $(OBJS) $(LIBS)
-	mv airsarin $(BIN_POSTFIX) $(BINDIR)
+	mv airsarin$(BIN_POSTFIX) $(BINDIR)
 	cp airsarin.1 ../../man/cat1/airsarin.1
 	rm -f $(OBJS)
 
