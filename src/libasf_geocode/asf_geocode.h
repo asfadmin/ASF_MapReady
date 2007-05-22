@@ -2,6 +2,11 @@
 
 #include "asf_meta.h"
 
+// sometimes we don't have this - choose a conservative value
+#ifndef SSIZE_MAX
+#define SSIZE_MAX 32767
+#endif
+
 // This is the old parse_options.h
 /* Type describing the resampling method to be used.  */
 typedef enum {
