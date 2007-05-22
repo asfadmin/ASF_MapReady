@@ -5,14 +5,17 @@
 
 /* work-around for a bug in the windows version of glib */
 #ifdef win32
+
 #ifdef g_assert
 #undef g_assert
-#define g_assert (void) 
+#define g_assert(expr) assert(expr)
 #endif
+
 #ifdef g_assert_not_reached
 #undef g_assert_not_reached
-#define g_assert_not_reached() exit(1)
+#define g_assert_not_reached() assert(FALSE)
 #endif
+
 #endif
 
 #endif
