@@ -38,12 +38,14 @@ CC="gcc"
 osType=`uname`
 versMajor=`uname -r | awk -F. '{print $1}'`
 versMinor=`uname -r | awk -F. '{print $2}'`
+c99="-D_ISOC99_SOURCE"
 
 ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O4"
 case "${osType}:${versMajor}:${versMinor}" in
 	SunOS:*:*)
-		sys="solaris" ;;
+		sys="solaris" 
+		c99="--std=c99" ;;
 	Linux:*:*)
 		sys="linux" ;;
 	CYGWIN*:*:*)
@@ -257,10 +259,11 @@ rm -f ./endian
 
 # EOF (without quotes) makes cat print out strings with expanded variables
 cat <<EOF >>system_rules
-SYS     = $sys
-CC      = $CC
-RANLIB  = $ranlib
-OPTFLAG = $optFlag
+SYS     =   $sys
+CC      =   $CC
+RANLIB  =   $ranlib
+OPTFLAG =   $optFlag
+C99_FLAGS = $c99
 EOF
 
 # 'EOF' (with quotes) makes cat print out literal strings (no expanded variables [$])
@@ -270,7 +273,6 @@ ASF_INCLUDE_DIR = ../../include
 # LARGEFILE_FLAGS must precede all include options.
 LARGEFILE_FLAGS = -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 INCLUDE_FLAGS   = -I. -I$(ASF_INCLUDE_DIR)
-C99_FLAGS       = -D_ISOC99_SOURCE --std=c99 -D_POSIX_C_SOURCE
 SYS_FLAGS       = -D$(SYS)
 
 # If compiler is gcc we're going to add some debugging flags/libraries
