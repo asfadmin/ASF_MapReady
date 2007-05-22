@@ -44,8 +44,7 @@ static const size_t default_cache_size = 16 * 1048576;
 // unique names.
 static unsigned long current_tile_file_number = 0;
 // We need to ensure that multiple threads trying to create their own
-// images concurently don't end up with the sampe temporary file
-// names.
+// images concurently don't end up with the same temporary file names.
 G_LOCK_DEFINE_STATIC (current_tile_file_number);
 
 // We don't want to let multiple threads twiddle the signal block mask

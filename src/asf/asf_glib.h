@@ -6,6 +6,8 @@
 /* work-around for a bug in the windows version of glib */
 #ifdef win32
 
+#include <assert.h>
+
 #ifdef g_assert
 #undef g_assert
 #define g_assert(expr) assert(expr)
