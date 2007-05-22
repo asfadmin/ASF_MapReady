@@ -87,7 +87,7 @@ void find_pairs(int track, char *list, char *pairs, int *nPairs)
 
   fpOut = FOPEN(pairs, "w");
   
-  // Look for image pairs
+  // Look for image pairs and determine how many pairs we have
   for (i=0; i<n; i++)
     if (orbit[i]>rev) {
       rev = orbit[i];
@@ -113,5 +113,4 @@ void find_pairs(int track, char *list, char *pairs, int *nPairs)
   FREE(orbit);
   FREE(frame);
   FREE(s);
-
 }

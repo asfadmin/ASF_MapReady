@@ -1,25 +1,35 @@
 #include "asf_baseline.h"
 
+// Prototypes
+void init_baseline_shape(char *inFile);
+void open_baseline_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
+void close_baseline_shape(DBFHandle dbase, SHPHandle shape);
+
 void generate_products(struct base_pair *pairs, int nPairs)
 {
-  FILE *fpDB, *fpText, *fpKml;
+  DBFHandle dbase=NULL;
+  SHPHandle shape=NULL;
+  FILE *fpDB=NULL, *fpText=NULL, *fpKml=NULL;
   char dbFile[255], textFile[255], kmlFile[255], shapeFile[255]; 
   int i, old_orbit=-99;
 
-  for (i=0; i<nPairs; i++) {
-    
+  for (i=0; i<nPairs; i++) {    
     if (pairs[i].master != old_orbit) {
       // Closing open files if necessary
       if (fpDB)
 	FCLOSE(fpDB);
       if (fpText)
 	FCLOSE(fpText);
-      if (fpKml)
+      if (fpKml) {
+	kml_footer(fpKml);
 	FCLOSE(fpKml);
+      }
+      if (dbase && shape)
+	close_baseline_shape(dbase, shape);
 
       // Open database file and write header
-      sprintf(dbFile, "%s_%s_%d_%d.db", 
-	      pairs[i].sensor, pairs[i].mode, pairs[i].track, pairs[i].master);
+      sprintf(dbFile, "%s_%s_%d_%d.db", pairs[i].sensor, pairs[i].mode, 
+	      pairs[i].track, pairs[i].master);
       fpDB = FOPEN(dbFile, "wt");
       fprintf(fpDB, "Sensor\t");
       fprintf(fpDB, "Beam_mode\t");
@@ -66,13 +76,12 @@ void generate_products(struct base_pair *pairs, int nPairs)
 	      pairs[i].sensor, pairs[i].mode, pairs[i].master);
       fpKml = FOPEN(kmlFile, "wt");
       kml_header(fpKml);
-      baseline2kml(pairs, nPairs, fpKml);
-      kml_footer(fpKml);
 
       // Write baseline shape file
       sprintf(shapeFile, "%s_%s_%d",
 	      pairs[i].sensor, pairs[i].mode, pairs[i].master);
-      baseline2shape(pairs, nPairs, shapeFile);
+      init_baseline_shape(shapeFile);
+      open_baseline_shape(shapeFile, &dbase, &shape);
     }
 
     // Write into database file
@@ -113,8 +122,16 @@ void generate_products(struct base_pair *pairs, int nPairs)
     fprintf(fpText, "%.4f\t", pairs[i].fe_lat);
     fprintf(fpText, "%.4f\n", pairs[i].fe_lon);
 
-    old_orbit = pairs[i].master;
+    // Write into baseline kml file
+    baseline2kml(i, pairs, fpKml);
+
+    // Write into baseline shape file
+    baseline2shape(i, pairs, dbase, shape);
+
   }
   FCLOSE(fpDB);
   FCLOSE(fpText);
+  kml_footer(fpKml);
+  FCLOSE(fpKml);
+  close_baseline_shape(dbase, shape);
 }

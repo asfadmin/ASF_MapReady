@@ -17,18 +17,14 @@
 #include "asf_vector.h"
 #include "shapefil.h"
 
+#define SIZE 10000
+
 struct srf_orbit {
+  char sensor[10];  
   int orbit;
   int seq;
-  int index;
-  struct srf_orbit *next;
-};
-
-struct base_info {
-  int orbit;      // orbit number
-  int frame;      // frame number
-  int seq;        // sequence number (only of interest for ordering)
   char orbit_dir; // orbit direction
+  int frame;      // frame number
   float c_lat;    // center latitude
   float c_lon;    // center longitude
   float ns_lat;   // near start latitude
@@ -48,7 +44,6 @@ struct base_info {
   double range;   // slant range to mid pixel
   double doppler; // Doppler frequence (constant term)
   char time[30];  // acquisition time
-  struct base_info *next;
 };
 
 struct base_pair {
@@ -59,7 +54,7 @@ struct base_pair {
   char orbit_dir[15];// orbit direction
   int master;        // orbit of master image
   int m_seq;         // sequence of master image
-  char  m_time[30];  // acquisition time of master image
+  char m_time[30];   // acquisition time of master image
   int slave;         // orbit of slave image
   int s_seq;         // sequence of slave image
   char s_time[30];   // acquisition time of slave image
@@ -79,16 +74,19 @@ struct base_pair {
 };
 
 // Prototypes
-void baseline2kml(struct base_pair *pairs, int nPairs, FILE *fp);
-void baseline2shape(struct base_pair *pairs, int nPairs, char *shapeFile);
+void baseline2kml(int ii, struct base_pair *pairs, FILE *fp);
+void baseline2shape(int ii, struct base_pair *pairs, 
+		    DBFHandle dbase, SHPHandle shape);
 void baseline_catalog(char *beam_mode);
-void filter_srf(char *output, char *sensor, char *mode, int *nFiles);
+void read_srf(char *mode, int track, struct srf_orbit *srf_orbit, int *nOrbits);
+/*
 void find_pairs(int track, char *list, char *pairs_list, int *nPairs);
 void read_srf(char *list, int nFiles, char *pairs_list, int nPairs, 
 	      char *sensor, char *beam_mode, 
 	      struct base_info **srf, struct base_pair **base_pairs);
-void determine_baseline(char *sensor, int track, struct base_info *srf, 
-			struct base_pair *pairs, int nPairs);
+*/
+void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrbits,
+			struct base_pair *pairs, int *nPairs);
 void generate_products(struct base_pair *pairs, int nPairs);
 
 #endif

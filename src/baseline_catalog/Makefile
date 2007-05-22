@@ -20,10 +20,8 @@ LIBS =  \
 
 OBJLIB = 	\
 	baseline2vector.o \
-	filter_srf.o \
-	find_pairs.o \
-	determine_baseline.o \
 	read_srf.o \
+	determine_baseline.o \
 	generate_products.o \
 	baseline_catalog.o
 
