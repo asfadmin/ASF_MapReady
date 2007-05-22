@@ -25,4 +25,4 @@ deskew: $(OBJS)
 	cp deskew.1 ../../man/cat1/deskew.1
 
 clean:
-	rm *.o
+	rm -f *.o
