@@ -8,19 +8,16 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 
 # These variables specify the tarball and what it unpacks into.
 UNPACK_DIR := shapelib-1.2.10
-TARFILE := $(UNPACK_DIR).tar
-ZIPFILE := $(TARFILE).gz
+ZIPFILE := $(UNPACK_DIR).tar.gz
 
 build: build_stamp
 
 # Create the library & necessary components in the proper place for retrieval
 build_stamp:
 	mkdir -p $(LIB_DIR) $(INCLUDE_DIR)
-	gunzip --to-stdout $(ZIPFILE) > $(TARFILE)
-	tar xvf $(TARFILE)
-	rm -f $(TARFILE)
+	gunzip --to-stdout $(ZIPFILE) |	tar xv
 	(   cd $(UNPACK_DIR) ; \
-	    cat Makefile ../Makefile.addendum > Makefile.2 ; \
+	    cat ../Makefile.prependum Makefile ../Makefile.addendum > Makefile.2 ; \
 	    mv Makefile.2 Makefile ; \
 	    $(MAKE) libshp.a ; \
 	    cp libshp.a $(LIB_DIR) ; \
