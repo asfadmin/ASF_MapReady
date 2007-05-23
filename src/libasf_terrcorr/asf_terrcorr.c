@@ -26,13 +26,6 @@
 
 static const int PAD = DEM_GRID_RHS_PADDING;
 
-char *strdup(const char *);
-
-static int int_rnd(double x)
-{
-  return (int)floor(x+0.5);
-}
-
 static void ensure_ext(char **filename, const char *ext)
 {
   char *ret = MALLOC(sizeof(char)*(strlen(*filename)+strlen(ext)+5));
@@ -51,20 +44,8 @@ static void ensure_ext(char **filename, const char *ext)
 
 static void remove_file(const char * file)
 {
-  if (fileExists(file)) {
+  if (fileExists(file))
     unlink(file);
-  }
-}
-
-static char * appendSuffix(const char *inFile, const char *suffix)
-{
-  char *suffix_pid = MALLOC(sizeof(char)*(strlen(suffix)+25));
-  sprintf(suffix_pid, "%s", suffix);
-
-  char * ret = appendToBasename(inFile, suffix_pid);
-
-  free(suffix_pid);
-  return ret;
 }
 
 static char *outputName(const char *dir, const char *base, const char *suffix)
@@ -83,7 +64,7 @@ static char *outputName(const char *dir, const char *base, const char *suffix)
     split_dir_and_file(base, dirTmp, fileTmp);
     strcat(fil, fileTmp);
 
-    char *ret = appendSuffix(fil, suffix);
+    char *ret = appendToBasename(fil, suffix);
 
     free(fil);
     free(dirTmp);
@@ -294,7 +275,7 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
       if (update_flag) {
           // If the user issued the "update" flag, then we need to move
           // the new metadata file over the old metadata file.  (ie., we
-          // are "updating" the existing metadata with the new shift values
+          // are "updating" the existing metadata with the new shift values)
           char *inMetaFile = appendExt(sarFile, ".meta");
           char *outMetaFile = appendExt(outFile, ".meta");
           fileCopy(outMetaFile, inMetaFile);
@@ -715,8 +696,8 @@ int match_dem(meta_parameters *metaSAR,
     asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
 		   100*cert, dx, dy);
 
-    idx = - int_rnd(dx);
-    idy = - int_rnd(dy);
+    idx = - (int)floor(dx+.5);
+    idy = - (int)floor(dy+.5);
 
     redo_clipping = FALSE;
 
@@ -917,6 +898,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
              "\nSAR metadata file missing or cannot be opened\n");
   metaSAR = meta_read(sarFile);
 
+  // sanity check
+  if (!metaSAR->sar)
+      asfPrintError("Invalid metadata for: %s\nNo SAR block found.\n", sarFile);
+
   //if (is_alos(metaSAR))
   //    asfPrintError("Terrain correction of ALOS data is not yet supported.\n");
   //if (is_scansar(metaSAR))
@@ -970,7 +955,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 
       const float cutoff = -900; // seems to work for most DEMs
       asfPrintStatus("Interpolating DEM Holes.\n");
-      asfPrintStatus("Height cutoff: %.2fm.\n", cutoff);
+      asfPrintStatus("Hole height cutoff: < %.2fm.\n", cutoff);
 
       interp_dem_holes_file(demFile, smoothedDem, cutoff, FALSE);
 
@@ -1074,7 +1059,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		   metaSAR->general->x_pixel_size);
   } else {
     pixel_size = sarRes;
-    resampleFile = strdup(sarFile);
+    resampleFile = STRDUP(sarFile);
     clean_resample_file = FALSE; // don't want to delete the user's image! :)
   }
 
@@ -1082,7 +1067,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   // slant range conversion. This ensures that we have square pixels in the
   // output and don't need to scale the image afterwards.
   if (metaSAR->sar->image_type == 'G') {
-    srFile = appendSuffix(sarFile, "_slant");
+    srFile = appendToBasename(sarFile, "_slant");
     double sr_pixel_size =
       (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
        meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
@@ -1102,7 +1087,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
            metaSAR->sar->image_type == 'R')
   {
     // map projected... at the moment, just support scansar projection
-    srFile = appendSuffix(sarFile, "_slant");
+    srFile = appendToBasename(sarFile, "_slant");
     //double sr_pixel_size =
     //  (meta_get_slant(metaSAR,0,metaSAR->general->sample_count) -
     //   meta_get_slant(metaSAR,0,0)) / metaSAR->general->sample_count;
@@ -1119,7 +1104,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
 		   metaSAR->general->x_pixel_size);
   } else {
     // image already in slant range - no action necessary
-    srFile = strdup(resampleFile);
+    srFile = STRDUP(resampleFile);
     image_was_ground_range = FALSE;
   }
 
@@ -1137,9 +1122,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     {
       // user gave us a slant-range image that didn't require resampling
       // but does require deskewing.  In this case don't want to deskew
-      // in place, because that would modify the original data
+      // in place, because that would modify the original data (in the
+      // normal case, we're modifying one of the temporary files)
       free(srFile);
-      srFile = appendSuffix(sarFile, "_deskewed");
+      srFile = appendToBasename(sarFile, "_deskewed");
       deskew(sarFile, srFile);
       meta_free(metaSAR);
       metaSAR = meta_read(srFile);
@@ -1253,7 +1239,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
     // DEM, it points to our smoothed version of it ...
     if (smooth_dem_holes) {
         // ... but we have some code in here just to make sure, wouldn't
-        // want to delete the user's DEM!!
+        // want to delete the user's DEM!
         if (strstr(demFile, "_tc_smooth"))
             clean(demFile);
     }
@@ -1262,11 +1248,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (smooth_dem_holes)
     FREE(demFile);
 
-  // if we generated the mask, we should clean it up
-  //  ... actually, keep the auto-generated mask.  If user is using
-  //      asf_convert or the gui it will be deleted with the temporary
-  //      files, unless they've elected to keep it (and in that case,
-  //      we definitely don't want to have deleted it!)
   if (generate_water_mask)
     FREE(userMaskFile);
 
