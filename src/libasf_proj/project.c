@@ -818,8 +818,8 @@ void proj_to_latlon(meta_projection *proj, double x, double y, double z,
 		    "Use 'scan_latlon' instead.\n");
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
-      *lat = y;
-      *lon = x;
+      *lat = y*D2R;
+      *lon = x*D2R;
       break;
     default:
       printf("Unrecognized map projection '%c' passed to proj_to_latlon!\n",
