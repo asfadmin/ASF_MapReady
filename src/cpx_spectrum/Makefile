@@ -21,7 +21,7 @@ OBJS  = cpx_spectrum.o \
 
 cpx_spectrum: $(OBJS)
 	$(CC) $(CFLAGS) $(LFLAGS) -o cpx_spectrum $(OBJS) $(LIBS)
-	mv cpx_spectrum $(BIN_POSTFIX) $(BINDIR)
+	mv cpx_spectrum$(BIN_POSTFIX) $(BINDIR)
 	rm *.o
 	cp *.1 ../../man/cat1
 
