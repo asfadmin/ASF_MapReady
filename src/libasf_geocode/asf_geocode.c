@@ -45,6 +45,16 @@ static void print_large_error_blurb(int force_flag)
   }
 }
 
+static int is_alos_prism(meta_parameters *meta) {
+    return strcmp(meta->general->sensor, "ALOS") == 0 &&
+        strcmp(meta->general->sensor_name, "PRISM") == 0;
+}
+
+static int is_alos_avnir(meta_parameters *meta) {
+    return strcmp(meta->general->sensor, "ALOS") == 0 &&
+        strcmp(meta->general->sensor_name, "AVNIR") == 0;
+}
+
 // Since our normal approach is to pass the datum from the input image
 // on through to the (re)projected output image, reprojecting a pixel
 // from a lat long pseudoprojected image requires us to do almost
@@ -556,6 +566,16 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
   // Check whether (output file) projection parameters are valid, dying
   // with an error if they aren't.
   check_parameters (projection_type, datum, pp, imd, force_flag);
+
+  // Don't allow height correction to be applied to ALOS Prism or Avnir
+  if (average_height != 0.0 && (is_alos_prism(imd) || is_alos_avnir(imd))) {
+      asfPrintWarning("Specified height correction of %gm will be ignored for "
+                      "ALOS Prism/Avnir data.\n", average_height);
+      average_height = 0.0;
+  }
+
+  if (average_height != 0.0)
+      asfPrintStatus("Height correction: %fm.\n", average_height);
 
   // Old Scansar data needs a 400m height adjustment.
   if (imd->sar && imd->sar->image_type == 'P' &&

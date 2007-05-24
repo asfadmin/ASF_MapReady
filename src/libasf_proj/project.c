@@ -864,7 +864,6 @@ void alos_to_latlon(meta_parameters *meta,
 
     if (z != 0.0) {
         // height correction applies directly to y (range direction)
-        assert(meta->transform->parameter_count == 4);
         double incid = meta_incid(meta, yLine, xSample);
         xSample += z*tan(PI/2-incid)/meta->general->x_pixel_size;
     }
