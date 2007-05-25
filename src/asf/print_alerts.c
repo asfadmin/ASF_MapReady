@@ -229,10 +229,11 @@ void asfLineMeter(int currentLine, int totalLines)
   /* Report to the log as well */
   /* Only on the last line */
   if (logflag && currentLine==totalLines) {
-    sprintf(logbuf,"%s%c",logbuf,'\n');
+    strcat(logbuf, "\n");
     printLog(logbuf);
   }
 
+  /* Check if we should abort every once in a while */
   if (currentLine%640==0 || currentLine==totalLines)
     check_stop();
 }
@@ -269,10 +270,11 @@ void asfPercentMeter(double inPercent)
   /* Report to the log as well */
   /* Only on the last line */
   if (logflag && newPercent==100) {
-    sprintf(logbuf,"%s%c",logbuf,'\n');
+    strcat(logbuf, "\n");
     printLog(logbuf);
   }
 
+  /* Check if we should abort, 4 times during processing */
   if (newPercent%25==0)
     check_stop();
 }
