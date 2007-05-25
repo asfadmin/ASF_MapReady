@@ -90,4 +90,7 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
 /* Prototypes from deskew.c */
 void deskew(const char *infile, const char *outfile);
 
+/* Prototypes from c2p.c */
+void c2p(const char *infile, const char *outfile, int multilook, int banded);
+
 #endif
