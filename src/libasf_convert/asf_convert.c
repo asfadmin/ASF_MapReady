@@ -136,6 +136,8 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     if (save_converted) {
         char *outfileDir = get_dirname(cfg->general->out_name);
         char *basename = get_basename(tiff_basename);
+        // the naming scheme of the geocoded dem/mask must match what the
+        // gui expects in settings_update_dem/mask.
         sprintf(geocoded, "%sgeocoded_%s_%s", outfileDir, what, basename);
         free(outfileDir);
         free(basename);

@@ -1290,7 +1290,9 @@ settings_update_dem(Settings *s, const char *output_path, int is_first)
     {
         // ... we point to the saved DEM instead of the TIFF
         char *file = get_basename(s->dem_file);
-        sprintf(s->dem_file, "%s/%s.img", output_path, file);
+        // note that the file name here is hard-coded to match what is
+        // set up in libasf_convert's convert_tiff() code.
+        sprintf(s->dem_file, "%s/geocoded_dem_%s.img", output_path, file);
         free(file);
     }
 }
@@ -1306,7 +1308,9 @@ settings_update_mask(Settings *s, const char *output_path, int is_first)
     {
         // ... we point to the saved mask instead of the TIFF
         char *file = get_basename(s->mask_file);
-        sprintf(s->mask_file, "%s/%s.img", output_path, file);
+        // note that the file name here is hard-coded to match what is
+        // set up in libasf_convert's convert_tiff() code.
+        sprintf(s->mask_file, "%s/geocoded_mask_%s.img", output_path, file);
         free(file);
     }
 }
