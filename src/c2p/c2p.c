@@ -74,18 +74,27 @@ void usage(char *name);
 
 int main (int argc, char *argv[])
 {
-/* Make sure there are the correct number of args in the command line */
-  if (argc != 3) { usage(argv[0]); }
+/* cla parsing */
+  handle_common_asf_args(&argc, &argv, "c2p");
+  int multilook = extract_flag_options(&argc, &argv, "-ml", "-multilook", NULL);
+  int multiband = extract_flag_options(&argc, &argv, "-mb", "-multiband", NULL);
   
+/* After extracting the optional flags, should have 2 args left */
+  if (argc != 3)
+      usage(argv[0]);
+
 /* Make sure input and output names are different */
   if (strcmp(argv[1],argv[2])==SAME) {
     printf("c2p: Input and output names cannot be the same. Exiting.\n");
     exit(EXIT_FAILURE);
   }
 
-/* Do it!  No multilook, no banded output */
-  c2p(argv[1], argv[2], FALSE, FALSE);
+/* Do it! */
+  c2p(argv[1], argv[2], multilook, multiband);
   
+  if (logflag)
+      FCLOSE(fLog);
+
   return 0;
 }
 
@@ -94,14 +103,24 @@ void usage(char *name)
 {
  printf("\n"
 	"USAGE:\n"
-	"   %s <in> <out>\n",name);
+	"   %s [-ml] [-mb] <in> <out>\n",name);
  printf("\n"
 	"REQUIRED ARGUMENTS:\n"
 	"   <in>  The input file, assumed to be complex data.\n"
 	"          will add .cpx extension to create <in>.cpx\n"
 	"   <out> The base file name for the output;\n"
-	"          Writes out files named <out>.amp, <out>.phase,\n"
-	"          and <out>.meta\n");
+	"          Writes out files named <out>_amp.img and\n"
+    "          <out>_phase.img, and metadata for each.\n"
+    "          When the -mb flag (multiband) is present,\n"
+    "          the output is <out>.img, a 2-band file with\n"
+    "          the amplitude in band 0, phase in band 1.\n\n"
+    "OPTIONAL ARGUMENTS:\n"
+    "   -ml   The data is multilooked as it is converted to\n"
+    "          polar.  The amplitude values are computed by\n"
+    "          first calculating the power, then multilooking,\n"
+    "          and finally square-rooting to obtain the\n"
+    "          amplitude.\n"
+    "   -mb   Output a single 2-band file.\n\n");
  printf("\n"
 	"DESCRIPTION:\n"
 	"   Converts a complex image file to polar image files (amp + phase)\n");
