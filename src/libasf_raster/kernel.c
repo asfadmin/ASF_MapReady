@@ -5,7 +5,7 @@ FUNCTION NAME:   kernel - performs the kernel operation of the
 INPUT: inbuf          - input image buffer
        nLines         - number of lines (image buffer)
        nSamples       - number of samples per line (image buffer)
-       xLine          - line of interest
+       yLine          - line of interest
        xSample        - sample position within line
        kernel_size    - number of samples in kernel
        damping_factor - exponential damping factor
@@ -28,12 +28,12 @@ int compare_values(const float *valueA, const float *valueB)
   return 0;
 }
 
-double calc_sum(float *inbuf, int nSamples, int xLine, int xSample, int kernel_size)
+double calc_sum(float *inbuf, int nSamples, int yLine, int xSample, int kernel_size)
 {
   register int i,j;
   double sum=0.0;
   int half = (kernel_size-1)/2;
-  int base = (xSample-half+(xLine-half)*nSamples);
+  int base = (xSample-half+(yLine-half)*nSamples);
 
   for (i=0; i<kernel_size; i++) 
     for (j=0; j<kernel_size; j++) 
@@ -42,13 +42,13 @@ double calc_sum(float *inbuf, int nSamples, int xLine, int xSample, int kernel_s
   return sum;
 }
 
-double calc_mean(float *inbuf, int nSamples, int xLine, int xSample, 
+double calc_mean(float *inbuf, int nSamples, int yLine, int xSample, 
 		 int kernel_size)
 {
   register int i,j;
   double sum=0.0, mean;
   int half = (kernel_size-1)/2;
-  int base = (xSample-half+(xLine-half)*nSamples);
+  int base = (xSample-half+(yLine-half)*nSamples);
 
   for (i=0; i<kernel_size; i++) 
     for (j=0; j<kernel_size; j++) 
@@ -59,13 +59,13 @@ double calc_mean(float *inbuf, int nSamples, int xLine, int xSample,
   return mean;
 }
 
-double calc_std_dev(float *inbuf, int nSamples, int xLine, int xSample, 
+double calc_std_dev(float *inbuf, int nSamples, int yLine, int xSample, 
 		    int kernel_size, double mean)
 {
   register int i,j;
   double sum_vv=0.0, standard_deviation;
   int half = (kernel_size-1)/2;
-  int base = (xSample-half+(xLine-half)*nSamples);
+  int base = (xSample-half+(yLine-half)*nSamples);
 
   for (i=0; i<kernel_size; i++)
     for (j=0; j<kernel_size; j++)
@@ -77,11 +77,12 @@ double calc_std_dev(float *inbuf, int nSamples, int xLine, int xSample,
 }
 
 float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples, 
-	     int xLine, int xSample, int kernel_size, float damping_factor, 
+	     int yLine, int xSample, int kernel_size, float damping_factor, 
 	     int nLooks)
 {                    
   double sum = 0.0, mean, standard_deviation, weight, value = 0.0;         
-  int half = (kernel_size-1)/2, base = (xSample-half+(xLine-half)*nSamples); 
+  int half = (kernel_size-1)/2;
+  int base = xSample-half+(yLine-half)*nSamples;
   int total = 0, sigmsq=4;
   double ci, cu, cmax, center, a, b, d, rf = 0.0, x, y, m;
   float *pix;
@@ -90,24 +91,16 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
   switch(filter_type)
     {
     case AVERAGE:
-      for (i=0; i<nLines; i++) {
-	for (j=xSample-half; j<=xSample+half; j++) {
-	    if (inbuf[base]!=0 && j<nSamples)
-	      {
-		sum += inbuf[base];
-		total += 1;
-	      }
-	    base++;
-	  }
-	base += nSamples;
-	base -= kernel_size;
-      }
+      for (i=yLine-half; i<=yLine-half; i++)
+	for (j=xSample-half; j<=xSample+half; j++)
+	  sum += inbuf[i*nSamples+j];
+      total = kernel_size * kernel_size;
       value = sum/total;
       break;
 
     case GAUSSIAN:
-      sum = calc_sum(inbuf, nSamples, xLine, xSample, kernel_size);
-      for (i=0; i<nLines; i++) {
+      sum = calc_sum(inbuf, nSamples, yLine, xSample, kernel_size);
+      for (i=yLine-half; i<=yLine-half; i++) {
         for (j=xSample-half; j<=xSample+half; j++) {
           value += exp(- (SQR(i-half)+SQR(j-xSample)) / (2*sigmsq)) 
                    * inbuf[base] / sum;
@@ -182,12 +175,12 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
     case EDGE:
       value = inbuf[base + half + half*nSamples] - kernel(AVERAGE,inbuf,nLines,
-        nSamples,xLine,xSample,kernel_size,damping_factor,nLooks);
+        nSamples,yLine,xSample,kernel_size,damping_factor,nLooks);
       break;
 
     case MEDIAN:
       pix = (float*) MALLOC(kernel_size*kernel_size*sizeof(float));
-      for (i=0; i<nLines; i++) {
+      for (i=yLine-half; i<=yLine+half; i++) {
         for (j=xSample-half; j<=xSample+half; j++) 
           pix[total++] = inbuf[base++];
         base += nSamples;
@@ -200,9 +193,9 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
     case LEE:
       center = inbuf[base + half + half*nSamples];
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       ci = standard_deviation/mean;
       cu = sqrt(1/(double)nLooks);
       weight = 1 - SQR(cu)/SQR(ci);
@@ -211,9 +204,9 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
     case ENHANCED_LEE:
       center = inbuf[base + half + half*nSamples];
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       ci = standard_deviation/mean;
       cu = sqrt(1/(double)nLooks);
       cmax = sqrt(1+2.0/(double)nLooks);
@@ -225,12 +218,12 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
       break;
 
     case FROST:
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       ci = standard_deviation/mean;
       a = damping_factor * SQR(ci);
-      for (i=0; i<nLines; i++) {
+      for (i=yLine-half; i<=yLine+half; i++) {
 	for (j=xSample-half; j<=xSample+half; j++) {
           m = exp(-a * abs(j-half));
           rf += m * inbuf[base];
@@ -244,7 +237,7 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
       break;
 
     case ENHANCED_FROST:
-      for (i=0; i<nLines; i++) {
+      for (i=yLine-half; i<=yLine+half; i++) {
         for (j=xSample-half; j<=xSample+half; j++) {
           inbuf[base] = SQR(inbuf[base]);
           base++;
@@ -254,9 +247,9 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
       }
       base = xSample- half;
       center = inbuf[base + half + half*nSamples];
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       cu = sqrt(1/(double)nLooks);
       cmax = sqrt(1+2.0/(double)nLooks);
       for (i=0; i<nLines; i++) {
@@ -278,9 +271,9 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
     case GAMMA_MAP:
       center = inbuf[base + half + half*nSamples];
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       ci = standard_deviation/mean;
       cu = sqrt(1/(double)nLooks);
       cmax = sqrt(2.0)*cu;
@@ -295,9 +288,9 @@ float kernel(filter_type_t filter_type, float *inbuf, int nLines, int nSamples,
 
     case KUAN:
       center = inbuf[base + half + half*nSamples];
-      mean = calc_mean(inbuf, nSamples, xLine, xSample, kernel_size);
+      mean = calc_mean(inbuf, nSamples, yLine, xSample, kernel_size);
       standard_deviation = 
-	calc_std_dev(inbuf, nSamples, xLine, xSample, kernel_size, mean);
+	calc_std_dev(inbuf, nSamples, yLine, xSample, kernel_size, mean);
       ci = standard_deviation/mean;
       cu = sqrt(1/(double)nLooks);
       weight = (1 - SQR(cu)/SQR(ci))/(1 + SQR(cu));
