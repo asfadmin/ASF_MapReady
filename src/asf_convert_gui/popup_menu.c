@@ -6,12 +6,9 @@
 
 static const int popup_menu_item_remove = 0;
 static const int popup_menu_item_process = 1;
-static const int popup_menu_item_display_ceos_metadata = 4;
-static const int popup_menu_item_display_asf_metadata = 5;
-static const int popup_menu_item_view_output = 6;
-static const int popup_menu_item_google_earth = 7;
-
 static const int popup_menu_item_reprocess = 1;
+static const int popup_menu_item_display_ceos_metadata = 4;
+static const int popup_menu_item_google_earth = 5;
 
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
@@ -31,6 +28,9 @@ static const char * imgloc(char * file)
 void set_toolbar_images()
 {
     GtkWidget * w = get_widget_checked("google_earth_toolbar_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+
+    w = get_widget_checked("completed_files_google_earth_toolbar_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
 
     w = get_widget_checked("ceos_metadata_toolbar_image");
@@ -89,6 +89,7 @@ enable_toolbar_buttons(gboolean enable_view_output,
     GtkWidget *display_asf_button;
     GtkWidget *view_output_button;
     GtkWidget *google_earth_button;
+    GtkWidget *google_earth_button2;
 
     rename_button = get_widget_checked("rename_button");
     view_log_button = get_widget_checked("view_log_button");
@@ -97,6 +98,8 @@ enable_toolbar_buttons(gboolean enable_view_output,
     display_asf_button = get_widget_checked("display_asf_button");
     view_output_button = get_widget_checked("view_output_button");
     google_earth_button = get_widget_checked("google_earth_button");
+    google_earth_button2 =
+      get_widget_checked("completed_files_google_earth_button");
 
     gtk_widget_set_sensitive(rename_button, TRUE);
     gtk_widget_set_sensitive(view_log_button, TRUE);
@@ -105,6 +108,7 @@ enable_toolbar_buttons(gboolean enable_view_output,
     gtk_widget_set_sensitive(display_asf_button, enable_display_asf_metadata);
     gtk_widget_set_sensitive(display_ceos_button, enable_display_ceos_metadata);
     gtk_widget_set_sensitive(google_earth_button, TRUE);
+    gtk_widget_set_sensitive(google_earth_button2, TRUE);
 }
 
 static void
@@ -122,7 +126,8 @@ disable_popups_for_multiple_selected(GtkMenu *menu)
         gboolean enable;
         GtkMenuItem * item = GTK_MENU_ITEM(iter->data);
 
-        enable = n == popup_menu_item_remove || n == popup_menu_item_process;
+        enable = n == popup_menu_item_remove || n == popup_menu_item_process ||
+                 n == popup_menu_item_google_earth;
         gtk_widget_set_sensitive(GTK_WIDGET(item), enable);
 
         ++n;
@@ -166,7 +171,6 @@ disable_toolbar_buttons_for_multiple_selected()
     GtkWidget *display_ceos_button;
     GtkWidget *display_asf_button;
     GtkWidget *view_output_button;
-    GtkWidget *google_earth_button;
 
     rename_button = get_widget_checked("rename_button");
     view_log_button = get_widget_checked("view_log_button");
@@ -174,7 +178,6 @@ disable_toolbar_buttons_for_multiple_selected()
     display_ceos_button = get_widget_checked("display_ceos_button");
     display_asf_button = get_widget_checked("display_asf_button");
     view_output_button = get_widget_checked("view_output_button");
-    google_earth_button = get_widget_checked("google_earth_button");
 
     gtk_widget_set_sensitive(rename_button, FALSE);
     gtk_widget_set_sensitive(view_log_button, FALSE);
@@ -182,7 +185,6 @@ disable_toolbar_buttons_for_multiple_selected()
     gtk_widget_set_sensitive(display_asf_button, FALSE);
     gtk_widget_set_sensitive(display_ceos_button, FALSE);
     gtk_widget_set_sensitive(view_output_button, FALSE);
-    gtk_widget_set_sensitive(google_earth_button, FALSE);
 }
 
 static void
@@ -679,9 +681,9 @@ handle_view_output()
 }
 
 static int
-handle_google_earth()
+handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 {
-    GtkWidget *completed_files_list;
+    GtkWidget *files_list;
     GtkTreeModel * model;
     GtkTreeSelection *selection;
     GList * selected_rows, * i;
@@ -695,24 +697,22 @@ handle_google_earth()
     int n_bad = 0;
 
 #ifdef win32
+    // FIXME, hardcoded windows path here
     ge = "/cygdrive/c/Program\\ Files/Google/Google\\ Earth/googleearth.exe";
 #else
     ge = find_in_path("googleearth");
 
     if (!ge)
     {
-       message_box("Couldn't find path to googleearth!  Is it installed?");
+       message_box("Couldn't find googleearth!  Is it installed?");
        return FALSE;
     }
 #endif
 
-    completed_files_list = get_widget_checked("completed_files_list");
-    selection = gtk_tree_view_get_selection(
-        GTK_TREE_VIEW(completed_files_list));
-    model = GTK_TREE_MODEL(completed_list_store);
-
-    selected_rows = gtk_tree_selection_get_selected_rows(
-        selection, &model);
+    files_list = get_widget_checked(widget_name);
+    selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+    model = GTK_TREE_MODEL(store);
+    selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
 
     refs = NULL;
     i = selected_rows;
@@ -729,8 +729,7 @@ handle_google_earth()
         GtkTreeRowReference * ref;
 
         path = (GtkTreePath *) i->data;
-        ref = gtk_tree_row_reference_new(
-            GTK_TREE_MODEL(completed_list_store), path);
+        ref = gtk_tree_row_reference_new(model, path);
 
         refs = g_list_append(refs, ref);
 
@@ -752,9 +751,8 @@ handle_google_earth()
 
         ref = (GtkTreeRowReference *) i->data;
         path = gtk_tree_row_reference_get_path(ref);
-        gtk_tree_model_get_iter(GTK_TREE_MODEL(completed_list_store),
-                                &iter, path);
-        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter, 
+        gtk_tree_model_get_iter(model, &iter, path);
+        gtk_tree_model_get(model, &iter, 
             COL_DATA_FILE, &input_name, 
             COL_OUTPUT_FILE, &out_name,
             -1);
@@ -767,8 +765,8 @@ handle_google_earth()
             free(tmp);
 
             sprintf(kml_filename, "%stmp%d.kml", output_dir, pid);
-            printf("kml file: %s\n", kml_filename);
-            kml_file = fopen(kml_filename, "wt");
+            printf("Temporary kml file: %s\n", kml_filename);
+            kml_file = fopen(kml_filename, "w");
             if (!kml_file)
             {
                 message_box("Couldn't open kml file!");
@@ -788,25 +786,32 @@ handle_google_earth()
         }
 
 	metadata_name = build_asf_metadata_filename(out_name);
+        char *base_output_name = get_basename(out_name);
         
         if (fileExists(metadata_name)) 
-        {
-            char *base_output_name = get_basename(out_name);
+            meta = meta_read(metadata_name);
+        else
+            meta = meta_create(metadata_name);
 
-            meta = meta_read(metadata_name);    
-            printf("input_name: %s\n", input_name);
+        if (meta && meta->general &&
+            meta_is_valid_double(meta->general->center_latitude) &&
+            meta_is_valid_double(meta->general->center_longitude))
+        {
+            printf("Adding to kml: %s\n", input_name);
 //            kml_entry_with_overlay(kml_file, meta, base_output_name, 
 //                                   input_name, output_dir);
             kml_entry(kml_file, meta, base_output_name);
             meta_free(meta);
-            free(base_output_name);
-
             ++n_ok;
         }
         else
         {
+            printf("Failed to add to kml: %s\n", metadata_name);
+            if (meta) meta_free(meta);
             ++n_bad;
         }
+
+        free(base_output_name);
 
 	g_free(metadata_name);
         i = g_list_next(i);
@@ -817,9 +822,7 @@ handle_google_earth()
 
     if (n_bad > 0)
     {
-        message_box("Not all of the selected images had metadata\n"
-                    "files available.  To view in Google Earth, the\n"
-                    "data needs to be imported first.");
+        message_box("Some of the metadata files failed to load.\n");
     }
 
     if (n_ok > 0)
@@ -840,6 +843,19 @@ handle_google_earth()
     free(output_dir);
 
     return TRUE;
+}
+
+static int
+handle_google_earth()
+{
+    return handle_google_earth_imp("files_list", list_store);
+}
+
+static int
+handle_completed_files_google_earth()
+{
+    return handle_google_earth_imp("completed_files_list", 
+                                   completed_list_store);
 }
 
 static int 
@@ -973,6 +989,12 @@ on_google_earth_button_clicked(GtkWidget *widget)
   handle_google_earth();
 }
 
+SIGNAL_CALLBACK void
+on_completed_files_google_earth_button_clicked(GtkWidget *widget)
+{
+  handle_completed_files_google_earth();
+}
+
 SIGNAL_CALLBACK gint
 popup_menu_ceos_metadata(GtkWidget *widget, GdkEvent *event)
 {
@@ -1039,6 +1061,12 @@ popup_menu_google_earth(GtkWidget *widget, GdkEvent *event)
   return handle_google_earth();
 }
 
+SIGNAL_CALLBACK gint
+popup_menu_completed_files_google_earth(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_completed_files_google_earth();
+}
+
 static void
 setup_completed_files_popup_menu()
 {
@@ -1079,12 +1107,11 @@ setup_completed_files_popup_menu()
         G_CALLBACK(popup_menu_view_output), NULL);
     gtk_widget_show(item);
 
-    // Turning off the google earth for convert 3.0
-    //item = gtk_menu_item_new_with_label("View With Google Earth");
-    //gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
-    //g_signal_connect_swapped(G_OBJECT(item), "activate",
-    //    G_CALLBACK(popup_menu_google_earth), NULL);
-    //gtk_widget_show(item);
+    item = gtk_menu_item_new_with_label("View With Google Earth");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+        G_CALLBACK(popup_menu_completed_files_google_earth), NULL);
+    gtk_widget_show(item);
 
     gtk_widget_show(menu);
 
@@ -1132,6 +1159,12 @@ setup_files_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_ceos_metadata), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View With Google Earth");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+        G_CALLBACK(popup_menu_google_earth), NULL);
     gtk_widget_show(item);
 
     gtk_widget_show(menu);
