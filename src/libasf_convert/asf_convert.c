@@ -293,19 +293,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     strcpy(tmp_dir, cfg->general->tmp_dir);
     while (fgets(line, 255, fBatch) != NULL) {
       char batchItem[255], fileName[255], batchPreDir[255];
-      FILE *fConfig;
-
       sscanf(line, "%s", batchItem);
-      split_dir_and_file(batchItem, batchPreDir, fileName);
       
       // strip off known extensions
       char *p = findExt(batchItem);
       if (p) *p = '\0';
 
+      split_dir_and_file(batchItem, batchPreDir, fileName);
+
       // Create temporary configuration file
       create_and_set_tmp_dir(fileName, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
-      fConfig = FOPEN(tmpCfgName, "w");
+      FILE *fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
       fprintf(fConfig, "[General]\n");
       fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
