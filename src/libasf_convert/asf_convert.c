@@ -318,8 +318,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Run asf_convert for temporary configuration file
       asfPrintStatus("\nProcessing %s ...\n", batchItem);
-      check_return(asf_convert(FALSE, tmpCfgName),
-                   "Processing image in batch mode (asf_convert).\n");
+      asfSystem("%sasf_convert%s %s", get_argv0(), bin_postfix(), tmpCfgName);
       strcpy(tmp_dir, cfg->general->tmp_dir);
     }
     FCLOSE(fBatch);

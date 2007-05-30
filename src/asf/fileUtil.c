@@ -550,3 +550,12 @@ getPath(const char *in)
 
   return dir;
 }
+
+const char *bin_postfix()
+{
+#ifdef win32
+    return ".exe";
+#else
+    return "";
+#endif
+}

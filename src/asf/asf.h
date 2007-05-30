@@ -190,6 +190,9 @@ int remove_dir(const char *dir);
    file.  returns empty if no dir info given.  */
 char * getPath(const char *in);
 
+/* returns ".exe" on Windows, "" everywhere else */
+const char *bin_postfix(void);
+
 /******************************************************************************
  * ioLine: Grab any data type and fill a buffer of _type_ data.
  * Assumes that the datae file contains data in big endian order and
@@ -249,11 +252,12 @@ int get_partial_float_lines(FILE *file, meta_parameters *meta,
 			    float *dest);
 
 /***************************************************************************
- * Get the location of the ASF Share Directory */
+ * Get the location of the ASF Share Directory, (and some other stuff) */
 const char * get_asf_share_dir(void);
 const char * get_asf_share_dir_with_argv0(const char *);
 const char * get_asf_bin_dir(void);
 FILE * fopen_share_file(const char * filename, const char * mode);
+const char *get_argv0(void);
 
 /***************************************************************************
  * Wrapper for system() that is more portable, plus uses varargs */

@@ -3,6 +3,7 @@ char * strdup(const char *);
 
 static char * s_share_dir = 0;
 static char * s_bin_dir = 0;
+static char * s_argv0 = 0;
 
 #if defined(win32)
 
@@ -460,6 +461,12 @@ fopen_share_file(const char * filename, const char * mode)
 
 const char *get_asf_share_dir_with_argv0(const char *argv0)
 {
+    // strip off the executable, leaving just the path info
+    char *argv0_path = get_dirname(argv0);
+
+    if (!s_argv0)
+        s_argv0 = STRDUP(argv0_path);
+
 #ifndef win32
     // If the user specified a path on the command line, we want to
     // try that directory first, when searching for the share dir.
@@ -472,8 +479,6 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
         // to get to the share dir (i.e. "share/asf_tools")
         char *share = strstr(ASF_SHARE_DIR, "share");
         if (share) {
-            // strip off the executable, leaving just the path info
-            char *argv0_path = get_dirname(argv0);
             if (argv0_path && strlen(argv0_path) > 0) {
                 // a copy for us to change "whatever/bin" to "whatever/share/asf_tools"
                 char *buf = MALLOC(sizeof(char)*(strlen(argv0_path) + strlen(share) + 5));
@@ -491,10 +496,15 @@ const char *get_asf_share_dir_with_argv0(const char *argv0)
                 }
                 FREE(buf);
             }
-            FREE(argv0_path);
         }
     }
 #endif
 
+    FREE(argv0_path);
     return get_asf_share_dir();
+}
+
+const char *get_argv0()
+{
+    return s_argv0;
 }
