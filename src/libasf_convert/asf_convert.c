@@ -287,6 +287,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     char tmp_dir[255];
     char tmpCfgName[255];
     char line[255];
+    int n_ok = 0, n_bad = 0;
     FILE *fBatch = FOPEN(cfg->general->batchFile, "r");
 
     strcpy(tmp_dir, cfg->general->tmp_dir);
@@ -296,6 +297,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       sscanf(line, "%s", batchItem);
       split_dir_and_file(batchItem, batchPreDir, fileName);
+      
+      // strip off known extensions
+      char *p = findExt(batchItem);
+      if (p) *p = '\0';
+
       // Create temporary configuration file
       create_and_set_tmp_dir(fileName, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
@@ -314,14 +320,39 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       tmp_cfg = read_convert_config(tmpCfgName);
       check_return(write_convert_config(tmpCfgName, tmp_cfg),
                    "Could not update configuration file");
-      FREE(tmp_cfg);
+      free_convert_config(tmp_cfg);
 
       // Run asf_convert for temporary configuration file
+
+      // This is really quite a kludge-- we used to call the library
+      // function here, now we shell out and run the tool directly, sort
+      // of a step backwards, it seems.  Unfortunately, in order to keep
+      // processing the batch even if an error occurs, we're stuck with
+      // this method.  (Otherwise, we'd have to teach asfPrintError to
+      // get us back here, to continue the loop.)
       asfPrintStatus("\nProcessing %s ...\n", batchItem);
-      asfSystem("%sasf_convert%s %s", get_argv0(), bin_postfix(), tmpCfgName);
+      int ret = asfSystem("%sasf_convert%s -log %s.log %s",
+          get_argv0(), bin_postfix(), batchItem, tmpCfgName);
+
+      if (ret != 0) {
+          asfPrintStatus("%s: failed\n", batchItem);
+          ++n_bad;
+      } else {
+          asfPrintStatus("%s: ok\n", batchItem);
+          ++n_ok;
+      }
+
       strcpy(tmp_dir, cfg->general->tmp_dir);
     }
     FCLOSE(fBatch);
+
+    asfPrintStatus("\n\nBatch Complete.\n");
+    asfPrintStatus("Successfully processed %d/%d file%s.\n", n_ok,
+        n_ok + n_bad, n_ok + n_bad == 1 ? "" : "s");
+
+    if (n_bad > 0)
+        asfPrintStatus("  *** %d file%s failed. ***\n", n_bad,
+            n_bad==1 ? "" : "s");
   }
   // Regular processing
   else {
@@ -1343,17 +1374,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (!cfg->general->intermediates) {
         remove_dir(cfg->general->tmp_dir);
     }
+
+    // Don't change this message unless you also change the code in
+    // asf_convert_gui/execute.c to look for a different successful
+    // completion string.  GUI currently detects successful processing
+    // by looking for this message in the log file.... (yeah, I know.)
+    asfPrintStatus("Successful completion!\n\n");
   }
 
   update_status("Done");
   free_convert_config(cfg);
   clear_status_file();
-
-  // Don't change this message unless you also change the code in
-  // asf_convert_gui/execute.c to look for a different successful
-  // completion string.  GUI currently detects successful processing
-  // by looking for this message in the log file.... (yeah, I know.)
-  asfPrintStatus("Successful completion!\n\n");
 
   return(EXIT_SUCCESS);
 }
