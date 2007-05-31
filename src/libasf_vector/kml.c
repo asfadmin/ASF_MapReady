@@ -200,15 +200,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  </LookAt>\n");
     fprintf(kml_file, "  <visibility>1</visibility>\n");
     fprintf(kml_file, "  <open>1</open>\n");
-    fprintf(kml_file, "  <Style>\n");
-    fprintf(kml_file, "    <LineStyle>\n");
-    fprintf(kml_file, "      <color>ffff9900</color>\n");
-    fprintf(kml_file, "      <width>3</width>\n");
-    fprintf(kml_file, "    </LineStyle>\n");
-    fprintf(kml_file, "    <PolyStyle>\n");
-    fprintf(kml_file, "      <color>1fff5500</color>\n");
-    fprintf(kml_file, "    </PolyStyle>\n");
-    fprintf(kml_file, "  </Style>\n");
+    write_kml_style_keys(kml_file);
     fprintf(kml_file, "  <Polygon>\n");
 	fprintf(kml_file, "    <extrude>1</extrude>\n");
 	fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
@@ -433,14 +425,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
   fprintf(kml_file, "  <open>1</open>\n");
-  fprintf(kml_file, "  <Style>\n");
-  fprintf(kml_file, "    <LineStyle>\n");
-  fprintf(kml_file, "      <color>ff00ffff</color>\n");
-  fprintf(kml_file, "    </LineStyle>\n");
-  fprintf(kml_file, "    <PolyStyle>\n");
-  fprintf(kml_file, "      <color>7f00ff00</color>\n");
-  fprintf(kml_file, "    </PolyStyle>\n");
-  fprintf(kml_file, "  </Style>\n");
+  write_kml_style_keys(kml_file);
   fprintf(kml_file, "  <LineString>\n");
   fprintf(kml_file, "    <extrude>1</extrude>\n");
   fprintf(kml_file, "    <tessellate>1</tessellate>\n");
@@ -580,3 +565,17 @@ void write_kml(char *inFile, char *basename, format_type_t format, int list)
   return;
 }
 
+void write_kml_style_keys(FILE *kml_file)
+{
+    // so all of our methods use the same "look" for the
+    // boxes/lines.
+    fprintf(kml_file, "  <Style>\n");
+    fprintf(kml_file, "    <LineStyle>\n");
+    fprintf(kml_file, "      <color>ffff9900</color>\n");
+    fprintf(kml_file, "      <width>3</width>\n");
+    fprintf(kml_file, "    </LineStyle>\n");
+    fprintf(kml_file, "    <PolyStyle>\n");
+    fprintf(kml_file, "      <color>1fff5500</color>\n");
+    fprintf(kml_file, "    </PolyStyle>\n");
+    fprintf(kml_file, "  </Style>\n");
+}

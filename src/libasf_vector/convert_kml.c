@@ -93,14 +93,7 @@ void polygon2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "<latitude>%9.4f</latitude>\n", lat[0]);
   fprintf(fp, "<range>400000</range>\n");
   fprintf(fp, "</LookAt>\n");
-  fprintf(fp, "<Style>\n");
-  fprintf(fp, "<LineStyle>\n");
-  fprintf(fp, "<color>ff00ffff</color>\n");
-  fprintf(fp, "</LineStyle>\n");
-  fprintf(fp, "<PolyStyle>\n");
-  fprintf(fp, "<color>7f00ff00</color>\n");
-  fprintf(fp, "</PolyStyle>\n");
-  fprintf(fp, "</Style>\n");
+  write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LineString>\n");
@@ -186,11 +179,7 @@ void rgps2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "<range>3250000</range>\n");
   fprintf(fp, "<heading>-90</heading>\n");
   fprintf(fp, "</LookAt>\n");
-  fprintf(fp, "<Style>\n");
-  fprintf(fp, "<LineStyle><color>00000ff</color>"
-	  "<width>3</width></LineStyle>\n");
-  //fprintf(fp, "<PolyStyle><color>7f0000ff</color></PolyStyle>\n");
-  fprintf(fp, "</Style>\n");
+  write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
@@ -343,11 +332,7 @@ void shape2kml(char *line, FILE *fp, char *name)
       fprintf(fp, "<range>400000</range>\n");
       fprintf(fp, "</LookAt>\n");
       if (pointType == SHPT_POLYGON) {
-	fprintf(fp, "<Style>\n");
-	fprintf(fp, "<LineStyle><color>ff00ffff</color>"
-		"<width>3</width></LineStyle>\n");
-	fprintf(fp, "<PolyStyle><color>00fffff</color></PolyStyle>\n");
-	fprintf(fp, "</Style>\n");
+          write_kml_style_keys(fp);
 	fprintf(fp, "<Polygon>\n");
 	fprintf(fp, "<outerBoundaryIs>\n");
 	fprintf(fp, "<LinearRing>\n");

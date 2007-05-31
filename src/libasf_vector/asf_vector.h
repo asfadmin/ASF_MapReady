@@ -42,6 +42,7 @@ void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
 void kml_footer(FILE *kml_file);
 void write_kml(char *inFile, char *outFile, format_type_t format, int list);
 void write_kml_overlay(char *filename);
+void write_kml_style_keys(FILE *kml_file);
 
 // Prototypes from convert_shape.c
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
