@@ -1,8 +1,20 @@
 #include <unistd.h>
+
+#ifdef win32
+#define BYTE __byte
+#include "asf.h"
+#undef BYTE
+#include <windows.h>
+#include <shellapi.h>
+#endif
+
 #include "asf_convert_gui.h"
 #include <asf.h>
 #include <asf_meta.h>
+
+#define POINT __tmp_point
 #include <asf_vector.h>
+#undef POINT
 
 static const int popup_menu_item_remove = 0;
 static const int popup_menu_item_process = 1;
@@ -696,19 +708,6 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     int n_ok = 0;
     int n_bad = 0;
 
-#ifdef win32
-    // FIXME, hardcoded windows path here
-    ge = "/cygdrive/c/Program\\ Files/Google/Google\\ Earth/googleearth.exe";
-#else
-    ge = find_in_path("googleearth");
-
-    if (!ge)
-    {
-       message_box("Couldn't find googleearth!  Is it installed?");
-       return FALSE;
-    }
-#endif
-
     files_list = get_widget_checked(widget_name);
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(store);
@@ -825,11 +824,25 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         message_box("Some of the metadata files failed to load.\n");
     }
 
+#ifdef win32
+    char path[1024];
+    FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)output_dir, (LPTSTR)path);
+    ge = STRDUP(escapify(path));
+    printf("Path to google earth: %s\n", ge);
+#else
+    ge = find_in_path("googleearth");
+    if (!ge)
+    {
+       message_box("Couldn't find googleearth!  Is it installed?");
+       return FALSE;
+    }
+#endif
+
     if (n_ok > 0)
     {
         int pid = fork();
         if (pid == 0) {
-            asfSystem("%s \"%s\"", ge, kml_filename);
+            asfSystem("\"%s\" \"%s\"", ge, kml_filename);
             //unlink(kml_filename);
             exit(EXIT_SUCCESS);
         }
