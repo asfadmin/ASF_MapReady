@@ -195,39 +195,41 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
             meta->general->center_latitude);
     fprintf(kml_file, "    <range>400000</range>\n");
-    //fprintf(kml_file, "    <tilt>45</tilt>\n");
+    fprintf(kml_file, "    <tilt>30</tilt>\n");
     //fprintf(kml_file, "    <heading>50</heading>\n");
     fprintf(kml_file, "  </LookAt>\n");
     fprintf(kml_file, "  <visibility>1</visibility>\n");
     fprintf(kml_file, "  <open>1</open>\n");
     fprintf(kml_file, "  <Style>\n");
     fprintf(kml_file, "    <LineStyle>\n");
-    fprintf(kml_file, "      <color>ff00ffff</color>\n");
+    fprintf(kml_file, "      <color>ffff9900</color>\n");
     fprintf(kml_file, "      <width>3</width>\n");
     fprintf(kml_file, "    </LineStyle>\n");
     fprintf(kml_file, "    <PolyStyle>\n");
-    fprintf(kml_file, "      <color>00ffffff</color>\n");
+    fprintf(kml_file, "      <color>1fff5500</color>\n");
     fprintf(kml_file, "    </PolyStyle>\n");
     fprintf(kml_file, "  </Style>\n");
     fprintf(kml_file, "  <Polygon>\n");
-    fprintf(kml_file, "  <outerBoundaryIs>\n");
-    fprintf(kml_file, "  <LinearRing>\n");
-    fprintf(kml_file, "    <coordinates>\n");
+	fprintf(kml_file, "    <extrude>1</extrude>\n");
+	fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+    fprintf(kml_file, "    <outerBoundaryIs>\n");
+    fprintf(kml_file, "      <LinearRing>\n");
+    fprintf(kml_file, "        <coordinates>\n");
     
     update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_UR, lon_UR, &max_lat, &min_lat, &max_lon, &min_lon);
 
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LL, lat_LL);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LR, lat_LR);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UR, lat_UR);
-    fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
+    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
     
-    fprintf(kml_file, "    </coordinates>\n");
-    fprintf(kml_file, "  </LinearRing>\n");
-    fprintf(kml_file, "  </outerBoundaryIs>\n");
+    fprintf(kml_file, "        </coordinates>\n");
+    fprintf(kml_file, "      </LinearRing>\n");
+    fprintf(kml_file, "    </outerBoundaryIs>\n");
     fprintf(kml_file, "  </Polygon>\n");
     fprintf(kml_file, "</Placemark>\n");
 
