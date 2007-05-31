@@ -29,6 +29,7 @@ have_shp="no"
 try_gtk="yes"
 have_gtk="no"
 have_fftw="no"
+have_png="no"
 
 AC_PROG_CC
 AC_PROG_LEX
@@ -164,6 +165,19 @@ else
 fi
 AC_SUBST(ASF_LIB_TIFF)
 AC_SUBST(LIBTIFF_LOCATION)
+
+#### libpng check ####
+AC_CHECK_LIB(png,png_write_image,have_png="yes",have_png="no")
+if test "$sys" = "win32" ; then
+   have_png="no"
+fi
+if test "$have_png" = "no" ; then
+   ASF_LIB_PNG="${ext_lib_src_dir}/libpng"
+   PNG_LIBS="\$(LIBDIR)/libpng.a"
+else
+   PNG_LIBS="-lpng"
+fi
+AC_SUBST(ASF_LIB_PNG)
 
 #### libgeotiff check ####
 AC_CHECK_LIB(geotiff,main,have_geotiff="yes",have_geotiff="no")
@@ -322,6 +336,9 @@ JPEG_CFLAGS = $JPEG_CFLAGS
 
 TIFF_LIBS = $TIFF_LIBS
 TIFF_CFLAGS = $TIFF_CFLAGS
+
+PNG_LIBS = $PNG_LIBS
+PNG_CFLAGS = $PNG_CFLAGS
 
 FFT_LIBS = $FFTW_LIBS
 FFT_CLFAGS = $FFTW_CFLAGS
