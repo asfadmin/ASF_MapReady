@@ -11,6 +11,7 @@ typedef struct
   char *out_name;         // output file name
   int import;             // import flag
   int sar_processing;     // SAR processing flag
+  int c2p;                // complex -> polar flag
   int image_stats;        // image stats flag (for internal use only)
   int detect_cr;          // detect corner reflector flag (for internal use only)
   int terrain_correct;    // terrain correction flag
@@ -55,6 +56,11 @@ typedef struct
                           // GAMMA_IMAGE,
                           // BETA_IMAGE
 } s_sar_processing;
+
+typedef struct
+{
+  int multilook;          // should we multilook?
+} s_c2p;
 
 typedef struct
 {
@@ -119,6 +125,7 @@ typedef struct
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
   s_sar_processing *sar_processing;    // SAR processing parameters
+  s_c2p *c2p;                          // complex -> polar parameters
   s_image_stats *image_stats;          // image stats parameters
   s_detect_cr *detect_cr;              // corner reflector detection parameters
   s_terrain_correct *terrain_correct;  // terrain correction parameters

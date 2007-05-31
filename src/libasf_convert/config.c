@@ -108,6 +108,12 @@ int init_convert_config(char *configFile)
 //        "# further parameters.\n\n");
 //  fprintf(fConfig, "sar processing = 0\n\n");
 
+  // c2p flag -- removed for 3.x!
+  //fprintf(fConfig, "# For SLC (single-look complex) data, asf_convert can convert the data\n"
+  //        "# to polar (amplitude and phase), before further processing.  In fact,\n"
+  //        "# if you wish to do any further processing, this step is required.\n\n");
+  //fprintf(fConfig, "c2p = 0\n\n");
+
   // terrain correction flag
   fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
           "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
@@ -206,6 +212,9 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->sar_processing->radiometry);
             FREE(cfg->sar_processing);
         }
+        if (cfg->c2p) {
+            FREE(cfg->c2p);
+        }
         if (cfg->image_stats) {
             FREE(cfg->image_stats->values);
             FREE(cfg->image_stats);
@@ -232,7 +241,6 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->export);
         }
         FREE(cfg);
-
     }
 }
 
@@ -251,6 +259,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
   cfg->sar_processing = newStruct(s_sar_processing);
+  cfg->c2p = newStruct(s_c2p);
   cfg->image_stats = newStruct(s_image_stats);
   cfg->detect_cr = newStruct(s_detect_cr);
   cfg->terrain_correct = newStruct(s_terrain_correct);
@@ -266,6 +275,7 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->general->out_name, "");
   cfg->general->import = 0;
   cfg->general->sar_processing = 0;
+  cfg->general->c2p = 0;
   cfg->general->image_stats = 0;
   cfg->general->detect_cr = 0;
   cfg->general->terrain_correct = 0;
@@ -303,6 +313,8 @@ convert_config *init_fill_convert_config(char *configFile)
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
+
+  cfg->c2p->multilook = FALSE;
 
   cfg->image_stats->values = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->image_stats->values, "LOOK");
@@ -383,6 +395,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "sar processing", 14)==0)
         cfg->general->sar_processing = read_int(line, "sar processing");
+      if (strncmp(test, "c2p", 3)==0)
+        cfg->general->c2p = read_int(line, "c2p");
       if (strncmp(test, "image stats", 11)==0)
         cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
@@ -423,6 +437,9 @@ convert_config *init_fill_convert_config(char *configFile)
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
+      // C2P
+      if (strncmp(test, "multilook", 9)==0)
+        cfg->c2p->multilook = read_int(line, "multilook");
       // Image stats
       if (strncmp(test, "stats values", 12)==0)
         strcpy(cfg->image_stats->values, read_str(line, "stats values"));
@@ -516,6 +533,8 @@ convert_config *init_fill_convert_config(char *configFile)
             cfg->general->import = read_int(line, "import");
         if (strncmp(test, "sar processing", 14)==0)
             cfg->general->sar_processing = read_int(line, "sar processing");
+        if (strncmp(test, "c2p", 3)==0)
+            cfg->general->c2p = read_int(line, "c2p");
         if (strncmp(test, "image stats", 11)==0)
             cfg->general->image_stats = read_int(line, "image stats");
         if (strncmp(test, "detect corner reflectors", 24)==0)
@@ -582,6 +601,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "sar processing", 14)==0)
         cfg->general->sar_processing = read_int(line, "sar processing");
+      if (strncmp(test, "c2p", 3)==0)
+        cfg->general->c2p = read_int(line, "c2p");
       if (strncmp(test, "image stats", 11)==0)
         cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
@@ -639,8 +660,18 @@ convert_config *read_convert_config(char *configFile)
 
     if (strncmp(line, "[SAR processing]", 16)==0) strcpy(params, "SAR processing");
     if (strncmp(params, "SAR processing", 14)==0) {
+      test = read_param(line);
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
+      FREE(test);
+    }
+
+    if (strncmp(line, "[C2P]", 5)==0) strcpy(params, "C2P");
+    if (strncmp(params, "C2P", 3)==0) {
+        test = read_param(line);
+        if (strncmp(test, "multilook", 9)==0)
+            cfg->c2p->multilook = read_int(line, "multilook");
+        FREE(test);
     }
 
     if (strncmp(line, "[Image stats]", 13)==0) strcpy(params, "Image stats");
@@ -795,6 +826,19 @@ int write_convert_config(char *configFile, convert_config *cfg)
         }
         fprintf(fConfig, "sar processing = %i\n", cfg->general->sar_processing);
     }
+    // General - c2p
+    // For 3.2, only write this out if the flag is actually set.
+    if (cfg->general->c2p) {
+        if (!shortFlag) {
+            fprintf(fConfig, "\n# For SLC (single-look complex) data, asf_convert can convert the data\n"
+                    "# to polar (amplitude and phase), before further processing.  In fact,\n"
+                    "# if you wish to do any further processing, this step is required.\n\n");
+            fprintf(fConfig, "# Running asf_convert with the -create option and the c2p\n"
+                    "# flag switched on will generate a [C2P] section where you can define\n"
+                    "# further parameters.\n\n");
+        }
+        fprintf(fConfig, "c2p = %i\n", cfg->general->c2p);
+    }
     // General - Image stats
     if (cfg->general->image_stats) {
       if (!shortFlag)
@@ -924,6 +968,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# The sigma, gamma and beta image are different representations of calibrated\n"
                 "# SAR images. Their values are in power scale.\n\n");
         fprintf(fConfig, "radiometry = %s\n\n", cfg->sar_processing->radiometry);
+    }
+    if (cfg->general->c2p) {
+        fprintf(fConfig, "\n[C2P]\n");
+        if (!shortFlag)
+            fprintf(fConfig, "\n# SLC data is not multilooked, but will be if this flag\n"
+                    "is set.\n\n");
+        fprintf(fConfig, "multilook = %d\n\n", cfg->c2p->multilook);
     }
     // Image stats
     if (cfg->general->image_stats) {

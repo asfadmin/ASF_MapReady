@@ -478,6 +478,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     }
 
+    // Check whether everything in the [C2P] block is reasonable
+    if (cfg->general->c2p) {
+        asfPrintWarning("SLC ingest with c2p is still underdevelopment.\n");
+        // make sure input data has the extension .cpx
+        char *ext = findExt(cfg->general->in_name);
+        if (strcmp_case(ext, ".cpx") != 0) {
+            asfPrintWarning("Input data is not complex.  c2p flag ignored.\n");
+            cfg->general->c2p = 0;
+        }
+    }
+
     // Check whether everything in the [Image stats] block is reasonable
     if (cfg->general->image_stats) {
 
@@ -780,6 +791,25 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintStatus("Image has already been processed - skipping SAR processing step");
       }
       meta_free(meta);
+    }
+
+    if (cfg->general->c2p) {
+
+        update_status("Converting Complex to Polar...");
+
+        sprintf(inFile, "%s", outFile);
+        if (cfg->general->terrain_correct ||
+            cfg->general->geocoding ||
+            cfg->general->export)
+        {
+            sprintf(outFile, "%s/c2p", cfg->general->tmp_dir);
+        }
+        else 
+        {
+            sprintf(outFile, "%s", cfg->general->out_name);
+        }
+
+        c2p(inFile, outFile, cfg->c2p->multilook, TRUE);
     }
 
     if (cfg->general->image_stats) {
