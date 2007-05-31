@@ -745,16 +745,26 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         GtkTreeRowReference * ref;
         gchar * input_name;
         gchar * out_name;
-	gchar * metadata_name;
-	meta_parameters *meta;
+        gchar * metadata_name;
+        GdkPixbuf *pb = NULL;
+        meta_parameters *meta;
 
         ref = (GtkTreeRowReference *) i->data;
         path = gtk_tree_row_reference_get_path(ref);
         gtk_tree_model_get_iter(model, &iter, path);
-        gtk_tree_model_get(model, &iter, 
-            COL_DATA_FILE, &input_name, 
-            COL_OUTPUT_FILE, &out_name,
-            -1);
+
+        if (strstr(widget_name, "completed")) {
+            gtk_tree_model_get(model, &iter, 
+                COMP_COL_DATA_FILE, &input_name, 
+                COMP_COL_OUTPUT_FILE, &out_name,
+                COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
+                -1);
+        } else {
+            gtk_tree_model_get(model, &iter, 
+                COL_DATA_FILE, &input_name, 
+                COL_OUTPUT_FILE, &out_name,
+                -1);
+        }
 
         if (first)
         {
@@ -784,7 +794,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             first = FALSE;
         }
 
-	metadata_name = build_asf_metadata_filename(out_name);
+        metadata_name = build_asf_metadata_filename(out_name);
         char *base_output_name = get_basename(out_name);
         
         if (fileExists(metadata_name)) 
@@ -797,9 +807,21 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             meta_is_valid_double(meta->general->center_longitude))
         {
             printf("Adding to kml: %s\n", input_name);
-//            kml_entry_with_overlay(kml_file, meta, base_output_name, 
-//                                   input_name, output_dir);
-            kml_entry(kml_file, meta, base_output_name);
+            if (pb) {
+                // we have a pixbuf to use as an overlay
+                char *png_filename = MALLOC(sizeof(char)*
+                    (strlen(output_dir) + strlen(base_output_name) + 10));
+                sprintf(png_filename, "%s%s.png", output_dir,
+                    base_output_name);
+                printf("Generating png: %s\n", png_filename);
+                pixbuf2png(pb, png_filename);
+                kml_entry_with_overlay(kml_file, meta, base_output_name, 
+                    png_filename, output_dir);
+                FREE(png_filename);
+                // FIXME: remember png files, so we can delete later?
+            } else {
+                kml_entry(kml_file, meta, base_output_name);
+            }
             meta_free(meta);
             ++n_ok;
         }
@@ -812,7 +834,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
         free(base_output_name);
 
-	g_free(metadata_name);
+        g_free(metadata_name);
         i = g_list_next(i);
     }
 

@@ -8,7 +8,7 @@ OBJS = \
 	kml.o \
 	convert_kml.o \
 	shape.o \
-	convert_shape.o \
+	convert_shape.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
@@ -18,6 +18,7 @@ LIBS = \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(JPEG_LIBS) \
+	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \

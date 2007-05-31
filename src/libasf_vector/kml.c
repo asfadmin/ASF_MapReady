@@ -40,81 +40,6 @@ update_latlon_maxes(double lat, double lon, double *max_lat, double *min_lat,
     if (lon<*min_lon) *min_lon = lon;
 }
 
-static int
-make_input_image_thumbnail (meta_parameters *imd, const char *input_data,
-                            size_t max_thumbnail_dimension,
-                            const char *output_jpeg)
-{
-    /* Make a copy of one of the arguments so the compilers doesn't
-    complain about us ignoring the const qualifier when we pass it fo
-    fopenCeos().  */
-
-    if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16 &&
-        imd->general->data_type != INTEGER32 &&
-        imd->general->data_type != REAL32 &&
-        imd->general->data_type != REAL64)
-    {
-        /* don't know how to make a thumbnail for this type ... */
-        return FALSE;
-    }
-
-    CEOS_FILE *id = fopenCeos ((char*)input_data); // Input data file.
-
-    if (!id->f_in) {
-        // failed for some reason, just quit without thumbnailing
-        return FALSE;
-    }
-
-    // Vertical and horizontal scale factors required to meet the
-    // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (id->ddr.nl / max_thumbnail_dimension);
-    int hsf = ceil (id->ddr.ns / max_thumbnail_dimension);
-    // Overall scale factor to use is the greater of vsf and hsf.
-    int sf = (hsf > vsf ? hsf : vsf);
-
-    // Thumbnail image sizes.
-    size_t tsx = id->ddr.ns / sf;
-    size_t tsy = id->ddr.nl / sf;
-
-    // Thumbnail image.
-    FloatImage *ti = float_image_new (tsx, tsy);
-
-    // Form the thumbnail image by grabbing individual pixels.  FIXME:
-    // Might be better to do some averaging or interpolating.
-    size_t ii;
-    int *line = MALLOC (sizeof(int) * id->ddr.ns);
-    for ( ii = 0 ; ii < tsy ; ii++ ) {
-        readCeosLine (line, ii * sf, id);
-        size_t jj;
-        for ( jj = 0 ; jj < tsx ; jj++ ) {
-            // Current sampled value.  We will average a couple pixels together.
-            int csv;
-            if ( jj * sf < id->ddr.nl - 1 ) {
-                csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
-            }
-            else {
-                csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
-            }
-            float_image_set_pixel (ti, jj, ii, (float)csv);
-        }
-    }
-    free (line);
-
-    // Export as jpeg image as promised.  We don't want to reduce the
-    // image resolution anymore, so we use the largest dimension
-    // currently in the image as the max dimension for the image to
-    // generate.
-    float_image_export_as_jpeg (ti, output_jpeg, (ti->size_x > ti->size_y ?
-            ti->size_x : ti->size_y), NAN);
-
-    float_image_free (ti);
-    FCLOSE(id->f_in);
-    free(id);
-
-    return TRUE;
-}
-
 static void rotate(double x_in, double y_in, double x0, double y0, double ang,
                    double *xr, double *yr)
 {
@@ -126,7 +51,7 @@ static void rotate(double x_in, double y_in, double x0, double y0, double ang,
 }
 
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
-                           char *name, char *ceos_filename, char *dir)
+                           char *name, char *png_filename, char *dir)
 {
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
@@ -136,30 +61,10 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_LR, lon_LR;
     double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
 
-    if (meta->location) {
-      lat_UL = meta->location->lat_start_near_range;
-      lon_UL = meta->location->lon_start_near_range;
-      lat_UR = meta->location->lat_start_far_range;
-      lon_UR = meta->location->lon_start_far_range;
-      lat_LL = meta->location->lat_end_near_range;
-      lon_LL = meta->location->lon_end_near_range;
-      lat_LR = meta->location->lat_end_far_range;
-      lon_LR = meta->location->lon_end_far_range;
-    }
-    else {
-      meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-      lat_UL *= R2D;
-      lon_UL *= R2D;
-      meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-      lat_LL *= R2D;
-      lon_LL *= R2D;
-      meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-      lat_LR *= R2D;
-      lon_LR *= R2D;
-      meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-      lat_UR *= R2D;
-      lon_UR *= R2D;
-    }
+    meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+    meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+    meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+    meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
 
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
@@ -225,18 +130,13 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  </Polygon>\n");
     fprintf(kml_file, "</Placemark>\n");
 
-    if (ceos_filename)
+    if (png_filename)
     {
-        printf("ceos filename: %s\n", ceos_filename);
+        printf("png filename: %s\n", png_filename);
 
         if (!dir)
             asfPrintError("Must pass in a directory for the overlay files!\n");
-
-        char *jpeg_basename = get_basename(ceos_filename);
-        char *output_jpeg = MALLOC(sizeof(char)*(strlen(jpeg_basename)+
-						strlen(dir)+10));
-        sprintf(output_jpeg, "%s%s.jpg", dir, jpeg_basename);
-        if (make_input_image_thumbnail(meta, ceos_filename, 512, output_jpeg))
+        else
         {
             double h = 0.0;
 
@@ -263,16 +163,15 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
             latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
 
-            double ang1 = atan2(ul_y-ur_y, ul_x-ur_x);
-            double ang2 = atan2(ll_y-lr_y, ll_x-lr_x);
-            double ang = -(ang1+ang2)/2;
+            double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
+            double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
+            double ang = (ang1+ang2)/2;
 
             printf("UL: %lf,%lf\n", ul_x,ul_y);
             printf("UR: %lf,%lf\n", ur_x,ur_y);
             printf("LL: %lf,%lf\n", ll_x,ll_y);
             printf("LR: %lf,%lf\n", lr_x,lr_y);
-            printf("angle= %lf %lf %lf\n", ang1*R2D, ang2*R2D,
-                   ang*R2D);
+            printf("angle= %lf\n", ang*R2D);
 
             rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
             rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
@@ -301,11 +200,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             
             if (box_south_lat > box_north_lat)
                 swap(&box_south_lat, &box_north_lat);
-            if (box_east_lon > box_west_lon)
+            if (box_east_lon < box_west_lon)
                 swap(&box_east_lon, &box_west_lon);
 
-            if (meta->general->orbit_direction == 'D')
-                swap(&box_south_lat, &box_north_lat);
+            //if (meta->general->orbit_direction == 'D')
+            //    swap(&box_south_lat, &box_north_lat);
 
             fprintf(kml_file, "<GroundOverlay>\n");
             //fprintf(kml_file, "  <description>\n");
@@ -322,29 +221,24 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             fprintf(kml_file, "    <tilt>45</tilt>\n");
             fprintf(kml_file, "    <heading>50</heading>\n");
             fprintf(kml_file, "  </LookAt>\n");
-            fprintf(kml_file, "  <color>9effffff</color>\n");
+            fprintf(kml_file, "  <color>afffffff</color>\n");
             fprintf(kml_file, "  <Icon>\n");
-            fprintf(kml_file, "      <href>%s</href>\n", output_jpeg);
+            fprintf(kml_file, "      <href>%s</href>\n", png_filename);
             fprintf(kml_file, "  </Icon>\n");
             fprintf(kml_file, "  <LatLonBox>\n");
             fprintf(kml_file, "      <north>%.12f</north>\n", box_north_lat);
             fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
             fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
             fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
-            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
+            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", ang*R2D);
             fprintf(kml_file, "  </LatLonBox>\n");
 
             fprintf(kml_file, "</GroundOverlay>\n");
-        } else {
-            printf("Failed to generate overlay for: %s\n", ceos_filename);
         }
-
-        free(output_jpeg);
-        free(jpeg_basename);
     }
-
 }
 
+static
 void kml_entry_overlay(FILE *kml_file, char *name)
 {
   julian_date jdate;
@@ -390,10 +284,8 @@ void kml_entry_overlay(FILE *kml_file, char *name)
 
   // Read the image and generate a JPEG from it
   create_name(input_image, name, ".img");
-  create_name(output_image, name, ".jpg");
-  image = float_image_new_from_file(ns, nl, input_image, 0, 
-				    FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-  float_image_export_as_jpeg(image, output_image, MAX(nl, ns), NAN);
+  create_name(output_image, name, ".png");
+  //img2png(meta, input_image, 512, output_image);
   
   // Write everything into kml file
   fprintf(kml_file, "<Placemark>\n");
@@ -469,9 +361,9 @@ void kml_entry_overlay(FILE *kml_file, char *name)
 }
 
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
-                            char *ceos_filename, char *jpeg_dir)
+                            char *png_filename, char *dir)
 {
-   kml_entry_impl(kml_file, meta, name, ceos_filename, jpeg_dir);
+   kml_entry_impl(kml_file, meta, name, png_filename, dir);
 }
 
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name)
@@ -490,7 +382,7 @@ void write_kml_overlay(char *filename)
   char *kml_filename = appendExt(filename, ".kml");
   char *basename = get_basename(filename);
   
-  FILE *kml_file = FOPEN(kml_filename, "wt");
+  FILE *kml_file = FOPEN(kml_filename, "w");
   
   kml_header(kml_file);
   kml_entry_overlay(kml_file, basename);
@@ -537,7 +429,7 @@ void write_kml(char *inFile, char *basename, format_type_t format, int list)
   // Write kml header
   outFile = (char *) MALLOC(sizeof(char)*255);
   sprintf(outFile, "%s.kml", basename);
-  fpOut = FOPEN(outFile, "wt");
+  fpOut = FOPEN(outFile, "w");
   kml_header(fpOut);
 
   // Convert to kml

@@ -362,6 +362,9 @@ gboolean completed_files_list_leave_notify_event_handler(GtkWidget *widget,
 gboolean completed_files_list_scroll_event_handler (GtkWidget *,
              GdkEventScroll *, gpointer user_data);
 
+/* png_util.c */
+int pixbuf2png(GdkPixbuf *pb, const char *output_png);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
