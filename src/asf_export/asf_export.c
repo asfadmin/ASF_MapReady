@@ -152,7 +152,6 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #include <ctype.h>
 #include <errno.h>
-#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
