@@ -797,7 +797,6 @@ main (int argc, char *argv[])
   */
 
   // Do that exporting magic!
-  printf("%d %d\n", NONE, command_line.sample_mapping);
   asf_export_bands(format, command_line.sample_mapping, rgb,
                    true_color, false_color, pauli, sinclair,
                    command_line.look_up_table_name,
