@@ -61,10 +61,21 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_LR, lon_LR;
     double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
 
-    meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-    meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-    meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-    meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+    if (meta->location) {
+        lat_UL = meta->location->lat_start_near_range;
+        lon_UL = meta->location->lon_start_near_range;
+        lat_UR = meta->location->lat_start_far_range;
+        lon_UR = meta->location->lon_start_far_range;
+        lat_LR = meta->location->lat_end_far_range;
+        lon_LR = meta->location->lon_end_far_range;
+        lat_LL = meta->location->lat_end_near_range;
+        lon_LL = meta->location->lon_end_near_range;
+    } else {
+        meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+        meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+        meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+        meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+    }
 
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
@@ -107,8 +118,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  <open>1</open>\n");
     write_kml_style_keys(kml_file);
     fprintf(kml_file, "  <Polygon>\n");
-	fprintf(kml_file, "    <extrude>1</extrude>\n");
-	fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+    // different behavior if we have an overlay - no extrude, and draw on
+    // the ground instead of at an absolute height above the terrain
+	fprintf(kml_file, "    <extrude>%d</extrude>\n",
+        png_filename ? 0 : 1);
+	fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
+        png_filename ? "relativeToGround" : "absolute");
     fprintf(kml_file, "    <outerBoundaryIs>\n");
     fprintf(kml_file, "      <LinearRing>\n");
     fprintf(kml_file, "        <coordinates>\n");
@@ -118,11 +133,14 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
     update_latlon_maxes(lat_UR, lon_UR, &max_lat, &min_lat, &max_lon, &min_lon);
 
-    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-    fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+    // have the outline on the ground, if we are doing an overlay
+    // otherwise, draw it up in the air a little
+    int alt = png_filename ? 500 : 7000;
+    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, alt);
+    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LL, lat_LL, alt);
+    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LR, lat_LR, alt);
+    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UR, lat_UR, alt);
+    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, alt);
     
     fprintf(kml_file, "        </coordinates>\n");
     fprintf(kml_file, "      </LinearRing>\n");
@@ -139,6 +157,15 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         else
         {
             double h = 0.0;
+
+            if (meta->location) {
+                // override what we found earlier, when drawing the box, here
+                // we want the actual bounding box, not the satellite swath
+                meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+                meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+                meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+                meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+            }
 
             double clat = meta->general->center_latitude;
             double clon = meta->general->center_longitude;
@@ -221,7 +248,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             fprintf(kml_file, "    <tilt>45</tilt>\n");
             fprintf(kml_file, "    <heading>50</heading>\n");
             fprintf(kml_file, "  </LookAt>\n");
-            fprintf(kml_file, "  <color>afffffff</color>\n");
+            fprintf(kml_file, "  <color>ffffffff</color>\n");
             fprintf(kml_file, "  <Icon>\n");
             fprintf(kml_file, "      <href>%s</href>\n", png_filename);
             fprintf(kml_file, "  </Icon>\n");

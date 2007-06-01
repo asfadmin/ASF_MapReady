@@ -1198,7 +1198,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
 	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
 	  meta->general->line_count : meta->general->sample_count;
-	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 256;
+	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 512;
 
         // Pass in command line
         if (!cfg->general->export)

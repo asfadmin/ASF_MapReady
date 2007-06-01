@@ -142,11 +142,13 @@ int pixbuf2png(GdkPixbuf *pb, const char *output_png)
     int i;
     int width = gdk_pixbuf_get_width(pb);
     int height = gdk_pixbuf_get_height(pb);
+    int n_channels = gdk_pixbuf_get_n_channels(pb);
 
     int rowstride = gdk_pixbuf_get_rowstride(pb);
     guchar *pixels = gdk_pixbuf_get_pixels(pb);
+    guchar *pixels_out = MALLOC(sizeof(guchar)*width*height*4);
 
-    printf("pixbuf2png> opening: %s\n", output_png);
+    //printf("pixbuf2png> opening: %s\n", output_png);
     FILE *fout = FOPEN(output_png, "wb");
     png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
         NULL, NULL, NULL);
@@ -155,7 +157,7 @@ int pixbuf2png(GdkPixbuf *pb, const char *output_png)
         return FALSE;
     }
 
-    printf("pixbuf2png> png_create_info_struct\n");
+    //printf("pixbuf2png> png_create_info_struct\n");
     png_infop info_ptr = png_create_info_struct(png_ptr);
     if (!info_ptr) {
         png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
@@ -164,7 +166,7 @@ int pixbuf2png(GdkPixbuf *pb, const char *output_png)
         return FALSE;
     }
 
-    printf("pixbuf2png> setjmp\n");
+    //printf("pixbuf2png> setjmp\n");
     if (setjmp(png_jmpbuf(png_ptr))) {
         png_destroy_write_struct(&png_ptr, &info_ptr);
         fclose(fout);
@@ -172,36 +174,58 @@ int pixbuf2png(GdkPixbuf *pb, const char *output_png)
         return FALSE;
     }
 
-    printf("pixbuf2png> png_init_io\n");
+    //printf("pixbuf2png> png_init_io\n");
     png_init_io(png_ptr, fout);
 
-    printf("pixbuf2png> png_set_IHDR\n");
+    //printf("pixbuf2png> png_set_IHDR\n");
     png_set_IHDR(png_ptr, info_ptr, width, height, 8, 
-        PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+        PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-    printf("pixbuf2png> png_write_info\n");
+    //printf("pixbuf2png> png_write_info\n");
     png_write_info(png_ptr, info_ptr);
 
-    printf("pixbuf2png> row_pointers\n");
+    // add a transparency byte to each pixel in the pixels_out buffer
+    for (i=0; i<height; ++i) {
+        int j;
+        for (j=0; j<width; ++j) {
+            // output: red=k, green=k+1, blue=k+2, alpha=k+3
+            int out_k = 4*(j + i*width);
+            // input: red=k, green=k+1, blue=k+2
+            int in_k = j*n_channels + i*rowstride;
+
+            // make it transparent, if the pixel is black
+            // (i.e., all channels are 0)
+            int trans = pixels[in_k] == 0 &&
+                pixels[in_k+1] == 0 && pixels[in_k+2] == 0;
+
+            pixels_out[out_k] = pixels[in_k];
+            pixels_out[out_k+1] = pixels[in_k+1];
+            pixels_out[out_k+2] = pixels[in_k+2];
+            pixels_out[out_k+3] = trans ? 0 : 255;
+        }
+    }
+
+    //printf("pixbuf2png> row_pointers\n");
     png_bytep *row_pointers = MALLOC(sizeof(png_bytep)*height);
     for (i=0; i<height; ++i)
-        row_pointers[i] = pixels + i * rowstride;
+        row_pointers[i] = pixels_out + i*width*4;
 
-    printf("pixbuf2png> png_write_image\n");
+    //printf("pixbuf2png> png_write_image\n");
     png_write_image(png_ptr, row_pointers);
 
-    printf("pixbuf2png> png_write_end\n");
+    //printf("pixbuf2png> png_write_end\n");
     png_write_end(png_ptr, NULL);
 
-    printf("pixbuf2png> png_destroy_write_struct\n");
+    //printf("pixbuf2png> png_destroy_write_struct\n");
     png_destroy_write_struct(&png_ptr, &info_ptr);
 
-    printf("pixbuf2png> fclose\n");
+    //printf("pixbuf2png> fclose\n");
     fclose(fout);
 
-    printf("pixbuf2png> freeing row pointers\n");
+    //printf("pixbuf2png> freeing row pointers\n");
     FREE(row_pointers);
+    FREE(pixels_out);
 
     return TRUE;
 }

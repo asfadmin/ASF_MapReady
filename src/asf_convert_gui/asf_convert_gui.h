@@ -17,7 +17,7 @@
 #include "asf.h"
 
 #define THUMB_SIZE 48
-#define THUMB_SIZE_BIG 256
+#define THUMB_SIZE_BIG 512
 #define THUMBNAILS
 
 /* Gtk 2.6 has a very nice file chooser */
