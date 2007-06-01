@@ -47,6 +47,7 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".TIFF") == 0 ||
 	strcmp_case(ext, ".JPG") == 0 ||
 	strcmp_case(ext, ".JPEG") == 0 ||
+	strcmp_case(ext, ".PNG") == 0 ||
 	strcmp_case(ext, ".PGM") == 0 ||
 	strcmp_case(ext, ".CFG") == 0 ||
 	strcmp_case(ext, ".CPX") == 0 ||
