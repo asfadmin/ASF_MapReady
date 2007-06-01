@@ -1,6 +1,7 @@
 #include <tiffio.h>
 #include <geotiffio.h>
 #include <jpeglib.h>
+#include <png.h>
 
 #include "asf_raster.h"
 #include "libasf_proj.h"
@@ -45,6 +46,7 @@ typedef enum {
   TIF,                          /* Tiff. */
   JPEG,                         /* Joint Photographic Experts Group.  */
   PGM,                          /* Portable GrayMap.  */
+  PNG,                          /* Portable Network Graphic */
   KML                           // JPEG with GoogleEarth overlay file
 } output_format_t;
 
@@ -209,6 +211,40 @@ void write_rgb_jpeg_float2byte(FILE *ojpeg,
 			       float no_data, int sample_count);
 void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 			  struct jpeg_compress_struct *cinfo,
+			  channel_stats_t stats, scale_t sample_mapping,
+			  float no_data, int sample_count,
+			  char *look_up_table_name);
+
+void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
+                         channel_stats_t stats, scale_t sample_mapping,
+                         png_structp png_ptr, png_infop png_info_ptr,
+                         int sample_count);
+void write_png_float2byte(FILE *opng, float *float_line,
+               png_structp png_ptr, png_infop png_info_ptr,
+			   channel_stats_t stats,
+			   scale_t sample_mapping,
+			   float no_data, int sample_count);
+void write_rgb_png_byte2byte(FILE *opng,
+			      unsigned char *red_byte_line,
+			      unsigned char *green_byte_line,
+			      unsigned char *blue_byte_line,
+                  png_structp png_ptr, png_infop png_info_ptr,
+			      int sample_count);
+void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
+             png_structp png_ptr, png_infop png_info_ptr,
+			 int sample_count, char *look_up_table_name);
+void write_rgb_png_float2byte(FILE *opng,
+			       float *red_float_line,
+			       float *green_float_line,
+			       float *blue_float_line,
+                   png_structp png_ptr, png_infop png_info_ptr,
+			       channel_stats_t red_stats,
+			       channel_stats_t green_stats,
+			       channel_stats_t blue_stats,
+			       scale_t sample_mapping,
+			       float no_data, int sample_count);
+void write_png_float2lut(FILE *opng, float *float_line,
+              png_structp png_ptr, png_infop png_info_ptr,
 			  channel_stats_t stats, scale_t sample_mapping,
 			  float no_data, int sample_count,
 			  char *look_up_table_name);

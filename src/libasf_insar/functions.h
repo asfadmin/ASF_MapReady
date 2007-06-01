@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <asf_export.h>
 #include <asf_import.h>
 #include <asf_terrcorr.h>
 #include <asf_geocode.h>
-#include <asf_export.h>
 
 int exit_code;
 

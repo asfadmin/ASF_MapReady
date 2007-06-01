@@ -60,6 +60,15 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                       true_color, false_color, pauli, sinclair,
                       look_up_table_name, JPEG);
   }
+  else if ( format == PNG ) {
+    sprintf(in_data_name, "%s.img", in_base_name);
+    sprintf(in_meta_name, "%s.meta", in_base_name);
+    append_ext_if_needed (output_name, ".png", NULL);
+    export_band_image(in_meta_name, in_data_name, output_name,
+		      sample_mapping, band_name, rgb,
+                      true_color, false_color, pauli, sinclair,
+                      look_up_table_name, PNG);
+  }
   else if ( format == PGM ) {
     if (rgb || true_color || false_color || pauli || sinclair) {
         asfPrintWarning(

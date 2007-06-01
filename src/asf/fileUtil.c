@@ -144,21 +144,17 @@ void append_ext_if_needed(char *file_name, const char *newExt,
 {
   char *ext, extuc[1024];
   char new1uc[1024], new2uc[1024];
-  int ext_exists;
 
   ext = findExt(file_name);
-  ext_exists = (ext) ? TRUE : FALSE;
-  if (ext_exists)
+  if (ext) {
     strcpy(extuc, uc(ext));
-
-  if (ext_exists) {
-    if (newExt != NULL) {
+    if (newExt) {
       strcpy(new1uc,uc(newExt));
       if (strcmp(extuc, new1uc)==0) {
         return;
       }
     }
-    if (alsoAllowedExt != NULL) {
+    if (alsoAllowedExt) {
       strcpy(new2uc,uc(alsoAllowedExt));
       if (strcmp(extuc, new2uc)==0) {
         return;
@@ -185,6 +181,7 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
        strcmp_case(ext, ".TIFF") == 0 ||
        strcmp_case(ext, ".JPG") == 0 ||
        strcmp_case(ext, ".JPEG") == 0 ||
+       strcmp_case(ext, ".PNG") == 0 ||
        strcmp_case(ext, ".PGM") == 0))
     base_name = stripExt(inFile);
   else

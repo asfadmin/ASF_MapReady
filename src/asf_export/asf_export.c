@@ -44,6 +44,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            pgm     - Portable graymap image, with byte valued pixels\n"\
+"            png     - Portable network graphic, with byte values pixels\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
@@ -70,7 +71,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        will not be exported, e.g. '-rgb ignore 2 1' will result in an\n"\
 "        RGB file that has a zero in each RGB pixel's red component.\n"\
 "        The result will be an image with only greens and blues in it.\n"\
-"        Currently implemented for GeoTIFF, TIFF and JPEG.\n"\
+"        Currently implemented for GeoTIFF, TIFF, JPEG and PNG.\n"\
 "        Cannot be chosen together with the -band option.\n"\
 "   -lut <look up table file>\n"\
 "        Applys a look up table to the image while exporting.\n"\
@@ -218,6 +219,9 @@ checkForOption (char *key, int argc, char *argv[])
   return FLAG_NOT_SET;
 }
 
+static const char *sigma_str(int with_sigma) {
+    return with_sigma ? "w/sigma" : "";
+}
 
 // Main program body.
 int
@@ -459,6 +463,13 @@ main (int argc, char *argv[])
     strcpy (command_line.format, "geotiff");
   }
 
+  // Compose input metadata name
+  strcpy (command_line.in_meta_name, in_base_name);
+  strcat (command_line.in_meta_name, ".meta");
+
+  // for some validation, need the metadata
+  md = meta_read (command_line.in_meta_name);
+
   // Convert the string to upper case.
   for ( ii = 0 ; ii < strlen (command_line.format) ; ++ii ) {
     command_line.format[ii] = toupper (command_line.format[ii]);
@@ -482,45 +493,28 @@ main (int argc, char *argv[])
   }
 
   // Set the default byte scaling mechanisms
-  if ( strcmp (command_line.format, "TIFF") == 0
+  if (md->optical) {
+     // for optical data, default sample mapping is NONE
+      command_line.sample_mapping = NONE;
+  }
+  // for other data, default is based on the output type
+  else if ( strcmp (command_line.format, "TIFF") == 0
        || strcmp (command_line.format, "TIF") == 0
        || strcmp (command_line.format, "JPEG") == 0
        || strcmp (command_line.format, "JPG") == 0
+       || strcmp (command_line.format, "PNG") == 0
        || strcmp (command_line.format, "PGM") == 0)
+  {
     command_line.sample_mapping = SIGMA;
-  else if ( strcmp (command_line.format, "GEOTIFF") == 0 )
+  }
+  else if ( strcmp (command_line.format, "GEOTIFF") == 0 ) {
     command_line.sample_mapping = NONE;
-
-  else
-    command_line.size = NO_MAXIMUM_OUTPUT_SIZE;
+  }
 
   if ( quietFlag != FLAG_NOT_SET )
     command_line.quiet = TRUE;
   else
     command_line.quiet = FALSE;
-
-  // Set scaling mechanism
-  if ( byteFlag != FLAG_NOT_SET ) {
-    strcpy (sample_mapping_string, argv[byteFlag + 1]);
-    for ( ii = 0; ii < strlen(sample_mapping_string); ii++) {
-      sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
-    }
-    if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
-      command_line.sample_mapping = TRUNCATE;
-    else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
-      command_line.sample_mapping = MINMAX;
-    else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
-      command_line.sample_mapping = SIGMA;
-    else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
-      command_line.sample_mapping = HISTOGRAM_EQUALIZE;
-    else
-      asfPrintError("Unrecognized byte scaling method '%s'.\n",
-                    sample_mapping_string);
-  }
-  if ( lutFlag != FLAG_NOT_SET &&
-       command_line.sample_mapping == NONE)
-    asfPrintError("Look up tables can only be applied to byte output"
-		  " images\n");
 
   // Set rgb combination
   if ( rgbFlag != FLAG_NOT_SET ) {
@@ -559,20 +553,17 @@ main (int argc, char *argv[])
     }
   }
 
-  // Compose input metadata name
-  strcpy (command_line.in_meta_name, in_base_name);
-  strcat (command_line.in_meta_name, ".meta");
-
   // Set up the bands for true or false color optical data
   true_color = false_color = 0;
+  int with_sigma = FALSE;
   if (truecolorFlag != FLAG_NOT_SET || falsecolorFlag != FLAG_NOT_SET) {
-    md = meta_read (command_line.in_meta_name);
     int ALOS_optical = (md->optical && strncmp(md->general->sensor, "ALOS", 4) == 0) ? 1 : 0;
     if (md->optical && truecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel,   "03 w/sigma");
-        strcpy(command_line.green_channel, "02 w/sigma");
-        strcpy(command_line.blue_channel,  "01 w/sigma");
+        with_sigma = TRUE;
+        strcpy(command_line.red_channel,   "03");
+        strcpy(command_line.green_channel, "02");
+        strcpy(command_line.blue_channel,  "01");
         true_color = 1;
         asfPrintStatus("Applying True Color contrast expansion to following channels:");
       }
@@ -595,9 +586,10 @@ main (int argc, char *argv[])
     }
     if (md->optical && falsecolorFlag != FLAG_NOT_SET) {
       if (ALOS_optical) {
-        strcpy(command_line.red_channel,   "04 w/sigma");
-        strcpy(command_line.green_channel, "03 w/sigma");
-        strcpy(command_line.blue_channel,  "02 w/sigma");
+        with_sigma = TRUE;
+        strcpy(command_line.red_channel,   "04");
+        strcpy(command_line.green_channel, "03");
+        strcpy(command_line.blue_channel,  "02");
         false_color = 1;
         asfPrintStatus("Applying False Color contrast expansion to the following channels:");
       }
@@ -621,8 +613,8 @@ main (int argc, char *argv[])
     if (!ALOS_optical && !md->optical) {
       asfPrintError("-truecolor or -falsecolor option selected with non-optical data\n");
     }
-    meta_free(md);
   }
+  meta_free(md);
 
   if (rgbFlag != FLAG_NOT_SET ||
      truecolorFlag != FLAG_NOT_SET ||
@@ -630,9 +622,9 @@ main (int argc, char *argv[])
   {
     char red_band[16], green_band[16], blue_band[16];
 
-    asfPrintStatus("\nRed channel  : %s\n", command_line.red_channel);
-    asfPrintStatus("Green channel: %s\n", command_line.green_channel);
-    asfPrintStatus("Blue channel : %s\n\n", command_line.blue_channel);
+    asfPrintStatus("\nRed channel  : %s %s\n", command_line.red_channel, sigma_str(with_sigma));
+    asfPrintStatus("Green channel: %s %s\n", command_line.green_channel, sigma_str(with_sigma));
+    asfPrintStatus("Blue channel : %s %s\n\n", command_line.blue_channel, sigma_str(with_sigma));
 
     if (is_numeric(command_line.red_channel) &&
         is_numeric(command_line.green_channel) &&
@@ -692,6 +684,29 @@ main (int argc, char *argv[])
     strcpy(command_line.look_up_table_name, argv[lutFlag + 1]);
     rgb = 1;
   }
+
+  // Set scaling mechanism
+  if ( byteFlag != FLAG_NOT_SET ) {
+    strcpy (sample_mapping_string, argv[byteFlag + 1]);
+    for ( ii = 0; ii < strlen(sample_mapping_string); ii++) {
+      sample_mapping_string[ii] = toupper (sample_mapping_string[ii]);
+    }
+    if ( strcmp (sample_mapping_string, "TRUNCATE") == 0 )
+      command_line.sample_mapping = TRUNCATE;
+    else if ( strcmp(sample_mapping_string, "MINMAX") == 0 )
+      command_line.sample_mapping = MINMAX;
+    else if ( strcmp(sample_mapping_string, "SIGMA") == 0 )
+      command_line.sample_mapping = SIGMA;
+    else if ( strcmp(sample_mapping_string, "HISTOGRAM_EQUALIZE") == 0 )
+      command_line.sample_mapping = HISTOGRAM_EQUALIZE;
+    else
+      asfPrintError("Unrecognized byte scaling method '%s'.\n",
+                    sample_mapping_string);
+  }
+  if ( lutFlag != FLAG_NOT_SET &&
+       command_line.sample_mapping == NONE)
+    asfPrintError("Look up tables can only be applied to byte output"
+		  " images\n");
 
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET ||
@@ -757,6 +772,9 @@ main (int argc, char *argv[])
   else if ( strcmp (command_line.format, "PGM") == 0 ) {
     format = PGM;
   }
+  else if ( strcmp (command_line.format, "PNG") == 0 ) {
+    format = PNG;
+  }
   else if ( strcmp (command_line.format, "KML") == 0 ) {
     format = KML;
   }
@@ -779,6 +797,7 @@ main (int argc, char *argv[])
   */
 
   // Do that exporting magic!
+  printf("%d %d\n", NONE, command_line.sample_mapping);
   asf_export_bands(format, command_line.sample_mapping, rgb,
                    true_color, false_color, pauli, sinclair,
                    command_line.look_up_table_name,
