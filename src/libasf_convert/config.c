@@ -1118,7 +1118,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n[Export]\n");
       if (!shortFlag)
         fprintf(fConfig, "\n# The following format are considered valid format: ASF, TIFF, GEOTIFF\n"
-                "# JPEG and PGM.\n"
+                "# JPEG, PNG and PGM.\n"
                 "# In the same way as for the import block, ASF as an export option results in\n"
                 "# skipping the export step entirely. All other formats, with the exception of\n"
                 "# GeoTIFF, require the scaling of the internal ASF format from floating point\n"

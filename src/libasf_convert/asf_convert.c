@@ -595,6 +595,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           strncmp(uc(cfg->export->format), "TIFF", 4) != 0 &&
           strncmp(uc(cfg->export->format), "GEOTIFF", 7) != 0 &&
           strncmp(uc(cfg->export->format), "JPEG", 4) != 0 &&
+          strncmp(uc(cfg->export->format), "PNG", 3) != 0 &&
           strncmp(uc(cfg->export->format), "PGM", 3) != 0) {
         asfPrintError("Chosen export format (%s) not supported\n",
                      cfg->export->format);
@@ -1009,6 +1010,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         format = JPEG;
       } else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0) {
         format = PGM;
+      } else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0) {
+        format = PNG;
       }
 
       // Byte scaling
@@ -1183,21 +1186,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->thumbnail) {
         asfPrintStatus("Generating Thumbnail image...\n");
 
-        output_format_t format = JPEG;
+        output_format_t format = PNG;
         scale_t scale = SIGMA;
-	meta_parameters *meta;
-	double in_side_length, out_pixel_size;
-	char *tmpFile;
+        meta_parameters *meta;
+        double in_side_length, out_pixel_size;
+        char *tmpFile;
         int i,n;
 
-	tmpFile = (char *) MALLOC(sizeof(char)*512);
+        tmpFile = (char *) MALLOC(sizeof(char)*512);
 
-	// Calculate pixel size for generating right size thumbnail
-	meta = meta_read(inFile);
+        // Calculate pixel size for generating right size thumbnail
+        meta = meta_read(inFile);
 
-	in_side_length = (meta->general->line_count > meta->general->sample_count) ?
-	  meta->general->line_count : meta->general->sample_count;
-	out_pixel_size =  meta->general->x_pixel_size * in_side_length / 512;
+        in_side_length = (meta->general->line_count > meta->general->sample_count) ?
+	        meta->general->line_count : meta->general->sample_count;
+        out_pixel_size =  meta->general->x_pixel_size * in_side_length / 512;
 
         // Pass in command line
         if (!cfg->general->export)
@@ -1208,7 +1211,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         char *basename = get_basename(cfg->general->out_name);
 
         if (cfg->general->intermediates) {
-            sprintf(outFile, "%s/%s_thumb.jpg",
+            sprintf(outFile, "%s/%s_thumb.png",
                     cfg->general->tmp_dir, basename);
             sprintf(tmpFile, "%s/%s_thumb",
                     cfg->general->tmp_dir, basename);
@@ -1216,7 +1219,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
             strcpy(tmpFile, tmp);
             strcpy(outFile, tmp);
-            strcat(outFile, ".jpg");
+            strcat(outFile, ".png");
             free(tmp);
         }
 
@@ -1302,18 +1305,18 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               // strip off the band name at the end!
               char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
               if (cfg->general->intermediates) {
-                sprintf(banded_name, "%s/%s_thumb_%s.jpg",
+                sprintf(banded_name, "%s/%s_thumb_%s.png",
                         cfg->general->tmp_dir, basename, bands[0]);
-                sprintf(outFile, "%s/%s_thumb.jpg",
+                sprintf(outFile, "%s/%s_thumb.png",
                         cfg->general->tmp_dir, basename);
               }
               else {
-                sprintf(banded_name, "%s_thumb_%s.jpg",
+                sprintf(banded_name, "%s_thumb_%s.png",
                         cfg->general->out_name, bands[0]);
                 char *tmp =
                     appendToBasename(cfg->general->out_name, "_thumb");
                 strcpy(outFile, tmp);
-                strcat(outFile, ".jpg");
+                strcat(outFile, ".png");
                 free(tmp);
               }
               fileRename(banded_name, outFile);
