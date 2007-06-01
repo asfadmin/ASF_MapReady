@@ -210,11 +210,18 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
             printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
 
+            if (clat < 0) {
+                // account for the false northing in the southern hemisphere
+                ul_y_rot -= 10000000;
+                ur_y_rot -= 10000000;
+                ll_y_rot -= 10000000;
+                lr_y_rot -= 10000000;
+            }
+
             UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
             UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
             UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
             UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
-
             //double box_north_lat = (lat_UL_rot + lat_UR_rot)/2;
             //double box_south_lat = (lat_LL_rot + lat_LR_rot)/2;
             //double box_east_lon = (lon_UL_rot + lon_LL_rot)/2;

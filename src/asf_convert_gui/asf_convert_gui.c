@@ -133,7 +133,7 @@ main(int argc, char **argv)
 
     /* set up the rgb stuff on the export tab */
     rgb_combo_box_setup();
-
+    
     gtk_main ();
 
     if (settings_on_execute)
