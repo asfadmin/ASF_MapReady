@@ -59,7 +59,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_UR, lon_UR;
     double lat_LL, lon_LL;
     double lat_LR, lon_LR;
-    double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
 
     if (meta->location) {
         lat_UL = meta->location->lat_start_near_range;
@@ -127,11 +126,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "    <outerBoundaryIs>\n");
     fprintf(kml_file, "      <LinearRing>\n");
     fprintf(kml_file, "        <coordinates>\n");
-    
-    update_latlon_maxes(lat_UL, lon_UL, &max_lat, &min_lat, &max_lon, &min_lon);
-    update_latlon_maxes(lat_LL, lon_LL, &max_lat, &min_lat, &max_lon, &min_lon);
-    update_latlon_maxes(lat_LR, lon_LR, &max_lat, &min_lat, &max_lon, &min_lon);
-    update_latlon_maxes(lat_UR, lon_UR, &max_lat, &min_lat, &max_lon, &min_lon);
 
     // have the outline on the ground, if we are doing an overlay
     // otherwise, draw it up in the air a little
@@ -148,7 +142,13 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  </Polygon>\n");
     fprintf(kml_file, "</Placemark>\n");
 
-    if (png_filename)
+    if (!png_filename)
+        printf("No overlay: Unprocessed data.\n");
+    if (!meta->projection)
+        printf("No overlay: Unprojected data.\n");
+    else if (meta->projection->type != UNIVERSAL_TRANSVERSE_MERCATOR)
+        printf("No overlay: Not UTM.\n");
+    else
     {
         printf("png filename: %s\n", png_filename);
 
