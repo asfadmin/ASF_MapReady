@@ -50,6 +50,26 @@ static void rotate(double x_in, double y_in, double x0, double y0, double ang,
     *yr = y0 + cos(ang)*x - sin(ang)*y;
 }
 
+static double max2(double a, double b)
+{
+    return a > b ? a : b;
+}
+
+static double max4(double a, double b, double c, double d)
+{
+    return max2(max2(a,b), max2(c,d));
+}
+
+static double min2(double a, double b)
+{
+    return a < b ? a : b;
+}
+
+static double min4(double a, double b, double c, double d)
+{
+    return min2(min2(a,b), min2(c,d));
+}
+
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
                            char *name, char *png_filename, char *dir)
 {
@@ -116,6 +136,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  <visibility>1</visibility>\n");
     fprintf(kml_file, "  <open>1</open>\n");
     write_kml_style_keys(kml_file);
+
     fprintf(kml_file, "  <Polygon>\n");
     // different behavior if we have an overlay - no extrude, and draw on
     // the ground instead of at an absolute height above the terrain
@@ -127,27 +148,22 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "      <LinearRing>\n");
     fprintf(kml_file, "        <coordinates>\n");
 
-    // have the outline on the ground, if we are doing an overlay
-    // otherwise, draw it up in the air a little
-    int alt = png_filename ? 500 : 7000;
-    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, alt);
-    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LL, lat_LL, alt);
-    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_LR, lat_LR, alt);
-    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UR, lat_UR, alt);
-    fprintf(kml_file, "          %.12f,%.12f,%d\n", lon_UL, lat_UL, alt);
-    
-    fprintf(kml_file, "        </coordinates>\n");
-    fprintf(kml_file, "      </LinearRing>\n");
-    fprintf(kml_file, "    </outerBoundaryIs>\n");
-    fprintf(kml_file, "  </Polygon>\n");
-    fprintf(kml_file, "</Placemark>\n");
+    if (!png_filename || !meta->projection)
+    {
+        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
 
-    if (!png_filename)
-        printf("No overlay: Unprocessed data.\n");
-    if (!meta->projection)
-        printf("No overlay: Unprojected data.\n");
-    else if (meta->projection->type != UNIVERSAL_TRANSVERSE_MERCATOR)
-        printf("No overlay: Not UTM.\n");
+        fprintf(kml_file, "        </coordinates>\n");
+        fprintf(kml_file, "      </LinearRing>\n");
+        fprintf(kml_file, "    </outerBoundaryIs>\n");
+        fprintf(kml_file, "  </Polygon>\n");
+        fprintf(kml_file, "</Placemark>\n");
+
+        printf("No overlay: unprojected data.\n");
+    }
     else
     {
         printf("png filename: %s\n", png_filename);
@@ -237,6 +253,22 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             if (box_east_lon < box_west_lon)
                 swap(&box_east_lon, &box_west_lon);
 
+            double upper_lat = max4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
+            double lower_lat = min4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
+            double upper_lon = max4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
+            double lower_lon = min4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
+
+            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
+            fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
+            fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
+            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+            fprintf(kml_file, "        </coordinates>\n");
+            fprintf(kml_file, "      </LinearRing>\n");
+            fprintf(kml_file, "    </outerBoundaryIs>\n");
+            fprintf(kml_file, "  </Polygon>\n");
+            fprintf(kml_file, "</Placemark>\n");
+
             //if (meta->general->orbit_direction == 'D')
             //    swap(&box_south_lat, &box_north_lat);
 
@@ -264,7 +296,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
             fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
             fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
-            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", ang*R2D);
+            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
             fprintf(kml_file, "  </LatLonBox>\n");
 
             fprintf(kml_file, "</GroundOverlay>\n");
