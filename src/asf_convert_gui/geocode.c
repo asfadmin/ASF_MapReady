@@ -18,23 +18,19 @@ const char * datum_string(int datum)
 const char * resample_method_string(int resample_method)
 {
     switch (resample_method) {
-  case RESAMPLE_NEAREST_NEIGHBOR:
-      return "nearest_neighbor";
-      break;
-  default:
-  case RESAMPLE_BILINEAR:
-      return "bilinear";
-      break;
-  case RESAMPLE_BICUBIC:
-      return "bicubic";
-      break;
+    case RESAMPLE_NEAREST_NEIGHBOR:
+        return "nearest_neighbor";
+    default:
+    case RESAMPLE_BILINEAR:
+        return "bilinear";
+    case RESAMPLE_BICUBIC:
+        return "bicubic";
     }
 }
 
 static int entry_has_text(const char * entry_name)
 {
-    GtkEntry * entry;
-    entry = GTK_ENTRY(get_widget_checked(entry_name));
+    GtkEntry *entry = GTK_ENTRY(get_widget_checked(entry_name));
     return strlen(gtk_entry_get_text(entry)) > 0;
 }
 
@@ -51,7 +47,7 @@ const char * geocode_options_string(const Settings * settings)
         gboolean enable_second_standard_parallel = FALSE;
         gboolean enable_false_northing = FALSE;
         gboolean enable_false_easting = FALSE;
-	gboolean enable_pole_switch = FALSE;
+        gboolean enable_pole_switch = FALSE;
 
         switch (settings->projection)
         {
@@ -130,25 +126,15 @@ const char * geocode_options_string(const Settings * settings)
 
         if (enable_first_standard_parallel)
             sprintf(ret, "%s --first-standard-parallel %f ", 
-            ret, settings->plat1);
+                ret, settings->plat1);
 
         if (enable_second_standard_parallel)
             sprintf(ret, "%s --second-standard-parallel %f ", 
-            ret, settings->plat2);
+                ret, settings->plat2);
 
-	if (enable_pole_switch)
-	    sprintf(ret, "%s --%s-pole", ret,
-		    settings->plat1 < 0 ? "south" : "north");
-
-// Commented out so asf_geocode is not fed bogus false easting/northing values
-// currently these are not made available in the gui anyway
-//        if (enable_false_northing)
-//            sprintf(ret, "%s --false-northing %f ", ret, 
-//            settings->false_northing);
-//
-//        if (enable_false_easting)
-//            sprintf(ret, "%s --false-easting %f ", ret, 
-//            settings->false_northing);
+	    if (enable_pole_switch)
+	        sprintf(ret, "%s --%s-pole", ret,
+		        settings->plat1 < 0 ? "south" : "north");
 
         if (settings->specified_height)
             sprintf(ret, "%s --height %f ", ret, settings->height);
@@ -161,8 +147,8 @@ const char * geocode_options_string(const Settings * settings)
         sprintf(ret, "%s --resample-method %s ", ret, 
             resample_method_string (settings->resample_method));
 
-	if (settings->geocode_force)
-	  sprintf(ret, "%s --force ", ret);
+        if (settings->geocode_force)
+            sprintf(ret, "%s --force ", ret);
     }
     else
     {
@@ -354,55 +340,55 @@ void geocode_options_changed()
                 case PROJ_PS:
                     gtk_entry_set_text(
                         GTK_ENTRY(central_meridian_entry),
-                        double_to_string(pps->ps.slon));
+                            double_to_string(pps->ps.slon));
                     gtk_entry_set_text(
                         GTK_ENTRY(first_standard_parallel_entry),
-                        double_to_string(pps->ps.slat));
+                            double_to_string(pps->ps.slat));
                     gtk_entry_set_text(
                         GTK_ENTRY(false_northing_entry),
-                        double_to_string(pps->ps.false_northing));
+                            double_to_string(pps->ps.false_northing));
                     gtk_entry_set_text(
                         GTK_ENTRY(false_easting_entry),
-                        double_to_string(pps->ps.false_easting));
+                            double_to_string(pps->ps.false_easting));
                     break;
 
                 case PROJ_LAMCC:
                     gtk_entry_set_text(
                         GTK_ENTRY(first_standard_parallel_entry),
-                        double_to_string(pps->lamcc.plat1));
+                            double_to_string(pps->lamcc.plat1));
                     gtk_entry_set_text(
                         GTK_ENTRY(second_standard_parallel_entry),
-                        double_to_string(pps->lamcc.plat2));
+                            double_to_string(pps->lamcc.plat2));
                     gtk_entry_set_text(
                         GTK_ENTRY(central_meridian_entry),
-                        double_to_string(pps->lamcc.lon0));
+                            double_to_string(pps->lamcc.lon0));
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
-                        double_to_string(pps->lamcc.lat0));
+                            double_to_string(pps->lamcc.lat0));
                     break;
 
                 case PROJ_LAMAZ:
                     gtk_entry_set_text(
                         GTK_ENTRY(central_meridian_entry),
-                        double_to_string(pps->lamaz.center_lon));
+                            double_to_string(pps->lamaz.center_lon));
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
-                        double_to_string(pps->lamaz.center_lat));
+                            double_to_string(pps->lamaz.center_lat));
                     break;
 
                 case PROJ_ALBERS:
                     gtk_entry_set_text(
                         GTK_ENTRY(first_standard_parallel_entry),
-                        double_to_string(pps->albers.std_parallel1));
+                            double_to_string(pps->albers.std_parallel1));
                     gtk_entry_set_text(
                         GTK_ENTRY(second_standard_parallel_entry),
-                        double_to_string(pps->albers.std_parallel2));
+                            double_to_string(pps->albers.std_parallel2));
                     gtk_entry_set_text(
                         GTK_ENTRY(central_meridian_entry),
-                        double_to_string(pps->albers.center_meridian));
+                            double_to_string(pps->albers.center_meridian));
                     gtk_entry_set_text(
                         GTK_ENTRY(latitude_of_origin_entry),
-                        double_to_string(pps->albers.orig_latitude));
+                            double_to_string(pps->albers.orig_latitude));
                     break;
                 }
 
@@ -467,7 +453,7 @@ void geocode_options_changed()
         enable_pixel_size_checkbutton = TRUE;
         enable_datum_hbox = TRUE;
         enable_resample_hbox = TRUE;
-	enable_force_checkbutton = TRUE;
+        enable_force_checkbutton = TRUE;
 
         // turn off the average height checkbutton if terrain correction
         // is selected

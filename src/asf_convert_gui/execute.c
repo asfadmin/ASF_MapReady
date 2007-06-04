@@ -126,7 +126,7 @@ do_cmd(gchar *cmd, gchar *log_file_name)
 
             if (!g_file_test(log_file_name, G_FILE_TEST_EXISTS))
             {
-                output = fopen(log_file_name, "wt");
+                output = fopen(log_file_name, "w");
                 if (output)
                 {
                     if (saved_errno > 0)
@@ -366,8 +366,8 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         GError *err = NULL, *err_big = NULL;
         GdkPixbuf *pb, *pb_big;
 
-	if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
-	{
+        if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
+	    {
             if (scaling_required) {
                 pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
                                               THUMB_SIZE, THUMB_SIZE,
@@ -396,8 +396,8 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                 else
                 {
                     g_warning("Error loading image '%s': %s\n",
-                              thumbnail_name, err->message);
-                    g_error_free(err);
+                              thumbnail_name, err_big->message);
+                    g_error_free(err_big);
                 }
             }
             else
@@ -406,7 +406,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                           thumbnail_name, err->message);
                 g_error_free(err);
             }
-	}
+        }
         
         free(thumbnail_name);
     }
@@ -435,12 +435,12 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
         FILE * tmp;
         gchar fname [4096];
         sprintf(fname, "%s/tmp00%li", dir, time(NULL));
-        tmp = fopen(fname, "wt");
+        tmp = fopen(fname, "w");
         if (!tmp)
         {
             *err_string = (gchar *) g_malloc (sizeof(gchar) * 512);
             if (strcmp(dir, ".") == 0 && errno == EACCES)
-                sprintf(*err_string, "Cannot write to output directory!");
+                strcpy(*err_string, "Cannot write to output directory!");
             else
                 snprintf(*err_string, 512, "%s: %s", dir, strerror(errno));
 
@@ -483,38 +483,37 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         asfPrintStatus("Running convert with configuration file: %s\n",
 		       cfg_file);
 
-	asf_convert_ext(FALSE, cfg_file, save_dem);
+        asf_convert_ext(FALSE, cfg_file, save_dem);
 
-	FCLOSE(fLog);
-	exit(EXIT_SUCCESS);
+        FCLOSE(fLog);
+        exit(EXIT_SUCCESS);
     }
     else
     {
         /* parent */
         int counter = 1;
-	char *statFile = appendExt(cfg_file, ".status");
-	char *projFile = appendExt(cfg_file, ".proj");
+        char *statFile = appendExt(cfg_file, ".status");
+        char *projFile = appendExt(cfg_file, ".proj");
 
         while (waitpid(pid, NULL, WNOHANG) == 0)
-	{
-	    while (gtk_events_pending())
-	      gtk_main_iteration();
+        {
+            while (gtk_events_pending())
+                gtk_main_iteration();
 
             g_usleep(50);
 
-	    if (++counter % 200 == 0)
-	    {
-	        /* check status file */
-	        char buf[256];
-		FILE *fStat = fopen(statFile, "rt");
-		if (fStat)
-		{
-		    fgets(buf, sizeof(buf), fStat);
-		    fclose(fStat);
+            if (++counter % 200 == 0) {
+                /* check status file */
+                char buf[256];
+                FILE *fStat = fopen(statFile, "rt");
+                if (fStat)
+                {
+                    fgets(buf, sizeof(buf), fStat);
+                    fclose(fStat);
 
-		    gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
+                    gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
 
-                     if (strcmp(buf, "Done")==0 || strcmp(buf, "Error")==0) {
+                    if (strcmp(buf, "Done")==0 || strcmp(buf, "Error")==0) {
                          // kludge:
                          // Status file says "Done" but we're still here.
                          // This could happen because it *just* finished
@@ -547,14 +546,14 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
                          // were to occur somewhere other than Linux
                          break;
                      }
-		}
-	    }
+                }
+            }
         }
 
-	unlink(statFile);
+        unlink(statFile);
 
-	free(projFile);
-	free(statFile);
+        free(projFile);
+        free(statFile);
     }
 
     gchar *the_output = NULL;
@@ -584,7 +583,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
                 else
                 {
                     the_output = (gchar *)
-		      g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
+                        g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
 
                     strcpy(the_output, buffer);
                 }
@@ -626,11 +625,11 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
         //char *in_basename = stripExt(in_data);
-	char *out_basename = stripExt(out_full);
+        char *out_basename = stripExt(out_full);
         char *out_nameonly = get_basename(out_full);
-	char *output_dir = getPath(out_full);
-	char *config_file, *cmd_output, *tmp_dir;
-	gchar *err_string;
+        char *output_dir = getPath(out_full);
+        char *config_file, *cmd_output, *tmp_dir;
+        gchar *err_string;
 
         /* Ensure we have access to the output directory */
         if (!have_access_to_dir(output_dir, &err_string))
@@ -647,31 +646,31 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         }
 
         tmp_dir = MALLOC(sizeof(char)*
-                         (strlen(output_dir)+strlen(out_nameonly)+32));
+            (strlen(output_dir)+strlen(out_nameonly)+32));
         sprintf(tmp_dir, "%s/%s-%s", output_dir, out_nameonly,
-                time_stamp_dir());
+            time_stamp_dir());
 
         create_clean_dir(tmp_dir);
-	set_asf_tmp_dir(tmp_dir);
+        set_asf_tmp_dir(tmp_dir);
 
         settings_update_dem(user_settings, output_dir, is_first);
         settings_update_mask(user_settings, output_dir, is_first);
 
-	config_file =
-	  settings_to_config_file(user_settings, in_data, out_full,
-				  output_dir, tmp_dir);
+        config_file =
+            settings_to_config_file(user_settings, in_data, out_full,
+                output_dir, tmp_dir);
         if (!config_file) {
             message_box("Error creating configuration file.\n");
             return;
         }
 
-	cmd_output = do_convert(pid, iter, config_file, TRUE,
-                                user_settings->keep_files);
-	err_string = check_for_error(cmd_output);
+        cmd_output = do_convert(pid, iter, config_file, TRUE,
+            user_settings->keep_files);
+        err_string = check_for_error(cmd_output);
         if (err_string) {
             // unsuccessful
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, 
-                               COL_LOG, cmd_output, -1);
+                COL_LOG, cmd_output, -1);
         }
         else {
             // successful -- move to "completed" list
@@ -680,12 +679,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             set_thumbnail(&completed_iter, tmp_dir, out_full);
         }
 
-    FREE(err_string);
-	free(config_file);
-	free(out_basename);
-	free(output_dir);
+        FREE(err_string);
+        free(config_file);
+        free(out_basename);
+        free(output_dir);
         free(out_nameonly);
-	g_free(cmd_output);
+        g_free(cmd_output);
 
         if (!user_settings->keep_files)
             remove_dir(tmp_dir);
@@ -774,14 +773,14 @@ on_execute_button_clicked (GtkWidget *button)
         }
 
         process_items_from_list(rows, TRUE);
-	settings_delete(user_settings);
+        settings_delete(user_settings);
     }
 }
 
 SIGNAL_CALLBACK void
 on_stop_button_clicked(GtkWidget * widget)
 {
-  set_stop();
+    set_stop();
 }
 
 void set_stop()

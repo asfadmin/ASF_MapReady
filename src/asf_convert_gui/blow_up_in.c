@@ -50,8 +50,7 @@ in_input_thumbnail (GtkWidget *widget, GdkEventMotion *event)
     gtk_tree_view_get_cell_area (GTK_TREE_VIEW (widget), tp, itc, &itnc_rect);
     /* Here we depend on the fact that the input thumbnail is packed at
     the beginning of the cell horizontally, and centered in the cell
-    vertically (FIXME: find a way to verify this with
-    assertions).  */
+    vertically (FIXME: find a way to verify this with assertions).  */
     GdkRectangle itn_rect;	/* Input thumbnail rectangle.  */
     /* FIXME: fix this border hackery to be precise somehow.  */
     itn_rect.x = itnc_rect.x + 1;	/* There is probably a small border so +1.  */

@@ -1,5 +1,5 @@
 /* This program is a simple GUI wrapper around the asf_convert
-tool.  */
+   tool.  */
 
 #include "asf_convert_gui.h"
 #include "asf_version.h"
@@ -39,11 +39,11 @@ main(int argc, char **argv)
 #endif
 
 #ifdef win32
-        // On windows, ensure that our installed sh.exe is the one that is found,
-        // by severely restricting the path.
-        char pathenv[1024];
-        sprintf(pathenv, "PATH=%s", get_asf_bin_dir());
-        putenv(pathenv);
+    // On windows, ensure that our installed sh.exe is the one that is found,
+    // by severely restricting the path.
+    char pathenv[1024];
+    sprintf(pathenv, "PATH=%s", get_asf_bin_dir());
+    putenv(pathenv);
 #endif
 
     if (!use_thumbnails)
@@ -134,8 +134,10 @@ main(int argc, char **argv)
     /* set up the rgb stuff on the export tab */
     rgb_combo_box_setup();
     
+    /* enters the main GTK loop */
     gtk_main ();
 
+    /* clean up, application has been closed */
     if (settings_on_execute)
         settings_delete(settings_on_execute);
 

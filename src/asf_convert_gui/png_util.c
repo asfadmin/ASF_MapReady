@@ -140,11 +140,12 @@ img2png(meta_parameters *meta, const char *img_file, int max_dimension,
 int pixbuf2png(GdkPixbuf *pb, const char *output_png)
 {
     int i;
+
     int width = gdk_pixbuf_get_width(pb);
     int height = gdk_pixbuf_get_height(pb);
     int n_channels = gdk_pixbuf_get_n_channels(pb);
-
     int rowstride = gdk_pixbuf_get_rowstride(pb);
+
     guchar *pixels = gdk_pixbuf_get_pixels(pb);
     guchar *pixels_out = MALLOC(sizeof(guchar)*width*height*4);
 
