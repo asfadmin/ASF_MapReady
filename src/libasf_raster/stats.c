@@ -333,3 +333,81 @@ calc_stats_from_file(const char *inFile, char *band, double mask,
 
     *histogram = hist;
 }
+
+void
+calc_stats_rmse_from_file(const char *inFile, char *band, double mask,
+                          double *min, double *max, double *mean,
+                          double *stdDev, double *rmse,
+                          gsl_histogram **histogram)
+{
+  double se;
+  int ii,jj;
+
+  *min = 999999;
+  *max = -999999;
+  *mean = 0.0;
+
+  meta_parameters *meta = meta_read(inFile);
+  int band_number =
+        (!band || strlen(band) == 0 || strcmp(band, "???") == 0) ? 0 :
+      get_band_number(meta->general->bands, meta->general->band_count, band);
+  long offset = meta->general->line_count * band_number;
+  float *data = MALLOC(sizeof(float) * meta->general->sample_count);
+
+    // pass 1 -- calculate mean, min & max
+  FILE *fp = FOPEN(inFile, "rb");
+  long long pixel_count=0;
+  asfPrintStatus("\nCalculating min, max, and mean...\n");
+  for (ii=0; ii<meta->general->line_count; ++ii) {
+    asfPercentMeter(((double)ii/(double)meta->general->line_count));
+    get_float_line(fp, meta, ii + offset, data);
+
+    for (jj=0; jj<meta->general->sample_count; ++jj) {
+      if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
+        if (data[jj] < *min) *min = data[jj];
+        if (data[jj] > *max) *max = data[jj];
+        *mean += data[jj];
+        ++pixel_count;
+      }
+    }
+  }
+  asfPercentMeter(1.0);
+  FCLOSE(fp);
+
+  *mean /= pixel_count;
+
+    // Guard against weird data
+  if(!(*min<*max)) *max = *min + 1;
+
+    // Initialize the histogram.
+  const int num_bins = 256;
+  gsl_histogram *hist = gsl_histogram_alloc (num_bins);
+  gsl_histogram_set_ranges_uniform (hist, *min, *max);
+  *stdDev = 0.0;
+
+    // pass 2 -- update histogram, calculate standard deviation
+  fp = FOPEN(inFile, "rb");
+  asfPrintStatus("\nCalculating standard deviation, rmse, and histogram...\n");
+  se = 0.0;
+  for (ii=0; ii<meta->general->line_count; ++ii) {
+    asfPercentMeter(((double)ii/(double)meta->general->line_count));
+    get_float_line(fp, meta, ii + offset, data);
+
+    for (jj=0; jj<meta->general->sample_count; ++jj) {
+      if (ISNAN(mask) || !FLOAT_EQUIVALENT(data[jj], mask)) {
+        *stdDev += (data[jj] - *mean) * (data[jj] - *mean);
+        gsl_histogram_increment (hist, data[jj]);
+        se += (data[jj] - *mean) * (data[jj] - *mean);
+      }
+    }
+  }
+  asfPercentMeter(1.0);
+  FCLOSE(fp);
+  *stdDev = sqrt(*stdDev/(pixel_count - 1));
+  *rmse = sqrt(se/(pixel_count - 1));
+
+  FREE(data);
+
+  *histogram = hist;
+}
+
