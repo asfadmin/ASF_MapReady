@@ -107,6 +107,7 @@ char *uc (const char *string);
 
 /* Case-insensitive string comparison */
 int strcmp_case(const char *s1, const char *s2);
+int strncmp_case(const char *s1, const char *s2, size_t n);
 
 /* Allocate and return a new string which is s1+s2, neither of which are null*/
 char *appendStr(const char *s1, const char *s2);
