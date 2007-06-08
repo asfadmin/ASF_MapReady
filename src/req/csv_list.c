@@ -47,15 +47,22 @@ void populate_csvs()
                 return;
             }
             else {
+#ifdef win32
+                sprintf(name, "%s\\%s", csv_dir, dp->d_name);
+#else
                 sprintf(name, "%s/%s", csv_dir, dp->d_name);
+#endif
+                printf("Checking: %s\n", name);
                 char *e = findExt(name);
-                if (strcmp_case(e, ".csv") == 0) {
+                if (e && strcmp_case(e, ".csv") == 0) {
                     struct stat st_buf;
                     int status = stat(name, &st_buf);
+                    printf("Status: %d\b", status);
                     if (status != -1) {
                         printf("Checking: %s %ld\n", name, (long)st_buf.st_mtime);
                         if (st_buf.st_mtime > most_recent_time) {
                             to_be_selected = num;
+                            most_recent_time = st_buf.st_mtime;
                             printf(" --> Most recent found so far!\n");
                         }
                         printf("Adding: %s\n", name);
@@ -69,9 +76,15 @@ void populate_csvs()
         }
         closedir(dfd);
 
-        if (to_be_selected > 0) {
+        if (to_be_selected >= 0) {
             csv_combo_select(to_be_selected);
-            process();
+            gui_process(FALSE);
         }
     }
+}
+
+SIGNAL_CALLBACK void on_csv_dir_combobox_changed(GtkWidget *w)
+{
+    printf("csv changed...\n");
+    gui_process(FALSE);
 }

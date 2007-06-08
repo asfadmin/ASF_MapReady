@@ -99,3 +99,4 @@ void set_font ()
 void set_font () {}
 
 #endif /* defined(win32) */
+

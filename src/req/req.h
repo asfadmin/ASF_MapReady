@@ -30,6 +30,7 @@ typedef struct
     char *csv_dir;
     char *output_dir;
     int req_num;
+    int req_id;
 }
 Settings;
 
@@ -55,20 +56,33 @@ char* get_string_from_entry(const char *widget_name);
 void put_string_to_entry(const char *widget_name, char *txt);
 char *get_string_from_comboboxentry(const char *widget_name);
 void put_string_to_comboboxentry(const char *widget_name, char *txt);
+void put_file_in_textview(const char *file, const char *widget_name);
+void put_string_to_label(const char *widget_name, const char *txt);
 
 /* req.c */
 char *find_in_share(const char * filename);
 
 /* settings.c */
-void apply_saved_settings();
-char *settings_get_output_dir();
-char *settings_get_csv_dir();
+void apply_saved_settings(void);
+char *settings_get_output_dir(void);
+char *settings_get_csv_dir(void);
+Settings *settings_load(void);
+void settings_free(Settings *s);
+int settings_get_next_req_id(void);
+void settings_set_next_req_id_and_incr_req_num(int req_id);
+int settings_get_is_emergency(void);
 
 /* csv_list.c */
-void populate_csvs();
+void populate_csvs(void);
 
 /* process.c */
-void process();
+void process(const char *csv_file, const char *req_file, int is_emergency,
+             int *req_id);
+void gui_process(int for_real);
+
+/* output.c */
+void update_output_file(void);
+char *get_output_file(void);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

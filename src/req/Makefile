@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = req
-SRCS = req.c utility.c font.c settings.c csv_list.c process.c
+SRCS = req.c utility.c font.c settings.c csv_list.c process.c output.c browse.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)

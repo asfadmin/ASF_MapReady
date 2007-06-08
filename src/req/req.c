@@ -41,6 +41,7 @@ main(int argc, char **argv)
     // pull out what is in the saved settings file
     apply_saved_settings();
     populate_csvs();
+    update_output_file();
 
     GtkWidget *widget = get_widget_checked("req_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);

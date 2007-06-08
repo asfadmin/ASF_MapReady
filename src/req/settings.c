@@ -7,6 +7,7 @@ Settings *settings_new()
     s->csv_dir = NULL;
     s->output_dir = NULL;
     s->req_num = 1;
+    s->req_id = 1;
     return s;
 }
 
@@ -25,7 +26,6 @@ static int matches(const char *buf, const char *key)
 static void read_string_param(const char *buf, const char *key, char **value)
 {
     if (matches(buf, key)) {
-        printf("Matches: %s\n", key);
         char *p = strchr(buf, '=');
 
         // skip past = sign, eat whitespace
@@ -40,18 +40,14 @@ static void read_string_param(const char *buf, const char *key, char **value)
         p = *value + strlen(*value) - 1;
         while (isspace(*p))
             *p-- = '\0';
-
-        printf("Value: %s\n", *value);
     }
 }
 
 static void read_int_param(const char *buf, const char *key, int *value)
 {
     if (matches(buf, key)) {
-        printf("Matches: %s\n", key);
         char *p = strchr(buf, '=') + 1;
         *value = atoi(p);
-        printf("Value: %d\n", *value);
     }
 }
 
@@ -66,10 +62,10 @@ Settings *settings_load()
         if (fp) {
             char buf[1024];
             while (fgets(buf, 1024, fp) != NULL) {
-                printf("Line: %s\n", buf);
                 read_string_param(buf, "csv directory", &s->csv_dir);
                 read_string_param(buf, "output directory", &s->output_dir);
                 read_int_param(buf, "next request number", &s->req_num);
+                read_int_param(buf, "next request id", &s->req_id);
             }
             FCLOSE(fp);
         } else {
@@ -80,6 +76,10 @@ Settings *settings_load()
     }
 
     FREE(sav_file);
+
+    if (s->req_num < 1) s->req_num = 1;
+    if (s->req_id < 1) s->req_id = 1;
+
     return s;
 }
 
@@ -88,6 +88,7 @@ static void apply_settings_to_gui(Settings *s)
     put_string_to_entry("csv_directory_entry", s->csv_dir);
     put_string_to_entry("output_directory_entry", s->output_dir);
     put_int_to_entry("next_request_number_entry", s->req_num);
+    put_int_to_entry("next_request_id_entry", s->req_id);
 }
 
 void apply_saved_settings()
@@ -128,8 +129,10 @@ void settings_save(Settings *s)
         // update an existing file
         printf("Found settings file: %s\n", sav_file);
         char *new_sav_txt = MALLOC(sizeof(char)*1024);
+        strcpy(new_sav_txt, "");
         int len=1024;
-        int wrote_csv=FALSE, wrote_output=FALSE, wrote_req_num=FALSE;
+        int wrote_csv=FALSE, wrote_output=FALSE, wrote_req_num=FALSE,
+            wrote_req_id=FALSE;
         FILE *fp = FOPEN(sav_file, "r");
         if (!fp) {
             message_box("Error opening output file!\n");
@@ -150,6 +153,10 @@ void settings_save(Settings *s)
                 add_to_text(&new_sav_txt, &len,
                     "next request number = %d\r\n", s->req_num);
                 wrote_req_num = TRUE;
+            } else if (matches(buf, "next request id")) {
+                add_to_text(&new_sav_txt, &len,
+                    "next request id = %d\r\n", s->req_id);
+                wrote_req_id = TRUE;
             } else {
                 add_to_text(&new_sav_txt, &len, "%s", buf);
             }
@@ -165,6 +172,9 @@ void settings_save(Settings *s)
         if (!wrote_req_num && s->req_num > 1)
             add_to_text(&new_sav_txt, &len,
                 "next request number = %d\n", s->req_num);
+        if (!wrote_req_id && s->req_id > 1)
+            add_to_text(&new_sav_txt, &len,
+                "next request id = %d\n", s->req_id);
 
         fp = FOPEN(sav_file, "w");
         fprintf(fp, "%s", new_sav_txt);
@@ -177,6 +187,7 @@ void settings_save(Settings *s)
         if (s->output_dir)
             fprintf(fp, "output directory = %s\r\n", s->output_dir);
         fprintf(fp, "next request number = %d\r\n", s->req_num);
+        fprintf(fp, "next request id = %d\r\n", s->req_id);
         FCLOSE(fp);
     }
 }
@@ -218,9 +229,49 @@ char *settings_get_output_dir()
     return mkstr(get_string_from_entry("output_directory_entry"));
 }
 
+static void set_settings_saved_label(const char *txt)
+{
+    GtkWidget *w = get_widget_checked("settings_saved_label");
+    gtk_label_set_text(GTK_LABEL(w), txt);
+}
+
+SIGNAL_CALLBACK void on_change_page(GtkWidget *widget)
+{
+    set_settings_saved_label("");
+    put_string_to_label("generate_label", "");
+    update_output_file();
+}
+
 SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *widget)
 {
     save_settings();
-    // FIXME: change this to a message that appears in the gui, no popup
-    message_box("The new settings have been saved.");
+    set_settings_saved_label("Settings Saved.");
 }
+
+int settings_get_next_req_id(void)
+{
+    Settings *s = settings_load();
+    int id = s->req_id;
+    settings_free(s);
+    return id;
+}
+
+void settings_set_next_req_id_and_incr_req_num(int req_id)
+{
+    Settings *s = settings_load();
+    if (req_id <= s->req_id)
+        printf("*** New request id is smaller!?\n");
+    s->req_id = req_id;
+    ++s->req_num;
+    settings_save(s);
+    apply_settings_to_gui(s);
+    settings_free(s);
+    update_output_file();
+}
+
+int settings_get_is_emergency()
+{
+    // FIXME, return FALSE for now...
+    return FALSE;
+}
+
