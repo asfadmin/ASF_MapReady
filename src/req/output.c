@@ -8,8 +8,7 @@ static void generate(char **dir, char **file)
     else
         *dir = STRDUP("");
 
-    // FIXME: This may have to be a gui option, could also be "E"
-    char request_type = 'W';
+    char request_type = settings_get_is_emergency() ? 'E' : 'W';
 
     *file = MALLOC(sizeof(char)*32);
     sprintf(*file, "REQ%c%06d", request_type, s->req_num);

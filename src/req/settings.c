@@ -57,7 +57,6 @@ Settings *settings_load()
 
     char *sav_file = find_in_share("req_settings.txt");
     if (fileExists(sav_file)) {
-        printf("Found settings file: %s\n", sav_file);
         FILE *fp = FOPEN(sav_file, "r");
         if (fp) {
             char buf[1024];
@@ -271,7 +270,12 @@ void settings_set_next_req_id_and_incr_req_num(int req_id)
 
 int settings_get_is_emergency()
 {
-    // FIXME, return FALSE for now...
-    return FALSE;
+    GtkWidget *w = get_widget_checked("emergency_checkbutton");
+    return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
 }
 
+SIGNAL_CALLBACK void on_emergency_checkbutton_toggled(GtkWidget *w)
+{
+    update_output_file();
+    gui_process(FALSE);
+}

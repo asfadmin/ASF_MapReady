@@ -42,6 +42,7 @@ main(int argc, char **argv)
     apply_saved_settings();
     populate_csvs();
     update_output_file();
+    hook_up_csv_dir_entry_changed();
 
     GtkWidget *widget = get_widget_checked("req_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);

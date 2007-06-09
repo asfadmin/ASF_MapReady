@@ -83,8 +83,17 @@ void populate_csvs()
     }
 }
 
-SIGNAL_CALLBACK void on_csv_dir_combobox_changed(GtkWidget *w)
+SIGNAL_CALLBACK void
+on_csv_dir_combobox_changed(GtkWidget *w, gpointer callback_data)
 {
-    printf("csv changed...\n");
     gui_process(FALSE);
+}
+
+void hook_up_csv_dir_entry_changed()
+{
+    GtkWidget *w = get_widget_checked("csv_dir_combobox");
+    GtkEntry *e = GTK_ENTRY (GTK_BIN (w)->child);
+    g_signal_connect(GTK_OBJECT(e), "csv_changed",
+        G_CALLBACK(on_csv_dir_combobox_changed), NULL);
+
 }

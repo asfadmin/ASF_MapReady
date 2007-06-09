@@ -57,6 +57,7 @@ void put_string_to_entry(const char *widget_name, char *txt);
 char *get_string_from_comboboxentry(const char *widget_name);
 void put_string_to_comboboxentry(const char *widget_name, char *txt);
 void put_file_in_textview(const char *file, const char *widget_name);
+void put_string_in_textview(const char *widget_name, const char *txt);
 void put_string_to_label(const char *widget_name, const char *txt);
 
 /* req.c */
@@ -74,6 +75,7 @@ int settings_get_is_emergency(void);
 
 /* csv_list.c */
 void populate_csvs(void);
+void hook_up_csv_dir_entry_changed(void);
 
 /* process.c */
 void process(const char *csv_file, const char *req_file, int is_emergency,

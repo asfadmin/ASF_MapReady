@@ -207,6 +207,12 @@ void put_file_in_textview(const char *file, const char *widget_name)
     }
 }
 
+void put_string_in_textview(const char *widget_name, const char *txt)
+{
+    GtkWidget *tv = get_widget_checked(widget_name);
+    append_output(txt, tv);
+}
+
 void put_string_to_label(const char *widget_name, const char *txt)
 {
     GtkWidget *w = get_widget_checked(widget_name);

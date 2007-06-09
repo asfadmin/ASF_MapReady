@@ -500,7 +500,9 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
     FILE *fin = fopen(csv_file, "r");
     if (!fin) {
-        message_box("Failed to open CSV file: %s\n", csv_file);
+        char buf[1024];
+        sprintf(buf, "Failed to open CSV file: %s\n", csv_file);
+        put_string_in_textview("output_textview", buf);
         return;
     }
 
@@ -537,8 +539,11 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
     if (strcmp(line, expected_header) != 0)
     {
-        message_box("CSV File header line differs from expected\nExp: %s\nGot: %s\n",
+        char buf[1024];
+        sprintf(buf, "CSV File header line differs from expected!\n\n"
+                     "Expected:\n%s\n\nGot:\n%s\n",
             expected_header, line);
+        put_string_in_textview("output_textview", buf);
         fclose(fin);
         return;
     }
@@ -564,11 +569,11 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                 if (date < first_date) first_date = date;
                 if (date > last_date) last_date = date;
             }
-            if (strcmp(sensor,"PSM")==0)
+            if (strcmp(sensor, "PSM")==0)
                 ++n_prism;
-            else if (strcmp(sensor,"AV2")==0)
+            else if (strcmp(sensor, "AV2")==0)
                 ++n_avnir;
-            else if (strcmp(sensor,"PSR")==0)
+            else if (strcmp(sensor, "PSR")==0)
                 ++n_palsar;
             else
                 assert(0); // was supposed to check for this above
@@ -595,7 +600,9 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     // open output file
     FILE *fout = fopen(req_file, "wb");
     if (!fout) {
-        message_box("Failed to open output file: %s\n", req_file);
+        char buf[1024];
+        sprintf(buf, "Failed to open output file: %s\n", req_file);
+        put_string_in_textview("output_textview", buf);
         fclose(fout);
         return;
     }
@@ -798,29 +805,34 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
 void gui_process(int for_real)
 {
-    char csv_file[1024];
+    char csv_file[1024], buf[1024];
     get_combo_box_entry_item("csv_dir_combobox", csv_file);    
     if (strlen(csv_file) > 0)
     {
         if (fileExists(csv_file)) {
-            printf("Processing: %s\n", csv_file);
-            int req_id = settings_get_next_req_id();
-            int is_emergency = settings_get_is_emergency();
-            char *outfile = get_output_file();
-            process(csv_file, outfile, is_emergency, &req_id);
-            put_file_in_textview(outfile, "output_textview");
-            if (for_real) {
-                // update request num, id!
-                settings_set_next_req_id_and_incr_req_num(req_id);
-                char lbl[256];
-                sprintf(lbl, "Generated output file: %s", outfile);
-                put_string_to_label("generate_label", lbl);
+            char *ext = findExt(csv_file);
+            if (!ext || strcmp_case(ext, ".csv")!=0) {
+                sprintf(buf, "File doesn't have a csv extension: %s\n", csv_file);
+                put_string_in_textview("output_textview", buf);
             } else {
-                // delete temp file
-                remove(outfile);
+                int req_id = settings_get_next_req_id();
+                int is_emergency = settings_get_is_emergency();
+                char *outfile = get_output_file();
+                process(csv_file, outfile, is_emergency, &req_id);
+                put_file_in_textview(outfile, "output_textview");
+                if (for_real) {
+                    // update request num, id!
+                    settings_set_next_req_id_and_incr_req_num(req_id);
+                    sprintf(buf, "Generated output file: %s", outfile);
+                    put_string_to_label("generate_label", buf);
+                } else {
+                    // delete temp file
+                    remove(outfile);
+                }
             }
         } else {
-            message_box("File not found: %s\n", csv_file);
+            sprintf(buf, "File not found: %s\n", csv_file);
+            put_string_in_textview("output_textview", buf);
         }
     }
 }
