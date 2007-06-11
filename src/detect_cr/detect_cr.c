@@ -109,6 +109,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 #include "fft2d.h"
 #include "detect_cr.h"
 #include "asf_geocode.h"
+#include "libasf_proj.h"
 
 #define borderX 80	/* Distances from edge of image to start correlating.*/
 #define borderY 80

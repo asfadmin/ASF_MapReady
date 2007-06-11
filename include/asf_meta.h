@@ -31,7 +31,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.0
+#define META_VERSION 2.1
 
 // Maximum number of bands that are supported by the ingest.
 #define MAX_BANDS 20
@@ -394,6 +394,7 @@ typedef meta_projection proj_parameters;
  * meta_stats: statistical info about the image
  */
 typedef struct {
+  char band_id[10];          // band name - version 2.1
   double min, max;           /* Minimum and maximum image values      */
   double mean;               /* Mean average of image values          */
   double rmse;               /* Root mean squared error               */
@@ -401,6 +402,9 @@ typedef struct {
   double mask;               /* Value ignored while taking statistics */
 } meta_stats;
 
+typedef struct {
+  meta_stats stats[1];
+} meta_band_stats;
 
 /********************************************************************
  * State_vectors: Some collection of fixed-earth state vectors around
@@ -493,6 +497,7 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
   meta_stats         *stats;
+  meta_band_stats    *band;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;
     /* Deprecated elements from old metadata format.  */
@@ -545,6 +550,7 @@ meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_stats *meta_stats_init(void);
+meta_band_stats *meta_band_stats_init(int band_count);
 meta_location *meta_location_init(void);
 meta_parameters *raw_init(void);
 

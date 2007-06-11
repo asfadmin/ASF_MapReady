@@ -6,7 +6,7 @@
 
 #define FLOAT_EQUALS_ZERO(X) (X<0.000000000001 && X>-0.000000000001)
 
-int asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask, 
+int asf_elevation(char *unwrapped_phase, char *phase_mask, 
 		  char *baseFile, char *seeds, char *slant_amplitude, 
 		  char *slant_coherence, char *ground_elevation, 
 		  char *ground_elevation_error, char *ground_amplitude, 
@@ -24,8 +24,8 @@ int asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask,
   double seed_phase, seed_height;
 
   // Assigning temporary file names
-  sprintf(slant_elevation, "tmp%d_sr_elev.img", (int)getpid());
-  sprintf(slant_elevation_error, "tmp%d_sr_eleverr.img", (int)getpid());
+  sprintf(slant_elevation, "slant_range_elev.img");
+  sprintf(slant_elevation_error, "slant_range_eleverr.img");
 
   printf("\n   Generating slant range elevation and elevation error ...\n");
 

@@ -16,7 +16,7 @@ CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)
 OBJS_M2E = meta2envi.o
 OBJS_E2M = envi2meta.o
 
-all: meta2envi clean
+all: meta2envi envi2meta clean
 
 meta2envi: $(OBJS_M2E)
 	$(CC) $(CFLAGS) $(LFLAGS) -o meta2envi $(OBJS_M2E) $(LIBS)

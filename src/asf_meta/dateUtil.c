@@ -483,6 +483,25 @@ void date_alos2date(const char *inStr,ymd_date *date,hms_time *time)
 	subStr(18,3,&msec);
 	time->sec=sec+msec/1000.0;
 }
+// Extract SIR-C summary style date from the given string:
+// instr="YYYY/MM/DD hh:mm:ss.ttt"
+// index  01234567890123456789012
+void date_sirc2date(const char *inStr,ymd_date *date,hms_time *time)
+{
+	char buf[100];
+	int sec,msec;
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+	subStr(0,4,&date->year);
+	subStr(5,2,&date->month);
+	subStr(8,2,&date->day);
+	subStr(11,2,&time->hour);
+	subStr(14,2,&time->min);
+	subStr(17,2,&sec);
+	subStr(20,3,&msec);
+	time->sec=sec+msec/1000.0;
+}
+
+
 /* Convert DSSR style date to time stamp 
 instr="YYYYMMDDhhmmssttt"
 index  01234567890123456

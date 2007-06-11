@@ -6,6 +6,8 @@
 #include "metadata_parser.h"
 #include "worgen.h"
 #include "earth_radius2datum.h"
+#include "get_ceos_names.h"
+#include "meta_init.h"
 
 /* Local prototypes */
 void meta_read_old(meta_parameters *meta, char *fileName);
@@ -31,6 +33,7 @@ meta_parameters *meta_read(const char *inName)
   char              *meta_name      = appendExt(inName,".meta");
   char              *ddr_name       = appendExt(inName,".ddr");
   meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
+  char junk[256];
 
   /* Read file with appropriate reader for version.  */
   if ( !fileExists(meta_name) && fileExists(ddr_name)) {
@@ -48,6 +51,10 @@ meta_parameters *meta_read(const char *inName)
     else {
       parse_metadata(meta, meta_name);
     }
+  }
+  // Generate metadata if CEOS files could be detected
+  else if (require_ceos_metadata(inName,junk) != NO_CEOS_METADATA) {
+    ceos_init(inName, meta);
   }
 
   /* Remember the name and location of the meta struct */

@@ -137,8 +137,11 @@ void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time);
 /*Extract second DSSR-style date from instr="DD-MMM-YYYY hh:mm:ss.ttt" */
 void date_dssr2time(const char *inStr,hms_time *time);
 
-// Extract ALOS summary style data from instr="YYYYMMDD hh:mm:ss.ttt
+// Extract ALOS summary style data from instr="YYYYMMDD hh:mm:ss.ttt"
 void date_alos2date(const char *inStr,ymd_date *date,hms_time *time);
+
+// Extract SIR-C summary style data from instr="YYYY/MM/DD hh:mm:ss.ttt"
+void date_sirc2date(const char *inStr,ymd_date *date,hms_time *time);
 
 // Converts a DDSR style date to a time stamp
 void date_dssr2time_stamp(const char *inStr, char *t_stamp);

@@ -109,6 +109,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_write.o \
 	orbital_state_vector.o \
 	meta_write_sprocket.o \
+	meta_set_no_data.o \
 	proj2meta.o \
 	propagate.o \
 	readSubset.o \

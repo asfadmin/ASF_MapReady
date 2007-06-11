@@ -11,7 +11,7 @@ report_level_t g_report_level=WARNING;
 
 static void check_stop()
 {
-    snprintf(logbuf, sizeof(logbuf), "%s/stop.txt", get_asf_tmp_dir());
+  //snprintf(logbuf, sizeof(logbuf), "%s/stop.txt", get_asf_tmp_dir());
     if (fileExists(logbuf)) {
         remove(logbuf);
         asfPrintError("Interrupted by user.\n");
@@ -42,10 +42,6 @@ void asfPrintStatus(const char *format, ...)
     fflush (stdout);
   }
   if (logflag) {
-    if (!fLog) {
-      logflag = FALSE;
-      asfPrintWarning("Error writing to log file: invalid file pointer\n");
-    }
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
@@ -66,10 +62,6 @@ void asfForcePrintStatus(const char *format, ...)
   va_end(ap);
 
   if (logflag) {
-    if (!fLog) {
-      logflag = FALSE;
-      asfPrintWarning("Error writing to log file: invalid file pointer\n");
-    }
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
@@ -81,37 +73,27 @@ void asfForcePrintStatus(const char *format, ...)
 /* Report warning to user & log file, then continue the program  */
 void asfPrintWarning(const char *format, ...)
 {
+  va_list ap;
   const char *warningBegin = "\n** Warning: ********\n";
   const char *warningEnd = "** End of warning **\n\n";
 
-  if (logflag && !fLog) {
-    // re-entry here, but it's ok since we change the flag...
-    logflag = FALSE;
-    asfPrintWarning("Error writing to log file: invalid file pointer\n");
-  }
-
-  va_list ap;
-
-  if (quietflag < 2)
-    printf("%s", warningBegin);
-  if (logflag)
+  printf("%s", warningBegin);
+  if (logflag) {
     fprintf(fLog, "%s", warningBegin);
-
-  if (quietflag < 2) {
-    va_start(ap, format);
-    vprintf(format, ap);
-    va_end(ap);
   }
+
+  va_start(ap, format);
+  vprintf(format, ap);
+  va_end(ap);
+
   if (logflag) {
     va_start(ap, format);
     vfprintf(fLog, format, ap);
     va_end(ap);
   }
-  
-  if (quietflag < 2) {
-    printf(warningEnd);
-    fflush (stdout);
-  }
+
+  printf(warningEnd);
+  fflush (stdout);
   if (logflag) {
     fprintf(fLog, "%s", warningEnd);
     fflush (fLog);
@@ -122,15 +104,9 @@ void asfPrintWarning(const char *format, ...)
 /* Report to user & logfile, then die  */
 void asfPrintError(const char *format, ...)
 {
+  va_list ap;
   const char *errorBegin = "\n** Error: ********\n";
   const char *errorEnd = "** End of error **\n\n";
-
-  if (logflag && !fLog) {
-    logflag = FALSE;
-    asfPrintWarning("Error writing to log file: invalid file pointer\n");
-  }
-
-  va_list ap;
 
   printf("%s", errorBegin);
   if (logflag) {
@@ -229,13 +205,11 @@ void asfLineMeter(int currentLine, int totalLines)
   /* Report to the log as well */
   /* Only on the last line */
   if (logflag && currentLine==totalLines) {
-    strcat(logbuf, "\n");
+    sprintf(logbuf,"%s%c",logbuf,'\n');
     printLog(logbuf);
   }
 
-  /* Check if we should abort every once in a while */
-  if (currentLine%640==0 || currentLine==totalLines)
-    check_stop();
+  check_stop();
 }
 
 /******************************************************************************
@@ -270,11 +244,9 @@ void asfPercentMeter(double inPercent)
   /* Report to the log as well */
   /* Only on the last line */
   if (logflag && newPercent==100) {
-    strcat(logbuf, "\n");
+    sprintf(logbuf,"%s%c",logbuf,'\n');
     printLog(logbuf);
   }
 
-  /* Check if we should abort, 4 times during processing */
-  if (newPercent%25==0)
-    check_stop();
+  check_stop();
 }

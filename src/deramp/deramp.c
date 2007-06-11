@@ -201,11 +201,9 @@ int main(int argc, char *argv[])
 	FREE(data); FREE(sflat);FREE(cflat);
 
 	printf("   Completed 100 percent\n\n");
-	StopWatch();
 	if (logflag) {
 	  sprintf(logbuf, "   Wrote %lld bytes of data\n\n", (long long)(len*wid*4));
 	  printLog(logbuf);
-	  StopWatchLog(fLog);
 	}
 
 	return 0;

@@ -5,7 +5,6 @@ include ../../make_support/system_rules
 CFLAGS := -Wall $(CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
 OBJS = \
-	coregister.o \
 	functions.o \
 	ips_config.o \
 	ips.o \
@@ -13,7 +12,8 @@ OBJS = \
 	polar2complex.o \
 	baseline.o \
 	asf_igram_coh.o \
-	asf_elevation.o
+	asf_elevation.o \
+	asf_coregister.o
 
 all: build_only
 	mv libasf_insar.a $(LIBDIR)

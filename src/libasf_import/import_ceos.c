@@ -352,7 +352,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     if (meta->projection!=NULL && meta->projection->type!=MAGIC_UNSET_CHAR) {
       /* This must be ScanSAR */
       if (meta->projection->type != SCANSAR_PROJECTION &&
-	  strcmp(meta->general->sensor, "RSAT") == 0) {
+	  strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
+	  strncmp(meta->general->processor, "ASF", 4) == 0) {
         /* This is actually geocoded.  We don't trust any
            already-geocoded products other than polar stereo in the
            northern hemisphere (because of the RGPS Ice tracking
@@ -365,6 +366,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
                         "prohibited, because these products are broken.  "
                         "Don't use them.\n");
         }
+        sprintf(logbuf,
+                "   Input data type: level two data\n"
+                "   Output data type: geocoded amplitude image\n");
+        meta->general->image_data_type = GEOCODED_IMAGE;
+      }
+      else if (strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
+	       strncmp(meta->general->processor, "CDPF", 4) == 0) {
+	// This is geocoded data from MDA
         sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n");

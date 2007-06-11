@@ -32,7 +32,7 @@ float *createSpeckle(void)
 }
 
 /* The function was implemented using the documentation of the LAS tool picshade */
-void shaded_relief(char *inFile, char *outFile, int addSpeckle)
+void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water)
 {
   meta_parameters *metaIn, *metaOut;
   FILE *fpIn, *fpOut;
@@ -120,15 +120,18 @@ void shaded_relief(char *inFile, char *outFile, int addSpeckle)
       // Calculate the shaded relief
       if (FLOAT_EQUIVALENT(dem[kk+sample_count], 0.0))
 	relief[kk] = 0.0;
+      else if (water && dem[kk+sample_count] < 1.0)
+	relief[kk] = 0.0;
       else {
 	relief[kk] = (float) (output_scale * pow(alpha,exponent) + ambient_light);
 	if (addSpeckle)
 	  relief[kk] *= getSpeckle;
       }
     }
-
+    
     // Write out shaded relief
     put_float_line(fpOut, metaOut, ii, relief);
+    asfLineMeter(ii, line_count-2);
   }
 
   FCLOSE(fpIn);

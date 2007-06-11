@@ -5,29 +5,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <asf_export.h>
 #include <asf_import.h>
 #include <asf_terrcorr.h>
 #include <asf_geocode.h>
+#include <asf_export.h>
 
 int exit_code;
 
 /* Function definitions*/
-int avg_in_dop(char *inFile1, char *inFile2, char *outFile1);
-int doppler_per_patch(char *parFile1, char *parFile2, char *metaFile1, 
-		      char *metaFile2, char *deltaFile, char *outFile1, 
-		      char *outFile2);
 int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
 	  char *outFile);
 int c2p(char *inFile, char *outFile);
-int cpx_autofilter(char *inFile1, char *inFile2, char *outFile1, char *outFile2);
 int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFile);
 int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, 
 		    char *maskFile, int gridSize, int useFFT);
 int fit_line(char *inFile, char *outFile);
 int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile);
-int igram(char *inFile1, char *inFile2, char *outFile);	
-int coh(char *inFile1, char *inFile2, char *outFile);
 int multilook(char *inFile, char *outFile, char *metaFile);
 int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth);
 int fit_plane(char *inFile, char *outFile, double fraction);
@@ -41,7 +34,6 @@ int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1,
 	   int nOverAzi, int nOverRng, int nProcs, int flattening);
 int refine_base(char *phaseFile, char *seeds, char *oldBase, char *newBase);
 int raster_calc(char *outFile,char *operation);
-int convert2ppm(char *inFile, char *outFile);
 int phase_filter(char *inFile, double strength, char *outFile);
 int zeroify(char *phaseFile1, char *phaseFile2, char *outFile);
 int escher(char *inFile, char *outFile);

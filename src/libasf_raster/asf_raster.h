@@ -73,7 +73,7 @@ typedef double calc_stats_formula_t(double band1_val, double band2_val,
 
 // Prototypes from bands.c
 char **extract_band_names(char *bands, int band_count);
-char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel,
+char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel, 
 		  char *blue_channel, int *num_found);
 char **find_single_band(char *in_base_name, char *band, int *num_found);
 int get_band_number(char *bands, int band_count, char *channel);
@@ -82,11 +82,10 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep);
 /* Prototypes from scaling.c *************************************************/
 unsigned char *floats_to_bytes (float *data, long long pixel_count, float mask,
 				scale_t scaling);
+void floats_to_bytes_from_file(const char *inFile, const char *outFile,
+                               char *band, float mask, scale_t scaling);
 
 /* Prototypes from stats.c ***************************************************/
-void calc_stats_rmse_from_file(const char *inFile, char *band, double mask, double *min,
-                               double *max, double *mean, double *stdDev, double *rmse,
-                               gsl_histogram **histogram);
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
 			  gsl_histogram **histogram);
@@ -124,7 +123,7 @@ void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 			     char *offsetFileName);
 
 /* Prototypes from shaded_relief.c *******************************************/
-void shaded_relief(char *inFile, char *outFile, int addSpeckle);
+void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);
 
 /* Prototypes from resample.c ************************************************/
 int resample(char *infile, char *outfile, double xscalfact, double yscalfact);

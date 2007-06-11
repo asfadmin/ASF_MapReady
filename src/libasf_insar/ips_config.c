@@ -207,14 +207,7 @@ dem_config *create_config_with_defaults()
   cfg->master = newStruct(s_image);
   cfg->slave = newStruct(s_image);
   cfg->ingest = newStruct(s_ingest);
-  cfg->doppler = newStruct(s_status);
-  cfg->coreg_p1 = newStruct(s_coreg);
-  cfg->coreg_pL = newStruct(s_coreg);
-  cfg->doppler_per_patch = newStruct(s_status);
-  cfg->ardop_master = newStruct(s_ardop);
-  cfg->ardop_slave = newStruct(s_ardop);
-  cfg->cpx_autofilter = newStruct(s_status);
-  cfg->coreg_slave = newStruct(s_coreg);
+  cfg->coreg = newStruct(s_coregister);
   cfg->igram_coh = newStruct(s_igram_coh);
   cfg->offset_match = newStruct(s_offset);
   cfg->sim_phase = newStruct(s_sim_phase);
@@ -260,54 +253,23 @@ dem_config *create_config_with_defaults()
   cfg->ingest->prcflag = 0;
   cfg->ingest->status = new_str("new");
   
-  cfg->doppler->status = new_str("new");
-  
-  cfg->coreg_p1->patches = 1;
-  cfg->coreg_p1->start_master = 0;
-  cfg->coreg_p1->start_slave = 0;
-  cfg->coreg_p1->grid = 20;
-  cfg->coreg_p1->fft = 1;
-  cfg->coreg_p1->off_az = 0;
-  cfg->coreg_p1->off_rng = 0;
-  cfg->coreg_p1->status = new_str("new");
-  
-  cfg->coreg_pL->patches = 1;
-  cfg->coreg_pL->start_master = 0;
-  cfg->coreg_pL->start_slave = 0;
-  cfg->coreg_pL->grid = 20;
-  cfg->coreg_pL->fft = 1;
-  cfg->coreg_pL->off_az = 0;
-  cfg->coreg_pL->off_rng = 0;
-  cfg->coreg_pL->status = new_str("new");
-  
-  cfg->doppler_per_patch->status = new_str("new");
-  
-  cfg->ardop_master->start_offset = 0;
-  cfg->ardop_master->end_offset = 0;
-  cfg->ardop_master->patches = 1;
-  cfg->ardop_master->power = 1;
-  cfg->ardop_master->power_img = new_blank_str();
-  cfg->ardop_master->status = new_str("new");
-  
-  cfg->ardop_slave->start_offset = 0;
-  cfg->ardop_slave->end_offset = 0;
-  cfg->ardop_slave->patches = 1;
-  cfg->ardop_slave->power = 1;
-  cfg->ardop_slave->power_img = new_blank_str();
-  cfg->ardop_slave->status = new_str("new");
-  
-  cfg->cpx_autofilter->status = new_str("new");
-  
-  cfg->coreg_slave->grid = 20;
-  cfg->coreg_slave->fft = 1;
-  cfg->coreg_slave->sinc = 0;
-  cfg->coreg_slave->warp = 0;
-  cfg->coreg_slave->status = new_str("new");
-  
+  cfg->coreg->p1_master_start = 0;
+  cfg->coreg->p1_slave_start = 0;
+  cfg->coreg->p1_patches = 1;
+  cfg->coreg->pL_master_start = 0;
+  cfg->coreg->pL_slave_start = 0;
+  cfg->coreg->pL_patches = 1;
+  cfg->coreg->grid = 20;
+  cfg->coreg->fft = 1;
+  cfg->coreg->power = 0;
+  cfg->coreg->master_power = new_blank_str();
+  cfg->coreg->slave_power = new_blank_str();
+  cfg->coreg->status = new_str("new");
+
   cfg->igram_coh->igram = new_blank_str();
   cfg->igram_coh->coh = new_blank_str();
   cfg->igram_coh->min = 0.3;
-  cfg->igram_coh->ml = 1;
+  cfg->igram_coh->looks = 1;
   cfg->igram_coh->status = new_str("new");
   
   cfg->offset_match->max = 1.0;
@@ -585,108 +547,51 @@ dem_config *read_config(char *configFile, int createFlag)
 	read_str(cfg->ingest->status, line, "status");
     }
     
-    if (strncmp(line, "[Doppler]", 9)==0) strcpy(params, "doppler");
-    if (strcmp(params, "doppler")==0) {
+    if (strncmp(line, "[Coregistration]", 16)==0) strcpy(params, "coregister");
+    if (strcmp(params, "coregister")==0) {
       test = read_param(line);
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->doppler->status, line, "status");
-    }
-    
-    if (strncmp(line, "[Coregister first patch]", 24)==0) strcpy(params, "coreg_p1");
-    if (strcmp(params, "coreg_p1")==0) {
-      test = read_param(line);
-      if (strncmp(test, "patches", 7)==0) 
-	cfg->coreg_p1->patches = read_int(line, "patches"); 
-      if (strncmp(test, "start master", 12)==0) 
-	cfg->coreg_p1->start_master = read_int(line, "start master"); 
-      if (strncmp(test, "start slave", 11)==0) 
-	cfg->coreg_p1->start_slave = read_int(line, "start slave"); 
-      if (strncmp(test, "grid", 4)==0) cfg->coreg_p1->grid = read_int(line, "grid"); 
-      if (strncmp(test, "fft", 3)==0) cfg->coreg_p1->fft = read_int(line, "fft"); 
-      if (strncmp(test, "offset azimuth", 14)==0) 
-	cfg->coreg_p1->off_az = read_int(line, "offset azimuth");
-      if (strncmp(test, "offset range", 12)==0) 
-	cfg->coreg_p1->off_rng = read_int(line, "offset azimuth");
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->coreg_p1->status, line, "status"); 
-    }	  
-    
-    if (strncmp(line, "[Coregister last patch]", 23)==0) strcpy(params, "coreg_pL");
-    if (strcmp(params, "coreg_pL")==0) {
-      test = read_param(line);
-      if (strncmp(test, "patches", 7)==0) 
-	cfg->coreg_pL->patches = read_int(line, "patches"); 
-      if (strncmp(test, "start master", 12)==0) 
-	cfg->coreg_pL->start_master = read_int(line, "start master"); 
-      if (strncmp(test, "start slave", 11)==0) 
-	cfg->coreg_pL->start_slave = read_int(line, "start slave"); 
-      if (strncmp(test, "grid", 4)==0) cfg->coreg_pL->grid = read_int(line, "grid"); 
-      if (strncmp(test, "fft", 3)==0) cfg->coreg_pL->fft = read_int(line, "fft"); 
-      if (strncmp(test, "offset azimuth", 14)==0) 
-	cfg->coreg_pL->off_az = read_int(line, "offset azimuth");
-      if (strncmp(test, "offset range", 12)==0) 
-	cfg->coreg_pL->off_rng = read_int(line, "offset azimuth");
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->coreg_pL->status, line, "status"); 
-    }	  
-    
-    if (strncmp(line, "[doppler_per_patch]", 19)==0) 
-      strcpy(params, "doppler_per_patch");
-    if (strcmp(params, "doppler_per_patch")==0) {
-      test = read_param(line);
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->doppler_per_patch->status, line, "status");
-    }
-    
-    if (strncmp(line, "[ardop - Master image]", 22)==0) strcpy(params, "ardop_master");
-    if (strcmp(params, "ardop_master")==0) {
-      test = read_param(line);
-      if (strncmp(test, "start offset", 12)==0) 
-	cfg->ardop_master->start_offset = read_int(line, "start offset"); 
-      if (strncmp(test, "end offset", 10)==0) 
-	cfg->ardop_master->end_offset = read_int(line, "end offset"); 
-      if (strncmp(test, "patches", 7)==0) 
-	cfg->ardop_master->patches = read_int(line, "patches");
-      if (strncmp(test, "power flag", 10)==0) 
-	cfg->ardop_master->power = read_int(line, "power flag"); 
-      if (strncmp(test, "power image", 11)==0) 
-	read_str(cfg->ardop_master->power_img, line, "power image"); 
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->ardop_master->status, line, "status"); 
-    }	  
-    
-    if (strncmp(line, "[ardop - Slave image]", 21)==0) strcpy(params, "ardop_slave");
-    if (strcmp(params, "ardop_slave")==0) {
-      test = read_param(line);
-      if (strncmp(test, "start offset", 6)==0) 
-	cfg->ardop_slave->start_offset = read_int(line, "start offset"); 
-      if (strncmp(test, "end offset", 10)==0) 
-	cfg->ardop_slave->end_offset = read_int(line, "end offset"); 
-      if (strncmp(test, "patches", 7)==0) 
-	cfg->ardop_slave->patches = read_int(line, "patches"); 
-      if (strncmp(test, "power flag", 10)==0) 
-	cfg->ardop_slave->power = read_int(line, "power flag"); 
-      if (strncmp(test, "power image", 11)==0) 
-	read_str(cfg->ardop_slave->power_img, line, "power image"); 
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->ardop_slave->status, line, "status"); 
-    }	  
-    
-    if (strncmp(line, "[Coregister slave]", 16)==0) strcpy(params, "coreg_slave");
-    if (strcmp(params, "coreg_slave")==0) {
-      test = read_param(line);
+      if (strncmp(test, "start first patch master", 24)==0) 
+	cfg->coreg->p1_master_start = read_int(line, "start first patch master"); 
+      if (strncmp(test, "start first patch slave", 23)==0) 
+	cfg->coreg->p1_slave_start = read_int(line, "start first patch slave"); 
+      if (strncmp(test, "first patches", 13)==0) 
+	cfg->coreg->p1_patches = read_int(line, "first patches"); 
+      if (strncmp(test, "start last patch master", 23)==0) 
+	cfg->coreg->pL_master_start = read_int(line, "start last patch master"); 
+      if (strncmp(test, "start last patch slave", 22)==0) 
+	cfg->coreg->pL_slave_start = read_int(line, "start last patch slave"); 
+      if (strncmp(test, "last patches", 12)==0) 
+	cfg->coreg->pL_patches = read_int(line, "last patches"); 
+      if (strncmp(test, "master offset", 13)==0) 
+	cfg->coreg->master_offset = read_int(line, "master offset"); 
+      if (strncmp(test, "slave offset", 12)==0) 
+	cfg->coreg->slave_offset = read_int(line, "slave offset");
+      if (strncmp(test, "master patches", 14)==0) 
+	cfg->coreg->master_patches = read_int(line, "master patches"); 
+      if (strncmp(test, "slave patches", 13)==0) 
+	cfg->coreg->slave_patches = read_int(line, "slave patches"); 
+      if (strncmp(test, "azimuth offset first patch", 26)==0) 
+	cfg->coreg->p1_azimuth_offset = read_int(line, "azimuth offset first patch"); 
+      if (strncmp(test, "range offset first patch", 24)==0) 
+	cfg->coreg->p1_range_offset = read_int(line, "range offset first patch"); 
+      if (strncmp(test, "azimuth offset last patch", 25)==0) 
+	cfg->coreg->pL_azimuth_offset = read_int(line, "azimuth offset last patch"); 
+      if (strncmp(test, "range offset last patch", 23)==0) 
+	cfg->coreg->pL_range_offset = read_int(line, "range offset last patch"); 
       if (strncmp(test, "grid", 4)==0) 
-	cfg->coreg_slave->grid = read_int(line, "grid"); 
+	cfg->coreg->grid = read_int(line, "grid"); 
       if (strncmp(test, "fft", 3)==0) 
-	cfg->coreg_slave->fft = read_int(line, "fft"); 
-      if (strncmp(test, "sinc", 4)==0) 
-	cfg->coreg_slave->sinc = read_int(line, "sinc"); 
-      if (strncmp(test, "warp", 4)==0) 
-	cfg->coreg_slave->warp = read_int(line, "warp"); 
+	cfg->coreg->fft = read_int(line, "fft"); 
+      if (strncmp(test, "power flag", 10)==0) 
+	cfg->coreg->power = read_int(line, "power flag"); 
+      if (strncmp(test, "master power image", 18)==0) 
+	read_str(cfg->coreg->master_power, line, "master power image"); 
+      if (strncmp(test, "slave power image", 17)==0) 
+	read_str(cfg->coreg->slave_power, line, "slave power image"); 
       if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->coreg_slave->status, line, "status"); 
-    }	  
-    
+	read_str(cfg->coreg->status, line, "status"); 
+    }
+
     if (strncmp(line, "[Interferogram/coherence]", 25)==0) 
       strcpy(params, "igram_coh");
     if (strcmp(params, "igram_coh")==0) {
@@ -697,8 +602,8 @@ dem_config *read_config(char *configFile, int createFlag)
 	read_str(cfg->igram_coh->coh, line, "coherence image");
       if (strncmp(test, "minimum coherence", 17)==0) 
 	cfg->igram_coh->min = read_double(line, "minimum coherence");
-      if (strncmp(test, "multilook", 9)==0) 
-	cfg->igram_coh->ml = read_int(line, "multilook");
+      if (strncmp(test, "looks", 5)==0) 
+	cfg->igram_coh->looks = read_int(line, "looks");
       if (strncmp(test, "status", 6)==0) 
 	read_str(cfg->igram_coh->status, line, "status");
     }
@@ -860,7 +765,7 @@ int write_config(char *configFile, dem_config *cfg)
   // output basename
   if (!shortFlag)
     fprintf(fConfig, "\n# The ips saves a large number of intermediate and final results.\n"
-          "# All the files relevant for further analysis will start with this basename\n\n");
+	    "# All the files relevant for further analysis will start with this basename\n\n");
   fprintf(fConfig, "base name = %s\n", cfg->general->base);
   // data type
   if (!shortFlag)
@@ -887,8 +792,8 @@ int write_config(char *configFile, dem_config *cfg)
     fprintf(fConfig, "\n# For effectively using swath data the user can define latitude\n"
             "# constraints to select a subset of the swath data (-99 indicates that no\n"
             "# latitude constraint is chosen).\n\n");
-    fprintf(fConfig, "lat begin = %.3f\n", cfg->general->lat_begin);
-    fprintf(fConfig, "lat end = %.3f\n", cfg->general->lat_end);
+  fprintf(fConfig, "lat begin = %.3f\n", cfg->general->lat_begin);
+  fprintf(fConfig, "lat end = %.3f\n", cfg->general->lat_end);
   // coregistration
   if (!shortFlag)
     fprintf(fConfig, "\n# Matching up the first and last patches of an image pair leads to\n"
@@ -903,9 +808,9 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# is an empirical value that worked in most cases.\n\n");
   fprintf(fConfig, "maximum offset = %d\n", cfg->general->max_off);
   /* Keep the mask related stuff out until it is actually implemented
-  fprintf(fConfig, "correlation mask = < flag for using a mask for co-registration: "
-	  "0 | 1 (not implemented yet) >\n");
-  fprintf(fConfig, "mask file = < mask file location >\n");
+     fprintf(fConfig, "correlation mask = < flag for using a mask for co-registration: "
+     "0 | 1 (not implemented yet) >\n");
+     fprintf(fConfig, "mask file = < mask file location >\n");
   */
   // default values file
   if (!shortFlag) {
@@ -939,7 +844,7 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# to 'processing'. When the processing is complete it is changed to 'success'"
 	    "\n\n");
   fprintf(fConfig, "status = %s\n\n\n", cfg->general->status);
-
+  
   // [Master] section
   fprintf(fConfig, "[Master image]\n");
   if (!shortFlag)
@@ -955,7 +860,7 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# Swath data has usually an extension .par, whereas CEOS data has an extension.\n"
 	    "# .L\n\n");		  
   fprintf(fConfig, "metadata file = %s\n\n\n", cfg->master->meta);
-	  
+  
   // [Slave] section
   fprintf(fConfig, "[Slave image]\n");
   if (!shortFlag)
@@ -971,399 +876,125 @@ int write_config(char *configFile, dem_config *cfg)
             "# Swath data has usually an extension .par, whereas CEOS data has an extension.\n"
             "# .D\n\n");		  
   fprintf(fConfig, "metadata file = %s\n\n\n", cfg->slave->meta);
+  
+  // [Ingest] section
+  fprintf(fConfig, "[Ingest]\n");
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
+	    "# vectors provided by the German Aerospace Center (DLR) for the master image."
+	    "\n\n");
+  fprintf(fConfig, "precise master = %s\n", cfg->ingest->prc_master);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
+	    "# vectors provided by the German Aerospace Center (DLR) for the slave image."
+	    "\n\n");
+  fprintf(fConfig, "precise slave = %s\n", cfg->ingest->prc_slave);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This flag defines whether precision state vectors should be used\n"
+	    "# or not (1 for using precision state vectors, 0 for not using precision\n"
+	    "# state vectors). This funcionality is not fully implemented yet.\n\n");
+  fprintf(fConfig, "precise orbits = %d\n", cfg->ingest->prcflag);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
+	    "# The status 'new' indicates that this processing step has not been\n"
+	    "# performed. When the processing is complete it is changed to 'success'\n"
+	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
+  fprintf(fConfig, "status = %s\n\n\n", cfg->ingest->status);
+    
+  // [Coregistration] section
+  fprintf(fConfig, "[Coregistration]\n");
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
+	    "# of the first patch of the master image is started. This can be changed \n"
+	    "# when the initial co-registration does not succeed.\n\n");
+  fprintf(fConfig, "start first patch master = %ld\n", cfg->coreg->p1_master_start);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
+	    "# of the first patch of the slave image is started. This can be changed \n"
+	    "# when the initial co-registration does not succeed.\n\n");
+  fprintf(fConfig, "start first patch slave = %ld\n", cfg->coreg->p1_slave_start);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
+	    "# during the co-registration of the upper part of the images. Ideally the\n"
+	    "# images correlate with one patch. At times, two patches might be required\n\n");
+  fprintf(fConfig, "first patches = %d\n", cfg->coreg->p1_patches);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
+	    "# of the last patch of the master image is started. This can be changed \n"
+	    "# when the initial co-registration does not succeed.\n\n");
+  fprintf(fConfig, "start last patch master = %ld\n", cfg->coreg->pL_master_start);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
+	    "# of the last patch of the slave image is started. This can be changed \n"
+	    "# when the initial co-registration does not succeed.\n\n");
+  fprintf(fConfig, "start last patch slave = %ld\n", cfg->coreg->pL_slave_start);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
+	    "# during the co-registration of the lower part of the images. Ideally the\n"
+	    "# images correlate with one patch. At times, two patches might be required\n\n");
+  fprintf(fConfig, "last patches = %d\n", cfg->coreg->pL_patches);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
+	    "# last patch co-registration for the master image.\n\n");
+  fprintf(fConfig, "master offset = %ld\n", cfg->coreg->master_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
+	    "# last patch co-registration for the slave image.\n\n");
+  fprintf(fConfig, "slave offset = %ld\n", cfg->coreg->slave_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the number of patches that are used for\n"
+	    "# the processing of the master image\n\n");
+  fprintf(fConfig, "master patches = %d\n", cfg->coreg->master_patches);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the number of patches that are used for\n"
+	    "# the processing of the slave image\n\n");
+  fprintf(fConfig, "slave patches = %d\n", cfg->coreg->slave_patches);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
+	    "# the matching algorithm determined for the first patch.\n\n");
+  fprintf(fConfig, "azimuth offset first patch = %d\n", cfg->coreg->p1_azimuth_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
+	    "# the matching algorithm determined for the first patch.\n\n");
+  fprintf(fConfig, "range offset first patch = %d\n", cfg->coreg->p1_range_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
+	    "# the matching algorithm determined for the last patch.\n\n");
+  fprintf(fConfig, "azimuth offset last patch = %d\n", cfg->coreg->pL_azimuth_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
+	    "# the matching algorithm determined for the lsat patch.\n\n");
+  fprintf(fConfig, "range offset last patch = %d\n", cfg->coreg->pL_range_offset);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
+	    "# grid that is used for the FFT match\n\n");	  
+  fprintf(fConfig, "grid = %d\n", cfg->coreg->grid);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
+	    "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
+	    "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
+	    "# better matching results.\n\n");
+  fprintf(fConfig, "fft = %d\n", cfg->coreg->fft);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
+	    "# processing the images (1 for generating a power image, 0 for not\n"
+	    "# generating power images.\n\n");
+  fprintf(fConfig, "power flag = %d\n", cfg->coreg->power);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the file name of the master power image."
+	    "\n\n");
+  fprintf(fConfig, "master power image = %s\n", cfg->coreg->master_power);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# This parameter defines the file name of the slave power image."
+	    "\n\n");
+  fprintf(fConfig, "slave power image = %s\n", cfg->coreg->slave_power);
+  if (!shortFlag)
+    fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
+	    "# The status 'new' indicates that this processing step has not been\n"
+	    "# performed. When the processing is complete it is changed to 'success'\n"
+	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
+  fprintf(fConfig, "status = %s\n\n\n", cfg->coreg->status);
 
-  // SWATH data
-  if (strncmp(cfg->general->data_type, "STF", 3)==0) {
-    // [Ingest] section
-    fprintf(fConfig, "[Ingest]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
-	      "# vectors provided by the German Aerospace Center (DLR) for the master image."
-	      "\n\n");
-    fprintf(fConfig, "precise master = %s\n", cfg->ingest->prc_master);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the location of the precision state\n"
-	      "# vectors provided by the German Aerospace Center (DLR) for the slave image."
-	      "\n\n");
-    fprintf(fConfig, "precise slave = %s\n", cfg->ingest->prc_slave);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines whether precision state vectors should be used\n"
-	      "# or not (1 for using precision state vectors, 0 for not using precision\n"
-	      "# state vectors). This funcionality is not fully implemented yet.\n\n");
-    fprintf(fConfig, "precise orbits = %d\n", cfg->ingest->prcflag);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ingest->status);
-    if (strncmp(cfg->general->doppler, "average", 7)==0) {
-      // [Doppler] section
-      fprintf(fConfig, "[Doppler]\n");
-      if (!shortFlag)
-        fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-                "# The status 'new' indicates that this processing step has not been\n"
-		"# performed. When the processing is complete it is changed to 'success'\n"
-		"# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-      fprintf(fConfig, "status = %s\n\n\n", cfg->doppler->status);
-    }
-    // [Coregister first patch] section
-    fprintf(fConfig, "[Coregister first patch]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
-	      "# during the co-registration of the upper part of the images. Ideally the\n"
-	      "# images correlate with one patch. At times, two patches might be required\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->coreg_p1->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the first patch of the master image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start master = %ld\n", cfg->coreg_p1->start_master);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the first patch of the slave image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start slave = %ld\n", cfg->coreg_p1->start_slave);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match.\n\n");	  
-    fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	      "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	      "# better matching results.\n\n");
-    fprintf(fConfig, "fft = %d\n", cfg->coreg_p1->fft);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_p1->off_az);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset range = %d\n", cfg->coreg_p1->off_rng);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->coreg_p1->status);
-    // [Coregister last patch] section
-    fprintf(fConfig, "[Coregister last patch]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
-	      "# during the co-registration of the lower part of the images. Ideally the\n"
-	      "# images correlate with one patch. At times, two patches might be required\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->coreg_pL->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the last patch of the master image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start master = %ld\n", cfg->coreg_pL->start_master);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the last patch of the slave image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start slave = %ld\n", cfg->coreg_pL->start_slave);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	      "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	      "# better matching results.\n\n");
-    fprintf(fConfig, "fft = %d\n", cfg->coreg_pL->fft);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_pL->off_az);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset range = %d\n", cfg->coreg_pL->off_rng);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->coreg_pL->status);
-    if (strncmp(cfg->general->doppler, "updated", 7)==0) {
-      // [doppler_per_patch] section
-      fprintf(fConfig, "[doppler_per_patch]\n");
-      if (!shortFlag)
-        fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-                "# The status 'new' indicates that this processing step has not been\n"
-		"# performed. When the processing is complete it is changed to 'success'\n"
-		"# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-      fprintf(fConfig, "status = %s\n\n\n", cfg->doppler_per_patch->status);
-    }
-    // [ardop - Master image] section
-    fprintf(fConfig, "[ardop - Master image]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the start offset determined by the\n"
-	      "# first patch co-registration for the master image.\n\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_master->start_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
-	      "# last patch co-registration for the master image.\n\n");
-    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_master->end_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates how many patches of data have been\n"
-	      "# for the master image.\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->ardop_master->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
-	      "# processing the master image (1 for generating a power image, 0 for not\n"
-	      "# generating a power image).\n\n");
-    fprintf(fConfig, "power flag = %d\n", cfg->ardop_master->power);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the file name of the master power image."
-	      "\n\n");
-    fprintf(fConfig, "power image = %s\n", cfg->ardop_master->power_img);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ardop_master->status);
-    // [ardop - Slave image] section
-    fprintf(fConfig, "[ardop - Slave image]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the start offset determined by the\n"
-	      "# the first patch co-registration for the slave image.\n\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_slave->start_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
-	      "# the last patch co-registration for the slave image.\n\n");
-    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_slave->end_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates how many patches of data have been\n"
-	      "# for the slave image.\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->ardop_slave->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
-	      "# processing the slave image (1 for generating a power image, 0 for not\n"
-	      "# generating a power image.\n\n");
-    fprintf(fConfig, "power flag = %d\n", cfg->ardop_slave->power);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the file name of the slave power image."
-	      "\n\n");
-    fprintf(fConfig, "power image = %s\n", cfg->ardop_slave->power_img);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ardop_slave->status);
-  }
-  
-  // CEOS level zero data
-  if (strncmp(cfg->general->data_type, "RAW", 3)==0) {
-    // [Ingest] section
-    fprintf(fConfig, "[Ingest]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ingest->status);
-    if (strncmp(cfg->general->doppler, "average", 7)==0) {
-      // {Doppler] section
-      fprintf(fConfig, "[Doppler]\n");
-      if (!shortFlag)
-        fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-                "# The status 'new' indicates that this processing step has not been\n"
-		"# performed. When the processing is complete it is changed to 'success'\n"
-		"# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-      fprintf(fConfig, "status = %s\n\n\n", cfg->doppler->status);
-    }
-    // [Coregister first patch] section
-    fprintf(fConfig, "[Coregister first patch]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
-	      "# during the co-registration of the upper part of the images. Ideally the\n"
-	      "# images correlate with one patch. At times, two patches might be required\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->coreg_p1->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the first patch of the master image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start master = %ld\n", cfg->coreg_p1->start_master);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the first patch of the slave image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start slave = %ld\n", cfg->coreg_p1->start_slave);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %d\n", cfg->coreg_p1->grid);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	      "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	      "# better matching results.\n\n");
-    fprintf(fConfig, "fft = %d\n", cfg->coreg_p1->fft);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_p1->off_az);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset range = %d\n", cfg->coreg_p1->off_rng);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->coreg_p1->status);
-    // [Coregister last patch] section
-    fprintf(fConfig, "[Coregister last patch]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the number of patches that are used\n"
-	      "# during the co-registration of the lower part of the images. Ideally the\n"
-	      "# images correlate with one patch. At times, two patches might be required\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->coreg_pL->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the last patch of the master image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start master = %ld\n", cfg->coreg_pL->start_master);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates at which line number the processing\n"
-	      "# of the last patch of the slave image is started. This can be changed \n"
-	      "# when the initial co-registration does not succeed.\n\n");
-    fprintf(fConfig, "start slave = %ld\n", cfg->coreg_pL->start_slave);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %d\n", cfg->coreg_pL->grid);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	      "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	      "# better matching results.\n\n");
-    fprintf(fConfig, "fft = %d\n", cfg->coreg_pL->fft);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in azimuth direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset azimuth = %d\n", cfg->coreg_pL->off_az);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the pixel offset in range direction\n"
-	      "# the matching algorithm determined.\n\n");
-    fprintf(fConfig, "offset range = %d\n", cfg->coreg_pL->off_rng);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->coreg_pL->status);
-    if (strncmp(cfg->general->doppler, "updated", 7)==0) {
-      fprintf(fConfig, "[doppler_per_patch]\n");
-      fprintf(fConfig, "status = %s\n\n\n", cfg->doppler_per_patch->status);
-    }
-    fprintf(fConfig, "[ardop - Master image]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the start offset determined by the\n"
-	      "# the first patch co-registration for the master image.\n\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_master->start_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
-	      "# the last patch co-registration for the master image.\n\n");
-    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_master->end_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates how many patches of data have been\n"
-	      "# for the master image.\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->ardop_master->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
-	      "# processing the master image (1 for generating a power image, 0 for not\n"
-	      "# generating a power image).\n\n");
-    fprintf(fConfig, "power flag = %d\n", cfg->ardop_master->power);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the file name of the master power image."
-	      "\n\n");
-    fprintf(fConfig, "power image = %s\n", cfg->ardop_master->power_img);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ardop_master->status);
-    fprintf(fConfig, "[ardop - Slave image]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the start offset determined by the\n"
-	      "# the first patch co-registration for the slave image.\n\n");
-    fprintf(fConfig, "start offset = %ld\n", cfg->ardop_slave->start_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates the end offset determined by the\n"
-	      "# the last patch co-registration for the slave image.\n\n");
-    fprintf(fConfig, "end offset = %ld\n", cfg->ardop_slave->end_offset);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter indicates how many patches of data have been\n"
-	      "# for the slave image.\n\n");
-    fprintf(fConfig, "patches = %d\n", cfg->ardop_slave->patches);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines whether a power image is created while\n"
-	      "# processing the slave image (1 for generating a power image, 0 for not\n"
-	      "# generating a power image.\n\n");
-    fprintf(fConfig, "power flag = %d\n", cfg->ardop_slave->power);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter defines the file name of the slave power image."
-	      "\n\n");
-    fprintf(fConfig, "power image = %s\n", cfg->ardop_slave->power_img);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ardop_slave->status);
-  }
-  
-  // Single look complex (SLC) data
-  if (strncmp(cfg->general->data_type, "SLC", 3)==0) {
-    // [Ingest] section
-    fprintf(fConfig, "[Ingest]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ingest->status);
-    // [Coregister slave] section
-    fprintf(fConfig, "[Coregister slave]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameter determines the number of pixels that define the\n"
-              "# grid that is used for the FFT match\n\n");	  
-    fprintf(fConfig, "grid = %d\n", cfg->coreg_slave->grid);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This parameters defines whether a complex FFT is used for the\n"
-	      "# fine co-registration instead of the coherence (1 for complex FFT match,\n"
-	      "# 0 for FFT match using coherence). Complex FFT matches usually lead to\n"
-	      "# better matching results.\n\n");
-    fprintf(fConfig, "fft = %d\n", cfg->coreg_slave->fft);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines the use of a sinc function in the interpolation\n"
-	      "# during the remapping of the slave image into the geometry of the master\n"
-	      "# image (1 for using the sinc function, 0 for not using it).\n\n");
-    fprintf(fConfig, "sinc = %d\n", cfg->coreg_slave->sinc);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# This flag defines the use of a warp function for the remapping\n"
-	      "# of the slave image into the master image geometry (1 for using the warp\n"
-	      "# function, 0 for not using it). The warp function generates a horizontal\n"
-	      "# and vertical vector field that accomodate higher order distortions.\n\n");
-    fprintf(fConfig, "warp = %d\n", cfg->coreg_slave->warp);
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->coreg_slave->status);
-  }
-  
   // [Interferogram/coherence] section
   fprintf(fConfig, "[Interferogram/coherence]\n");
   if (!shortFlag)
@@ -1380,16 +1011,16 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# as an indicator of co-registration problems.\n\n");
   fprintf(fConfig, "minimum coherence = %.1f\n", cfg->igram_coh->min);
   if (!shortFlag)
-    fprintf(fConfig, "\n# This indicates whether a multilooked version of the interferogram\n"
-	    "# is stored (1 for generating a multilooked interferogram, 0 for not generating\n"
-	    "# one).\n\n");
-  fprintf(fConfig, "multilook = %d\n", cfg->igram_coh->ml);
+    fprintf(fConfig, "\n# This parameter shows the number of looks used for the\n"
+	    "# multilooking of interferogram and coherence image.\n\n");
+  fprintf(fConfig, "looks = %d\n", cfg->igram_coh->looks);
   if (!shortFlag)
     fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
             "# The status 'new' indicates that this processing step has not been\n"
 	    "# performed. When the processing is complete it is changed to 'success'\n"
 	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
   fprintf(fConfig, "status = %s\n\n\n", cfg->igram_coh->status);
+
   // [Offset matching] section
   fprintf(fConfig, "[Offset matching]\n");
   if (!shortFlag)
@@ -1402,6 +1033,7 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# performed. When the processing is complete it is changed to 'success'\n"
 	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
   fprintf(fConfig, "status = %s\n\n\n", cfg->offset_match->status);
+
   // [Simulated phase] section
   fprintf(fConfig, "[Simulated phase]\n");
   if (!shortFlag)
@@ -1417,6 +1049,7 @@ int write_config(char *configFile, dem_config *cfg)
   fprintf(fConfig, "status = %s\n\n\n", cfg->sim_phase->status);
   
   if (strncmp(cfg->general->mode, "DINSAR", 6)==0) {
+
     // [Differential interferogram] section
     fprintf(fConfig, "[Differential interferogram]\n");
     if (!shortFlag)
@@ -1432,6 +1065,7 @@ int write_config(char *configFile, dem_config *cfg)
   }
   
   if (strncmp(cfg->general->mode, "DEM", 3)==0) {
+    
     // [Deramp/multilook] section
     fprintf(fConfig, "[Deramp/multilook]\n");
     if (!shortFlag)
@@ -1440,6 +1074,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->deramp_ml->status);
+
     // [Phase unwrapping] section
     fprintf(fConfig, "[Phase unwrapping]\n");
     if (!shortFlag)
@@ -1492,6 +1127,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->unwrap->status);
+    
     // [Baseline refinement] section
     fprintf(fConfig, "[Baseline refinement]\n");
     if (!shortFlag)
@@ -1507,6 +1143,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->refine->status);
+    
     // [Elevation] section
     fprintf(fConfig, "[Elevation]\n");
     if (!shortFlag)
@@ -1521,6 +1158,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->elevation->status);
+    
     // [Ground range DEM] section
     fprintf(fConfig, "[Ground range DEM]\n");
     if (!shortFlag)
@@ -1529,6 +1167,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->ground_range->status);
+    
     // [Geocoding] section
     fprintf(fConfig, "[Geocoding]\n");
     if (!shortFlag)
@@ -1567,6 +1206,7 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->geocode->status);
+
     // [Export] section
     fprintf(fConfig, "[Export]\n");
     if (!shortFlag)
@@ -1587,4 +1227,4 @@ int write_config(char *configFile, dem_config *cfg)
   
   return(0);
 }
-
+  

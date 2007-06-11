@@ -17,9 +17,6 @@ typedef struct {
 
 typedef fftwf_complex fcpx;
 
-// Prototypes from coregister.c
-int average_in_doppler(char *inFileMaster, char *inFileSlave, char *outFile);
-
 // Prototypes from complex2polar.c
 int complex2polar(char *cpxfile, char *ampfile, char *phsfile);
 
@@ -39,12 +36,23 @@ double meta_flat_phase(meta_parameters *sar,const baseline base,int y,int x);
 /*Return the "phase rate"-- the number of meters of elevation per radian of phase.*/
 double meta_phase_rate(meta_parameters *sar,const baseline base,int y,int x);
 
+// Prototypes from asf_coregister.c
+int average_in_doppler(char *inFileMaster, char *inFileSlave, char *outFile);
+int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
+		   long *p1_master_start, long *p1_slave_start, int p1_patches,
+		   long *pL_master_start, long *pL_slave_start, int pL_patches,
+		   long master_offset, long slave_offset, int maximum_offset,
+		   int *master_patches, int *slave_patches, int *p1_range_offset, 
+		   int *p1_azimuth_offset, int *pL_range_offset, 
+		   int *pL_azimuth_offset, int *grid, int *fft, int power,
+		   char *masterFile, char *slaveFile);
+
 // Prototypes from asf_igram_coh.c
 int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 		  char *masterFile, char *slaveFile, char *outBase);
 
 // Prototypes from asf_elevation.c
-int asf_elevation(char *logFile, char *unwrapped_phase, char *phase_mask, 
+int asf_elevation(char *unwrapped_phase, char *phase_mask, 
 		  char *baseFile, char *seeds, char *slant_amplitude, 
 		  char *slant_coherence, char *ground_elevation, 
 		  char *ground_elevation_error, char *ground_amplitude, 

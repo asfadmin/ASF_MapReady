@@ -96,14 +96,9 @@ int meta_get_latLon(meta_parameters *meta,
     }
     return 0;
   } else { /*Bogus image type.*/
-    asfPrintError(
-      "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
-      "meta->transform = %p, so it isn't ALOS.\n"
-      "meta->sar = %p, so it isn't Slant/Ground range.\n"
-      "meta->projection = %p, so it isn't Projected, or Scansar.\n"
-      "meta->general->name: %s\n",
-      meta->transform, meta->sar, meta->projection,
-      meta->general ? meta->general->basename : "(null)");
+    printf("Error! Invalid image type '%c' passed to meta_get_latLon!\n",
+     meta->sar->image_type);
+    exit(1);
     return 1; /* Not Reached */
   }
   return 0;
@@ -198,12 +193,11 @@ static int get_error(meta_parameters *meta,
                      double *error)
 {
   lat_lon new;
-  int err;
+        int err;
   err = meta_get_latLon(meta,yLine,xSamp,elev,&new.lat,&new.lon);
-  if (err)
-    return err;
+        if (err) return err;
   *error = get_distance(new,target);
-  return 0;
+        return 0;
 }
 
 /******************************************************************
@@ -213,7 +207,7 @@ static int get_error(meta_parameters *meta,
 static int meta_get_lineSamp_imp(meta_parameters *meta,
           double x_start, double y_start,
           double lat,double lon,double elev,
-          double *yLine,double *xSamp, double tolerance)
+          double *yLine,double *xSamp)
 {
   /*Number of pixels along which to
     perform finite difference approximation of the derivative.*/
@@ -228,7 +222,7 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
 
   target.lat = lat;
   target.lon = lon;
-  while (fabs(x-x_old)+fabs(y-y_old)>DELTA*tolerance)
+  while (fabs(x-x_old)+fabs(y-y_old)>DELTA/5)
   {
     double cur_err, tmp, del_x, del_y, rad;
 
@@ -353,69 +347,48 @@ int meta_get_lineSamp(meta_parameters *meta,
     
     double x0, y0;
     int err;
-    double tol = 0.2;
-    int num_iter = 0;
-
-    // Plan: added a tolerance factor to meta_get_lineSamp_imp, slowly
-    // increase it as we get more and more desperate for convergence.
-    // We shouldn't ever get past the first iteration, the only cases
-    // where this was needed were cases near the zero doppler line, which
-    // was fixed up in another way.
-    while (++num_iter <= 6)
-    {
-      //if (num_iter > 1)
-      //  printf("Iteration #%d: tolerance: %f\n", num_iter, tol);
-
-      x0 = meta->general->sample_count/2;
-      y0 = meta->general->line_count/2;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      // First attempt failed to converge... try another starting location,
-      // near one of the corners.  If this corner fails, then we'll try each
-      // of the other corners.
-      //printf("Failed to converge at center point... trying UL corner.\n");
-      x0 = meta->general->sample_count/8;
-      y0 = meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at UL corner... trying LR corner.\n");
-      x0 = 7*meta->general->sample_count/8;
-      y0 = 7*meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at LR corner... trying LL corner.\n");
-      x0 = meta->general->sample_count/8;
-      y0 = 7*meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at LL corner... trying UR corner.\n");
-      x0 = 7*meta->general->sample_count/8;
-      y0 = meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at UR corner... trying (0,0) ??\n");
-      x0 = y0 = 0.0;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-
-      tol += 0.2;
-    }
-
+    
+    x0 = meta->general->sample_count/2;
+    y0 = meta->general->line_count/2;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
+    // First attempt failed to converge... try another starting location,
+    // near one of the corners.  If this corner fails, then we'll try each
+    // of the other corners.
+    //printf("Failed to converge at center point... trying UL corner.\n");
+    x0 = meta->general->sample_count/8;
+    y0 = meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at UL corner... trying LR corner.\n");
+    x0 = 7*meta->general->sample_count/8;
+    y0 = 7*meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at LR corner... trying LL corner.\n");
+    x0 = meta->general->sample_count/8;
+    y0 = 7*meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at LL corner... trying UR corner.\n");
+    x0 = 7*meta->general->sample_count/8;
+    y0 = meta->general->line_count/8;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
+    //printf("Failed to converge at UR corner... trying (0,0) ??\n");
+    x0 = y0 = 0.0;
+    err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, yLine, xSamp);
+    if (!err) return 0;
+    
     // Return center point just for something to return...
     *xSamp = meta->general->sample_count/2;
     *yLine = meta->general->line_count/2;
-    return 1;
+  return 1;
   }
 }
 

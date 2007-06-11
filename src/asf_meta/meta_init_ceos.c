@@ -150,7 +150,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    if ( -1 == get_ifiledr(in_fName, iof))  { FREE(iof); iof = NULL; }
    mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
    /* Something funny about CDPF SLCs and map projection record: cheezy fix */
-   if (strncmp(dssr->fac_id,"CDPF",4)!=0) {
+   if (strncmp(dssr->fac_id,"CDPF",4)!=0 ||
+       strstr(dssr->product_id, "SSG")) {
      //     if ( -1 == get_mpdr(leaderName, mpdr))    { FREE(mpdr); mpdr = NULL; }
      if ( -1 == get_mpdr(in_fName, mpdr))    { FREE(mpdr); mpdr = NULL; }
    }
@@ -185,6 +186,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
 
  /* Fill meta->general structure */
+   char *basename = get_basename(in_fName);
+   strcpy(meta->general->basename, basename);
    /* Determine satellite and beam mode */
    strcpy(meta->general->sensor, dssr->mission_id);
    strtok(meta->general->sensor," ");/*Remove spaces from field.*/
@@ -322,7 +325,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
 
    // RSI data don't have an indication in the metadata for frame numbers
-   if (ceos->facility==RSI)
+   if (ceos->facility==RSI || ceos->facility==CDPF)
      meta->general->frame =
        asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
 
@@ -453,7 +456,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    meta->general->no_data = MAGIC_UNSET_DOUBLE;
 
  /* Fill meta->sar structure */
-   if (mpdr || ceos->product==SCN) {
+   if (mpdr || ceos->product==SCN || ceos->product==SSG) {
      if (strcmp(meta->general->sensor, "ALOS") == 0)
        meta->sar->image_type = 'R';
      else {
@@ -547,7 +550,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    else if (strcmp(meta->general->sensor, "ALOS") == 0) {
      double delta;
      if (get_alos_delta_time (in_fName, meta, &delta)) {
-         meta->sar->azimuth_time_per_pixel =
+         meta->sar->azimuth_time_per_pixel = 
              delta / meta->sar->original_line_count;
      } else {
          // this isn't actually a fatal problem, for ALOS data...
@@ -556,7 +559,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
    else if (strcmp(meta->general->sensor, "SIR-C") == 0) {
      double delta = 15;
-     meta->sar->azimuth_time_per_pixel =
+     meta->sar->azimuth_time_per_pixel = 
        delta / meta->sar->original_line_count;
    }
    else {
@@ -651,7 +654,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    strtok(meta->sar->satellite_clock_time, " ");/*Remove spaces from field*/
 
    // FIXME: Need to sort out state vectors. Cannot do anything afterwards.
-   if (strcmp(meta->general->sensor,"SIR-C") == 0)
+   if (strcmp(meta->general->sensor,"SIR-C") == 0 ||
+       ceos->product == SSG)
      return;
 
  /* Fill meta->state_vectors structure. Call to ceos_init_proj requires that the
@@ -707,7 +711,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
 
    /* Now the satellite height */
-   if (!asf_facdr) {
+   if (!asf_facdr && ceos->product != SSG) {
      meta->sar->satellite_height =
          meta_get_sat_height(meta,
                              meta->general->line_count/2,
@@ -747,23 +751,23 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    else {
      double line_count = meta->general->line_count;
      double sample_count = meta->general->sample_count;
-     meta_get_latLon(meta, 0, 0, 0,
-		     &meta->location->lat_start_near_range,
+     meta_get_latLon(meta, 0, 0, 0, 
+		     &meta->location->lat_start_near_range, 
 		     &meta->location->lon_start_near_range);
      meta->location->lat_start_near_range *= R2D;
      meta->location->lon_start_near_range *= R2D;
-     meta_get_latLon(meta, line_count, 0, 0,
-		     &meta->location->lat_end_near_range,
+     meta_get_latLon(meta, line_count, 0, 0, 
+		     &meta->location->lat_end_near_range, 
 		     &meta->location->lon_end_near_range);
      meta->location->lat_end_near_range *= R2D;
      meta->location->lon_end_near_range *= R2D;
-     meta_get_latLon(meta, line_count, sample_count, 0,
-		     &meta->location->lat_end_far_range,
+     meta_get_latLon(meta, line_count, sample_count, 0, 
+		     &meta->location->lat_end_far_range, 
 		     &meta->location->lon_end_far_range);
      meta->location->lat_end_far_range *= R2D;
      meta->location->lon_end_far_range *= R2D;
-     meta_get_latLon(meta, 0, sample_count, 0,
-		     &meta->location->lat_start_far_range,
+     meta_get_latLon(meta, 0, sample_count, 0, 
+		     &meta->location->lat_start_far_range, 
 		     &meta->location->lon_start_far_range);
      meta->location->lat_start_far_range *= R2D;
      meta->location->lon_start_far_range *= R2D;
@@ -1105,35 +1109,22 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
 	* as far as we can tell, are never stored in the CEOS
 	*/
-       projection->param.lamcc.false_easting=MAGIC_UNSET_DOUBLE;
-       projection->param.lamcc.false_northing=MAGIC_UNSET_DOUBLE;
-       projection->param.lamcc.scale_factor=MAGIC_UNSET_DOUBLE;
      }
      else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic*/
        projection->param.ps.slat=70.0;
        projection->param.ps.slon=-45.0;
-       projection->param.ps.is_north_pole=1;
-       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
-       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
      }
      else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
        projection->param.ps.slat=mpdr->upslat;
        projection->param.ps.slon=mpdr->upslong;
-       if (projection->param.ps.slat>0) {
-         if (projection->param.ps.slon==0.0) {
-           projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
-         }
-         projection->param.ps.is_north_pole=1;
-       }
-       else {
-         projection->param.ps.is_north_pole=0;
-       }
-       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
-       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
+       if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
+	 projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
      }
-     else if (strncmp(mpdr->mpdesig, "UTM", 3) == 0) {
+     else if 
+       (strncmp(mpdr->mpdesig, "UTM", 3) == 0 ||
+	strncmp(mpdr->mpdesig, "UNIVERSAL TRANSVERSE MERCATOR", 29) == 0) {
        projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
        projection->param.utm.zone=atoi(mpdr->utmzone);
        projection->param.utm.false_easting=mpdr->utmeast;
@@ -1163,27 +1154,19 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->startX = mpdr->tlceast;
        projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) / mpdr->nlines;
        projection->perX   = (mpdr->trceast - mpdr->tlceast) / mpdr->npixels;
+       // bogus information but that is what MDA offers for SSG data
+       if (strncmp(mpdr->refelip, "NAD 83", 6)==0)
+	 projection->datum = NAD83_DATUM;
      }
 
      /* Default the units to meters */
      strcpy(projection->units,"meters");
 
      projection->hem = (dssr->pro_lat>0.0) ? 'N' : 'S';
-     if (strncmp(dssr->ellip_des,"GRS80",5)==0) {
+     if (strncmp(dssr->ellip_des,"GRS80",5)==0)
        projection->spheroid = GRS1980_SPHEROID;
-       if (strncmp(meta->general->sensor, "ALOS", 4) != 0) {
-         projection->datum = NAD83_DATUM; // A wild guess because NAD83 usually goes with GRS-1980
-                                          // This is probably a bad guess for some stations (Australia)
-       }
-       else {
-         // ALOS uses GRS-1980 and the specs say a ITRF-97 datum
-         projection->datum = ITRF97_DATUM;
-       }
-     }
-     else if (strncmp(dssr->ellip_des,"GEM06",5)==0) {
+     else if (strncmp(dssr->ellip_des,"GEM06",5)==0)
        projection->spheroid = GEM6_SPHEROID;
-       projection->datum = WGS84_DATUM; // A best guess ...WGS66 is a better fit but not well supported
-     }
      projection->re_major = dssr->ellip_maj*1000;
      projection->re_minor = dssr->ellip_min*1000;
      projection->height = 0.0;
@@ -1205,26 +1188,6 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->type = POLAR_STEREOGRAPHIC;
        projection->param.ps.slat = ampr->lat_map_origin;
        projection->param.ps.slon = ampr->lon_map_origin;
-       if (projection->param.ps.slat>0) {
-         projection->param.ps.is_north_pole=1;
-       }
-       else {
-         projection->param.ps.is_north_pole=0;
-       }
-       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
-       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
-       if (strncmp(meta->general->sensor, "ALOS", 4) == 0) {
-         projection->datum = ITRF97_DATUM;
-       }
-       else if (strncmp(dssr->ellip_des, "GEM06", 5) == 0) {
-         projection->datum = WGS84_DATUM;
-       }
-       else if (strncmp(dssr->ellip_des, "GRS80", 5) == 0) {
-         projection->datum = NAD83_DATUM;
-       }
-       else {
-         projection->datum = WGS84_DATUM;
-       }
      }
    }
 }
@@ -1398,6 +1361,8 @@ ceos_description *get_ceos_description(const char *fName)
 	  ceos->product=SLC;
 	else if (0==strncmp(prodStr,"SCANSAR WIDE",12)) ceos->product=SCANSAR;
 	else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
+	else if (0==strncmp(prodStr, "SYSTEMATIC GEOCODED UTM", 23)) 
+	  ceos->product=SSG;
 	else {
 	  printf("Get_ceos_description Warning! Unknown CDPF product type '%s'!\n",
 		 prodStr);

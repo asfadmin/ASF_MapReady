@@ -199,6 +199,7 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
 meta_stats *meta_stats_init(void)
 {
   meta_stats *stats = (meta_stats *)MALLOC(sizeof(meta_stats));
+  strcpy (stats->band_id, MAGIC_UNSET_STRING);
   stats->min = MAGIC_UNSET_DOUBLE;
   stats->max = MAGIC_UNSET_DOUBLE;
   stats->mean = MAGIC_UNSET_DOUBLE;
@@ -207,6 +208,18 @@ meta_stats *meta_stats_init(void)
   stats->mask = MAGIC_UNSET_DOUBLE;
   return stats;
 }
+
+meta_band_stats *meta_band_stats_init(int band_count)
+{
+  int ii=0;
+  meta_band_stats *band;
+
+  band = (meta_band_stats *) MALLOC(sizeof(meta_stats)*band_count);
+
+  //  for (ii=0; ii<band_count; ii++)
+  //  band[ii]->stats = meta_stats_init();
+}
+
 
 /*******************************************************************
  * meta_location_init():
@@ -240,6 +253,7 @@ meta_parameters *raw_init(void)
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->transform       = NULL;
   meta->stats           = NULL;
+  meta->band            = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
   //meta->location        = meta_location_init();  
   meta->location        = NULL;

@@ -13,7 +13,7 @@ char **extract_band_names(char *bands, int band_count)
   int ii;
 
   if (bands && strlen(bands) && band_count > 0) {
-    band_name = (char **) MALLOC(band_count*sizeof(char *));
+    band_name = (char **) CALLOC(band_count,sizeof(char *));
     for (ii=0; ii<band_count-1; ii++) {
       band_name[ii] = (char *) MALLOC(10*sizeof(char));
       p = strchr(bands, ',');
@@ -22,7 +22,7 @@ char **extract_band_names(char *bands, int band_count)
       *p = ',';
       bands = p+1;
     }
-    band_name[band_count-1] = (char *) MALLOC(10*sizeof(char));
+    band_name[band_count-1] = (char *) CALLOC(10,sizeof(char));
     sprintf(band_name[band_count-1], bands);
     return band_name;
   }

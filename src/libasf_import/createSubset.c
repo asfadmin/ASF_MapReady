@@ -253,6 +253,8 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
   rp2 = g->rp*g->rp;
   time = loc_sec-inc;
   slantRange = range;
+  g->earth_radius = (g->re*g->rp) /
+    sqrt(rp2*cos(targetLat)*cos(targetLat) + re2*sin(targetLat)*sin(targetLat));
 
   while (!done) {
 
@@ -267,7 +269,6 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
                    sqrt(outVec.pos.x*outVec.pos.x+outVec.pos.y*outVec.pos.y));
 
     /* Geocentric latitude for image time */
-    free_geolocate(g);
     g = init_geolocate(&outVec);
     sarPos = g->stVec.pos;
     relPos.x = sin(yaw);
@@ -281,7 +282,10 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
     slantRange =(-b - sqrt(d))/(2.0*a);
     vecScale(&relPos,slantRange);
     vecAdd(sarPos,relPos,&targetPos);
-      lat=atan2(targetPos.z, sqrt(targetPos.x*targetPos.x+targetPos.y*targetPos.y));
+    lat=atan2(targetPos.z, 
+	      sqrt(targetPos.x*targetPos.x+targetPos.y*targetPos.y));
+    g->earth_radius = (g->re*g->rp) /
+      sqrt(rp2*cos(lat)*cos(lat) + re2*sin(lat)*sin(lat));
 
     /* Geodetic latitude for image time */
     e = (re2-rp2)/re2;
@@ -296,7 +300,6 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
   }
 
   *targetTime = time;
-  free_geolocate(g);
 }
 
 
@@ -371,7 +374,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   date_printDate(&ymdDate,'\0',ymdStr);
   date_printTime(&hmsTime,3,'\0',hmsStr);
   for (i=0; i<strlen(hmsStr); i++)
-    if (isdigit((int)hmsStr[i])) sprintf(tmp, "%s%c", tmp, hmsStr[i]);
+    if (isdigit(hmsStr[i])) sprintf(tmp, "%s%c", tmp, hmsStr[i]);
   sprintf(imgTimeStr, "%s%s", ymdStr, tmp);
 
   *nVec = (lowerVec < upperVec) ? lowerVec : upperVec;

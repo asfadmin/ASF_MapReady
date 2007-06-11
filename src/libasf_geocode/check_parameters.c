@@ -17,7 +17,7 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
 		      project_parameters_t *pp, meta_parameters *meta,
 		      int force_flag)
 {
-  double lat, lon, min_lat, max_lat;
+  double lon, min_lat, max_lat;
   int zone, min_zone=60, max_zone=1;
 
   void (*report_func) (const char *format, ...);
@@ -140,27 +140,31 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       // case rather than kludging it in here...
 
       // Top left zone
-      meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+      //meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
+      lon = meta->location->lon_start_near_range;
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Top right zone
-      meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
-		      &lon);
+      //meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
+      //	      &lon);
+      lon = meta->location->lon_start_far_range;
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom left zone
-      meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
+      //meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
+      lon = meta->location->lon_end_near_range;
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom right zone
-      meta_get_latLon(meta, meta->general->line_count - 1,
-		      meta->general->sample_count - 1, 0.0, &lat, &lon);
+      //meta_get_latLon(meta, meta->general->line_count - 1,
+      //	      meta->general->sample_count - 1, 0.0, &lat, &lon);
+      lon = meta->location->lon_end_far_range;
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;

@@ -140,7 +140,9 @@ char *sprn_dssr(struct dataset_sum_rec *ds, int era)
 	    ds->az_time_center);
     add(&ret, "\n Zero-Doppler azimuth time last pixel\t%s", ds->az_time_last);
   }
-  else if (strncmp(ds->fac_id, "ASF", 3)==0) {
+  else if (strncmp(ds->fac_id, "ASF", 3)==0 ||
+	   strncmp(ds->fac_id, "CDPF", 4)==0 ||
+	   strncmp(ds->fac_id, "RSI", 3)==0) {
     if (era==0)
       {
 	add(&ret, "\n NUM ANNOTATION PTS\t%d",ds->annot_pts);
@@ -176,6 +178,26 @@ char *sprn_dssr(struct dataset_sum_rec *ds, int era)
 	add(&ret, "\n SOFTWARE VERSION OF DECODER    \t%s",ds->decode_version);
       }
   }
+  if (strncmp(ds->mission_id, "ALOS", 4)==0)
+    {
+      add(&ret, "\nCalibration data indicator\t%d",ds->cal_data_indicator);
+      add(&ret, "\nStart line calibration (top)\t%d",ds->start_cal_up);
+      add(&ret, "\nStop line calibration (top)\t%d", ds->stop_cal_up);
+      add(&ret, "\nStart line calibration (bottom)\t%d", ds->start_cal_bottom);
+      add(&ret, "\nStop line calibration (bottom)\t%d", ds->stop_cal_bottom);
+      add(&ret, "\nPRF switching indicator\t%d", ds->prf_switch);
+      add(&ret, "\nLine locator of PRF switching\t%d", ds->line_prf_switch);
+      add(&ret, "\nBeam center direction\t%8.3lf", ds->beam_center_dir);
+      add(&ret, "\nYaw steering mode flag\t%d", ds->yaw_steering);
+      add(&ret, "\nNominal offnadir angle\t%16.7lf", ds->off_nadir_angle);
+      add(&ret, "\nAntenna beam number\t%d", ds->ant_beam_num);
+      add(&ret, "\nIncidence angle constant (a0)\t%20.13lf", ds->incid_a[0]);
+      add(&ret, "\nIncidence angle constant (a1)\t%20.13lf", ds->incid_a[1]);
+      add(&ret, "\nIncidence angle constant (a2)\t%20.13lf", ds->incid_a[2]);
+      add(&ret, "\nIncidence angle constant (a3)\t%20.13lf", ds->incid_a[3]);
+      add(&ret, "\nIncidence angle constant (a4)\t%20.13lf", ds->incid_a[4]);
+      add(&ret, "\nIncidence angle constant (a5)\t%20.13lf", ds->incid_a[5]);
+    }
   add(&ret, "\n*********** end of Dataset Summary  record ********************\n");
   return ret;
 }

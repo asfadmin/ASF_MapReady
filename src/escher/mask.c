@@ -112,7 +112,7 @@ void saveMask(unsigned char *m, char *f)
 {
   char fnm[256];
   
-  create_name(fnm,f,"_phase.mask");
+  create_name(fnm,f,"_mask.img");
   writeVector(m, fnm, CHAR, size);
   printf("   saved a mask array to the file %s ...", fnm);
   return;

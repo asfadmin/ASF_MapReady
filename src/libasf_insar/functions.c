@@ -4,47 +4,6 @@
 #include "asf.h"
 #include "functions.h"
 
-int avg_in_dop(char *inFile1, char * inFile2, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "avg_in_dop %s %s %s %s", options, inFile1, inFile2, 
-	  outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int doppler_per_patch(char *parFile1, char * parFile2, char *metaFile1, 
-		      char *metaFile2, char *deltaFile, char *outFile1, 
-		      char *outFile2)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "doppler_per_patch %s -line 1000 %s %s %s %s %s %s %s", 
-	  options, parFile1, parFile2, metaFile1, metaFile2, deltaFile, 
-	  outFile1, outFile2);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
 int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
 	  char *outFile)
 {
@@ -160,42 +119,6 @@ int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile)
   sprintf(options, "-log %s", logFile);
   sprintf(command, "calc_deltas %s %s %i %s", 
 	  inFile1, inFile2, lineDiff, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int igram(char *inFile1, char *inFile2, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "igram %s %s %s %s", options, inFile1, inFile2, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-	
-int coh(char *inFile1, char *inFile2, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "coh %s %s %s %s", options, inFile1, inFile2, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");
@@ -411,23 +334,6 @@ int raster_calc(char *outFile, char *operation)
   
   sprintf(options, "-log %s", logFile);
   sprintf(command, "raster_calc %s %s %s", options, outFile, operation);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int convert2ppm(char *inFile, char *outFile)
-{
-  char command[255];
-  int ret;
-  
-  sprintf(command, "convert2ppm -mask %s %s", inFile, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

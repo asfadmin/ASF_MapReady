@@ -57,7 +57,7 @@ int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
 	int iterations=0,err=0,max_iter=10000;
 	double yaw=0,deltaAz;
 	double look=0;
-	double dopGuess,dopDotGuess,deltaDop,prevDeltaDop=-9999999;
+	double dopGuess,dopDotGuess,deltaDop;
 	vector target,vRel;
 
         while (1)
@@ -70,16 +70,12 @@ int getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
 		deltaDop=dop-dopGuess;
 		relativeVelocity=vecMagnitude(vRel);
 		deltaAz=deltaDop*(g->lambda/(2*relativeVelocity));
-                // handle the zero doppler case -- without this, we will
-                // sometimes flip back&forth accross zero doppler, until max_iter
-                if (fabs(deltaDop+prevDeltaDop)<.000001) deltaAz/=2.;
 		if (fabs(deltaAz*range)<0.1)/*Require decimeter convergence*/
 			break;
 		yaw+=deltaAz;
                 if (++iterations>max_iter) { /* Failed to converge */
                     err=1; break;
                 }
-                prevDeltaDop=deltaDop;
 	}
 	*out_look=look;
 	*out_yaw=yaw;
@@ -173,7 +169,7 @@ int getLook(GEOLOCATE_REC *g,double range,double yaw,double *plook)
 
   ht=vecMagnitude(g->stVec.pos);
   if (range < (ht - earth_radius) - range_tolerance) {
-      asfPrintWarning("getLook(): Range vector does not reach earth!\n");
+    //asfPrintWarning("getLook(): Range vector does not reach earth!\n");
       return 1;
   }
   if (ht < earth_radius - range_tolerance) {
@@ -183,15 +179,8 @@ int getLook(GEOLOCATE_REC *g,double range,double yaw,double *plook)
 
   /* Calculate look angle */
   coslook = (ht*ht+range*range-earth_radius*earth_radius)/(2.0*range*ht);
-  if (!meta_is_valid_double(coslook)) {
-      asfPrintWarning("getLook(): coslook was NaN!\n");
-      return 1;
-  }
-  if (coslook > 1.0) {
-      asfPrintWarning("getLook(): cosine(look angle) resulted in a value "
-                      "larger than 1.0!\n");
-      return 1;
-  }
+  asfRequire(coslook <= 1.0,
+    "getLook() cosine(look angle) resulted in a value larger than 1.0\n");
   look = acos(coslook);
 
   /* For a left-looking SAR, we define the look angle to be negative.*/

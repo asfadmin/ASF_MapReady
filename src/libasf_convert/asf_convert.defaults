@@ -18,3 +18,4 @@ resampling = BILINEAR
 force = 0
 output format = GEOTIFF
 byte conversion = SIGMA
+smooth dem holes = 1

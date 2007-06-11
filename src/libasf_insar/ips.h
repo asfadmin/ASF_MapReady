@@ -42,6 +42,29 @@ typedef struct {
 } s_status;
 
 typedef struct {
+  long p1_master_start;  // first line of first master patch
+  long p1_slave_start;   // first line of first slave patch
+  int p1_patches;       // number of patches to process at beginning of image
+  long pL_master_start;  // first line of last master patch
+  long pL_slave_start;   // first line of last slave patch
+  int pL_patches;       // number of patches to process at end of image
+  long master_offset;    // line offset between first and last patch (master)
+  long slave_offset;     // line offset between first and last patch (slave)
+  int master_patches;   // patches to process in master image
+  int slave_patches;    // patches to process in slave image
+  int p1_azimuth_offset;// azimuth offset (first patch in master and slave)
+  int p1_range_offset;  // range offset (first patch in master and slave)
+  int pL_azimuth_offset;// azimuth offset (last patch in master and slave)
+  int pL_range_offset;  // range offset (last patch in master and slave)
+  int grid;             // grid size for fine coregistration
+  int fft;              // flag for complex FFT matching
+  int power;            // flag for generating power images
+  char *master_power;   // name of master power image
+  char *slave_power;    // name of slave power image
+  char *status;         // status of processing
+} s_coregister;
+
+typedef struct {
   long start_offset;	/* first line of processing */
   long end_offset;	/* last line of processing */
   int patches;		/* number of patches */
@@ -67,7 +90,7 @@ typedef struct {
   char *igram;		/* name of the interferogram */
   char *coh;		/* name of the coherence image */
   double min;		/* minimum coherence level to process */
-  int ml;	       	/* switch for multilooked interferogram */
+  int looks;	       	/* number of looks */
   char *status;         /* status of processing */	
 } s_igram_coh;
 
@@ -135,14 +158,7 @@ typedef struct {
   s_image *master;		/* master image */
   s_image *slave;	       	/* slave image */
   s_ingest *ingest;		/* ingest STF data */
-  s_status *doppler;		/* average Doppler processing */
-  s_status *doppler_per_patch;	/* updated Doppler processing */
-  s_coreg *coreg_p1;		/* coregistration of first patch */
-  s_coreg *coreg_pL;		/* coregistration of last patch */
-  s_ardop *ardop_master;	/* processing master image */
-  s_ardop *ardop_slave;		/* processing slave image */
-  s_status *cpx_autofilter;	/* filter SLC images */
-  s_coreg *coreg_slave;		/* coregistration of SLC slave image */
+  s_coregister *coreg;          // coregistration of master and slave
   s_igram_coh *igram_coh;      	/* interferogram/coherence generation */
   s_offset *offset_match;      	/* pixel offset matching */
   s_sim_phase *sim_phase;      	/* simulate phase image and seed points */
