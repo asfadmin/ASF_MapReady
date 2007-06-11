@@ -245,6 +245,7 @@ SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *widget)
 {
     save_settings();
     set_settings_saved_label("Settings Saved.");
+    populate_csvs();
 }
 
 int settings_get_next_req_id(void)
@@ -274,7 +275,55 @@ int settings_get_is_emergency()
     return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
 }
 
+long settings_get_start_date()
+{
+    char *s = get_string_from_entry("start_date_entry");
+    if (strlen(s) > 0) {
+        return atol(s);
+    } else {
+        return -1;
+    }
+}
+
+void settings_set_start_date(long l)
+{
+    if (l < 0)
+        put_string_to_entry("start_date_entry", "");
+    else
+        put_long_to_entry("start_date_entry", l);
+}
+
+long settings_get_end_date()
+{
+    char *s = get_string_from_entry("end_date_entry");
+    if (strlen(s) > 0) {
+        return atol(s);
+    } else {
+        return -1;
+    }
+}
+
+void settings_set_end_date(long l)
+{
+    if (l < 0)
+        put_string_to_entry("end_date_entry", "");
+    else
+        put_long_to_entry("end_date_entry", l);
+}
+
 SIGNAL_CALLBACK void on_emergency_checkbutton_toggled(GtkWidget *w)
+{
+    update_output_file();
+    gui_process(FALSE);
+}
+
+SIGNAL_CALLBACK void on_start_date_entry_changed(GtkWidget *w)
+{
+    update_output_file();
+    gui_process(FALSE);
+}
+
+SIGNAL_CALLBACK void on_end_date_entry_changed(GtkWidget *w)
 {
     update_output_file();
     gui_process(FALSE);

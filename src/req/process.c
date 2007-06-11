@@ -1,6 +1,7 @@
 #include "req.h"
 #include <time.h>
 #include <assert.h>
+#include <ctype.h>
 #include "asf_nan.h"
 
 static void
@@ -112,8 +113,8 @@ static int parse_line(// input
                       int *palsar_table_number)
 {
     // cheat!  easier to validate if every piece will end with a comma
-    line[strlen(line)] = '\0';
-    line[strlen(line)-1] = ',';
+    line[strlen(line)+1] = '\0';
+    line[strlen(line)] = ',';
 
     // iterator
     char *p = line;
@@ -163,10 +164,13 @@ static int parse_line(// input
     // direction
     p = my_parse_int(p, direction);
     if (!p) return FALSE;
-    if (*direction != 1 && *direction != 2) {
+    if (*direction != 1 && *direction != 0 && *direction != 2) {
         printf("  --> Invalid direction: %d\n", *direction);
         return FALSE;
     }
+    // FIXME: this is a temporary hack for testing while we sort
+    // out the convention
+    if (*direction == 2) *direction = 0;
 
     // duration
     p = my_parse_int(p, duration);
@@ -306,7 +310,8 @@ static int parse_line(// input
     p = my_parse_int(p, palsar_table_number);
     if (!p) return FALSE;
     if (*palsar_table_number != MAGIC_UNSET_INT && !is_palsar) {
-        printf("  --> palsar table number set for non-palsar data\n");
+        printf("  --> palsar table number set (%d) for non-palsar data\n",
+            *palsar_table_number);
         return FALSE;
     }
     if (is_palsar && *palsar_table_number != MAGIC_UNSET_INT &&
@@ -328,6 +333,7 @@ static int direction_converter(int direction)
     // 1 --> descending --> 1
     if (direction == 2) return 0;
     if (direction == 1) return 1;
+    if (direction == 0) return 0;
     assert(0); // impossible
     return 42;
 }
@@ -357,7 +363,7 @@ static void write_common(FILE *fout, long date, int path, double start_lat,
     fwrite(tmp_buf, sizeof(char), 9, fout);
     //  33    5  Path Number
     //  38    1  Blank
-    snprintf(tmp_buf, 32, " %3d  ", path);
+    snprintf(tmp_buf, 32, "%5d ", path);
     assert(strlen(tmp_buf)==6);
     fwrite(tmp_buf, sizeof(char), 6, fout);
     //  39    7  Observation Beginning Latitude
@@ -491,8 +497,49 @@ static void write_palsar(FILE *fout, int palsar_table_number)
     fwrite(tmp_buf, sizeof(char), 1, fout);
 }
 
+static void strip_end_whitesp(char *s)
+{
+    char *p = s + strlen(s) - 1;
+    while (isspace(*p)) *p-- = '\0';
+}
+
+static int is_valid_date(long l)
+{
+    char year[32], month[32], day[32];
+    sprintf(year, "%ld", l);
+    if (strlen(year) != 8)
+        return FALSE;
+
+    strcpy(month, year+4);
+    strcpy(day, month+2);
+    year[4] = '\0';
+    month[2] = '\0';
+
+    int y = atoi(year);
+    int m = atoi(month);
+    int d = atoi(day);
+
+    if (y >= 2007 && y <= 9999 && // year between 2007 and 9999
+        m >= 1    && m <= 12   && // month between 1 and 12
+        d >= 1    && d <= 31)     // day between 1 and 31
+    {
+        // now check month/day combo
+        if (m==2 && d>29)
+            return FALSE; // not going to worry about leap year stuff
+
+        if (d==31 && (m==4 || m==6 || m==9 || m==11))
+            return FALSE;
+
+        // all tests passed
+        return TRUE;
+    }
+
+    // failed
+    return FALSE;
+}
+
 void process(const char *csv_file, const char *req_file, int is_emergency,
-             int *req_id)
+             int *req_id, long start_date_user, long end_date_user)
 {
     printf("Process> %s -> %s\n", csv_file, req_file);
 
@@ -510,12 +557,13 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
     // read header line
     fgets(line, 1024, fin);
-    const char *expected_header = 
+    strip_end_whitesp(line);
+    const char *expected_header =
         "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
         "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
         "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
         "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
-        "AVNIR_Exposure,PALSAR_Table_Number\n";
+        "AVNIR_Exposure,PALSAR_Table_Number";
 
     // where we will put all the above, when processing a line
     char sensor[256];
@@ -555,6 +603,8 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     int n_prism = 0, n_avnir = 0, n_palsar = 0;
     int line_no = 2; // start at 2, since we already read 1 line.
     while (fgets(line, 1024, fin) != NULL) {
+        strip_end_whitesp(line);
+
         int valid =
             parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
                 observation_mode, &observation_purpose, &prism_nadir_angle,
@@ -607,6 +657,32 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         return;
     }
 
+    // see if the user specified an earlier/later start/end date
+    if (start_date_user > 0) {
+        if (start_date_user > first_date)
+            alert("The start date is later than some of the request dates!");
+        if (start_date_user > 99991231) {
+            alert("The start date is invalid, larger than maximum allowed.");
+            start_date_user = 99991231;
+        }
+        if (is_valid_date(start_date_user))
+            first_date = start_date_user;
+    }
+    if (end_date_user > 0) {
+        if (end_date_user < last_date)
+            alert("The end date is earlier than some of the request dates!");
+        if (end_date_user > 99991231) {
+            alert("The end date is invalid, larger than maximum allowed.");
+            end_date_user = 99991231;
+        }
+        if (is_valid_date(end_date_user))
+            last_date = end_date_user;
+    }
+    if (first_date > last_date) {
+        alert("Start date must be earlier than the end date.");
+        first_date = last_date;
+    }
+
     // write output file header lines
     char tmp_buf[32];
 
@@ -644,12 +720,12 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     fwrite(tmp_buf, sizeof(char), 6, fout);
     //  57    8   Begin Date of Data (UTC): YYYYMMDD
     //  65    1   Blank
-    snprintf(tmp_buf, 32, "%ld ", first_date);
+    snprintf(tmp_buf, 32, "%8ld ", first_date);
     assert(strlen(tmp_buf)==9);
     fwrite(tmp_buf, sizeof(char), 9, fout);
     //  66    8   End Date of Data (UTC): YYYYMMDD
     //  74    1   Blank
-    snprintf(tmp_buf, 32, "%ld ", last_date);
+    snprintf(tmp_buf, 32, "%8ld ", last_date);
     assert(strlen(tmp_buf)==9);
     fwrite(tmp_buf, sizeof(char), 9, fout);
     //  75    8   File Format Version (date): YYYYMMDD "20051017"
@@ -715,12 +791,21 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     // and finally the palsar lines, so we will go through the files three
     // times, rather then queueing things up.
 
+    // NOTE: The old script numbered the requests starting with the Avnir
+    // data, even though these were the second set of items in the file
+    // (after the Prism stuff), so we will do the same.  This is the
+    // reason for the futzing around with the request ID, and the
+    // "first_avnir" and "first_palsar" flags.
+    *req_id += n_avnir;
+    int first_avnir = TRUE, first_palsar = TRUE;
+
     int i, written_prism = 0, written_avnir = 0, written_palsar = 0;
     for (i=0; i<3; ++i) {
         // open up input file again, read header line again
         FILE *fin = fopen(csv_file, "r");
         fgets(line, 1024, fin);
         while (fgets(line, 1024, fin) != NULL) {
+            strip_end_whitesp(line);
 
             // first read in all of the line's items
             int valid = 
@@ -741,6 +826,10 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                 }
                 else if (i==1 && strcmp(sensor, "AV2")==0) {
                     ++written_avnir;
+                    if (first_avnir) {
+                        *req_id -= n_prism + n_avnir;
+                        first_avnir = FALSE;
+                    }
                     write_common(fout, date, path, start_lat, direction, duration,
                                  observation_mode, observation_purpose, *req_id, sensor);
                     write_avnir(fout, avnir_pointing_angle, avnir_gain,
@@ -749,6 +838,10 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                 }
                 else if (i==2 && strcmp(sensor, "PSR")==0) {
                     ++written_palsar;
+                    if (first_palsar) {
+                        *req_id += n_prism;
+                        first_palsar = FALSE;
+                    }
                     write_common(fout, date, path, start_lat, direction, duration,
                                  observation_mode, observation_purpose, *req_id, sensor);
                     write_palsar(fout, palsar_table_number);
@@ -801,6 +894,11 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
             printf("File too large to verify size.\n");
         }
     }
+
+    if (start_date_user < 0)
+        settings_set_start_date(first_date);
+    if (end_date_user < 0)
+        settings_set_end_date(last_date);
 }
 
 void gui_process(int for_real)
@@ -817,8 +915,11 @@ void gui_process(int for_real)
             } else {
                 int req_id = settings_get_next_req_id();
                 int is_emergency = settings_get_is_emergency();
+                long start_date = settings_get_start_date();
+                long end_date = settings_get_end_date();
                 char *outfile = get_output_file();
-                process(csv_file, outfile, is_emergency, &req_id);
+                process(csv_file, outfile, is_emergency, &req_id,
+                    start_date, end_date);
                 put_file_in_textview(outfile, "output_textview");
                 if (for_real) {
                     // update request num, id!

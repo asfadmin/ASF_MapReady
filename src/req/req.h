@@ -47,6 +47,8 @@ double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
 int get_int_from_entry(const char *widget_name);
 void put_int_to_entry(const char *widget_name, int val);
+long get_long_from_entry(const char *widget_name);
+void put_long_to_entry(const char *widget_name, long val);
 int get_checked(const char *widget_name);
 void set_checked(const char *widget_name, int checked);
 void message_box(const char *format, ...);
@@ -72,14 +74,19 @@ void settings_free(Settings *s);
 int settings_get_next_req_id(void);
 void settings_set_next_req_id_and_incr_req_num(int req_id);
 int settings_get_is_emergency(void);
+long settings_get_start_date(void);
+long settings_get_end_date(void);
+void settings_set_start_date(long l);
+void settings_set_end_date(long l);
 
 /* csv_list.c */
 void populate_csvs(void);
 void hook_up_csv_dir_entry_changed(void);
+void alert(const char *s);
 
 /* process.c */
 void process(const char *csv_file, const char *req_file, int is_emergency,
-             int *req_id);
+             int *req_id, long start_date, long end_date);
 void gui_process(int for_real);
 
 /* output.c */

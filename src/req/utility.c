@@ -94,6 +94,21 @@ void put_int_to_entry(const char *widget_name, int val)
     gtk_entry_set_text(GTK_ENTRY(e), tmp);
 }
 
+long get_long_from_entry(const char *widget_name)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    return atol(gtk_entry_get_text(GTK_ENTRY(e)));
+}
+
+void put_long_to_entry(const char *widget_name, long val)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    
+    char tmp[64];
+    sprintf(tmp, "%ld", val);
+
+    gtk_entry_set_text(GTK_ENTRY(e), tmp);
+}
 
 int get_checked(const char *widget_name)
 {

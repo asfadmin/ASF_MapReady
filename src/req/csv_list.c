@@ -86,6 +86,8 @@ void populate_csvs()
 SIGNAL_CALLBACK void
 on_csv_dir_combobox_changed(GtkWidget *w, gpointer callback_data)
 {
+    settings_set_start_date(-1);
+    settings_set_end_date(-1);
     gui_process(FALSE);
 }
 
@@ -96,4 +98,9 @@ void hook_up_csv_dir_entry_changed()
     g_signal_connect(GTK_OBJECT(e), "csv_changed",
         G_CALLBACK(on_csv_dir_combobox_changed), NULL);
 
+}
+
+void alert(const char *s)
+{
+    put_string_to_label("generate_label", s);
 }
