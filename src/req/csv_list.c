@@ -8,7 +8,9 @@
 void clear_csv_combo()
 {
     GtkWidget *w = get_widget_checked("csv_dir_combobox");
-    gtk_combo_box_remove_text(GTK_COMBO_BOX(w), 0);
+    do {
+        gtk_combo_box_remove_text(GTK_COMBO_BOX(w), 0);
+    } while (gtk_combo_box_get_active(GTK_COMBO_BOX(w)) != -1);
 }
 
 void add_to_csv_combo(const char *txt)
@@ -52,20 +54,20 @@ void populate_csvs()
 #else
                 sprintf(name, "%s/%s", csv_dir, dp->d_name);
 #endif
-                printf("Checking: %s\n", name);
+                //printf("Checking: %s\n", name);
                 char *e = findExt(name);
                 if (e && strcmp_case(e, ".csv") == 0) {
                     struct stat st_buf;
                     int status = stat(name, &st_buf);
-                    printf("Status: %d\b", status);
+                    //printf("Status: %d\b", status);
                     if (status != -1) {
-                        printf("Checking: %s %ld\n", name, (long)st_buf.st_mtime);
+                        //printf("Checking: %s %ld\n", name, (long)st_buf.st_mtime);
                         if (st_buf.st_mtime > most_recent_time) {
                             to_be_selected = num;
                             most_recent_time = st_buf.st_mtime;
-                            printf(" --> Most recent found so far!\n");
+                            //printf(" --> Most recent found so far!\n");
                         }
-                        printf("Adding: %s\n", name);
+                        //printf("Adding: %s\n", name);
                         add_to_csv_combo(name);
                         ++num;
                     } else {

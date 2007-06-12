@@ -1,6 +1,6 @@
 #include "req.h"
 
-#define VERSION "1.0"
+#define VERSION "1.0.2"
 
 /************************************************************************
  * Global variables...
@@ -14,7 +14,12 @@ char *find_in_share(const char * filename)
     char * ret = MALLOC(sizeof(char) *
         (strlen(get_asf_share_dir()) + strlen(filename) + 5));
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
-    return ret;
+    if (fileExists(ret))
+        return ret;
+    else {
+        free(ret);
+        return NULL;
+    }
 }
 
 SIGNAL_CALLBACK void
@@ -29,7 +34,12 @@ main(int argc, char **argv)
     gtk_init(&argc, &argv);
     block_processing = FALSE;
 
-    gchar *glade_xml_file = (gchar *) find_in_share("req.glade");
+    char *glade_xml_file = find_in_share("req.glade");
+    if (!glade_xml_file) {
+        printf("Couldn't find the req.glade file.  Aborting...\n");
+        exit(1);
+    }
+
     printf("Found req.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     g_free(glade_xml_file);
@@ -37,7 +47,7 @@ main(int argc, char **argv)
     // add version number to window title
     char title[256];
     sprintf(title,
-        "The ALOS Observation Request File Generator: Version %s", VERSION);
+        "The ALOS Observation Request Generator: Version %s", VERSION);
 
     // pull out what is in the saved settings file
     apply_saved_settings();

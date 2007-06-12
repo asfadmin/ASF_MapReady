@@ -124,7 +124,7 @@ static void add_to_text(char **txt, int *cur_len, const char *format, ...)
 void settings_save(Settings *s)
 {
     char *sav_file = find_in_share("req_settings.txt");
-    if (fileExists(sav_file)) {
+    if (sav_file && fileExists(sav_file)) {
         // update an existing file
         printf("Found settings file: %s\n", sav_file);
         char *new_sav_txt = MALLOC(sizeof(char)*1024);
@@ -178,7 +178,10 @@ void settings_save(Settings *s)
         fp = FOPEN(sav_file, "w");
         fprintf(fp, "%s", new_sav_txt);
         FCLOSE(fp);
+        free(sav_file);
     } else {
+        sav_file = MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+32));
+        sprintf(sav_file, "%s/req_settings.txt", get_asf_share_dir());
         // write a new file
         FILE *fp = FOPEN(sav_file, "w");
         if (s->csv_dir)
@@ -188,6 +191,7 @@ void settings_save(Settings *s)
         fprintf(fp, "next request number = %d\r\n", s->req_num);
         fprintf(fp, "next request id = %d\r\n", s->req_id);
         FCLOSE(fp);
+        free(sav_file);
     }
 }
 
@@ -205,17 +209,26 @@ Settings *settings_new_from_gui()
 
     s->csv_dir = settings_get_csv_dir();
     s->output_dir = settings_get_output_dir();
-
     s->req_num = atoi(get_string_from_entry("next_request_number_entry"));
+    s->req_id = atoi(get_string_from_entry("next_request_id_entry"));
 
     return s;
 }
 
-void save_settings()
+int save_settings()
 {
     Settings *s = settings_new_from_gui();
+    if (!fileExists(s->csv_dir)) {
+        message_box("CSV Directory doesn't exist.");
+        return FALSE;
+    }
+    if (!fileExists(s->output_dir)) {
+        message_box("Output Directory doesn't exist.");
+        return FALSE;
+    }
     settings_save(s);
     settings_free(s);
+    return TRUE;
 }
 
 char *settings_get_csv_dir()
@@ -243,9 +256,10 @@ SIGNAL_CALLBACK void on_change_page(GtkWidget *widget)
 
 SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *widget)
 {
-    save_settings();
-    set_settings_saved_label("Settings Saved.");
-    populate_csvs();
+    if (save_settings()) {
+        set_settings_saved_label("Settings Saved.");
+        populate_csvs();
+    }
 }
 
 int settings_get_next_req_id(void)
