@@ -93,6 +93,9 @@ void gui_process(int for_real);
 void update_output_file(void);
 char *get_output_file(void);
 
+/* Date utils */
+#include "date.h"
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
@@ -106,5 +109,8 @@ extern const char PATH_SEPATATOR;
 
 /* xml version of the .glade file */
 extern GladeXML *glade_xml;
+
+/* blocks (re-)processing in events that are triggered during processing */
+int block_processing;
 
 #endif

@@ -27,6 +27,7 @@ int
 main(int argc, char **argv)
 {
     gtk_init(&argc, &argv);
+    block_processing = FALSE;
 
     gchar *glade_xml_file = (gchar *) find_in_share("req.glade");
     printf("Found req.glade: %s\n", glade_xml_file);
@@ -36,7 +37,7 @@ main(int argc, char **argv)
     // add version number to window title
     char title[256];
     sprintf(title,
-            "The ALOS Acquisition File Generator: Version %s", VERSION);
+        "The ALOS Observation Request File Generator: Version %s", VERSION);
 
     // pull out what is in the saved settings file
     apply_saved_settings();

@@ -287,10 +287,12 @@ long settings_get_start_date()
 
 void settings_set_start_date(long l)
 {
+    block_processing=TRUE;
     if (l < 0)
         put_string_to_entry("start_date_entry", "");
     else
         put_long_to_entry("start_date_entry", l);
+    block_processing=FALSE;
 }
 
 long settings_get_end_date()
@@ -305,10 +307,12 @@ long settings_get_end_date()
 
 void settings_set_end_date(long l)
 {
+    block_processing=TRUE;
     if (l < 0)
         put_string_to_entry("end_date_entry", "");
     else
         put_long_to_entry("end_date_entry", l);
+    block_processing=FALSE;
 }
 
 SIGNAL_CALLBACK void on_emergency_checkbutton_toggled(GtkWidget *w)
