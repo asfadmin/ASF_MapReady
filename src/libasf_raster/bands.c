@@ -9,6 +9,7 @@ char *channel_trim (const char *channel);
 char **extract_band_names(char *bands, int band_count)
 {
   char *t_bands;
+  char *t_channel;
   char *ptrptr;
   char **band_ary;
   int i;
@@ -18,15 +19,24 @@ char **extract_band_names(char *bands, int band_count)
   if (band_count == 1) {
     if (strlen(bands) > 0) {
       band_ary = (char **) MALLOC(sizeof(char*));
-      band_ary[0] = channel_trim(strtok_r(t_bands, ",", &ptrptr));
+      t_channel = strtok_r(t_bands, ",", &ptrptr);
+      if (t_channel != NULL) {
+        band_ary[0] = STRDUP(t_channel);
+      }
     }
   }
   else if (band_count > 1) {
     // Handle multiple bands if multiple bands exist
     band_ary = (char **) MALLOC(sizeof(char*) * band_count);
-    band_ary[0] = channel_trim(strtok_r(t_bands, ",", &ptrptr));
+    t_channel = strtok_r(t_bands, ",", &ptrptr);
+    if (t_channel != NULL) {
+      band_ary[0] = STRDUP(t_channel);
+    }
     for (i = 1; i < band_count; i++) {
-      band_ary[i] = channel_trim(strtok_r(NULL, ",", &ptrptr));
+      t_channel = strtok_r(NULL, ",", &ptrptr);
+      if (t_channel != NULL) {
+        band_ary[i] = STRDUP(t_channel);
+      }
     }
   }
   else {
