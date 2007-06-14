@@ -15,28 +15,33 @@ char **extract_band_names(char *bands, int band_count)
   int i;
 
   // First do the obvious for single-band images.
-  t_bands = STRDUP(bands);
-  if (band_count == 1) {
-    if (strlen(bands) > 0) {
-      band_ary = (char **) MALLOC(sizeof(char*));
+  if (bands != NULL && strlen(bands) > 0) {
+    t_bands = STRDUP(bands);
+    if (band_count == 1) {
+      if (strlen(bands) > 0) {
+        band_ary = (char **) MALLOC(sizeof(char*));
+        t_channel = strtok_r(t_bands, ",", &ptrptr);
+        if (t_channel != NULL) {
+          band_ary[0] = STRDUP(t_channel);
+        }
+      }
+    }
+    else if (band_count > 1) {
+      // Handle multiple bands if multiple bands exist
+      band_ary = (char **) MALLOC(sizeof(char*) * band_count);
       t_channel = strtok_r(t_bands, ",", &ptrptr);
       if (t_channel != NULL) {
         band_ary[0] = STRDUP(t_channel);
       }
-    }
-  }
-  else if (band_count > 1) {
-    // Handle multiple bands if multiple bands exist
-    band_ary = (char **) MALLOC(sizeof(char*) * band_count);
-    t_channel = strtok_r(t_bands, ",", &ptrptr);
-    if (t_channel != NULL) {
-      band_ary[0] = STRDUP(t_channel);
-    }
-    for (i = 1; i < band_count; i++) {
-      t_channel = strtok_r(NULL, ",", &ptrptr);
-      if (t_channel != NULL) {
-        band_ary[i] = STRDUP(t_channel);
+      for (i = 1; i < band_count; i++) {
+        t_channel = strtok_r(NULL, ",", &ptrptr);
+        if (t_channel != NULL) {
+          band_ary[i] = STRDUP(t_channel);
+        }
       }
+    }
+    else {
+      band_ary = NULL;
     }
   }
   else {
