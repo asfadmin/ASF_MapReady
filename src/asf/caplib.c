@@ -471,15 +471,24 @@ int FFLUSH(FILE *stream)
 // as well.
 char *STRDUP (const char *s)
 {
-  char *result = MALLOC (sizeof (char) * (strlen (s) + 1));
+  char *result;
 
-  int idx = 0;
-  while ( s[idx] != '\0') {
-    result[idx] = s[idx];
-    idx++;
+  if (s != NULL) {
+    result = MALLOC (sizeof (char) * (strlen (s) + 1));
+
+    int idx = 0;
+    while ( s[idx] != '\0') {
+      result[idx] = s[idx];
+      idx++;
+    }
+
+    result[idx] = '\0';
   }
-
-  result[idx] = '\0';
+  else {
+    result = NULL;
+  }
 
   return result;
 }
+
+
