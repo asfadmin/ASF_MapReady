@@ -102,6 +102,9 @@ void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats);
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
                             stats_t *inFile1_stats, stats_t *inFile2_stats);
+void print_stats_results(char *filename1, char *filename2,
+                         stats_t *s1, stats_t *s2,
+                         double psnr);
 
 int main(int argc, char **argv)
 {
@@ -242,9 +245,14 @@ int main(int argc, char **argv)
     case ASF_IMG:
       {
       int band_count1, band_count2;
+      asfPrintStatus("\nCalculating Statistics...\n\n");
       calc_asf_img_stats_2files(inFile1, inFile2,
                                 &inFile1_stats, &inFile2_stats,
                                 &band_count1, &band_count2, &psnr);
+      asfPrintStatus("\nStatistics Results...\n");
+      print_stats_results(inFile1, inFile2,
+                          &inFile1_stats, &inFile2_stats,
+                          psnr);
       }
       break;
     case JPEG:
@@ -512,6 +520,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   if (*band_count1 > 0 && md1 != NULL) {
     band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
     if (band_names1 != NULL) {
+      asfPrintStatus("Calculating statistics for %s", inFile1);
       calc_stats_rmse_from_file(inFile1, band_names1[0],
                                 md1->general->no_data,
                                 &s1->min, &s1->max, &s1->mean,
@@ -521,6 +530,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   if (*band_count2 > 0 && md2 != NULL) {
     band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
     if (band_names2 != NULL) {
+      asfPrintStatus("\nCalculating statistics for %s", inFile2);
       calc_stats_rmse_from_file(inFile2, band_names2[0],
                                 md2->general->no_data,
                                 &s2->min, &s2->max, &s2->mean,
@@ -556,7 +566,27 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
         se = 0.0;
         max_val = get_maxval(md1); // Since both file's data types are the same, this is OK
         lines = MIN(md1->general->line_count, md2->general->line_count);
+        if (lines < md1->general->line_count) {
+          asfPrintWarning("File2 has fewer lines than File1 (%d v. %d).\n"
+              "Only the first %d lines will be utilized for PSNR calculation\n",
+              md2->general->line_count, md1->general->line_count, lines);
+        }
+        if (lines < md2->general->line_count) {
+          asfPrintWarning("File1 has fewer lines than File2 (%d v. %d).\n"
+              "Only the first %d lines will be utilized for PSNR calculation\n",
+          md1->general->line_count, md2->general->line_count, lines);
+        }
         samples = MIN(md1->general->sample_count, md2->general->sample_count);
+        if (samples < md1->general->sample_count) {
+          asfPrintWarning("File2 has fewer samples per line than File1 (%d v. %d).\n"
+              "Only the first %d samples within each line of data will be utilized for PSNR calculation\n",
+          md2->general->sample_count, md1->general->sample_count, samples);
+        }
+        if (samples < md2->general->sample_count) {
+          asfPrintWarning("File1 has fewer samples per line than File2 (%d v. %d).\n"
+              "Only the first %d samples within each line of data will be utilized for PSNR calculation\n",
+          md1->general->sample_count, md2->general->sample_count, samples);
+        }
         for (ii=0; ii<lines; ++ii) {
           asfPercentMeter((double)ii/(double)lines);
           get_float_line(fp1, md1, ii + offset1, data1);
@@ -681,6 +711,32 @@ float get_maxval(meta_parameters *meta)
   return ret;
 }
 
+void print_stats_results(char *filename1, char *filename2,
+                         stats_t *s1, stats_t *s2,
+                         double psnr)
+{
+  asfPrintStatus(
+      "\nStatistics for Baseline File: %s\n"
+      "   min: %f\n"
+      "   max: %f\n"
+      "  mean: %f\n"
+      "  sdev: %f\n"
+      "  rmse: %f\n"
+      "result: %s\n",
+      filename1, s1->min, s1->max, s1->mean, s1->sdev, s1->rmse,
+      s1->stats_good ? "GOOD STATS" : "UNRELIABLE STATS");
+  asfPrintStatus(
+      "\nStatistics for New Version File: %s\n"
+      "   min: %f\n"
+      "   max: %f\n"
+      "  mean: %f\n"
+      "  sdev: %f\n"
+      "  rmse: %f\n"
+      "result: %s\n",
+      filename2, s2->min, s2->max, s2->mean, s2->sdev, s2->rmse,
+      s2->stats_good ? "GOOD STATS" : "UNRELIABLE STATS");
+  asfPrintStatus("\nPSNR between files: %f\n\n", psnr);
+}
 
 
 
