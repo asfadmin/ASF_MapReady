@@ -14,6 +14,9 @@ char **extract_band_names(char *bands, int band_count)
   char **band_ary;
   int i;
 
+  // Set up the band array
+  band_ary = (char **) CALLOC(sizeof(char*), MAX_BANDS);
+
   // First do the obvious for single-band images.
   if (bands != NULL && strlen(bands) > 0) {
     t_bands = STRDUP(bands);
