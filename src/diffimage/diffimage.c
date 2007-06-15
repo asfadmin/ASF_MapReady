@@ -74,6 +74,7 @@ typedef enum {
 } graphics_file_t;
 
 typedef struct {
+  int stats_good;
   double min;
   double max;
   double mean;
@@ -181,16 +182,16 @@ int main(int argc, char **argv)
 
   // Determine input file graphical format types and check to see if they are
   // supported and the same type (etc ...error checking)
-  if (strncmp(inFile1, inFile2, strlen(inFile1)) == 0) {
+  if (strcmp(inFile1, inFile2) == 0) {
     return (0); // PASS - a file compared to itself is always the same
   }
   if (!fileExists(inFile1)) {
-    sprintf(msg, "File not found: %s\n", inFile1);
+    sprintf(msg, "File not found: %s\n  => Did you forget to use the filename extension?", inFile1);
     err_out(fError, quietflag, msg);
     return (1);
   }
   if (!fileExists(inFile2)) {
-    sprintf(msg, "File not found: %s\n", inFile2);
+    sprintf(msg, "File not found: %s\n  => Did you forget to use the filename extension?", inFile2);
     err_out(fError, quietflag, msg);
     return (1);
   }
@@ -453,15 +454,19 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                int *band_count1, int *band_count2,
                                double *psnr)
 {
-  char *f1 = STRDUP(inFile1);
-  char *f2 = STRDUP(inFile2);
+  char *f1;
+  char *f2;
   char inFile1_meta[255], inFile2_meta[255];
+  char **band_names1 = NULL;
+  char **band_names2 = NULL;
   char *c;
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
-  meta_parameters *md1, *md2;
+  meta_parameters *md1 = NULL;
+  meta_parameters *md2 = NULL;
 
   // Init stats
+  s1->stats_good = s2->stats_good = 1; // Presumed innocent until proven guilty
   s1->min = s2->min = 0.0;
   s1->max = s2->max = 0.0;
   s1->mean = s2->mean = 0.0;
@@ -470,32 +475,58 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   *psnr = 0.0;
 
   // Read metadata and check for multi-bandedness (only support single band files for now)
-  c = findExt(f1);
-  *c = '\0';
-  sprintf(inFile1_meta, "%s.meta", f1);
-  md1 = meta_read(inFile1_meta);
-  c = findExt(f2);
-  *c = '\0';
-  sprintf(inFile2_meta, "%s.meta", f2);
-  md2 = meta_read(inFile2_meta);
-  *band_count1 = md1->general->band_count;
-  *band_count2 = md2->general->band_count;
+  if (inFile1 != NULL && strlen(inFile1) > 0) {
+    f1 = STRDUP(inFile1);
+    c = findExt(f1);
+    *c = '\0';
+    sprintf(inFile1_meta, "%s.meta", f1);
+    if (fileExists(inFile1_meta)) {
+      md1 = meta_read(inFile1_meta);
+      s1->stats_good = (md1 != NULL) ? s1->stats_good : 0;
+    }
+  }
+  else {
+    s1->stats_good = 0;
+  }
+  if (inFile2 != NULL && strlen(inFile2) > 0) {
+    f2 = STRDUP(inFile2);
+    c = findExt(f2);
+    *c = '\0';
+    sprintf(inFile2_meta, "%s.meta", f2);
+    if (fileExists(inFile2_meta)) {
+      md2 = meta_read(inFile2_meta);
+      s2->stats_good = (md2 != NULL) ? s2->stats_good : 0;
+    }
+  }
+  else {
+    s2->stats_good = 0;
+  }
+  *band_count1 = (md1 != NULL) ? md1->general->band_count : 0;
+  *band_count2 = (md2 != NULL) ? md2->general->band_count : 0;
 
   // Calculate the stats from the data.
   s1->hist = NULL;
   s1->hist_pdf = NULL;
   s2->hist = NULL;
   s2->hist_pdf = NULL;
-  char **band_name1 = extract_band_names(md1->general->bands, md1->general->band_count);
-  char **band_name2 = extract_band_names(md2->general->bands, md2->general->band_count);
-  calc_stats_rmse_from_file(inFile1, band_name1[0],
-                       md1->general->no_data,
-                       &s1->min, &s1->max, &s1->mean,
-                       &s1->sdev, &s1->rmse, &s1->hist);
-  calc_stats_rmse_from_file(inFile2, band_name2[0],
-                       md2->general->no_data,
-                       &s2->min, &s2->max, &s2->mean,
-                       &s2->sdev, &s2->rmse, &s2->hist);
+  if (*band_count1 > 0 && md1 != NULL) {
+    band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
+    if (band_names1 != NULL) {
+      calc_stats_rmse_from_file(inFile1, band_names1[0],
+                                md1->general->no_data,
+                                &s1->min, &s1->max, &s1->mean,
+                                &s1->sdev, &s1->rmse, &s1->hist);
+    }
+  }
+  if (*band_count2 > 0 && md2 != NULL) {
+    band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
+    if (band_names2 != NULL) {
+      calc_stats_rmse_from_file(inFile2, band_names2[0],
+                                md2->general->no_data,
+                                &s2->min, &s2->max, &s2->mean,
+                                &s2->sdev, &s2->rmse, &s2->hist);
+    }
+  }
 
   // Calculate the peak signal to noise ratio (PSNR) between the two images
   double se;
@@ -504,57 +535,81 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   int band1 = 0;
   int band2 = 0;
   long pixel_count = 0;
+  long lines, samples;
   long offset1 = md1->general->line_count * band1;
   long offset2 = md2->general->line_count * band2;
   float max_val;
-  float *data1 = (float*)MALLOC(sizeof(float) * md1->general->sample_count);
-  float *data2 = (float*)MALLOC(sizeof(float) * md2->general->sample_count);
-  if (data1 == NULL || data2 == NULL ||
-      (md1->general->line_count != md2->general->line_count) ||
-      (md1->general->sample_count != md2->general->sample_count)) {
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
-  }
-  else {
-    asfPrintStatus("\nCalculating PSNR...\n");
-    FILE *fp1 = fopen(inFile1, "rb");
-    FILE *fp2 = fopen(inFile2, "rb");
-    se = 0.0;
-    max_val = get_maxval(md1);
-    // Assumes that both images have the same line count
-    for (ii=0; ii<md1->general->line_count; ++ii) {
-      asfPercentMeter(((double)ii/(double)md1->general->line_count));
-      get_float_line(fp1, md1, ii + offset1, data1);
-      get_float_line(fp2, md2, ii + offset2, data2);
-      for (jj=0; jj<md1->general->sample_count; ++jj) {
-        se += (data1[jj] - data2[jj]) * (data1[jj] - data2[jj]);
-        pixel_count++;
-      }
-    }
-    asfPercentMeter(1.0);
-    FCLOSE(fp1);
-    FCLOSE(fp2);
-    if (pixel_count > 0 && max_val > 0 && se > 0) {
-      rmse = sqrt(se/pixel_count);
-      *psnr = 10.0 * log10(max_val/rmse);
+  float *data1;
+  float *data2;
+  if (md1 != NULL && md2 != NULL) {
+    data1 = (float*)MALLOC(sizeof(float) * md1->general->sample_count);
+    data2 = (float*)MALLOC(sizeof(float) * md2->general->sample_count);
+    if (data1 == NULL || data2 == NULL ||
+        (md1->general->data_type != md2->general->data_type)) {
+      *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
     }
     else {
-      *psnr = -1;
+      asfPrintStatus("\nCalculating PSNR...\n");
+      FILE *fp1 = fopen(inFile1, "rb");
+      FILE *fp2 = fopen(inFile2, "rb");
+      if (fp1 != NULL && fp2 != NULL) {
+        se = 0.0;
+        max_val = get_maxval(md1); // Since both file's data types are the same, this is OK
+        lines = MIN(md1->general->line_count, md2->general->line_count);
+        samples = MIN(md1->general->sample_count, md2->general->sample_count);
+        for (ii=0; ii<lines; ++ii) {
+          asfPercentMeter((double)ii/(double)lines);
+          get_float_line(fp1, md1, ii + offset1, data1);
+          get_float_line(fp2, md2, ii + offset2, data2);
+          for (jj=0; jj<samples; ++jj) {
+            se += (data1[jj] - data2[jj]) * (data1[jj] - data2[jj]);
+            pixel_count++;
+          }
+        }
+        asfPercentMeter(1.0);
+        FCLOSE(fp1);
+        FCLOSE(fp2);
+        if (pixel_count > 0 && max_val > 0) {
+          rmse = sqrt(se/pixel_count);
+          *psnr = (rmse > 0) ? 10.0 * log10(max_val/rmse) : 0;
+        }
+        else {
+          *psnr = -1;
+        }
+      }
+      else {
+        *psnr = -1;
+      }
     }
+  }
+  else {
+    *psnr = -1;
   }
 
   // Cleanup and begone
-  if (f1 != NULL) free(f1);
-  if (f2 != NULL) free(f2);
-  FREE_BANDS(band_name1);
-  FREE_BANDS(band_name2);
-  if (data1 != NULL) free(data1);
-  if (data2 != NULL) free(data2);
-  meta_free(md1);
-  meta_free(md2);
+  if (f1 != NULL) FREE(f1);
+  if (f2 != NULL) FREE(f2);
+  if (band_names1 != NULL && md1 != NULL) {
+    for (ii=0; ii<md1->general->band_count; ii++) {
+      if (band_names1[ii] != NULL) FREE(band_names1[ii]);
+    }
+    FREE(band_names1);
+  }
+  if (band_names2 != NULL && md2 != NULL) {
+    for (ii=0; ii<md2->general->band_count; ii++) {
+      if (band_names2[ii] != NULL) FREE(band_names2[ii]);
+    }
+    FREE(band_names2);
+  }
+  if (data1 != NULL) FREE(data1);
+  if (data2 != NULL) FREE(data2);
+  if (md1 != NULL) meta_free(md1);
+  if (md2 != NULL) meta_free(md2);
 }
 
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats) {
+                            stats_t *inFile1_stats, stats_t *inFile2_stats)
+{
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
   stats_t *s1 = inFile1_stats;
@@ -569,7 +624,8 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
-                               stats_t *inFile1_stats, stats_t *inFile2_stats) {
+                               stats_t *inFile1_stats, stats_t *inFile2_stats)
+{
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
   stats_t *s1 = inFile1_stats;
@@ -584,7 +640,8 @@ void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats) {
+                            stats_t *inFile1_stats, stats_t *inFile2_stats)
+{
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
   stats_t *s1 = inFile1_stats;
@@ -623,5 +680,7 @@ float get_maxval(meta_parameters *meta)
 
   return ret;
 }
+
+
 
 
