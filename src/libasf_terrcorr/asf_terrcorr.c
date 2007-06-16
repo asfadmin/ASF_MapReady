@@ -323,11 +323,6 @@ static void update_extents(int lineSAR, int sampSAR,
     line = (int) (.5 + (y - metaDEM->projection->startY) /
                         metaDEM->projection->perY);
 
-    printf("Corner at (%d,%d):\n"
-      "lat,lon:   %f,%f\n"
-      "x,y:       %f,%f\n"
-      "line,samp: %d,%d\n\n",lineSAR, sampSAR,lat,lon,x,y,line,samp);
-
     // padding, allow for subsequent geocoding & height-induced offsets
     int line_lo = line - 20;
     int line_hi = line + 20;
