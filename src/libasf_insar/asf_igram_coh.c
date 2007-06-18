@@ -7,13 +7,14 @@
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
-		  char *masterFile, char *slaveFile, char *outBase)
+		  char *masterFile, char *slaveFile, char *outBase,
+		  float *average)
 {
   char ampFile[255], phaseFile[255];
   char cohFile[255], ml_ampFile[255], ml_phaseFile[255];
   FILE *fpMaster, *fpSlave, *fpAmp, *fpPhase, *fpCoh, *fpAmp_ml, *fpPhase_ml;
   int line, sample_count, line_count, count;
-  float	bin_high, bin_low, average, max=0.0, sum_a, sum_b, ampScale;
+  float	bin_high, bin_low, max=0.0, sum_a, sum_b, ampScale;
   double hist_sum=0.0, percent, percent_sum;
   long long hist_val[HIST_SIZE], hist_cnt=0;
   meta_parameters *inMeta,*outMeta, *ml_outMeta;
@@ -25,7 +26,7 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   create_name(phaseFile, outBase,"_igram_phase.img");
   create_name(ml_ampFile, outBase,"_igram_ml_amp.img");
   create_name(ml_phaseFile, outBase,"_igram_ml_phase.img");
-  create_name(cohFile, outBase,"_coh.img");
+  sprintf(cohFile, "coherence.img");
 
   // Read input meta file
   inMeta = meta_read(masterFile);
@@ -92,7 +93,7 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   // Initialize histogram
   for (count=0; count<HIST_SIZE; count++) hist_val[count] = 0;
 
-  asfPrintStatus("   Calculating interferogram and coherence ...\n\n");
+  printf("Calculating interferogram and coherence ...\n\n");
 
   for (line=0; line<line_count; line+=stepLine)
   {
@@ -101,7 +102,7 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
     int inCol;
     limitLine=MIN(lookLine, line_count-line);
 
-    printf("   Percent completed %3.0f\r",(float)line/line_count*100.0);
+    printf("Percent completed %3.0f\r",(float)line/line_count*100.0);
 
     pCoh = coh;
 
@@ -224,25 +225,25 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
     }
   } // End for line
 
-  printf("   Percent completed %3.0f\n",(float)line/line_count*100.0);
+  printf("Percent completed %3.0f\n",(float)line/line_count*100.0);
 
   // Sum and print the statistics
   percent_sum = 0.0;
-  asfPrintStatus("   Coherence  :  Occurrences  :  Percent\n");
-  asfPrintStatus("   ---------------------------------------\n");
+  printf("   Coherence  :  Occurrences  :  Percent\n");
+  printf("   ---------------------------------------\n");
   for (count=0; count<HIST_SIZE; count++) {
     bin_low  = (float)(count)/(float)HIST_SIZE;
     bin_high = (float)(count+1)/(float)HIST_SIZE;
     percent  = (double)hist_val[count]/(double)hist_cnt;
     percent_sum += (float)100*percent;
-    asfPrintStatus("   %.2f -> %.2f :   %.8lld       %2.3f \n",
+    printf("   %.2f -> %.2f :   %.8lld       %2.3f \n",
 		   bin_low,bin_high, (long long) hist_val[count],100*percent);
   }
-  average = (float)hist_sum/(float)hist_cnt;
-  asfPrintStatus("   ---------------------------------------\n");
-  asfPrintStatus("   Maximum Coherence: %.3f\n", max);
-  asfPrintStatus("   Average Coherence: %.3f  (%.1f / %lld) %f\n", 
-		 average,hist_sum, hist_cnt, percent_sum);
+  *average = (float)hist_sum/(float)hist_cnt;
+  printf("   ---------------------------------------\n");
+  printf("   Maximum Coherence: %.3f\n", max);
+  printf("   Average Coherence: %.3f  (%.1f / %lld) %f\n", 
+		 *average,hist_sum, hist_cnt, percent_sum);
 
   // Free and exit
   FREE(master); 

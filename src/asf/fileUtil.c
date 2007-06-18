@@ -17,7 +17,32 @@ int extExists(const char *name, const char *newExt)
   return exists;
 }
 
-int fileExists(const char *name)
+int fileSize(const char *name)
+{
+  struct dirent *dp;
+  struct stat statbuf;
+  DIR *dir;
+  char file_name[255];
+  long file_size;
+
+  dir = opendir(".");
+  while ((dp = readdir(dir)) != NULL) {
+
+    if (stat(dp->d_name, &statbuf) == -1)
+      continue;
+    sprintf(file_name, "%s", dp->d_name);
+    if (strcmp(file_name, name) == 0) {
+      file_size = (int)statbuf.st_size;
+      break;
+    }
+  }
+  closedir(dir);
+
+  return file_size;
+}
+
+int fileExists(const char 
+*name)
 {
   FILE *f = fopen (name,"r");
   if (f == NULL)

@@ -65,6 +65,14 @@ typedef enum {
 
 extern report_level_t g_report_level;
 
+typedef enum {
+  FILE_EXISTS=1,
+  FILE_TYPE,
+  VALID_VALUE,
+  VALUE_RANGE,
+  METADATA
+} check_input_t;
+
 /* Print an error with printf-style formatting codes and args, then die.  */
 void bail(const char *message, ...)/* ; is coming, don't worry.  */
 /* The GNU C compiler can give us some special help if compiling with
@@ -96,6 +104,11 @@ char* date_stamp(void);
 char* date_time_stamp(void);
 char* time_stamp_dir(void);
 
+// Prototypes from check.c
+void check_return(int ret, char *msg);
+int check_status(char *status);
+
+
 /******************************************************************************
  * strUtil:
  * A collection of string manipulation utilities. */
@@ -116,6 +129,7 @@ char *appendStr(const char *s1, const char *s2);
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
  * asf.a/fileUtil.c */
+
 
 /* Return a pointer into string name pointing to the dot ('.')
    character in the trailing dot extension, or a NULL pointer if name

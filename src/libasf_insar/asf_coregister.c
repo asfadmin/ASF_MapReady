@@ -3,13 +3,6 @@
 #include "asf_insar.h"
 #include "functions.h"
 
-static void check_return(int ret, char *msg)
-{
-  if (ret!=0) {
-    asfPrintError("%s\n", msg);
-  }
-}
-
 int average_in_doppler(char *inFileMaster, char *inFileSlave, char *outFile)
 {  
   FILE *fp;

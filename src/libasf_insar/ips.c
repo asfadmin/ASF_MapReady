@@ -6,94 +6,13 @@
 #include "functions.h"
 #include "asf_insar.h"
 
-typedef struct
-{
-	double Bn,dBn;
-	double Bp,dBp;
-} baseLine;
-
-static baseLine readBaseLine(char *fname)
-{
-	baseLine base;
-	FILE *fp1;
-	fp1 = FOPEN(fname,"r");
-	if (4!=fscanf(fp1,"%lf%lf%lf%lf",&base.Bn,&base.dBn,&base.Bp,&base.dBp))
-		{ printf("Unable to read baseline from file '%s'\n",fname); exit(1); }
-	fclose(fp1);
-	return base;
-}
-
-static double baseLineDiff(const baseLine *a,const baseLine *b)
-{
-	return fabs(a->Bn-b->Bn)+
-		fabs(a->dBn-b->dBn)+
-		fabs(a->Bp-b->Bp)+
-		fabs(a->dBp-b->dBp);
-}
-
-static int check_refinement(char *base1, char *base2, char *base3)
-{
-    baseLine b1,b2,b3;
-    b1=readBaseLine(base1);
-    if (base2!=NULL)
-    	b2=readBaseLine(base2);
-    if (base3!=NULL)
-    	b3=readBaseLine(base3);
-
-    /*If the baseline's changed by less than 1 mm,*/
-    if (base2!=NULL)
-    	if (baseLineDiff(&b1,&b2) < 0.001)
-    		return(1); /*we've sucessfully converged.*/
-
-    /*If the baseline's changed by less than 1 mm,*/
-    if (base3!=NULL)
-    	if (baseLineDiff(&b1,&b3) < 0.001)
-		return(1); /*we're cyclic, but (pretty close to) converged anyway.*/
-    return(0);
-}
-
-
-static void check_return(int ret, char *msg)
-{
-  if (ret!=0) {
-    asfPrintError("%s\n", msg);
-  }
-}
-
-
-static int check_status(char *status)
-{
-  if (strncmp(status, "new", 3)==0) return 1;
-  else if (strncmp(status, "stop", 4)==0) {
-    printf("   Processing interrupted by user!\n\n");
-    exit(0);
-  }
-  else return 0;
-}
-
-
-static char *base2str(int baseNo, char *base)
-{
-  char *baseStr=(char *)MALLOC(sizeof(char)*50);
-
-  if (baseNo<10) sprintf(baseStr,"%s.base.0%i", base, baseNo);
-  else sprintf(baseStr,"%s.base.%i", base, baseNo);
-
-  return baseStr;
-}
-
-
-
 int ips(dem_config *cfg, char *configFile, int createFlag)
 {
   meta_parameters *meta=NULL;
-  FILE *fCoh;
-  char cmd[255], path[255], data[255], metadata[255], tmp[255];
-  char format[255], metaFile[25];
-  char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL;
-  int i, datatype=0;
+  char cmd[255], path[255], data[255], metadata[255], tmp[255], tmp2[255];
+  char format[255], metaFile[25], *newBase=NULL;
+  int datatype=0;
   float avg;
-  double lat1=0.0, lat2=0.0, lon1;
   resample_method_t resample_method;
   datum_type_t datum=WGS84_DATUM;
   int geocode_force_flag=1;
@@ -194,10 +113,10 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   printf("   Data type: %s\n   Processing mode: %s\n",
 	 cfg->general->data_type, cfg->general->mode);
   fLog = FOPEN(logFile, "a");
+  logflag=TRUE;
   sprintf(logbuf, "   Data type: %s\n   Processing mode: %s\n",
 	  cfg->general->data_type, cfg->general->mode);
   printLog(logbuf);
-  FCLOSE(fLog);
 
   // Ingest the various data types: STF, RAW, or SLC 
   if (check_status(cfg->ingest->status)) {
@@ -230,7 +149,6 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 	cfg->coreg->master_offset = cfg->coreg->slave_offset;
 
       cfg->coreg->slave_patches = cfg->coreg->master_patches;
-      lzInt(metaFile, "sar.look_count:", NULL);
     }
     else { // Deal with complex single look complex
       
@@ -244,6 +162,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       meta = meta_init("b_cpx.meta");
       cfg->igram_coh->looks = meta->sar->look_count;
     }
+
     sprintf(cfg->ingest->status, "success");
     check_return(write_config(configFile, cfg),
 		 "Could not update configuration file");
@@ -293,23 +212,20 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 		   "Could not update configuration file");
     }
 
+    meta = meta_read("a_amp");
+    cfg->igram_coh->looks = meta->sar->look_count;
+    meta_free(meta);
+
     check_return(asf_igram_coh(cfg->igram_coh->looks*3, 3, 
 			       cfg->igram_coh->looks, 1, 
-			       "a_cpx.img", "b_corr_cpx.img", cfg->general->base),
+			       "a_cpx.img", "b_corr_cpx.img", 
+			       cfg->general->base, &avg),
 		 "interferogram/coherence image generation(asf_igram_coh)");
-
-    fCoh = FOPEN(logFile, "r");
-    if (fCoh) {
-      while (fgets(tmp, 255, fCoh) != NULL) {
-	if (strncmp(tmp, "   Average Coherence:", 21)==0)
-	  sscanf(tmp, "%s %s %f", tmp, tmp, &avg);
-      }
-      if (avg < cfg->igram_coh->min) {
-	sprintf(tmp, "average coherence level below minimum of %.1f",
-		cfg->igram_coh->min);
-	check_return(1, tmp);
-      }
-      FCLOSE(fCoh);
+ 
+    if (avg < cfg->igram_coh->min) {
+      sprintf(tmp, "average coherence level below minimum of %.1f",
+	      cfg->igram_coh->min);
+      check_return(1, tmp);
     }
 
     sprintf(cfg->igram_coh->status, "success");
@@ -320,6 +236,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   // Refine the offset
   if (check_status(cfg->offset_match->status)) {
 
+    asfPrintStatus("\nRefining the geolocation ...\n\n");
     sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
     check_return(asf_check_geolocation(tmp, cfg->general->dem, NULL,
 				       "dem_sim.img", "dem_slant.img"),
@@ -330,36 +247,11 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 		 "Could not update configuration file");
   }
 
-  // Simulated phase image and seed points
-  if (check_status(cfg->sim_phase->status)) {
-    check_return(dem2phase("dem_slant.img", "a_cpx.meta",
-			   base2str(0, cfg->general->base), "out_dem_phase.img"),
-		 "creating simulated phase (dem2phase)");
-
-    sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
-    check_return(dem2seeds("dem_slant.img", tmp, cfg->sim_phase->seeds, 0),
-		 "creating seed points (dem2seeds)");
-
-    sprintf(cfg->sim_phase->status, "success");
-    check_return(write_config(configFile, cfg),
-		 "Could not update configuration file");
-  }
-
-  // Deramping and multilooking interferogram
-  if (check_status(cfg->deramp_ml->status)) {
-    check_return(deramp(cfg->igram_coh->igram,
-			base2str(0, cfg->general->base), "igramd", 0),
-		 "deramping interferogram (deramp)");
-    check_return(multilook("igramd", "ml", "a_cpx.meta"),
-		 "multilooking interferogram (multilook)");
-
-    sprintf(cfg->deramp_ml->status, "success");
-    check_return(write_config(configFile, cfg),
-		 "Could not update configuration file");
-  }
-
   // Calculate differential interferogram
   if (strncmp(cfg->general->mode, "DINSAR", 6)==0) {
+    check_return(dem2phase("dem_slant.img", base2str(0, cfg->general->base), 
+			   "out_dem_phase.img"),
+		 "creating simulated phase (dem2phase)");
     sprintf(tmp, "\'(a-b)%%6.2831853-3.14159265\' ml_phase.img "
 	    "out_dem_phase.img");
     check_return(raster_calc("dinsar_phase.img", tmp),
@@ -379,145 +271,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       check_return(write_config(configFile, cfg),
 		   "Could not update configuration file");
     }
-    if (cfg->unwrap->flattening==1) {
-      check_return(raster_calc("ml_dem_phase.img", "\'(a-b)%6.2831853-3.14159265\' "
-			       "ml_phase.img out_dem_phase.img"),
-		   "subtracting terrain induced phase (raster_calc)");
-    }
 
-    if (strncmp(cfg->unwrap->algorithm, "escher", 6)==0) {
-      if (cfg->unwrap->flattening==1) sprintf(tmp, "ml_dem_phase.img");
-      else sprintf(tmp, "ml_phase.img");
-      if (cfg->unwrap->filter < 0.0 || cfg->unwrap->filter > 3.0) {
-	printf("\n   WARNING: phase filter value out of range - "
-	       "set to value of 1.6\n\n");
-	cfg->unwrap->filter = 1.6;
-	check_return(write_config(configFile, cfg),
-		     "Could not update configuration file");
-      }
-      if (cfg->unwrap->filter>0.0) {
-	check_return(phase_filter(tmp, (double) cfg->unwrap->filter,
-				  "filtered_phase"),
-		     "phase filtering (phase_filter)");
-	sprintf(tmp, "filtered_phase");
-      }
-      if (strcmp(tmp, "ml_phase.img")!=0) {
-	check_return(zeroify(tmp, "ml_phase.img", "escher_in_phase.img"),
-		     "phase value cosmetics (zeroify)");
-	sprintf(tmp, "escher_in_phase.img");
-      }
-      if (cfg->unwrap->flattening==1) {
-	check_return(escher(tmp,"unwrap_dem"), "phase unwrapping (escher)");
-	check_return(raster_calc("unwrap_phase.img", "\'(a+b)*(a/a)*(b/b)\' "
-				 "unwrap_dem.img out_dem_phase.img"),
-		     "adding terrain induced phase back (raster_calc)");
-      }
-      else
-	check_return(escher(tmp,"unwrap"), "phase unwrapping (escher)");
-
-      check_return(deramp("unwrap", base2str(0, cfg->general->base),
-			  "unwrap_nod", 1),
-		   "reramping unwrapped phase (deramp)");
-
-      link("unwrap_phase.meta", "unwrap_dem_mask.meta");
-      /* FIXME
-      check_return(asf_export_bands(JPEG, sample_mapping, 0, 0, 0, 0, 0, 
-				    "interferogram.lut", "unwrap_dem_phase", 
-				    "unwrap_mask", NULL),
-		   "colorized phase unwrapping mask (asf_export)");
-      */
-    }
-
-    if (strncmp(cfg->unwrap->algorithm, "snaphu", 6)==0) {
-
-      if (cfg->general->test == 1) {
-	if (cfg->unwrap->flattening==1) sprintf(tmp, "ml_dem.phase");
-	else sprintf(tmp, "ml_phase.img");
-	if (cfg->unwrap->filter < 0.0 || cfg->unwrap->filter > 3.0) {
-	  printf("\n   WARNING: phase filter value out of range - "
-		 "set to value of 1.6\n\n");
-	  cfg->unwrap->filter = 1.6;
-	  check_return(write_config(configFile, cfg),
-		       "Could not update configuration file");
-	}
-	if (cfg->unwrap->filter>0.0) {
-	  check_return(phase_filter(tmp, (double) cfg->unwrap->filter,
-				    "filtered_phase"),
-		       "phase filtering (phase_filter)");
-	  sprintf(tmp, "filtered_phase");
-	}
-	if (strcmp(tmp, "ml_phase.img")!=0) {
-	  check_return(zeroify(tmp, "ml_phase", "escher_in_phase.img"),
-		       "phase value cosmetics (zeroify)");
-	  sprintf(tmp, "escher_in_phase.img");
-	}
-	if (cfg->unwrap->flattening==1) {
-	  check_return(escher(tmp,"unwrap_dem"), "phase unwrapping (escher)");
-	  check_return(raster_calc("escher.phase", "\'(a+b)*(a/a)*(b/b)\' "
-				   "unwrap_dem_phase.img out_dem_phase.img"),
-		       "adding terrain induced phase back (raster_calc)");
-	}
-	else
-	  check_return(escher(tmp,"escher"), "phase unwrapping (escher)");
-
-	check_return(deramp("escher", base2str(0, cfg->general->base),
-			    "escher_nod", 1),
-		     "reramping unwrapped phase (deramp)");
-
-	link("escher.meta", "unwrap_dem_mask.meta");
-	/* FIXME
-	check_return(asf_export_bands(JPEG, sample_mapping, 0, 0, 0, 0, 0, 
-				      "interferogram.lut", "unwrap_dem_phase", 
-				      "unwrap_mask", NULL),
-		     "colorized phase unwrapping mask (asf_export)");
-	*/
-      }
-
-      //sprintf(cmd, "make_snaphu_conf %s.phase unwrap.phase", 
-      //      cfg->igram_coh->igram);
-      //system(cmd);
-      fLog = FOPEN(logFile, "a");
-      sprintf(logbuf, "Command line: %s\n", cmd);
-      printf("%s", logbuf);
-      printLog(logbuf);
-      FCLOSE(fLog);
-      if (cfg->unwrap->tiles_azimuth == 0 || cfg->unwrap->tiles_range == 0) {
-	meta = meta_init("a.meta");
-	/* some more old trim_slc stuff to check!!!
-
-	if (datatype==2) {
-	meta_get_latLon(meta, cfg->trim_slc->line, 1, 0, &lat1, &lon);
-	meta_get_latLon(meta, cfg->trim_slc->length, 1, 0, &lat2, &lon);
-	}
-	else {
-	*/
-	meta_get_latLon(meta, cfg->coreg->master_offset, 1, 0, &lat1, &lon1);
-	meta_get_latLon(meta, cfg->coreg->master_offset, 1, 0, &lat2, &lon1);
-/*	}*/
-	cfg->unwrap->tiles_azimuth =
-	  (int) (fabs(lat1-lat2)*cfg->unwrap->tiles_per_degree);
-	cfg->unwrap->tiles_range = (int) (fabs(cfg->unwrap->tiles_per_degree*0.8));
-      }
-      if (cfg->unwrap->flattening==1)
-	check_return(snaphu(cfg->unwrap->algorithm, "ml_phase.img", "ml_amp.img",
-			    cfg->coreg->master_power, cfg->coreg->slave_power,
-			    "snaphu.conf", "unwrap_phase.img",
-			    cfg->unwrap->tiles_azimuth, cfg->unwrap->tiles_range,
-			    cfg->unwrap->overlap_azimuth, cfg->unwrap->overlap_range,
-			    cfg->unwrap->procs, 1), "phase unwrapping (snaphu)");
-      else
-	check_return(snaphu(cfg->unwrap->algorithm, "ml_phase.img", "ml_amp.img",
-			    cfg->coreg->master_power, cfg->coreg->slave_power,
-			    "snaphu.conf", "unwrap_phase.img",
-			    cfg->unwrap->tiles_azimuth, cfg->unwrap->tiles_range,
-			    cfg->unwrap->overlap_azimuth, cfg->unwrap->overlap_range,
-			    cfg->unwrap->procs, 0), "phase unwrapping (snaphu)");
-      link("ml_phase.meta", "unwrap_phase.meta");
-    }
-
-    check_return(deramp("unwrap", base2str(0, cfg->general->base),
-			"unwrap_nod", 1),
-		 "reramping unwrapped phase (deramp)");
+    check_return(asf_phase_unwrap(cfg->unwrap->algorithm, 
+				  cfg->igram_coh->igram, "a_cpx.meta",
+				  cfg->general->dem, "base.00",
+				  cfg->unwrap->filter, cfg->unwrap->flattening,
+				  "unwrap_mask", "unwrap"),
+		 "unwrapping the phase (asf_phase_unwrap)");
 
     sprintf(cfg->unwrap->status, "success");
     check_return(write_config(configFile, cfg),
@@ -533,30 +293,11 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       check_return(write_config(configFile, cfg),
 		   "Could not update configuration file");
     }
-    newBase = base2str(0, cfg->general->base);
-    for (i=0; i<cfg->refine->max; i++)
-      {
-	veryoldBase = oldBase;
-	oldBase = newBase;
-	newBase = base2str(i+1, cfg->general->base);
 
-	check_return(refine_base("unwrap_nod_phase.img",
-				 cfg->sim_phase->seeds, oldBase, newBase),
-		     "baseline refinement (refine_base)");
-	if (i>0)
-	  if (check_refinement(newBase,oldBase,veryoldBase)) break;
-      }
-    if (i==cfg->refine->max)
-      check_return(1, "Baseline iterations failed to converge");
-    cfg->refine->iter = i+1;
-
-    check_return(deramp(cfg->igram_coh->igram,
-			base2str(cfg->refine->iter, cfg->general->base),
-			"igramd", 0),
-		 "deramping interferogram with refined baseline (deramp)");
-    sprintf(tmp, "%s_ml", cfg->igram_coh->igram);
-    check_return(multilook("igramd", tmp, "a_cpx.meta"),
-		 "multilooking refined interferogram (multilook)");
+    check_return(asf_baseline(cfg->general->base, cfg->igram_coh->igram, 
+			      cfg->refine->seeds, cfg->refine->max,
+			      &cfg->refine->iter),
+		 "refining the baseline (asf_baseline)");
 
     sprintf(cfg->refine->status, "success");
     check_return(write_config(configFile, cfg),
@@ -565,6 +306,10 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 
   // Elevation and elevation error
   if (check_status(cfg->elevation->status)) {
+
+    fLog = FOPEN(logFile, "a");
+    logflag = TRUE;
+
     newBase = base2str(cfg->refine->iter, cfg->general->base);
     check_return(deramp("unwrap_nod", newBase, "unwrap", 0),
 		 "deramping unwrapped phase with refined baseline (deramp)");
@@ -572,46 +317,16 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     sprintf(cmd, "raster_diff -d %s unwrap_phase.img out_dem_phase.img",
 	    cfg->unwrap->qc);
     asfSystem(cmd);
+    sprintf(tmp, "a_amp.img");
+    sprintf(tmp2, "coherence.img");
 
     check_return(asf_elevation("unwrap_phase.img", "unwrap_dem_mask.img",
-			       newBase, cfg->sim_phase->seeds,
-			       "a_amp.img", cfg->igram_coh->coh,
-			       "elevation.img", "elevation_error.img",
-			       "ampliutde.img", "coherence_gr.img"),
+			       newBase, cfg->refine->seeds,
+			       cfg->elevation->dem, cfg->elevation->error,
+			       tmp, tmp2, "elevation.img", 
+			       "elevation_error.img",
+			       "amplitude.img", "coherence_gr.img"),
 		 "generating elevation and elevation error (asf_elevation)");;
-
-    /*
-    check_return(elev("unwrap_phase.img", newBase, cfg->elevation->dem,
-		      cfg->sim_phase->seeds),
-		 "creating elevation map (elev)");
-    if (strcmp(cfg->unwrap->algorithm, "escher")==0) {
-      check_return(eleverr(cfg->igram_coh->coh, newBase,
-			   "unwrap_dem_phase.mask" , cfg->elevation->error),
-		   "elevation error estimate (eleverr)");
-    }
-    else
-      check_return(eleverr(cfg->igram_coh->coh, newBase, NULL,
-			   cfg->elevation->error),
-		   "elevation error estimate (eleverr)");
-
-    sprintf(cfg->elevation->status, "success");
-    check_return(write_config(configFile, cfg),
-		 "Could not update configuration file");
-  }
-
-  // Remapping to ground range
-  if (check_status(cfg->ground_range->status)) {
-    check_return(deskew_dem(cfg->elevation->dem, "elevation.img", "", 1),
-		 "remapping elevation to ground range DEM (deskew_dem)");
-    check_return(deskew_dem(cfg->elevation->dem, "amplitude.img",
-			    "a_amp.img", 1),
-		 "remapping amplitude to ground range (deskew_dem)");
-    check_return(deskew_dem(cfg->elevation->dem, "error.img",
-			    cfg->elevation->error, 1),
-		 "remapping error map to ground range (deskew_dem)");
-    check_return(deskew_dem(cfg->elevation->dem, "coh_gr.img", "coh.img", 0),
-		 "remapping coherence to ground range (deskew_dem)");
-    */
 
     sprintf(cfg->elevation->status, "success");
     check_return(write_config(configFile, cfg),
@@ -620,10 +335,11 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 
   // Geocoding 
   if (check_status(cfg->geocode->status)) {
+
     /* Need to create an options string to pass into asf_geocode.
        For UTM projection the center longitude can be passed in.
-       For Albers Conic Equal Area, Lambert Conformal Conic and Polar Stereographic
-       we can use predefined projection files.*/
+       For Albers Conic Equal Area, Lambert Conformal Conic and 
+       Polar Stereographic we can use predefined projection files.*/
     if (cfg->geocode->pixel_spacing < 5) {
       printf("\n   WARNING: pixel spacing out of range - "
 	     "set to default value of 20\n\n");
@@ -662,21 +378,24 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
 					    resample_method, average_height,
 					    datum, cfg->geocode->pixel_spacing,
-					    NULL, "error", cfg->geocode->error,
+					    NULL, "elevation_error", 
+					    cfg->geocode->error,
 					    background_value),
 		 "geocoding ground range error map (asf_geocode)");
     check_return(asf_geocode_from_proj_file(cfg->geocode->proj, geocode_force_flag,
 					    resample_method, average_height,
 					    datum, cfg->geocode->pixel_spacing,
-					    NULL, "coh_gr", cfg->geocode->coh,
+					    NULL, "coherence_gr", 
+					    cfg->geocode->coh,
 					    background_value),
 		 "geocoding ground range coherence (asf_geocode)");
-
+    
     sprintf(cfg->geocode->status, "success");
   }
 
   // Exporting
   if (check_status(cfg->export->status)) {
+
     if (strcmp(uc(cfg->export->format), "TIFF")==0)
       out_format = TIF;
     else if (strcmp(uc(cfg->export->format), "GEOTIFF")==0)

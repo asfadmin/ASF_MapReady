@@ -11,9 +11,16 @@ OBJS = \
 	complex2polar.o \
 	polar2complex.o \
 	baseline.o \
+	asf_coregister.o \
 	asf_igram_coh.o \
 	asf_elevation.o \
-	asf_coregister.o
+	asf_phase_unwrap.o \
+	asf_baseline.o \
+	deramp.o \
+	refine_baseline.o \
+	multilook.o \
+	phase_filter.o \
+	escher.o
 
 all: build_only
 	mv libasf_insar.a $(LIBDIR)

@@ -46,9 +46,6 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      int smooth_dem_holes,
                      char **other_files_to_update_with_offsets);
 
-void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
-             char *demFile, char *cutDemFile);
-
 /**
    Functions private to terrain correction, not meant for general use.
 **/

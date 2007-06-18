@@ -10,6 +10,14 @@ int asf_export(output_format_t format, scale_t sample_mapping,
 			  in_base_name, output_name, NULL);
 }
 
+int asf_export_with_lut(output_format_t format, scale_t sample_mapping,
+			char *lutFile, char *inFile, char *outFile)
+{
+  return asf_export_bands(format, sample_mapping, 1, 0, 0, 0, 0,
+			  lutFile, inFile, outFile, NULL);
+}
+
+
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color, int pauli, int sinclair,
                      char *look_up_table_name, char *in_base_name,

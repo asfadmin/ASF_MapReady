@@ -344,8 +344,8 @@ static void update_extents(int lineSAR, int sampSAR,
     if (line_hi > *line_max) *line_max = line_hi;
 }
 
-void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
-             char *demFile, char *cutDemFile)
+static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
+                    char *demFile, char *output_dir)
 {
     asfRequire(metaDEM->projection != NULL, "Requires projected DEM");
 
@@ -353,8 +353,8 @@ void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
     int nl = metaSAR->general->line_count;
     int ns = metaSAR->general->sample_count;
 
-    line_min = metaDEM->general->line_count - 1;
-    samp_min = metaDEM->general->sample_count - 1;
+    line_min = nl - 1;
+    samp_min = ns - 1;
     line_max = 0;
     samp_max = 0;
 
@@ -366,6 +366,8 @@ void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
                    &line_min, &line_max, &samp_min, &samp_max);
     update_extents(nl-1, ns-1, metaDEM, metaSAR,
                    &line_min, &line_max, &samp_min, &samp_max);
+
+    char *cutDemFile = outputName(output_dir, demFile, "_cut");
 
     asfPrintStatus("Cutting DEM: lines %d-%d, samples %d-%d\n",
                    line_min, line_max, samp_min, samp_max);
@@ -382,6 +384,8 @@ void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
 
     trim(demFile, cutDemFile, samp_min, line_min,
          samp_max - samp_min + 1, line_max - line_min + 1);
+
+    free(cutDemFile);
 }
 
 static void
@@ -1218,9 +1222,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   if (save_clipped_dem)
   {
     asfPrintStatus("Cutting out portion of the DEM...\n");
-    char *cutDemFile = outputName(output_dir, demFile, "_cut");
-    cut_dem(metaSAR, metaDEM, demFile, cutDemFile);
-    free(cutDemFile);
+    cut_dem(metaSAR, metaDEM, demFile, output_dir);
   }
 
   if (clean_files) {

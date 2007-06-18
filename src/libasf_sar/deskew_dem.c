@@ -601,6 +601,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	int dem_is_ground_range=FALSE;
 	register int x,y,b;
         struct deskew_dem_data d;
+	int band_count=1; // in case no SAR image is passed in
 
 	inSarFlag = inSarName != NULL;
         inMaskFlag = inMaskName != NULL;
@@ -613,9 +614,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	inDemMeta = meta_read(inDemName);
 	outMeta = meta_read(inDemName);
 
+	/*
         if (doRadiometric)
             asfPrintWarning("Radiometric terrain correction is still "
                             "experimental.\n");
+	*/
 
         if (inDemMeta->sar->image_type == 'G')
 	   dem_is_ground_range=TRUE;
@@ -626,6 +629,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	}
 	if (inSarFlag) {
 	   inSarMeta = meta_read(inSarName);
+	   band_count = inSarMeta->general->band_count;
            d.meta = inSarMeta;
 	   if (inSarMeta->sar->image_type=='P') {
 	      asfPrintError("SAR image cannot be map projected for this program to work!\n");
@@ -684,6 +688,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
         }
         
         // output file's metadata is all set, now
+	meta_get_corner_coords(outMeta);
 	meta_write(outMeta, outName);
 
 /* Blather at user about what is going on */
@@ -703,7 +708,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	else
 	  sprintf(msg,"%s geometrically.\n",msg);
 
-	asfPrintStatus(msg);
+	printf(msg);
 
 /*Allocate input buffers.*/
 	if (inSarFlag) {
@@ -761,23 +766,24 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                     maskLine[x] = outLine[x];
             }
 
-            // do this line in all of the bands
-            for (b=0; b<inSarMeta->general->band_count; ++b) {
+	    // do this line in all of the bands
+	    for (b=0; b<band_count; ++b) {
+	      if (inSarFlag) {
                 get_band_float_line(inSarFp,inSarMeta,b,y,inSarLine);
-
+		
                 geo_compensate(&d,grDEMline,inSarLine,outLine,
                                d.numSamples,1,maskLine,y);
-
-                if (y>0&&doRadiometric)
-                  radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                                   d.numSamples,y,doRadiometric);
-
-                // subtract away the masked region
-                mask_float_line(d.numSamples,fill_value,outLine,
-                                maskLine,grDEMline,&d);
-
-                put_band_float_line(outFp,outMeta,b,y,outLine);
-            }
+	      }		
+	      if (y>0&&doRadiometric)
+		radio_compensate(&d,grDEMline,grDEMlast,outLine,
+				 d.numSamples,y,doRadiometric);
+	      
+	      // subtract away the masked region
+	      mask_float_line(d.numSamples,fill_value,outLine,
+			      maskLine,grDEMline,&d);
+	      
+	      put_band_float_line(outFp,outMeta,b,y,outLine);
+	    }
             if (outMaskFlag)
                 put_float_line(outMaskFp,outMeta,y,maskLine);
 

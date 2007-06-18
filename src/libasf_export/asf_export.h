@@ -89,6 +89,8 @@ typedef struct {
 /* Prototypes */
 int asf_export(output_format_t format, scale_t sample_mapping,
 	       char *in_base_name, char *output_name);
+int asf_export_with_lut(output_format_t, scale_t sample_mapping,
+			char *lutFile, char *inFile, char *outFile);
 int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      int true_color, int false_color, int pauli, int sinclair,
                      char *look_up_table_name, char *in_base_name,

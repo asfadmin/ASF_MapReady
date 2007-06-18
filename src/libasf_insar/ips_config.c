@@ -210,13 +210,11 @@ dem_config *create_config_with_defaults()
   cfg->coreg = newStruct(s_coregister);
   cfg->igram_coh = newStruct(s_igram_coh);
   cfg->offset_match = newStruct(s_offset);
-  cfg->sim_phase = newStruct(s_sim_phase);
   cfg->dinsar = newStruct(s_dinsar);
   cfg->deramp_ml = newStruct(s_status);
   cfg->unwrap = newStruct(s_unwrap);
   cfg->refine = newStruct(s_refine);
   cfg->elevation = newStruct(s_elev);
-  cfg->ground_range = newStruct(s_status);
   cfg->geocode = newStruct(s_geocode);
   cfg->export = newStruct(s_export);
   
@@ -275,9 +273,6 @@ dem_config *create_config_with_defaults()
   cfg->offset_match->max = 1.0;
   cfg->offset_match->status = new_str("new");
   
-  cfg->sim_phase->seeds = new_blank_str();
-  cfg->sim_phase->status = new_str("new");
-  
   cfg->dinsar->igram = new_blank_str();
   cfg->dinsar->status = new_str("new");
   
@@ -294,6 +289,7 @@ dem_config *create_config_with_defaults()
   cfg->unwrap->qc = new_blank_str();
   cfg->unwrap->status = new_str("new");
   
+  cfg->refine->seeds = new_blank_str();
   cfg->refine->iter = 0;
   cfg->refine->max = 15;
   cfg->refine->status = new_str("new");
@@ -302,7 +298,6 @@ dem_config *create_config_with_defaults()
   cfg->elevation->error = new_blank_str();
   cfg->elevation->status = new_str("new");
   
-  cfg->ground_range->status = new_str("new");
   cfg->geocode->dem = new_blank_str();
   cfg->geocode->amp = new_blank_str();
   cfg->geocode->error = new_blank_str();
@@ -617,15 +612,6 @@ dem_config *read_config(char *configFile, int createFlag)
 	read_str(cfg->offset_match->status, line, "status");
     }
     
-    if (strncmp(line, "[Simulated phase]", 17)==0) strcpy(params, "simulated phase");
-    if (strcmp(params, "simulated phase")==0) {
-      test = read_param(line);
-      if (strncmp(test, "seeds", 5)==0) 
-	read_str(cfg->sim_phase->seeds, line, "seeds");
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->sim_phase->status, line, "status");
-    }
-    
     if (strncmp(line, "[Differential interferogram]", 28)==0) 
       strcpy(params, "differential interferogram");
     if (strcmp(params, "differential interferogram")==0) {
@@ -672,6 +658,8 @@ dem_config *read_config(char *configFile, int createFlag)
     if (strncmp(line, "[Baseline refinement]", 21)==0) strcpy(params, "refine");
     if (strcmp(params, "refine")==0) {
       test = read_param(line);
+      if (strncmp(test, "seeds", 5)==0) 
+	read_str(cfg->refine->seeds, line, "seeds");
       if (strncmp(test, "iter", 4)==0) 
 	cfg->refine->iter = read_int(line, "iterations");
       if (strncmp(test, "max", 3)==0) 
@@ -688,13 +676,6 @@ dem_config *read_config(char *configFile, int createFlag)
 	read_str(cfg->elevation->error, line, "error map");
       if (strncmp(test, "status", 6)==0) 
 	read_str(cfg->elevation->status, line, "status");
-    }
-    
-    if (strncmp(line, "[Ground range DEM]", 18)==0) strcpy(params, "final_dem");
-    if (strcmp(params, "final_dem")==0) {
-      test = read_param(line);
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->ground_range->status, line, "status");   
     }
     
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "geocoding");
@@ -1034,20 +1015,6 @@ int write_config(char *configFile, dem_config *cfg)
 	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
   fprintf(fConfig, "status = %s\n\n\n", cfg->offset_match->status);
 
-  // [Simulated phase] section
-  fprintf(fConfig, "[Simulated phase]\n");
-  if (!shortFlag)
-    fprintf(fConfig, "\n# Name of the file containing seed points used in the phase\n"
-            "# unwrapping process. Seed points are selected on a regular grid and represent\n"
-	    "# points with minimum slope.\n\n");
-  fprintf(fConfig, "seeds = %s\n", cfg->sim_phase->seeds);
-  if (!shortFlag)
-    fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-            "# The status 'new' indicates that this processing step has not been\n"
-	    "# performed. When the processing is complete it is changed to 'success'\n"
-	    "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-  fprintf(fConfig, "status = %s\n\n\n", cfg->sim_phase->status);
-  
   if (strncmp(cfg->general->mode, "DINSAR", 6)==0) {
 
     // [Differential interferogram] section
@@ -1131,6 +1098,11 @@ int write_config(char *configFile, dem_config *cfg)
     // [Baseline refinement] section
     fprintf(fConfig, "[Baseline refinement]\n");
     if (!shortFlag)
+      fprintf(fConfig, "\n# Name of the file containing seed points used in the phase\n"
+	      "# unwrapping process. Seed points are selected on a regular grid and represent\n"
+	      "# points with minimum slope.\n\n");
+    fprintf(fConfig, "seeds = %s\n", cfg->refine->seeds);
+    if (!shortFlag)
       fprintf(fConfig, "# Number of iterations used in the baseline refinement.\n\n");
     fprintf(fConfig, "iterations = %d\n", cfg->refine->iter);
     if (!shortFlag)
@@ -1158,15 +1130,6 @@ int write_config(char *configFile, dem_config *cfg)
 	      "# performed. When the processing is complete it is changed to 'success'\n"
 	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
     fprintf(fConfig, "status = %s\n\n\n", cfg->elevation->status);
-    
-    // [Ground range DEM] section
-    fprintf(fConfig, "[Ground range DEM]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->ground_range->status);
     
     // [Geocoding] section
     fprintf(fConfig, "[Geocoding]\n");

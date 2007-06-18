@@ -65,39 +65,12 @@ typedef struct {
 } s_coregister;
 
 typedef struct {
-  long start_offset;	/* first line of processing */
-  long end_offset;	/* last line of processing */
-  int patches;		/* number of patches */
-  int power;		/* switch for power image */
-  char *power_img;	/* name of the power image */
-  char *status;		/* status of processing */
-} s_ardop;
-
-typedef struct {
-  int patches;		/* number of patches */
-  long start_master;    /* first line of processing */
-  long start_slave;	/* last line of processing */
-  int grid;		/* grid size */
-  int fft;		/* switch for complex FFT match in fico */
-  int sinc;		/* switch for sinc option in remap */
-  int warp;		/* switch for warp option in remap */
-  int off_az;		/* offset in azimuth */
-  int off_rng;		/* offset in range */
-  char *status;         /* status of processing */	
-} s_coreg;
-
-typedef struct {
   char *igram;		/* name of the interferogram */
   char *coh;		/* name of the coherence image */
   double min;		/* minimum coherence level to process */
   int looks;	       	/* number of looks */
   char *status;         /* status of processing */	
 } s_igram_coh;
-
-typedef struct {
-  char *seeds;		/* name of the seed point file */
-  char *status;         /* status of processing */	
-} s_sim_phase;
 
 typedef struct {
   char *igram;		/* name of the differential interferogram */
@@ -124,8 +97,9 @@ typedef struct {
 } s_unwrap;
 
 typedef struct {
-  int iter;		/* actual number of iterations for baseline refinement */
-  int max;		/* maximum number of iterations for baseline refinement */
+  char *seeds;          // name of the seeds point file
+  int iter;		// actual number of iterations for baseline refinement
+  int max;		// maximum number of iterations for baseline refinement
   char *status;         /* status of processing */	
 } s_refine;
 
@@ -161,13 +135,11 @@ typedef struct {
   s_coregister *coreg;          // coregistration of master and slave
   s_igram_coh *igram_coh;      	/* interferogram/coherence generation */
   s_offset *offset_match;      	/* pixel offset matching */
-  s_sim_phase *sim_phase;      	/* simulate phase image and seed points */
   s_dinsar *dinsar;	        /* differential interferogram */
   s_status *deramp_ml;		/* multilook deramped interferogram */
   s_unwrap *unwrap;		/* phase unwrapping */
   s_refine *refine;		/* baseline refinement */
   s_elev *elevation;		/* elevation and elevation error */
-  s_status *ground_range;      	/* ground range DEM */
   s_geocode *geocode;		/* geocoding */
   s_export *export;             /* export from internal to external format */
 } dem_config;

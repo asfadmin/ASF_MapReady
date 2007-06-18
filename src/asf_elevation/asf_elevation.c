@@ -110,7 +110,8 @@ int main(int argc, char **argv)
 {
   char *unwrapped_phase, *phase_mask, *baseline, *seeds, *slant_amplitude;
   char *slant_coherence, *ground_elevation, *ground_elevation_error;
-  char *ground_amplitude, *ground_coherence;
+  char *ground_amplitude, *ground_coherence, slant_elevation[255];
+  char slant_elevation_error[255];
   extern int currArg; /* pre-initialized to 1; like optind */
   
   logflag=quietflag=0;
@@ -140,6 +141,8 @@ int main(int argc, char **argv)
   phase_mask = argv[currArg++];
   baseline = argv[currArg++];
   seeds  = argv[currArg++];
+  sprintf(slant_elevation, "slant_ht");
+  sprintf(slant_elevation_error, "slant_ht_err");
   slant_amplitude  = argv[currArg++];
   slant_coherence  = argv[currArg++];
   ground_elevation  = argv[currArg++];
@@ -153,7 +156,8 @@ int main(int argc, char **argv)
     sprintf(logFile, "tmp%d.log", (int)getpid());
 
   // Call library function that gets the work done
-  asf_elevation(logFile, unwrapped_phase, phase_mask, baseline, seeds,
+  asf_elevation(unwrapped_phase, phase_mask, baseline, seeds,
+                slant_elevation, slant_elevation_error,
 		slant_amplitude, slant_coherence, ground_elevation,
 		ground_elevation_error, ground_amplitude, ground_coherence);
 

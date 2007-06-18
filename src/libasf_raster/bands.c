@@ -8,50 +8,27 @@ char *channel_trim (const char *channel);
 
 char **extract_band_names(char *bands, int band_count)
 {
-  char *t_bands;
-  char *t_channel;
-  char *ptrptr;
-  char **band_ary;
-  int i;
+  char **band_name;
+  char *p;
+  int ii;
 
-  // Set up the band array
-  band_ary = (char **) CALLOC(sizeof(char*), MAX_BANDS);
-
-  // First do the obvious for single-band images.
-  if (bands != NULL && strlen(bands) > 0) {
-    t_bands = STRDUP(bands);
-    if (band_count == 1) {
-      if (strlen(bands) > 0) {
-        band_ary = (char **) MALLOC(sizeof(char*));
-        t_channel = strtok_r(t_bands, ",", &ptrptr);
-        if (t_channel != NULL) {
-          band_ary[0] = STRDUP(t_channel);
-        }
-      }
+  if (bands && strlen(bands) && band_count > 0) {
+    band_name = (char **) CALLOC(band_count,sizeof(char *));
+    for (ii=0; ii<band_count-1; ii++) {
+      band_name[ii] = (char *) MALLOC(10*sizeof(char));
+      p = strchr(bands, ',');
+      *p = '\0';
+      sprintf(band_name[ii], bands);
+      *p = ',';
+      bands = p+1;
     }
-    else if (band_count > 1) {
-      // Handle multiple bands if multiple bands exist
-      band_ary = (char **) MALLOC(sizeof(char*) * band_count);
-      t_channel = strtok_r(t_bands, ",", &ptrptr);
-      if (t_channel != NULL) {
-        band_ary[0] = STRDUP(t_channel);
-      }
-      for (i = 1; i < band_count; i++) {
-        t_channel = strtok_r(NULL, ",", &ptrptr);
-        if (t_channel != NULL) {
-          band_ary[i] = STRDUP(t_channel);
-        }
-      }
-    }
-    else {
-      band_ary = NULL;
-    }
+    band_name[band_count-1] = (char *) CALLOC(10,sizeof(char));
+    sprintf(band_name[band_count-1], bands);
+    return band_name;
   }
   else {
-    band_ary = NULL;
+    return NULL;
   }
-
-  return band_ary;
 }
 
 /*
@@ -97,7 +74,7 @@ int split3(const char *rgb, char **pr, char **pg, char **pb, char sep)
 // Returns an array of strings which represent bands.
 //
 char **find_bands(char *in_base_name, int rgb_flag, char *red_channel, char *green_channel,
-      char *blue_channel, int *num_found)
+		  char *blue_channel, int *num_found)
 {
   char **rgb=NULL;
   meta_parameters *meta;
@@ -199,7 +176,7 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
   *num_found = 0;
   if (strcmp(uc(band), "ALL") == 0) {
     band_name = extract_band_names(meta->general->bands,
-           meta->general->band_count);
+				   meta->general->band_count);
     *num_found = meta->general->band_count;
   }
   else {
@@ -211,8 +188,8 @@ char **find_single_band(char *in_base_name, char *band, int *num_found)
     strcpy(band_name[0],"");
     if (strcmp(meta->general->bands, "???") != 0) {
       if (strlen(band) && strstr(meta->general->bands, band)) {
-  strcpy(band_name[*num_found], band);
-  (*num_found)++;
+	strcpy(band_name[*num_found], band);
+	(*num_found)++;
       }
     }
   }

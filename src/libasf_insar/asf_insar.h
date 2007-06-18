@@ -49,13 +49,43 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
 
 // Prototypes from asf_igram_coh.c
 int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
-		  char *masterFile, char *slaveFile, char *outBase);
+		  char *masterFile, char *slaveFile, char *outBase,
+		  float *average);
+
+// Prototypes from asf_phase_unwrap.c
+int dem2phase(char *demFile, char *baseFile, char *phaseFile);
+int asf_phase_unwrap(char *algorithm, char *interferogram, char *metaFile, 
+		     char *demFile, char *baseline, double filter_strength, 
+		     int flattening, char *mask, char *unwrapped_phase);
 
 // Prototypes from asf_elevation.c
 int asf_elevation(char *unwrapped_phase, char *phase_mask, 
-		  char *baseFile, char *seeds, char *slant_amplitude, 
+		  char *baseFile, char *seeds, char *slant_elevation,
+		  char *slant_elevation_error, char *slant_amplitude, 
 		  char *slant_coherence, char *ground_elevation, 
 		  char *ground_elevation_error, char *ground_amplitude, 
 		  char *ground_coherence);
+
+// Prototypes from asf_baseline.c
+char *base2str(int baseNo, char *base);
+int asf_baseline(char *baseName, char *interferogram, char *seeds, 
+		 int max_iterations, int *iterations);
+
+// Prototypes from multilook.c
+int multilook(char *inFile, char *outFile, char *metaFile, char *overlay);
+
+// Prototypes from deramp.c
+int deramp(char *inFile, char *baseFile, char *outFile, int back);
+
+// Prototypes from phase_filter.c
+int phase_filter(char *inFile, double strength, char *outFile);
+int zeroify(char *inFile, char *testFile, char *outFile);
+
+// Prototypes from escher.c
+int escher(char *inFile, char *outFile);
+
+// Prototypes from refine_baseline.c
+int refine_baseline(char *phaseFile, char *seeds, char *oldBase, 
+		    char *newBase);
 
 #endif

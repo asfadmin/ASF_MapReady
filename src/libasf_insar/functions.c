@@ -130,24 +130,6 @@ int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile)
   return ret;
 }
 
-int multilook(char *inFile, char *outFile, char *metaFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -meta %s", logFile, metaFile);
-  sprintf(command, "multilook %s %s %s", options, inFile, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
 int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth)
 {
   char options[255]="", command[255];
@@ -220,68 +202,6 @@ int remap(char *inFile, char *outFile, char *options)
         return ret;
 }
 
-int dem2phase(char *demFile, char *metaFile, char *baseFile, char *phaseFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "dem2phase %s %s %s %s", 
-	  options, demFile, baseFile, phaseFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int dem2seeds(char *demFile, char *ampFile, char *seedsFile, int fft)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  if (fft) 
-    sprintf(command, "dem2seeds_fft %s %s %s", demFile, ampFile, seedsFile);
-  else 
-    sprintf(command, "dem2seeds %s %s %s %s", 
-	    options, demFile, ampFile, seedsFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int deramp(char *demFile, char *baseFile, char *outFile, int back)
-{       
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  if (back) sprintf(options, "%s -backward", options);
-  sprintf(command, "deramp %s %s %s %s", 
-	  options, demFile, baseFile, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}         
-
-
 int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1, 
 	   char *pwrFile2, char *config, char *outFile, int nAzimuth, int nRange, 
 	   int nOverAzi, int nOverRng, int nProcs, int flattening)
@@ -308,25 +228,6 @@ int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1,
   return ret;
 }
 
-int refine_base(char *phaseFile, char *seeds, char *oldBase, char *newBase)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -quiet", logFile);
-  sprintf(command, "refine_base %s %s %s %s %s\n", 
-	  options, phaseFile, seeds, oldBase, newBase);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\n", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
 int raster_calc(char *outFile, char *operation)
 {
   char options[255]="", command[255];
@@ -334,123 +235,6 @@ int raster_calc(char *outFile, char *operation)
   
   sprintf(options, "-log %s", logFile);
   sprintf(command, "raster_calc %s %s %s", options, outFile, operation);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int phase_filter(char *inFile, double strength, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "phase_filter %s %s %.1lf %s", 
-	  options, inFile, strength, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "zeroify %s %s %s %s", 
-	  options, phaseFile1, phaseFile2, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int escher(char *inFile, char *outFile)
-{       
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  sprintf(command, "escher %s %s %s", options, inFile, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int elev(char *phaseFile, char *baseFile, char *outFile, char *seeds)
-{       
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s -quiet", logFile);
-  sprintf(command, "elev %s %s %s %s %s", 
-	  options, phaseFile, baseFile, outFile, seeds);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int eleverr(char *cohFile, char *baseFile, char *maskFile, char *outFile)
-{                       
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  if (maskFile!=NULL) 
-    sprintf(options, "-log %s -mask %s", logFile, maskFile); 
-  sprintf(command, "eleverr %s %s %s %s", 
-	  options, cohFile, baseFile, outFile);
-  
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
-  printLog(logbuf);
-  FCLOSE(fLog);
-  ret = system(command);
-  
-  return ret;
-}
-
-int deskew_dem(char *inFile1, char *outFile, char *inFile2, int radiometric)
-{
-  char options[255]="", command[255];
-  int ret;
-  
-  sprintf(options, "-log %s", logFile);
-  if (strcmp(inFile2,"")!=0) 
-    sprintf(options, "-i %s %d", inFile2, radiometric); 
-  sprintf(command, "deskew_dem %s %s %s", 
-	  options, inFile1, outFile);
   
   printf("\nCommand line: %s\nDate: ", command);
   fLog = FOPEN(logFile, "a");

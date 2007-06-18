@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     sprintf(cfg->igram_coh->coh, "%s_coh.img", cfg->general->base);
     sprintf(cfg->coreg->master_power, "%s_a_pwr.img", cfg->general->base);
     sprintf(cfg->coreg->slave_power, "%s_b_pwr.img", cfg->general->base);
-    sprintf(cfg->sim_phase->seeds, "%s.seeds", cfg->general->base);
+    sprintf(cfg->refine->seeds, "%s.seeds", cfg->general->base);
     sprintf(cfg->dinsar->igram, "%s_digram.img", cfg->general->base);
     sprintf(cfg->unwrap->qc, "%s_qc.phase", cfg->general->base);
     sprintf(cfg->elevation->dem, "%s_ht.img", cfg->general->base);

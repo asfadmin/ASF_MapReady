@@ -7,27 +7,24 @@
 #define FLOAT_EQUALS_ZERO(X) (X<0.000000000001 && X>-0.000000000001)
 
 int asf_elevation(char *unwrapped_phase, char *phase_mask, 
-		  char *baseFile, char *seeds, char *slant_amplitude, 
+		  char *baseFile, char *seeds, char *slant_elevation,
+		  char *slant_elevation_error, char *slant_amplitude, 
 		  char *slant_coherence, char *ground_elevation, 
 		  char *ground_elevation_error, char *ground_amplitude, 
 		  char *ground_coherence)
 {
+
   int x, y, ss, sl, nrows, ncols;
   double xScale, yScale, k, *phase2elevBase, *sinFlat, *cosFlat;
   meta_parameters *meta;
   baseline base;
   FILE *fphase, *felev, *feleverr, *fseed, *fmask, *fcoh;
-  char slant_elevation[255], slant_elevation_error[255];
   float *uwp, *coh, *elev, *eleverr;
   unsigned char *mask;
   double delta_phase, delta_height;
   double seed_phase, seed_height;
 
-  // Assigning temporary file names
-  sprintf(slant_elevation, "slant_range_elev.img");
-  sprintf(slant_elevation_error, "slant_range_eleverr.img");
-
-  printf("\n   Generating slant range elevation and elevation error ...\n");
+  printf("\nGenerating slant range elevation and elevation error ...\n\n");
 
   /* Get input scene size and windowing info. Get datafile values*/
   meta = meta_read(unwrapped_phase);
@@ -35,7 +32,7 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
   ncols  = meta->general->sample_count;
   sl     = meta->general->start_line;
   ss     = meta->general->start_sample;
-  yScale = meta->sar->line_increment;
+  yScale = meta->sar->look_count;
   xScale = meta->sar->sample_increment;
   
   // Write metadata files for temporary slant range images
@@ -120,7 +117,7 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
   }
   
   if (!quietflag) 
-    printf("   Seed Phase: %f\n   Elevation: %f\n",seed_phase,seed_height);
+    printf("   Seed Phase: %f\n   Elevation: %f\n\n",seed_phase,seed_height);
   
   /* calculate the sine of the incidence angle across cols*/
   sinFlat = (double *)MALLOC(sizeof(double)*ncols);
@@ -184,11 +181,10 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
     put_float_line(felev, meta, y, elev);
     put_float_line(feleverr, meta, y, eleverr);
 
-    asfPercentMeter(y*100/nrows);
+    asfLineMeter(y, nrows);
   }
   
   // Free memory and close files
-  meta_free(meta);
   FREE(uwp);
   FREE(mask);
   FREE(coh);
@@ -206,18 +202,19 @@ int asf_elevation(char *unwrapped_phase, char *phase_mask,
 
   int fill_value=-1;
   // Transform all the slant range products into ground range
-  printf("   Generating ground range elevation ...\n");
+  printf("\nGenerating ground range elevation ...\n");
   deskew_dem(slant_elevation, ground_elevation, NULL, 0, NULL, NULL, TRUE,
              fill_value);
-  printf("   Generating ground range amplitude image ...\n");
+  printf("\nGenerating ground range amplitude image ...\n");
   deskew_dem(slant_elevation, ground_amplitude, slant_amplitude, 1, NULL, NULL,
              TRUE, fill_value);
-  printf("   Generating ground range elevation error ...\n");
+  printf("\nGenerating ground range elevation error ...\n");
   deskew_dem(slant_elevation, ground_elevation_error, slant_elevation_error, 1,
              NULL, NULL, TRUE, fill_value);
-  printf("   Generating ground range coherence image ...\n\n");
+  printf("\nGenerating ground range coherence image ...\n\n");
   deskew_dem(slant_elevation, ground_coherence, slant_coherence, 0, NULL, NULL,
              TRUE, fill_value);
 
+  //meta_free(meta);
   return 0;
 }

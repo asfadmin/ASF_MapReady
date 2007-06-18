@@ -22,10 +22,12 @@ LIBS = 	\
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/libifm.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
+	$(LIBDIR)/libpng.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \

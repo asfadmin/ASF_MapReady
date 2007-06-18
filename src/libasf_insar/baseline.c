@@ -186,6 +186,7 @@ baseline read_baseline(char *fName)
   printf("   Baseline:   Normal: %f, delta: %f\n",b.Bn,b.dBn);
   printf("               Parallel: %f, delta: %f\n",b.Bp,b.dBp);
   printf("               Temporal: %f days\n\n",b.temporal);
+  /*
   if (logflag) {
     sprintf(logbuf,"   Baseline:   Normal: %f, delta: %f\n",b.Bn,b.dBn);
     printLog(logbuf);
@@ -194,6 +195,7 @@ baseline read_baseline(char *fName)
     sprintf(logbuf,"               Temporal: %f days\n\n",b.temporal);
     printLog(logbuf);
   }
+  */
   return b;
 }
 
