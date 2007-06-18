@@ -224,8 +224,8 @@ void asfPercentMeter(double inPercent)
   /* Get inPercent to integer form */
   newPercent = (int)(inPercent * 100.0);
 
-  /* Flag to report every 1% */
-  blather = newPercent-oldPercent == 1;
+  /* Flag to report every 1% (or more) */
+  blather = newPercent-oldPercent >= 1;
   oldPercent = newPercent;
 
   /* Quit now if we're not going to blather at the user */
