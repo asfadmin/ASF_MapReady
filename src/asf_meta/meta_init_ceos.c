@@ -1109,22 +1109,36 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
 	* as far as we can tell, are never stored in the CEOS
 	*/
+       projection->param.lamcc.false_easting=MAGIC_UNSET_DOUBLE;
+       projection->param.lamcc.false_northing=MAGIC_UNSET_DOUBLE;
+       projection->param.lamcc.scale_factor=MAGIC_UNSET_DOUBLE;
      }
      else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic*/
        projection->param.ps.slat=70.0;
        projection->param.ps.slon=-45.0;
-     }
+       projection->param.ps.is_north_pole=1;
+       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
+       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;     }
      else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
        projection->param.ps.slat=mpdr->upslat;
        projection->param.ps.slon=mpdr->upslong;
-       if (projection->param.ps.slat>0 && projection->param.ps.slon==0.0)
-	 projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
+       if (projection->param.ps.slat>0) {
+        if (projection->param.ps.slon==0.0) {
+	        projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
+        }
+        projection->param.ps.is_north_pole=1;
+       }
+       else {
+         projection->param.ps.is_north_pole=0;
+       }
+       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
+       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
      }
      else if 
        (strncmp(mpdr->mpdesig, "UTM", 3) == 0 ||
-	strncmp(mpdr->mpdesig, "UNIVERSAL TRANSVERSE MERCATOR", 29) == 0) {
+        strncmp(mpdr->mpdesig, "UNIVERSAL TRANSVERSE MERCATOR", 29) == 0) {
        projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
        projection->param.utm.zone=atoi(mpdr->utmzone);
        projection->param.utm.false_easting=mpdr->utmeast;
@@ -1163,10 +1177,21 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      strcpy(projection->units,"meters");
 
      projection->hem = (dssr->pro_lat>0.0) ? 'N' : 'S';
-     if (strncmp(dssr->ellip_des,"GRS80",5)==0)
+     if (strncmp(dssr->ellip_des,"GRS80",5)==0) {
        projection->spheroid = GRS1980_SPHEROID;
-     else if (strncmp(dssr->ellip_des,"GEM06",5)==0)
+       if (strncmp(meta->general->sensor, "ALOS", 4) != 0) {
+         projection->datum = NAD83_DATUM; // A wild guess because NAD83 usually goes with GRS-1980
+         // This is probably a bad guess for some stations (Australia)
+       }
+       else {
+         // ALOS uses GRS-1980 and the specs say a ITRF-97 datum
+         projection->datum = ITRF97_DATUM;
+       }
+     }
+     else if (strncmp(dssr->ellip_des,"GEM06",5)==0) {
        projection->spheroid = GEM6_SPHEROID;
+       projection->datum = WGS84_DATUM; // A best guess ...WGS66 is a better fit but not well supported
+     }
      projection->re_major = dssr->ellip_maj*1000;
      projection->re_minor = dssr->ellip_min*1000;
      projection->height = 0.0;
@@ -1188,6 +1213,26 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->type = POLAR_STEREOGRAPHIC;
        projection->param.ps.slat = ampr->lat_map_origin;
        projection->param.ps.slon = ampr->lon_map_origin;
+       if (projection->param.ps.slat>0) {
+         projection->param.ps.is_north_pole=1;
+       }
+       else {
+         projection->param.ps.is_north_pole=0;
+       }
+       projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
+       projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
+       if (strncmp(meta->general->sensor, "ALOS", 4) == 0) {
+         projection->datum = ITRF97_DATUM;
+       }
+       else if (strncmp(dssr->ellip_des, "GEM06", 5) == 0) {
+         projection->datum = WGS84_DATUM;
+       }
+       else if (strncmp(dssr->ellip_des, "GRS80", 5) == 0) {
+         projection->datum = NAD83_DATUM;
+       }
+       else {
+         projection->datum = WGS84_DATUM;
+       }
      }
    }
 }
@@ -1593,53 +1638,53 @@ void get_polarization (const char *fName, char *polarization, double *chirp)
 }
 
 // This is experimental code... not used in 3.1
-static double calc_delta_time(const char *fileName, meta_parameters *meta)
-{
-    //  1) Get lat/lon coordinates for the center/top and center/bottom points
-    //  2) Get those into UTM
-    //  3) Calculate distance between them
-    //  4) Use satellite velocity to calculate the image acquisition length
-
-    // At this point, we should have enough of the metadata populated to
-    // successfully call meta_get_latLon
-
-    double lat_tc, lon_tc, x_tc, y_tc, z_tc; // top-center
-    double lat_bc, lon_bc, x_bc, y_bc, z_bc; // bottom-center
-
-    int samp = meta->general->sample_count / 2;
-    int line_top = 317;  //0
-    int line_bot = 9665; //meta->general->line_count - 1;
-
-    meta_get_latLon(meta, line_top, samp, 0, &lat_tc, &lon_tc);
-    meta_get_latLon(meta, line_bot, samp, 0, &lat_bc, &lon_bc);
-
-    // straight-line calculation
-    int zone = utm_zone(lon_tc); // ensure same zone for each
-
-    latLon2UTM_zone(lat_tc, lon_tc, 0, zone, &x_tc, &y_tc);
-    latLon2UTM_zone(lat_bc, lon_bc, 0, zone, &x_bc, &y_bc);
-
-    double d = hypot(x_tc-x_bc, y_tc-y_bc);
-
-    // spherical model calculation
-    double R = meta_get_earth_radius(meta, (line_bot-line_top)/2, samp);
-    vector v_tc, v_bc;
-    sph2cart(R,lat_tc*D2R,lon_tc*D2R,&v_tc);
-    sph2cart(R,lat_bc*D2R,lon_bc*D2R,&v_bc);
-
-    double ang = vecAngle(v_tc, v_bc);
-    double d1 = R*ang;
-
-    // nadir velocity is in the map projection data record
-    struct VMPDREC mpdr;
-    get_mpdr(fileName, &mpdr);
-    double v = mpdr.velnadir;
-
-    printf("top-center: (%f,%f)\n", lat_tc, lon_tc);
-    printf("bottom-center: (%f,%f)\n", lat_bc, lon_bc);
-    printf("d=%f\nv=%f\nd1=%f\nt=%f\n", d, v, d1, d1/v);
-    return d/v;
-}
+//static double calc_delta_time(const char *fileName, meta_parameters *meta)
+//{
+//    //  1) Get lat/lon coordinates for the center/top and center/bottom points
+//    //  2) Get those into UTM
+//    //  3) Calculate distance between them
+//    //  4) Use satellite velocity to calculate the image acquisition length
+//
+//    // At this point, we should have enough of the metadata populated to
+//    // successfully call meta_get_latLon
+//
+//    double lat_tc, lon_tc, x_tc, y_tc; // top-center
+//    double lat_bc, lon_bc, x_bc, y_bc; // bottom-center
+//
+//    int samp = meta->general->sample_count / 2;
+//    int line_top = 317;  //0
+//    int line_bot = 9665; //meta->general->line_count - 1;
+//
+//    meta_get_latLon(meta, line_top, samp, 0, &lat_tc, &lon_tc);
+//    meta_get_latLon(meta, line_bot, samp, 0, &lat_bc, &lon_bc);
+//
+//    // straight-line calculation
+//    int zone = utm_zone(lon_tc); // ensure same zone for each
+//
+//    latLon2UTM_zone(lat_tc, lon_tc, 0, zone, &x_tc, &y_tc);
+//    latLon2UTM_zone(lat_bc, lon_bc, 0, zone, &x_bc, &y_bc);
+//
+//    double d = hypot(x_tc-x_bc, y_tc-y_bc);
+//
+//    // spherical model calculation
+//    double R = meta_get_earth_radius(meta, (line_bot-line_top)/2, samp);
+//    vector v_tc, v_bc;
+//    sph2cart(R,lat_tc*D2R,lon_tc*D2R,&v_tc);
+//    sph2cart(R,lat_bc*D2R,lon_bc*D2R,&v_bc);
+//
+//    double ang = vecAngle(v_tc, v_bc);
+//    double d1 = R*ang;
+//
+//    // nadir velocity is in the map projection data record
+//    struct VMPDREC mpdr;
+//    get_mpdr(fileName, &mpdr);
+//    double v = mpdr.velnadir;
+//
+//    printf("top-center: (%f,%f)\n", lat_tc, lon_tc);
+//    printf("bottom-center: (%f,%f)\n", lat_bc, lon_bc);
+//    printf("d=%f\nv=%f\nd1=%f\nt=%f\n", d, v, d1, d1/v);
+//    return d/v;
+//}
 
 // Get the delta image time for ALOS data out of the summary file
 int get_alos_delta_time (const char *fileName, meta_parameters *meta,
