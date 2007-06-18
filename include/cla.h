@@ -36,4 +36,7 @@ int extract_string_options(int *argc, char **argv[], char *val, ... );
 // log
 void parse_log_options(int *argc, char **argv[]);
 
+// parse out some common options: -license, -version, -log, -quiet
+void handle_common_asf_args(int *argc, char **argv[], const char *prog_name);
+
 #endif
