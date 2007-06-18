@@ -86,6 +86,9 @@ void floats_to_bytes_from_file(const char *inFile, const char *outFile,
                                char *band, float mask, scale_t scaling);
 
 /* Prototypes from stats.c ***************************************************/
+void calc_stats_rmse_from_file(const char *inFile, char *band, double mask, double *min,
+                               double *max, double *mean, double *stdDev, double *rmse,
+                               gsl_histogram **histogram);
 void calc_stats_from_file(const char *inFile, char *band, double mask, double *min,
 			  double *max, double *mean, double *stdDev,
 			  gsl_histogram **histogram);
