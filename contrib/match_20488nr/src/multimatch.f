@@ -453,7 +453,7 @@ c  Read Command file
 c
         write(6,*) ' '
         write(6,*) 'Opening cmd input  file: ',a_cmdfile(1:52)
-        open(unit=20,file=a_cmdfile,status='old',form='formatted',readonly)
+        open(unit=20,file=a_cmdfile,status='old',form='formatted')
 
         read(20,'(a)',end=110) a_outfile
         i_err = 0
@@ -463,7 +463,7 @@ c
           call parse(a_input,i_vals,a_vals)     
           do i = 1,i_vals
             if (a_vals(i) .eq. ' ') then
-              type *,'parse error'
+              print *,'parse error'
             else if (a_vals(i)(1:4) .eq. 'rws=') then
               read(a_vals(i)(5:),*) i_rws
             else if (a_vals(i)(1:7) .eq. 'rwsize=') then
@@ -771,7 +771,7 @@ c
             r_iat(2,4) = 0.
             r_iat(3,4) = 0.
           else
-            type *,'File type = ',a_type(i_file)
+            print *,'File type = ',a_type(i_file)
             stop 'File type not recognized'
           end if
 
@@ -781,24 +781,24 @@ c
           end if
           if (i_type(i_file) .eq. 4 ) r_spc(1,i_file) = -r_spc(1,i_file)
 
-c          type *,' '
-c          type *,'r_iat='
-c          type *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
-c          type *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
-c          type *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
-c          type *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
+c          print *,' '
+c          print *,'r_iat='
+c          print *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
+c          print *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
+c          print *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
+c          print *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
 
           if (i_file .eq. 0) then   ! output file
 
             call invrstrn(r_iat,r_inv)
 
-c            type *,' '
-c            type *,'r_inv='
-c            type *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
-c            type *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
-c            type *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
-c            type *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
-c            type *,' '
+c            print *,' '
+c            print *,'r_inv='
+c            print *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
+c            print *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
+c            print *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
+c            print *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
+c            print *,' '
 
           else
 
@@ -806,24 +806,24 @@ c            type *,' '
             call multitrn(r_inv,r_tmp,r_atm(1,1,i_file))
             call invrstrn(r_atm(1,1,i_file),r_mta(1,1,i_file))
 
-c            type *,' '
-c            type *,'r_atm='
-c            type *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
-c            type *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
-c            type *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
-c            type *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
-c            type *,'r_mta='
-c            type *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
-c            type *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
-c            type *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
-c            type *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
+c            print *,' '
+c            print *,'r_atm='
+c            print *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
+c            print *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
+c            print *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
+c            print *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
+c            print *,'r_mta='
+c            print *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
+c            print *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
+c            print *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
+c            print *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
 
 c            call multitrn(r_mta(1,1,i_file),r_atm(1,1,i_file),r_tmp)
-c            type *,'r_tmp='
-c            type *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
-c            type *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
-c            type *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
-c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
+c            print *,'r_tmp='
+c            print *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
+c            print *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
+c            print *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
+c            print *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 
             if (i_ssize(i_file) .le.     0) then
               write(6,*) 'Error - Input file has 0 pixels per line'
@@ -909,17 +909,17 @@ c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
           if (a_rmgfile(i_file) .ne. ' ') then
             write(6,'(x,a,a,2i6)') 'Opening rmg file: ',a_rmgfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
             open(unit=40+i_file,file=a_rmgfile(i_file),form='unformatted',
-     &         status='old',access='direct',recl=8*i_ssize(i_file),readonly)
+     &         status='old',access='direct',recl=8*i_ssize(i_file))
           end if
           if (a_magfile(i_file) .ne. ' ') then
             write(6,'(x,a,a,2i6)') 'Opening amp file: ',a_magfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
             open(unit= 60+i_file,file=a_magfile(i_file),form='unformatted',
-     &       status='old',access='direct',recl=i_mbytes(i_file)*i_ssize(i_file),readonly)
+     &       status='old',access='direct',recl=i_mbytes(i_file)*i_ssize(i_file))
           end if
           if (a_dtefile(i_file) .ne. ' ') then
             write(6,'(x,a,a,2i6)') 'Opening hgt file: ',a_dtefile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
             open(unit= 80+i_file,file=a_dtefile(i_file),form='unformatted',
-     &       status='old',access='direct',recl=i_dbytes(i_file)*i_ssize(i_file),readonly)
+     &       status='old',access='direct',recl=i_dbytes(i_file)*i_ssize(i_file))
           end if
 
 
@@ -927,7 +927,7 @@ c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 
         if (i_ssize(0) .le.     0) stop 'Error - Reference file has 0 pixels per line'
         if (i_ssize(0) .gt. I_MXS) then
-          type *, 'Error - Reference file exceeds max pixels per line', i_ssize(0),I_MXS
+          print *, 'Error - Reference file exceeds max pixels per line', i_ssize(0),I_MXS
           stop 'Execution Halted'
         end if
 
@@ -1077,7 +1077,7 @@ c
                     call init_gx(i_gxi,i_typ,a_lbl,i_wxs,i_wys,i_frx,i_fry,i_clrs)
                     i_gx = i_gxi
 
-                    type *,'i_gx=',i_gx
+                    print *,'i_gx=',i_gx
                     CALL DISPLAY_LABEL(11,a_lbl(1))
                     CALL DISPLAY_LABEL(12,a_lbl(2))
                     CALL DISPLAY_LABEL(13,a_lbl(3))
@@ -1091,9 +1091,9 @@ c
                     call clear_win(14)
         
                     I_NWMAX=MAX(I_PX,I_PY)
-                    type *,'i_nwmax=',i_nwmax
+                    print *,'i_nwmax=',i_nwmax
                     I_ZOOM=MAX(MIN(128/I_NWMAX,8),1)
-                    type *,'i_zoom=',i_zoom
+                    print *,'i_zoom=',i_zoom
                     I_PZX=I_PX*I_ZOOM
                     I_PZY=I_PY*I_ZOOM
 
@@ -1101,9 +1101,9 @@ c
                     I_ZOOMC=MAX(MIN(128/I_NWMAX,8),1)
                     I_CZX=I_CX*I_ZOOMC
                     I_CZY=I_CY*I_ZOOMC
-                    TYPE *,'I_CY =',I_CY
-                    TYPE *,'I_CZY=',I_CZY
-                    TYPE *,'I_ZMC=',I_ZOOMC
+                    PRINT *,'I_CY =',I_CY
+                    PRINT *,'I_CZY=',I_CZY
+                    PRINT *,'I_ZMC=',I_ZOOMC
                 END IF
 
                    
@@ -1111,7 +1111,7 @@ c
                     I_NP=8
                     I_XDISP=((I_SPX-I_STX+I_DLX)/I_DLX)*I_NP
                     I_YDISP=((I_SPY-I_STY+I_DLY)/I_DLY)*I_NP
-                    TYPE *,'I_XDISP,I_YDISP=',I_XDISP,I_YDISP
+                    PRINT *,'I_XDISP,I_YDISP=',I_XDISP,I_YDISP
                     A_TEMP='DISPARITY'
 
                     i_gxi = 3
@@ -1156,7 +1156,7 @@ c
           do i_osoff=i_stx,i_spx,i_dlx
             i_osnum=min(min(I_BSS,i_rws+2*i_sdx),i_ssize(0)-i_osoff+1)
             I_NX = I_NX + 1
-c            type *,'Clearing output arrays'
+c            print *,'Clearing output arrays'
             do il=1,i_olnum
               do is=1,i_osnum
                 r_obufa(is,il)=0.
@@ -1417,7 +1417,7 @@ c
                   end if
                 end do
                 do il=1,i_ilnum/i_ilfac-1
-c                  type *,'il=',il !@#$%
+c                  print *,'il=',il !@#$%
                   do is=1,i_isnum/i_isfac
  
                     v_olocc(1,1,is) = v_olocc(1,2,is)
@@ -1506,8 +1506,8 @@ c                  type *,'il=',il !@#$%
                         end if
                       end do
                     end do
-c                    type *,'is=',is,max(i_smin+1,1),min(i_smax,i_osnum) !@#$%
-c                    type *,'   ',il,max(i_lmin+1,1),min(i_lmax,i_olnum) !@#$%
+c                    print *,'is=',is,max(i_smin+1,1),min(i_smax,i_osnum) !@#$%
+c                    print *,'   ',il,max(i_lmin+1,1),min(i_lmax,i_olnum) !@#$%
 
                     do iss = max(i_smin,1),min(i_smax+1,i_osnum)
                       do ill = max(i_lmin,1),min(i_lmax+1,i_olnum)
@@ -1676,7 +1676,7 @@ c
                     if (i_cnt .gt. 0) then
                       r_avg = r_sum/max(i_cnt,1)
                       if ((r_sqr/max(i_cnt,1))-r_avg**2 .lt. 0.) 
-     &                         type *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
+     &                         print *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
                       r_std = sqrt(abs((r_sqr/max(i_cnt,1))-r_avg**2))
                     else
                       r_avg = 1.e20
@@ -1705,7 +1705,7 @@ c
                     if (i_cnt .gt. 0) then
                       r_avg = r_sum/max(i_cnt,1)
                       if ((r_sqr/max(i_cnt,1))-r_avg**2 .lt. 0.) 
-     &                         type *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
+     &                         print *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
                       r_std = sqrt(abs((r_sqr/max(i_cnt,1))-r_avg**2))
                     else
                       r_avg = 1.e20
@@ -1770,7 +1770,7 @@ c
                
                 IF ( I_FLAGC .EQ. 0 ) THEN
                   IF ( I_EDGE(1) .EQ. 0 .AND. I_EDGE(2) .EQ. 0 ) THEN
-                    IF ( L_TDISP .EQ. .TRUE. .AND. L_TTOGL .EQ. .TRUE.) THEN
+                    IF ( L_TDISP .EQV. .TRUE. .AND. L_TTOGL .EQV. .TRUE.) THEN
                       WRITE(6,'(2I10,2F8.2,F7.3,2F8.3)') I_OSOFF,I_OLOFF,
      &                  R_SHFTXX,R_SHFTYY,R_CPEAK,
      &                  MIN(R_EVAL1,999.E0),MIN(R_EVAL2,999.E0)
@@ -1849,7 +1849,7 @@ c 160                 format(2(i7,f11.3),4f10.5,2f10.2)
      &                    v_iloc(1),v_iloc(2),v_iloc(3),r_shftxx,r_shftyy,r_snr,r_cov(1),r_cov(2),r_cov(3)
                      end if
                   ELSE
-                    IF ( L_TDISP .EQ. .TRUE. .AND. L_TTOGL .EQ. .TRUE.) THEN
+                    IF ( L_TDISP .EQV. .TRUE. .AND. L_TTOGL .EQV. .TRUE.) THEN
                       WRITE(6,*) 'Match on Edge'
                     END IF
                   END IF
@@ -1876,7 +1876,7 @@ c
                     if (i_cnt .gt. 0) then
                       r_avg = r_sum/max(i_cnt,1)
                       if ((r_sqr/max(i_cnt,1))-r_avg**2 .lt. 0.) 
-     &                         type *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
+     &                         print *,'******* std error = ',(r_sqr/max(i_cnt,1))-r_avg**2
                       r_std = sqrt(abs((r_sqr/max(i_cnt,1))-r_avg**2))
                     else
                       r_avg = 1.e20
@@ -2123,7 +2123,7 @@ c
             r_b(3,2)=(a12*a31-a11*a32)/r_dd
             r_b(3,3)=(a11*a22-a12*a21)/r_dd
           else
-            type *,'Determinant =  0 in Subroutine matinvrt'
+            print *,'Determinant =  0 in Subroutine matinvrt'
             r_b(1,1)=1.
             r_b(1,2)=0.
             r_b(1,3)=0.
@@ -2487,9 +2487,9 @@ c
 
               else
 
-c                type *,'r_c = 0',(v_pln(1,1)-v_pln(1,2)),(v_pln(2,3)-v_pln(2,2)) , 
+c                print *,'r_c = 0',(v_pln(1,1)-v_pln(1,2)),(v_pln(2,3)-v_pln(2,2)) , 
 c     &              (v_pln(2,1)-v_pln(2,2)),(v_pln(1,3)-v_pln(1,2))
-c                type *,'       ',v_pln(1,1),v_pln(1,2),v_pln(2,3),v_pln(2,2),v_pln(2,1),v_pln(1,3)
+c                print *,'       ',v_pln(1,1),v_pln(1,2),v_pln(2,3),v_pln(2,2),v_pln(2,1),v_pln(1,3)
 
               end if
 
@@ -3902,8 +3902,8 @@ c
             IF ( IX .EQ. 0 .OR. IX .EQ. I_WSAXJ-I_WSAXI ) I_EDGE(2)=1
             R_SHFTX=IX*I_AVGX
             R_SHFTY=IY*I_AVGY
-C            type *,'i_wsaxyi = ',i_wsaxyi
-C            type *,'std = ',r_stdvi,r_stdvj
+C            print *,'i_wsaxyi = ',i_wsaxyi
+C            print *,'std = ',r_stdvi,r_stdvj
             R_SHRP=(R_PEAK-(R_CORN(MAX(IX-1,1),IY)+
      &          R_CORN(MIN(IX+1,I_WSAXJ-I_WSAXI),IY))/2.)
             I_FLAG=0
@@ -3987,11 +3987,11 @@ C            R_N2=((R_STDVI**2+R_STDVJ**2)/2)-(R_CORR(IX,IY)/I_WSAXYI)
             R_DXX=R_DXX*I_WSAXYI
             R_DYY=R_DYY*I_WSAXYI
             R_DXY=R_DXY*I_WSAXYI
-C            type *,'d = ',r_dxx,r_dyy,r_dxy
+C            print *,'d = ',r_dxx,r_dyy,r_dxy
             R_N4=R_N2**2
             R_N2=R_N2*2
             R_N4=R_N4*.5*I_WSAXYI
-C            type *,'NOISE  =',R_NOISE,r_n2,r_n4
+C            print *,'NOISE  =',R_NOISE,r_n2,r_n4
             R_U=R_DXY**2-R_DXX*R_DYY
             R_U2=R_U**2 !                    *I_AVGX*I_AVGY/I_WSAXYI
             IF ( R_U .EQ. 0 ) THEN
@@ -4005,19 +4005,19 @@ C            type *,'NOISE  =',R_NOISE,r_n2,r_n4
               R_COV(3)=((R_N2*R_U      -R_N4*(R_DXX+R_DYY))*R_DXY)/R_U2
             END IF
 C            IF ( R_COV(1) .LE. 0. .OR. R_COV(2) .LE. 0. ) THEN
-C              type *,'***  r_cov = ',r_cov
-C              type *,'d = ',r_dxx,r_dyy,r_dxy
-C              type *,'NOISE  =',R_NOISE,r_n2,r_n4
-C              type *,'u = ',r_u,r_u2
+C              print *,'***  r_cov = ',r_cov
+C              print *,'d = ',r_dxx,r_dyy,r_dxy
+C              print *,'NOISE  =',R_NOISE,r_n2,r_n4
+C              print *,'u = ',r_u,r_u2
 C             READ(5,*) I
 C            END IF
             R_U=SQRT((R_COV(1)+R_COV(2))**2.-4.*(R_COV(1)*R_COV(2)-R_COV(3)**2))
             R_EVAL1=(R_COV(1)+R_COV(2)+R_U)/2.
             R_EVAL2=(R_COV(1)+R_COV(2)-R_U)/2.
             IF ( R_EVAL1 .LE. 0 .OR. R_EVAL2 .LE. 0 ) THEN
-C              TYPE *,'EVAL_ERROR',R_EVAL1,R_EVAL2
+C              PRINT *,'EVAL_ERROR',R_EVAL1,R_EVAL2
             END IF
-C            type *,'eval = ',SQRT(ABS(r_eval1)),SQRT(ABS(r_eval2))
+C            print *,'eval = ',SQRT(ABS(r_eval1)),SQRT(ABS(r_eval2))
 
             
             IF ( R_COV(3) .EQ. 0 ) THEN
@@ -4036,7 +4036,7 @@ C            type *,'eval = ',SQRT(ABS(r_eval1)),SQRT(ABS(r_eval2))
               IF ( R_COV(1)-R_EVAL1 .NE. 0. ) THEN
                 R_EVEC1(1)=-R_COV(3)/(R_COV(1)-R_EVAL1)
               ELSE
-                TYPE *,'E VECTOR 1 ERROR'
+                PRINT *,'E VECTOR 1 ERROR'
                 R_EVEC1(1)=999.
               END IF
               R_EVEC1(2)=1.
@@ -4047,7 +4047,7 @@ C            type *,'eval = ',SQRT(ABS(r_eval1)),SQRT(ABS(r_eval2))
               IF ( R_COV(1)-R_EVAL2 .NE. 0. ) THEN
                  R_EVEC2(1)=-R_COV(3)/(R_COV(1)-R_EVAL2)
               ELSE
-                TYPE *,'E VECTOR 2 ERROR'
+                PRINT *,'E VECTOR 2 ERROR'
                 R_EVEC2(1)=999.
               END IF
               R_EVEC2(2)=1.
@@ -4071,7 +4071,7 @@ C            type *,'eval = ',SQRT(ABS(r_eval1)),SQRT(ABS(r_eval2))
             R_EVEC2(1) = 0.
             R_EVEC2(2) = 0.
             I_FLAG=2
-c            TYPE *,'CORRELATION ERROR'
+c            PRINT *,'CORRELATION ERROR'
           END IF
         ELSE
           R_SHFTY=0
@@ -4122,7 +4122,7 @@ c            TYPE *,'CORRELATION ERROR'
 c          i_mbytes = 0
 
           open(unit=18,file=a_magfile,status='old',form='unformatted',
-     &        access='direct',recl=50,readonly)
+     &        access='direct',recl=50)
 
           do i=1,20
             read(18,rec=i,err=901) a_string(i)
@@ -4199,7 +4199,7 @@ c          i_demoff = 0
 c          i_doff = 0
 
           open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &        access='direct',recl=50,readonly)
+     &        access='direct',recl=50)
 
           do i=1,20
             read(18,rec=i,err=901) a_string(i)
@@ -4211,22 +4211,22 @@ c          i_doff = 0
               write(6,*) 'Reading airsar elevation header     ',i_dbsize
             else if (index(a_string(i),'NUMBER OF HEADER RECORDS =') .gt. 0) then
               read(a_string(i)(35:),*) i_doff
-c              type *,'i_doff=',i_doff
+c              print *,'i_doff=',i_doff
             else if (index(a_string(i),'NUMBER OF SAMPLES PER RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_dssize
-c              type *,'i_dssize=',i_dssize
+c              print *,'i_dssize=',i_dssize
             else if (index(a_string(i),'NUMBER OF LINES IN IMAGE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dlsize
-c              type *,'i_dlsize=',i_dlsize
+c              print *,'i_dlsize=',i_dlsize
             else if (index(a_string(i),'NUMBER OF BYTES PER SAMPLE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dbytes
-c              type *,'i_dbytes=',i_dbytes
+c              print *,'i_dbytes=',i_dbytes
             else if (index(a_string(i),'BYTE OFFSET OF FIRST DATA RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_boff
-c              type *,'i_boff=',i_boff
+c              print *,'i_boff=',i_boff
             else if (index(a_string(i),'BYTE OFFSET OF DEM HEADER =') .gt. 0) then
               read(a_string(i)(35:),*) i_demoff
-c              type *,'i_demoff=',i_demoff
+c              print *,'i_demoff=',i_demoff
             end if
           end do
 901       close(18)
@@ -4235,44 +4235,44 @@ c              type *,'i_demoff=',i_demoff
           if (i_dbsize .gt. 0) then
 
             open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &          access='direct',recl=i_dbsize,readonly)
+     &          access='direct',recl=i_dbsize)
 
             do i=1,(1100-1)/i_dbsize + 1
               read(18,rec=i+(i_demoff/i_dbsize),err=902) (b_string(j),j=1+(i-1)*i_dbsize,min(i*i_dbsize,5000))
             end do
 
             do i=1,21
-c              type *,i,a_string(i)
+c              print *,i,a_string(i)
               if (a_string(i) .eq. ' ') then
                 ! do nothing
               else if (index(a_string(i),'X-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(1)
-c                type *,'x spacing=',r_spc(1)
+c                print *,'x spacing=',r_spc(1)
               else if (index(a_string(i),'Y-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(2)
-c                type *,'y spacing=',r_spc(2)
+c                print *,'y spacing=',r_spc(2)
               else if (index(a_string(i),'ELEVATION INCREMENT (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dmul
               else if (index(a_string(i),'ELEVATION OFFSET (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dadd
               else if (index(a_string(i),'LATITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(1)
-c                type *,'lat=',r_peg(1)
+c                print *,'lat=',r_peg(1)
                 r_peg(1) = r_peg(1) / r_rtod
               else if (index(a_string(i),'LONGITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(2)
-c                type *,'lon=',r_peg(2)
+c                print *,'lon=',r_peg(2)
                 r_peg(2) = r_peg(2) / r_rtod
               else if (index(a_string(i),'HEADING AT PEG POINT (DEGREES) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(3)
-c                type *,'hdg=',r_peg(3)
+c                print *,'hdg=',r_peg(3)
                 r_peg(3) = r_peg(3) / r_rtod
               else if (index(a_string(i),'ALONG-TRACK OFFSET S0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(1)
-c                type *,'s0 =',r_str(1)
+c                print *,'s0 =',r_str(1)
               else if (index(a_string(i),'CROSS-TRACK OFFSET C0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(2)
-c                type *,'c0 =',r_str(2)
+c                print *,'c0 =',r_str(2)
               end if
               if (1.eq.2) then
 990             write(6,*) 'Error - ',i,' ',a_string(i)
