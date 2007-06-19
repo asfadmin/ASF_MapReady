@@ -133,7 +133,7 @@ void	     read_events();
 
 /*******************************************/
 #ifdef SGI
-void plot_data_(i_w,i_num,r_x,r_y)
+void plot_data__(i_w,i_num,r_x,r_y)
 #endif
 #ifdef HP
 void plot_data(i_w,i_num,r_x,r_y)
@@ -215,7 +215,7 @@ void display_idx(i_w, i_x, i_y, i_width, i_height, i_bpl, i_data)
 
 
 #ifdef SGI
-void display_img_(i_w, i_x, i_y, i_width, i_height, i_bpl, r_dat)
+void display_img__(i_w, i_x, i_y, i_width, i_height, i_bpl, r_dat)
 #endif
 #ifdef HP
 void display_img(i_w, i_x, i_y, i_width, i_height, i_bpl, r_dat)
@@ -334,7 +334,7 @@ void display_rmg(i_w, i_x, i_y, i_width, i_height, i_bpl, r_dat1,r_dat2)
 }
 
 #ifdef SGI
-void display_label_(i_w,a_string)
+void display_label__(i_w,a_string)
 #endif
 #ifdef HP
 void display_label(i_w,a_string)
@@ -841,7 +841,7 @@ void setcolor(i_c)
 
 
 #ifdef SGI
-void clear_win_(i_w)
+void clear_win__(i_w)
 #endif
 #ifdef HP
 void clear_win(i_w)
@@ -1203,7 +1203,7 @@ void get_dialog(a_msg,a_rsp)
 
 /*******************************************/
 #ifdef SGI
-int init_gx_(i_gxi,i_typ,a_labl,i_wxs,i_wys,i_frx,i_fry,i_cin)
+int init_gx__(i_gxi,i_typ,a_labl,i_wxs,i_wys,i_frx,i_fry,i_cin)
 #endif
 #ifdef HP
 int init_gx(i_gxi,i_typ,a_labl,i_wxs,i_wys,i_frx,i_fry,i_cin)
@@ -2554,6 +2554,8 @@ char *buff;
         move abs(loc_byte) from the current location.
         
 */
+
+typedef long long off64_t;
 
 off64_t ioseek64_(chan, loc_byte)
 int *chan;
