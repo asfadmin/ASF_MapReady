@@ -52,11 +52,3 @@ multitps: $(TPS_OBJS)
 
 clean:
 	rm -f *.o
-
-#f77 -extend_source -bytereclen -O3 multimosaic.f -o multimosaic
-#f77 -extend_source -bytereclen -O multitps.f -o multitps
-#
-##f77 -extend_source -bytereclen -O multicull.f -o multicull
-#f77 -extend_source -bytereclen -O multicull.f -o multicull ../../NR/*.f
-#
-#g77 -ffixed-line-length-132 -O3 multimosaic.f -o multimosaic
