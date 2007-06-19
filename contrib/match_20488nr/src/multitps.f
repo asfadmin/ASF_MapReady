@@ -251,7 +251,7 @@ c  Read Command file
 c
         write(6,*) ' '
         write(6,*) 'Opening CMD file: ',a_cmdfile(1:52)
-        open(unit=10,file=a_cmdfile,status='old',form='formatted',readonly)
+        open(unit=10,file=a_cmdfile,status='old',form='formatted')
 
         read(10,'(a)',end=110) a_outfile
         i_err = 0
@@ -261,7 +261,7 @@ c
           call parse(a_input,i_vals,a_vals)     
           do i = 1,i_vals
             if (a_vals(i) .eq. ' ') then
-              type *,'parse error'
+              print *,'parse error'
             else if (a_vals(i)(1:4) .eq. 'typ=') then
               a_type(i_file)=a_vals(i)(5:)
             else if (a_vals(i)(1:4) .eq. 'mss=') then
@@ -799,7 +799,7 @@ c
             r_b(3,2)=(a12*a31-a11*a32)/r_dd
             r_b(3,3)=(a11*a22-a12*a21)/r_dd
           else
-            type *,'Determinant =  0 in Subroutine matinvrt'
+            print *,'Determinant =  0 in Subroutine matinvrt'
             r_b(1,1)=1.
             r_b(1,2)=0.
             r_b(1,3)=0.
@@ -1264,7 +1264,7 @@ c
           i_doff = 0
 
           open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &        access='direct',recl=50,readonly)
+     &        access='direct',recl=50)
 
           do i=1,20
             read(18,rec=i,err=901) a_string(i)
@@ -1300,7 +1300,7 @@ c              type *,'i_demoff=',i_demoff
           if (i_dbsize .gt. 0) then
 
             open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &          access='direct',recl=i_dbsize,readonly)
+     &          access='direct',recl=i_dbsize)
 
             do i=1,(1100-1)/i_dbsize + 1
               read(18,rec=i+(i_demoff/i_dbsize),err=902) (b_string(j),j=1+(i-1)*i_dbsize,min(i*i_dbsize,5000))

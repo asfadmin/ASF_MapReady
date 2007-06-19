@@ -5,14 +5,16 @@
 
 
 BINDIR  = ../bin
-LIBS    = -lX11 -lXm -lXt -lm
+XHOME   = -L/usr/X11R6/lib
+LIBS    = $(XHOME) -lXm -lXt -lX11 -lm
 OPTFLAG = -O2
+HP_SGI = -DSGI
 
 FC     = g77
-FFLAGS = $(OPTFLAG) -ffixed-line-length-132 -DSGI
+FFLAGS = $(OPTFLAG) $(HP_SGI) -ffixed-line-length-132
 
 CC     = gcc
-CFLAGS = $(OPTFLAG) -DSGI
+CFLAGS = $(OPTFLAG) $(HP_SGI)
 
 MATCH_C_SRC = graphx.c
 MATCH_C_OBJ = $(MATCH_C_SRC:.c=.o)
@@ -39,9 +41,8 @@ $(MATCH_C_OBJ): $(MATCH_C_SRC)
 	$(CC) $(CFLAGS) -c $(MATCH_C_SRC)
 $(MATCH_F_OBJ): $(MATCH_F_SRC)
 	$(FC) $(FFLAGS) -c $(MATCH_F_SRC)
-multimatch: $(MATCH_OBJS)
-	$(FC) -o $@ $(MATCH_F_OBJ) $(MATCH_C_OBJ) -L/usr/X11R6/lib -lXm -lXt -lX11 -lm
-#	$(FC) $(FFLAGS) -o multimatch $(MATCH_OBJS) -L/usr/X11R6/lib $(LIBS)
+multimatch: $(MATCH_OBJS) Makefile 
+	$(FC) $(OPTFLAG) -o multimatch $(MATCH_OBJS) $(LIBS)
 
 multicull: $(CULL_OBJS)
 	$(FC) $(FFLAGS) -o multicull $(CULL_OBJS)

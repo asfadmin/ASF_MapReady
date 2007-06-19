@@ -875,7 +875,7 @@ c               type*, 'r_chisq = ',i,j,r_chisq(j,i),r_vobs(j,i)
          enddo                  !i_pts loop for chisq
 
          r_chisq(1,0) = sqrt(r_chisq(1,0)/(2.*i_mp))
-         type*, 'r_chisq = ',r_chisq(1,0),sqrt(r_chird(1)/i_mp),sqrt(r_chird(2)/i_mp)
+         print*, 'r_chisq = ',r_chisq(1,0),sqrt(r_chird(1)/i_mp),sqrt(r_chird(2)/i_mp)
 
       endif
       
