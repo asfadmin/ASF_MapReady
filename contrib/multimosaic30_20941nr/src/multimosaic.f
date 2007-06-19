@@ -374,7 +374,7 @@ c  Read Command file
 c
         write(6,*) ' '
         write(6,*) 'Opening cmd input  file: ',a_cmdfile(1:52)
-        open(unit=20,file=a_cmdfile,status='old',form='formatted',readonly)
+        open(unit=20,file=a_cmdfile,status='old',form='formatted')
 
         i_err = 0
         i_file = -1
@@ -384,7 +384,7 @@ c
             call parse(a_input,i_vals,a_vals)     
             do i = 1,i_vals
               if (a_vals(i) .eq. ' ') then
-                type *,'parse error'
+                print *,'parse error'
               else if (a_vals(i)(1:4) .eq. 'smp=') then
                 if (a_vals(i)(5:) .eq. 'simplicial' .or. a_vals(i)(5:) .eq. 'SIMPLICIAL' .or.
      &              a_vals(i)(5:) .eq. 'plane'      .or. a_vals(i)(5:) .eq. 'PLANE' .or.
@@ -687,7 +687,7 @@ c        write(6,*) ' set0 = ',(i_set(i,0),i=0,9)
 
         if (i_set(1,0) .eq. 0 ) then
           if (a_type(0) .eq. 'sch' .or. a_type(0) .eq. 'SCH') then
-            type *,'Using Peg of 1st input image: ',sngl(r_peg(1,1)),sngl(r_peg(2,1)),
+            print *,'Using Peg of 1st input image: ',sngl(r_peg(1,1)),sngl(r_peg(2,1)),
      &                    sngl(r_peg(3,1))
             r_peg(1,0) = r_peg(1,1)
             r_peg(2,0) = r_peg(2,1)
@@ -695,7 +695,7 @@ c        write(6,*) ' set0 = ',(i_set(i,0),i=0,9)
           endif
         endif
         if (i_set(3,0) .eq. 0 ) then
-          type *,'Using Spc of 1st input image: ',sngl(r_spc(1,1)),sngl(r_spc(2,1))
+          print *,'Using Spc of 1st input image: ',sngl(r_spc(1,1)),sngl(r_spc(2,1))
           r_spc(1,0) = r_spc(1,1)
           r_spc(2,0) = r_spc(2,1)
         endif
@@ -798,11 +798,11 @@ c
             r_iat(3,4) = 0.
             if (i_zone(i_file) .le. 0) then
               call utmtoll(r_a,r_e2,i_zone(i_file),a_grid,v_oloc,r_peg(1,i_file),r_peg(2,i_file),2)
-              type *,'setting zone = ',i_zone(i_file), i_file
+              print *,'setting zone = ',i_zone(i_file), i_file
               if (i_set(2,i_file) .eq. 0) then
                 r_str(1,i_file) = v_oloc(1)
                 r_str(2,i_file) = v_oloc(2)
-                type *,'setting Northing/Easting = ',r_str(1,i_file),r_str(2,i_file)
+                print *,'setting Northing/Easting = ',r_str(1,i_file),r_str(2,i_file)
               endif
             endif
           else if (a_type(i_file).eq.'UTM' .or. a_type(i_file).eq.'utm' ) then
@@ -850,24 +850,24 @@ c
           endif
           if (i_type(i_file) .eq. -4 ) r_spc(1,i_file) = -r_spc(1,i_file)
 
-c          type *,' '
-c          type *,'r_iat='
-c          type *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
-c          type *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
-c          type *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
-c          type *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
+c          print *,' '
+c          print *,'r_iat='
+c          print *,r_iat(1,1),r_iat(1,2),r_iat(1,3)
+c          print *,r_iat(2,1),r_iat(2,2),r_iat(2,3)
+c          print *,r_iat(3,1),r_iat(3,2),r_iat(3,3)
+c          print *,r_iat(1,4),r_iat(2,4),r_iat(3,4)
 
           if (i_file .eq. 0) then   ! output file
 
             call invrstrn(r_iat,r_inv)
 
-c            type *,' '
-c            type *,'r_inv='
-c            type *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
-c            type *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
-c            type *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
-c            type *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
-c            type *,' '
+c            print *,' '
+c            print *,'r_inv='
+c            print *,r_inv(1,1),r_inv(1,2),r_inv(1,3)
+c            print *,r_inv(2,1),r_inv(2,2),r_inv(2,3)
+c            print *,r_inv(3,1),r_inv(3,2),r_inv(3,3)
+c            print *,r_inv(1,4),r_inv(2,4),r_inv(3,4)
+c            print *,' '
 
           else
 
@@ -875,23 +875,23 @@ c            type *,' '
             call multitrn(r_inv,r_tmp,r_atm(1,1,i_file))
             call invrstrn(r_atm(1,1,i_file),r_mta(1,1,i_file))
 
-c            type *,' '
-c            type *,'r_atm='
-c            type *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
-c            type *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
-c            type *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
-c            type *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
-c            type *,'r_mta='
-c            type *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
-c            type *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
-c            type *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
-c            type *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
+c            print *,' '
+c            print *,'r_atm='
+c            print *,r_atm(1,1,i_file),r_atm(1,2,i_file),r_atm(1,3,i_file)
+c            print *,r_atm(2,1,i_file),r_atm(2,2,i_file),r_atm(2,3,i_file)
+c            print *,r_atm(3,1,i_file),r_atm(3,2,i_file),r_atm(3,3,i_file)
+c            print *,r_atm(1,4,i_file),r_atm(2,4,i_file),r_atm(3,4,i_file)
+c            print *,'r_mta='
+c            print *,r_mta(1,1,i_file),r_mta(1,2,i_file),r_mta(1,3,i_file)
+c            print *,r_mta(2,1,i_file),r_mta(2,2,i_file),r_mta(2,3,i_file)
+c            print *,r_mta(3,1,i_file),r_mta(3,2,i_file),r_mta(3,3,i_file)
+c            print *,r_mta(1,4,i_file),r_mta(2,4,i_file),r_mta(3,4,i_file)
             call multitrn(r_mta(1,1,i_file),r_atm(1,1,i_file),r_tmp)
-c            type *,'r_tmp='
-c            type *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
-c            type *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
-c            type *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
-c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
+c            print *,'r_tmp='
+c            print *,r_tmp(1,1),r_tmp(1,2),r_tmp(1,3)
+c            print *,r_tmp(2,1),r_tmp(2,2),r_tmp(2,3)
+c            print *,r_tmp(3,1),r_tmp(3,2),r_tmp(3,3)
+c            print *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 
             if (i_ssize(i_file) .le.     0) then
               write(6,*) 'Error - Input file has 0 pixels per line'
@@ -976,17 +976,17 @@ c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
               if (a_rmgfile(i_file) .ne. ' ') then
                 write(6,'(x,a,a,2i6)') 'Opening rmg input  file: ',a_rmgfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                 open(unit=40+i_file,file=a_rmgfile(i_file),form='unformatted',
-     &             status='old',access='direct',recl=8*i_ssize(i_file),readonly)
+     &             status='old',access='direct',recl=8*i_ssize(i_file))
               endif
               if (a_magfile(i_file) .ne. ' ') then
                 write(6,'(x,a,a,2i6)') 'Opening amp input  file: ',a_magfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                 open(unit=60+i_file,file=a_magfile(i_file),form='unformatted',
-     &           status='old',access='direct',recl=i_mbytes(i_file)*i_ssize(i_file),readonly)
+     &           status='old',access='direct',recl=i_mbytes(i_file)*i_ssize(i_file))
               endif
               if (a_dtefile(i_file) .ne. ' ') then
                 write(6,'(x,a,a,2i6)') 'Opening hgt input  file: ',a_dtefile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                 open(unit=80+i_file,file=a_dtefile(i_file),form='unformatted',
-     &           status='old',access='direct',recl=i_dbytes(i_file)*i_ssize(i_file),readonly)
+     &           status='old',access='direct',recl=i_dbytes(i_file)*i_ssize(i_file))
               endif
             endif
 
@@ -1014,11 +1014,11 @@ c            type *,r_tmp(1,4),r_tmp(2,4),r_tmp(3,4)
 
         if (i_ssize(0) .le.     0) stop 'Error - Output file has 0 pixels per line'
         if (i_ssize(0) .gt. I_MXS) then
-          type *, 'Error - Output file exceeds max pixels per line', i_ssize(0),I_MXS
+          print *, 'Error - Output file exceeds max pixels per line', i_ssize(0),I_MXS
           stop 'Execution Halted'
         endif
 
-        type *,' '
+        print *,' '
         if (a_stdfile(0) .ne. ' ') then
           write(6,'(x,a,a,2i6)') 'Opening std output file: ',a_stdfile(0)(1:40),i_ssize(0),i_lsize(0)
           open(unit=29,file=a_stdfile(0),form='unformatted',status='unknown',
@@ -1075,7 +1075,7 @@ c            type *,'Clearing output arrays'
                 r_sbuff(is,il)=0.
               enddo
             enddo
-            type *,'at block ',i_bs,i_bl
+            print *,'at block ',i_bs,i_bl
 
             do i_file=1,i_nof          ! Loop over input files
 
@@ -1179,7 +1179,7 @@ c            type *,'Clearing output arrays'
               i_isfac = max((i_isnum+I_IBS-1)/(I_IBS),i_ifacmin(i_file))
               i_ilfac = max((i_ilnum+I_IBL-1)/(I_IBL),i_ifacmin(i_file))
 
-c              type *,'so,sn,lo,ln = ',i_isoff,i_isnum,i_iloff,i_ilnum
+c              print *,'so,sn,lo,ln = ',i_isoff,i_isnum,i_iloff,i_ilnum
 
               if (i_isnum .gt. 0 .and. i_ilnum .gt. 0) then
                 if (i_nof .ge. 20) then
@@ -1187,24 +1187,24 @@ c              type *,'so,sn,lo,ln = ',i_isoff,i_isnum,i_iloff,i_ilnum
                   if (a_rmgfile(i_file) .ne. ' ') then
                     write(6,'(x,a,a,2i6)') 'Opening rmg input  file: ',a_rmgfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                     open(unit=40+i_ffff,file=a_rmgfile(i_file),form='unformatted',
-     &                 status='old',access='direct',recl=8*i_ssize(i_file),readonly)
+     &                 status='old',access='direct',recl=8*i_ssize(i_file))
                   endif
                   if (a_magfile(i_file) .ne. ' ') then
                     write(6,'(x,a,a,2i6)') 'Opening amp input  file: ',a_magfile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                     open(unit=60+i_ffff,file=a_magfile(i_file),form='unformatted',
-     &               status='old',access='direct',recl=i_mbytes(i_file)*(i_ssize(i_file)+i_moff(2,i_file)),readonly)
+     &               status='old',access='direct',recl=i_mbytes(i_file)*(i_ssize(i_file)+i_moff(2,i_file)))
                   endif
                   if (a_dtefile(i_file) .ne. ' ') then
                     write(6,'(x,a,a,2i6)') 'Opening hgt input  file: ',a_dtefile(i_file)(1:40),i_ssize(i_file),i_lsize(i_file)
                     open(unit=80+i_ffff,file=a_dtefile(i_file),form='unformatted',
-     &               status='old',access='direct',recl=i_dbytes(i_file)*(i_ssize(i_file)+i_doff(2,i_file)),readonly)
+     &               status='old',access='direct',recl=i_dbytes(i_file)*(i_ssize(i_file)+i_doff(2,i_file)))
                   endif
                 else
                   i_ffff = i_file
                 endif
-                type *,' Reading file ',i_file,'     ',i_isnum,i_ilnum,max(i_isfac,i_ilfac)
-c                type *,'   lines: ',i_fstln,' to ',i_lstln !@#$%
-c                type *,'   pixls: ',i_fstsp,' to ',i_lstsp !@#$%
+                print *,' Reading file ',i_file,'     ',i_isnum,i_ilnum,max(i_isfac,i_ilfac)
+c                print *,'   lines: ',i_fstln,' to ',i_lstln !@#$%
+c                print *,'   pixls: ',i_fstsp,' to ',i_lstsp !@#$%
 
                 if (a_rmgfile(i_file) .ne. ' ') then
                   do il=1,i_ilnum/i_ilfac
@@ -1327,7 +1327,7 @@ c                  write(6,'(x,a,i4)') 'Finding edges of input image ',i_file
                           v_gpl(1,i_gpc)=(il*i_ilfac+i_iloff)*r_spc(1,i_file)+r_str(1,i_file)
                           v_gpl(2,i_gpc)=(is*i_isfac+i_isoff)*r_spc(2,i_file)+r_str(2,i_file)
                           v_gpl(3,i_gpc)=r_ibufb(is,il)
-c     c                     type *,'i_gpc',i_gpc,v_gpl(1,i_gpc),v_gpl(2,i_gpc),v_gpl(3,i_gpc) !@#$%
+c     c                     print *,'i_gpc',i_gpc,v_gpl(1,i_gpc),v_gpl(2,i_gpc),v_gpl(3,i_gpc) !@#$%
 
                           if (i_type(i_file) .eq. 1) then 
                             v_iloc2(1) = v_gpl(1,i_gpc)
@@ -1400,7 +1400,7 @@ c     c                     type *,'i_gpc',i_gpc,v_gpl(1,i_gpc),v_gpl(2,i_gpc),v
                           v_gpl(1,i_gpc)=(il*i_ilfac+i_iloff)*r_spc(1,i_file)+r_str(1,i_file)
                           v_gpl(2,i_gpc)=(is*i_isfac+i_isoff)*r_spc(2,i_file)+r_str(2,i_file)
                           v_gpl(3,i_gpc)=r_ibufb(is,il)
-c     c                     type *,'i_gpc',i_gpc,v_gpl(1,i_gpc),v_gpl(2,i_gpc),v_gpl(3,i_gpc) !@#$%
+c     c                     print *,'i_gpc',i_gpc,v_gpl(1,i_gpc),v_gpl(2,i_gpc),v_gpl(3,i_gpc) !@#$%
 
                           if (i_type(i_file) .eq. 1) then 
                             v_iloc2(1) = v_gpl(1,i_gpc)
@@ -1479,7 +1479,7 @@ c                  write(6,*) ' '
 c
 c  Write out gap pixel info
 c
-c                  type *,'i_gpc = ',i_gpc
+c                  print *,'i_gpc = ',i_gpc
 c                  do i=1,i_gpc
 c                    write(6,*) i,v_gpl(1,i),v_gpl(2,i),v_gpl(3,i)
 c                  enddo
@@ -1644,8 +1644,8 @@ c
                         endif
                       enddo
                     enddo
-c                    type *,'is=',is,max(i_smin+1,1),min(i_smax,i_osnum) !@#$%
-c                    type *,'   ',il,max(i_lmin+1,1),min(i_lmax,i_olnum) !@#$%
+c                    print *,'is=',is,max(i_smin+1,1),min(i_smax,i_osnum) !@#$%
+c                    print *,'   ',il,max(i_lmin+1,1),min(i_lmax,i_olnum) !@#$%
 
                     do iss = max(i_smin,1),min(i_smax+1,i_osnum)
                       do ill = max(i_lmin,1),min(i_lmax+1,i_olnum)
@@ -1886,7 +1886,7 @@ c
 c  Overlay GCP data on Mosaic
 c 
         do i_file = 1,i_nog
-          open(unit=27,file=a_gcpfile(i_file),status='old',form='formatted',readonly)
+          open(unit=27,file=a_gcpfile(i_file),status='old',form='formatted')
           write(6,*) 'Overlaying GCPs from: ',a_gcpfile(i_file)(1:length(a_gcpfile(i_file))),i_fills(i_file)
           do i=1,100000
             if (mod(i,100) .eq. 0) write(6,*) '  at point: ',i
@@ -2158,7 +2158,7 @@ c
             r_b(3,2)=(a12*a31-a11*a32)/r_dd
             r_b(3,3)=(a11*a22-a12*a21)/r_dd
           else
-            type *,'Determinant =  0 in Subroutine matinvrt'
+            print *,'Determinant =  0 in Subroutine matinvrt'
             r_b(1,1)=1.
             r_b(1,2)=0.
             r_b(1,3)=0.
@@ -2522,9 +2522,9 @@ c
 
               else
 
-c                type *,'r_c = 0',(v_pln(1,1)-v_pln(1,2)),(v_pln(2,3)-v_pln(2,2)) , 
+c                print *,'r_c = 0',(v_pln(1,1)-v_pln(1,2)),(v_pln(2,3)-v_pln(2,2)) , 
 c     &              (v_pln(2,1)-v_pln(2,2)),(v_pln(1,3)-v_pln(1,2))
-c                type *,'       ',v_pln(1,1),v_pln(1,2),v_pln(2,3),v_pln(2,2),v_pln(2,1),v_pln(1,3)
+c                print *,'       ',v_pln(1,1),v_pln(1,2),v_pln(2,3),v_pln(2,2),v_pln(2,1),v_pln(1,3)
 
               endif
 
@@ -3940,7 +3940,7 @@ c
           i_mssize = 0
 
           open(unit=18,file=a_magfile,status='old',form='unformatted',
-     &        access='direct',recl=50,readonly)
+     &        access='direct',recl=50)
 
           do i=1,20
             read(18,rec=i,err=901) a_string(i)
@@ -4016,7 +4016,7 @@ c
           i_doff(2) = 0
 
           open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &        access='direct',recl=50,readonly)
+     &        access='direct',recl=50)
 
           do i=1,20
             read(18,rec=i,err=901) a_string(i)
@@ -4028,22 +4028,22 @@ c
               write(6,*) 'Reading airsar elevation header     ',i_dbsize
             else if (index(a_string(i),'NUMBER OF HEADER RECORDS =') .gt. 0) then
               read(a_string(i)(35:),*) i_doff(1)
-c              type *,'i_doff=',i_doff
+c              print *,'i_doff=',i_doff
             else if (index(a_string(i),'NUMBER OF SAMPLES PER RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_dssize
-c              type *,'i_dssize=',i_dssize
+c              print *,'i_dssize=',i_dssize
             else if (index(a_string(i),'NUMBER OF LINES IN IMAGE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dlsize
-c              type *,'i_dlsize=',i_dlsize
+c              print *,'i_dlsize=',i_dlsize
             else if (index(a_string(i),'NUMBER OF BYTES PER SAMPLE =') .gt. 0) then
               read(a_string(i)(35:),*) i_dbytes
-c              type *,'i_dbytes=',i_dbytes
+c              print *,'i_dbytes=',i_dbytes
             else if (index(a_string(i),'BYTE OFFSET OF FIRST DATA RECORD =') .gt. 0) then
               read(a_string(i)(35:),*) i_boff
-c              type *,'i_boff=',i_boff
+c              print *,'i_boff=',i_boff
             else if (index(a_string(i),'BYTE OFFSET OF DEM HEADER =') .gt. 0) then
               read(a_string(i)(35:),*) i_demoff
-c              type *,'i_demoff=',i_demoff
+c              print *,'i_demoff=',i_demoff
             endif
           enddo
 901       close(18)
@@ -4052,7 +4052,7 @@ c              type *,'i_demoff=',i_demoff
           if (i_dbsize .gt. 0) then
 
             open(unit=18,file=a_demfile,status='old',form='unformatted',
-     &          access='direct',recl=i_dbsize,readonly)
+     &          access='direct',recl=i_dbsize)
 
             do i=1,(1100-1)/i_dbsize + 1
               read(18,rec=i+(i_demoff/i_dbsize),err=902) (b_string(j),j=1+(i-1)*i_dbsize,min(i*i_dbsize,5000))
@@ -4063,38 +4063,38 @@ c              type *,'i_demoff=',i_demoff
                 ! do nothing
               else if (index(a_string(i),'X-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(1)
-c                type *,'x spacing=',r_spc(1)
+c                print *,'x spacing=',r_spc(1)
               else if (index(a_string(i),'Y-DIRECTION POST SPACING (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_spc(2)
-c                type *,'y spacing=',r_spc(2)
+c                print *,'y spacing=',r_spc(2)
               else if (index(a_string(i),'ELEVATION INCREMENT (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dmul
               else if (index(a_string(i),'ELEVATION OFFSET (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,iostat=i_err) r_dadd
               else if (index(a_string(i),'LATITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(1)
-c                type *,'lat=',r_peg(1)
+c                print *,'lat=',r_peg(1)
                 r_peg(1) = r_peg(1) / r_rtod
               else if (index(a_string(i),'LONGITUDE OF PEG POINT =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(2)
-c                type *,'lon=',r_peg(2)
+c                print *,'lon=',r_peg(2)
                 r_peg(2) = r_peg(2) / r_rtod
               else if (index(a_string(i),'HEADING AT PEG POINT (DEGREES) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_peg(3)
-c                type *,'hdg=',r_peg(3)
+c                pring *,'hdg=',r_peg(3)
                 r_peg(3) = r_peg(3) / r_rtod
               else if (index(a_string(i),'ALONG-TRACK OFFSET S0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(1)
-c                type *,'s0 =',r_str(1)
+c                print *,'s0 =',r_str(1)
               else if (index(a_string(i),'ORIGIN OF AZIMUTH (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(1)
-c                type *,'s0 =',r_str(1)
+c                print *,'s0 =',r_str(1)
               else if (index(a_string(i),'CROSS-TRACK OFFSET C0 (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(2)
-c                type *,'c0 =',r_str(2)
+c                print *,'c0 =',r_str(2)
               else if (index(a_string(i),'ORIGIN OF RANGE (M) =') .gt. 0) then
                 read(a_string(i)(35:),*,err=990) r_str(2)
-c                type *,'c0 =',r_str(2)
+c                print *,'c0 =',r_str(2)
               endif
               if (1.eq.2) then
                 write(6,*) ' '
