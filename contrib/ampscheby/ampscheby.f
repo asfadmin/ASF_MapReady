@@ -35,7 +35,7 @@ c     OUTPUT VARIABLES:
 c     LOCAL VARIABLES:
       character*100 a_data,a_out,a_corr,a_string
       real*4 r_val,r_xmax,r_xmin,r_cfit(75),r_j,r_data(2*4000), r_cnt(4000)
-      integer i_samples,i_deg,i,j,i_ss,i_es,i_sl,i_el,i_sl,i_skl,iargc
+      integer i_samples,i_deg,i,j,i_ss,i_es,i_sl,i_el,i_skl,iargc
 
 
 c     COMMON BLOCKS:
@@ -143,7 +143,7 @@ c     read in data a do chebyshev fit to data
       i_npts = i_es - i_ss + 1
       r_xmin = .9999 
       r_xmax = i_samples
-      call chebft(r_xmin,r_xmax,r_cfit,i_deg,func)
+      call chebft(r_xmin,r_xmax,r_cfit,i_deg)
       
       do i=i_ss,i_es            ! 1,i_npts
          r_val =  chebev(r_xmin,r_xmax,r_cfit,i_deg,r_xch(i))
