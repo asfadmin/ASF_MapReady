@@ -2,6 +2,8 @@
 #       multimosaic
 #	multiaffine3d
 
+BINDIR = ../bin
+
 FC     = g77
 OPTFLAG = -O2
 FFLAGS = $(OPTFLAG) -ffixed-line-length-132
@@ -22,9 +24,15 @@ all: multimosaic multiaffine3d clean
 
 multimosaic: $(MOSAIC_OBJS)
 	$(FC) $(FFLAGS) -o multimosaic $(MOSAIC_OBJS)
+	cp -p multimosaic$(BIN_POSTFIX) $(BINDIR)
+	@echo "XXXXXXXX  Mutlimosaic Built!  XXXXXXXX"
+	@echo ""
 
 multiaffine3d: $(AFFINE_OBJS)
 	$(FC) $(FFLAGS) -o multiaffine3d $(AFFINE_OBJS)
+	cp -p multiaffine3d$(BIN_POSTFIX) $(BINDIR)
+	@echo "XXXXXXXX  Mutliaffine3d Built!  XXXXXXXX"
+	@echo ""
 	
 clean:
 	rm -f *.o
