@@ -23,7 +23,7 @@ c**
 c**   FUNCTIONAL DESCRIPTION: This program will compute statics and a 
 c**   linear fit of offset data and then cull points based on thresholds
 c**   for the SNR, match covariances, or residuals from fits.
-c**
+c** 
 c**   ROUTINES CALLED: svdvecfit,QRdecomp
 c**   
 c**   NOTES: none
