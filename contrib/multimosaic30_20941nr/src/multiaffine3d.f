@@ -272,7 +272,7 @@ c
 c     Enter fit restrictions
 c     
       write (6,*) 'Reading command file: ',a_cmdfile(1:max(1,length(a_cmdfile)))
-      open(unit=21,file=a_cmdfile,form='formatted',status='old',readonly,err=910)
+      open(unit=21,file=a_cmdfile,form='formatted',status='old',err=910)
 
       read(21,*,err=911) i_mfc
       if (i_mfc .gt. I_MFE) stop 'Error - Number of affine transforms exeeds I_MFE'
@@ -1307,7 +1307,7 @@ c
          r_b(3,2)=(a12*a31-a11*a32)/r_dd
          r_b(3,3)=(a11*a22-a12*a21)/r_dd
       else
-         type *,'Determinant =  0 in Subroutine matinvrt'
+         print *,'Determinant =  0 in Subroutine matinvrt'
          r_b(1,1)=1.
          r_b(1,2)=0.
          r_b(1,3)=0.
@@ -2286,7 +2286,7 @@ c     type*, 'r_chisq = ',i,j,r_chisq(j,i),r_vobs(j,i)
          enddo                  !i_pts loop for chisq
 
          r_chisq(1,0) = sqrt(r_chisq(1,0)/(2.*i_mp))
-         type*, 'r_chisq = ',r_chisq(1,0),sqrt(r_chird(1)/i_mp),sqrt(r_chird(2)/i_mp)
+         print *, 'r_chisq = ',r_chisq(1,0),sqrt(r_chird(1)/i_mp),sqrt(r_chird(2)/i_mp)
 
       endif
       
