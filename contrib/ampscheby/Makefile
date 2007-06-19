@@ -1,37 +1,14 @@
+# Makefile for ampescheby
 
-include ../../make_support/system_rules
+FC     = g77
+FFLAGS = -O2 -ffixed-line-length-132
 
-INCDIR  = /usr/Motif-2.1/include/
-LIBS    =
+FOBJECTS = ampscheby.o
 
-# 
-# For SGI
-# 
-#FC     = /usr/bin/f77
-#FFLAGS = -O2 -DSGI -bytereclen -extend_source -OPT:Olimit=2500 -I$(INCDIR) 
-#LC     = /usr/bin/f77  
-#LFLAGS = $(LIBS)
+all: ampscheby clean
 
-#
-# For Sun
-#
-FC     = f77
-FFLAGS = -O2
-LC     = f77
-LFLAGS = $(LIBS)
-
-FSOURCES = ampscheby.f
-FOBJECTS = $(patsubst %.f, %.o, $(FSOURCES))
-
-BINLIST	= $(BINDIR)/ampscheby
-
-# Build into place.  Rebuilds on changes to Makefile.
-$(BINLIST): $(FOBJECTS) Makefile
-	$(LC) -o $@ $(FOBJECTS) $(LFLAGS)
-
-# Compile fortran code.
-%.o: %.f
-	$(FC) $(FFLAGS) -c $<
+ampscheby: $(FOBJECTS)
+	$(FC) $(FFLAGS) -o ampscheby $(FOBJECTS)
 
 clean:
-	rm *.o
+	rm -f *.o
