@@ -23,8 +23,8 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
 void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
-		 char *inMetaName, char *lutName, char *outBaseName,
-		 radiometry_t radiometry, int db_flag, int import_single_band)
+     char *inMetaName, char *lutName, char *outBaseName,
+     radiometry_t radiometry, int db_flag, int import_single_band)
 {
   char outDataName[256], outMetaName[256];              /* Output file names */
   int nl=MAGIC_UNSET_INT, ns=MAGIC_UNSET_INT;     /* Number of lines/samples */
@@ -70,7 +70,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     int trash;
     bin_state *s;  /* Structure with info about the satellite & its raw data */
     readPulseFunc readNextPulse; /* Pointer to function that reads the next line
-				    of CEOS Data */
+            of CEOS Data */
     iqType *iqBuf;           /* Buffer containing the complex i & q channels */
 
     /* Die if the sprocket flag is specified, since it doesn't do lvl 0 */
@@ -200,7 +200,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     rightFill = image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - (ns + leftFill + rightFill)
-		     * image_fdr.bytgroup);
+         * image_fdr.bytgroup);
     /*
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - ns * image_fdr.bytgroup);
@@ -285,7 +285,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     rightFill = image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - (ns + leftFill + rightFill)
-		     * image_fdr.bytgroup);
+         * image_fdr.bytgroup);
     /*
     headerBytes = firstRecordLen(inDataName)
                   + (image_fdr.reclen - ns * image_fdr.bytgroup);
@@ -318,17 +318,17 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
     strcat(outDataName,TOOLS_IMAGE_EXT);
 
-    if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
-	radiometry == r_BETA) {
+    if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+  radiometry == r_BETA) {
       if (meta->optical) {
-	asfPrintWarning("Cannot apply SIGMA, GAMMA or BETA radiometry "
-			"to optical data.\n"
-			"Set radiometry to the default amplitude\n");
-	radiometry = r_AMP;
+  asfPrintWarning("Cannot apply SIGMA, GAMMA or BETA radiometry "
+      "to optical data.\n"
+      "Set radiometry to the default amplitude\n");
+  radiometry = r_AMP;
       }
       else if (check_cal(inMetaName)==0)
-	  asfPrintError("Unable to find calibration parameters "
-			"in the metadata.\n");
+    asfPrintError("Unable to find calibration parameters "
+      "in the metadata.\n");
     }
 
     /* FIXME! Temporary warning about unsupported ALOS radiometries */
@@ -352,8 +352,8 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
     if (meta->projection!=NULL && meta->projection->type!=MAGIC_UNSET_CHAR) {
       /* This must be ScanSAR */
       if (meta->projection->type != SCANSAR_PROJECTION &&
-	  strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
-	  strncmp(meta->general->processor, "ASF", 4) == 0) {
+    strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
+    strncmp(meta->general->processor, "ASF", 4) == 0) {
         /* This is actually geocoded.  We don't trust any
            already-geocoded products other than polar stereo in the
            northern hemisphere (because of the RGPS Ice tracking
@@ -372,44 +372,44 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else if (strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
-	       strncmp(meta->general->processor, "CDPF", 4) == 0) {
-	// This is geocoded data from MDA
+         strncmp(meta->general->processor, "CDPF", 4) == 0) {
+  // This is geocoded data from MDA
         sprintf(logbuf,
                 "   Input data type: level two data\n"
                 "   Output data type: geocoded amplitude image\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
-	       strcmp(meta->general->mode, "1B2R") == 0) {
-	sprintf(logbuf,
-		"   Input data type: level two data\n"
-		"   Output data type: georeferenced amplitude image\n");
+         strcmp(meta->general->mode, "1B2R") == 0) {
+  sprintf(logbuf,
+    "   Input data type: level two data\n"
+    "   Output data type: georeferenced amplitude image\n");
         meta->general->image_data_type = GEOREFERENCED_IMAGE;
       }
       else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
-	       strcmp(meta->general->mode, "1B2G") == 0) {
-	sprintf(logbuf,
-		"   Input data type: level two data\n"
-		"   Output data type: geocoded amplitude image\n");
+         strcmp(meta->general->mode, "1B2G") == 0) {
+  sprintf(logbuf,
+    "   Input data type: level two data\n"
+    "   Output data type: geocoded amplitude image\n");
         meta->general->image_data_type = GEOCODED_IMAGE;
       }
       else if (radiometry == r_SIGMA) {
-	sprintf(logbuf,
-		"   Input data type: level one data\n"
-		"   Output data type: calibrated image (sigma power scale values)\n");
-	meta->general->image_data_type = SIGMA_IMAGE;
+  sprintf(logbuf,
+    "   Input data type: level one data\n"
+    "   Output data type: calibrated image (sigma power scale values)\n");
+  meta->general->image_data_type = SIGMA_IMAGE;
       }
       else if (radiometry == r_GAMMA) {
-	sprintf(logbuf,
-		"   Input data type: level one data\n"
-		"   Output data type: calibrated image (gamma power scale values)\n");
-	meta->general->image_data_type = GAMMA_IMAGE;
+  sprintf(logbuf,
+    "   Input data type: level one data\n"
+    "   Output data type: calibrated image (gamma power scale values)\n");
+  meta->general->image_data_type = GAMMA_IMAGE;
       }
       else if (radiometry == r_BETA) {
-	sprintf(logbuf,
-		"   Input data type: level one data\n"
-		"   Output data type: calibrated image (beta power scale values)\n");
-	meta->general->image_data_type = BETA_IMAGE;
+  sprintf(logbuf,
+    "   Input data type: level one data\n"
+    "   Output data type: calibrated image (beta power scale values)\n");
+  meta->general->image_data_type = BETA_IMAGE;
       }
       else {
         sprintf(logbuf,
@@ -483,12 +483,23 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
     /* Check size of the header */
     //get_ifiledr(inDataName,&image_fdr);
-    get_ifiledr(inMetaName,&image_fdr);
-    leftFill = image_fdr.lbrdrpxl;
-    rightFill = image_fdr.rbrdrpxl;
+    if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
+      get_ALOS_optical_ifiledr(inMetaName, &image_fdr);
+    }
+    else {
+      get_ifiledr(inMetaName,&image_fdr);
+    }
+    if (strncmp(meta->general->sensor, "ALOS", 4) == 0 && meta->optical) {
+      leftFill = image_fdr.predata+image_fdr.lbrdrpxl + 1;
+      rightFill = image_fdr.sufdata+image_fdr.rbrdrpxl + 1;
+    }
+    else {
+      leftFill = image_fdr.lbrdrpxl;
+      rightFill = image_fdr.rbrdrpxl;
+    }
     headerBytes = firstRecordLen(inDataName)
-                  + (image_fdr.reclen - (ns + leftFill + rightFill)
-		     * image_fdr.bytgroup);
+        + (image_fdr.reclen - (ns + leftFill + rightFill)
+         * image_fdr.bytgroup);
 
     /* Allocate memory for 16 bit amplitude data */
     if (meta->general->data_type==INTEGER16) { /* 16 bit amplitude data */
@@ -724,23 +735,23 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
 
           for (kk=0; kk<ns; kk++) {
             if (short_buf[kk]) {
-	      /*Interpolate noise table to find this pixel's noise.*/
-	      double index=(float)kk/tablePix;
-	      int    base=(int)index;
-	      double frac=index-base;
-	      double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
-	      double incid=1.0;
-	      if (cal_param->output_type==gamma_naught)
-		incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
-	      if (cal_param->output_type==beta_naught)
-		incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
-	      if (db_flag) {
-		out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
-	      }
-	      else {
-		out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
-	      }
-	    }
+        /*Interpolate noise table to find this pixel's noise.*/
+        double index=(float)kk/tablePix;
+        int    base=(int)index;
+        double frac=index-base;
+        double noise=noise_table[base]+frac*(noise_table[base+1]-noise_table[base]);
+        double incid=1.0;
+        if (cal_param->output_type==gamma_naught)
+    incid=incid_cos[base]+frac*(incid_cos[base+1]-incid_cos[base]);
+        if (cal_param->output_type==beta_naught)
+    incid=incid_sin[base]+frac*(incid_sin[base+1]-incid_sin[base]);
+        if (db_flag) {
+    out_buf[kk]=get_cal_dn_in_db(cal_param,noise,incid,(int)short_buf[kk]);
+        }
+        else {
+    out_buf[kk]=get_cal_dn(cal_param,noise,incid,(int)short_buf[kk]);
+        }
+      }
             else
               out_buf[kk]= 0.0;
           }
@@ -833,10 +844,15 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
         FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
 
         for (kk=0; kk<ns; kk++) {
-          if (radiometry==r_POWER)
+          if (radiometry==r_POWER) {
             out_buf[kk]=(float)(byte_buf[kk]*byte_buf[kk]);
-          else
+          }
+          else if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
+            out_buf[kk]=(float)byte_buf[kk+image_fdr.predata];
+          }
+          else {
             out_buf[kk]=(float)byte_buf[kk];
+          }
         }
 
         put_float_line(fpOut, meta, ii, out_buf);
@@ -865,7 +881,7 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
   strcpy(meta->general->basename, inDataName);
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   if (nBands == 1 && meta->sar)
-	  strcpy(meta->general->bands, meta->sar->polarization);
+    strcpy(meta->general->bands, meta->sar->polarization);
   meta_write(meta,outMetaName);
   //}
 

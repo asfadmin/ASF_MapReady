@@ -105,16 +105,20 @@ void calc_tiff_stats_2files(char *inFile1, char *inFile2,
 void print_stats_results(char *filename1, char *filename2,
                          stats_t *s1, stats_t *s2,
                          double psnr);
+void diff_check(char *outputFile, char *inFile1, char *inFile2,
+                stats_t *stats1, stats_t *stats2, double psnr);
 
 int main(int argc, char **argv)
 {
   char *inFile1,*inFile2;
+  char outputFile[1024];
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
   FILE *fError;                 /* Error log, stderr or log file */
-  extern int logflag,quietflag;
+  extern int logflag, quietflag;
+  int outputflag;
   char msg[1024];
   char type_str[255];
   stats_t inFile1_stats, inFile2_stats;
@@ -126,7 +130,8 @@ int main(int argc, char **argv)
 
   /* process command line */
   /* q has a : because we want to have it be -quiet (: = uiet) */
-  while ((c=getopt(argc,argv,"l:q:")) != EOF)
+  asfSplashScreen(argc, argv);
+  while ((c=getopt(argc,argv,"o:l:")) != EOF)
   {
     switch (c) {
       case 'l':/* -log <filename>, get logfile; this is sorta hacked */
@@ -139,14 +144,23 @@ int main(int argc, char **argv)
           usage(argv[0]);
         }
         break;
-      case 'q':/* -quiet flag; this is also hacked */
-        if (0==strncmp(optarg,"uiet",4)) {
-          quietflag=1;
+      case 'o':/* -output <filename>, get output filename ...empty if no differences */
+        if (0==strncmp(optarg,"utput",5)) {
+          sscanf(argv[optind++], "%s", outputFile);
+          outputflag=1;
         }
         else {
           usage(argv[0]);
         }
         break;
+    //case 'q':/* -quiet flag; this is also hacked */
+      //if (0==strncmp(optarg,"uiet",4)) {
+      //  quietflag=1;
+      //}
+      //else {
+      //  usage(argv[0]);
+      //}
+      //break;
       default:
         if (fLog) {
           FCLOSE(fLog);
@@ -244,15 +258,24 @@ int main(int argc, char **argv)
   switch (type1) {
     case ASF_IMG:
       {
-      int band_count1, band_count2;
-      asfPrintStatus("\nCalculating Statistics...\n\n");
-      calc_asf_img_stats_2files(inFile1, inFile2,
-                                &inFile1_stats, &inFile2_stats,
-                                &band_count1, &band_count2, &psnr);
-      asfPrintStatus("\nStatistics Results...\n");
-      print_stats_results(inFile1, inFile2,
-                          &inFile1_stats, &inFile2_stats,
-                          psnr);
+        int band_count1, band_count2;
+        asfPrintStatus("\nCalculating Statistics...\n\n");
+        calc_asf_img_stats_2files(inFile1, inFile2,
+                                  &inFile1_stats, &inFile2_stats,
+                                  &band_count1, &band_count2, &psnr);
+//        asfPrintStatus("\nStatistics Results...\n");
+//        print_stats_results(inFile1, inFile2,
+//                            &inFile1_stats, &inFile2_stats,
+//                            psnr);
+        if (outputflag) {
+          diff_check(outputFile,
+                     inFile1, inFile2, &inFile1_stats, &inFile2_stats, psnr);
+        }
+        else {
+          // Shouldn't be here...
+          asfPrintError("Missing output file name ...no place to store file differences!\n");
+          usage(argv[0]);
+        }
       }
       break;
     case JPEG:
@@ -283,24 +306,36 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-         "   %s [-log <file>] [-quiet] <img1.ext> <img2.ext>\n"
+         "   %s <-output <diff_output_file>> [-log <file>] <img1.ext> <img2.ext>\n"
          "\nOPTIONS:\n"
-         "   -log <file>:  allows the output to be written to a log file\n"
-         "                 in addition to stdout.\n"
-         "   -quiet:       suppresses the output to stdout\n"
-         "\nINPUTS:\n"
-         "   <img1.ext>:  any supported single-banded graphics file image.\n"
-         "                supported types include TIFF, GEOTIFF, PGM, PPM,\n"
-         "                JPEG, and ASF IMG.\n"
-         "   <img2.ext>:  an image to line up with the first.\n"
-         "                image 2 should be the same graphics file type and not\n"
-         "                be bigger than image 1\n"
-         "\nDESCRIPTION:\n"
-         "   diffimage lines up two images, to slightly better the\n"
-         "   single-pixel precision.  It will work with images of any\n"
-         "   size, but is most efficient when the image dimensions are\n"
-         "   near a power of 2.  The images need not be square.\n"
-         "\nVersion %.2f, Alaska Satellite Facility Tools\n\n",name,VERSION);
+      "   -output <diff_output_file>:  output to write image differencing\n"
+      "                 results to (required.)\n"
+      "   -log <file>:  allows the output to be written to a log file\n"
+      "                 in addition to stdout (not required but strongly suggested.)\n"
+      "\nINPUTS:\n"
+      "   <img1.ext>:  any supported single-banded graphics file image.\n"
+      "                supported types include TIFF, GEOTIFF, PGM, PPM,\n"
+      "                JPEG, and ASF IMG.  File extension is REQUIRED.\n"
+      "   <img2.ext>:  an image to line up with the first.\n"
+      "                image 2 should be the same graphics file type and not\n"
+      "                be bigger than image 1.  File extension is REQUIRED.\n"
+      "\nDESCRIPTION:\n"
+      "   1. diffimage calculates image statistics within each input image\n"
+      "   and calculates the peak signal-to-noise (PSNR) between the two\n"
+      "   images.\n"
+      "   2. diffimage then lines up the two images, to slightly better\n"
+      "   than single-pixel precision, and determines if any geolocation\n"
+      "   shift has occurred between the two and the size of the shift.\n"
+      "   Because an fft-based match is utilized it will work with images of\n"
+      "   any size, but is most efficient when the image dimensions are\n"
+      "   near a power of 2.  The images need not be square.\n"
+      "   3. diffimage then compares image statistics and geolocation shift\n"
+      "   (if it occurred) and determines if the two images are different from\n"
+      "   each other or not.\n"
+      "   4. If there are no differences, the output file will exist but will be\n"
+      "   of zero length.  Otherwise, a summary of the differences will be placed\n"
+      "   in both the output file and the log file (if specified.)\n"
+      "\nVersion %.2f, Alaska Satellite Facility Tools\n\n",name,VERSION);
   exit(1);
 }
 
@@ -738,5 +773,86 @@ void print_stats_results(char *filename1, char *filename2,
   asfPrintStatus("\nPSNR between files: %f\n\n", psnr);
 }
 
+void diff_check(char *outputFile, char *inFile1, char *inFile2,
+                stats_t *stats1, stats_t *stats2, double psnr)
+{
+  FILE *outputFP = NULL;
+
+  outputFP = fopen(outputFile, "w");
+
+  // Compare statistics
+  double baseline_range = fabs(stats1->sdev) * 6.0; // Assume 6-sigma range (99.999999%) is full range of data
+  double min_tol = (MIN_DIFF_TOL/100.0)*baseline_range;
+  double max_tol = (MAX_DIFF_TOL/100.0)*baseline_range;
+  double mean_tol = (MEAN_DIFF_TOL/100.0)*baseline_range;
+  double sdev_tol = (SDEV_DIFF_TOL/100.0)*baseline_range;
+//  double rmse_tol = (RMSE_DIFF_TOL/100.0)*stats1->rmse;
+  double psnr_tol = PSNR_TOL;
+
+  double min_diff = fabs(stats2->min - stats1->min);
+  double max_diff = fabs(stats2->max - stats1->max);
+  double mean_diff = fabs(stats2->mean - stats1->mean);
+  double sdev_diff = fabs(6.0*stats2->sdev - 6.0*stats1->sdev);
+//  double rmse_diff = fabs(stats2->rmse - stats1->rmse);
+
+  if ((stats1->stats_good && stats2->stats_good) &&
+      (min_diff > min_tol ||
+      max_diff > max_tol ||
+      mean_diff > mean_tol ||
+      sdev_diff > sdev_tol ||
+//      rmse_diff > rmse_tol ||
+       psnr > psnr_tol))
+  {
+    fprintf(outputFP, "\n-----------------------------------------------\n");
+    asfPrintStatus("\n-----------------------------------------------\n");
+
+    char msg[1024];
+    sprintf(msg, "FAIL: Comparing %s to %s resulted in differences found:\n\n",
+            inFile2, inFile1);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+    sprintf(msg, "[%s] [MIN]   Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
+            min_diff > min_tol ? "FAIL" : "PASS",
+            stats1->min, stats2->min, min_tol, MIN_DIFF_TOL);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+    sprintf(msg, "[%s] [MAX]   Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
+            max_diff > max_tol ? "FAIL" : "PASS",
+            stats1->max, stats2->max, max_tol, MAX_DIFF_TOL);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+    sprintf(msg, "[%s] [MEAN]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
+            mean_diff > mean_tol ? "FAIL" : "PASS",
+            stats1->mean, stats2->mean, mean_tol, MEAN_DIFF_TOL);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+    sprintf(msg, "[%s] [SDEV]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
+            sdev_diff > sdev_tol ? "FAIL" : "PASS",
+            stats1->sdev, stats2->sdev, sdev_tol, SDEV_DIFF_TOL);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+//    sprintf(msg, "[%s] [RMSE]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
+//            rmse_diff > rmse_tol ? "FAIL" : "PASS",
+//            stats1->rmse, stats2->rmse, rmse_tol, RMSE_DIFF_TOL);
+//    fprintf(outputFP, msg);
+//    asfPrintStatus(msg);
+
+    sprintf(msg, "[%s] [PSNR]      PSNR: %11f,                       PSNR Tolerance: %11f\n",
+            psnr > psnr_tol ? "FAIL" : "PASS",
+            psnr, psnr_tol);
+    fprintf(outputFP, msg);
+    asfPrintStatus(msg);
+
+    fprintf(outputFP, "-----------------------------------------------\n\n");
+    asfPrintStatus("-----------------------------------------------\n\n");
+  }
+
+  FCLOSE(outputFP);
+}
 
 

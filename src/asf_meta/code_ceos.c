@@ -68,8 +68,8 @@ void right_justify(char buf[], int len)
 void flt2asc(double *in,unsigned char *outBuf,int len,codingDir dir)
 {
   int i;
-  char	cmp[255],
-	tmp[255]= /*250 spaces follow.*/
+  char  cmp[255],
+  tmp[255]= /*250 spaces follow.*/
 "                                                  \
                                                   \
                                                   \
@@ -91,17 +91,17 @@ void flt2asc(double *in,unsigned char *outBuf,int len,codingDir dir)
       strncpy(tmp,(char *)outBuf,len);
       tmp[len]=0;/* add terminating null.*/
       if (0==strncmp(tmp,cmp,len))
-	*in=0.0;
+  *in=0.0;
       else
-	sscanf(tmp,"%lG",in);
+  sscanf(tmp,"%lG",in);
   }
 }
 
 void long2asc(int *in,unsigned char *outBuf,int len,codingDir dir)
 {
   int i;
-  char	cmp[255],
-	tmp[255]= /*250 spaces follow.*/
+  char  cmp[255],
+  tmp[255]= /*250 spaces follow.*/
 "                                                  \
                                                   \
                                                   \
@@ -118,9 +118,9 @@ void long2asc(int *in,unsigned char *outBuf,int len,codingDir dir)
       strncpy(tmp,(char *)outBuf,len);
       tmp[len]=0;/* add terminating null.*/
       if (0==strncmp(tmp,cmp,len))
-	*in=0;
+  *in=0;
       else
-	sscanf(tmp,"%d",in);
+  sscanf(tmp,"%d",in);
   }
 }
 
@@ -184,17 +184,17 @@ DESCRIPTION:
   These procedures convert ASF metadata structures to and from their
   ASCII form.  See ceos.h for info on the structures.
   To convert an ASCII buffer read in from a .ldr,.trl, or .L file, call
- 	Code_###(bf,ceosStructure [,era] ,fromASCII);
+  Code_###(bf,ceosStructure [,era] ,fromASCII);
   To convert that structure back into ASCII, call
-	Code_###(bf,ceosStructure [,era] ,toASCII);
+  Code_###(bf,ceosStructure [,era] ,toASCII);
 
 PROGRAM HISTORY:
 VERSION         DATE   AUTHOR
 -------         ----   ------
   1.0           2/97   O. Lawlor (ASF)  converted from various
-					(one-way) utility procedures
-  2.0		2/98   T. Logan (ASF)   added all record types, debugged each
-  2.1		3/98   O. Lawlor (ASF)  Debugged Tom's debugging.
+          (one-way) utility procedures
+  2.0   2/98   T. Logan (ASF)   added all record types, debugged each
+  2.1   3/98   O. Lawlor (ASF)  Debugged Tom's debugging.
 *********************************************************************/
 
 void Code_FDR_common(unsigned char *bf, struct FDR* q,codingDir dir)
@@ -280,264 +280,311 @@ void Code_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir)
     intV(maxidata,off,8);
     /* ignore variable length spare bytes: byte 448 to ? */
 }
+
+void Code_ALOS_optical_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir)
+{
+  int off;
+  bf+=12;/*Skip CEOS Header. (OSL 10/3/98)*/
+  Code_FDR_common(bf, (struct FDR*)q, dir);
+  off = 168;
+  intV(numofrec,off,6);
+  intV(reclen,off,6);
+  strV(spare4,off,24);
+  intV(bitssamp,off,4);
+  intV(sampdata,off,4);
+  intV(bytgroup,off,4);
+  strV(justific,off,4);
+  intV(sarchan,off,4);
+  intV(linedata,off,8);
+  intV(lbrdrpxl,off,4);
+  intV(datgroup,off,8);
+  intV(rbrdrpxl,off,4);
+  intV(topbrdr,off,4);
+  intV(botbrdr,off,4);
+  strV(interlv,off,4);
+  intV(recline,off,4); //was intV(recline,off,2) for non-ALOS optical
+  intV(mrecline,off,4);//was intV(mrecline,off,2) for non-ALOS optical
+  intV(predata,off,4);
+  intV(sardata,off,8);
+  intV(sufdata,off,4);
+  strV(repflag,off,4);
+  strV(lin_loc,off,8);
+  strV(chn_loc,off,8);
+  strV(time_loc,off,8);
+  strV(left_loc,off,8);
+  strV(right_loc,off,8);
+  strV(pad_ind,off,4);
+  strV(spare6,off,28);
+  strV(qual_loc,off,8);
+  strV(cali_loc,off,8);
+  strV(gain_loc,off,8);
+  strV(bais_loc,off,8);
+  strV(formatid,off,28);
+  strV(formcode,off,4);
+  intV(leftfill,off,4);
+  intV(rigtfill,off,4);
+  intV(maxidata,off,8);
+  /* ignore variable length spare bytes: byte 448 to ? */
+}
+
 void Code_MPDR(unsigned char *bf, struct VMPDREC *q,codingDir dir)
 {
-	int off=12+16;
-	strV(mpdesc,off,32);
-	longV(npixels,off,16);
-	longV(nlines,off,16);
-	fltV(nomipd,off,16);
-	fltV(nomild,off,16);
-	fltV(orient,off,16);
-	fltV(orbitincl,off,16);
-	fltV(ascnode,off,16);
-	fltV(distplat,off,16);
-	fltV(altplat,off,16);
-	fltV(velnadir,off,16);
-	fltV(plathead,off,16);
+  int off=12+16;
+  strV(mpdesc,off,32);
+  longV(npixels,off,16);
+  longV(nlines,off,16);
+  fltV(nomipd,off,16);
+  fltV(nomild,off,16);
+  fltV(orient,off,16);
+  fltV(orbitincl,off,16);
+  fltV(ascnode,off,16);
+  fltV(distplat,off,16);
+  fltV(altplat,off,16);
+  fltV(velnadir,off,16);
+  fltV(plathead,off,16);
 
-	strV(refelip,off,32);
-	fltV(remajor,off,16);
-	fltV(reminor,off,16);
-	fltV(datshiftx,off,16);
-	fltV(datshifty,off,16);
-	fltV(datshiftz,off,16);
-	fltV(datshift1,off,16);
-	fltV(datshift2,off,16);
-	fltV(datshift3,off,16);
-	fltV(rescale,off,16);
+  strV(refelip,off,32);
+  fltV(remajor,off,16);
+  fltV(reminor,off,16);
+  fltV(datshiftx,off,16);
+  fltV(datshifty,off,16);
+  fltV(datshiftz,off,16);
+  fltV(datshift1,off,16);
+  fltV(datshift2,off,16);
+  fltV(datshift3,off,16);
+  fltV(rescale,off,16);
 
-	strV(mpdesig,off,32);
-	strV(utmdesc,off,32);
-	strV(utmzone,off,4);
-	fltV(utmeast,off,16);
-	fltV(utmnorth,off,16);
-	fltV(utmlong,off,16);
-	fltV(utmlat,off,16);
-	fltV(utmpara1,off,16);
-	fltV(utmpara2,off,16);
-	fltV(utmscale,off,16);
+  strV(mpdesig,off,32);
+  strV(utmdesc,off,32);
+  strV(utmzone,off,4);
+  fltV(utmeast,off,16);
+  fltV(utmnorth,off,16);
+  fltV(utmlong,off,16);
+  fltV(utmlat,off,16);
+  fltV(utmpara1,off,16);
+  fltV(utmpara2,off,16);
+  fltV(utmscale,off,16);
 
-	strV(upsdesc,off,32);
-	fltV(upslong,off,16);
-	fltV(upslat,off,16);
-	fltV(upsscale,off,16);
+  strV(upsdesc,off,32);
+  fltV(upslong,off,16);
+  fltV(upslat,off,16);
+  fltV(upsscale,off,16);
 
-	strV(nspdesc,off,32);
+  strV(nspdesc,off,32);
 
-	fltV(nspeast,off,16);
-	fltV(nspnorth,off,16);
-	fltV(nsplong,off,16);
-	fltV(nsplat,off,16);
-	fltV(nsppara1,off,16);
-	fltV(nsppara2,off,16);
-	fltV(nsppara3,off,16);
-	fltV(nsppara4,off,16);
-	fltV(nspcm1,off,16);
-	fltV(nspcm2,off,16);
-	fltV(nspcm3,off,16);
+  fltV(nspeast,off,16);
+  fltV(nspnorth,off,16);
+  fltV(nsplong,off,16);
+  fltV(nsplat,off,16);
+  fltV(nsppara1,off,16);
+  fltV(nsppara2,off,16);
+  fltV(nsppara3,off,16);
+  fltV(nsppara4,off,16);
+  fltV(nspcm1,off,16);
+  fltV(nspcm2,off,16);
+  fltV(nspcm3,off,16);
 
-	off+=64;/*Spares.*/
-	fltV(tlcnorth,off,16);
-	fltV(tlceast,off,16);
-	fltV(trcnorth,off,16);
-	fltV(trceast,off,16);
-	fltV(brcnorth,off,16);
-	fltV(brceast,off,16);
-	fltV(blcnorth,off,16);
-	fltV(blceast,off,16);
-	fltV(tlclat,off,16);
-	fltV(tlclong,off,16);
-	fltV(trclat,off,16);
-	fltV(trclong,off,16);
-	fltV(brclat,off,16);
-	fltV(brclong,off,16);
-	fltV(blclat,off,16);
-	fltV(blclong,off,16);
-	fltV(tlcheight,off,16);
-	fltV(trcheight,off,16);
-	fltV(brcheight,off,16);
-	fltV(blcheight,off,16);
+  off+=64;/*Spares.*/
+  fltV(tlcnorth,off,16);
+  fltV(tlceast,off,16);
+  fltV(trcnorth,off,16);
+  fltV(trceast,off,16);
+  fltV(brcnorth,off,16);
+  fltV(brceast,off,16);
+  fltV(blcnorth,off,16);
+  fltV(blceast,off,16);
+  fltV(tlclat,off,16);
+  fltV(tlclong,off,16);
+  fltV(trclat,off,16);
+  fltV(trclong,off,16);
+  fltV(brclat,off,16);
+  fltV(brclong,off,16);
+  fltV(blclat,off,16);
+  fltV(blclong,off,16);
+  fltV(tlcheight,off,16);
+  fltV(trcheight,off,16);
+  fltV(brcheight,off,16);
+  fltV(blcheight,off,16);
 
-	fltV(a11,off,20);
-	fltV(a12,off,20);
-	fltV(a13,off,20);
+  fltV(a11,off,20);
+  fltV(a12,off,20);
+  fltV(a13,off,20);
 fltV(a14,off,20);
-	fltV(a21,off,20);
-	fltV(a22,off,20);
-	fltV(a23,off,20);
-	fltV(a24,off,20);
+  fltV(a21,off,20);
+  fltV(a22,off,20);
+  fltV(a23,off,20);
+  fltV(a24,off,20);
 
-	fltV(b11,off,20);
-	fltV(b12,off,20);
-	fltV(b13,off,20);
-	fltV(b14,off,20);
-	fltV(b21,off,20);
-	fltV(b22,off,20);
-	fltV(b23,off,20);
-	fltV(b24,off,20);
+  fltV(b11,off,20);
+  fltV(b12,off,20);
+  fltV(b13,off,20);
+  fltV(b14,off,20);
+  fltV(b21,off,20);
+  fltV(b22,off,20);
+  fltV(b23,off,20);
+  fltV(b24,off,20);
 
 }
 
 void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir dir)
 {
-	int off=12;
-	shrtV(seq_num,off,4);
-	shrtV(sar_chan,16,4); strV(product_id,20,16); strV(scene_des,36,32);
-	strV(inp_sctim,68,32); strV(asc_des,100,16); fltV(pro_lat,116,16);
-	fltV(pro_long,132,16); fltV(pro_head,148,16); strV(ellip_des,164,16);
-	fltV(ellip_maj,180,16); fltV(ellip_min,196,16); fltV(earth_mass,212,16);
-	fltV(grav_const,228,16); fltV(ellip_j[0],244,16);
-	fltV(ellip_j[1],260,16); fltV(ellip_j[2],276,16);
+  int off=12;
+  shrtV(seq_num,off,4);
+  shrtV(sar_chan,16,4); strV(product_id,20,16); strV(scene_des,36,32);
+  strV(inp_sctim,68,32); strV(asc_des,100,16); fltV(pro_lat,116,16);
+  fltV(pro_long,132,16); fltV(pro_head,148,16); strV(ellip_des,164,16);
+  fltV(ellip_maj,180,16); fltV(ellip_min,196,16); fltV(earth_mass,212,16);
+  fltV(grav_const,228,16); fltV(ellip_j[0],244,16);
+  fltV(ellip_j[1],260,16); fltV(ellip_j[2],276,16);
         if (!era)
           {
-	    fltV(terrain_h ,292,16);
-	    fltV(sc_lin    ,308,16);
-	    fltV(sc_pix    ,324,16);
-	  }
-	else
-  	  {
+      fltV(terrain_h ,292,16);
+      fltV(sc_lin    ,308,16);
+      fltV(sc_pix    ,324,16);
+    }
+  else
+      {
             strV(spare1,292,16);
-	    fltV(terrain_h,308,16);
+      fltV(terrain_h,308,16);
             fltV(sc_lin,324,8);
             fltV(sc_pix,332,8);
           }
-	fltV(scene_len ,340,16); fltV(scene_wid ,356,16);
-	shrtV(nchn,388,4); strV(mission_id,396,16); strV(sensor_id,412,32);
-	strV(revolution,444,8); fltV(plat_lat,452,8); fltV(plat_long,460,8);
-	fltV(plat_head_scene,468,8); fltV(clock_ang,476,8);
-	fltV(incident_ang,484,8); fltV(frequency,492,8);
-	fltV(wave_length,500,16); strV(motion_comp,516,2);
-	strV(pulse_code,518,16);
- 	fltV(ampl_coef[0],534,16); fltV(ampl_coef[1],550,16);
-	fltV(ampl_coef[2],566,16); fltV(ampl_coef[3],582,16);
-	fltV(ampl_coef[4],598,16); fltV(phas_coef[0],614,16);
-	fltV(phas_coef[1],630,16); fltV(phas_coef[2],646,16);
-	fltV(phas_coef[3],662,16); fltV(phas_coef[4],678,16);
-	longV(chirp_ext_ind,694,8); fltV(rng_samp_rate,710,16);
-	fltV(rng_gate,726,16); fltV(rng_length,742,16);
-	strV(baseband_f,758,4); strV(rngcmp_f,762,4);
-	fltV(gn_polar,766,16); fltV(gn_cross,782,16);
-	longV(chn_bits,798,8); strV(quant_desc,806,12);
-	fltV(i_bias,818,16); fltV(q_bias,834,16);
-	fltV(iq_ratio,850,16); fltV(spare_dss_7,866,16);
-	fltV(spare_dss_8,882,16); fltV(ele_sight,898,16);
-	fltV(mech_sight,914,16); strV(echo_track,930,4);
-	fltV(prf,934,16); fltV(elev_beam,950,16);
-	fltV(azi_beam,966,16); strV(sat_bintim,982,16);
-	strV(sat_clktim,998,32); longV(sat_clkinc,1030,8);
-	strV(fac_id,1046,16); strV(sys_id,1062,8);
-	strV(ver_id,1070,8); strV(fac_code,1078,16);
-	strV(lev_code,1094,16); strV(product_type,1110,32);
-	strV(algor_id,1142,32); fltV(n_azilok,1174,16);
-	fltV(n_rnglok,1190,16); fltV(bnd_azilok,1206,16);
-	fltV(bnd_rnglok,1222,16); fltV(bnd_azi,1238,16);
-	fltV(bnd_rng,1254,16); strV(azi_weight,1270,32);
-	strV(rng_weight,1302,32); strV(data_inpsrc,1334,16);
-	fltV(rng_res,1350,16); fltV(azi_res,1366,16);
-	fltV(radi_stretch[0],1382,16); fltV(radi_stretch[1],1398,16);
-	fltV(alt_dopcen[0],1414,16); fltV(alt_dopcen[1],1430,16);
-	fltV(alt_dopcen[2],1446,16); fltV(crt_dopcen[0],1478,16);
-	fltV(crt_dopcen[1],1494,16); fltV(crt_dopcen[2],1510,16);
-	strV(time_dir_pix,1526,8); strV(time_dir_lin,1534,8);
-	fltV(alt_rate[0],1542,16); fltV(alt_rate[1],1558,16);
-	fltV(alt_rate[2],1574,16); fltV(crt_rate[0],1606,16);
-	fltV(crt_rate[1],1622,16); fltV(crt_rate[2],1638,16);
-	strV(line_cont,1670,8); strV(clutterlock_flg,1678,4);
-	strV(auto_focus,1682,4); fltV(line_spacing,1686,16);
-	fltV(pixel_spacing,1702,16); strV(rngcmp_desg,1718,16);
-	if (strncmp(q->fac_id, "ASF", 3)==0) {
-	  if (era==0) {
-	    int i;
- 	    intV(annot_pts,2006,8);
- 	    if (q->annot_pts>=64)
- 	  	  q->annot_pts=63;
-	    for (i=0,off=2022; i< q->annot_pts; i++) {
-   	      intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
-	      strV(annot_text[i],off,16);
-	    }
-	  }
-	  else {
-  	    intV(no_beams,1766,2);
-	    strV(beam1,1768,4); strV(beam2,1772,4);
-	    strV(beam3,1776,4); strV(beam4,1780,4);
-	    sngV(prf1,1784,8); sngV(prf2,1792,8);
-	    sngV(prf3,1800,8); sngV(prf4,1808,8);
-	    sngV(rng_gate1,1816,8); sngV(rng_gate2,1824,8);
-	    sngV(rng_gate3,1832,8); sngV(rng_gate4,1840,8);
-	    intV(tot_pls_burst,1848,4); intV(val_pls_burst,1852,4);
-	    intV(az_ovlp_nxt_img,1856,8); intV(rg_off_nxt_img,1864,8);
-	    strV(cal_params_file,1872,32);
-	    strV(scan_results_file,1904,32);
-	    strV(scanner_version,1936,16);
-	    strV(decode_version,1952,16);
-	  }
-	}
-	else if (strncmp(q->fac_id, "ES", 2)==0 || 
-		 strncmp(q->fac_id, "D-PAF", 5)==0 ||
-		 strncmp(q->fac_id, "I-PAF", 5)==0){
-	  int i;
-	  for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
-	  strV(az_time_first,1814,24);
-	  strV(az_time_center,1838,24);
-	  strV(az_time_last,1862,24);
-	}
-	else if (strncmp(q->mission_id, "ALOS", 4)==0) {
-	  int i;
-	  shrtV(cal_data_indicator,1766,4);
-	  intV(start_cal_up,1770,8);
-	  intV(stop_cal_up,1778,8);
-	  intV(start_cal_bottom,1786,8);
-	  intV(stop_cal_bottom,1794,8);
-	  shrtV(prf_switch,1802,4);
-	  intV(line_prf_switch,1806,8);
-	  fltV(beam_center_dir,1814,16);
-	  shrtV(yaw_steering,1830,4);
-	  shrtV(param_table,1834,4);
-	  fltV(off_nadir_angle,1838,16);
-	  shrtV(ant_beam_num,1854,4);
-	  for (i=0; i<6; i++)
-	    fltV(incid_a[i],1886+i*20,20);
-	}
-	/* Coded up the ALOS spec as I had it - does not seem to match 
-	   the data though. Left things here just in case.
-	  
-	else if (strncmp(q->mission_id, "ALOS", 4)==0) {
-	  strV(scene_start_time,1734,32);
-	  strV(scene_center_time,1766,32);
-	  strV(scene_end_time,1798,32);
-	  strV(vexcel_id,1886,8);
-	  strV(vexcel_ver,1894,8);
-	  int i;
-	  for (i=0; i<5; i++) sngV(ant_elev_pattern[i],1902+i*20,20);
-	  strV(ant_pattern_file,2018,128);
-	  sngV(processing_gain,2178,16);
-	  for (i=0; i<5; i++) {
-	    intV(beam_num_doppler[i],2194+i*241,1);
-	    sngV(range_ref_doppler[i],2195+i*241,16);
-	    strV(time_ref_doppler[i],2211+i*241,32);
-	    sngV(doppler_centroid_2d[0][i],2243+i*241,16);
-	    sngV(doppler_centroid_2d[1][i],2259+i*241,16);
-	    sngV(doppler_centroid_2d[2][i],2275+i*241,16);
-	    sngV(doppler_centroid_2d[3][i],2291+i*241,16);
-	    sngV(doppler_centroid_2d[4][i],2307+i*241,16);
-	    sngV(doppler_centroid_2d[5][i],2323+i*241,16);
-	    sngV(doppler_centroid_2d[6][i],2339+i*241,16);
-	    sngV(doppler_centroid_2d[7][i],2355+i*241,16);
-	    sngV(doppler_centroid_2d[8][i],2371+i*241,16);
-	    sngV(doppler_centroid_2d[9][i],2387+i*241,16);
-	    sngV(doppler_centroid_2d[10][i],2403+i*241,16);
-	    sngV(doppler_centroid_2d[11][i],2419+i*241,16);
-	    intV(beam_num_velocity[i],3399+i*113,1);
-	    sngV(range_ref_velocity[i],3400+i*113,16);
-	    strV(time_ref_velocity[i],3416+i*113,32);
-	    sngV(velocity_2d[0][i],3464+i*113,16);
-	    sngV(velocity_2d[1][i],3480+i*113,16);
-	    sngV(velocity_2d[2][i],3496+i*113,16);
-	    sngV(velocity_2d[3][i],3512+i*113,16);
-	  }
-	}
-	*/
+  fltV(scene_len ,340,16); fltV(scene_wid ,356,16);
+  shrtV(nchn,388,4); strV(mission_id,396,16); strV(sensor_id,412,32);
+  strV(revolution,444,8); fltV(plat_lat,452,8); fltV(plat_long,460,8);
+  fltV(plat_head_scene,468,8); fltV(clock_ang,476,8);
+  fltV(incident_ang,484,8); fltV(frequency,492,8);
+  fltV(wave_length,500,16); strV(motion_comp,516,2);
+  strV(pulse_code,518,16);
+  fltV(ampl_coef[0],534,16); fltV(ampl_coef[1],550,16);
+  fltV(ampl_coef[2],566,16); fltV(ampl_coef[3],582,16);
+  fltV(ampl_coef[4],598,16); fltV(phas_coef[0],614,16);
+  fltV(phas_coef[1],630,16); fltV(phas_coef[2],646,16);
+  fltV(phas_coef[3],662,16); fltV(phas_coef[4],678,16);
+  longV(chirp_ext_ind,694,8); fltV(rng_samp_rate,710,16);
+  fltV(rng_gate,726,16); fltV(rng_length,742,16);
+  strV(baseband_f,758,4); strV(rngcmp_f,762,4);
+  fltV(gn_polar,766,16); fltV(gn_cross,782,16);
+  longV(chn_bits,798,8); strV(quant_desc,806,12);
+  fltV(i_bias,818,16); fltV(q_bias,834,16);
+  fltV(iq_ratio,850,16); fltV(spare_dss_7,866,16);
+  fltV(spare_dss_8,882,16); fltV(ele_sight,898,16);
+  fltV(mech_sight,914,16); strV(echo_track,930,4);
+  fltV(prf,934,16); fltV(elev_beam,950,16);
+  fltV(azi_beam,966,16); strV(sat_bintim,982,16);
+  strV(sat_clktim,998,32); longV(sat_clkinc,1030,8);
+  strV(fac_id,1046,16); strV(sys_id,1062,8);
+  strV(ver_id,1070,8); strV(fac_code,1078,16);
+  strV(lev_code,1094,16); strV(product_type,1110,32);
+  strV(algor_id,1142,32); fltV(n_azilok,1174,16);
+  fltV(n_rnglok,1190,16); fltV(bnd_azilok,1206,16);
+  fltV(bnd_rnglok,1222,16); fltV(bnd_azi,1238,16);
+  fltV(bnd_rng,1254,16); strV(azi_weight,1270,32);
+  strV(rng_weight,1302,32); strV(data_inpsrc,1334,16);
+  fltV(rng_res,1350,16); fltV(azi_res,1366,16);
+  fltV(radi_stretch[0],1382,16); fltV(radi_stretch[1],1398,16);
+  fltV(alt_dopcen[0],1414,16); fltV(alt_dopcen[1],1430,16);
+  fltV(alt_dopcen[2],1446,16); fltV(crt_dopcen[0],1478,16);
+  fltV(crt_dopcen[1],1494,16); fltV(crt_dopcen[2],1510,16);
+  strV(time_dir_pix,1526,8); strV(time_dir_lin,1534,8);
+  fltV(alt_rate[0],1542,16); fltV(alt_rate[1],1558,16);
+  fltV(alt_rate[2],1574,16); fltV(crt_rate[0],1606,16);
+  fltV(crt_rate[1],1622,16); fltV(crt_rate[2],1638,16);
+  strV(line_cont,1670,8); strV(clutterlock_flg,1678,4);
+  strV(auto_focus,1682,4); fltV(line_spacing,1686,16);
+  fltV(pixel_spacing,1702,16); strV(rngcmp_desg,1718,16);
+  if (strncmp(q->fac_id, "ASF", 3)==0) {
+    if (era==0) {
+      int i;
+      intV(annot_pts,2006,8);
+      if (q->annot_pts>=64)
+        q->annot_pts=63;
+      for (i=0,off=2022; i< q->annot_pts; i++) {
+          intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
+        strV(annot_text[i],off,16);
+      }
+    }
+    else {
+        intV(no_beams,1766,2);
+      strV(beam1,1768,4); strV(beam2,1772,4);
+      strV(beam3,1776,4); strV(beam4,1780,4);
+      sngV(prf1,1784,8); sngV(prf2,1792,8);
+      sngV(prf3,1800,8); sngV(prf4,1808,8);
+      sngV(rng_gate1,1816,8); sngV(rng_gate2,1824,8);
+      sngV(rng_gate3,1832,8); sngV(rng_gate4,1840,8);
+      intV(tot_pls_burst,1848,4); intV(val_pls_burst,1852,4);
+      intV(az_ovlp_nxt_img,1856,8); intV(rg_off_nxt_img,1864,8);
+      strV(cal_params_file,1872,32);
+      strV(scan_results_file,1904,32);
+      strV(scanner_version,1936,16);
+      strV(decode_version,1952,16);
+    }
+  }
+  else if (strncmp(q->fac_id, "ES", 2)==0 ||
+     strncmp(q->fac_id, "D-PAF", 5)==0 ||
+     strncmp(q->fac_id, "I-PAF", 5)==0){
+    int i;
+    for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
+    strV(az_time_first,1814,24);
+    strV(az_time_center,1838,24);
+    strV(az_time_last,1862,24);
+  }
+  else if (strncmp(q->mission_id, "ALOS", 4)==0) {
+    int i;
+    shrtV(cal_data_indicator,1766,4);
+    intV(start_cal_up,1770,8);
+    intV(stop_cal_up,1778,8);
+    intV(start_cal_bottom,1786,8);
+    intV(stop_cal_bottom,1794,8);
+    shrtV(prf_switch,1802,4);
+    intV(line_prf_switch,1806,8);
+    fltV(beam_center_dir,1814,16);
+    shrtV(yaw_steering,1830,4);
+    shrtV(param_table,1834,4);
+    fltV(off_nadir_angle,1838,16);
+    shrtV(ant_beam_num,1854,4);
+    for (i=0; i<6; i++)
+      fltV(incid_a[i],1886+i*20,20);
+  }
+  /* Coded up the ALOS spec as I had it - does not seem to match
+     the data though. Left things here just in case.
+
+  else if (strncmp(q->mission_id, "ALOS", 4)==0) {
+    strV(scene_start_time,1734,32);
+    strV(scene_center_time,1766,32);
+    strV(scene_end_time,1798,32);
+    strV(vexcel_id,1886,8);
+    strV(vexcel_ver,1894,8);
+    int i;
+    for (i=0; i<5; i++) sngV(ant_elev_pattern[i],1902+i*20,20);
+    strV(ant_pattern_file,2018,128);
+    sngV(processing_gain,2178,16);
+    for (i=0; i<5; i++) {
+      intV(beam_num_doppler[i],2194+i*241,1);
+      sngV(range_ref_doppler[i],2195+i*241,16);
+      strV(time_ref_doppler[i],2211+i*241,32);
+      sngV(doppler_centroid_2d[0][i],2243+i*241,16);
+      sngV(doppler_centroid_2d[1][i],2259+i*241,16);
+      sngV(doppler_centroid_2d[2][i],2275+i*241,16);
+      sngV(doppler_centroid_2d[3][i],2291+i*241,16);
+      sngV(doppler_centroid_2d[4][i],2307+i*241,16);
+      sngV(doppler_centroid_2d[5][i],2323+i*241,16);
+      sngV(doppler_centroid_2d[6][i],2339+i*241,16);
+      sngV(doppler_centroid_2d[7][i],2355+i*241,16);
+      sngV(doppler_centroid_2d[8][i],2371+i*241,16);
+      sngV(doppler_centroid_2d[9][i],2387+i*241,16);
+      sngV(doppler_centroid_2d[10][i],2403+i*241,16);
+      sngV(doppler_centroid_2d[11][i],2419+i*241,16);
+      intV(beam_num_velocity[i],3399+i*113,1);
+      sngV(range_ref_velocity[i],3400+i*113,16);
+      strV(time_ref_velocity[i],3416+i*113,32);
+      sngV(velocity_2d[0][i],3464+i*113,16);
+      sngV(velocity_2d[1][i],3480+i*113,16);
+      sngV(velocity_2d[2][i],3496+i*113,16);
+      sngV(velocity_2d[3][i],3512+i*113,16);
+    }
+  }
+  */
 }
 
 void Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir)
@@ -587,18 +634,18 @@ void Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir)
     v = q->data;
     for (i=0; i< q->npoint; i++)
       {
-	if (dir == fromASCII)
+  if (dir == fromASCII)
          {
-	   v = (struct att_vect_rec *) MALLOC (sizeof(struct att_vect_rec));
-	   if (oldv==NULL)
-		q->data=v;
-	   else
-		oldv->next=v;
-	 }
-	off += Code_ATVR(&bf[off],v,dir);
+     v = (struct att_vect_rec *) MALLOC (sizeof(struct att_vect_rec));
+     if (oldv==NULL)
+    q->data=v;
+     else
+    oldv->next=v;
+   }
+  off += Code_ATVR(&bf[off],v,dir);
         oldv=v;
-   	v = v->next;
-   	pointNo++;
+    v = v->next;
+    pointNo++;
       }
     strV(spare_adr_1,off,640);
 }
@@ -642,7 +689,7 @@ void Code_RADDR(unsigned char *bf, struct VRADDR* q,codingDir dir)
     off+=4;
     for (i=0; i<256; i++)
     {/* <--- Since fltV is a #define, these brackets are necessary.*/
-    	fltV(noise[i],off,16);
+      fltV(noise[i],off,16);
     }
 }
 
@@ -661,7 +708,7 @@ void Code_RSI_RADDR(unsigned char *bf, struct RSI_VRADDR* q,codingDir dir)
     strV(samp_type,off,16);
     shrtV(samp_inc,off,4);
     for (ii=0; ii<512; ii++) {
-    	fltV(lookup_tab[ii],off,16);
+      fltV(lookup_tab[ii],off,16);
     }
     strV(spare2,off,4);
     fltV(noise_scale,off,16);
@@ -692,9 +739,9 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
     fltV(abs_rad_unc_deg,off, 16);
     off=222;
     for (i=0; (i<q->nchn && i<16); i++)
-	 {
-	   fltV(rel_rad_unc[0][i],off,16);
-	   fltV(rel_rad_unc[1][i],off,16);
+   {
+     fltV(rel_rad_unc[0][i],off,16);
+     fltV(rel_rad_unc[1][i],off,16);
          }
     off=734;
     fltV(alt_locerr,off,16);
@@ -705,10 +752,10 @@ void Code_DQS(unsigned char* bf,struct qual_sum_rec* q,int era,codingDir dir)
     fltV(ori_err,off,16);
     off=830;
     for (i=0; i<16; i++)
-    	 {
-  	    fltV(misreg[0][i],off, 16);
-	    fltV(misreg[1][i],off, 16);
-	 }
+       {
+        fltV(misreg[0][i],off, 16);
+      fltV(misreg[1][i],off, 16);
+   }
     if (era==1) {
       fltV(nesz,off,16);
       fltV(enl,off,16);
@@ -731,44 +778,44 @@ void Code_DHR(unsigned char* bf, struct data_hist_rec* q, codingDir dir)
   longV(ltab,off, 8);
 
   if (dir==fromASCII)
-	oldD=NULL;
+  oldD=NULL;
   else
-	d=q->data;
+  d=q->data;
   for (j=0; j< (q->ntab); j++)
   {
-	if (dir==fromASCII)
-		d=(struct hist_dset *)MALLOC(sizeof(struct hist_dset));
-	Code_DH(&bf[off],d,dir);
-	off += 248+8*d->nhist;
-	if (dir==fromASCII) {
-		d->next = NULL;
-		if (!oldD)
-			oldD = q->data = d;
-		else
-			oldD = ( oldD->next = d);
-	}
-	else /*(dir==toASCII)*/
-		{ d=d->next; }
+  if (dir==fromASCII)
+    d=(struct hist_dset *)MALLOC(sizeof(struct hist_dset));
+  Code_DH(&bf[off],d,dir);
+  off += 248+8*d->nhist;
+  if (dir==fromASCII) {
+    d->next = NULL;
+    if (!oldD)
+      oldD = q->data = d;
+    else
+      oldD = ( oldD->next = d);
+  }
+  else /*(dir==toASCII)*/
+    { d=d->next; }
   }
 }
 
 void Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir)
 {
-	int off = 0, i;
-	strV(hist_desc,off,32); shrtV(nrec,off, 4);
-	shrtV(tab_seq,off, 4); longV(nbin,off, 8);
-	longV(ns_lin,off, 8); longV(ns_pix,off, 8);
-	longV(ngrp_lin,off, 8); longV(ngrp_pix,off, 8);
-	longV(nsamp_lin,off, 8); longV(nsamp_pix,off, 8);
-	fltV(min_smp,off, 16); fltV(max_smp,off, 16);
-	fltV(mean_smp,off, 16); fltV(std_smp,off, 16);
-	fltV(smp_inc,off, 16); fltV(min_hist,off, 16);
-	fltV(max_hist,off, 16); fltV(mean_hist,off, 16);
-	fltV(std_hist,off, 16); longV(nhist,off,8);
-	if (dir==fromASCII)
-	  q->data_values_hist = (int *) MALLOC (sizeof(int)*q->nhist);
+  int off = 0, i;
+  strV(hist_desc,off,32); shrtV(nrec,off, 4);
+  shrtV(tab_seq,off, 4); longV(nbin,off, 8);
+  longV(ns_lin,off, 8); longV(ns_pix,off, 8);
+  longV(ngrp_lin,off, 8); longV(ngrp_pix,off, 8);
+  longV(nsamp_lin,off, 8); longV(nsamp_pix,off, 8);
+  fltV(min_smp,off, 16); fltV(max_smp,off, 16);
+  fltV(mean_smp,off, 16); fltV(std_smp,off, 16);
+  fltV(smp_inc,off, 16); fltV(min_hist,off, 16);
+  fltV(max_hist,off, 16); fltV(mean_hist,off, 16);
+  fltV(std_hist,off, 16); longV(nhist,off,8);
+  if (dir==fromASCII)
+    q->data_values_hist = (int *) MALLOC (sizeof(int)*q->nhist);
 
-	for (i=0; i<q->nhist; i++)
+  for (i=0; i<q->nhist; i++)
            { longV(data_values_hist[i],off, 8); }
 }
 
@@ -794,7 +841,7 @@ void Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir)
     longV(n_bins,off,8);
     for (i=0;i<(q->n_bins); i++)
     {/* <-- since fltV is a #define, these {}'s are needed.*/
-    	fltV(data_values_spec[i],off,16);
+      fltV(data_values_spec[i],off,16);
     }
     strV(spare_rsr_3,off,1052);
 }
@@ -842,13 +889,13 @@ void Code_ASF_FACDR(unsigned char *bf,struct VFDRECV *q,int era,codingDir dir)
     fltV(estnoifl,off,17); fltV(radiores,off,17); intV(nsatpnts,off,9);
     strV(inspecf,off,4);
     if (era) {
-	fltV(repl_agc,off,17); fltV(temp_rx_lna,off,17);
-	fltV(temp_rx_sub,off,17); fltV(temp_rx_prot,off,17);
-	fltV(temp_cal_sys,off,17); fltV(rx_agc,off,17);
-	fltV(pre_cal1_pow,off,17); fltV(pre_cal2_pow,off,17);
-	fltV(post_cal1_pow,off,17); fltV(post_cal2_pow,off,17);
-	fltV(repl_pow,off,17); fltV(ssar_roll_ang,off,17);
-	strV(comment,off,100);
+  fltV(repl_agc,off,17); fltV(temp_rx_lna,off,17);
+  fltV(temp_rx_sub,off,17); fltV(temp_rx_prot,off,17);
+  fltV(temp_cal_sys,off,17); fltV(rx_agc,off,17);
+  fltV(pre_cal1_pow,off,17); fltV(pre_cal2_pow,off,17);
+  fltV(post_cal1_pow,off,17); fltV(post_cal2_pow,off,17);
+  fltV(repl_pow,off,17); fltV(ssar_roll_ang,off,17);
+  strV(comment,off,100);
     }
     else strV(comment,off,100);
 }

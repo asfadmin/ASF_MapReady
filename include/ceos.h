@@ -1619,6 +1619,7 @@ int get_raddr(const char *filename,struct VRADDR *rec);
 int get_rsi_raddr(const char *filename, struct RSI_VRADDR *rec);
 int get_rsr(const char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(const char *filename,struct IOF_VFDR *vfdr);
+int get_ALOS_optical_ifiledr(const char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(const char *filename,struct FDR *rec);
 int get_ppr(const char *filename,struct PPREC *rec);
 int get_rcdr(const char *filename,struct radio_comp_data_rec *rcdr);
