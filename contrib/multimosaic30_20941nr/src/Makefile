@@ -8,9 +8,17 @@ FFLAGS = $(OPTFLAG) -ffixed-line-length-132
 
 MOSAIC_OBJS = multimosaic.o
 	
-AFFINE_OBJS = multiaffine3d.o
+NR = ../../NR
+AFFINE_OBJS = \
+	$(NR)/dgaussh.o \
+	$(NR)/dpythag.o \
+	$(NR)/dqrdcmp.o \
+	$(NR)/dsvbksb.o \
+	$(NR)/dsvdcmp.o \
+	$(NR)/dsvdvar.o \
+	multiaffine3d.o
 
-all: multimosaic multiaffine clean
+all: multimosaic multiaffine3d clean
 
 multimosaic: $(MOSAIC_OBJS)
 	$(FC) $(FFLAGS) -o multimosaic $(MOSAIC_OBJS)
