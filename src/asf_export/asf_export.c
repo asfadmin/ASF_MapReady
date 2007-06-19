@@ -44,7 +44,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "            geotiff - GeoTIFF file, with floating point or byte valued pixels\n"\
 "            jpeg    - Lossy compressed image, with byte valued pixels\n"\
 "            pgm     - Portable graymap image, with byte valued pixels\n"\
-"            png     - Portable network graphic, with byte values pixels\n"\
+"            png     - Portable network graphic, with byte valued pixels\n"\
 "   -byte <sample mapping option>\n"\
 "        Converts output image to byte using the following options:\n"\
 "            truncate\n"\
@@ -134,9 +134,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "\n"\
 "   To export to file2.jpg in the jpeg format:\n"\
 "        example> "ASF_NAME_STRING" -format jpeg file1 file2\n"\
-"\n"\
-"   To export file1 to a jpeg called file3.jpg no larger than 800x800:\n"\
-"        example> "ASF_NAME_STRING" -format jpeg -size 800 file1 file3\n"
+"\n"
 
 #define ASF_LIMITATIONS_STRING \
 "   Currently supports ingest of ASF format floating point and byte data.\n"\
