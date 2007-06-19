@@ -1,2 +1,0 @@
-#f77 -extend_source -bytereclen -O multicull.f -o multicull
-f77 -extend_source -bytereclen -O multicull.f -o multicull ../../NR/*.f
