@@ -366,7 +366,7 @@ static int parse_zone_option(int *i, int argc,
                              char *argv[], int *specified,
                              int *value, int *ok)
 {
-  if (strcmp(argv[*i], "--zone") == 0 ||
+  if (strcmp(argv[*i], "--zone") == 0 || strcmp(argv[*i], "-zone") == 0 ||
     strcmp(argv[*i], "-z") == 0)
   {
     *ok = parse_int_option(i, argc, argv, specified, value);
@@ -382,7 +382,10 @@ static int parse_first_standard_parallel_option(int *i, int argc,
                                                 char *argv[], int *specified,
                                                 double *value, int *ok)
 {
-  if (strcmp(argv[*i], "--first-standard-parallel") == 0)
+  if (strcmp(argv[*i], "--first-standard-parallel") == 0 ||
+      strcmp(argv[*i], "--plat1") == 0 ||
+      strcmp(argv[*i], "-first-standard-parallel") == 0 ||
+      strcmp(argv[*i], "-plat1") == 0)
   {
     *ok = parse_double_option(i, argc, argv, specified, value);
     return TRUE;
@@ -397,7 +400,10 @@ static int parse_second_standard_parallel_option(int *i, int argc,
                                                  char *argv[], int *specified,
                                                  double *value, int *ok)
 {
-  if (strcmp(argv[*i], "--second-standard-parallel") == 0)
+  if (strcmp(argv[*i], "--second-standard-parallel") == 0 ||
+      strcmp(argv[*i], "-second-standard-parallel") == 0 ||
+      strcmp(argv[*i], "--plat2") == 0 ||
+      strcmp(argv[*i], "-plat2") == 0)
   {
     *ok = parse_double_option(i, argc, argv, specified, value);
     return TRUE;
@@ -413,7 +419,11 @@ static int parse_center_latitude_option(int *i, int argc,
                                         double *value, int *ok)
 {
   if (strcmp(argv[*i], "--center-latitude") == 0 ||
-    strcmp(argv[*i], "--latitude-of-origin") == 0)
+    strcmp(argv[*i], "-center-latitude") == 0 ||
+    strcmp(argv[*i], "--latitude-of-origin") == 0 ||
+    strcmp(argv[*i], "-latitude-of-origin") == 0 ||
+    strcmp(argv[*i], "--lat0") == 0 ||
+    strcmp(argv[*i], "-lat0") == 0)
   {
     *ok = parse_double_option(i, argc, argv, specified, value);
     return TRUE;
@@ -428,7 +438,10 @@ static int parse_central_meridian_option(int *i, int argc,
                                          char *argv[], int *specified,
                                          double *value, int *ok)
 {
-  if (strcmp(argv[*i], "--central-meridian") == 0)
+  if (strcmp(argv[*i], "--central-meridian") == 0 ||
+      strcmp(argv[*i], "-central-meridian") == 0 ||
+      strcmp(argv[*i], "-lon0") == 0 ||
+      strcmp(argv[*i], "--lon0") == 0)
   {
     *ok = parse_double_option(i, argc, argv, specified, value);
     return TRUE;
@@ -650,7 +663,7 @@ void parse_other_options(int *argc, char **argv[],
         extract_string_options(argc, argv, band_id, "-band", "--band", NULL);
   extract_double_options(argc, argv, height, "--height", "-height", "-h", NULL);
   extract_double_options(argc, argv, pixel_size,
-    "--pixel-size", "-pixel-size", "-pix", NULL);
+    "--pixel-size", "-pixel-size", "-pix", "-ps", NULL);
   *resample_method = parse_resample_method_option (argc, argv);
   *override_checks = extract_flags(argc, argv, "--force", "-force", "-f", NULL);
 

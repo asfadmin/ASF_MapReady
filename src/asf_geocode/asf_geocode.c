@@ -49,148 +49,7 @@ trouble, and use edit_man_header. :)
 "     The base name of the geocoded image to produce.\n"
 
 #define ASF_OPTIONS_STRING \
-"     Projection Parameter Options  \n"\
-"     ============================\n"\
-"\n"\
-"     All these options take arguments, unless otherwise noted.  Groups\n"\
-"     of options which appear together on a single line seperated by\n"\
-"     commas are aliases for the same parameter (they are intended to\n"\
-"     aid recognition, since there is much confusion of map projection\n"\
-"     terminology).\n"\
-"\n"\
-"     -p, -projection: Projection\n"\
-"          Projection to use.  Argument must be one of the following:\n"\
-"               utm    - Universal Transverse Mercator\n"\
-"               ps     - Polar stereographic\n"\
-"               lamcc  - Lambert conformal conic\n"\
-"               lamaz  - Lambert azimuthal equal area\n"\
-"               albers - Albers conical equal area\n"\
-"\n"\
-"       UTM\n"\
-"       ---\n"\
-"          --zone                      : Zone (optional)\n"\
-"\n"\
-"          If a zone is not specified, it will be determined from the\n"\
-"          scene's metadata.\n\n"\
-"\n"\
-"       POLAR STEREO\n"\
-"       ------------\n"\
-"          --first-standard-parallel    : Latitude of True Scale\n"\
-"          --central-meridian           : Longitude of Central Meridian\n"\
-"          --north-pole                 : Center on North Pole (no argument)\n"\
-"          --south-pole                 : Center on South Pole (no argument)\n"\
-"          --false-easting              : False Easting (optional)\n"\
-"          --false-northing             : False Northing (optional)\n"\
-"\n"\
-"       LAMBERT CONFORMAL CONIC\n"\
-"       -----------------------\n"\
-"          --first-standard-parallel   : First Standard Parallel\n"\
-"          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude at projection\"s origin\n"\
-"          --central-meridian          : Central Meridian\n"\
-"          --false-easting             : False Easting (optional)\n"\
-"          --false-northing            : False Northing (optional)\n"\
-"\n"\
-"          You may omit the origin (the image center will be used as the\n"\
-"          origin), however the standard parallels are required.\n"\
-"\n"\
-"       LAMBERT AZIMUTHAL EQUAL AREA\n"\
-"       ----------------------------\n"\
-"          --latitude-of-origin        : Latitude at center of projection\n"\
-"          --central-meridian          : Longitude at center of projection\n"\
-"          --false-easting             : False Easting (optional)\n"\
-"          --false-northing            : False Northing (optional)\n"\
-"\n"\
-"          You may omit the point of tangency (the image center will be\n"\
-"          used).\n"\
-"\n"\
-"       ALBERS CONICAL EQUAL AREA\n"\
-"       -------------------------\n"\
-"          --first-standard-parallel   : First Standard Parallel\n"\
-"          --second-standard-parallel  : Second Standard Parallel\n"\
-"          --latitude-of-origin        : Latitude of projection\"s origin\n"\
-"          --central-meridian          : Central Meridian\n"\
-"          --false-easting             : False Easting (optional)\n"\
-"          --false-northing            : False Northing (optional)\n"\
-"\n"\
-"          You may omit the origin (the image center will be used as the\n"\
-"          origin), however the standard parallels are required.\n"\
-"\n"\
-"     Using a Projection Parameters File\n"\
-"     ==================================\n"\
-"\n"\
-"     -write-proj-file <file>\n"\
-"          Save the specified projection information to a file with\n"\
-"          the given name.  The file may be used for subsequent projections\n"\
-"          with --read-proj-file.\n"\
-"\n"\
-"     -read-proj-file <file>\n"\
-"          Read projection information from the given file.  The format of\n"\
-"          the file must match what is used with --write-proj-file.\n"\
-"          This option may not be used together with any other\n"\
-"          projection options.\n"\
-"\n"\
-"          You cannot specify a projection (with --projection), and\n"\
-"          --read-proj-file at the same time.\n"\
-"\n"\
-"     Other Options\n"\
-"     =============\n"\
-"\n"\
-"     -height <height> \n"\
-"          Assume that terrain in the image is <height> meters above\n"\
-"          the reference GEM6 ellipsoid.  Optimal geolocation accuracy\n"\
-"          will then be achieved for pixels on terrain at this height.\n"\
-"          The geolocation of terrain at other height will be off by\n"\
-"          about the height difference between the terrain and\n"\
-"          <height>, assuming a satellite look angle 45 degrees from\n"\
-"          horizontal.\n"\
-"\n"\
-"     -resample-method <method>\n"\
-"          Specifies which interpolation method to use when resampling\n"\
-"          images into projection geometry.  Available choices are:\n"\
-"            nearest_neighbor\n"\
-"            bilinear\n"\
-"            bicubic\n"\
-"\n"\
-"     -datum <datum> \n"\
-"          Specifies the datum that is used when projecting.  The datum\n"\
-"          applies to the target coordinate system.  Supported Datums:\n"\
-"            NAD27  (North American Datum 1927) (Clarke 1866)\n"\
-"            NAD83  (North American Datum 1983) (GRS 1980)\n"\
-"            WGS84  (World Geodetic System 1984) (default).\n"\
-"          NOTE: When specifying a datum together with a UTM projection\n"\
-"          type, note the following valid zone numbers which may be combined\n"\
-"          with each datum type:\n"\
-"            NAD27  Valid zones are 2 through 22\n"\
-"            NAD83  Valid zones are 2 through 23\n"\
-"            WGS84  Valid zones are 1 through 60\n"\
-"\n"\
-"     -pixel_size <pixel spacing>\n"\
-"          Specifies the pixel spacing of the geocoded image.  "ASF_NAME_STRING"\n"\
-"          by default will preserve the pixel size of the input image.\n"\
-"\n"\
-"     -band <band_id | all>\n"\
-"          If the image file contains multiple bands (channels), then\n"\
-"          geocode the band identified by 'band_id' (only) into a single-band\n"\
-"          ASF-format file.  If 'all' is specified rather than a band_id, then\n"\
-"          geocode all available bands into a single multi-band ASF-format file.\n"\
-"          In this case, all bands will be geocoded using the same set of\n"\
-"          projection parameters, and the parameters in the resulting metadata\n"\
-"          file apply to all.  Default is '-band all'.\n"\
-"\n"\
-"     -background <background fill value>\n"\
-"          Value to use for pixels that fall outside of the scene.  "ASF_NAME_STRING"\n"\
-"          by default will fill the outside with zeroes.\n"\
-"\n"\
-"     -force\n"\
-"          Override the built-in projection sanity checks.  "ASF_NAME_STRING"\n"\
-"          by default will abort with an error if it detects that a\n"\
-"          scene lies in an area where the selected projection is\n"\
-"          going to give poor results.  However, you may still wish\n"\
-"          to do the projection anyway (such as when you will mosaic\n"\
-"          the result a number of other scenes and wish to have them\n"\
-"          all in the same projection), the -force option can be used\n"\
-"          in these situations.\n"\
+"%s"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -287,7 +146,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+        geocode_projection_options_help());
   exit(EXIT_SUCCESS);
 }
 

@@ -59,60 +59,7 @@ void set_projection_functions (projection_type_t projection_type,
 			       array_projector_t *array_project,
 			       array_projector_t *array_unproject);
 
-///////////////////////////////////////////////////////////////////////////////
-
-// This is the old geocode_options.h
-/*
-  Pass the argc,argv pair to get_geocode_options.
-
-  GENERAL FORMAT
-  ==============
-  --projection <name> <<projection specific options>>
-  -p <name> <<projection specific options>>
-
-     UTM
-     ---
-          --zone,                     : Zone
-          --central-meridian          : Longitude of Central Meridian
-
-          Either the zone or center_longitude must be specified.
-
-     POLAR STEREO
-     ------------
-          --first-standard-parallel    : Latitude of True Scale
-          --central-meridian           : Longitude of Central Meridian
-          -n, --north-pole             : Center on North Pole (no argument)
-          -s, --south-pole             : Center on South Pole (no argument)
-          --false-easting              : False Easting (optional)
-          --false-northing             : False Northing (optional)
-
-     LAMBERT CONFORMAL CONIC
-     -----------------------
-          --first-standard-parallel   : First Standard Parallel
-          --second-standard-parallel  : Second Standard Parallel
-          --latitude-of-origin        : Latitude at projection's origin
-          --central-meridian          : Central Meridian
-          --false-easting             : False Easting (optional)
-          --false-northing            : False Northing (optional)
-
-     LAMBERT AZIMUTHAL EQUAL AREA
-     ----------------------------
-          --latitude-of-origin        : Latitude at center of projection
-          --central-meridian          : Longitude at center of projection
-          --false-easting             : False Easting (optional)
-          --false-northing            : False Northing (optional)
-
-     ALBERS CONICAL EQUAL AREA
-     -------------------------
-          --first-standard-parallel   : First Standard Parallel
-          --second-standard-parallel  : Second Standard Parallel
-          --latitude-of-origin        : Latitude of projection's origin
-          --central-meridian          : Central Meridian
-          --false-easting             : False Easting (optional)
-          --false-northing            : False Northing (optional)
-
-
-*/
+const char *geocode_projection_options_help(void);
 
 project_parameters_t * get_geocode_options(int *argc, char ***argv,
                                            projection_type_t * proj_type,
@@ -169,10 +116,21 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
                     char *band_id, char *in_base_name, char *out_base_name,
                     float background_val);
 int asf_geocode (project_parameters_t *pp, projection_type_t projection_type,
-		 int force_flag, resample_method_t resample_method,
-		 double average_height, datum_type_t datum, double pixel_size,
-		 char *band_id, char *in_base_name, char *out_base_name,
+                 int force_flag, resample_method_t resample_method,
+                 double average_height, datum_type_t datum, double pixel_size,
+                 char *band_id, char *in_base_name, char *out_base_name,
                  float background_val);
+int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
+                    int force_flag, resample_method_t resample_method,
+                    double average_height, datum_type_t datum, double pixel_size,
+                    int multiband, int band_num, char *in_base_name,
+                    char *out_base_name, float background_val);
+int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
+               int force_flag, resample_method_t resample_method,
+               double average_height, datum_type_t datum, double pixel_size,
+               int multiband, int band_num, char **in_base_names,
+               char *out_base_name, float background_val, double lat_min,
+               double lat_max, double lon_min, double lon_max);
 void sigsegv_handler (int signal_number);
 
 // Prototypes from geoid.c

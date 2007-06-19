@@ -5,6 +5,7 @@ TARGET = mosaic
 CFLAGS += $(GLIBS_CFLAGS)
 
 LIBS  = \
+	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
