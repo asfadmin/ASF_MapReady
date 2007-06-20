@@ -10,6 +10,7 @@
 include ../../make_support/system_rules
 
 OBJS  = caplib.o \
+	check.o \
 	cla.o \
 	endian.o \
 	error.o \
