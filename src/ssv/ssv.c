@@ -74,15 +74,20 @@ main(int argc, char **argv)
     gchar *glade_xml_file = (gchar *) find_in_share("ssv.glade");
     //printf("Found ssv.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
-    g_free(glade_xml_file);
+    free(glade_xml_file);
 
     // set up window title
     char title[256];
+    sprintf(title, "ssv ver %s: %s", VERSION, argv[1]);
     if (band_specified) {
-        sprintf(title, "ssv ver %s: %s (%s)", VERSION, argv[1], band);
-    } else {
-        sprintf(title, "ssv ver %s: %s", VERSION, argv[1]);
+        sprintf(&title[strlen(title)], " (%s)", band);
+    } else if (meta && meta->general && meta->general->band_count > 1) {
+        strcpy(band, meta->general->bands);
+        char *p = strchr(band, ',');
+        if (p) *p = '\0';
+        sprintf(&title[strlen(title)], " (%s)", band);
     }
+
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
