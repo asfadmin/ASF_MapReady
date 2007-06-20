@@ -39,17 +39,19 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double *z, double **lat, double **lon,
       double **height, long length, datum_type_t dtm);
 
-static void print_proj_info(projection_type_t projection_type,
-                            project_parameters_t *pp)
+char *proj_info_as_string(projection_type_t projection_type,
+                          project_parameters_t *pp)
 {
+    static char ret[256];
+
     switch (projection_type)
     {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-        asfPrintStatus("Projection: UTM\n   Zone: %d\n\n", pp->utm.zone);
+        sprintf(ret, "Projection: UTM\n   Zone: %d\n\n", pp->utm.zone);
         break;
 
     case POLAR_STEREOGRAPHIC:
-        asfPrintStatus(
+        sprintf(ret,
             "Projection: Polar Stereographic\n"
             "   Standard parallel: %.4f\n"
             "   Central meridian: %.4f\n"
@@ -58,7 +60,7 @@ static void print_proj_info(projection_type_t projection_type,
         break;
 
     case ALBERS_EQUAL_AREA:
-        asfPrintStatus(
+        sprintf(ret,
             "Projection: Albers Equal Area Conic\n"
             "   First standard parallel: %.4f\n"
             "   Second standard parallel: %.4f\n"
@@ -69,7 +71,7 @@ static void print_proj_info(projection_type_t projection_type,
         break;
 
     case LAMBERT_CONFORMAL_CONIC:
-        asfPrintStatus(
+        sprintf(ret,
             "Projection: Lambert Conformal Conic\n"
             "   First standard parallel: %.4f\n"
             "   Second standard parallel: %.4f\n"
@@ -79,7 +81,7 @@ static void print_proj_info(projection_type_t projection_type,
         break;
 
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-        asfPrintStatus(
+        sprintf(ret,
             "Projection: Lambert Azimuthal Equal Area\n"
             "   Latitude of origin: %.4f\n"
             "   Central meridian: %.4f\n\n",
@@ -90,6 +92,14 @@ static void print_proj_info(projection_type_t projection_type,
         asfPrintError("Projection type not supported!\n");
         break;
     }
+
+    return ret;
+}
+
+static void print_proj_info(projection_type_t projection_type,
+                            project_parameters_t *pp)
+{
+    asfPrintStatus(proj_info_as_string(projection_type, pp));
 }
 
 // Blurb about what the user can do if projection errors are too

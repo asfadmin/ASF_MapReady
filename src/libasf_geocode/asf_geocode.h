@@ -69,6 +69,10 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
                                            int *override_checks,
                                            char *band_id);
 
+/* Handy for those asfPrintStatus()s */
+char *proj_info_as_string(projection_type_t projection_type,
+                          project_parameters_t *pp);
+
 void parse_proj_args_file(const char * file, project_parameters_t * pps,
 			  projection_type_t * proj_type);
 

@@ -49,6 +49,10 @@ on_sv_main_window_delete_event(GtkWidget *w, gpointer data)
 int
 main(int argc, char **argv)
 {
+    char band[512];
+    int band_specified = extract_string_options(&argc, &argv, band,
+        "-band", "--band", "-b", NULL);
+
     if (argc != 2) {
         printf("Usage: sv <filename>\n\n"
             "<filename> should be an ASF internal format image file.\n");
@@ -63,7 +67,7 @@ main(int argc, char **argv)
     cx = cy = crosshair_x = crosshair_y = 0;
     zoom = 1;
 
-    read_file(argv[1]);
+    read_file(argv[1], band_specified ? band : NULL);
 
     gtk_init(&argc, &argv);
 
@@ -74,7 +78,11 @@ main(int argc, char **argv)
 
     // set up window title
     char title[256];
-    sprintf(title, "sv ver %s: %s", VERSION, argv[1]);
+    if (band_specified) {
+        sprintf(title, "sv ver %s: %s (%s)", VERSION, argv[1], band);
+    } else {
+        sprintf(title, "sv ver %s: %s", VERSION, argv[1]);
+    }
     GtkWidget *widget = get_widget_checked("sv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
@@ -83,6 +91,7 @@ main(int argc, char **argv)
     fill_big();
     update_pixel_info();
     set_font();
+    fill_meta_info();
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();

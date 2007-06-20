@@ -16,6 +16,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "float_image.h"
+#include "asf_raster.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
@@ -56,7 +57,7 @@ char *find_in_share(const char * filename);
 float get_pixel(int line, int sample);
 
 /* read.c */
-void read_file(const char *filename);
+void read_file(const char *filename, const char *band);
 
 /* big_image.c */
 void fill_big(void);
@@ -64,6 +65,9 @@ void update_pixel_info(void);
 
 /* small_image.c */
 void fill_small(void);
+
+/* meta.c */
+void fill_meta_info(void);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

@@ -46,7 +46,7 @@ static void clear_data()
     }
 }
 
-static void read_asf(const char *filename)
+static void read_asf(const char *filename, const char *band)
 {
     // assume metadata has already been read in
     assert(meta);
@@ -55,6 +55,14 @@ static void read_asf(const char *filename)
     printf("Reading ASF Internal: %s\n", filename);
     nl = meta->general->line_count;
     ns = meta->general->sample_count;
+    int b = 0;
+    if (band)
+        b = get_band_number(meta->general->bands,
+                meta->general->band_count, (char*)band);
+    if (b<0)
+        asfPrintError("Band '%s' not found.\n");
+    else if (band)
+        asfPrintStatus("Reading band #%d: %s\n", b+1, band);
 
     FILE *fp = FOPEN(filename, "rb");
 
@@ -64,7 +72,7 @@ static void read_asf(const char *filename)
 
         int i,j;
         for (i=0; i<nl; ++i) {
-            get_float_line(fp, meta, i, buf);
+            get_float_line(fp, meta, i + b*nl, buf);
             for (j=0; j<ns; ++j)
                 float_image_set_pixel(data_fi, j, i, buf[j]);
             asfPercentMeter((float)i/nl);
@@ -78,7 +86,7 @@ static void read_asf(const char *filename)
         int i;
         for (i=0; i<nl; i+=128) {
             int l=128; if (i+128>nl) l=nl-i;
-            get_float_lines(fp, meta, i, l, data + i*ns);
+            get_float_lines(fp, meta, i + b*nl, l, data + i*ns);
             asfPercentMeter((float)i/nl);
         }
     }
@@ -179,7 +187,7 @@ static void read_D(const char *filename)
     free(meta_filename);
 }
 
-void read_file(const char *filename)
+void read_file(const char *filename, const char *band)
 {
     // first need to figure out what kind of file this is
     // we will do that based on the extension
@@ -220,7 +228,7 @@ void read_file(const char *filename)
             asfPrintError("Cannot find metadata for: %s\n", meta_filename);
         }
         free(meta_filename);
-        read_asf(img_file);
+        read_asf(img_file, band);
     } else if (strcmp_case(ext, ".D") == 0) {
         assert(img_file);
         char *meta_filename = appendExt(filename, ".L");
@@ -230,6 +238,8 @@ void read_file(const char *filename)
             asfPrintError("Cannot find metadata: %s\n", meta_filename);
         }
         free(meta_filename);
+        if (band)
+            asfPrintWarning("Band specification ignored.\n");
         read_D(img_file);
     } else if (strncmp_case(filename, "IMG-", 4) == 0) {
         assert(img_file);
@@ -242,30 +252,22 @@ void read_file(const char *filename)
         } else {
             asfPrintError("Cannot find metadata: %s\n", meta_filename);
         }
+        if (band)
+            asfPrintWarning("Band specification ignored.\n");
         read_alos(p, img_file, meta_filename);
         free(meta_filename);
-    } else if (strncmp_case(filename, "LED-", 4) == 0) {
-        assert(img_file); // in this case, was actually the metadata file
-        char *meta_filename = STRDUP(filename);
-        char *p = strchr(filename, '-') + 1;
-        if (fileExists(meta_filename)) {
-            meta = meta_create(p);
-        } else {
-            asfPrintError("Cannot find metadata: %s\n", meta_filename);
-        }
-        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
-        int i,nBands;
-        for (i=0; i<MAX_BANDS; ++i)
-            dataName[i] = MALLOC(sizeof(char)*256);
-        get_ceos_data_name(p, dataName, &nBands);
-        read_alos(p, dataName[0], meta_filename);
-        FREE_BANDS(dataName);
-        free(meta_filename);
     } else {
-        // possibly an alos basename -- prepend "LED-" and see
-        char *meta_filename = MALLOC(sizeof(char)*(10+strlen(filename)));
-        strcpy(meta_filename, "LED-");
-        strcat(meta_filename, filename);
+        // possibly an alos basename -- prepend "LED-" (if needed) and see
+        char *meta_filename;
+        if (strncmp_case(filename, "LED-", 4) == 0) {
+            if (!fileExists(filename))
+                asfPrintError("Cannot find: %s\n", filename);
+            meta_filename = STRDUP(filename);
+        } else {
+            meta_filename = MALLOC(sizeof(char)*(10+strlen(filename)));
+            strcpy(meta_filename, "LED-");
+            strcat(meta_filename, filename);
+        }
         if (fileExists(meta_filename)) {
             meta = meta_create(filename);
             char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
@@ -273,7 +275,19 @@ void read_file(const char *filename)
             for (i=0; i<MAX_BANDS; ++i)
                 dataName[i] = MALLOC(sizeof(char)*256);
             get_ceos_data_name(filename, dataName, &nBands);
-            read_alos(filename, dataName[0], meta_filename);
+            int which_band=-1;
+            if (band) {
+                for (i=0; i<nBands; ++i) {
+                    if (strcmp(dataName[i], band) == 0) {
+                        which_band=i;
+                        break;
+                    }
+                }
+            } else
+                which_band = 0;
+            if (which_band < 0)
+                asfPrintError("Band '%s' not found.\n");
+            read_alos(filename, dataName[which_band], meta_filename);
             FREE_BANDS(dataName);
         } else {
             asfPrintError("Unknown image type: %s\n", img_file);
