@@ -95,43 +95,49 @@ void fftDiff(char *inFile1, char *inFile2, float *bestLocX, float *bestLocY, flo
 float get_maxval(meta_parameters *meta);
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               int *band_count1, int *band_count2, double *psnr);
+                               double *psnr, int band);
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats);
+                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
 void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
-                               stats_t *inFile1_stats, stats_t *inFile2_stats);
+                               stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats);
+                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
 void print_stats_results(char *filename1, char *filename2,
                          stats_t *s1, stats_t *s2,
                          double psnr);
 void diff_check(char *outputFile, char *inFile1, char *inFile2,
-                stats_t *stats1, stats_t *stats2, double psnr);
+                stats_t *stats1, stats_t *stats2, double *psnr,
+                int strict, int num_bands);
+void diffErrOut(char *outputFile, char *err_msg);
 
 int main(int argc, char **argv)
 {
   char *inFile1,*inFile2;
-  char outputFile[1024];
+  char *outputFile;
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
   FILE *fError;                 /* Error log, stderr or log file */
   extern int logflag, quietflag;
-  int outputflag;
+  int outputflag=0;
+  int bandflag=0;
+  int strictflag=0;
+  int band=0;
   char msg[1024];
   char type_str[255];
-  stats_t inFile1_stats, inFile2_stats;
-  double psnr; // peak signal to noise ratio
+  stats_t inFile1_stats[MAX_BANDS];
+  stats_t inFile2_stats[MAX_BANDS];
+  double psnr[MAX_BANDS]; // peak signal to noise ratio
   //float bestLocX, bestLocY, certainty;
 
   fLog=NULL;
   logflag=quietflag=0;
+  outputFile=(char*)CALLOC(1024, sizeof(char));
 
   /* process command line */
-  /* q has a : because we want to have it be -quiet (: = uiet) */
   asfSplashScreen(argc, argv);
-  while ((c=getopt(argc,argv,"o:l:")) != EOF)
+  while ((c=getopt(argc,argv,"o:l:b:s:")) != EOF)
   {
     switch (c) {
       case 'l':/* -log <filename>, get logfile; this is sorta hacked */
@@ -153,14 +159,23 @@ int main(int argc, char **argv)
           usage(argv[0]);
         }
         break;
-    //case 'q':/* -quiet flag; this is also hacked */
-      //if (0==strncmp(optarg,"uiet",4)) {
-      //  quietflag=1;
-      //}
-      //else {
-      //  usage(argv[0]);
-      //}
-      //break;
+      case 'b':/* -band flag */
+        if (0==strncmp(optarg,"and",3)) {
+          sscanf(argv[optind++], "%d", &band);
+          bandflag=1;
+        }
+        else {
+          usage(argv[0]);
+        }
+        break;
+      case 's': /* -strict flag */
+        if (0==strncmp(optarg,"trict",5)) {
+          strictflag=1;
+        }
+        else {
+          usage(argv[0]);
+        }
+        break;
       default:
         if (fLog) {
           FCLOSE(fLog);
@@ -170,12 +185,14 @@ int main(int argc, char **argv)
     }
   }
 
+  // After parsing out the command line arguments, there should be 2 arguments left...
+  // the two files to compare
   if ((argc-optind) != 2) {
     if ((argc-optind) > 2) {
-      printf("\nToo many inputs.\n");
+      printf("\n => Too many inputs.\n");
     }
     if ((argc-optind) < 2) {
-      printf("\nToo few inputs.\n");
+      printf("\n => Too few inputs.\n");
     }
     if (fLog) {
       FCLOSE(fLog);
@@ -183,11 +200,16 @@ int main(int argc, char **argv)
     usage(argv[0]);
   }
   else {
+    // Grab the file names
     inFile1=argv[optind];
     inFile2=argv[optind+1];
   }
+  if (!outputflag) {
+    sprintf(msg, "Missing output file name ...no place to store file differences!\n");
+    asfPrintError(msg);
+  }
 
-  // Set up output redirection
+  // Set up output redirection for error and log messages
   if (logflag == 0) {
     fLog = NULL;
     fError = NULL;
@@ -253,43 +275,135 @@ int main(int argc, char **argv)
   }
 
   /***** Calculate stats and PSNR *****/
-  //   Can't be here unless both file types were the same,
+  //   Can't be here unless both graphics file types were the same,
   //   so choose the input process based on just one of them.
   switch (type1) {
     case ASF_IMG:
       {
         int band_count1, band_count2;
-        asfPrintStatus("\nCalculating Statistics...\n\n");
-        calc_asf_img_stats_2files(inFile1, inFile2,
-                                  &inFile1_stats, &inFile2_stats,
-                                  &band_count1, &band_count2, &psnr);
-//        asfPrintStatus("\nStatistics Results...\n");
-//        print_stats_results(inFile1, inFile2,
-//                            &inFile1_stats, &inFile2_stats,
-//                            psnr);
-        if (outputflag) {
+        char inFile1_meta[1024], inFile2_meta[1024];
+        char *f1, *f2, *c;
+        meta_parameters *md1 = NULL;
+        meta_parameters *md2 = NULL;
+
+        // Read metadata and check for multi-bandedness
+        if (inFile1 != NULL && strlen(inFile1) > 0) {
+          f1 = STRDUP(inFile1);
+          c = findExt(f1);
+          *c = '\0';
+          sprintf(inFile1_meta, "%s.meta", f1);
+          if (fileExists(inFile1_meta)) {
+            md1 = meta_read(inFile1_meta);
+          }
+          else {
+            // Can't find metadata file
+            sprintf(msg, "Cannot find metadata file %s\n", inFile1_meta);
+            diffErrOut(outputFile, msg);
+            asfPrintError(msg);
+          }
+          if (md1 == NULL) {
+            // Can't find metadata file
+            sprintf(msg, "Cannot find metadata file %s\n", inFile1_meta);
+            diffErrOut(outputFile, msg);
+            asfPrintError(msg);
+          }
+        }
+        if (inFile2 != NULL && strlen(inFile2) > 0) {
+          f2 = STRDUP(inFile2);
+          c = findExt(f2);
+          *c = '\0';
+          sprintf(inFile2_meta, "%s.meta", f2);
+          if (fileExists(inFile2_meta)) {
+            md2 = meta_read(inFile2_meta);
+          }
+          else {
+            // Can't find metadata file
+            sprintf(msg, "Cannot find metadata file %s\n", inFile2_meta);
+            diffErrOut(outputFile, msg);
+            asfPrintError(msg);
+          }
+          if (md2 == NULL) {
+            // Can't find metadata file
+            sprintf(msg, "Cannot find metadata file %s\n", inFile2_meta);
+            diffErrOut(outputFile, msg);
+            asfPrintError(msg);
+          }
+        }
+        band_count1 = md1->general->band_count;
+        band_count2 = md2->general->band_count;
+        if (bandflag && !(band < band_count1 && band < band_count2 && band >= 0)) {
+          sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
+              "or greater, and less than the number of available bands in the file\n"
+              "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
+              "the valid band number choices.  \n"
+              "\nFile1 has %d bands.  File2 has %d bands\n",
+              band_count1, band_count2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (!bandflag && band_count1 != band_count2) {
+          sprintf(msg, "Files do not have the same number of bands.\n"
+              "Cannot compare all bands.  Consider using the -band option to\n"
+              "compare individual bands within the files.\n"
+              "\nFile1 has %d bands.  File2 has %d bands\n",
+              band_count1, band_count2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
+        // check the results
+        if (!bandflag) {
+          // Process every available band
+          int band_no;
+          for (band_no=0; band_no < band_count1; band_no++) {
+            calc_asf_img_stats_2files(inFile1, inFile2,
+                                      &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                      &psnr[band_no], band_no);
+            // fftMatch(shifts_t *shift, band_no) goes here
+          }
+          // FIXME: Add *shift to diff_check
           diff_check(outputFile,
-                     inFile1, inFile2, &inFile1_stats, &inFile2_stats, psnr);
+                     inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                     band_count1); // Assumes both files have the same band count or would not be here
         }
         else {
-          // Shouldn't be here...
-          asfPrintError("Missing output file name ...no place to store file differences!\n");
-          usage(argv[0]);
+          // Process selected band
+          calc_asf_img_stats_2files(inFile1, inFile2,
+                                    inFile1_stats, inFile2_stats,
+                                    psnr, band);
+          // fftMatch(shifts_t *shift, band_no) goes here
+          // FIXME: Add *shift to diff_check
+          diff_check(outputFile,
+                     inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                     strictflag, 1);
         }
+        //
+        //////////////////////////////////////////////////////////////////////////////////////
       }
       break;
     case JPEG:
-      calc_jpeg_stats_2files(inFile1, inFile2, &inFile1_stats, &inFile2_stats);
+      {
+        ;
+      }
       break;
     case PGM:
     case PPM:
-      calc_pgm_ppm_stats_2files(inFile1, inFile2, &inFile1_stats, &inFile2_stats);
-      break;
+    {
+      ;
+    }
+    break;
     case STD_TIFF:
     case GEO_TIFF:
-      calc_tiff_stats_2files(inFile1, inFile2, &inFile1_stats, &inFile2_stats);
-      break;
+    {
+      ;
+    }
+    break;
     default:
+      sprintf(msg, "Unrecognized image file type found.\n");
+      diffErrOut(outputFile, msg);
+      asfPrintError(msg);
       break;
   }
 
@@ -306,19 +420,27 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-         "   %s <-output <diff_output_file>> [-log <file>] <img1.ext> <img2.ext>\n"
+         "   %s <-output <diff_output_file>> [-log <file>] [-band <band number>] [-strict] <img1.ext> <img2.ext>\n"
          "\nOPTIONS:\n"
       "   -output <diff_output_file>:  output to write image differencing\n"
       "                 results to (required.)\n"
       "   -log <file>:  allows the output to be written to a log file\n"
       "                 in addition to stdout (not required but strongly suggested.)\n"
+      "   -band <band number>:  allows comparing one selected band from within\n"
+      "                 multi-banded image files, including the separate color bands\n"
+      "                 found within color images.  Default is to compare all\n"
+      "                 available bands.\n"
+      "   -strict:      forces statistics comparison to utilize all available\n"
+      "                 fields (min, max, mean, sdev, PSNR).  Without the -strict\n"
+      "                 option specified, only mean, sdev, and PSNR are utilized.\n"
+      "                 default is non-strict.\n"
       "\nINPUTS:\n"
-      "   <img1.ext>:  any supported single-banded graphics file image.\n"
-      "                supported types include TIFF, GEOTIFF, PGM, PPM,\n"
-      "                JPEG, and ASF IMG.  File extension is REQUIRED.\n"
-      "   <img2.ext>:  an image to line up with the first.\n"
-      "                image 2 should be the same graphics file type and not\n"
-      "                be bigger than image 1.  File extension is REQUIRED.\n"
+      "   <img1.ext>:   any supported single-banded graphics file image.\n"
+      "                 supported types include TIFF, GEOTIFF, PGM, PPM,\n"
+      "                 JPEG, and ASF IMG.  File extension is REQUIRED.\n"
+      "   <img2.ext>:   an image to line up with the first.\n"
+      "                 image 2 should be the same graphics file type and not\n"
+      "                 be bigger than image 1.  File extension is REQUIRED.\n"
       "\nDESCRIPTION:\n"
       "   1. diffimage calculates image statistics within each input image\n"
       "   and calculates the peak signal-to-noise (PSNR) between the two\n"
@@ -494,8 +616,7 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
 
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               int *band_count1, int *band_count2,
-                               double *psnr)
+                               double *psnr, int band)
 {
   char *f1;
   char *f2;
@@ -503,6 +624,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   char **band_names1 = NULL;
   char **band_names2 = NULL;
   char *c;
+  int band_count1, band_count2;
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
   meta_parameters *md1 = NULL;
@@ -517,7 +639,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   s1->rmse = s2->rmse = 0.0;
   *psnr = 0.0;
 
-  // Read metadata and check for multi-bandedness (only support single band files for now)
+  // Read metadata and check for multi-bandedness
   if (inFile1 != NULL && strlen(inFile1) > 0) {
     f1 = STRDUP(inFile1);
     c = findExt(f1);
@@ -544,29 +666,29 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   else {
     s2->stats_good = 0;
   }
-  *band_count1 = (md1 != NULL) ? md1->general->band_count : 0;
-  *band_count2 = (md2 != NULL) ? md2->general->band_count : 0;
+  band_count1 = (md1 != NULL) ? md1->general->band_count : 0;
+  band_count2 = (md2 != NULL) ? md2->general->band_count : 0;
 
   // Calculate the stats from the data.
   s1->hist = NULL;
   s1->hist_pdf = NULL;
   s2->hist = NULL;
   s2->hist_pdf = NULL;
-  if (*band_count1 > 0 && md1 != NULL) {
+  if (band_count1 > 0 && md1 != NULL) {
     band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
     if (band_names1 != NULL) {
-      asfPrintStatus("Calculating statistics for %s", inFile1);
-      calc_stats_rmse_from_file(inFile1, band_names1[0],
+      asfPrintStatus("\nCalculating statistics for %s band in %s", band_names1[band], inFile1);
+      calc_stats_rmse_from_file(inFile1, band_names1[band],
                                 md1->general->no_data,
                                 &s1->min, &s1->max, &s1->mean,
                                 &s1->sdev, &s1->rmse, &s1->hist);
     }
   }
-  if (*band_count2 > 0 && md2 != NULL) {
+  if (band_count2 > 0 && md2 != NULL) {
     band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
     if (band_names2 != NULL) {
-      asfPrintStatus("\nCalculating statistics for %s", inFile2);
-      calc_stats_rmse_from_file(inFile2, band_names2[0],
+      asfPrintStatus("\nCalculating statistics for %s band in %s", band_names2[band], inFile2);
+      calc_stats_rmse_from_file(inFile2, band_names2[band],
                                 md2->general->no_data,
                                 &s2->min, &s2->max, &s2->mean,
                                 &s2->sdev, &s2->rmse, &s2->hist);
@@ -577,8 +699,8 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   double se;
   double rmse;
   int ii, jj;
-  int band1 = 0;
-  int band2 = 0;
+  int band1 = band;
+  int band2 = band;
   long pixel_count = 0;
   long lines, samples;
   long offset1 = md1->general->line_count * band1;
@@ -673,7 +795,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats)
+                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr)
 {
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
@@ -689,7 +811,7 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
-                               stats_t *inFile1_stats, stats_t *inFile2_stats)
+                               stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr)
 {
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
@@ -705,7 +827,7 @@ void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats)
+                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr)
 {
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
@@ -751,7 +873,7 @@ void print_stats_results(char *filename1, char *filename2,
                          double psnr)
 {
   asfPrintStatus(
-      "\nStatistics for Baseline File: %s\n"
+      "\nStatistics for File1: %s\n"
       "   min: %f\n"
       "   max: %f\n"
       "  mean: %f\n"
@@ -761,7 +883,7 @@ void print_stats_results(char *filename1, char *filename2,
       filename1, s1->min, s1->max, s1->mean, s1->sdev, s1->rmse,
       s1->stats_good ? "GOOD STATS" : "UNRELIABLE STATS");
   asfPrintStatus(
-      "\nStatistics for New Version File: %s\n"
+      "\nStatistics for File2: %s\n"
       "   min: %f\n"
       "   max: %f\n"
       "  mean: %f\n"
@@ -774,85 +896,265 @@ void print_stats_results(char *filename1, char *filename2,
 }
 
 void diff_check(char *outputFile, char *inFile1, char *inFile2,
-                stats_t *stats1, stats_t *stats2, double psnr)
+                stats_t *stats1, stats_t *stats2, double *psnr,
+                int strict, int num_bands)
 {
+  int band;
+  double baseline_range;
+  double min_tol;
+  double max_tol;
+  double mean_tol;
+  double sdev_tol;
+  //  double rmse_tol;
+  double psnr_tol;
+  double min_diff;
+  double max_diff;
+  double mean_diff;
+  double sdev_diff;
+  //  double rmse_diff;
   FILE *outputFP = NULL;
 
   outputFP = fopen(outputFile, "w");
 
-  // Compare statistics
-  double baseline_range = fabs(stats1->sdev) * 6.0; // Assume 6-sigma range (99.999999%) is full range of data
-  double min_tol = (MIN_DIFF_TOL/100.0)*baseline_range;
-  double max_tol = (MAX_DIFF_TOL/100.0)*baseline_range;
-  double mean_tol = (MEAN_DIFF_TOL/100.0)*baseline_range;
-  double sdev_tol = (SDEV_DIFF_TOL/100.0)*baseline_range;
-//  double rmse_tol = (RMSE_DIFF_TOL/100.0)*stats1->rmse;
-  double psnr_tol = PSNR_TOL;
+  // Get or produce band names for intelligent output...
+  char type_str[255];
+  graphics_file_t type = getGraphicsFileType(inFile1);
+  graphicsFileType_toStr(type, type_str);
+  char **band_names1 = NULL;
+  char **band_names2 = NULL;
+  if (type == ASF_IMG) {
+    // Grab band names from the metadata
+    meta_parameters *md1, *md2;
+    int band_count1=1, band_count2=1;
+    char *f, *c;
+    char inFile1_meta[1024], inFile2_meta[1024];
+    if (inFile1 != NULL && strlen(inFile1) > 0) {
+      f = STRDUP(inFile1);
+      c = findExt(f);
+      *c = '\0';
+      sprintf(inFile1_meta, "%s.meta", f);
+      if (fileExists(inFile1_meta)) {
+        md1 = meta_read(inFile1_meta);
+      }
+      FREE(f);
+    }
+    if (inFile2 != NULL && strlen(inFile2) > 0) {
+      f = STRDUP(inFile2);
+      c = findExt(f);
+      *c = '\0';
+      sprintf(inFile2_meta, "%s.meta", f);
+      if (fileExists(inFile2_meta)) {
+        md2 = meta_read(inFile2_meta);
+      }
+      FREE(f);
+    }
+    band_count1 = (md1 != NULL) ? md1->general->band_count : 1;
+    band_count2 = (md2 != NULL) ? md2->general->band_count : 1;
 
-  double min_diff = fabs(stats2->min - stats1->min);
-  double max_diff = fabs(stats2->max - stats1->max);
-  double mean_diff = fabs(stats2->mean - stats1->mean);
-  double sdev_diff = fabs(6.0*stats2->sdev - 6.0*stats1->sdev);
-//  double rmse_diff = fabs(stats2->rmse - stats1->rmse);
-
-  if ((stats1->stats_good && stats2->stats_good) &&
-      (min_diff > min_tol ||
-      max_diff > max_tol ||
-      mean_diff > mean_tol ||
-      sdev_diff > sdev_tol ||
-//      rmse_diff > rmse_tol ||
-       psnr > psnr_tol))
-  {
-    fprintf(outputFP, "\n-----------------------------------------------\n");
-    asfPrintStatus("\n-----------------------------------------------\n");
-
-    char msg[1024];
-    sprintf(msg, "FAIL: Comparing %s to %s resulted in differences found:\n\n",
-            inFile2, inFile1);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-    sprintf(msg, "[%s] [MIN]   Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
-            min_diff > min_tol ? "FAIL" : "PASS",
-            stats1->min, stats2->min, min_tol, MIN_DIFF_TOL);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-    sprintf(msg, "[%s] [MAX]   Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
-            max_diff > max_tol ? "FAIL" : "PASS",
-            stats1->max, stats2->max, max_tol, MAX_DIFF_TOL);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-    sprintf(msg, "[%s] [MEAN]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
-            mean_diff > mean_tol ? "FAIL" : "PASS",
-            stats1->mean, stats2->mean, mean_tol, MEAN_DIFF_TOL);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-    sprintf(msg, "[%s] [SDEV]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
-            sdev_diff > sdev_tol ? "FAIL" : "PASS",
-            stats1->sdev, stats2->sdev, sdev_tol, SDEV_DIFF_TOL);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-//    sprintf(msg, "[%s] [RMSE]  Baseline: %11f,  New Version: %11f, Tolerance: %11f (%3f Percent)\n",
-//            rmse_diff > rmse_tol ? "FAIL" : "PASS",
-//            stats1->rmse, stats2->rmse, rmse_tol, RMSE_DIFF_TOL);
-//    fprintf(outputFP, msg);
-//    asfPrintStatus(msg);
-
-    sprintf(msg, "[%s] [PSNR]      PSNR: %11f,                       PSNR Tolerance: %11f\n",
-            psnr > psnr_tol ? "FAIL" : "PASS",
-            psnr, psnr_tol);
-    fprintf(outputFP, msg);
-    asfPrintStatus(msg);
-
-    fprintf(outputFP, "-----------------------------------------------\n\n");
-    asfPrintStatus("-----------------------------------------------\n\n");
+    if (band_count1 > 0 && md1 != NULL) {
+      band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
+    }
+    if (band_count2 > 0 && md2 != NULL) {
+      band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
+    }
+  }
+  else {
+    // Produce numeric band names (if no ASF metadata)
+    // FIXME: Look for metadata band names in GeoTIFFs ...they may have been exported by ASF
+    band_names1 = (char**)MALLOC(MAX_BANDS*sizeof(char*));
+    if (band_names1 != NULL) {
+      int i;
+      for (i=0; i<MAX_BANDS; i++) {
+        band_names1[i] = (char*)CALLOC(64, sizeof(char));
+        if (band_names1[i] != NULL) {
+          sprintf(band_names1[i], "%02d", i);
+        }
+      }
+    }
+    band_names2 = (char**)MALLOC(MAX_BANDS*sizeof(char*));
+    if (band_names2 != NULL) {
+      int i;
+      for (i=0; i<MAX_BANDS; i++) {
+        band_names2[i] = (char*)CALLOC(64, sizeof(char));
+        if (band_names2[i] != NULL) {
+          sprintf(band_names2[i], "%02d", i);
+        }
+      }
+    }
   }
 
+  // Check each band for differences
+  char band_str1[64];
+  char band_str2[64];
+  for (band=0; band<num_bands; band++) {
+    // If differences exist, then produce an output file with content, else
+    // produce an empty output file (handy for scripts that check for file existence
+    // AND file size greater than zero)
+    // Compare statistics
+    baseline_range = fabs(stats1[band].sdev) * 6.0; // Assume 6-sigma range (99.999999%) is full range of data
+    min_tol = (MIN_DIFF_TOL/100.0)*baseline_range;
+    max_tol = (MAX_DIFF_TOL/100.0)*baseline_range;
+    mean_tol = (MEAN_DIFF_TOL/100.0)*baseline_range;
+    sdev_tol = (SDEV_DIFF_TOL/100.0)*stats1[band].sdev;
+    psnr_tol = PSNR_TOL;
+    min_diff = fabs(stats2[band].min - stats1[band].min);
+    max_diff = fabs(stats2[band].max - stats1[band].max);
+    mean_diff = fabs(stats2[band].mean - stats1[band].mean);
+    sdev_diff = fabs(6.0*stats2[band].sdev - 6.0*stats1[band].sdev);
+
+    if (strict &&
+        (stats1[band].stats_good && stats2[band].stats_good) &&
+        (min_diff > min_tol ||
+         max_diff > max_tol ||
+         mean_diff > mean_tol ||
+         sdev_diff > sdev_tol ||
+         psnr[band] > psnr_tol))
+    {
+      // Strict comparison utilizes all values
+      fprintf(outputFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      char msg[1024];
+      if (num_bands > 1) {
+        sprintf(band_str1, "band %s in ", band_names1[band]);
+        sprintf(band_str2, "band %s in ", band_names2[band]);
+      }
+      else {
+        strcpy(band_str1, "");
+        strcpy(band_str2, "");
+      }
+      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences found:\n\n",
+              band_str1, inFile2, band_str2, inFile1);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [min]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              min_diff > min_tol ? "FAIL" : "PASS",
+              stats1[band].min, stats2[band].min, min_tol, MIN_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [max]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              max_diff > max_tol ? "FAIL" : "PASS",
+              stats1[band].max, stats2[band].max, max_tol, MAX_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              mean_diff > mean_tol ? "FAIL" : "PASS",
+              stats1[band].mean, stats2[band].mean, mean_tol, MEAN_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              sdev_diff > sdev_tol ? "FAIL" : "PASS",
+              stats1[band].sdev, stats2[band].sdev, sdev_tol, SDEV_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                  PSNR Tolerance: %11f\n",
+              psnr[band] > psnr_tol ? "FAIL" : "PASS",
+              psnr[band], psnr_tol);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outputFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+    }
+    else if (!strict &&
+             (stats1[band].stats_good && stats2[band].stats_good) &&
+             (mean_diff > mean_tol ||
+              sdev_diff > sdev_tol ||
+              psnr[band] > psnr_tol)) {
+      // If not doing strict checking, skip comparing min and max values
+      fprintf(outputFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      char msg[1024];
+      if (num_bands > 1) {
+        sprintf(band_str1, "band %s in ", band_names1[band]);
+        sprintf(band_str2, "band %s in ", band_names2[band]);
+      }
+      else {
+        strcpy(band_str1, "");
+        strcpy(band_str2, "");
+      }
+      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences found:\n\n",
+              band_str1, inFile2, band_str2, inFile1);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              mean_diff > mean_tol ? "FAIL" : "PASS",
+              stats1[band].mean, stats2[band].mean, mean_tol, MEAN_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
+              sdev_diff > sdev_tol ? "FAIL" : "PASS",
+              stats1[band].sdev, stats2[band].sdev, sdev_tol, SDEV_DIFF_TOL);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                  PSNR Tolerance: %11f\n",
+              psnr[band] > psnr_tol ? "FAIL" : "PASS",
+              psnr[band], psnr_tol);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outputFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+    }
+    else if (stats1[band].stats_good && stats2[band].stats_good) {
+      asfPrintStatus("\nNo differences found\n\n");
+    }
+
+    if (!stats1[band].stats_good || !stats2[band].stats_good) {
+      char msg[1024];
+
+      fprintf(outputFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      if (!stats1[band].stats_good) {
+        sprintf(msg, "FAIL: %s file statistics not found.\n", inFile1);
+        fprintf(outputFP, msg);
+        asfPrintStatus(msg);
+      }
+      if (!stats2[band].stats_good) {
+        sprintf(msg, "FAIL: %s file statistics not found.\n", inFile2);
+        fprintf(outputFP, msg);
+        asfPrintStatus(msg);
+      }
+
+      fprintf(outputFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+    }
+  } // For each band
+
   FCLOSE(outputFP);
+  // FIXME: FREE() the band name arrays
+}
+
+void diffErrOut(char *outputFile, char *err_msg)
+{
+  char msg[1024];
+  FILE *outputFP = NULL;
+
+  if (outputFile != NULL && strlen(outputFile) > 0) {
+    outputFP = FOPEN(outputFile, "wa");
+
+    fprintf(outputFP, "\n-----------------------------------------------\n");
+
+    sprintf(msg, "FAIL: %s\n", err_msg);
+    fprintf(outputFP, msg);
+
+    fprintf(outputFP, "-----------------------------------------------\n\n");
+
+    FCLOSE(outputFP);
+  }
+  else {
+    asfPrintError("Invalid output file name (NULL or zero length)\n");
+  }
 }
 
 
