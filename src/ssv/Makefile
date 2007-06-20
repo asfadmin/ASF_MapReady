@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
-TARGET = sv
-SRCS = sv.c utility.c font.c small_image.c read.c big_image.c meta.c
+TARGET = ssv
+SRCS = ssv.c utility.c font.c small_image.c read.c big_image.c meta.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)

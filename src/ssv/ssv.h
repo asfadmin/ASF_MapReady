@@ -52,7 +52,7 @@ void put_string_to_comboboxentry(const char *widget_name, char *txt);
 void put_file_in_textview(const char *file, const char *widget_name);
 void put_string_to_label(const char *widget_name, const char *txt);
 
-/* sv.c */
+/* ssv.c */
 char *find_in_share(const char * filename);
 float get_pixel(int line, int sample);
 

@@ -3,9 +3,9 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="sv_main_window">
+<widget class="GtkWindow" id="ssv_main_window">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">sv</property>
+  <property name="title" translatable="yes">ssv</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -18,9 +18,9 @@
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
-  <signal name="delete_event" handler="on_sv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:23 GMT"/>
-  <signal name="destroy_event" handler="on_sv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:36 GMT"/>
-  <signal name="destroy" handler="on_sv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:53 GMT"/>
+  <signal name="delete_event" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:23 GMT"/>
+  <signal name="destroy_event" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:36 GMT"/>
+  <signal name="destroy" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:53 GMT"/>
 
   <child>
     <widget class="GtkVBox" id="vbox3">

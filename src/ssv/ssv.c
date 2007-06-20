@@ -1,4 +1,4 @@
-#include "sv.h"
+#include "ssv.h"
 
 #define VERSION "1.0"
 
@@ -41,7 +41,7 @@ char *find_in_share(const char * filename)
 }
 
 SIGNAL_CALLBACK void
-on_sv_main_window_delete_event(GtkWidget *w, gpointer data)
+on_ssv_main_window_delete_event(GtkWidget *w, gpointer data)
 {
     gtk_main_quit();
 }
@@ -54,7 +54,7 @@ main(int argc, char **argv)
         "-band", "--band", "-b", NULL);
 
     if (argc != 2) {
-        printf("Usage: sv <filename>\n\n"
+        printf("Usage: ssv <filename>\n\n"
             "<filename> should be an ASF internal format image file.\n");
         exit(1);
     }
@@ -71,19 +71,19 @@ main(int argc, char **argv)
 
     gtk_init(&argc, &argv);
 
-    gchar *glade_xml_file = (gchar *) find_in_share("sv.glade");
-    printf("Found sv.glade: %s\n", glade_xml_file);
+    gchar *glade_xml_file = (gchar *) find_in_share("ssv.glade");
+    //printf("Found ssv.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     g_free(glade_xml_file);
 
     // set up window title
     char title[256];
     if (band_specified) {
-        sprintf(title, "sv ver %s: %s (%s)", VERSION, argv[1], band);
+        sprintf(title, "ssv ver %s: %s (%s)", VERSION, argv[1], band);
     } else {
-        sprintf(title, "sv ver %s: %s", VERSION, argv[1]);
+        sprintf(title, "ssv ver %s: %s", VERSION, argv[1]);
     }
-    GtkWidget *widget = get_widget_checked("sv_main_window");
+    GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
     // load the metadata & image data, other setup
