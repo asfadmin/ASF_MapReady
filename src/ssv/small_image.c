@@ -26,14 +26,18 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
 
     int bb_min_x = (cx - size*zoom/2) * width / ns;
     if (bb_min_x < 0) bb_min_x = 0;
+    if (bb_min_x > width-1) bb_min_x = width-1;
 
     int bb_max_x = (cx + size*zoom/2) * width / ns;
+    if (bb_max_x < 0) bb_max_x = 0;
     if (bb_max_x > width-1) bb_max_x = width-1;
 
     int bb_min_y = (cy - size*zoom/2) * height / nl;
     if (bb_min_y < 0) bb_min_y = 0;
+    if (bb_min_y > height-1) bb_min_y = height-1;
 
     int bb_max_y = (cy + size*zoom/2) * height / nl;
+    if (bb_max_y < 0) bb_max_y = 0;
     if (bb_max_y > height-1) bb_max_y = height-1;
 
     for (i=bb_min_x; i<=bb_max_x; ++i) {
