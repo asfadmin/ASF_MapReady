@@ -45,12 +45,12 @@ static void print_proj_info(projection_type_t projection_type,
     switch (projection_type)
     {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-        asfPrintStatus(" Projection: UTM\n   Zone: %d\n\n", pp->utm.zone);
+        asfPrintStatus("Projection: UTM\n   Zone: %d\n\n", pp->utm.zone);
         break;
 
     case POLAR_STEREOGRAPHIC:
         asfPrintStatus(
-            " Projection: Polar Stereographic\n"
+            "Projection: Polar Stereographic\n"
             "   Standard parallel: %.4f\n"
             "   Central meridian: %.4f\n"
             "   Hemisphere: %c\n\n", 
@@ -59,7 +59,7 @@ static void print_proj_info(projection_type_t projection_type,
 
     case ALBERS_EQUAL_AREA:
         asfPrintStatus(
-            " Projection: Albers Equal Area Conic\n"
+            "Projection: Albers Equal Area Conic\n"
             "   First standard parallel: %.4f\n"
             "   Second standard parallel: %.4f\n"
             "   Central meridian: %.4f\n"
@@ -70,7 +70,7 @@ static void print_proj_info(projection_type_t projection_type,
 
     case LAMBERT_CONFORMAL_CONIC:
         asfPrintStatus(
-            " Projection: Lambert Conformal Conic\n"
+            "Projection: Lambert Conformal Conic\n"
             "   First standard parallel: %.4f\n"
             "   Second standard parallel: %.4f\n"
             "   Central meridian: %.4f\n"
@@ -80,7 +80,7 @@ static void print_proj_info(projection_type_t projection_type,
 
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
         asfPrintStatus(
-            " Projection: Lambert Azimuthal Equal Area\n"
+            "Projection: Lambert Azimuthal Equal Area\n"
             "   Latitude of origin: %.4f\n"
             "   Central meridian: %.4f\n\n",
             pp->lamaz.center_lat, pp->lamaz.center_lon);
@@ -1061,10 +1061,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       g_assert_not_reached ();
   }
 
-  // Generate the output filename
-  GString *output_file = g_string_new (output_image->str);
-  g_string_append (output_file, ".img");
-
   //-------------------------------------------------------------------------
   // Now working on generating the output metadata file
 
@@ -1254,7 +1250,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if ( GSL_MIN(imd->general->x_pixel_size,
 	        imd->general->y_pixel_size) > pixel_size ) {
         asfPrintWarning
-        ("Requested pixel size %lf is smaller then the input image resolution "
+        ("Requested pixel size %lf is smaller than the input image resolution "
         "(%le meters).\n", pixel_size,
         GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
     }
@@ -1264,7 +1260,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
 	        imd->general->y_pixel_size) > (2*pixel_size) ) {
         report_func
-        ("Requested pixel size %lf is smaller then the minimum implied by half \n"
+        ("Requested pixel size %lf is smaller than the minimum implied by half \n"
         "the input image resolution (%le meters), this is not supported.\n",
         pixel_size, GSL_MIN (imd->general->x_pixel_size,
 			        imd->general->y_pixel_size));
@@ -1653,7 +1649,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         FILE *outFp = NULL; // only used in the line-by-line output case
         if (output_by_line) {
           // open for append, if multiband && this isn't the first band
-          outFp = FOPEN(output_file->str, multiband && kk>0 ? "a" : "w");
+          outFp = FOPEN(output_image->str, multiband && kk>0 ? "a" : "w");
         }
 
         if (output_by_line)
@@ -1727,13 +1723,28 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                     float_image_sample_method);
               }
 
-              oix_last_valid = oix;
-              if (oix_first_valid == -1) oix_first_valid = oix;
+              if (meta_is_valid_double(imd->general->no_data) &&
+                value == imd->general->no_data)
+              {
+                // pixel is the "no data" value -- only the first image
+                // will set this in the output image, otherwise we risk
+                // overwriting real data with background.
+                if (i==0) {
+                  if (output_by_line)
+                    output_line[oix] = value;
+                  else
+                    banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+                }
+              }
+              else {
+                oix_last_valid = oix;
+                if (oix_first_valid == -1) oix_first_valid = oix;
 
-              if (output_by_line)
-                output_line[oix] = value;
-              else
-                banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+                if (output_by_line)
+                  output_line[oix] = value;
+                else
+                  banded_float_image_set_pixel(output_bfi, kk, oix, oiy, value);
+              }
             }
 
           } // end of for-each-sample-in-line set output values
@@ -1881,7 +1892,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   meta_free (omd);
-  g_string_free (output_file, TRUE);
   g_string_free (output_meta_data, TRUE);
   g_string_free (output_image, TRUE);
 

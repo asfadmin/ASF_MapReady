@@ -445,7 +445,7 @@ const char *geocode_projection_options_help()
 "          Value to use for pixels that fall outside of the scene.  By default,\n"
 "          the outside is filled with zeroes.\n"\
 "\n"
-"     -force\n"
+"     -force (-f)\n"
 "          Override the built-in projection sanity checks.  Normally,\n"
 "          the program will abort with an error if it detects that a\n"
 "          scene lies in an area where the selected projection is\n"
