@@ -29,8 +29,12 @@ void fill_meta_info()
             strlen(meta->general->bands) > 0 ? meta->general->bands : "-");
       }
       if (meta->sar) {
+        // don't show the polarization for ALOS data, it is usually wrong...
+        if (strcmp_case(meta->general->sensor, "ALOS") != 0) {
+          sprintf(&s[strlen(s)], "Polarization: %s\n", meta->sar->polarization);
+        }
+
         sprintf(&s[strlen(s)],
-          "Polarization: %s\n"
           "Look Direction: %c\n"
           "Look Count: %d\n"
           "Deskewed: %s\n"
@@ -39,7 +43,6 @@ void fill_meta_info()
           "Slant to First Pixel: %.1f m\n"
           "PRF: %.1f Hz\n"
           "Satellite Height: %.0f m\n\n",
-            meta->sar->polarization,
             meta->sar->look_direction,
             meta->sar->look_count,
             meta->sar->deskewed ? "Yes" : "No",

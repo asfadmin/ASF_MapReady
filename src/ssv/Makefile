@@ -105,6 +105,7 @@ CFLAGS += \
 LDLIBS = \
 	$(LIBDIR)/libasf_metadata.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \

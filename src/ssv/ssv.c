@@ -24,6 +24,9 @@ int nl, ns;
 int zoom;
 int crosshair_x, crosshair_y;
 
+// loaded filename
+char *g_file;
+
 float get_pixel(int line, int sample)
 {
     if (data)
@@ -66,8 +69,9 @@ main(int argc, char **argv)
     g_min = g_max = 0;
     cx = cy = crosshair_x = crosshair_y = 0;
     zoom = 1;
+    g_file = STRDUP(argv[1]);
 
-    read_file(argv[1], band_specified ? band : NULL);
+    read_file(g_file, band_specified ? band : NULL);
 
     gtk_init(&argc, &argv);
 
@@ -78,14 +82,23 @@ main(int argc, char **argv)
 
     // set up window title
     char title[256];
-    sprintf(title, "ssv ver %s: %s", VERSION, argv[1]);
+    sprintf(title, "ssv ver %s: %s", VERSION, g_file);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
     } else if (meta && meta->general && meta->general->band_count > 1) {
-        strcpy(band, meta->general->bands);
-        char *p = strchr(band, ',');
-        if (p) *p = '\0';
-        sprintf(&title[strlen(title)], " (%s)", band);
+        if (strlen(meta->general->bands) > 0) {
+            strcpy(band, meta->general->bands);
+            char *p = strchr(band, ',');
+            if (p) *p = '\0';
+        } else if (strncmp_case(g_file, "IMG-", 4) == 0) {
+            strcpy(band, g_file+4);
+            char *p = strchr(band, '-');
+            if (p) *p = '\0';
+        } else {
+            strcpy(band, "");
+        }
+        if (strlen(band) > 0)
+            sprintf(&title[strlen(title)], " (%s)", band);
     }
 
     GtkWidget *widget = get_widget_checked("ssv_main_window");
@@ -104,6 +117,7 @@ main(int argc, char **argv)
     if (data) free(data);
     if (data_fi) float_image_free(data_fi);
     if (meta) meta_free(meta);
+    if (g_file) free(g_file);
 
     exit (EXIT_SUCCESS);
 }
