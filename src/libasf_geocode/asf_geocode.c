@@ -715,10 +715,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         }
     }
 
-    // the number of bands in the output will be equal to the largest
+    // The number of bands in the output will be equal to the largest
     // number of bands in all of the inputs.  Any inputs that "run out"
     // of bands will just be ignored when generating that particular
-    // band in the output image.
+    // band in the output image.  NOTE: We still want to do this even if the
+    // user has used the "-band" option to actually process only one band.
     if (imd->general->band_count > n_bands) {
       n_bands = imd->general->band_count;
       ref_input = i;
@@ -980,8 +981,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     process_as_byte ? "BYTE" : "REAL32");
 
   if (n_bands > 1)
-    asfPrintStatus("Number of bands in the output: %d\n", n_bands);
-    
+      asfPrintStatus("Number of bands in the output: %d\n",
+        multiband ? n_bands : 1);
+
   // now apply the input lat/lon "bounding box" restriction to the
   // calculated extents.  Do this by converting the 4 corner points of
   // the lat/lon box.
