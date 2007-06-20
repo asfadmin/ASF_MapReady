@@ -577,7 +577,7 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters
       if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],stats.mask) )
         continue;
       stats.histogram[bin]++;
-      diff_squared_sum = SQR(data_line[sample] - stats.mean);
+      diff_squared_sum += SQR(data_line[sample] - stats.mean);
     }
   }
   if (!quietflag) printf("\rSecond data sweep: 100%% complete.\n");
