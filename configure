@@ -4495,11 +4495,11 @@ fi
 
 #### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/ssv"
 fi
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/ssv"
 fi
 
 
