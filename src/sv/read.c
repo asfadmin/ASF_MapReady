@@ -5,6 +5,21 @@
 #include <asf_nan.h>
 #include "asf_endian.h"
 
+// if an image takes up above this number of bytes, we store data
+// with FloatImage instead of just an in-memory float array
+static const int FLOAT_IMAGE_CUTOFF = 500*1024*1024;
+
+static int use_float_image(int nl, int ns)
+{
+    if (nl*ns*4 > FLOAT_IMAGE_CUTOFF) {
+        asfPrintStatus("Storing image data using disk cache (FloatImage).\n");
+        return TRUE;
+    } else {
+        asfPrintStatus("Storing image data in memory.\n");
+        return FALSE;
+    }
+}
+
 static int try_ext(const char *filename, const char *ext)
 {
     char *buf = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
@@ -19,38 +34,71 @@ static int try_ext(const char *filename, const char *ext)
     return ret;
 }
 
+static void clear_data()
+{
+    if (data) {
+        free(data);
+        data=NULL;
+    }
+    if (data_fi) {
+        float_image_free(data_fi);
+        data_fi=NULL;
+    }
+}
+
 static void read_asf(const char *filename)
 {
     // assume metadata has already been read in
     assert(meta);
-    if (data) free(data);
+    clear_data();
 
     printf("Reading ASF Internal: %s\n", filename);
     nl = meta->general->line_count;
     ns = meta->general->sample_count;
-    data = MALLOC(sizeof(float)*nl*ns);
+
     FILE *fp = FOPEN(filename, "rb");
 
-    // get_float_lines(fp, meta, 0, nl, data);
-    int i;
-    for (i=0; i<nl; i+=128) {
-        int l=128; if (i+128>nl) l=nl-i;
-        get_float_lines(fp, meta, i, l, data + i*ns);
-        asfPercentMeter((float)i/nl);
-    }
-    asfPercentMeter(1.0);
+    if (use_float_image(nl,ns)) {
+        data_fi = float_image_new(ns, nl);
+        float *buf = MALLOC(sizeof(float)*ns);
 
+        int i,j;
+        for (i=0; i<nl; ++i) {
+            get_float_line(fp, meta, i, buf);
+            for (j=0; j<ns; ++j)
+                float_image_set_pixel(data_fi, j, i, buf[j]);
+            asfPercentMeter((float)i/nl);
+        }
+
+        free(buf);
+    } else {
+        data = MALLOC(sizeof(float)*nl*ns);
+
+        // get_float_lines(fp, meta, 0, nl, data);
+        int i;
+        for (i=0; i<nl; i+=128) {
+            int l=128; if (i+128>nl) l=nl-i;
+            get_float_lines(fp, meta, i, l, data + i*ns);
+            asfPercentMeter((float)i/nl);
+        }
+    }
+
+    asfPercentMeter(1.0);
     fclose(fp);
 }
 
 static void read_ceos(struct IOF_VFDR *image_fdr, const char *filename)
 {
     assert(meta);
-    if (data) free(data);
+    clear_data();
 
     nl = meta->general->line_count;
     ns = meta->general->sample_count;
-    data = MALLOC(sizeof(float)*nl*ns);
+
+    if (use_float_image(nl,ns))
+        data_fi = float_image_new(ns, nl);
+    else
+        data = MALLOC(sizeof(float)*nl*ns);
 
     int leftFill = image_fdr->lbrdrpxl;
     int rightFill = image_fdr->rbrdrpxl;
@@ -69,9 +117,17 @@ static void read_ceos(struct IOF_VFDR *image_fdr, const char *filename)
             FSEEK64(fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns, fp);
 
-            for (jj = 0; jj < ns; ++jj) {
-                big16(shorts[jj]);
-                data[jj + ii*ns] = (float)(shorts[jj]);
+            if (data) {
+                for (jj = 0; jj < ns; ++jj) {
+                    big16(shorts[jj]);
+                    data[jj + ii*ns] = (float)(shorts[jj]);
+                }
+            } else {
+                for (jj = 0; jj < ns; ++jj) {
+                    big16(shorts[jj]);
+                    float_image_set_pixel(data_fi, jj, ii,
+                        (float)(shorts[jj]));
+                }
             }
 
             asfPercentMeter((float)ii/nl);
@@ -87,8 +143,14 @@ static void read_ceos(struct IOF_VFDR *image_fdr, const char *filename)
             FSEEK64(fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns, fp);
 
-            for (jj = 0; jj < ns; ++jj)
-                data[jj + ii*ns] = (float)(bytes[jj]);
+            if (data) {
+                for (jj = 0; jj < ns; ++jj)
+                    data[jj + ii*ns] = (float)(bytes[jj]);
+            } else {
+                for (jj = 0; jj < ns; ++jj)
+                    float_image_set_pixel(data_fi, jj, ii,
+                        (float)(bytes[jj]));
+            }
 
             asfPercentMeter((float)ii/nl);
         }
@@ -198,7 +260,6 @@ void read_file(const char *filename)
         get_ceos_data_name(p, dataName, &nBands);
         read_alos(p, dataName[0], meta_filename);
         FREE_BANDS(dataName);
-        printf("Hi\n");
         free(meta_filename);
     } else {
         // possibly an alos basename -- prepend "LED-" and see
@@ -221,7 +282,7 @@ void read_file(const char *filename)
     }
 
     FREE(img_file);
-    assert(data);
+    assert(data||data_fi);
 
     cx = crosshair_x = ns/2;
     cy = crosshair_y = nl/2;

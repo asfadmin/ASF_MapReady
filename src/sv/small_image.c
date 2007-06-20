@@ -59,13 +59,13 @@ static GdkPixbuf * make_small_image(int size)
 {
     static GdkPixbuf *pixbuf_small = NULL;
     if (!pixbuf_small) {
-        assert(data && meta);
+        assert((data||data_fi) && meta);
 
         int larger_dim = size*4;
         if (larger_dim > meta->general->line_count)
             larger_dim = meta->general->line_count;
 
-        printf("Larger size: %d\n", larger_dim);
+        //printf("Larger size: %d\n", larger_dim);
 
         int ii, jj;
 
@@ -80,30 +80,50 @@ static GdkPixbuf * make_small_image(int size)
         size_t tsx = meta->general->sample_count / sf;
         size_t tsy = meta->general->line_count / sf;
 
-        printf("Sizes: %d, %d\n", tsx, tsy);
+        //printf("Sizes: %d, %d\n", tsx, tsy);
 
-        // Compute stats
         double avg = 0.0;
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                int kk = jj*sf + ii*ns*sf;
-                if (kk > nl*ns)
-                    asfPrintError("index too big: kk=%d ii=%d jj=%d sf=%d nl=%d ns=%d nl*ns=%d\n",
-                        kk, ii, jj, sf, nl, ns, nl*ns);
-                avg += data[kk];
-            }
-        }
-
-        // Compute the std devation
-        avg /= tsx*tsy;
         double stddev = 0.0;
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float v = data[jj*sf + ii*sf*ns];
-                stddev += (v - avg) * (v - avg);
+
+        // split out the case where we have no ignore value --
+        // should be quite a bit faster...
+        if (meta_is_valid_double(meta->general->no_data)) {
+            // Compute stats -- ignore "no data" value
+            int n=0;
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = get_pixel(ii*sf, jj*sf);
+                    if (v != meta->general->no_data) {
+                        avg += v;
+                        ++n;
+                    }
+                }
             }
+            avg /= (double)n;
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = get_pixel(ii*sf, jj*sf);
+                    if (v != meta->general->no_data)
+                        stddev += (v - avg) * (v - avg);
+                }
+            }
+            stddev = sqrt(stddev / (double)(tsx*tsy));
+        } else {
+            // Compute stats -- no ignore
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    avg += get_pixel(ii*sf, jj*sf);
+                }
+            }
+            avg /= (double)(tsx*tsy);
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = get_pixel(ii*sf, jj*sf);
+                    stddev += (v - avg) * (v - avg);
+                }
+            }
+            stddev = sqrt(stddev / (double)(tsx*tsy));
         }
-        stddev = sqrt(stddev / (tsx*tsy));
 
         printf("Avg, StdDev: %f, %f\n", avg, stddev);
 
@@ -119,7 +139,7 @@ static GdkPixbuf * make_small_image(int size)
         printf("Building image...\n");
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float val = data[jj*sf + ii*sf*ns];
+                float val = get_pixel(ii*sf, jj*sf);
 
                 unsigned char uval;
                 if (val < g_min)
@@ -149,8 +169,8 @@ static GdkPixbuf * make_small_image(int size)
         // scaling method, much nicer than what we did above
 
         // Must ensure we scale the same in each direction
-        double scale_y = tsy / size;
-        double scale_x = tsx / size;
+        double scale_y = (double)tsy / size;
+        double scale_x = (double)tsx / size;
         double scale = scale_y > scale_x ? scale_y : scale_x;
         int x_dim = tsx / scale;
         int y_dim = tsy / scale;

@@ -58,7 +58,7 @@ static void put_crosshair (GdkPixbuf *pixbuf)
 
 static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
 {
-    assert(data && meta);
+    assert((data||data_fi) && meta);
 
     int ii, jj;
     unsigned char *bdata = MALLOC(sizeof(unsigned char)*size*size*3);
@@ -72,11 +72,10 @@ static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
         for ( jj = min_x ; jj < min_x + size*zoom ; jj += zoom ) {
             unsigned char uval;
 
-            if (ii<0 || ii>nl-1 || jj<0 || jj>ns-1) {
+            if (ii<0 || ii>=nl || jj<0 || jj>=ns) {
                 uval = 0;
             } else {
-                int kk = jj + ii*ns;
-                float val = data[kk];
+                float val = get_pixel(ii, jj);
 
                 if (val < g_min)
                     uval = 0;
@@ -106,7 +105,7 @@ static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
     return pb;
 }
 
-static guchar get_pixel (GdkPixbuf *pixbuf, int x, int y)
+static guchar get_pb_pixel (GdkPixbuf *pixbuf, int x, int y)
 {
     int width, height, rowstride, n_channels;
     guchar *pixels, *p;
@@ -155,8 +154,8 @@ void update_pixel_info()
         int x = (crosshair_x - cx)/zoom + 450;
         int y = (crosshair_y - cy)/zoom + 450;
 
-        guchar uval = get_pixel(shown_pixbuf, x, y);
-        float fval = data[crosshair_x + crosshair_y * ns];
+        guchar uval = get_pb_pixel(shown_pixbuf, x, y);
+        float fval = get_pixel(crosshair_y, crosshair_x);
 
         double lat, lon;
         meta_get_latLon(meta, crosshair_y, crosshair_x, 0, &lat, &lon);
@@ -177,7 +176,7 @@ void update_pixel_info()
         if (meta->state_vectors) {
             double s,t;
             meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
-            sprintf(&buf[strlen(buf)], "Incid: %f (deg), Slant: %.1f m\n",
+            sprintf(&buf[strlen(buf)], "Incid: %.3f (deg), Slant: %.1f m\n",
                 R2D*meta_incid(meta, y, x), s);
         }
     }
@@ -318,7 +317,7 @@ on_big_image_eventbox_motion_notify_event(
     }
     else
     {
-        float fval = data[x + y * ns];
+        float fval = get_pixel(y, x);
 
         double lat, lon;
         meta_get_latLon(meta, y, x, 0, &lat, &lon);

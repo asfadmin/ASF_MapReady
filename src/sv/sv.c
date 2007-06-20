@@ -12,8 +12,9 @@ GladeXML *glade_xml;
 // loaded metadata
 meta_parameters *meta;
 
-// loaded image data
+// loaded image data -- only one of these will be non-NULL
 float *data;
+FloatImage *data_fi;
 
 // various values
 double g_min;
@@ -22,6 +23,14 @@ int cx, cy;
 int nl, ns;
 int zoom;
 int crosshair_x, crosshair_y;
+
+float get_pixel(int line, int sample)
+{
+    if (data)
+        return data[sample + line*ns];
+    else
+        return float_image_get_pixel(data_fi, sample, line);
+}
 
 char *find_in_share(const char * filename)
 {
@@ -46,6 +55,16 @@ main(int argc, char **argv)
         exit(1);
     }
 
+    // initialize globals
+    data = NULL;
+    data_fi = NULL;
+    meta = NULL;
+    g_min = g_max = 0;
+    cx = cy = crosshair_x = crosshair_y = 0;
+    zoom = 1;
+
+    read_file(argv[1]);
+
     gtk_init(&argc, &argv);
 
     gchar *glade_xml_file = (gchar *) find_in_share("sv.glade");
@@ -59,15 +78,7 @@ main(int argc, char **argv)
     GtkWidget *widget = get_widget_checked("sv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
 
-    // initialize globals
-    data = NULL;
-    meta = NULL;
-    g_min = g_max = 0;
-    cx = cy = crosshair_x = crosshair_y = 0;
-    zoom = 1;
-
     // load the metadata & image data, other setup
-    read_file(argv[1]);
     fill_small();
     fill_big();
     update_pixel_info();
@@ -77,6 +88,7 @@ main(int argc, char **argv)
     gtk_main ();
 
     if (data) free(data);
+    if (data_fi) float_image_free(data_fi);
     if (meta) meta_free(meta);
 
     exit (EXIT_SUCCESS);

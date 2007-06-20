@@ -15,6 +15,7 @@
 
 #include "asf.h"
 #include "asf_meta.h"
+#include "float_image.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
@@ -52,6 +53,7 @@ void put_string_to_label(const char *widget_name, const char *txt);
 
 /* sv.c */
 char *find_in_share(const char * filename);
+float get_pixel(int line, int sample);
 
 /* read.c */
 void read_file(const char *filename);
@@ -78,6 +80,7 @@ extern const char PATH_SEPATATOR;
 extern GladeXML *glade_xml;
 extern meta_parameters *meta;
 extern float *data;
+extern FloatImage *data_fi;
 extern double g_min;
 extern double g_max;
 extern int cx, cy;
