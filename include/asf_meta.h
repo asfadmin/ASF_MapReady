@@ -158,6 +158,7 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
 
 /* String identifying the datum */
 const char *datum_toString(datum_type_t);
+const char *spheroid_toString(spheroid_type_t spheroid);
 
 /********************************************************************
  * meta_general: General Radio Detection And Ranging parameters

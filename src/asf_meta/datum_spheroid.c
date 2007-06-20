@@ -16,18 +16,19 @@ spheroid_type_t
 datum_spheroid (datum_type_t datum)
 {
   switch ( datum ) {
+
   case NAD27_DATUM:
     return CLARKE1866_SPHEROID;
-    break;
+
   case NAD83_DATUM:
     return GRS1980_SPHEROID;
-    break;
+
   case WGS84_DATUM:
     return WGS84_SPHEROID;
-    break;
+
   default:
     assert (0);
-    break;
+    return WGS84_SPHEROID;
   }
 }
 
@@ -73,6 +74,45 @@ const char *datum_toString(datum_type_t datum)
 
       case UNKNOWN_DATUM:
           return "UNKNOWN";
+
+      default:
+          return MAGIC_UNSET_STRING;
+  }
+}
+
+/* Returns a string identifying the given spheroid */
+const char *spheroid_toString(spheroid_type_t spheroid)
+{
+  switch (spheroid) {
+      case BESSEL_SPHEROID:
+          return "BESSEL";
+
+      case CLARKE1866_SPHEROID:
+          return "CLARKE1866";
+
+      case CLARKE1880_SPHEROID:
+          return "CLARKE1880";
+
+      case GEM6_SPHEROID:
+          return "GEM6";
+
+      case GEM10C_SPHEROID:
+          return "GEM10C";
+
+      case GRS1980_SPHEROID:
+          return "GRS1980";
+
+      case INTERNATIONAL1924_SPHEROID:
+          return "INTERNATIONAL1924";
+
+      case INTERNATIONAL1967_SPHEROID:
+          return "INTERNATIONAL1967";
+
+      case WGS72_SPHEROID:
+          return "WGS72";
+
+      case WGS84_SPHEROID:
+          return "WGS84";
 
       default:
           return MAGIC_UNSET_STRING;

@@ -355,41 +355,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_char  (fp,"hem:",meta->projection->hem,
 		    "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     if (META_VERSION >= 1.3) {
-      switch (meta->projection->spheroid) {
-      case BESSEL_SPHEROID:
-	meta_put_string(fp,"spheroid:","BESSEL","Spheroid");
-	break;
-      case CLARKE1866_SPHEROID:
-	meta_put_string(fp,"spheroid:","CLARKE1866","Spheroid");
-	break;
-      case CLARKE1880_SPHEROID:
-	meta_put_string(fp,"spheroid:","CLARKE1880","Spheroid");
-	break;
-      case GEM6_SPHEROID:
-	meta_put_string(fp,"spheroid:","GEM6","Spheroid");
-	break;
-      case GEM10C_SPHEROID:
-	meta_put_string(fp,"spheroid:","GEM10C","Spheroid");
-	break;
-      case GRS1980_SPHEROID:
-	meta_put_string(fp,"spheroid:","GRS1980","Spheroid");
-	break;
-      case INTERNATIONAL1924_SPHEROID:
-	meta_put_string(fp,"spheroid:","INTERNATIONAL1924","Spheroid");
-	break;
-      case INTERNATIONAL1967_SPHEROID:
-	meta_put_string(fp,"spheroid:","INTERNATIONAL1967","Spheroid");
-	break;
-      case WGS72_SPHEROID:
-	meta_put_string(fp,"spheroid:","WGS72","Spheroid");
-	break;
-      case WGS84_SPHEROID:
-	meta_put_string(fp,"spheroid:","WGS84","Spheroid");
-	break;
-      default:
-        meta_put_string(fp,"spheroid:","???","Spheroid");
-        break;
-      }
+        meta_put_string(fp,"spheroid:",
+                        spheroid_toString(meta->projection->spheroid),"Spheroid");
     }
     meta_put_double(fp,"re_major:",meta->projection->re_major,
 		    "Major Axis (equator) of earth [m]");
