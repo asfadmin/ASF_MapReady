@@ -24,19 +24,19 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
-    int bb_min_x = (cx - size*zoom/2) * width / ns;
+    int bb_min_x = (center_samp - size*zoom/2) * width / ns;
     if (bb_min_x < 0) bb_min_x = 0;
     if (bb_min_x > width-1) bb_min_x = width-1;
 
-    int bb_max_x = (cx + size*zoom/2) * width / ns;
+    int bb_max_x = (center_samp + size*zoom/2) * width / ns;
     if (bb_max_x < 0) bb_max_x = 0;
     if (bb_max_x > width-1) bb_max_x = width-1;
 
-    int bb_min_y = (cy - size*zoom/2) * height / nl;
+    int bb_min_y = (center_line - size*zoom/2) * height / nl;
     if (bb_min_y < 0) bb_min_y = 0;
     if (bb_min_y > height-1) bb_min_y = height-1;
 
-    int bb_max_y = (cy + size*zoom/2) * height / nl;
+    int bb_max_y = (center_line + size*zoom/2) * height / nl;
     if (bb_max_y < 0) bb_max_y = 0;
     if (bb_max_y > height-1) bb_max_y = height-1;
 

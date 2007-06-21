@@ -85,12 +85,11 @@ extern GladeXML *glade_xml;
 extern meta_parameters *meta;
 extern float *data;
 extern FloatImage *data_fi;
-extern double g_min;
-extern double g_max;
-extern int cx, cy;
 extern int nl, ns;
-extern int zoom;
-extern int crosshair_x, crosshair_y;
-extern int cc_x, cc_y;
+extern double g_min, g_max;
+extern double zoom;
+extern double center_line, center_samp;
+extern double crosshair_line, crosshair_samp;
+extern double ctrl_clk_line, ctrl_clk_samp;
 
 #endif

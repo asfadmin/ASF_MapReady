@@ -9,21 +9,17 @@ void fill_meta_info()
     if (meta) {
       if (meta->general) {
         sprintf(&s[strlen(s)],
-          "Size: %d x %d (LxS)\n\n"
-          "Sensor: %s\n"
-          "Mode: %s\n"
+          "Size: %d x %d (LxS)\n"
+          "Sensor/Mode: %s/%s\n"
           "Acquisition Date: %s\n"
-          "Orbit: %d\n"
+          "Orbit/Frame: %d/%d\n"
           "Direction: %s\n"
-          "Frame: %d\n"
           "Bands: %s\n\n",
             meta->general->line_count, meta->general->sample_count,
-            meta->general->sensor,
-            meta->general->mode,
+            meta->general->sensor, meta->general->mode,
             meta->general->acquisition_date,
-            meta->general->orbit,
+            meta->general->orbit, meta->general->frame,
             meta->general->orbit_direction == 'A' ? "Ascending" : "Descending",
-            meta->general->frame,
             strlen(meta->general->bands) > 0 ? meta->general->bands : "-");
       }
       if (meta->sar) {

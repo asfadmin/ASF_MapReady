@@ -298,6 +298,6 @@ void read_file(const char *filename, const char *band)
     FREE(img_file);
     assert(data||data_fi);
 
-    cx = crosshair_x = ns/2;
-    cy = crosshair_y = nl/2;
+    center_samp = crosshair_samp = 0;// (double)ns/2.;
+    center_line = crosshair_line = 0;// (double)nl/2.;
 }

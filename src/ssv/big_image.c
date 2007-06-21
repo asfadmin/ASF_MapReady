@@ -2,15 +2,29 @@
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
 
+static void ls2img(double line, double samp, int *x, int *y)
+{
+    // for right now, we use a hard-coded 450 for the size/2
+    *x = (samp - (double)center_samp)/zoom + 450;
+    *y = (line - (double)center_line)/zoom + 450;
+}
+
+static void img2ls(int x, int y, double *line, double *samp)
+{
+    // for right now, we use a hard-coded 450 for the size/2
+    *line = ((double)y - 450)*zoom + (double)center_line;
+    *samp = ((double)x - 450)*zoom + (double)center_samp;
+}
+
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
     free(pixels);
 }
 
 // draws a crosshair at x,y (image coords)
-static void put_crosshair (GdkPixbuf *pixbuf, int x, int y)
+static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
 {
-    if (x < 0 || y < 0)
+    if (samp < 0 || line < 0 || samp >= ns || line >= nl)
         return;
 
     int i, lo, hi;
@@ -28,37 +42,103 @@ static void put_crosshair (GdkPixbuf *pixbuf, int x, int y)
     height = gdk_pixbuf_get_height (pixbuf);
     
     // convert from image coords to screen coords
-    x = (x - cx)/zoom + 450;
-    y = (y - cy)/zoom + 450;
+    int ix, iy;
+    ls2img(line, samp, &ix, &iy);
 
-    if (x < 0 || x >= width || y < 0 || y >= width)
+    if (ix <= 0 || ix >= width || iy <= 0 || iy >= width)
         return;
 
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
-    lo = x - 15;   if (lo < 0)     lo = 0;
-    hi = x + 15;   if (hi > width) hi = width;
+    lo = ix - 15;   if (lo < 0)     lo = 0;
+    hi = ix + 15;   if (hi > width) hi = width;
 
     for (i = lo; i < hi; ++i) {
-        if (i > x-3 && i < x+3) i = x+3;
-        p = pixels + y * rowstride + i * n_channels;
+        if (i > ix-3 && i < ix+3) i = ix+3;
+        p = pixels + iy * rowstride + i * n_channels;
         p[1] = 255;
         p[0] = p[2] = 0;
     }
 
-    lo = y - 15;   if (lo < 0)      lo = 0;
-    hi = y + 15;   if (hi > height) hi = height;
+    lo = iy - 15;   if (lo < 0)      lo = 0;
+    hi = iy + 15;   if (hi > height) hi = height;
 
     for (i = lo; i < hi; ++i) {
-        if (i > y-3 && i < y+3) i = y+3;
-        p = pixels + i * rowstride + x * n_channels;
+        if (i > iy-3 && i < iy+3) i = iy+3;
+        p = pixels + i * rowstride + ix * n_channels;
         p[1] = 255;
         p[0] = p[2] = 0;
     }
 }
 
-static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
+static int iabs(int i)
+{
+    return i<0 ? -i : i;
+}
+
+static void put_line(GdkPixbuf *pixbuf, double samp0, double line0, 
+                     double samp1, double line1)
+{
+    if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
+        samp0 >= ns || samp1 >= ns || line0 >= nl || line1 >= nl)
+        return;
+
+    int i, j, width, height, rowstride, n_channels;
+    guchar *pixels, *p;
+    
+    n_channels = gdk_pixbuf_get_n_channels (pixbuf);
+    
+    g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
+    g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
+    g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
+    g_assert (n_channels == 3);
+
+    width = gdk_pixbuf_get_width (pixbuf);
+    height = gdk_pixbuf_get_height (pixbuf);
+    
+    // convert from image coords to screen coords
+    int ix0, iy0, ix1, iy1;
+    ls2img(samp0, line0, &ix0, &iy0);
+    ls2img(samp1, line1, &ix1, &iy1);
+
+    rowstride = gdk_pixbuf_get_rowstride (pixbuf);
+    pixels = gdk_pixbuf_get_pixels (pixbuf);
+
+    // loop on the distance which is greater
+    if (iabs(ix1-ix0) > iabs(iy1-iy0)) {
+        int incr = ix1>ix0 ? 1 : -1;
+        for (i=ix0; i!=ix1; i+=incr) {
+            j = iy0 + (float)(i-ix0)/(ix1-ix0) * (iy1-iy0);
+            if (j >= 0 && i >= 0 && i <= width && j <= height) {
+              p = pixels + j * rowstride + i * n_channels;
+              p[0] = 255; p[1] = p[2] = 0;
+            }
+        }
+    } else {
+        int incr = iy1>iy0 ? 1 : -1;
+        for (j=iy0; j!=iy1; j+=incr) {
+            i = ix0 + (float)(j-iy0)/(iy1-iy0) * (ix1-ix0);
+            if (j >= 0 && i >= 0 && i <= width && j <= height) {
+              p = pixels + j * rowstride + i * n_channels;
+              p[0] = 255; p[1] = p[2] = 0;
+            }
+        }
+    }
+}
+
+static int calc_scaled_pixel_value(float val)
+{
+    if (val < g_min)
+        return 0;
+    else if (val > g_max)
+        return 255;
+    else
+        return (int) round(((val-g_min)/(g_max-g_min))*255);
+}
+
+static GdkPixbuf * make_big_image(int size, int center_line, int center_samp, 
+                                  double zoom)
 {
     assert((data||data_fi) && meta);
 
@@ -67,24 +147,19 @@ static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
 
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
-    int min_x = cx - size*zoom/2;
-    int min_y = cy - size*zoom/2;
     int mm = 0;
-    for ( ii = min_y ; ii < min_y + size*zoom ; ii += zoom ) {
-        for ( jj = min_x ; jj < min_x + size*zoom ; jj += zoom ) {
+    for ( ii = 0 ; ii < size; ii++ ) {
+        for ( jj = 0 ; jj < size; jj++ ) {
+            double l, s;
+            img2ls(jj,ii,&l,&s);
+            
             unsigned char uval;
 
-            if (ii<0 || ii>=nl || jj<0 || jj>=ns) {
+            if (l<0 || l>=nl || s<0 || s>=ns) {
                 uval = 0;
             } else {
-                float val = get_pixel(ii, jj);
-
-                if (val < g_min)
-                    uval = 0;
-                else if (val > g_max)
-                    uval = 255;
-                else
-                    uval = (unsigned char) round(((val-g_min)/(g_max-g_min))*255);
+                uval = (unsigned char)calc_scaled_pixel_value(
+                    get_pixel((int)floor(l),(int)floor(s)));
             }
 
             int n = 3*mm;
@@ -103,36 +178,13 @@ static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
-    put_crosshair(pb, crosshair_x, crosshair_y);
+    put_crosshair(pb, crosshair_line, crosshair_samp);
+    put_crosshair(pb, ctrl_clk_line, ctrl_clk_samp);
+    put_line(pb, crosshair_line, crosshair_samp, ctrl_clk_line, ctrl_clk_samp);
     return pb;
 }
 
-static guchar get_pb_pixel (GdkPixbuf *pixbuf, int x, int y)
-{
-    int width, height, rowstride, n_channels;
-    guchar *pixels, *p;
-    
-    n_channels = gdk_pixbuf_get_n_channels (pixbuf);
-    
-    g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
-    g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
-    g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
-    g_assert (n_channels == 3);
-    
-    width = gdk_pixbuf_get_width (pixbuf);
-    height = gdk_pixbuf_get_height (pixbuf);
-    
-    g_assert (x >= 0 && x < width);
-    g_assert (y >= 0 && y < height);
-    
-    rowstride = gdk_pixbuf_get_rowstride (pixbuf);
-    pixels = gdk_pixbuf_get_pixels (pixbuf);
-    
-    p = pixels + y * rowstride + x * n_channels;
-    return p[0];
-}
-
-static void line_samp_to_proj(int line, int samp, double *x, double *y)
+static void line_samp_to_proj(double line, double samp, double *x, double *y)
 {
     double lat, lon, projZ;
     meta_get_latLon(meta, line, samp, 0, &lat, &lon);
@@ -140,7 +192,7 @@ static void line_samp_to_proj(int line, int samp, double *x, double *y)
         latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
             x, y, &projZ);
     } else {
-        latLon2UTM(lat*D2R, lon*D2R, 0, x, y);
+        latLon2UTM(lat, lon, 0, x, y);
     }
 }
 
@@ -152,57 +204,61 @@ void update_pixel_info()
     GtkWidget *img = get_widget_checked("big_image");
     GdkPixbuf *shown_pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(img));
 
-    if (crosshair_x < 0 || crosshair_x >= ns || 
-        crosshair_y < 0 || crosshair_y >= nl)
+    double x = crosshair_samp;
+    double y = crosshair_line;
+
+    sprintf(buf, "Line: %.1f, Sample: %.1f\n", y, x);
+
+    if (x < 0 || x >= ns || y < 0 || y >= nl)
     {
         // outside of the image
-        strcpy(buf, "");
-        crosshair_x = crosshair_y = 0;
+        sprintf(&buf[strlen(buf)], "Pixel Value: (outside image)\n");
     }
     else
     {
         assert(meta);
         assert(shown_pixbuf);
         
-        int x = (crosshair_x - cx)/zoom + 450;
-        int y = (crosshair_y - cy)/zoom + 450;
+        float fval = get_pixel(crosshair_line, crosshair_samp);
+        int uval = calc_scaled_pixel_value(fval);
 
-        guchar uval = get_pb_pixel(shown_pixbuf, x, y);
-        float fval = get_pixel(crosshair_y, crosshair_x);
+        sprintf(&buf[strlen(buf)], "Pixel Value: %f -> %d\n", fval, uval);
+    }
 
-        double lat, lon;
-        meta_get_latLon(meta, crosshair_y, crosshair_x, 0, &lat, &lon);
+    double lat, lon;
+    meta_get_latLon(meta, y, x, 0, &lat, &lon);
+    sprintf(&buf[strlen(buf)], "Lat: %.3f, Lon: %.3f\n", lat, lon);
 
-        sprintf(buf, "Line: %5d, Sample: %5d\n"
-            "Pixel Value: %f -> %d\n"
-            "Lat: %.3f, Lon: %.3f\n", crosshair_y, crosshair_x,
-            fval, (int)uval, lat, lon);
+    if (meta->projection) {
+        double projX, projY, projZ;
+        latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
+            &projX, &projY, &projZ);
+        sprintf(&buf[strlen(buf)], "ProjX: %.1f m, ProjY: %.1f m\n",
+            projX, projY);
+    }
 
-        if (meta->projection) {
-            double projX, projY, projZ;
-            latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
-                &projX, &projY, &projZ);
-            sprintf(&buf[strlen(buf)], "ProjX: %.1f m, ProjY: %.1f m\n",
-                projX, projY);
-        }
+    if (meta->state_vectors) {
+        double s,t;
+        meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
+        sprintf(&buf[strlen(buf)], "Incid: %.3f (deg), Slant: %.1f m\n",
+            R2D*meta_incid(meta, crosshair_line, crosshair_samp), s);
+    }
 
-        if (meta->state_vectors) {
-            double s,t;
-            meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
-            sprintf(&buf[strlen(buf)], "Incid: %.3f (deg), Slant: %.1f m\n",
-                R2D*meta_incid(meta, y, x), s);
-        }
+    if (ctrl_clk_samp >= 0 && ctrl_clk_line >= 0) {
+        // crosshair coords
+        double proj_x_cr, proj_y_cr; 
+        line_samp_to_proj(y, x, &proj_x_cr, &proj_y_cr);
 
-        if (cc_x >= 0 && cc_y >= 0) {
-            double proj_x_cr, proj_y_cr; // crosshair coords
-            line_samp_to_proj(crosshair_y, crosshair_x, &proj_x_cr, &proj_y_cr);
-            double proj_x, proj_y;       // ctrl-click coords
-            line_samp_to_proj(cc_y, cc_x, &proj_x, &proj_y);
-            double d = hypot(proj_x-proj_x_cr, proj_y-proj_y_cr);
-            sprintf(&buf[strlen(buf)], "Distance to %d,%d: %.1f m", cc_y, cc_x, d);
-        } else {
-            sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
-        }
+        // ctrl-click coords
+        double proj_x_cc, proj_y_cc;       
+        line_samp_to_proj(ctrl_clk_line, ctrl_clk_samp, &proj_x_cc, &proj_y_cc);
+
+        double d = hypot(proj_x_cc-proj_x_cr, proj_y_cc-proj_y_cr);
+
+        sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f m",
+            ctrl_clk_line, ctrl_clk_samp, d);
+    } else {
+        sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
     }
 
     GtkWidget *lbl = get_widget_checked("upper_label");
@@ -211,7 +267,7 @@ void update_pixel_info()
 
 void fill_big()
 {
-    GdkPixbuf *pb = make_big_image(900, cx, cy, zoom);
+    GdkPixbuf *pb = make_big_image(900, center_line, center_samp, zoom);
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }
@@ -228,8 +284,8 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     int w = gdk_pixbuf_get_width(pb);
     int h = gdk_pixbuf_get_height(pb);
 
-    cx = (int)event->x * ns / w;
-    cy = (int)event->y * nl / h;
+    center_samp = ((int)event->x * ns) / (double)w;
+    center_line = ((int)event->y * nl) / (double)h;
 
     fill_small();
     fill_big();
@@ -252,21 +308,18 @@ on_big_image_eventbox_button_press_event(
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
-            cc_x = ((int)event->x - 450)*zoom + cx;
-            cc_y = ((int)event->y - 450)*zoom + cy;
+            img2ls((int)event->x, (int)event->y, &ctrl_clk_line, &ctrl_clk_samp);
         }
         // left-click: move crosshair
         else {
-            crosshair_x = ((int)event->x - 450)*zoom + cx;
-            crosshair_y = ((int)event->y - 450)*zoom + cy;
-            cc_x = cc_y = -1;
+            img2ls((int)event->x, (int)event->y, &crosshair_line, &crosshair_samp);
+            ctrl_clk_line = ctrl_clk_samp = -1;
         }
         update_pixel_info();
         fill_big();
     } else if (event->button == 3) {
         // right-click: re-center
-        cx = ((int)event->x - 450)*zoom + cx; // gotta fix this hard-coded value
-        cy = ((int)event->y - 450)*zoom + cy;
+        img2ls((int)event->x, (int)event->y, &center_line, &center_samp);
         fill_small();
         fill_big();
     }
@@ -287,9 +340,15 @@ on_big_image_scroll_event(
     gtk_widget_set_events(widget, 0);
 
     if (event->direction == GDK_SCROLL_UP) {
-        if (zoom > 1) --zoom;
+        if (zoom > 1)
+            --zoom;
+        else if (zoom <= 1)
+            zoom /= 2;
     } else if (event->direction == GDK_SCROLL_DOWN) {
-        ++zoom;
+        if (zoom <= 1)
+            zoom *= 2;
+        else
+            ++zoom;
     }
 
     fill_small();
@@ -312,10 +371,10 @@ on_big_image_eventbox_key_press_event(
     else if (event->state & GDK_SHIFT_MASK) incr = 25*zoom;
 
     switch (event->keyval) {
-        case GDK_Up: crosshair_y -= incr; break;
-        case GDK_Down: crosshair_y += incr; break;
-        case GDK_Left: crosshair_x -= incr; break;
-        case GDK_Right: crosshair_x += incr; break;
+        case GDK_Up: crosshair_line -= incr; break;
+        case GDK_Down: crosshair_line += incr; break;
+        case GDK_Left: crosshair_samp -= incr; break;
+        case GDK_Right: crosshair_samp += incr; break;
         default: return TRUE;
     }
 
@@ -330,29 +389,29 @@ on_big_image_eventbox_motion_notify_event(
 {
     printf("motion...\n");
 
-    int x = ((int)event->x - 450)*zoom + cx; // gotta fix this hard-coded value
-    int y = ((int)event->y - 450)*zoom + cy;
+    double line, samp;
+    img2ls((int)event->x, (int)event->y, &line, &samp);
 
     static GtkWidget *lbl = NULL;
     if (!lbl)
         lbl = get_widget_checked("upper_label");
 
     char buf[512];
-    if (x < 0 || x >= ns || y < 0 || y >= nl)
+    if (samp < 0 || samp >= ns || line < 0 || line >= nl)
     {
         // outside of the image
         strcpy(buf, "");
     }
     else
     {
-        float fval = get_pixel(y, x);
+        float fval = get_pixel(line, samp);
 
         double lat, lon;
-        meta_get_latLon(meta, y, x, 0, &lat, &lon);
+        meta_get_latLon(meta, line, samp, 0, &lat, &lon);
 
-        sprintf(buf, "Line: %d, Sample: %d\n"
+        sprintf(buf, "Line: %.1f, Sample: %.1f\n"
             "Pixel Value: %f\n"
-            "Lat: %f, Lon: %f\n", crosshair_y, crosshair_x,
+            "Lat: %f, Lon: %f\n", crosshair_line, crosshair_samp,
             fval, lat, lon);
     }
 
