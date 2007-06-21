@@ -7,9 +7,10 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
-static void put_crosshair (GdkPixbuf *pixbuf)
+// draws a crosshair at x,y (image coords)
+static void put_crosshair (GdkPixbuf *pixbuf, int x, int y)
 {
-    if (crosshair_x < 0 || crosshair_y < 0)
+    if (x < 0 || y < 0)
         return;
 
     int i, lo, hi;
@@ -26,8 +27,9 @@ static void put_crosshair (GdkPixbuf *pixbuf)
     width = gdk_pixbuf_get_width (pixbuf);
     height = gdk_pixbuf_get_height (pixbuf);
     
-    int x = (crosshair_x - cx)/zoom + 450;
-    int y = (crosshair_y - cy)/zoom + 450;
+    // convert from image coords to screen coords
+    x = (x - cx)/zoom + 450;
+    y = (y - cy)/zoom + 450;
 
     if (x < 0 || x >= width || y < 0 || y >= width)
         return;
@@ -101,7 +103,7 @@ static GdkPixbuf * make_big_image(int size, int cx, int cy, int zoom)
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
-    put_crosshair(pb);
+    put_crosshair(pb, crosshair_x, crosshair_y);
     return pb;
 }
 
@@ -130,6 +132,19 @@ static guchar get_pb_pixel (GdkPixbuf *pixbuf, int x, int y)
     return p[0];
 }
 
+static void line_samp_to_proj(int line, int samp, double *x, double *y)
+{
+    double lat, lon, projZ;
+    meta_get_latLon(meta, line, samp, 0, &lat, &lon);
+    if (meta->projection) {
+        latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
+            x, y, &projZ);
+    } else {
+        latLon2UTM(lat*D2R, lon*D2R, 0, x, y);
+    }
+}
+
+
 void update_pixel_info()
 {
     char buf[512];
@@ -137,10 +152,8 @@ void update_pixel_info()
     GtkWidget *img = get_widget_checked("big_image");
     GdkPixbuf *shown_pixbuf = gtk_image_get_pixbuf(GTK_IMAGE(img));
 
-    if (crosshair_x < 0 ||
-        crosshair_x >= ns || 
-        crosshair_y < 0 || 
-        crosshair_y >= nl)
+    if (crosshair_x < 0 || crosshair_x >= ns || 
+        crosshair_y < 0 || crosshair_y >= nl)
     {
         // outside of the image
         strcpy(buf, "");
@@ -178,6 +191,17 @@ void update_pixel_info()
             meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
             sprintf(&buf[strlen(buf)], "Incid: %.3f (deg), Slant: %.1f m\n",
                 R2D*meta_incid(meta, y, x), s);
+        }
+
+        if (cc_x >= 0 && cc_y >= 0) {
+            double proj_x_cr, proj_y_cr; // crosshair coords
+            line_samp_to_proj(crosshair_y, crosshair_x, &proj_x_cr, &proj_y_cr);
+            double proj_x, proj_y;       // ctrl-click coords
+            line_samp_to_proj(cc_y, cc_x, &proj_x, &proj_y);
+            double d = hypot(proj_x-proj_x_cr, proj_y-proj_y_cr);
+            sprintf(&buf[strlen(buf)], "Distance to %d,%d: %.1f m", cc_y, cc_x, d);
+        } else {
+            sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
         }
     }
 
@@ -226,10 +250,17 @@ on_big_image_eventbox_button_press_event(
     gtk_widget_set_events(widget, 0);
 
     if (event->button == 1) {
+        // ctrl-left-click: measure distance
+        if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
+            cc_x = ((int)event->x - 450)*zoom + cx;
+            cc_y = ((int)event->y - 450)*zoom + cy;
+        }
         // left-click: move crosshair
-        crosshair_x = ((int)event->x - 450)*zoom + cx; // gotta fix this hard-coded value
-        crosshair_y = ((int)event->y - 450)*zoom + cy;
-
+        else {
+            crosshair_x = ((int)event->x - 450)*zoom + cx;
+            crosshair_y = ((int)event->y - 450)*zoom + cy;
+            cc_x = cc_y = -1;
+        }
         update_pixel_info();
         fill_big();
     } else if (event->button == 3) {
@@ -238,9 +269,6 @@ on_big_image_eventbox_button_press_event(
         cy = ((int)event->y - 450)*zoom + cy;
         fill_small();
         fill_big();
-    } else {
-        // middle-click: do anything??
-        printf("Mouse event: %d\n", (int)event->button);
     }
 
     while (gtk_events_pending())
