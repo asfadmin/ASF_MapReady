@@ -233,15 +233,15 @@ void update_pixel_info()
         double projX, projY, projZ;
         latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
             &projX, &projY, &projZ);
-        sprintf(&buf[strlen(buf)], "ProjX: %.1f m, ProjY: %.1f m\n",
+        sprintf(&buf[strlen(buf)], "Proj X,Y: %.1f, %.1f m\n",
             projX, projY);
     }
 
     if (meta->state_vectors) {
         double s,t;
         meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
-        sprintf(&buf[strlen(buf)], "Incid: %.3f (deg), Slant: %.1f m\n",
-            R2D*meta_incid(meta, crosshair_line, crosshair_samp), s);
+        sprintf(&buf[strlen(buf)], "Incid: %.3f, Look: %.3f (deg)\nSlant: %.1f m\n",
+            R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s);
     }
 
     if (ctrl_clk_samp >= 0 && ctrl_clk_line >= 0) {
