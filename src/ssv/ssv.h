@@ -91,5 +91,6 @@ extern int cx, cy;
 extern int nl, ns;
 extern int zoom;
 extern int crosshair_x, crosshair_y;
+extern int cc_x, cc_y;
 
 #endif

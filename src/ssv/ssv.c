@@ -23,6 +23,7 @@ int cx, cy;
 int nl, ns;
 int zoom;
 int crosshair_x, crosshair_y;
+int cc_x, cc_y;
 
 // loaded filename
 char *g_file;
@@ -67,7 +68,8 @@ main(int argc, char **argv)
     data_fi = NULL;
     meta = NULL;
     g_min = g_max = 0;
-    cx = cy = crosshair_x = crosshair_y = 0;
+    cx = cy = crosshair_x = crosshair_y;
+    cc_x = cc_y = -1;
     zoom = 1;
     g_file = STRDUP(argv[1]);
 

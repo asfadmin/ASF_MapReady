@@ -16,7 +16,6 @@ void fill_meta_info()
           "Orbit: %d\n"
           "Direction: %s\n"
           "Frame: %d\n"
-          "Band Count: %d\n"
           "Bands: %s\n\n",
             meta->general->line_count, meta->general->sample_count,
             meta->general->sensor,
@@ -25,7 +24,6 @@ void fill_meta_info()
             meta->general->orbit,
             meta->general->orbit_direction == 'A' ? "Ascending" : "Descending",
             meta->general->frame,
-            meta->general->band_count,
             strlen(meta->general->bands) > 0 ? meta->general->bands : "-");
       }
       if (meta->sar) {
