@@ -109,6 +109,7 @@ main(int argc, char **argv)
     fill_small();
     fill_big();
     update_pixel_info();
+    update_zoom();
     set_font();
     fill_meta_info();
 

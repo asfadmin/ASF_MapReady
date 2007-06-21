@@ -276,8 +276,8 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
     // temporarily block keypress events...
-    widget = get_widget_checked("small_image_eventbox");
-    gtk_widget_set_events(widget, 0);
+    //widget = get_widget_checked("small_image_eventbox");
+    //gtk_widget_set_events(widget, 0);
     
     GtkWidget *img = get_widget_checked("small_image");
     GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
@@ -293,7 +293,7 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     while (gtk_events_pending())
         gtk_main_iteration();    
 
-    gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
+    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
@@ -302,8 +302,8 @@ on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
     // temporarily block keypress events...
-    widget = get_widget_checked("big_image_eventbox");
-    gtk_widget_set_events(widget, 0);
+    //widget = get_widget_checked("big_image_eventbox");
+    //gtk_widget_set_events(widget, 0);
 
     if (event->button == 1) {
         // ctrl-left-click: measure distance
@@ -327,8 +327,26 @@ on_big_image_eventbox_button_press_event(
     while (gtk_events_pending())
         gtk_main_iteration();    
 
-    gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
+    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
+}
+
+void update_zoom()
+{
+   char buf[256];
+   if (zoom >= 1)
+       sprintf(buf, "Zoom: %.1f X", zoom);
+   else if (zoom > .1)
+       sprintf(buf, "Zoom: %.2f X", zoom);
+   else if (zoom >= .01)
+       sprintf(buf, "Zoom: %.3f X", zoom);
+   else if (zoom >= .001)
+       sprintf(buf, "Zoom: %.4f X", zoom);
+   else if (zoom >= .0001)
+       sprintf(buf, "Zoom: %.5f X", zoom);
+   else
+       sprintf(buf, "Zoom: %f X", zoom);
+   put_string_to_label("zoom_label", buf);
 }
 
 SIGNAL_CALLBACK int
@@ -336,8 +354,8 @@ on_big_image_scroll_event(
     GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
     // temporarily block keypress events...
-    widget = get_widget_checked("big_image_eventbox");
-    gtk_widget_set_events(widget, 0);
+    //widget = get_widget_checked("big_image_eventbox");
+    //gtk_widget_set_events(widget, 0);
 
     if (event->direction == GDK_SCROLL_UP) {
         if (zoom > 1)
@@ -351,13 +369,14 @@ on_big_image_scroll_event(
             ++zoom;
     }
 
+    update_zoom();
     fill_small();
     fill_big();
 
     while (gtk_events_pending())
         gtk_main_iteration();    
 
-    gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
+    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
