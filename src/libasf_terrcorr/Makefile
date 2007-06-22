@@ -4,8 +4,7 @@ include ../../make_support/system_rules
 
 CFLAGS := -Wall $(CFLAGS)
 
-OBJS =  seedsquares.o \
-	asf_terrcorr.o
+OBJS =  seedsquares.o asf_terrcorr.o build_dem.o
 
 LIBS  = \
 	$(LIBDIR)/libasf_raster.a \
