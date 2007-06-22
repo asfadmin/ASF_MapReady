@@ -342,6 +342,8 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     return TRUE;
 }
 
+static int last_was_crosshair = TRUE;
+
 SIGNAL_CALLBACK int
 on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
@@ -354,11 +356,13 @@ on_big_image_eventbox_button_press_event(
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
             img2ls((int)event->x, (int)event->y, &ctrl_clk_line, &ctrl_clk_samp);
+            last_was_crosshair = FALSE;
         }
         // left-click: move crosshair
         else {
             img2ls((int)event->x, (int)event->y, &crosshair_line, &crosshair_samp);
             ctrl_clk_line = ctrl_clk_samp = -1;
+            last_was_crosshair = TRUE;
         }
         update_pixel_info();
         fill_big();
@@ -418,8 +422,8 @@ on_big_image_scroll_event(
     fill_small();
     fill_big();
 
-    while (gtk_events_pending())
-        gtk_main_iteration();    
+    //while (gtk_events_pending())
+    //    gtk_main_iteration();    
 
     //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
@@ -427,22 +431,52 @@ on_big_image_scroll_event(
 
 static int handle_keypress(GdkEventKey *event)
 {
-    int z = zoom;
-    if (z==0) z=1;
+    if (event->keyval == GDK_Page_Up || event->keyval == GDK_Prior || event->keyval == GDK_plus) {
+        if (zoom > 1)
+            --zoom;
+        else if (zoom <= 1)
+            zoom /= 2;
+        update_zoom();
+        fill_small();
+    } else if (event->keyval == GDK_Page_Down || event->keyval == GDK_Next || event->keyval == GDK_minus) {
+        if (zoom <= 1)
+            zoom *= 2;
+        else
+            ++zoom;
+        update_zoom();
+        fill_small();
+    } else if (event->keyval == GDK_Home) {
+        zoom = 1;
+        update_zoom();
+        fill_small();
+    } else {
+      int z = (int)zoom;
+      if (z==0) z=1;
 
-    int incr = z;
-    if (event->state & GDK_CONTROL_MASK) incr = 10*z;
-    else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
+      int incr = z;
+      if (event->state & GDK_CONTROL_MASK) incr = 10*z;
+      else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
 
-    switch (event->keyval) {
-        case GDK_Up: crosshair_line -= incr; break;
-        case GDK_Down: crosshair_line += incr; break;
-        case GDK_Left: crosshair_samp -= incr; break;
-        case GDK_Right: crosshair_samp += incr; break;
-        default: return TRUE;
+      if (last_was_crosshair) {
+        switch (event->keyval) {
+            case GDK_Up: crosshair_line -= incr; break;
+            case GDK_Down: crosshair_line += incr; break;
+            case GDK_Left: crosshair_samp -= incr; break;
+            case GDK_Right: crosshair_samp += incr; break;
+            default: return TRUE;
+        }
+      } else {
+        switch (event->keyval) {
+            case GDK_Up: ctrl_clk_line -= incr; break;
+            case GDK_Down: ctrl_clk_line += incr; break;
+            case GDK_Left: ctrl_clk_samp -= incr; break;
+            case GDK_Right: ctrl_clk_samp += incr; break;
+            default: return TRUE;
+        }
+      }
+      update_pixel_info();
     }
 
-    update_pixel_info();
     fill_big();
     return TRUE;
 }
