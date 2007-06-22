@@ -9,7 +9,7 @@
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
-  <property name="resizable">False</property>
+  <property name="resizable">True</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
@@ -261,17 +261,18 @@
 
 	  <child>
 	    <widget class="GtkEventBox" id="big_image_eventbox">
+	      <property name="width_request">800</property>
+	      <property name="height_request">800</property>
 	      <property name="visible">True</property>
 	      <property name="visible_window">True</property>
 	      <property name="above_child">False</property>
 	      <signal name="button_press_event" handler="on_big_image_eventbox_button_press_event" last_modification_time="Sun, 17 Jun 2007 04:40:20 GMT"/>
 	      <signal name="key_press_event" handler="on_big_image_eventbox_key_press_event" last_modification_time="Sun, 17 Jun 2007 04:40:35 GMT"/>
 	      <signal name="scroll_event" handler="on_big_image_scroll_event" last_modification_time="Sun, 17 Jun 2007 04:40:35 GMT"/>
+	      <signal name="size_allocate" handler="on_big_image_resize" last_modification_time="Thu, 21 Jun 2007 14:58:18 GMT"/>
 
 	      <child>
 		<widget class="GtkImage" id="big_image">
-		  <property name="width_request">900</property>
-		  <property name="height_request">900</property>
 		  <property name="visible">True</property>
 		  <property name="xalign">0.5</property>
 		  <property name="yalign">0.5</property>

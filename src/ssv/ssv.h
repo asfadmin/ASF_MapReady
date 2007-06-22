@@ -63,6 +63,10 @@ void read_file(const char *filename, const char *band);
 void fill_big(void);
 void update_pixel_info(void);
 void update_zoom(void);
+int get_big_image_width(void);
+int get_big_image_width2(void);
+int get_big_image_height(void);
+int get_big_image_height2(void);
 
 /* small_image.c */
 void fill_small(void);

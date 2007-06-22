@@ -2,18 +2,62 @@
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
 
+// current sizes of the large image.
+static int big_img_width=800;
+static int big_img_height=800;
+static int big_img_width2=400;
+static int big_img_height2=400;
+
+int get_big_image_width()
+{
+    return big_img_width;
+}
+
+int get_big_image_height()
+{
+    return big_img_height;
+}
+
+int get_big_image_width2()
+{
+    return big_img_width2;
+}
+
+int get_big_image_height2()
+{
+    return big_img_height2;
+}
+
+SIGNAL_CALLBACK void on_big_image_resize(GtkWidget *w, 
+    GtkAllocation *alloc, gpointer user_data)
+{
+    //GtkWidget *img = get_widget_checked("big_image");
+    if (big_img_width != alloc->width || big_img_height != alloc->height) {
+        big_img_width = alloc->width;
+        big_img_height = alloc->height;
+        big_img_width2 = big_img_width/2;
+        big_img_height2 = big_img_height/2;
+        fill_small();
+        fill_big();
+    }
+}
+
+SIGNAL_CALLBACK void on_big_image_repaint(GtkWidget *w)
+{
+    fill_small();
+    fill_big();
+}
+
 static void ls2img(double line, double samp, int *x, int *y)
 {
-    // for right now, we use a hard-coded 450 for the size/2
-    *x = (samp - (double)center_samp)/zoom + 450;
-    *y = (line - (double)center_line)/zoom + 450;
+    *x = (samp - (double)center_samp)/zoom + get_big_image_width2();
+    *y = (line - (double)center_line)/zoom + get_big_image_height2();
 }
 
 static void img2ls(int x, int y, double *line, double *samp)
 {
-    // for right now, we use a hard-coded 450 for the size/2
-    *line = ((double)y - 450)*zoom + (double)center_line;
-    *samp = ((double)x - 450)*zoom + (double)center_samp;
+    *line = ((double)y - get_big_image_height2())*zoom + (double)center_line;
+    *samp = ((double)x - get_big_image_width2())*zoom + (double)center_samp;
 }
 
 static void destroy_pb_data(guchar *pixels, gpointer data)
@@ -137,19 +181,20 @@ static int calc_scaled_pixel_value(float val)
         return (int) round(((val-g_min)/(g_max-g_min))*255);
 }
 
-static GdkPixbuf * make_big_image(int size, int center_line, int center_samp, 
-                                  double zoom)
+static GdkPixbuf * make_big_image()
 {
     assert((data||data_fi) && meta);
 
     int ii, jj;
-    unsigned char *bdata = MALLOC(sizeof(unsigned char)*size*size*3);
+    int biw = get_big_image_width();
+    int bih = get_big_image_height();
+    unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*3);
 
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     int mm = 0;
-    for ( ii = 0 ; ii < size; ii++ ) {
-        for ( jj = 0 ; jj < size; jj++ ) {
+    for ( ii = 0 ; ii < bih; ii++ ) {
+        for ( jj = 0 ; jj < biw; jj++ ) {
             double l, s;
             img2ls(jj,ii,&l,&s);
             
@@ -173,7 +218,7 @@ static GdkPixbuf * make_big_image(int size, int center_line, int center_samp,
     // Create the pixbuf
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE, 
-                                 8, size, size, size*3, destroy_pb_data, NULL);
+                                 8, biw, bih, biw*3, destroy_pb_data, NULL);
     
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
@@ -267,7 +312,7 @@ void update_pixel_info()
 
 void fill_big()
 {
-    GdkPixbuf *pb = make_big_image(900, center_line, center_samp, zoom);
+    GdkPixbuf *pb = make_big_image();
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }
