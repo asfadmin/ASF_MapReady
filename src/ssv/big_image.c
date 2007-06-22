@@ -425,14 +425,14 @@ on_big_image_scroll_event(
     return TRUE;
 }
 
-SIGNAL_CALLBACK int
-on_big_image_eventbox_key_press_event(
-    GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+static int handle_keypress(GdkEventKey *event)
 {
-    printf("keypress...\n");
-    int incr = zoom;
-    if (event->state & GDK_CONTROL_MASK) incr = 10*zoom;
-    else if (event->state & GDK_SHIFT_MASK) incr = 25*zoom;
+    int z = zoom;
+    if (z==0) z=1;
+
+    int incr = z;
+    if (event->state & GDK_CONTROL_MASK) incr = 10*z;
+    else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
 
     switch (event->keyval) {
         case GDK_Up: crosshair_line -= incr; break;
@@ -445,6 +445,20 @@ on_big_image_eventbox_key_press_event(
     update_pixel_info();
     fill_big();
     return TRUE;
+}
+
+SIGNAL_CALLBACK int
+on_big_image_eventbox_key_press_event(
+    GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+    return handle_keypress(event);
+}
+
+SIGNAL_CALLBACK int
+on_ssv_main_window_key_press_event(
+    GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+    return handle_keypress(event);
 }
 
 SIGNAL_CALLBACK int

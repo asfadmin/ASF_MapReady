@@ -19,7 +19,8 @@
   <signal name="delete_event" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:23 GMT"/>
   <signal name="destroy_event" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:36 GMT"/>
   <signal name="destroy" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:53 GMT"/>
-
+  <signal name="key_press_event" handler="on_ssv_main_window_key_press_event" last_modification_time="Thu, 21 Jun 2007 16:34:00 GMT"/>
+  
   <child>
     <widget class="GtkVBox" id="vbox3">
       <property name="visible">True</property>
@@ -264,13 +265,12 @@
 	      <property name="width_request">800</property>
 	      <property name="height_request">800</property>
 	      <property name="visible">True</property>
+	      <property name="events">GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_KEY_PRESS_MASK</property>
 	      <property name="visible_window">True</property>
 	      <property name="above_child">False</property>
 	      <signal name="button_press_event" handler="on_big_image_eventbox_button_press_event" last_modification_time="Sun, 17 Jun 2007 04:40:20 GMT"/>
-	      <signal name="key_press_event" handler="on_big_image_eventbox_key_press_event" last_modification_time="Sun, 17 Jun 2007 04:40:35 GMT"/>
 	      <signal name="scroll_event" handler="on_big_image_scroll_event" last_modification_time="Sun, 17 Jun 2007 04:40:35 GMT"/>
 	      <signal name="size_allocate" handler="on_big_image_resize" last_modification_time="Thu, 21 Jun 2007 14:58:18 GMT"/>
-
 	      <child>
 		<widget class="GtkImage" id="big_image">
 		  <property name="visible">True</property>
