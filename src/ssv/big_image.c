@@ -89,14 +89,14 @@ static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
     int ix, iy;
     ls2img(line, samp, &ix, &iy);
 
-    if (ix <= 0 || ix >= width || iy <= 0 || iy >= width)
+    if (ix <= 0 || ix > width || iy <= 0 || iy > height)
         return;
 
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
-    lo = ix - 15;   if (lo < 0)     lo = 0;
-    hi = ix + 15;   if (hi > width) hi = width;
+    lo = ix - 15;   if (lo < 0)      lo = 0;
+    hi = ix + 15;   if (hi >= width) hi = width-1;
 
     for (i = lo; i < hi; ++i) {
         if (i > ix-3 && i < ix+3) i = ix+3;
@@ -105,8 +105,8 @@ static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
         p[0] = p[2] = 0;
     }
 
-    lo = iy - 15;   if (lo < 0)      lo = 0;
-    hi = iy + 15;   if (hi > height) hi = height;
+    lo = iy - 15;   if (lo < 0)       lo = 0;
+    hi = iy + 15;   if (hi >= height) hi = height-1;
 
     for (i = lo; i < hi; ++i) {
         if (i > iy-3 && i < iy+3) i = iy+3;
@@ -121,8 +121,8 @@ static int iabs(int i)
     return i<0 ? -i : i;
 }
 
-static void put_line(GdkPixbuf *pixbuf, double samp0, double line0, 
-                     double samp1, double line1)
+static void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
+                     double line1, double samp1)
 {
     if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
         samp0 >= ns || samp1 >= ns || line0 >= nl || line1 >= nl)
@@ -143,8 +143,8 @@ static void put_line(GdkPixbuf *pixbuf, double samp0, double line0,
     
     // convert from image coords to screen coords
     int ix0, iy0, ix1, iy1;
-    ls2img(samp0, line0, &ix0, &iy0);
-    ls2img(samp1, line1, &ix1, &iy1);
+    ls2img(line0, samp0, &ix0, &iy0);
+    ls2img(line1, samp1, &ix1, &iy1);
 
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
