@@ -56,6 +56,7 @@ BUGS:
 #include <tiffio.h>
 #include <xtiffio.h>
 #include "diffimage_tolerances.h"
+#include "geotiff_support.h"
 
 #define VERSION 1.0
 
@@ -84,6 +85,49 @@ typedef struct {
   gsl_histogram_pdf *hist_pdf;
 } stats_t;
 
+#define MISSING_TIFF_DATA -1
+typedef struct {
+  uint32 width;
+  uint32 height;
+  short sample_format;
+  short bits_per_sample;
+  short planar_config;
+  data_type_t data_type;
+  int num_bands;
+  int is_scanline_format;
+} tiff_data_t;
+
+#define MISSING_GTIF_DATA -1
+typedef struct {
+  int gtif_data_exists;
+  char *GTcitation;
+  char *PCScitation;
+  double *tie_point;
+  double *pixel_scale;
+  short model_type;
+  short raster_type;
+  short linear_units;
+  double scale_factor;
+  datum_type_t datum;
+  char hemisphere;
+  unsigned long pro_zone; // UTM zone (UTM only)
+  short proj_coords_trans;
+  short pcs;
+  short geodetic_datum;
+  short geographic_datum;
+  double false_easting;
+  double false_northing;
+  double natLonOrigin;
+  double lonCenter;
+  double falseOriginLon;
+  double falseOriginLat;
+  double natLatOrigin;
+  double latCenter;
+  double stdParallel1;
+  double stdParallel2;
+  double lonPole;
+} geotiff_data_t;
+
 /**** PROTOTYPES ****/
 void usage(char *name);
 void msg_out(FILE *fpLog, int quiet, char *msg);
@@ -101,14 +145,20 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
 void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
+                            stats_t *inFile1_stats, stats_t *inFile2_stats,
+                            double *psnr, int band);
 void print_stats_results(char *filename1, char *filename2,
                          stats_t *s1, stats_t *s2,
                          double psnr);
-void diff_check(char *outputFile, char *inFile1, char *inFile2,
-                stats_t *stats1, stats_t *stats2, double *psnr,
-                int strict, int num_bands);
+void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
+                      stats_t *stats1, stats_t *stats2, double *psnr,
+                      int strict, int num_bands);
+void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2);
 void diffErrOut(char *outputFile, char *err_msg);
+char *data_type2str(data_type_t data_type);
+void get_tiff_info(char *file, tiff_data_t *t);
+void get_geotiff_keys(char *file, geotiff_data_t *g);
+void projection_type_2_str(projection_type_t proj, char *proj_str);
 
 int main(int argc, char **argv)
 {
@@ -350,6 +400,17 @@ int main(int argc, char **argv)
           diffErrOut(outputFile, msg);
           asfPrintError(msg);
         }
+        if (md1->general->data_type != md2->general->data_type) {
+          char *s1 = data_type2str(md1->general->data_type);
+          char *s2 = data_type2str(md2->general->data_type);
+          sprintf(msg, "Files do not have the same data type.\n"
+              "\nFile1 has %s data.  File2 has %s data\n",
+              s1, s2);
+          FREE(s1);
+          FREE(s2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
 
         //////////////////////////////////////////////////////////////////////////////////////
         // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
@@ -363,10 +424,10 @@ int main(int argc, char **argv)
                                       &psnr[band_no], band_no);
             // fftMatch(shifts_t *shift, band_no) goes here
           }
-          // FIXME: Add *shift to diff_check
-          diff_check(outputFile,
-                     inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
-                     band_count1); // Assumes both files have the same band count or would not be here
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                           band_count1); // Assumes both files have the same band count or would not be here
         }
         else {
           // Process selected band
@@ -374,10 +435,10 @@ int main(int argc, char **argv)
                                     inFile1_stats, inFile2_stats,
                                     psnr, band);
           // fftMatch(shifts_t *shift, band_no) goes here
-          // FIXME: Add *shift to diff_check
-          diff_check(outputFile,
-                     inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
-                     strictflag, 1);
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                           inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                           strictflag, 1);
         }
         //
         //////////////////////////////////////////////////////////////////////////////////////
@@ -397,7 +458,84 @@ int main(int argc, char **argv)
     case STD_TIFF:
     case GEO_TIFF:
     {
-      ;
+      int geotiff = (type1 == GEO_TIFF) ? 1 : 0;
+      tiff_data_t t1, t2;
+      geotiff_data_t g1, g2;
+
+      // Determine number of bands and data type
+      get_tiff_info(inFile1, &t1);
+      get_tiff_info(inFile2, &t2);
+      if (t1.data_type != t2.data_type) {
+        char *s1 = data_type2str(t1.data_type);
+        char *s2 = data_type2str(t2.data_type);
+        sprintf(msg, "Files do not have the same data type.\n"
+                "\nFile1 has %s data.  File2 has %s data\n",
+                s1, s2);
+        FREE(s1);
+        FREE(s2);
+        diffErrOut(outputFile, msg);
+        asfPrintError(msg);
+      }
+      if (bandflag && !(band < t1.num_bands && band < t2.num_bands && band >= 0)) {
+        sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
+            "or greater, and less than the number of available bands in the file\n"
+                "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
+                "the valid band number choices.  \n"
+                "\nFile1 has %d bands.  File2 has %d bands\n",
+            t1.num_bands, t2.num_bands);
+        diffErrOut(outputFile, msg);
+        asfPrintError(msg);
+      }
+      if (!bandflag && t1.num_bands != t2.num_bands) {
+        sprintf(msg, "Files do not have the same number of bands.\n"
+            "Cannot compare all bands.  Consider using the -band option to\n"
+                "compare individual bands within the files.\n"
+                "\nFile1 has %d bands.  File2 has %d bands\n",
+            t1.num_bands, t2.num_bands);
+        diffErrOut(outputFile, msg);
+        asfPrintError(msg);
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////
+      // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
+      // check the results
+      if (!bandflag) {
+          // Process every available band
+        int band_no;
+        for (band_no=0; band_no < t1.num_bands; band_no++) {
+          calc_tiff_stats_2files(inFile1, inFile2,
+                                 &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                 &psnr[band_no], band_no);
+          if (geotiff) {
+            get_geotiff_keys(inFile1, &g1);
+            get_geotiff_keys(inFile2, &g2);
+            diff_check_geotiff(outputFile, &g1, &g2);
+          }
+          // fftMatch(shifts_t *shift, band_no) goes here
+        }
+        // FIXME: Add *shift to diff_check_stats()
+        diff_check_stats(outputFile,
+                         inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                         t1.num_bands); // Assumes both files have the same band count or would not be here
+      }
+      else {
+          // Process selected band
+        calc_tiff_stats_2files(inFile1, inFile2,
+                               inFile1_stats, inFile2_stats,
+                               psnr, band);
+        if (geotiff) {
+          get_geotiff_keys(inFile1, &g1);
+          get_geotiff_keys(inFile2, &g2);
+          diff_check_geotiff(outputFile, &g1, &g2);
+        }
+        // fftMatch(shifts_t *shift, band_no) goes here
+        // FIXME: Add *shift to diff_check_stats()
+        diff_check_stats(outputFile,
+                         inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                         strictflag, 1);
+      }
+      //
+      //////////////////////////////////////////////////////////////////////////////////////
     }
     break;
     default:
@@ -406,9 +544,6 @@ int main(int argc, char **argv)
       asfPrintError(msg);
       break;
   }
-
-  // Find geolocation shifts between the images
-  //fftDiff(inFile1, inFile2, &bestLocX, &bestLocY, &certainty);
 
   if (fLog != NULL) {
     fclose(fLog);
@@ -827,7 +962,8 @@ void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
 }
 
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
-                            stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr)
+                            stats_t *inFile1_stats, stats_t *inFile2_stats,
+                            double *psnr, int band)
 {
 //  char *f1 = inFile1;
 //  char *f2 = inFile2;
@@ -895,9 +1031,9 @@ void print_stats_results(char *filename1, char *filename2,
   asfPrintStatus("\nPSNR between files: %f\n\n", psnr);
 }
 
-void diff_check(char *outputFile, char *inFile1, char *inFile2,
-                stats_t *stats1, stats_t *stats2, double *psnr,
-                int strict, int num_bands)
+void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
+                      stats_t *stats1, stats_t *stats2, double *psnr,
+                      int strict, int num_bands)
 {
   int band;
   double baseline_range;
@@ -1023,7 +1159,7 @@ void diff_check(char *outputFile, char *inFile1, char *inFile2,
         strcpy(band_str1, "");
         strcpy(band_str2, "");
       }
-      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences found:\n\n",
+      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences their statistics:\n\n",
               band_str1, inFile2, band_str2, inFile1);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
@@ -1079,7 +1215,7 @@ void diff_check(char *outputFile, char *inFile1, char *inFile2,
         strcpy(band_str1, "");
         strcpy(band_str2, "");
       }
-      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences found:\n\n",
+      sprintf(msg, "FAIL: Comparing %s%s to %s%s\n      resulted in differences their statistics:\n\n",
               band_str1, inFile2, band_str2, inFile1);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
@@ -1157,4 +1293,810 @@ void diffErrOut(char *outputFile, char *err_msg)
   }
 }
 
+// User must free the returned string
+char *data_type2str(data_type_t data_type)
+{
+  char *retstr = (char*)CALLOC(64, sizeof(char));
+
+  switch (data_type) {
+    case BYTE:
+      strcpy(retstr, "BYTE");
+      break;
+    case INTEGER16:
+      strcpy(retstr, "INTEGER16");
+      break;
+    case INTEGER32:
+      strcpy(retstr, "INTEGER32");
+      break;
+    case REAL32:
+      strcpy(retstr, "REAL32");
+      break;
+    case REAL64:
+      strcpy(retstr, "REAL64");
+      break;
+    case COMPLEX_BYTE:
+      strcpy(retstr, "COMPLEX_BYTE");
+      break;
+    case COMPLEX_INTEGER16:
+      strcpy(retstr, "COMPLEX_INTEGER16");
+      break;
+    case COMPLEX_INTEGER32:
+      strcpy(retstr, "COMPLEX_INTEGER32");
+      break;
+    case COMPLEX_REAL32:
+      strcpy(retstr, "COMPLEX_REAL32");
+      break;
+    case COMPLEX_REAL64:
+      strcpy(retstr, "COMPLEX_REAL64");
+      break;
+    default:
+      strcpy(retstr, "UNKNOWN");
+      break;
+  }
+
+  return retstr;
+}
+
+void get_tiff_info(char *file, tiff_data_t *t)
+{
+  TIFF *tif = XTIFFOpen(file, "r");
+
+  if (tif != NULL) {
+    get_tiff_data_config(tif,
+                        &t->sample_format,
+                        &t->bits_per_sample,
+                        &t->planar_config,
+                        &t->data_type,
+                        &t->num_bands,
+                        &t->is_scanline_format);
+    TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
+    TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
+    XTIFFClose(tif);
+  }
+  else {
+    t->sample_format = MISSING_TIFF_DATA;
+    t->bits_per_sample = MISSING_TIFF_DATA;
+    t->planar_config = MISSING_TIFF_DATA;
+    t->data_type = 0;
+    t->num_bands = MISSING_TIFF_DATA;
+    t->is_scanline_format = MISSING_TIFF_DATA;
+  }
+}
+
+void get_geotiff_keys(char *file, geotiff_data_t *g)
+{
+  TIFF *tif = XTIFFOpen(file, "r");
+  GTIF *gtif = NULL;
+
+  // FIXME: This function needs to get the keys just like a generic import
+  // does... see diff_check_geotiff() below
+  // Init values to 'missing'
+  g->gtif_data_exists = 0;
+
+  // Read geotiff info
+  if (tif != NULL) {
+    gtif = GTIFNew(tif);
+    if (gtif != NULL) {
+      int count, read_count;
+      int citation_length;
+      int typeSize;
+      tagtype_t citation_type;
+
+      // Get citations
+      citation_length = GTIFKeyInfo(gtif, GTCitationGeoKey, &typeSize, &citation_type);
+      if (citation_length > 0) {
+        g->GTcitation = (char*)MALLOC(citation_length * typeSize);
+        GTIFKeyGet(gtif, GTCitationGeoKey, g->GTcitation, 0, citation_length);
+      }
+      else {
+        g->GTcitation = NULL;
+      }
+      citation_length = GTIFKeyInfo(gtif, PCSCitationGeoKey, &typeSize, &citation_type);
+      if (citation_length > 0) {
+        g->PCScitation = (char*)MALLOC(citation_length * typeSize);
+        GTIFKeyGet(gtif, PCSCitationGeoKey, g->PCScitation, 0, citation_length);
+      }
+      else {
+        g->PCScitation = NULL;
+      }
+      if (strlen(g->GTcitation) > 0 || strlen(g->PCScitation)) g->gtif_data_exists = 1;
+
+      // Get tie points and pixel scale
+      (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &count, &g->tie_point);
+      if (count >= 6) g->gtif_data_exists = 1;
+      (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &count, &g->pixel_scale);
+      if (count >= 3) g->gtif_data_exists = 1;
+
+      // Get model type, raster type, and linear units
+      read_count = GTIFKeyGet (gtif, GTModelTypeGeoKey, &g->model_type, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      read_count = GTIFKeyGet (gtif, GTRasterTypeGeoKey, &g->raster_type, 0, 0);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      read_count = GTIFKeyGet (gtif, ProjLinearUnitsGeoKey, &g->linear_units, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+
+      // Get UTM related info if it exists
+      read_count = GTIFKeyGet(gtif, ProjectedCSTypeGeoKey, &g->pcs, 0, 1);
+      if (read_count == 1 && PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+        g->gtif_data_exists = 1;
+      }
+      else {
+        read_count = GTIFKeyGet(gtif, ProjectionGeoKey, &g->pcs, 0, 1);
+        if (read_count == 1 && PCS_2_UTM(g->pcs, &g->hemisphere, &g->datum, &g->pro_zone)) {
+          g->gtif_data_exists = 1;
+        }
+        else {
+          g->hemisphere = '\0';
+          g->datum = UNKNOWN_DATUM;
+          g->pro_zone = MISSING_GTIF_DATA;
+        }
+      }
+
+      // Get projection type (ProjCoordTransGeoKey) and other projection parameters
+      read_count = GTIFKeyGet(gtif, ProjCoordTransGeoKey, &g->proj_coords_trans, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->proj_coords_trans = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet(gtif, GeographicTypeGeoKey, &g->geographic_datum, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->geographic_datum = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet(gtif, GeogGeodeticDatumGeoKey, &g->geodetic_datum, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->geodetic_datum = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet(gtif, ProjScaleAtNatOriginGeoKey, &g->scale_factor, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->scale_factor = MISSING_GTIF_DATA;
+
+      // Get generic projection parameters (Note: projection type is defined by
+      // the g->proj_coords_trans value)
+      read_count = GTIFKeyGet (gtif, ProjFalseEastingGeoKey, &g->false_easting, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->false_easting = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjFalseNorthingGeoKey, &g->false_northing, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->false_northing = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjNatOriginLongGeoKey, &g->natLonOrigin, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->natLonOrigin = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjNatOriginLatGeoKey, &g->natLatOrigin, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->natLatOrigin = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjStdParallel1GeoKey, &g->stdParallel1, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->stdParallel1 = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjStdParallel2GeoKey, &g->stdParallel2, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->stdParallel2 = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjCenterLongGeoKey, &g->lonCenter, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->lonCenter = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjCenterLatGeoKey, &g->latCenter, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->latCenter = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjFalseOriginLongGeoKey, &g->falseOriginLon, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->falseOriginLon = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjFalseOriginLatGeoKey, &g->falseOriginLat, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->falseOriginLat = MISSING_GTIF_DATA;
+      read_count = GTIFKeyGet (gtif, ProjStraightVertPoleLongGeoKey, &g->lonPole, 0, 1);
+      if (read_count >= 1) g->gtif_data_exists = 1;
+      else g->lonPole = MISSING_GTIF_DATA;
+    }
+  }
+}
+
+void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
+{
+  char dummy_hem;
+  datum_type_t dummy_datum;
+  long dummy_zone;
+  projection_type_t projection_type1, projection_type2;
+  FILE *outputFP = NULL;
+
+  // FIXME: This stuff needs to be projection type-specific since I have to use
+  // lat/lon together with latLon2utm() and check geolocations in meters
+  // (due to longitude convergence at the poles)
+
+  // Determine projection types
+  if (PCS_2_UTM(g1->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
+    projection_type1 = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+  else {
+    switch(g1->proj_coords_trans) {
+      case CT_TransverseMercator:
+      case CT_TransvMercator_Modified_Alaska:
+      case CT_TransvMercator_SouthOriented:
+        projection_type1 = UNIVERSAL_TRANSVERSE_MERCATOR;
+        break;
+      case CT_AlbersEqualArea:
+        projection_type1 = ALBERS_EQUAL_AREA;
+        break;
+      case CT_LambertConfConic_1SP:
+      case CT_LambertConfConic_2SP:
+        projection_type1 = LAMBERT_CONFORMAL_CONIC;
+        break;
+      case CT_PolarStereographic:
+        projection_type1 = POLAR_STEREOGRAPHIC;
+        break;
+      case CT_LambertAzimEqualArea:
+        projection_type1 = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+        break;
+      default:
+        projection_type1 = MISSING_GTIF_DATA;
+        break;
+    }
+  }
+  if (PCS_2_UTM(g2->pcs, &dummy_hem, &dummy_datum, &dummy_zone)) {
+    projection_type2 = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+  else {
+    switch(g2->proj_coords_trans) {
+      case CT_TransverseMercator:
+      case CT_TransvMercator_Modified_Alaska:
+      case CT_TransvMercator_SouthOriented:
+        projection_type2 = UNIVERSAL_TRANSVERSE_MERCATOR;
+        break;
+      case CT_AlbersEqualArea:
+        projection_type2 = ALBERS_EQUAL_AREA;
+        break;
+      case CT_LambertConfConic_1SP:
+      case CT_LambertConfConic_2SP:
+        projection_type2 = LAMBERT_CONFORMAL_CONIC;
+        break;
+      case CT_PolarStereographic:
+        projection_type2 = POLAR_STEREOGRAPHIC;
+        break;
+      case CT_LambertAzimEqualArea:
+        projection_type2 = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+        break;
+      default:
+        projection_type2 = MISSING_GTIF_DATA;
+        break;
+    }
+  }
+
+  // Perform comparison based on projection type
+  int failed=0;
+  if (!(g1->gtif_data_exists && g2->gtif_data_exists)) {
+    failed=1;
+  }
+  switch (projection_type1) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      if (g1->pcs != g2->pcs                    ||
+          projection_type1 != projection_type2  ||
+          g1->scale_factor != g2->scale_factor)
+        failed = 1;
+      break;
+    case ALBERS_EQUAL_AREA:
+      if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+          g1->stdParallel1 != g2->stdParallel1            ||
+          g1->stdParallel2 != g2->stdParallel2            ||
+          g1->false_easting != g2->false_easting          ||
+          g1->false_northing != g2->false_northing        ||
+          g1->natLonOrigin != g2->natLonOrigin            ||
+          g1->lonCenter != g2->lonCenter                  ||
+          g1->natLatOrigin != g2->natLatOrigin)
+        failed=1;
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+          g1->stdParallel1 != g2->stdParallel1            ||
+          g1->stdParallel2 != g2->stdParallel2            ||
+          g1->false_easting != g2->false_easting          ||
+          g1->false_northing != g2->false_northing        ||
+          g1->natLonOrigin != g2->natLonOrigin            ||
+          g1->natLatOrigin != g2->natLatOrigin            ||
+          g1->falseOriginLon != g2->falseOriginLon        ||
+          g1->falseOriginLat != g2->falseOriginLat        ||
+          g1->scale_factor != g2->scale_factor)
+        failed=1;
+      break;
+    case POLAR_STEREOGRAPHIC:
+      if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+          g1->natLatOrigin != g2->natLatOrigin            ||
+          g1->lonPole != g2->lonPole                      ||
+          g1->false_easting != g2->false_easting          ||
+          g1->false_northing != g2->false_northing)
+        failed=1;
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+          g1->false_easting != g2->false_easting          ||
+          g1->false_northing != g2->false_northing        ||
+          g1->lonCenter != g2->lonCenter                  ||
+          g1->latCenter != g2->latCenter)
+        failed=1;
+      break;
+    default:
+      failed=1;
+      break;
+  }
+
+  // Report results if the comparisons failed
+  outputFP = fopen(outfile, "w");
+  if (outputFP == NULL) {
+    // Failed to open output file
+    asfPrintError("Cannot open output file for reporting geotiff file differences\n");
+  }
+  if (failed && outputFP != NULL) {
+    char msg[1024];
+
+    fprintf(outputFP, "\n-----------------------------------------------\n");
+    asfPrintStatus("\n-----------------------------------------------\n");
+
+    // Report results based on projection type
+    if (!g1->gtif_data_exists) {
+      sprintf(msg, "ERROR: GeoTIFF data not found in File1\n");
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+    }
+    if (!g2->gtif_data_exists) {
+      sprintf(msg, "ERROR: GeoTIFF data not found in File2\n");
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+    }
+    if (projection_type1 != projection_type2) {
+      char type_str1[256], type_str2[256];
+      projection_type_2_str(projection_type1, type_str1);
+      projection_type_2_str(projection_type2, type_str2);
+      sprintf(msg, "Projection type found in File1\n  %s\nnot equal to projection type in File2\n  %s\n",
+             type_str1, type_str2);
+      fprintf(outputFP, msg);
+      asfPrintStatus(msg);
+    }
+    if (g1->gtif_data_exists &&
+        g2->gtif_data_exists &&
+        projection_type1 == projection_type2)
+    {
+      switch (projection_type1) {
+        case UNIVERSAL_TRANSVERSE_MERCATOR:
+          if (g1->pcs != g2->pcs ||
+              g1->scale_factor != g2->scale_factor) {
+            sprintf(msg, "UTM Projections with differences found: \n\n");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+          }
+          if (g1->pcs != g2->pcs) {
+            char tmp1[16], tmp2[16];
+            sprintf(tmp1,"%d", g1->pcs);
+            sprintf(tmp2,"%d", g2->pcs);
+            sprintf(msg, "  PCS value from ProjectedCSTypeGeoKey or ProjectionGeoKey differ:\n"
+                "    File1: %s\n"
+                "    File2: %s\n",
+                g1->pcs != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                g2->pcs != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+          }
+          if (g1->scale_factor != g2->scale_factor) {
+            char tmp1[16], tmp2[16];
+            sprintf(tmp1,"%f", g1->scale_factor);
+            sprintf(tmp2,"%f", g2->scale_factor);
+            sprintf(msg, "  UTM scale factors differ:\n"
+                "    File1: %s\n"
+                "    File2: %s\n",
+                g1->scale_factor != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                g2->scale_factor != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+          }
+          break;
+        case ALBERS_EQUAL_AREA:
+          if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+              g1->stdParallel1 != g2->stdParallel1            ||
+              g1->stdParallel2 != g2->stdParallel2            ||
+              g1->false_easting != g2->false_easting          ||
+              g1->false_northing != g2->false_northing        ||
+              g1->natLonOrigin != g2->natLonOrigin            ||
+              g1->lonCenter != g2->lonCenter                  ||
+              g1->natLatOrigin != g2->natLatOrigin) {
+            sprintf(msg, "Albers Equal Area Projections with differences found: \n\n");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+            if (g1->proj_coords_trans != g2->proj_coords_trans) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%d", g1->proj_coords_trans);
+              sprintf(tmp2,"%d", g2->proj_coords_trans);
+              sprintf(msg, "  Projection type code from ProjCoordTransGeoKey differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->stdParallel1 != g2->stdParallel1) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->stdParallel1);
+              sprintf(tmp2,"%f", g2->stdParallel1);
+              sprintf(msg, "  First standard parallels differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->stdParallel1 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->stdParallel1 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->stdParallel2 != g2->stdParallel2) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->stdParallel2);
+              sprintf(tmp2,"%f", g2->stdParallel2);
+              sprintf(msg, "  Second standard parallels differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->stdParallel2 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->stdParallel2 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_easting != g2->false_easting) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_easting);
+              sprintf(tmp2,"%f", g2->false_easting);
+              sprintf(msg, "  False eastings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_northing != g2->false_northing) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_northing);
+              sprintf(tmp2,"%f", g2->false_northing);
+              sprintf(msg, "  False northings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->natLonOrigin != g2->natLonOrigin) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->natLonOrigin);
+              sprintf(tmp2,"%f", g2->natLonOrigin);
+              sprintf(msg, "  Central meridians (from ProjNatOriginLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->natLonOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->natLonOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->lonCenter != g2->lonCenter) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->lonCenter);
+              sprintf(tmp2,"%f", g2->lonCenter);
+              sprintf(msg, "  Central meridians (from ProjCenterLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->lonCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->lonCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->natLatOrigin != g2->natLatOrigin) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->natLatOrigin);
+              sprintf(tmp2,"%f", g2->natLatOrigin);
+              sprintf(msg, "  Latitudes of Origin (from ProjNatOriginLatGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+          }
+          break;
+        case LAMBERT_CONFORMAL_CONIC:
+          if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+              g1->stdParallel1 != g2->stdParallel1          ||
+              g1->stdParallel2 != g2->stdParallel2          ||
+              g1->false_easting != g2->false_easting        ||
+              g1->false_northing != g2->false_northing      ||
+              g1->natLonOrigin != g2->natLonOrigin          ||
+              g1->natLatOrigin != g2->natLatOrigin          ||
+              g1->falseOriginLon != g2->falseOriginLon      ||
+              g1->falseOriginLat != g2->falseOriginLat      ||
+              g1->scale_factor != g2->scale_factor) {
+            sprintf(msg, "Lambert Conformal Conic Projections with differences found: \n\n");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+            if (g1->proj_coords_trans != g2->proj_coords_trans) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%d", g1->proj_coords_trans);
+              sprintf(tmp2,"%d", g2->proj_coords_trans);
+              sprintf(msg, "  Projection type code from ProjCoordTransGeoKey differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->stdParallel1 != g2->stdParallel1) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->stdParallel1);
+              sprintf(tmp2,"%f", g2->stdParallel1);
+              sprintf(msg, "  First standard parallels differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->stdParallel1 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->stdParallel1 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->stdParallel2 != g2->stdParallel2) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->stdParallel2);
+              sprintf(tmp2,"%f", g2->stdParallel2);
+              sprintf(msg, "  Second standard parallels differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->stdParallel2 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->stdParallel2 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_easting != g2->false_easting) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_easting);
+              sprintf(tmp2,"%f", g2->false_easting);
+              sprintf(msg, "  False eastings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_northing != g2->false_northing) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_northing);
+              sprintf(tmp2,"%f", g2->false_northing);
+              sprintf(msg, "  False northings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->natLonOrigin != g2->natLonOrigin) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->natLonOrigin);
+              sprintf(tmp2,"%f", g2->natLonOrigin);
+              sprintf(msg, "  Longitudes of Origin (from ProjNatOriginLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->natLonOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->natLonOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->natLatOrigin != g2->natLatOrigin) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->natLatOrigin);
+              sprintf(tmp2,"%f", g2->natLatOrigin);
+              sprintf(msg, "  Latitudes of Origin (from ProjNatOriginLatGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->falseOriginLon != g2->falseOriginLon) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->falseOriginLon);
+              sprintf(tmp2,"%f", g2->falseOriginLon);
+              sprintf(msg, "  Longitudes of Origin (from ProjFalseOriginLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->falseOriginLon != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->falseOriginLon != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->falseOriginLat != g2->falseOriginLat) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->falseOriginLat);
+              sprintf(tmp2,"%f", g2->falseOriginLat);
+              sprintf(msg, "  Latitudes of Origin (from ProjFalseOriginLatGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->falseOriginLat != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->falseOriginLat != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+          }
+          break;
+        case POLAR_STEREOGRAPHIC:
+          if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+              g1->natLatOrigin != g2->natLatOrigin          ||
+              g1->lonPole != g2->lonPole                    ||
+              g1->false_easting != g2->false_easting        ||
+              g1->false_northing != g2->false_northing) {
+            sprintf(msg, "Polar Stereographic Projections with differences found: \n\n");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+            if (g1->proj_coords_trans != g2->proj_coords_trans) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%d", g1->proj_coords_trans);
+              sprintf(tmp2,"%d", g2->proj_coords_trans);
+              sprintf(msg, "  Projection type code from ProjCoordTransGeoKey differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->natLatOrigin != g2->natLatOrigin) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->natLatOrigin);
+              sprintf(tmp2,"%f", g2->natLatOrigin);
+              sprintf(msg, "  Latitudes of Origin (from ProjNatOriginLatGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->lonPole != g2->lonPole) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->lonPole);
+              sprintf(tmp2,"%f", g2->lonPole);
+              sprintf(msg, "  Longitudes of Straight Vertical Pole (from ProjStraightVertPoleLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->lonPole != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->lonPole != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_easting != g2->false_easting) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_easting);
+              sprintf(tmp2,"%f", g2->false_easting);
+              sprintf(msg, "  False eastings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_northing != g2->false_northing) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_northing);
+              sprintf(tmp2,"%f", g2->false_northing);
+              sprintf(msg, "  False northings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+          }
+          break;
+        case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+          if (g1->proj_coords_trans != g2->proj_coords_trans  ||
+              g1->false_easting != g2->false_easting        ||
+              g1->false_northing != g2->false_northing      ||
+              g1->lonCenter != g2->lonCenter                ||
+              g1->latCenter != g2->latCenter) {
+            failed=1;
+            sprintf(msg, "Lambert Azimuthal Equal Area Projections with differences found: \n\n");
+            fprintf(outputFP, msg);
+            asfPrintStatus(msg);
+            if (g1->proj_coords_trans != g2->proj_coords_trans) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%d", g1->proj_coords_trans);
+              sprintf(tmp2,"%d", g2->proj_coords_trans);
+              sprintf(msg, "  Projection type code from ProjCoordTransGeoKey differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_easting != g2->false_easting) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_easting);
+              sprintf(tmp2,"%f", g2->false_easting);
+              sprintf(msg, "  False eastings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->false_northing != g2->false_northing) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->false_northing);
+              sprintf(tmp2,"%f", g2->false_northing);
+              sprintf(msg, "  False northings differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->lonCenter != g2->lonCenter) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->lonCenter);
+              sprintf(tmp2,"%f", g2->lonCenter);
+              sprintf(msg, "  Central meridians (from ProjCenterLongGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->lonCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->lonCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+            if (g1->latCenter != g2->latCenter) {
+              char tmp1[16], tmp2[16];
+              sprintf(tmp1,"%f", g1->latCenter);
+              sprintf(tmp2,"%f", g2->latCenter);
+              sprintf(msg, "  Latitudes of Origin (from ProjCenterLatGeoKey) differ:\n"
+                  "    File1: %s\n"
+                      "    File2: %s\n",
+                  g1->latCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
+                  g2->latCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+              fprintf(outputFP, msg);
+              asfPrintStatus(msg);
+            }
+          }
+          break;
+        default:
+          // Should never reach this code
+          sprintf(msg, "Found unsupported or missing projection type\n\n");
+          fprintf(outputFP, msg);
+          asfPrintStatus(msg);
+          break;
+      }
+    }
+
+    fprintf(outputFP, "-----------------------------------------------\n\n");
+    asfPrintStatus("-----------------------------------------------\n\n");
+  }
+
+  if (failed && outputFP != NULL) {
+    FCLOSE(outputFP);
+  }
+}
+
+void projection_type_2_str(projection_type_t proj, char *proj_str)
+{
+  switch (proj) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      strcpy(proj_str, "UTM");
+      break;
+    case ALBERS_EQUAL_AREA:
+      strcpy(proj_str, "Albers Equal Area");
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      strcpy(proj_str, "Lambert Conformal Conic");
+      break;
+    case POLAR_STEREOGRAPHIC:
+      strcpy(proj_str, "Polar Stereographic");
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      strcpy(proj_str, "Lambert Azimuthal Equal Area");
+      break;
+    default:
+      strcpy(proj_str, "Unknown");
+      break;
+  }
+}
 
