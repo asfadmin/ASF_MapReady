@@ -187,8 +187,14 @@ static void read_D(const char *filename)
     free(meta_filename);
 }
 
-void read_file(const char *filename, const char *band)
+void read_file(const char *filename_in, const char *band)
 {
+    char *filename = STRDUP(filename_in);
+
+    // strip off a trailing "."
+    if (filename[strlen(filename)-1] == '.')
+        filename[strlen(filename)-1] = '\0';
+
     // first need to figure out what kind of file this is
     // we will do that based on the extension
     // user may have just given basename, so we may need to hunt
@@ -296,6 +302,8 @@ void read_file(const char *filename, const char *band)
     }
 
     FREE(img_file);
+    FREE(filename);
+
     assert(data||data_fi);
 
     center_samp = crosshair_samp = (double)ns/2.;

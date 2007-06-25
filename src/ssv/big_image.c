@@ -356,6 +356,7 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     // clicking in the small image moves the big image
     GtkWidget *img = get_widget_checked("small_image");
     GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
+
     int w = gdk_pixbuf_get_width(pb);
     int h = gdk_pixbuf_get_height(pb);
 
@@ -423,11 +424,12 @@ static void zoom_in()
     // zooming in when larger than 1:1 decreases by 1 each time
     // until 1:1, then we halve the zoom factor
     if (zoom > 1)
-        --zoom;
+        zoom = (int)(zoom+.98) - 1;
     else // zoom <= 1
         zoom /= 2;
 
     update_zoom();
+    fill_small();
 }
 
 static void zoom_out()
@@ -437,7 +439,7 @@ static void zoom_out()
     if (zoom <= 1)
         zoom *= 2;
     else // zoom > 1
-        ++zoom;
+        zoom = (int)zoom + 1;
 
     update_zoom();
     fill_small();
@@ -467,15 +469,39 @@ on_big_image_scroll_event(
 static int handle_keypress(GdkEventKey *event)
 {
     // handle the non-cursor-moving events first
-    if (event->keyval == GDK_Page_Up || event->keyval == GDK_Prior || event->keyval == GDK_plus) {
+    if (event->keyval == GDK_Page_Up || 
+        event->keyval == GDK_Prior || 
+        event->keyval == GDK_plus)
+    {
         // Page Up or Plus: Zoom IN
         zoom_in();
-    } else if (event->keyval == GDK_Page_Down || event->keyval == GDK_Next || event->keyval == GDK_minus) {
+    } else if (event->keyval == GDK_Page_Down || 
+        event->keyval == GDK_Next || 
+        event->keyval == GDK_minus)
+    {
         // Page Down or Minus: Zoom OUT
         zoom_out();
     } else if (event->keyval == GDK_Home) {
         // Home: Revert to the normal zoom level
         zoom_default();
+    } else if (event->keyval == GDK_End) {
+        // End: Fit image to window
+        int h = get_big_image_height();
+        int w = get_big_image_width();
+
+        // choose the larger of the horiz/vert zoom -- round up!
+        //int z1 = (int)((double)nl/(double)h + .95);
+        //int z2 = (int)((double)ns/(double)w + .95);
+        double z1 = (double)nl/(double)h;
+        double z2 = (double)ns/(double)w;
+        zoom = z1 > z2 ? z1 : z2;
+
+        // recenter the image as well
+        center_line = nl/2;
+        center_samp = ns/2;
+
+        update_zoom();
+        fill_small();
     } else if (event->keyval == GDK_Tab) {
         // Tab key: Switch between the crosshairs (which one is affected by
         //          subsequent arrow movements)
@@ -492,27 +518,48 @@ static int handle_keypress(GdkEventKey *event)
         if (z==0) z=1; // z will be 0 when the zoom factor is <= .5
 
         int incr = z;
-        if (event->state & GDK_CONTROL_MASK) incr = 10*z;
-        else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
 
-        if (last_was_crosshair) {
+        // ALT: Recenters, instead of moves the crosshair
+        // CTRL: Multiplies the movement amount by 10.
+        // SHIFT: Multiplies the movement amount by 25.
+        // So, CTRL-SHIFT will multiply the movement amount by 250
+
+        if (event->state & GDK_CONTROL_MASK)
+            incr *= 10;
+        if (event->state & GDK_SHIFT_MASK)
+            incr *= 25;
+
+        if (event->state & GDK_MOD1_MASK) {
+            // Alt was pressed --> move center
             switch (event->keyval) {
-                case GDK_Up: crosshair_line -= incr; break;
-                case GDK_Down: crosshair_line += incr; break;
-                case GDK_Left: crosshair_samp -= incr; break;
-                case GDK_Right: crosshair_samp += incr; break;
+                case GDK_Up: center_line -= incr; break;
+                case GDK_Down: center_line += incr; break;
+                case GDK_Left: center_samp -= incr; break;
+                case GDK_Right: center_samp += incr; break;
                 default: return TRUE;
             }
+            fill_small();
         } else {
-            switch (event->keyval) {
-                case GDK_Up: ctrl_clk_line -= incr; break;
-                case GDK_Down: ctrl_clk_line += incr; break;
-                case GDK_Left: ctrl_clk_samp -= incr; break;
-                case GDK_Right: ctrl_clk_samp += incr; break;
-                default: return TRUE;
+            // Move one of the crosshairs
+            if (last_was_crosshair) {
+                switch (event->keyval) {
+                    case GDK_Up: crosshair_line -= incr; break;
+                    case GDK_Down: crosshair_line += incr; break;
+                    case GDK_Left: crosshair_samp -= incr; break;
+                    case GDK_Right: crosshair_samp += incr; break;
+                    default: return TRUE;
+                }
+            } else {
+                switch (event->keyval) {
+                    case GDK_Up: ctrl_clk_line -= incr; break;
+                    case GDK_Down: ctrl_clk_line += incr; break;
+                    case GDK_Left: ctrl_clk_samp -= incr; break;
+                    case GDK_Right: ctrl_clk_samp += incr; break;
+                    default: return TRUE;
+                }
             }
+            update_pixel_info();
         }
-        update_pixel_info();
     }
 
     fill_big();

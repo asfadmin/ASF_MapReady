@@ -20,7 +20,7 @@
   <signal name="destroy_event" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:36 GMT"/>
   <signal name="destroy" handler="on_ssv_main_window_delete_event" last_modification_time="Sat, 16 Jun 2007 07:42:53 GMT"/>
   <signal name="key_press_event" handler="on_ssv_main_window_key_press_event" last_modification_time="Thu, 21 Jun 2007 16:34:00 GMT"/>
-  
+
   <child>
     <widget class="GtkVBox" id="vbox3">
       <property name="visible">True</property>
@@ -261,6 +261,27 @@
 	  </child>
 
 	  <child>
+	    <widget class="GtkLabel" id="label3">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">False</property>
+	      <property name="use_markup">False</property>
+	      <property name="justify">GTK_JUSTIFY_LEFT</property>
+	      <property name="wrap">False</property>
+	      <property name="selectable">False</property>
+	      <property name="xalign">0.5</property>
+	      <property name="yalign">0.5</property>
+	      <property name="xpad">0</property>
+	      <property name="ypad">0</property>
+	    </widget>
+	    <packing>
+	      <property name="padding">2</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	    </packing>
+	  </child>
+
+	  <child>
 	    <widget class="GtkEventBox" id="big_image_eventbox">
 	      <property name="width_request">800</property>
 	      <property name="height_request">800</property>
@@ -271,6 +292,7 @@
 	      <signal name="button_press_event" handler="on_big_image_eventbox_button_press_event" last_modification_time="Sun, 17 Jun 2007 04:40:20 GMT"/>
 	      <signal name="scroll_event" handler="on_big_image_scroll_event" last_modification_time="Sun, 17 Jun 2007 04:40:35 GMT"/>
 	      <signal name="size_allocate" handler="on_big_image_resize" last_modification_time="Thu, 21 Jun 2007 14:58:18 GMT"/>
+
 	      <child>
 		<widget class="GtkImage" id="big_image">
 		  <property name="visible">True</property>
