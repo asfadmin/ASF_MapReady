@@ -3,6 +3,8 @@
 #include "libasf_proj.h"
 
 // current sizes of the large image.
+// keep half the size around, we need that during the redraw, which
+// is supposed to be quick
 static int big_img_width=800;
 static int big_img_height=800;
 static int big_img_width2=400;
@@ -31,17 +33,26 @@ int get_big_image_height2()
 SIGNAL_CALLBACK void on_big_image_resize(GtkWidget *w, 
     GtkAllocation *alloc, gpointer user_data)
 {
-    //GtkWidget *img = get_widget_checked("big_image");
-    if (big_img_width != alloc->width || big_img_height != alloc->height) {
+    // User resized!
+    // Recalculate the width/height and half-width/half-height values
+    // This if statement just prevents doing the redraw if the user didn't
+    // actually resize (i.e., just grabbed the edge but didn't drag it).
+    // (It also is useful to stop an infinate cascade-of-resizes that GTK
+    // sometimes seems to get stuck in -- the "fill_small/big" will
+    // occasionally trigger a resize that runs after this method completes)
+    if (big_img_width != alloc->width || big_img_height != alloc->height)
+    {
         big_img_width = alloc->width;
         big_img_height = alloc->height;
         big_img_width2 = big_img_width/2;
         big_img_height2 = big_img_height/2;
+
         fill_small();
         fill_big();
     }
 }
 
+// I am not sure this is even necessary
 SIGNAL_CALLBACK void on_big_image_repaint(GtkWidget *w)
 {
     fill_small();
@@ -50,12 +61,15 @@ SIGNAL_CALLBACK void on_big_image_repaint(GtkWidget *w)
 
 static void ls2img(double line, double samp, int *x, int *y)
 {
+    // convert from line/sample coordinates (SAR image coordinates)
+    // to screen coordinates
     *x = (samp - (double)center_samp)/zoom + get_big_image_width2();
     *y = (line - (double)center_line)/zoom + get_big_image_height2();
 }
 
 static void img2ls(int x, int y, double *line, double *samp)
 {
+    // convert from screen coordinates to line/sample coordinates
     *line = ((double)y - get_big_image_height2())*zoom + (double)center_line;
     *samp = ((double)x - get_big_image_width2())*zoom + (double)center_samp;
 }
@@ -66,7 +80,7 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
 }
 
 // draws a crosshair at x,y (image coords)
-static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
+static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp, int green)
 {
     if (samp < 0 || line < 0 || samp >= ns || line >= nl)
         return;
@@ -95,14 +109,26 @@ static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
+    // 15 is the size of the crosshair in each direction (30 pixels total)
+    // these are screen pixels, so the crosshair is the same for all zooms
     lo = ix - 15;   if (lo < 0)      lo = 0;
     hi = ix + 15;   if (hi >= width) hi = width-1;
+
+    // crosshair is drawn in red, unless "green" was set
+    int r = 255;
+    int g = 0;
+    int b = 0;
+    if (green) {
+        r = b = 0;
+        g = 255;
+    }
 
     for (i = lo; i < hi; ++i) {
         if (i > ix-3 && i < ix+3) i = ix+3;
         p = pixels + iy * rowstride + i * n_channels;
-        p[1] = 255;
-        p[0] = p[2] = 0;
+        p[0] = r;
+        p[1] = g;
+        p[2] = b;
     }
 
     lo = iy - 15;   if (lo < 0)       lo = 0;
@@ -111,8 +137,9 @@ static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp)
     for (i = lo; i < hi; ++i) {
         if (i > iy-3 && i < iy+3) i = iy+3;
         p = pixels + i * rowstride + ix * n_channels;
-        p[1] = 255;
-        p[0] = p[2] = 0;
+        p[0] = r;
+        p[1] = g;
+        p[2] = b;
     }
 }
 
@@ -149,7 +176,12 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
-    // loop on the distance which is greater
+    // What a mess!  But the concept is trivial:
+    //   (1) Loop goes on the x or y
+    //   (2) linearly interpolate to find the other coordinate
+    //   (3) place that pixel
+    // i,j is the interpolated sample,line where the pixel goes
+    // we loop on whichever distance (x or y) is greater
     if (iabs(ix1-ix0) > iabs(iy1-iy0)) {
         int incr = ix1>ix0 ? 1 : -1;
         for (i=ix0; i!=ix1; i+=incr) {
@@ -223,8 +255,8 @@ static GdkPixbuf * make_big_image()
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
-    put_crosshair(pb, crosshair_line, crosshair_samp);
-    put_crosshair(pb, ctrl_clk_line, ctrl_clk_samp);
+    put_crosshair(pb, crosshair_line, crosshair_samp, TRUE);
+    put_crosshair(pb, ctrl_clk_line, ctrl_clk_samp, FALSE);
     put_line(pb, crosshair_line, crosshair_samp, ctrl_clk_line, ctrl_clk_samp);
     return pb;
 }
@@ -244,6 +276,7 @@ static void line_samp_to_proj(double line, double samp, double *x, double *y)
 
 void update_pixel_info()
 {
+    // update the left-hand "clicked pixel" information
     char buf[512];
 
     GtkWidget *img = get_widget_checked("big_image");
@@ -320,10 +353,7 @@ void fill_big()
 SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-    // temporarily block keypress events...
-    //widget = get_widget_checked("small_image_eventbox");
-    //gtk_widget_set_events(widget, 0);
-    
+    // clicking in the small image moves the big image
     GtkWidget *img = get_widget_checked("small_image");
     GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
     int w = gdk_pixbuf_get_width(pb);
@@ -335,23 +365,17 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     fill_small();
     fill_big();
 
-    while (gtk_events_pending())
-        gtk_main_iteration();    
-
-    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
+// Keeps track of which crosshair should be affected when the user
+// presses an arrow key.
 static int last_was_crosshair = TRUE;
 
 SIGNAL_CALLBACK int
 on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-    // temporarily block keypress events...
-    //widget = get_widget_checked("big_image_eventbox");
-    //gtk_widget_set_events(widget, 0);
-
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
@@ -373,10 +397,6 @@ on_big_image_eventbox_button_press_event(
         fill_big();
     }
 
-    while (gtk_events_pending())
-        gtk_main_iteration();    
-
-    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
@@ -398,83 +418,101 @@ void update_zoom()
    put_string_to_label("zoom_label", buf);
 }
 
+static void zoom_in()
+{
+    // zooming in when larger than 1:1 decreases by 1 each time
+    // until 1:1, then we halve the zoom factor
+    if (zoom > 1)
+        --zoom;
+    else // zoom <= 1
+        zoom /= 2;
+
+    update_zoom();
+}
+
+static void zoom_out()
+{
+    // zooming out when larger than 1:1 increases by 1 each time
+    // when less than 1:1, then we double the zoom factor
+    if (zoom <= 1)
+        zoom *= 2;
+    else // zoom > 1
+        ++zoom;
+
+    update_zoom();
+    fill_small();
+}
+
+static void zoom_default()
+{
+    zoom = 1;
+    update_zoom();
+    fill_small();
+}
+
 SIGNAL_CALLBACK int
 on_big_image_scroll_event(
     GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
-    // temporarily block keypress events...
-    //widget = get_widget_checked("big_image_eventbox");
-    //gtk_widget_set_events(widget, 0);
-
     if (event->direction == GDK_SCROLL_UP) {
-        if (zoom > 1)
-            --zoom;
-        else if (zoom <= 1)
-            zoom /= 2;
+        zoom_in();
     } else if (event->direction == GDK_SCROLL_DOWN) {
-        if (zoom <= 1)
-            zoom *= 2;
-        else
-            ++zoom;
+        zoom_out();
     }
 
-    update_zoom();
-    fill_small();
     fill_big();
-
-    //while (gtk_events_pending())
-    //    gtk_main_iteration();    
-
-    //gtk_widget_set_events(widget, GDK_BUTTON_PRESS_MASK);
     return TRUE;
 }
 
 static int handle_keypress(GdkEventKey *event)
 {
+    // handle the non-cursor-moving events first
     if (event->keyval == GDK_Page_Up || event->keyval == GDK_Prior || event->keyval == GDK_plus) {
-        if (zoom > 1)
-            --zoom;
-        else if (zoom <= 1)
-            zoom /= 2;
-        update_zoom();
-        fill_small();
+        // Page Up or Plus: Zoom IN
+        zoom_in();
     } else if (event->keyval == GDK_Page_Down || event->keyval == GDK_Next || event->keyval == GDK_minus) {
-        if (zoom <= 1)
-            zoom *= 2;
-        else
-            ++zoom;
-        update_zoom();
-        fill_small();
+        // Page Down or Minus: Zoom OUT
+        zoom_out();
     } else if (event->keyval == GDK_Home) {
-        zoom = 1;
-        update_zoom();
-        fill_small();
+        // Home: Revert to the normal zoom level
+        zoom_default();
+    } else if (event->keyval == GDK_Tab) {
+        // Tab key: Switch between the crosshairs (which one is affected by
+        //          subsequent arrow movements)
+        if (ctrl_clk_line > 0 && ctrl_clk_samp > 0)
+            last_was_crosshair = !last_was_crosshair;
+        else
+            last_was_crosshair = TRUE;
     } else {
-      int z = (int)zoom;
-      if (z==0) z=1;
+        // arrow key event (or a key we don't handle)
+        // moves the crosshair (or ctrl-click crosshair) the specified
+        // direction.  ctrl-arrow and shift-arrow will move the
+        // arrow farther
+        int z = (int)zoom;
+        if (z==0) z=1; // z will be 0 when the zoom factor is <= .5
 
-      int incr = z;
-      if (event->state & GDK_CONTROL_MASK) incr = 10*z;
-      else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
+        int incr = z;
+        if (event->state & GDK_CONTROL_MASK) incr = 10*z;
+        else if (event->state & GDK_SHIFT_MASK) incr = 25*z;
 
-      if (last_was_crosshair) {
-        switch (event->keyval) {
-            case GDK_Up: crosshair_line -= incr; break;
-            case GDK_Down: crosshair_line += incr; break;
-            case GDK_Left: crosshair_samp -= incr; break;
-            case GDK_Right: crosshair_samp += incr; break;
-            default: return TRUE;
+        if (last_was_crosshair) {
+            switch (event->keyval) {
+                case GDK_Up: crosshair_line -= incr; break;
+                case GDK_Down: crosshair_line += incr; break;
+                case GDK_Left: crosshair_samp -= incr; break;
+                case GDK_Right: crosshair_samp += incr; break;
+                default: return TRUE;
+            }
+        } else {
+            switch (event->keyval) {
+                case GDK_Up: ctrl_clk_line -= incr; break;
+                case GDK_Down: ctrl_clk_line += incr; break;
+                case GDK_Left: ctrl_clk_samp -= incr; break;
+                case GDK_Right: ctrl_clk_samp += incr; break;
+                default: return TRUE;
+            }
         }
-      } else {
-        switch (event->keyval) {
-            case GDK_Up: ctrl_clk_line -= incr; break;
-            case GDK_Down: ctrl_clk_line += incr; break;
-            case GDK_Left: ctrl_clk_samp -= incr; break;
-            case GDK_Right: ctrl_clk_samp += incr; break;
-            default: return TRUE;
-        }
-      }
-      update_pixel_info();
+        update_pixel_info();
     }
 
     fill_big();
@@ -485,6 +523,8 @@ SIGNAL_CALLBACK int
 on_big_image_eventbox_key_press_event(
     GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 {
+    // this event never seems to fire -- all kepresses are grabbed
+    // by the "main_window" keypress handler below
     return handle_keypress(event);
 }
 
@@ -495,38 +535,18 @@ on_ssv_main_window_key_press_event(
     return handle_keypress(event);
 }
 
-SIGNAL_CALLBACK int
-on_big_image_eventbox_motion_notify_event(
-    GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
-{
-    printf("motion...\n");
-
-    double line, samp;
-    img2ls((int)event->x, (int)event->y, &line, &samp);
-
-    static GtkWidget *lbl = NULL;
-    if (!lbl)
-        lbl = get_widget_checked("upper_label");
-
-    char buf[512];
-    if (samp < 0 || samp >= ns || line < 0 || line >= nl)
-    {
-        // outside of the image
-        strcpy(buf, "");
-    }
-    else
-    {
-        float fval = get_pixel(line, samp);
-
-        double lat, lon;
-        meta_get_latLon(meta, line, samp, 0, &lat, &lon);
-
-        sprintf(buf, "Line: %.1f, Sample: %.1f\n"
-            "Pixel Value: %f\n"
-            "Lat: %f, Lon: %f\n", crosshair_line, crosshair_samp,
-            fval, lat, lon);
-    }
-
-    gtk_label_set_text(GTK_LABEL(lbl), buf);
-    return TRUE;
-}
+//  Haven't gotten the motion events firing yet... not sure what
+//  to do if we do get them working, either
+//SIGNAL_CALLBACK int
+//on_big_image_eventbox_motion_notify_event(
+//    GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+//{
+//    printf("motion...\n");
+//
+//    double line, samp;
+//    img2ls((int)event->x, (int)event->y, &line, &samp);
+//
+//    // now do something cool!!
+//
+//    return TRUE;
+//}
