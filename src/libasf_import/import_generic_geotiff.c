@@ -39,9 +39,9 @@
 #include "tiff_to_float_image.h"
 #include "tiff_to_byte_image.h"
 #include "write_meta_and_img.h"
-#include "geotiff_support.h"
 #include "import_generic_geotiff.h"
 #include "arcgis_geotiff_support.h"
+#include "geotiff_support.h"
 
 #define BAD_VALUE_SCAN_ON
 
@@ -74,13 +74,6 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
                             const char *outBaseName, int num_bands, int *ignore);
 int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
                            const char *outBaseName, int num_bands, int *ignore);
-int  get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation);
-int geotiff_image_band_statistics(TIFF *input_tiff, meta_parameters *omd,
-                                  meta_stats *stats,
-                                  int num_bands, int band_no,
-                                  short bits_per_sample, short sample_format,
-                                  short planar_config,
-                                  gboolean use_mask_value, double mask_value);
 int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                              const char *outBaseName, int num_bands,
                              int *ignore, short bits_per_sample,
@@ -1031,11 +1024,11 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   ignore = CALLOC(MAX_BANDS, sizeof(int)); // Contains '1' if a band is to be ignored (empty band)
   for (ii=0; ii<num_bands; ii++) {
     int ret;
-    ret = geotiff_image_band_statistics(input_tiff, meta_out,
-                                        band_stats[ii],
-                                        num_bands, ii,
-                                        bits_per_sample, sample_format,
-                                        planar_config, 0, mask_value);
+    ret = tiff_image_band_statistics(input_tiff, meta_out,
+                                     band_stats[ii],
+                                     num_bands, ii,
+                                     bits_per_sample, sample_format,
+                                     planar_config, 0, mask_value);
     if (ret != 0 ||
         (band_stats[ii]->mean == band_stats[ii]->min &&
          band_stats[ii]->mean == band_stats[ii]->max &&
@@ -1532,12 +1525,12 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
   return *num_bands;
 }
 
-int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
-                                   meta_stats *stats,
-                                   int num_bands, int band_no,
-                                   short bits_per_sample, short sample_format,
-                                   short planar_config,
-                                   gboolean use_mask_value, double mask_value)
+int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
+                                meta_stats *stats,
+                                int num_bands, int band_no,
+                                short bits_per_sample, short sample_format,
+                                short planar_config,
+                                int use_mask_value, double mask_value)
 {
   tsize_t scanlineSize;
 
