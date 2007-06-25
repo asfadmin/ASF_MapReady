@@ -1631,7 +1631,7 @@ int geotiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                 break;
               default:
                 // There is no such thing as an IEEE 16-bit floating point
-                asfPrintError("Unexpected data type in GeoTIFF ...Cannot calculate statistics.\n");
+                asfPrintError("Unexpected data type in TIFF/GeoTIFF ...Cannot calculate statistics.\n");
                 return 1;
                 break;
             }
