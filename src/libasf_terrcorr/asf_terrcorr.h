@@ -56,4 +56,8 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
               int *x_br_list, int *y_br_list,
               float *good_pct_list);
 
+/* Prototypes from build_dem.c */
+char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
+                const char *dir_for_tmp_dem);
+
 #endif

@@ -8,8 +8,10 @@
 #include <dirent.h>
 #include "asf.h"
 #include "asf_meta.h"
+#include "asf_nan.h"
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
+#include "asf_geocode.h"
 #include "libasf_proj.h"
 
 static int iabs(int i)
@@ -29,6 +31,7 @@ static int pnpoly(int npol, double *xp, double *yp, double x, double y)
 
       c = !c;
   }
+
   return c;
 }
 
@@ -144,6 +147,7 @@ static int test_overlap_file(meta_parameters *meta, const char *filename)
     return ret;
 }
 
+// this is just to make the recursive searching of directories look nice
 static char *spaces(int n)
 {
     int i;
@@ -153,10 +157,14 @@ static char *spaces(int n)
     return buf;
 }
 
+// forward declaration of the wrapper that calls process_dir or
+// process_file as appropriate
 static void process(const char *what, int level, int recursive,
                     char *overlapping_dems[], int *next_dem_number,
                     meta_parameters *meta, int *n_dems_total);
 
+// process all things in a directory.  Calls "process" to decide
+// if the "thing" is a dir (process_dir) or a file (process_file)
 static void process_dir(const char *dir, int top, int recursive,
                         char *overlapping_dems[], int *next_dem_number,
                         meta_parameters *meta, int *n_dems_total)
@@ -189,6 +197,7 @@ static void process_dir(const char *dir, int top, int recursive,
   closedir(dfd);
 }
 
+// if a file is a .img file, test it for overlap, otherwise do nothing
 static void process_file(const char *file, int level,
                          char *overlapping_dems[], int *next_dem_number,
                          meta_parameters *meta, int *n_dems_total)
@@ -221,6 +230,7 @@ static void process_file(const char *file, int level,
     FREE(base);
 }
 
+// calls either process_dir or process_file, above
 static void process(const char *what, int level, int recursive,
                     char *overlapping_dems[], int *next_dem_number,
                     meta_parameters *meta, int *n_dems_total)
@@ -252,6 +262,8 @@ static void process(const char *what, int level, int recursive,
   FREE(base);
 }
 
+// in a given directory, find all overlapping dems.  Calls
+// "process" to do the real work
 static char **find_overlapping_dems_dir(meta_parameters *meta,
                                         const char *dem_dir,
                                         int *n_dems_total)
@@ -282,9 +294,12 @@ static char **find_overlapping_dems_dir(meta_parameters *meta,
     }
 }
 
-char **find_overlapping_dems(meta_parameters *meta,
-                             const char *file_with_dem_dirs,
-                             int *n_dems_found)
+// given a metadata file, and a file that contains a list of
+// directories containing DEMs, return the DEMs that overlap
+// with the given metadata.
+static char **find_overlapping_dems(meta_parameters *meta,
+                                    const char *file_with_dem_dirs,
+                                    int *n_dems_found)
 {
     // hard-coded limit of 100 dems
     int i;
@@ -298,7 +313,11 @@ char **find_overlapping_dems(meta_parameters *meta,
     int n_dems_total = 0;
     char line[512];
 
-    FILE *fp = FOPEN(file_with_dem_dirs, "r");
+    FILE *fp = fopen(file_with_dem_dirs, "r");
+    if (!fp) {
+        asfPrintError("Failed to open: %s\n", file_with_dem_dirs);
+    }
+
     while (NULL != fgets(line, 512, fp)) {
         while (isspace(line[strlen(line)-1])) line[strlen(line)-1] = '\0';
         asfPrintStatus("Looking for DEMs in directory: %s\n", line);
@@ -335,5 +354,204 @@ char **find_overlapping_dems(meta_parameters *meta,
         asfPrintWarning("No DEMs found!\n");
         free(overlapping_dems);
         return NULL;
+    }
+
+    // not reached
+}
+
+static int try_ext(const char *filename, const char *ext)
+{
+    char *buf = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
+    if (ext[0]=='.')
+        sprintf(buf, "%s%s", filename, ext);
+    else
+        sprintf(buf, "%s.%s", filename, ext);
+
+    int ret = fileExists(buf);
+    free(buf);
+
+    return ret;
+}
+
+static int is_dir(const char *what)
+{
+    struct stat stbuf;
+    if (stat(what, &stbuf) == -1)
+        return FALSE;
+    return (stbuf.st_mode & S_IFMT) == S_IFDIR;
+}
+
+static void update_extents(double lat, double lon,
+                           double *lat_lo, double *lat_hi,
+                           double *lon_lo, double *lon_hi)
+{
+    if (lat < *lat_lo) *lat_lo = lat;
+    if (lon < *lon_lo) *lon_lo = lon;
+
+    if (lat > *lat_hi) *lat_hi = lat;
+    if (lon > *lon_hi) *lon_hi = lon;
+}
+
+static void get_bounding_box(meta_parameters *meta,
+                             double *lat_lo, double *lat_hi,
+                             double *lon_lo, double *lon_hi)
+{
+    *lat_lo = *lon_lo = 999;
+    *lat_hi = *lon_hi = -999;
+    double size_lat;
+    double size_lon;
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
+
+    if (meta->location) {
+        meta_location *ml = meta->location;
+        update_extents(ml->lat_start_near_range, ml->lon_start_near_range, 
+            lat_lo, lat_hi, lon_lo, lon_hi);
+        update_extents(ml->lat_start_far_range, ml->lon_start_far_range, 
+            lat_lo, lat_hi, lon_lo, lon_hi);
+        update_extents(ml->lat_end_near_range, ml->lon_end_near_range, 
+            lat_lo, lat_hi, lon_lo, lon_hi);
+        update_extents(ml->lat_end_far_range, ml->lon_end_far_range, 
+            lat_lo, lat_hi, lon_lo, lon_hi);
+
+        size_lat = fabs(ml->lat_start_far_range - ml->lat_start_near_range);
+        size_lon = fabs(ml->lon_start_far_range - ml->lon_start_near_range);
+    } 
+    else {
+        double lat, lon;
+
+        // must call meta_get_latLon for each corner
+        meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+        update_extents(lat, lon, lat_lo, lat_hi, lon_lo, lon_hi);
+        size_lat = lat;
+        size_lon = lon;
+
+        meta_get_latLon(meta, 0, ns-1, 0, &lat, &lon);
+        update_extents(lat, lon, lat_lo, lat_hi, lon_lo, lon_hi);
+        size_lat -= lat;
+        size_lon -= lon;
+
+        meta_get_latLon(meta, nl-1, 0, 0, &lat, &lon);
+        update_extents(lat, lon, lat_lo, lat_hi, lon_lo, lon_hi);
+
+        meta_get_latLon(meta, nl-1, ns-1, 0, &lat, &lon);
+        update_extents(lat, lon, lat_lo, lat_hi, lon_lo, lon_hi);
+
+        size_lat = fabs(size_lat);
+        size_lon = fabs(size_lon);
+    }
+
+    // Add a little bit of fudge to each -- we want there to be some room
+    // for adjustment via the co-registration.
+    
+    // Try to add about 100 pixels worth to each top/left/bottom/right.
+    // To get that much, we estimate how many pixels per lat & long degree
+    // from the "size_lat/lon" variables we calculated above.
+
+    // We aren't really concerned if this isn't too accurate.
+
+    double lat_fudge = size_lat / (double)ns * 100;
+    double lon_fudge = size_lon / (double)ns * 100;
+
+    *lat_lo -= lat_fudge;
+    *lat_hi += lat_fudge;
+
+    *lon_lo -= lon_fudge;
+    *lon_hi += lon_fudge;
+}
+
+static int asf_mosaic_utm(char **files, char *outfile, int zone,
+                          double lat_lo, double lat_hi,
+                          double lon_lo, double lon_hi,
+                          double background_val)
+{
+    project_parameters_t pp;
+    projection_type_t projection_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+
+    pp.utm.zone = zone;
+
+    // force calculation of these values
+    pp.utm.lon0 = MAGIC_UNSET_DOUBLE;
+    pp.utm.lat0 = MAGIC_UNSET_DOUBLE;
+
+    int force = TRUE;
+    resample_method_t resample = RESAMPLE_BILINEAR;
+    double height = 0;
+    datum_type_t datum = WGS84_DATUM;
+    double ps = -1;
+
+    return asf_mosaic(&pp, projection_type, force, resample, height, 
+        datum, ps, TRUE, 0, files, outfile, background_val,
+        lat_lo, lat_hi, lon_lo, lon_hi);
+}
+
+// External entry point
+//  --> meta: SAR metadata
+//  --> dem_cla_arg: either (1) a DEM, (2) a directory with DEMs,
+//                   (3) a file containing directories of DEMs.
+// In case (1), nothing is done, return value is dem_cla_arg.
+// In case (2), the directory is scanned and a DEM is built from
+//              the DEMs found in that directory.
+// In case (3), All of the directories are scanned, and a DEM is
+//              built from the DEMs in all of the directories.
+char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
+                const char *dir_for_tmp_dem)
+{
+    char *ext = findExt(dem_cla_arg);
+    if (ext) {
+        // check against known DEM extensions
+        if (strcmp_case(ext, ".img") == 0 ||
+            strcmp_case(ext, ".tif") == 0 ||
+            strcmp_case(ext, ".tiff") == 0)
+        {
+            // presumably, this is a DEM -- case (1) above.
+            return STRDUP(dem_cla_arg);
+        }
+    }
+    else {
+        // no extension -- user may have just provided the basename
+        if (try_ext(dem_cla_arg, ".img"))
+            return STRDUP(dem_cla_arg);
+        else if (try_ext(dem_cla_arg, ".tiff"))
+            return STRDUP(dem_cla_arg);
+        else if (try_ext(dem_cla_arg, ".tif"))
+            return STRDUP(dem_cla_arg);
+    }
+
+    char **list_of_dems = NULL;
+    // Eliminated case (1) -- try case (2)
+    if (is_dir(dem_cla_arg)) {
+        int n;
+        list_of_dems =
+            find_overlapping_dems_dir(meta, dem_cla_arg, &n);
+    }
+    else {
+        if (fileExists(dem_cla_arg)) {
+            int n;
+            list_of_dems =
+                find_overlapping_dems(meta, dem_cla_arg, &n);
+        }
+    }
+
+    if (list_of_dems) {
+        // form a bounding box
+        double lat_lo, lat_hi, lon_lo, lon_hi;
+        get_bounding_box(meta, &lat_lo, &lat_hi, &lon_lo, &lon_hi);
+
+        // hard-coded name of the built dem
+        char *built_dem = MALLOC(sizeof(char)*(strlen(dir_for_tmp_dem)+10));
+        sprintf(built_dem, "%s/dem.img", dir_for_tmp_dem);
+
+        // always geocode to utm -- we may wish change this to use the
+        // user's preferred projection...
+        asf_mosaic_utm(list_of_dems, built_dem,
+            utm_zone(meta->general->center_longitude), lat_lo, lat_hi,
+            lon_lo, lon_hi, meta->general->no_data);
+
+        return built_dem;
+    }
+    else {
+        asfPrintError("DEM not found: %s\n", dem_cla_arg);
+        return NULL; // not reached
     }
 }
