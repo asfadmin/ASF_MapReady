@@ -167,7 +167,8 @@ int  tiff_image_band_statistics_from_file(char *inFile, int band_no, int *stats_
                                           int use_mask_value, float mask_value);
 void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
                                      int band1, int band2, double *psnr);
-double tiff_image_get_double_pixel(TIFF *tif, tdata_t *buf, int row, int col, int band_no);
+float tiff_image_get_float_pixel(TIFF *tif, int row, int col, int band_no);
+void tiff_get_float_line(TIFF *tif, float *buf, int row, int band_no);
 
 int main(int argc, char **argv)
 {
@@ -630,8 +631,8 @@ graphics_file_t getGraphicsFileType (char *file)
   FILE *fp = (FILE *)fopen(file, "r");
   uint8 magic[4];
   graphics_file_t file_type = UNKNOWN_GRAPHICS_TYPE;
-  TIFF *itif;
-  GTIF *gtif;
+  TIFF *itif = NULL;
+  GTIF *gtif = NULL;
 
   if (fp != NULL) {
     int i;
@@ -659,7 +660,8 @@ graphics_file_t getGraphicsFileType (char *file)
       if (itif != NULL) {
         gtif = GTIFNew(itif);
         if (gtif != NULL) {
-          double *tie_point, *pixel_scale;
+          double *tie_point = NULL;
+          double *pixel_scale = NULL;
           short model_type, raster_type, linear_units;
           int read_count, tie_points, pixel_scales;
 
@@ -840,7 +842,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   }
 
   // Calculate the peak signal to noise ratio (PSNR) between the two images
-  double se;
+  double sse;
   double rmse;
   int ii, jj;
   int band1 = band;
@@ -864,7 +866,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
       FILE *fp1 = fopen(inFile1, "rb");
       FILE *fp2 = fopen(inFile2, "rb");
       if (fp1 != NULL && fp2 != NULL) {
-        se = 0.0;
+        sse = 0.0;
         max_val = get_maxval(md1->general->data_type); // Since both file's data types are the same, this is OK
         lines = MIN(md1->general->line_count, md2->general->line_count);
         if (lines < md1->general->line_count) {
@@ -893,7 +895,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
           get_float_line(fp1, md1, ii + offset1, data1);
           get_float_line(fp2, md2, ii + offset2, data2);
           for (jj=0; jj<samples; ++jj) {
-            se += (data1[jj] - data2[jj]) * (data1[jj] - data2[jj]);
+            sse += (data1[jj] - data2[jj]) * (data1[jj] - data2[jj]);
             pixel_count++;
           }
         }
@@ -901,8 +903,8 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
         FCLOSE(fp1);
         FCLOSE(fp2);
         if (pixel_count > 0 && max_val > 0) {
-          rmse = sqrt(se/pixel_count);
-          *psnr = (rmse > 0) ? 10.0 * log10(max_val/rmse) : 0;
+          rmse = sqrt(sse/pixel_count);
+          *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
         }
         else {
           *psnr = -1;
@@ -1141,7 +1143,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       int i;
       for (i=0; i<MAX_BANDS; i++) {
         band_names2[i] = (char*)CALLOC(64, sizeof(char));
-        if (band_names2[i] != NULL) {
+        if (band_names2[i] == NULL) {
           sprintf(msg, "Cannot allocate memory for band name array.\n");
           fprintf(outputFP, msg);
           asfPrintError(msg);
@@ -1159,7 +1161,13 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       geotiff_data_t g1, g2;
       int num_bands_found1=0, num_bands_found2=0;
       int *empty = (int*)CALLOC(MAX_BANDS, sizeof(int));
-      char *band_str1, *band_str2;
+      char *band_str1 = (char*)CALLOC(25, sizeof(char));
+      char *band_str2 = (char*)CALLOC(25, sizeof(char));
+      if (band_str1 == NULL || band_str2 == NULL) {
+        sprintf(msg, "Cannot allocate memory for band name string.\n");
+        fprintf(outputFP, msg);
+        asfPrintError(msg);
+      }
 
       get_geotiff_keys(inFile1, &g1);
       if (g1.gtif_data_exists && g1.GTcitation != NULL && strlen(g1.GTcitation) > 0) {
@@ -1225,6 +1233,10 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       FREE(empty);
       FREE(band_str1);
       FREE(band_str2);
+      if (g1.GTcitation)FREE(g1.GTcitation);
+      if (g1.PCScitation)FREE(g1.PCScitation);
+      if (g2.GTcitation)FREE(g2.GTcitation);
+      if (g2.PCScitation)FREE(g2.PCScitation);
     }
     else {
       // For non ASF IMG and GeoTIFF images, just use numeric band id's
@@ -1237,6 +1249,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
   }
 
   // Check each band for differences
+  tiff_data_t t;
+  get_tiff_info_from_file(inFile1, &t);
   char band_str1[64];
   char band_str2[64];
   for (band=0; band<num_bands; band++) {
@@ -1249,19 +1263,33 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
     max_tol = (MAX_DIFF_TOL/100.0)*baseline_range;
     mean_tol = (MEAN_DIFF_TOL/100.0)*baseline_range;
     sdev_tol = (SDEV_DIFF_TOL/100.0)*stats1[band].sdev;
-    psnr_tol = PSNR_TOL;
+    switch (t.data_type) {
+      case BYTE:
+        psnr_tol = BYTE_PSNR_TOL;
+        break;
+      case INTEGER16:
+        psnr_tol = INTEGER16_PSNR_TOL;
+        break;
+      case INTEGER32:
+        psnr_tol = INTEGER32_PSNR_TOL;
+        break;
+      case REAL32:
+      default:
+        psnr_tol = REAL32_PSNR_TOL;
+        break;
+    }
+
     min_diff = fabs(stats2[band].min - stats1[band].min);
     max_diff = fabs(stats2[band].max - stats1[band].max);
     mean_diff = fabs(stats2[band].mean - stats1[band].mean);
     sdev_diff = fabs(6.0*stats2[band].sdev - 6.0*stats1[band].sdev);
-
     if (strict &&
         (stats1[band].stats_good && stats2[band].stats_good) &&
         (min_diff > min_tol ||
          max_diff > max_tol ||
          mean_diff > mean_tol ||
          sdev_diff > sdev_tol ||
-         psnr[band] > psnr_tol))
+         psnr[band] < psnr_tol))
     {
       // Strict comparison utilizes all values
       fprintf(outputFP, "\n-----------------------------------------------\n");
@@ -1304,8 +1332,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                  PSNR Tolerance: %11f\n",
-              psnr[band] > psnr_tol ? "FAIL" : "PASS",
+      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+              psnr[band] < psnr_tol ? "FAIL" : "PASS",
               psnr[band], psnr_tol);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
@@ -1317,7 +1345,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
              (stats1[band].stats_good && stats2[band].stats_good) &&
              (mean_diff > mean_tol ||
               sdev_diff > sdev_tol ||
-              psnr[band] > psnr_tol)) {
+              psnr[band] < psnr_tol)) {
       // If not doing strict checking, skip comparing min and max values
       fprintf(outputFP, "\n-----------------------------------------------\n");
       asfPrintStatus("\n-----------------------------------------------\n");
@@ -1348,8 +1376,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                  PSNR Tolerance: %11f\n",
-              psnr[band] > psnr_tol ? "FAIL" : "PASS",
+      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+              psnr[band] < psnr_tol ? "FAIL" : "PASS",
               psnr[band], psnr_tol);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
@@ -1491,6 +1519,12 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->is_scanline_format);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
+  if (t->planar_config != PLANARCONFIG_CONTIG &&
+      t->planar_config != PLANARCONFIG_SEPARATE &&
+      t->num_bands == 1)
+  {
+    t->planar_config = PLANARCONFIG_CONTIG;
+  }
 }
 
 void get_geotiff_keys(char *file, geotiff_data_t *g)
@@ -1529,7 +1563,11 @@ void get_geotiff_keys(char *file, geotiff_data_t *g)
       else {
         g->PCScitation = NULL;
       }
-      if (strlen(g->GTcitation) > 0 || strlen(g->PCScitation)) g->gtif_data_exists = 1;
+      if ((g->GTcitation != NULL && strlen(g->GTcitation) > 0) ||
+           (g->PCScitation != NULL && strlen(g->PCScitation) > 0))
+      {
+        g->gtif_data_exists = 1;
+      }
 
       // Get tie points and pixel scale
       (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &count, &g->tie_point);
@@ -2239,10 +2277,12 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
   tiff_data_t t;
   tsize_t scanlineSize;
 
+  *stats_exist = 1; // Innocent until presumed guilty...
   get_tiff_info_from_file(inFile, &t);
+  // Note: For single-plane (greyscale) images, planar_config will remain unset so
+  // we can't use it as a guide for checking TIFF validity...
   if (t.sample_format == MISSING_TIFF_DATA ||
       t.bits_per_sample == MISSING_TIFF_DATA ||
-      t.planar_config == MISSING_TIFF_DATA ||
       t.data_type == 0 ||
       t.num_bands == MISSING_TIFF_DATA ||
       t.is_scanline_format == MISSING_TIFF_DATA ||
@@ -2282,7 +2322,7 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
     *stats_exist = 0;
     return 1;
   }
-  tdata_t *buf = _TIFFmalloc(scanlineSize);
+  float *buf = (float*)MALLOC(t.width * sizeof(float));
 
   // If there is a mask value we are supposed to ignore,
   if ( use_mask_value ) {
@@ -2291,9 +2331,10 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
     {
       // Planar configuration is chunky, e.g. interlaced pixels, rgb rgb etc.
       asfPercentMeter((double)ii/(double)t.height);
+      tiff_get_float_line(tif, buf, ii, band_no);
       for (jj = 0 ; jj < t.width; jj++ ) {
         // iterate over each pixel sample in the scanline
-        cs = tiff_image_get_double_pixel(tif, buf, ii, jj, band_no);
+        cs = buf[jj];
         if ( !isnan(mask_value) && (gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
           continue;
         }
@@ -2313,9 +2354,10 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
     for ( ii = 0; ii < t.height; ii++ )
     {
       asfPercentMeter((double)ii/(double)t.height);
+      tiff_get_float_line(tif, buf, ii, band_no);
       for (jj = 0 ; jj < t.width; jj++ ) {
         // iterate over each pixel sample in the scanline
-        cs = tiff_image_get_double_pixel(tif, buf, ii, jj, band_no);
+        cs = buf[jj];
         if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
         if ( G_UNLIKELY (cs > fmax) ) { fmax = cs; }
         double old_mean = *mean;
@@ -2326,13 +2368,13 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
     }
     asfPercentMeter(1.0);
   }
-  if (buf) _TIFFfree(buf);
 
   // Verify the new extrema have been found.
   //if (fmin == FLT_MAX || fmax == -FLT_MAX)
   if (gsl_fcmp (fmin, FLT_MAX, 0.00000000001) == 0 ||
       gsl_fcmp (fmax, -FLT_MAX, 0.00000000001) == 0)
   {
+    if (buf) free(buf);
     if (tif) XTIFFClose(tif);
     *stats_exist = 0;
     return 1;
@@ -2347,11 +2389,13 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
   // The new extrema had better be in the range supported range
   if (fabs(*mean) > FLT_MAX || fabs(*sdev) > FLT_MAX)
   {
+    if (buf) free(buf);
     if (tif) XTIFFClose(tif);
     *stats_exist = 0;
     return 1;
   }
 
+  if (buf) free(buf);
   if (tif) XTIFFClose(tif);
   return 0;
 }
@@ -2378,7 +2422,7 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
     *psnr = -1;
     return;
   }
-  get_tiff_info_from_file(inFile2, &t1);
+  get_tiff_info_from_file(inFile2, &t2);
   if (t2.sample_format == MISSING_TIFF_DATA ||
       t2.bits_per_sample == MISSING_TIFF_DATA ||
       t2.planar_config == MISSING_TIFF_DATA ||
@@ -2394,13 +2438,12 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   }
 
   // Calculate the peak signal to noise ratio (PSNR) between the two images
-  double se;
+  double sse;
   double rmse;
   int ii, jj;
   long height = MIN(t1.height, t2.height);
   long width = MIN(t1.width, t2.width);
   long pixel_count = 0;
-  long lines;
   float max_val;
   if (band1 < 0 || band1 > t1.num_bands - 1 ||
       band2 < 0 || band2 > t2.num_bands - 1) {
@@ -2471,31 +2514,33 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
     *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
     return;
   }
-  tdata_t *buf1 = _TIFFmalloc(scanlineSize1);
-  tdata_t *buf2 = _TIFFmalloc(scanlineSize2);
+  float *buf1 = (float*)CALLOC(t1.width, sizeof(float));
+  float *buf2 = (float*)CALLOC(t2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for TIFF data buffers.\n");
     *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
-    if (buf1) _TIFFfree(buf1);
-    if (buf2) _TIFFfree(buf2);
+    if (buf1) FREE(buf1);
+    if (buf2) FREE(buf2);
     return;
   }
 
-  se = 0.0;
+  sse = 0.0;
   max_val = get_maxval(t1.data_type); // Since both file's data types are the same, this is OK
   for (ii=0; ii<height; ++ii) {
-    asfPercentMeter((double)ii/(double)lines);
+    asfPercentMeter((double)ii/(double)height);
+    tiff_get_float_line(tif1, buf1, ii, band1);
+    tiff_get_float_line(tif2, buf2, ii, band2);
     for (jj=0; jj<width; ++jj) {
-      cs1 = tiff_image_get_double_pixel(tif1, buf1, ii, jj, band1);
-      cs2 = tiff_image_get_double_pixel(tif2, buf2, ii, jj, band2);
-      se += (cs1 - cs2) * (cs1 - cs2);
+      cs1 = buf1[jj];
+      cs2 = buf2[jj];
+      sse += (cs1 - cs2) * (cs1 - cs2);
       pixel_count++;
     }
   }
   asfPercentMeter(1.0);
   if (pixel_count > 0 && max_val > 0) {
-    rmse = sqrt(se/pixel_count);
-    *psnr = (rmse > 0) ? 10.0 * log10(max_val/rmse) : 0;
+    rmse = sqrt(sse/pixel_count);
+    *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
   }
   else {
     *psnr = -1;
@@ -2503,19 +2548,19 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
 
   XTIFFClose(tif1);
   XTIFFClose(tif2);
-  if (buf1) _TIFFfree(buf1);
-  if (buf2) _TIFFfree(buf2);
+  if (buf1) FREE(buf1);
+  if (buf2) FREE(buf2);
 }
 
-double tiff_image_get_double_pixel(TIFF *tif, tdata_t *buf, int row, int col, int band_no)
+void tiff_get_float_line(TIFF *tif, float *buf, int row, int band_no)
 {
-  double cs = 0.0; // Current sample
   tiff_data_t t;
 
   get_tiff_info(tif, &t);
+  // Note: For single-plane (greyscale) images, planar_config may remain unset so
+  // we can't use it as a guide for checking TIFF validity...
   if (t.sample_format == MISSING_TIFF_DATA ||
       t.bits_per_sample == MISSING_TIFF_DATA ||
-      t.planar_config == MISSING_TIFF_DATA ||
       t.data_type == 0 ||
       t.num_bands == MISSING_TIFF_DATA ||
       t.is_scanline_format == MISSING_TIFF_DATA ||
@@ -2526,111 +2571,149 @@ double tiff_image_get_double_pixel(TIFF *tif, tdata_t *buf, int row, int col, in
   }
 
   // Read a scanline
+  tsize_t scanlineSize = TIFFScanlineSize(tif);
+  tdata_t *tif_buf = _TIFFmalloc(scanlineSize);
   if (t.planar_config == PLANARCONFIG_CONTIG || t.num_bands == 1) {
-    TIFFReadScanline(tif, buf, row, 0);
+    TIFFReadScanline(tif, tif_buf, row, 0);
   }
   else {
     // Planar configuration is band-sequential
-    TIFFReadScanline(tif, buf, row, band_no);
+    TIFFReadScanline(tif, tif_buf, row, band_no);
   }
 
-  // Grab and convert the appropriate pixel
-  switch(t.bits_per_sample) {
-    case 8:
-      switch(t.sample_format) {
-        case SAMPLEFORMAT_UINT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((uint8*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((uint8*)(buf))[col]);
-          }
-          break;
-        case SAMPLEFORMAT_INT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((int8*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((int8*)(buf))[col]);   // Current sample.
-          }
-          break;
-        default:
-          // There is no such thing as an IEEE 8-bit floating point
-          if (tif) XTIFFClose(tif);
-          asfPrintError("tiff_image_get_double_pixel(): Unexpected data type in TIFF file.\n");
-          break;
-      }
-      break;
-    case 16:
-      switch(t.sample_format) {
-        case SAMPLEFORMAT_UINT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((uint16*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((uint16*)(buf))[col]);   // Current sample.
-          }
-          break;
-        case SAMPLEFORMAT_INT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((int16*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((uint16*)(buf))[col]);   // Current sample.
-          }
-          break;
-        default:
-          // There is no such thing as an IEEE 16-bit floating point
-          if (tif) XTIFFClose(tif);
-          asfPrintError("tiff_image_get_double_pixel(): Unexpected data type in TIFF file.\n");
-          break;
-      }
-      break;
-    case 32:
-      switch(t.sample_format) {
-        case SAMPLEFORMAT_UINT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((uint32*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((uint32*)(buf))[col]);   // Current sample.
-          }
-          break;
-        case SAMPLEFORMAT_INT:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((long*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((long*)(buf))[col]);   // Current sample.
-          }
-          break;
-        case SAMPLEFORMAT_IEEEFP:
-          if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
-            cs = (double)(((float*)(buf))[(col*t.num_bands)+band_no]);   // Current sample.
-          }
-          else {
-            // Planar configuration is band-sequential or single-banded
-            cs = (double)(((float*)(buf))[col]);   // Current sample.
-          }
-          break;
-        default:
-          if (tif) XTIFFClose(tif);
-          asfPrintError("tiff_image_get_double_pixel(): Unexpected data type in TIFF file.\n");
-          break;
-      }
-      break;
-    default:
-      if (tif) XTIFFClose(tif);
-      asfPrintError("tiff_image_get_double_pixel(): Unexpected data type in TIFF file.\n");
-      break;
+  int col;
+  for (col=0; col<t.width; col++) {
+    switch(t.bits_per_sample) {
+      case 8:
+        switch(t.sample_format) {
+          case SAMPLEFORMAT_UINT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((uint8*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((uint8*)(tif_buf))[col]);
+            }
+            break;
+          case SAMPLEFORMAT_INT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((int8*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((int8*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          default:
+            // There is no such thing as an IEEE 8-bit floating point
+            if (tif_buf) _TIFFfree(tif_buf);
+            if (tif) XTIFFClose(tif);
+            asfPrintError("tiff_get_float_line(): Unexpected data type in TIFF file.\n");
+            break;
+        }
+        break;
+      case 16:
+        switch(t.sample_format) {
+          case SAMPLEFORMAT_UINT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((uint16*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((uint16*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          case SAMPLEFORMAT_INT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((int16*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((uint16*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          default:
+            // There is no such thing as an IEEE 16-bit floating point
+            if (tif_buf) _TIFFfree(tif_buf);
+            if (tif) XTIFFClose(tif);
+            asfPrintError("tiff_get_float_line(): Unexpected data type in TIFF file.\n");
+            break;
+        }
+        break;
+      case 32:
+        switch(t.sample_format) {
+          case SAMPLEFORMAT_UINT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((uint32*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((uint32*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          case SAMPLEFORMAT_INT:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((long*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((long*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          case SAMPLEFORMAT_IEEEFP:
+            if (t.planar_config == PLANARCONFIG_CONTIG && t.num_bands > 1) {
+              buf[col] = (float)(((float*)(tif_buf))[(col*t.num_bands)+band_no]);   // Current sample.
+            }
+            else {
+              // Planar configuration is band-sequential or single-banded
+              buf[col] = (float)(((float*)(tif_buf))[col]);   // Current sample.
+            }
+            break;
+          default:
+            if (tif_buf) _TIFFfree(tif_buf);
+            if (tif) XTIFFClose(tif);
+            asfPrintError("tiff_get_float_line(): Unexpected data type in TIFF file.\n");
+            break;
+        }
+        break;
+      default:
+        if (tif_buf) _TIFFfree(tif_buf);
+        if (tif) XTIFFClose(tif);
+        asfPrintError("tiff_get_float_line(): Unexpected data type in TIFF file.\n");
+        break;
+    }
+  }
+  if (tif_buf) {
+    _TIFFfree(tif_buf);
+  }
+}
+
+float tiff_image_get_float_pixel(TIFF *tif, int row, int col, int band_no)
+{
+  tiff_data_t t;
+  float cs;
+
+  get_tiff_info(tif, &t);
+  // Note: For single-plane (greyscale) images, planar_config may remain unset so
+  // we can't use it as a guide for checking TIFF validity...
+  if (t.sample_format == MISSING_TIFF_DATA ||
+      t.bits_per_sample == MISSING_TIFF_DATA ||
+      t.data_type == 0 ||
+      t.num_bands == MISSING_TIFF_DATA ||
+      t.is_scanline_format == MISSING_TIFF_DATA ||
+      t.height == 0 ||
+      t.width == 0)
+  {
+    asfPrintError("Cannot read tif file\n");
   }
 
+  // Get a float line from the file
+  float *buf = (float*)MALLOC(t.width*sizeof(float));
+  tiff_get_float_line(tif, buf, row, band_no);
+  cs = buf[col];
+  FREE(buf);
+
+  // Return as float
   return cs;
 }
 

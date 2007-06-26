@@ -6,7 +6,10 @@
 #define MEAN_DIFF_TOL 0.5
 #define SDEV_DIFF_TOL 0.5
 // #define RMSE_DIFF_TOL 0.5 // Max allowed difference, in percent of baseline rmse, between internal data rmse's
-#define PSNR_TOL 7.0 // Max absolute difference allowed for peak signal to noise ratio (range typically 0 to around 400)
+#define BYTE_PSNR_TOL -16.0       // Minimum PSNRs v. data type
+#define INTEGER16_PSNR_TOL -5.46
+#define INTEGER32_PSNR_TOL 18.62
+#define REAL32_PSNR_TOL 161.96
 
 #endif // _DIFFIMAGE_TOLERANCES_
 
