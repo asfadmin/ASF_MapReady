@@ -77,8 +77,10 @@ char *findExt(const char *name)
 	strcmp_case(ext, ".CFG") == 0 ||
 	strcmp_case(ext, ".CSV") == 0 ||
 	strcmp_case(ext, ".CPX") == 0 ||
+	strcmp_case(ext, ".KML") == 0 ||
 	strcmp_case(ext, ".D") == 0 ||
-	strcmp_case(ext, ".L") == 0)
+	strcmp_case(ext, ".L") == 0 ||
+	strcmp_case(ext, ".BIL") == 0)
       return (char *) &name[ii];
     else
       return NULL;
