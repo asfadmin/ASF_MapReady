@@ -429,6 +429,8 @@ Ctrl-Shift-Arrow: Move crosshair 250x
 Tab: Toggle which crosshair is moved
 c: Center image on crosshair
 a: In terminal, display pixel values
+l: Move crosshair to local maxima
+   (30x30 search area, ctrl-l: 300x300)
 g: Open in Google Earth
 m: Open the CEOS Metadata Viewer
 

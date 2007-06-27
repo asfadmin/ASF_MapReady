@@ -588,6 +588,39 @@ static int handle_keypress(GdkEventKey *event)
         // m: open a new file
         open_mdv();
         return TRUE;
+    } else if (event->keyval == GDK_l) {
+        // l: move to a local maxima (30x30 pixel search area)
+        //    if ctrl-l is clicked, search 300x300 area
+        // affects the same crosshair that would be moved with
+        // the arrow keys
+        int line, samp;
+        if (!last_was_crosshair && ctrl_clk_line>0 && ctrl_clk_samp>0) {
+            line = ctrl_clk_line; samp=ctrl_clk_samp;
+        } else {
+            line = crosshair_line; samp=crosshair_samp;
+        }
+        int line_max=line, samp_max=samp;
+        float max_val=-99999;
+        int i,j,radius=15;
+        if (event->state & GDK_CONTROL_MASK)
+            radius*=10;
+        for (i=line-radius; i<=line+radius; ++i) {
+            for (j=samp-radius; j<=samp+radius; ++j) {
+                if (i>=0 && j>=0 && i<nl && j<ns && get_pixel(i,j) > max_val) {
+                    max_val = get_pixel(i,j);
+                    line_max = i;
+                    samp_max = j;
+                }
+            }
+        }
+        if (!last_was_crosshair && ctrl_clk_line>0 && ctrl_clk_samp>0) {
+            ctrl_clk_line=line_max;
+            ctrl_clk_samp=samp_max;
+        } else {
+            crosshair_line=line_max;
+            crosshair_samp=samp_max;
+        }
+        update_pixel_info();
     } else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified
