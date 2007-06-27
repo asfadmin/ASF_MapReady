@@ -1,11 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <asf_meta.h>
+
 #include <assert.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
+#ifdef linux
+#include <unistd.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <ctype.h>
+
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
