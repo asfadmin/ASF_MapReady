@@ -1802,7 +1802,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               } else {
                 for (oix = oix_first_valid; (int)oix <= oix_last_valid; ++oix) {
                   float value = banded_float_image_get_pixel(output_bfi,
-                    kk, oiy, oix);
+                    kk, oix, oiy);
                   banded_float_image_set_pixel(output_bfi, kk, oix, oiy,
                     value + get_geoid_height(lat[oix]*R2D, lon[oix]*R2D));
                 }
