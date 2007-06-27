@@ -299,7 +299,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
       asfPrintStatus("   Data format: %s\n", format_type);
       import_bil(inBaseName, outBaseName);
     }
-    else if (strncmp(format_type, "GRIDFLOAT", 3) == 0) {
+    else if (strncmp(format_type, "GRIDFLOAT", 9) == 0) {
       asfPrintStatus("   Data format: %s\n", format_type);
       import_gridfloat(inBaseName, outBaseName);
     }
