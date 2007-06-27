@@ -70,5 +70,6 @@ void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 void import_bil(char *inBaseName, char *outBaseName);
+void import_gridfloat(char *inBaseName, char *outBaseName);
 
 #endif

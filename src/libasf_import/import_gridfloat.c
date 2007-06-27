@@ -25,27 +25,23 @@ static void get_value(const char *line, char *value)
         value[strlen(value)-1]='\0';
 }
 
-void import_bil(char *inBaseName, char *outBaseName)
+void import_gridfloat(char *inBaseName, char *outBaseName)
 {
-    int i,j;
+    int i;
 
-    // all four of these must be present
-    char *blw_file = appendExt(inBaseName, ".blw");
+    // all three of these must be present
     char *hdr_file = appendExt(inBaseName, ".hdr");
     char *prj_file = appendExt(inBaseName, ".prj");
-    char *bil_file = appendExt(inBaseName, ".bil");
+    char *flt_file = appendExt(inBaseName, ".flt");
 
-    if (!fileExists(blw_file) || !fileExists(hdr_file) || !fileExists(bil_file) ||
-        !fileExists(prj_file))
+    if (!fileExists(flt_file) || !fileExists(hdr_file) || !fileExists(prj_file))
     {
         asfPrintError(
             "The BIL and/or associated metadata files were not found:\n"
-            "  BIL File: %s %s\n"
-            "  BLW File: %s %s\n"
+            "  FLT File: %s %s\n"
             "  PRJ File: %s %s\n"
             "  HDR File: %s %s\n",
-          bil_file, fileExists(bil_file) ? "Found" : "NOT FOUND",
-          blw_file, fileExists(blw_file) ? "Found" : "NOT FOUND",
+          flt_file, fileExists(flt_file) ? "Found" : "NOT FOUND",
           prj_file, fileExists(prj_file) ? "Found" : "NOT FOUND",
           hdr_file, fileExists(hdr_file) ? "Found" : "NOT FOUND");
     }
@@ -55,36 +51,37 @@ void import_bil(char *inBaseName, char *outBaseName)
     // Info we'll get from the header file
     int nrows=-1;
     int ncols=-1;
+    double cell_size = 0;
+    double lat_ll = -999;
+    double lon_ll = -999;
+    double nodata = -9999;
 
     // Read header file
     char line[1024], value[1024];
     FILE *fp = FOPEN(hdr_file, "r");
     while (NULL!=fgets(line, 1024, fp)) {
-        if (matches(line, "BYTEORDER")) {
-            get_value(line, value);
-            if (strcmp(value, "I") != 0)
-                asfPrintError("Unsupported byte order (should be 'I'): %s\n",
-                    value);
-        } else if (matches(line, "LAYOUT")) {
-            get_value(line, value);
-            if (strcmp(value, "BIL") != 0)
-                asfPrintError("Unsupported layout (should be BIL): %s\n",
-                    value);
-        } else if (matches(line, "NROWS")) {
-            get_value(line, value);
-            nrows = atoi(value);
-        } else if (matches(line, "NCOLS")) {
+        if (matches(line, "ncols")) {
             get_value(line, value);
             ncols = atoi(value);
-        } else if (matches(line, "NBANDS")) {
+        } else if (matches(line, "nrows")) {
             get_value(line, value);
-            if (strcmp(value, "1") != 0)
-                asfPrintError("Unsupported number of bands (should be 1): %s\n",
-                    value);
-        } else if (matches(line, "NBITS")) {
+            nrows = atoi(value);
+        } else if (matches(line, "xllcorner")) {
             get_value(line, value);
-            if (strcmp(value, "16") != 0)
-                asfPrintError("Unsupported number of bands (should be 16): %s\n",
+            lon_ll = atof(value);
+        } else if (matches(line, "yllcorner")) {
+            get_value(line, value);
+            lat_ll = atof(value);
+        } else if (matches(line, "cellsize")) {
+            get_value(line, value);
+            cell_size = atof(value);
+        } else if (matches(line, "NODATA_value")) {
+            get_value(line, value);
+            nodata = atof(value);
+        } else if (matches(line, "byteorder")) {
+            get_value(line, value);
+            if (strcmp(value, "LSBFIRST") != 0)
+                asfPrintError("Unsupported byte order (should be 'LSBFIRST'): %s\n",
                     value);
         }
     }
@@ -95,31 +92,6 @@ void import_bil(char *inBaseName, char *outBaseName)
             "Header file did not contain Row/Column infomation.\n"
             "It is a valid .HDR file?\n");
     }
-
-    // items we expect in the BLW file
-    asfPrintStatus("Parsing %s ...\n", blw_file);
-
-    double cell_size_horiz = 0;
-    double cell_size_vert = 0;
-    double lat_ul = -999;
-    double lon_ul = -999;
-
-    // BLW file is weirder... items are not labelled.  But, here is
-    // the order of what's in there:
-    //   Line 1: Cell size (horizontal)
-    //   Line 2: <ignore>
-    //   Line 3: <ignore>
-    //   Line 4: Cell size (vertical)
-    //   Line 5: Upper left latitude (degrees)
-    //   Line 6: Upper left longitude (degrees)
-    fp = FOPEN(blw_file, "r");
-    fscanf(fp, "%lf\n", &cell_size_horiz); // Line 1
-    fgets(line, 1024, fp);                //      2
-    fgets(line, 1024, fp);                //      3
-    fscanf(fp, "%lf\n", &cell_size_vert);  //      4
-    fscanf(fp, "%lf\n", &lon_ul);          //      5
-    fscanf(fp, "%lf\n", &lat_ul);          //      6
-    fclose(fp);
 
     // PRJ File
     asfPrintStatus("Parsing %s ...\n", prj_file);
@@ -199,11 +171,13 @@ void import_bil(char *inBaseName, char *outBaseName)
     meta_location *ml = meta->location;
 
     // populate general block info
-    mg->data_type = INTEGER16;
+    mg->data_type = REAL32;
     mg->image_data_type = DEM; //presumably!?
 
-    mg->x_pixel_size = cell_size_horiz;
-    mg->y_pixel_size = -cell_size_vert;
+    mg->no_data = nodata;
+
+    mg->x_pixel_size = cell_size;
+    mg->y_pixel_size = cell_size;
 
     mg->line_count = nrows;
     mg->sample_count = ncols;
@@ -220,14 +194,14 @@ void import_bil(char *inBaseName, char *outBaseName)
     strcpy(mg->mode, "N/A");
     strcpy(mg->processor, "Unknown");
 
-    mg->center_latitude = lat_ul + cell_size_horiz * ncols / 2.0;
-    mg->center_longitude = lon_ul + cell_size_vert * nrows / 2.0;
+    mg->center_latitude = lat_ll + cell_size * ncols / 2.0;
+    mg->center_longitude = lon_ll + cell_size * nrows / 2.0;
 
     // populate projection block info
 
     mp->type = LAT_LONG_PSEUDO_PROJECTION;
-    mp->startX = lon_ul;
-    mp->startY = lat_ul;
+    mp->startX = lon_ll;
+    mp->startY = lat_ll;
     mp->perX = mg->x_pixel_size;
     mp->perY = -mg->y_pixel_size;
     strcpy(mp->units, "degrees");
@@ -260,17 +234,14 @@ void import_bil(char *inBaseName, char *outBaseName)
     // INT16 data, since we asked for it in the metadata)
     char *data_filename = appendExt(outBaseName, ".img");
 
-    asfPrintStatus("Reading %s, writing %s ...\n", bil_file, data_filename);
+    asfPrintStatus("Reading %s, writing %s ...\n", flt_file, data_filename);
 
-    unsigned short *shorts = MALLOC(sizeof(unsigned short)*ncols);
     float *floats = MALLOC(sizeof(float)*ncols);
-
-    fp = FOPEN(bil_file, "rb");
+    fp = FOPEN(flt_file, "rb");
     FILE *out = FOPEN(data_filename, "wb");
+
     for (i=0; i<nrows; ++i) {
-        FREAD(shorts, sizeof(unsigned short), ncols, fp);
-        for (j=0; j<ncols; ++j)
-            floats[j] = (float)shorts[j];
+        FREAD(floats, sizeof(float), ncols, fp);
         put_float_line(out, meta, i, floats);
         asfLineMeter(i,nrows);
     }
@@ -278,12 +249,10 @@ void import_bil(char *inBaseName, char *outBaseName)
     fclose(fp);
     fclose(out);
 
-    free(shorts);
     free(data_filename);
     free(floats);
 
-    free(blw_file);
     free(hdr_file);
     free(prj_file);
-    free(bil_file);
+    free(flt_file);
 }
