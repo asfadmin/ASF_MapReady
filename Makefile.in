@@ -45,6 +45,7 @@ MODULES = \
 	src/mosaic \
 	src/create_thumbs \
 	src/llh2ls \
+	src/convert2vector \
 	@ASF_GUI@
 # src_x/sarview
 
