@@ -310,7 +310,12 @@ void update_pixel_info()
     meta_get_latLon(meta, y, x, 0, &lat, &lon);
     sprintf(&buf[strlen(buf)], "Lat: %.3f, Lon: %.3f (deg)\n", lat, lon);
 
-    if (meta->projection) {
+    // skip projection coords if not projected, or lat/long pseudo (since
+    // in that case the projection coords are just the lat/long values
+    // we are already showing)
+    if (meta->projection &&
+        meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+    {
         double projX, projY, projZ;
         latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
             &projX, &projY, &projZ);
