@@ -25,7 +25,7 @@ double crosshair_line, crosshair_samp;
 double ctrl_clk_samp, ctrl_clk_line;
 
 // loaded filename
-char *g_file;
+char *g_filename;
 
 float get_pixel(int line, int sample)
 {
@@ -70,9 +70,13 @@ main(int argc, char **argv)
     center_line = center_samp = crosshair_samp = crosshair_line = -1;
     ctrl_clk_line = ctrl_clk_samp = -1;
     zoom = 1;
-    g_file = STRDUP(argv[1]);
+    g_filename = STRDUP(argv[1]);
 
-    read_file(g_file, band_specified ? band : NULL);
+    // strip off a trailing "."
+    if (g_filename[strlen(g_filename)-1] == '.')
+        g_filename[strlen(g_filename)-1] = '\0';
+
+    read_file(g_filename, band_specified ? band : NULL);
 
     gtk_init(&argc, &argv);
 
@@ -87,7 +91,7 @@ main(int argc, char **argv)
 
     // set up window title
     char title[256];
-    sprintf(title, "ssv ver %s: %s", VERSION, g_file);
+    sprintf(title, "ssv ver %s: %s", VERSION, g_filename);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
     } else if (meta && meta->general && meta->general->band_count > 1) {
@@ -95,8 +99,8 @@ main(int argc, char **argv)
             strcpy(band, meta->general->bands);
             char *p = strchr(band, ',');
             if (p) *p = '\0';
-        } else if (strncmp_case(g_file, "IMG-", 4) == 0) {
-            strcpy(band, g_file+4);
+        } else if (strncmp_case(g_filename, "IMG-", 4) == 0) {
+            strcpy(band, g_filename+4);
             char *p = strchr(band, '-');
             if (p) *p = '\0';
         } else {
@@ -116,6 +120,7 @@ main(int argc, char **argv)
     update_zoom();
     set_font();
     fill_meta_info();
+    calc_image_stats(); // starts a thread
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
@@ -123,7 +128,7 @@ main(int argc, char **argv)
     if (data) free(data);
     if (data_fi) float_image_free(data_fi);
     if (meta) meta_free(meta);
-    if (g_file) free(g_file);
+    if (g_filename) free(g_filename);
 
     exit (EXIT_SUCCESS);
 }

@@ -67,12 +67,25 @@ int get_big_image_width(void);
 int get_big_image_width2(void);
 int get_big_image_height(void);
 int get_big_image_height2(void);
+int calc_scaled_pixel_value(float val);
 
 /* small_image.c */
 void fill_small(void);
 
 /* meta.c */
+char * escapify(const char * s);
 void fill_meta_info(void);
+void open_mdv(void);
+
+/* stats.c */
+void calc_image_stats(void);
+
+/* google.c */
+int open_google_earth(void);
+
+/* new.c */
+void new_file(void);
+void browse_new_file(void);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
@@ -96,5 +109,6 @@ extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
 extern double ctrl_clk_line, ctrl_clk_samp;
+extern char *g_filename;
 
 #endif

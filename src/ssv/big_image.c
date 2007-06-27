@@ -203,8 +203,11 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     }
 }
 
-static int calc_scaled_pixel_value(float val)
+int calc_scaled_pixel_value(float val)
 {
+    if (meta_is_valid_double(meta->general->no_data) && 
+        val == meta->general->no_data)
+        return 0;
     if (val < g_min)
         return 0;
     else if (val > g_max)
@@ -300,12 +303,12 @@ void update_pixel_info()
         float fval = get_pixel(crosshair_line, crosshair_samp);
         int uval = calc_scaled_pixel_value(fval);
 
-        sprintf(&buf[strlen(buf)], "Pixel Value: %f -> %d\n", fval, uval);
+        sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n", fval, uval);
     }
 
     double lat, lon;
     meta_get_latLon(meta, y, x, 0, &lat, &lon);
-    sprintf(&buf[strlen(buf)], "Lat: %.3f, Lon: %.3f\n", lat, lon);
+    sprintf(&buf[strlen(buf)], "Lat: %.3f, Lon: %.3f (deg)\n", lat, lon);
 
     if (meta->projection) {
         double projX, projY, projZ;
@@ -509,6 +512,77 @@ static int handle_keypress(GdkEventKey *event)
             last_was_crosshair = !last_was_crosshair;
         else
             last_was_crosshair = TRUE;
+    } else if (event->keyval == GDK_c) {
+        // c: Center image view on crosshair
+        if (event->state & GDK_CONTROL_MASK) {
+            if (ctrl_clk_line > 0 && ctrl_clk_samp > 0) {
+                center_line = ctrl_clk_line;
+                center_samp = ctrl_clk_samp;
+            } else {
+                // if no ctrl-crosshair (red crosshair) yet, place
+                // one in the center, and center on it
+                center_line = ctrl_clk_line = nl/2;
+                center_samp = ctrl_clk_samp = ns/2;
+                last_was_crosshair = FALSE;
+            }
+        } else {
+            if (crosshair_line > 0 && crosshair_samp > 0) {
+                center_line = crosshair_line;
+                center_samp = crosshair_samp;
+            } else {
+                // I am not sure it is possible to get in here
+                // we should always have a green crosshair
+                center_line = crosshair_line = nl/2;
+                center_samp = crosshair_samp = ns/2;
+                last_was_crosshair = TRUE;
+            }
+        }
+        fill_small();
+    } else if (event->keyval == GDK_a) {
+        // a: print out pixel values in a neighborhood of the
+        //    crosshair.  ctrl-a uses the other crosshair
+        int line=crosshair_line, samp=crosshair_samp;
+        if (event->state & GDK_CONTROL_MASK) {
+            if (ctrl_clk_line > 0 && ctrl_clk_samp > 0) {
+                line = ctrl_clk_line;
+                samp = ctrl_clk_samp;
+            } else {
+                line = samp = -1;
+            }
+        }
+        if (line > 0 && samp > 0) {
+            int i,j;
+            printf("     |");
+            for (j=samp-4; j<=samp+4; ++j)
+                printf("%5d  ",j);
+            printf("\n-----+");
+            for (j=samp-4; j<=samp+4; ++j)
+                printf("-------");
+            printf("-\n");
+            for (i=line-4; i<=line+4; ++i) {
+                printf("%5d|",i);
+                for (j=samp-4; j<=samp+4; ++j) {
+                    if (i>=0 && j>=0 && i<nl && j<ns)
+                        if (i==line && j==samp)
+                            printf("%6.1f*",get_pixel(i,j));
+                        else
+                            printf("%6.1f ",get_pixel(i,j));
+                    else
+                        printf("     * ");
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        return TRUE;
+    } else if (event->keyval == GDK_g) {
+        // g: open google earth
+        open_google_earth();
+        return TRUE;
+    } else if (event->keyval == GDK_m) {
+        // m: open a new file
+        open_mdv();
+        return TRUE;
     } else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified

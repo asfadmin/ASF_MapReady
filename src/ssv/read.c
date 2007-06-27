@@ -191,10 +191,6 @@ void read_file(const char *filename_in, const char *band)
 {
     char *filename = STRDUP(filename_in);
 
-    // strip off a trailing "."
-    if (filename[strlen(filename)-1] == '.')
-        filename[strlen(filename)-1] = '\0';
-
     // first need to figure out what kind of file this is
     // we will do that based on the extension
     // user may have just given basename, so we may need to hunt
@@ -254,6 +250,7 @@ void read_file(const char *filename_in, const char *band)
         char *p = strchr(filename+5, '-') + 1;
         strcat(meta_filename, p);
         if (fileExists(meta_filename)) {
+            printf("Creating metadata: %s\n", p);
             meta = meta_create(p);
         } else {
             asfPrintError("Cannot find metadata: %s\n", meta_filename);
@@ -275,12 +272,13 @@ void read_file(const char *filename_in, const char *band)
             strcat(meta_filename, filename);
         }
         if (fileExists(meta_filename)) {
-            meta = meta_create(filename);
             char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
             int i,nBands;
             for (i=0; i<MAX_BANDS; ++i)
                 dataName[i] = MALLOC(sizeof(char)*256);
-            get_ceos_data_name(filename, dataName, &nBands);
+            char *p = meta_filename;
+            if (strncmp_case(p, "LED-", 4) == 0) p += 4;
+            get_ceos_data_name(p, dataName, &nBands);
             int which_band=-1;
             if (band) {
                 for (i=0; i<nBands; ++i) {
@@ -293,7 +291,8 @@ void read_file(const char *filename_in, const char *band)
                 which_band = 0;
             if (which_band < 0)
                 asfPrintError("Band '%s' not found.\n");
-            read_alos(filename, dataName[which_band], meta_filename);
+            meta = meta_create(p);
+            read_alos(p, dataName[which_band], meta_filename);
             FREE_BANDS(dataName);
         } else {
             asfPrintError("Unknown image type: %s\n", img_file);

@@ -60,9 +60,10 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
     }
 }
 
+GdkPixbuf *pixbuf_small = NULL;
+
 static GdkPixbuf * make_small_image(int size)
 {
-    static GdkPixbuf *pixbuf_small = NULL;
     if (!pixbuf_small) {
         assert((data||data_fi) && meta);
 
@@ -130,7 +131,7 @@ static GdkPixbuf * make_small_image(int size)
             stddev = sqrt(stddev / (double)(tsx*tsy));
         }
 
-        printf("Avg, StdDev: %f, %f\n", avg, stddev);
+        //printf("Avg, StdDev: %f, %f\n", avg, stddev);
 
         // Set the limits of the scaling - 2-sigma on either side of the mean
         // These are globals, we will use them in the big image, too.
@@ -142,17 +143,20 @@ static GdkPixbuf * make_small_image(int size)
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
         printf("Building image...\n");
+        int have_no_data = meta_is_valid_double(meta->general->no_data);
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
                 float val = get_pixel(ii*sf, jj*sf);
 
                 unsigned char uval;
-                if (val < g_min)
+                if (have_no_data && val == meta->general->no_data)
+                    uval = 0;
+                else if (val < g_min)
                     uval = 0;
                 else if (val > g_max)
                     uval = 255;
                 else
-                    uval = (unsigned char) round(((val-g_min)/(g_max-g_min))*255);
+                    uval = (unsigned char)(((val-g_min)/(g_max-g_min))*255+0.5);
             
                 int n = 3*(ii*tsx+jj);
                 bdata[n] = uval;
