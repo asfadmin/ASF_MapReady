@@ -201,7 +201,7 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
 
     mp->type = LAT_LONG_PSEUDO_PROJECTION;
     mp->startX = lon_ll;
-    mp->startY = lat_ll;
+    mp->startY = lat_ll + cell_size * nrows;
     mp->perX = mg->x_pixel_size;
     mp->perY = -mg->y_pixel_size;
     strcpy(mp->units, "degrees");
