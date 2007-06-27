@@ -979,6 +979,11 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       project_utm(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
+    case LAT_LONG_PSEUDO_PROJECTION:
+      *x = lat*D2R;
+      *y = lon*D2R;
+      *z = height;
+      break;
     default:
       printf("Unrecognized map projection '%c' passed to latlon_to_proj!\n",
 	     proj->type);
