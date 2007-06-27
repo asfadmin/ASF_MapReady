@@ -295,9 +295,13 @@ int asf_import(radiometry_t radiometry, int db_flag,
         }
       }
     }
+    else if (strncmp(format_type, "BIL", 3) == 0) {
+      asfPrintStatus("   Data format: %s\n", format_type);
+      import_bil(inBaseName, outBaseName);
+    }
     /* Don't recognize this data format; report & quit */
     else {
-        asfPrintError("Unrecognized data format: '%s'",format_type);
+        asfPrintError("Unrecognized data format: '%s'\n",format_type);
     }
 
     /* resample, if necessary */

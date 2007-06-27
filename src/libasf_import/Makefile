@@ -67,6 +67,7 @@ OBJS  = ardop_write.o \
 	import_esri.o \
 	import_usgs_seamless.o \
 	import_stf.o \
+	import_bil.o \
 	least_squares.o \
 	matrix.o \
 	missing.o \

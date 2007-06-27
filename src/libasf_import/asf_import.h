@@ -69,4 +69,6 @@ import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
 void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
 
+void import_bil(char *inBaseName, char *outBaseName);
+
 #endif
