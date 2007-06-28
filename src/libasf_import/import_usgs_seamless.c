@@ -217,20 +217,22 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   mg->start_line = 0;
   mg->start_sample = 0;
 
-  mg->x_pixel_size = pixel_scale[0];
-  mg->y_pixel_size = pixel_scale[1];
+  // We are supposed to put {x,y}_pixel_size in meters ==> convert.
 
-  // For now we are going to insist that the degrees per pixel in the
-  // X and Y directions are identical(ish).  I believe asf_geocode at
-  // least would work for non-square pixel dimensions, with the
-  // caveats that output pixels would still be square, and would have
-  // default size derived solely from the input pixel size (arc length
-  // between pixels) in the latitude direction.
-  assert (fabs (mg->x_pixel_size - mg->y_pixel_size) < 0.0001);
-  // Better to use gsl_fcmp, but it probably adds a library
-  // dependency, which is extra bad now that asf_import is itself a
-  // library.
-  //  assert (gsl_fcmp (mg->x_pixel_size, mg->y_pixel_size, 0.0001));
+  // we are cheating a bit here, forcing the result to be to the nearest
+  // 10m.  This is ok -- the one where accuracy is important is the
+  // value in the projection block, this one is used by geocode when
+  // deciding how large the pixels should be in the output.  
+  int pixel_size_meters = 10*(int)(11131.95 * pixel_scale[0] + .5);
+
+  // USGS data is currently 30, 60 or 90m.  Since we are cheating, we
+  // have this sanity check in place.
+  if (pixel_size_meters != 30 && pixel_size_meters != 60 && pixel_size_meters != 90){
+      asfPrintWarning("Unexpected pixel size: %dm.\n"
+          "USGS Seamless data should be 30, 60 or 90m\n", pixel_size_meters);
+  }
+  mg->x_pixel_size = pixel_size_meters;
+  mg->y_pixel_size = pixel_size_meters;
 
   // Image raster coordinates of tie point.
   double raster_tp_x = tie_point[0];
@@ -261,8 +263,8 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   mp->startX = (0.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
   mp->startY = (0.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
 
-  mp->perX = mg->x_pixel_size;
-  mp->perY = -mg->y_pixel_size;
+  mp->perX = pixel_scale[0];
+  mp->perY = -pixel_scale[1];
 
   strcpy (mp->units, "degrees");
 

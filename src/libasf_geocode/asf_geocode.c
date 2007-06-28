@@ -1103,16 +1103,19 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   double y_pixel_size = omd->general->y_pixel_size;
 
-  // Check metadata ptrs (omd->general is theoretically guaranteed good)
-  if (omd->projection) {
-    if (omd->projection->perY > 0) {
-      g_assert (0);		/* Shouldn't happen.  */
-      pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-    }
-    else {
-      pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-    }
-  }
+  // I can't figure out what this code is for.  Commenting out for now
+  // and we'll see what breaks....     -kh 6/28/07
+  //// Check metadata ptrs (omd->general is theoretically guaranteed good)
+  //if (omd->projection) {
+  //  if (omd->projection->perY > 0) {
+  //    g_assert (0);		/* Shouldn't happen.  */
+  //    pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+  //  }
+  //  else {
+  //    pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
+  //  }
+  //}
+  // ... up to here
   if (omd->projection == NULL) {
     omd->projection = meta_projection_init();
   }
