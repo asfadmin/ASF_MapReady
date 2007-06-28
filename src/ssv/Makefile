@@ -106,12 +106,15 @@ LDLIBS = \
 	$(LIBDIR)/libasf_metadata.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libshp.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(JPEG_LIBS) \
+	$(PNG_LIBS) \
 	$(GTK_LIBS) \
 	$(shell /usr/bin/pkg-config --libs libglade-2.0) \
 	$(shell /usr/bin/pkg-config --libs gthread-2.0)

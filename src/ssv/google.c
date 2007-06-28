@@ -19,6 +19,66 @@
 #include <png.h>
 #include <gdk/gdk.h>
 
+#ifdef win32
+static const char PATH_SEPARATOR=':';
+#else
+static const char PATH_SEPARATOR=';';
+#endif
+
+char *find_in_path(char * file)
+{
+    char *path, *buf, *name, *p;
+    int len, pathlen;
+
+    /* first see if file is in current directory */
+    if (fileExists(file))
+        return STRDUP(file);
+
+    path = (gchar *)g_getenv("PATH");
+
+    len = strlen(file) + 1;
+    pathlen = strlen(path);
+
+    /* work area */
+    buf = MALLOC( sizeof(char) * (pathlen + len + 2) ); 
+
+    /* put separator + filename at the end of the buffer */
+    name = buf + pathlen + 1;
+    *name = DIR_SEPARATOR;
+    memcpy(name + 1, file, len);
+
+    /* now try each path item, prepended to the filename in the work area */
+    p = path;
+    do
+    {
+        char * start;
+        char * q = strchr(p + 1, PATH_SEPARATOR);
+
+        /* if separator not found, point to the end */
+        if ( !q ) 
+            q = path + pathlen;
+
+        start = name - (q - p);
+
+        /* copy path portion to the work area */
+        memcpy( start, p, q - p );
+
+        if (fileExists(start))
+        {
+            char * ret = STRDUP(start);
+            free(buf);
+            return ret; 
+        }
+
+        p = q;
+    } 
+    while (*p++ != '\0');
+
+    /* not found! */ 
+    free(buf);
+    return NULL;
+}
+
 static int pixbuf2png(GdkPixbuf *pb, const char *output_png)
 {
     int i;
