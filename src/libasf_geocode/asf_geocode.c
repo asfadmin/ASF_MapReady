@@ -963,7 +963,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     {
         g_assert(i==0);
         if (n_input_images > 1)
-            asfPrintStatus("No pixel size specified.\nUsing azimuth pixel size"
+            asfPrintStatus("No pixel size specified.\nUsing azimuth pixel size "
                 "from the first image's metadata: %f\n", imd->general->y_pixel_size);
         else
             asfPrintStatus("No pixel size specified, using azimuth pixel size from "
@@ -989,33 +989,60 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       asfPrintStatus("Number of bands in the output: %d\n",
         multiband ? n_bands : 1);
 
+  asfPrintStatus("Before applying the lat/lon box:\n"
+      "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
+
   // now apply the input lat/lon "bounding box" restriction to the
   // calculated extents.  Do this by converting the 4 corner points of
   // the lat/lon box.
   {
     double x, y, z;
+    double bb_min_x=99999999, bb_max_x=0;
+    double bb_min_y=99999999, bb_max_y=0;
+
     // this time, we update the min if we're GREATER, max if we're SMALLER
     if (lat_min >= -90 && lon_min >= -180) {
-      project (pp, lat_min, lon_min, average_height, &x, &y, &z, datum);
-      if (x > min_x) min_x = x;    if (x < max_x) max_x = x;
-      if (y > min_y) min_y = y;    if (y < max_y) max_y = y;
+      project (pp, lat_min*D2R, lon_min*D2R, average_height,
+          &x, &y, &z, datum);
+
+      //printf("min,min: %f %f\n", x, y);
+      if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
+      if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
     if (lat_min >= -90 && lon_max <= 180) {
-      project (pp, lat_min, lon_max, average_height, &x, &y, &z, datum);
-      if (x > min_x) min_x = x;    if (x < max_x) max_x = x;
-      if (y > min_y) min_y = y;    if (y < max_y) max_y = y;
+      project (pp, lat_min*D2R, lon_max*D2R, average_height,
+          &x, &y, &z, datum);
+
+      //printf("min,max: %f %f\n", x, y);
+      if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
+      if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
     if (lat_max <= 90 && lon_min >= -180) {
-      project (pp, lat_max, lon_min, average_height, &x, &y, &z, datum);
-      if (x > min_x) min_x = x;    if (x < max_x) max_x = x;
-      if (y > min_y) min_y = y;    if (y < max_y) max_y = y;
+      project (pp, lat_max*D2R, lon_min*D2R, average_height,
+          &x, &y, &z, datum);
+
+      //printf("max,min: %f %f\n", x, y);
+      if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
+      if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
     if (lat_max <= 90 && lon_max <= 180) {
-      project (pp, lat_max, lon_max, average_height, &x, &y, &z, datum);
-      if (x > min_x) min_x = x;    if (x < max_x) max_x = x;
-      if (y > min_y) min_y = y;    if (y < max_y) max_y = y;
+      project (pp, lat_max*D2R, lon_max*D2R, average_height,
+          &x, &y, &z, datum);
+
+      //printf("max,max: %f %f\n", x, y);
+      if (x < bb_min_x) bb_min_x = x;    if (x > bb_max_x) bb_max_x = x;
+      if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
+
+    if (bb_min_x > min_x) min_x = bb_min_x;
+    if (bb_max_x < max_x) max_x = bb_max_x;
+
+    if (bb_min_y > min_y) min_y = bb_min_y;
+    if (bb_max_y < max_y) max_y = bb_max_y;
   }
+
+  asfPrintStatus("After applying the lat/lon box:\n"
+      "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
 
   // Projection coordinates per pixel in output image.  There is a
   // significant assumption being made here: we assume that the

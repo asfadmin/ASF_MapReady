@@ -242,11 +242,6 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   double tp_lon = tie_point[3];
   double tp_lat = tie_point[4];
 
-  mg->center_latitude
-    = (height / 2.0 - raster_tp_y) * (-mg->y_pixel_size) + tp_lat;
-  mg->center_longitude
-    = (width / 2.0 - raster_tp_x) * mg->x_pixel_size + tp_lon;
-
   asfPrintStatus("Gathering image statistics...\n");
   float min, max, mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
@@ -265,6 +260,9 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   mp->perX = pixel_scale[0];
   mp->perY = -pixel_scale[1];
+
+  mg->center_latitude = (height / 2.0 - raster_tp_y) * mp->perY + tp_lat;
+  mg->center_longitude = (width / 2.0 - raster_tp_x) * mp->perX + tp_lon;
 
   strcpy (mp->units, "degrees");
 
@@ -296,14 +294,22 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
 
   meta_location *ml = meta_out->location; // Convenience alias.
-  ml->lat_start_near_range = mp->startX;
-  ml->lon_start_near_range = mp->startY;
-  ml->lat_start_far_range = mp->startX + mp->perX * width;
-  ml->lon_start_far_range = mp->startY;
-  ml->lat_end_near_range = mp->startX;
-  ml->lon_end_near_range = mp->startY + mp->perY * height;
-  ml->lat_end_far_range = mp->startX + mp->perX * width;
-  ml->lon_end_far_range = mp->startY + mp->perY * height;
+  //ml->lat_start_near_range = mp->startX;
+  //ml->lon_start_near_range = mp->startY;
+  //ml->lat_start_far_range = mp->startX + mp->perX * width;
+  //ml->lon_start_far_range = mp->startY;
+  //ml->lat_end_near_range = mp->startX;
+  //ml->lon_end_near_range = mp->startY + mp->perY * height;
+  //ml->lat_end_far_range = mp->startX + mp->perX * width;
+  //ml->lon_end_far_range = mp->startY + mp->perY * height;
+    ml->lon_start_near_range = mp->startX;
+    ml->lat_start_near_range = mp->startY;
+    ml->lon_start_far_range = mp->startX + mp->perX * width;
+    ml->lat_start_far_range = mp->startY;
+    ml->lon_end_near_range = mp->startX;
+    ml->lat_end_near_range = mp->startY + mp->perY * height;
+    ml->lon_end_far_range = mp->startX + mp->perX * width;
+    ml->lat_end_far_range = mp->startY + mp->perY * height;
 
   asfPrintStatus("Writing ASF .img and .meta output files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);

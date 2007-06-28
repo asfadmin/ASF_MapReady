@@ -27,20 +27,55 @@ static int iabs(int i)
     return i>0 ? i : -i;
 }
 
-// this is from the comp.graphics.algorithms FAQ
-// see http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
-static int pnpoly(int npol, double *xp, double *yp, double x, double y)
+//  public domain function by Darel Rex Finley, 2006
+//  modified for ASF by kh.  Code was found at: http://alienryderflex.com/intersect/
+
+//  Determines the intersection point of the line segment defined by points A and B
+//  with the line segment defined by points C and D.
+//
+//  Returns YES if the intersection point was found.
+//  Returns NO if there is no determinable intersection point.
+
+//  Known bug: returns FALSE if the segments are colinear, even if they overlap
+
+int lineSegmentsIntersect(
+    double Ax, double Ay,
+    double Bx, double By,
+    double Cx, double Cy,
+    double Dx, double Dy)
 {
-  int i, j, c = 0;
-  for (i = 0, j = npol-1; i < npol; j = i++) {
-    if ((((yp[i]<=y) && (y<yp[j])) ||
-      ((yp[j]<=y) && (y<yp[i]))) &&
-      (x < (xp[j] - xp[i]) * (y - yp[i]) / (yp[j] - yp[i]) + xp[i]))
+  double  distAB, theCos, theSin, newX, ABpos ;
 
-      c = !c;
-  }
+  //  Fail if either line segment is zero-length.
+  if ((Ax==Bx && Ay==By) || (Cx==Dx && Cy==Dy)) return FALSE;
 
-  return c;
+  //  (1) Translate the system so that point A is on the origin.
+  Bx-=Ax; By-=Ay;
+  Cx-=Ax; Cy-=Ay;
+  Dx-=Ax; Dy-=Ay;
+
+  //  Discover the length of segment A-B.
+  distAB=sqrt(Bx*Bx+By*By);
+
+  //  (2) Rotate the system so that point B is on the positive X axis.
+  theCos=Bx/distAB;
+  theSin=By/distAB;
+  newX=Cx*theCos+Cy*theSin;
+  Cy  =Cy*theCos-Cx*theSin; Cx=newX;
+  newX=Dx*theCos+Dy*theSin;
+  Dy  =Dy*theCos-Dx*theSin; Dx=newX;
+
+  //  Fail if segment C-D doesn't cross line A-B.
+  if ((Cy<0. && Dy<0.) || (Cy>=0. && Dy>=0.)) return FALSE;
+
+  //  (3) Discover the position of the intersection point along line A-B.
+  ABpos=Dx+(Cx-Dx)*Dy/(Dy-Cy);
+
+  //  Fail if segment C-D crosses line A-B outside of segment A-B.
+  if (ABpos<0. || ABpos>distAB) return FALSE;
+
+  //  Success.
+  return TRUE;
 }
 
 // return TRUE if there is any overlap between the two scenes
@@ -50,26 +85,27 @@ static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
     int zone2 = utm_zone(meta2->general->center_longitude);
 
     // if zone1 & zone2 differ by more than 1, we can stop now
-    if (iabs(zone1-zone2) > 1)
-      return FALSE;
+    if (iabs(zone1-zone2) > 1) {
+        return FALSE;
+    }
 
     // The Plan:
-    // we'll test if any of the 4 corner points of meta2 are in the
-    // polygon for meta1.  We will convert all corner points to UTM
-    // in the zone for meta1.
+    // Generate polygons for each metadata, then test of any pair of
+    // line segments between the polygons intersect.
 
-    // first, get the corners of meta1.
-    double xp[4], yp[4];
+    // corners of meta1.
+    double xp_1[5], yp_1[5];
+    
     if (meta1->location) {
         // use the location block if available
         latLon2UTM_zone(meta1->location->lat_start_near_range,
-            meta1->location->lon_start_near_range, 0, zone1, &xp[0], &yp[0]);
+            meta1->location->lon_start_near_range, 0, zone1, &xp_1[0], &yp_1[0]);
         latLon2UTM_zone(meta1->location->lat_start_far_range,
-            meta1->location->lon_start_far_range, 0, zone1, &xp[0], &yp[0]);
+            meta1->location->lon_start_far_range, 0, zone1, &xp_1[1], &yp_1[1]);
         latLon2UTM_zone(meta1->location->lat_end_far_range,
-            meta1->location->lon_end_far_range, 0, zone1, &xp[0], &yp[0]);
+            meta1->location->lon_end_far_range, 0, zone1, &xp_1[2], &yp_1[2]);
         latLon2UTM_zone(meta1->location->lat_end_near_range,
-            meta1->location->lon_end_near_range, 0, zone1, &xp[0], &yp[0]);
+            meta1->location->lon_end_near_range, 0, zone1, &xp_1[3], &yp_1[3]);
     } else {
         double lat, lon;
         int nl1 = meta1->general->line_count;
@@ -77,82 +113,73 @@ static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
 
         // must call meta_get_latLon for each corner
         meta_get_latLon(meta1, 0, 0, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[0], &yp[0]);
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_1[0], &yp_1[0]);
 
         meta_get_latLon(meta1, nl1-1, 0, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[1], &yp[1]);
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_1[1], &yp_1[1]);
 
         meta_get_latLon(meta1, nl1-1, ns1-1, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[2], &yp[2]);
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_1[2], &yp_1[2]);
 
         meta_get_latLon(meta1, 0, ns1-1, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[3], &yp[3]);
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_1[3], &yp_1[3]);
     }
 
-    // now test each corner point for meta2.  If any point is inside the
-    // xp[],yp[] polygon, then the images overlap.  (And we can stop checking)
-    double x, y;
+    // close the polygon
+    xp_1[4] = xp_1[0];
+    yp_1[4] = yp_1[0];
+
+    // corners of meta2.
+    double xp_2[5], yp_2[5];
+
     if (meta2->location) {
+        // use the location block if available
         latLon2UTM_zone(meta2->location->lat_start_near_range,
-            meta2->location->lon_start_near_range, 0, zone1, &x, &y);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
-
+            meta2->location->lon_start_near_range, 0, zone1, &xp_2[0], &yp_2[0]);
         latLon2UTM_zone(meta2->location->lat_start_far_range,
-            meta2->location->lon_start_far_range, 0, zone1, &xp[0], &yp[0]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
-
+            meta2->location->lon_start_far_range, 0, zone1, &xp_2[1], &yp_2[1]);
         latLon2UTM_zone(meta2->location->lat_end_far_range,
-            meta2->location->lon_end_far_range, 0, zone1, &xp[0], &yp[0]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
-
+            meta2->location->lon_end_far_range, 0, zone1, &xp_2[2], &yp_2[2]);
         latLon2UTM_zone(meta2->location->lat_end_near_range,
-            meta2->location->lon_end_near_range, 0, zone1, &xp[0], &yp[0]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
-    }
-    else {
+            meta2->location->lon_end_near_range, 0, zone1, &xp_2[3], &yp_2[3]);
+    } else {
         double lat, lon;
-        int nl2 = meta1->general->line_count;
-        int ns2 = meta1->general->sample_count;
+        int nl2 = meta2->general->line_count;
+        int ns2 = meta2->general->sample_count;
 
+        // must call meta_get_latLon for each corner
         meta_get_latLon(meta2, 0, 0, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[0], &yp[0]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_2[0], &yp_2[0]);
 
         meta_get_latLon(meta2, nl2-1, 0, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[1], &yp[1]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_2[1], &yp_2[1]);
 
         meta_get_latLon(meta2, nl2-1, ns2-1, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[2], &yp[2]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_2[2], &yp_2[2]);
 
         meta_get_latLon(meta2, 0, ns2-1, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone1, &xp[3], &yp[3]);
-        if (pnpoly(4, xp, yp, x, y))
-            return TRUE;
+        latLon2UTM_zone(lat, lon, 0, zone1, &xp_2[3], &yp_2[3]);
     }
 
-    // no corner points inside --> no overlap
-    return FALSE;
-}
+    // close the polygon
+    xp_2[4] = xp_2[0];
+    yp_2[4] = yp_2[0];
 
-// wrapper for test_overlap that will load the metadata for file #2
-// because generally we have 1 file (with metadata we have already
-// loaded), and we want to run through a list of other files.
-static int test_overlap_file(meta_parameters *meta, const char *filename)
-{
-    char *meta_filename = appendExt(filename, ".meta");
-    meta_parameters *m2 = meta_read(meta_filename);
-    int ret = test_overlap(meta, m2);
-    free(meta_filename);
-    return ret;
+    // loop over each pair of line segments, testing for intersection
+    int i, j;
+    for (i = 0; i < 4; ++i) {
+        for (j = 0; j < 4; ++j) {
+            if (lineSegmentsIntersect(
+                xp_1[i], yp_1[i], xp_1[i+1], yp_1[i+1],
+                xp_2[j], yp_2[j], xp_2[j+1], yp_2[j+1]))
+            {
+                return TRUE;
+            }
+        }
+    }
+
+    // no overlap
+    return FALSE;
 }
 
 // this is just to make the recursive searching of directories look nice
@@ -216,7 +243,13 @@ static void process_file(const char *file, int level,
     {
         char *does;
         ++(*n_dems_total);
-        if (test_overlap_file(meta, file)) {
+
+        char *meta_filename = appendExt(file, ".meta");
+        meta_parameters *meta_dem = meta_read(meta_filename);
+
+        if (meta_dem->general->image_data_type != DEM) {
+            does = "Not a DEM";
+        } else if (test_overlap(meta, meta_dem)) {
             // overlaps!
             overlapping_dems[*next_dem_number] = STRDUP(file);
             ++(*next_dem_number);
@@ -224,6 +257,10 @@ static void process_file(const char *file, int level,
         } else {
             does = "No";
         }
+
+        free(meta_filename);
+        meta_free(meta_dem);
+
         asfPrintStatus("  %s%s - %s\n", spaces(level), base, does);
     }
     else if (ext && strcmp_case(ext, ".meta") == 0) {
@@ -512,28 +549,36 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
             strcmp_case(ext, ".tif") == 0 ||
             strcmp_case(ext, ".tiff") == 0)
         {
+            asfPrintStatus("%s: DEM.\n", dem_cla_arg);
             // presumably, this is a DEM -- case (1) above.
             return STRDUP(dem_cla_arg);
         }
     }
     else {
         // no extension -- user may have just provided the basename
-        if (try_ext(dem_cla_arg, ".img"))
+        if (try_ext(dem_cla_arg, ".img")) {
+            asfPrintStatus("%s: DEM.\n", dem_cla_arg);
             return STRDUP(dem_cla_arg);
-        else if (try_ext(dem_cla_arg, ".tiff"))
+        } else if (try_ext(dem_cla_arg, ".tiff")) {
+            asfPrintStatus("%s: DEM.\n", dem_cla_arg);
             return STRDUP(dem_cla_arg);
-        else if (try_ext(dem_cla_arg, ".tif"))
+        } else if (try_ext(dem_cla_arg, ".tif")) {
+            asfPrintStatus("%s: DEM.\n", dem_cla_arg);
             return STRDUP(dem_cla_arg);
+        }
     }
 
     char **list_of_dems = NULL;
     // Eliminated case (1) -- try case (2)
     if (is_dir(dem_cla_arg)) {
+        asfPrintStatus("%s: directory containing DEMs.\n", dem_cla_arg);
         int n;
         list_of_dems =
             find_overlapping_dems_dir(meta, dem_cla_arg, &n);
     }
     else {
+        // this is case (3)
+        asfPrintStatus("%s: file containing directories of DEMs.\n", dem_cla_arg);
         if (fileExists(dem_cla_arg)) {
             int n;
             list_of_dems =
@@ -547,8 +592,12 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
         get_bounding_box(meta, &lat_lo, &lat_hi, &lon_lo, &lon_hi);
 
         // hard-coded name of the built dem
-        char *built_dem = MALLOC(sizeof(char)*(strlen(dir_for_tmp_dem)+10));
-        sprintf(built_dem, "%s/dem.img", dir_for_tmp_dem);
+        char *built_dem;
+        if (strlen(dir_for_tmp_dem) > 0) {
+            built_dem = MALLOC(sizeof(char)*(strlen(dir_for_tmp_dem)+10));
+            sprintf(built_dem, "%s/dem", dir_for_tmp_dem);
+        } else
+            built_dem = STRDUP("dem");
 
         // always geocode to utm -- we may wish change this to use the
         // user's preferred projection...
@@ -556,6 +605,7 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
             utm_zone(meta->general->center_longitude), lat_lo, lat_hi,
             lon_lo, lon_hi, meta->general->no_data);
 
+        asfPrintStatus("Constructed DEM: %s\n", built_dem);
         return built_dem;
     }
     else {

@@ -854,7 +854,7 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   return 0;
 }
 
-int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
+int asf_terrcorr_ext(char *sarFile, char *demFile_in, char *userMaskFile,
                      char *outFile, double pixel_size, int clean_files,
                      int do_resample, int do_corner_matching, int do_interp,
                      int do_fftMatch_verification, int dem_grid_size,
@@ -907,6 +907,9 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   //if (is_scansar(metaSAR))
   //    asfPrintError("Terrain correction of ScanSar data is not yet "
   //                  "supported.\n");
+
+  asfPrintStatus("Checking %s ... \n", demFile_in);
+  char *demFile = build_dem(metaSAR, demFile_in, output_dir);
 
   asfPrintStatus("Reading DEM metadata from: %s\n", demFile);
   asfRequire(extExists(demFile, ".meta") || extExists(demFile, ".ddr"),
@@ -1259,6 +1262,7 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *userMaskFile,
   FREE(lsMaskFile);
   FREE(resampleFile_2);
   FREE(userMaskClipped);
+  FREE(demFile);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

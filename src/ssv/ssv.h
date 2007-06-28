@@ -81,6 +81,7 @@ void open_mdv(void);
 void calc_image_stats(void);
 
 /* google.c */
+char *find_in_path(char * file);
 int open_google_earth(void);
 
 /* new.c */
