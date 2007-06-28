@@ -202,8 +202,20 @@ void import_bil(char *inBaseName, char *outBaseName)
     mg->data_type = INTEGER16;
     mg->image_data_type = DEM; //presumably!?
 
-    mg->x_pixel_size = cell_size_horiz;
-    mg->y_pixel_size = -cell_size_vert;
+    // these are supposed to be in meters
+    // currently, cell_size_* is in arcsecs... so here is a kludgey
+    // calculation, to round to the nearest 30m. usgs data is either
+    // 30, 60, or 90 meter.
+    // Note that the projection block will have the actual pixel size
+    int cell_size_m = 10 * (int)(11131.95 * -cell_size_vert + .5);
+    if (cell_size_m != 30 && cell_size_m != 60 && cell_size_m != 90)
+    {
+        asfPrintWarning("Unexpected pixel size of %dm (%.10f degree) detected.\n"
+            "USGS Seamless data should be 30, 60, or 90 meter.\n",
+            cell_size_m, -cell_size_vert);
+    }
+    mg->x_pixel_size = cell_size_m;
+    mg->y_pixel_size = cell_size_m;
 
     mg->line_count = nrows;
     mg->sample_count = ncols;
@@ -228,8 +240,8 @@ void import_bil(char *inBaseName, char *outBaseName)
     mp->type = LAT_LONG_PSEUDO_PROJECTION;
     mp->startX = lon_ul;
     mp->startY = lat_ul;
-    mp->perX = mg->x_pixel_size;
-    mp->perY = -mg->y_pixel_size;
+    mp->perX = cell_size_horiz;
+    mp->perY = cell_size_vert;
     strcpy(mp->units, "degrees");
     mp->hem = mg->center_latitude > 0 ? 'N' : 'S';
 
