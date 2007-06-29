@@ -88,6 +88,11 @@ char *proj_info_as_string(projection_type_t projection_type,
             pp->lamaz.center_lat, pp->lamaz.center_lon);
         break;
 
+    case SCANSAR_PROJECTION:
+        sprintf(ret,
+            "Projection: ScanSAR\n");
+        break;
+
     case LAT_LONG_PSEUDO_PROJECTION:
         sprintf(ret,
             "Projection: Lat/Lon (pseudoprojection)\n");
