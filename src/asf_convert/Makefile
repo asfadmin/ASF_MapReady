@@ -7,8 +7,8 @@ LIBS  = \
 	$(LIBDIR)/libasf_convert.a \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_export.a \
-	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_terrcorr.a \
+	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sar.a \
