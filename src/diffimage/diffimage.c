@@ -39,6 +39,7 @@ BUGS:
 *******************************************************************************/
 #include "asf.h"
 #include <math.h>
+#include <ctype.h>
 #include "fft.h"
 #include "fft2d.h"
 #include "ddr.h"
@@ -67,6 +68,8 @@ BUGS:
 #  define png_jmpbuf (png_ptr)    ((png_ptr)->jmpbuf)
 #endif
 
+#define MISSING_PSNR -32000
+
 /**** TYPES ****/
 typedef enum {
   UNKNOWN_GRAPHICS_TYPE=0,
@@ -74,6 +77,7 @@ typedef enum {
   JPEG,
   PGM,
   PPM,
+  PBM,
   STD_TIFF,
   GEO_TIFF,
   BMP,
@@ -118,6 +122,19 @@ typedef struct {
   int num_bands;
 } png_info_t;
 
+#define MISSING_PPM_PGM_DATA -1
+typedef struct {
+  char magic[2];
+  uint32 width;
+  uint32 height;
+  uint32 max_val; // May be 255 or less
+  int ascii_data;
+  uint32 img_offset; // Just past header
+  int bit_depth; // Should only be 8-bits per element
+  data_type_t data_type; // ASF data type
+  int num_bands; // 1 or 3
+} ppm_pgm_info_t;
+
 #define MISSING_GTIF_DATA -1
 typedef struct {
   int gtif_data_exists;
@@ -149,10 +166,6 @@ typedef struct {
   double lonPole;
 } geotiff_data_t;
 
-/**** GLOBALS ****/
-//static png_structp png_ptr = NULL;
-//static png_infop info_ptr = NULL;
-
 /**** PROTOTYPES ****/
 void usage(char *name);
 void msg_out(FILE *fpLog, int quiet, char *msg);
@@ -165,8 +178,9 @@ float get_maxval(data_type_t data_type);
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
                                double *psnr, int band);
-void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
-                               stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
+void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
+                               stats_t *inFile1_stats, stats_t *inFile2_stats,
+                               double *psnr, int band);
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
                             stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr);
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
@@ -206,6 +220,17 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
 void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
                                     int band1, int band2, double *psnr);
 void png_sequential_get_float_line(png_structp png_ptr, png_infop info_ptr, float *buf, int band);
+void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *outfile);
+void ppm_pgm_get_float_line(FILE *fp, float *buf, int row, ppm_pgm_info_t *pgm, int band_no);
+int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
+                                             int band_no, int *stats_exist,
+                                             double *min, double *max,
+                                             double *mean, double *sdev, double *rmse,
+                                             int use_mask_value, float mask_value);
+void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
+                                        int band1, int band2, double *psnr);
+void get_band_names(char *inFile, FILE *outputFP,
+                    char ***band_names, int *num_extracted_bands);
 
 int main(int argc, char **argv)
 {
@@ -233,6 +258,8 @@ int main(int argc, char **argv)
   outputFile=(char*)CALLOC(1024, sizeof(char));
 
   /* process command line */
+  // FIXME: Might want to add -band1 and -band2 flags that would allow comparing
+  // any arbitrary band in file1 to any arbitrary band in file2
   while ((c=getopt(argc,argv,"o:l:b:s:")) != EOF)
   {
     switch (c) {
@@ -378,6 +405,8 @@ int main(int argc, char **argv)
   /***** Calculate stats and PSNR *****/
   //   Can't be here unless both graphics file types were the same,
   //   so choose the input process based on just one of them.
+  char **band_names1, **band_names2;
+  char band_str1[255], band_str2[255];
   switch (type1) {
     case ASF_IMG:
       {
@@ -388,6 +417,8 @@ int main(int argc, char **argv)
         meta_parameters *md2 = NULL;
 
         // Read metadata and check for multi-bandedness
+        get_band_names(inFile1, NULL, &band_names1, &band_count1);
+        get_band_names(inFile2, NULL, &band_names2, &band_count2);
         if (inFile1 != NULL && strlen(inFile1) > 0) {
           f1 = STRDUP(inFile1);
           c = findExt(f1);
@@ -470,6 +501,14 @@ int main(int argc, char **argv)
           // Process every available band
           int band_no;
           for (band_no=0; band_no < band_count1; band_no++) {
+            strcpy(band_str1, "");
+            strcpy(band_str2, "");
+            if (band_count1 > 0) {
+              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
+              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
+            }
+            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+                           band_str1, inFile1, band_str2, inFile2);
             calc_asf_img_stats_2files(inFile1, inFile2,
                                       &inFile1_stats[band_no], &inFile2_stats[band_no],
                                       &psnr[band_no], band_no);
@@ -484,6 +523,7 @@ int main(int argc, char **argv)
         }
         else {
           // Process selected band
+          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n", inFile1, inFile2);
           calc_asf_img_stats_2files(inFile1, inFile2,
                                     inFile1_stats, inFile2_stats,
                                     psnr, band);
@@ -505,164 +545,270 @@ int main(int argc, char **argv)
       }
       break;
     case PNG:
-    {
-      png_info_t ihdr1, ihdr2;
+      {
+        png_info_t ihdr1, ihdr2;
+        int band_count1, band_count2;
 
-      // Determine number of bands and data type etc.
-      get_png_info_hdr_from_file(inFile1, &ihdr1, outputFile);
-      get_png_info_hdr_from_file(inFile2, &ihdr2, outputFile);
+        // Determine number of bands and data type etc.
+        get_png_info_hdr_from_file(inFile1, &ihdr1, outputFile);
+        get_png_info_hdr_from_file(inFile2, &ihdr2, outputFile);
+        get_band_names(inFile1, NULL, &band_names1, &band_count1);
+        get_band_names(inFile2, NULL, &band_names2, &band_count2);
 
-      if (ihdr1.data_type != ihdr2.data_type) {
-        char *s1 = data_type2str(ihdr1.data_type);
-        char *s2 = data_type2str(ihdr2.data_type);
-        sprintf(msg, "Files do not have the same data type.\n"
-            "\nFile1 has %s data.  File2 has %s data\n",
-            s1, s2);
-        FREE(s1);
-        FREE(s2);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
-      if (bandflag && !(band < ihdr1.num_bands && band < ihdr2.num_bands && band >= 0)) {
-        sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
-            "or greater, and less than the number of available bands in the file\n"
-                "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
-                "the valid band number choices.  \n"
-                "\nFile1 has %d bands.  File2 has %d bands\n",
-            ihdr1.num_bands, ihdr2.num_bands);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
-      if (!bandflag && ihdr1.num_bands != ihdr2.num_bands) {
-        sprintf(msg, "Files do not have the same number of bands.\n"
-            "Cannot compare all bands.  Consider using the -band option to\n"
-                "compare individual bands within the files.\n"
-                "\nFile1 has %d bands.  File2 has %d bands\n",
-            ihdr1.num_bands, ihdr2.num_bands);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
-
-      //////////////////////////////////////////////////////////////////////////////////////
-      // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
-      // check the results
-      if (!bandflag) {
-        // Process every available band
-        int band_no;
-        for (band_no=0; band_no < ihdr1.num_bands; band_no++) {
-          calc_png_stats_2files(inFile1, inFile2, outputFile,
-                                &inFile1_stats[band_no], &inFile2_stats[band_no],
-                                &psnr[band_no], band_no);
-          // fftMatch(shifts_t *shift, band_no) goes here
+        if (ihdr1.data_type != ihdr2.data_type) {
+          char *s1 = data_type2str(ihdr1.data_type);
+          char *s2 = data_type2str(ihdr2.data_type);
+          sprintf(msg, "Files do not have the same data type.\n"
+              "\nFile1 has %s data.  File2 has %s data\n",
+              s1, s2);
+          FREE(s1);
+          FREE(s2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
         }
-        // FIXME: Add *shift to diff_check_stats()
-        diff_check_stats(outputFile,
-                         inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
-                         ihdr1.data_type, ihdr1.num_bands);
+        if (bandflag && !(band < ihdr1.num_bands && band < ihdr2.num_bands && band >= 0)) {
+          sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
+              "or greater, and less than the number of available bands in the file\n"
+                  "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
+                  "the valid band number choices.  \n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              ihdr1.num_bands, ihdr2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (!bandflag && ihdr1.num_bands != ihdr2.num_bands) {
+          sprintf(msg, "Files do not have the same number of bands.\n"
+              "Cannot compare all bands.  Consider using the -band option to\n"
+                  "compare individual bands within the files.\n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              ihdr1.num_bands, ihdr2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
+        // check the results
+        if (!bandflag) {
+          // Process every available band
+          int band_no;
+          for (band_no=0; band_no < ihdr1.num_bands; band_no++) {
+            strcpy(band_str1, "");
+            strcpy(band_str2, "");
+            if (ihdr1.num_bands > 1) {
+              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
+              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
+            }
+            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+                          band_str1, inFile1, band_str2, inFile2);
+            calc_png_stats_2files(inFile1, inFile2, outputFile,
+                                  &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                  &psnr[band_no], band_no);
+            // fftMatch(shifts_t *shift, band_no) goes here
+          }
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                          ihdr1.data_type, ihdr1.num_bands);
+        }
+        else {
+          // Process selected band
+          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
+                        inFile1, inFile2);
+          calc_png_stats_2files(inFile1, inFile2, outputFile,
+                                inFile1_stats, inFile2_stats,
+                                psnr, band);
+          // fftMatch(shifts_t *shift, band_no) goes here
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                          strictflag, ihdr1.data_type, 1);
+        }
+        //
+        //////////////////////////////////////////////////////////////////////////////////////
       }
-      else {
-        // Process selected band
-        calc_png_stats_2files(inFile1, inFile2, outputFile,
-                              inFile1_stats, inFile2_stats,
-                              psnr, band);
-        // fftMatch(shifts_t *shift, band_no) goes here
-        // FIXME: Add *shift to diff_check_stats()
-        diff_check_stats(outputFile,
-                         inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
-                         strictflag, ihdr1.data_type, 1);
-      }
-      //
-      //////////////////////////////////////////////////////////////////////////////////////
-    }
-    case PGM:
+      break;
     case PPM:
-    {
-      ;
-    }
-    break;
+    case PGM:
+      {
+        ppm_pgm_info_t pgm1, pgm2;
+        int band_count1, band_count2;
+
+        // Determine number of bands and data type etc.
+        get_ppm_pgm_info_hdr_from_file(inFile1, &pgm1, outputFile);
+        get_ppm_pgm_info_hdr_from_file(inFile2, &pgm2, outputFile);
+        get_band_names(inFile1, NULL, &band_names1, &band_count1);
+        get_band_names(inFile2, NULL, &band_names2, &band_count2);
+
+        if (pgm1.data_type != pgm2.data_type) {
+          char *s1 = data_type2str(pgm1.data_type);
+          char *s2 = data_type2str(pgm2.data_type);
+          sprintf(msg, "Files do not have the same data type.\n"
+              "\nFile1 has %s data.  File2 has %s data\n",
+              s1, s2);
+          FREE(s1);
+          FREE(s2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (bandflag && !(band < pgm1.num_bands && band < pgm2.num_bands && band >= 0)) {
+          sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
+              "or greater, and less than the number of available bands in the file\n"
+                  "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
+                  "the valid band number choices.  \n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              pgm1.num_bands, pgm2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (!bandflag && pgm1.num_bands != pgm2.num_bands) {
+          sprintf(msg, "Files do not have the same number of bands.\n"
+              "Cannot compare all bands.  Consider using the -band option to\n"
+                  "compare individual bands within the files.\n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              pgm1.num_bands, pgm2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
+        // check the results
+        if (!bandflag) {
+          // Process every available band
+          int band_no;
+          for (band_no=0; band_no < pgm1.num_bands; band_no++) {
+            strcpy(band_str1, "");
+            strcpy(band_str2, "");
+            if (pgm1.num_bands > 1) {
+              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
+              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
+            }
+            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+                          band_str1, inFile1, band_str2, inFile2);
+            calc_ppm_pgm_stats_2files(inFile1, inFile2, outputFile,
+                                      &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                      &psnr[band_no], band_no);
+            // fftMatch(shifts_t *shift, band_no) goes here
+          }
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                          pgm1.data_type, pgm1.num_bands);
+        }
+        else {
+          // Process selected band
+          asfPrintStatus("\nCalculating statistics for\n  %s and\n  %s\n",
+                        inFile1, inFile2);
+          calc_ppm_pgm_stats_2files(inFile1, inFile2, outputFile,
+                                    inFile1_stats, inFile2_stats,
+                                    psnr, band);
+          // fftMatch(shifts_t *shift, band_no) goes here
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                          strictflag, pgm1.data_type, 1);
+        }
+        //
+        //////////////////////////////////////////////////////////////////////////////////////
+      }
+      break;
     case STD_TIFF:
     case GEO_TIFF:
-    {
-      int geotiff = (type1 == GEO_TIFF) ? 1 : 0;
-      tiff_data_t t1, t2;
-      geotiff_data_t g1, g2;
+      {
+        int geotiff = (type1 == GEO_TIFF) ? 1 : 0;
+        tiff_data_t t1, t2;
+        geotiff_data_t g1, g2;
+        int band_count1, band_count2;
 
-      // Determine number of bands and data type
-      get_tiff_info_from_file(inFile1, &t1);
-      get_tiff_info_from_file(inFile2, &t2);
-      if (t1.data_type != t2.data_type) {
-        char *s1 = data_type2str(t1.data_type);
-        char *s2 = data_type2str(t2.data_type);
-        sprintf(msg, "Files do not have the same data type.\n"
-                "\nFile1 has %s data.  File2 has %s data\n",
-                s1, s2);
-        FREE(s1);
-        FREE(s2);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
-      if (bandflag && !(band < t1.num_bands && band < t2.num_bands && band >= 0)) {
-        sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
-            "or greater, and less than the number of available bands in the file\n"
-                "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
-                "the valid band number choices.  \n"
-                "\nFile1 has %d bands.  File2 has %d bands\n",
-            t1.num_bands, t2.num_bands);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
-      if (!bandflag && t1.num_bands != t2.num_bands) {
-        sprintf(msg, "Files do not have the same number of bands.\n"
-            "Cannot compare all bands.  Consider using the -band option to\n"
-                "compare individual bands within the files.\n"
-                "\nFile1 has %d bands.  File2 has %d bands\n",
-            t1.num_bands, t2.num_bands);
-        diffErrOut(outputFile, msg);
-        asfPrintError(msg);
-      }
+        // Determine number of bands and data type
+        get_tiff_info_from_file(inFile1, &t1);
+        get_tiff_info_from_file(inFile2, &t2);
+        get_band_names(inFile1, NULL, &band_names1, &band_count1);
+        get_band_names(inFile2, NULL, &band_names2, &band_count2);
+        if (t1.data_type != t2.data_type) {
+          char *s1 = data_type2str(t1.data_type);
+          char *s2 = data_type2str(t2.data_type);
+          sprintf(msg, "Files do not have the same data type.\n"
+                  "\nFile1 has %s data.  File2 has %s data\n",
+                  s1, s2);
+          FREE(s1);
+          FREE(s2);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (bandflag && !(band < t1.num_bands && band < t2.num_bands && band >= 0)) {
+          sprintf(msg, "Invalid band number.  Band number must be 0 (first band)\n"
+              "or greater, and less than the number of available bands in the file\n"
+                  "Example:  If the files have 3 bands, then band numbers 0, 1, or 2 are\n"
+                  "the valid band number choices.  \n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              t1.num_bands, t2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
+        if (!bandflag && t1.num_bands != t2.num_bands) {
+          sprintf(msg, "Files do not have the same number of bands.\n"
+              "Cannot compare all bands.  Consider using the -band option to\n"
+                  "compare individual bands within the files.\n"
+                  "\nFile1 has %d bands.  File2 has %d bands\n",
+              t1.num_bands, t2.num_bands);
+          diffErrOut(outputFile, msg);
+          asfPrintError(msg);
+        }
 
-      //////////////////////////////////////////////////////////////////////////////////////
-      // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
-      // check the results
-      if (!bandflag) {
-        // Process every available band
-        int band_no;
-        for (band_no=0; band_no < t1.num_bands; band_no++) {
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
+        // check the results
+        if (!bandflag) {
+          // Process every available band
+          int band_no;
+          for (band_no=0; band_no < t1.num_bands; band_no++) {
+            strcpy(band_str1, "");
+            strcpy(band_str2, "");
+            if (t1.num_bands > 1) {
+              sprintf(band_str1, "Band %s in ", band_names1[band_no]);
+              sprintf(band_str2, "Band %s in ", band_names2[band_no]);
+            }
+            asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+                          band_str1, inFile1, band_str2, inFile2);
+            calc_tiff_stats_2files(inFile1, inFile2,
+                                  &inFile1_stats[band_no], &inFile2_stats[band_no],
+                                  &psnr[band_no], band_no);
+            if (geotiff) {
+              get_geotiff_keys(inFile1, &g1);
+              get_geotiff_keys(inFile2, &g2);
+              diff_check_geotiff(outputFile, &g1, &g2);
+            }
+            // fftMatch(shifts_t *shift, band_no) goes here
+          }
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
+                          t1.data_type, t1.num_bands);
+        }
+        else {
+          // Process selected band
+          asfPrintStatus("\nCalculating statistics for\n  %s%s and\n  %s%s\n",
+                        inFile1, inFile2);
           calc_tiff_stats_2files(inFile1, inFile2,
-                                 &inFile1_stats[band_no], &inFile2_stats[band_no],
-                                 &psnr[band_no], band_no);
+                                inFile1_stats, inFile2_stats,
+                                psnr, band);
           if (geotiff) {
             get_geotiff_keys(inFile1, &g1);
             get_geotiff_keys(inFile2, &g2);
             diff_check_geotiff(outputFile, &g1, &g2);
           }
           // fftMatch(shifts_t *shift, band_no) goes here
+          // FIXME: Add *shift to diff_check_stats()
+          diff_check_stats(outputFile,
+                          inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
+                          strictflag, t1.data_type, 1);
         }
-        // FIXME: Add *shift to diff_check_stats()
-        diff_check_stats(outputFile,
-                         inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
-                         t1.data_type, t1.num_bands);
+        //
+        //////////////////////////////////////////////////////////////////////////////////////
       }
-      else {
-          // Process selected band
-        calc_tiff_stats_2files(inFile1, inFile2,
-                               inFile1_stats, inFile2_stats,
-                               psnr, band);
-        if (geotiff) {
-          get_geotiff_keys(inFile1, &g1);
-          get_geotiff_keys(inFile2, &g2);
-          diff_check_geotiff(outputFile, &g1, &g2);
-        }
-        // fftMatch(shifts_t *shift, band_no) goes here
-        // FIXME: Add *shift to diff_check_stats()
-        diff_check_stats(outputFile,
-                         inFile1, inFile2, &inFile1_stats[band], &inFile2_stats[band], &psnr[band],
-                         strictflag, t1.data_type, 1);
-      }
-      //
-      //////////////////////////////////////////////////////////////////////////////////////
-    }
-    break;
+      break;
     default:
       sprintf(msg, "Unrecognized image file type found.\n");
       diffErrOut(outputFile, msg);
@@ -762,6 +908,9 @@ graphics_file_t getGraphicsFileType (char *file)
     if (magic[0] == 0xFF && magic[1] == 0xD8) {
       file_type = JPEG;
     }
+    else if (magic[0] == 'P' && (magic[1] == '4' || magic[1] == '1')) {
+      file_type = PBM;
+    }
     else if (magic[0] == 'P' && (magic[1] == '5' || magic[1] == '2')) {
       file_type = PGM;
     }
@@ -846,6 +995,9 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
       break;
     case JPEG:
       strcpy (type_str, "JPEG");
+      break;
+    case PBM:
+      strcpy (type_str, "PBM");
       break;
     case PGM:
       strcpy (type_str, "PGM");
@@ -974,10 +1126,11 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
     data2 = (float*)MALLOC(sizeof(float) * md2->general->sample_count);
     if (data1 == NULL || data2 == NULL ||
         (md1->general->data_type != md2->general->data_type)) {
-      *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+      *psnr = MISSING_PSNR;
     }
     else {
-      asfPrintStatus("\nCalculating PSNR...\n");
+      asfPrintStatus("\nCalculating PSNR between\n  Band %s in %s and\n  Band %s in %s\n",
+                    band_names1[band1], inFile1, band_names2[band2], inFile2);
       FILE *fp1 = fopen(inFile1, "rb");
       FILE *fp2 = fopen(inFile2, "rb");
       if (fp1 != NULL && fp2 != NULL) {
@@ -1022,16 +1175,16 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
           *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
         }
         else {
-          *psnr = -1;
+          *psnr = MISSING_PSNR;
         }
       }
       else {
-        *psnr = -1;
+        *psnr = MISSING_PSNR;
       }
     }
   }
   else {
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
   }
 
   // Cleanup and begone
@@ -1062,6 +1215,7 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
   stats_t *s2 = inFile2_stats;
 
   // Init stats
+  s1->stats_good = s2->stats_good = 0;
   s1->min = s2->min = 0.0;
   s1->max = s2->max = 0.0;
   s1->mean = s2->mean = 0.0;
@@ -1069,16 +1223,29 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = -1;
+  *psnr = MISSING_PSNR;
+
+/*  jpeg_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
+                                      &s1->min, &s1->max,
+                                      &s1->mean, &s1->sdev, &s1->rmse,
+                                      0, UINT8_IMAGE_DEFAULT_MASK);
+  jpeg_image_band_statistics_from_file(inFile2, outfile, band, &s2->stats_good,
+                                      &s2->min, &s2->max,
+                                      &s2->mean, &s2->sdev, &s2->rmse,
+                                      0, UINT8_IMAGE_DEFAULT_MASK);
+  jpeg_image_band_psnr_from_files(inFile1, inFile2, outfile, band, band, psnr);
+*/
 }
 
-void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
-                               stats_t *inFile1_stats, stats_t *inFile2_stats, double *psnr)
+void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
+                               stats_t *inFile1_stats, stats_t *inFile2_stats,
+                               double *psnr, int band)
 {
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
 
   // Init stats
+  s1->stats_good = s2->stats_good = 0;
   s1->min = s2->min = 0.0;
   s1->max = s2->max = 0.0;
   s1->mean = s2->mean = 0.0;
@@ -1086,7 +1253,17 @@ void calc_pgm_ppm_stats_2files(char *inFile1, char *inFile2,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = -1;
+  *psnr = MISSING_PSNR;
+
+  ppm_pgm_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
+                                          &s1->min, &s1->max,
+                                          &s1->mean, &s1->sdev, &s1->rmse,
+                                          0, UINT8_IMAGE_DEFAULT_MASK);
+  ppm_pgm_image_band_statistics_from_file(inFile2, outfile, band, &s2->stats_good,
+                                          &s2->min, &s2->max,
+                                          &s2->mean, &s2->sdev, &s2->rmse,
+                                          0, UINT8_IMAGE_DEFAULT_MASK);
+  ppm_pgm_image_band_psnr_from_files(inFile1, inFile2, outfile, band, band, psnr);
 }
 
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
@@ -1097,6 +1274,7 @@ void calc_tiff_stats_2files(char *inFile1, char *inFile2,
   stats_t *s2 = inFile2_stats;
 
   // Init stats
+  s1->stats_good = s2->stats_good = 0;
   s1->min = s2->min = 0.0;
   s1->max = s2->max = 0.0;
   s1->mean = s2->mean = 0.0;
@@ -1104,7 +1282,7 @@ void calc_tiff_stats_2files(char *inFile1, char *inFile2,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = -1;
+  *psnr = MISSING_PSNR;
 
   tiff_image_band_statistics_from_file(inFile1, band, &s1->stats_good,
                                        &s1->min, &s1->max,
@@ -1197,179 +1375,12 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
   outputFP = fopen(outputFile, "wa");
 
   // Get or produce band names for intelligent output...
-  char type_str[255];
-  graphics_file_t type = getGraphicsFileType(inFile1);
-  graphicsFileType_toStr(type, type_str);
   char **band_names1 = NULL;
   char **band_names2 = NULL;
-  if (type == ASF_IMG) {
-    // Grab band names from the metadata
-    meta_parameters *md1, *md2;
-    int band_count1=1, band_count2=1;
-    char *f, *c;
-    char inFile1_meta[1024], inFile2_meta[1024];
-    if (inFile1 != NULL && strlen(inFile1) > 0) {
-      f = STRDUP(inFile1);
-      c = findExt(f);
-      *c = '\0';
-      sprintf(inFile1_meta, "%s.meta", f);
-      if (fileExists(inFile1_meta)) {
-        md1 = meta_read(inFile1_meta);
-      }
-      FREE(f);
-    }
-    if (inFile2 != NULL && strlen(inFile2) > 0) {
-      f = STRDUP(inFile2);
-      c = findExt(f);
-      *c = '\0';
-      sprintf(inFile2_meta, "%s.meta", f);
-      if (fileExists(inFile2_meta)) {
-        md2 = meta_read(inFile2_meta);
-      }
-      FREE(f);
-    }
-    band_count1 = (md1 != NULL) ? md1->general->band_count : 1;
-    band_count2 = (md2 != NULL) ? md2->general->band_count : 1;
-
-    if (band_count1 > 0 && md1 != NULL) {
-      band_names1 = extract_band_names(md1->general->bands, md1->general->band_count);
-    }
-    if (band_count2 > 0 && md2 != NULL) {
-      band_names2 = extract_band_names(md2->general->bands, md2->general->band_count);
-    }
-  }
-  else {
-    // Other file types...
-    //
-    // Allocate memory for the band names
-    band_names1 = (char**)MALLOC(MAX_BANDS*sizeof(char*));
-    if (band_names1 != NULL) {
-      int i;
-      for (i=0; i<MAX_BANDS; i++) {
-        band_names1[i] = (char*)CALLOC(64, sizeof(char));
-        if (band_names1[i] == NULL) {
-          sprintf(msg, "Cannot allocate memory for band name array.\n");
-          fprintf(outputFP, msg);
-          asfPrintError(msg);
-        }
-      }
-    }
-    else {
-      sprintf(msg, "Cannot allocate memory for band name array.\n");
-      fprintf(outputFP, msg);
-      asfPrintError(msg);
-    }
-    band_names2 = (char**)MALLOC(MAX_BANDS*sizeof(char*));
-    if (band_names2 != NULL) {
-      int i;
-      for (i=0; i<MAX_BANDS; i++) {
-        band_names2[i] = (char*)CALLOC(64, sizeof(char));
-        if (band_names2[i] == NULL) {
-          sprintf(msg, "Cannot allocate memory for band name array.\n");
-          fprintf(outputFP, msg);
-          asfPrintError(msg);
-        }
-      }
-    }
-    else {
-      sprintf(msg, "Cannot allocate memory for band name array.\n");
-      fprintf(outputFP, msg);
-      asfPrintError(msg);
-    }
-    if (type == GEO_TIFF) {
-      // If band names are embedded in the GeoTIFF, then grab them.  Otherwise
-      // assign numeric band names
-      geotiff_data_t g1, g2;
-      int *empty = (int*)CALLOC(MAX_BANDS, sizeof(int));
-      char *band_str1 = (char*)CALLOC(25, sizeof(char));
-      char *band_str2 = (char*)CALLOC(25, sizeof(char));
-      if (band_str1 == NULL || band_str2 == NULL) {
-        sprintf(msg, "Cannot allocate memory for band name string.\n");
-        fprintf(outputFP, msg);
-        asfPrintError(msg);
-      }
-
-      get_geotiff_keys(inFile1, &g1);
-      if (g1.gtif_data_exists && g1.GTcitation != NULL && strlen(g1.GTcitation) > 0) {
-        char *tmp_citation = STRDUP(g1.GTcitation);
-        get_bands_from_citation(&num_extracted_bands1, &band_str1, empty, tmp_citation);
-        FREE(tmp_citation);
-      }
-      else if (g1.gtif_data_exists && g1.PCScitation != NULL && strlen(g1.PCScitation) > 0) {
-        char *tmp_citation = STRDUP(g1.PCScitation);
-        get_bands_from_citation(&num_extracted_bands1, &band_str1, empty, tmp_citation);
-        FREE(tmp_citation);
-      }
-      if (num_extracted_bands1 <= 0) {
-        // Could not find band strings in the citations, so assign numeric band IDs
-        int i;
-        for (i=0; i<MAX_BANDS; i++) {
-          sprintf(band_names1[i], "%02d", i);
-        }
-      }
-      else {
-        // Extract the band names from the band names string
-        //
-        // extract_band_names() allocated memory, so better free it first...
-        int i;
-        for (i=0; i<MAX_BANDS; i++) {
-          FREE(band_names1[i]);
-        }
-        FREE(band_names1);
-        band_names1 = extract_band_names(band_str1, num_extracted_bands1);
-      }
-
-      get_geotiff_keys(inFile2, &g2);
-      if (g2.gtif_data_exists && g2.GTcitation != NULL && strlen(g2.GTcitation) > 0) {
-        char *tmp_citation = STRDUP(g2.GTcitation);
-        get_bands_from_citation(&num_extracted_bands2, &band_str2, empty, tmp_citation);
-        FREE(tmp_citation);
-      }
-      else if (g2.gtif_data_exists && g2.PCScitation != NULL && strlen(g2.PCScitation) > 0) {
-        char *tmp_citation = STRDUP(g2.PCScitation);
-        get_bands_from_citation(&num_extracted_bands2, &band_str2, empty, tmp_citation);
-        FREE(tmp_citation);
-      }
-      if (num_extracted_bands2 <= 0) {
-        // Could not find band strings in the citations, so assign numeric band IDs
-        int i;
-        for (i=0; i<MAX_BANDS; i++) {
-          sprintf(band_names2[i], "%02d", i);
-        }
-      }
-      else {
-        // Extract the band names from the band names string
-        //
-        // extract_band_names() allocated memory, so better free it first...
-        int i;
-        for (i=0; i<MAX_BANDS; i++) {
-          FREE(band_names2[i]);
-        }
-        FREE(band_names2);
-        band_names2 = extract_band_names(band_str2, num_extracted_bands2);
-      }
-
-      FREE(empty);
-      FREE(band_str1);
-      FREE(band_str2);
-      if (g1.GTcitation)FREE(g1.GTcitation);
-      if (g1.PCScitation)FREE(g1.PCScitation);
-      if (g2.GTcitation)FREE(g2.GTcitation);
-      if (g2.PCScitation)FREE(g2.PCScitation);
-    }
-    else {
-      // For non ASF IMG and GeoTIFF images, just use numeric band id's
-      int i;
-      for (i=0; i<MAX_BANDS; i++) {
-        sprintf(band_names1[i], "%02d", i);
-        sprintf(band_names2[i], "%02d", i);
-      }
-    }
-  }
+  get_band_names(inFile1, outputFP, &band_names1, &num_extracted_bands1);
+  get_band_names(inFile2, outputFP, &band_names2, &num_extracted_bands2);
 
   // Check each band for differences
-//  tiff_data_t t;
-//  get_tiff_info_from_file(inFile1, &t);
   char band_str1[64];
   char band_str2[64];
   for (band=0; band<num_bands; band++) {
@@ -1424,8 +1435,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
         strcpy(band_str1, "");
         strcpy(band_str2, "");
       }
-      sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s\nresulted in differences their statistics:\n\n",
-              band_str1, inFile2, band_str2, inFile1);
+      sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s:\n\n",
+              band_str1, inFile1, band_str2, inFile2);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
@@ -1453,9 +1464,15 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
-              psnr[band] < psnr_tol ? "FAIL" : "PASS",
-              psnr[band], psnr_tol);
+      if (psnr[band] != MISSING_PSNR) {
+        sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+                psnr[band] < psnr_tol ? "FAIL" : "PASS",
+                psnr[band], psnr_tol);
+      }
+      else {
+        sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
+                psnr_tol);
+      }
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
@@ -1480,8 +1497,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
         strcpy(band_str1, "");
         strcpy(band_str2, "");
       }
-      sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s\nresulted in differences their statistics:\n\n",
-              band_str1, inFile2, band_str2, inFile1);
+      sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s:\n\n",
+              band_str1, inFile1, band_str2, inFile2);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
@@ -1493,13 +1510,19 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
 
       sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               sdev_diff > sdev_tol ? "FAIL" : "PASS",
-              stats1[band].sdev, stats2[band].sdev, sdev_tol, SDEV_DIFF_TOL);
+              stats1[band].sdev, stats2[band].sdev, sdev_tol/6.0, SDEV_DIFF_TOL);
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
-              psnr[band] < psnr_tol ? "FAIL" : "PASS",
-              psnr[band], psnr_tol);
+      if (psnr[band] != MISSING_PSNR) {
+        sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
+                psnr[band] < psnr_tol ? "FAIL" : "PASS",
+                psnr[band], psnr_tol);
+      }
+      else {
+        sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
+                psnr_tol);
+      }
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
@@ -1529,13 +1552,21 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, "\n-----------------------------------------------\n");
       asfPrintStatus("\n-----------------------------------------------\n");
 
+      if (num_bands > 1) {
+        sprintf(band_str1, "Band %s in ", band_names1[band]);
+        sprintf(band_str2, "Band %s in ", band_names2[band]);
+      }
+      else {
+        strcpy(band_str1, "");
+        strcpy(band_str2, "");
+      }
       if (!stats1[band].stats_good) {
-        sprintf(msg, "FAIL: %s file statistics not found.\n", inFile1);
+        sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str1, inFile1);
         fprintf(outputFP, msg);
         asfPrintStatus(msg);
       }
       if (!stats2[band].stats_good) {
-        sprintf(msg, "FAIL: %s file statistics not found.\n", inFile2);
+        sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str2, inFile2);
         fprintf(outputFP, msg);
         asfPrintStatus(msg);
       }
@@ -2569,7 +2600,7 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
       t1.width == 0)
   {
     asfPrintWarning("Missing TIFF header values in %s\n", inFile1);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
   get_tiff_info_from_file(inFile2, &t2);
@@ -2583,7 +2614,7 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
       t2.width == 0)
   {
     asfPrintWarning("Missing TIFF header values in %s\n", inFile2);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
 
@@ -2595,11 +2626,14 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   long width = MIN(t1.width, t2.width);
   long pixel_count = 0;
   float max_val;
+  char **band_names1, **band_names2;
+  int band_count1, band_count2;
+
   if (band1 < 0 || band1 > t1.num_bands - 1 ||
       band2 < 0 || band2 > t2.num_bands - 1) {
     asfPrintWarning("Invalid band number for file1 (%d v. %d) or file2 (%d v. %d)\n",
                     band1, t1.num_bands, band2, t2.num_bands);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
   if (t1.height != t2.height) {
@@ -2615,22 +2649,26 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
 
   if (t1.data_type != t2.data_type) {
     asfPrintWarning("TIFF files have different data types.\n");
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
-  asfPrintStatus("\nCalculating PSNR...\n");
+
+  get_band_names(inFile1, NULL, &band_names1, &band_count1);
+  get_band_names(inFile2, NULL, &band_names2, &band_count2);
+  asfPrintStatus("\nCalculating PSNR between\n  Band %s in %s and\n  Band %s in %s\n",
+                 band_names1[band1], inFile1, band_names2[band2], inFile2);
 
   TIFF *tif1 = XTIFFOpen(inFile1, "rb");
   if (tif1 == NULL) {
     asfPrintWarning("Cannot open %s\n", inFile1);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   scanlineSize1 = TIFFScanlineSize(tif1);
   if (scanlineSize1 <= 0) {
     asfPrintWarning("Invalid scanline size (%d)\n", scanlineSize1);
     if (tif1) XTIFFClose(tif1);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   if (t1.num_bands > 1 &&
@@ -2639,20 +2677,20 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   {
     asfPrintWarning("Invalid planar configuration in %s\n", inFile1);
     if (tif1) XTIFFClose(tif1);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   TIFF *tif2 = XTIFFOpen(inFile2, "rb");
   if (tif2 == NULL) {
     asfPrintWarning("Cannot open %s\n", inFile2);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   scanlineSize2 = TIFFScanlineSize(tif2);
   if (scanlineSize2 <= 0) {
     asfPrintWarning("Invalid scanline size (%d)\n", scanlineSize2);
     if (tif2) XTIFFClose(tif2);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   if (t2.num_bands > 1 &&
@@ -2661,14 +2699,14 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   {
     asfPrintWarning("Invalid planar configuration in %s\n", inFile2);
     if (tif2) XTIFFClose(tif2);
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     return;
   }
   float *buf1 = (float*)CALLOC(t1.width, sizeof(float));
   float *buf2 = (float*)CALLOC(t2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for TIFF data buffers.\n");
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
     return;
@@ -2693,7 +2731,7 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
     *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
   }
   else {
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
   }
 
   XTIFFClose(tif1);
@@ -3055,6 +3093,7 @@ void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
   stats_t *s2 = inFile2_stats;
 
   // Init stats
+  s1->stats_good = s2->stats_good = 0;
   s1->min = s2->min = 0.0;
   s1->max = s2->max = 0.0;
   s1->mean = s2->mean = 0.0;
@@ -3062,7 +3101,7 @@ void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = -1;
+  *psnr = MISSING_PSNR;
 
   png_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
                                       &s1->min, &s1->max,
@@ -3283,7 +3322,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot read PNG file header in file1\n  %s\n", inFile1);
     if (outputFP) fprintf(outputFP, msg);
     FCLOSE(outputFP);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
   get_png_info_hdr_from_file(inFile2, &ihdr2, outfile);
@@ -3301,7 +3340,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot read PNG file header in file2\n  %s\n", inFile2);
     if (outputFP) fprintf(outputFP, msg);
     FCLOSE(outputFP);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
 
@@ -3407,7 +3446,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     FCLOSE(pngFP1);
     FCLOSE(pngFP2);
     FCLOSE(outputFP);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
   if (ihdr1.height != ihdr2.height) {
@@ -3430,17 +3469,21 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     FCLOSE(pngFP1);
     FCLOSE(pngFP2);
     FCLOSE(outputFP);
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
     return;
   }
 
-
-  asfPrintStatus("\nCalculating PSNR...\n");
+  char **band_names1, **band_names2;
+  int band_count1, band_count2;
+  get_band_names(inFile1, NULL, &band_names1, &band_count1);
+  get_band_names(inFile2, NULL, &band_names2, &band_count2);
+  asfPrintStatus("\nCalculating PSNR between\n  Band %s in %s and\n  Band %s in %s\n",
+                 band_names1[band1], inFile1, band_names2[band2], inFile2);
   float *buf1 = (float*)CALLOC(ihdr1.width, sizeof(float));
   float *buf2 = (float*)CALLOC(ihdr2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for PNG data buffers.\n");
-    *psnr = -1; // Since PSNR is always zero or positive, this value means 'invalid PSNR'
+    *psnr = MISSING_PSNR;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
     if (png_ptr1) png_destroy_read_struct(&png_ptr1, &info_ptr1, NULL);
@@ -3471,7 +3514,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
   }
   else {
-    *psnr = -1;
+    *psnr = MISSING_PSNR;
   }
 
   if (png_ptr1) png_destroy_read_struct(&png_ptr1, &info_ptr1, NULL);
@@ -3520,12 +3563,432 @@ void png_sequential_get_float_line(png_structp png_ptr, png_infop info_ptr, floa
   }
 }
 
+void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *outfile)
+{
+  int ch, i;
+  unsigned char tmp[1024]; // For reading width, height, max_val only
+  int max_chars   = 1024; // Length of tmp for loop termination when reading sequential uchars
+  FILE *fp = (FILE*)FOPEN(inFile, "rb");
 
+  strcpy(pgm->magic,"");
+  pgm->width=MISSING_PPM_PGM_DATA;
+  pgm->height=MISSING_PPM_PGM_DATA;
+  pgm->max_val=MISSING_PPM_PGM_DATA;
+  pgm->ascii_data=1; // Default to unsupported type ...ASCII data separated by whitespace
+  pgm->img_offset = MISSING_PSNR; // Will result in a failed fseek()
+  pgm->bit_depth=0;
+  pgm->data_type=0;
+  pgm->num_bands=0;
 
+  //// Read magic number that identifies
+  FREAD(pgm->magic, sizeof(unsigned char), 2, fp);
+  if (pgm->magic[0] == 'P' && (pgm->magic[1] == '5' || pgm->magic[1] == '6'))
+  {
+    pgm->ascii_data = 0;
+    pgm->img_offset = 2; // Just past magic number
+  }
+  else {
+    // Shouldn't be possible to be here, but what the hey...
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header.\n");
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
 
+  //// Determine number of channels (3 for rgb, 1 for gray)
+  if (pgm->magic[1] == '6') {
+    pgm->num_bands = 3; // RGB PPM file
+  }
+  else if (pgm->magic[1] == '5') {
+    pgm->num_bands = 1; // Grayscale PGM file
+  }
+  else {
+    // Shouldn't be able to reach this code
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header...\n");
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
 
+  //// Read image width (in pixels)
+  // Move past white space
+  ch = fgetc(fp);
+  pgm->img_offset++;
+  while (isspace(ch) && ch != EOF) {
+    ch = fgetc(fp); // Move past white space
+    pgm->img_offset++;
+  }
+  i = 0;
+  while (!isspace(ch) && i < max_chars && ch != EOF) {
+    tmp[i++] = ch;
+    ch = fgetc(fp);
+    pgm->img_offset++;
+  }
+  tmp[i]='\0';
+  if (i == max_chars || ch == EOF) {
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
+            "width");
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
+  pgm->width = atoi(tmp);
 
+  //// Read image height (in rows)
+  while (isspace(ch) && ch != EOF) {
+    ch = fgetc(fp); // Move past white space
+    pgm->img_offset++;
+  }
+  i = 0;
+  while (!isspace(ch) && i < max_chars && ch != EOF) {
+    tmp[i++] = ch;
+    ch = fgetc(fp);
+    pgm->img_offset++;
+  }
+  tmp[i]='\0';
+  if (i == max_chars || ch == EOF) {
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
+            "height");
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
+  pgm->height = atoi(tmp);
 
+  //// Read max-allowed pixel value
+  while (isspace(ch) && ch != EOF) {
+    ch = fgetc(fp); // Move past white space
+    pgm->img_offset++;
+  }
+  i = 0;
+  while (!isspace(ch) && i < max_chars && ch != EOF) {
+    tmp[i++] = ch;
+    ch = fgetc(fp);
+    pgm->img_offset++;
+  }
+  tmp[i]='\0';
+  if (i == max_chars || ch == EOF) {
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
+            "max. pixel value");
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
+  pgm->max_val = atoi(tmp);
+
+  //// Move past white space to beginning of image data to set pgm->img_offset for an fseek()
+  while (isspace(ch) && ch != EOF) {
+    ch = fgetc(fp); // Move past white space
+    pgm->img_offset++;
+  }
+  pgm->img_offset--;
+  if (ch == EOF) {
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "No image data found in PNG file\n  %s\n",
+            inFile);
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
+
+  //// Determine byte-boundary bit-depth and ASF data type for holding
+  //// the PPM/PGM file's image data
+  if (powf(2.0, 32.0) > pgm->max_val) {
+    pgm->bit_depth = 8;
+    pgm->data_type = BYTE;
+  }
+  else if (powf(2.0, 16.0) > pgm->max_val) {
+    pgm->bit_depth = 16;
+    pgm->data_type = INTEGER16;
+  }
+  else if (powf(2.0, 8.0) > pgm->max_val) {
+    pgm->bit_depth = 32;
+    pgm->data_type = INTEGER32;
+  }
+  else {
+    FILE *outFP=(FILE*)FOPEN(outfile,"wa");
+    char msg[1024];
+    sprintf(msg, "Invalid max. pixel value found in PNG file (%d)\n  %s\n",
+            pgm->max_val,
+            inFile);
+    fprintf(outFP, msg);
+    FCLOSE(outFP);
+    FCLOSE(fp);
+    asfPrintError(msg);
+  }
+
+  FCLOSE(fp);
+}
+
+void get_band_names(char *inFile, FILE *outputFP,
+                    char ***band_names, int *num_extracted_bands)
+{
+  char msg[1024];
+  char type_str[255];
+  graphics_file_t type = getGraphicsFileType(inFile);
+  graphicsFileType_toStr(type, type_str);
+  if (type == ASF_IMG) {
+    // Grab band names from the metadata
+    meta_parameters *md;
+    int band_count=1;
+    char *f, *c;
+    char inFile_meta[1024];
+    if (inFile != NULL && strlen(inFile) > 0) {
+      f = STRDUP(inFile);
+      c = findExt(f);
+      *c = '\0';
+      sprintf(inFile_meta, "%s.meta", f);
+      if (fileExists(inFile_meta)) {
+        md = meta_read(inFile_meta);
+      }
+      FREE(f);
+    }
+    band_count = (md != NULL) ? md->general->band_count : 1;
+
+    if (band_count > 0 && md != NULL) {
+      *band_names = extract_band_names(md->general->bands, md->general->band_count);
+    }
+  }
+  else {
+    // Other file types...
+    //
+    // Allocate memory for the band names
+    *band_names = (char**)MALLOC(MAX_BANDS*sizeof(char*));
+    if (*band_names != NULL) {
+      int i;
+      for (i=0; i<MAX_BANDS; i++) {
+        (*band_names)[i] = (char*)CALLOC(64, sizeof(char));
+        if ((*band_names)[i] == NULL) {
+          sprintf(msg, "Cannot allocate memory for band name array.\n");
+          if (outputFP != NULL) fprintf(outputFP, msg);
+          asfPrintError(msg);
+        }
+      }
+    }
+    else {
+      sprintf(msg, "Cannot allocate memory for band name array.\n");
+      if (outputFP != NULL) fprintf(outputFP, msg);
+      asfPrintError(msg);
+    }
+
+    if (type == GEO_TIFF) {
+      // If band names are embedded in the GeoTIFF, then grab them.  Otherwise
+      // assign numeric band names
+      geotiff_data_t g;
+      int *empty = (int*)CALLOC(MAX_BANDS, sizeof(int));
+      char *band_str = (char*)CALLOC(25, sizeof(char));
+      if (band_str == NULL) {
+        sprintf(msg, "Cannot allocate memory for band name string.\n");
+        if (outputFP != NULL) fprintf(outputFP, msg);
+        asfPrintError(msg);
+      }
+
+      get_geotiff_keys(inFile, &g);
+      if (g.gtif_data_exists && g.GTcitation != NULL && strlen(g.GTcitation) > 0) {
+        char *tmp_citation = STRDUP(g.GTcitation);
+        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation);
+        FREE(tmp_citation);
+      }
+      else if (g.gtif_data_exists && g.PCScitation != NULL && strlen(g.PCScitation) > 0) {
+        char *tmp_citation = STRDUP(g.PCScitation);
+        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation);
+        FREE(tmp_citation);
+      }
+      if (*num_extracted_bands <= 0) {
+        // Could not find band strings in the citations, so assign numeric band IDs
+        int i;
+        for (i=0; i<MAX_BANDS; i++) {
+          sprintf((*band_names)[i], "%02d", i);
+        }
+      }
+      else {
+        // Extract the band names from the band names string
+        //
+        // extract_band_names() allocated memory, so better free it first...
+        int i;
+        for (i=0; i<MAX_BANDS; i++) {
+          FREE((*band_names)[i]);
+        }
+        FREE(*band_names);
+        *band_names = extract_band_names(band_str, *num_extracted_bands);
+      }
+
+      FREE(empty);
+      FREE(band_str);
+      if (g.GTcitation)FREE(g.GTcitation);
+      if (g.PCScitation)FREE(g.PCScitation);
+    }
+    else {
+      // For non ASF IMG and GeoTIFF images, just use numeric band id's
+      int i;
+      for (i=0; i<MAX_BANDS; i++) {
+        sprintf((*band_names)[i], "%02d", i);
+      }
+    }
+  }
+}
+
+void ppm_pgm_get_float_line(FILE *fp, float *buf, int row, ppm_pgm_info_t *pgm, int band_no)
+{
+  if (band_no < 0 || band_no > pgm->num_bands - 1) {
+    asfPrintError("Invalid band number (%d).  Valid: 0 through %d (only)\n",
+                  band_no, pgm->num_bands - 1);
+  }
+  unsigned char *pgm_buf = (unsigned char*)MALLOC(pgm->num_bands * pgm->width * sizeof(unsigned char));
+  if (pgm_buf == NULL) {
+    asfPrintError("Cannot allocate memory for PPM/PGM scanline buffer\n");
+  }
+
+  FREAD(pgm_buf, sizeof(unsigned char), pgm->width * pgm->num_bands, fp);
+
+  int col;
+  for (col=0; col<pgm->width; col++) {
+    buf[col] = (float)(((unsigned char*)pgm_buf)[(col*pgm->num_bands)+band_no]);
+  }
+  if (pgm_buf)FREE(pgm_buf);
+}
+
+int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
+                                             int band_no, int *stats_exist,
+                                             double *min, double *max,
+                                             double *mean, double *sdev, double *rmse,
+                                             int use_mask_value, float mask_value)
+{
+  ppm_pgm_info_t pgm;
+
+  *stats_exist = 1; // Innocent until presumed guilty...
+  get_ppm_pgm_info_hdr_from_file(inFile, &pgm, outfile);
+  if (pgm.magic == NULL || strlen(pgm.magic) == 0 ||
+      pgm.width <= 0 ||
+      pgm.height <= 0 ||
+      pgm.max_val <= 0 ||
+      pgm.img_offset < 0 ||
+      pgm.bit_depth != 8 ||
+      pgm.data_type != BYTE ||
+      pgm.num_bands <= 0)
+  {
+    *stats_exist = 0;
+    return 1;
+  }
+
+  // Minimum and maximum sample values as integers.
+  double fmin = FLT_MAX;
+  double fmax = -FLT_MAX;
+  double cs; // Current sample value
+
+  *mean = 0.0;
+  double s = 0.0;
+
+  uint32 sample_count = 0;      // Samples considered so far.
+  uint32 ii, jj;
+  FILE *fp = FOPEN(inFile, "rb");
+  if (fp == NULL) {
+    *stats_exist = 0;
+    return 1;
+  }
+  float *buf = (float*)MALLOC(pgm.width * sizeof(float));
+  if (buf == NULL) {
+    *stats_exist = 0;
+    return 1;
+  }
+
+  // If there is a mask value we are supposed to ignore,
+  fseek(fp, (long)pgm.img_offset, SEEK_SET);
+  if ( use_mask_value ) {
+    // iterate over all rows in the PPM or PGM file
+    for ( ii = 0; ii < pgm.height; ii++ )
+    {
+      asfPercentMeter((double)ii/(double)pgm.height);
+      ppm_pgm_get_float_line(fp, buf, ii, &pgm, band_no);
+      for (jj = 0 ; jj < pgm.width; jj++ ) {
+        // iterate over each pixel sample in the scanline
+        cs = buf[jj];
+        if ( !isnan(mask_value) && (gsl_fcmp (cs, mask_value, 0.00000000001) == 0 ) ) {
+          continue;
+        }
+        if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
+        if ( G_UNLIKELY (cs > fmax) ) { fmax = cs; }
+        double old_mean = *mean;
+        *mean += (cs - *mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - *mean);
+        sample_count++;
+      }
+    }
+    asfPercentMeter(1.0);
+  }
+  else {
+    // There is no mask value to ignore, so we do the same as the
+    // above loop, but without the possible continue statement.
+    for ( ii = 0; ii < pgm.height; ii++ )
+    {
+      asfPercentMeter((double)ii/(double)pgm.height);
+      ppm_pgm_get_float_line(fp, buf, ii, &pgm, band_no);
+      for (jj = 0 ; jj < pgm.width; jj++ ) {
+        // iterate over each pixel sample in the scanline
+        cs = buf[jj];
+        if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
+        if ( G_UNLIKELY (cs > fmax) ) { fmax = cs; }
+        double old_mean = *mean;
+        *mean += (cs - *mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - *mean);
+        sample_count++;
+      }
+    }
+    asfPercentMeter(1.0);
+  }
+
+  // Verify the new extrema have been found.
+  //if (fmin == FLT_MAX || fmax == -FLT_MAX)
+  if (gsl_fcmp (fmin, FLT_MAX, 0.00000000001) == 0 ||
+      gsl_fcmp (fmax, -FLT_MAX, 0.00000000001) == 0)
+  {
+    if (buf) free(buf);
+    if (fp) FCLOSE(fp);
+    *stats_exist = 0;
+    return 1;
+  }
+
+  *min = fmin;
+  *max = fmax;
+  *sdev = sqrt (s / (sample_count - 1));
+  *rmse = *sdev; // This assumes the sample count is large enough to ensure that the sample standard
+                 // deviation is very very similar to the population standard deviation.
+
+  // The new extrema had better be in the range supported range
+  if (fabs(*mean) > FLT_MAX || fabs(*sdev) > FLT_MAX)
+  {
+    if (buf) free(buf);
+    if (fp) FCLOSE(fp);
+    *stats_exist = 0;
+    return 1;
+  }
+
+  if (buf) free(buf);
+  if (fp) FCLOSE(fp);
+  return 0;
+}
+
+void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
+                                        int band1, int band2, double *psnr)
+{
+}
 
 
 
