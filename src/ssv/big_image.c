@@ -621,6 +621,10 @@ static int handle_keypress(GdkEventKey *event)
             crosshair_samp=samp_max;
         }
         update_pixel_info();
+    } else if (event->keyval == GDK_n) {
+        // n: open a new file
+        new_file();
+        return TRUE;
     } else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified

@@ -3,12 +3,24 @@
 double avg, stddev;
 double stat_max, stat_min;
 int hist[256];
-int stats_calced = FALSE;
+
+// whether the stats have actually been calculated in the background thread
+int stats_calced = FALSE;    
+// whether the calculated stats have been applied to the gui's stats_label, etc
+int stats_generated = FALSE;
 
 static void fill_stats_label()
 {
     char s[1024];
     strcpy(s, "");
+
+    // y = m*x + b
+    double m = 255.0/(g_max-g_min);
+    double b = -g_min*255.0/(g_max-g_min);
+
+    // we will take charge of displaying the sign
+    char c = b>0 ? '+' : '-';
+    b = fabs(b);
 
     sprintf(&s[strlen(s)],
         "Average: %.3f\n"
@@ -16,10 +28,9 @@ static void fill_stats_label()
         "Min Value: %.2f\n"
         "Max Value: %.2f\n"
         "Mapping Fn for pixels:\n"
-        "  Y = %.3f * X + %.3f\n\n",
-        avg, stddev, stat_min, stat_max,
-        255.0/(g_max-g_min), -g_min*255.0/(g_max-g_min));
-    
+        "  Y = %.3f * X %c %.3f",
+        avg, stddev, stat_min, stat_max, m, c, b);
+
     put_string_to_label("stats_label", s);
 }
 
@@ -28,7 +39,7 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
-static void calc_stats_thread(gpointer user_data)
+void calc_stats_thread(gpointer user_data)
 {
     int i, j;
     int n_nodata=0;
@@ -112,24 +123,50 @@ void calc_image_stats()
     g_assert(!err);
 }
 
-int fill_stats()
+static void pop_hist()
 {
-    // stats may not have been fully calculated yet...
-    if (!stats_calced) {
-        // it usually doesn't take that long...
-        // wait a sec and try it again
-        g_usleep(500000);
-        if (!stats_calced) {
-            // tell the user to try again later.
-            put_string_to_label("stats_label", "Calculating...");
-            return FALSE;
+    int i,j;
+
+    int bin_max = 0;
+    for (i=0; i<256; ++i) {
+        if (hist[i] > bin_max) bin_max = hist[i];
+    }
+
+    const int w = 200;
+    unsigned char *histogram_data = MALLOC(sizeof(unsigned char)*256*w*4);
+    for (i=0; i<256; ++i) {
+        int l = (int)((double)hist[i] / (double)bin_max * (double)w);
+        for (j=0; j<l*4; j += 4) {
+            histogram_data[j+i*w*4] = (unsigned char)0;
+            histogram_data[j+i*w*4+1] = (unsigned char)0;
+            histogram_data[j+i*w*4+2] = (unsigned char)0;
+            histogram_data[j+i*w*4+3] = (unsigned char)255; // alpha
+        }
+        for (j=l*4; j<w*4; j+=4) {
+            histogram_data[j+i*w*4] = (unsigned char)0;
+            histogram_data[j+i*w*4+1] = (unsigned char)0;
+            histogram_data[j+i*w*4+2] = (unsigned char)0;
+            histogram_data[j+i*w*4+3] = (unsigned char)0;   // alpha
         }
     }
 
-    int i, j;
-    fill_stats_label();
+    GdkPixbuf *pb = gdk_pixbuf_new_from_data(histogram_data,
+        GDK_COLORSPACE_RGB, TRUE, 8, w, 256, w*4, destroy_pb_data, NULL);
 
+    GtkWidget *img = get_widget_checked("histogram_image");
+
+    GdkPixbuf *old_pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
+    g_object_unref(old_pb);
+
+    gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+
+}
+
+int fill_stats()
+{
     {
+        int i, j;
+
         const int w = 12; // width of the little "scale" image
         unsigned char *histogram_scale_data = MALLOC(sizeof(unsigned char)*256*w*3);
         for (i=0; i<256; ++i) {
@@ -142,40 +179,33 @@ int fill_stats()
             GDK_COLORSPACE_RGB, FALSE, 8, w, 256, w*3, destroy_pb_data, NULL);
 
         GtkWidget *img = get_widget_checked("histogram_scale_image");
+
+        GdkPixbuf *old_pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
+        g_object_unref(old_pb);
+
         gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     }
 
-    int bin_max = 0;
-    for (i=0; i<256; ++i) {
-        //printf("hist[%d] = %d\n", i, hist[i]);
-        if (hist[i] > bin_max) bin_max = hist[i];
-    }
+    // stats may not have been fully calculated yet...
+    if (!stats_calced) {
+        // it usually doesn't take that long...
+        // wait a sec and try it again
+        g_usleep(500000);
+        if (!stats_calced) {
+            // tell the user to try again later.
+            put_string_to_label("stats_label", "");
 
-    {
-        const int w = 200;
-        unsigned char *histogram_data = MALLOC(sizeof(unsigned char)*256*w*4);
-        for (i=0; i<256; ++i) {
-            int l = (int)((double)hist[i] / (double)bin_max * (double)w);
-            for (j=0; j<l*4; j += 4) {
-                histogram_data[j+i*w*4] = (unsigned char)0;
-                histogram_data[j+i*w*4+1] = (unsigned char)0;
-                histogram_data[j+i*w*4+2] = (unsigned char)0;
-                histogram_data[j+i*w*4+3] = (unsigned char)255; // alpha
-            }
-            for (j=l*4; j<w*4; j+=4) {
-                histogram_data[j+i*w*4] = (unsigned char)0;
-                histogram_data[j+i*w*4+1] = (unsigned char)0;
-                histogram_data[j+i*w*4+2] = (unsigned char)0;
-                histogram_data[j+i*w*4+3] = (unsigned char)0;   // alpha
-            }
+            int i;
+            for (i=0; i<256; ++i)
+                hist[i] = 0;
+            pop_hist();
+
+            return FALSE;
         }
-
-        GdkPixbuf *pb = gdk_pixbuf_new_from_data(histogram_data,
-            GDK_COLORSPACE_RGB, TRUE, 8, w, 256, w*4, destroy_pb_data, NULL);
-
-        GtkWidget *img = get_widget_checked("histogram_image");
-        gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     }
+
+    fill_stats_label();
+    pop_hist();
 
     return TRUE;
 }
@@ -184,10 +214,9 @@ SIGNAL_CALLBACK int
 on_change_current_page(GtkNotebook *w, GtkNotebookPage *p, guint page_num,
                        gpointer user_data)
 {
-    static int generated = FALSE;
-    if (page_num == 1 && !generated) {
+    if (page_num == 1 && !stats_generated) {
         if (fill_stats())
-            generated = TRUE;
+            stats_generated = TRUE;
     }
     return TRUE;
 }

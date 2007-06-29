@@ -1,6 +1,8 @@
 #ifndef __SV_H
 #define __SV_H
 
+#define VERSION "1.1"
+
 #define _GNU_SOURCE
 
 #include <stdlib.h>
@@ -71,6 +73,7 @@ int calc_scaled_pixel_value(float val);
 
 /* small_image.c */
 void fill_small(void);
+void fill_small_force_reload(void);
 
 /* meta.c */
 char * escapify(const char * s);
@@ -79,6 +82,8 @@ void open_mdv(void);
 
 /* stats.c */
 void calc_image_stats(void);
+int fill_stats(void);
+void calc_stats_thread(gpointer user_data);
 
 /* google.c */
 char *find_in_path(char * file);
@@ -86,7 +91,9 @@ int open_google_earth(void);
 
 /* new.c */
 void new_file(void);
-void browse_new_file(void);
+void load_file(const char *file);
+void reset_globals(void);
+void set_title(int band_specified, char *band);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

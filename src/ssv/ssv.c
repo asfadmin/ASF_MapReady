@@ -1,7 +1,5 @@
 #include "ssv.h"
 
-#define VERSION "1.0"
-
 /************************************************************************
  * Global variables...
  */
@@ -62,14 +60,14 @@ main(int argc, char **argv)
         exit(1);
     }
 
+    // we could call load_file() here, but don't because this way we can
+    // interleave the call to gtk_init() with some of the loading code --
+    // which keeps the window from showing up until after it has been loaded,
+    // which looks much nicer
+
     // initialize globals
-    data = NULL;
-    data_fi = NULL;
-    meta = NULL;
-    g_min = g_max = 0;
-    center_line = center_samp = crosshair_samp = crosshair_line = -1;
-    ctrl_clk_line = ctrl_clk_samp = -1;
-    zoom = 1;
+    reset_globals();
+
     g_filename = STRDUP(argv[1]);
 
     // strip off a trailing "."
@@ -90,28 +88,7 @@ main(int argc, char **argv)
     free(glade_xml_file);
 
     // set up window title
-    char title[256];
-    sprintf(title, "ssv ver %s: %s", VERSION, g_filename);
-    if (band_specified) {
-        sprintf(&title[strlen(title)], " (%s)", band);
-    } else if (meta && meta->general && meta->general->band_count > 1) {
-        if (strlen(meta->general->bands) > 0) {
-            strcpy(band, meta->general->bands);
-            char *p = strchr(band, ',');
-            if (p) *p = '\0';
-        } else if (strncmp_case(g_filename, "IMG-", 4) == 0) {
-            strcpy(band, g_filename+4);
-            char *p = strchr(band, '-');
-            if (p) *p = '\0';
-        } else {
-            strcpy(band, "");
-        }
-        if (strlen(band) > 0)
-            sprintf(&title[strlen(title)], " (%s)", band);
-    }
-
-    GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget), title);
+    set_title(band_specified, band);
 
     // load the metadata & image data, other setup
     fill_small();

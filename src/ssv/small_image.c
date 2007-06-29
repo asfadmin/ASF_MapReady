@@ -62,9 +62,14 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
 
 GdkPixbuf *pixbuf_small = NULL;
 
-static GdkPixbuf * make_small_image(int size)
+static GdkPixbuf * make_small_image(int size, int force)
 {
-    if (!pixbuf_small) {
+    if (!pixbuf_small || force) {
+        if (pixbuf_small) {
+            g_object_unref(pixbuf_small);
+            pixbuf_small = NULL;
+        }
+
         assert((data||data_fi) && meta);
 
         int larger_dim = size*4;
@@ -142,7 +147,7 @@ static GdkPixbuf * make_small_image(int size)
 
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
-        printf("Building image...\n");
+        printf("Building preview image...\n");
         int have_no_data = meta_is_valid_double(meta->general->no_data);
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
@@ -163,7 +168,7 @@ static GdkPixbuf * make_small_image(int size)
                 bdata[n+1] = uval;
                 bdata[n+2] = uval;
             }
-            asfLineMeter(ii,tsy);
+            asfPercentMeter((double)ii/(tsy-1));
         }
         
         // Create the pixbuf
@@ -199,9 +204,16 @@ static GdkPixbuf * make_small_image(int size)
     return pb2;
 }
 
+void fill_small_force_reload()
+{
+    GdkPixbuf *pb = make_small_image(256, TRUE);
+    GtkWidget *img = get_widget_checked("small_image");
+    gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+}
+
 void fill_small()
 {
-    GdkPixbuf *pb = make_small_image(256);
+    GdkPixbuf *pb = make_small_image(256, FALSE);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }
