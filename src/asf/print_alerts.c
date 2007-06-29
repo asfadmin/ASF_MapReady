@@ -151,7 +151,7 @@ void asfPrintError(const char *format, ...)
 
   if (logflag) {
     fprintf(fLog, "%s", errorEnd);
-    FCLOSE(fLog);
+    if (fLog) FCLOSE(fLog);
   }
 
   update_status("Error");
