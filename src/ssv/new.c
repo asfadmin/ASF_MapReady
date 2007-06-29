@@ -53,7 +53,7 @@ SIGNAL_CALLBACK void ok_clicked()
 // sets up the file chooser dialog
 static void create_file_chooser_dialog()
 {
-    GtkWidget *parent = get_widget_checked("asf_convert");
+    GtkWidget *parent = get_widget_checked("ssv_main_window");
 
     browse_widget = gtk_file_chooser_dialog_new(
         "Open Image File", GTK_WINDOW(parent),
@@ -82,30 +82,20 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(D_filt, "*.D");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
 
-    GtkFileFilter *stf_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(stf_filt, "STF Files (*.000)");
-    gtk_file_filter_add_pattern(stf_filt, "*.000");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), stf_filt);
-
-    GtkFileFilter *raw_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(raw_filt, "RAW Files (*.raw)");
-    gtk_file_filter_add_pattern(raw_filt, "*.raw");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), raw_filt);
-
-    GtkFileFilter *geotiff_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(geotiff_filt, "GeoTIFF Files (*.tif)");
-    gtk_file_filter_add_pattern(geotiff_filt, "*.tif");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), geotiff_filt);
-
-    GtkFileFilter *cpx_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(cpx_filt, "Complex Files (*.cpx)");
-    gtk_file_filter_add_pattern(cpx_filt, "*.cpx");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), cpx_filt);
-
     GtkFileFilter *alos_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
     gtk_file_filter_add_pattern(alos_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
+
+    GtkFileFilter *alos2_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(alos2_filt, "ALOS Image Files (IMG-*)");
+    gtk_file_filter_add_pattern(alos2_filt, "IMG-*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos2_filt);
+
+    GtkFileFilter *img_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(img_filt, "ASF Internal Files (*.img)");
+    gtk_file_filter_add_pattern(img_filt, "*.img");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
 
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
@@ -143,7 +133,6 @@ void new_file(void)
 
     of.hwndOwner = NULL;
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
-        "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
         "ALOS Leader (LED-*)\0LED-*\0"
         "ALOS Image (IMG-*)\0IMG-*\0"
         "ASF Internal (*.img)\0*.img\0"
