@@ -137,31 +137,41 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       // case rather than kludging it in here...
 
       // Top left zone
-      //meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
-      lon = meta->location->lon_start_near_range;
+      double lat;
+      if (meta->location)
+          lon = meta->location->lon_start_near_range;
+      else
+          meta_get_latLon(meta, 0, 0, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Top right zone
-      //meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0, &lat,
-      //	      &lon);
-      lon = meta->location->lon_start_far_range;
+      if (meta->location)
+          lon = meta->location->lon_start_far_range;
+      else
+          meta_get_latLon(meta, 0, meta->general->sample_count - 1, 0.0,
+              &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom left zone
-      //meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0, &lat, &lon);
-      lon = meta->location->lon_end_near_range;
+      if (meta->location)
+          lon = meta->location->lon_end_near_range;
+      else
+          meta_get_latLon(meta, meta->general->line_count - 1, 0, 0.0,
+              &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
       // Bottom right zone
-      //meta_get_latLon(meta, meta->general->line_count - 1,
-      //	      meta->general->sample_count - 1, 0.0, &lat, &lon);
-      lon = meta->location->lon_end_far_range;
+      if (meta->location)
+          lon = meta->location->lon_end_far_range;
+      else
+          meta_get_latLon(meta, meta->general->line_count - 1,
+      	      meta->general->sample_count - 1, 0.0, &lat, &lon);
       zone = calc_utm_zone(lon);
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;

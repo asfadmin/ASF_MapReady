@@ -27,6 +27,20 @@ static int iabs(int i)
     return i>0 ? i : -i;
 }
 
+// this is from the comp.graphics.algorithms FAQ
+// see http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+static int pnpoly(int npol, double *xp, double *yp, double x, double y)
+{
+  int i, j, c = 0;
+  for (i = 0, j = npol-1; i < npol; j = i++) {
+    if ((((yp[i]<=y) && (y<yp[j])) ||
+      ((yp[j]<=y) && (y<yp[i]))) &&
+      (x < (xp[j] - xp[i]) * (y - yp[i]) / (yp[j] - yp[i]) + xp[i]))
+      c = !c;
+  }
+  return c;
+}
+
 //  public domain function by Darel Rex Finley, 2006
 //  modified for ASF by kh.  Code was found at: http://alienryderflex.com/intersect/
 
@@ -81,6 +95,24 @@ int lineSegmentsIntersect(
 // return TRUE if there is any overlap between the two scenes
 static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
 {
+    if (!meta_is_valid_double(meta1->general->center_longitude)) {
+        int nl = meta1->general->line_count;
+        int ns = meta1->general->sample_count;
+
+        meta_get_latLon(meta1, nl/2, ns/2, 0,
+            &meta1->general->center_latitude,
+            &meta1->general->center_longitude);
+    }
+
+    if (!meta_is_valid_double(meta2->general->center_longitude)) {
+        int nl = meta2->general->line_count;
+        int ns = meta2->general->sample_count;
+
+        meta_get_latLon(meta2, nl/2, ns/2, 0,
+            &meta2->general->center_latitude,
+            &meta2->general->center_longitude);
+    }
+
     int zone1 = utm_zone(meta1->general->center_longitude);
     int zone2 = utm_zone(meta2->general->center_longitude);
 
@@ -92,6 +124,9 @@ static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
     // The Plan:
     // Generate polygons for each metadata, then test of any pair of
     // line segments between the polygons intersect.
+
+    // Other possibility: meta1 is completely contained within meta2,
+    // or the reverse.
 
     // corners of meta1.
     double xp_1[5], yp_1[5];
@@ -178,6 +213,30 @@ static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
         }
     }
 
+    // test for containment: meta2 in meta1
+    int all_in=TRUE;
+    for (i=0; i<4; ++i) {
+        if (!pnpoly(5, xp_1, yp_1, xp_2[i], yp_2[i])) {
+            all_in=FALSE;
+            break;
+        }
+    }
+
+    if (all_in)
+        return TRUE;
+
+    // test for containment: meta1 in meta2
+    all_in = TRUE;
+    for (i=0; i<4; ++i) {
+        if (!pnpoly(5, xp_2, yp_2, xp_1[i], yp_1[i])) {
+            all_in=FALSE;
+            break;
+        }
+    }
+
+    if (all_in)
+        return TRUE;
+
     // no overlap
     return FALSE;
 }
@@ -263,8 +322,9 @@ static void process_file(const char *file, int level,
 
         asfPrintStatus("  %s%s - %s\n", spaces(level), base, does);
     }
-    else if (ext && strcmp_case(ext, ".meta") == 0) {
-        // silently ignore the .meta files -- they will be picked up
+    else if (ext && (strcmp_case(ext, ".meta") == 0 ||
+                     strcmp_case(ext, ".ddr") == 0)) {
+        // silently ignore the .meta, etc files -- they will be picked up
         // when processing the corresponding .img file
         ;
     }
@@ -326,14 +386,17 @@ static char **find_overlapping_dems_dir(meta_parameters *meta,
         n_dems_total);
 
     if (n > 0) {
-        asfPrintStatus("  Found %d overlapping dems.\n", n);
+        asfPrintStatus("Found %d overlapping dem%s:\n", n, n==1?"":"s");
         for (i=0; i<max_dems; ++i)
             if (overlapping_dems[i])
-                asfPrintStatus("    %s\n", overlapping_dems[i]);
+                asfPrintStatus("  %s\n", overlapping_dems[i]);
 
         return overlapping_dems;
     } else {
-        asfPrintStatus("  No DEMs found in: %s\n", dem_dir);
+        if (*n_dems_total == 0)
+            asfPrintStatus("No DEMs found in: %s\n", dem_dir);
+        else
+            asfPrintStatus("No overlapping DEMs found in: %s\n", dem_dir);
         free(overlapping_dems);
         return NULL;
     }
@@ -389,7 +452,8 @@ static char **find_overlapping_dems(meta_parameters *meta,
         n_dirs_checked, n_dems_total, *n_dems_found);
 
     if (*n_dems_found > 0) {
-        asfPrintStatus("Found %d overlapping dems.\n", *n_dems_found);
+        asfPrintStatus("Found %d overlapping dem%s:\n", *n_dems_found,
+            *n_dems_found == 1 ? "" : "s");
         for (i=0; i<max_dems; ++i)
             if (overlapping_dems[i])
                 asfPrintStatus("    %s\n", overlapping_dems[i]);
