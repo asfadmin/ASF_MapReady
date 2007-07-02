@@ -12,7 +12,7 @@ meta_parameters *meta;
 
 // loaded image data -- only one of these will be non-NULL
 float *data;
-FloatImage *data_fi;
+CachedImage *data_ci;
 
 // various values
 int nl, ns;
@@ -30,7 +30,7 @@ float get_pixel(int line, int sample)
     if (data)
         return data[sample + line*ns];
     else
-        return float_image_get_pixel(data_fi, sample, line);
+        return cached_image_get_pixel(data_ci, line, sample);
 }
 
 char *find_in_share(const char * filename)
@@ -45,6 +45,30 @@ SIGNAL_CALLBACK void
 on_ssv_main_window_delete_event(GtkWidget *w, gpointer data)
 {
     gtk_main_quit();
+}
+
+/* danger: returns pointer to static data!! */
+static const char * imgloc(char * file)
+{
+    static char loc[1024];
+    gchar * tmp = find_in_share(file);
+    if (tmp) {
+      strcpy(loc, tmp);
+      g_free(tmp);
+    } else {
+      strcpy(loc, file);
+    }
+
+    return loc;
+}
+
+void set_toolbar_images()
+{
+    GtkWidget * w = get_widget_checked("google_earth_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+
+    w = get_widget_checked("mdv_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
 }
 
 int
@@ -90,6 +114,8 @@ main(int argc, char **argv)
     // set up window title
     set_title(band_specified, band);
 
+    set_toolbar_images();
+
     // load the metadata & image data, other setup
     fill_small();
     fill_big();
@@ -103,7 +129,7 @@ main(int argc, char **argv)
     gtk_main ();
 
     if (data) free(data);
-    if (data_fi) float_image_free(data_fi);
+    if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
 

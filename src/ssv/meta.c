@@ -196,3 +196,7 @@ void open_mdv()
     }
 }
 
+SIGNAL_CALLBACK void on_mdv_button_clicked(GtkWidget *w)
+{
+    open_mdv();
+}

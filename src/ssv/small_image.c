@@ -70,14 +70,13 @@ static GdkPixbuf * make_small_image(int size, int force)
             pixbuf_small = NULL;
         }
 
-        assert((data||data_fi) && meta);
+        assert((data||data_ci) && meta);
 
         int larger_dim = size*4;
         if (larger_dim > meta->general->line_count)
             larger_dim = meta->general->line_count;
 
         //printf("Larger size: %d\n", larger_dim);
-
         int ii, jj;
 
         // Vertical and horizontal scale factors required to meet the
@@ -92,6 +91,10 @@ static GdkPixbuf * make_small_image(int size, int force)
         size_t tsy = meta->general->line_count / sf;
 
         //printf("Sizes: %d, %d\n", tsx, tsy);
+        
+        // store data used to build the small image pixmap
+        // we will calculate the stats on this subset
+        float *fdata = MALLOC(sizeof(float)*tsx*tsy);
 
         double avg = 0.0;
         double stddev = 0.0;
@@ -104,6 +107,7 @@ static GdkPixbuf * make_small_image(int size, int force)
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = get_pixel(ii*sf, jj*sf);
+                    fdata[jj+ii*tsx] = v;
                     if (v != meta->general->no_data) {
                         avg += v;
                         ++n;
@@ -113,7 +117,7 @@ static GdkPixbuf * make_small_image(int size, int force)
             avg /= (double)n;
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
-                    float v = get_pixel(ii*sf, jj*sf);
+                    float v = fdata[jj+ii*tsx];//get_pixel(ii*sf, jj*sf);
                     if (v != meta->general->no_data)
                         stddev += (v - avg) * (v - avg);
                 }
@@ -123,13 +127,15 @@ static GdkPixbuf * make_small_image(int size, int force)
             // Compute stats -- no ignore
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
-                    avg += get_pixel(ii*sf, jj*sf);
+                    float v = get_pixel(ii*sf, jj*sf);
+                    fdata[jj+ii*tsx] = v;
+                    avg += v;
                 }
             }
             avg /= (double)(tsx*tsy);
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
-                    float v = get_pixel(ii*sf, jj*sf);
+                    float v = fdata[jj+ii*tsx];
                     stddev += (v - avg) * (v - avg);
                 }
             }
@@ -151,7 +157,8 @@ static GdkPixbuf * make_small_image(int size, int force)
         int have_no_data = meta_is_valid_double(meta->general->no_data);
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float val = get_pixel(ii*sf, jj*sf);
+                int index = jj+ii*tsx;
+                float val = fdata[index];
 
                 unsigned char uval;
                 if (have_no_data && val == meta->general->no_data)
@@ -163,14 +170,17 @@ static GdkPixbuf * make_small_image(int size, int force)
                 else
                     uval = (unsigned char)(((val-g_min)/(g_max-g_min))*255+0.5);
             
-                int n = 3*(ii*tsx+jj);
+                int n = 3*index;
                 bdata[n] = uval;
                 bdata[n+1] = uval;
                 bdata[n+2] = uval;
             }
             asfPercentMeter((double)ii/(tsy-1));
         }
-        
+
+        // done with our subset
+        free(fdata);
+
         // Create the pixbuf
         GdkPixbuf *pb =
             gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE, 

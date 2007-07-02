@@ -19,6 +19,7 @@
 #include "asf_meta.h"
 #include "float_image.h"
 #include "asf_raster.h"
+#include "cache.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
@@ -110,7 +111,7 @@ extern const char PATH_SEPATATOR;
 extern GladeXML *glade_xml;
 extern meta_parameters *meta;
 extern float *data;
-extern FloatImage *data_fi;
+extern CachedImage *data_ci;
 extern int nl, ns;
 extern double g_min, g_max;
 extern double zoom;

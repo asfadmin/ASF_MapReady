@@ -1,0 +1,54 @@
+
+
+1. Instead of using FloatImage to store the image data when it is too large,
+   use a new scheme where the actual image is used as the data cache.  (As
+   it is now, FloatImage creates a new cache, which takes a long time, though
+   once created the performance isn't bad.)  We may be able to use some stuff
+   from float_blob, from Britton's viewer.
+
+2. Make the decision to load the image in memory or cache smarter.  Currently
+   we just have a hard-coded cutoff of 500MB.  We should try to allocate
+   enough memory for the entire image, and fall back to cache if there is
+   not enough.
+
+3. The ALOS filename detection needs to be smarter.  Currently, running
+   "ssv dir/IMG-HH-something" doesn't work -- the presence of "dir" confuses
+   the loading code.
+
+4. You are currently required to specify a filename on the command line.
+   Running without an argument should load a blank image, and the user can
+   then load something.
+
+5. The "Settings" tab is empty.  Some ideas for what goes in here:
+
+   a.  Choose what color the crosshairs/lines are.
+   b.  Select how the data is mapped from floating points to bytes.  We
+       currently only do 2-sigma.
+   c.  Toggle between starting up in 1:1, or full extent.
+
+   For (c) to be sensible, we'd have to allow saving the settings for
+   use the next time you run ssv.
+
+6. Currently the only way to look at a band other than the first of a
+   multi-band file is to use the "-band" command line option.  I don't
+   know if this would be appropriate for the settings tab -- those
+   probably shouldn't be image-specific, but somehow the user should be
+   able to switch bands inside the program.  Another button in the
+   toolbar, perhaps?  Brings up a band selector, then acts like you are
+   loading a new file?
+
+7. The histogram doesn't look good for raw ceos data, since it only has
+   a subset of the full 0-256 range.  So, the histogram looks sparse.
+   I'm not sure how to best solve this problem.  Make the bars wider,
+   when this situation is detected?  Make the histogram shorter? Of course,
+   the vertical spacing needs to be uniform, so we can't just shrink out
+   the zero sections.
+
+8. Support for geotiffs.
+
+9. Support for other images types like jpeg, png.
+
+10. Support for looking at color images.
+
+11. Support for combining multi-band images into color imagery.
+   

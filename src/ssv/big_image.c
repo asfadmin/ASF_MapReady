@@ -218,7 +218,7 @@ int calc_scaled_pixel_value(float val)
 
 static GdkPixbuf * make_big_image()
 {
-    assert((data||data_fi) && meta);
+    assert((data||data_ci) && meta);
 
     int ii, jj;
     int biw = get_big_image_width();

@@ -255,3 +255,8 @@ int open_google_earth()
 
     return TRUE;
 }
+
+SIGNAL_CALLBACK void on_google_earth_button_clicked(GtkWidget *w)
+{
+    open_google_earth();
+}

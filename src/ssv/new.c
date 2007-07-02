@@ -200,7 +200,7 @@ void reset_globals()
     zoom = 1;
 
     data = NULL;
-    data_fi = NULL;
+    data_ci = NULL;
     meta = NULL;
 
     stats_calced = FALSE;
@@ -211,7 +211,7 @@ void load_file(const char *file)
 {
     // unload the current file, clear current globals
     if (data) free(data);
-    if (data_fi) float_image_free(data_fi);
+    if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
 
@@ -247,4 +247,9 @@ void load_file(const char *file)
     } else {
         calc_image_stats(); // starts a thread
     }
+}
+
+SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)
+{
+    new_file();    
 }
