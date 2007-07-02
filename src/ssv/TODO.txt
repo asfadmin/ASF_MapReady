@@ -1,15 +1,16 @@
 
 
-1. Instead of using FloatImage to store the image data when it is too large,
-   use a new scheme where the actual image is used as the data cache.  (As
-   it is now, FloatImage creates a new cache, which takes a long time, though
-   once created the performance isn't bad.)  We may be able to use some stuff
-   from float_blob, from Britton's viewer.
+1. The CachedImage code is a work in progress.  We should be able to use it
+   for all images, and get faster loading times.
 
 2. Make the decision to load the image in memory or cache smarter.  Currently
    we just have a hard-coded cutoff of 500MB.  We should try to allocate
    enough memory for the entire image, and fall back to cache if there is
-   not enough.
+   not enough.  UPDATE: I did this second idea, but forgot about the swap
+   problem - doing a greedy malloc will result in swapping.  Better to
+   use our own cache instead.  So, maybe a hard-coded limit is best,
+   perhaps 256MB.  Or, try to figure out how much physical memory there
+   is at run time.
 
 3. The ALOS filename detection needs to be smarter.  Currently, running
    "ssv dir/IMG-HH-something" doesn't work -- the presence of "dir" confuses
