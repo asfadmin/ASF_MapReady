@@ -814,16 +814,16 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
         if (!ok) {
             if (!force_flag) {
-            asfPrintError("The scene is in a region of the world that "
-                            "doesn't have NAD27 grid shift\ndata available.\n"
-                            "\nUse the -force option (Ignore projection errors) or adjust the\n"
-                            "selected projection parameters (use WGS84?)to something more\n"
-                            "appropriate for this image's region.\n");
+                asfPrintError("The scene is in a region of the world that "
+                    "doesn't have NAD27 grid shift\ndata available.\n\n"
+                    "Use the -force option (Ignore projection errors) or adjust the\n"
+                    "selected projection parameters (use WGS84?) to something more\n"
+                    "appropriate for this image's region.\n");
             }
             else {
-            asfPrintWarning("The scene is in a region of the world that "
-                "doesn't have NAD27 grid shift\ndata available.  Large errors"
-                        " may result.\n");
+                asfPrintWarning("The scene is in a region of the world that "
+                    "doesn't have NAD27 grid shift\ndata available.  Large errors"
+                    " may result.\n");
             }
         }
     }
