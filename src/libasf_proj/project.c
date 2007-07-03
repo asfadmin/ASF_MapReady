@@ -41,8 +41,8 @@ int setenv(const char *, const char *, int);
 static void set_proj_lib_path(datum_type_t datum)
 {
     static int set_path_already = FALSE;
-    if (!set_path_already) {
-        if (datum == NAD27_DATUM) {
+    if (datum == NAD27_DATUM) {
+        if (!set_path_already) {
             // point to the grid shift files
             char proj_putenv[255];
             sprintf(proj_putenv, "PROJ_LIB=%s/proj", get_asf_share_dir());
