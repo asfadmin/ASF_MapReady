@@ -16,6 +16,7 @@ return NULL (because it will exit before that).
 This way, we can have maximum trust in these routines, and use them as much as
 possible.
 ******************************************************************************/
+
 #include "caplib.h"
 #include "log.h"
 
@@ -237,8 +238,7 @@ void FREE_BANDS(char **ptr)
 FILE *FOPEN(const char *file,const char *mode)
 {
 #if defined(win32)
-	/* Although there is a man page for fopen64 on windows Cygwin
-	 * it seems that the 64 bit functionality is not yet in place */
+    // fopen is 64-bit ok on Cygwin -- no fopen64().
 	FILE *ret=fopen(file,mode);
 #else
 	FILE *ret=fopen64(file,mode);
@@ -413,9 +413,8 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 #if defined(irix)
 	ret=fseek64(stream,offset,ptrname);
 #elif defined(win32)
-	/* Although there is a man page for fseeko64 on Windows cygwin
-	 * it appears that 64 bit ops are not yet supported there */
-	ret=fseek(stream,(long)offset,ptrname);
+    // On cygwin, the fseeko function is 64-bit ready
+    ret=fseeko(stream,offset,ptrname);
 #else
 	ret=fseeko64(stream,offset,ptrname);
 #endif
