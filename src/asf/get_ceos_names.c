@@ -170,6 +170,13 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char **dataName, int *n
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(ceosName, dirName, fileName);
 
+  /* For ALOS, strip off any LED- prepension that is already there */
+  if (strncmp_case(fileName, "LED-", 4) == 0) {
+    char tmp[256];
+    strcpy(tmp, fileName);
+    strcpy(fileName, tmp+4);
+  }
+
   for (ii=begin; ii<end; ii++) {
     int strEnd = strlen(ceos_data_extensions[ii]) - 1;
 
