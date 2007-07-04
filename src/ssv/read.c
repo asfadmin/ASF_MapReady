@@ -14,6 +14,32 @@ int try_ext(const char *filename, const char *ext)
     return ret;
 }
 
+int try_prepension(const char *filename, const char *prepension)
+{
+    char *dir = MALLOC(sizeof(char)*(strlen(filename)+10));
+    char *file = MALLOC(sizeof(char)*(strlen(filename)+10));
+    split_dir_and_file(filename, dir, file);
+
+    printf("%s -> %s,%s\n", filename,dir,file);
+
+    char *buf = MALLOC(sizeof(char)*(strlen(filename)+
+        strlen(prepension)+5));
+
+    if (strlen(dir) > 0)
+        sprintf(buf, "%s/%s%s", dir, prepension, file);
+    else
+        sprintf(buf, "%s%s", prepension, file);
+
+    printf("try: %s\n", buf);
+    int ret = fileExists(buf);
+
+    free(buf);
+    free(dir);
+    free(file);
+
+    return ret;
+}
+
 int read_file(const char *filename, const char *band, int on_fail_abort)
 {
     if (meta)
@@ -32,7 +58,7 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
     char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *err = NULL;
 
-    if (try_asf(basename)) {
+    if (try_asf(filename)) {
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             meta = read_asf_meta(meta_name);
             open_asf_data(data_name, band, meta,
@@ -42,10 +68,22 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
             free(err);
             return FALSE;
         }
-    } else if (try_ceos(basename)) {
+    } else if (try_ceos(filename)) {
         if (handle_ceos_file(filename, meta_name, data_name, &err)) {
             meta = read_ceos_meta(meta_name);
             open_ceos_data(data_name, meta_name, band, meta,
+                &read_fn, &thumb_fn, &read_client_info);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    } else if (try_alos(filename)) {
+        if (handle_alos_file(filename, band, meta_name, data_name, &err)) {
+            printf("ALOS: Reading meta: %s\n", meta_name);
+            meta = read_alos_meta(meta_name);
+            printf("ALOS: Reading data: %s\n", data_name);
+            open_alos_data(data_name, meta_name, band, meta,
                 &read_fn, &thumb_fn, &read_client_info);
         } else {
             err_func(err);

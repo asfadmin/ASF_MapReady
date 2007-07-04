@@ -1,14 +1,5 @@
 #include "ssv.h"
-
-#include "asf_import.h"
-#include "get_ceos_names.h"
-#include "asf_nan.h"
-#include "asf_endian.h"
-
-typedef struct {
-    int headerBytes;
-    int reclen;
-} ReadCeosClientInfo;
+#include "read_ceos.h"
 
 int try_ceos(const char *filename)
 {
@@ -198,12 +189,3 @@ int open_ceos_data(const char *data_name, const char *meta_name,
 
     return TRUE;
 }
-
-//static void read_alos(const char *basename, const char *img_name,
-//                      const char *meta_name)
-//{
-//    printf("Reading ALOS: %s\n", img_name);
-//    struct IOF_VFDR image_fdr;
-//    get_ifiledr(basename, &image_fdr);
-//    read_ceos(&image_fdr, img_name);
-//}

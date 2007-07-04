@@ -52,7 +52,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
         int sf = meta->general->line_count / thumb_size_y;
         assert(sf==meta->general->sample_count / thumb_size_x);
 
-        //quiet=TRUE;
+        quiet=TRUE;
 
         int i,j;
         for (i=0; i<thumb_size_y; ++i) {
@@ -63,7 +63,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
             asfPercentMeter((float)i/(thumb_size_y-1));
         }        
 
-        //quiet=FALSE;
+        quiet=FALSE;
     } else {
         self->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
             self->meta, self->read_client_info, dest);
