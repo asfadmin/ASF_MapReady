@@ -96,8 +96,7 @@ settings_apply_to_gui(const Settings * s)
         set_combo_box_item(input_data_format_combobox, 6);
         break;
       case INPUT_FORMAT_ASF_INTERNAL:
-        // Caution: Not implemented in the GUI
-        set_combo_box_item(input_data_format_combobox, 7);
+        set_combo_box_item(input_data_format_combobox, 5);
         break;
     }
 
@@ -515,8 +514,7 @@ settings_get_from_gui()
         ret->input_data_format = INPUT_FORMAT_COMPLEX;
         break;
       case 5:
-        // Caution: Not implemented in the GUI
-        ret->input_data_format = INPUT_FORMAT_ESRI;
+        ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
         break;
       case 6:
         // Caution: Not implemented in the GUI
@@ -524,7 +522,7 @@ settings_get_from_gui()
         break;
       case 7:
         // Caution: Not implemented in the GUI
-        ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
+        ret->input_data_format = INPUT_FORMAT_ESRI;
         break;
     }
 
@@ -980,7 +978,7 @@ settings_get_input_data_format_string(const Settings *s)
         break;
 
     case INPUT_FORMAT_ASF_INTERNAL:
-        format_arg_to_import = "";
+        format_arg_to_import = "asf";
         break;
 
     case INPUT_FORMAT_GEOTIFF:
@@ -1113,6 +1111,7 @@ settings_get_output_format_extension(const Settings *s)
         }
         /* else, fall through */
 
+    case INPUT_FORMAT_ASF_INTERNAL:
     case INPUT_FORMAT_GEOTIFF:
     case INPUT_FORMAT_CEOS_LEVEL1:
         if (s->export_is_checked)
@@ -1408,9 +1407,16 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "File was generated on: %s\n\n", date_time_stamp());
 
     fprintf(cf, "[General]\n");
-    fprintf(cf, "input file = %s\n", input_basename);
+    // must strip .img for asf internal
+    if (s->input_data_format == INPUT_FORMAT_ASF_INTERNAL) {
+        char *tmp = stripExt(input_basename);
+        fprintf(cf, "input file = %s\n", tmp);
+        free(tmp);
+    } else
+        fprintf(cf, "input file = %s\n", input_basename);
     fprintf(cf, "output file = %s\n", output_file);
-    fprintf(cf, "import = 1\n");
+    fprintf(cf, "import = %d\n",
+        s->input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");

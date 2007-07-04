@@ -1047,11 +1047,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       if (y < bb_min_y) bb_min_y = y;    if (y > bb_max_y) bb_max_y = y;
     }
 
-    if (bb_min_x > min_x) min_x = bb_min_x;
-    if (bb_max_x < max_x) max_x = bb_max_x;
+    if (bb_min_x != 99999999 && bb_min_x > min_x) min_x = bb_min_x;
+    if (bb_max_x != 0 && bb_max_x < max_x) max_x = bb_max_x;
 
-    if (bb_min_y > min_y) min_y = bb_min_y;
-    if (bb_max_y < max_y) max_y = bb_max_y;
+    if (bb_min_y != 99999999 && bb_min_y > min_y) min_y = bb_min_y;
+    if (bb_max_y != 0 && bb_max_y < max_y) max_y = bb_max_y;
   }
 
   asfPrintStatus("After applying the lat/lon box:\n"

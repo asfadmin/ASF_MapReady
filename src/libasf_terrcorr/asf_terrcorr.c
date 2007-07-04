@@ -854,8 +854,8 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   return 0;
 }
 
-int asf_terrcorr_ext(char *sarFile, char *demFile_in, char *userMaskFile,
-                     char *outFile, double pixel_size, int clean_files,
+int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
+                     char *outFile_in, double pixel_size, int clean_files,
                      int do_resample, int do_corner_matching, int do_interp,
                      int do_fftMatch_verification, int dem_grid_size,
                      int do_terrain_correction, int fill_value,
@@ -879,6 +879,10 @@ int asf_terrcorr_ext(char *sarFile, char *demFile_in, char *userMaskFile,
   int image_was_ground_range = TRUE;
 
   asfPrintStatus("Starting terrain correction pre-processing.\n");
+
+  // strip any extension given to us in the input/output files
+  char *sarFile = stripExt(sarFile_in);
+  char *outFile = stripExt(outFile_in);
 
   // we want passing in an empty string for the mask to mean "no mask"
   if (userMaskFile && strlen(userMaskFile) == 0)
@@ -1263,6 +1267,8 @@ int asf_terrcorr_ext(char *sarFile, char *demFile_in, char *userMaskFile,
   FREE(resampleFile_2);
   FREE(userMaskClipped);
   FREE(demFile);
+  FREE(sarFile);
+  FREE(outFile);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

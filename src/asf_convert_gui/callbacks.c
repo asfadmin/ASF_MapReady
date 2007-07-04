@@ -378,6 +378,13 @@ on_geotiff_input_activate(GtkWidget *widget)
   input_data_format_combobox_changed();
   update_summary();
 }
+
+SIGNAL_CALLBACK void
+on_asf_internal_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+  update_summary();
+}
 #endif
 
 SIGNAL_CALLBACK void
