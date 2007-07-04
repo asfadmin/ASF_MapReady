@@ -199,21 +199,18 @@ void reset_globals()
     ctrl_clk_line = ctrl_clk_samp = -1;
     zoom = 1;
 
-    data = NULL;
     data_ci = NULL;
     meta = NULL;
-
-    stats_calced = FALSE;
-    stats_generated = FALSE;
 }
 
 void load_file(const char *file)
 {
     // unload the current file, clear current globals
-    if (data) free(data);
     if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
+    if (g_meta_name) free(g_filename);
+    if (g_data_name) free(g_filename);
 
     reset_globals();
 
@@ -226,7 +223,7 @@ void load_file(const char *file)
     if (g_filename[strlen(g_filename)-1] == '.')
         g_filename[strlen(g_filename)-1] = '\0';
 
-    read_file(g_filename, NULL);
+    read_file(g_filename, NULL, FALSE);
     set_title(FALSE, NULL);
 
     // load the metadata & image data, other setup
@@ -235,18 +232,7 @@ void load_file(const char *file)
     update_pixel_info();
     update_zoom();
     fill_meta_info();
-
-    // if the user is currently looking at the stats tab, we will not
-    // load the stats async ... just let them wait it out
-    GtkWidget *tabs = get_widget_checked("tabs");
-    if (gtk_notebook_get_current_page(GTK_NOTEBOOK(tabs)) == 1) {
-        asfPrintStatus("Calculating stats synchronously...\n");
-        calc_stats_thread(NULL);
-        if (fill_stats())
-            stats_generated = TRUE;
-    } else {
-        calc_image_stats(); // starts a thread
-    }
+    fill_stats();
 }
 
 SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)

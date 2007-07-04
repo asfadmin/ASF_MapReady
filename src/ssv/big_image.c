@@ -218,7 +218,7 @@ int calc_scaled_pixel_value(float val)
 
 static GdkPixbuf * make_big_image()
 {
-    assert((data||data_ci) && meta);
+    assert(data_ci && meta);
 
     int ii, jj;
     int biw = get_big_image_width();
@@ -239,7 +239,8 @@ static GdkPixbuf * make_big_image()
                 uval = 0;
             } else {
                 uval = (unsigned char)calc_scaled_pixel_value(
-                    get_pixel((int)floor(l),(int)floor(s)));
+                    cached_image_get_pixel(data_ci, 
+                        (int)floor(l),(int)floor(s)));
             }
 
             int n = 3*mm;
@@ -300,7 +301,9 @@ void update_pixel_info()
         assert(meta);
         assert(shown_pixbuf);
         
-        float fval = get_pixel(crosshair_line, crosshair_samp);
+        float fval = cached_image_get_pixel(data_ci,
+            crosshair_line, crosshair_samp);
+
         int uval = calc_scaled_pixel_value(fval);
 
         sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n", fval, uval);
@@ -569,9 +572,11 @@ static int handle_keypress(GdkEventKey *event)
                 for (j=samp-4; j<=samp+4; ++j) {
                     if (i>=0 && j>=0 && i<nl && j<ns)
                         if (i==line && j==samp)
-                            printf("%6.1f*",get_pixel(i,j));
+                            printf("%6.1f*",
+                                cached_image_get_pixel(data_ci,i,j));
                         else
-                            printf("%6.1f ",get_pixel(i,j));
+                            printf("%6.1f ",
+                                cached_image_get_pixel(data_ci,i,j));
                     else
                         printf("     * ");
                 }
@@ -606,8 +611,9 @@ static int handle_keypress(GdkEventKey *event)
             radius*=10;
         for (i=line-radius; i<=line+radius; ++i) {
             for (j=samp-radius; j<=samp+radius; ++j) {
-                if (i>=0 && j>=0 && i<nl && j<ns && get_pixel(i,j) > max_val) {
-                    max_val = get_pixel(i,j);
+                float val = cached_image_get_pixel(data_ci,i,j);
+                if (i>=0 && j>=0 && i<nl && j<ns && val>max_val) {
+                    max_val = val;
                     line_max = i;
                     samp_max = j;
                 }

@@ -1,5 +1,4 @@
 #include "ssv.h"
-#include "ceos_io.h"
 #include "asf_import.h"
 #include "get_ceos_names.h"
 #include "asf_nan.h"
@@ -7,7 +6,7 @@
 
 #include <errno.h>
 
-static int try_ext(const char *filename, const char *ext)
+int try_ext(const char *filename, const char *ext)
 {
     char *buf = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
     if (ext[0]=='.')
@@ -21,199 +20,71 @@ static int try_ext(const char *filename, const char *ext)
     return ret;
 }
 
-static void clear_data()
+int read_file(const char *filename, const char *band, int on_fail_abort)
 {
-    if (data) {
-        free(data);
-        data=NULL;
-    }
-    if (data_ci) {
-        cached_image_free(data_ci);
-        data_ci=NULL;
-    }
-}
+    if (meta)
+        meta_free(meta);
 
-static const int test_cache = FALSE;
+    void (*err_func) (const char *format, ...);
+    err_func = on_fail_abort ? asfPrintError : message_box;
 
-static float *try_malloc(nbytes)
-{
-    if (test_cache) {
-        asfPrintStatus("Test mode: Storing image in cache.\n");
-        return NULL;
-    }
+    char *basename = get_filename(filename);
 
-    // be greedy -- try to allocate enough memory to store the
-    // entire image
-    data = malloc(nbytes);
-    if (!data)
-    {
-#ifdef ENOMEM
-		if (errno==ENOMEM) // There will never be enough memory.
-		    data = NULL;
-#endif
-#ifdef EAGAIN
-		if (errno==EAGAIN) // There's not enough memory now.
-		{
- 			g_usleep(2000000); // Wait 2 seconds... and try again
-            data = malloc(nbytes);
+    void *read_client_info = NULL;
+    ReadClientFn *read_fn = NULL;
+    ThumbFn *thumb_fn = NULL;
+
+    char *meta_name = MALLOC(sizeof(char)*(strlen(filename)+10));
+    char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
+    char *err = NULL;
+
+    if (try_asf(basename)) {
+        if (handle_asf_file(filename, meta_name, data_name, &err)) {
+            meta = read_asf_meta(meta_name);
+            open_asf_data(data_name, band, meta,
+                &read_fn, &thumb_fn, &read_client_info);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
         }
-#endif
-    }
-
-    // print out what we decided to do, and how expensive it was.
-    char *where = "in memory";
-    if (!data)
-        where = "with CachedImage";
-
-    float kb = (float)nbytes/1024.;
-
-    if (kb > 100) {
-        asfPrintStatus("Storing %.1f megabytes of image data %s.\n",
-            kb/1024., where);
     } else {
-        asfPrintStatus("Storing %.1f kilobytes of image data %s.\n",
-            kb, where);
+        err_func("Don't know how to load file: %s\n", filename);
+        return FALSE;
     }
 
-    return data;
-}
-
-static void read_asf(const char *filename, const char *band)
-{
-    // assume metadata has already been read in
     assert(meta);
-    clear_data();
-
-    printf("Reading ASF Internal: %s\n", filename);
-    nl = meta->general->line_count;
-    ns = meta->general->sample_count;
-    int b = 0;
-    if (band)
-        b = get_band_number(meta->general->bands,
-                meta->general->band_count, (char*)band);
-    if (b<0)
-        asfPrintError("Band '%s' not found.\n");
-    else if (band)
-        asfPrintStatus("Reading band #%d: %s\n", b+1, band);
-
-    data = try_malloc(sizeof(float)*nl*ns);
-    int can_keep_in_memory = data != NULL;
-
-
-    if (can_keep_in_memory) {
-        FILE *fp = FOPEN(filename, "rb");
-    
-        // get_float_lines(fp, meta, 0, nl, data);
-        int i;
-        for (i=0; i<nl; i+=128) {
-            int l=128; if (i+128>nl) l=nl-i;
-            get_float_lines(fp, meta, i + b*nl, l, data + i*ns);
-            asfPercentMeter((float)i/nl);
-        }
-
-        fclose(fp);
-        asfPercentMeter(1.0);
-    } else {
-        data_ci = cached_image_new_from_file(filename, b, 0, 0,
-            meta, TRUE, FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-    }
-
-    if (data) assert(!data_ci);
-    if (data_ci) assert(!data);
-}
-
-static void read_ceos(struct IOF_VFDR *image_fdr, const char *filename)
-{
-    assert(meta);
-    clear_data();
 
     nl = meta->general->line_count;
     ns = meta->general->sample_count;
 
-    data = try_malloc(sizeof(float)*nl*ns);
+    assert(read_fn && read_client_info);
 
-    int leftFill = image_fdr->lbrdrpxl;
-    int rightFill = image_fdr->rbrdrpxl;
-    int headerBytes = firstRecordLen((char*)filename) +
-        (image_fdr->reclen - (ns + leftFill + rightFill)*image_fdr->bytgroup);
+    data_ci = cached_image_new_from_file(data_name, meta, read_fn,
+        thumb_fn, read_client_info);
 
-    if (data)
-    {
-        // read in the whole image right now
-        FILE *fp = fopen(filename, "rb");
+    assert(data_ci);
 
-        int ii,jj;
-        if (meta->general->data_type == INTEGER16)
-        {
-            unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
-            for (ii=0; ii<nl; ++ii) {
-                long long offset = (long long)(headerBytes + ii*image_fdr->reclen);
+    FREE(basename);
 
-                FSEEK64(fp, offset, SEEK_SET);
-                FREAD(shorts, sizeof(unsigned short), ns, fp);
+    center_samp = crosshair_samp = (double)ns/2.;
+    center_line = crosshair_line = (double)nl/2.;
 
-                for (jj = 0; jj < ns; ++jj) {
-                    big16(shorts[jj]);
-                    data[jj + ii*ns] = (float)(shorts[jj]);
-                }
+    g_meta_name = STRDUP(meta_name);
+    free(meta_name);
 
-                asfPercentMeter((float)ii/nl);
-            }
-            free(shorts);
-        }
-        else if (meta->general->data_type == BYTE)
-        {
-            unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
-            for (ii=0; ii<nl; ++ii) {
-                long long offset = (long long)(headerBytes + ii*image_fdr->reclen);
+    g_data_name = STRDUP(data_name);
+    free(data_name);
 
-                FSEEK64(fp, offset, SEEK_SET);
-                FREAD(bytes, sizeof(unsigned char), ns, fp);
-
-                for (jj = 0; jj < ns; ++jj)
-                    data[jj + ii*ns] = (float)(bytes[jj]);
-
-                asfPercentMeter((float)ii/nl);
-            }
-            free(bytes);
-        }
-
-        asfPercentMeter(1.0);
-        fclose(fp);
-    }
-    else
-    {
-        // can't fit in memory, create the cache
-        data_ci = cached_image_new_from_file(filename, 0, headerBytes,
-            image_fdr->reclen, meta, FALSE,
-            FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
-
-    }
+    return TRUE;
 }
 
-static void read_alos(const char *basename, const char *img_name,
-                      const char *meta_name)
-{
-    printf("Reading ALOS: %s\n", img_name);
-    struct IOF_VFDR image_fdr;
-    get_ifiledr(basename, &image_fdr);
-    read_ceos(&image_fdr, img_name);
-}
 
-static void read_D(const char *filename)
-{
-    printf("Reading CEOS: %s\n", filename);
-    char *meta_filename = appendExt(filename, ".L");
-    struct IOF_VFDR image_fdr;
-    get_ifiledr(meta_filename, &image_fdr);
-    read_ceos(&image_fdr, filename);
-    free(meta_filename);
-}
 
-void read_file(const char *filename_in, const char *band)
-{
+/*
     char *filename = STRDUP(filename_in);
     char *basename = get_basename(filename);
+
 
     // first need to figure out what kind of file this is
     // we will do that based on the extension
@@ -241,9 +112,6 @@ void read_file(const char *filename_in, const char *band)
         // user gave extension
         img_file = STRDUP(filename);
     }
-
-    if (meta)
-        meta_free(meta);
 
     if (strcmp_case(ext, ".img") == 0) {
         assert(img_file);
@@ -335,10 +203,5 @@ void read_file(const char *filename_in, const char *band)
 
     FREE(img_file);
     FREE(filename);
-    FREE(basename);
-
-    assert(data||data_ci);
-
-    center_samp = crosshair_samp = (double)ns/2.;
-    center_line = crosshair_line = (double)nl/2.;
 }
+*/

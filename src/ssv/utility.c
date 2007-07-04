@@ -120,6 +120,12 @@ void message_box(const char *format, ...)
     if (len > 1022)
         printf("Lengthy message may have been truncated.\n");
 
+    // strip trailing newline -- looks much nicer, and allows us to
+    // call asfPrintWarning/Error & message_box interchangably and
+    // have both look good.
+    if (buf[strlen(buf)-1] == '\n')
+        buf[strlen(buf)-1] = '\0';
+
     GtkWidget *dialog, *label;
 
     dialog = gtk_dialog_new_with_buttons( "Message",

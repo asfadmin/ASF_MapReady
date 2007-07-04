@@ -21,6 +21,12 @@
 #include "asf_raster.h"
 #include "cache.h"
 
+typedef struct {
+    unsigned char *data;
+    int size_x;
+    int size_y;
+} ThumbnailData;
+
 /* for win32, need __declspec(dllexport) on all signal handlers. */
 #if !defined(SIGNAL_CALLBACK)
 #  if defined(win32)
@@ -57,10 +63,19 @@ void put_string_to_label(const char *widget_name, const char *txt);
 
 /* ssv.c */
 char *find_in_share(const char * filename);
-float get_pixel(int line, int sample);
 
 /* read.c */
-void read_file(const char *filename, const char *band);
+int read_file(const char *filename, const char *band, int on_fail_abort);
+int try_ext(const char *filename, const char *ext);
+
+/* read_asf.c */
+int try_asf(const char *filename);
+int handle_asf_file(const char *filename, char *meta_name, char *data_name,
+                    char **err);
+meta_parameters *read_asf_meta(const char *meta_name);
+int open_asf_data(const char *filename, const char *band,
+                  meta_parameters *meta, ReadClientFn **read_fn,
+                  ThumbFn **thumb_fn, void **read_client_info);
 
 /* big_image.c */
 void fill_big(void);
@@ -73,8 +88,10 @@ int get_big_image_height2(void);
 int calc_scaled_pixel_value(float val);
 
 /* small_image.c */
+ThumbnailData *get_thumbnail_data(void);
 void fill_small(void);
 void fill_small_force_reload(void);
+void fill_small_have_data(ThumbnailData *thumbnail_data);
 
 /* meta.c */
 char * escapify(const char * s);
@@ -110,14 +127,18 @@ extern const char PATH_SEPATATOR;
 /* xml version of the .glade file */
 extern GladeXML *glade_xml;
 extern meta_parameters *meta;
-extern float *data;
 extern CachedImage *data_ci;
 extern int nl, ns;
 extern double g_min, g_max;
+extern double g_avg, g_stddev;
+extern double g_stat_max, g_stat_min;
+extern int g_hist[256];
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
 extern double ctrl_clk_line, ctrl_clk_samp;
 extern char *g_filename;
+extern char *g_data_name;
+extern char *g_meta_name;
 
 #endif

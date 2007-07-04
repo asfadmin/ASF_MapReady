@@ -1,13 +1,8 @@
 #include "ssv.h"
 
-double avg, stddev;
-double stat_max, stat_min;
-int hist[256];
-
-// whether the stats have actually been calculated in the background thread
-int stats_calced = FALSE;    
-// whether the calculated stats have been applied to the gui's stats_label, etc
-int stats_generated = FALSE;
+double g_avg, g_stddev;
+double g_stat_max, g_stat_min;
+int g_hist[256];
 
 static void fill_stats_label()
 {
@@ -29,7 +24,7 @@ static void fill_stats_label()
         "Max Value: %.2f\n"
         "Mapping Fn for pixels:\n"
         "  Y = %.3f * X %c %.3f",
-        avg, stddev, stat_min, stat_max, m, c, b);
+        g_avg, g_stddev, g_stat_min, g_stat_max, m, c, b);
 
     put_string_to_label("stats_label", s);
 }
@@ -39,103 +34,19 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
-void calc_stats_thread(gpointer user_data)
-{
-    int i, j;
-    int n_nodata=0;
-    int n=0;
-
-    for (i=0; i<256; ++i)
-        hist[i] = 0;
-
-    avg = stddev = 0.0;
-    stat_max = -99999;
-    stat_min = 99999;
-
-    if (meta_is_valid_double(meta->general->no_data)) {
-        for (i=0; i<nl; i+=2) {
-            for (j=0; j<ns; j+=2) {
-                float v = get_pixel(i,j);
-                if (v != meta->general->no_data) {
-                    avg += v;
-
-                    if (v > stat_max) stat_max = v;
-                    if (v < stat_min) stat_min = v;
-
-                    int u = calc_scaled_pixel_value(v);
-                    hist[u] += 1;
-
-                    ++n;
-                } else {
-                    ++n_nodata;
-                }
-            }
-        }
-        avg /= (double)n;
-        for (i=0; i<nl; i+=2) {
-            for (j=0; j<ns; j+=2) {
-                float v = get_pixel(i,j);
-                if (v != meta->general->no_data)
-                    stddev += (v-avg)*(v-avg);
-            }
-        }
-    } else {
-        n = nl*ns/4;
-        for (i=0; i<nl; i+=2) {
-            for (j=0; j<ns; j+=2) {
-                float v = get_pixel(i,j);
-                avg += v;
-
-                if (v > stat_max) stat_max = v;
-                if (v < stat_min) stat_min = v;
-
-                int u = calc_scaled_pixel_value(v);
-                hist[u] += 1;
-            }
-        }
-        avg /= (double)n;
-        for (i=0; i<nl; i+=2) {
-            for (j=0; j<ns; j+=2) {
-                float v = get_pixel(i,j);
-                stddev += (v-avg)*(v-avg);
-            }
-        }
-    }
-
-    stddev = sqrt(stddev / (double)n);
-
-    stats_calced = TRUE;
-}
-
-void calc_image_stats()
-{
-    asfPrintStatus("Calculating stats asynchronously ...\n");
-
-    static GThreadPool *ttp = NULL;
-    GError *err = NULL;
-
-    if (!ttp) {
-        if (!g_thread_supported ()) g_thread_init (NULL);
-        ttp = g_thread_pool_new ((GFunc)calc_stats_thread, NULL, 4, TRUE, &err);
-        g_assert(!err);
-    }
-    g_thread_pool_push (ttp, "ignored", &err);
-    g_assert(!err);
-}
-
 static void pop_hist()
 {
     int i,j;
 
     int bin_max = 0;
     for (i=0; i<256; ++i) {
-        if (hist[i] > bin_max) bin_max = hist[i];
+        if (g_hist[i] > bin_max) bin_max = g_hist[i];
     }
 
     const int w = 200;
     unsigned char *histogram_data = MALLOC(sizeof(unsigned char)*256*w*4);
     for (i=0; i<256; ++i) {
-        int l = (int)((double)hist[i] / (double)bin_max * (double)w);
+        int l = (int)((double)g_hist[i] / (double)bin_max * (double)w);
         for (j=0; j<l*4; j += 4) {
             histogram_data[j+i*w*4] = (unsigned char)0;
             histogram_data[j+i*w*4+1] = (unsigned char)0;
@@ -186,24 +97,6 @@ int fill_stats()
         gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
     }
 
-    // stats may not have been fully calculated yet...
-    if (!stats_calced) {
-        // it usually doesn't take that long...
-        // wait a sec and try it again
-        g_usleep(500000);
-        if (!stats_calced) {
-            // tell the user to try again later.
-            put_string_to_label("stats_label", "");
-
-            int i;
-            for (i=0; i<256; ++i)
-                hist[i] = 0;
-            pop_hist();
-
-            return FALSE;
-        }
-    }
-
     fill_stats_label();
     pop_hist();
 
@@ -214,9 +107,5 @@ SIGNAL_CALLBACK int
 on_change_current_page(GtkNotebook *w, GtkNotebookPage *p, guint page_num,
                        gpointer user_data)
 {
-    if (page_num == 1 && !stats_generated) {
-        if (fill_stats())
-            stats_generated = TRUE;
-    }
     return TRUE;
 }

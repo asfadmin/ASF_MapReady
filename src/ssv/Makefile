@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = ssv
-SRCS = ssv.c utility.c font.c small_image.c read.c big_image.c meta.c stats.c google.c new.c cache.c
+SRCS = ssv.c utility.c font.c small_image.c read.c read_asf.c big_image.c meta.c stats.c google.c new.c cache.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -74,7 +74,7 @@ LIB = \
 	-lz \
 	-lcomdlg32
 
-CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
+CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\

@@ -10,8 +10,7 @@ GladeXML *glade_xml;
 // loaded metadata
 meta_parameters *meta;
 
-// loaded image data -- only one of these will be non-NULL
-float *data;
+// loaded image data
 CachedImage *data_ci;
 
 // various values
@@ -25,13 +24,9 @@ double ctrl_clk_samp, ctrl_clk_line;
 // loaded filename
 char *g_filename;
 
-float get_pixel(int line, int sample)
-{
-    if (data)
-        return data[sample + line*ns];
-    else
-        return cached_image_get_pixel(data_ci, line, sample);
-}
+// data & meta filenames
+char *g_data_name;
+char *g_meta_name;
 
 char *find_in_share(const char * filename)
 {
@@ -93,13 +88,21 @@ main(int argc, char **argv)
     reset_globals();
 
     g_filename = STRDUP(argv[1]);
+    g_data_name = g_meta_name = NULL;
 
     // strip off a trailing "."
     if (g_filename[strlen(g_filename)-1] == '.')
         g_filename[strlen(g_filename)-1] = '\0';
 
-    read_file(g_filename, band_specified ? band : NULL);
+    read_file(g_filename, band_specified ? band : NULL, TRUE);
 
+    assert(g_data_name);
+    assert(g_meta_name);
+
+    // we load the thumbnail data before bringing up the window, looks
+    // much nicer.  When loading an image within the GUI, we don't need
+    // to do get_thumbnail_data() as a separate step.
+    ThumbnailData *thumbnail_data = get_thumbnail_data();
     gtk_init(&argc, &argv);
 
     //GtkWidget *eb = get_widget_checked("big_image_eventbox");
@@ -111,24 +114,22 @@ main(int argc, char **argv)
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     free(glade_xml_file);
 
-    // set up window title
+    // set up window title, etc
     set_title(band_specified, band);
-
     set_toolbar_images();
 
     // load the metadata & image data, other setup
-    fill_small();
+    fill_small_have_data(thumbnail_data);
     fill_big();
     update_pixel_info();
     update_zoom();
     set_font();
     fill_meta_info();
-    calc_image_stats(); // starts a thread
+    //calc_image_stats(); // starts a thread
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 
-    if (data) free(data);
     if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
