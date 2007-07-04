@@ -1709,7 +1709,7 @@ int get_alos_delta_time (const char *fileName, meta_parameters *meta,
       // try "path/workreport"
       char *path = getPath(fileName);
       if (strlen(path) > 0)
-          sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
+          sprintf(summaryFile, "%s/workreport", path);
       else
           strcpy(summaryFile, "workreport");
       FREE(path);
