@@ -125,7 +125,7 @@ main(int argc, char **argv)
     update_zoom();
     set_font();
     fill_meta_info();
-    //calc_image_stats(); // starts a thread
+    fill_stats();
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
@@ -133,6 +133,8 @@ main(int argc, char **argv)
     if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
+    if (g_data_name) free(g_meta_name);
+    if (g_meta_name) free(g_data_name);
 
     exit (EXIT_SUCCESS);
 }

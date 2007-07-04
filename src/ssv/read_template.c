@@ -103,6 +103,7 @@ int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
                   float *dest, void *read_client_info,
                   meta_parameters *meta)
 {
+    ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
     return FALSE;
 }
 
@@ -132,6 +133,7 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
                          int thumb_size_y, meta_parameters *meta,
                          void *read_client_info, float *dest)
 {
+    ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
     return FALSE;
 }
 
@@ -142,7 +144,8 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
 // and set pointers to the read_X_client and get_X_thumbnail_data
 // functions.
 
-// [in] filename: the data file name, returned from handle_X_file().
+// [in] data_name: the data file name, returned from handle_X_file().
+// [in] meta_name: the meta file name, returned from handle_X_file().
 // [in] band: Command-line band argument.  Ignore if you don't support
 //            bands.  Will be NULL if no band argument was supplied, in
 //            which case you should load the first band.
@@ -152,9 +155,10 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
 // [out] read_client_info: Pointer to a populated ReadXClientInfo struct,
 //                         that you have allocated.
 
-int open_X_data(const char *filename, const char *band,
-                meta_parameters *meta, ReadClientFn **read_fn,
-                ThumbFn **thumb_fn, void **read_client_info)
+int open_X_data(const char *data_name, const char *meta_name,
+                const char *band, meta_parameters *meta,
+                ReadClientFn **read_fn, ThumbFn **thumb_fn,
+                void **read_client_info)
 {
     ReadXClientInfo *info = MALLOC(sizeof(ReadXClientInfo));
 

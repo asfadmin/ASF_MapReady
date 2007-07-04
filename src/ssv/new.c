@@ -209,12 +209,12 @@ void load_file(const char *file)
     if (data_ci) cached_image_free(data_ci);
     if (meta) meta_free(meta);
     if (g_filename) free(g_filename);
-    if (g_meta_name) free(g_filename);
-    if (g_data_name) free(g_filename);
+    if (g_meta_name) free(g_data_name);
+    if (g_data_name) free(g_meta_name);
 
     reset_globals();
 
-    printf("\nLoading: %s\n", file);
+    asfPrintStatus("\nLoading: %s\n", file);
 
     // start loading of the new file
     g_filename = STRDUP(file);

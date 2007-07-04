@@ -1,10 +1,4 @@
 #include "ssv.h"
-#include "asf_import.h"
-#include "get_ceos_names.h"
-#include "asf_nan.h"
-#include "asf_endian.h"
-
-#include <errno.h>
 
 int try_ext(const char *filename, const char *ext)
 {
@@ -42,6 +36,16 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             meta = read_asf_meta(meta_name);
             open_asf_data(data_name, band, meta,
+                &read_fn, &thumb_fn, &read_client_info);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    } else if (try_ceos(basename)) {
+        if (handle_ceos_file(filename, meta_name, data_name, &err)) {
+            meta = read_ceos_meta(meta_name);
+            open_ceos_data(data_name, meta_name, band, meta,
                 &read_fn, &thumb_fn, &read_client_info);
         } else {
             err_func(err);

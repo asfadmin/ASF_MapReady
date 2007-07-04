@@ -102,10 +102,3 @@ int fill_stats()
 
     return TRUE;
 }
-
-SIGNAL_CALLBACK int
-on_change_current_page(GtkNotebook *w, GtkNotebookPage *p, guint page_num,
-                       gpointer user_data)
-{
-    return TRUE;
-}
