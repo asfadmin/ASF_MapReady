@@ -86,6 +86,7 @@
 			  <child>
 			    <widget class="GtkButton" id="mdv_button">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Display CEOS Metadata</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -113,6 +114,7 @@
 			  <child>
 			    <widget class="GtkButton" id="google_earth_button">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Open scene in Google Earth.  Projected data will contain an image overlay.</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -161,15 +163,16 @@
 			  <child>
 			    <widget class="GtkButton" id="new_button">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Open a new file.</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
 			      <signal name="clicked" handler="on_new_button_clicked" last_modification_time="Fri, 29 Jun 2007 18:05:28 GMT"/>
 
 			      <child>
-				<widget class="GtkImage" id="new_image">
+				<widget class="GtkImage" id="image1">
 				  <property name="visible">True</property>
-				  <property name="stock">gtk-new</property>
+				  <property name="stock">gtk-open</property>
 				  <property name="icon_size">4</property>
 				  <property name="xalign">0.5</property>
 				  <property name="yalign">0.5</property>
