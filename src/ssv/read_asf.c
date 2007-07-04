@@ -112,9 +112,14 @@ int get_asf_thumbnail_data(FILE *fp, int thumb_size_x,
     return TRUE;
 }
 
+void free_asf_client_info(void *read_client_info)
+{
+    ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
+    free(info);
+}
+
 int open_asf_data(const char *filename, const char *band,
-                  meta_parameters *meta, ReadClientFn **read_fn,
-                  ThumbFn **thumb_fn, void **read_client_info)
+                  meta_parameters *meta, ClientInterface *client)
 {
     ReadAsfClientInfo *info = MALLOC(sizeof(ReadAsfClientInfo));
 
@@ -134,9 +139,10 @@ int open_asf_data(const char *filename, const char *band,
 
     info->band = b;
 
-    *read_client_info = info;
-    *read_fn = read_asf_client;
-    *thumb_fn = get_asf_thumbnail_data;
+    client->read_client_info = info;
+    client->read_fn = read_asf_client;
+    client->thumb_fn = get_asf_thumbnail_data;
+    client->free_fn = free_asf_client_info;
 
     return TRUE;
 }

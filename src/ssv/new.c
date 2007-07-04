@@ -82,11 +82,6 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(D_filt, "*.D");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
 
-    GtkFileFilter *alos_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
-    gtk_file_filter_add_pattern(alos_filt, "LED-*");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
-
     GtkFileFilter *alos2_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(alos2_filt, "ALOS Image Files (IMG-*)");
     gtk_file_filter_add_pattern(alos2_filt, "IMG-*");
@@ -133,7 +128,6 @@ void new_file(void)
 
     of.hwndOwner = NULL;
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
-        "ALOS Leader (LED-*)\0LED-*\0"
         "ALOS Image (IMG-*)\0IMG-*\0"
         "ASF Internal (*.img)\0*.img\0"
         "All Files\0*\0";

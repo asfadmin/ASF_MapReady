@@ -65,14 +65,13 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
 
         quiet=FALSE;
     } else {
-        self->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
-            self->meta, self->read_client_info, dest);
+        self->client->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
+            self->meta, self->client->read_client_info, dest);
     }
 }
 
 CachedImage * cached_image_new_from_file(
-    const char *file, meta_parameters *meta, 
-    ReadClientFn *read_fn, ThumbFn *thumb_fn, void *read_client_info)
+    const char *file, meta_parameters *meta, ClientInterface *client)
 {
     CachedImage *self = MALLOC(sizeof(CachedImage));
 
@@ -80,23 +79,20 @@ CachedImage * cached_image_new_from_file(
 
     self->fp = FOPEN(file, "rb");
 
-    self->read_fn = read_fn;
-    self->thumb_fn = thumb_fn;
-
-    self->read_client_info = read_client_info;
-    self->meta = meta;
+    self->client = client; // take ownership of this
+    self->meta = meta;     // do not take ownership of this
 
     self->nl = meta->general->line_count;
     self->ns = meta->general->sample_count;
 
     // how many rows per tile?
     // We will use ~64 Meg tiles
-    self->rows_per_tile = 64*1024*1024 / (ns*4);
+    self->rows_per_tile = 64*1024*1024 / (self->ns*4);
 
     // test line -- uncomment this for very small tiles
     //self->rows_per_tile = 2*1024*1024 / (ns*4);
 
-    asfPrintStatus("Image is %dx%d LxS\n", nl, ns);
+    asfPrintStatus("Image is %dx%d LxS\n", self->nl, self->ns);
     asfPrintStatus("Using %d rows per tile.\n", self->rows_per_tile);
 
     // at the beginning, we have no tiles
@@ -233,48 +229,8 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
         print_cache_size(self);
     }
 
-    self->read_fn(self->fp, rs, rows_to_get, self->cache[spot],
-        self->read_client_info, self->meta);
-
-    //// for asf internal, can use get_float_line
-    //if (self->is_asf_internal) {
-    //    // asf internal is the easy one
-    //    get_float_lines(self->fp, meta, rs + nl*self->band,
-    //        rows_to_get, self->cache[spot]);
-    //} else {
-    //    // ceos
-    //    if (meta->general->data_type == INTEGER16) {
-    //        unsigned short *shorts = MALLOC(sizeof(unsigned short)*self->ns);
-    //        for (i=rs; i<rs+rows_to_get; ++i) {
-    //            long long offset =
-    //                (long long)(self->headerLen + i*self->recLen);
-
-    //            FSEEK64(self->fp, offset, SEEK_SET);
-    //            FREAD(shorts, sizeof(unsigned short), self->ns, self->fp);
-
-    //            int j;
-    //            for (j=0; j<self->ns; ++j) {
-    //                big16(shorts[j]);
-    //                self->cache[spot][i*self->ns + j] = (float)shorts[j];
-    //            }
-    //        }
-    //        free (shorts);
-    //    } else if (meta->general->data_type == BYTE) {
-    //        unsigned char *bytes = MALLOC(sizeof(unsigned char)*self->ns);
-    //        for (i=rs; i<rs+self->rows_per_tile; ++i) {
-    //            long long offset =
-    //                (long long)(self->headerLen + i*self->recLen);
-
-    //            FSEEK64(self->fp, offset, SEEK_SET);
-    //            FREAD(bytes, sizeof(unsigned char), self->ns, self->fp);
-
-    //            int j;
-    //            for (j=0; j<self->ns; ++j)
-    //                self->cache[spot][i*self->ns + j] = (float)bytes[j];
-    //        }
-    //        free (bytes);
-    //    }
-    //}
+    self->client->read_fn(self->fp, rs, rows_to_get, self->cache[spot],
+        self->client->read_client_info, self->meta);
 
     return self->cache[spot][(line-rs)*self->ns + samp];
 }
@@ -289,11 +245,15 @@ void cached_image_free (CachedImage *self)
             free(self->cache[i]);
     }
 
+    self->client->free_fn(self->client->read_client_info);
+
     free(self->rowstarts);
     free(self->access_counts);
     free(self->cache);
+    free(self->client);
 
     // we do not own the metadata -- don't free it!
+
     free(self);
 }
 

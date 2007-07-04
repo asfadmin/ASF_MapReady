@@ -32,11 +32,6 @@ int try_alos(const char *filename)
     return ret;
 }
 
-meta_parameters *read_alos_meta(const char *meta_name)
-{
-    return meta_create(meta_name);
-}
-
 int handle_alos_file(const char *filename, const char *band,
                      char *meta_name, char *data_name, char **err)
 {
@@ -56,8 +51,26 @@ int handle_alos_file(const char *filename, const char *band,
         else
             strcpy(meta_name, "");
         strcat(meta_name, "LED-");
-        char *p = strchr(file+5, '-') + 1;
-        strcat(meta_name, p);
+        // may or may not have a band specifier after the IMG-
+        // so, we have to try both
+        char *p = file+4;
+        char *tmp = MALLOC(sizeof(char)*(strlen(filename)+10));
+        sprintf(tmp, "%s%s", meta_name, p);
+        if (fileExists(tmp)) {
+            // worked!  No band name
+            strcpy(meta_name, tmp);
+        } else {
+            // did not work -- assume band name present
+            p = strchr(p+1, '-');
+            if (p) {
+                strcat(meta_name, p+1);
+            } else {
+                // no '-' found, probably no band name there.  We will go
+                // with our best guess but we'll likely error out.
+                strcpy(meta_name, tmp);
+            }
+        }
+        free(tmp);
     } else {
         // either user provided the name of the LED- file
         // or user provided the basename
@@ -121,35 +134,4 @@ int handle_alos_file(const char *filename, const char *band,
     free(file);
 
     return ret;
-}
-
-// we couldn't use open_ceos_data, because of what needs to get
-// passed to get_ifiledr -- for alos, must pass in the basename
-int open_alos_data(const char *data_name, const char *meta_name,
-                   const char *band, meta_parameters *meta, 
-                   ReadClientFn **read_fn, ThumbFn **thumb_fn,
-                   void **read_client_info)
-{
-    ReadCeosClientInfo *info = MALLOC(sizeof(ReadCeosClientInfo));
-
-    int ns = meta->general->sample_count;
-
-    *read_client_info = info;
-
-    // for alos, use the ceos reader client functions
-    *read_fn = read_ceos_client;
-    *thumb_fn = get_ceos_thumbnail_data;
-
-    struct IOF_VFDR image_fdr;
-    get_ifiledr(meta_name, &image_fdr);
-
-    int leftFill = image_fdr.lbrdrpxl;
-    int rightFill = image_fdr.rbrdrpxl;
-
-    info->headerBytes = firstRecordLen((char*)data_name) +
-        (image_fdr.reclen - (ns + leftFill + rightFill)*image_fdr.bytgroup);
-
-    info->reclen = image_fdr.reclen;
-
-    return TRUE;
 }

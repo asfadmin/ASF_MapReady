@@ -75,8 +75,8 @@ int handle_asf_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_asf_meta(const char *meta_name);
 int open_asf_data(const char *filename, const char *band,
-                  meta_parameters *meta, ReadClientFn **read_fn,
-                  ThumbFn **thumb_fn, void **read_client_info);
+                  meta_parameters *meta, ClientInterface *client);
+void free_asf_client_info(void *read_client_info);
 
 /* read_ceos.c */
 int try_ceos(const char *filename);
@@ -84,18 +84,13 @@ int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_ceos_meta(const char *meta_name);
 int open_ceos_data(const char *dataname, const char *metaname, const char *band,
-                   meta_parameters *meta, ReadClientFn **read_fn,
-                   ThumbFn **thumb_fn, void **read_client_info);
+                   meta_parameters *meta, ClientInterface *client);
+void free_ceos_client_info(void *read_client_info);
 
 /* read_alos.c */
 int try_alos(const char *filename);
 int handle_alos_file(const char *filename, const char *band, char *meta_name,
                      char *data_name, char **err);
-meta_parameters *read_alos_meta(const char *meta_name);
-int open_alos_data(const char *dataname, const char *metaname, const char *band,
-                   meta_parameters *meta, ReadClientFn **read_fn,
-                   ThumbFn **thumb_fn, void **read_client_info);
-
 
 /* big_image.c */
 void fill_big(void);

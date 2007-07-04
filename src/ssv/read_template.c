@@ -140,6 +140,18 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
 //----------------------------------------------------------------------
 // open_X_data()
 
+// You probably don't need to change this beyond updating "X"
+// Frees the client info structure
+
+void free_X_client_info(void *read_client_info)
+{
+    ReadXClientInfo *info = (ReadXClientInfo*) read_client_info;
+    free(info);
+}
+
+//----------------------------------------------------------------------
+// open_X_data()
+
 // Open the data file, populate the read_client_info structure,
 // and set pointers to the read_X_client and get_X_thumbnail_data
 // functions.
@@ -150,21 +162,20 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
 //            bands.  Will be NULL if no band argument was supplied, in
 //            which case you should load the first band.
 // [in] meta: The metdata from read_X_meta().
-// [out] read_fn: Pointer to read_X_client
-// [out] thumb_fn: Pointer to get_X_thumbnail_data
-// [out] read_client_info: Pointer to a populated ReadXClientInfo struct,
-//                         that you have allocated.
+// [out] client: Structure of pointers to client functions,
+//               including the read_client_info.  You should allocate
+//               read_client_info, but ClientInterface is pre-allocated
 
 int open_X_data(const char *data_name, const char *meta_name,
                 const char *band, meta_parameters *meta,
-                ReadClientFn **read_fn, ThumbFn **thumb_fn,
-                void **read_client_info)
+                ClientInterface *client)
 {
     ReadXClientInfo *info = MALLOC(sizeof(ReadXClientInfo));
 
-    *read_client_info = info;
-    *read_fn = read_X_client;
-    *thumb_fn = get_X_thumbnail_data;
+    client->read_client_info = info;
+    client->read_fn = read_X_client;
+    client->thumb_fn = get_X_thumbnail_data;
+    client->free_fn = get_X_thumbnail_data;
 
     return FALSE;
 }

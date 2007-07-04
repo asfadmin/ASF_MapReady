@@ -163,18 +163,19 @@ int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
     return TRUE;
 }
 
+void free_ceos_client_info(void *read_client_info)
+{
+    ReadCeosClientInfo *info = (ReadCeosClientInfo*) read_client_info;
+    free(info);
+}
+
 int open_ceos_data(const char *data_name, const char *meta_name,
-                   const char *band, meta_parameters *meta, 
-                   ReadClientFn **read_fn, ThumbFn **thumb_fn,
-                   void **read_client_info)
+                   const char *band, meta_parameters *meta,
+                   ClientInterface *client)
 {
     ReadCeosClientInfo *info = MALLOC(sizeof(ReadCeosClientInfo));
 
     int ns = meta->general->sample_count;
-
-    *read_client_info = info;
-    *read_fn = read_ceos_client;
-    *thumb_fn = get_ceos_thumbnail_data;
 
     struct IOF_VFDR image_fdr;
     get_ifiledr(meta_name, &image_fdr);
@@ -186,6 +187,11 @@ int open_ceos_data(const char *data_name, const char *meta_name,
         (image_fdr.reclen - (ns + leftFill + rightFill)*image_fdr.bytgroup);
 
     info->reclen = image_fdr.reclen;
+
+    client->read_client_info = info;
+    client->read_fn = read_ceos_client;
+    client->thumb_fn = get_ceos_thumbnail_data;
+    client->free_fn = free_ceos_client_info;
 
     return TRUE;
 }
