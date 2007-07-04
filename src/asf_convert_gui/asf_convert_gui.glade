@@ -140,6 +140,15 @@
 				  <signal name="activate" handler="on_complex_activate" last_modification_time="Tue, 14 Sep 2004 18:29:52 GMT"/>
 				</widget>
 			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="asf_internal">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">ASF Internal</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_asf_internal_activate" last_modification_time="Wed, 04 Jul 2007 21:39:52 GMT"/>
+				</widget>
+			      </child>
 			    </widget>
 			  </child>
 			</widget>
