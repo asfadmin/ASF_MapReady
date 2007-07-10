@@ -84,8 +84,8 @@ int is_slant_range(meta_parameters *md)
   // projection types
   if (ms) {
     return ( (ms->image_type == 'P' && mp->type == SCANSAR_PROJECTION) ||
-	     ms->image_type == 'S'
-	     ) ? 1 : 0;
+       ms->image_type == 'S'
+       ) ? 1 : 0;
   }
   else
     return 0;
@@ -415,6 +415,7 @@ void datum_2_string (char *datum_str, datum_type_t datum)
 void write_datum_key (GTIF *ogtif, datum_type_t datum,
                       double re_major, double re_minor)
 {
+  short user_defined = 32767;
   //
   // NOTE: There is no GCS or GCSE value available for ITRF97,
   // but ITRF97 is based on WGS84.  Using WGS84 rather than ITRF97

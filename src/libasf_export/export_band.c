@@ -445,7 +445,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
       }
-        break;
+      break;
       case POLAR_STEREOGRAPHIC:
       {
         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
@@ -458,45 +458,42 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.ps.slon);
         }
-	if (meta_is_valid_double(md->projection->param.ps.slat)) {
+        if (meta_is_valid_double(md->projection->param.ps.slat)) {
           GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.ps.slat);
-	}
-	if (meta_is_valid_double(md->projection->param.ps.false_easting)) {
-	  GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+        }
+        if (meta_is_valid_double(md->projection->param.ps.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.ps.false_easting);
         }
-	else {
+        else {
           GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
         if (meta_is_valid_double(md->projection->param.ps.false_northing)) {
-  	  GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
                       md->projection->param.ps.false_northing);
         }
         else {
           GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
         }
-	// This writes the GeographicTypeGeoKey
+        // This writes the GeographicTypeGeoKey
         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
-	if (md->projection->datum != HUGHES_DATUM) {
-	
-	
-	
-        snprintf (citation, max_citation_length + 1,
-                  "Polar stereographic projected GeoTIFF using %s "
-                  "datum written by Alaska Satellite Facility "
-                  "tools", datum_str);
-        append_band_names(band_names, rgb, citation);
-        citation_length = strlen(citation);
-        asfRequire (citation_length >= 0 &&
-            citation_length <= max_citation_length,
-            "bad citation length");
-	{
+        if (md->projection->datum != HUGHES_DATUM) {
+          snprintf (citation, max_citation_length + 1,
+                    "Polar stereographic projected GeoTIFF using %s "
+                    "datum written by Alaska Satellite Facility "
+                    "tools", datum_str);
+          append_band_names(band_names, rgb, citation);
+          citation_length = strlen(citation);
+          asfRequire (citation_length >= 0 &&
+                      citation_length <= max_citation_length,
+                      "bad citation length");
+        }
         else {
           // Hughes Datum
           // ...Since the datum is user-defined and the GeoTIFF is now delving outside the
@@ -519,7 +516,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
       }
-        break;
+      break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       {
         GTIFKeySet (ogtif, ProjectedCSTypeGeoKey, TYPE_SHORT, 1,
