@@ -310,6 +310,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
     char *citation;
     int citation_length;
 
+    // For now, only support the Hughes ellipsoid for polar stereo
+    if (md->projection->datum == HUGHES_DATUM &&
+        md->projection->type != POLAR_STEREOGRAPHIC)
+    {
+      asfPrintError("Hughes Ellipsoid is only supported for Polar Stereographic projections.\n");
+    }
+
     /* Write the appropriate geotiff keys for the projection type.  */
     switch (md->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
@@ -447,21 +454,39 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     CT_PolarStereographic);
-        GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.ps.slon);
-        GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.ps.slat);
-        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.ps.false_easting);
-        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.ps.false_northing);
-        // This writes the GeographicTypeGeoKey
+        if (meta_is_valid_double(md->projection->param.ps.slon)) {
+          GTIFKeySet (ogtif, ProjStraightVertPoleLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.ps.slon);
+        }
+	if (meta_is_valid_double(md->projection->param.ps.slat)) {
+          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.ps.slat);
+	}
+	if (meta_is_valid_double(md->projection->param.ps.false_easting)) {
+	  GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.ps.false_easting);
+        }
+	else {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.ps.false_northing)) {
+  	  GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.ps.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+	// This writes the GeographicTypeGeoKey
         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
         /* Set the citation key.  */
         char datum_str[256];
         datum_2_string (datum_str, md->projection->datum);
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
+	if (md->projection->datum != HUGHES_DATUM) {
+	
+	
+	
         snprintf (citation, max_citation_length + 1,
                   "Polar stereographic projected GeoTIFF using %s "
                   "datum written by Alaska Satellite Facility "
@@ -471,8 +496,24 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
             "bad citation length");
-        // The following is not needed for any but UTM (according to the standard)
-        // but it appears that everybody uses it anyway... so we'll write it
+	{
+        else {
+          // Hughes Datum
+          // ...Since the datum is user-defined and the GeoTIFF is now delving outside the
+          // realm of 'normal' GeoTIFFs, we put all the pertinent projection parameters
+          // into the citation strings to help users if their s/w doesn't 'like' user-defined
+          // datums.
+          citation_length =
+              snprintf (citation, max_citation_length + 1,
+                        "Polar stereographic projected GeoTIFF using Hughes "
+                        "ellipsoid written by Alaska Satellite Facility "
+                        "tools, Natural Origin Latitude %lf, Straight Vertical "
+                        "Pole %lf.", md->projection->param.ps.slat,
+                        md->projection->param.ps.slon);
+          asfRequire (citation_length >= 0 &&
+              citation_length <= max_citation_length,
+          "bad citation length");
+        }
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
         // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);

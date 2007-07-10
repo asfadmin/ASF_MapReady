@@ -46,6 +46,9 @@ spheroid_type_t axis2spheroid (double re_major, double re_minor)
   diff_array[9].spheroid = WGS84_SPHEROID;
   diff_array[9].diff = spheroid_diff_from_axis(diff_array[9].spheroid, re_major, re_minor);
 
+  diff_array[10].spheroid = HUGHES_SPHEROID;
+  diff_array[10].diff = spheroid_diff_from_axis(diff_array[10].spheroid, re_major, re_minor);
+
   // NOTE: Counting down (see below) rather than up puts a preference on using a newer or
   // more common spheroids rather than an older or less common ...look at the list above.
   // => GRS1980 and GEM10C will have similar results in general, so in this case in particular,
@@ -138,6 +141,10 @@ double spheroid_diff_from_axis (spheroid_type_t spheroid, double n_semi_major, d
     case WGS84_SPHEROID:
       s_semi_major = WGS84_SEMIMAJOR;
       s_semi_minor = WGS84_SEMIMAJOR * (1.0 - 1.0/WGS84_INV_FLATTENING);
+      break;
+    case HUGHES_SPHEROID:
+      s_semi_major = HUGHES_SEMIMAJOR;
+      s_semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
       break;
     default:
       asfPrintError("ERROR: Unsupported spheroid type in spheroid_axis_fit()\n");
@@ -396,6 +403,9 @@ void datum_2_string (char *datum_str, datum_type_t datum)
     case ITRF97_DATUM:
       strcpy(datum_str, "ITRF97 (WGS 84)");
       break;
+    case HUGHES_DATUM:
+      strcpy(datum_str, "HUGHES 1980");
+      break;
     default:
       strcpy (datum_str, "UNKNOWN or UNSUPPORTED");
       break;
@@ -430,6 +440,20 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
     case ITRF97_DATUM:
     case WGS84_DATUM:
       GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCS_WGS_84);
+      break;
+    case HUGHES_DATUM:
+      // The GeoTIFF standard knows nothing of a Hughes ellipsoid/spheroid or
+      // datum... the following implements a user-defined version (what the
+      // standard calls "a rare bird indeed")
+      GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, user_defined);
+      GTIFKeySet (ogtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, user_defined);
+      GTIFKeySet (ogtif, GeogEllipsoidGeoKey, TYPE_SHORT, 1, user_defined);
+      GTIFKeySet (ogtif, GeogSemiMajorAxisGeoKey, TYPE_DOUBLE, 1,
+                  (double) HUGHES_SEMIMAJOR);
+      GTIFKeySet (ogtif, GeogInvFlatteningGeoKey, TYPE_DOUBLE, 1,
+                  (double) HUGHES_INV_FLATTENING);
+      double semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
+      GTIFKeySet (ogtif, GeogSemiMinorAxisGeoKey, TYPE_DOUBLE, 1, semi_minor);
       break;
     case EGM96_DATUM:
     case ETRF89_DATUM:
@@ -468,6 +492,21 @@ void write_datum_key (GTIF *ogtif, datum_type_t datum,
           break;
         case WGS84_SPHEROID:
           GTIFKeySet (ogtif, GeographicTypeGeoKey, TYPE_SHORT, 1, GCSE_WGS84);
+          break;
+        case HUGHES_SPHEROID:
+          // The Hughes datum (really the ellipsoid) is special ..a little recursion lets
+          // the key-writing code exist in one place (see case above) instead of repeating
+          // it here.
+          // FIXME: It is rare that the ellipsoid-fitting code would actually get called,
+          // BUT at this time the Hughes ellipsoid is only supported for polar stereo
+          // map projections.  If the ellipsoid-fitting code (here) got called and the
+          // map projection is a not a polar stereo, then it's possible that a Hughes
+          // ellipsoid (aka datum or spheroid) could be written to the GeoTIFF and we wouldn't
+          // have trapped the error ...but I think this would be so rare that I'm willing to
+          // take a chance on it rather than modify the parameters to write_datum_key()
+          // to include either a pointer to metadata or the projection type.  I prefer
+          // loose coupling...
+          write_datum_key (ogtif, HUGHES_DATUM, re_major, re_minor);
           break;
         default:
             // Don't write anything into GeographicTypeGeoKey (including 'user-defined'
