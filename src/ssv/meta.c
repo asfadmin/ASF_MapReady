@@ -43,7 +43,9 @@ void fill_meta_info()
           "Azimuth Time/Pixel: %f s\n"
           "Slant to First Pixel: %.1f m\n"
           "PRF: %.1f Hz\n"
-          "Satellite Height: %.0f m\n\n",
+          "Earth Radius: %.0f m\n"
+          "Satellite Height: %.0f m\n"
+          "    (Above Earth: %.0f m)\n\n",
             meta->sar->look_direction,
             meta->sar->look_count,
             meta->sar->deskewed ? "Yes" : "No",
@@ -51,7 +53,9 @@ void fill_meta_info()
             meta->sar->azimuth_time_per_pixel,
             meta->sar->slant_range_first_pixel,
             meta->sar->prf,
-            meta->sar->satellite_height);
+            meta->sar->earth_radius,
+            meta->sar->satellite_height,
+            meta->sar->satellite_height-meta->sar->earth_radius);
       }
       if (meta->projection) {
           sprintf(&s[strlen(s)], "%s",
