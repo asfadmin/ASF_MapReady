@@ -122,6 +122,7 @@ typedef enum {
   INTERNATIONAL1967_SPHEROID,
   WGS72_SPHEROID,
   WGS84_SPHEROID,
+  HUGHES_SPHEROID,
   UNKNOWN_SPHEROID
 } spheroid_type_t;
 
@@ -135,6 +136,7 @@ typedef enum {
   NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
   WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
   WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
+  HUGHES_DATUM,
   UNKNOWN_DATUM
 } datum_type_t;
 
