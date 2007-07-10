@@ -108,6 +108,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(alos_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
 
+    GtkFileFilter *img_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(img_filt, "ASF Internal Files (*.img)");
+    gtk_file_filter_add_pattern(img_filt, "*.img");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
@@ -151,6 +156,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         "GeoTIFF Files (*.tif)\0*.tif\0"
         "Complex Files (*.cpx)\0*.cpx\0"
         "ALOS Files (LED-*)\0LED-*\0"
+        "ASF Internal Files (*.img)\0*.img\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;

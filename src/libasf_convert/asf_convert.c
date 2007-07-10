@@ -1032,7 +1032,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(outFile, "%s", cfg->general->out_name);
 
       // Move the .meta file out of temporary status
-      copy_meta(inFile, outFile);
+      // Don't need to do this if we skipped import, we'd already have .meta
+      if (cfg->general->import)
+          copy_meta(inFile, outFile);
 
       if (strlen(cfg->export->rgb) > 0) {
           // user has requested banding

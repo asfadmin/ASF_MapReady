@@ -296,6 +296,7 @@ show_queued_thumbnails()
     int i;
     for (i = 0; i < QUEUE_SIZE; ++i) {
         if (thumb_files[i]) {
+
             // do a gtk main loop iteration
             while (gtk_events_pending())
                 gtk_main_iteration();
@@ -323,8 +324,6 @@ add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
     {
         GtkWidget *files_list;
         gchar * out_name_full;
-
-        //printf("Adding: %s\n", data_file);
 
         files_list = get_widget_checked("files_list");
         char *bands = build_band_list(data_file);

@@ -166,7 +166,7 @@ meta_file_name(const gchar * data_file_name)
         return g_strdup(data_file_name);
     }
 
-    gchar * p = strrchr(data_file_name, '.');
+    char *p = findExt(data_file_name);
     if (!p)
     {
         gchar * ret =
@@ -177,19 +177,20 @@ meta_file_name(const gchar * data_file_name)
         return ret;
     }
 
-    if (strcmp(p + 1, "D") == 0)
+    if (strcmp(p, ".D") == 0)
     {
         gchar * ret = g_strdup(data_file_name);
         ret[strlen(data_file_name) - 1] = 'L';
         return ret;
     }
 
-    if (strcmp(p + 1, ".img") == 0)
+    if (strcmp(p, ".img") == 0)
     {
         gchar * ret =
-            (gchar *) g_malloc(sizeof(gchar) * (strlen(data_file_name) + 2));
+            (gchar *) g_malloc(sizeof(gchar) * (strlen(data_file_name) + 5));
         strcpy(ret, data_file_name);
-        *(ret + (data_file_name - p + 1)) = '\0';
+        p = findExt(ret);
+        *p = '\0';
         strcat(ret, ".meta");    
         return ret;
     }
