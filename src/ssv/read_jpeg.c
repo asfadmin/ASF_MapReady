@@ -127,14 +127,7 @@ int read_jpeg_client(FILE *fp, int row_start, int n_rows_to_get,
     int ns = meta->general->sample_count;
     JSAMPLE *rgbBuf = MALLOC(sizeof(JSAMPLE)*ns*cinfo->output_components);
 
-    //jpeg_start_output(cinfo, 0);
-
-    int i;
-    for (i=0; i<row_start; ++i) {
-        jpeg_read_scanlines(cinfo, &rgbBuf, 1);
-    }
-
-    int k=0;
+    int i,k=0;
     for (i=0; i<n_rows_to_get; ++i) {
         jpeg_read_scanlines(cinfo, &rgbBuf, 1);
 
@@ -147,18 +140,8 @@ int read_jpeg_client(FILE *fp, int row_start, int n_rows_to_get,
         }
     }
 
-    //jpeg_finish_output(cinfo);
-
     return TRUE;
 }
-
-//int get_jpeg_thumbnail_data(FILE *fp, int thumb_size_x,
-//                            int thumb_size_y, meta_parameters *meta,
-//                            void *read_client_info, void *dest)
-//{
-//    ReadJpegClientInfo *info = (ReadJpegClientInfo*)read_client_info;
-//    return FALSE;
-//}
 
 void free_jpeg_client_info(void *read_client_info)
 {
@@ -184,7 +167,7 @@ int open_jpeg_data(const char *data_name, const char *meta_name,
 
     client->read_client_info = info;
     client->read_fn = read_jpeg_client;
-    client->thumb_fn = NULL; //get_jpeg_thumbnail_data;
+    client->thumb_fn = NULL;
     client->free_fn = free_jpeg_client_info;
 
     client->data_type = RGB_BYTE;

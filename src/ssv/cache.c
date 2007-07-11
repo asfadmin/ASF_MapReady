@@ -179,6 +179,12 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
                          void *dest_void)
 {
     if (self->entire_image_fits || !self->client->thumb_fn) {
+        // Either we don't have thumbnailing support from the client,
+        // or the image will fit entirely in memory.  In both cases, we
+        // can just call get_pixel() on the subset necessary to show
+        // the image, which will load the entire image into cache.
+        // (... well, unless it is so huge that our tiles fit between
+        //      the thumbnail grid ... but that's crazy talk)
         int ds = data_size(self);
         unsigned char *dest = (unsigned char*)dest_void;
 
@@ -186,6 +192,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
         int sf = meta->general->line_count / thumb_size_y;
         assert(sf==meta->general->sample_count / thumb_size_x);
 
+        // supress the "populating cache" msgs when loading the whole thing
         quiet=TRUE;
 
         int i,j;
@@ -218,7 +225,7 @@ CachedImage * cached_image_new_from_file(
     self->fp = FOPEN(file, "rb");
 
     self->client = client; // take ownership of this
-    self->meta = meta;     // do not take ownership of this
+    self->meta = meta;     // do NOT take ownership of this
 
     self->nl = meta->general->line_count;
     self->ns = meta->general->sample_count;

@@ -15,7 +15,6 @@ CachedImage *data_ci;
 
 // various values
 int nl, ns;
-double g_min, g_max;
 double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;

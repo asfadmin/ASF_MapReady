@@ -188,7 +188,7 @@ void set_title(int band_specified, char *band)
 
 void reset_globals()
 {
-    g_min = g_max = 0;
+    clear_stats();
     center_line = center_samp = crosshair_samp = crosshair_line = -1;
     ctrl_clk_line = ctrl_clk_samp = -1;
     zoom = 1;

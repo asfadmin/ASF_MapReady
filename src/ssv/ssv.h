@@ -123,9 +123,11 @@ void fill_meta_info(void);
 void open_mdv(void);
 
 /* stats.c */
-void calc_image_stats(void);
+unsigned char *generate_thumbnail_data(int tsx, int tsy);
 int fill_stats(void);
 void calc_stats_thread(gpointer user_data);
+int calc_scaled_pixel_value(float val);
+void clear_stats(void);
 
 /* google.c */
 char *find_in_path(char * file);
@@ -146,17 +148,23 @@ extern const char DIR_SEPARATOR;
 
 extern const char PATH_SEPATATOR;
 
+typedef struct {
+    double map_min, map_max; // max/min for 2-sigma mapping
+    double avg, stddev;
+    double act_min, act_max; // absolute min/max of all values
+    int hist[256];           // histogram
+} ImageStats;
+
 /*************** these are our global variables ... ***********************/
 
 /* xml version of the .glade file */
 extern GladeXML *glade_xml;
 extern meta_parameters *meta;
 extern CachedImage *data_ci;
+
 extern int nl, ns;
-extern double g_min, g_max;
-extern double g_avg, g_stddev;
-extern double g_stat_max, g_stat_min;
-extern int g_hist[256];
+extern ImageStats g_stats;
+
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;

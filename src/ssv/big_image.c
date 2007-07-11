@@ -203,19 +203,6 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     }
 }
 
-int calc_scaled_pixel_value(float val)
-{
-    if (meta_is_valid_double(meta->general->no_data) && 
-        val == meta->general->no_data)
-        return 0;
-    if (val < g_min)
-        return 0;
-    else if (val > g_max)
-        return 255;
-    else
-        return (int) round(((val-g_min)/(g_max-g_min))*255);
-}
-
 static GdkPixbuf * make_big_image()
 {
     assert(data_ci && meta);
