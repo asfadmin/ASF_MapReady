@@ -49,6 +49,7 @@
 #define IMPORT_GENERIC_FLOAT_MICRON 0.000000001
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, IMPORT_GENERIC_FLOAT_MICRON))
+#define FLOAT_TOLERANCE 0.00001
 
 #define DEFAULT_UTM_SCALE_FACTOR     0.9996
 
@@ -62,6 +63,7 @@
 #define HUGHES_DATUM_STR  "HUGHES"
 
 #define USER_DEFINED_PCS             32767
+#define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
 // If you change the BAND_ID_STRING here, make sure you make an identical
@@ -149,7 +151,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Open the structure that contains the geotiff keys.
   input_gtif = GTIFNew (input_tiff);
   asfRequire (input_gtif != NULL,
-	      "Error reading GeoTIFF keys from input TIFF file.\n");
+        "Error reading GeoTIFF keys from input TIFF file.\n");
 
 
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
@@ -500,7 +502,53 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
             }
           }
         }
-        // FIXME: Hughes datum support... need it!
+        // Hughes datum support ...The Hughes-1980 datum is user-defined and the
+        // typically defined by the major and inv-flattening
+        // FIXME: There are several ways of representing otherwise-undefined datum
+        // datum types ...maybe consider supporting those?  (Probably not...)
+        if (datum == UNKNOWN_DATUM) {
+          short int ellipsoid_key;
+          read_count = GTIFKeyGet(input_gtif, GeogEllipsoidGeoKey, &ellipsoid_key, 0, 1);
+          if (read_count && ellipsoid_key == USER_DEFINED_KEY) {
+            double semi_major = 0.0;
+            double semi_minor = 0.0;
+            double inv_flattening = 0.0;
+            double hughes_semiminor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
+            read_count = GTIFKeyGet(input_gtif, GeogSemiMajorAxisGeoKey, &semi_major, 0, 1);
+            read_count += GTIFKeyGet(input_gtif, GeogInvFlatteningGeoKey, &inv_flattening, 0, 1);
+            read_count += GTIFKeyGet(input_gtif, GeogSemiMinorAxisGeoKey, &semi_minor, 0, 1);
+            if (read_count >= 2 &&
+                     semi_major != USER_DEFINED_KEY &&
+                     inv_flattening != USER_DEFINED_KEY &&
+                     FLOAT_COMPARE_TOLERANCE(semi_major, HUGHES_SEMIMAJOR, FLOAT_TOLERANCE) &&
+                     FLOAT_COMPARE_TOLERANCE(inv_flattening, HUGHES_INV_FLATTENING, FLOAT_TOLERANCE))
+            {
+              datum = HUGHES_DATUM;
+            }
+            else if (read_count >= 2 &&
+                     semi_major != USER_DEFINED_KEY &&
+                     semi_minor != USER_DEFINED_KEY &&
+                     FLOAT_COMPARE_TOLERANCE(semi_major, HUGHES_SEMIMAJOR, FLOAT_TOLERANCE) &&
+                     FLOAT_COMPARE_TOLERANCE(semi_minor, hughes_semiminor, FLOAT_TOLERANCE))
+            {
+              datum = HUGHES_DATUM;
+            }
+            else if (read_count >= 2 &&
+                     semi_minor != USER_DEFINED_KEY &&
+                     inv_flattening != USER_DEFINED_KEY &&
+                     FLOAT_COMPARE_TOLERANCE(semi_minor, hughes_semiminor, FLOAT_TOLERANCE) &&
+                     FLOAT_COMPARE_TOLERANCE(inv_flattening, HUGHES_INV_FLATTENING, FLOAT_TOLERANCE))
+            {
+              datum = HUGHES_DATUM;
+            }
+            else {
+              datum = UNKNOWN_DATUM;
+            }
+          }
+          else {
+            datum = HUGHES_DATUM;
+          }
+        }
         if (datum == UNKNOWN_DATUM) {
           asfPrintWarning("Unable to determine datum type from GeoTIFF file\n"
                         "Defaulting to WGS-84 ...This may result in projection errors\n");
@@ -1135,7 +1183,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Copy all fields just in case of future code rearrangements...
   copy_proj_parms (&proj, mp);
   proj_to_latlon(&proj,center_x, center_y, 0.0,
-		 &center_latitude, &center_longitude, &dummy_var);
+     &center_latitude, &center_longitude, &dummy_var);
   mg->center_latitude = R2D*center_latitude;
   mg->center_longitude = R2D*center_longitude;
 
@@ -1199,8 +1247,9 @@ void check_projection_parameters(meta_projection *mp)
   project_parameters_t *pp = &mp->param;
 
 // FIXME: Hughes datum stuff commented out for now ...until Hughes is implemented in the trunk
-//  asfRequire(!(datum == HUGHES_DATUM && projection_type != POLAR_STEREOGRAPHIC),
-//               "Hughes ellipsoid is only supported for polar stereographic projections.\n");
+   if (mp->datum == HUGHES_DATUM && mp->type != POLAR_STEREOGRAPHIC) {
+     asfPrintError("Hughes ellipsoid is only supported for polar stereographic projections.\n");
+   }
 
   switch (mp->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:

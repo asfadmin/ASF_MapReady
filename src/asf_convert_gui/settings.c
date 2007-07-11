@@ -1700,8 +1700,8 @@ int apply_settings_from_config_file(char *configFile)
             s.datum = DATUM_NAD27;
         else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0)
             s.datum = DATUM_NAD83;
-        //else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0)
-        //    s.datum = DATUM_HUGHES;
+        else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0)
+            s.datum = DATUM_HUGHES;
 
         s.resample_method = RESAMPLE_BILINEAR;
         if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)

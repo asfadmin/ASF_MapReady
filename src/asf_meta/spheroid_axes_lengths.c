@@ -48,8 +48,12 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
     *major = WGS84_SEMIMAJOR;
     *minor = *major - (1.0 / WGS84_INV_FLATTENING) * *major;
     break;
+  case HUGHES_SPHEROID:
+    *major = HUGHES_SEMIMAJOR;
+    *minor = *major - (1.0 / HUGHES_INV_FLATTENING) * *major;
+    break;
   default:
     assert (0);
-    break;
+  break;
   }
 }

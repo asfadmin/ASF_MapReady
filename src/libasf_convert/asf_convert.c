@@ -293,7 +293,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     while (fgets(line, 255, fBatch) != NULL) {
       char batchItem[255], fileName[255], batchPreDir[255];
       sscanf(line, "%s", batchItem);
-      
+
       // strip off known extensions
       char *p = findExt(batchItem);
       if (p) *p = '\0';
@@ -543,9 +543,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Check for pixel size smaller than threshold ???
 
       // Datum
-      if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) != 0 &&
-          strncmp(uc(cfg->geocoding->datum), "NAD27", 5) != 0 &&
-          strncmp(uc(cfg->geocoding->datum), "NAD83", 5) != 0) {
+      if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5)  != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "NAD27", 5)  != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "NAD83", 5)  != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) != 0) {
         asfPrintError("Chosen datum not supported\n");
       }
 
@@ -804,7 +805,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         {
             sprintf(outFile, "%s/c2p", cfg->general->tmp_dir);
         }
-        else 
+        else
         {
             sprintf(outFile, "%s", cfg->general->out_name);
         }
@@ -958,6 +959,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
         datum = NAD83_DATUM;
       }
+      if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0 ) {
+        datum = HUGHES_DATUM;
+      }
 
       // Resampling method
       if (strncmp(uc(cfg->geocoding->resampling), "NEAREST_NEIGHBOR", 16) == 0) {
@@ -1049,7 +1053,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     "Green band: %s\n"
                     "Blue band : %s\n\n",
                               red, green, blue);
-		check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+    check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
                                                 inFile, outFile, bands),
                                "export data file (asf_export), banded.\n");
                   int i;
@@ -1201,7 +1205,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         meta = meta_read(inFile);
 
         in_side_length = (meta->general->line_count > meta->general->sample_count) ?
-	        meta->general->line_count : meta->general->sample_count;
+          meta->general->line_count : meta->general->sample_count;
         out_pixel_size =  meta->general->x_pixel_size * in_side_length / 512;
 
         // Pass in command line
@@ -1225,8 +1229,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             free(tmp);
         }
 
-	check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
-		     "resampling data to thumbnail size (resample)\n");
+  check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
+         "resampling data to thumbnail size (resample)\n");
 
         if (strlen(cfg->export->rgb) > 0) {
            char *red, *green, *blue;

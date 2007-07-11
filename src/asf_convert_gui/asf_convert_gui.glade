@@ -2123,6 +2123,15 @@
 					      <signal name="activate" handler="on_nad83_activate" last_modification_time="Fri, 12 Nov 2004 00:47:02 GMT"/>
 					    </widget>
 					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="hughes">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">HUGHES</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_hughes_activate" last_modification_time="Fri, 06 Jul 2007 22:45:21 GMT"/>
+					    </widget>
+					  </child>
 					</widget>
 				      </child>
 				    </widget>

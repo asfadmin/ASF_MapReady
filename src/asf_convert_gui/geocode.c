@@ -12,6 +12,8 @@ const char * datum_string(int datum)
         return "NAD27";
     case DATUM_NAD83:
         return "NAD83";
+    case DATUM_HUGHES:
+        return "HUGHES";
     }
 }
 
@@ -67,7 +69,7 @@ const char * geocode_options_string(const Settings * settings)
                 entry_has_text("false_northing_entry");
             enable_false_easting =
                 entry_has_text("false_easting_entry");
-	    enable_pole_switch = TRUE;
+      enable_pole_switch = TRUE;
             break;
 
         case PROJ_LAMCC:
@@ -125,16 +127,16 @@ const char * geocode_options_string(const Settings * settings)
             sprintf(ret, "%s --latitude-of-origin %f ", ret, settings->lat0);
 
         if (enable_first_standard_parallel)
-            sprintf(ret, "%s --first-standard-parallel %f ", 
+            sprintf(ret, "%s --first-standard-parallel %f ",
                 ret, settings->plat1);
 
         if (enable_second_standard_parallel)
-            sprintf(ret, "%s --second-standard-parallel %f ", 
+            sprintf(ret, "%s --second-standard-parallel %f ",
                 ret, settings->plat2);
 
-	    if (enable_pole_switch)
-	        sprintf(ret, "%s --%s-pole", ret,
-		        settings->plat1 < 0 ? "south" : "north");
+      if (enable_pole_switch)
+          sprintf(ret, "%s --%s-pole", ret,
+            settings->plat1 < 0 ? "south" : "north");
 
         if (settings->specified_height)
             sprintf(ret, "%s --height %f ", ret, settings->height);
@@ -144,7 +146,7 @@ const char * geocode_options_string(const Settings * settings)
 
         sprintf(ret, "%s --datum %s ", ret, datum_string(settings->datum));
 
-        sprintf(ret, "%s --resample-method %s ", ret, 
+        sprintf(ret, "%s --resample-method %s ", ret,
             resample_method_string (settings->resample_method));
 
         if (settings->geocode_force)
@@ -294,7 +296,7 @@ void geocode_options_changed()
         projection == PROJ_UTM;
 
     if (geocode_projection_is_checked)
-    {	
+    {
         predefined_projection_is_selected =
             0 < gtk_option_menu_get_history(
             GTK_OPTION_MENU(predefined_projection_option_menu));
@@ -392,7 +394,7 @@ void geocode_options_changed()
                     break;
                 }
 
-		g_free(pps);
+    g_free(pps);
             }
         }
 
@@ -475,12 +477,12 @@ void geocode_options_changed()
         {
             enable_average_height_checkbutton = TRUE;
 
-            average_height_is_checked = 
+            average_height_is_checked =
                 gtk_toggle_button_get_active(
                     GTK_TOGGLE_BUTTON(average_height_checkbutton));
         }
 
-        pixel_size_is_checked = 
+        pixel_size_is_checked =
             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(
             pixel_size_checkbutton));
 
@@ -532,7 +534,7 @@ void geocode_options_changed()
     gtk_widget_set_sensitive(utm_zone_label,
         enable_utm_zone);
 
-    gtk_widget_set_sensitive(central_meridian_entry, 
+    gtk_widget_set_sensitive(central_meridian_entry,
         enable_central_meridian);
 
     gtk_widget_set_sensitive(central_meridian_label,
@@ -663,6 +665,12 @@ SIGNAL_CALLBACK void
 on_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
+    on_huges_activate(GtkWidget * widget)
+{
+  geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void

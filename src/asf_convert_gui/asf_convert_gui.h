@@ -78,7 +78,8 @@ enum Datums
 {
     DATUM_WGS84 = 0,
     DATUM_NAD27 = 1,
-    DATUM_NAD83 = 2
+    DATUM_NAD83 = 2,
+    DATUM_HUGHES = 3
 };
 
 enum

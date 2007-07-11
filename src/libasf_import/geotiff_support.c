@@ -35,11 +35,18 @@ int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
   const short NNN_WGS84S = 327;
   const short NNN_USER_DEFINED_NORTH = 160;
   const short NNN_USER_DEFINED_SOUTH = 161;
+  const short USER_DEFINED_PCS = 32767; // This code means it is NOT a UTM...
   int isUTM = 0;
   short datumClassifierNNN;
 
   datumClassifierNNN = pcs / 100;
-  if (datumClassifierNNN == NNN_NAD27) {
+  if (pcs == USER_DEFINED_PCS) {
+    *hem = '\0';
+    *datum = UNKNOWN_DATUM;
+    *zone = 0;
+    isUTM = 0;
+  }
+  else if (datumClassifierNNN == NNN_NAD27) {
       *hem = 'N';
       *datum = NAD27_DATUM;
       *zone = pcs - (pcs / 100)*100;

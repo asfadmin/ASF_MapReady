@@ -130,21 +130,21 @@ void select_current_block(char *block_name)
 {
   void *current_block = stack_top->block;
 
-  if ( !strcmp(block_name, "general") ) { 
-    current_block = MTL->general; 
-    goto MATCHED; 
+  if ( !strcmp(block_name, "general") ) {
+    current_block = MTL->general;
+    goto MATCHED;
   }
-  if ( !strcmp(block_name, "sar") ) { 
+  if ( !strcmp(block_name, "sar") ) {
     if (MTL->sar == NULL)
       { MTL->sar = meta_sar_init(); }
-    current_block = MTL->sar; 
-    goto MATCHED; 
+    current_block = MTL->sar;
+    goto MATCHED;
   }
-  if ( !strcmp(block_name, "optical") ) { 
+  if ( !strcmp(block_name, "optical") ) {
     if (MTL->optical == NULL)
       { MTL->optical = meta_optical_init(); }
-    current_block = MTL->optical; 
-    goto MATCHED; 
+    current_block = MTL->optical;
+    goto MATCHED;
   }
   if ( !strcmp(block_name, "state") ) {
     if (MTL->state_vectors == NULL)
@@ -198,11 +198,11 @@ void select_current_block(char *block_name)
     goto MATCHED;
   }
 
-  if ( !strcmp(block_name, "location") ) { 
+  if ( !strcmp(block_name, "location") ) {
     if (MTL->location == NULL)
       { MTL->location = meta_location_init(); }
-    current_block = MTL->location; 
-    goto MATCHED; 
+    current_block = MTL->location;
+    goto MATCHED;
   }
 
   /* Got an unknown block name, so report.  */
@@ -364,14 +364,14 @@ void fill_structure_field(char *field_name, void *valp)
         return;
       }
       /* If its a question mark don't bother the user with a warning,
-	 this happens often with DDRs.  */
+   this happens often with DDRs.  */
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "?") ) {
         MGENERAL->orbit_direction = '?';
         return;
       }
       else {
         warning_message("Bad value: orbit_direction = '%s'.\n",
-			VALP_AS_CHAR_POINTER);
+      VALP_AS_CHAR_POINTER);
         return;
       }
     }
@@ -379,15 +379,15 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->frame = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "band_count") )
       { MGENERAL->band_count = VALP_AS_INT; return; }
-    if ( !strcmp(field_name, "bands") ) { 
+    if ( !strcmp(field_name, "bands") ) {
       if (strlen(VALP_AS_CHAR_POINTER) == 0) {
-	char tmp[10];
-	sprintf(tmp, "0%.0lf" , VALP_AS_DOUBLE);
-	strcpy(MGENERAL->bands, tmp);
+  char tmp[10];
+  sprintf(tmp, "0%.0lf" , VALP_AS_DOUBLE);
+  strcpy(MGENERAL->bands, tmp);
       }
       else
-	strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER); 
-      return; 
+  strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER);
+      return;
     }
     if ( !strcmp(field_name, "line_count") )
       { MGENERAL->line_count = VALP_AS_INT; return; }
@@ -449,7 +449,7 @@ void fill_structure_field(char *field_name, void *valp)
       }
       else {
         warning_message("Bad value: image_type = '%s'.\n",
-			VALP_AS_CHAR_POINTER);
+      VALP_AS_CHAR_POINTER);
         sar_projected = 0;
         return;
       }
@@ -466,7 +466,7 @@ void fill_structure_field(char *field_name, void *valp)
         MSAR->look_direction = '?'; return;
       }
       warning_message("Bad value: look_direction = '%c'.\n",
-		      VALP_AS_CHAR_POINTER[0]);
+          VALP_AS_CHAR_POINTER[0]);
       return;
     }
     if ( !strcmp(field_name, "look_count") )
@@ -530,11 +530,11 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields which normally go in the optical block of the metadata file.  */
   if ( !strcmp(stack_top->block_name, "optical") ) {
     if ( !strcmp(field_name, "pointing_direction") )
-      { strcpy(MOPTICAL->pointing_direction, VALP_AS_CHAR_POINTER); return; }      
+      { strcpy(MOPTICAL->pointing_direction, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "off_nadir_angle") )
       { MOPTICAL->off_nadir_angle = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "correction_level") )
-      { strcpy(MOPTICAL->correction_level, VALP_AS_CHAR_POINTER); return; }      
+      { strcpy(MOPTICAL->correction_level, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "cloud_percentage") )
       { MOPTICAL->cloud_percentage = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "sun_azimuth_angle") )
@@ -661,12 +661,14 @@ void fill_structure_field(char *field_name, void *valp)
         MPROJ->spheroid = WGS72_SPHEROID;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
         MPROJ->spheroid = WGS84_SPHEROID;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "HUGHES") )
+        MPROJ->spheroid = HUGHES_SPHEROID;
       else {
         MPROJ->spheroid = UNKNOWN_SPHEROID;
         // Only complain if the image is truly map projected
         if (sar_projected && map_projection_type) {
           warning_message("Bad value: spheroid = '%s'.\n",
-			  VALP_AS_CHAR_POINTER);
+        VALP_AS_CHAR_POINTER);
         }
       }
       return;
@@ -677,23 +679,25 @@ void fill_structure_field(char *field_name, void *valp)
       { MPROJ->re_minor = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "datum") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "EGM96") )
-	MPROJ->datum = EGM96_DATUM;
+  MPROJ->datum = EGM96_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ED50") )
-	MPROJ->datum = ED50_DATUM;
+  MPROJ->datum = ED50_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRF89") )
-	MPROJ->datum = ETRF89_DATUM;
+  MPROJ->datum = ETRF89_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRS89") )
-	MPROJ->datum = ETRS89_DATUM;
+  MPROJ->datum = ETRS89_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ITRF97") )
-	MPROJ->datum = ITRF97_DATUM;
+  MPROJ->datum = ITRF97_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD27") )
-	MPROJ->datum = NAD27_DATUM;
+  MPROJ->datum = NAD27_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD83") )
-	MPROJ->datum = NAD83_DATUM;
+  MPROJ->datum = NAD83_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS72") )
-	MPROJ->datum = WGS72_DATUM;
+  MPROJ->datum = WGS72_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
-	MPROJ->datum = WGS84_DATUM;
+  MPROJ->datum = WGS84_DATUM;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "HUGHES") )
+        MPROJ->datum = HUGHES_DATUM;
       else {
         MPROJ->datum = UNKNOWN_DATUM;
         // Only complain if the mage is truly map projected
@@ -816,22 +820,22 @@ void fill_structure_field(char *field_name, void *valp)
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "phi(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-	{ MTRANSFORM->y[ii] = VALP_AS_DOUBLE; return; }
+  { MTRANSFORM->y[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "lambda(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-	{ MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
+  { MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "i(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-	{ MTRANSFORM->s[ii] = VALP_AS_DOUBLE; return; }
+  { MTRANSFORM->s[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "j(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-	{ MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
+  { MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
     }
   }
 
