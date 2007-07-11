@@ -162,7 +162,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
 
     char *ext = findExt(input_data);
-    if (strcmp_case(ext, ".img") == 0)
+    if (ext && strcmp_case(ext, ".img") == 0)
         return make_asf_internal_thumb(input_metadata, input_data,
             max_thumbnail_dimension);
 

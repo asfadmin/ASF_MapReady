@@ -17,6 +17,7 @@ static int
 settings_get_output_format_requires_byte(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
+        s->output_format == OUTPUT_FORMAT_PNG ||
         s->output_format == OUTPUT_FORMAT_PGM ||
         s->output_format == OUTPUT_FORMAT_TIFF;
 }
@@ -1131,6 +1132,10 @@ settings_get_output_format_extension(const Settings *s)
                 out_extension = "jpg";
                 break;
 
+            case OUTPUT_FORMAT_PNG:
+                out_extension = "png";
+                break;
+
             case OUTPUT_FORMAT_PGM:
                 out_extension = "pgm";
                 break;
@@ -1176,6 +1181,10 @@ settings_get_output_format_string(const Settings *s)
     case OUTPUT_FORMAT_JPEG:
     default:
         format_arg_to_export = "jpeg";
+        break;
+
+    case OUTPUT_FORMAT_PNG:
+        format_arg_to_export = "png";
         break;
 
     case OUTPUT_FORMAT_PGM:
@@ -1256,6 +1265,7 @@ settings_get_output_format_can_be_thumbnailed(const Settings *s)
 {
     return s->output_format == OUTPUT_FORMAT_JPEG ||
         s->output_format == OUTPUT_FORMAT_TIFF ||
+        s->output_format == OUTPUT_FORMAT_PNG ||
         s->output_format == OUTPUT_FORMAT_PGM;
 }
 
@@ -1605,6 +1615,8 @@ int apply_settings_from_config_file(char *configFile)
         s.output_format = OUTPUT_FORMAT_JPEG;
     else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0)
         s.output_format = OUTPUT_FORMAT_PGM;
+    else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0)
+        s.output_format = OUTPUT_FORMAT_PNG;
 
     s.apply_scaling = 0;
     s.longest_dimension = 0;

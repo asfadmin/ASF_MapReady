@@ -1002,8 +1002,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       asfPrintStatus("Number of bands in the output: %d\n",
         multiband ? n_bands : 1);
 
-  asfPrintStatus("Before applying the lat/lon box:\n"
-      "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
+  //asfPrintStatus("Before applying the lat/lon box:\n"
+  //    "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
 
   // now apply the input lat/lon "bounding box" restriction to the
   // calculated extents.  Do this by converting the 4 corner points of
@@ -1054,8 +1054,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (bb_max_y != 0 && bb_max_y < max_y) max_y = bb_max_y;
   }
 
-  asfPrintStatus("After applying the lat/lon box:\n"
-      "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
+  //asfPrintStatus("After applying the lat/lon box:\n"
+  //    "  x: %f - %f\n  y: %f - %f\n", min_x, max_x, min_y, max_y);
 
   // Projection coordinates per pixel in output image.  There is a
   // significant assumption being made here: we assume that the

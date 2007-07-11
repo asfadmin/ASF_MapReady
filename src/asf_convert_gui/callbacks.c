@@ -278,6 +278,7 @@ export_checkbutton_toggle()
         {
         default:
         case OUTPUT_FORMAT_JPEG:
+        case OUTPUT_FORMAT_PNG:
         case OUTPUT_FORMAT_PGM:
         case OUTPUT_FORMAT_TIFF:
         case OUTPUT_FORMAT_ASF_INTERNAL:
@@ -405,6 +406,13 @@ on_output_format_combobox_changed(GtkWidget *widget)
 
 SIGNAL_CALLBACK void
 on_jpeg_activate(GtkWidget *widget)
+{
+    output_format_combobox_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_png_activate(GtkWidget *widget)
 {
     output_format_combobox_changed();
     update_summary();

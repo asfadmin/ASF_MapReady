@@ -254,6 +254,10 @@ void update_summary()
             strcat(text, "JPEG");
             break;
 
+        case OUTPUT_FORMAT_PNG:
+            strcat(text, "PNG");
+            break;
+
         case OUTPUT_FORMAT_PGM:
             strcat(text, "PGM");
             break;
