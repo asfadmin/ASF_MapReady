@@ -74,9 +74,9 @@ main(int argc, char **argv)
         "-band", "--band", "-b", NULL);
 
     if (argc != 2) {
-        printf("Usage: ssv <filename>\n\n"
-            "<filename> should be an ASF internal format image file.\n");
-        exit(1);
+        g_filename = STRDUP(find_in_share("startup.jpg"));
+    } else {
+        g_filename = STRDUP(argv[1]);
     }
 
     // we could call load_file() here, but don't because this way we can
@@ -87,7 +87,6 @@ main(int argc, char **argv)
     // initialize globals
     reset_globals();
 
-    g_filename = STRDUP(argv[1]);
     g_data_name = g_meta_name = NULL;
 
     // strip off a trailing "."

@@ -84,6 +84,7 @@ $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
+	cp startup.jpg $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
@@ -127,6 +128,7 @@ default: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
+	cp startup.jpg $(SHAREDIR)
 #	cp $(TARGET).ico $(SHAREDIR)
 
 %.c: %.h
