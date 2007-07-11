@@ -692,6 +692,76 @@ handle_view_output()
     return TRUE;
 }
 
+static void ssv_thread (GString *file, gpointer user_data)
+{
+#ifdef win32
+    gchar * ssv = find_in_bin("ssv.exe");
+#else
+    gchar * ssv = find_in_bin("ssv");
+#endif
+
+    char buf[1024];
+    char *escaped_str = escapify(file->str);
+    sprintf(buf, "\"%s\" \"%s\"", ssv, escaped_str);
+    free(escaped_str);
+    asfSystem(buf);
+    g_string_free(file, TRUE);
+}
+
+void show_input_image(gchar * in_name)
+{
+#ifdef win32
+    gchar * ssv = find_in_bin("ssv.exe");
+#else
+    gchar * ssv = find_in_bin("ssv");
+#endif
+
+    if (ssv)
+    {
+        static GThreadPool *ttp = NULL;
+        GError *err = NULL;
+
+        if (!ttp)
+        {
+            if (!g_thread_supported ()) g_thread_init (NULL);
+            ttp = g_thread_pool_new ((GFunc) ssv_thread, NULL, 4, TRUE, &err);
+            g_assert(!err);
+        }
+
+        g_thread_pool_push (ttp, g_string_new (in_name), &err);
+        g_assert(!err);
+    }
+    else
+    {
+        message_box("Failed to open external viewer!");
+    }
+}
+
+static int
+handle_view_input()
+{
+    GtkWidget *files_list;
+    GtkTreeIter iter;
+
+    files_list = get_widget_checked("files_list");
+
+    if (get_iter_to_first_selected_row(files_list, &iter))
+    {
+        gchar * in_name;
+
+        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+            COL_DATA_FILE, &in_name, -1);
+        show_input_image(in_name);
+        g_free(in_name);
+    }
+    else
+    {
+        show_please_select_message();
+    }
+
+    return TRUE;
+}
+
 static int
 handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 {
@@ -1025,6 +1095,12 @@ on_google_earth_button_clicked(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
+on_view_input_button_clicked(GtkWidget *widget)
+{
+  handle_view_input();
+}
+
+SIGNAL_CALLBACK void
 on_completed_files_google_earth_button_clicked(GtkWidget *widget)
 {
   handle_completed_files_google_earth();
@@ -1088,6 +1164,12 @@ SIGNAL_CALLBACK gint
 popup_menu_view_output(GtkWidget *widget, GdkEvent *event)
 {
   return handle_view_output();
+}
+
+SIGNAL_CALLBACK gint
+popup_menu_view_input(GtkWidget *widget, GdkEvent *event)
+{
+  return handle_view_input();
 }
 
 SIGNAL_CALLBACK gint
@@ -1200,6 +1282,12 @@ setup_files_popup_menu()
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_google_earth), NULL);
+    gtk_widget_show(item);
+
+    item = gtk_menu_item_new_with_label("View Input");
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
+    g_signal_connect_swapped(G_OBJECT(item), "activate",
+        G_CALLBACK(popup_menu_view_input), NULL);
     gtk_widget_show(item);
 
     gtk_widget_show(menu);
