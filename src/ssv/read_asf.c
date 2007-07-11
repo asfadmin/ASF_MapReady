@@ -76,9 +76,10 @@ meta_parameters *read_asf_meta(const char *meta_name)
 }
 
 int read_asf_client(FILE *fp, int row_start, int n_rows_to_get,
-                    float *dest, void *read_client_info,
+                    void *dest_void, void *read_client_info,
                     meta_parameters *meta)
 {
+    float *dest = (float*)dest_void;
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
 
     get_float_lines(fp, meta, row_start + nl*info->band,
@@ -89,8 +90,9 @@ int read_asf_client(FILE *fp, int row_start, int n_rows_to_get,
 
 int get_asf_thumbnail_data(FILE *fp, int thumb_size_x,
                            int thumb_size_y, meta_parameters *meta,
-                           void *read_client_info, float *dest)
+                           void *read_client_info, void *dest_void)
 {
+    float *dest = (float*)dest_void;
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
 
     float *buf = MALLOC(sizeof(float)*meta->general->sample_count);
@@ -143,6 +145,8 @@ int open_asf_data(const char *filename, const char *band,
     client->read_fn = read_asf_client;
     client->thumb_fn = get_asf_thumbnail_data;
     client->free_fn = free_asf_client_info;
+
+    client->data_type = GREYSCALE_FLOAT;
 
     return TRUE;
 }

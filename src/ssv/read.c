@@ -50,6 +50,10 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
 
     ClientInterface *client = MALLOC(sizeof(ClientInterface));
 
+    // these defaults should be overridden by the client if necessary
+    client->data_type = UNDEFINED;
+    client->require_full_load = FALSE;
+
     char *meta_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *err = NULL;
@@ -81,12 +85,19 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
             free(err);
             return FALSE;
         }
+    } else if (try_jpeg(filename)) {
+        if (handle_jpeg_file(filename, meta_name, data_name, &err)) {
+            meta = read_jpeg_meta(meta_name);
+            open_jpeg_data(data_name, meta_name, band, meta, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
     } else {
         err_func("Don't know how to load file: %s\n", filename);
         return FALSE;
     }
-
-    assert(meta);
 
     data_ci = cached_image_new_from_file(data_name, meta, client);
 

@@ -44,98 +44,38 @@ static const int MAX_TILES = 16;
 // quit blathering?
 int quiet = FALSE;
 
-void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
-                         float *dest)
+static int data_size(CachedImage *self)
 {
-    if (self->entire_image_fits) {
-        // this will fill the cache with the image data
-        int sf = meta->general->line_count / thumb_size_y;
-        assert(sf==meta->general->sample_count / thumb_size_x);
-
-        quiet=TRUE;
-
-        int i,j;
-        for (i=0; i<thumb_size_y; ++i) {
-            for (j=0; j<thumb_size_x; ++j) {
-                dest[i*thumb_size_x+j] =
-                    cached_image_get_pixel(self,i*sf,j*sf);
-            }
-            asfPercentMeter((float)i/(thumb_size_y-1));
-        }        
-
-        quiet=FALSE;
-    } else {
-        self->client->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
-            self->meta, self->client->read_client_info, dest);
+    switch (self->data_type) {
+        case GREYSCALE_FLOAT:
+            return 4;
+        case RGB_BYTE:
+            return 3;
+        default:
+            assert(FALSE);
+            return 0;
     }
-}
-
-CachedImage * cached_image_new_from_file(
-    const char *file, meta_parameters *meta, ClientInterface *client)
-{
-    CachedImage *self = MALLOC(sizeof(CachedImage));
-
-    asfPrintStatus("Opening cache: %s\n", file);
-
-    self->fp = FOPEN(file, "rb");
-
-    self->client = client; // take ownership of this
-    self->meta = meta;     // do not take ownership of this
-
-    self->nl = meta->general->line_count;
-    self->ns = meta->general->sample_count;
-
-    // how many rows per tile?
-    // We will use ~64 Meg tiles
-    self->rows_per_tile = 64*1024*1024 / (self->ns*4);
-
-    // test line -- uncomment this for very small tiles
-    //self->rows_per_tile = 2*1024*1024 / (ns*4);
-
-    asfPrintStatus("Image is %dx%d LxS\n", self->nl, self->ns);
-    asfPrintStatus("Using %d rows per tile.\n", self->rows_per_tile);
-
-    // at the beginning, we have no tiles
-    self->n_tiles = 0;
-    self->reached_max_tiles = FALSE;
-
-    self->rowstarts = MALLOC(sizeof(int)*MAX_TILES);
-    self->cache = MALLOC(sizeof(float*)*MAX_TILES);
-    self->access_counts = MALLOC(sizeof(int)*MAX_TILES);
-
-    int i;
-    for (i=0; i<MAX_TILES; ++i) {
-        self->rowstarts[i] = -1;
-        self->cache[i] = NULL;
-        self->access_counts[i] = 0;
-    }
-
-    self->n_access = 0;
-
-    int n_tiles_required = (int)ceil((double)self->nl / self->rows_per_tile);
-    self->entire_image_fits = n_tiles_required <= MAX_TILES;
-
-    asfPrintStatus("Number of tiles required for the entire image: %d\n",
-        n_tiles_required);
-    asfPrintStatus("Fits in memory: %s\n",
-        self->entire_image_fits ? "Yes" : "No");
-
-    return self;
 }
 
 static void print_cache_size(CachedImage *self)
 {
     int i;
     int size=0;
+    int ds = data_size(self);
     for (i=0; i<self->n_tiles; ++i)
-        size += 4*self->rows_per_tile*self->ns;
+        size += ds*self->rows_per_tile*self->ns;
+
     asfPrintStatus("Cache size is %.1f megabytes.\n",
         (float)size/1024./1024.);
 }
 
-float cached_image_get_pixel (CachedImage *self, int line, int samp)
+static unsigned char *get_pixel(CachedImage *self, int line, int samp)
 {
     int i;
+
+    // size of each pixel
+    int ds = data_size(self);
+
     for (i=0; i<self->n_tiles; ++i) {
         int rs = self->rowstarts[i];
         if (rs >= 0) {
@@ -155,7 +95,7 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
                 self->access_counts[i] = self->n_access++;
 
                 // return cached value
-                return self->cache[i][(line-rs)*self->ns + samp];
+                return &self->cache[i][((line-rs)*self->ns + samp)*ds];
             }
         }
     }
@@ -163,7 +103,7 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
     int spot = 0;
     if (!self->reached_max_tiles) {
         assert(self->cache[self->n_tiles] == NULL);
-        float *data = malloc(sizeof(float)*ns*self->rows_per_tile);
+        unsigned char *data = malloc(ds*ns*self->rows_per_tile);
         if (!data) {
             // couldn't allocate the next tile -- must dump existing
             if (!quiet)
@@ -203,7 +143,7 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
     // clear out the cache -- we may not fill up the tile, if
     // we are near the end of the file, and we don't want old data
     // to appear
-    memset(self->cache[spot], 0, sizeof(float)*ns*self->rows_per_tile);
+    memset(self->cache[spot], 0, ds*ns*self->rows_per_tile);
 
     // update where this cache entry starts
     int rs = (line / self->rows_per_tile) * self->rows_per_tile;
@@ -229,10 +169,141 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
         print_cache_size(self);
     }
 
-    self->client->read_fn(self->fp, rs, rows_to_get, self->cache[spot],
+    self->client->read_fn(self->fp, rs, rows_to_get, (void*)(self->cache[spot]),
         self->client->read_client_info, self->meta);
 
-    return self->cache[spot][(line-rs)*self->ns + samp];
+    return &self->cache[spot][((line-rs)*self->ns + samp)*ds];
+}
+
+void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
+                         void *dest_void)
+{
+    if (self->entire_image_fits || !self->client->thumb_fn) {
+        int ds = data_size(self);
+        unsigned char *dest = (unsigned char*)dest_void;
+
+        // this will fill the cache with the image data
+        int sf = meta->general->line_count / thumb_size_y;
+        assert(sf==meta->general->sample_count / thumb_size_x);
+
+        quiet=TRUE;
+
+        int i,j;
+        for (i=0; i<thumb_size_y; ++i) {
+            for (j=0; j<thumb_size_x; ++j) {
+                // make this independent of the data type
+                unsigned char *p = get_pixel(self,i*sf,j*sf);
+                memcpy(dest+(i*thumb_size_x+j)*ds, p, ds);
+            }
+            asfPercentMeter((float)i/(thumb_size_y-1));
+        }        
+
+        quiet=FALSE;
+    } else {
+        self->client->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
+            self->meta, self->client->read_client_info, dest_void);
+    }
+}
+
+CachedImage * cached_image_new_from_file(
+    const char *file, meta_parameters *meta, ClientInterface *client)
+{
+    CachedImage *self = MALLOC(sizeof(CachedImage));
+
+    asfPrintStatus("Opening cache: %s\n", file);
+
+    self->data_type = client->data_type;
+    assert(self->data_type != UNDEFINED);
+
+    self->fp = FOPEN(file, "rb");
+
+    self->client = client; // take ownership of this
+    self->meta = meta;     // do not take ownership of this
+
+    self->nl = meta->general->line_count;
+    self->ns = meta->general->sample_count;
+    asfPrintStatus("Image is %dx%d LxS\n", self->nl, self->ns);
+
+    if (client->require_full_load) {
+        // Use only 1 tile -- load entire image into it
+        // (client tells us we should do it this way)
+        // will it fit?  Who knows.  Assume it will, MALLOC will fail
+        // if it actually does not.
+        self->rows_per_tile = self->nl;
+    } else {
+        // how many rows per tile?
+        // We will use ~64 Meg tiles
+        self->rows_per_tile = 64*1024*1024 / (self->ns*data_size(self));
+
+        // test line -- uncomment this for very small tiles
+        //self->rows_per_tile = 2*1024*1024 / (ns*4);
+    }
+
+    asfPrintStatus("Using %d rows per tile.\n", self->rows_per_tile);
+
+    int n_tiles_required = (int)ceil((double)self->nl / self->rows_per_tile);
+    self->entire_image_fits = n_tiles_required <= MAX_TILES;
+
+    // at the beginning, we have no tiles
+    self->n_tiles = 0;
+    self->reached_max_tiles = FALSE;
+
+    int i;
+    self->rowstarts = MALLOC(sizeof(int)*MAX_TILES);
+    self->cache = MALLOC(sizeof(float*)*MAX_TILES);
+    self->access_counts = MALLOC(sizeof(int)*MAX_TILES);
+    for (i=0; i<MAX_TILES; ++i) {
+        self->rowstarts[i] = -1;
+        self->cache[i] = NULL;
+        self->access_counts[i] = 0;
+    }
+
+    self->n_access = 0;
+
+    asfPrintStatus("Number of tiles required for the entire image: %d\n",
+        n_tiles_required);
+    asfPrintStatus("Fits in memory: %s\n",
+        self->entire_image_fits ? "Yes" : "No");
+
+    return self;
+}
+
+float cached_image_get_pixel (CachedImage *self, int line, int samp)
+{
+    if (self->data_type == GREYSCALE_FLOAT) {
+        return *((float*)get_pixel(self, line, samp));
+    }
+    else if (self->data_type == RGB_BYTE) {
+        unsigned char r, g, b;
+        cached_image_get_rgb(self, line, samp, &r, &g, &b);
+        return ((float)r + (float)g + (float)b)/3.;
+    }
+
+    // not reached
+    assert(0);
+    return 0;
+}
+
+void cached_image_get_rgb(CachedImage *self, int line, int samp,
+                          unsigned char *r, unsigned char *g,
+                          unsigned char *b)
+{
+    if (self->data_type == GREYSCALE_FLOAT) {
+        float f = cached_image_get_pixel(self, line, samp);
+        *r = *g = *b = (unsigned char)calc_scaled_pixel_value(f);
+    }
+    else if (self->data_type == RGB_BYTE) {
+        unsigned char *uc = get_pixel(self, line, samp);
+
+        *r = uc[0];
+        *g = uc[1];
+        *b = uc[2];
+    }
+    else {
+        // impossible!
+        assert(0);
+        *r = *g = *b = 0;
+    }
 }
 
 void cached_image_free (CachedImage *self)

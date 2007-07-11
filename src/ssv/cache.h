@@ -19,18 +19,26 @@
 #endif
 
 typedef int ReadClientFn(FILE *fp, int row_start, int n_rows_to_get,
-                         float *dest, void *read_client_info,
+                         void *dest, void *read_client_info,
                          meta_parameters *meta);
 typedef int ThumbFn(FILE *fp, int thumb_size_x,
                     int thumb_size_y, meta_parameters *meta,
-                    void *read_client_info, float *dest);
+                    void *read_client_info, void *dest);
 typedef void FreeFn(void *read_client_info);
+
+typedef enum {
+    UNDEFINED = 0,
+    GREYSCALE_FLOAT = 1,
+    RGB_BYTE = 2
+} ssv_data_type_t;
 
 typedef struct {
     ReadClientFn *read_fn;
     ThumbFn *thumb_fn;
     FreeFn *free_fn;
     void *read_client_info;
+    ssv_data_type_t data_type;
+    int require_full_load;
 } ClientInterface;
 
 typedef struct {
@@ -41,10 +49,11 @@ typedef struct {
   int rows_per_tile;        // Number of rows in each tile
   int entire_image_fits;    // TRUE if we can load the entire image
   int *rowstarts;           // Row numbers starting each tile
-  float **cache;            // Cached values
+  unsigned char **cache;    // Cached values (floats, unsigned chars ...)
   int *access_counts;       // Updated when a tile is accessed
   FILE *fp;                 // file pointer
   int n_access;             // used to find oldest tile
+  ssv_data_type_t data_type;// type of data we have
   meta_parameters *meta;    // metadata -- don't own this pointer
 } CachedImage;
 
@@ -52,9 +61,12 @@ CachedImage * cached_image_new_from_file(
     const char *file, meta_parameters *meta, ClientInterface *client);
 
 float cached_image_get_pixel (CachedImage *self, int line, int samp);
+void cached_image_get_rgb(CachedImage *self, int line, int samp,
+                          unsigned char *r, unsigned char *g,
+                          unsigned char *b);
 
 void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
-                        float *dest);
+                         void *dest);
 
 void cached_image_free (CachedImage *self);
 

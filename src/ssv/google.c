@@ -227,6 +227,9 @@ int open_google_earth()
 
     gchar *ge;
 
+    printf("kml: %s\n", kml_filename);
+    printf("dir: %s\n", dirname);
+
 #ifdef win32
     char path[1024];
     FindExecutable((LPCTSTR)kml_filename, (LPCTSTR)dirname, (LPTSTR)path);

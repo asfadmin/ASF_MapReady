@@ -65,12 +65,10 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
 
 static unsigned char *generate_thumbnail_data(int tsx, int tsy)
 {
-    // store data used to build the small image pixmap
-    // we will calculate the stats on this subset
-    float *fdata = MALLOC(sizeof(float)*tsx*tsy);
-
     printf("Loading preview image data...\n");
-    load_thumbnail_data(data_ci, tsx, tsy, fdata);
+
+    int ii, jj;
+    unsigned char *bdata = MALLOC(sizeof(unsigned char)*tsx*tsy*3);
 
     // we will estimate the stats from the thumbnail data
     g_avg = 0.0;
@@ -78,95 +76,136 @@ static unsigned char *generate_thumbnail_data(int tsx, int tsy)
     g_stat_max = -99999;
     g_stat_min = 99999;
 
-    int ii, jj;
-
-    // split out the case where we have no ignore value --
-    // should be quite a bit faster...
-    if (meta_is_valid_double(meta->general->no_data)) {
-        // Compute stats -- ignore "no data" value
-        int n=0;
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float v = fdata[jj+ii*tsx];
-                if (v != meta->general->no_data) {
-                    g_avg += v;
-                    if (v > g_stat_max) g_stat_max = v;
-                    if (v < g_stat_min) g_stat_min = v;
-                    ++n;
-                }
-            }
-        }
-        g_avg /= (double)n;
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float v = fdata[jj+ii*tsx];
-                if (v != meta->general->no_data)
-                    g_stddev += (v - g_avg) * (v - g_avg);
-            }
-        }
-        g_stddev = sqrt(g_stddev / (double)(tsx*tsy));
-    } else {
-        // Compute stats -- no ignore
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float v = fdata[jj+ii*tsx];
-                g_avg += v;
-                if (v > g_stat_max) g_stat_max = v;
-                if (v < g_stat_min) g_stat_min = v;
-            }
-        }
-        g_avg /= (double)(tsx*tsy);
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                float v = fdata[jj+ii*tsx];
-                g_stddev += (v - g_avg) * (v - g_avg);
-            }
-        }
-        g_stddev = sqrt(g_stddev / (double)(tsx*tsy));
-    }
-
-    //printf("Avg, StdDev: %f, %f\n", g_avg, g_stddev);
-
-    // Set the limits of the scaling - 2-sigma on either side of the mean
-    // These are globals, we will use them in the big image, too.
-    g_min = g_avg - 2*g_stddev;
-    g_max = g_avg + 2*g_stddev;
-
-    // compute the histogram, too, in this final loop
     for (ii=0; ii<256; ++ii)
         g_hist[ii] = 0;
 
-    unsigned char *bdata = MALLOC(sizeof(unsigned char)*tsx*tsy*3);
+    // Here we do the rather ugly thing of making the thumbnail
+    // loading code specific to each supported data type.  This is
+    // because we've combined the stats calculation into this...
+    if (data_ci->data_type == GREYSCALE_FLOAT) {
+        // store data used to build the small image pixmap
+        // we will calculate the stats on this subset
+        float *fdata = MALLOC(sizeof(float)*tsx*tsy);
 
-    // Now actually scale the data, and convert to bytes.
-    // Note that we need 3 values, one for each of the RGB channels.
-    int have_no_data = meta_is_valid_double(meta->general->no_data);
-    for ( ii = 0 ; ii < tsy ; ii++ ) {
-        for ( jj = 0 ; jj < tsx ; jj++ ) {
-            int index = jj+ii*tsx;
-            float val = fdata[index];
+        load_thumbnail_data(data_ci, tsx, tsy, fdata);
 
-            unsigned char uval;
-            if (have_no_data && val == meta->general->no_data)
-                uval = 0;
-            else if (val < g_min)
-                uval = 0;
-            else if (val > g_max)
-                uval = 255;
-            else
-                uval = (unsigned char)(((val-g_min)/(g_max-g_min))*255+0.5);
-        
-            int n = 3*index;
-            bdata[n] = uval;
-            bdata[n+1] = uval;
-            bdata[n+2] = uval;
-
-            g_hist[uval] += 1;
+        // split out the case where we have no ignore value --
+        // should be quite a bit faster...
+        if (meta_is_valid_double(meta->general->no_data)) {
+            // Compute stats -- ignore "no data" value
+            int n=0;
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = fdata[jj+ii*tsx];
+                    if (v != meta->general->no_data) {
+                        g_avg += v;
+                        if (v > g_stat_max) g_stat_max = v;
+                        if (v < g_stat_min) g_stat_min = v;
+                        ++n;
+                    }
+                }
+            }
+            g_avg /= (double)n;
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = fdata[jj+ii*tsx];
+                    if (v != meta->general->no_data)
+                        g_stddev += (v - g_avg) * (v - g_avg);
+                }
+            }
+            g_stddev = sqrt(g_stddev / (double)(tsx*tsy));
+        } else {
+            // Compute stats -- no ignore
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = fdata[jj+ii*tsx];
+                    g_avg += v;
+                    if (v > g_stat_max) g_stat_max = v;
+                    if (v < g_stat_min) g_stat_min = v;
+                }
+            }
+            g_avg /= (double)(tsx*tsy);
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    float v = fdata[jj+ii*tsx];
+                    g_stddev += (v - g_avg) * (v - g_avg);
+                }
+            }
+            g_stddev = sqrt(g_stddev / (double)(tsx*tsy));
         }
-    }
 
-    // done with our subset
-    free(fdata);
+        //printf("Avg, StdDev: %f, %f\n", g_avg, g_stddev);
+
+        // Set the limits of the scaling - 2-sigma on either side of the mean
+        // These are globals, we will use them in the big image, too.
+        g_min = g_avg - 2*g_stddev;
+        g_max = g_avg + 2*g_stddev;
+
+        // compute the histogram, too, in this final loop
+        for (ii=0; ii<256; ++ii)
+            g_hist[ii] = 0;
+
+        // Now actually scale the data, and convert to bytes.
+        // Note that we need 3 values, one for each of the RGB channels.
+        int have_no_data = meta_is_valid_double(meta->general->no_data);
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int index = jj+ii*tsx;
+                float val = fdata[index];
+
+                unsigned char uval;
+                if (have_no_data && val == meta->general->no_data)
+                    uval = 0;
+                else if (val < g_min)
+                    uval = 0;
+                else if (val > g_max)
+                    uval = 255;
+                else
+                    uval = (unsigned char)(((val-g_min)/(g_max-g_min))*255+0.5);
+            
+                int n = 3*index;
+                bdata[n] = uval;
+                bdata[n+1] = uval;
+                bdata[n+2] = uval;
+
+                g_hist[uval] += 1;
+            }
+        }
+
+        // done with our subset
+        free(fdata);
+    }
+    else if (data_ci->data_type == RGB_BYTE) {
+
+        load_thumbnail_data(data_ci, tsx, tsy, (void*)bdata);
+
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int index = 3*(jj+ii*tsx);
+                unsigned char uval =
+                    (bdata[index] + bdata[index+1] + bdata[index+2])/3;
+   
+                g_avg += uval;
+                g_hist[uval] += 1;
+
+                if (uval > g_stat_max) g_stat_max = uval;
+                if (uval < g_stat_min) g_stat_min = uval;
+            }
+        }
+
+        g_avg /= (double)(tsx*tsy);
+
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int index = 3*(jj+ii*tsx);
+                unsigned char uval =
+                    (bdata[index] + bdata[index+1] + bdata[index+2])/3;
+
+                g_stddev += (uval - g_avg) * (uval - g_avg);
+            }
+        }
+        g_stddev = sqrt(g_stddev / (double)(tsx*tsy));
+    }
 
     return bdata;
 }

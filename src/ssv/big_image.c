@@ -225,28 +225,25 @@ static GdkPixbuf * make_big_image()
     int bih = get_big_image_height();
     unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*3);
 
-    // Now actually scale the data, and convert to bytes.
-    // Note that we need 3 values, one for each of the RGB channels.
     int mm = 0;
     for ( ii = 0 ; ii < bih; ii++ ) {
         for ( jj = 0 ; jj < biw; jj++ ) {
             double l, s;
             img2ls(jj,ii,&l,&s);
-            
-            unsigned char uval;
+
+            unsigned char r, g, b;
 
             if (l<0 || l>=nl || s<0 || s>=ns) {
-                uval = 0;
+                r = g = b = 0;
             } else {
-                uval = (unsigned char)calc_scaled_pixel_value(
-                    cached_image_get_pixel(data_ci, 
-                        (int)floor(l),(int)floor(s)));
+                cached_image_get_rgb(data_ci, (int)floor(l),
+                    (int)floor(s), &r, &g, &b);
             }
 
             int n = 3*mm;
-            bdata[n] = uval;
-            bdata[n+1] = uval;
-            bdata[n+2] = uval;
+            bdata[n] = r;
+            bdata[n+1] = g;
+            bdata[n+2] = b;
             ++mm;
         }
     }
@@ -267,13 +264,18 @@ static GdkPixbuf * make_big_image()
 
 static void line_samp_to_proj(double line, double samp, double *x, double *y)
 {
-    double lat, lon, projZ;
-    meta_get_latLon(meta, line, samp, 0, &lat, &lon);
-    if (meta->projection) {
-        latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
-            x, y, &projZ);
+    if (meta->projection || meta->sar || meta->transform) {
+        double lat, lon, projZ;
+        meta_get_latLon(meta, line, samp, 0, &lat, &lon);
+        if (meta->projection) {
+            latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
+                x, y, &projZ);
+        } else {
+            latLon2UTM(lat, lon, 0, x, y);
+        }
     } else {
-        latLon2UTM(lat, lon, 0, x, y);
+        *x = samp;
+        *y = line;
     }
 }
 
@@ -300,18 +302,30 @@ void update_pixel_info()
     {
         assert(meta);
         assert(shown_pixbuf);
-        
-        float fval = cached_image_get_pixel(data_ci,
-            crosshair_line, crosshair_samp);
 
-        int uval = calc_scaled_pixel_value(fval);
+        if (data_ci->data_type == GREYSCALE_FLOAT) {
+            float fval = cached_image_get_pixel(data_ci,
+                crosshair_line, crosshair_samp);
 
-        sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n", fval, uval);
+            int uval = calc_scaled_pixel_value(fval);
+
+            sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n",
+                fval, uval);
+        }
+        else if (data_ci->data_type == RGB_BYTE) {
+            unsigned char r, g, b;
+            cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
+                &r, &g, &b);
+            sprintf(&buf[strlen(buf)], "Pixel Value: R,G,B = %d, %d, %d\n",
+                (int)r, (int)g, (int)b);
+        }
     }
 
-    double lat, lon;
-    meta_get_latLon(meta, y, x, 0, &lat, &lon);
-    sprintf(&buf[strlen(buf)], "Lat: %.3f, Lon: %.3f (deg)\n", lat, lon);
+    double lat=0, lon=0;
+    if (meta->projection || meta->sar || meta->transform) {
+        meta_get_latLon(meta, y, x, 0, &lat, &lon);
+        sprintf(&buf[strlen(buf)], "Lat: %.4f, Lon: %.4f (deg)\n", lat, lon);
+    }
 
     // skip projection coords if not projected, or lat/long pseudo (since
     // in that case the projection coords are just the lat/long values
@@ -329,7 +343,7 @@ void update_pixel_info()
     if (meta->state_vectors) {
         double s,t;
         meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
-        sprintf(&buf[strlen(buf)], "Incid: %.3f, Look: %.3f (deg)\nSlant: %.1f m\n",
+        sprintf(&buf[strlen(buf)], "Incid: %.4f, Look: %.4f (deg)\nSlant: %.1f m\n",
             R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s);
     }
 
@@ -344,8 +358,12 @@ void update_pixel_info()
 
         double d = hypot(proj_x_cc-proj_x_cr, proj_y_cc-proj_y_cr);
 
-        sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f m",
-            ctrl_clk_line, ctrl_clk_samp, d);
+        char *units = "m";
+        if (!meta->sar && !meta->transform && !meta->projection)
+            units = "pixels";
+
+        sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f %s",
+            ctrl_clk_line, ctrl_clk_samp, d, units);
     } else {
         sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
     }

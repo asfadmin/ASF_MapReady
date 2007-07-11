@@ -92,6 +92,15 @@ int try_alos(const char *filename);
 int handle_alos_file(const char *filename, const char *band, char *meta_name,
                      char *data_name, char **err);
 
+/* read_jpeg.c */
+int try_jpeg(const char *filename);
+int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
+                     char **err);
+meta_parameters *read_jpeg_meta(const char *meta_name);
+int open_jpeg_data(const char *data_name, const char *meta_name,
+                   const char *band, meta_parameters *meta,
+                   ClientInterface *client);
+
 /* big_image.c */
 void fill_big(void);
 void update_pixel_info(void);

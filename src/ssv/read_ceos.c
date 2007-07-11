@@ -73,9 +73,11 @@ meta_parameters *read_ceos_meta(const char *meta_name)
 }
 
 int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
-                    float *dest, void *read_client_info,
+                    void *dest_void, void *read_client_info,
                     meta_parameters *meta)
 {
+    float *dest = (float*)dest_void;
+
     ReadCeosClientInfo *info = (ReadCeosClientInfo*)read_client_info;
     int ii, jj, ns = meta->general->sample_count;
 
@@ -117,8 +119,10 @@ int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
 
 int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
                             int thumb_size_y, meta_parameters *meta,
-                            void *read_client_info, float *dest)
+                            void *read_client_info, void *dest_void)
 {
+    float *dest = (float*)dest_void;
+
     ReadCeosClientInfo *info = (ReadCeosClientInfo*)read_client_info;
     int ii, jj, ns = meta->general->sample_count;
 
@@ -192,6 +196,8 @@ int open_ceos_data(const char *data_name, const char *meta_name,
     client->read_fn = read_ceos_client;
     client->thumb_fn = get_ceos_thumbnail_data;
     client->free_fn = free_ceos_client_info;
+
+    client->data_type = GREYSCALE_FLOAT;
 
     return TRUE;
 }

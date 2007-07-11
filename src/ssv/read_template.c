@@ -77,11 +77,19 @@ int handle_X_file(const char *filename, char *meta_name, char *data_name,
 // read_X_meta()
 
 // Create & return a meta_parameters structure from the given file.
-// Return NULL if the metadata could not be read.
+// Return NULL if the metadata could not be read, or there is no
+// metadata for this particular format.
 
 meta_parameters *read_X_meta(const char *meta_name)
 {
-    return meta_read(meta_name);
+    meta_parameters *meta = raw_init();
+
+    // At least populate these fields:
+    // General-->
+    //      line_count
+    //      sample_count
+
+    return meta;
 }
 
 //----------------------------------------------------------------------
@@ -100,9 +108,13 @@ meta_parameters *read_X_meta(const char *meta_name)
 // return TRUE on success, FALSE on failure.
 
 int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
-                  float *dest, void *read_client_info,
+                  void *dest_void, void *read_client_info,
                   meta_parameters *meta)
 {
+    // pick one of these!  And populate it.
+    //float *dest = (float*)dest_void;
+    //unsigned char *dest = (unsigned char*)dest_void;
+
     ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
     return FALSE;
 }
@@ -131,21 +143,25 @@ int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
 
 int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
                          int thumb_size_y, meta_parameters *meta,
-                         void *read_client_info, float *dest)
+                         void *read_client_info, void *dest_void)
 {
+    // pick one of these!  And populate it.
+    //float *dest = (float*)dest_void;
+    //unsigned char *dest = (unsigned char*)dest_void;
+
     ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
     return FALSE;
 }
 
 //----------------------------------------------------------------------
-// open_X_data()
+// free_X_client_info()
 
 // You probably don't need to change this beyond updating "X"
 // Frees the client info structure
 
 void free_X_client_info(void *read_client_info)
 {
-    ReadXClientInfo *info = (ReadXClientInfo*) read_client_info;
+    ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
     free(info);
 }
 
@@ -172,10 +188,17 @@ int open_X_data(const char *data_name, const char *meta_name,
 {
     ReadXClientInfo *info = MALLOC(sizeof(ReadXClientInfo));
 
+    // populate the info block here
+
     client->read_client_info = info;
     client->read_fn = read_X_client;
     client->thumb_fn = get_X_thumbnail_data;
-    client->free_fn = get_X_thumbnail_data;
+    client->free_fn = free_X_client_info;
+
+    // You must set this to something!
+    // Be sure what you return for "dest" in the read client
+    // functions is of this type
+    client->data_type = UNDEFINED;
 
     return FALSE;
 }
