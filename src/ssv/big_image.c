@@ -2,6 +2,8 @@
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
 
+UserPolygon g_poly;
+
 // current sizes of the large image.
 // keep half the size around, we need that during the redraw, which
 // is supposed to be quick
@@ -243,9 +245,23 @@ static GdkPixbuf * make_big_image()
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
+    // put the red crosshair at the "active" point along the polygon
+    if (g_poly.c < g_poly.n)
+        put_crosshair(pb, g_poly.line[g_poly.c], g_poly.samp[g_poly.c],
+            FALSE);
+    if (g_poly.n > 0) {
+        put_line(pb, crosshair_line, crosshair_samp,
+            g_poly.line[0], g_poly.samp[0]);
+        for (ii=0; ii<g_poly.n-1; ++ii) {
+            put_line(pb, g_poly.line[ii], g_poly.samp[ii],
+                g_poly.line[ii+1], g_poly.samp[ii+1]);
+        }
+    }
+
+    // green crosshair goes second, so if the two overlap, we will see
+    // the green one (the main one)
     put_crosshair(pb, crosshair_line, crosshair_samp, TRUE);
-    put_crosshair(pb, ctrl_clk_line, ctrl_clk_samp, FALSE);
-    put_line(pb, crosshair_line, crosshair_samp, ctrl_clk_line, ctrl_clk_samp);
+
     return pb;
 }
 
@@ -334,23 +350,42 @@ void update_pixel_info()
             R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s);
     }
 
-    if (ctrl_clk_samp >= 0 && ctrl_clk_line >= 0) {
-        // crosshair coords
-        double proj_x_cr, proj_y_cr; 
-        line_samp_to_proj(y, x, &proj_x_cr, &proj_y_cr);
+    if (g_poly.n > 0) {
+        // start distance measure at crosshair coords
+        double cross_x, cross_y, prev_x, prev_y;
+        line_samp_to_proj(y, x, &cross_x, &cross_y);
+        prev_x = cross_x; prev_y = cross_y;
 
-        // ctrl-click coords
-        double proj_x_cc, proj_y_cc;       
-        line_samp_to_proj(ctrl_clk_line, ctrl_clk_samp, &proj_x_cc, &proj_y_cc);
+        // iterate through ctrl-clicked coords
+        int i;
+        double d=0, A=0;
+        for (i=0; i<g_poly.n; ++i) {
+            double proj_x, proj_y;       
+            line_samp_to_proj(g_poly.line[i], g_poly.samp[i], &proj_x, &proj_y);
 
-        double d = hypot(proj_x_cc-proj_x_cr, proj_y_cc-proj_y_cr);
+            d += hypot(proj_x-prev_x, proj_y-prev_y);
+            A += prev_x * proj_y - proj_x * prev_y;
+
+            prev_x = proj_x; prev_y = proj_y;
+
+            // for the area calc, we close the polygon automatically
+            if (i==g_poly.n-1)
+                A += prev_x * cross_y - cross_x * prev_y;
+        }
+        A /= 2.;
 
         char *units = "m";
         if (!meta->sar && !meta->transform && !meta->projection)
             units = "pixels";
 
-        sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f %s",
-            ctrl_clk_line, ctrl_clk_samp, d, units);
+        if (g_poly.n == 1)
+            sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f %s",
+                g_poly.line[0], g_poly.samp[0], d, units);
+        else
+            sprintf(&buf[strlen(buf)],
+                "Total distance: %.1f %s (%d pts)\n"
+                "Area (of closure): %.1f %s^2",
+                d, units, g_poly.n+1, fabs(A), units);
     } else {
         sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
     }
@@ -396,13 +431,24 @@ on_big_image_eventbox_button_press_event(
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
-            img2ls((int)event->x, (int)event->y, &ctrl_clk_line, &ctrl_clk_samp);
+            if (g_poly.n < 255) {
+                double l, s;
+                img2ls((int)event->x, (int)event->y, &l, &s);
+                g_poly.line[g_poly.n] = l;
+                g_poly.samp[g_poly.n] = s;
+                ++g_poly.n;
+                if (g_poly.n == 1)
+                    g_poly.c = 0;
+                else
+                    g_poly.c = g_poly.n-1;
+            } else {
+                asfPrintWarning("Exceeded maximum polygon length.\n");
+            }
             last_was_crosshair = FALSE;
         }
         // left-click: move crosshair
         else {
             img2ls((int)event->x, (int)event->y, &crosshair_line, &crosshair_samp);
-            ctrl_clk_line = ctrl_clk_samp = -1;
             last_was_crosshair = TRUE;
         }
         update_pixel_info();
@@ -519,25 +565,50 @@ static int handle_keypress(GdkEventKey *event)
         update_zoom();
         fill_small();
     } else if (event->keyval == GDK_Tab) {
-        // Tab key: Switch between the crosshairs (which one is affected by
-        //          subsequent arrow movements)
-        if (ctrl_clk_line > 0 && ctrl_clk_samp > 0)
-            last_was_crosshair = !last_was_crosshair;
-        else
+        // Tab key: Cycle between the crosshairs (which one is affected by
+        // subsequent arrow movements) Shift- or ctrl-tab: other direction
+        if (g_poly.n > 0) {
+            if (event->state & GDK_SHIFT_MASK ||
+                event->state & GDK_CONTROL_MASK)
+            {
+                if (g_poly.c == 0) {
+                    last_was_crosshair = TRUE;
+                    g_poly.c = -1;
+                } else if (g_poly.c == -1) {
+                    last_was_crosshair = FALSE;
+                    g_poly.c = g_poly.n - 1;
+                } else {
+                    last_was_crosshair = FALSE;
+                    --g_poly.c;
+                }
+            } else {
+                if (g_poly.c == g_poly.n-1) {
+                    last_was_crosshair = TRUE;
+                    g_poly.c = -1;
+                } else {
+                    last_was_crosshair = FALSE;
+                    ++g_poly.c;
+                }
+            }
+        } else
             last_was_crosshair = TRUE;
+    } else if (event->keyval == GDK_BackSpace) {
+        // Backspace: clear most recently added point
+        if (g_poly.n > 0) {
+            --g_poly.n;
+            if (g_poly.c >= g_poly.n)
+                g_poly.c = g_poly.n-1;
+            update_pixel_info();
+        }
+    } else if (event->keyval == GDK_Escape) {
+        // Escape: clear the ctrl-clicked path
+        g_poly.n = g_poly.c = 0;
+        update_pixel_info();
     } else if (event->keyval == GDK_c) {
         // c: Center image view on crosshair
-        if (event->state & GDK_CONTROL_MASK) {
-            if (ctrl_clk_line > 0 && ctrl_clk_samp > 0) {
-                center_line = ctrl_clk_line;
-                center_samp = ctrl_clk_samp;
-            } else {
-                // if no ctrl-crosshair (red crosshair) yet, place
-                // one in the center, and center on it
-                center_line = ctrl_clk_line = nl/2;
-                center_samp = ctrl_clk_samp = ns/2;
-                last_was_crosshair = FALSE;
-            }
+        if (event->state & GDK_CONTROL_MASK && g_poly.n > 0 && g_poly.c >= 0) {
+            center_line = g_poly.line[g_poly.c];
+            center_samp = g_poly.samp[g_poly.c];
         } else {
             if (crosshair_line > 0 && crosshair_samp > 0) {
                 center_line = crosshair_line;
@@ -556,9 +627,9 @@ static int handle_keypress(GdkEventKey *event)
         //    crosshair.  ctrl-a uses the other crosshair
         int line=crosshair_line, samp=crosshair_samp;
         if (event->state & GDK_CONTROL_MASK) {
-            if (ctrl_clk_line > 0 && ctrl_clk_samp > 0) {
-                line = ctrl_clk_line;
-                samp = ctrl_clk_samp;
+            if (g_poly.c < g_poly.n) {
+                line = g_poly.line[g_poly.c];
+                samp = g_poly.samp[g_poly.c];
             } else {
                 line = samp = -1;
             }
@@ -604,8 +675,8 @@ static int handle_keypress(GdkEventKey *event)
         // affects the same crosshair that would be moved with
         // the arrow keys
         int line, samp;
-        if (!last_was_crosshair && ctrl_clk_line>0 && ctrl_clk_samp>0) {
-            line = ctrl_clk_line; samp=ctrl_clk_samp;
+        if (!last_was_crosshair && g_poly.c < g_poly.n) {
+            line = g_poly.line[g_poly.c]; samp=g_poly.samp[g_poly.c];
         } else {
             line = crosshair_line; samp=crosshair_samp;
         }
@@ -624,9 +695,9 @@ static int handle_keypress(GdkEventKey *event)
                 }
             }
         }
-        if (!last_was_crosshair && ctrl_clk_line>0 && ctrl_clk_samp>0) {
-            ctrl_clk_line=line_max;
-            ctrl_clk_samp=samp_max;
+        if (!last_was_crosshair && g_poly.c < g_poly.n) {
+            g_poly.line[g_poly.c]=line_max;
+            g_poly.samp[g_poly.c]=samp_max;
         } else {
             crosshair_line=line_max;
             crosshair_samp=samp_max;
@@ -678,10 +749,20 @@ static int handle_keypress(GdkEventKey *event)
                 }
             } else {
                 switch (event->keyval) {
-                    case GDK_Up: ctrl_clk_line -= incr; break;
-                    case GDK_Down: ctrl_clk_line += incr; break;
-                    case GDK_Left: ctrl_clk_samp -= incr; break;
-                    case GDK_Right: ctrl_clk_samp += incr; break;
+                    if (g_poly.c < g_poly.n) {
+                        case GDK_Up:
+                            g_poly.line[g_poly.c] -= incr;
+                            break;
+                        case GDK_Down:
+                            g_poly.line[g_poly.c] += incr; 
+                            break;
+                        case GDK_Left:
+                            g_poly.samp[g_poly.c] -= incr; 
+                            break;
+                        case GDK_Right:
+                            g_poly.samp[g_poly.c] += incr; 
+                            break;
+                    }
                     default: return TRUE;
                 }
             }

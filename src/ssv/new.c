@@ -190,11 +190,12 @@ void reset_globals()
 {
     clear_stats();
     center_line = center_samp = crosshair_samp = crosshair_line = -1;
-    ctrl_clk_line = ctrl_clk_samp = -1;
     zoom = 1;
 
     data_ci = NULL;
     meta = NULL;
+
+    g_poly.n = g_poly.c = 0;
 }
 
 void load_file(const char *file)

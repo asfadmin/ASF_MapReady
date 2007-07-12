@@ -148,6 +148,7 @@ extern const char DIR_SEPARATOR;
 
 extern const char PATH_SEPATATOR;
 
+// This is defined/managed in stats.c, it is a singleton
 typedef struct {
     double map_min, map_max; // max/min for 2-sigma mapping
     double avg, stddev;
@@ -155,20 +156,28 @@ typedef struct {
     int hist[256];           // histogram
 } ImageStats;
 
+// This is defined/managed in big_image.c, it is a singleton
+typedef struct {
+    int n;                  // How many points in the polygon
+    int c;                  // Currently "active" point (-1 for none)
+    double line[256];       // vertices of the polygon
+    double samp[256];
+} UserPolygon;
+
 /*************** these are our global variables ... ***********************/
 
-/* xml version of the .glade file */
 extern GladeXML *glade_xml;
 extern meta_parameters *meta;
 extern CachedImage *data_ci;
 
 extern int nl, ns;
 extern ImageStats g_stats;
+extern UserPolygon g_poly;
 
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
-extern double ctrl_clk_line, ctrl_clk_samp;
+
 extern char *g_filename;
 extern char *g_data_name;
 extern char *g_meta_name;

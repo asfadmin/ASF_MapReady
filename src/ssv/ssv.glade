@@ -562,7 +562,7 @@
 			<widget class="GtkLabel" id="help_label">
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes">Left-Click: Place crosshair
-Ctrl-Left-Click: Place secondary crosshair
+Ctrl-Left-Click: Place secondary crosshair(s)
 Right-click: Re-center view
 Scroll wheel: Zoom in/out
 
@@ -572,6 +572,8 @@ Shift-Arrow: Move crosshair 25x
 Ctrl-Shift-Arrow: Move crosshair 250x
 
 Tab: Toggle which crosshair is moved
+Esc: Clear ctrl-clicked path
+Backspace: Remove last ctrl-clicked point
 c: Center image on crosshair
 a: In terminal, display pixel values
 l: Move crosshair to local maxima

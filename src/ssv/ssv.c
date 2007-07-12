@@ -18,7 +18,6 @@ int nl, ns;
 double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
-double ctrl_clk_samp, ctrl_clk_line;
 
 // loaded filename
 char *g_filename;
