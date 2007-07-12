@@ -1,4 +1,4 @@
-#include "ssv.h"
+#include "asf_view.h"
 
 /************************************************************************
  * Global variables...
@@ -106,8 +106,8 @@ main(int argc, char **argv)
     //int e = gtk_widget_get_events(eb);
     //gtk_widget_set_events(eb, e | GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK);
 
-    gchar *glade_xml_file = (gchar *) find_in_share("ssv.glade");
-    printf("Found ssv.glade: %s\n", glade_xml_file);
+    gchar *glade_xml_file = (gchar *) find_in_share("asf_view.glade");
+    printf("Found asf_view.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     free(glade_xml_file);
 

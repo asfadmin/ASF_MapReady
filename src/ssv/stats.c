@@ -1,4 +1,4 @@
-#include "ssv.h"
+#include "asf_view.h"
 
 // global variable for the image stats
 ImageStats g_stats;

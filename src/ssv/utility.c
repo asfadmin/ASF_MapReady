@@ -7,7 +7,7 @@ const char PATH_SEPARATOR = ':';
 const char DIR_SEPARATOR;
 #endif
 
-#include "ssv.h"
+#include "asf_view.h"
 
 void add_to_combobox(const char *widget_name, const char *txt)
 {

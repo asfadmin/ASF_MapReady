@@ -24,7 +24,7 @@
 #include "asf.h"
 #include "asf_endian.h"
 
-#include "ssv.h"
+#include "asf_view.h"
 
 #ifndef linux
 #ifndef win32

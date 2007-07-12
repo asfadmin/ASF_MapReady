@@ -1,4 +1,4 @@
-#include "ssv.h"
+#include "asf_view.h"
 
 // size of the smaller "preview" image in the top-left corner
 static const int THUMB_SIZE = 256;

@@ -12,7 +12,7 @@
 #undef DIR_SEPARATOR
 #endif
 
-#include "ssv.h"
+#include "asf_view.h"
 
 extern int stats_calced;
 extern int stats_generated;
