@@ -157,11 +157,12 @@ typedef struct {
 } ImageStats;
 
 // This is defined/managed in big_image.c, it is a singleton
+#define MAX_POLY_LEN 128
 typedef struct {
-    int n;                  // How many points in the polygon
-    int c;                  // Currently "active" point (-1 for none)
-    double line[256];       // vertices of the polygon
-    double samp[256];
+    int n;                    // How many points in the polygon
+    int c;                    // Currently "active" point (-1 for none)
+    double line[MAX_POLY_LEN];// vertices of the polygon
+    double samp[MAX_POLY_LEN];
 } UserPolygon;
 
 /*************** these are our global variables ... ***********************/

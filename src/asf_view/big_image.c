@@ -249,6 +249,8 @@ static GdkPixbuf * make_big_image()
     if (g_poly.c < g_poly.n)
         put_crosshair(pb, g_poly.line[g_poly.c], g_poly.samp[g_poly.c],
             FALSE);
+
+    // draw the polygon
     if (g_poly.n > 0) {
         put_line(pb, crosshair_line, crosshair_samp,
             g_poly.line[0], g_poly.samp[0]);
@@ -281,7 +283,6 @@ static void line_samp_to_proj(double line, double samp, double *x, double *y)
         *y = line;
     }
 }
-
 
 void update_pixel_info()
 {
@@ -358,7 +359,7 @@ void update_pixel_info()
 
         // iterate through ctrl-clicked coords
         int i;
-        double d=0, A=0;
+        double d=0, A=0; // d=distance, A=area
         for (i=0; i<g_poly.n; ++i) {
             double proj_x, proj_y;       
             line_samp_to_proj(g_poly.line[i], g_poly.samp[i], &proj_x, &proj_y);
@@ -383,7 +384,7 @@ void update_pixel_info()
                 g_poly.line[0], g_poly.samp[0], d, units);
         else
             sprintf(&buf[strlen(buf)],
-                "Total distance: %.1f %s (%d pts)\n"
+                "Total distance: %.1f %s (%d points)\n"
                 "Area (of closure): %.1f %s^2",
                 d, units, g_poly.n+1, fabs(A), units);
     } else {
@@ -431,7 +432,7 @@ on_big_image_eventbox_button_press_event(
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
-            if (g_poly.n < 255) {
+            if (g_poly.n < MAX_POLY_LEN) {
                 double l, s;
                 img2ls((int)event->x, (int)event->y, &l, &s);
                 g_poly.line[g_poly.n] = l;
@@ -442,7 +443,8 @@ on_big_image_eventbox_button_press_event(
                 else
                     g_poly.c = g_poly.n-1;
             } else {
-                asfPrintWarning("Exceeded maximum polygon length.\n");
+                asfPrintWarning("Exceeded maximum polygon length.\n"
+                                "No more points can be added.\n");
             }
             last_was_crosshair = FALSE;
         }
