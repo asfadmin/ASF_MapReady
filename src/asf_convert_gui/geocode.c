@@ -668,7 +668,7 @@ on_nad83_activate(GtkWidget * widget)
 }
 
 SIGNAL_CALLBACK void
-    on_huges_activate(GtkWidget * widget)
+on_hughes_activate(GtkWidget * widget)
 {
   geocode_options_changed();
 }
