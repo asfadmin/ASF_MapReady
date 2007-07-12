@@ -692,17 +692,17 @@ handle_view_output()
     return TRUE;
 }
 
-static void ssv_thread (GString *file, gpointer user_data)
+static void asf_view_thread (GString *file, gpointer user_data)
 {
 #ifdef win32
-    gchar * ssv = find_in_bin("ssv.exe");
+    gchar * asf_view = find_in_bin("asf_view.exe");
 #else
-    gchar * ssv = find_in_bin("ssv");
+    gchar * asf_view = find_in_bin("asf_view");
 #endif
 
     char buf[1024];
     char *escaped_str = escapify(file->str);
-    sprintf(buf, "\"%s\" \"%s\"", ssv, escaped_str);
+    sprintf(buf, "\"%s\" \"%s\"", asf_view, escaped_str);
     free(escaped_str);
     asfSystem(buf);
     g_string_free(file, TRUE);
@@ -711,12 +711,12 @@ static void ssv_thread (GString *file, gpointer user_data)
 void show_input_image(gchar * in_name)
 {
 #ifdef win32
-    gchar * ssv = find_in_bin("ssv.exe");
+    gchar * asf_view = find_in_bin("asf_view.exe");
 #else
-    gchar * ssv = find_in_bin("ssv");
+    gchar * asf_view = find_in_bin("asf_view");
 #endif
 
-    if (ssv)
+    if (asf_view)
     {
         static GThreadPool *ttp = NULL;
         GError *err = NULL;
@@ -724,7 +724,7 @@ void show_input_image(gchar * in_name)
         if (!ttp)
         {
             if (!g_thread_supported ()) g_thread_init (NULL);
-            ttp = g_thread_pool_new ((GFunc) ssv_thread, NULL, 4, TRUE, &err);
+            ttp = g_thread_pool_new ((GFunc) asf_view_thread, NULL, 4, TRUE, &err);
             g_assert(!err);
         }
 
