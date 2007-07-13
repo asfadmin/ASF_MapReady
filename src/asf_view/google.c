@@ -20,9 +20,9 @@
 #include <gdk/gdk.h>
 
 #ifdef win32
-static const char PATH_SEPARATOR=':';
-#else
 static const char PATH_SEPARATOR=';';
+#else
+static const char PATH_SEPARATOR=':';
 #endif
 
 char *find_in_path(char * file)
