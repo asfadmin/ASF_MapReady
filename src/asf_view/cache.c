@@ -51,6 +51,8 @@ static int data_size(CachedImage *self)
             return 4;
         case RGB_BYTE:
             return 3;
+        case GREYSCALE_BYTE:
+            return 1;
         default:
             assert(FALSE);
             return 0;
@@ -94,7 +96,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
                 // mark this as the most recently accessed
                 self->access_counts[i] = self->n_access++;
 
-                // return cached value
+                // return pointer to the cached value
                 return &self->cache[i][((line-rs)*self->ns + samp)*ds];
             }
         }
@@ -280,6 +282,9 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
     if (self->data_type == GREYSCALE_FLOAT) {
         return *((float*)get_pixel(self, line, samp));
     }
+    else if (self->data_type == GREYSCALE_BYTE) {
+        return (float) *(get_pixel(self, line, samp));
+    }
     else if (self->data_type == RGB_BYTE) {
         unsigned char r, g, b;
         cached_image_get_rgb(self, line, samp, &r, &g, &b);
@@ -298,6 +303,9 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
     if (self->data_type == GREYSCALE_FLOAT) {
         float f = cached_image_get_pixel(self, line, samp);
         *r = *g = *b = (unsigned char)calc_scaled_pixel_value(f);
+    }
+    else if (self->data_type == GREYSCALE_BYTE) {
+        *r = *g = *b = *(get_pixel(self, line, samp));
     }
     else if (self->data_type == RGB_BYTE) {
         unsigned char *uc = get_pixel(self, line, samp);

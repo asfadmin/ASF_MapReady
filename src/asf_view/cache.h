@@ -26,10 +26,23 @@ typedef int ThumbFn(FILE *fp, int thumb_size_x,
                     void *read_client_info, void *dest);
 typedef void FreeFn(void *read_client_info);
 
+// Adding a new supported data type:
+//  cache.c:
+//    data_size()
+//    cached_image_get_pixel()
+//    cached_image_get_rgb()
+//  stats.c:
+//    generate_thumbnail_data()
+//  big_image.c:
+//    update_pixel_info()
+//  read_X.c: (for X clients that will handle the data type)
+//    open_X_data()
+//     
 typedef enum {
     UNDEFINED = 0,
     GREYSCALE_FLOAT = 1,
-    RGB_BYTE = 2
+    GREYSCALE_BYTE = 2,
+    RGB_BYTE = 3
 } ssv_data_type_t;
 
 typedef struct {

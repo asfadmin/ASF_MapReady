@@ -170,7 +170,8 @@ int open_jpeg_data(const char *data_name, const char *meta_name,
     client->thumb_fn = NULL;
     client->free_fn = free_jpeg_client_info;
 
-    client->data_type = RGB_BYTE;
+    client->data_type =
+        cinfo->output_components==3 ? RGB_BYTE : GREYSCALE_BYTE;
 
     // since jpeg doesn't support random access ...
     client->require_full_load = TRUE;

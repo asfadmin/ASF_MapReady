@@ -140,10 +140,10 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
 
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
-                int index = 3*(jj+ii*tsx);
-                unsigned char uval =
-                    (bdata[index] + bdata[index+1] + bdata[index+2])/3;
-   
+                int kk = 3*(jj+ii*tsx);
+                unsigned char uval = 
+                    (bdata[kk] + bdata[kk+1] + bdata[kk+2])/3;
+
                 g_stats.avg += uval;
                 g_stats.hist[uval] += 1;
 
@@ -156,14 +156,54 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
 
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
-                int index = 3*(jj+ii*tsx);
-                unsigned char uval =
-                    (bdata[index] + bdata[index+1] + bdata[index+2])/3;
+                int kk = 3*(jj+ii*tsx);
+                unsigned char uval = 
+                    (bdata[kk] + bdata[kk+1] + bdata[kk+2])/3;
 
                 g_stats.stddev += (uval - g_stats.avg) * (uval - g_stats.avg);
             }
         }
         g_stats.stddev = sqrt(g_stats.stddev / (double)(tsx*tsy));
+
+    }
+    else if (data_ci->data_type == GREYSCALE_BYTE) {
+
+        // this case is very similar to the RGB case, above, except we
+        // have to first grab the data into a greyscale buffer, and
+        // then copy it over to the 3-band buffer we're supposed to return
+        unsigned char *gsdata = MALLOC(sizeof(unsigned char)*tsx*tsy);
+        load_thumbnail_data(data_ci, tsx, tsy, (void*)gsdata);
+
+        g_stats.act_max = 0;
+        g_stats.act_min = 255;
+        g_stats.map_min = 0;
+        g_stats.map_max = 255;
+
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                unsigned char uval = gsdata[jj+ii*tsx];
+                int index = 3*(jj+ii*tsx);
+                bdata[index] = bdata[index+1] = bdata[index+2] = uval;
+
+                g_stats.avg += uval;
+                g_stats.hist[uval] += 1;
+
+                if (uval > g_stats.act_max) g_stats.act_max = uval;
+                if (uval < g_stats.act_min) g_stats.act_min = uval;
+            }
+        }
+
+        g_stats.avg /= (double)(tsx*tsy);
+
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                unsigned char uval = gsdata[jj+ii*tsx];
+                g_stats.stddev += (uval - g_stats.avg) * (uval - g_stats.avg);
+            }
+        }
+        g_stats.stddev = sqrt(g_stats.stddev / (double)(tsx*tsy));
+
+        free(gsdata);
     }
 
     return bdata;

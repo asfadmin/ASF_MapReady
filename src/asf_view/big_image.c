@@ -323,6 +323,12 @@ void update_pixel_info()
             sprintf(&buf[strlen(buf)], "Pixel Value: R,G,B = %d, %d, %d\n",
                 (int)r, (int)g, (int)b);
         }
+        else if (data_ci->data_type == GREYSCALE_BYTE) {
+            unsigned char r, g, b;
+            cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
+                &r, &g, &b);
+            sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", (int)r);
+        }
     }
 
     double lat=0, lon=0;
