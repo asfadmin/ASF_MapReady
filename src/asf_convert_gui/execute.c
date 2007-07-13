@@ -493,8 +493,6 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         /* parent */
         int counter = 1;
         char *statFile = appendExt(cfg_file, ".status");
-        char *projFile = appendExt(cfg_file, ".proj");
-
         while (waitpid(pid, NULL, WNOHANG) == 0)
         {
             while (gtk_events_pending())
@@ -551,14 +549,12 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         }
 
         unlink(statFile);
-
-        free(projFile);
         free(statFile);
     }
 
     gchar *the_output = NULL;
 
-    output = fopen(logFile, "rt");
+    output = fopen(logFile, "r");
 
     if (!output)
     {
@@ -660,7 +656,12 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             settings_to_config_file(user_settings, in_data, out_full,
                 output_dir, tmp_dir);
         if (!config_file) {
-            message_box("Error creating configuration file.\n");
+            err_string = "Error creating configuration file.";
+            gtk_list_store_set(list_store, iter, COL_STATUS, err_string, -1);
+
+            free(out_basename);
+            free(output_dir);
+            free(tmp_dir);
             return;
         }
 
@@ -671,6 +672,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             // unsuccessful
             gtk_list_store_set(list_store, iter, COL_STATUS, err_string, 
                 COL_LOG, cmd_output, -1);
+            FREE(err_string);
         }
         else {
             // successful -- move to "completed" list
@@ -679,7 +681,6 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
             set_thumbnail(&completed_iter, tmp_dir, out_full);
         }
 
-        FREE(err_string);
         free(config_file);
         free(out_basename);
         free(output_dir);
@@ -688,6 +689,8 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
         if (!user_settings->keep_files)
             remove_dir(tmp_dir);
+
+        free(tmp_dir);
     }
 
     g_free(status);
