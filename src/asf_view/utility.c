@@ -221,3 +221,12 @@ void put_string_to_label(const char *widget_name, const char *txt)
     gtk_label_set_text(GTK_LABEL(w), txt);
 }
 
+void show_widget(const char *widget_name, int show)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    if (show)
+        gtk_widget_show(w);
+    else
+        gtk_widget_hide(w);
+}
+

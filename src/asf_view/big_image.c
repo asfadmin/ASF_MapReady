@@ -81,6 +81,13 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
+static void show_or_hide_save_subset_button()
+{
+    // we show it when there is a user polygon defined
+    // that's when saving a subset would make sense
+    show_widget("save_subset_button", g_poly.n > 0);
+}
+
 // draws a crosshair at x,y (image coords)
 static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp, int green)
 {
@@ -406,6 +413,9 @@ void fill_big()
     GdkPixbuf *pb = make_big_image();
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+
+    // might as well do this here
+    show_or_hide_save_subset_button();
 }
 
 SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
@@ -676,6 +686,11 @@ static int handle_keypress(GdkEventKey *event)
     } else if (event->keyval == GDK_m) {
         // m: open a new file
         open_mdv();
+        return TRUE;
+    } else if (event->keyval == GDK_s && event->state & GDK_CONTROL_MASK) {
+        // ctrl-s: save subset
+        if (g_poly.n > 0)
+            save_subset(0);
         return TRUE;
     } else if (event->keyval == GDK_l) {
         // l: move to a local maxima (30x30 pixel search area)
