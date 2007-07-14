@@ -1,21 +1,76 @@
 Convert Version History
 
-v3.1.x (released YYYY Month DD)
--- started at revision 4998, still need to go back to 3.0.21 tag
-Retired ability to export PPM files
-Added ability to export PGM files
-ALOS Support: Can now import, geocode, and export PalSAR standard beams, AVNIR2, and PRISM
-r4999 allow dos style line endings in projection files
-New tool: 'meta2envi' for easy viewing while the data is still in asf format
-r5002 fix crash when no 'sar' block is in the meta file
-Several minor bug fixes (memory leaks, indexing errors, etc)
-Some libraries removed from build system (asf_odl, asf_lt, asf_geolib)
-Change GUI panes to input & output from input/output & log
-New tool: resample <reason & functionality)
-Inconsistency fix for masking in terrain correction & geocoding
-Improved status reporting in the GUI
-Various build system improvements
--- stop at revision 5188
+v3.1.16 (released 2007 July 13)
+New Functionality (GUI and command-line tools)
+- Added ALOS support for the import, radiometry, geocode, and export
+  functionalities. This includes all ALOS sensors: PalSAR, AVNIR2, and PRISM.
+- Polarimetric support added (HH, HV, VH, VV; bi-pole, quad-pole)
+- Color support for multi-band/multi-polarization imagery
+  - User-defined assignment of 1 or more bands to one or more
+    color planes in any order, no requirement to use all 3 color
+    planes (RGB)
+  - True Color (2-Sigma contrast-expanded color planes, automatic
+    assignment of optical 3-2-1 bands to R-G-B color channels)
+  - False Color (2-Sigma contrast-expanded color planes, automatic
+    assignment of optical 4-3-2 bands to R-G-B color channels)
+- Added ability to import or export individual (or more) selected
+  bands from multi-band imagery
+- Added greyscale-to-pseudocolor image conversion via a look-up
+  table definition which maps grey levels to colors.  Includes ability
+  to define starting and ending colors over a range of greyscales
+  and automatic color-interpolation between these values.
+- Added radiometric terrain correction
+- Colorized layover and shadow masks.  Saved in same format as output
+  image.  Colors can be user-defined via configuration file.
+- Added ability to export an ENVI-type header (.hdr) for ingesting
+  ASF intermediate files (if saved) into ENVI or ENVI-compatible GIS
+  and imaging software
+- Added support for the Hughes datum with the polar stereographic projection
+- New meta field "bands" in the "general" block (designates names for each band)
+- New tool! convert2vector to assist in mask file creation
+
+Bugs Fixed
+- Minor issues related to the importation of very large images resolved
+- Resolved some minor memory leaks that affected some Windows users
+- Reduced memory requirements during calculation of image statistics
+  (helps some Windows users)
+- Fixed incorrect latitude of origin for southern hemisphere UTM
+  projections
+- Corrected incorrect map projected pixel size in Y direction which occurred in
+  some circumstances
+- Intermittent failure to display input thumbnail resolved
+- Intermittent failure to display output thumbnail resolved
+- Fixed crash when the chosen file for the "load settings" button doesn't exist
+- No longer always have the "Save intermediates" checkbox checked after loading
+  settings
+- Fixed calculation for center lat/lon in metadata
+- Get image thumbnail pop-ups to show up in the proper place when the scroll
+  bar has been moved
+- Fixed instances of geocode dying with the error:
+  "Failed to determine line and sample from latitude and longitude"
+- Fixed swapped lat/lon in ENVI .hdr file when using the Albers projection
+- When geocoding account for the given average height correction when
+  'refine geolocation' has been chosen as opposed to  full terrain correction
+- Improved GeoTIFF metadata population which had caused problems viewing
+  polarstereo projected images in ArcMap
+
+Features Enhanced
+- GUI format adjusted for more intuitive batch processing
+- Better error and fault reporting
+- Improved projection parameter checking when geocoding
+- Trade PPM output option for PGM output for more efficient greyscale
+  file sizes.  (Uncompressed RGB may be saved as a TIFF or GeoTIFF
+  instead)
+- ASCII metadata enhanced to include new fields for ALOS (etc)
+- Improved threading
+- Increased responsiveness of the "Stop" button
+- Install missing documentation
+
+
+v3.0.23 (released 2007 April 12)
+Fixed crashes when an image came near or crossed the International Date Line
+Fixed a failure when geocoding some ScanSAR images
+
 
 v3.0.21 (released 2007 February 8)
 Improved datum and spheroid support
@@ -98,7 +153,7 @@ metadata
 
 
 2.1.9 (released 2006 May 15)
-RPM installer for linux
+RPM installer for Linux
 Use autoconf/configure for source distribution
 Added meta->sar->azimuth_processing_bandwidth field to the metadata file
 Added meta->sar->chirp_rate field to the metadata file
@@ -113,8 +168,8 @@ GUI
 Change "output directory" & "naming scheme" buttons no longer obliterate
   changes made by the other.
 Items in the batch list update automatically (no longer require a mouse over)
-When you right click on a dataset you can bring up ceos metadata
-  (in the metadata gui)
+When you right click on a dataset you can bring up CEOS metadata
+  (in the metadata GUI)
 When you right click on a dataset you can bring up asf metadata
   (after processing)
 Windows file selector is now used on Windows instead of the GTK file selector
@@ -125,10 +180,10 @@ CEOS Metadata viewer integrated into GUI
 Import tab
   Keep intermediate files checkbox added
 Radiometry
-  Added a checkbox to output in the decible scale instead of power
+  Added a checkbox to output in the decibel scale instead of power
 Geocode tab
   Output pixel size option
-  New projection: lambert conformal conic
+  New projection: Lambert conformal conic
 Export tab
   Histogram equalization sample mapping method option (for mapping float to
     byte)
@@ -146,7 +201,7 @@ asf_import
   Remove 0 fill on left or right of image
   Will now allow projected CEOS data to be imported (though it cannot be
     reprojected at this time)
-  New -dB option to output calibrated data in decibles instead of the power
+  New -dB option to output calibrated data in decibels instead of the power
     scale (only works with -sigma, -beta, & -gamma flags)
 asf_geocode
   New option "force" added (allows projections in bizarre locations)
@@ -166,13 +221,13 @@ metadata
 -------------------------------------------------------------------------------
 
 2.0.1 (released 2005 April 28)
-The ASF software tools are designed to make it easier for users to process ASF 
-data products and translate them into a variety of other formats. A graphical 
-user interface exists which guides the user through the process of ingesting, 
+The ASF software tools are designed to make it easier for users to process ASF
+data products and translate them into a variety of other formats. A graphical
+user interface exists which guides the user through the process of ingesting,
 geocoding, and exporting datasets.
 
-The tools can currently ingest most Level 1 ASF products, and produce geocoded 
-(or ungeocoded) GeoTIFF, TIFF, JPEG, or portable pixmap images. The GUI that 
-runs on the windows environment has 4 different tabs which allows the user to 
-import, export, geocode to apply one of four projections and to modify how the 
+The tools can currently ingest most Level 1 ASF products, and produce geocoded
+(or non-geocoded) GeoTIFF, TIFF, JPEG, or portable pixmap images. The GUI that
+runs on the windows environment has 4 different tabs which allows the user to
+import, export, geocode to apply one of four projections and to modify how the
 radiometry is displayed.
