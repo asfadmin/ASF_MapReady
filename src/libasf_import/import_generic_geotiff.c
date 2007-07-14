@@ -70,6 +70,23 @@
 // change in the export library ...the defs must match
 #define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order"
 
+typedef enum {
+  UNKNOWN_TIFF_TYPE = 0,
+  SCANLINE_TIFF,
+  STRIP_TIFF,
+  TILED_TIFF
+} tiff_format_t;
+typedef struct {
+  tiff_format_t format;
+  uint32 scanlineSize;
+  uint32 numStrips;
+  uint32 rowsPerStrip;
+  uint32 tileWidth;
+  uint32 tileLength;
+  int imageCount;
+  int volume_tiff;
+} tiff_type_t;
+
 spheroid_type_t SpheroidName2spheroid(char *sphereName);
 void check_projection_parameters(meta_projection *mp);
 int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
@@ -80,6 +97,9 @@ int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                              const char *outBaseName, int num_bands,
                              int *ignore, short bits_per_sample,
                              short sample_format, short planar_config);
+void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo);
+void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band);
+void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -1581,7 +1601,26 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                                 short planar_config,
                                 int use_mask_value, double mask_value)
 {
-  tsize_t scanlineSize;
+  tiff_type_t tiffInfo;
+
+  // Determine what type of TIFF this is (scanline/strip/tiled)
+  get_tiff_type(tif, &tiffInfo);
+  if (tiffInfo.imageCount > 1) {
+    asfPrintWarning("Found multi-image TIFF file.  Statistics will only be\n"
+        "calculated from the bands in the first image in the file\n");
+  }
+  if (tiffInfo.imageCount < 1) {
+    asfPrintError ("TIFF file contains zero images\n");
+  }
+  if (tiffInfo.format != SCANLINE_TIFF &&
+      tiffInfo.format != STRIP_TIFF    &&
+      tiffInfo.format != TILED_TIFF)
+  {
+    asfPrintError("Unrecognized TIFF type\n");
+  }
+  if (tiffInfo.volume_tiff) {
+    asfPrintError("Multi-dimensional TIFF found ...only 2D TIFFs are supported.\n");
+  }
 
   // Minimum and maximum sample values as integers.
   double fmin = FLT_MAX;
@@ -1590,7 +1629,7 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
 
   stats->mean = 0.0;
   double s = 0.0;
-
+  uint32 scanlineSize = 0;
   uint32 sample_count = 0;      // Samples considered so far.
   uint32 ii, jj;
   scanlineSize = TIFFScanlineSize(tif);
@@ -1611,12 +1650,38 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-        TIFFReadScanline(tif, buf, ii, 0);
-      }
-      else {
-        // Planar configuration is band-sequential
-        TIFFReadScanline(tif, buf, ii, band_no);
+      // Get a data line from the TIFF
+      switch (tiffInfo.format) {
+        case SCANLINE_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            TIFFReadScanline(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            TIFFReadScanline(tif, buf, ii, band_no);
+          }
+          break;
+        case STRIP_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            ReadScanline_from_TIFF_Strip(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
+          }
+          break;
+        case TILED_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
+          }
+          break;
+        default:
+          asfPrintError("Invalid TIFF format found.\n");
+          break;
       }
       for (jj = 0 ; jj < omd->general->sample_count; jj++ ) {
         // iterate over each pixel sample in the scanline
@@ -1736,12 +1801,38 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
     for ( ii = 0; ii < omd->general->line_count; ii++ )
     {
       asfPercentMeter((double)ii/(double)omd->general->line_count);
-      if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-        TIFFReadScanline(tif, buf, ii, 0);
-      }
-      else {
-        // Planar configuration is band-sequential
-        TIFFReadScanline(tif, buf, ii, band_no);
+      // Get a data line from the TIFF
+      switch (tiffInfo.format) {
+        case SCANLINE_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            TIFFReadScanline(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            TIFFReadScanline(tif, buf, ii, band_no);
+          }
+          break;
+        case STRIP_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            ReadScanline_from_TIFF_Strip(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
+          }
+          break;
+        case TILED_TIFF:
+          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
+          }
+          else {
+            // Planar configuration is band-sequential
+            ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
+          }
+          break;
+        default:
+          asfPrintError("Invalid TIFF format found.\n");
+          break;
       }
       for (jj = 0 ; jj < omd->general->sample_count; jj++ ) {
         // iterate over each pixel sample in the scanline
@@ -1879,6 +1970,26 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
   float *buf;
   tsize_t scanlineSize;
 
+  // Determine what type of TIFF this is (scanline/strip/tiled)
+  tiff_type_t tiffInfo;
+  get_tiff_type(tif, &tiffInfo);
+  if (tiffInfo.imageCount > 1) {
+    asfPrintWarning("Found multi-image TIFF file.  Only the first image in the file\n"
+                   "will be exported.\n");
+  }
+  if (tiffInfo.imageCount < 1) {
+    asfPrintError ("TIFF file contains zero images\n");
+  }
+  if (tiffInfo.format != SCANLINE_TIFF &&
+      tiffInfo.format != STRIP_TIFF    &&
+      tiffInfo.format != TILED_TIFF)
+  {
+    asfPrintError("Unrecognized TIFF type\n");
+  }
+  if (tiffInfo.volume_tiff) {
+    asfPrintError("Multi-dimensional TIFF found ...only 2D TIFFs are supported.\n");
+  }
+
   buf = (float*)MALLOC(sizeof(float)*omd->general->sample_count);
   outName = (char*)MALLOC(sizeof(char)*strlen(outBaseName) + 5);
   strcpy(outName, outBaseName);
@@ -1898,44 +2009,58 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
 
   for (band=0; band < num_bands; band++) {
     if (num_bands > 1) {
-      asfPrintStatus("Writing band %02d...\n", band+1);
+      asfPrintStatus("\nWriting band %02d...\n", band+1);
     }
     else
     {
-      asfPrintStatus("Writing binary image...\n");
+      asfPrintStatus("\nWriting binary image...\n");
     }
     FILE *fp=(FILE*)FOPEN(outName, band > 0 ? "ab" : "wb");
     if (fp == NULL) return 1;
     if (!ignore[band]) {
       for (row=0; row < omd->general->line_count; row++) {
         asfLineMeter(row, omd->general->line_count);
-        if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-          TIFFReadScanline(tif, tif_buf, row, 0);
-        }
-        else {
-          TIFFReadScanline(tif, tif_buf, row, band);
+        switch (tiffInfo.format) {
+          case SCANLINE_TIFF:
+            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+              TIFFReadScanline(tif, tif_buf, row, 0);
+            }
+            else {
+            // Planar configuration is band-sequential
+              TIFFReadScanline(tif, tif_buf, row, band);
+            }
+            break;
+          case STRIP_TIFF:
+            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+              ReadScanline_from_TIFF_Strip(tif, tif_buf, row, 0);
+            }
+            else {
+            // Planar configuration is band-sequential
+              ReadScanline_from_TIFF_Strip(tif, tif_buf, row, band);
+            }
+            break;
+          case TILED_TIFF:
+            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, 0);
+            }
+            else {
+            // Planar configuration is band-sequential
+              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, band);
+            }
+            break;
+          default:
+            asfPrintError("Invalid TIFF format found.\n");
+            break;
         }
         for (col=0; col < omd->general->sample_count; col++) {
           switch (bits_per_sample) {
             case 8:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((uint8*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((uint8*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((uint8*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((int8*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((int8*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((int8*)tif_buf)[col]);
                   break;
                 default:
                   // No such thing as an 8-bit IEEE float
@@ -1947,22 +2072,10 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 16:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((uint16*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((uint16*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((uint16*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((int16*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((int16*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((int16*)tif_buf)[col]);
                   break;
                 default:
                   // No such thing as an 16-bit IEEE float
@@ -1974,31 +2087,13 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 32:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((uint32*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((uint32*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((uint32*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((long*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((long*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((long*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_IEEEFP:
-                  if (planar_config == PLANARCONFIG_CONTIG && num_bands > 1) {
-                    buf[col] = (float)(((float*)tif_buf)[(col*num_bands)+band]);
-                  }
-                  else {
-                    // Planar configuration is band-sequential or single-banded
-                    buf[col] = (float)(((float*)tif_buf)[col]);
-                  }
+                  buf[col] = (float)(((float*)tif_buf)[col]);
                   break;
                 default:
                   asfPrintError("Unexpected data type in TIFF file ...cannot write ASF-internal\n"
@@ -2026,4 +2121,444 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
 
   return 0;
 }
+
+void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo)
+{
+  int rc[64], ret;
+  tiff_type_t *t=tiffInfo; // convenience ptr
+
+  // Init to loser values
+  t->format = 0; // Unknown type
+  t->scanlineSize = 0;
+  t->numStrips = 0;
+  t->rowsPerStrip = 0;
+  t->tileWidth = 0;
+  t->tileLength = 0;
+  t->imageCount = 0;
+  t->volume_tiff = 0;
+
+  // Count number of images stored in this TIFF
+  do{
+    t->imageCount++;
+    ret = TIFFReadDirectory(tif);  // Makes next image directory the current directory until no more are left
+  }while (ret);
+
+  // Check to see if this TIFF has more than 2 dimensions
+  uint32 imagedepth;
+  rc[3] = TIFFGetField(tif, TIFFTAG_IMAGEDEPTH, &imagedepth);
+  if (rc[3] && imagedepth > 1) {
+    t->volume_tiff = 1;
+  }
+
+  // Read settings from TIFF
+  if (t->imageCount > 0 && !t->volume_tiff) {
+    tsize_t ss = TIFFScanlineSize(tif); // Length of a scanline in bytes (regardless of data type or rgb/gray)
+    uint32 nstrips = TIFFNumberOfStrips(tif); // Number of strips in file
+    uint32 rowsperstrip = 0;
+    rc[0] = TIFFGetField(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip); // Rows per strip ...zero for scanline and tile files
+    //tsize_t stripsize = TIFFStripSize(tif); // Equals lines * samples * samples_per_pixel for scanline images
+    uint32 tile_width = 0, tile_length = 0;
+    rc[1] = TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tile_width);
+    rc[2] = TIFFGetField(tif, TIFFTAG_TILELENGTH, &tile_length);
+
+    // Determine TIFF type
+    if (rc[1] && rc[2] && tile_width > 1 && tile_length > 1 && TIFFIsTiled(tif)) {
+      uint32 tiledepth;
+      rc[4] = TIFFGetField(tif, TIFFTAG_TILEDEPTH, &tiledepth);
+      if (rc[4] && tiledepth > 1) {
+        t->volume_tiff = 1;
+      }
+      else if (tile_width % 16 == 0 && tile_length % 16 == 0) {
+        t->format = TILED_TIFF;
+        t->scanlineSize = ss;
+        t->tileWidth = tile_width;
+        t->tileLength = tile_length;
+      }
+    }
+    else if (rc[0] && nstrips >= 1 && rowsperstrip >= 1) {
+      t->format = STRIP_TIFF;
+      t->scanlineSize = ss;
+      t->numStrips = nstrips;
+      t->rowsPerStrip = rowsperstrip;
+    }
+    else if (ss > 0) {
+      t->format = SCANLINE_TIFF;
+      t->scanlineSize = ss;
+    }
+  }
+/*  asfPrintStatus("\nTIFF File Info:\n");
+  asfPrintStatus("File name       : %s\n",
+                 TIFFFileName(tif));
+  asfPrintStatus("TIFF type       : %s\n",
+         t->format == SCANLINE_TIFF ? "SCANLINE_TIFF" :
+         t->format == STRIP_TIFF ? "STRIP_TIFF" :
+         t->format == TILED_TIFF ? "TILED_TIFF" : "UNKNOWN_TIFF_TYPE");
+  asfPrintStatus("Scanline size   : %d\n", t->scanlineSize);
+  asfPrintStatus("Number of strips: %d\n", t->numStrips);
+  asfPrintStatus("Rows per strip  : %d\n", t->rowsPerStrip);
+  asfPrintStatus("Tile width      : %d\n", t->tileWidth);
+  asfPrintStatus("Tile length     : %d\n", t->tileLength);
+  asfPrintStatus("Images in file  : %d\n", t->imageCount);
+  asfPrintStatus("Dimensions      : %s\n\n",
+         t->volume_tiff == 0 ? "Standard 2D image" :
+         t->volume_tiff == 1 ? "Multi-dimensional image" : "Unknown");
+  */
+}
+
+void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
+{
+  int read_count;
+  tiff_type_t t;
+  tdata_t sbuf;
+  tstrip_t strip;
+  uint32 strip_row; // The row within the strip that contains the requested data row
+
+  if (tif == NULL) {
+    asfPrintError("TIFF file not open for read\n");
+  }
+
+  get_tiff_type(tif, &t);
+  uint32 strip_size = TIFFStripSize(tif);
+  sbuf = _TIFFmalloc(strip_size);
+
+  short planar_config;    // TIFFTAG_PLANARCONFIG
+  read_count = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar_config);
+  if (read_count < 1) {
+    asfPrintError("Cannot determine planar configuration from TIFF file.\n");
+  }
+  short samples_per_pixel;
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of samples per pixel from TIFF file.\n");
+  }
+  if (band < 0 || band > samples_per_pixel) {
+    asfPrintError("Invalid band number (%d).  Band number should range from %d to %d.\n",
+                  0, samples_per_pixel);
+  }
+  uint32 height;
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of lines from TIFF file.\n");
+  }
+  uint32 width;
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of pixels per line from TIFF file.\n");
+  }
+  short sample_format;
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sample_format); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
+  }
+  short bits_per_sample;
+  read_count = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
+  }
+  // Check for valid row number
+  if (row < 0 || row >= height) {
+    asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
+                  row, height - 1);
+  }
+
+  // Develop a buffer with a line of data from a single band in it
+  strip     = (row + 1) / t.rowsPerStrip - 1;
+  strip_row = (row + 1) % t.rowsPerStrip - 1;
+  if (read_count && planar_config == PLANARCONFIG_SEPARATE) {
+    strip += band * height; // Add offset to correct plane if band-sequential
+    TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
+    uint32 col;
+    for (col = 0; col < width; col++) {
+      switch (bits_per_sample) {
+        case 8:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint8*)buf)[col] = ((uint8*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int8*)buf)[col] = ((int8*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        case 16:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint16*)buf)[col] = ((uint16*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int16*)buf)[col] = ((int16*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        case 32:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint32*)buf)[col] = ((uint32*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int32*)buf)[col] = ((int32*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            case SAMPLEFORMAT_IEEEFP:
+              ((float*)buf)[col] = ((float*)sbuf)[(strip_row * t.scanlineSize) + col];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        default:
+          asfPrintError("Usupported bits per sample found in TIFF file\n");
+          break;
+      }
+    }
+  }
+  else if (read_count && planar_config == PLANARCONFIG_CONTIG) {
+    TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
+    uint32 col;
+    for (col = 0; col < width; col++) {
+      switch (bits_per_sample) {
+        case 8:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint8*)buf)[col] = ((uint8*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int8*)buf)[col] = ((int8*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        case 16:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint16*)buf)[col] = ((uint16*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int16*)buf)[col] = ((int16*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        case 32:
+          switch (sample_format) {
+            case SAMPLEFORMAT_UINT:
+              ((uint32*)buf)[col] = ((uint32*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            case SAMPLEFORMAT_INT:
+              ((int32*)buf)[col] = ((int32*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            case SAMPLEFORMAT_IEEEFP:
+              ((float*)buf)[col] = ((float*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              break;
+            default:
+              asfPrintError("Unexpected data type in TIFF file\n");
+              break;
+          }
+          break;
+        default:
+          asfPrintError("Usupported bits per sample found in TIFF file\n");
+          break;
+      }
+    }
+  }
+
+//  _TIFFfree(sbuf);
+}
+
+/* (Typical type of info for tiled tiffs...)
+TIFF File Info:
+File name       : tiled.tif
+TIFF type       : TILED_TIFF
+Scanline size   : 8528
+Number of strips: 0
+Rows per strip  : 0
+Tile width      : 64
+Tile length     : 64
+Images in file  : 1
+Dimensions      : Standard 2D image
+
+From a tiff_type_t *t:
+t->scanlineSize
+t->numStrips
+t->rowsPerStrip
+t->tileWidth
+t->tileLength
+t->imageCount
+*/
+
+void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
+{
+  int read_count;
+  tiff_type_t t;
+  tdata_t tbuf=0;
+
+  if (tif == NULL) {
+    asfPrintError("TIFF file not open for read\n");
+  }
+
+  get_tiff_type(tif, &t);
+  uint32 tileSize = TIFFTileSize(tif);
+  tbuf = _TIFFmalloc(tileSize);
+  if (tbuf == NULL) {
+    asfPrintError("Unable to allocate tiled TIFF scanline buffer\n");
+  }
+
+  short samples_per_pixel;
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of samples per pixel from TIFF file.\n");
+  }
+  if (band < 0 || band > samples_per_pixel) {
+    asfPrintError("Invalid band number (%d).  Band number should range from %d to %d.\n",
+                  0, samples_per_pixel);
+  }
+  uint32 height;
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of lines from TIFF file.\n");
+  }
+  uint32 width;
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the number of pixels per line from TIFF file.\n");
+  }
+  short sample_format;
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sample_format); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
+  }
+  short bits_per_sample;
+  read_count = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample); // Number of bands
+  if (read_count < 1) {
+    asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
+  }
+  short orientation;
+  read_count = TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation); // top-left, left-top, bot-right, etc
+  if (read_count < 1) {
+    asfPrintError("Cannot read image orientation from TIFF file.\n");
+  }
+  if (read_count && orientation != ORIENTATION_TOPLEFT) {
+    asfPrintError("Unsupported orientation found (%s)\n",
+                  orientation == ORIENTATION_TOPRIGHT ? "TOP RIGHT" :
+                  orientation == ORIENTATION_BOTRIGHT ? "BOTTOM RIGHT" :
+                  orientation == ORIENTATION_BOTLEFT  ? "BOTTOM LEFT" :
+                  orientation == ORIENTATION_LEFTTOP  ? "LEFT TOP" :
+                  orientation == ORIENTATION_RIGHTTOP ? "RIGHT TOP" :
+                  orientation == ORIENTATION_RIGHTBOT ? "RIGHT BOTTOM" :
+                  orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
+  }
+  // Check for valid row number
+  if (row < 0 || row >= height) {
+    asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
+                  row, height - 1);
+  }
+  // Develop a buffer with a line of data from a single band in it
+  uint32 tile_row = (uint32)floor((float)(row/t.tileLength))*t.tileLength;
+  uint32 row_in_tile = row - tile_row;
+  if (read_count) {
+    uint32 tile_col;
+    uint32 buf_col;
+    for (tile_col = 0, buf_col = 0;
+         tile_col < width;
+         tile_col += t.tileWidth) {
+           TIFFReadTile(tif, tbuf, tile_col, tile_row, 0, band);
+      uint32 i;
+      for (i = 0; i < t.tileWidth && buf_col < width; i++) {
+        switch (bits_per_sample) {
+          case 8:
+            switch (sample_format) {
+              case SAMPLEFORMAT_UINT:
+                ((uint8*)buf)[buf_col] = ((uint8*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              case SAMPLEFORMAT_INT:
+                ((int8*)buf)[buf_col] = ((int8*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              default:
+                asfPrintError("Unexpected data type in TIFF file\n");
+                break;
+            }
+            break;
+          case 16:
+            switch (sample_format) {
+              case SAMPLEFORMAT_UINT:
+                ((uint16*)buf)[buf_col] = ((uint16*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              case SAMPLEFORMAT_INT:
+                ((int16*)buf)[buf_col] = ((int16*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              default:
+                asfPrintError("Unexpected data type in TIFF file\n");
+                break;
+            }
+            break;
+          case 32:
+            switch (sample_format) {
+              case SAMPLEFORMAT_UINT:
+                ((uint32*)buf)[buf_col] = ((uint32*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              case SAMPLEFORMAT_INT:
+                ((int32*)buf)[buf_col] = ((int32*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              case SAMPLEFORMAT_IEEEFP:
+                ((float*)buf)[buf_col] = ((float*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                buf_col++;
+                break;
+              default:
+                asfPrintError("Unexpected data type in TIFF file\n");
+                break;
+            }
+            break;
+          default:
+            asfPrintError("Usupported bits per sample found in TIFF file\n");
+            break;
+        }
+      }
+    }
+  }
+
+  if (tbuf) _TIFFfree(tbuf);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
