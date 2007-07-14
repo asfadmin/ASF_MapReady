@@ -85,6 +85,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
+	cp asf_view_cfg.csv $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
@@ -129,6 +130,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
+	cp asf_view_cfg.csv $(SHAREDIR)
 #	cp $(TARGET).ico $(SHAREDIR)
 
 %.c: %.h

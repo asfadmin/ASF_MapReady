@@ -230,3 +230,8 @@ void show_widget(const char *widget_name, int show)
         gtk_widget_hide(w);
 }
 
+void enable_widget(const char *widget_name, int enable)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    gtk_widget_set_sensitive(w, enable);
+}

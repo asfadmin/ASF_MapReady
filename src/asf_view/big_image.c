@@ -690,7 +690,7 @@ static int handle_keypress(GdkEventKey *event)
     } else if (event->keyval == GDK_s && event->state & GDK_CONTROL_MASK) {
         // ctrl-s: save subset
         if (g_poly.n > 0)
-            save_subset(0);
+            save_subset();
         return TRUE;
     } else if (event->keyval == GDK_l) {
         // l: move to a local maxima (30x30 pixel search area)
@@ -710,11 +710,13 @@ static int handle_keypress(GdkEventKey *event)
             radius*=10;
         for (i=line-radius; i<=line+radius; ++i) {
             for (j=samp-radius; j<=samp+radius; ++j) {
-                float val = cached_image_get_pixel(data_ci,i,j);
-                if (i>=0 && j>=0 && i<nl && j<ns && val>max_val) {
-                    max_val = val;
-                    line_max = i;
-                    samp_max = j;
+                if (i>=0 && i>=0 && i<nl && j<ns) {
+                    float val = cached_image_get_pixel(data_ci,i,j);
+                    if (val>max_val) {
+                        max_val = val;
+                        line_max = i;
+                        samp_max = j;
+                    }
                 }
             }
         }

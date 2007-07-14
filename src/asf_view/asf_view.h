@@ -61,6 +61,7 @@ void put_string_to_comboboxentry(const char *widget_name, char *txt);
 void put_file_in_textview(const char *file, const char *widget_name);
 void put_string_to_label(const char *widget_name, const char *txt);
 void show_widget(const char *widget_name, int show);
+void enable_widget(const char *widget_name, int enable);
 
 /* ssv.c */
 char *find_in_share(const char * filename);
@@ -141,11 +142,7 @@ void reset_globals(void);
 void set_title(int band_specified, char *band);
 
 /* subset.c */
-#define PIXEL_VALUES 0
-#define INCIDENCE_ANGLES 1
-#define LOOK_ANGLES 2
-#define SLANT_RANGES 3
-void save_subset(int what_to_save);
+void save_subset(void);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
