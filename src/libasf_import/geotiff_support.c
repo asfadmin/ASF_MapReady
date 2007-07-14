@@ -175,7 +175,7 @@ int get_tiff_data_config(TIFF *tif,
                          data_type_t *data_type, int *num_bands,
                          int *is_scanline_format)
 {
-  int     ret = 0;
+  int     ret = 0, read_count;
   uint16  planarConfiguration = 0;
   uint16  bitsPerSample = 0;
   uint16  sampleFormat = 0;
@@ -184,9 +184,102 @@ int get_tiff_data_config(TIFF *tif,
   *data_type = -1;
   *num_bands = 0;
 
+  /*********************************************************/
+  /*  Read all tags and accept them as-is into the fields  */
+  /*********************************************************/
   // Required tag for all images
   ret = 0;
-  TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+
+  tiff_type_t t;
+  get_tiff_type(tif, &t);
+  *is_scanline_format = (t.format == SCANLINE_TIFF) ? 1 : 0;
+  if (t.format != SCANLINE_TIFF &&
+      t.format != STRIP_TIFF    &&
+      t.format != TILED_TIFF)
+  {
+    ret = -1;
+  }
+
+  read_count = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+  if (read_count) *bits_per_sample = bitsPerSample;
+
+  read_count += TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
+  if (read_count) {
+    *sample_format = sampleFormat;
+    switch (sampleFormat) {
+      case SAMPLEFORMAT_UINT:
+      {
+        switch (bitsPerSample) {
+          case 8:
+            *data_type = BYTE;
+            break;
+          case 16:
+            *data_type = INTEGER32;
+            break;
+          case 32:
+            *data_type = REAL32;
+            break;
+          default:
+            *data_type = 0;
+            break;
+        }
+      }
+      break;
+      case SAMPLEFORMAT_INT:
+      {
+        switch (bitsPerSample) {
+          case 8:
+          case 16:
+            *data_type = INTEGER16;
+            break;
+          case 32:
+            *data_type = INTEGER32;
+            break;
+          default:
+            *data_type = 0;
+            break;
+        }
+      }
+      break;
+      case SAMPLEFORMAT_IEEEFP:
+      {
+        *data_type = REAL32;
+      }
+      break;
+      default:
+      {
+        switch (bitsPerSample) {
+          case 8:
+              // Most likely unsigned 8-bit byte
+            *data_type = BYTE;
+            break;
+          case 16:
+              // Most likely 16-bit integer
+            *data_type = INTEGER16;
+            break;
+          case 32:
+              // Most likely 32-bot float
+            *data_type = REAL32;
+            break;
+          default:
+            *data_type = 0;
+            break;
+        }
+      }
+      break;
+    }
+  }
+
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
+  if (read_count) *num_bands = samplesPerPixel;
+
+  read_count = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
+  if (read_count) *planar_config = planarConfiguration;
+
+  /*********************************************************/
+  /*  Determine health                                     */
+  /*********************************************************/
+
   if (bitsPerSample != 8  &&
       bitsPerSample != 16 &&
       bitsPerSample != 32)
@@ -194,25 +287,28 @@ int get_tiff_data_config(TIFF *tif,
     // Only support byte, integer16, integer32, and 32-bit floats
     ret = -1;
   }
-  else {
-    *bits_per_sample = (short)bitsPerSample;
+
+  if (sampleFormat != SAMPLEFORMAT_UINT &&
+      sampleFormat != SAMPLEFORMAT_INT  &&
+      sampleFormat != SAMPLEFORMAT_IEEEFP)
+  {
+    ret = -1;
   }
 
-  // Required tag for all images
-  if (ret == 0) {
-    TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
-    if (samplesPerPixel < 1 || samplesPerPixel > MAX_BANDS) {
-      // Only support 1 through MAX_BANDS bands in the image
-      ret = -1;
-    }
-    else {
-      *num_bands = samplesPerPixel;
-    }
+  if (samplesPerPixel < 1 || samplesPerPixel > MAX_BANDS) {
+    // Only support 1 through MAX_BANDS bands in the image
+    ret = -1;
+  }
+
+  if (samplesPerPixel > 1 &&
+      planarConfiguration != PLANARCONFIG_CONTIG &&
+      planarConfiguration != PLANARCONFIG_SEPARATE)
+  {
+    ret = -1;
   }
 
   // Required tag only for color (multi-band) images
   if (ret == 0 && samplesPerPixel > 1) {
-    TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
     if (planarConfiguration != PLANARCONFIG_CONTIG &&
         planarConfiguration != PLANARCONFIG_SEPARATE)
     {
@@ -229,107 +325,7 @@ int get_tiff_data_config(TIFF *tif,
                     "Unknown Planar Config (?)");
       }
     }
-    else {
-      *planar_config = planarConfiguration;
-    }
   }
-
-  // Required tag for all images
-  //
-  // Only support BYTE, INTEGER16, INTEGER32, and REAL32 at this time...
-  if (ret == 0) {
-    TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
-    switch (sampleFormat) {
-      case SAMPLEFORMAT_UINT:
-        {
-          *sample_format = sampleFormat;
-          switch (bitsPerSample) {
-            case 8:
-              *data_type = BYTE;
-              break;
-            case 16:
-              *data_type = INTEGER32;
-              break;
-            case 32:
-              *data_type = REAL32;
-              break;
-            default:
-              ret = -1;
-              break;
-          }
-        }
-        break;
-      case SAMPLEFORMAT_INT:
-        {
-          *sample_format = sampleFormat;
-          switch (bitsPerSample) {
-            case 8:
-            case 16:
-              *data_type = INTEGER16;
-              break;
-            case 32:
-              *data_type = INTEGER32;
-              break;
-            default:
-              ret = -1;
-              break;
-          }
-        }
-        break;
-      case SAMPLEFORMAT_IEEEFP:
-        {
-          *sample_format = sampleFormat;
-          *data_type = REAL32;
-        }
-        break;
-      default:
-        {
-          // Either the sample format is unknown or it's one of the complex types
-          // Since a complex type would be rare in a TIFF, we assume it isn't and
-          // then guess what the data type is based on how many bits are in the
-          // samples ...only the results of the ingest will indicate whether this is
-          // a good idea or not.
-          *sample_format = UNKNOWN_SAMPLE_FORMAT;
-          switch (bitsPerSample) {
-            case 8:
-              // Most likely unsigned 8-bit byte
-              *sample_format = SAMPLEFORMAT_UINT;
-              *data_type = BYTE;
-              break;
-            case 16:
-              // Most likely 16-bit integer
-              *sample_format = SAMPLEFORMAT_INT;
-              *data_type = INTEGER16;
-              break;
-            case 32:
-              // Most likely 32-bot float
-              *sample_format = SAMPLEFORMAT_IEEEFP;
-              *data_type = REAL32;
-              break;
-            default:
-              ret = -1;
-              break;
-          }
-        }
-        break;
-    }
-  }
-
-  // Required to have scanline format
-  /*if (ret == 0) {
-    short tile_width;
-    TIFFGetField(tif, TIFFTAG_TILEWIDTH, &tile_width);
-    if (tile_width > 0)
-    {
-      // Only support true scanline format TIFFs
-      *is_scanline_format = 0;
-      ret = -1;
-    }
-    else {
-      *is_scanline_format = 1;
-    }
-  }*/
-  *is_scanline_format = 1;
 
   return ret;
 }

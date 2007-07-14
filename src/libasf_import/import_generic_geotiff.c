@@ -70,23 +70,6 @@
 // change in the export library ...the defs must match
 #define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order"
 
-typedef enum {
-  UNKNOWN_TIFF_TYPE = 0,
-  SCANLINE_TIFF,
-  STRIP_TIFF,
-  TILED_TIFF
-} tiff_format_t;
-typedef struct {
-  tiff_format_t format;
-  uint32 scanlineSize;
-  uint32 numStrips;
-  uint32 rowsPerStrip;
-  uint32 tileWidth;
-  uint32 tileLength;
-  int imageCount;
-  int volume_tiff;
-} tiff_type_t;
-
 spheroid_type_t SpheroidName2spheroid(char *sphereName);
 void check_projection_parameters(meta_projection *mp);
 int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
@@ -97,9 +80,6 @@ int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                              const char *outBaseName, int num_bands,
                              int *ignore, short bits_per_sample,
                              short sample_format, short planar_config);
-void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo);
-void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band);
-void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -207,12 +187,14 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // FIXME: Modify the band stats functions and image writing functions to support separate bands instead
   // of requiring interlaced bands (which is really only good for up to 4 bands...)
   if (ret != 0) {
-    asfPrintStatus("\n\nFOUND TIFF tag data as follows:\n"
+       tiff_type_t t;
+       get_tiff_type(input_tiff, &t);
+       asfPrintWarning("FOUND TIFF tag data as follows:\n"
         "         Sample Format: %s\n"
         "       Bits per Sample: %d\n"
         "  Planar Configuration: %s\n"
         "       Number of Bands: %d\n"
-        "    Is Scanline Format: %s\n\n",
+        "                Format: %s\n",
         (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
           (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
             (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported",
@@ -221,7 +203,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
           (planar_config == PLANARCONFIG_SEPARATE) ? "Separate planes (band-sequential)" :
             "Unknown or unrecognized",
         num_bands,
-        (is_scanline_format) ? "YES" : "NO");
+        t.format == SCANLINE_TIFF ? "SCANLINE TIFF" :
+        t.format == STRIP_TIFF ? "STRIP TIFF" :
+        t.format == TILED_TIFF ? "TILED TIFF" : "UNKNOWN");
+
     asfPrintError("  Unsupported TIFF type found or required TIFF tags are missing\n"
         "    in TIFF File \"%s\"\n\n"
         "  TIFFs must contain the following:\n"
@@ -230,7 +215,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         "        Planar config: Contiguous (Greyscale, RGB, or RGBA) or separate planes (band-sequential.)\n"
         "      Bits per sample: 8, 16, or 32\n"
         "      Number of bands: 1 through %d bands allowed.\n"
-        "               Format: Scanline format TIFF req'd (Tiled TIFF format not supported.)\n",
+        "               Format: Scanline, strip, or tiled\n",
         inFileName, MAX_BANDS);
   }
   asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %d-bit %s type data\n"
@@ -276,17 +261,20 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   double *tie_point;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
                                &tie_point);
-  asfRequire (count == 6,
-              "GeoTIFF file does not contain tie points\n");
+  if (count != 6) {
+    asfPrintError ("GeoTIFF file does not contain tie points\n");
+  }
   // Get the scale factors which define the scale relationship between
   // raster pixels and geographic coordinate space.
   double *pixel_scale;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
                                &pixel_scale);
-  asfRequire (count == 3,
-              "GeoTIFF file does not contain pixel scale parameters\n");
-  asfRequire (pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0,
-              "GeoTIFF file contains invalid pixel scale parameters\n");
+  if (count != 3) {
+    asfPrintError ("GeoTIFF file does not contain pixel scale parameters\n");
+  }
+  if (pixel_scale[0] <= 0.0 || pixel_scale[1] <= 0.0) {
+    asfPrintError ("GeoTIFF file contains invalid pixel scale parameters\n");
+  }
 
   // CHECK TO SEE IF THE GEOTIFF CONTAINS USEFUL DATA:
   //  If the tiff file contains geocoded information, then the model type
@@ -2255,6 +2243,21 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   if (read_count < 1) {
     asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
   }
+  short orientation;
+  read_count = TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation); // top-left, left-top, bot-right, etc
+  if (read_count < 1) {
+    asfPrintError("Cannot read image orientation from TIFF file.\n");
+  }
+  if (read_count && orientation != ORIENTATION_TOPLEFT) {
+    asfPrintError("Unsupported orientation found (%s)\n",
+                  orientation == ORIENTATION_TOPRIGHT ? "TOP RIGHT" :
+                  orientation == ORIENTATION_BOTRIGHT ? "BOTTOM RIGHT" :
+                  orientation == ORIENTATION_BOTLEFT  ? "BOTTOM LEFT" :
+                  orientation == ORIENTATION_LEFTTOP  ? "LEFT TOP" :
+                  orientation == ORIENTATION_RIGHTTOP ? "RIGHT TOP" :
+                  orientation == ORIENTATION_RIGHTBOT ? "RIGHT BOTTOM" :
+                      orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
+  }
   // Check for valid row number
   if (row < 0 || row >= height) {
     asfPrintError("Invalid row number (%d) found.  Valid range is 0 through %d\n",
@@ -2262,8 +2265,8 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   }
 
   // Develop a buffer with a line of data from a single band in it
-  strip     = (row + 1) / t.rowsPerStrip - 1;
-  strip_row = (row + 1) % t.rowsPerStrip - 1;
+  strip     = (uint32)floor((float)(row/t.rowsPerStrip))*t.rowsPerStrip;
+  strip_row = row - strip;
   if (read_count && planar_config == PLANARCONFIG_SEPARATE) {
     strip += band * height; // Add offset to correct plane if band-sequential
     TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
@@ -2372,7 +2375,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
     }
   }
 
-//  _TIFFfree(sbuf);
+  _TIFFfree(sbuf);
 }
 
 /* (Typical type of info for tiled tiffs...)
