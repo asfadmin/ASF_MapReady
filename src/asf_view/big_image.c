@@ -157,8 +157,12 @@ static int iabs(int i)
     return i<0 ? -i : i;
 }
 
+// colors supported by put_line
+#define RED 1
+#define PURPLE 2
+
 static void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
-                     double line1, double samp1)
+                     double line1, double samp1, int color)
 {
     if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
         samp0 >= ns || samp1 >= ns || line0 >= nl || line1 >= nl)
@@ -185,6 +189,19 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
+    // color of the drawn line
+    unsigned char r, g, b;
+    if (color==RED) {
+        r = 255;
+        g = b = 0;
+    } else if (color==PURPLE) {
+        r = b = 255;
+        g = 0;
+    } else {
+        assert(0);
+        r=g=b=0;//not reached
+    }
+
     // What a mess!  But the concept is trivial:
     //   (1) Loop goes on the x or y
     //   (2) linearly interpolate to find the other coordinate
@@ -197,7 +214,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
             j = iy0 + (float)(i-ix0)/(ix1-ix0) * (iy1-iy0);
             if (j >= 0 && i >= 0 && i <= width && j <= height) {
               p = pixels + j * rowstride + i * n_channels;
-              p[0] = 255; p[1] = p[2] = 0;
+              p[0] = r; p[1] = g; p[2] = b;
             }
         }
     } else {
@@ -206,7 +223,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
             i = ix0 + (float)(j-iy0)/(iy1-iy0) * (ix1-ix0);
             if (j >= 0 && i >= 0 && i <= width && j <= height) {
               p = pixels + j * rowstride + i * n_channels;
-              p[0] = 255; p[1] = p[2] = 0;
+              p[0] = r; p[1] = g; p[2] = b;
             }
         }
     }
@@ -260,16 +277,28 @@ static GdkPixbuf * make_big_image()
     // draw the polygon
     if (g_poly.n > 0) {
         put_line(pb, crosshair_line, crosshair_samp,
-            g_poly.line[0], g_poly.samp[0]);
+            g_poly.line[0], g_poly.samp[0], RED);
         for (ii=0; ii<g_poly.n-1; ++ii) {
             put_line(pb, g_poly.line[ii], g_poly.samp[ii],
-                g_poly.line[ii+1], g_poly.samp[ii+1]);
+                g_poly.line[ii+1], g_poly.samp[ii+1], RED);
         }
     }
 
     // green crosshair goes second, so if the two overlap, we will see
     // the green one (the main one)
     put_crosshair(pb, crosshair_line, crosshair_samp, TRUE);
+
+    // draw bounding box if requested
+    if (g_poly.show_extent) {
+        put_line(pb, g_poly.extent_y_min, g_poly.extent_x_min,
+                     g_poly.extent_y_max, g_poly.extent_x_min, PURPLE);
+        put_line(pb, g_poly.extent_y_max, g_poly.extent_x_min,
+                     g_poly.extent_y_max, g_poly.extent_x_max, PURPLE);
+        put_line(pb, g_poly.extent_y_max, g_poly.extent_x_max,
+                     g_poly.extent_y_min, g_poly.extent_x_max, PURPLE);
+        put_line(pb, g_poly.extent_y_min, g_poly.extent_x_max,
+                     g_poly.extent_y_min, g_poly.extent_x_min, PURPLE);
+    }
 
     return pb;
 }
@@ -616,11 +645,13 @@ static int handle_keypress(GdkEventKey *event)
             --g_poly.n;
             if (g_poly.c >= g_poly.n)
                 g_poly.c = g_poly.n-1;
+            g_poly.show_extent = FALSE;
             update_pixel_info();
         }
     } else if (event->keyval == GDK_Escape) {
         // Escape: clear the ctrl-clicked path
         g_poly.n = g_poly.c = 0;
+        g_poly.show_extent = FALSE;
         update_pixel_info();
     } else if (event->keyval == GDK_c) {
         // c: Center image view on crosshair
@@ -727,6 +758,7 @@ static int handle_keypress(GdkEventKey *event)
             crosshair_line=line_max;
             crosshair_samp=samp_max;
         }
+        g_poly.show_extent = FALSE;
         update_pixel_info();
     } else if (event->keyval == GDK_n) {
         // n: open a new file
@@ -791,6 +823,7 @@ static int handle_keypress(GdkEventKey *event)
                     default: return TRUE;
                 }
             }
+            g_poly.show_extent = FALSE;
             update_pixel_info();
         }
     }

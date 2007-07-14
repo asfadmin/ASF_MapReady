@@ -168,6 +168,10 @@ typedef struct {
     int c;                    // Currently "active" point (-1 for none)
     double line[MAX_POLY_LEN];// vertices of the polygon
     double samp[MAX_POLY_LEN];
+    int show_extent;          // draw bounding box of polygon?
+    int extent_x_min, extent_x_max; // bounding box values
+    int extent_y_min, extent_y_max; // when show_extent==TRUE, these must
+                                    // be made valid
 } UserPolygon;
 
 /*************** these are our global variables ... ***********************/

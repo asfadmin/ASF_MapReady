@@ -34,6 +34,7 @@ static int get_format()
     return -1;
 }
 
+// try to find a program we can use to view the generated csv files
 static const char * detect_csv_assoc()
 {
     static char *csv_app = NULL;
@@ -50,17 +51,17 @@ static const char * detect_csv_assoc()
             csv_app = escapify(path);
             printf("Path to CSV Application: %s\n", csv_app);
         } else {
-            if (ret==2)
+            if (ret==SE_ERR_FNF)
                 printf("File not found: %s\n", csv_file);
-            else if (ret==31)
+            else if (ret==SE_ERR_NOASSOC)
                 printf("No association for: %s\n", csv_file);
-            else if (ret==8)
+            else if (ret==SE_ERR_OOM)
                 printf("Out of resources.\n");
             else
-                printf("Unknown return value: %d\n", ret);
+                printf("Unknown error! (return value: %d)\n", ret);
 
             csv_app = STRDUP("notepad.exe");
-            printf("CSV Application not found.\n");
+            printf("CSV Application not found -- using notepad.\n");
         }
         FREE(csv_file);
 #else
@@ -87,6 +88,7 @@ static const char * detect_csv_assoc()
     return csv_app;
 }
 
+// mapping between combobox entry indexes and the #defines
 static int get_what_to_save()
 {
     GtkWidget *dcb = get_widget_checked("data_combobox");
@@ -128,6 +130,14 @@ static void update_save_subset_info()
     enable_widget("strict_boundary_checkbutton", g_poly.n > 1);
 }
 
+static void close_subset_window()
+{
+    g_poly.show_extent = FALSE;
+    fill_big();
+
+    show_widget("save_subset_window", FALSE);
+}
+
 SIGNAL_CALLBACK void 
 on_format_asf_internal_radiobutton_toggled(GtkWidget *w)
 {
@@ -141,12 +151,12 @@ SIGNAL_CALLBACK void on_format_csv_radiobutton_toggled(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_save_subset_window_delete_event(GtkWidget *w)
 {
-    show_widget("save_subset_window", FALSE);
+    close_subset_window();
 }
 
 SIGNAL_CALLBACK void on_cancel_button_clicked(GtkWidget *w)
 {
-    show_widget("save_subset_window", FALSE);
+    close_subset_window();
 }
 
 static void show_save_subset_window()
@@ -244,6 +254,15 @@ void save_subset()
             show_save_subset_window();
             put_string_to_label("subset_info_label", subset_info);
             set_defaults();
+            
+            g_poly.show_extent = TRUE;
+            g_poly.extent_y_min = line_min;
+            g_poly.extent_y_max = line_max;
+            g_poly.extent_x_min = samp_min;
+            g_poly.extent_x_max = samp_max;
+
+            fill_big();
+
             update_save_subset_info();
         } else {
             asfPrintWarning("Can't save subset: No crosshair.\n");
