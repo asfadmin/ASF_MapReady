@@ -1194,6 +1194,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
               strncmp(mpdr->mpdesig, "UPS", 3) == 0)
      {
        projection->spheroid = HUGHES_SPHEROID;
+       projection->datum = HUGHES_DATUM;
      }
      else if (strncmp(dssr->ellip_des,"GEM06",5)==0) {
        projection->spheroid = GEM6_SPHEROID;
@@ -1218,9 +1219,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->param.utm.zone = ampr->utm_zone;
        projection->param.utm.false_easting = 500000.0;
        if (ampr->hem == 0)
-   projection->param.utm.false_northing = 0.0;
+         projection->param.utm.false_northing = 0.0;
        else
-   projection->param.utm.false_northing = 10000000.0;
+         projection->param.utm.false_northing = 10000000.0;
        projection->param.utm.lat0 = 0.0;
        projection->param.utm.lon0 = (double) (ampr->utm_zone - 1) * 6.0 - 177.0;
        projection->param.utm.scale_factor = 0.9996;
