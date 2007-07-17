@@ -20,8 +20,6 @@ int try_prepension(const char *filename, const char *prepension)
     char *file = MALLOC(sizeof(char)*(strlen(filename)+10));
     split_dir_and_file(filename, dir, file);
 
-    printf("%s -> %s,%s\n", filename,dir,file);
-
     char *buf = MALLOC(sizeof(char)*(strlen(filename)+
         strlen(prepension)+5));
 
@@ -30,7 +28,6 @@ int try_prepension(const char *filename, const char *prepension)
     else
         sprintf(buf, "%s%s", prepension, file);
 
-    printf("try: %s\n", buf);
     int ret = fileExists(buf);
 
     free(buf);

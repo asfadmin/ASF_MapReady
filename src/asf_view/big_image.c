@@ -234,9 +234,10 @@ static GdkPixbuf * make_big_image()
     assert(data_ci && meta);
 
     int ii, jj;
+    int nchan = 3; // RGB for now, don't support RGBA yet
     int biw = get_big_image_width();
     int bih = get_big_image_height();
-    unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*3);
+    unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*nchan);
 
     int mm = 0;
     for ( ii = 0 ; ii < bih; ii++ ) {

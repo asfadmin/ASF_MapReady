@@ -13,19 +13,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_histogram.h>
 
-// sometimes we don't have this - choose a conservative value
-#ifndef SSIZE_MAX
-#define SSIZE_MAX 32767
-#endif
-
-typedef int ReadClientFn(int row_start, int n_rows_to_get,
-                         void *dest, void *read_client_info,
-                         meta_parameters *meta);
-typedef int ThumbFn(int thumb_size_x,
-                    int thumb_size_y, meta_parameters *meta,
-                    void *read_client_info, void *dest);
-typedef void FreeFn(void *read_client_info);
-
+//---------------------------------------------------------------------------
 // Adding a new supported data type:
 //  cache.c:
 //    data_size()
@@ -35,7 +23,7 @@ typedef void FreeFn(void *read_client_info);
 //    generate_thumbnail_data()
 //  big_image.c:
 //    update_pixel_info()
-//  read_X.c: (for X clients that will handle the data type)
+//  read_X.c: (for clients that will handle the data type)
 //    open_X_data()
 //     
 typedef enum {
@@ -44,6 +32,26 @@ typedef enum {
     GREYSCALE_BYTE = 2,
     RGB_BYTE = 3
 } ssv_data_type_t;
+
+// NOTE: At the moment, the Pixbuf that contains the displayed data
+// is plain RGB, not RGB-A, so adding support for transparency would
+// also involve changing big_image.c/make_big_image(), and you'd have
+// to add a method to the cache interface that returned the alpha
+// channel in addition to the rgb values.
+
+//---------------------------------------------------------------------------
+// This is the client interface -- the set of function pointers, etc,
+// that encapsulate how the image cache gets data from the file.
+// See: -read.c/read_file() for how the cache is hooked up to the
+//          client depending on what the file type is
+//      -read_template.c for an example of how to add another client
+typedef int ReadClientFn(int row_start, int n_rows_to_get,
+                         void *dest, void *read_client_info,
+                         meta_parameters *meta);
+typedef int ThumbFn(int thumb_size_x,
+                    int thumb_size_y, meta_parameters *meta,
+                    void *read_client_info, void *dest);
+typedef void FreeFn(void *read_client_info);
 
 typedef struct {
     ReadClientFn *read_fn;
@@ -54,6 +62,10 @@ typedef struct {
     int require_full_load;
 } ClientInterface;
 
+
+//---------------------------------------------------------------------------
+// Here is the ImageCache stuff.  The global ImageCache that holds the
+// loaded image is "data_ci".  This is all private data.
 typedef struct {
   int nl, ns;               // Image dimensions.
   ClientInterface *client;  // pointers to data read implementations
@@ -64,7 +76,6 @@ typedef struct {
   int *rowstarts;           // Row numbers starting each tile
   unsigned char **cache;    // Cached values (floats, unsigned chars ...)
   int *access_counts;       // Updated when a tile is accessed
-  //FILE *fp;                 // file pointer
   int n_access;             // used to find oldest tile
   ssv_data_type_t data_type;// type of data we have
   meta_parameters *meta;    // metadata -- don't own this pointer

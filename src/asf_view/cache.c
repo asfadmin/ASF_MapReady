@@ -224,8 +224,6 @@ CachedImage * cached_image_new_from_file(
     self->data_type = client->data_type;
     assert(self->data_type != UNDEFINED);
 
-    //self->fp = FOPEN(file, "rb");
-
     self->client = client; // take ownership of this
     self->meta = meta;     // do NOT take ownership of this
 
@@ -323,8 +321,6 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
 
 void cached_image_free (CachedImage *self)
 {
-    //fclose(self->fp);
-
     int i;
     for (i=0; i<self->n_tiles; ++i) {
         if (self->cache[i])
