@@ -25,6 +25,7 @@ PROGRAM HISTORY:
 #include "dateUtil.h"
 #include "get_ceos_names.h"
 #include "libasf_proj.h"
+#include "spheroids.h"
 
 // ALOS beam modes
 char *alos_beam_mode[132]={
@@ -49,11 +50,11 @@ char *alos_beam_mode[132]={
 void ceos_init_sar(const char *in_fName,meta_parameters *meta);
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);
 void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
-		       struct dataset_sum_rec *dssr,
-		       struct VMPDREC *mpdr, struct VFDRECV *asf_facdr);
+           struct dataset_sum_rec *dssr,
+           struct VMPDREC *mpdr, struct VFDRECV *asf_facdr);
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
-		    struct alos_map_proj_rec *ampr);
+        struct alos_map_proj_rec *ampr);
 ceos_description *get_ceos_description(const char *fName);
 ceos_description *get_sensor(const char *fName);
 double get_firstTime(const char *fName);
@@ -204,7 +205,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       sprintf(meta->sar->polarization, "VV");
    }
    else if ((strncmp(dssr->sensor_id,"ERS-2",5)==0) ||
-	    (strncmp(dssr->mission_id,"ERS2",4)==0)) {
+      (strncmp(dssr->mission_id,"ERS2",4)==0)) {
       strcpy(meta->general->sensor,"ERS2");
       strcpy(meta->general->mode, "STD");
       sprintf(meta->sar->polarization, "VV");
@@ -228,42 +229,42 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      /* probably need to check incidence angle to figure out what is going on */
       strcpy(meta->general->sensor,"RSAT-1");
       if (strncmp(dssr->product_type,"SCANSAR",7)==0) {
-	if (ceos->facility == RSI) {
-	  strcpy(beamtype,rcdr->beam_type[3]);
-	  strtok(beamtype," ");
-	  if (rcdr->num_rec == 2)
-	    strcpy(beamname, "SNA");
-	  else if (rcdr->num_rec == 3)
-	    strcpy(beamname, "SNB");
-	  else if (rcdr->num_rec == 4) {
-	    if (strcmp(beamtype," S7")==0)
-	      strcpy(beamname, "SWA");
-	    else if (strcmp(beamtype," S6")==0)
-	      strcpy(beamname, "SWB");
-	  }
-	  meta->sar->image_type = 'P';
-	}
-	else if (strncmp(dssr->sys_id,"FOCUS",5)==0) {
-	  if (rcdr->num_rec == 2)
-	    strcpy(beamname, "SNA");
-	  else if (rcdr->num_rec == 3)
-	    strcpy(beamname, "SNB");
-	  else if (rcdr->num_rec == 4) {
-	    // We assume a nominal center look angle of 40.45 degrees for SWA
-	    if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65)
-	      strcpy(beamname, "SWA");
-	    // We assume a nominla center look angle of 38.2 degrees for SWB
-	    else if (rcdr->look_angle[3] > 38.0 && rcdr->look_angle[3] < 38.4)
-	      strcpy(beamname, "SWB");
-	  }
-	  meta->sar->image_type = 'P';
-	}
-	else {
-	  if (strncmp(dssr->beam3,"WD3",3)==0) strcpy(beamname,"SWA");
-	  else if (strncmp(dssr->beam3,"ST5",3)==0) strcpy(beamname,"SWB");
-	  else if (strncmp(dssr->beam3,"ST6",3)==0) strcpy(beamname,"SNA");
-	  else strcpy(beamname,"SNB");
-	}
+  if (ceos->facility == RSI) {
+    strcpy(beamtype,rcdr->beam_type[3]);
+    strtok(beamtype," ");
+    if (rcdr->num_rec == 2)
+      strcpy(beamname, "SNA");
+    else if (rcdr->num_rec == 3)
+      strcpy(beamname, "SNB");
+    else if (rcdr->num_rec == 4) {
+      if (strcmp(beamtype," S7")==0)
+        strcpy(beamname, "SWA");
+      else if (strcmp(beamtype," S6")==0)
+        strcpy(beamname, "SWB");
+    }
+    meta->sar->image_type = 'P';
+  }
+  else if (strncmp(dssr->sys_id,"FOCUS",5)==0) {
+    if (rcdr->num_rec == 2)
+      strcpy(beamname, "SNA");
+    else if (rcdr->num_rec == 3)
+      strcpy(beamname, "SNB");
+    else if (rcdr->num_rec == 4) {
+      // We assume a nominal center look angle of 40.45 degrees for SWA
+      if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65)
+        strcpy(beamname, "SWA");
+      // We assume a nominla center look angle of 38.2 degrees for SWB
+      else if (rcdr->look_angle[3] > 38.0 && rcdr->look_angle[3] < 38.4)
+        strcpy(beamname, "SWB");
+    }
+    meta->sar->image_type = 'P';
+  }
+  else {
+    if (strncmp(dssr->beam3,"WD3",3)==0) strcpy(beamname,"SWA");
+    else if (strncmp(dssr->beam3,"ST5",3)==0) strcpy(beamname,"SWB");
+    else if (strncmp(dssr->beam3,"ST6",3)==0) strcpy(beamname,"SNA");
+    else strcpy(beamname,"SNB");
+  }
       }
       else {
         int beamnum = atoi(&(dssr->beam1[2]));
@@ -280,7 +281,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       if ((ppr) &&
           (   (strncmp(dssr->fac_id,"CDPF",4)==0)
            || (strncmp(dssr->fac_id,"FOCUS",5)==0)
-	      || (strncmp(dssr->fac_id,"RSI",3)==0))) {
+        || (strncmp(dssr->fac_id,"RSI",3)==0))) {
         strcpy(beamname, ppr->beam_type);
       }
       strcpy(meta->general->mode, beamname);
@@ -345,9 +346,9 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    if (asf_facdr)
       meta->general->sample_count  = asf_facdr->npixels;
    else if (((iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup) ==
-	    (dssr->sc_pix*2))
+      (dssr->sc_pix*2))
       meta->general->sample_count  =
-	(iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup;
+  (iof->reclen-iof->predata-iof->sufdata)/iof->bytgroup;
    else
       meta->general->sample_count  = iof->sardata/iof->bytgroup;
    */
@@ -443,7 +444,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    if (meta->general->frame < 0)
      meta->general->frame =
        asf_frame_calc(meta->general->sensor, meta->general->center_latitude,
-		      meta->general->orbit_direction);
+          meta->general->orbit_direction);
 
    meta->general->re_major = (dssr->ellip_maj < 10000.0) ?
      dssr->ellip_maj*1000.0 : dssr->ellip_maj;
@@ -475,7 +476,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
          meta->sar->image_type = 'S';
       }
       else if (ceos->product==LOW_REZ || ceos->product==HI_REZ ||
-	       ceos->product==SGF) {
+         ceos->product==SGF) {
          meta->sar->image_type = 'G';
       }
    }
@@ -483,8 +484,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    switch (ceos->satellite) {
       case  ERS:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
-	 meta->sar->look_count = 5;
-	 break;
+   meta->sar->look_count = 5;
+   break;
       case JERS: meta->sar->look_count = 3; break;
       case RSAT:
          dssr->rng_samp_rate *= get_units(dssr->rng_samp_rate,EXPECTED_RSR);
@@ -495,17 +496,17 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
             meta->sar->look_count = 1; /* FN1-FN5 */
          break;
       case ALOS:
-	if (mpdr) // geocoded image have look count information
-	  meta->sar->look_count = (int) (dssr->n_azilok + 0.5);
-	break;
+  if (mpdr) // geocoded image have look count information
+    meta->sar->look_count = (int) (dssr->n_azilok + 0.5);
+  break;
       case SIR_C:
         break;
       case unknownSatellite:
-	assert (0);
-	break;
+  assert (0);
+  break;
       default:
-	assert (0);
-	break;
+  assert (0);
+  break;
    }
    if (asf_facdr) {
       if (toupper(asf_facdr->deskewf[0])=='Y')
@@ -530,7 +531,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
      (iof->reclen-iof->predata-iof->sufdata-iof->lbrdrpxl-iof->rbrdrpxl)
      / iof->bytgroup;
    if ( meta->sar->original_line_count==0
-	|| meta->sar->original_sample_count==0) {
+  || meta->sar->original_sample_count==0) {
      meta->sar->original_line_count   = dssr->sc_lin*2;
      meta->sar->original_sample_count = dssr->sc_pix*2;
    }
@@ -550,7 +551,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    else if (strcmp(meta->general->sensor, "ALOS") == 0) {
      double delta;
      if (get_alos_delta_time (in_fName, meta, &delta)) {
-         meta->sar->azimuth_time_per_pixel = 
+         meta->sar->azimuth_time_per_pixel =
              delta / meta->sar->original_line_count;
      } else {
          // this isn't actually a fatal problem, for ALOS data...
@@ -559,7 +560,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
    else if (strcmp(meta->general->sensor, "SIR-C") == 0) {
      double delta = 15;
-     meta->sar->azimuth_time_per_pixel = 
+     meta->sar->azimuth_time_per_pixel =
        delta / meta->sar->original_line_count;
    }
    else {
@@ -569,8 +570,8 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
         firstTime = date_hms2sec(&time);
         date_dssr2time(dssr->az_time_center, &time);
         centerTime = date_hms2sec(&time);
-	//printf("firstTime: %lf\n", firstTime);
-	//printf("centerTime: %lf\n", centerTime);
+  //printf("firstTime: %lf\n", firstTime);
+  //printf("centerTime: %lf\n", centerTime);
       }
       date_dssr2date(dssr->inp_sctim, &date, &time);
       centerTime = date_hms2sec(&time);
@@ -600,7 +601,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    if ( (asf_facdr)
        && (ceos->processor==ASP||ceos->processor==SPS||ceos->processor==PREC)) {
       meta->sar->time_shift = meta->sar->azimuth_time_per_pixel
-	* asf_facdr->alines;
+  * asf_facdr->alines;
       meta->sar->azimuth_time_per_pixel *= -1.0;
    }
    if (asf_facdr) {
@@ -611,7 +612,7 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    }
    else {
       meta->sar->slant_range_first_pixel = dssr->rng_gate
-	     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
+       * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
    }
    /* needed to move the earth radius and satellite height to the send
       since the alternative calcuation requires state vectors */
@@ -703,11 +704,11 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
       ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
      /* Do these again -- can get a better estimate now that we have
-	the projection block figured out. */
+  the projection block figured out. */
      meta->sar->earth_radius =
        meta_get_earth_radius(meta,
-			     meta->general->line_count/2,
-			     meta->general->sample_count/2);
+           meta->general->line_count/2,
+           meta->general->sample_count/2);
    }
 
    /* Now the satellite height */
@@ -751,24 +752,24 @@ void ceos_init_sar(const char *in_fName,meta_parameters *meta)
    else {
      double line_count = meta->general->line_count;
      double sample_count = meta->general->sample_count;
-     meta_get_latLon(meta, 0, 0, 0, 
-		     &meta->location->lat_start_near_range, 
-		     &meta->location->lon_start_near_range);
+     meta_get_latLon(meta, 0, 0, 0,
+         &meta->location->lat_start_near_range,
+         &meta->location->lon_start_near_range);
      meta->location->lat_start_near_range *= R2D;
      meta->location->lon_start_near_range *= R2D;
-     meta_get_latLon(meta, line_count, 0, 0, 
-		     &meta->location->lat_end_near_range, 
-		     &meta->location->lon_end_near_range);
+     meta_get_latLon(meta, line_count, 0, 0,
+         &meta->location->lat_end_near_range,
+         &meta->location->lon_end_near_range);
      meta->location->lat_end_near_range *= R2D;
      meta->location->lon_end_near_range *= R2D;
-     meta_get_latLon(meta, line_count, sample_count, 0, 
-		     &meta->location->lat_end_far_range, 
-		     &meta->location->lon_end_far_range);
+     meta_get_latLon(meta, line_count, sample_count, 0,
+         &meta->location->lat_end_far_range,
+         &meta->location->lon_end_far_range);
      meta->location->lat_end_far_range *= R2D;
      meta->location->lon_end_far_range *= R2D;
-     meta_get_latLon(meta, 0, sample_count, 0, 
-		     &meta->location->lat_start_far_range, 
-		     &meta->location->lon_start_far_range);
+     meta_get_latLon(meta, 0, sample_count, 0,
+         &meta->location->lat_start_far_range,
+         &meta->location->lon_start_far_range);
      meta->location->lat_start_far_range *= R2D;
      meta->location->lon_start_far_range *= R2D;
    }
@@ -897,7 +898,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   meta->general->start_sample = 0;
   if (ampr) {
     if (strcmp(meta->general->mode, "1A")==0 ||
-	strcmp(meta->general->mode, "1B1")==0) {
+  strcmp(meta->general->mode, "1B1")==0) {
       meta->general->x_pixel_size = ampr->x_pixel_size;
       meta->general->y_pixel_size = ampr->y_pixel_size;
     }
@@ -988,8 +989,8 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
       meta->projection->datum = ITRF97_DATUM;
     meta->projection->height = 0.0;
     latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0.0,
-		   &meta->projection->startX, &meta->projection->startY,
-		   &projZ);
+       &meta->projection->startX, &meta->projection->startY,
+       &projZ);
   }
 
   // Map transformation coefficients
@@ -1011,8 +1012,8 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 // Have to come up with a new initialization strategy, otherwise we run into
 // problems, especially with earth radius calculations
 void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
-		       struct dataset_sum_rec *dssr,
-		       struct VMPDREC *mpdr, struct VFDRECV *asf_facdr)
+           struct dataset_sum_rec *dssr,
+           struct VMPDREC *mpdr, struct VFDRECV *asf_facdr)
 {
   stateVector st_start;
   meta_projection *projection;
@@ -1051,7 +1052,7 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
     meta_get_earth_radius(meta, meta->general->line_count/2, 0);
   st_start = meta_get_stVec(meta,0.0);
   fixed2gei(&st_start,0.0);/*Remove earth's spin JPL's AT/CT projection
-			     requires this*/
+           requires this*/
   atct_init(meta->projection,st_start);
 
   strcpy(projection->units,"meters");
@@ -1066,8 +1067,8 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
  * Allocate a projection parameters structure, given an ASF map projection data
  * record. */
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
-		    struct VMPDREC *mpdr, struct scene_header_rec *shr,
-		    struct alos_map_proj_rec *ampr)
+        struct VMPDREC *mpdr, struct scene_header_rec *shr,
+        struct alos_map_proj_rec *ampr)
 {
    meta_projection *projection;
    if (meta->projection == NULL) {
@@ -1082,14 +1083,14 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      meta->general->sample_count = mpdr->npixels;
 
      if ((strncmp(mpdr->mpdesc, "SLANT RANGE", 11) == 0) ||
-	 (strncmp(mpdr->mpdesc, "Slant range", 11) == 0)) {
+   (strncmp(mpdr->mpdesc, "Slant range", 11) == 0)) {
        /* FOCUS processor populates map projection record for slant range! */
        /* ESA (I-PAF) apparently does the same */
        meta->sar->image_type='S';
        projection->type=MAGIC_UNSET_CHAR;
      }
      else if ((strncmp(mpdr->mpdesc, "GROUND RANGE", 12) == 0) ||
-	      (strncmp(mpdr->mpdesc, "Ground range", 12) == 0)) {
+        (strncmp(mpdr->mpdesc, "Ground range", 12) == 0)) {
        /* ESA populates map projection record also for ground range! */
        meta->sar->image_type='G';
        projection->type=MAGIC_UNSET_CHAR;
@@ -1100,15 +1101,15 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      else if (strncmp(mpdr->mpdesig, "LAMBERT", 7) == 0) {
        projection->type=LAMBERT_CONFORMAL_CONIC;/*Lambert Conformal Conic.*/
        printf("WARNING: * Images geocoded with the Lambert Conformal Conic "
-	      "projection may not\n"
-	      "         * be accurately geocoded!\n");
+        "projection may not\n"
+        "         * be accurately geocoded!\n");
        projection->param.lamcc.plat1=mpdr->nsppara1;
        projection->param.lamcc.plat2=mpdr->nsppara2;
        projection->param.lamcc.lat0=mpdr->blclat+0.023;/*NOTE: Hack.*/
        projection->param.lamcc.lon0=mpdr->blclong+2.46;/*NOTE: Hack */
        /* NOTE: We have to hack the lamcc projection because the true lat0 and lon0,
-	* as far as we can tell, are never stored in the CEOS
-	*/
+  * as far as we can tell, are never stored in the CEOS
+  */
        projection->param.lamcc.false_easting=MAGIC_UNSET_DOUBLE;
        projection->param.lamcc.false_northing=MAGIC_UNSET_DOUBLE;
        projection->param.lamcc.scale_factor=MAGIC_UNSET_DOUBLE;
@@ -1126,7 +1127,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->param.ps.slon=mpdr->upslong;
        if (projection->param.ps.slat>0) {
         if (projection->param.ps.slon==0.0) {
-	        projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
+          projection->param.ps.slon=-45.0;/*Correct reference longitude bug*/
         }
         projection->param.ps.is_north_pole=1;
        }
@@ -1136,7 +1137,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
        projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;
      }
-     else if 
+     else if
        (strncmp(mpdr->mpdesig, "UTM", 3) == 0 ||
         strncmp(mpdr->mpdesig, "UNIVERSAL TRANSVERSE MERCATOR", 29) == 0) {
        projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -1149,7 +1150,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      }
      else {
        printf("Cannot match projection '%s',\n"
-	      "in map projection data record.\n",mpdr->mpdesig);
+        "in map projection data record.\n",mpdr->mpdesig);
        exit(EXIT_FAILURE);
      }
 
@@ -1169,8 +1170,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) / mpdr->nlines;
        projection->perX   = (mpdr->trceast - mpdr->tlceast) / mpdr->npixels;
        // bogus information but that is what MDA offers for SSG data
-       if (strncmp(mpdr->refelip, "NAD 83", 6)==0)
-	 projection->datum = NAD83_DATUM;
+       if (strncmp(mpdr->refelip, "NAD 83", 6)==0) {
+         projection->datum = NAD83_DATUM;
+       }
      }
 
      /* Default the units to meters */
@@ -1188,12 +1190,26 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
          projection->datum = ITRF97_DATUM;
        }
      }
+     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 ||
+              strncmp(mpdr->mpdesig, "UPS", 3) == 0)
+     {
+       projection->spheroid = HUGHES_SPHEROID;
+     }
      else if (strncmp(dssr->ellip_des,"GEM06",5)==0) {
        projection->spheroid = GEM6_SPHEROID;
        projection->datum = WGS84_DATUM; // A best guess ...WGS66 is a better fit but not well supported
      }
-     projection->re_major = dssr->ellip_maj*1000;
-     projection->re_minor = dssr->ellip_min*1000;
+
+     if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 ||
+         strncmp(mpdr->mpdesig, "UPS", 3) == 0)
+     {
+       projection->re_major = HUGHES_SEMIMAJOR;
+       projection->re_minor = HUGHES_SEMIMAJOR - (1.0 / HUGHES_INV_FLATTENING) * HUGHES_SEMIMAJOR;
+     }
+     else {
+       projection->re_major = dssr->ellip_maj*1000;
+       projection->re_minor = dssr->ellip_min*1000;
+     }
      projection->height = 0.0;
    }
    else {
@@ -1202,9 +1218,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->param.utm.zone = ampr->utm_zone;
        projection->param.utm.false_easting = 500000.0;
        if (ampr->hem == 0)
-	 projection->param.utm.false_northing = 0.0;
+   projection->param.utm.false_northing = 0.0;
        else
-	 projection->param.utm.false_northing = 10000000.0;
+   projection->param.utm.false_northing = 10000000.0;
        projection->param.utm.lat0 = 0.0;
        projection->param.utm.lon0 = (double) (ampr->utm_zone - 1) * 6.0 - 177.0;
        projection->param.utm.scale_factor = 0.9996;
@@ -1247,34 +1263,34 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 // You must pass it a state vector from the start of imaging.
 void atct_init(meta_projection *proj,stateVector st)
 {
-	vector up={0.0,0.0,1.0};
-	vector z_orbit, y_axis, a, nd;
-	double alpha3_sign;
-	double alpha1,alpha2,alpha3;
+  vector up={0.0,0.0,1.0};
+  vector z_orbit, y_axis, a, nd;
+  double alpha3_sign;
+  double alpha1,alpha2,alpha3;
 
-	vecCross(st.pos,st.vel,&z_orbit);vecNormalize(&z_orbit);
+  vecCross(st.pos,st.vel,&z_orbit);vecNormalize(&z_orbit);
 
-	vecCross(z_orbit,up,&y_axis);vecNormalize(&y_axis);
+  vecCross(z_orbit,up,&y_axis);vecNormalize(&y_axis);
 
-	vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
+  vecCross(y_axis,z_orbit,&a);vecNormalize(&a);
 
-	alpha1 = atan2_check(a.y,a.x)*R2D;
-	alpha2 = -1.0 * asind(a.z);
-	if (z_orbit.z < 0.0)
-	{
-		alpha1 +=  180.0;
-		alpha2 = -1.0*(180.0-fabs(alpha2));
-	}
+  alpha1 = atan2_check(a.y,a.x)*R2D;
+  alpha2 = -1.0 * asind(a.z);
+  if (z_orbit.z < 0.0)
+  {
+    alpha1 +=  180.0;
+    alpha2 = -1.0*(180.0-fabs(alpha2));
+  }
 
-	vecCross(a,st.pos,&nd);vecNormalize(&nd);
-	alpha3_sign = vecDot(nd,z_orbit);
-	alpha3 = acosd(vecDot(a,st.pos)/vecMagnitude(st.pos));
-	if (alpha3_sign<0.0)
-		alpha3 *= -1.0;
+  vecCross(a,st.pos,&nd);vecNormalize(&nd);
+  alpha3_sign = vecDot(nd,z_orbit);
+  alpha3 = acosd(vecDot(a,st.pos)/vecMagnitude(st.pos));
+  if (alpha3_sign<0.0)
+    alpha3 *= -1.0;
 
-	proj->param.atct.alpha1=alpha1;
-	proj->param.atct.alpha2=alpha2;
-	proj->param.atct.alpha3=alpha3;
+  proj->param.atct.alpha1=alpha1;
+  proj->param.atct.alpha2=alpha2;
+  proj->param.atct.alpha3=alpha3;
 }
 */
 
@@ -1332,96 +1348,96 @@ ceos_description *get_ceos_description(const char *fName)
     /*Determine the facility that processed the data.*/
     if (0==strncmp(ceos->dssr.fac_id,"ASF",3))
       {/*Alaska SAR Facility Image*/
-	/*Determine the image type and processor ID.*/
-	ceos->facility=ASF;
-	if (0==strncmp(procStr,"ASP",3)) ceos->processor=ASP;
-	else if (0==strncmp(procStr,"SPS",3)) ceos->processor=SPS;
-	else if (0==strncmp(procStr,"PREC",3)) ceos->processor=PREC;
-	else if (0==strncmp(procStr,"ARDOP",5)) ceos->processor=ARDOP;
-	else if (0==strncmp(procStr,"PP",2)) ceos->processor=PP;
-	else if (0==strncmp(procStr,"SP2",3)) ceos->processor=SP2;
-	else if (0==strncmp(procStr,"AMM",3)) ceos->processor=AMM;
-	else if (0==strncmp(procStr,"DPS",3)) ceos->processor=DPS;
-	else if (0==strncmp(procStr,"MSSAR",5)) ceos->processor=MSSAR;
-	/* VEXCEL Focus processor */
-	else if (0==strncmp(procStr,"FOCUS",5)) ceos->processor=FOCUS;
-	else if (0==strncmp(procStr,"SKY",3))
-	  {/*Is VEXCEL level-0 processor, not ASF*/
-	    ceos->facility=VEXCEL;
-	    ceos->processor=LZP;
-	    ceos->product=CCSD;
-	    return ceos;
-	  }
-	else if (0==strncmp(procStr, "PC", 2)) {
-	  if (0==strncmp(prodStr,"SCANSAR",7)) ceos->processor=SP3;
-	   else if (0==strncmp(prodStr,"FUL",3)) ceos->processor=PREC;
-	}
-	else {
-	  printf("get_ceos_description Warning! Unknown ASF processor '%s'!\n",
-		 procStr);
-	  ceos->processor=unknownProcessor;
-	}
+  /*Determine the image type and processor ID.*/
+  ceos->facility=ASF;
+  if (0==strncmp(procStr,"ASP",3)) ceos->processor=ASP;
+  else if (0==strncmp(procStr,"SPS",3)) ceos->processor=SPS;
+  else if (0==strncmp(procStr,"PREC",3)) ceos->processor=PREC;
+  else if (0==strncmp(procStr,"ARDOP",5)) ceos->processor=ARDOP;
+  else if (0==strncmp(procStr,"PP",2)) ceos->processor=PP;
+  else if (0==strncmp(procStr,"SP2",3)) ceos->processor=SP2;
+  else if (0==strncmp(procStr,"AMM",3)) ceos->processor=AMM;
+  else if (0==strncmp(procStr,"DPS",3)) ceos->processor=DPS;
+  else if (0==strncmp(procStr,"MSSAR",5)) ceos->processor=MSSAR;
+  /* VEXCEL Focus processor */
+  else if (0==strncmp(procStr,"FOCUS",5)) ceos->processor=FOCUS;
+  else if (0==strncmp(procStr,"SKY",3))
+    {/*Is VEXCEL level-0 processor, not ASF*/
+      ceos->facility=VEXCEL;
+      ceos->processor=LZP;
+      ceos->product=CCSD;
+      return ceos;
+    }
+  else if (0==strncmp(procStr, "PC", 2)) {
+    if (0==strncmp(prodStr,"SCANSAR",7)) ceos->processor=SP3;
+     else if (0==strncmp(prodStr,"FUL",3)) ceos->processor=PREC;
+  }
+  else {
+    printf("get_ceos_description Warning! Unknown ASF processor '%s'!\n",
+     procStr);
+    ceos->processor=unknownProcessor;
+  }
 
 
-	if (0==strncmp(prodStr,"LOW",3)) ceos->product=LOW_REZ;
-	else if (0==strncmp(prodStr,"FUL",3)) ceos->product=HI_REZ;
-	else if (0==strncmp(prodStr,"SCANSAR",7)) ceos->product=SCANSAR;
-	else if (0==strncmp(prodStr,"CCSD",4)) ceos->product=CCSD;
-	else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=SLC;
-	else if (0==strncmp(prodStr,"RAMP",4)) ceos->product=RAMP;
-	/* Non-ASF data */
-	else if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
-	  ceos->product=SLC;
-	else if (0==strncmp(prodStr, "SLANT RANGE COMPLEX",19)) ceos->product=SLC;
-	else if (0==strncmp(prodStr, "SAR PRECISION IMAGE",19)) ceos->product=PRI;
-	else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
-	else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23))
-	  ceos->product=SGI;
-	else {
-	  printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",
-		 prodStr);
-	  ceos->product=unknownProduct;
-	}
+  if (0==strncmp(prodStr,"LOW",3)) ceos->product=LOW_REZ;
+  else if (0==strncmp(prodStr,"FUL",3)) ceos->product=HI_REZ;
+  else if (0==strncmp(prodStr,"SCANSAR",7)) ceos->product=SCANSAR;
+  else if (0==strncmp(prodStr,"CCSD",4)) ceos->product=CCSD;
+  else if (0==strncmp(prodStr,"COMPLEX",7)) ceos->product=SLC;
+  else if (0==strncmp(prodStr,"RAMP",4)) ceos->product=RAMP;
+  /* Non-ASF data */
+  else if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
+    ceos->product=SLC;
+  else if (0==strncmp(prodStr, "SLANT RANGE COMPLEX",19)) ceos->product=SLC;
+  else if (0==strncmp(prodStr, "SAR PRECISION IMAGE",19)) ceos->product=PRI;
+  else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
+  else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23))
+    ceos->product=SGI;
+  else {
+    printf("get_ceos_description Warning! Unknown ASF product type '%s'!\n",
+     prodStr);
+    ceos->product=unknownProduct;
+  }
 
       }
     else if (0==strncmp(ceos->dssr.fac_id,"ES",2))
       {/*European Space Agency Image*/
-	printf("   Data set processed by ESA\n");
-	ceos->facility=ESA;
+  printf("   Data set processed by ESA\n");
+  ceos->facility=ESA;
 
-	if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
-	if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) ceos->product=PRI;
-	else {
-	  printf("Get_ceos_description Warning! Unknown ESA product type '%s'!\n",
-		 prodStr);
-	  ceos->product=unknownProduct;
-	}
+  if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
+  if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) ceos->product=PRI;
+  else {
+    printf("Get_ceos_description Warning! Unknown ESA product type '%s'!\n",
+     prodStr);
+    ceos->product=unknownProduct;
+  }
       }
     else if (0==strncmp(ceos->dssr.fac_id,"CDPF",4))
       {
-	printf("   Data set processed by CDPF\n");
-	ceos->facility=CDPF;
+  printf("   Data set processed by CDPF\n");
+  ceos->facility=CDPF;
 
-	if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
-	  ceos->product=SLC;
-	else if (0==strncmp(prodStr,"SCANSAR WIDE",12)) ceos->product=SCANSAR;
-	else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
-	else if (0==strncmp(prodStr, "SYSTEMATIC GEOCODED UTM", 23)) 
-	  ceos->product=SSG;
-	else {
-	  printf("Get_ceos_description Warning! Unknown CDPF product type '%s'!\n",
-		 prodStr);
-	  ceos->product=unknownProduct;
-	}
+  if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
+    ceos->product=SLC;
+  else if (0==strncmp(prodStr,"SCANSAR WIDE",12)) ceos->product=SCANSAR;
+  else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
+  else if (0==strncmp(prodStr, "SYSTEMATIC GEOCODED UTM", 23))
+    ceos->product=SSG;
+  else {
+    printf("Get_ceos_description Warning! Unknown CDPF product type '%s'!\n",
+     prodStr);
+    ceos->product=unknownProduct;
+  }
       }
     else if (0==strncmp(ceos->dssr.fac_id,"D-PAF",5)) {
        printf("   Data set processed by D-PAF\n");
        ceos->facility=ESA;
        if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
        else {
-	 printf("Get_ceos_description Warning! Unknown D-PAF product type '%s'!\n",
-		prodStr);
-	 ceos->product=unknownProduct;
+   printf("Get_ceos_description Warning! Unknown D-PAF product type '%s'!\n",
+    prodStr);
+   ceos->product=unknownProduct;
        }
 
     }
@@ -1430,9 +1446,9 @@ ceos_description *get_ceos_description(const char *fName)
       ceos->facility=ESA;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) ceos->product=RAW;
       else {
-	printf("Get_ceos_description Warning! Unknown I-PAF product type '%s'!\n",
-	       prodStr);
-	ceos->product=unknownProduct;
+  printf("Get_ceos_description Warning! Unknown I-PAF product type '%s'!\n",
+         prodStr);
+  ceos->product=unknownProduct;
       }
     }
     /* This functionality is not yet implemented.
@@ -1448,9 +1464,9 @@ ceos_description *get_ceos_description(const char *fName)
       else if (0==strncmp(ceos->dssr.lev_code, "1.1", 3)) ceos->product=SLC;
        else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23)) ceos->product=SGI;
       else {
-	printf("Get_ceos_description Warning! Unknown EOC product type '%s'!\n",
-	       prodStr);
-	ceos->product=unknownProduct;
+  printf("Get_ceos_description Warning! Unknown EOC product type '%s'!\n",
+         prodStr);
+  ceos->product=unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"RSI",3)) {
@@ -1461,9 +1477,9 @@ ceos_description *get_ceos_description(const char *fName)
       else if (0==strncmp(prodStr, "SCANSAR NARROW",14)) ceos->product=SCN;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) ceos->product=SGF;
       else {
-	printf("Get_ceos_description Warning! Unknown RSI product type '%s'!\n",
-	       prodStr);
-	ceos->product=unknownProduct;
+  printf("Get_ceos_description Warning! Unknown RSI product type '%s'!\n",
+         prodStr);
+  ceos->product=unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"JPL",3)) {
@@ -1473,9 +1489,9 @@ ceos_description *get_ceos_description(const char *fName)
     }
     else {
       printf( "****************************************\n"
-	      "SEVERE WARNING!!!!  Unknown CEOS Facility '%s'!\n"
-	      "****************************************\n",
-	      ceos->dssr.fac_id);
+        "SEVERE WARNING!!!!  Unknown CEOS Facility '%s'!\n"
+        "****************************************\n",
+        ceos->dssr.fac_id);
       ceos->facility=unknownFacility;
     }
   }
@@ -1494,8 +1510,8 @@ ceos_description *get_ceos_description(const char *fName)
       if (0==strncmp(sensorStr,"AVNIR",5)) ceos->sensor = AVNIR;
       else if (0==strncmp(sensorStr, "PRISM",5)) ceos->sensor = PRISM;
       else {
-	printf("Get_ceos_description Warning! Unknown sensor '%s'!\n", sensorStr);
-	ceos->sensor = unknownSensor;
+  printf("Get_ceos_description Warning! Unknown sensor '%s'!\n", sensorStr);
+  ceos->sensor = unknownSensor;
       }
     }
 
@@ -1555,8 +1571,8 @@ ceos_description *get_sensor(const char *fName)
       if (0==strncmp(sensorStr,"AVNIR",5)) ceos->sensor = AVNIR;
       else if (0==strncmp(sensorStr, "PRISM",5)) ceos->sensor = PRISM;
       else {
-	printf("Get_ceos_description Warning! Unknown sensor '%s'!\n", sensorStr);
-	ceos->sensor = unknownSensor;
+  printf("Get_ceos_description Warning! Unknown sensor '%s'!\n", sensorStr);
+  ceos->sensor = unknownSensor;
       }
     }
   }
@@ -1736,8 +1752,8 @@ int get_alos_delta_time (const char *fileName, meta_parameters *meta,
       dateStr[strlen(dateStr)-2] = '\0';
       date_alos2date(dateStr, &summary_date, &summary_time);
       if (date_difference(&dssr_date, &dssr_time,
-			  &summary_date, &summary_time) > 0.0) {
-	asfPrintWarning("Summary file does not correspond to leader file.\n"
+        &summary_date, &summary_time) > 0.0) {
+  asfPrintWarning("Summary file does not correspond to leader file.\n"
                         "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
         *delta = 0;
         FCLOSE(fp);
