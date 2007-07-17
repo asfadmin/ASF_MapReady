@@ -22,13 +22,13 @@ extern int stats_generated;
 static GtkWidget *browse_widget = NULL;
 
 // called when "cancel" clicked on the GtkFileChooser
-SIGNAL_CALLBACK void cancel_clicked()
+SIGNAL_CALLBACK void new_cancel_clicked()
 {
     gtk_widget_hide(browse_widget);
 }
 
 // called when "ok" clicked on the GtkFileChooser
-SIGNAL_CALLBACK void ok_clicked()
+SIGNAL_CALLBACK void new_ok_clicked()
 {
     GSList *files = gtk_file_chooser_get_filenames(
         GTK_FILE_CHOOSER(browse_widget));
@@ -72,9 +72,9 @@ static void create_file_chooser_dialog()
     GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
 
     g_signal_connect((gpointer)cancel_btn, "clicked",
-        G_CALLBACK(cancel_clicked), NULL);
+        G_CALLBACK(new_cancel_clicked), NULL);
     g_signal_connect((gpointer)ok_btn, "clicked",
-        G_CALLBACK(ok_clicked), NULL);
+        G_CALLBACK(new_ok_clicked), NULL);
 
     // add the filters
     GtkFileFilter *D_filt = gtk_file_filter_new();

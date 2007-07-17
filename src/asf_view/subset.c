@@ -66,7 +66,7 @@ static const char * detect_csv_assoc()
         FREE(csv_file);
 #else
         // On Linux, get the app from the configuration file
-        FILE *cfg = fopen(csv_file);
+        FILE *cfg = fopen(csv_file, "r");
         if (cfg) {
             char tmp[1024];
             while (fgets(tmp, 1024, cfg) != NULL) {
@@ -79,7 +79,7 @@ static const char * detect_csv_assoc()
                 csv_app = STRDUP("");
             fclose(cfg);
         } else {
-            printf("Failed to open %s: %s\n", csv_file, strerror(csv_file));
+            printf("Failed to open %s: %s\n", csv_file, strerror(errno));
             csv_app = STRDUP("");
             printf("CSV Application not found.\n");
         }
