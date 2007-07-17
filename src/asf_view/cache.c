@@ -171,7 +171,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
         print_cache_size(self);
     }
 
-    self->client->read_fn(self->fp, rs, rows_to_get, (void*)(self->cache[spot]),
+    self->client->read_fn(rs, rows_to_get, (void*)(self->cache[spot]),
         self->client->read_client_info, self->meta);
 
     return &self->cache[spot][((line-rs)*self->ns + samp)*ds];
@@ -209,7 +209,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
 
         quiet=FALSE;
     } else {
-        self->client->thumb_fn(self->fp, thumb_size_x, thumb_size_y,
+        self->client->thumb_fn(thumb_size_x, thumb_size_y,
             self->meta, self->client->read_client_info, dest_void);
     }
 }
@@ -224,7 +224,7 @@ CachedImage * cached_image_new_from_file(
     self->data_type = client->data_type;
     assert(self->data_type != UNDEFINED);
 
-    self->fp = FOPEN(file, "rb");
+    //self->fp = FOPEN(file, "rb");
 
     self->client = client; // take ownership of this
     self->meta = meta;     // do NOT take ownership of this
@@ -323,7 +323,7 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
 
 void cached_image_free (CachedImage *self)
 {
-    fclose(self->fp);
+    //fclose(self->fp);
 
     int i;
     for (i=0; i<self->n_tiles; ++i) {

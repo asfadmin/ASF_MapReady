@@ -58,6 +58,8 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
     char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *err = NULL;
 
+    // If you are considering adding support for another data type,
+    // see the comments in read_template.c
     if (try_asf(filename)) {
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             meta = read_asf_meta(meta_name);
@@ -87,8 +89,7 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
         }
     } else if (try_jpeg(filename)) {
         if (handle_jpeg_file(filename, meta_name, data_name, &err)) {
-            meta = read_jpeg_meta(meta_name);
-            open_jpeg_data(data_name, meta_name, band, meta, client);
+            meta = open_jpeg(data_name, client);
         } else {
             err_func(err);
             free(err);

@@ -98,10 +98,7 @@ int handle_alos_file(const char *filename, const char *band, char *meta_name,
 int try_jpeg(const char *filename);
 int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
-meta_parameters *read_jpeg_meta(const char *meta_name);
-int open_jpeg_data(const char *data_name, const char *meta_name,
-                   const char *band, meta_parameters *meta,
-                   ClientInterface *client);
+meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 
 /* big_image.c */
 void fill_big(void);
@@ -143,6 +140,7 @@ void set_title(int band_specified, char *band);
 
 /* subset.c */
 void save_subset(void);
+void update_poly_extents(void);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

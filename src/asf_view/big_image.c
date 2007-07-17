@@ -282,6 +282,10 @@ static GdkPixbuf * make_big_image()
             put_line(pb, g_poly.line[ii], g_poly.samp[ii],
                 g_poly.line[ii+1], g_poly.samp[ii+1], RED);
         }
+    } else if (g_poly.show_extent) {
+        // no polygon -- close "save subset" window, if open
+        show_widget("save_subset_window", FALSE);
+        g_poly.show_extent = FALSE;
     }
 
     // green crosshair goes second, so if the two overlap, we will see
@@ -290,6 +294,7 @@ static GdkPixbuf * make_big_image()
 
     // draw bounding box if requested
     if (g_poly.show_extent) {
+        update_poly_extents();
         put_line(pb, g_poly.extent_y_min, g_poly.extent_x_min,
                      g_poly.extent_y_max, g_poly.extent_x_min, PURPLE);
         put_line(pb, g_poly.extent_y_max, g_poly.extent_x_min,
@@ -645,13 +650,11 @@ static int handle_keypress(GdkEventKey *event)
             --g_poly.n;
             if (g_poly.c >= g_poly.n)
                 g_poly.c = g_poly.n-1;
-            g_poly.show_extent = FALSE;
             update_pixel_info();
         }
     } else if (event->keyval == GDK_Escape) {
         // Escape: clear the ctrl-clicked path
         g_poly.n = g_poly.c = 0;
-        g_poly.show_extent = FALSE;
         update_pixel_info();
     } else if (event->keyval == GDK_c) {
         // c: Center image view on crosshair
@@ -758,7 +761,6 @@ static int handle_keypress(GdkEventKey *event)
             crosshair_line=line_max;
             crosshair_samp=samp_max;
         }
-        g_poly.show_extent = FALSE;
         update_pixel_info();
     } else if (event->keyval == GDK_n) {
         // n: open a new file
@@ -823,7 +825,6 @@ static int handle_keypress(GdkEventKey *event)
                     default: return TRUE;
                 }
             }
-            g_poly.show_extent = FALSE;
             update_pixel_info();
         }
     }

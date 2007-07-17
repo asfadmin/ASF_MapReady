@@ -10,7 +10,10 @@
 // else you'll need to store in here.  For example, the ASF Internal
 // version of this struct holds the currently displayed band number.
 // The CEOS struct has the header length.
+
+// Almost certainly, you'll need to keep the file pointer in here
 typedef struct {
+    FILE *fp;
 } ReadXClientInfo;
 
 //----------------------------------------------------------------------
@@ -66,6 +69,11 @@ int try_X(const char *filename)
 //    with information about what file was being looked for and couldn't
 //    be found.
 
+// The only place this is called is in "read.c/read_file()", so you can
+// customize the signature to fit your needs.  However, you do need to
+// populate meta_name & data_name (even if the file doesn't actually
+// separate the two).  I don't think you'd need to change this functions
+// signature.
 int handle_X_file(const char *filename, char *meta_name, char *data_name,
                     char **err)
 {
@@ -80,6 +88,10 @@ int handle_X_file(const char *filename, char *meta_name, char *data_name,
 // Return NULL if the metadata could not be read, or there is no
 // metadata for this particular format.
 
+// The only place this is called is in "read.c/read_file()", so you can
+// customize the signature to fit your needs.  The read_jpeg client, for
+// example, eliminated this function entirely, and returned metadata
+// with the "open_" function, below.
 meta_parameters *read_X_meta(const char *meta_name)
 {
     meta_parameters *meta = raw_init();
@@ -97,7 +109,6 @@ meta_parameters *read_X_meta(const char *meta_name)
 
 // A function that will read the given rows from the file.
 
-// [in] fp: An already open file pointer to the data file.
 // [in] row_start: The row number of the desired row.
 // [in] n_rows_to_get: How many rows to read in.
 // [out] dest: where the data should be put.  Allocated by the caller.
@@ -107,7 +118,9 @@ meta_parameters *read_X_meta(const char *meta_name)
 
 // return TRUE on success, FALSE on failure.
 
-int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
+// You aren't allowed to customize the interface, here -- any additional
+// info you want needs to be placed into the ReadXClientInfo struct.
+int read_X_client(int row_start, int n_rows_to_get,
                   void *dest_void, void *read_client_info,
                   meta_parameters *meta)
 {
@@ -116,7 +129,11 @@ int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
     //unsigned char *dest = (unsigned char*)dest_void;
 
     ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
-    return FALSE;
+    FILE *fp = info->fp;
+
+    // here is where you populate "dest"
+
+    return FALSE; // TRUE;
 }
 
 //----------------------------------------------------------------------
@@ -141,6 +158,13 @@ int read_X_client(FILE *fp, int row_start, int n_rows_to_get,
 
 // You should use an asfPercentMeter while reading in the data.
 
+// You aren't allowed to customize the interface, here -- any additional
+// info you want needs to be placed into the ReadXClientInfo struct.
+
+// However, you are allowed to completely eliminate this -- set the
+// thumbnail function pointer to NULL.  In that case, the read_X code
+// will be called to generate the thumbnail.
+
 int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
                          int thumb_size_y, meta_parameters *meta,
                          void *read_client_info, void *dest_void)
@@ -150,6 +174,9 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
     //unsigned char *dest = (unsigned char*)dest_void;
 
     ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
+    FILE *fp = info->fp;
+
+    // here is where you populate "dest"
     return FALSE;
 }
 
@@ -159,9 +186,12 @@ int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
 // You probably don't need to change this beyond updating "X"
 // Frees the client info structure
 
+// You aren't allowed to customize the interface, here -- the cache
+// has a pointer to this function that is typedef'ed.
 void free_X_client_info(void *read_client_info)
 {
     ReadXClientInfo *info = (ReadXClientInfo*)read_client_info;
+    if (info->fp) fclose(info->fp);
     free(info);
 }
 
@@ -182,17 +212,21 @@ void free_X_client_info(void *read_client_info)
 //               including the read_client_info.  You should allocate
 //               read_client_info, but ClientInterface is pre-allocated
 
+// The only place this is called is in "read.c/read_file()", so you can
+// customize the signature to fit your needs.  The read_jpeg client, for
+// example, combined this with "read_x_meta".
 int open_X_data(const char *data_name, const char *meta_name,
                 const char *band, meta_parameters *meta,
                 ClientInterface *client)
 {
     ReadXClientInfo *info = MALLOC(sizeof(ReadXClientInfo));
-
-    // populate the info block here
+    
+    info->fp = fopen(data_name, "rb");
+    // populate the rest of the info block here
 
     client->read_client_info = info;
     client->read_fn = read_X_client;
-    client->thumb_fn = get_X_thumbnail_data;
+    client->thumb_fn = get_X_thumbnail_data; // NULL is allowed
     client->free_fn = free_X_client_info;
 
     // You must set this to something!

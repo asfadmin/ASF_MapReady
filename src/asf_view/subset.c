@@ -231,6 +231,22 @@ static void compute_extent(meta_parameters *meta,
     *nl = *line_max - *line_min + 1;
 }
 
+void update_poly_extents()
+{
+    int size_x, size_y;
+    compute_extent(meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
+        &g_poly.extent_x_min, &g_poly.extent_x_max, &size_y, &size_x);
+
+    char subset_info[128];
+    snprintf(subset_info, 128,
+        "Extent: Line %d-%d, Sample %d-%d\nOutput will be %dx%d LxS",
+        g_poly.extent_y_min, g_poly.extent_y_max,
+        g_poly.extent_x_min, g_poly.extent_x_max,
+        size_y, size_x);
+
+    put_string_to_label("subset_info_label", subset_info);
+}
+
 void save_subset()
 {
     if (g_poly.n > 0) {
@@ -242,25 +258,10 @@ void save_subset()
             if (crosshair_samp >= meta->general->sample_count)
                 crosshair_samp = meta->general->sample_count - 1;
 
-            int line_min, line_max, samp_min, samp_max, nl, ns;
-            compute_extent(meta, &line_min, &line_max, &samp_min, &samp_max,
-                &nl, &ns);
-
-            char subset_info[128];
-            snprintf(subset_info, 128,
-                "Extent: Line %d-%d, Sample %d-%d\nOutput will be %dx%d LxS",
-                line_min, line_max, samp_min, samp_max, nl, ns);
-
             show_save_subset_window();
-            put_string_to_label("subset_info_label", subset_info);
             set_defaults();
             
             g_poly.show_extent = TRUE;
-            g_poly.extent_y_min = line_min;
-            g_poly.extent_y_max = line_max;
-            g_poly.extent_x_min = samp_min;
-            g_poly.extent_x_max = samp_max;
-
             fill_big();
 
             update_save_subset_info();
@@ -681,7 +682,7 @@ SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *w)
     free(save_file);
 
     if (ok)
-        show_widget("save_subset_window", FALSE);
+        close_subset_window();
 }
 
 SIGNAL_CALLBACK void on_save_subset_button_clicked(GtkWidget *w)

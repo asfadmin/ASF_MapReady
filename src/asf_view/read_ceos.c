@@ -72,9 +72,9 @@ meta_parameters *read_ceos_meta(const char *meta_name)
     return meta_create(meta_name);
 }
 
-int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
-                    void *dest_void, void *read_client_info,
-                    meta_parameters *meta)
+int read_ceos_client(int row_start, int n_rows_to_get,
+                     void *dest_void, void *read_client_info,
+                     meta_parameters *meta)
 {
     float *dest = (float*)dest_void;
 
@@ -88,8 +88,8 @@ int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
             long long offset = (long long)(info->headerBytes +
                 (ii+row_start)*info->reclen);
 
-            FSEEK64(fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns, fp);
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(shorts, sizeof(unsigned short), ns, info->fp);
 
             for (jj = 0; jj < ns; ++jj) {
                 big16(shorts[jj]);
@@ -105,8 +105,8 @@ int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
             long long offset = (long long)(info->headerBytes +
                 (ii+row_start)*info->reclen);
 
-            FSEEK64(fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns, fp);
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(bytes, sizeof(unsigned char), ns, info->fp);
 
             for (jj = 0; jj < ns; ++jj)
                 dest[jj + ii*ns] = (float)(bytes[jj]);
@@ -117,9 +117,9 @@ int read_ceos_client(FILE *fp, int row_start, int n_rows_to_get,
     return TRUE;
 }
 
-int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
-                            int thumb_size_y, meta_parameters *meta,
-                            void *read_client_info, void *dest_void)
+int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
+                            meta_parameters *meta, void *read_client_info,
+                            void *dest_void)
 {
     float *dest = (float*)dest_void;
 
@@ -135,8 +135,8 @@ int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
         for (ii=0; ii<thumb_size_y; ++ii) {
             long long offset = (long long)(info->headerBytes + ii*sf*info->reclen);
 
-            FSEEK64(fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns, fp);
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(shorts, sizeof(unsigned short), ns, info->fp);
 
             for (jj = 0; jj < thumb_size_x; ++jj) {
                 big16(shorts[jj]);
@@ -153,8 +153,8 @@ int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
         for (ii=0; ii<thumb_size_y; ++ii) {
             long long offset = (long long)(info->headerBytes + ii*sf*info->reclen);
 
-            FSEEK64(fp, offset, SEEK_SET);
-            FREAD(bytes, sizeof(unsigned char), ns, fp);
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(bytes, sizeof(unsigned char), ns, info->fp);
 
             for (jj = 0; jj < thumb_size_x; ++jj)
                 dest[jj + ii*thumb_size_x] = (float)(bytes[jj*sf]);
@@ -170,6 +170,7 @@ int get_ceos_thumbnail_data(FILE *fp, int thumb_size_x,
 void free_ceos_client_info(void *read_client_info)
 {
     ReadCeosClientInfo *info = (ReadCeosClientInfo*) read_client_info;
+    if (info->fp) fclose(info->fp);
     free(info);
 }
 
@@ -191,6 +192,13 @@ int open_ceos_data(const char *data_name, const char *meta_name,
         (image_fdr.reclen - (ns + leftFill + rightFill)*image_fdr.bytgroup);
 
     info->reclen = image_fdr.reclen;
+
+    info->fp = fopen(data_name, "rb");
+    if (!info->fp) {
+        asfPrintWarning("Failed to open CEOS file %s: %s\n",
+            data_name, strerror(errno));
+        return FALSE;
+    }
 
     client->read_client_info = info;
     client->read_fn = read_ceos_client;

@@ -1,6 +1,7 @@
 #include "asf_view.h"
 
 typedef struct {
+    FILE *fp; // data file pointer
     int band; // which band we are using
 } ReadAsfClientInfo;
 
@@ -75,22 +76,22 @@ meta_parameters *read_asf_meta(const char *meta_name)
     return meta_read(meta_name);
 }
 
-int read_asf_client(FILE *fp, int row_start, int n_rows_to_get,
+int read_asf_client(int row_start, int n_rows_to_get,
                     void *dest_void, void *read_client_info,
                     meta_parameters *meta)
 {
     float *dest = (float*)dest_void;
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
 
-    get_float_lines(fp, meta, row_start + nl*info->band,
+    get_float_lines(info->fp, meta, row_start + nl*info->band,
                     n_rows_to_get, dest);
 
     return TRUE;
 }
 
-int get_asf_thumbnail_data(FILE *fp, int thumb_size_x,
-                           int thumb_size_y, meta_parameters *meta,
-                           void *read_client_info, void *dest_void)
+int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
+                           meta_parameters *meta, void *read_client_info,
+                           void *dest_void)
 {
     float *dest = (float*)dest_void;
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
@@ -104,7 +105,7 @@ int get_asf_thumbnail_data(FILE *fp, int thumb_size_x,
 
     int i,j;
     for (i=0; i<thumb_size_y; ++i) {
-        get_float_line(fp, meta, i*sf + off, buf);
+        get_float_line(info->fp, meta, i*sf + off, buf);
         for (j=0; j<thumb_size_x; ++j)
             dest[i*thumb_size_x+j] = buf[j*sf];
         asfPercentMeter((float)i/(thumb_size_y-1));
@@ -117,6 +118,7 @@ int get_asf_thumbnail_data(FILE *fp, int thumb_size_x,
 void free_asf_client_info(void *read_client_info)
 {
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
+    if (info->fp) fclose(info->fp);
     free(info);
 }
 
@@ -140,6 +142,12 @@ int open_asf_data(const char *filename, const char *band,
         asfPrintStatus("Reading band #%d: %s\n", b+1, band);
 
     info->band = b;
+    info->fp = fopen(filename, "rb");
+    if (!info->fp) {
+        asfPrintWarning("Failed to open ASF Internal file %s: %s\n",
+            filename, strerror(errno));
+        return FALSE;
+    }
 
     client->read_client_info = info;
     client->read_fn = read_asf_client;

@@ -3,7 +3,7 @@
 
 typedef struct {
     struct jpeg_decompress_struct *cinfo;
-    int fp_was_set;
+    FILE *fp;
 } ReadJpegClientInfo;
 
 int try_jpeg(const char *filename)
@@ -72,31 +72,7 @@ int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
     return FALSE;
 }
 
-meta_parameters *read_jpeg_meta(const char *meta_name)
-{
-    meta_parameters *meta = raw_init();
-    
-    struct jpeg_decompress_struct cinfo;
-    jpeg_create_decompress(&cinfo);
-
-	struct jpeg_error_mgr mgr;
-	cinfo.err = jpeg_std_error(&mgr);
-
-    FILE *fp = FOPEN(meta_name, "rb");
-    jpeg_stdio_src(&cinfo, fp);
-
-    jpeg_read_header(&cinfo, TRUE);
-
-    meta->general->line_count = cinfo.image_height;
-    meta->general->sample_count = cinfo.image_width;
-
-    jpeg_destroy_decompress(&cinfo);
-    FCLOSE(fp);
-
-    return meta;
-}
-
-int read_jpeg_client(FILE *fp, int row_start, int n_rows_to_get,
+int read_jpeg_client(int row_start, int n_rows_to_get,
                      void *dest_void, void *read_client_info,
                      meta_parameters *meta)
 {
@@ -109,20 +85,10 @@ int read_jpeg_client(FILE *fp, int row_start, int n_rows_to_get,
     ReadJpegClientInfo *info = (ReadJpegClientInfo*)read_client_info;
     struct jpeg_decompress_struct *cinfo = info->cinfo;
 
-    if (!info->fp_was_set) {
-	    static struct jpeg_error_mgr mgr;
-	    cinfo->err = jpeg_std_error(&mgr);
-
-        jpeg_stdio_src(cinfo, fp);
-        jpeg_read_header(cinfo, TRUE);
-        jpeg_start_decompress(cinfo);
-
-        info->fp_was_set = TRUE;
-    } else {
-        // we should actually never get here -- because we require a full
-        // load, this function should only be called ONCE
-        assert(0);
-    }
+    // these will explode if we ever call this fn a second time on
+    // the same data.  Shouldn't happen, because we set "require_full_load"
+    assert(info->fp);
+    assert(info->cinfo);
 
     int ns = meta->general->sample_count;
     JSAMPLE *rgbBuf = MALLOC(sizeof(JSAMPLE)*ns*cinfo->output_components);
@@ -140,30 +106,54 @@ int read_jpeg_client(FILE *fp, int row_start, int n_rows_to_get,
         }
     }
 
+    fclose(info->fp);
+    info->fp = NULL;
+
+    jpeg_finish_decompress(cinfo);
+    jpeg_destroy_decompress(cinfo);
+    free(cinfo);
+    info->cinfo = NULL;
+
     return TRUE;
 }
 
 void free_jpeg_client_info(void *read_client_info)
 {
     ReadJpegClientInfo *info = (ReadJpegClientInfo*)read_client_info;
-    jpeg_finish_decompress(info->cinfo);
-    jpeg_destroy_decompress(info->cinfo);
+    if (info->fp) fclose(info->fp); // should never be still open
     free(info);
 }
 
-int open_jpeg_data(const char *data_name, const char *meta_name,
-                   const char *band, meta_parameters *meta,
-                   ClientInterface *client)
+// for jpeg, combined the "open_meta" and "open_data" functions -- both
+// will be opening the same file.
+meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
 {
     ReadJpegClientInfo *info = MALLOC(sizeof(ReadJpegClientInfo));
 
+    // We set up all the jpeg infrastructure here, but don't actually
+    // do anything with it, that all happens in read_jpeg_client.
+    // Can't do it all in read_jpeg_client, because we need to set
+    // up metadata in here.
     struct jpeg_decompress_struct *cinfo =
         MALLOC(sizeof(struct jpeg_decompress_struct));
     jpeg_create_decompress(cinfo);
     cinfo->buffered_image = TRUE;
 
+    static struct jpeg_error_mgr mgr;
+    cinfo->err = jpeg_std_error(&mgr);
+
+    info->fp = fopen(data_name, "rb");
+    if (!info->fp) {
+        asfPrintWarning("Failed to open Jpeg file %s: %s\n",
+            data_name, strerror(errno));
+        return NULL;
+    }
+
+    jpeg_stdio_src(cinfo, info->fp);
+    jpeg_read_header(cinfo, TRUE);
+    jpeg_start_decompress(cinfo);
+
     info->cinfo = cinfo;
-    info->fp_was_set = FALSE;
 
     client->read_client_info = info;
     client->read_fn = read_jpeg_client;
@@ -176,5 +166,9 @@ int open_jpeg_data(const char *data_name, const char *meta_name,
     // since jpeg doesn't support random access ...
     client->require_full_load = TRUE;
 
-    return FALSE;
+    meta_parameters *meta = raw_init();
+    meta->general->line_count = cinfo->image_height;
+    meta->general->sample_count = cinfo->image_width;
+
+    return meta;
 }

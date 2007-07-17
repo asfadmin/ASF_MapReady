@@ -18,10 +18,10 @@
 #define SSIZE_MAX 32767
 #endif
 
-typedef int ReadClientFn(FILE *fp, int row_start, int n_rows_to_get,
+typedef int ReadClientFn(int row_start, int n_rows_to_get,
                          void *dest, void *read_client_info,
                          meta_parameters *meta);
-typedef int ThumbFn(FILE *fp, int thumb_size_x,
+typedef int ThumbFn(int thumb_size_x,
                     int thumb_size_y, meta_parameters *meta,
                     void *read_client_info, void *dest);
 typedef void FreeFn(void *read_client_info);
@@ -64,7 +64,7 @@ typedef struct {
   int *rowstarts;           // Row numbers starting each tile
   unsigned char **cache;    // Cached values (floats, unsigned chars ...)
   int *access_counts;       // Updated when a tile is accessed
-  FILE *fp;                 // file pointer
+  //FILE *fp;                 // file pointer
   int n_access;             // used to find oldest tile
   ssv_data_type_t data_type;// type of data we have
   meta_parameters *meta;    // metadata -- don't own this pointer
