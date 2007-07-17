@@ -16,6 +16,7 @@ include ../../make_support/system_rules
 ###############################################################################
 
 SOURCES := diffimage.c
+HEADERS := diffimage_tolerances.h
 
 ###############################################################################
 #
@@ -69,12 +70,13 @@ LDLIBS := $(LIBS)
 
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
-all: diffimage
+all: $(PROGRAM)
 
-$(PROGRAM): $(OBJS)
+$(PROGRAM): $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 	mv diffimage$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
 clean:
 	rm -f $(PROGRAM) $(OBJS) core.* core
+
