@@ -100,17 +100,17 @@ static int valid_avnir_pointing_angle(double a)
     return TRUE;
 }
 
-static int parse_line(// input
-                      char *line,
-                      // outputs:
-                      char *sensor, long *date, int *path, double *start_lat,
-                      int *direction, int *duration, char *observation_mode,
-                      int *observation_purpose, double *prism_nadir_angle,
-                      double *prism_forward_angle, double *prism_backward_angle,
-                      int *prism_nadir_gain, int *prism_forward_gain,
-                      int *prism_backward_gain, double *avnir_pointing_angle,
-                      int *avnir_gain, int *avnir_exposure,
-                      int *palsar_table_number)
+static int obs_parse_line(// input
+                        char *line,
+                        // outputs:
+                        char *sensor, long *date, int *path, double *start_lat,
+                        int *direction, int *duration, char *observation_mode,
+                        int *observation_purpose, double *prism_nadir_angle,
+                        double *prism_forward_angle, double *prism_backward_angle,
+                        int *prism_nadir_gain, int *prism_forward_gain,
+                        int *prism_backward_gain, double *avnir_pointing_angle,
+                        int *avnir_gain, int *avnir_exposure,
+                        int *palsar_table_number)
 {
     // cheat!  easier to validate if every piece will end with a comma
     line[strlen(line)+1] = '\0';
@@ -326,15 +326,19 @@ static int parse_line(// input
 
 static void write_common(FILE *fout, long date, int path, double start_lat,
                         int direction, int duration, char *observation_mode,
-                        int observation_purpose, int req_id, char *sensor)
+                        int observation_purpose, int req_id, char *sensor,
+                        int request_type)
 {
+    // Acquisition and Observation requests have the same format
+    // up until byte 54, where Acq has some different stuff inserted in
+
     char tmp_buf[32];
     //   0   16  Observation Request ID
     //  16    1  Blank
     snprintf(tmp_buf, 32, "AADN%011dD ", req_id);
     assert(strlen(tmp_buf)==17);
     fwrite(tmp_buf, sizeof(char), 17, fout);
-    //  17    2  Observation Request ID Blanch Number
+    //  17    2  Observation Request ID Branch Number
     //  19    1  Blank
     fwrite("** ", sizeof(char), 3, fout);
     //  20    3  Sensor Name: "PSM"
@@ -342,38 +346,85 @@ static void write_common(FILE *fout, long date, int path, double start_lat,
     snprintf(tmp_buf, 32, "%s ", sensor);
     assert(strlen(tmp_buf)==4);
     fwrite(tmp_buf, sizeof(char), 4, fout);
-    //  24    8  Observation Date (UTC)
-    //  32    1  Blank
-    snprintf(tmp_buf, 32, "%ld ", date);
-    assert(strlen(tmp_buf)==9);
-    fwrite(tmp_buf, sizeof(char), 9, fout);
-    //  33    5  Path Number
-    //  38    1  Blank
-    snprintf(tmp_buf, 32, "%5d ", path);
-    assert(strlen(tmp_buf)==6);
-    fwrite(tmp_buf, sizeof(char), 6, fout);
-    //  39    7  Observation Beginning Latitude
-    //  46    1  Blank
-    snprintf(tmp_buf, 32, "%7.3f ", start_lat);
-    assert(strlen(tmp_buf)==8);
-    fwrite(tmp_buf, sizeof(char), 8, fout);
-    //  47    1  Asc/Desc-ending Flag
-    //  48    1  Blank
-    snprintf(tmp_buf, 32, "%1d ", direction);
-    assert(strlen(tmp_buf)==2);
-    fwrite(tmp_buf, sizeof(char), 2, fout);
-    //  49    4  Observation Time
-    //  53    1  Blank
-    snprintf(tmp_buf, 32, "%4d ", duration);
-    assert(strlen(tmp_buf)==5);
-    fwrite(tmp_buf, sizeof(char), 5, fout);
-    //  54    3  Operation Mode
-    //  57    1  Blank
+
+    if (request_type == OBSERVATION_REQUEST) {
+        //  24    8  Observation Date (UTC)
+        //  32    1  Blank
+        snprintf(tmp_buf, 32, "%ld ", date);
+        assert(strlen(tmp_buf)==9);
+        fwrite(tmp_buf, sizeof(char), 9, fout);
+        //  33    5  Path Number
+        //  38    1  Blank
+        snprintf(tmp_buf, 32, "%5d ", path);
+        assert(strlen(tmp_buf)==6);
+        fwrite(tmp_buf, sizeof(char), 6, fout);
+        //  39    7  Observation Beginning Latitude
+        //  46    1  Blank
+        snprintf(tmp_buf, 32, "%7.3f ", start_lat);
+        assert(strlen(tmp_buf)==8);
+        fwrite(tmp_buf, sizeof(char), 8, fout);
+
+        //  47    1  Asc/Desc-ending Flag
+        //  48    1  Blank
+        snprintf(tmp_buf, 32, "%1d ", direction);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);        
+
+        //  49    4  Observation Time
+        //  53    1  Blank
+        snprintf(tmp_buf, 32, "%4d ", duration);
+        assert(strlen(tmp_buf)==5);
+        fwrite(tmp_buf, sizeof(char), 5, fout);
+    } else {
+        //  fields 7,9,11,13,15 are all *'s for r-t acq requests
+        fwrite("******** ***** ******* * **** ", sizeof(char), 25, fout);
+    }
+
+    if (request_type == ACQUISITION_REQUEST) {
+        //  54    4  Acquisition Mode ("REAL")
+        //  58    1  Blank
+        fwrite("REAL ", sizeof(char), 5, fout);
+
+        //  59    8  Acquisition Date (UTC) YYYYMMDD
+        //  67    1  Blank
+        snprintf(tmp_buf, 32, "%ld ", date);
+        assert(strlen(tmp_buf)==9);
+        fwrite(tmp_buf, sizeof(char), 9, fout);
+
+        //  68    5  Acquisition Path Number
+        //  73    1  Blank
+        snprintf(tmp_buf, 32, "%5d ", path);
+        assert(strlen(tmp_buf)==6);
+        fwrite(tmp_buf, sizeof(char), 6, fout);
+
+        //  74    7  Acquisition Start Latitude
+        //  81    1  Blank
+        snprintf(tmp_buf, 32, "%7.3f ", start_lat);
+        assert(strlen(tmp_buf)==8);
+        fwrite(tmp_buf, sizeof(char), 8, fout);
+        
+        //  82    1  Acquisition A/D: 0=asc, 1=desc.
+        //  83    1  Blank
+        snprintf(tmp_buf, 32, "%1d ", direction);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);        
+
+        //  84    4  Acquisition Time (NNNN)
+        //  88    1  Blank
+        snprintf(tmp_buf, 32, "%4d ", duration);
+        assert(strlen(tmp_buf)==5);
+        fwrite(tmp_buf, sizeof(char), 5, fout);
+    } else {
+        // obs requests don't have the above fields at all
+    }
+
+    //  54    3  Operation Mode (acq:  89 3)
+    //  57    1  Blank                 92 1)
     snprintf(tmp_buf, 32, "%s ", observation_mode);
     assert(strlen(tmp_buf)==4);
     fwrite(tmp_buf, sizeof(char), 4, fout);
-    //  58    2  Observation Purpose
-    //  60    1  Blank
+    //  58    2  Observation Purpose (acq:  93 2)
+    //  60    1  Blank                      95 1)
     snprintf(tmp_buf, 32, "%2d ", observation_purpose);
     assert(strlen(tmp_buf)==3);
     fwrite(tmp_buf, sizeof(char), 3, fout);
@@ -382,94 +433,228 @@ static void write_common(FILE *fout, long date, int path, double start_lat,
 static void write_prism(FILE *fout,
                         double prism_nadir_angle, double prism_forward_angle,
                         double prism_backward_angle, int prism_nadir_gain,
-                        int prism_forward_gain, int prism_backward_gain)
+                        int prism_forward_gain, int prism_backward_gain,
+                        int direction, int request_type)
 {
     char tmp_buf[32];
-    //  61    6  Angle Of Nadir View Image
-    //  67    1  Blank
-    if (meta_is_valid_double(prism_nadir_angle))
-        snprintf(tmp_buf, 32, "%6.2f ", prism_nadir_angle);
-    else
-        strcpy(tmp_buf, "****** ");
-    assert(strlen(tmp_buf)==7);
-    fwrite(tmp_buf, sizeof(char), 7, fout);
-    //  68    6  Angle Of Forward View Image
-    //  74    1  Blank
-    if (meta_is_valid_double(prism_forward_angle))
-        snprintf(tmp_buf, 32, "%6.2f ", prism_forward_angle);
-    else
-        strcpy(tmp_buf, "****** ");
-    assert(strlen(tmp_buf)==7);
-    fwrite(tmp_buf, sizeof(char), 7, fout);
-    //  75    6  Angle Of Backward View Image
-    //  81    1  Blank
-    if (meta_is_valid_double(prism_backward_angle))
-        snprintf(tmp_buf, 32, "%6.2f ", prism_backward_angle);
-    else
-        strcpy(tmp_buf, "****** ");
-    assert(strlen(tmp_buf)==7);
-    fwrite(tmp_buf, sizeof(char), 7, fout);
-    //  82    1  Gain (Nadir)
-    //  83    1  Blank
-    if (prism_nadir_gain == MAGIC_UNSET_INT)
-        strcpy(tmp_buf, "* ");
-    else
-        snprintf(tmp_buf, 32, "%d ", prism_nadir_gain);
-    assert(strlen(tmp_buf)==2);
-    fwrite(tmp_buf, sizeof(char), 2, fout);
-    //  84    1  Gain (Forward)
-    //  85    1  Blank
-    if (prism_forward_gain == MAGIC_UNSET_INT)
-        strcpy(tmp_buf, "* ");
-    else
-        snprintf(tmp_buf, 32, "%d ", prism_forward_gain);
-    assert(strlen(tmp_buf)==2);
-    fwrite(tmp_buf, sizeof(char), 2, fout);
-    //  86    1  Gain (Backward)
-    if (prism_backward_gain == MAGIC_UNSET_INT)
-        strcpy(tmp_buf, "*");
-    else
-        snprintf(tmp_buf, 32, "%d", prism_backward_gain);
-    assert(strlen(tmp_buf)==1);
-    fwrite(tmp_buf, sizeof(char), 1, fout);
+
+    if (request_type==OBSERVATION_REQUEST) {
+        //  61    6  Angle Of Nadir View Image
+        //  67    1  Blank
+        if (meta_is_valid_double(prism_nadir_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_nadir_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+        //  68    6  Angle Of Forward View Image
+        //  74    1  Blank
+        if (meta_is_valid_double(prism_forward_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_forward_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+        //  75    6  Angle Of Backward View Image
+        //  81    1  Blank
+        if (meta_is_valid_double(prism_backward_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_backward_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+        //  82    1  Gain (Nadir)
+        //  83    1  Blank
+        if (prism_nadir_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "* ");
+        else
+            snprintf(tmp_buf, 32, "%d ", prism_nadir_gain);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);
+        //  84    1  Gain (Forward)
+        //  85    1  Blank
+        if (prism_forward_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "* ");
+        else
+            snprintf(tmp_buf, 32, "%d ", prism_forward_gain);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);
+        //  86    1  Gain (Backward)
+        if (prism_backward_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "*");
+        else
+            snprintf(tmp_buf, 32, "%d", prism_backward_gain);
+        assert(strlen(tmp_buf)==1);
+        fwrite(tmp_buf, sizeof(char), 1, fout);
+    } else {
+        assert(request_type==ACQUISITION_REQUEST);
+        //  96    1   Compression Mode
+        //  97    1   Blank
+        fwrite("2 ", sizeof(char), 2, fout);
+
+        //  98    2   Number of Slot Information
+        fwrite(" 1", sizeof(char), 2, fout);
+    }
+
     //  87    1  HEX 0A
     tmp_buf[0] = 0x0A;
     fwrite(tmp_buf, sizeof(char), 1, fout);
+
+    // now write the slot info
+    if (request_type==ACQUISITION_REQUEST) {
+        //   0    7  Slot Change Begin Latitude
+        //           "*" is set in the case of first slot
+        //   7    1  Blank
+        fwrite("******* ", sizeof(char), 8, fout);
+
+        //   8    1  Ascending/Descending
+        //   9    1  Blank
+        snprintf(tmp_buf, 32, "%1d ", direction);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);        
+
+        //  10    6  Angle Of Nadir View Image
+        //  11    1  Blank
+        if (meta_is_valid_double(prism_nadir_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_nadir_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+
+        //  17    6  Angle Of Forward View Image
+        //  23    1  Blank
+        if (meta_is_valid_double(prism_forward_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_forward_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+
+        //  24    6  Angle Of Backward View Image
+        //  30    1  Blank
+        if (meta_is_valid_double(prism_backward_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", prism_backward_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+
+        //  31    1  Gain (Nadir)
+        //  32    1  Blank
+        if (prism_nadir_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "* ");
+        else
+            snprintf(tmp_buf, 32, "%d ", prism_nadir_gain);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);
+
+        //  33    1  Gain (Forward)
+        //  34    1  Blank
+        if (prism_forward_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "* ");
+        else
+            snprintf(tmp_buf, 32, "%d ", prism_forward_gain);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);
+
+        //  35    1  Gain (Backward)
+        if (prism_backward_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "*");
+        else
+            snprintf(tmp_buf, 32, "%d", prism_backward_gain);
+        assert(strlen(tmp_buf)==1);
+        fwrite(tmp_buf, sizeof(char), 1, fout);
+
+        //  87    1  HEX 0A
+        tmp_buf[0] = 0x0A;
+        fwrite(tmp_buf, sizeof(char), 1, fout);
+    }
 }
 
 static void write_avnir(FILE *fout, double avnir_pointing_angle,
-                        int avnir_gain, int avnir_exposure)
+                        int avnir_gain, int avnir_exposure,
+                        int direction, int request_type)
 {
     char tmp_buf[32];
-    //  61    6  Pointing Angle (degrees)
-    //  67    1  Blank
-    if (meta_is_valid_double(avnir_pointing_angle))
-        snprintf(tmp_buf, 32, "%6.2f ", avnir_pointing_angle);
-    else
-        strcpy(tmp_buf, "****** ");
-    assert(strlen(tmp_buf)==7);
-    fwrite(tmp_buf, sizeof(char), 7, fout);
-    //  68    4  Gain Status
-    //  72    1  Blank
-    if (avnir_gain == MAGIC_UNSET_INT)
-        strcpy(tmp_buf, "**** ");
-    else
-        snprintf(tmp_buf, 32, "%4d ", avnir_gain);
-    assert(strlen(tmp_buf)==5);
-    fwrite(tmp_buf, sizeof(char), 5, fout);
-    //  73    4  Exposure Status
-    if (avnir_exposure == MAGIC_UNSET_INT)
-        strcpy(tmp_buf, "****");
-    else
-        snprintf(tmp_buf, 32, "%4d", avnir_exposure);
-    assert(strlen(tmp_buf)==4);
-    fwrite(tmp_buf, sizeof(char), 4, fout);
-    //  77    1  HEX 0A
+
+    if (request_type==OBSERVATION_REQUEST) {
+        //  61    6  Pointing Angle (degrees)
+        //  67    1  Blank
+        if (meta_is_valid_double(avnir_pointing_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", avnir_pointing_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+        //  68    4  Gain Status
+        //  72    1  Blank
+        if (avnir_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "**** ");
+        else
+            snprintf(tmp_buf, 32, "%4d ", avnir_gain);
+        assert(strlen(tmp_buf)==5);
+        fwrite(tmp_buf, sizeof(char), 5, fout);
+        //  73    4  Exposure Status
+        if (avnir_exposure == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "****");
+        else
+            snprintf(tmp_buf, 32, "%4d", avnir_exposure);
+        assert(strlen(tmp_buf)==4);
+        fwrite(tmp_buf, sizeof(char), 4, fout);
+    } else {
+        assert(request_type==ACQUISITION_REQUEST);
+        //  96    2   Number of Slot Information
+        fwrite(" 1", sizeof(char), 2, fout);
+    }
+    //  77    1  HEX 0A   (Acq:   98   1)
     tmp_buf[0] = 0x0A;
     fwrite(tmp_buf, sizeof(char), 1, fout);
+
+    // now write the slot info
+    if (request_type==ACQUISITION_REQUEST) {
+        //   0    7  Slot Change Begin Latitude
+        //           "*" is set in the case of first slot
+        //   7    1  Blank
+        fwrite("******* ", sizeof(char), 8, fout);
+
+        //   8    1  Ascending/Descending
+        //   9    1  Blank
+        snprintf(tmp_buf, 32, "%1d ", direction);
+        assert(strlen(tmp_buf)==2);
+        fwrite(tmp_buf, sizeof(char), 2, fout);        
+
+        //  10    6  Pointing Angle (degrees)
+        //  16    1  Blank
+        if (meta_is_valid_double(avnir_pointing_angle))
+            snprintf(tmp_buf, 32, "%6.2f ", avnir_pointing_angle);
+        else
+            strcpy(tmp_buf, "****** ");
+        assert(strlen(tmp_buf)==7);
+        fwrite(tmp_buf, sizeof(char), 7, fout);
+        //  17    4  Gain Status
+        //  21    1  Blank
+        if (avnir_gain == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "**** ");
+        else
+            snprintf(tmp_buf, 32, "%4d ", avnir_gain);
+        assert(strlen(tmp_buf)==5);
+        fwrite(tmp_buf, sizeof(char), 5, fout);
+        //  22    4  Exposure Status
+        if (avnir_exposure == MAGIC_UNSET_INT)
+            strcpy(tmp_buf, "****");
+        else
+            snprintf(tmp_buf, 32, "%4d", avnir_exposure);
+        assert(strlen(tmp_buf)==4);
+        fwrite(tmp_buf, sizeof(char), 4, fout);
+
+        //  26    1  HEX 0A
+        tmp_buf[0] = 0x0A;
+        fwrite(tmp_buf, sizeof(char), 1, fout);
+    }
 }
 
-static void write_palsar(FILE *fout, int palsar_table_number)
+static void write_palsar(FILE *fout, int palsar_table_number, int request_type)
 {
     char tmp_buf[32];
     //  61    3  Table Number
@@ -490,32 +675,14 @@ static void strip_end_whitesp(char *s)
         *p-- = '\0';
 }
 
-void process(const char *csv_file, const char *req_file, int is_emergency,
-             int *req_id, long start_date_user, long end_date_user)
+void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
+                     int is_emergency, int *req_id,
+                     long start_date_user, long end_date_user,
+                     const char *type_code, const char *station_code,
+                     int request_type)
 {
-    printf("Process> %s -> %s\n", csv_file, req_file);
-
-    char req_type = is_emergency ? 'E' : 'W';
-
-    FILE *fin = fopen(csv_file, "r");
-    if (!fin) {
-        char buf[1024];
-        sprintf(buf, "Failed to open CSV file: %s\n", csv_file);
-        put_string_in_textview("output_textview", buf);
-        return;
-    }
-
+    // temporary spot for the read line
     char line[1024];
-
-    // read header line
-    fgets(line, 1024, fin);
-    strip_end_whitesp(line);
-    const char *expected_header =
-        "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
-        "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
-        "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
-        "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
-        "AVNIR_Exposure,PALSAR_Table_Number";
 
     // where we will put all the above, when processing a line
     char sensor[256];
@@ -537,16 +704,21 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     int avnir_exposure;
     int palsar_table_number;
 
-    if (strcmp(line, expected_header) != 0)
-    {
-        char buf[1024];
-        sprintf(buf, "CSV File header line differs from expected!\n\n"
-                     "Expected:\n%s\n\nGot:\n%s\n",
-            expected_header, line);
-        put_string_in_textview("output_textview", buf);
-        fclose(fin);
-        return;
-    }
+    // request code should be "REQ" or "RQT"
+    assert(strlen(type_code)==3);
+    if (request_type==OBSERVATION_REQUEST)
+        assert(strcmp(type_code, "REQ")==0);
+    else if (request_type==ACQUISITION_REQUEST)
+        assert(strcmp(type_code, "RQT")==0);
+    else
+        assert(0);
+
+    char req_type = is_emergency ? 'E' : 'W';
+
+    // station code should be "ASF_" or "AADN" or "MIAM" or ...
+    // don't get picky here, since we might add more later
+    // but the formatting will break if the length isn't exactly 4
+    assert(strlen(station_code)==4);
 
     // read in the whole file, so we can determine the number of requests, the
     // start date, and the end date.
@@ -558,7 +730,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         strip_end_whitesp(line);
 
         int valid =
-            parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
+            obs_parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
                 observation_mode, &observation_purpose, &prism_nadir_angle,
                 &prism_forward_angle, &prism_backward_angle, &prism_gain_nadir,
                 &prism_gain_forward, &prism_gain_backward, &avnir_pointing_angle,
@@ -591,7 +763,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         n_requests, first_date, last_date);
 
     // now, start working on the request file.
-    // first, get current date/time, to stamp the request file.  FIXME: UTC
+    // first, get current date/time, to stamp the request file.
     time_t t;
     t = time(NULL);
     char time_stamp[10];
@@ -663,7 +835,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     char tmp_buf[32];
 
     // Header Structure:
-    //   0   10   File Name: REQxnnnnnn
+    //   0   10   File Name: REQxnnnnnn (or RQTxnnnnnn)
     char *basename = get_basename(req_file);
     assert(strlen(basename)==10);
     fwrite(basename, sizeof(char), 10, fout);
@@ -672,11 +844,13 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     //  11    6   Fixed string: "ALOS  "
     //  17    1   Blank
     fwrite(" ALOS   ", sizeof(char), 8, fout);
-    //  18    4   Station Code (from): "AADN"
+    //  18    4   Station Code (from): e.g., "AADN"
     //  22    1   Blank
     //  23    4   EOC MMO Code (to): "HMMO"
     //  27    1   Blank
-    fwrite("AADN HMMO ", sizeof(char), 10, fout);
+    snprintf(tmp_buf, 32, "%s HMMO ", station_code);
+    assert(strlen(tmp_buf)==10);
+    fwrite(tmp_buf, sizeof(char), 10, fout);
     //  28    8   File Creation Date (UTC): YYYMMDD
     assert(strlen(date_stamp)==8);
     fwrite(date_stamp, sizeof(char), 8, fout);
@@ -689,7 +863,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     //  46    4   Length of Data Record: "****" ???
     //  50    1   Blank
     fwrite(" **** ", sizeof(char), 6, fout);
-    //  51    5   # of data recs (observation requests): NNNNN
+    //  51    5   # of data recs (obs/acq requests): NNNNN
     //  56    1   Blank
     snprintf(tmp_buf, 32, "%5d ", n_requests);
     assert(strlen(tmp_buf)==6);
@@ -722,7 +896,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     //   0   4   PRISM Request Type: "REQW" or "REQE" or "****"
     //   1   4   Blank
     if (n_prism > 0)
-        snprintf(tmp_buf, 32, "REQ%c ", req_type);
+        snprintf(tmp_buf, 32, "%s%c ", type_code, req_type);
     else
         strcpy(tmp_buf, "**** ");
     assert(strlen(tmp_buf)==5);
@@ -735,7 +909,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     //  11   4   AVNIR Request Type: "REQW" or "REQE" or "****"
     //  15   1   Blank
     if (n_avnir > 0)
-        snprintf(tmp_buf, 32, "REQ%c ", req_type);
+        snprintf(tmp_buf, 32, "%s%c ", type_code, req_type);
     else
         strcpy(tmp_buf, "**** ");
     assert(strlen(tmp_buf)==5);
@@ -748,7 +922,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     //  22   4   PALSAR Request Type: "REQW" or "REQE" or "****"
     //  26   1   Blank
     if (n_palsar > 0)
-        snprintf(tmp_buf, 32, "REQ%c ", req_type);
+        snprintf(tmp_buf, 32, "%s%c ", type_code, req_type);
     else
         strcpy(tmp_buf, "**** ");
     assert(strlen(tmp_buf)==5);
@@ -785,7 +959,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
             // first read in all of the line's items
             int valid =
-                parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
+                obs_parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
                     observation_mode, &observation_purpose, &prism_nadir_angle,
                     &prism_forward_angle, &prism_backward_angle, &prism_gain_nadir,
                     &prism_gain_forward, &prism_gain_backward, &avnir_pointing_angle,
@@ -795,10 +969,11 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                 if (i==0 && strcmp(sensor, "PSM")==0) {
                     ++written_prism;
                     write_common(fout, date, path, start_lat, direction, duration,
-                                 observation_mode, observation_purpose, *req_id, sensor);
+                                 observation_mode, observation_purpose, *req_id, sensor,
+                                 request_type);
                     write_prism(fout, prism_nadir_angle, prism_forward_angle,
                         prism_backward_angle, prism_gain_nadir, prism_gain_forward,
-                        prism_gain_backward);
+                        prism_gain_backward, direction, request_type);
                     *req_id += 1;
                 }
                 else if (i==1 && strcmp(sensor, "AV2")==0) {
@@ -808,9 +983,10 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                         first_avnir = FALSE;
                     }
                     write_common(fout, date, path, start_lat, direction, duration,
-                                 observation_mode, observation_purpose, *req_id, sensor);
+                                 observation_mode, observation_purpose, *req_id, sensor,
+                                 request_type);
                     write_avnir(fout, avnir_pointing_angle, avnir_gain,
-                        avnir_exposure);
+                        avnir_exposure, direction, request_type);
                     *req_id += 1;
                 }
                 else if (i==2 && strcmp(sensor, "PSR")==0) {
@@ -820,8 +996,9 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                         first_palsar = FALSE;
                     }
                     write_common(fout, date, path, start_lat, direction, duration,
-                                 observation_mode, observation_purpose, *req_id, sensor);
-                    write_palsar(fout, palsar_table_number);
+                                 observation_mode, observation_purpose, *req_id, sensor,
+                                 request_type);
+                    write_palsar(fout, palsar_table_number, request_type);
                     *req_id += 1;
                 }
             }
@@ -842,9 +1019,9 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     if (written_prism != n_prism)
         printf(" *** Incorrect prism count: %d <-> %d\n", n_prism, written_prism);
     if (written_avnir != n_avnir)
-        printf(" *** Incorrect prism count: %d <-> %d\n", n_prism, written_prism);
+        printf(" *** Incorrect avnir count: %d <-> %d\n", n_avnir, written_avnir);
     if (written_palsar != n_palsar)
-        printf(" *** Incorrect prism count: %d <-> %d\n", n_prism, written_prism);
+        printf(" *** Incorrect palsar count: %d <-> %d\n", n_palsar, written_palsar);
     if (written_prism + written_avnir + written_palsar != n_requests)
         printf(" *** Incorrect total record count: %d+%d+%d != %d\n",
             written_prism, written_avnir, written_palsar, n_requests);
@@ -853,8 +1030,22 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     if (check_size)
     {
         // ensure output size file was correct
-        int expected_size = // header + descrip + per data recs
-            128 + 33 + n_prism*88 + n_avnir*78 + n_palsar*67;
+        int expected_size;
+        
+        if (request_type == OBSERVATION_REQUEST)
+            expected_size = // header + descrip + per data recs
+                128 + 33 + n_prism*88 + n_avnir*78 + n_palsar*67;
+        else if (request_type == ACQUISITION_REQUEST)
+            expected_size =
+                128 + 33 + // header + descrip
+                    n_prism*(101 + 37) + // regular + slot
+                    n_avnir*(99 + 27) + // regular + slot
+                    n_palsar*102; // no slot rec
+        else {
+            // impossible!!
+            printf("Bad request type: %d\n", request_type);
+            assert(0);
+        }
 
         if (expected_size < 32768) {
             char buf[32768];
@@ -878,6 +1069,24 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         settings_set_end_date(last_date);
 }
 
+void obs_process(FILE *fin, const char *csv_file, const char *req_file,
+                 int is_emergency, int *req_id, long start_date_user,
+                 long end_date_user, const char *station_code)
+{
+    acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
+        start_date_user, end_date_user, "REQ", station_code,
+        OBSERVATION_REQUEST);
+}
+
+void acq_process(FILE *fin, const char *csv_file, const char *req_file,
+                 int is_emergency, int *req_id, long start_date_user, 
+                 long end_date_user, const char *station_code)
+{
+    acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
+        start_date_user, end_date_user, "RQT", station_code,
+        ACQUISITION_REQUEST);
+}
+
 void gui_process(int for_real)
 {
     if (block_processing)
@@ -895,7 +1104,8 @@ void gui_process(int for_real)
                 int req_id = settings_get_next_req_id();
                 char *outfile = get_output_file();
                 process(csv_file, outfile, settings_get_is_emergency(), &req_id,
-                    settings_get_start_date(), settings_get_end_date());
+                    settings_get_start_date(), settings_get_end_date(), 
+                    settings_get_request_type());
                 put_file_in_textview(outfile, "output_textview");
                 if (for_real) {
                     // update request num, id!
@@ -917,4 +1127,149 @@ void gui_process(int for_real)
 SIGNAL_CALLBACK void on_generate_button_clicked(GtkWidget *w)
 {
     gui_process(TRUE);
+}
+
+void process(const char *csv_file, const char *req_file, int is_emergency,
+             int *req_id, long start_date_user, long end_date_user,
+             int request_type)
+{
+    printf("Process> %s -> %s\n", csv_file, req_file);
+
+    FILE *fin = fopen(csv_file, "r");
+    if (!fin) {
+        char buf[1024];
+        sprintf(buf, "Failed to open CSV file: %s\n", csv_file);
+        put_string_in_textview("output_textview", buf);
+        return;
+    }
+
+    const char *obs_expected_header =
+        "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
+        "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
+        "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
+        "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
+        "AVNIR_Exposure,PALSAR_Table_Number";
+
+    const char *acq_expected_header =
+        "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
+        "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
+        "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
+        "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
+        "AVNIR_Exposure,PALSAR_Table_Number";
+
+    const char *l0_expected_header =
+        "Downlink Segment Number,Level 0 Data Code";
+
+    char line[1024];
+
+    // read header line
+    fgets(line, 1024, fin);
+    strip_end_whitesp(line);
+
+    if (request_type == OBSERVATION_REQUEST) {
+        if (strcmp(line, obs_expected_header) == 0) {
+            printf("Processing as an Observation Request.\n");
+
+            // process an observation request
+            obs_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user,
+                settings_get_station_code());
+        } else {
+            // they told it was an observation request -- clearly, not.
+            char buf[1024];
+            sprintf(buf, "CSV File header line differs from expected!\n\n"
+                        "Expected Observation Request Header String:\n"
+                        "  %s\n"
+                        "Got:\n%s\n",
+                obs_expected_header, line);
+
+            put_string_in_textview("output_textview", buf);
+
+            fclose(fin);
+            return;
+        }
+    }
+    else if (request_type == ACQUISITION_REQUEST) {
+        if (strcmp(line, acq_expected_header) == 0) {
+            printf("Processing as an Acquisition Request.\n");
+
+            // process an acquisition request
+            acq_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user,
+                settings_get_station_code());
+        } else {
+            // they told it was an acquisition request -- clearly, not.
+            char buf[1024];
+            sprintf(buf, "CSV File header line differs from expected!\n\n"
+                        "Expected Acqusition Request Header String:\n"
+                        "  %s\n"
+                        "Got:\n%s\n",
+                acq_expected_header, line);
+
+            put_string_in_textview("output_textview", buf);
+
+            fclose(fin);
+            return;
+        }
+    }
+    else if (request_type == ON_DEMAND_LEVEL_0) {
+        if (strcmp(line, acq_expected_header) == 0) {
+
+        } else {
+            char buf[1024];
+            sprintf(buf, "CSV File header line differs from expected!\n\n"
+                        "Expected On-Demand Level 0 Header String:\n"
+                        "  %s\n"
+                        "Got:\n%s\n",
+                l0_expected_header, line);
+
+            put_string_in_textview("output_textview", buf);
+
+            fclose(fin);
+            return;
+        }
+    }
+    else if (request_type == UNSELECTED_REQUEST_TYPE) {
+        // request type needs to be figured out from the header, if possible
+        if (strcmp(line, obs_expected_header) == 0) {
+            printf("Processing as an Observation Request.\n");
+
+            obs_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user,
+                settings_get_station_code());
+        }
+        else if (strcmp(line, acq_expected_header) == 0) {
+            printf("Processing as an Acquisition Request.\n");
+
+            acq_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user,
+                settings_get_station_code());
+        } 
+        else if (strcmp(line, l0_expected_header) == 0) {
+
+        }
+        else {
+            // couldn't figure out what this file is, from the header!
+            char buf[1024];
+            sprintf(buf, "CSV File header line differs from expected!\n\n"
+                        "Expected one of these:\n"
+                        "  Observation: %s\n"
+                        "  Acquisition: %s\n"
+                        "  Level 0: %s\n\n"
+                        "Got:\n%s\n",
+                obs_expected_header, acq_expected_header, l0_expected_header, line);
+            put_string_in_textview("output_textview", buf);
+
+            fclose(fin);
+            return;
+        }
+    }
+    else {
+        // this should never happen
+        char buf[1024];
+        sprintf(buf, "Unexpected request type %d!\n", request_type);
+        put_string_in_textview("output_textview", buf);
+        fclose(fin);
+        return;
+    }
 }

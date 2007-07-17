@@ -24,6 +24,11 @@
 #  endif
 #endif
 
+#define UNSELECTED_REQUEST_TYPE 0
+#define OBSERVATION_REQUEST 1
+#define ACQUISITION_REQUEST 2
+#define ON_DEMAND_LEVEL_0 3
+
 /********************************** Settings ********************************/
 typedef struct
 {
@@ -31,6 +36,7 @@ typedef struct
     char *output_dir;
     int req_num;
     int req_id;
+    char *station_code;
 }
 Settings;
 
@@ -78,6 +84,8 @@ long settings_get_start_date(void);
 long settings_get_end_date(void);
 void settings_set_start_date(long l);
 void settings_set_end_date(long l);
+int settings_get_request_type(void);
+const char *settings_get_station_code(void);
 
 /* csv_list.c */
 void populate_csvs(void);
@@ -86,7 +94,7 @@ void alert(const char *s);
 
 /* process.c */
 void process(const char *csv_file, const char *req_file, int is_emergency,
-             int *req_id, long start_date, long end_date);
+             int *req_id, long start_date, long end_date, int request_type);
 void gui_process(int for_real);
 
 /* output.c */

@@ -8,6 +8,7 @@ Settings *settings_new()
     s->output_dir = NULL;
     s->req_num = 1;
     s->req_id = 1;
+    s->station_code = NULL;
     return s;
 }
 
@@ -15,6 +16,7 @@ void settings_free(Settings *s)
 {
     if (s->csv_dir) FREE(s->csv_dir);
     if (s->output_dir) FREE(s->output_dir);
+    if (s->station_code) FREE(s->station_code);
     FREE(s);
 }
 
@@ -65,6 +67,7 @@ Settings *settings_load()
                 read_string_param(buf, "output directory", &s->output_dir);
                 read_int_param(buf, "next request number", &s->req_num);
                 read_int_param(buf, "next request id", &s->req_id);
+                read_string_param(buf, "station code", &s->station_code);
             }
             FCLOSE(fp);
         } else {
@@ -78,6 +81,9 @@ Settings *settings_load()
 
     if (s->req_num < 1) s->req_num = 1;
     if (s->req_id < 1) s->req_id = 1;
+
+    if (!s->station_code)
+        s->station_code = STRDUP("AADN");
 
     return s;
 }
@@ -131,7 +137,7 @@ void settings_save(Settings *s)
         strcpy(new_sav_txt, "");
         int len=1024;
         int wrote_csv=FALSE, wrote_output=FALSE, wrote_req_num=FALSE,
-            wrote_req_id=FALSE;
+            wrote_req_id=FALSE, wrote_station_code=FALSE;
         FILE *fp = FOPEN(sav_file, "r");
         if (!fp) {
             message_box("Error opening output file!\n");
@@ -156,6 +162,10 @@ void settings_save(Settings *s)
                 add_to_text(&new_sav_txt, &len,
                     "next request id = %d\r\n", s->req_id);
                 wrote_req_id = TRUE;
+            } else if (s->station_code && matches(buf, "station code")) {
+                add_to_text(&new_sav_txt, &len,
+                    "station code = %s\r\n", s->station_code);
+                wrote_station_code = TRUE;
             } else {
                 add_to_text(&new_sav_txt, &len, "%s", buf);
             }
@@ -164,21 +174,23 @@ void settings_save(Settings *s)
 
         if (s->csv_dir && !wrote_csv)
             add_to_text(&new_sav_txt, &len,
-                "csv directory = %s\n", s->csv_dir);
+                "csv directory = %s\r\n", s->csv_dir);
         if (s->output_dir && !wrote_output)
             add_to_text(&new_sav_txt, &len,
-                "output directory = %s\n", s->output_dir);
+                "output directory = %s\r\n", s->output_dir);
         if (!wrote_req_num && s->req_num > 1)
             add_to_text(&new_sav_txt, &len,
-                "next request number = %d\n", s->req_num);
+                "next request number = %d\r\n", s->req_num);
         if (!wrote_req_id && s->req_id > 1)
             add_to_text(&new_sav_txt, &len,
-                "next request id = %d\n", s->req_id);
+                "next request id = %d\r\n", s->req_id);
+        if (s->station_code && !wrote_station_code)
+            add_to_text(&new_sav_txt, &len,
+                "station_code = %s\r\n", s->station_code);
 
         fp = FOPEN(sav_file, "w");
         fprintf(fp, "%s", new_sav_txt);
         FCLOSE(fp);
-        free(sav_file);
     } else {
         sav_file = MALLOC(sizeof(char)*(strlen(get_asf_share_dir())+32));
         sprintf(sav_file, "%s/req_settings.txt", get_asf_share_dir());
@@ -190,9 +202,11 @@ void settings_save(Settings *s)
             fprintf(fp, "output directory = %s\r\n", s->output_dir);
         fprintf(fp, "next request number = %d\r\n", s->req_num);
         fprintf(fp, "next request id = %d\r\n", s->req_id);
+        if (s->output_dir)
+            fprintf(fp, "station code = %s\r\n", s->station_code);
         FCLOSE(fp);
-        free(sav_file);
     }
+    free(sav_file);
 }
 
 static char *mkstr(const char *s)
@@ -211,6 +225,7 @@ Settings *settings_new_from_gui()
     s->output_dir = settings_get_output_dir();
     s->req_num = atoi(get_string_from_entry("next_request_number_entry"));
     s->req_id = atoi(get_string_from_entry("next_request_id_entry"));
+    s->station_code = STRDUP(settings_get_station_code());
 
     return s;
 }
@@ -287,6 +302,23 @@ int settings_get_is_emergency()
 {
     GtkWidget *w = get_widget_checked("emergency_checkbutton");
     return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
+}
+
+int settings_get_request_type()
+{
+    GtkWidget *w = get_widget_checked("request_type_combobox");
+    return gtk_combo_box_get_active(GTK_COMBO_BOX(w));
+}
+
+const char *settings_get_station_code()
+{
+    static char *station_code=NULL;
+    if (!station_code) {
+        Settings *s = settings_load();
+        station_code = STRDUP(s->station_code);
+        settings_free(s);
+    }
+    return station_code;
 }
 
 long settings_get_start_date()
