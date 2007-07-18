@@ -71,7 +71,7 @@ static const char * detect_csv_assoc()
             char tmp[1024];
             while (fgets(tmp, 1024, cfg) != NULL) {
                 if (strncmp_case(tmp, "CSV,", 4) == 0) {
-                    csv_app = STRDUP(tmp);
+                    csv_app = STRDUP(tmp+4);
                     printf("CSV Application from config file: %s\n", csv_app);
                 }
             }
