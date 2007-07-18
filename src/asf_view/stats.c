@@ -205,6 +205,9 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
 
         free(gsdata);
     }
+    else {
+	asfPrintError("Unexpected data type: %d!\n", data_ci->data_type);
+    }
 
     return bdata;
 }
@@ -292,7 +295,8 @@ static void pop_hist()
     GtkWidget *img = get_widget_checked("histogram_image");
 
     GdkPixbuf *old_pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
-    g_object_unref(old_pb);
+    if (old_pb)
+        g_object_unref(old_pb);
 
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 
@@ -316,7 +320,8 @@ int fill_stats()
     GtkWidget *img = get_widget_checked("histogram_scale_image");
 
     GdkPixbuf *old_pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
-    g_object_unref(old_pb);
+    if (old_pb)
+        g_object_unref(old_pb);
 
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 
