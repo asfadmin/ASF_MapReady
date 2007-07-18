@@ -1121,7 +1121,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->param.ps.is_north_pole=1;
        projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
        projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;     }
-     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0) {
+     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 ||
+              strncmp(mpdr->mpdesig, "PS-SSM/I", 8) == 0)
+     {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic: radarsat era.*/
        projection->param.ps.slat=mpdr->upslat;
        projection->param.ps.slon=mpdr->upslong;
@@ -1190,7 +1192,8 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
          projection->datum = ITRF97_DATUM;
        }
      }
-     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0)
+     else if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 ||
+              strncmp(mpdr->mpdesig, "PS-SSM/I", 8) == 0)
      {
        projection->spheroid = HUGHES_SPHEROID;
        projection->datum = HUGHES_DATUM;
@@ -1200,7 +1203,8 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->datum = WGS84_DATUM; // A best guess ...WGS66 is a better fit but not well supported
      }
 
-     if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0)
+     if (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 ||
+         strncmp(mpdr->mpdesig, "PS-SSM/I", 8) == 0)
      {
        projection->re_major = HUGHES_SEMIMAJOR;
        projection->re_minor = HUGHES_SEMIMAJOR - (1.0 / HUGHES_INV_FLATTENING) * HUGHES_SEMIMAJOR;
