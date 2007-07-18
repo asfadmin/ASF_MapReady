@@ -20,6 +20,7 @@ build_stamp:
 	tar xvf $(TARFILE)
 	rm -f $(TARFILE)
 	(	cd $(UNPACK_DIR) ; \
+		patch pngset.c ../pngset.patch ; \
 		LDFLAGS="-L$(LIB_DIR)" \
 		CFLAGS="-I$(INCLUDE_DIR)" \
 		./configure --prefix=$(ROOT_DIR) ; \
