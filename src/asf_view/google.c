@@ -3,6 +3,7 @@
 #ifdef win32
 #define BYTE __byte
 #include "asf.h"
+#include "asf_meta.h"
 #undef BYTE
 #include <windows.h>
 #include <shellapi.h>
@@ -17,6 +18,11 @@
 #undef POINT
 
 #include <png.h>
+
+#ifndef png_jmpbuf
+#  define png_jmpbuf (png_ptr)    ((png_ptr)->jmpbuf)
+#endif
+
 #include <gdk/gdk.h>
 
 #ifdef win32
