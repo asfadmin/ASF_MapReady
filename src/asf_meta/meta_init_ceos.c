@@ -633,6 +633,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   strncpy(buf, &dssr->product_id[11], 4);
   buf[4]=0;
   sscanf(buf, "%d", &meta->general->frame);
+  if (dssr->time_dir_lin[0] == 'A')
+    meta->general->orbit_direction = 'A';
+  else if (dssr->time_dir_lin[0] == 'D')
+    meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
 
   firstTime = get_alos_firstTime(dataName[0]);
