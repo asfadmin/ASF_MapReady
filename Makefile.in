@@ -15,8 +15,8 @@ include make_support/system_rules
 MODULES = \
 	src/asf \
 	src/libasf_proj \
-	src/libasf_ardop \
 	src/asf_meta \
+	src/libasf_ardop \
 	src/asf_fft \
 	src/libasf_raster \
 	src/libasf_vector \
