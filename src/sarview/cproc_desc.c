@@ -152,8 +152,8 @@ void image_describePixel(char *dest,double x,double y)
                     double s,t;
                     meta_get_timeSlantDop(meta, y, x, &t, &s, NULL);
                     sprintf(&dest[strlen(dest)],
-                            "Incid: %f (deg), Slant: %f m\n",
-                            R2D*meta_incid(meta, y, x), s);
+                            "Incid: %f , %f Slant: %f m\n",
+                            R2D*meta_incid(meta, y, x), R2D*meta_look(meta, y, x), s);
                 }
 	}
 }
