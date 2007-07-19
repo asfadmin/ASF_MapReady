@@ -1,7 +1,6 @@
 #include <assert.h>
-
-#include <asf_meta.h>
 #include <spheroids.h>
+#include <libasf_proj.h>
 
 // Fill in major and minor with the axes lenghts of spheroid.
 void

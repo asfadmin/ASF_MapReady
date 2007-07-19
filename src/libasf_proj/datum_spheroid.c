@@ -1,7 +1,6 @@
 #include <assert.h>
-
 #include <asf.h>
-#include <asf_meta.h>
+#include <libasf_proj.h>
 
 /* Return the spheroid generally associated with a given datum.
    Unfortunately, in the larger world, a given datum isn't really
