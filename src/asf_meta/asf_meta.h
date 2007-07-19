@@ -27,6 +27,8 @@
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
 #include "asf_complex.h"
+#include "libasf_proj.h"
+#include "asf.h"
 
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
@@ -84,73 +86,6 @@ typedef enum {
   IMAGE,
   MASK
 } image_data_type_t;
-
-typedef enum {
-  UNIVERSAL_TRANSVERSE_MERCATOR,
-  POLAR_STEREOGRAPHIC,
-  ALBERS_EQUAL_AREA,
-  LAMBERT_CONFORMAL_CONIC,
-  LAMBERT_AZIMUTHAL_EQUAL_AREA,
-  STATE_PLANE,
- /* along-track/across-track is ScanSAR specific projection */
-  SCANSAR_PROJECTION,
-  /* A simple "projection" in which the image pixels are arranged such
-     that latitude and longitude lines form an regular rectangular
-     grid over the image.  */
-  LAT_LONG_PSEUDO_PROJECTION,
-  UNKNOWN_PROJECTION
-} projection_type_t;
-
-typedef enum {
-  BESSEL_SPHEROID,
-  CLARKE1866_SPHEROID,
-  CLARKE1880_SPHEROID,
-  GEM6_SPHEROID,
-  GEM10C_SPHEROID,
-  GRS1980_SPHEROID,
-  INTERNATIONAL1924_SPHEROID,
-  INTERNATIONAL1967_SPHEROID,
-  WGS72_SPHEROID,
-  WGS84_SPHEROID,
-  HUGHES_SPHEROID,
-  UNKNOWN_SPHEROID
-} spheroid_type_t;
-
-typedef enum {
-  EGM96_DATUM,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
-  ED50_DATUM,    /* European Datum 1950 (International 1924) */
-  ETRF89_DATUM,  /* European Terrestrial Reference Frame 1989 (WGS84) */
-  ETRS89_DATUM,  /* European Terrestrial Reference System 1989 (GRS 1980) */
-  ITRF97_DATUM,  /* International Terrestrial Reference Frame (GRS 1980) */
-  NAD27_DATUM,   /* North American Datum 1927 (Clarke 1866) */
-  NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
-  WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
-  WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
-  HUGHES_DATUM,
-  UNKNOWN_DATUM
-} datum_type_t;
-
-/* Return the spheroid generally associated with a given datum.
-   Unfortunately, in the larger world, a given datum isn't really
-   always necessarily associated with a particular spheroid.  For the
-   purposes of the data on the insdie of the ASF tools world, however,
-   we consider the correspondence to be as described in this function.
-   So be sure to test on import if this correspondence is really
-   true!  
-
-   This function fails if given a datum it hasn't been taught about
-   yet.  */
-spheroid_type_t
-datum_spheroid (datum_type_t datum);
-
-/* Return the semimajor and semiminor axes lengths of spheroid in
-   meters.  Fails for spheroids it hasn't been taught about yet.  */
-void
-spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor);
-
-/* String identifying the datum */
-const char *datum_toString(datum_type_t);
-const char *spheroid_toString(spheroid_type_t spheroid);
 
 /********************************************************************
  * meta_general: General Radio Detection And Ranging parameters
@@ -297,72 +232,8 @@ typedef struct {
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
  */
- /* Albers Conical Equal Area. */
-  typedef struct {
-    double std_parallel1;     /* First standard parallel           */
-    double std_parallel2;     /* Second standard parallel          */
-    double center_meridian;   /* Longitude of center meridian      */
-    double orig_latitude;     /* Latitude of the projection origin */
-    double false_easting;     /* False Easting                     */
-    double false_northing;    /* False Northing                    */
-  } proj_albers;
- /* Along-track/cross-track.*/
-  typedef struct {
-    double rlocal;              /* Radius of earth at scene center (meters)*/
-    double alpha1,alpha2,alpha3;/* Rotation angles, in degrees             */
-  } proj_atct;
- /* Lambert Azimuthal Equal Area. */
-  typedef struct {
-    double center_lon;        /* Longitude at center of projection */
-    double center_lat;        /* Latitude at center of projection  */
-    double false_easting;     /* False Easting                     */
-    double false_northing;    /* False Northing                    */
-  } proj_lamaz;
- /* Lambert Conformal Conic.*/
-  typedef struct {
-    double plat1;             /* First standard parallel  */
-    double plat2;             /* Second standard parallel */
-    double lat0;              /* Latitude of Origin       */
-    double lon0;              /* Center Meridian          */
-    double false_easting;     /* False Easting            */
-    double false_northing;    /* False Northing           */
-    double scale_factor;      /* Scale Factor             */
-  } proj_lamcc;
- /* Polar Sterographic.  */
-  typedef struct {
-    double slat;              /* Standard Parallel 1                        */
-    double slon;              /* Center Meridian                            */
-    int is_north_pole;        /* 1 if centered on North Pole, 0 if South    */
-    double false_easting;     /* False Easting                              */
-    double false_northing;    /* False Northing                             */
-  } proj_ps;
- /* Universal Transverse Mercator.*/
-  typedef struct {
-    int zone;                 /* Zone                                       */
-    double false_easting;     /* False Easting                              */
-    double false_northing;    /* False Northing                             */
-    double lat0;              /* Latitude                                   */
-    double lon0;              /* Longitude                                  */
-    double scale_factor;      /* Scale factor: 0.9996 by definition         */
-  } proj_utm;
- /* State Plane. */
-  typedef struct {
-    int zone;
-  } proj_state;
-/* For lat long pseudo projected images, no additional parameters are
-   required, so they don't have their own structure type.  */
+// these guys have moved to libasf_proj.h
 
- /* Projection parameters for the projection in use.  */
-  typedef union {
-    proj_albers   albers;   /* Albers Conical Equal Area     */
-    proj_atct     atct;     /* Along-track/cross-track       */
-    proj_lamaz    lamaz;    /* Lambert Azimuthal Equal Area  */
-    proj_lamcc    lamcc;    /* Lambert Conformal Conic       */
-    proj_ps       ps;       /* Polar Sterographic            */
-    proj_utm      utm;      /* Universal Transverse Mercator */
-    proj_state    state;    /* State Plane                   */
-  } param_t;
-typedef param_t project_parameters_t;
 typedef struct {
   projection_type_t type;  /* Projection types */
   double startX,startY;  /* Projection coordinates of top, lefthand corner.*/
@@ -791,5 +662,49 @@ int get_partial_float_lines(FILE *file, meta_parameters *meta,
 			    int sample_number, int num_samples_to_get,
 			    float *dest);
 
+/***************************************************************************
+  General conversion functions between projection coordinates and geographic
+  coordinates.
+***************************************************************************/
+void proj_to_latlon(meta_projection *proj, double x, double y, double z,
+		    double *lat, double *lon, double *height);
+void alos_to_latlon(meta_parameters *meta,
+		    double xSample, double yLine, double z,
+		    double *lat_d, double *lon, double *height);
+void scan_to_latlon(meta_parameters *meta,
+		    double x, double y, double z,
+		    double *lat, double *lon, double *height);
+void latlon_to_proj(meta_projection *proj, char look_dir,
+		    double lat, double lon, double height,
+                    double *x, double *y, double *z);
+
+void latLon2proj(double lat, double lon, double elev, char *projFile, 
+		 double *projX, double *projY);
+
+void fill_in_utm(double lat, double lon, project_parameters_t *pps);
+void latLon2UTM(double lat, double lon, double elev,
+                double *projX, double *projY);
+void latLon2UTM_zone(double lat, double lon, double elev, int zone,
+                     double *projX, double *projY);
+void UTM2latLon(double projX, double projY, double elev, int zone,
+                double *lat, double *lon);
+
+/***************************************************************************
+  Functions for dealing with projection parameter files.
+***************************************************************************/
+void read_proj_file(char * file, project_parameters_t * pps,
+		    projection_type_t * proj_type);
+
+/***************************************************************************
+  Misc projection-related functions
+***************************************************************************/
+void to_degrees(projection_type_t pt, project_parameters_t * pps);
+void to_radians(projection_type_t pt, project_parameters_t * pps);
+
+/*
+   Returns nonzero if projection parameters exist and are populated
+   with map-projected values (not ScanSAR and not pseudo lat/lon)
+*/
+int is_map_projected(meta_parameters *md);
 
 #endif

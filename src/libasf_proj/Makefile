@@ -6,18 +6,16 @@ CFLAGS += $(GLIB_CFLAGS)
 
 # libs for the test program
 LIBS =	$(PROJ_LIBS) \
-	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	-lm
 
-OBJS =  read_proj_file.o \
-	is_map_projected.o \
-	project.o
+OBJS = project.o spheroid_axes_lengths.o datum_spheroid.o
 
 all: build_only
 	cp libasf_proj.a $(LIBDIR)
 	cp libasf_proj.h $(ASF_INCLUDE_DIR)
+	cp spheroids.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)

@@ -66,7 +66,6 @@ LAS_OBJS = allocbuf.o \
 	doopen.o \
 	lasIO.o  \
 	packed_deg.o \
-	spheroid_axes_lengths.o \
 	squeeze.o
 
 OBJS =  $(LEX_YACC_OBJS) \
@@ -77,7 +76,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	code_ceos.o \
 	coniFetch.o \
 	dateUtil.o \
-	datum_spheroid.o \
 	earth_radius2datum.o \
 	err_die.o \
 	fixed2gei.o \
@@ -105,6 +103,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta_init_ceos.o \
 	meta_init_stVec.o \
 	meta_is_valid.o \
+	meta_project.o \
 	meta2ddr.o \
 	meta2envi.o \
 	meta2esri.o \
@@ -125,6 +124,8 @@ OBJS =  $(LEX_YACC_OBJS) \
 	yaw2doppler.o \
 	xpix_ypix.o \
 	pp_corrected_vals.o \
+	read_proj_file.o \
+	is_map_projected.o \
 	$(LAS_OBJS)
 
 all: asf_meta
