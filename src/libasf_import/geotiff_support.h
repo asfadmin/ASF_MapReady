@@ -21,6 +21,8 @@ typedef struct {
   int volume_tiff;
 } tiff_type_t;
 
+#include "asf_meta.h"
+
 int PCS_2_UTM (short pcs, char *hem, datum_type_t *datum, unsigned long *zone);
 void copy_proj_parms(meta_projection *dest, meta_projection *src);
 int get_tiff_data_config(TIFF *tif,

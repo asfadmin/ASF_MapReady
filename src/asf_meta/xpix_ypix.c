@@ -1,4 +1,5 @@
 #include "asf.h"
+#include "asf_meta.h"
 #include "geolocate.h"
 
 #ifndef pi

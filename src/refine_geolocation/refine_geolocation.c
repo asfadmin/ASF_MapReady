@@ -118,6 +118,7 @@
 
 #include <stdio.h>
 #include <asf.h>
+#include <asf_meta.h>
 #include <asf_terrcorr.h>
 #include <asf_license.h>
 #include <asf_contact.h>

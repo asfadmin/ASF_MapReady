@@ -6,6 +6,7 @@
 
 #include <fftw3.h>
 #include <asf_complex.h>
+#include <asf_meta.h>
 
 typedef struct {
         double Bn;       /* Normal Baseline: perpendicular to look direction.*/

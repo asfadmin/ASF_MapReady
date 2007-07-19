@@ -9,6 +9,8 @@ testing to see if the files actually exist
 #ifndef _GET_CEOS_NAMES_H_
 #define _GET_CEOS_NAMES_H_
 
+#include "asf_meta.h"
+
 /* Useful stuff for meta initialization from CEOS metadata */
 typedef struct {
   struct dataset_sum_rec dssr;

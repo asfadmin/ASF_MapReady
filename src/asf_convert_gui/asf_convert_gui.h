@@ -15,6 +15,7 @@
 #include <glib/gprintf.h>
 
 #include "asf.h"
+#include "asf_meta.h"
 
 #define THUMB_SIZE 48
 #define THUMB_SIZE_BIG 512

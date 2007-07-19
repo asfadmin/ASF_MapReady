@@ -31,6 +31,7 @@ ALGORITHM
 
 ALGORITHM REFERENCES	none
 *******************************************************************************/
+#include "asf_meta.h"
 #include "las.h"
 #include "diskio.h"
 

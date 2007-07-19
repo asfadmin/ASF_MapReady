@@ -16,6 +16,7 @@
 #define __IFM_H
 
 #include "asf.h"          /* for FILE * variable type */
+#include "asf_meta.h"
 #include "asf_insar.h"    /* for Complex Type declarations */
 
 typedef struct {

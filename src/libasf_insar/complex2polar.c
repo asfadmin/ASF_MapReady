@@ -1,4 +1,5 @@
 #include "asf.h"
+#include "asf_meta.h"
 
 int complex2polar(char *cpxfile, char *ampfile, char *phsfile)
 {

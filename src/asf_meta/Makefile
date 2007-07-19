@@ -90,6 +90,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	get_stf_names.o \
 	heading.o \
 	interp_stVec.o \
+	ioLine.o \
 	latLon2timeSlant.o \
 	lzFetch.o \
 	meta_complex2polar.o \

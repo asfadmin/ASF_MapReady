@@ -1763,14 +1763,19 @@ int apply_settings_from_config_file(char *configFile)
     /* The config file contains the basename -- we must pass the actual
      * data file name (CEOS), or leader file name (ALOS) to add_to_files_list
      */
-    char *metaName = MALLOC(sizeof(char)*(strlen(cfg->general->in_name)+25));
+    char **metaName;
+    int ii, trailer;
+    metaName = (char **) MALLOC(2*sizeof(char *));
+    for (ii=0; ii<2; ii++)
+      metaName[ii] = MALLOC(sizeof(char)*(strlen(cfg->general->in_name)+25));
+
     ceos_metadata_ext_t ext_type =
-        get_ceos_metadata_name(cfg->general->in_name, metaName);
+        get_ceos_metadata_name(cfg->general->in_name, metaName, &trailer);
 
     if (ext_type == CEOS_LED)
     {
         // alos -- pass in metadata name
-        add_to_files_list_iter(metaName, &iter);
+        add_to_files_list_iter(metaName[0], &iter);
     }
     else
     {
@@ -1780,7 +1785,7 @@ int apply_settings_from_config_file(char *configFile)
         for (i=0; i<MAX_BANDS; ++i)
             dataNames[i] = MALLOC(sizeof(char)*256);
 
-        add_to_files_list_iter(metaName, &iter);
+        add_to_files_list_iter(metaName[0], &iter);
         get_ceos_data_name(cfg->general->in_name, dataNames, &nBands);
         assert(nBands == 1);
 
@@ -1789,6 +1794,8 @@ int apply_settings_from_config_file(char *configFile)
         FREE_BANDS(dataNames);
     }
 
+    for (ii=0; ii<2; ii++)
+      FREE(metaName[ii]);
     FREE(metaName);
 
     set_output_name(&iter, cfg->general->out_name);

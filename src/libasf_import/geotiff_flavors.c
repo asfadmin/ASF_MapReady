@@ -14,6 +14,7 @@
 #include <xtiffio.h>
 
 #include <asf.h>
+#include <asf_meta.h>
 #include <proj.h>
 #include "asf_import.h"
 #include "geotiff_flavors.h"

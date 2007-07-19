@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "dateUtil.h"
 #include "orbital_state_vector.h"
 #include "propagate.h"

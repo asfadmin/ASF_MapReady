@@ -9,7 +9,6 @@
 #include <stdarg.h>
 
 #include "caplib.h"
-#include "asf_meta.h"    /* For get_(data)_line(s) and put_(data)_line(s) */
 #include "error.h"
 #include "log.h"
 #include "cla.h"
@@ -56,6 +55,16 @@
 
 /* Speed of light */
 #define SPD_LIGHT 2.997924562e8
+
+// Maximum number of bands that are supported by the ingest.
+#define MAX_BANDS 20
+
+/* These are the dummy values that meta variables get set to at initialization */
+#define MAGIC_UNSET_CHAR ('?')
+#define MAGIC_UNSET_STRING ("???")
+#define MAGIC_UNSET_INT (-999999999)
+/* For MAGIC_UNSET_DOUBLE to work, you must include asf_nan.h */
+#define MAGIC_UNSET_DOUBLE (NAN)
 
 typedef enum {
   NOREPORT=1,
@@ -209,64 +218,6 @@ char * getPath(const char *in);
 
 /* returns ".exe" on Windows, "" everywhere else */
 const char *bin_postfix(void);
-
-/******************************************************************************
- * ioLine: Grab any data type and fill a buffer of _type_ data.
- * Assumes that the datae file contains data in big endian order and
- * returns data in host byte order. Implemented in asf.a/ioLine.c */
-
-/* Size of line chunk to read or write.  */
-#define CHUNK_OF_LINES 32
-
-int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
-                  unsigned char *dest);
-int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
-                   int num_lines_to_get, unsigned char *dest);
-int get_float_line(FILE *file, meta_parameters *meta, int line_number,
-		float *dest);
-int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
-                        int line_number_in_band, float *dest);
-int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, float *dest);
-int get_double_line(FILE *file, meta_parameters *meta, int line_number,
-		double *dest);
-int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, double *dest);
-int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
-		complexFloat *dest);
-int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, complexFloat *dest);
-int put_float_line(FILE *file, meta_parameters *meta, int line_number,
-		const float *source);
-int put_band_float_line(FILE *file, meta_parameters *meta, int band_number,
-                        int line_number, const float *source);
-int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const float *source);
-int put_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
-                         int line_number, int num_lines_to_put,
-                         const float *source);
-int put_double_line(FILE *file, meta_parameters *meta, int line_number,
-		const double *source);
-int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const double *source);
-int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
-		const complexFloat *source);
-int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const complexFloat *source);
-
-int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number, 
-			  int sample_number, int num_samples_to_get, 
-			  unsigned char *dest);
-int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number, 
-			   int num_lines_to_get, int sample_number, 
-			   int num_samples_to_get, unsigned char *dest);
-int get_partial_float_line(FILE *file, meta_parameters *meta, int line_number, 
-			   int sample_number, int num_samples_to_get,
-			   float *dest);
-int get_partial_float_lines(FILE *file, meta_parameters *meta, 
-			    int line_number, int num_lines_to_get,
-			    int sample_number, int num_samples_to_get,
-			    float *dest);
 
 /***************************************************************************
  * Get the location of the ASF Share Directory, (and some other stuff) */
