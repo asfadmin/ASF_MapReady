@@ -86,6 +86,8 @@ OBJS =  $(LEX_YACC_OBJS) \
 	getLatLong.o \
 	getLoc.o \
 	get_ceos.o \
+	get_ceos_names.o \
+	get_stf_names.o \
 	heading.o \
 	interp_stVec.o \
 	latLon2timeSlant.o \
@@ -128,6 +130,7 @@ all: asf_meta
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
+	cp asf_meta.h get_ceos_names.h get_stf_names.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f asf_meta.a

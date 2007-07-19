@@ -108,12 +108,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
         case r_POWER:
             sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
     }
+    /*
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
         "  The following flags will be ignored since this is a level zero data set:\n"
         "  %s\n", logbuf);
     }
+    */
 
     /* Handle output files */
     strcat(outDataName,TOOLS_RAW_EXT);
@@ -170,12 +172,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
         case r_POWER:
             sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
     }
+    /*
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
         "  The following flags will be ignored since this is a complex data set:\n"
         "  %s\n", logbuf);
     }
+    */
 
     /* Deal with metadata */
     meta->general->data_type=COMPLEX_REAL32;
@@ -255,12 +259,14 @@ void import_ceos(char *inDataName, char *bandExt, int band, int nBands,
         case r_POWER:
             sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
     }
+    /*
     if (tempFlag) {
       asfPrintStatus(
         "Warning:\n"
         "  The following flags will be ignored since this is a complex data set:\n"
         "  %s\n", logbuf);
     }
+    */
 
     /* Deal with metadata */
     meta->general->data_type=COMPLEX_REAL32;

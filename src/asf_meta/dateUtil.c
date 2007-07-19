@@ -517,8 +517,8 @@ void date_dssr2time_stamp(const char *inStr, char *t_stamp)
   t.tm_mon = date.month - 1;
   t.tm_mday = date.day;
   t.tm_sec = time.sec;
-  t.tm_min = time.min - 1;
-  t.tm_hour = time.hour - 1;
+  t.tm_min = time.min;
+  t.tm_hour = time.hour;
   t.tm_isdst = -1;
   strftime(t_stamp, 22, "%d-%b-%Y, %H:%M:%S", &t);
 }

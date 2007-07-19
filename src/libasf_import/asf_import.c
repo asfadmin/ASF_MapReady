@@ -118,12 +118,12 @@ int asf_import(radiometry_t radiometry, int db_flag,
                double *p_correct_y_pixel_size, char *inMetaNameOption,
                char *inBaseName, char *outBaseName)
 {
-    char **inBandName, inDataName[512]="", inMetaName[512]="";
+    char **inBandName, inDataName[512]="", **inMetaName;
     char unscaledBaseName[256]="", bandExt[10]="", tmp[10]="";
     int do_resample;
     int do_metadata_fix;
     double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
-    int ii, kk, nBands;
+    int ii, kk, nBands, trailer;
 
     asfPrintStatus("Importing: %s\n", inBaseName);
 
@@ -131,6 +131,9 @@ int asf_import(radiometry_t radiometry, int db_flag,
     inBandName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
     for (ii=0; ii<MAX_BANDS; ii++)
       inBandName[ii] = (char *) MALLOC(512*sizeof(char));
+    inMetaName = (char **) MALLOC(2*sizeof(char *));
+    for (ii=0; ii<2; ii++)
+      inMetaName[ii] = (char *) MALLOC(512*sizeof(char));
 
     // Determine some flags
     do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
@@ -152,11 +155,12 @@ int asf_import(radiometry_t radiometry, int db_flag,
     if (strncmp(format_type, "CEOS", 4) == 0) {
         asfPrintStatus("   Data format: %s\n\n", format_type);
         if (inMetaNameOption == NULL)
-            require_ceos_pair(inBaseName, inBandName, inMetaName, &nBands);
+            require_ceos_pair(inBaseName, inBandName, inMetaName, &nBands,
+			      &trailer);
         else {
             /* Allow the base name to be different for data & meta */
             require_ceos_data(inBaseName, inBandName, &nBands);
-            require_ceos_metadata(inMetaNameOption, inMetaName);
+            require_ceos_metadata(inMetaNameOption, inMetaName, &trailer);
         }
         for (ii=0; ii<nBands; ii++) {
           // Determine the band extension (band ID)
@@ -236,25 +240,25 @@ int asf_import(radiometry_t radiometry, int db_flag,
     /* Ingest ENVI format data */
     else if (strncmp(format_type, "ENVI", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        import_envi(inDataName, inMetaName, unscaledBaseName);
+        import_envi(inDataName, inMetaName[0], unscaledBaseName);
     }
     /* Ingest ESRI format data */
     else if (strncmp(format_type, "ESRI", 4) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
-        import_esri(inDataName, inMetaName, unscaledBaseName);
+        import_esri(inDataName, inMetaName[0], unscaledBaseName);
     }
     /* Ingest Vexcel Sky Telemetry Format (STF) data */
     else if (strncmp(format_type, "STF", 3) == 0) {
         asfPrintStatus("   Data format: %s\n", format_type);
         if (inMetaNameOption == NULL)
-            require_stf_pair(inBaseName, inDataName, inMetaName);
+            require_stf_pair(inBaseName, inDataName, inMetaName[0]);
         else {
             /* Allow the base name to be different for data & meta */
             require_stf_data(inBaseName, inDataName);
-            require_stf_metadata(inMetaNameOption, inMetaName);
+            require_stf_metadata(inMetaNameOption, inMetaName[0]);
         }
         int lat_constrained = upperLat != -99 && lowerLat != -99;
-        import_stf(inDataName, inMetaName, unscaledBaseName, radiometry,
+        import_stf(inDataName, inMetaName[0], unscaledBaseName, radiometry,
                    lat_constrained, lowerLat, upperLat, prcPath);
     }
     else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {

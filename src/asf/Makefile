@@ -15,8 +15,6 @@ OBJS  = caplib.o \
 	endian.o \
 	error.o \
 	fileUtil.o \
-	get_ceos_names.o \
-	get_stf_names.o \
 	ioLine.o \
 	log.o \
 	stopwatch.o \

@@ -296,7 +296,6 @@ static void print_help(void)
 int main(int argc, char *argv[])
 {
     char inBaseName[256]="";
-    char inMetaName[256]="";
     char outBaseName[256]="";
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
@@ -622,30 +621,7 @@ int main(int argc, char *argv[])
 
     /***********************END COMMAND LINE PARSING STUFF***********************/
 
-    /* If the user wants sprocket layers, first check to see if the asf data is
-    already there and go straight to creating the layers */
-    if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-        char asfimage[256], asfmeta[256];
-        strcat(strcpy(asfimage,outBaseName),TOOLS_IMAGE_EXT);
-        strcat(strcpy(asfmeta,outBaseName),TOOLS_META_EXT);
-        if (fileExists(asfimage) && fileExists(asfmeta)) {
-            /* Cal params are only retrieved from CEOS data, so nab the CEOS name */
-            get_ceos_metadata_name(inBaseName, inMetaName);
-            create_sprocket_layers(outBaseName, inMetaName);
-            /* Nix the log file if the user didn't ask for it */
-            if (flags[f_LOG] == FLAG_NOT_SET) {
-                fclose (fLog);
-                remove(logFile);
-            }
-            exit(EXIT_SUCCESS);
-        }
-    }
-
-    printf("%s\n",date_time_stamp());
-    printf("Program: asf_import\n\n");
-    if (logflag) {
-        printLog("Program: asf_import\n\n");
-    }
+    asfSplashScreen (argc, argv);
 
     { // scoping block
         int db_flag = flags[f_DB] != FLAG_NOT_SET;

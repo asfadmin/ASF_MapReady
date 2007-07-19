@@ -13,6 +13,7 @@ PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independence.
 ****************************************************************/
 #include "asf.h"
+#include "get_ceos_names.h"
 #include "meta_init.h"
 #include "ceos.h"
 #include "dateUtil.h"
@@ -66,13 +67,12 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 	date_ymd2jd(&imgDate,&imgJD);
 	imgSec=date2sec(&imgJD,&imgTime);
 
-	if (ceos->facility==VEXCEL && ceos->product==CCSD) {
+	if (ceos->processor==FOCUS && ceos->product==CCSD) {
 		/* do nothing-- dssr "inp_sctim" already gives scene start time */
 	}
 	else if (0!=strcmp(ceos->dssr.az_time_first,"")) 
 	{ /* e.g., ESA data.  "az_time_first" field gives start of image */
-		date_dssr2date(ceos->dssr.az_time_first,&imgDate,&imgTime);
-		date_ymd2jd(&imgDate,&imgJD);
+		date_dssr2time(ceos->dssr.az_time_first,&imgTime);
 		imgSec=date2sec(&imgJD,&imgTime);
 	}
 	else if (ceos->facility==EOC) 
@@ -100,85 +100,104 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
  * Ceos_init_stVec:
  * Reads state vectors from given CEOS file, writing them in the
  * appropriate format to SAR parameters structure.*/
-void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *meta)
+void ceos_init_stVec(const char *fName, ceos_description *ceos,
+		     meta_parameters *meta)
 {
-	int i;
-	double timeStart=0.0;/*Time of first state vector, relative to image start.*/
-	int areInertial=1;/*Flag: are state vectors in non-rotating frame?*/
-	int areInertialVelocity=0;/*Flag: have state vectors not been corrected for non-rotating frame?*/
-	int areFixedVelocity=0;/*Flag: were state vectors in fixed-earth velocity; but inertial coordinates?*/
-	meta_state_vectors *s;
-	struct pos_data_rec ppdr;
-	
-/*Fetch platform position data record.*/
-	get_ppdr(fName,&ppdr);
-	
-/*Allocate output record.*/
-	meta->state_vectors = meta_state_vectors_init(ppdr.ndata);
-	meta->state_vectors->vector_count = ppdr.ndata;
-	s = meta->state_vectors;
-
-/*Determine State Vector Format.*/
-	if (0==strncmp(ppdr.ref_coord,"INERTIAL",9))
-		areInertial=1;/*Listed as Inertial-- believe it.*/
-	if (0==strncmp(ppdr.ref_coord,"EARTH CENTERED ROT",18))
-		areInertial=0;/*Listed as rotating-- believe it.*/
-	else if (0 == strncmp(ppdr.ref_coord, "ECR", 3)) {
-	  areInertial = 0;
-	  //areInertialVelocity = 1;
-	}
-	if (ppdr.hr_angle<=-99.0)
-		areInertial=0;/*Bogus GHA-- must be fixed-earth*/
-	
-	if (ceos->facility==ASF && ceos->processor==SP2 && ceos->version <=2.50)
-	/*The SCANSAR processor made very odd state vectors before 2.51*/
-		areInertial=0,areInertialVelocity=1;
-
-/*Fill output record with inital time.*/
-	if (ceos->facility==ASF)
-	{/* ASF's state vectors start at the 
+  int i;
+  double timeStart=0.0;/*Time of first state vector, relative to image start.*/
+  int areInertial=1;/*Flag: are state vectors in non-rotating frame?*/
+  int areInertialVelocity=0;/*Flag: have state vectors not been corrected for non-rotating frame?*/
+  int areFixedVelocity=0;/*Flag: were state vectors in fixed-earth velocity; but inertial coordinates?*/
+  meta_state_vectors *s;
+  struct pos_data_rec ppdr;
+  
+  /*Fetch platform position data record.*/
+  get_ppdr(fName,&ppdr);
+  
+  /*Allocate output record.*/
+  meta->state_vectors = meta_state_vectors_init(ppdr.ndata);
+  meta->state_vectors->vector_count = ppdr.ndata;
+  s = meta->state_vectors;
+  
+  /*Determine State Vector Format.*/
+  if (0==strncmp(ppdr.ref_coord,"INERTIAL",9))
+    areInertial=1;/*Listed as Inertial-- believe it.*/
+  if (0==strncmp(ppdr.ref_coord,"EARTH CENTERED ROT",18))
+    areInertial=0;/*Listed as rotating-- believe it.*/
+  else if (0 == strncmp(ppdr.ref_coord, "ECR", 3)) {
+    areInertial = 0;
+    //areInertialVelocity = 1;
+  }
+  if (ppdr.hr_angle<=-99.0)
+    areInertial=0;/*Bogus GHA-- must be fixed-earth*/
+  
+  if (ceos->facility==ASF && ceos->processor==SP2 && ceos->version <=2.50)
+    /*The SCANSAR processor made very odd state vectors before 2.51*/
+    areInertial=0,areInertialVelocity=1;
+  
+  /*Fill output record with inital time.*/
+  if (ceos->facility==ASF)
+    {/* ASF's state vectors start at the 
 	same time as the images themselves.*/
-		timeStart = 0.0;
-		s->year   = (int) ppdr.year;
-		s->julDay = (int) ppdr.gmt_day;
-		s->second = ppdr.gmt_sec;
-	} 
-	else
-	{/*Most facility's state vectors don't necessarily start
-	at the same time as the image.*/
-	  timeStart=get_timeDelta(ceos,&ppdr,meta);
-	  if (ceos->facility==RSI)
-	    areInertialVelocity = 1;
-	}
+      timeStart = 0.0;
+      s->year   = (int) ppdr.year;
+      s->julDay = (int) ppdr.gmt_day;
+      s->second = ppdr.gmt_sec;
+    } 
+  else
+    {/*Most facility's state vectors don't necessarily start
+       at the same time as the image.*/
+      timeStart=get_timeDelta(ceos,&ppdr,meta);
+      s->year   = (int) ppdr.year;
+      s->julDay = (int) ppdr.gmt_day;
+      s->second = ppdr.gmt_sec;
+      if (ceos->facility==RSI)
+	areInertialVelocity = 1;
+    }
+  
+  /*Fill ouput record with state vectors.*/
+  for (i=0; i<s->vector_count; i++) {
+    /*Read a state vector from the record, fixing the units.*/
+    stateVector st;
+    st.pos.x = ppdr.pos_vec[i][0];
+    st.pos.y = ppdr.pos_vec[i][1];
+    st.pos.z = ppdr.pos_vec[i][2];
+    vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
+    st.vel.x = ppdr.pos_vec[i][3];
+    st.vel.y = ppdr.pos_vec[i][4];
+    st.vel.z = ppdr.pos_vec[i][5];
+    vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
+    
+    /*Correct for non-rotating frame.*/
+    if (areInertial)
+      gei2fixed(&st,ppdr2gha(&ppdr,ceos,i*ppdr.data_int));
+    
+    /*Perform velocity fixes.*/
+    if (areInertialVelocity)
+      gei2fixed(&st,0.0);
+    else if (areFixedVelocity)
+      fixed2gei(&st,0.0);
+    
+    /*Write out resulting state vectors.*/
+    s->vecs[i].vec = st;
+    s->vecs[i].time = timeStart+i*ppdr.data_int;
+  }
 
-/*Fill ouput record with state vectors.*/
-	for (i=0;i<s->vector_count;i++)
-	{
-		/*Read a state vector from the record, fixing the units.*/
-		stateVector st;
-		st.pos.x=ppdr.pos_vec[i][0];
-		st.pos.y=ppdr.pos_vec[i][1];
-		st.pos.z=ppdr.pos_vec[i][2];
-		vecScale(&st.pos,get_units(vecMagnitude(st.pos),EXPECTED_POS));
-		st.vel.x=ppdr.pos_vec[i][3];
-		st.vel.y=ppdr.pos_vec[i][4];
-		st.vel.z=ppdr.pos_vec[i][5];
-		vecScale(&st.vel,get_units(vecMagnitude(st.vel),EXPECTED_VEL));
-		
-		/*Correct for non-rotating frame.*/
-		if (areInertial)
-			gei2fixed(&st,ppdr2gha(&ppdr,ceos,i*ppdr.data_int));
-		
-		/*Perform velocity fixes.*/
-		if (areInertialVelocity)
-			gei2fixed(&st,0.0);
-		else if (areFixedVelocity)
-			fixed2gei(&st,0.0);
-		
-		/*Write out resulting state vectors.*/
-		s->vecs[i].vec=st;
-		s->vecs[i].time=timeStart+i*ppdr.data_int;
-	}
+  // Propagate three state vectors for regular frames
+  if (ceos->processor != PREC) {
+    int vector_count=3;
+    double data_int = meta->sar->original_line_count / 2
+      * fabs(meta->sar->azimuth_time_per_pixel);
+    meta->state_vectors->vecs[0].time = get_timeDelta(ceos, &ppdr, meta);
+    if (ceos->processor != PREC && data_int < 360) {
+      while (fabs(data_int) > 15.0) {
+	data_int /= 2;
+	vector_count = vector_count*2-1;
+      }
+      // propagate three state vectors: start, center, end
+      propagate_state(meta, vector_count, data_int);
+    }
+  }
 }
 
 

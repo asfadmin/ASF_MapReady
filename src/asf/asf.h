@@ -51,6 +51,8 @@
 
 #define EXTENSION_SEPARATOR '.'
 #define ALOS_EXTENSION_SEPARATOR '-'
+#define CAN_EXTENSION_SEPARATOR '_'
+#define PLUS_SEPARATOR '+'
 
 /* Speed of light */
 #define SPD_LIGHT 2.997924562e8

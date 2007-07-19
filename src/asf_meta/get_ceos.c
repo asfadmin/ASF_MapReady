@@ -38,63 +38,70 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
                   unsigned char **buff)
 {
   FILE *fp;
-  char metaRecordName[256];
-  char **dataName, leaderName[256];
+  char **dataName, **metaName;
   struct HEADER  bufhdr;
-  int nOccurences=0, era=1, ii;
+  int nOccurences=0, era=1, ii, trailer;
 
   // Allocate memory
   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
+  metaName = (char **) MALLOC(2*sizeof(char *));
   for (ii=0; ii<MAX_BANDS; ii++)
     dataName[ii] = (char *) MALLOC(512*sizeof(char));
+  for (ii=0; ii<2; ii++)
+    metaName[ii] = (char *) MALLOC(512*sizeof(char));
 
   if (recordType==CEOS_IFILEDR) {
             int nBands;
             require_ceos_data(inName, dataName, &nBands);
-            strcpy(metaRecordName, dataName[0]);
+            strcpy(metaName[0], dataName[0]);
   } else {
-            require_ceos_metadata(inName, leaderName);
-            strcpy(metaRecordName, leaderName);
+            require_ceos_metadata(inName, metaName, &trailer);
             /* If looking for FDR record type, set it to IFILEDR type */
             if (recordType==CEOS_FDR)
                 recordType=CEOS_IFILEDR;
   }
 
   for (ii=0; ii<MAX_BANDS; ii++)
-            FREE(dataName[ii]);
-        FREE(dataName);
+    FREE(dataName[ii]);
+  FREE(dataName);
 
-  fp=FOPEN(metaRecordName, "r");
-  while (1==fread(&bufhdr, 12, 1, fp))
-  {
-    int itype,length,mallocBytes;
-    itype = bufhdr.rectyp[1];
-    //printf("get_ceos - record type: %d\n", itype);
-    length=bigInt32(bufhdr.recsiz);
-    mallocBytes = (length>16384) ? length : 16384;
-    *buff=(unsigned char *)MALLOC(mallocBytes);
-    *(struct HEADER *)*buff=bufhdr;
-    FREAD((*buff)+12, length-12, 1, fp);
-
-    if ((itype==recordType)||
-      (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
-      (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR))
-    {/*We have the correct kind of record.*/
-      nOccurences++;
-      if (nOccurences==recordNo)
-      { /*This is the correct occurence! Clean up and return.*/
-        FCLOSE(fp);
-        return era;
-      }
+  for (ii=0; ii<trailer+1; ii++) {
+    fp=FOPEN(metaName[ii], "r");
+    while (1==fread(&bufhdr, 12, 1, fp)) {
+      int itype,length,mallocBytes;
+      itype = bufhdr.rectyp[1];
+      length=bigInt32(bufhdr.recsiz);
+      mallocBytes = (length>16920) ? length : 16920;
+      *buff=(unsigned char *)MALLOC(mallocBytes);
+      *(struct HEADER *)*buff=bufhdr;
+      //printf("get_ceos - record type: %d, length: %d, trailer: %d\n", 
+      //	     itype, length, trailer);
+      FREAD((*buff)+12, length-12, 1, fp);
+      
+      if ((itype==recordType)||
+	  (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
+	  (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR))
+	{/*We have the correct kind of record.*/
+	  nOccurences++;
+	  if (nOccurences==recordNo)
+	    { /*This is the correct occurence! Clean up and return.*/
+	      FCLOSE(fp);
+	      return era;
+	    }
+	  else /*Move on.*/
+	    FREE(*buff);
+	}
       else /*Move on.*/
-        FREE(*buff);
+	FREE(*buff);
     }
-    else /*Move on.*/
-      FREE(*buff);
+    FCLOSE(fp);
   }
+  for (ii=0; ii<2; ii++)
+    FREE(metaName[ii]);
+  FREE(metaName);
 
-  FCLOSE(fp);
-  if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || recordType==CEOS_PPR)
+  if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || 
+      recordType==CEOS_PPR)
     return -1;/*It's OK if the MPDR, DQSR, or DHR are missing.*/
   return -1;
 }
