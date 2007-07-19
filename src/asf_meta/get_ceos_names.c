@@ -6,6 +6,7 @@
 */
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "get_ceos_names.h"
 #include "meta_init.h"
 

@@ -33,6 +33,7 @@ Converted from Howard Zebker's getloc.f Fortran code.
 
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_nan.h"
 #include "earthloc.h"
 

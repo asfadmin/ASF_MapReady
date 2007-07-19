@@ -13,6 +13,7 @@ PROGRAM HISTORY:
   1.0 - O. Lawlor.  9/10/98.  CEOS Independence.
 ****************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "get_ceos_names.h"
 #include "meta_init.h"
 #include "ceos.h"

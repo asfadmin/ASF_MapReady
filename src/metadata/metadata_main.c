@@ -118,6 +118,7 @@ BUGS:
 #include <errno.h>
 #include "ceos.h"
 #include "asf.h"
+#include "asf_meta.h"
 #include "get_ceos_names.h"
 #include "metadisplay.h"
 #include "cla.h"

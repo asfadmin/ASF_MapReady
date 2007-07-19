@@ -9,7 +9,7 @@ get_*:
 #include "asf.h"
 #include <ctype.h>
 #include "ceos.h"
-#include "get_ceos_names.h"
+#include "asf_meta.h"
 #include "asf_endian.h"
 
 /*Enumeration of the numeric types of various CEOS fields.*/

@@ -26,6 +26,7 @@
 #include "ddr.h"
 #include "geolocate.h"		/* For stateVector.  */
 #include "ceos.h"
+#include "get_ceos_names.h"
 #include "asf_complex.h"
 #include "libasf_proj.h"
 #include "asf.h"
@@ -661,6 +662,11 @@ int get_partial_float_lines(FILE *file, meta_parameters *meta,
 			    int line_number, int num_lines_to_get,
 			    int sample_number, int num_samples_to_get,
 			    float *dest);
+
+// Prototypes from meta_init_ceos.c
+char *get_polarization (const char *fName);
+int get_alos_band_number(const char *fName);
+ceos_description *get_ceos_description(const char *fName);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic

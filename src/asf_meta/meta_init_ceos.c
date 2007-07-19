@@ -19,6 +19,7 @@ PROGRAM HISTORY:
 #include <assert.h>
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "asf_nan.h"
 #include <ctype.h>
 #include "meta_init.h"
@@ -85,7 +86,6 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
 ceos_description *get_ceos_description(const char *fName);
 double get_firstTime(const char *fName);
 double get_alos_firstTime (const char *fName);
-void get_polarization (const char *fName, char *polarization);
 
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -649,14 +649,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   ceos_init_stVec(in_fName,ceos,meta);
 
   // SAR block
-  if (ceos->product == SLC) {
+  if (ceos->product == SLC)
     meta->sar->image_type = 'S';
-    meta->sar->look_count = 1;
-  }
-  else {
+  else
     meta->sar->image_type = 'R';
-    meta->sar->look_count = 1;
-  }
+  meta->sar->look_count = dssr->n_azilok;
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
@@ -1056,14 +1053,13 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   ceos_description *ceos=NULL;
   struct alos_map_proj_rec *ampr=NULL;
   char *substr;
-  int ii, nBands=1;
+  int ii;
 
   // Allocate memory
   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
   for (ii=0; ii<MAX_BANDS; ii++)
     dataName[ii] = (char *) MALLOC(512*sizeof(char));
 
-  //require_ceos_pair(in_fName, dataName, leaderName, &nBands);
   ceos = get_ceos_description(in_fName);
   meta->optical = meta_optical_init();
 
@@ -1120,7 +1116,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   for (ii=0; ii<11; ii++)
     substr++;
   meta->general->frame = atoi(substr);
-  meta->general->band_count = nBands;
+  meta->general->band_count = ceos->shr.no_bands;;
   strcpy(meta->general->bands, "");
   meta->general->line_count = ceos->shr.lines;
   meta->general->sample_count = ceos->shr.samples;
@@ -1926,24 +1922,55 @@ double get_alos_firstTime (const char *fName)
    return ((double)bigInt32(linehdr.acq_msec)/1000.0);
 }
 
-// function to figure out beam mode, pixel size and polarization
-void get_polarization (const char *fName, char *polarization)
+// Function that reads polarization out of the line header
+char *get_polarization (const char *fName)
 {
    FILE *fp;
    struct HEADER hdr;
    struct SHEADER linehdr;
    int length;
    char buff[25600];
+   char *polarization;
+
+   polarization = (char *) MALLOC(sizeof(char)*3);
 
    fp = FOPEN(fName, "r");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
    FREAD (buff, length, 1, fp);
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   printf("record type: %d\n", hdr.rectyp[1]);
    FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
-   // FIXME: Test the polarization for ALOS
+   if (bigInt16(linehdr.tran_polar) == 0)
+     polarization[0] = 'H';
+   else if (bigInt16(linehdr.tran_polar) == 1)
+     polarization[0] = 'V';
+   if (bigInt16(linehdr.recv_polar) == 0)
+     polarization[1] = 'H';
+   else if (bigInt16(linehdr.recv_polar) == 1)
+     polarization[1] = 'V';
+   polarization[2] = 0;
+   
+   return polarization;
 }
 
+// Function that reads the band number out of the line header
+int get_alos_band_number(const char *fName)
+{
+  FILE *fp;
+  struct HEADER hdr;
+  struct SHEADER linehdr;
+  int length;
+  char buff[25600];
+
+  fp = FOPEN(fName, "r");
+  FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+  length = bigInt32(hdr.recsiz)-12;
+  FREAD (buff, length, 1, fp);
+  FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+  FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+  FCLOSE(fp);
+
+  return bigInt32(linehdr.rec_num);
+}

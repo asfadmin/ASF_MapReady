@@ -118,12 +118,13 @@ int asf_import(radiometry_t radiometry, int db_flag,
                double *p_correct_y_pixel_size, char *inMetaNameOption,
                char *inBaseName, char *outBaseName)
 {
+  ceos_description *ceos;
     char **inBandName, inDataName[512]="", **inMetaName;
-    char unscaledBaseName[256]="", bandExt[10]="", tmp[10]="";
+    char unscaledBaseName[256]="", bandExt[10]="";
     int do_resample;
     int do_metadata_fix;
     double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
-    int ii, kk, nBands, trailer;
+    int ii, nBands, trailer;
 
     asfPrintStatus("Importing: %s\n", inBaseName);
 
@@ -162,9 +163,24 @@ int asf_import(radiometry_t radiometry, int db_flag,
             require_ceos_data(inBaseName, inBandName, &nBands);
             require_ceos_metadata(inMetaNameOption, inMetaName, &trailer);
         }
+	ceos = get_ceos_description(inBaseName);
         for (ii=0; ii<nBands; ii++) {
           // Determine the band extension (band ID)
-          strcpy(bandExt, "");
+	  if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
+	    char *polarization;
+
+	    polarization = get_polarization(inBandName[ii]);
+	    strcpy(bandExt, polarization);
+	    FREE(polarization);
+	  }
+	  else if (ceos->sensor == AVNIR) {
+	    int band_number;
+
+	    band_number = get_alos_band_number(inBandName[ii]);
+	    sprintf(bandExt, "0%d", band_number);
+	  }
+	  else if (ceos->sensor == PRISM)
+	    sprintf(bandExt, "01");
 
           // p will point to the beginning of the actual file (past the path)
           char *p = strrchr(inBandName[ii], '/');
@@ -173,19 +189,6 @@ int asf_import(radiometry_t radiometry, int db_flag,
           else
               ++p;
 
-          if (strncmp(p, "IMG-HH", 6)==0)
-            strcpy(bandExt, "HH");
-          if (strncmp(p, "IMG-HV", 6)==0)
-            strcpy(bandExt, "HV");
-          if (strncmp(p, "IMG-VH", 6)==0)
-            strcpy(bandExt, "VH");
-          if (strncmp(p, "IMG-VV", 6)==0)
-            strcpy(bandExt, "VV");
-          for (kk=1; kk<10; kk++) {
-            sprintf(tmp, "IMG-%02d", kk);
-            if (strncmp(p, tmp, 6)==0)
-              sprintf(bandExt, "0%d", kk);
-          }
           // Check to see if the user forced a band extension
           // (band_id) upon us... override the above if so
           int import_single_band = 0;
