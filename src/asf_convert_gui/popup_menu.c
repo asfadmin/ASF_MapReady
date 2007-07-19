@@ -3,6 +3,7 @@
 #ifdef win32
 #define BYTE __byte
 #include "asf.h"
+#include <asf_meta.h>
 #undef BYTE
 #include <windows.h>
 #include <shellapi.h>
@@ -10,7 +11,6 @@
 
 #include "asf_convert_gui.h"
 #include <asf.h>
-#include <asf_meta.h>
 
 #define POINT __tmp_point
 #include <asf_vector.h>
