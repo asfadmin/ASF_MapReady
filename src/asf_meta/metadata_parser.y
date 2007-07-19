@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "asf.h"
 #include "asf_meta.h"
 #include "caplib.h"
 #include "lex_yacc.h"
