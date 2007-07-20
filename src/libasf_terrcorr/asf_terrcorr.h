@@ -1,6 +1,8 @@
 #ifndef ASF_TERRCORR_H
 #define ASF_TERRCORR_H
 
+#include <asf_meta.h>
+
 /**
    asf_terrcorr
 
