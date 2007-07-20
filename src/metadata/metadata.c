@@ -177,8 +177,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_dssr(metaName[0],dssr) >= 0 )
 	  ret = sprn_dssr(dssr,1);
-	else if (get_dssr(metaName[1],dssr) >= 0 )
-	  ret = sprn_dssr(dssr,1);
+	else if (trailer) {
+	  if (get_dssr(metaName[1],dssr) >= 0 )
+	    ret = sprn_dssr(dssr,1);
+	}
       }
       FREE(dssr);
       break;
@@ -187,8 +189,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_shr(metaName[0],shr) >= 0 )
 	  ret = sprn_shr(shr);
-	else if (get_shr(metaName[1],shr) >= 0 )
-	  ret = sprn_shr(shr);
+	else if (trailer) {
+	  if (get_shr(metaName[1],shr) >= 0 )
+	    ret = sprn_shr(shr);
+	}
       }
       FREE(shr);
       break;
@@ -197,8 +201,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_mpdr(metaName[0],mpdrec) >= 0 ) 
 	  ret = sprn_mpdr(mpdrec); 
-	else if (get_mpdr(metaName[1],mpdrec) >= 0 ) 
-	  ret = sprn_mpdr(mpdrec);
+	else if (trailer) {
+	  if (get_mpdr(metaName[1],mpdrec) >= 0 ) 
+	    ret = sprn_mpdr(mpdrec);
+	}
       }
       FREE(mpdrec);
       break;
@@ -207,8 +213,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_ppdr(metaName[0],ppdr) >= 0)
 	  ret = sprn_ppdr(ppdr);
-	else if (get_ppdr(metaName[1],ppdr) >= 0)
-	  ret = sprn_ppdr(ppdr);
+	else if (trailer) {
+	  if (get_ppdr(metaName[1],ppdr) >= 0)
+	    ret = sprn_ppdr(ppdr);
+	}
       }
       FREE(ppdr);
       break;
@@ -217,8 +225,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_atdr(metaName[0],atdr) >= 0)
 	  ret = sprn_atdr(atdr);
-	else if (get_atdr(metaName[1],atdr) >= 0)
-	  ret = sprn_atdr(atdr);
+	else if (trailer) {
+	  if (get_atdr(metaName[1],atdr) >= 0)
+	    ret = sprn_atdr(atdr);
+	}
       }
       FREE(atdr);
       break;
@@ -227,8 +237,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_ampr(metaName[0],ampr) >= 0)
 	  ret = sprn_ampr(ampr);
-	else if (get_ampr(metaName[1],ampr) >= 0)
-	  ret = sprn_ampr(ampr);
+	else if (trailer) {
+	  if (get_ampr(metaName[1],ampr) >= 0)
+	    ret = sprn_ampr(ampr);
+	}
       }
       FREE(ampr);
       break;
@@ -237,8 +249,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_raddr(metaName[0],raddr) >= 0)
 	  ret = sprn_raddr(raddr);
-	else if (get_raddr(metaName[1],raddr) >= 0)
-	  ret = sprn_raddr(raddr);
+	else if (trailer) {
+	  if (get_raddr(metaName[1],raddr) >= 0)
+	    ret = sprn_raddr(raddr);
+	}
       }
       FREE(raddr);
       ardr = (struct alos_rad_data_rec *) 
@@ -246,8 +260,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_ardr(metaName[0],ardr) >= 0)
 	  ret = sprn_ardr(ardr);
-	else if (get_ardr(metaName[1],ardr) >= 0)
-	  ret = sprn_ardr(ardr);
+	else if (trailer) {
+	  if (get_ardr(metaName[1],ardr) >= 0)
+	    ret = sprn_ardr(ardr);
+	}
       }
       FREE(ardr);
       break;
@@ -257,8 +273,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_rcdr(metaName[0],rcdr) >= 0)
 	  ret = sprn_rcdr(rcdr);
-	else if (get_rcdr(metaName[1],rcdr) >= 0)
-	  ret = sprn_rcdr(rcdr);
+	else if (trailer) {
+	  if (get_rcdr(metaName[1],rcdr) >= 0)
+	    ret = sprn_rcdr(rcdr);
+	}
       }
       FREE(rcdr);
       break;
@@ -267,8 +285,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_dqsr(metaName[0],dqsr) >= 0) 
 	  ret = sprn_dqsr(dqsr,1);
-	else if (get_dqsr(metaName[1],dqsr) >= 0) 
-	  ret = sprn_dqsr(dqsr,1);
+	else if (trailer) {
+	  if (get_dqsr(metaName[1],dqsr) >= 0) 
+	    ret = sprn_dqsr(dqsr,1);
+	}
       }
       FREE(dqsr);
       break;
@@ -277,8 +297,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_dhr(metaName[0],dhr) >= 0) 
 	  ret = sprn_dhr(dhr);
-	else if (get_dhr(metaName[1],dhr) >= 0) 
-	  ret = sprn_dhr(dhr);
+	else if (trailer) {
+	  if (get_dhr(metaName[1],dhr) >= 0) 
+	    ret = sprn_dhr(dhr);
+	}
       }
       FREE(dhr);
       break;
@@ -287,8 +309,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_sdhr(metaName[0],dhr) >= 0) 
 	  ret = sprn_dhr(dhr);
-	else if (get_sdhr(metaName[1],dhr) >= 0) 
-	  ret = sprn_dhr(dhr);
+	else if (trailer) {
+	  if (get_sdhr(metaName[1],dhr) >= 0) 
+	    ret = sprn_dhr(dhr);
+	}
       }
       FREE(dhr);
       break;
@@ -297,8 +321,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_rsr(metaName[0],rsr) >= 0) 
 	  ret = sprn_rsr(rsr);
-	else if (get_rsr(metaName[1],rsr) >= 0) 
-	  ret = sprn_rsr(rsr);
+	else if (trailer) {
+	  if (get_rsr(metaName[1],rsr) >= 0) 
+	    ret = sprn_rsr(rsr);
+	}
       }
       FREE(rsr);
       break;
@@ -307,8 +333,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_ppr(metaName[0],ppr) >= 0)
 	  ret = sprn_ppr(ppr);
-	else if (get_ppr(metaName[1],ppr) >= 0)
-	  ret = sprn_ppr(ppr);
+	else if (trailer) {
+	  if (get_ppr(metaName[1],ppr) >= 0)
+	    ret = sprn_ppr(ppr);
+	}
       }
       FREE(ppr);
       break;
@@ -326,8 +354,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_asf_facdr(metaName[0],facdr) >= 0) 
 	  ret = sprn_facdr(facdr,1);
-	else if (get_asf_facdr(metaName[1],facdr) >= 0) 
-	  ret = sprn_facdr(facdr,1);
+	else if (trailer) {
+	  if (get_asf_facdr(metaName[1],facdr) >= 0) 
+	    ret = sprn_facdr(facdr,1);
+	}
       }
       FREE(facdr);
       break;
@@ -336,8 +366,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_esa_facdr(metaName[0],esa_facdr) >= 0)
 	  ret = sprn_esa_facdr(esa_facdr);
-	else if (get_esa_facdr(metaName[1],esa_facdr) >= 0)
-	  ret = sprn_esa_facdr(esa_facdr);
+	else if (trailer) {
+	  if (get_esa_facdr(metaName[1],esa_facdr) >= 0)
+	    ret = sprn_esa_facdr(esa_facdr);
+	}
       }
       FREE(esa_facdr);
       break;
@@ -346,8 +378,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       if (leaderNameExists) {
 	if (get_fdr(metaName[0],fdr) >= 0) 
 	  ret = sprn_fdr(fdr);
-	else if (get_fdr(metaName[1],fdr) >= 0) 
-	  ret = sprn_fdr(fdr);
+	else if (trailer) {
+	  if (get_fdr(metaName[1],fdr) >= 0) 
+	    ret = sprn_fdr(fdr);
+	}
       }
       FREE(fdr);
       break;
