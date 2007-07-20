@@ -38,32 +38,20 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
                   unsigned char **buff)
 {
   FILE *fp;
-  char **dataName, **metaName;
+  char **dataName=NULL, **metaName=NULL;
   struct HEADER  bufhdr;
   int nOccurences=0, era=1, ii, trailer;
 
-  // Allocate memory
-  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  metaName = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<MAX_BANDS; ii++)
-    dataName[ii] = (char *) MALLOC(512*sizeof(char));
-  for (ii=0; ii<2; ii++)
-    metaName[ii] = (char *) MALLOC(512*sizeof(char));
-
   if (recordType==CEOS_IFILEDR) {
             int nBands;
-            require_ceos_data(inName, dataName, &nBands);
+            require_ceos_data(inName, &dataName, &nBands);
             strcpy(metaName[0], dataName[0]);
   } else {
-            require_ceos_metadata(inName, metaName, &trailer);
+            require_ceos_metadata(inName, &metaName, &trailer);
             /* If looking for FDR record type, set it to IFILEDR type */
             if (recordType==CEOS_FDR)
                 recordType=CEOS_IFILEDR;
   }
-
-  for (ii=0; ii<MAX_BANDS; ii++)
-    FREE(dataName[ii]);
-  FREE(dataName);
 
   for (ii=0; ii<trailer+1; ii++) {
     fp=FOPEN(metaName[ii], "r");
@@ -96,9 +84,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
     }
     FCLOSE(fp);
   }
-  for (ii=0; ii<2; ii++)
-    FREE(metaName[ii]);
-  FREE(metaName);
+
+  free_ceos_names(dataName, metaName);
 
   if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || 
       recordType==CEOS_PPR)

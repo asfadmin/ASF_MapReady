@@ -592,7 +592,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   hms_time time;
   char buf[50];
   double firstTime, centerTime;
-  char **dataName, **metaName;
+  char **dataName=NULL, **metaName=NULL;
   int nBands, trailer;
   
   dssr = &ceos->dssr;
@@ -715,7 +715,7 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   struct radio_comp_data_rec *rcdr=NULL;
   struct PPREC *ppr=NULL;
   char beamname[32], beamtype[32], buf[50];
-  char **dataName, **metaName;
+  char **dataName=NULL, **metaName=NULL;
   ymd_date date;
   hms_time time;
   double firstTime, centerTime;

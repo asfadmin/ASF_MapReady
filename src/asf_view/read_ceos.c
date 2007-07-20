@@ -70,7 +70,7 @@ int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
 
 meta_parameters *read_ceos_meta(const char *meta_name)
 {
-  char **dataName, **metaName, *baseName;
+  char **dataName=NULL, **metaName=NULL, *baseName;
   int ii, nBands, trailer;
 
   baseName = (char *) MALLOC(sizeof(char)*512);
