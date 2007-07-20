@@ -106,20 +106,7 @@ int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init(const char *in_fName,meta_parameters *meta)
 {
-  char **dataName, **metaName;
-   ceos_description *ceos=NULL;
-   int ii, nBands=1, trailer;
-
-   // Allocate memory
-   dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-   for (ii=0; ii<MAX_BANDS; ii++)
-     dataName[ii] = (char *) MALLOC(512*sizeof(char));
-   metaName = (char **) MALLOC(2*sizeof(char *));
-   for (ii=0; ii<2; ii++)
-     metaName[ii] = (char *) MALLOC(512*sizeof(char));
-
-   ceos = get_ceos_description(in_fName);
-   require_ceos_pair(in_fName, dataName, metaName, &nBands, &trailer);
+   ceos_description *ceos = get_ceos_description(in_fName);
 
    if (ceos->sensor == SAR || ceos->sensor == PALSAR)
      ceos_init_sar(ceos, in_fName, meta);
@@ -127,12 +114,6 @@ void ceos_init(const char *in_fName,meta_parameters *meta)
      ceos_init_optical(in_fName, meta);
 
    FREE(ceos);
-   for (ii=0; ii<MAX_BANDS; ii++)
-     FREE(dataName[ii]);
-   FREE(dataName);
-   for (ii=0; ii<2; ii++)
-     FREE(metaName[ii]);
-   FREE(metaName);
 }
 
 
