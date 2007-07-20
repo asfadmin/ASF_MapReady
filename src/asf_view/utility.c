@@ -9,6 +9,16 @@ const char DIR_SEPARATOR;
 
 #include "asf_view.h"
 
+void clear_combobox(const char *widget_name)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    int x=0;
+    while (gtk_combo_box_get_active(GTK_COMBO_BOX(w)) != -1) {
+        gtk_combo_box_remove_text(GTK_COMBO_BOX(w), 0);
+        if (++x>MAX_BANDS) break;
+    }
+}
+
 void add_to_combobox(const char *widget_name, const char *txt)
 {
     GtkWidget *w = get_widget_checked(widget_name);
@@ -27,6 +37,26 @@ set_combo_box_item_checked(const char *widget_name, gint index)
 {
     GtkWidget *ddl = get_widget_checked(widget_name);
     gtk_combo_box_set_active(GTK_COMBO_BOX(ddl), index);
+}
+
+char *get_band_combo_text(const char *widget_name)
+{
+    // specific to combobox populated with meta->general->bands
+    GtkWidget *w = get_widget_checked(widget_name);
+    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(w));
+    char *b = STRDUP(meta->general->bands);
+    char *p = b;
+    while (i-- > 0) {
+        char *p1 = strchr(p,',');
+        if (!p1) { printf("Can't happen!\n"); break; }
+        p=p1+1;
+    }
+    char *q = strchr(p+1,',');
+    if (q) *q = '\0';
+
+    char *ret = STRDUP(p);
+    free(b);
+    return ret;
 }
 
 void

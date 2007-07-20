@@ -105,7 +105,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
     int spot = 0;
     if (!self->reached_max_tiles) {
         assert(self->cache[self->n_tiles] == NULL);
-        unsigned char *data = malloc(ds*ns*self->rows_per_tile);
+        unsigned char *data = malloc(ds*self->ns*self->rows_per_tile);
         if (!data) {
             // couldn't allocate the next tile -- must dump existing
             if (!quiet)
@@ -174,6 +174,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
     self->client->read_fn(rs, rows_to_get, (void*)(self->cache[spot]),
         self->client->read_client_info, self->meta);
 
+    assert((line-rs)*self->ns + samp <= self->ns*self->rows_per_tile);
     return &self->cache[spot][((line-rs)*self->ns + samp)*ds];
 }
 
@@ -240,10 +241,10 @@ CachedImage * cached_image_new_from_file(
     } else {
         // how many rows per tile?
         // We will use ~64 Meg tiles
-        self->rows_per_tile = 64*1024*1024 / (self->ns*data_size(self));
+        //self->rows_per_tile = 64*1024*1024 / (self->ns*data_size(self));
 
         // test line -- uncomment this for very small tiles
-        //self->rows_per_tile = 2*1024*1024 / (ns*4);
+        self->rows_per_tile = 2*1024*1024 / (self->ns*data_size(self));
     }
 
     asfPrintStatus("Using %d rows per tile.\n", self->rows_per_tile);

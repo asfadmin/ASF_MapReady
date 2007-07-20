@@ -100,7 +100,8 @@ meta_parameters *read_X_meta(const char *meta_name)
     // General-->
     //      line_count
     //      sample_count
-
+    //      band_count
+    //      bands
     return meta;
 }
 

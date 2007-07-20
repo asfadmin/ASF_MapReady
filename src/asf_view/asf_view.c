@@ -123,6 +123,7 @@ main(int argc, char **argv)
     set_font();
     fill_meta_info();
     fill_stats();
+    setup_bands_tab(meta);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();

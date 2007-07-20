@@ -199,7 +199,7 @@ void reset_globals()
     g_poly.n = g_poly.c = 0;
 }
 
-void load_file(const char *file)
+void load_file_banded(const char *file, const char *band)
 {
     // unload the current file, clear current globals
     if (data_ci) cached_image_free(data_ci);
@@ -219,8 +219,8 @@ void load_file(const char *file)
     if (g_filename[strlen(g_filename)-1] == '.')
         g_filename[strlen(g_filename)-1] = '\0';
 
-    read_file(g_filename, NULL, FALSE);
-    set_title(FALSE, NULL);
+    read_file(g_filename, band, FALSE);
+    set_title(band != NULL, band);
 
     // load the metadata & image data, other setup
     fill_small_force_reload();
@@ -229,6 +229,12 @@ void load_file(const char *file)
     update_zoom();
     fill_meta_info();
     fill_stats();
+    setup_bands_tab(meta);
+}
+
+void load_file(const char *file)
+{
+    load_file_banded(file, NULL);
 }
 
 SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)

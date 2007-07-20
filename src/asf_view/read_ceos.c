@@ -1,5 +1,7 @@
 #include "asf_view.h"
 #include "read_ceos.h"
+#include "meta_init.h"
+#include "get_ceos_names.h"
 
 int try_ceos(const char *filename)
 {

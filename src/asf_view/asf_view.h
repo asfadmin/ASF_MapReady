@@ -42,8 +42,10 @@ typedef struct {
 void set_font(void);
 
 /* utility.c */
+void clear_combobox(const char *widget_name);
 void add_to_combobox(const char *widget_name, const char *txt);
 void set_combo_box_item_checked(const char *widget_name, gint index);
+char *get_band_combo_text(const char *widget_name);
 void rb_select(const char *widget_name, gboolean is_on);
 double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
@@ -135,12 +137,18 @@ int open_google_earth(void);
 /* new.c */
 void new_file(void);
 void load_file(const char *file);
+void load_file_banded(const char *file, const char *band);
 void reset_globals(void);
 void set_title(int band_specified, char *band);
 
 /* subset.c */
 void save_subset(void);
 void update_poly_extents(void);
+
+/* bands.c */
+void setup_bands_tab(meta_parameters *meta);
+void set_bands_rgb(int r, int g, int b);
+void set_bands_greyscale(int b);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
@@ -172,6 +180,15 @@ typedef struct {
                                     // be made valid
 } UserPolygon;
 
+// This is defined/managed in bands.c, it is a singleton
+typedef struct {
+    int is_rgb;
+    int band_gs;
+    int band_r;
+    int band_g;
+    int band_b;
+} BandConfig;
+
 /*************** these are our global variables ... ***********************/
 
 extern GladeXML *glade_xml;
@@ -181,6 +198,7 @@ extern CachedImage *data_ci;
 extern int nl, ns;
 extern ImageStats g_stats;
 extern UserPolygon g_poly;
+extern BandConfig g_band_cfg;
 
 extern double zoom;
 extern double center_line, center_samp;

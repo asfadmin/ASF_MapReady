@@ -18,11 +18,6 @@
 #undef POINT
 
 #include <png.h>
-
-#ifndef png_jmpbuf
-#  define png_jmpbuf (png_ptr)    ((png_ptr)->jmpbuf)
-#endif
-
 #include <gdk/gdk.h>
 
 #ifdef win32
