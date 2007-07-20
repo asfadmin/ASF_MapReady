@@ -246,23 +246,19 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     int pre = has_prepension(input_metadata);
     if (pre > 0)
     {
-        int ii, nBands;
-        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            dataName[ii] = MALLOC(sizeof(char)*255);
-        char filename[255], dirname[255];
+        int nBands;
+        char **dataName, *baseName, filename[255], dirname[255];
+	baseName = (char *) MALLOC(sizeof(char)*256);
         split_dir_and_file(input_metadata, dirname, filename);
         met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
         sprintf(met, "%s%s", dirname, filename + pre);
 
-        get_ceos_data_name(met, dataName, &nBands);
+        get_ceos_data_name(met, baseName, &dataName, &nBands);
 
         data_name = STRDUP(dataName[0]);
         imd = silent_meta_create(met);
 
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            FREE(dataName[ii]);
-        FREE(dataName);
+        free_ceos_names(dataName, NULL);
     }
     else
     {

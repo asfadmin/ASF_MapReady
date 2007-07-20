@@ -155,14 +155,13 @@ static char *build_band_list(const char *file)
         char *ret;
         char filename[255], dirname[255];
 
-        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            dataName[ii] = MALLOC(sizeof(char)*255);
+        char **dataName, *baseName;
+	baseName = MALLOC(sizeof(char)*255);
 
         split_dir_and_file(file, dirname, filename);
         char *s = MALLOC(sizeof(char)*(strlen(file)+1));
         sprintf(s, "%s%s", dirname, filename + pre);
-        get_ceos_data_name(s, dataName, &nBands);
+        get_ceos_data_name(s, baseName, &dataName, &nBands);
 
         if (nBands <= 1) {
             // not multiband
@@ -201,10 +200,9 @@ static char *build_band_list(const char *file)
             }
         }
 
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            FREE(dataName[ii]);
-        FREE(dataName);
+        free_ceos_names(dataName, NULL);
         FREE(s);
+	FREE(baseName);
 
         return ret;
     }

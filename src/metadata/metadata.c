@@ -105,19 +105,13 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct PPREC *ppr;                    // Processing Parameter record
   struct alos_rad_data_rec *ardr;       // Radiometric Data record
 
-  char **dataNames, **metaName;
-  int ii, nBands, trailer, dataNameExists, leaderNameExists;
+  char **dataNames=NULL, **metaName=NULL, *baseName;
+  int nBands, trailer, dataNameExists, leaderNameExists;
   char *ret=NULL;
 
-  dataNames = MALLOC(sizeof(char*)*MAX_BANDS);
-  for (ii=0; ii<MAX_BANDS; ++ii)
-      dataNames[ii] = MALLOC(sizeof(char*)*512);
-  metaName = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<2; ii++)
-    metaName[ii] = (char *) MALLOC(sizeof(char)*512);
+  baseName = (char *) MALLOC(sizeof(char)*256);
 
-  char *baseName = get_base_name(fileName);
-  get_ceos_names(baseName, dataNames, metaName, &nBands, &trailer);
+  get_ceos_names(fileName, baseName, &dataNames, &metaName, &nBands, &trailer);
 
   FILE *fp_tmp = fopen(dataNames[0], "r");
   if (fp_tmp != NULL) {
@@ -389,8 +383,8 @@ char *get_record_as_string(char *fileName, int reqrec)
       printf("Not Valid Record Type\n");
       break;
     }
-  FREE_BANDS(dataNames);
   FREE(baseName);
+  free_ceos_names(dataNames, metaName);
   if (!ret)
       return STRDUP("Record not found.\n");
   return ret;
@@ -416,17 +410,9 @@ int check_record(char *fileName, int reqrec)
   struct PPREC *ppr;                    // Processing Parameter record
 
   char **dataName, **metaName;
-  int ii, nBands, trailer;
-
-  // Allocate memory
-  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  for (ii=0; ii<MAX_BANDS; ii++)
-    dataName[ii] = (char *) MALLOC(512*sizeof(char));
-  metaName = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<2; ii++)
-    metaName[ii] = (char *) MALLOC(512*sizeof(char *));
+  int nBands, trailer;
   
-  require_ceos_pair(fileName, dataName, metaName, &nBands, &trailer);
+  require_ceos_pair(fileName, &dataName, &metaName, &nBands, &trailer);
 
   switch (reqrec) 
     {
@@ -636,5 +622,7 @@ int check_record(char *fileName, int reqrec)
       printf("Not Valid Record Type\n");
       break;
     }
+  free_ceos_names(dataName, metaName);
+
   return 0;
 }

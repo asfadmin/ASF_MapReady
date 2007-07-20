@@ -1,6 +1,5 @@
 #include "asf_view.h"
 #include "read_ceos.h"
-#include "meta_init.h"
 #include "get_ceos_names.h"
 
 int try_ceos(const char *filename)
@@ -71,7 +70,16 @@ int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
 
 meta_parameters *read_ceos_meta(const char *meta_name)
 {
-    return meta_create(meta_name);
+  char **dataName, **metaName, *baseName;
+  int ii, nBands, trailer;
+
+  baseName = (char *) MALLOC(sizeof(char)*512);
+
+  get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
+
+  free_ceos_names(dataName, metaName);
+
+  return meta_create(baseName);
 }
 
 int read_ceos_client(int row_start, int n_rows_to_get,

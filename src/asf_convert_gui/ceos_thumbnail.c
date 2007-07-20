@@ -173,23 +173,20 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     int pre = has_prepension(input_metadata);
     if (pre > 0)
     {
-        int ii, nBands;
-        char **dataName = MALLOC(sizeof(char*)*MAX_BANDS);
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            dataName[ii] = MALLOC(sizeof(char)*255);
+        int nBands;
+        char **dataName, *baseName;
+	baseName = MALLOC(sizeof(char)*255);
         char filename[255], dirname[255];
         split_dir_and_file(input_metadata, dirname, filename);
         met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
         sprintf(met, "%s%s", dirname, filename + pre);
 
-        get_ceos_data_name(met, dataName, &nBands);
+        get_ceos_data_name(met, baseName, &dataName, &nBands);
 
         imd = silent_meta_create(met);
         data_name = STRDUP(dataName[0]);
 
-        for (ii=0; ii<MAX_BANDS; ++ii)
-            FREE(dataName[ii]);
-        FREE(dataName);
+        free_ceos_names(dataName, NULL);
     }
     else
     {

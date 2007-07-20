@@ -130,33 +130,38 @@ typedef enum {
    if it is a CEOS leader file (depending on our accepted CEOS extensions). If
    so populate metaName with the appropriate name and return the appropriate
    ENUM ceos_metadata_ext_t value.  */
-ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, char **metaName,
+ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName, 
+					   char ***pMetaName,
 					   int *trailer);
 
 /* If get_ceos_metadata_name fails to find a file, then exit the program.  */
-ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char **metaName,
+ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char ***metaName,
 					  int *trailer);
 
 /* Given the name of a file (potentially with path in front of it), determine
    if it is a CEOS data file (depending on our accepted CEOS extensions). If
    so, populate dataName with the appropriate name and return the appropriate
    ENUM ceos_data_ext_t value.  */
-ceos_data_ext_t get_ceos_data_name(const char *ceosName, char **dataName, int *nBands);
+ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *baseName,
+				   char ***pDataName, int *nBands);
 
 /* If get_ceos_data_name fails to find a file, then exit the program.  */
-ceos_data_ext_t require_ceos_data(const char *ceosName, char **dataName, int *nBands);
+ceos_data_ext_t require_ceos_data(const char *ceosName, char ***dataName, 
+				  int *nBands);
 
 /* Given the name of a file (potentially with path in front of it), determine
    if it is one of a CEOS file pair (depending on our accepted CEOS file
    extensions). If so populate dataName & metaName with the appropriate names
    and return the appropriate ENUM ceos_file_pairs_t value.  */
-ceos_file_pairs_t get_ceos_names(const char *ceosName, char **dataName,
-                                 char **metaName, int *nBands, int *trailer);
+ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
+				 char ***dataName, char ***metaName, 
+				 int *nBands, int *trailer);
 
 /* Do as get_ceos_names unless there is no pair in which case exit the program
    with a failure.  */
-ceos_file_pairs_t require_ceos_pair(const char *ceosName, char **dataName, 
-				    char **metaName, int *nBands, int *trailer);
+ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName, 
+				    char ***metaName, int *nBands, int *trailer);
 
+void free_ceos_names(char **dataName, char **metaName);
 
 #endif

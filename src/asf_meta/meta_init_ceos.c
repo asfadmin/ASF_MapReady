@@ -593,18 +593,12 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   char buf[50];
   double firstTime, centerTime;
   char **dataName, **metaName;
-  int ii, nBands, trailer;
+  int nBands, trailer;
   
   dssr = &ceos->dssr;
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
   get_mpdr(in_fName, mpdr);
-  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  for (ii=0; ii<MAX_BANDS; ii++)
-    dataName[ii] = (char *) MALLOC(512*sizeof(char));
-  metaName = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<2; ii++)
-    metaName[ii] = (char *) MALLOC(512*sizeof(char));
-  require_ceos_pair(in_fName, dataName, metaName, &nBands, &trailer);
+  require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
@@ -709,9 +703,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   // Clean up
   FREE(mpdr);
-  for (ii=0; ii<MAX_BANDS; ii++)
-    FREE(dataName[ii]);
-  FREE(dataName);
+  free_ceos_names(dataName, metaName);
 }
 
 // Only deals with Radarsat data
@@ -723,22 +715,16 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   struct radio_comp_data_rec *rcdr=NULL;
   struct PPREC *ppr=NULL;
   char beamname[32], beamtype[32], buf[50];
+  char **dataName, **metaName;
   ymd_date date;
   hms_time time;
   double firstTime, centerTime;
-  char **dataName, **metaName;
-  int ii, nBands, trailer;
+  int nBands, trailer;
 
   dssr = &ceos->dssr;
   ppr = (struct PPREC*) MALLOC(sizeof(struct PPREC));
   get_ppr(in_fName, ppr);
-  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  for (ii=0; ii<MAX_BANDS; ii++)
-    dataName[ii] = (char *) MALLOC(512*sizeof(char));
-  metaName = (char **) MALLOC(2*sizeof(char *));
-  for (ii=0; ii<2; ii++)
-    metaName[ii] = (char *) MALLOC(512*sizeof(char));
-  require_ceos_pair(in_fName, dataName, metaName, &nBands, &trailer);
+  require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
@@ -825,12 +811,7 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   if (mpdr)
     FREE(mpdr);
   FREE(ppr);
-  for (ii=0; ii<MAX_BANDS; ii++)
-    FREE(dataName[ii]);
-  FREE(dataName);
-  for (ii=0; ii<2; ii++)
-    FREE(metaName[ii]);
-  FREE(metaName);
+  free_ceos_names(dataName, metaName);
 }
 
 // Only deals with SIR-C data
@@ -1030,16 +1011,10 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 {
-  char **dataName; // CEOS names, typically .D and .L
   ceos_description *ceos=NULL;
   struct alos_map_proj_rec *ampr=NULL;
   char *substr;
   int ii;
-
-  // Allocate memory
-  dataName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-  for (ii=0; ii<MAX_BANDS; ii++)
-    dataName[ii] = (char *) MALLOC(512*sizeof(char));
 
   ceos = get_ceos_description(in_fName);
   meta->optical = meta_optical_init();

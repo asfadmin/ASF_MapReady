@@ -128,14 +128,6 @@ int asf_import(radiometry_t radiometry, int db_flag,
 
     asfPrintStatus("Importing: %s\n", inBaseName);
 
-    // Allocate memory
-    inBandName = (char **) MALLOC(MAX_BANDS*sizeof(char *));
-    for (ii=0; ii<MAX_BANDS; ii++)
-      inBandName[ii] = (char *) MALLOC(512*sizeof(char));
-    inMetaName = (char **) MALLOC(2*sizeof(char *));
-    for (ii=0; ii<2; ii++)
-      inMetaName[ii] = (char *) MALLOC(512*sizeof(char));
-
     // Determine some flags
     do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
     do_metadata_fix = p_correct_y_pixel_size != NULL;
@@ -156,12 +148,12 @@ int asf_import(radiometry_t radiometry, int db_flag,
     if (strncmp(format_type, "CEOS", 4) == 0) {
         asfPrintStatus("   Data format: %s\n\n", format_type);
         if (inMetaNameOption == NULL)
-            require_ceos_pair(inBaseName, inBandName, inMetaName, &nBands,
+            require_ceos_pair(inBaseName, &inBandName, &inMetaName, &nBands,
 			      &trailer);
         else {
             /* Allow the base name to be different for data & meta */
-            require_ceos_data(inBaseName, inBandName, &nBands);
-            require_ceos_metadata(inMetaNameOption, inMetaName, &trailer);
+            require_ceos_data(inBaseName, &inBandName, &nBands);
+            require_ceos_metadata(inMetaNameOption, &inMetaName, &trailer);
         }
 	ceos = get_ceos_description(inBaseName);
         for (ii=0; ii<nBands; ii++) {
@@ -343,15 +335,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
         fix_ypix(outBaseName, correct_y_pixel_size);
     }
 
-    /* If the user asked for sprocket layers, create sprocket data layers
-    now that we've got asf tools format data */
-    //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-    //    create_sprocket_layers(outBaseName, inMetaName);
-    //}
-
-    for (ii=0; ii<MAX_BANDS; ii++)
-      FREE(inBandName[ii]);
-    FREE(inBandName);
+    free_ceos_names(inBandName, inMetaName);
 
     asfPrintStatus("Import complete.\n");
     return 0;

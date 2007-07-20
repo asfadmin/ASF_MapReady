@@ -37,6 +37,8 @@ int handle_alos_file(const char *filename, const char *band,
 {
     char *dir = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *file = MALLOC(sizeof(char)*(strlen(filename)+10));
+    char baseName[256];
+ 
     split_dir_and_file(filename, dir, file);
 
     int ret = TRUE;
@@ -107,7 +109,7 @@ int handle_alos_file(const char *filename, const char *band,
                 dataName[i] = MALLOC(sizeof(char)*256);
             char *p = meta_name;
             if (strncmp_case(p, "LED-", 4) == 0) p += 4;
-            get_ceos_data_name(p, dataName, &nBands);
+            get_ceos_data_name(p, baseName, dataName, &nBands);
             int which_band=-1;
             if (band) {
                 for (i=0; i<nBands; ++i) {
