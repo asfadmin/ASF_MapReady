@@ -175,7 +175,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     {
         int nBands;
         char **dataName, *baseName;
-	baseName = MALLOC(sizeof(char)*255);
+        baseName = MALLOC(sizeof(char)*255);
         char filename[255], dirname[255];
         split_dir_and_file(input_metadata, dirname, filename);
         met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
@@ -187,6 +187,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         data_name = STRDUP(dataName[0]);
 
         free_ceos_names(dataName, NULL);
+        free(baseName);
     }
     else
     {
