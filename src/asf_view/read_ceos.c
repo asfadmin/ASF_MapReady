@@ -76,7 +76,8 @@ meta_parameters *read_ceos_meta(const char *meta_name)
     char **dataName=NULL, **metaName=NULL, *baseName;
     int nBands, trailer;
 
-    baseName = MALLOC(sizeof(char)*(strlen(filename)+5));
+    // baseName should never be longer than meta_name ...
+    baseName = MALLOC(sizeof(char)*(strlen(meta_name)+5));
 
     get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
 
