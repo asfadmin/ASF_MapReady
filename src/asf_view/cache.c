@@ -241,10 +241,10 @@ CachedImage * cached_image_new_from_file(
     } else {
         // how many rows per tile?
         // We will use ~64 Meg tiles
-        //self->rows_per_tile = 64*1024*1024 / (self->ns*data_size(self));
+        self->rows_per_tile = 64*1024*1024 / (self->ns*data_size(self));
 
         // test line -- uncomment this for very small tiles
-        self->rows_per_tile = 2*1024*1024 / (self->ns*data_size(self));
+        //self->rows_per_tile = 2*1024*1024 / (self->ns*data_size(self));
     }
 
     asfPrintStatus("Using %d rows per tile.\n", self->rows_per_tile);

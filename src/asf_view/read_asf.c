@@ -200,10 +200,11 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
 
             // "tot" is to help with the PercentMeter -- the total number
             // of lines that we will need to read.  "l" is the counter
-            int tot = info->band_r>=0 + info->band_g>=0 + info->band_b>=0;
-            tot *= thumb_size_y-1;
+            int tot = (info->band_r>=0) + (info->band_g>=0) + (info->band_b>=0);
+            tot *= thumb_size_y;
             int l=0;
 
+            printf("%d %d\n", tot, thumb_size_y);
             // to do each of the bands, we read the data into a float array,
             // then cast (back) to byte into the interleaved "dest" array
             // (interleaved in the sense that we only populate every 3rd item
@@ -213,11 +214,11 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             if (info->band_r >= 0) {
                 off = nl*info->band_r;
                 for (i=0; i<thumb_size_y; ++i) {
-                    k=3*i*sf*thumb_size_x; // starting point in dest array
+                    k=3*i*thumb_size_x; // starting point in dest array
                     get_float_line(info->fp, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
-                    asfPercentMeter((float)(l++)/tot);
+                    asfPercentMeter((float)(l++)/(tot-1));
                 }
             }
 
@@ -225,11 +226,11 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             if (info->band_g >= 0) {
                 off = nl*info->band_g;
                 for (i=0; i<thumb_size_y; ++i) {
-                    k=3*i*sf*thumb_size_x+1;
+                    k=3*i*thumb_size_x+1;
                     get_float_line(info->fp, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
-                    asfPercentMeter((float)(l++)/tot);
+                    asfPercentMeter((float)(l++)/(tot-1));
                 }
             }
 
@@ -237,15 +238,16 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             if (info->band_b >= 0) {
                 off = nl*info->band_b;
                 for (i=0; i<thumb_size_y; ++i) {
-                    k=3*i*sf*thumb_size_x+2;
+                    k=3*i*thumb_size_x+2;
                     get_float_line(info->fp, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
-                    asfPercentMeter((float)(l++)/tot);
+                    asfPercentMeter((float)(l++)/(tot-1));
                 }
             }
 
-            assert(l==tot);
+            //assert(l==tot);
+            if (l!=tot) printf("%d %d\n", l, tot-1);
         }
     } else {
         // this is the normal case -- regular old floating point data,

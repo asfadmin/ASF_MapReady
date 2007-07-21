@@ -206,7 +206,7 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         free(gsdata);
     }
     else {
-	asfPrintError("Unexpected data type: %d!\n", data_ci->data_type);
+	    asfPrintError("Unexpected data type: %d!\n", data_ci->data_type);
     }
 
     return bdata;

@@ -104,8 +104,18 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
     nl = meta->general->line_count;
     ns = meta->general->sample_count;
 
-    center_samp = crosshair_samp = (double)ns/2.;
-    center_line = crosshair_line = (double)nl/2.;
+    if (center_samp < 0 || center_samp >= ns ||
+        center_line < 0 || center_line >= nl)
+    {
+        center_samp = (double)ns/2.;
+        center_line = (double)nl/2.;
+    }
+    if (crosshair_samp < 0 || crosshair_samp >= ns ||
+        crosshair_line < 0 || crosshair_line >= nl)
+    {
+        crosshair_samp = (double)ns/2.;
+        crosshair_line = (double)nl/2.;
+    }
 
     g_meta_name = STRDUP(meta_name);
     free(meta_name);

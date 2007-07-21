@@ -138,7 +138,8 @@ int open_google_earth(void);
 void new_file(void);
 void load_file(const char *file);
 void load_file_banded(const char *file, const char *band);
-void reset_globals(void);
+void reload_file_banded(const char *file, const char *band);
+void reset_globals(int reset_position);
 void set_title(int band_specified, char *band);
 
 /* subset.c */

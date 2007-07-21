@@ -83,7 +83,7 @@ main(int argc, char **argv)
     // which looks much nicer
 
     // initialize globals
-    reset_globals();
+    reset_globals(TRUE);
 
     g_data_name = g_meta_name = NULL;
 

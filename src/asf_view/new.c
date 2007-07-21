@@ -187,19 +187,22 @@ void set_title(int band_specified, char *band)
     gtk_window_set_title(GTK_WINDOW(widget), title);
 }
 
-void reset_globals()
+void reset_globals(int reset_location)
 {
     clear_stats();
-    center_line = center_samp = crosshair_samp = crosshair_line = -1;
-    zoom = 1;
+
+    if (reset_location) {
+        center_line = center_samp = crosshair_samp = crosshair_line = -1;
+        zoom = 1;
+        g_poly.n = g_poly.c = 0;
+    }
 
     data_ci = NULL;
     meta = NULL;
-
-    g_poly.n = g_poly.c = 0;
 }
 
-void load_file_banded(const char *file, const char *band)
+static void load_file_banded_imp(const char *file, const char *band,
+                                 int reset_location)
 {
     // unload the current file, clear current globals
     if (data_ci) cached_image_free(data_ci);
@@ -208,7 +211,7 @@ void load_file_banded(const char *file, const char *band)
     if (g_meta_name) free(g_data_name);
     if (g_data_name) free(g_meta_name);
 
-    reset_globals();
+    reset_globals(reset_location);
 
     asfPrintStatus("\nLoading: %s\n", file);
 
@@ -230,6 +233,16 @@ void load_file_banded(const char *file, const char *band)
     fill_meta_info();
     fill_stats();
     setup_bands_tab(meta);
+}
+
+void reload_file_banded(const char *file, const char *band)
+{
+    load_file_banded_imp(file, band, FALSE);
+}
+
+void load_file_banded(const char *file, const char *band)
+{
+    load_file_banded_imp(file, band, TRUE);
 }
 
 void load_file(const char *file)
