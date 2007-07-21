@@ -85,6 +85,7 @@ long settings_get_end_date(void);
 void settings_set_start_date(long l);
 void settings_set_end_date(long l);
 int settings_get_request_type(void);
+void settings_set_request_type(int request_type);
 const char *settings_get_station_code(void);
 
 /* csv_list.c */

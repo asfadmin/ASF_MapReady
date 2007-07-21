@@ -8,10 +8,22 @@ static void generate(char **dir, char **file)
     else
         *dir = STRDUP("");
 
-    char request_type = settings_get_is_emergency() ? 'E' : 'W';
+    char e = settings_get_is_emergency() ? 'E' : 'W';
+    char *request_type;
+    switch (settings_get_request_type()) {
+        case ACQUISITION_REQUEST:
+            request_type="REQ"; break;
+        case OBSERVATION_REQUEST:
+            request_type="RQT"; break;
+        case ON_DEMAND_LEVEL_0:
+            request_type="L0MR"; break;
+        default:
+            // this will have to be filled in later, with what is detected
+            request_type="???"; break;
+    }
 
     *file = MALLOC(sizeof(char)*32);
-    sprintf(*file, "REQ%c%06d", request_type, s->req_num);
+    sprintf(*file, "%s%c%06d", request_type, e, s->req_num);
 
     settings_free(s);
 }

@@ -310,6 +310,17 @@ int settings_get_request_type()
     return gtk_combo_box_get_active(GTK_COMBO_BOX(w));
 }
 
+void settings_set_request_type(int request_type)
+{
+    GtkWidget *w = get_widget_checked("request_type_combobox");
+    if (which==OBSERVATION_REQUEST)
+        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 1);
+    else if (which==ACQUISITION_REQUEST)
+        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 2);
+    else if (which==ON_DEMAND_LEVEL_0)
+        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 3);
+}
+
 const char *settings_get_station_code()
 {
     static char *station_code=NULL;
