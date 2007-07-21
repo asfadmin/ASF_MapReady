@@ -3,39 +3,43 @@
 
  1. Update include/asf_version.h
 
-    Figure out what the subversion revision number, mention it in the
-    check-in.  Try to put the subversion number that will be attached
-    to the Tag operation, which is the revision number of last check-in
-    prior to bumping the version, +2.  (One for upping asf_version,
-    another for the tag.)
-
  2. Tag the repository:
-      svn copy https://lindon/svn/repos/asf_tools/trunk
-               https://lindon/svn/repos/asf_tools/tags/convert_v3-1-X
+      svn copy svn+ssh://svn/svn/asf_tools/trunk
+               svn+ssh://svn/svn/asf_tools/tags/convert_v3-1-X
 
     [[ tagging a branched revision --
-      svn copy https://lindon/svn/repos/asf_tools/branches/convert_vX-X-X
-               https://lindon/svn/repos/asf_tools/tags/convert_vX-X-X
+      svn copy svn+ssh://svn/svn/asf_tools/branches/convert_vX-X-X
+               svn+ssh://svn/svn/asf_tools/tags/convert_vX-X-X
     ]]
 
  3. Create a clean directory, for example:
       mkdir ~/asf/svn-rXXXX
       cd ~/asf/svn-rXXXX
 
+ 3.5. *** Important thing you only need to do once ***
+        In the release/rpmbuild directory (checked out in step 7) there are
+        two files that you need to put into your home directory:
+           cp dot.rpmmacros ~/.rpmmacros
+           cp dot.rpmrc ~/.rpmrc
+        You may need to skip step 4 for now, then do this step (3.5) after
+        you finish step 7, then do step 4.  Once done, won't need to be done
+        again.
+      ***
+      
  4. Update this line in ~/.rpmmacros
       %_topdir        %(echo $HOME)/asf/svn-rXXXX/release
 
  5. Export the tagged repository:
       svn export
-      https://lindon/svn/repos/asf_tools/tags/convert_v3-1-X asf_tools
+      svn+ssh://svn/svn/asf_tools/tags/convert_v3-1-X asf_tools
 
  6. ** KLUDGE #1 **
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
       src/ardop
 
  7. Check out the important parts of the release directory:
-      svn co https://lindon/svn/repos/release/trunk/autotar release/autotar
-      svn co https://lindon/svn/repos/release/trunk/rpmbuild release/rpmbuild
+      svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
+      svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
       mkdir -p release/tar_filelist release/tar/convert
 
  8. Create the source.convert file:
@@ -60,6 +64,7 @@ src/asf_terrcorr
 src/meta2envi
 src/resample
 src/fill_holes
+src/asf_view
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
@@ -80,18 +85,34 @@ src/fill_holes
     README_rpm.txt file from ../../asf_tools.
       ./tarrpms asf_convert
 
-15. Put the built files on quantum or someplace:
+15. *** SKIP - Quantum no longer exists - need a new canonical place to put
+               the releases!
+
+    Put the built files on quantum or someplace:
       scp RPMS/asf_convert-3.1.X-rpm.*
           'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       #We aren't actually putting the source rpms anywhere now
       #scp SRPMS/asf_convert-3.1.X-rpm-src.*
       #    'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
       scp Source/* 'quantum://shares/utd/Releases\ for\ Data\ Quality/Source'
-
+    
+    *** END SKIP ***
+    
 16. Bump the version in include/asf_version.h, add "-dev" to the end.
 
-17. The windows procedure is the same as described below.  Notes:
+17. The windows procedure is the same as described below.  (Step 10)
+    Notes:
+      - I build akdem_grab manually.  From asf_tools directory:
+            cd prototype/src/usgs_seamless
+            make
+            cp akdem_grab.exe ../../../bin
+        If "make" fails because of an error in osl/socket.cpp (it did for me)
+        then you probably need to do this:
+            vi ../osl/socket.cpp
+            --> comment out line 35: typedef int socklen_t;
 
+      - The installer package is now called "convertPackageInstall<VV>.nsi"
+        where <VV> is the version number: e.g., "convertPackageInstall32.nsi"
 
 Old instructions follow:
 -----------------------------------------------------------------------------
@@ -202,8 +223,8 @@ STP Instructions!
  1. Update STP_VERSION in src/stp/ardop_gui.c
 
  2. Tag the repository:
-      svn copy https://lindon/svn/repos/asf_tools/trunk
-               https://lindon/svn/repos/asf_tools/tags/stp_vX-X-X
+      svn copy https://svn/svn/repos/asf_tools/trunk
+               https://svn/svn/repos/asf_tools/tags/stp_vX-X-X
 
  3. Create a clean directory, for example:
       mkdir ~/asf/svn-rXXXX
@@ -214,7 +235,7 @@ STP Instructions!
 
  5. Export the tagged repository:
       svn export
-      https://lindon/svn/repos/asf_tools/tags/stp_vX-X-X asf_tools
+      https://svn/svn/repos/asf_tools/tags/stp_vX-X-X asf_tools
 
  6. ** KLUDGE #1 **
     Edit asf_tools/Makefile.in, the MODULES section should be changed to:
@@ -237,8 +258,8 @@ MODULES = \
     Get rid of the 'projections' stuff in the install target.
 
  7. Check out the important parts of the release directory:
-      svn co https://lindon/svn/repos/release/trunk/autotar release/autotar
-      svn co https://lindon/svn/repos/release/trunk/rpmbuild release/rpmbuild
+      svn co https://svn/svn/repos/release/trunk/autotar release/autotar
+      svn co https://svn/svn/repos/release/trunk/rpmbuild release/rpmbuild
       mkdir -p release/tar_filelist release/tar/stp
 
 7A. You may need to manually add
