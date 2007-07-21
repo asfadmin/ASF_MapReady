@@ -5,7 +5,7 @@
 
  2. Tag the repository:
       svn copy svn+ssh://svn/svn/asf_tools/trunk
-               svn+ssh://svn/svn/asf_tools/tags/convert_v3-1-X
+               svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-X
 
     [[ tagging a branched revision --
       svn copy svn+ssh://svn/svn/asf_tools/branches/convert_vX-X-X
@@ -31,11 +31,12 @@
 
  5. Export the tagged repository:
       svn export
-      svn+ssh://svn/svn/asf_tools/tags/convert_v3-1-X asf_tools
+      svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-X asf_tools
 
  6. ** KLUDGE #1 **
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
       src/ardop
+      src/llh2ls
 
  7. Check out the important parts of the release directory:
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
@@ -65,6 +66,11 @@ src/meta2envi
 src/resample
 src/fill_holes
 src/asf_view
+src/to_sr
+src/convert2vector
+src/deskew
+src/diffimage
+src/create_thumbs
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
