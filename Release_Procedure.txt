@@ -37,6 +37,7 @@
     Edit asf_tools/Makefile.in, eliminate the following from MODULES:
       src/ardop
       src/llh2ls
+      src/diffimage
 
  7. Check out the important parts of the release directory:
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
@@ -71,6 +72,7 @@ src/convert2vector
 src/deskew
 src/diffimage
 src/create_thumbs
+doc
 
 10. Run the autotar script:
       ./tarfile src ~/asf/svn-rXXXX convert
@@ -89,7 +91,7 @@ src/create_thumbs
 
 14. Create tarballs of the rpms.  The binary rpm will also contain the
     README_rpm.txt file from ../../asf_tools.
-      ./tarrpms asf_convert
+      ./tarrpms asf_convert convert
 
 15. *** SKIP - Quantum no longer exists - need a new canonical place to put
                the releases!
