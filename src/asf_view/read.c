@@ -41,6 +41,8 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
 {
     if (meta)
         meta_free(meta);
+    if (data_ci)
+        cached_image_free(data_ci);
 
     void (*err_func) (const char *format, ...);
     err_func = on_fail_abort ? asfPrintError : message_box;

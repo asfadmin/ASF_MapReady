@@ -100,9 +100,13 @@ void setup_bands_tab(meta_parameters *meta)
             meta->general->bands, g_band_cfg.band_b);
         populate_combo_csv("single_band_as_greyscale_combobox",
             meta->general->bands, g_band_cfg.band_gs);
-        disable_correct_hbox();
 
         multi_band(meta->general->bands);
+
+        set_checked("combine_bands_into_rgb_radiobutton", g_band_cfg.is_rgb);
+        set_checked("single_band_as_greyscale_radiobutton", !g_band_cfg.is_rgb);
+
+        disable_correct_hbox();
     }
 }
 

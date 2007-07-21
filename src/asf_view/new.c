@@ -161,9 +161,10 @@ void new_file(void)
 #endif // #ifdef win32
 }
 
-void set_title(int band_specified, char *band)
+void set_title(int band_specified, const char *band_in)
 {
     char title[256];
+    char *band = STRDUP(band_in); // local non-const copy we can change
     sprintf(title, "ssv ver %s: %s", VERSION, g_filename);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
@@ -185,6 +186,7 @@ void set_title(int band_specified, char *band)
 
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
+    free(band);
 }
 
 void reset_globals(int reset_location)
@@ -222,7 +224,7 @@ static void load_file_banded_imp(const char *file, const char *band,
         g_filename[strlen(g_filename)-1] = '\0';
 
     read_file(g_filename, band, FALSE);
-    set_title(band != NULL, (char*)band);
+    set_title(band != NULL, band);
 
     // load the metadata & image data, other setup
     fill_small_force_reload();

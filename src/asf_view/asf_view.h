@@ -140,7 +140,7 @@ void load_file(const char *file);
 void load_file_banded(const char *file, const char *band);
 void reload_file_banded(const char *file, const char *band);
 void reset_globals(int reset_position);
-void set_title(int band_specified, char *band);
+void set_title(int band_specified, const char *band);
 
 /* subset.c */
 void save_subset(void);

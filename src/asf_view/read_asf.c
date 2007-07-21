@@ -170,9 +170,10 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
     int i,j;
 
     int nl = meta->general->line_count;
-    //int ns = meta->general->sample_count;
+    int ns = meta->general->sample_count;
 
-    float *buf = MALLOC(sizeof(float)*meta->general->sample_count);
+    // temporary storage
+    float *buf = MALLOC(sizeof(float)*ns);
 
     if (meta->general->data_type == BYTE) {
         // BYTE case -- data file contains bytes.
@@ -204,7 +205,6 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             tot *= thumb_size_y;
             int l=0;
 
-            printf("%d %d\n", tot, thumb_size_y);
             // to do each of the bands, we read the data into a float array,
             // then cast (back) to byte into the interleaved "dest" array
             // (interleaved in the sense that we only populate every 3rd item
@@ -247,7 +247,8 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             }
 
             //assert(l==tot);
-            if (l!=tot) printf("%d %d\n", l, tot-1);
+            if (l!=tot) printf("These are supposed to be equal: %d %d\n",
+                l, tot);
         }
     } else {
         // this is the normal case -- regular old floating point data,
@@ -282,6 +283,13 @@ int open_asf_data(const char *filename, const char *band,
 
     info->is_rgb = FALSE;
     info->band_gs = info->band_r = info->band_g = info->band_b = 0;
+
+    // special hack for Avnir data!
+    if (!band && strcmp_case(meta->general->sensor_name, "AVNIR")==0) {
+        // no band was specifed -- show true color (3,2,1)
+        asfPrintStatus("Avnir data: defaulting to TRUE color -- 3,2,1\n");
+        band = "03,02,01";
+    }
 
     if (band) {
         char *r, *b, *g;
@@ -354,6 +362,5 @@ int open_asf_data(const char *filename, const char *band,
     else
         client->data_type = GREYSCALE_FLOAT;
 
-    //client->require_full_load = TRUE;
     return TRUE;
 }

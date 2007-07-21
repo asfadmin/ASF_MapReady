@@ -15,12 +15,13 @@ int try_ceos(const char *filename)
     char **dataName=NULL, **metaName=NULL, *baseName;
     int nBands, trailer;
 
-    baseName = (char *) MALLOC(sizeof(char)*512);
+    baseName = MALLOC(sizeof(char)*(strlen(filename)+5));
 
     ceos_file_pairs_t ret = 
         get_ceos_names(filename, baseName, &dataName, &metaName,
         &nBands, &trailer);
 
+    // we don't even care about these -- just interested in the return val
     free_ceos_names(dataName, metaName);
     free(baseName);
 
@@ -28,26 +29,35 @@ int try_ceos(const char *filename)
 }
 
 int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
-                    char **err)
+                     char **err)
 {
     char **dataName=NULL, **metaName=NULL, *baseName;
     int nBands, trailer;
 
-    baseName = (char *) MALLOC(sizeof(char)*512);
+    baseName = MALLOC(sizeof(char)*(strlen(filename)+5));
 
     ceos_file_pairs_t ret = 
         get_ceos_names(filename, baseName, &dataName, &metaName,
         &nBands, &trailer);
 
+    // we should not be in here if try_ceos(), above, failed
     assert(ret != NO_CEOS_FILE_PAIR);
 
-    int i, found=0;
-    for (i=0; i<nBands; ++i)
+    // which of all the dataName to put into data_name?
+    // default to the first band, unless one of the returned values matches
+    // what we were given -- in that case, the user has asked for a specific
+    // band, so that's what we need to use.
+    int i, found=FALSE;
+    for (i=0; i<nBands; ++i) {
         if (strcmp(filename, dataName[i]) == 0) {
+            // match -- user asked for specific band
             strcpy(data_name, dataName[i]);
             found = TRUE;
             break;
         }
+    }
+
+    // default to first band
     if (!found)
         strcpy(data_name, dataName[0]);
 
@@ -61,20 +71,20 @@ int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
 
 meta_parameters *read_ceos_meta(const char *meta_name)
 {
-  char **dataName=NULL, **metaName=NULL, *baseName;
-  int nBands, trailer;
+    // meta_create() likes the basename -- so we have to jump through a
+    // few hoops here before we can call it.
+    char **dataName=NULL, **metaName=NULL, *baseName;
+    int nBands, trailer;
 
-  baseName = (char *) MALLOC(sizeof(char)*512);
+    baseName = MALLOC(sizeof(char)*(strlen(filename)+5));
 
-  get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
+    get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
 
-  free_ceos_names(dataName, metaName);
-  meta_parameters *meta = meta_create(baseName);
-  free(baseName);
+    free_ceos_names(dataName, metaName);
+    meta_parameters *meta = meta_create(baseName);
+    free(baseName);
 
-  // at the current time, we do not support viewing mult-band data through
-  // the original ceos -- to do that, must be imported first
-  return meta;
+    return meta;
 }
 
 int read_ceos_client(int row_start, int n_rows_to_get,
@@ -117,6 +127,10 @@ int read_ceos_client(int row_start, int n_rows_to_get,
                 dest[jj + ii*ns] = (float)(bytes[jj]);
         }
         free(bytes);
+    }
+    else {
+        asfPrintError("Unsupported data type in CEOS data: %d\n",
+            meta->general->data_type);
     }
 
     return TRUE;
@@ -167,6 +181,10 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
             asfPercentMeter((float)ii/(thumb_size_y-1));
         }
         free(bytes);
+    }
+    else {
+        asfPrintError("Unsupported data type in CEOS data: %d\n",
+            meta->general->data_type);
     }
 
     return TRUE;
