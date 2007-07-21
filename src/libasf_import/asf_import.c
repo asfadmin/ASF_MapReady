@@ -119,7 +119,7 @@ int asf_import(radiometry_t radiometry, int db_flag,
                char *inBaseName, char *outBaseName)
 {
   ceos_description *ceos;
-    char **inBandName, inDataName[512]="", **inMetaName;
+    char **inBandName = NULL, inDataName[512]="", **inMetaName = NULL;
     char unscaledBaseName[256]="", bandExt[10]="";
     int do_resample;
     int do_metadata_fix;
@@ -149,30 +149,30 @@ int asf_import(radiometry_t radiometry, int db_flag,
         asfPrintStatus("   Data format: %s\n\n", format_type);
         if (inMetaNameOption == NULL)
             require_ceos_pair(inBaseName, &inBandName, &inMetaName, &nBands,
-			      &trailer);
+            &trailer);
         else {
             /* Allow the base name to be different for data & meta */
             require_ceos_data(inBaseName, &inBandName, &nBands);
             require_ceos_metadata(inMetaNameOption, &inMetaName, &trailer);
         }
-	ceos = get_ceos_description(inBaseName);
+  ceos = get_ceos_description(inBaseName);
         for (ii=0; ii<nBands; ii++) {
           // Determine the band extension (band ID)
-	  if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
-	    char *polarization;
+    if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
+      char *polarization;
 
-	    polarization = get_polarization(inBandName[ii]);
-	    strcpy(bandExt, polarization);
-	    FREE(polarization);
-	  }
-	  else if (ceos->sensor == AVNIR) {
-	    int band_number;
+      polarization = get_polarization(inBandName[ii]);
+      strcpy(bandExt, polarization);
+      FREE(polarization);
+    }
+    else if (ceos->sensor == AVNIR) {
+      int band_number;
 
-	    band_number = get_alos_band_number(inBandName[ii]);
-	    sprintf(bandExt, "0%d", band_number);
-	  }
-	  else if (ceos->sensor == PRISM)
-	    sprintf(bandExt, "01");
+      band_number = get_alos_band_number(inBandName[ii]);
+      sprintf(bandExt, "0%d", band_number);
+    }
+    else if (ceos->sensor == PRISM)
+      sprintf(bandExt, "01");
 
           // p will point to the beginning of the actual file (past the path)
           char *p = strrchr(inBandName[ii], '/');
