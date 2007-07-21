@@ -43,8 +43,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   int nOccurences=0, era=1, ii, trailer;
 
   if (recordType==CEOS_IFILEDR) {
-            int nBands;
-            require_ceos_data(inName, &dataName, &nBands);
+            int nBands, trailer;
+            require_ceos_pair(inName, &dataName, &metaName, &nBands, &trailer);
             strcpy(metaName[0], dataName[0]);
   } else {
             require_ceos_metadata(inName, &metaName, &trailer);

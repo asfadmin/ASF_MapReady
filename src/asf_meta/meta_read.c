@@ -33,7 +33,7 @@ meta_parameters *meta_read(const char *inName)
   char              *meta_name      = appendExt(inName,".meta");
   char              *ddr_name       = appendExt(inName,".ddr");
   meta_parameters   *meta           = raw_init(); /* Allocate and initialize basic structs */
-  char **junk;
+  char **junk=NULL;
   int junk2, ii;
 
   junk = (char **) MALLOC(2*sizeof(char *));
@@ -58,7 +58,7 @@ meta_parameters *meta_read(const char *inName)
     }
   }
   // Generate metadata if CEOS files could be detected
-  else if (require_ceos_metadata(inName,junk,&junk2) != NO_CEOS_METADATA) {
+  else if (require_ceos_metadata(inName,&junk,&junk2) != NO_CEOS_METADATA) {
     ceos_init(inName, meta);
   }
 
@@ -67,9 +67,7 @@ meta_parameters *meta_read(const char *inName)
 
   FREE(ddr_name);
   FREE(meta_name);
-  for (ii=0; ii<2; ii++)
-    FREE(junk[ii]);
-  FREE(junk);
+  free_ceos_names(NULL, junk);
 
   return meta;
 }

@@ -10,6 +10,7 @@
 #include <glib/gprintf.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include "ceos.h"
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)

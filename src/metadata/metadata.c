@@ -63,28 +63,6 @@ void print_record(FILE *fp, char *fileName, int reqrec)
     FREE(rec);
 }
 
-static char *get_base_name(const char *fileName)
-{
-    char *dir = MALLOC(sizeof(char)*(strlen(fileName)+1));
-    char *file = MALLOC(sizeof(char)*(strlen(fileName)+1));
-
-    split_dir_and_file(fileName, dir, file);
-
-    char *s;
-    if (strncmp(file, "LED-", 4) == 0 || strncmp(file, "IMG-", 4) == 0)
-        s = file + 4;
-    else
-        s = file;
-
-    char *ret = MALLOC(sizeof(char)*(strlen(fileName)+1));
-    sprintf(ret, "%s%s", dir, s);
-
-    FREE(file);
-    FREE(dir);
-
-    return ret;
-}
-
 char *get_record_as_string(char *fileName, int reqrec)
 {
   struct VFDRECV *facdr;                // Facility Related Data record
@@ -105,62 +83,28 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct PPREC *ppr;                    // Processing Parameter record
   struct alos_rad_data_rec *ardr;       // Radiometric Data record
 
+  ceos_data_ext_t data_ext;
+  ceos_metadata_ext_t metadata_ext;
   char **dataNames=NULL, **metaName=NULL, *baseName;
-  int nBands, trailer, dataNameExists, leaderNameExists;
+  int nBands, trailer, dataNameExists=1, leaderNameExists=1;
   char *ret=NULL;
 
   baseName = (char *) MALLOC(sizeof(char)*256);
 
-  get_ceos_names(fileName, baseName, &dataNames, &metaName, &nBands, &trailer);
+  metadata_ext = get_ceos_metadata_name(fileName, &metaName, &trailer);
+  data_ext = get_ceos_data_name(fileName, baseName, &dataNames, &nBands);
 
-  FILE *fp_tmp = fopen(dataNames[0], "r");
-  if (fp_tmp != NULL) {
-      dataNameExists = 1;
-      fclose(fp_tmp);
+  if (data_ext == NO_CEOS_DATA) {
+    asfPrintWarning("Data file (%s) missing.\n"
+		    "Unable to extract Image File Descriptor Record.\n",
+		    dataNames[0]);
+    dataNameExists = 0;
   }
-  else {
-      asfPrintWarning("Data file (%s) missing.\n"
-                      "Unable to extract Image File Descriptor Record.\n",
-                      dataNames[0]);
-      dataNameExists = 0;
+  if (metadata_ext == NO_CEOS_METADATA) {
+    asfPrintWarning("Leader (meta data) file missing.\n"
+		    "ONLY able to extract Image File Descriptor Record.\n");
+    leaderNameExists = 0;
   }
-
-  // Check leader file
-  fp_tmp = fopen(metaName[0], "r");
-  if (fp_tmp != NULL) {
-      leaderNameExists = 1;
-      fclose(fp_tmp);
-  }
-  else {
-      if (dataNameExists) {
-          asfPrintWarning("Leader (meta data) file missing.\n"
-                       "ONLY able to extract Image File Descriptor Record.\n");
-      }
-      else {
-          asfPrintWarning("Leader (meta data) file missing.\n");
-      }
-      leaderNameExists = 0;
-  }
-
-  // Check trailer file (if exists)
-  if (trailer) {
-    fp_tmp = fopen(metaName[0], "r");
-    if (fp_tmp != NULL) {
-      leaderNameExists = 1;
-      fclose(fp_tmp);
-    }
-    else {
-      if (dataNameExists) {
-	asfPrintWarning("Trailer (meta data) file missing.\n"
-			"ONLY able to extract Image File Descriptor Record.\n");
-      }
-      else {
-          asfPrintWarning("Trailer (meta data) file missing.\n");
-      }
-      leaderNameExists = 0;
-    }
-  }
-
   if (!dataNameExists && !leaderNameExists)
       return STRDUP("Unable to open data (.D) or leader (.L) file.\n");
 
@@ -336,10 +280,10 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (192): 
       vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
-      char *s = get_base_name(dataNames[0]);
-      if (dataNameExists && get_ifiledr(s,vfdr) >= 0)
-	ret = sprn_ifiledr(vfdr);
-      FREE(s);
+      if (dataNameExists) {
+	if (get_ifiledr(baseName,vfdr) >= 0)
+	  ret = sprn_ifiledr(vfdr);
+      }
       FREE(vfdr);
       break;
     case (200):

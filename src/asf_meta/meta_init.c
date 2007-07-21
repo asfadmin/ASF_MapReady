@@ -211,13 +211,13 @@ meta_stats *meta_stats_init(void)
 
 meta_band_stats *meta_band_stats_init(int band_count)
 {
-  int ii=0;
   meta_band_stats *band;
 
   band = (meta_band_stats *) MALLOC(sizeof(meta_stats)*band_count);
 
   //  for (ii=0; ii<band_count; ii++)
   //  band[ii]->stats = meta_stats_init();
+  return band;
 }
 
 
