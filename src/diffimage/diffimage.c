@@ -1,11 +1,6 @@
 /*******************************************************************************
 NAME: diffimage
 
-PROGRAM HISTORY:
-    VERS:   DATE:  AUTHOR:      PURPOSE:
-    ---------------------------------------------------------------
-    1.0            7/07   B. Dixon    As released
-
 ALGORITHM DESCRIPTION:
   Calculates statistics in each input file
   Calculates PSNR between the two input files
@@ -13,10 +8,12 @@ ALGORITHM DESCRIPTION:
   Checks for differences in stats, a PSNR that is too low, and for
     shifts in geolocation
 
-BUGS:
+ISSUES:
         The images must have at least 75% overlap.
         diffimage will occasionally fail to find the
-        correct offset (especially with noisy images).
+        correct offset especially with noisy images
+        or images with flat topography (low non-noise
+        spatial frequency.)
 
 *******************************************************************************/
 #include "asf.h"
@@ -87,6 +84,11 @@ typedef struct {
   gsl_histogram *hist;
   gsl_histogram_pdf *hist_pdf;
 } stats_t;
+
+typedef struct {
+  int psnr_good;
+  double psnr;
+} psnr_t;
 
 typedef struct {
   float dx; // In whatever units the image is in
@@ -192,25 +194,25 @@ void fftDiff(char *inFile1, char *inFile2, float *bestLocX, float *bestLocY, flo
 float get_maxval(data_type_t data_type);
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               double *psnr, int band);
+                               psnr_t *psnr, int band);
 void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               double *psnr, int band);
+                               psnr_t *psnr, int band);
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2, char *outfile,
                             stats_t *inFile1_stats, stats_t *inFile2_stats,
-                            double *psnr, int band);
+                            psnr_t *psnr, int band);
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
                             stats_t *inFile1_stats, stats_t *inFile2_stats,
-                            double *psnr, int band);
+                            psnr_t *psnr, int band);
 void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
                            stats_t *inFile1_stats, stats_t *inFile2_stats,
-                           double *psnr, int band);
+                           psnr_t *psnr, int band);
 void print_stats_results(char *filename1, char *filename2,
                          char *band_str1, char *band_str2,
                          stats_t *s1, stats_t *s2,
-                         double psnr);
+                         psnr_t psnr);
 void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
-                      stats_t *stats1, stats_t *stats2, double *psnr,
+                      stats_t *stats1, stats_t *stats2, psnr_t *psnr,
                       int strict, data_type_t t, int num_bands);
 void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2);
 void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
@@ -227,7 +229,7 @@ int  tiff_image_band_statistics_from_file(char *inFile, int band_no, int *stats_
                                           double *mean, double *sdev, double *rmse,
                                           int use_mask_value, float mask_value);
 void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
-                                     int band1, int band2, double *psnr);
+                                     int band1, int band2, psnr_t *psnr);
 float tiff_image_get_float_pixel(TIFF *tif, int row, int col, int band_no);
 void tiff_get_float_line(TIFF *tif, float *buf, int row, int band_no);
 void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr1, char *outfile);
@@ -237,7 +239,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
                                         double *mean, double *sdev, double *rmse,
                                         int use_mask_value, float mask_value);
 void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
-                                    int band1, int band2, double *psnr);
+                                    int band1, int band2, psnr_t *psnr);
 void png_sequential_get_float_line(png_structp png_ptr, png_infop info_ptr, float *buf, int band);
 void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *outfile);
 void ppm_pgm_get_float_line(FILE *fp, float *buf, int row, ppm_pgm_info_t *pgm, int band_no);
@@ -247,7 +249,7 @@ int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
                                              double *mean, double *sdev, double *rmse,
                                              int use_mask_value, float mask_value);
 void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
-                                        int band1, int band2, double *psnr);
+                                        int band1, int band2, psnr_t *psnr);
 void get_band_names(char *inFile, FILE *outputFP,
                     char ***band_names, int *num_extracted_bands);
 void free_band_names(char ***band_names, int num_extracted_bands);
@@ -259,7 +261,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
                                                   double *mean, double *sdev, double *rmse,
                                                   int use_mask_value, float mask_value);
 GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
-                                             int band1, int band2, double *psnr);
+                                             int band1, int band2, psnr_t *psnr);
 void make_generic_meta(char *file, uint32 height, uint32 width, data_type_t data_type);
 void fftShiftCheck(char *file1, char *file2, char *corr_file,
                    shift_data_t *shifts);
@@ -287,6 +289,7 @@ int main(int argc, char **argv)
   extern int optind;            /* argv index of the next argument */
   extern char *optarg;          /* current argv[] */
   int c;                        /* option letter from getopt() */
+  char ch;
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
   FILE *fError;                 /* Error log, stderr or log file */
   extern int logflag, quietflag;
@@ -300,7 +303,7 @@ int main(int argc, char **argv)
   char type_str[255];
   stats_t inFile1_stats[MAX_BANDS];
   stats_t inFile2_stats[MAX_BANDS];
-  double psnr[MAX_BANDS]; // peak signal to noise ratio
+  psnr_t psnr[MAX_BANDS]; // peak signal to noise ratio
   shift_data_t shifts[MAX_BANDS];
   //float bestLocX, bestLocY, certainty;
 
@@ -313,7 +316,8 @@ int main(int argc, char **argv)
   // any arbitrary band in file1 to any arbitrary band in file2
   while ((c=getopt(argc,argv,"o:l:b:s:")) != EOF)
   {
-    switch (c) {
+    ch = (char)c;
+    switch (ch) {
       case 'l':/* -log <filename>, get logfile; this is sorta hacked */
         if (0==strncmp(optarg,"og",2)) {
           sscanf(argv[optind++], "%s", logFile);
@@ -1451,7 +1455,7 @@ void graphicsFileType_toStr (graphics_file_t type, char *type_str)
 
 void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               double *psnr, int band)
+                               psnr_t *psnr, int band)
 {
   char *f1;
   char *f2;
@@ -1472,7 +1476,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
   s1->mean = s2->mean = 0.0;
   s1->sdev = s2->sdev = 0.0;
   s1->rmse = s2->rmse = 0.0;
-  *psnr = 0.0;
+  psnr->psnr = 0.0;
 
   // Read metadata and check for multi-bandedness
   if (inFile1 != NULL && strlen(inFile1) > 0) {
@@ -1548,7 +1552,8 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
     data2 = (float*)MALLOC(sizeof(float) * md2->general->sample_count);
     if (data1 == NULL || data2 == NULL ||
         (md1->general->data_type != md2->general->data_type)) {
-      *psnr = MISSING_PSNR;
+      psnr->psnr = MISSING_PSNR;
+      psnr->psnr_good = 0;
     }
     else {
       asfPrintStatus("\nCalculating PSNR between\n  Band %s in %s and\n  Band %s in %s\n",
@@ -1594,19 +1599,23 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
         if (fp2) FCLOSE(fp2);
         if (pixel_count > 0 && max_val > 0) {
           rmse = sqrt(sse/pixel_count);
-          *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+          psnr->psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+          psnr->psnr_good = 1;
         }
         else {
-          *psnr = MISSING_PSNR;
+          psnr->psnr = MISSING_PSNR;
+          psnr->psnr_good = 0;
         }
       }
       else {
-        *psnr = MISSING_PSNR;
+        psnr->psnr = MISSING_PSNR;
+        psnr->psnr_good = 0;
       }
     }
   }
   else {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
   }
 
   // Cleanup and begone
@@ -1632,7 +1641,7 @@ void calc_asf_img_stats_2files(char *inFile1, char *inFile2,
 
 void calc_jpeg_stats_2files(char *inFile1, char *inFile2, char *outfile,
                             stats_t *inFile1_stats, stats_t *inFile2_stats,
-                            double *psnr, int band)
+                            psnr_t *psnr, int band)
 {
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
@@ -1646,7 +1655,8 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2, char *outfile,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = MISSING_PSNR;
+  psnr->psnr = MISSING_PSNR;
+  psnr->psnr_good = 0;
 
   jpeg_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
                                        &s1->min, &s1->max,
@@ -1661,7 +1671,7 @@ void calc_jpeg_stats_2files(char *inFile1, char *inFile2, char *outfile,
 
 void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
                                stats_t *inFile1_stats, stats_t *inFile2_stats,
-                               double *psnr, int band)
+                               psnr_t *psnr, int band)
 {
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
@@ -1675,7 +1685,8 @@ void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = MISSING_PSNR;
+  psnr->psnr = MISSING_PSNR;
+  psnr->psnr_good = 0;
 
   ppm_pgm_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
                                           &s1->min, &s1->max,
@@ -1690,7 +1701,7 @@ void calc_ppm_pgm_stats_2files(char *inFile1, char *inFile2, char *outfile,
 
 void calc_tiff_stats_2files(char *inFile1, char *inFile2,
                             stats_t *inFile1_stats, stats_t *inFile2_stats,
-                            double *psnr, int band)
+                            psnr_t *psnr, int band)
 {
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
@@ -1704,7 +1715,8 @@ void calc_tiff_stats_2files(char *inFile1, char *inFile2,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = MISSING_PSNR;
+  psnr->psnr = MISSING_PSNR;
+  psnr->psnr_good = 0;
 
   tiff_image_band_statistics_from_file(inFile1, band, &s1->stats_good,
                                        &s1->min, &s1->max,
@@ -1746,7 +1758,7 @@ float get_maxval(data_type_t data_type)
 void print_stats_results(char *filename1, char *filename2,
                          char *band_str1, char *band_str2,
                          stats_t *s1, stats_t *s2,
-                         double psnr)
+                         psnr_t psnr)
 {
   asfPrintStatus(
       "\nStatistics for %s%s\n"
@@ -1768,11 +1780,11 @@ void print_stats_results(char *filename1, char *filename2,
       "result: %s\n",
       band_str2, filename2, s2->min, s2->max, s2->mean, s2->sdev, s2->rmse,
       s2->stats_good ? "GOOD STATS" : "UNRELIABLE STATS");
-  asfPrintStatus("\nPSNR between files: %f\n\n", psnr);
+  asfPrintStatus("\nPSNR between files: %f\n\n", psnr.psnr);
 }
 
 void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
-                      stats_t *stats1, stats_t *stats2, double *psnr,
+                      stats_t *stats1, stats_t *stats2, psnr_t *psnr,
                       int strict, data_type_t data_type, int num_bands)
 {
   char msg[1024];
@@ -1842,7 +1854,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
          max_diff > max_tol ||
          mean_diff > mean_tol ||
          sdev_diff > sdev_tol ||
-         psnr[band] < psnr_tol))
+         psnr[band].psnr < psnr_tol))
     {
       // Strict comparison utilizes all values
       fprintf(outputFP, "\n-----------------------------------------------\n");
@@ -1885,10 +1897,10 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      if (psnr[band] != MISSING_PSNR) {
+      if (psnr[band].psnr_good) {
         sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
-                psnr[band] < psnr_tol ? "FAIL" : "PASS",
-                psnr[band], psnr_tol);
+                psnr[band].psnr < psnr_tol ? "FAIL" : "PASS",
+                psnr[band].psnr, psnr_tol);
       }
       else {
         sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
@@ -1904,7 +1916,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
              (stats1[band].stats_good && stats2[band].stats_good) &&
              (mean_diff > mean_tol ||
               sdev_diff > sdev_tol ||
-              psnr[band] < psnr_tol)) {
+              psnr[band].psnr < psnr_tol)) {
       // If not doing strict checking, skip comparing min and max values
       fprintf(outputFP, "\n-----------------------------------------------\n");
       asfPrintStatus("\n-----------------------------------------------\n");
@@ -1935,10 +1947,10 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       fprintf(outputFP, msg);
       asfPrintStatus(msg);
 
-      if (psnr[band] != MISSING_PSNR) {
+      if (psnr[band].psnr_good) {
         sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
-                psnr[band] < psnr_tol ? "FAIL" : "PASS",
-                psnr[band], psnr_tol);
+                psnr[band].psnr < psnr_tol ? "FAIL" : "PASS",
+                psnr[band].psnr, psnr_tol);
       }
       else {
         sprintf(msg, "[FAIL] [PSNR]   PSNR:      MISSING,                    PSNR Minimum: %11f (higher == better)\n",
@@ -3080,7 +3092,7 @@ int tiff_image_band_statistics_from_file(char *inFile, int band_no,
 
 void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
                                      int band1, int band2,
-                                     double *psnr)
+                                     psnr_t *psnr)
 {
   double cs1, cs2;
   tiff_data_t t1, t2;
@@ -3097,7 +3109,8 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
       t1.width == 0)
   {
     asfPrintWarning("Missing TIFF header values in %s\n", inFile1);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   get_tiff_info_from_file(inFile2, &t2);
@@ -3111,7 +3124,8 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
       t2.width == 0)
   {
     asfPrintWarning("Missing TIFF header values in %s\n", inFile2);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -3131,7 +3145,8 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
       band2 < 0 || band2 > t2.num_bands - 1) {
     asfPrintWarning("Invalid band number for file1 (%d v. %d) or file2 (%d v. %d)\n",
                     band1, t1.num_bands, band2, t2.num_bands);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (t1.height != t2.height) {
@@ -3147,7 +3162,8 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
 
   if (t1.data_type != t2.data_type) {
     asfPrintWarning("TIFF files have different data types.\n");
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -3159,14 +3175,16 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   TIFF *tif1 = XTIFFOpen(inFile1, "rb");
   if (tif1 == NULL) {
     asfPrintWarning("Cannot open %s\n", inFile1);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   scanlineSize1 = TIFFScanlineSize(tif1);
   if (scanlineSize1 <= 0) {
     asfPrintWarning("Invalid scanline size (%d)\n", scanlineSize1);
     if (tif1) XTIFFClose(tif1);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (t1.num_bands > 1 &&
@@ -3175,20 +3193,23 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   {
     asfPrintWarning("Invalid planar configuration in %s\n", inFile1);
     if (tif1) XTIFFClose(tif1);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   TIFF *tif2 = XTIFFOpen(inFile2, "rb");
   if (tif2 == NULL) {
     asfPrintWarning("Cannot open %s\n", inFile2);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   scanlineSize2 = TIFFScanlineSize(tif2);
   if (scanlineSize2 <= 0) {
     asfPrintWarning("Invalid scanline size (%d)\n", scanlineSize2);
     if (tif2) XTIFFClose(tif2);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (t2.num_bands > 1 &&
@@ -3197,14 +3218,16 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   {
     asfPrintWarning("Invalid planar configuration in %s\n", inFile2);
     if (tif2) XTIFFClose(tif2);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   float *buf1 = (float*)CALLOC(t1.width, sizeof(float));
   float *buf2 = (float*)CALLOC(t2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for TIFF data buffers.\n");
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
     return;
@@ -3226,10 +3249,12 @@ void tiff_image_band_psnr_from_files(char *inFile1, char *inFile2,
   asfPercentMeter(1.0);
   if (pixel_count > 0 && max_val > 0) {
     rmse = sqrt(sse/pixel_count);
-    *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr_good = 1;
   }
   else {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
   }
 
   free_band_names(&band_names1, num_extracted_names1);
@@ -3587,7 +3612,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
 
 void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
                            stats_t *inFile1_stats, stats_t *inFile2_stats,
-                           double *psnr, int band)
+                           psnr_t *psnr, int band)
 {
   stats_t *s1 = inFile1_stats;
   stats_t *s2 = inFile2_stats;
@@ -3601,7 +3626,8 @@ void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
   s1->rmse = s2->rmse = 0.0;
   s1->hist = s2->hist = NULL;
   s1->hist_pdf = s2->hist_pdf = NULL;
-  *psnr = MISSING_PSNR;
+  psnr->psnr = MISSING_PSNR;
+  psnr->psnr_good = 0;
 
   png_image_band_statistics_from_file(inFile1, outfile, band, &s1->stats_good,
                                       &s1->min, &s1->max,
@@ -3793,7 +3819,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
 
 void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
                                      int band1, int band2,
-                                     double *psnr)
+                                     psnr_t *psnr)
 {
   double cs1, cs2;
   png_structp png_ptr1 = NULL, png_ptr2 = NULL;
@@ -3823,7 +3849,8 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot read PNG file header in file1\n  %s\n", inFile1);
     if (outputFP) fprintf(outputFP, msg);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   get_png_info_hdr_from_file(inFile2, &ihdr2, outfile);
@@ -3841,7 +3868,8 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot read PNG file header in file2\n  %s\n", inFile2);
     if (outputFP) fprintf(outputFP, msg);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -3947,7 +3975,8 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (ihdr1.height != ihdr2.height) {
@@ -3970,7 +3999,8 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -3983,7 +4013,8 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   float *buf2 = (float*)CALLOC(ihdr2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for PNG data buffers.\n");
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
     if (png_ptr1) png_destroy_read_struct(&png_ptr1, &info_ptr1, NULL);
@@ -4011,10 +4042,12 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   asfPercentMeter(1.0);
   if (pixel_count > 0 && max_val > 0) {
     rmse = sqrt(sse/pixel_count);
-    *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr_good = 1;
   }
   else {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
   }
 
   free_band_names(&band_names1, num_names_extracted1);
@@ -4511,7 +4544,7 @@ int ppm_pgm_image_band_statistics_from_file(char *inFile, char *outfile,
 }
 
 void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
-                                        int band1, int band2, double *psnr)
+                                        int band1, int band2, psnr_t *psnr)
 {
   ppm_pgm_info_t pgm1, pgm2; // Header info
   double cs1, cs2;
@@ -4534,7 +4567,8 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     sprintf(msg, "Cannot read PPM/PNG file header in file1\n  %s\n", inFile1);
     if (outputFP) fprintf(outputFP, msg);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   get_ppm_pgm_info_hdr_from_file(inFile2, &pgm2, outfile);
@@ -4550,7 +4584,8 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     sprintf(msg, "Cannot read PPM/PNG file header in file2\n  %s\n", inFile2);
     if (outputFP) fprintf(outputFP, msg);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -4571,7 +4606,8 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (pgm1.height != pgm2.height) {
@@ -4592,7 +4628,8 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     if (outputFP) FCLOSE(outputFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -4606,7 +4643,8 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
   float *buf2 = (float*)CALLOC(pgm2.width, sizeof(float));
   if (buf1 == NULL || buf2 == NULL) {
     asfPrintWarning("Cannot allocate memory for PNG data buffers.\n");
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
     if (outputFP != NULL) fprintf(outputFP, msg);
@@ -4637,10 +4675,12 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
   asfPercentMeter(1.0);
   if (pixel_count > 0 && max_val > 0) {
     rmse = sqrt(sse/pixel_count);
-    *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr_good = 1;
   }
   else {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
   }
 
   if (fp1) FCLOSE(fp1);
@@ -4895,7 +4935,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
 }
 
 GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
-                                     int band1, int band2, double *psnr)
+                                     int band1, int band2, psnr_t *psnr)
 {
   jpeg_info_t jpg1, jpg2;
   char msg[1024];
@@ -4911,13 +4951,15 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     outFP = (FILE*)FOPEN(outfile,"a");
     if (outFP) fprintf(outFP, "Cannot open file: %s\n", inFile1);
     if (outFP) FCLOSE(outFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (fp2 == NULL) {
     if (outFP) fprintf(outFP, "Cannot open file: %s\n", inFile2);
     if (outFP) FCLOSE(outFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -4927,7 +4969,8 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
       jpg1.data_type != BYTE ||
       jpg1.num_bands <= 0)
   {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   get_jpeg_info_hdr_from_file(inFile2, &jpg2, outfile);
@@ -4936,7 +4979,8 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
       jpg2.data_type != BYTE ||
       jpg2.num_bands <= 0)
   {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -5005,7 +5049,8 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     if (outFP) FCLOSE(outFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
   if (jpg1.height != jpg2.height) {
@@ -5020,13 +5065,26 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
   }
 
   if (jpg1.data_type != jpg2.data_type) {
-    sprintf(msg,"PPM/PGM files have differing data types.\n");
+    sprintf(msg,"Input JPEG files have differing data types.\n");
     asfPrintWarning(msg);
     if (outFP != NULL) fprintf(outFP, msg);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     if (outFP) FCLOSE(outFP);
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
+    return;
+  }
+  if (jpg1.num_bands != jpg2.num_bands) {
+    sprintf(msg,"Input JPEG files have a different number of bands (%d v. %d)\n",
+           jpg1.num_bands, jpg2.num_bands);
+    asfPrintWarning(msg);
+    if (outFP != NULL) fprintf(outFP, msg);
+    if (fp1) FCLOSE(fp1);
+    if (fp2) FCLOSE(fp2);
+    if (outFP) FCLOSE(outFP);
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
     return;
   }
 
@@ -5053,12 +5111,22 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     }
   }
   asfPercentMeter(1.0);
+  // Read any unread lines so the jpeg library won't complain when jpeg_finish_decompress()
+  // and jpeg_destroy_decompress() are called...
+  while (cinfo1.output_scanline < jpg1.height) {
+    jpeg_read_scanlines(&cinfo1, jpg_buf1, 1);
+  }
+  while (cinfo2.output_scanline < jpg2.height) {
+    jpeg_read_scanlines(&cinfo2, jpg_buf2, 1);
+  }
   if (pixel_count > 0 && max_val > 0) {
     rmse = sqrt(sse/pixel_count);
-    *psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr = 10.0 * log10(max_val/(rmse+.00000000000001));
+    psnr->psnr_good = 1;
   }
   else {
-    *psnr = MISSING_PSNR;
+    psnr->psnr = MISSING_PSNR;
+    psnr->psnr_good = 0;
   }
 
   jpeg_finish_decompress(&cinfo1);
