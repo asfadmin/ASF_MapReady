@@ -27,9 +27,11 @@ static void single_band(const char *str)
     show_widget("hbox_multi", FALSE);
     show_widget("hbox_bands_buttons", FALSE);
 
-    if (strlen(str)>0 && strcmp(str, MAGIC_UNSET_STRING)!=0)
-        put_string_to_label("single_band_label", str);
-    else
+    if (strlen(str)>0 && strcmp(str, MAGIC_UNSET_STRING)!=0) {
+        char tmp[128];
+        snprintf(tmp, 128, "Band: %s", str);
+        put_string_to_label("single_band_label", tmp);
+    } else
         put_string_to_label("single_band_label", "Bands: -");
 }
 
@@ -77,8 +79,12 @@ static void populate_combo_csv(const char *widget_name, char *csv, int i)
 
 void setup_bands_tab(meta_parameters *meta)
 {
-    if (!meta || meta->general->band_count == 1 || 
-        meta->general->band_count == MAGIC_UNSET_INT)
+    if (!meta ||
+        meta->general->band_count == 1 || 
+        meta->general->band_count == MAGIC_UNSET_INT ||
+        !meta->general->bands ||
+        strlen(meta->general->bands) == 0 ||
+        strcmp(meta->general->bands, MAGIC_UNSET_STRING) == 0)
     {
         single_band(meta->general->bands);
     }

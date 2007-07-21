@@ -212,7 +212,6 @@ static void load_file_banded_imp(const char *file, const char *band,
     if (g_data_name) free(g_meta_name);
 
     reset_globals(reset_location);
-
     asfPrintStatus("\nLoading: %s\n", file);
 
     // start loading of the new file
@@ -223,7 +222,7 @@ static void load_file_banded_imp(const char *file, const char *band,
         g_filename[strlen(g_filename)-1] = '\0';
 
     read_file(g_filename, band, FALSE);
-    set_title(band != NULL, band);
+    set_title(band != NULL, (char*)band);
 
     // load the metadata & image data, other setup
     fill_small_force_reload();

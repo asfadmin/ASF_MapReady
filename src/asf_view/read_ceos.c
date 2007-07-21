@@ -1,85 +1,80 @@
 #include "asf_view.h"
-#include "read_ceos.h"
+#include "asf_import.h"
 #include "get_ceos_names.h"
+#include "asf_nan.h"
+#include "asf_endian.h"
+
+typedef struct {
+    FILE *fp;
+    int headerBytes;
+    int reclen;
+} ReadCeosClientInfo;
 
 int try_ceos(const char *filename)
 {
-    char *ext = findExt(filename);
+    char **dataName=NULL, **metaName=NULL, *baseName;
+    int nBands, trailer;
 
-    if (ext && strlen(ext) > 0) {
-        return strcmp_case(ext, ".D") == 0 ||
-               strcmp_case(ext, ".L") == 0;
-    } else {
-        return try_ext(filename, ".D");
-    }
+    baseName = (char *) MALLOC(sizeof(char)*512);
+
+    ceos_file_pairs_t ret = 
+        get_ceos_names(filename, baseName, &dataName, &metaName,
+        &nBands, &trailer);
+
+    free_ceos_names(dataName, metaName);
+    free(baseName);
+
+    return ret != NO_CEOS_FILE_PAIR;
 }
 
 int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
                     char **err)
 {
-    char *ext = findExt(filename);
-    int has_ext = ext && strlen(ext) > 0;
-    int has_asf_ext = has_ext &&
-        (strcmp_case(ext,".D")==0 || strcmp_case(ext,".L")==0);
+    char **dataName=NULL, **metaName=NULL, *baseName;
+    int nBands, trailer;
 
-    // either they gave us an CEOS extension, or we try adding it
-    // to a user-provided basename, and that file does exist
-    if (has_asf_ext || try_ext(filename, ".D"))
-    {
-        char *m = appendExt(filename, ".L");
-        char *d = appendExt(filename, ".D");
+    baseName = (char *) MALLOC(sizeof(char)*512);
 
-        strcpy(meta_name, m);
-        strcpy(data_name, d);
+    ceos_file_pairs_t ret = 
+        get_ceos_names(filename, baseName, &dataName, &metaName,
+        &nBands, &trailer);
 
-        int ret;
-        if (!fileExists(meta_name) || !fileExists(data_name)) {
-            int l = sizeof(char)*strlen(filename)*2+255;
-            *err = MALLOC(l);
-            snprintf(*err, l,
-                "Error opening CEOS file.\n"
-                "  Metadata file: %s - %s\n"
-                "      Data file: %s - %s\n",
-                m, fileExists(m) ? "Found" : "NOT FOUND",
-                d, fileExists(d) ? "Found" : "NOT FOUND");
+    assert(ret != NO_CEOS_FILE_PAIR);
 
-            ret = FALSE;
+    int i, found=0;
+    for (i=0; i<nBands; ++i)
+        if (strcmp(filename, dataName[i]) == 0) {
+            strcpy(data_name, dataName[i]);
+            found = TRUE;
+            break;
         }
-        else
-            ret = TRUE;
+    if (!found)
+        strcpy(data_name, dataName[0]);
 
-        free(m);
-        free(d);
+    strcpy(meta_name, metaName[0]);
 
-        return ret;
-    }
-    else {
-        // in theory this shouldn't happen, if try_ext is working
-        assert(!try_ext(filename, ".D"));
-        int l = sizeof(char)*strlen(filename)*2+255;
-        *err = MALLOC(l);
-        snprintf(*err, l,
-            "Failed to open %s as a CEOS File.\n", filename);
-        return FALSE;
-    }
+    free_ceos_names(dataName, metaName);
+    free(baseName);
 
-    // not reached
-    assert(FALSE);
-    return FALSE;
+    return TRUE;
 }
 
 meta_parameters *read_ceos_meta(const char *meta_name)
 {
   char **dataName=NULL, **metaName=NULL, *baseName;
-  int ii, nBands, trailer;
+  int nBands, trailer;
 
   baseName = (char *) MALLOC(sizeof(char)*512);
 
   get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
 
   free_ceos_names(dataName, metaName);
+  meta_parameters *meta = meta_create(baseName);
+  free(baseName);
 
-  return meta_create(baseName);
+  // at the current time, we do not support viewing mult-band data through
+  // the original ceos -- to do that, must be imported first
+  return meta;
 }
 
 int read_ceos_client(int row_start, int n_rows_to_get,

@@ -75,15 +75,6 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
             free(err);
             return FALSE;
         }
-    } else if (try_alos(filename)) {
-        if (handle_alos_file(filename, band, meta_name, data_name, &err)) {
-            meta = read_ceos_meta(meta_name);
-            open_ceos_data(data_name, meta_name, band, meta, client);
-        } else {
-            err_func(err);
-            free(err);
-            return FALSE;
-        }
     } else if (try_jpeg(filename)) {
         if (handle_jpeg_file(filename, meta_name, data_name, &err)) {
             meta = open_jpeg(data_name, client);
