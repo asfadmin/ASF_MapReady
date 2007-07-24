@@ -2,6 +2,13 @@
 #include "shapefil.h"
 #include "asf_vector.h"
 
+#define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
+#define ASF_EXPORT_FLOAT_MICRON 0.000000001
+#define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
+                                (a, b, ASF_EXPORT_FLOAT_MICRON))
+
+void write_esri_proj_file(char *inFile);
+
 void shape_init(char *inFile, format_type_t format)
 {
   char *dbaseFile;
@@ -234,6 +241,9 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list)
   else
     convert2shape(inFile, format, dbase, shape, 0);
 
+  if (format == META)
+    write_esri_proj_file(outFile);
+
   // Close business
   close_shape(dbase, shape);
 
@@ -261,10 +271,27 @@ int read_shape(char *inFile, char *outFile, format_type_t format, int list)
     }
     FCLOSE(fpIn);
   }
-  else 
+  else
     convert_from_shape(inFile, format, fpOut);
 
   FCLOSE(fpOut);
 
   return 0;
+}
+
+void write_esri_proj_file(char *inFile) 
+{
+  FILE *fp;
+  char esri_prj_file_name[255];
+
+  create_name (esri_prj_file_name, inFile, ".prj");
+
+  fp = FOPEN(esri_prj_file_name, "w");
+  fprintf(fp,
+	  "GEOGCS[\"GCS_WGS_1984\","
+	  "DATUM[\"D_WGS_1984\","
+	  "SPHEROID[\"WGS_1984\",6378137,298.257223563]],"
+	  "PRIMEM[\"Greenwich\",0],"
+	  "UNIT[\"Degree\",0.017453292519943295]]");
+  FCLOSE(fp);
 }
