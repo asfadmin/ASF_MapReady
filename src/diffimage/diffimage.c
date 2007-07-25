@@ -594,6 +594,22 @@ int main(int argc, char **argv)
           free_band_names(&band_names2, num_names_extracted2);
           asfPrintError(msg);
         }
+        char *data_type_str = data_type2str(md1->general->data_type);
+        if (strncmp(data_type_str, "COMPLEX", 7) == 0) {
+          sprintf(msg, "Complex data types not yet supported (%s)\n",
+              data_type_str);
+          if (data_type_str) FREE(data_type_str);
+          diffErrOut(outputFile, msg);
+          meta_free(md1);
+          meta_free(md2);
+          FREE(outputFile);
+          FREE(f1);
+          FREE(f2);
+          free_band_names(&band_names1, num_names_extracted1);
+          free_band_names(&band_names2, num_names_extracted2);
+          asfPrintError(msg);
+        }
+        if (data_type_str) FREE(data_type_str);
 
         //////////////////////////////////////////////////////////////////////////////////////
         // Calculate statistics, PSNR, measure image-to-image shift in geolocation, and then
