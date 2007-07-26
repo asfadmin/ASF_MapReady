@@ -65,16 +65,16 @@ all: external_libs
 install: all
 	mkdir -p $(S_SHAREDIR)/doc
 	cp doc/*.pdf doc/asf_convert-version_history.txt $(S_SHAREDIR)/doc
-	mkdir -p @BINDIR@ @prefix@/lib @SHAREDIR@
-	cp -R $(S_BINDIR)/* @BINDIR@
-	cp -R lib/* @prefix@/lib
-	cp -R $(S_SHAREDIR)/* @SHAREDIR@
-	chmod 755 @BINDIR@/*
-	chmod -R a+r @SHAREDIR@/*
-	chmod a+x @SHAREDIR@/projections
-	chmod a+x @SHAREDIR@/projections/*
-	chmod a+x @SHAREDIR@/asf_convert
-	chmod a+x @SHAREDIR@/proj
+	mkdir -p "@BINDIR@" "@prefix@"/lib "@SHAREDIR@"
+	cp -R $(S_BINDIR)/* "@BINDIR@"
+	cp -R lib/* "@prefix@"/lib
+	cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
+	chmod 755 "@BINDIR@"/*
+	chmod -R a+r "@SHAREDIR@"/*
+	chmod a+x "@SHAREDIR@"/projections
+	chmod a+x "@SHAREDIR@"/projections/*
+	chmod a+x "@SHAREDIR@"/asf_convert
+	chmod a+x "@SHAREDIR@"/proj
 
 external_libs:
 	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
