@@ -49,7 +49,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
                    char *prcPath)
 {
   double clock_ang;
-  char parN[256], buf[256];
+  char *parN, buf[256];
   meta_parameters *meta=raw_init();
   stateVector stVec;/*Source state vector*/
   ymd_date st_date,img_date;
@@ -58,13 +58,15 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   char *st_timeStr;/*Source state vector time, YYYY-MM-DD hh:mm:ss.ttt*/
   int num_vecs;
 
-/*Need a SAR block*/
+  parN = (char *) MALLOC(sizeof(char)*512);
+
+  /*Need a SAR block*/
   if (!meta->sar) meta->sar = meta_sar_init();
 
-/*Open the parameter file*/
-  get_stf_metadata_name(inN, parN);
+  /*Open the parameter file*/
+  get_stf_metadata_name(inN, &parN);
 
-/*Find start of current scene*/
+  /*Find start of current scene*/
   if (img_timeStr == NULL)
     img_timeStr=lzStr(parN,"prep_block.location[0].line_date:",NULL);
   date_dssr2date(img_timeStr,&img_date,&img_time);
@@ -140,6 +142,8 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
 /*Write out and free the metadata structure*/
   meta_write(meta,outN);
   meta_free(meta);
+
+  FREE(parN);
 }
 
 /******************************************************************************
@@ -151,11 +155,13 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
             readPulseFunc *readNextPulse)
 {
   bin_state *s;
-  char lzName[256];
+  char *lzName;
   int ii;
   char *satName;
 
-  get_stf_metadata_name(inName,lzName);
+  lzName = (char *) MALLOC(sizeof(char)*512);
+
+  get_stf_metadata_name(inName, &lzName);
 
 /*Figure out what kind of SAR data we have; initialize the appropriate decoder*/
   satName=lzStr(lzName,"prep_block.satellite:",NULL);

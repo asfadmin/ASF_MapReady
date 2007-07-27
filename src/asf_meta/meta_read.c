@@ -59,7 +59,7 @@ meta_parameters *meta_read(const char *inName)
   }
   // Generate metadata if CEOS files could be detected
   else if (require_ceos_metadata(inName,&junk,&junk2) != NO_CEOS_METADATA) {
-    ceos_init(inName, meta);
+    ceos_init(inName, meta, STATUS);
   }
 
   /* Remember the name and location of the meta struct */

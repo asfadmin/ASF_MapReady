@@ -79,6 +79,12 @@ typedef struct {
     LEVEL_1B2R,
     LEVEL_1B2G
   } product;
+  enum {
+    CEOS_RAW_DATA,
+    CEOS_SLC_DATA_INT,
+    CEOS_SLC_DATA_FLOAT,
+    CEOS_AMP_DATA
+  } ceos_data_type;
 } ceos_description;
 
 /* Enum & strings for ceos metadata file extensions */
@@ -91,6 +97,7 @@ typedef enum {
   CEOS_ldr,
   CEOS_LEA,
   CEOS_lea,
+  CEOS_LEA_,
   CEOS_LED,
   NUM_CEOS_METADATA_EXTS
 } ceos_metadata_ext_t;

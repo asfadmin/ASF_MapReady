@@ -112,7 +112,9 @@ void delete_bin_state(bin_state *s)
  * meta_parameters structure.  */
 void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
 {
-  char parN[255],*ellipsoid;
+  char *parN, *ellipsoid;
+
+  parN = (char *) MALLOC(sizeof(char)*512);
 
   strcpy(meta->general->sensor, s->satName);
   strcpy(meta->general->mode,   s->beamMode);
@@ -139,7 +141,7 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
   sprintf(meta->sar->satellite_binary_time,"%f",s->time_code);
 
   if (stfFlag) {
-    get_stf_metadata_name(inN, parN);
+    get_stf_metadata_name(inN, &parN);
     strcpy(meta->general->processor, "ASF/IMPORT2ASF");
     meta->general->data_type = COMPLEX_REAL32;
     meta->general->image_data_type = RAW_IMAGE;
@@ -173,6 +175,7 @@ void updateMeta(bin_state *s,meta_parameters *meta,char *inN,int stfFlag)
       strcpy (meta->sar->satellite_clock_time, "0");
     }
   }
+  FREE(parN);
 }
 
 /*********************************************************************

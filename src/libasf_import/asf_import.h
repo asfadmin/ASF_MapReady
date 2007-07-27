@@ -3,8 +3,8 @@
 
 #define TOOLS_META_EXT    ".meta"
 #define TOOLS_IMAGE_EXT   ".img"
-#define TOOLS_RAW_EXT     ".raw"
-#define TOOLS_COMPLEX_EXT ".cpx"
+#define TOOLS_RAW_EXT     ".img"
+#define TOOLS_COMPLEX_EXT ".img"
 
 typedef enum {
     r_AMP=1,
@@ -50,16 +50,14 @@ int firstRecordLen(char *ceosName);
 void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
-void import_ceos(char *inDataName, char *bandExt, int band, int nBands, 
-		 char *inMetaName, char *lutName, char *outBaseName, 
-		 radiometry_t radiometry, int db_flag, int import_single_band);
+void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
+                 char *band_id, char *lutName, double *p_range_scale,
+                 double *p_azimuth_scale, double *p_correct_y_pixel_size,
+                 char *inMetaNameOption, radiometry_t radiometry, int db_flag);
+void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry, 
+		char *inMetaNameOption, int lat_constrained, double lowerLat, 
+		double upperLat, char *prcPath);
 
-void import_envi(char *inDataName,char *inMetaName,char *outBaseName);
-void import_esri(char *inDataName,char *inMetaName,char *outBaseName);
-
-void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
-                radiometry_t radiometry, int lat_constrained,
-                double lowerLat, double upperLat, char *prcPath);/*this last line of parameters are extra from the rest of the import_*() functions */
 void
 import_usgs_seamless (const char *inFileName, const char *outBaseName, ...);
 void

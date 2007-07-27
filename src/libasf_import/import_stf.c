@@ -2,6 +2,7 @@
 #include "dateUtil.h"
 #include "decoder.h"
 #include "lzFetch.h"
+#include "get_stf_names.h"
 
 /* Prototypes */
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
@@ -17,12 +18,12 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 
 /******************************************************************************
  * Import Sky Telemetry Format data to ASF Tools format */
-void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
-                radiometry_t radiometry, int lat_constrained,
-                double lowerLat, double upperLat, char *prcPath)/*this last line of parameters are extra from the rest of the import_*() functions */
+void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry, 
+		char *inMetaNameOption, int lat_constrained, double lowerLat, 
+		double upperLat, char *prcPath)
 {
-  char outDataName[256]="", outMetaName[256]="";        /* Output file names */
-  char imgTimeStr[20]="";
+  char outDataName[256]="", outMetaName[256]="", imgTimeStr[20]="";
+  char *inDataName, *inMetaName;
   int nTotal, nVec=1;
   int outLine;                     /* Used to handle missing lines correctly */
   long imgStart=0, imgEnd=0;       /* Used to handle missing lines correctly */
@@ -36,10 +37,13 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   double lat, lon;
   int prc_flag = FALSE;
 
-  //if (flags[f_SPROCKET] != FLAG_NOT_SET) {
-  //  asfPrintError("Data is level 0, sprocket can not use this.\n");
-  //  exit(EXIT_FAILURE);
-  //}
+  if (inMetaNameOption == NULL)
+    require_stf_pair(inBaseName, &inDataName, &inMetaName);
+  else {
+    /* Allow the base name to be different for data & meta */
+    require_stf_data(inBaseName, &inDataName);
+    require_stf_metadata(inMetaNameOption, &inMetaName);
+  }
 
   /* Handle output file name */
   strcpy(outDataName,outBaseName);
@@ -64,12 +68,6 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
           sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
       case r_POWER:
           sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
-  }
-  if (tempFlag) {
-    asfPrintStatus(
-      "Warning:\n"
-      "  The following flags will be ignored since this is a level zero data set:\n"
-      "  %s\n", logbuf);
   }
 
   if (lat_constrained) {
@@ -98,7 +96,9 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
     /* Find the index of the closest state vector to the start time */
     nVec=1;
     while (!done) {
-      sprintf(buf, "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:", nVec);
+      sprintf(buf, 
+	      "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:", 
+	      nVec);
       tmp_timeStr = lzStr(parName, buf, NULL);
       parse_ymdTime(tmp_timeStr,&tmp_date,&tmp_time);
       vec_sec = date_hms2sec(&tmp_time);
@@ -170,4 +170,6 @@ void import_stf(char *inDataName, char *inMetaName, char *outBaseName,
   meta->general->center_longitude = lon;
   meta_write(meta, outMetaName);
   meta_free(meta);
+
+  free_stf_names(inDataName, inMetaName);
 }

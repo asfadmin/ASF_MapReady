@@ -139,7 +139,7 @@ typedef struct {
   char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_count;            /* Number of bands in image                   */
-  char bands[25];            // Band combination
+  char bands[100];            // Band combination
   int line_count;            /* Number of lines in image.                  */
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */
@@ -666,7 +666,7 @@ int get_partial_float_lines(FILE *file, meta_parameters *meta,
 // Prototypes from meta_init_ceos.c
 char *get_polarization (const char *fName);
 int get_alos_band_number(const char *fName);
-ceos_description *get_ceos_description(const char *fName);
+ceos_description *get_ceos_description(const char *fName, report_level_t level);
 
 /***************************************************************************
   General conversion functions between projection coordinates and geographic

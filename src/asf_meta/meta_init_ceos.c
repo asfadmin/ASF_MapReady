@@ -83,7 +83,6 @@ void ceos_init_location_block(meta_parameters *meta);
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
         struct alos_map_proj_rec *ampr);
-ceos_description *get_ceos_description(const char *fName);
 double get_firstTime(const char *fName);
 double get_alos_firstTime (const char *fName);
 
@@ -104,9 +103,9 @@ int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
  * ceos_init:
  * Reads structure parameters from CEOS into existing meta_parameters
  * structure.  Calls the facility-specific decoders below. */
-void ceos_init(const char *in_fName,meta_parameters *meta)
+void ceos_init(const char *in_fName, meta_parameters *meta, report_level_t level)
 {
-   ceos_description *ceos = get_ceos_description(in_fName);
+   ceos_description *ceos = get_ceos_description(in_fName, level);
 
    if (ceos->sensor == SAR || ceos->sensor == PALSAR)
      ceos_init_sar(ceos, in_fName, meta);
@@ -427,10 +426,11 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   struct PPREC *ppr=NULL;
   struct VMPDREC *mpdr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
-  char beamname[32], buf[50];
+  char beamname[32], buf[50], **dataName;
   ymd_date date;
   hms_time time;
   double firstTime, centerTime;
+  int nBands;
 
   dssr = &ceos->dssr;
   iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
@@ -442,23 +442,27 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
-
-  // State vector block
-  ceos_init_stVec(in_fName,ceos,meta);
   
   // Azimuth time per pixel needs to be known for state vector propagation
-  date_dssr2time(dssr->az_time_first, &time);
-  firstTime = date_hms2sec(&time);
+  require_ceos_data(in_fName, &dataName, &nBands);
+  firstTime = get_firstTime(dataName[0]);
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel = 
     (centerTime - firstTime) / (meta->sar->original_line_count/2);
 
+  // State vector block
+  if (ceos->product != SSG)
+    ceos_init_stVec(in_fName,ceos,meta);
+
+  meta->general->frame =
+    asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
   if (meta->general->orbit_direction==' ')
     meta->general->orbit_direction =
       (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
   if (ceos->satellite == RSAT) {
     if (ceos->product == SCANSAR || ceos->product == SCN) {
+      meta->sar->look_count = 4;
       rcdr = (struct radio_comp_data_rec *)
 	MALLOC(sizeof(struct radio_comp_data_rec));
       get_rcdr(in_fName, rcdr);
@@ -479,7 +483,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
       get_mpdr(in_fName, mpdr);
       ceos_init_scansar(in_fName, meta, dssr, mpdr, NULL);
     }
-    if (ppr)
+    else if (ppr)
       strcpy(beamname, ppr->beam_type);
     strcpy(meta->general->mode, beamname);
     sprintf(meta->sar->polarization, "HH");
@@ -490,13 +494,28 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   meta->general->bit_error_rate = esa_facdr->ber;
 
   // SAR block
-  if (ceos->product==SLC || ceos->product==RAW) {
+  if (ceos->product == SLC || ceos->product == RAW) {
     meta->sar->image_type = 'S';
+    meta->sar->look_count = 1;
   }
-  // FIXME: sort out the specifics about sar->image_type
+  else if (ceos->product == SGF) {
+    meta->sar->image_type = 'G';
+    meta->sar->look_count = 1;
+  }
+  else if (ceos->product == SSG) {
+    meta->sar->image_type = 'P';
+    mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
+    get_mpdr(in_fName, mpdr);
+    ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
+    meta->sar->satellite_height = mpdr->distplat;
+    meta->sar->earth_radius = mpdr->distplat - mpdr->altplat;
+  }
   meta->sar->deskewed = 1;
   meta->sar->original_sample_count = iof->datgroup;
-  meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
+  meta->sar->slant_range_first_pixel = dssr->rng_gate
+    * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
+  meta->sar->slant_shift = 0;
+  meta->sar->time_shift = 0;
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
 			  meta->general->line_count/2,
@@ -759,15 +778,13 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
     }
     strcpy(meta->general->mode, beamname);
   }
-  if (ppr)
+  else if (ppr)
     strcpy(beamname, ppr->beam_type);
   strcpy(meta->general->mode, beamname);
   sprintf(meta->sar->polarization, "HH");
   strncpy(buf, &dssr->product_id[7], 4);
   buf[3] = 0;
   meta->general->frame = atoi(buf);
-  meta->general->frame =
-    asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
   if (meta->general->line_count == 0 || meta->general->sample_count == 0) {
     meta->general->line_count   = dssr->sc_lin*2;
     meta->general->sample_count = dssr->sc_pix*2;
@@ -1016,7 +1033,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   char *substr;
   int ii;
 
-  ceos = get_ceos_description(in_fName);
+  ceos = get_ceos_description(in_fName, NOREPORT);
   meta->optical = meta_optical_init();
 
   // General block
@@ -1502,14 +1519,33 @@ void atct_init(meta_projection *proj,stateVector st)
  * Extract a ceos_description structure from given CEOS file. This contains
  * "meta-meta-"data, data about the CEOS, such as the generating facility, a
  * decoded product type, etc.*/
-ceos_description *get_ceos_description(const char *fName)
+ceos_description *get_ceos_description(const char *fName, report_level_t level)
 {
-  int sar_image;
+  struct IOF_VFDR *iof=NULL;
+  int sar_image, dataSize;;
   char *versPtr,*satStr;
   char *sensorStr,*prodStr,*procStr;
-  ceos_description *ceos=(ceos_description *)MALLOC(sizeof(ceos_description));
-  memset(ceos,0,sizeof(ceos_description));
+  ceos_description *ceos = (ceos_description *)MALLOC(sizeof(ceos_description));
+  memset(ceos, 0, sizeof(ceos_description));
   
+  // Determine data type
+  iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
+  get_ifiledr(fName, iof);
+  if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
+  dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
+  if ((dataSize<6) && (strncmp(iof->formatid, "COMPLEX", 7)==0))
+    dataSize += (10 - dataSize)/2;
+  switch (dataSize) 
+    {
+    case 2:  ceos->ceos_data_type = CEOS_AMP_DATA;       break;
+    case 4:  ceos->ceos_data_type = CEOS_AMP_DATA;       break;
+    case 6:  ceos->ceos_data_type = CEOS_RAW_DATA;       break;
+    case 7:  ceos->ceos_data_type = CEOS_SLC_DATA_INT;   break;
+    case 9:  ceos->ceos_data_type = CEOS_SLC_DATA_FLOAT; break;
+    default: ceos->ceos_data_type = CEOS_AMP_DATA;       break;
+    }
+  FREE(iof);
+
   // Get dataset summary record for SAR image. Otherwise try scene header record.
   sar_image = get_dssr(fName,&ceos->dssr);
   if (sar_image == -1)
@@ -1531,8 +1567,8 @@ ceos_description *get_ceos_description(const char *fName)
     else if (0==strncmp(satStr,"S",1)) 
       ceos->satellite = SIR_C;
     else {
-      asfPrintStatus("get_ceos_description Warning! "
-		     "Unknown satellite '%s'!\n", satStr);
+      asfReport(level,"get_ceos_description Warning! "
+		"Unknown satellite '%s'!\n", satStr);
       ceos->satellite = unknownSatellite;
     }
     
@@ -1595,8 +1631,8 @@ ceos_description *get_ceos_description(const char *fName)
 	    ceos->processor = PREC;
 	}
 	else {
-	  asfPrintStatus("get_ceos_description Warning! "
-		      "Unknown ASF processor '%s'!\n", procStr);
+	  asfReport(level, "get_ceos_description Warning! "
+		    "Unknown ASF processor '%s'!\n", procStr);
 	  ceos->processor = unknownProcessor;
 	}
 	
@@ -1625,15 +1661,15 @@ ceos_description *get_ceos_description(const char *fName)
 	else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23))
 	  ceos->product = SGI;
 	else {
-	  asfPrintStatus("get_ceos_description Warning! "
-		      "Unknown ASF product type '%s'!\n", prodStr);
+	  asfReport(level, "get_ceos_description Warning! "
+		    "Unknown ASF product type '%s'!\n", prodStr);
 	  ceos->product = unknownProduct;
 	}
 	
       }
     else if (0==strncmp(ceos->dssr.fac_id,"ES",2))
       {/*European Space Agency Image*/
-	asfPrintStatus("   Data set processed by ESA\n");
+	asfReport(level, "   Data set processed by ESA\n");
 	ceos->facility = ESA;
 	
 	if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) 
@@ -1641,14 +1677,14 @@ ceos_description *get_ceos_description(const char *fName)
 	if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) 
 	  ceos->product = PRI;
 	else {
-	  asfPrintStatus("Get_ceos_description Warning! "
-		      "Unknown ESA product type '%s'!\n", prodStr);
+	  asfReport(level, "Get_ceos_description Warning! "
+		    "Unknown ESA product type '%s'!\n", prodStr);
 	  ceos->product = unknownProduct;
 	}
       }
     else if (0==strncmp(ceos->dssr.fac_id,"CDPF",4))
       {
-	asfPrintStatus("   Data set processed by CDPF\n");
+	asfReport(level, "   Data set processed by CDPF\n");
 	ceos->facility = CDPF;
 	
 	if (0==strncmp(prodStr,"SPECIAL PRODUCT(SINGL-LOOK COMP)",32))
@@ -1660,39 +1696,39 @@ ceos_description *get_ceos_description(const char *fName)
 	else if (0==strncmp(prodStr, "SYSTEMATIC GEOCODED UTM", 23)) 
 	  ceos->product = SSG;
 	else {
-	  asfPrintStatus("Get_ceos_description Warning! "
+	  asfReport(level, "Get_ceos_description Warning! "
 		      "Unknown CDPF product type '%s'!\n", prodStr);
 	  ceos->product = unknownProduct;
 	}
       }
     else if (0==strncmp(ceos->dssr.fac_id,"D-PAF",5)) {
-      asfPrintStatus("   Data set processed by D-PAF\n");
+      asfReport(level, "   Data set processed by D-PAF\n");
       ceos->facility = DPAF;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) 
 	ceos->product = RAW;
       else if (0==strncmp(prodStr,"SAR SINGLE LOOK COMPLEX IMAGE",29))
 	ceos->product = SLC;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		    "Unknown D-PAF product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"I-PAF",5)) {
-      asfPrintStatus("   Data set processed by I-PAF\n");
+      asfReport(level, "   Data set processed by I-PAF\n");
       ceos->facility = IPAF;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) 
 	ceos->product = RAW;
       else if (0==strncmp(prodStr,"SAR SINGLE LOOK COMPLEX IMAGE",29))
 	ceos->product = SLC;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		    "Unknown I-PAF product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"EOC",3)) {
-      asfPrintStatus("   Data set processed by EOC\n");
+      asfReport(level, "   Data set processed by EOC\n");
       ceos->facility = EOC;
       if (0==strncmp(ceos->dssr.lev_code, "1.0", 3)) 
 	ceos->product = RAW;
@@ -1701,13 +1737,13 @@ ceos_description *get_ceos_description(const char *fName)
       else if (0==strncmp(prodStr, "STANDARD GEOCODED IMAGE",23)) 
 	ceos->product = SGI;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		    "Unknown EOC product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"RSI",3)) {
-      asfPrintStatus("   Data set processed by RSI\n");
+      asfReport(level, "   Data set processed by RSI\n");
       ceos->facility = RSI;
       if (0==strncmp(prodStr, "SCANSAR WIDE",12)) 
 	ceos->product = SCANSAR;
@@ -1718,31 +1754,31 @@ ceos_description *get_ceos_description(const char *fName)
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15)) 
 	ceos->product = SGF;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		    "Unknown RSI product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"JPL",3)) {
-      asfPrintStatus("   Data set processed by JPL\n");
+      asfReport(level, "   Data set processed by JPL\n");
       ceos->facility = JPL;
       if (0==strncmp(prodStr, "REFORMATTED SIGNAL DATA", 23)) 
 	ceos->product = RAW;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		    "Unknown JPL product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
     }
     else if (0==strncmp(ceos->dssr.fac_id,"CSTARS",6)) {
-      asfPrintStatus("   Data set processed by CSTARS\n");
+      asfReport(level, "   Data set processed by CSTARS\n");
       ceos->facility = CSTARS;
       if (0==strncmp(procStr,"FOCUS",5)) 
 	ceos->processor = FOCUS;
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14)) 
 	ceos->product = SCN;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		       "Unknown CSTARS product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
       }
@@ -1754,7 +1790,7 @@ ceos_description *get_ceos_description(const char *fName)
     if (0==strncmp(satStr,"A",1)) 
       ceos->satellite = ALOS;
     else {
-      asfPrintStatus("get_ceos_description Warning! "
+      asfReport(level, "get_ceos_description Warning! "
 		     "Unknown satellite '%s'!\n", satStr);
       ceos->satellite = unknownSatellite;
     }
@@ -1767,7 +1803,7 @@ ceos_description *get_ceos_description(const char *fName)
       else if (0==strncmp(sensorStr, "PRISM",5)) 
 	ceos->sensor = PRISM;
       else {
-	asfPrintStatus("Get_ceos_description Warning! "
+	asfReport(level, "Get_ceos_description Warning! "
 		       "Unknown sensor '%s'!\n", sensorStr);
 	ceos->sensor = unknownSensor;
       }
@@ -1785,7 +1821,7 @@ ceos_description *get_ceos_description(const char *fName)
     else if (strncmp(prodStr, "1B2G", 4) == 0)
       ceos->product = LEVEL_1B2G;
     else {
-      asfPrintStatus("Get_ceos_description Warning! "
+      asfReport(level, "Get_ceos_description Warning! "
 		     "Unknown product '%s'!\n", prodStr);
       ceos->product = unknownProduct;
     }
@@ -1795,41 +1831,41 @@ ceos_description *get_ceos_description(const char *fName)
 
   // Tell user what product we are importing
   if (ceos->product == CCSD)
-    asfPrintStatus("   Product: CCSD\n");
+    asfReport(level, "   Product: CCSD\n");
   else if (ceos->product == RAW)
-    asfPrintStatus("   Product: RAW\n");
+    asfReport(level, "   Product: RAW\n");
   else if (ceos->product == LOW_REZ)
-    asfPrintStatus("   Product: LOW_REZ\n");
+    asfReport(level, "   Product: LOW_REZ\n");
   else if (ceos->product == HI_REZ)
-    asfPrintStatus("   Product: HI_REZ\n");
+    asfReport(level, "   Product: HI_REZ\n");
   else if (ceos->product == RAMP)
-    asfPrintStatus("   Product: RAMP\n");
+    asfReport(level, "   Product: RAMP\n");
   else if (ceos->product == SCANSAR)
-    asfPrintStatus("   Product: SCANSAR\n");
+    asfReport(level, "   Product: SCANSAR\n");
   else if (ceos->product == SLC)
-    asfPrintStatus("   Product: SLC\n");
+    asfReport(level, "   Product: SLC\n");
   else if (ceos->product == PRI)
-    asfPrintStatus("   Product: PRI\n");
+    asfReport(level, "   Product: PRI\n");
   else if (ceos->product == SGF)
-    asfPrintStatus("   Product: SGF\n");
+    asfReport(level, "   Product: SGF\n");
   else if (ceos->product == SGX)
-    asfPrintStatus("   Product: SGX\n");
+    asfReport(level, "   Product: SGX\n");
   else if (ceos->product == SGI)
-    asfPrintStatus("   Product: SGI\n");
+    asfReport(level, "   Product: SGI\n");
   else if (ceos->product == SSG)
-    asfPrintStatus("   Product: SSG\n");
+    asfReport(level, "   Product: SSG\n");
   else if (ceos->product == SPG)
-    asfPrintStatus("   Product: SPG\n");
+    asfReport(level, "   Product: SPG\n");
   else if (ceos->product == SCN)
-    asfPrintStatus("   Product: SCN\n");
+    asfReport(level, "   Product: SCN\n");
   else if (ceos->product == LEVEL_1A)
-    asfPrintStatus("   Product: LEVEL_1A\n");
+    asfReport(level, "   Product: LEVEL_1A\n");
   else if (ceos->product == LEVEL_1B1)
-    asfPrintStatus("   Product: LEVEL_1B1\n");
+    asfReport(level, "   Product: LEVEL_1B1\n");
   else if (ceos->product == LEVEL_1B2R)
-    asfPrintStatus("   Product: LEVEL_1B2R\n");
+    asfReport(level, "   Product: LEVEL_1B2R\n");
   else if (ceos->product == LEVEL_1B2G)
-    asfPrintStatus("   Product: LEVEL_1B2G\n");
+    asfReport(level, "   Product: LEVEL_1B2G\n");
   
   return ceos;
 }

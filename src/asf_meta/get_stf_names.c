@@ -21,15 +21,17 @@ const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".00
  * if it is a STF metadata file (depending on our accepted STF extensions).
  * If so populate metaName with the appropriate name and return the appropriate
  * ENUM stf_metadata_ext_t value.  */
-stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
+stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName)
 {
-  char dirName[256], fileName[256];
-  char metaTemp[1024];
-  char baseName[256];
-  char ext[256];
+  char dirName[256], fileName[256], metaTemp[1024], baseName[256], ext[256];
+  char *metaName;
   FILE *metaFP;
   int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
   stf_metadata_ext_t ii;
+
+  metaName = (char *) MALLOC(sizeof(char)*512);
+
+  *pMetaName = metaName;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
@@ -61,7 +63,7 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName)
  * require_stf_metadata:
  * If get_stf_metadata_name fails to find a file, then exit the program.
  * Otherwise act like get_stf_metadata_name  */
-stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
+stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
 {
   stf_metadata_ext_t ret = get_stf_metadata_name(stfName, metaName);
 
@@ -112,15 +114,17 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName)
  * This one sort of cheats, since currently the STF data file represents the
  * base name. The stf_data_ext_t enum is sort of buggered up since its only two
  * extensions are the same, always return STF_BLANK on success.  */
-stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
+stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName)
 {
-  char dirName[256], fileName[256];
-  char dataTemp[1024];
-  char baseName[256];
-  char ext[128];
+  char dirName[256], fileName[256], dataTemp[1024], baseName[256], ext[128];
+  char *dataName;
   FILE *dataFP;
   stf_data_ext_t ii;
   stf_data_ext_t begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
+
+  dataName = (char *) MALLOC(sizeof(char)*512);
+
+  *pDataName = dataName;
 
   /* Separate the filename from the path (if there's a path there) */
   split_dir_and_file(stfName, dirName, fileName);
@@ -157,7 +161,7 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName)
  * require_stf_data:
  * If get_stf_data_name fails to find a file, then exit the program.
  * Otherwise act like get_stf_data_name  */
-stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
+stf_data_ext_t require_stf_data(const char *stfName, char **dataName)
 {
   stf_data_ext_t ret = get_stf_data_name(stfName, dataName);
 
@@ -209,10 +213,10 @@ stf_data_ext_t require_stf_data(const char *stfName, char *dataName)
  * if it is one of a STF file pair (depending on our accepted STF file
  * extensions). If so populate dataName & metaName with the appropriate names
  * and return the appropriate ENUM stf_file_pairs_t value.*/
-stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
-                                 char *metaName)
+stf_file_pairs_t get_stf_names(const char *stfName, char **dataName,
+                                 char **metaName)
 {
-  printf ("stfName = %s, metaName = %s\n", stfName, metaName);
+  //printf ("stfName = %s, metaName = %s\n", stfName, metaName);
   // FIXME: there used to be this printf, but get_stf_metadata_name
   // returns an enumerated type these days.  I don't this print
   // statement was very important anyway, and I'm not sure offhand
@@ -267,8 +271,8 @@ stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
  * require_stf_pair:
  * Do as get_stf_names would unless there is no pair in which case exit the
  * program with a failure.  */
-stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
-                                    char *metaName)
+stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
+                                    char **metaName)
 {
   char extensionList[256];
   int andFlag=TRUE;
@@ -349,4 +353,12 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char *dataName,
   if (logflag)   {printLog(logbuf);}
   printf(logbuf);
   exit(EXIT_FAILURE);
+}
+
+void free_stf_names(char *dataName, char *metaName)
+{
+  if (dataName != NULL)
+    FREE(dataName);
+  if (metaName != NULL)
+    FREE(metaName);
 }

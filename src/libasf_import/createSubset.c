@@ -66,14 +66,15 @@ void time_range2Doppler(char *inN, double time, double slantFirst, float *fd, fl
   float *dopVec,*sampVec,currSamp=0.0;
   double aVal[3][4],range,t_ref,r_ref,xPix;
   int i,j,k,numCoef1,numCoef2,samples,nSteps=100;
-  char parN[255],buf[255];
+  char *parN, buf[255];
 
   /* Allocate memory for sample & Doppler vectors (nSteps)*/
   dopVec = (float *)MALLOC(sizeof(float)*nSteps);
   sampVec = (float *)MALLOC(sizeof(float)*nSteps);
+  parN = (char *) MALLOC(sizeof(char)*512);
 
   /* Read parameters out of par file */
-  get_stf_metadata_name(inN, parN);
+  get_stf_metadata_name(inN, &parN);
 
   samples = lzInt(parN, "prep_block.sensor.beam.nr_of_samples:", NULL);
   xPix = 1 / lzDouble(parN, "prep_block.sensor.beam.sampling_freq:", NULL)*(speedOfLight/2.0);
@@ -108,6 +109,11 @@ void time_range2Doppler(char *inN, double time, double slantFirst, float *fd, fl
 
   /* Quadratic Regression */
   yax2bxc(sampVec, dopVec, nSteps, fddd, fdd, fd);
+
+  // Clean up
+  FREE(sampVec);
+  FREE(dopVec);
+  FREE(parN);
 }
 
 
@@ -116,11 +122,13 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
   hms_time hmsTime;
   ymd_date ymdDate;
   julian_date jDate;
-  char parN[255],buf[255],*timeStr=NULL;
+  char *parN, buf[255],*timeStr=NULL;
   int i=0,done=0;
   double firstDate,lastDate,time,centerTime,oldTime,newTime,range;
 
-  get_stf_metadata_name(inN, parN);
+  parN = (char *) MALLOC(sizeof(char)*512);
+
+  get_stf_metadata_name(inN, &parN);
 
   /* Determine center time for swath */
   timeStr = lzStr(parN, "prep_block.first_date:", NULL);
@@ -134,7 +142,7 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
   centerTime = time + (double)(date_getMJD(&jDate) * 3600 *24);
 
   /* Find closest location block for center time to get a range */
-  get_stf_metadata_name(inN, parN);
+  get_stf_metadata_name(inN, &parN);
   oldTime = time;
   while (!done) {
     sprintf(buf, "prep_block.location[%d].line_date:", i);
@@ -151,6 +159,8 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd)
   /* Estimate Doppler */
   time_range2Doppler(inN, centerTime, range, fd, fdd, fddd);
 
+  // Clean up
+  FREE(parN);
 }
 
 /*****************************
@@ -169,11 +179,13 @@ void lat2stVec(char *inN, float lat, stateVector *outVec, double *seconds, int *
   stateVector stVec,locVec;
   int i=0,n=1,done=0;
   float oldLat,newLat;
-  char parN[255],buf[255],*loc_timeStr,*vec_timeStr,*values;
+  char *parN, buf[255],*loc_timeStr,*vec_timeStr,*values;
   double old_delta,delta,new_delta,loc_sec,vec_sec;
 
+  parN = (char *) MALLOC(sizeof(char)*512);
+
   /* Find closest location block for given latitude */
-  get_stf_metadata_name(inN, parN);
+  get_stf_metadata_name(inN, &parN);
   oldLat = lat;
   while (!done) {
     sprintf(buf, "prep_block.location[%d].line_date:", i);
@@ -229,6 +241,9 @@ void lat2stVec(char *inN, float lat, stateVector *outVec, double *seconds, int *
   *seconds = loc_sec;
   *nLoc = i-2;
   *nVec = n-2;
+
+  // Clean up
+  FREE(parN);
 }
 
 
@@ -317,16 +332,18 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   hms_time hmsTime;
   ymd_date ymdDate;
   julian_date jDate;
-  char parN[255],buf[255],*locTimeStr,ymdStr[10],hmsStr[10],tmp[10]="";
+  char *parN, buf[255],*locTimeStr,ymdStr[10],hmsStr[10],tmp[10]="";
   int i,nLoc,centerVec,upperVec,lowerVec;
   float centerLat;
   stateVector locVec;
   double centerTime,upperTime,lowerTime,imgTime,loc_sec,range,prf,azPixTime,line;
 
+  parN = (char *) MALLOC(sizeof(char)*512);
+
   centerLat = lowerLat + (upperLat-lowerLat)/2;
 
   /* Determine image start time and calculate azimuth pixel time */
-  get_stf_metadata_name(inN, parN);
+  get_stf_metadata_name(inN, &parN);
   locTimeStr = lzStr(parN, "prep_block.first_date:", NULL);
   date_dssr2date(locTimeStr,&ymdDate,&hmsTime);
   imgTime = date_hms2sec(&hmsTime);
@@ -394,4 +411,6 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
 		 *imgStart, upperTime);
   asfPrintStatus(logbuf, "   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
 
+  // Clean up
+  FREE(parN);
 }

@@ -63,8 +63,6 @@ OBJS  = ardop_write.o \
 	arcgis_geotiff_support.o \
 	import_generic_geotiff.o \
 	import_ceos.o \
-	import_envi.o \
-	import_esri.o \
 	import_usgs_seamless.o \
 	import_stf.o \
 	import_bil.o \

@@ -59,31 +59,32 @@ typedef enum {
    if it is a STF metadata file (depending on our accepted STF extensions). If
    so populate metaName with the appropriate name and return the appropriate
    ENUM stf_metadata_ext_t value.  */
-stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char *metaName);
+stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName);
 
 /* If get_stf_metadata_name fails to find a file, then exit the program.  */
-stf_metadata_ext_t require_stf_metadata(const char *stfName, char *metaName);
+stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName);
 
 /* Given the name of a file (potentially with path in front of it), determine
    if it is a STF data file (depending on our accepted STF extensions). If
    so, populate dataName with the appropriate name and return the appropriate
    ENUM stf_data_ext_t value.  */
-stf_data_ext_t get_stf_data_name(const char *stfName, char *dataName);
+stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName);
 
 /* If get_stf_data_name fails to find a file, then exit the program.  */
-stf_data_ext_t require_stf_data(const char *stfName, char *dataName);
+stf_data_ext_t require_stf_data(const char *stfName, char **dataName);
 
 /* Given the name of a file (potentially with path in front of it), determine if
    it is one of a STF file pair (depending on our accepted STF file
    extensions). If so populate dataName & metaName with the appropriate names
    and return the appropriate ENUM stf_file_pairs_t value.  */
-stf_file_pairs_t get_stf_names(const char *stfName, char *dataName,
-                                 char *metaName);
+stf_file_pairs_t get_stf_names(const char *stfName, char **dataName,
+			       char **metaName);
 
 /* Do as get_stf_names would unless there is no pair in which case exit the
    program with a failure.  */
-stf_file_pairs_t require_stf_pair(const char *ceosName, char *dataName,
-                                   char *metaName);
+stf_file_pairs_t require_stf_pair(const char *ceosName, char **dataName,
+				  char **metaName);
 
+void free_stf_names(char *dataName, char *metaName);
 
 #endif

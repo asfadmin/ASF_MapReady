@@ -14,13 +14,14 @@ DESCRIPTION:
 /*Internal Definitions:*/
 #include "ceos.h"
 #include "asf_meta.h"
+#include "asf.h"
 
 
 /***************************************
  * ceos_init:
  * Reads SAR structure parameters from CEOS into existing meta_parameters
  * structure.  Calls a facility-specific decoder. */
-void ceos_init(const char *fName,meta_parameters *sar);
+void ceos_init(const char *fName, meta_parameters *sar, report_level_t level);
 
 /***************************************
  * ardop_init:

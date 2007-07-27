@@ -165,7 +165,7 @@ void set_title(int band_specified, const char *band_in)
 {
     char title[256];
     char *band = STRDUP(band_in); // local non-const copy we can change
-    sprintf(title, "ssv ver %s: %s", VERSION, g_filename);
+    sprintf(title, "asf_view ver %s: %s", VERSION, g_filename);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
     } else if (meta && meta->general && meta->general->band_count > 1) {
@@ -186,7 +186,8 @@ void set_title(int band_specified, const char *band_in)
 
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
-    free(band);
+    // FIX ME: free dies for complex data
+    // free(band);
 }
 
 void reset_globals(int reset_location)

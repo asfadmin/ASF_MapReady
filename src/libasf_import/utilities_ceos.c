@@ -7,7 +7,7 @@
 #include "get_ceos_names.h"
 
 /*Internal Metadata creation routine prototype*/
-void ceos_init(const char *in_fName,meta_parameters *sar);
+void ceos_init(const char *in_fName, meta_parameters *sar, report_level_t level);
 
 
 /******************************************************************************
@@ -27,7 +27,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 {
   meta_parameters *meta=raw_init();
 
-  ceos_init(inN,meta);
+  ceos_init(inN, meta, NOREPORT);
   s->lookDir = meta->sar->look_direction;
 
   /* Check for VEXCEL LZP Data-- has odd state vectors */
@@ -121,7 +121,7 @@ FILE *openCeos(char *fName, char *outN, bin_state *s)
   dataName = (char **) MALLOC(512*MAX_BANDS*sizeof(char));
   for (ii=0; ii<MAX_BANDS; ii++)
     dataName[ii] = (char *) MALLOC(512*sizeof(char));
-  require_ceos_data(fName,dataName,&nBands);
+  require_ceos_data(fName,&dataName,&nBands);
   ret=FOPEN(dataName[0],"rb");
   FSEEK64(ret,0,0);/*Seek to beginning of file*/
   getNextCeosLine(ret, s, fName, outN);/*Skip over first line of file*/
