@@ -1560,9 +1560,9 @@ void import_ceos_byte_amp(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   if (nBands == 1 && meta->sar)
     strcpy(meta->general->bands, meta->sar->polarization);
-  else if (nBands == 2)
+  else if (nBands == 2 && meta->sar)
     strcpy(meta->sar->polarization, "dual-pol");
-  else if (nBands == 4)
+  else if (nBands == 4 && meta->sar)
     strcpy(meta->sar->polarization, "quad-pol");
   meta_write(meta, outMetaName);
 
@@ -1647,12 +1647,13 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   if (nBands == 1 && meta->sar && strlen(meta->general->bands) == 0)
     strcpy(meta->general->bands, meta->sar->polarization);
-  else if (nBands == 2)
+  else if (nBands == 2 && meta->sar)
     strcpy(meta->sar->polarization, "dual-pol");
-  else if (nBands == 4)
+  else if (nBands == 4 && meta->sar)
     strcpy(meta->sar->polarization, "quad-pol");
-  if (strncmp(meta->sar->polarization, "???", 3) == 0)
-    strcpy(meta->sar->polarization, meta->general->bands);
+  if (meta->sar)
+    if (strncmp(meta->sar->polarization, "???", 3) == 0)
+      strcpy(meta->sar->polarization, meta->general->bands);
   meta_write(meta, outMetaName);
 
   if (isPP(meta)) {

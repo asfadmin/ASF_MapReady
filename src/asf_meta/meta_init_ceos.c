@@ -640,6 +640,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     centerTime = date_hms2sec(&time);
     meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
       / (meta->sar->original_line_count/2);
+
+    ceos_init_stVec(in_fName,ceos,meta);
   }
 
   meta->general->band_count = nBands;
@@ -659,8 +661,20 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
   meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
   meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
-  meta->sar->earth_radius = mpdr->distplat;
-  meta->sar->chirp_rate = get_chirp_rate(in_fName);
+  if (ceos->product == SLC) {
+    meta->sar->earth_radius =
+      meta_get_earth_radius(meta,
+			    meta->general->line_count/2,
+			    meta->general->sample_count/2);
+    meta->sar->satellite_height =
+      meta_get_sat_height(meta,
+			  meta->general->line_count/2,
+			  meta->general->sample_count/2);
+  }
+  else {
+    meta->sar->earth_radius = mpdr->distplat;
+    meta->sar->chirp_rate = get_chirp_rate(in_fName);
+  }
 
   // Transformation block
   if (ceos->product != SLC) {
