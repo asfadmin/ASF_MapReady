@@ -616,13 +616,13 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
 ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName, 
 				    char ***metaName, int *nBands, int *trailer)
 {
-  char extensionList[128], baseName[512];;
+  char extensionList[128], baseName[512];
   int andFlag=TRUE;
   int begin=NO_CEOS_FILE_PAIR+1, end=NUM_CEOS_FILE_PAIRS;
   int ii;
   ceos_file_pairs_t pair;
 
-  pair = get_ceos_names(ceosName, &baseName, dataName, metaName, nBands, trailer);
+  pair = get_ceos_names(ceosName, baseName, dataName, metaName, nBands, trailer);
 
   if (pair != NO_CEOS_FILE_PAIR)
     return pair;

@@ -665,6 +665,7 @@ int get_partial_float_lines(FILE *file, meta_parameters *meta,
 
 // Prototypes from meta_init_ceos.c
 char *get_polarization (const char *fName);
+double get_chirp_rate (const char *fName);
 int get_alos_band_number(const char *fName);
 ceos_description *get_ceos_description(const char *fName, report_level_t level);
 

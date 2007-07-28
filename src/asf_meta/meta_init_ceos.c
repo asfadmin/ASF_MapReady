@@ -85,6 +85,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
         struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
 double get_alos_firstTime (const char *fName);
+double get_chirp_rate (const char *fName);
 
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *sar);
@@ -633,14 +634,15 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
 
-  firstTime = get_alos_firstTime(dataName[0]);
-  date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
-  meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
-    / (meta->sar->original_line_count/2);
+  if (ceos->product != SGI) {
+    firstTime = get_alos_firstTime(dataName[0]);
+    date_dssr2date(dssr->inp_sctim, &date, &time);
+    centerTime = date_hms2sec(&time);
+    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
+      / (meta->sar->original_line_count/2);
+  }
 
-  // State vector block
-  ceos_init_stVec(in_fName,ceos,meta);
+  meta->general->band_count = nBands;
 
   // SAR block
   if (ceos->product == SLC)
@@ -656,14 +658,9 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
   meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
-  meta->sar->earth_radius =
-    meta_get_earth_radius(meta,
-			  meta->general->line_count/2,
-			  meta->general->sample_count/2);
-  meta->sar->satellite_height =
-    meta_get_sat_height(meta,
-			meta->general->line_count/2,
-			meta->general->sample_count/2);
+  meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
+  meta->sar->earth_radius = mpdr->distplat;
+  meta->sar->chirp_rate = get_chirp_rate(in_fName);
 
   // Transformation block
   if (ceos->product != SLC) {
@@ -1965,4 +1962,24 @@ int get_alos_band_number(const char *fName)
   FCLOSE(fp);
 
   return bigInt32(linehdr.rec_num);
+}
+
+// Function that reads chirp out of the line header
+double get_chirp_rate (const char *fName)
+{
+   FILE *fp;
+   struct HEADER hdr;
+   struct SHEADER linehdr;
+   int length;
+   char buff[25600];
+
+   fp = FOPEN(fName, "r");
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   length = bigInt32(hdr.recsiz)-12;
+   FREAD (buff, length, 1, fp);
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   FCLOSE(fp);
+
+   return (double)bigInt16(linehdr.chirp_linear);
 }
