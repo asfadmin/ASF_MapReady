@@ -70,6 +70,8 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
 			meta_parameters *meta);
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
 			   meta_parameters *meta);
+void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
+			   meta_parameters *meta);
 
 // Importing CEOS optical data
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);
@@ -124,9 +126,10 @@ void ceos_init(const char *in_fName, meta_parameters *meta, report_level_t level
 void ceos_init_sar(ceos_description *ceos, const char *in_fName,
 		   meta_parameters *meta)
 {
-  if (ceos->facility == ASF && ceos->processor != FOCUS)
+  if (ceos->facility == ASF && ceos->processor != FOCUS && ceos->processor != LZP)
     ceos_init_sar_asf(ceos, in_fName, meta);
-  else if (ceos->facility == ASF && ceos->processor == FOCUS)
+  else if (ceos->facility == ASF && 
+	   (ceos->processor == FOCUS || ceos->processor == LZP))
     ceos_init_sar_focus(ceos, in_fName, meta);
   else if (ceos->facility == ESA)
     ceos_init_sar_esa(ceos, in_fName, meta);
@@ -144,6 +147,8 @@ void ceos_init_sar(ceos_description *ceos, const char *in_fName,
     ceos_init_sar_dpaf(ceos, in_fName, meta);
   else if (ceos->facility == IPAF)
     ceos_init_sar_ipaf(ceos, in_fName, meta);
+  else if (ceos->facility == BEIJING)
+    ceos_init_sar_beijing(ceos, in_fName, meta);
   else if (ceos->facility == unknownFacility)
     asfPrintError("Unknown CEOS facility! Data cannot be imported "
 		  "at this time.\n");
@@ -160,6 +165,8 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   struct VMPDREC *mpdr=NULL;        /* Map Projection Data Record            */
   int dataSize;
   int nBands=1;
+  ymd_date date;
+  hms_time time;
   
   meta->sar = meta_sar_init();
   
@@ -200,7 +207,11 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     default: meta->general->data_type = BYTE;              break;
     }
   strcpy(meta->general->system, meta_get_system());
-  date_dssr2time_stamp(dssr->inp_sctim, meta->general->acquisition_date);
+  if (ceos->facility == BEIJING)
+    date_dssr2time(dssr->inp_sctim, &date, &time);
+  else
+    date_dssr2date(dssr->inp_sctim, &date, &time);
+  date_dssr2time_stamp(&date, &time, meta->general->acquisition_date);
   meta->general->orbit = atoi(dssr->revolution);
   meta->general->orbit_direction  = dssr->asc_des[0];
   meta->general->band_count = nBands;
@@ -361,6 +372,9 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   }
   meta->general->bit_error_rate = asf_facdr->biterrrt;
 
+  // State vector block
+  ceos_init_stVec(in_fName, ceos, meta);
+
   // SAR block
   if (0==strncmp(asf_facdr->grndslnt,"GROUND",6))
     meta->sar->image_type= 'G';
@@ -388,7 +402,7 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   meta->sar->earth_radius = asf_facdr->eradcntr*1000.0;
   meta->sar->satellite_height = 
     meta->sar->earth_radius + asf_facdr->scalt*1000;
-
+  
   // State vector block
   ceos_init_stVec(in_fName, ceos, meta);
 
@@ -401,7 +415,7 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
   // Location block
-  if (!meta->location)
+  if (!meta->location && ceos->product != RAW)
     meta->location = meta_location_init();
   meta->location->lat_start_near_range = asf_facdr->nearslat;
   meta->location->lon_start_near_range = asf_facdr->nearslon;
@@ -511,7 +525,10 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->sar->satellite_height = mpdr->distplat;
     meta->sar->earth_radius = mpdr->distplat - mpdr->altplat;
   }
-  meta->sar->deskewed = 1;
+  if (ceos->product == RAW)
+    meta->sar->deskewed = 0;
+  else
+    meta->sar->deskewed = 1;
   meta->sar->original_sample_count = iof->datgroup;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
@@ -527,7 +544,8 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
 			meta->general->sample_count/2);
 
   // Location block
-  ceos_init_location_block(meta);
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
 
   // Clean up
   if (rcdr)
@@ -573,12 +591,14 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
   ceos_init_stVec(in_fName,ceos,meta);
 
   // SAR block
+  if (ceos->product == RAW || ceos->product == SLC)
+    meta->sar->image_type = 'S';
   if (ceos->product == PRI)
     meta->sar->image_type = 'G';
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->time_shift = 0;
-  date_dssr2time(dssr->az_time_first, &time);
+  date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
@@ -599,7 +619,8 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
 
   // Location block
-  ceos_init_location_block(meta);
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
 }
 
 // Only deal with ALOS data
@@ -833,7 +854,8 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
   
   // Location block
-  ceos_init_location_block(meta);
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
 
   // Clean up
   if (mpdr)
@@ -934,9 +956,9 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
   meta->sar->time_shift = 0;
-  date_dssr2time(dssr->az_time_first, &time);
+  date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
-  date_dssr2time(dssr->az_time_center, &time);
+  date_dssr2time(dssr->az_time_center, &date, &time);
   centerTime = date_hms2sec(&time);
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
@@ -957,7 +979,8 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
 			meta->general->sample_count/2);
 
   // Location block
-  ceos_init_location_block(meta);
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
 
   // Clean up
   FREE(esa_facdr);
@@ -1004,9 +1027,9 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
   meta->sar->time_shift = 0;
-  date_dssr2time(dssr->az_time_first, &time);
+  date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
-  date_dssr2time(dssr->az_time_center, &time);
+  date_dssr2time(dssr->az_time_center, &date, &time);
   centerTime = date_hms2sec(&time);
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
@@ -1027,7 +1050,74 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
 			meta->general->sample_count/2);
 
   // Location block
-  ceos_init_location_block(meta);
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
+
+  // Clean up
+  FREE(esa_facdr);
+}
+
+void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
+			   meta_parameters *meta)
+{
+  struct dataset_sum_rec *dssr=NULL;
+  struct ESA_FACDR *esa_facdr=NULL;
+  ymd_date date;
+  hms_time time;
+  double firstTime, centerTime;
+  char buf[50];
+
+  dssr = &ceos->dssr;
+  esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
+  get_esa_facdr(in_fName, esa_facdr);
+
+  // General block
+  ceos_init_sar_general(ceos, in_fName, meta);
+
+  if (strncmp(dssr->mission_id, "ERS", 3) == 0) {
+    strcpy(meta->general->mode, "STD");
+    strcpy(meta->general->bands, "VV");
+    meta->sar->look_count = 5;
+    strcpy(meta->sar->polarization, "VV");
+  }
+  strncpy(buf, &dssr->scene_des[18], 5);
+  buf[4] = 0;
+  meta->general->frame = atoi(buf);
+  if (meta->general->orbit_direction==' ')
+    meta->general->orbit_direction =
+      (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
+  meta->general->bit_error_rate = esa_facdr->ber;
+
+  // SAR block
+  if (ceos->product == RAW || ceos->product == SLC)
+    meta->sar->image_type = 'S';
+  meta->sar->deskewed = 1;
+  meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
+  meta->sar->slant_shift = 0;
+  meta->sar->time_shift = 0;
+  firstTime = get_firstTime(in_fName);
+  date_dssr2time(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  meta->sar->azimuth_time_per_pixel =
+    (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  ceos_init_stVec(in_fName,ceos,meta);
+  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
+  meta->sar->range_doppler_coefficients[1] = // two-way range time
+    dssr->crt_dopcen[1] / (speedOfLight * 2);
+  meta->sar->range_doppler_coefficients[2] = // two-way range time
+    dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
+  meta->sar->earth_radius =
+    meta_get_earth_radius(meta,
+                          meta->general->line_count/2,
+                          meta->general->sample_count/2);
+  meta->sar->satellite_height =
+    meta_get_sat_height(meta,
+                        meta->general->line_count/2,
+                        meta->general->sample_count/2);
+
+  // Location block
+  if (ceos->product != RAW)
+    ceos_init_location_block(meta);
 
   // Clean up
   FREE(esa_facdr);
@@ -1039,6 +1129,8 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
  * structure.  Calls the facility-specific decoders below. */
 void ceos_init_optical(const char *in_fName,meta_parameters *meta)
 {
+  ymd_date date;
+  hms_time time;
   ceos_description *ceos=NULL;
   struct alos_map_proj_rec *ampr=NULL;
   char *substr;
@@ -1092,8 +1184,13 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   strcpy(meta->general->system, meta_get_system());
   if (ceos->shr.sc_time[0] == ' ')
     date_shr2date_stamp(ceos->shr.acq_date, meta->general->acquisition_date);
-  else
-    date_dssr2time_stamp(ceos->shr.sc_time, meta->general->acquisition_date);
+  else {
+    if (ceos->facility == BEIJING)
+      date_dssr2time(ceos->dssr.inp_sctim, &date, &time);
+    else
+      date_dssr2date(ceos->dssr.inp_sctim, &date, &time);
+    date_dssr2time_stamp(&date, &time, meta->general->acquisition_date);
+  }
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
   substr = ceos->shr.work_scene_id;
@@ -1632,7 +1729,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
 	  {/*Is VEXCEL level-0 processor, not ASF*/
 	    ceos->facility = ASF;
 	    ceos->processor = LZP;
-	    ceos->product = CCSD;
+	    ceos->product = RAW;
 	    return ceos;
 	  }
 	else if (0==strncmp(procStr, "PC", 2)) {
@@ -1685,7 +1782,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
 	
 	if (0==strncmp(prodStr,"SAR RAW SIGNAL",14)) 
 	  ceos->product = RAW;
-	if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) 
+	else if (0==strncmp(prodStr,"SAR PRECISION IMAGE",19)) 
 	  ceos->product = PRI;
 	else {
 	  asfReport(level, "Get_ceos_description Warning! "
@@ -1792,6 +1889,17 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
 	asfReport(level, "Get_ceos_description Warning! "
 		       "Unknown CSTARS product type '%s'!\n", prodStr);
 	ceos->product = unknownProduct;
+      }
+    }
+    else if (0==strncmp(ceos->dssr.fac_id,"         Beijing",16)) {
+      asfReport(level, "   Data set processed by Beijing\n");
+      ceos->facility = BEIJING;
+      if (0==strncmp(prodStr,"SAR RAW DATA",12))
+        ceos->product = RAW;
+      else {
+        asfReport(level, "Get_ceos_description Warning! "
+                    "Unknown Beijing product type '%s'!\n", prodStr);
+        ceos->product = unknownProduct;
       }
     }
   }

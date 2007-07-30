@@ -95,7 +95,7 @@ getRec * fillOutGetRec(char file[])
 	/* Lower case fopen used to control if statement */
 	fp_ASF=fopen(name_ASF,"rb");
 	
-	create_name(name_RAW,file,".raw");
+	create_name(name_RAW,file,".img");
 	/* Lower case fopen used to control if statement */
 	fp_RAW=fopen(name_RAW,"rb");
 	

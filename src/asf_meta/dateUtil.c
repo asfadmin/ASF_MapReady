@@ -454,11 +454,21 @@ void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time)
 instr="DD-MMM-YYYY hh:mm:ss.ttt"
 index  012345678901234567890123
 */
-void date_dssr2time(const char *inStr,hms_time *time)
+void date_dssr2time(const char *inStr,ymd_date *date,hms_time *time)
 {
+  char mon[][5]= 
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
 	char buf[100];
-	int sec,msec;
+	int i,sec,msec;
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+        subStr(7,4,&date->year);
+        for (i=0; i<13; i++) {
+	  strncpy(buf, &inStr[3], 3);
+	  buf[3] = 0;
+	  if (strcmp(uc(buf), mon[i]) == 0)
+	    date->month = i;
+	}
+        subStr(0,2,&date->day);
 	subStr(12,2,&time->hour);
 	subStr(15,2,&time->min);
 	subStr(18,2,&sec);
@@ -506,19 +516,16 @@ void date_sirc2date(const char *inStr,ymd_date *date,hms_time *time)
 instr="YYYYMMDDhhmmssttt"
 index  01234567890123456
 */
-void date_dssr2time_stamp(const char *inStr, char *t_stamp)
+void date_dssr2time_stamp(ymd_date *date,hms_time *time, char *t_stamp)
 {
   struct tm t;
-  ymd_date date;
-  hms_time time;
 
-  date_dssr2date(inStr, &date, &time);
-  t.tm_year = date.year - 1900;
-  t.tm_mon = date.month - 1;
-  t.tm_mday = date.day;
-  t.tm_sec = time.sec;
-  t.tm_min = time.min;
-  t.tm_hour = time.hour;
+  t.tm_year = date->year - 1900;
+  t.tm_mon = date->month - 1;
+  t.tm_mday = date->day;
+  t.tm_sec = time->sec;
+  t.tm_min = time->min;
+  t.tm_hour = time->hour;
   t.tm_isdst = -1;
   strftime(t_stamp, 22, "%d-%b-%Y, %H:%M:%S", &t);
 }

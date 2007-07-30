@@ -64,7 +64,10 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 
 /*Compute the *scene* start time from the CEOS DSSR: */
 	/* begin with scene center time */
-	date_dssr2date(ceos->dssr.inp_sctim,&imgDate,&imgTime);
+	if (ceos->facility == BEIJING)
+	  date_dssr2time(ceos->dssr.inp_sctim,&imgDate,&imgTime);
+	else	  
+	  date_dssr2date(ceos->dssr.inp_sctim,&imgDate,&imgTime);
 	date_ymd2jd(&imgDate,&imgJD);
 	imgSec=date2sec(&imgJD,&imgTime);
 
@@ -73,7 +76,7 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 	}
 	else if (0!=strcmp(ceos->dssr.az_time_first,"")) 
 	{ /* e.g., ESA data.  "az_time_first" field gives start of image */
-		date_dssr2time(ceos->dssr.az_time_first,&imgTime);
+		date_dssr2time(ceos->dssr.az_time_first,&imgDate,&imgTime);
 		imgSec=date2sec(&imgJD,&imgTime);
 	}
 	else if (ceos->facility==EOC) 
@@ -125,6 +128,8 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
     areInertial=1;/*Listed as Inertial-- believe it.*/
   if (0==strncmp(ppdr.ref_coord,"EARTH CENTERED ROT",18))
     areInertial=0;/*Listed as rotating-- believe it.*/
+  else if (0==strncmp(ppdr.ref_coord,"Earth Centred Rot",17))
+    areInertial = 0;
   else if (0 == strncmp(ppdr.ref_coord, "ECR", 3)) {
     areInertial = 0;
     //areInertialVelocity = 1;
@@ -137,7 +142,7 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
     areInertial=0,areInertialVelocity=1;
   
   /*Fill output record with inital time.*/
-  if (ceos->facility==ASF)
+  if (ceos->facility==ASF && ceos->processor!=LZP)
     {/* ASF's state vectors start at the 
 	same time as the images themselves.*/
       timeStart = 0.0;

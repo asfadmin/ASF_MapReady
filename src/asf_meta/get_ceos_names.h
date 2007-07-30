@@ -25,7 +25,8 @@ typedef struct {
     JPL,
     CSTARS,
     DPAF,
-    IPAF
+    IPAF,
+    BEIJING
   } facility;
   enum {
     unknownSatellite,
