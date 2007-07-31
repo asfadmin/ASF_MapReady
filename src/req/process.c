@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "asf_nan.h"
+#include "asf_meta.h"
 
 static void
 get_combo_box_entry_item(const char *widget_name, char *dest)
@@ -100,10 +101,10 @@ static int valid_avnir_pointing_angle(double a)
     return TRUE;
 }
 
-static int obs_parse_line(// input
-                        char *line,
+static int parse_line(// input
+                        char *line, int request_type,
                         // outputs:
-                        char *sensor, long *date, int *path, double *start_lat,
+                        char *sensor, char *drf, long *date, int *path, double *start_lat,
                         int *direction, int *duration, char *observation_mode,
                         int *observation_purpose, double *prism_nadir_angle,
                         double *prism_forward_angle, double *prism_backward_angle,
@@ -139,10 +140,38 @@ static int obs_parse_line(// input
     }
     assert(is_avnir + is_prism + is_palsar == 1);
 
+    // request_type
+    char tmp[64];
+    p = my_parse_string(p, tmp);
+    if (!p) return FALSE;
+    const char *t = request_type == OBSERVATION_REQUEST ? 
+        "Observation" : "Acquisition";
+    if (strcmp_case(tmp, t) != 0) {
+        printf("Skipping non-%s Request_Type: %s\n", t, tmp);
+        return FALSE;
+    }
+
+    // for acquisition requests only -- drf
+    if (request_type == ACQUISITION_REQUEST) {
+        p = my_parse_string(p, drf);
+        if (!p) return FALSE;
+        if (strlen(drf)>4) {
+            printf("Truncating DRF to 4 characters: %s\n", drf);
+            drf[4] = '\0';
+        } else if (strlen(drf)<4) {
+            while (strlen(drf)<4) {
+                drf[strlen(drf)+1] = '\0';
+                drf[strlen(drf)] = '_';
+            }
+        }
+    } else {
+        strcpy(drf, settings_get_station_code());
+    }
+    assert(strlen(drf)==4);
+
     // date
     p = my_parse_long(p, date);
     if (!p) return FALSE;
-    char tmp[32];
     sprintf(tmp, "%ld", *date);
     if (strlen(tmp) != 8 || tmp[0] != '2') { // need to update this in 2999
         printf("  --> Invalid date: %ld\n", *date);
@@ -353,11 +382,13 @@ static void write_common(FILE *fout, long date, int path, double start_lat,
         snprintf(tmp_buf, 32, "%ld ", date);
         assert(strlen(tmp_buf)==9);
         fwrite(tmp_buf, sizeof(char), 9, fout);
+
         //  33    5  Path Number
         //  38    1  Blank
         snprintf(tmp_buf, 32, "%5d ", path);
         assert(strlen(tmp_buf)==6);
         fwrite(tmp_buf, sizeof(char), 6, fout);
+
         //  39    7  Observation Beginning Latitude
         //  46    1  Blank
         snprintf(tmp_buf, 32, "%7.3f ", start_lat);
@@ -377,7 +408,9 @@ static void write_common(FILE *fout, long date, int path, double start_lat,
         fwrite(tmp_buf, sizeof(char), 5, fout);
     } else {
         //  fields 7,9,11,13,15 are all *'s for r-t acq requests
-        fwrite("******** ***** ******* * **** ", sizeof(char), 25, fout);
+        char *s = "******** ***** ******* * **** ";
+        assert(strlen(s)==9+6+8+2+5);
+        fwrite(s, sizeof(char), 30, fout);
     }
 
     if (request_type == ACQUISITION_REQUEST) {
@@ -678,14 +711,14 @@ static void strip_end_whitesp(char *s)
 void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                      int is_emergency, int *req_id,
                      long start_date_user, long end_date_user,
-                     const char *type_code, const char *station_code,
-                     int request_type)
+                     const char *type_code, int request_type)
 {
     // temporary spot for the read line
     char line[1024];
 
     // where we will put all the above, when processing a line
     char sensor[256];
+    char drf[16], drf2[16];
     long date;
     int path;
     double start_lat;
@@ -715,11 +748,6 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
 
     char req_type = is_emergency ? 'E' : 'W';
 
-    // station code should be "ASF_" or "AADN" or "MIAM" or ...
-    // don't get picky here, since we might add more later
-    // but the formatting will break if the length isn't exactly 4
-    assert(strlen(station_code)==4);
-
     // read in the whole file, so we can determine the number of requests, the
     // start date, and the end date.
     long first_date, last_date;
@@ -730,8 +758,9 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
         strip_end_whitesp(line);
 
         int valid =
-            obs_parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
-                observation_mode, &observation_purpose, &prism_nadir_angle,
+            parse_line(line, request_type, sensor, drf2, &date, &path,
+                &start_lat, &direction, &duration, observation_mode, 
+                &observation_purpose, &prism_nadir_angle,
                 &prism_forward_angle, &prism_backward_angle, &prism_gain_nadir,
                 &prism_gain_forward, &prism_gain_backward, &avnir_pointing_angle,
                 &avnir_gain, &avnir_exposure, &palsar_table_number);
@@ -754,22 +783,42 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
         } else {
             printf("Invalid line %d in CSV file.\n", line_no);
         }
+
+        if (n_requests == 1)
+            // first line is THE drf.
+            strcpy(drf, drf2);
+        else {
+            // ensure all DRF values in the file are the same
+            if (strcmp(drf, drf2) != 0) {
+                printf("DRF value on line %d doesn't match the first: %s\n",
+                    line_no, drf2);
+            }
+        }
+
         ++line_no;
     }
 
     fclose(fin);
 
-    printf("Found %d requests, range: %ld -> %ld\n",
-        n_requests, first_date, last_date);
-
     // now, start working on the request file.
     // first, get current date/time, to stamp the request file.
     time_t t;
     t = time(NULL);
+    struct tm *ts = gmtime(&t);
     char time_stamp[10];
-    strftime(time_stamp, 10, "%T", gmtime(&t));
+    strftime(time_stamp, 10, "%T", ts);
     char date_stamp[10];
-    strftime(date_stamp, 10, "%Y%m%d", gmtime(&t));
+    strftime(date_stamp, 10, "%Y%m%d", ts);
+
+    if (n_requests == 0) {
+        printf("No requests found!\n");
+        strcpy(drf, "");
+        first_date = last_date =
+            date_to_long(ts->tm_year, ts->tm_mon, ts->tm_mday);
+    } else {
+        printf("Found %d requests, range: %ld -> %ld\n",
+            n_requests, first_date, last_date);
+    }
 
     // open output file
     FILE *fout = fopen(req_file, "wb");
@@ -848,7 +897,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     //  22    1   Blank
     //  23    4   EOC MMO Code (to): "HMMO"
     //  27    1   Blank
-    snprintf(tmp_buf, 32, "%s HMMO ", station_code);
+    snprintf(tmp_buf, 32, "%s HMMO ", drf);
     assert(strlen(tmp_buf)==10);
     fwrite(tmp_buf, sizeof(char), 10, fout);
     //  28    8   File Creation Date (UTC): YYYMMDD
@@ -959,8 +1008,9 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
 
             // first read in all of the line's items
             int valid =
-                obs_parse_line(line, sensor, &date, &path, &start_lat, &direction, &duration,
-                    observation_mode, &observation_purpose, &prism_nadir_angle,
+                parse_line(line, request_type, sensor, drf, &date, &path,
+                    &start_lat, &direction, &duration, observation_mode,
+                    &observation_purpose, &prism_nadir_angle,
                     &prism_forward_angle, &prism_backward_angle, &prism_gain_nadir,
                     &prism_gain_forward, &prism_gain_backward, &avnir_pointing_angle,
                     &avnir_gain, &avnir_exposure, &palsar_table_number);
@@ -970,7 +1020,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                     ++written_prism;
                     write_common(fout, date, path, start_lat, direction, duration,
                                  observation_mode, observation_purpose, *req_id, sensor,
-                                 station_code, request_type);
+                                 drf, request_type);
                     write_prism(fout, prism_nadir_angle, prism_forward_angle,
                         prism_backward_angle, prism_gain_nadir, prism_gain_forward,
                         prism_gain_backward, direction, request_type);
@@ -984,7 +1034,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                     }
                     write_common(fout, date, path, start_lat, direction, duration,
                                  observation_mode, observation_purpose, *req_id, sensor,
-                                 station_code, request_type);
+                                 drf, request_type);
                     write_avnir(fout, avnir_pointing_angle, avnir_gain,
                         avnir_exposure, direction, request_type);
                     *req_id += 1;
@@ -997,7 +1047,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                     }
                     write_common(fout, date, path, start_lat, direction, duration,
                                  observation_mode, observation_purpose, *req_id, sensor,
-                                 station_code, request_type);
+                                 drf, request_type);
                     write_palsar(fout, palsar_table_number, request_type);
                     *req_id += 1;
                 }
@@ -1071,20 +1121,18 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
 
 void obs_process(FILE *fin, const char *csv_file, const char *req_file,
                  int is_emergency, int *req_id, long start_date_user,
-                 long end_date_user, const char *station_code)
+                 long end_date_user)
 {
     acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
-        start_date_user, end_date_user, "REQ", station_code,
-        OBSERVATION_REQUEST);
+        start_date_user, end_date_user, "REQ", OBSERVATION_REQUEST);
 }
 
 void acq_process(FILE *fin, const char *csv_file, const char *req_file,
                  int is_emergency, int *req_id, long start_date_user,
-                 long end_date_user, const char *station_code)
+                 long end_date_user)
 {
     acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
-        start_date_user, end_date_user, "RQT", station_code,
-        ACQUISITION_REQUEST);
+        start_date_user, end_date_user, "RQT", ACQUISITION_REQUEST);
 }
 
 int odl0_parse_line(char *line, char *downlink_segment_number,
@@ -1149,7 +1197,7 @@ static void write_odl0(FILE *fout, char *downlink_segment_number,
 
 void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
                  int is_emergency, int *req_id, long start_date_user,
-                 long end_date_user, const char *station_code)
+                 long end_date_user)
 {
     // temporary spot for the read line
     char line[1024];
@@ -1214,7 +1262,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
     //  22    1   Blank
     //  23    4   EOC MMO Code (to): "HCNT" (fixed)
     //  27    1   Blank
-    snprintf(tmp_buf, 32, "%s HCNT ", station_code);
+    snprintf(tmp_buf, 32, "%s HCNT ", settings_get_station_code());
     assert(strlen(tmp_buf)==10);
     fwrite(tmp_buf, sizeof(char), 10, fout);
     //  28    8   File Creation Date (UTC): YYYMMDD
@@ -1277,7 +1325,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
     // END DESCRIPTOR
 
     // Go through the input file again
-    FILE *fin = fopen(csv_file, "r");
+    fin = fopen(csv_file, "r");
     fgets(line, 1024, fin); // skip header line
     while (fgets(line, 1024, fin) != NULL) {
         strip_end_whitesp(line);
@@ -1301,7 +1349,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
         int expected_size;
         
         expected_size = // header + descrip + per data recs
-            128 + 30 + n_request*41;
+            128 + 30 + n_requests*41;
 
         if (expected_size < 32768) {
             char buf[32768];
@@ -1362,7 +1410,7 @@ SIGNAL_CALLBACK void on_generate_button_clicked(GtkWidget *w)
     gui_process(TRUE);
 }
 
-void process(const char *csv_file, const char *req_file, int is_emergency,
+void process(const char *csv_file, char *req_file, int is_emergency,
              int *req_id, long start_date_user, long end_date_user,
              int request_type)
 {
@@ -1377,18 +1425,18 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
     }
 
     const char *obs_expected_header =
-        "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
-        "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
-        "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
-        "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
-        "AVNIR_Exposure,PALSAR_Table_Number";
+        "Sensor,Request_Type,Date,Path,Start Lat,Direction,Duration,"
+        "Observation_Mode,Observation_Purpose,PRISM_Nadir_Angle,"
+        "PRISM_Forward_Angle,PRISM_Backward_Angle,PRISM_Gain_Nadir,"
+        "PRISM_Gain_Forward,PRISM_Gain_Backward,AVNIR_Pointing_Angle,"
+        "AVNIR_Gain,AVNIR_Exposure,PALSAR_Table_Number";
 
     const char *acq_expected_header =
-        "Sensor,Date,Path,Start Lat,Direction,Duration,Observation_Mode,"
-        "Observation_Purpose,PRISM_Nadir_Angle,PRISM_Forward_Angle,"
-        "PRISM_Backward_Angle,PRISM_Gain_Nadir,PRISM_Gain_Forward,"
-        "PRISM_Gain_Backward,AVNIR_Pointing_Angle,AVNIR_Gain,"
-        "AVNIR_Exposure,PALSAR_Table_Number";
+        "Sensor,Request_Type,DRF,Date,Path,Start Lat,Direction,Duration,"
+        "Observation_Mode,Observation_Purpose,PRISM_Nadir_Angle,"
+        "PRISM_Forward_Angle,PRISM_Backward_Angle,PRISM_Gain_Nadir,"
+        "PRISM_Gain_Forward,PRISM_Gain_Backward,AVNIR_Pointing_Angle,"
+        "AVNIR_Gain,AVNIR_Exposure,PALSAR_Table_Number";
 
     const char *l0_expected_header =
         "Downlink Segment Number,Level 0 Data Code";
@@ -1411,8 +1459,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
             // process an observation request
             obs_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user,
-                settings_get_station_code());
+                start_date_user, end_date_user);
         } else {
             // they told it was an observation request -- clearly, not.
             char buf[1024];
@@ -1421,6 +1468,12 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                         "  %s\n"
                         "Got:\n%s\n",
                 obs_expected_header, line);
+
+            if (strcmp(line, acq_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be an acquisition request file.");
+            } else if (strcmp(line, l0_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be a on-demand level 0 request file.");
+            }
 
             put_string_in_textview("output_textview", buf);
 
@@ -1440,8 +1493,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
 
             // process an acquisition request
             acq_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user,
-                settings_get_station_code());
+                start_date_user, end_date_user);
 
         } else {
             // they told it was an acquisition request -- clearly, not.
@@ -1452,6 +1504,12 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                         "Got:\n%s\n",
                 acq_expected_header, line);
 
+            if (strcmp(line, obs_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be an observation request file.");
+            } else if (strcmp(line, l0_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be a on-demand level 0 request file.");
+            }
+
             put_string_in_textview("output_textview", buf);
 
             fclose(fin);
@@ -1459,7 +1517,7 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         }
     }
     else if (request_type == ON_DEMAND_LEVEL_0) {
-        if (strcmp(line, acq_expected_header) == 0) {
+        if (strcmp(line, l0_expected_header) == 0) {
             printf("Processing as an On-Demand Level 0 Request.\n");
 
             // filename needs to be regenerated
@@ -1469,9 +1527,8 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
             req_file = get_output_file();
 
             // process as on-demand level 0
-            odl0_process(fin, csv_file, req_file, req_id,
-                start_date_user, end_date_user,
-                settings_get_station_code());
+            odl0_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user);
         } else {
             char buf[1024];
             sprintf(buf, "CSV File header line differs from expected!\n\n"
@@ -1479,6 +1536,12 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
                         "  %s\n"
                         "Got:\n%s\n",
                 l0_expected_header, line);
+
+            if (strcmp(line, acq_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be an acquisition request file.");
+            } else if (strcmp(line, obs_expected_header) == 0) {
+                strcat(buf, "\nFile appears to be an observation request file.");
+            }
 
             put_string_in_textview("output_textview", buf);
 
@@ -1491,19 +1554,38 @@ void process(const char *csv_file, const char *req_file, int is_emergency,
         if (strcmp(line, obs_expected_header) == 0) {
             printf("Processing as an Observation Request.\n");
 
+            // filename needs to be regenerated
+            settings_set_request_type(ACQUISITION_REQUEST);
+            update_output_file();
+            free(req_file);
+            req_file = get_output_file();
+
             obs_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user,
-                settings_get_station_code());
+                start_date_user, end_date_user);
         }
         else if (strcmp(line, acq_expected_header) == 0) {
             printf("Processing as an Acquisition Request.\n");
 
+            // filename needs to be regenerated
+            settings_set_request_type(ACQUISITION_REQUEST);
+            update_output_file();
+            free(req_file);
+            req_file = get_output_file();
+
             acq_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user,
-                settings_get_station_code());
+                start_date_user, end_date_user);
         } 
         else if (strcmp(line, l0_expected_header) == 0) {
+            printf("Processing as an On-Demand Level 0 Request.\n");
 
+            // filename needs to be regenerated
+            settings_set_request_type(ACQUISITION_REQUEST);
+            update_output_file();
+            free(req_file);
+            req_file = get_output_file();
+
+            odl0_process(fin, csv_file, req_file, is_emergency, req_id,
+                start_date_user, end_date_user);
         }
         else {
             // couldn't figure out what this file is, from the header!

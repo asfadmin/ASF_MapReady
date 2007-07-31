@@ -94,7 +94,7 @@ void hook_up_csv_dir_entry_changed(void);
 void alert(const char *s);
 
 /* process.c */
-void process(const char *csv_file, const char *req_file, int is_emergency,
+void process(const char *csv_file, char *req_file, int is_emergency,
              int *req_id, long start_date, long end_date, int request_type);
 void gui_process(int for_real);
 

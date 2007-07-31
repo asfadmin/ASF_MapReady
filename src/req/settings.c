@@ -202,7 +202,7 @@ void settings_save(Settings *s)
             fprintf(fp, "output directory = %s\r\n", s->output_dir);
         fprintf(fp, "next request number = %d\r\n", s->req_num);
         fprintf(fp, "next request id = %d\r\n", s->req_id);
-        if (s->output_dir)
+        if (s->station_code)
             fprintf(fp, "station code = %s\r\n", s->station_code);
         FCLOSE(fp);
     }
@@ -307,18 +307,30 @@ int settings_get_is_emergency()
 int settings_get_request_type()
 {
     GtkWidget *w = get_widget_checked("request_type_combobox");
-    return gtk_combo_box_get_active(GTK_COMBO_BOX(w));
+    int ret = gtk_combo_box_get_active(GTK_COMBO_BOX(w));
+
+    if (ret == -1) {
+        settings_set_request_type(UNSELECTED_REQUEST_TYPE);
+        return UNSELECTED_REQUEST_TYPE;
+    }
+
+    return ret;
 }
 
 void settings_set_request_type(int request_type)
 {
     GtkWidget *w = get_widget_checked("request_type_combobox");
-    if (which==OBSERVATION_REQUEST)
+
+    if (request_type==OBSERVATION_REQUEST)
         gtk_combo_box_set_active(GTK_COMBO_BOX(w), 1);
-    else if (which==ACQUISITION_REQUEST)
+    else if (request_type==ACQUISITION_REQUEST)
         gtk_combo_box_set_active(GTK_COMBO_BOX(w), 2);
-    else if (which==ON_DEMAND_LEVEL_0)
+    else if (request_type==ON_DEMAND_LEVEL_0)
         gtk_combo_box_set_active(GTK_COMBO_BOX(w), 3);
+    else if (request_type==UNSELECTED_REQUEST_TYPE)
+        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 0);
+    else
+        assert(0);
 }
 
 const char *settings_get_station_code()

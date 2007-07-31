@@ -11,9 +11,9 @@ static void generate(char **dir, char **file)
     char e = settings_get_is_emergency() ? 'E' : 'W';
     char *request_type;
     switch (settings_get_request_type()) {
-        case ACQUISITION_REQUEST:
-            request_type="REQ"; break;
         case OBSERVATION_REQUEST:
+            request_type="REQ"; break;
+        case ACQUISITION_REQUEST:
             request_type="RQT"; break;
         case ON_DEMAND_LEVEL_0:
             request_type="L0MR"; break;
@@ -35,6 +35,8 @@ void update_output_file()
 
     put_string_to_entry("output_dir_entry", dir);
     put_string_to_entry("output_file_entry", file);
+
+    //printf("update output file to: %s\n", file);
 
     FREE(dir);
     FREE(file);
