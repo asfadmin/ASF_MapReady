@@ -73,6 +73,8 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
 
     if (!inMeta->projection && !inMeta->transform)
         asfPrintError("Expected a projection/transform block!\n");
+    if (!inMeta->state_vectors)
+        asfPrintError("Input data does not have state vectors!\n");
 
     //asfPrintStatus("Converting %s to slant range...\n", infile);
 
