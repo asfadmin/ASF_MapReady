@@ -38,8 +38,8 @@ void interp_dem_holes_data(meta_parameters *meta, float *dem_data,
                 // scan up/down/left/right to find nearest good data
                 // then set this pixel to be a weighted average
 
-                int right = j+1;
-                while (right < ns && get_pixel(i,right) < cutoff)
+                int right = j;
+                while (right < ns-1 && get_pixel(i,right) < cutoff)
                     ++right;
 
                 if (right-j > 250) {
@@ -49,16 +49,16 @@ void interp_dem_holes_data(meta_parameters *meta, float *dem_data,
                     continue;
                 }
 
-                int left = j-1;
-                while (left >= 0 && get_pixel(i,left) < cutoff)
+                int left = j;
+                while (left > 0 && get_pixel(i,left) < cutoff)
                     --left;
 
-                int up = i-1;
-                while (up >= 0 && get_pixel(up,j) < cutoff)
+                int up = i;
+                while (up > 0 && get_pixel(up,j) < cutoff)
                     --up;
 
-                int down = i+1;
-                while (down < nl && get_pixel(down,j) < cutoff)
+                int down = i;
+                while (down < nl-1 && get_pixel(down,j) < cutoff)
                     ++down;
 
                 float n = (i-up) + (down-i) + (j-left) + (right-j);
@@ -124,8 +124,8 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
                 // scan up/down/left/right to find nearest good data
                 // then set this pixel to be a weighted average
 
-                int right = j+1;
-                while (right<ns && float_image_get_pixel(img,right,i)<cutoff)
+                int right = j;
+                while (right<ns-1 && float_image_get_pixel(img,right,i)<cutoff)
                     ++right;
 
                 if (right-j > 250) {
@@ -135,16 +135,16 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
                     continue;
                 }
 
-                int left = j-1;
-                while (left >= 0 && float_image_get_pixel(img,left,i) < cutoff)
+                int left = j;
+                while (left > 0 && float_image_get_pixel(img,left,i) < cutoff)
                     --left;
 
-                int up = i-1;
-                while (up >= 0 && float_image_get_pixel(img,j,up) < cutoff)
+                int up = i;
+                while (up > 0 && float_image_get_pixel(img,j,up) < cutoff)
                     --up;
 
-                int down = i+1;
-                while (down < nl && float_image_get_pixel(img,j,down) < cutoff)
+                int down = i;
+                while (down < nl-1 && float_image_get_pixel(img,j,down) < cutoff)
                     ++down;
 
                 float n = 1./(i-up) + 1./(down-i) + 1./(j-left) + 1./(right-j);
