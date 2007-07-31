@@ -1240,8 +1240,14 @@ float
 float_image_get_pixel (FloatImage *self, ssize_t x, ssize_t y)
 {
   // Are we at a valid image pixel?
-  g_assert (x >= 0 && (size_t) x < self->size_x);
-  g_assert (y >= 0 && (size_t) y < self->size_y);
+  asfRequire (x >= 0 && (size_t) x < self->size_x,
+              "%d >= 0 && %d < %d\n"
+              "Invalid pixel index in the x dimension\n",
+              (int)x, (int)x, (int)(self->size_x));
+  asfRequire (y >= 0 && (size_t) y < self->size_y,
+              "%d >= 0 && %d < %d\n"
+              "Invalid pixel index in the y dimension\n",
+              (int)y, (int)y, (int)(self->size_y));
 
   // Get the pixel coordinates, including tile and pixel-in-tile.
   g_assert (sizeof (long int) >= sizeof (size_t));
