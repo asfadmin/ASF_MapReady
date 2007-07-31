@@ -1252,9 +1252,6 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
     }
   }
 
-  if (smooth_dem_holes)
-    FREE(demFile);
-
   if (generate_water_mask)
     FREE(userMaskFile);
 
