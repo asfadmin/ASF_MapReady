@@ -32,7 +32,7 @@ as long as both this file and the caller are compiled the same way.
 #if defined(_AIX) || defined(HAVE_SOCKLEN_T) || defined(CMK_HAS_SOCKLEN) || defined(__socklen_t_defined)
   /* nothing needed--already have a socklen_t */
 #else /* no socklen_t: define our own */
-  typedef int socklen_t;
+  //typedef int socklen_t;
 #endif
 
 /*Just print out error message and exit*/
