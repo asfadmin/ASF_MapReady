@@ -187,9 +187,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // FIXME: Modify the band stats functions and image writing functions to support separate bands instead
   // of requiring interlaced bands (which is really only good for up to 4 bands...)
   if (ret != 0) {
-       tiff_type_t t;
-       get_tiff_type(input_tiff, &t);
-       asfPrintWarning("FOUND TIFF tag data as follows:\n"
+    char msg[1024];
+    tiff_type_t t;
+    get_tiff_type(input_tiff, &t);
+    sprintf(msg, "FOUND TIFF tag data as follows:\n"
         "         Sample Format: %s\n"
         "       Bits per Sample: %d\n"
         "  Planar Configuration: %s\n"
@@ -206,6 +207,23 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         t.format == SCANLINE_TIFF ? "SCANLINE TIFF" :
         t.format == STRIP_TIFF ? "STRIP TIFF" :
         t.format == TILED_TIFF ? "TILED TIFF" : "UNKNOWN");
+    switch (t.format) {
+      case STRIP_TIFF:
+        sprintf(msg, "%s"
+                "        Rows per Strip: %d\n",
+                msg, t.rowsPerStrip);
+        break;
+      case TILED_TIFF:
+        sprintf(msg, "%s"
+                "            Tile Width: %d\n"
+                "           Tile Height: %d\n",
+                msg, t.tileWidth, t.tileLength);
+        break;
+      case SCANLINE_TIFF:
+      default:
+        break;
+    }
+    asfPrintWarning(msg);
 
     asfPrintError("  Unsupported TIFF type found or required TIFF tags are missing\n"
         "    in TIFF File \"%s\"\n\n"
@@ -300,16 +318,38 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // type).  See the if(geotiff_data_exists) section on reading parameters below.
     geotiff_data_exists = 1;
   }
+
   else {
     geotiff_data_exists = 0;
   }
-  if (model_type == ModelTypeProjected && linear_units != Linear_Meter) {
+  // Try to do some intelligent guess-work to make up for missing keys...
+  if (model_type != ModelTypeProjected &&
+      model_type != ModelTypeGeographic &&
+      model_type != ModelTypeGeocentric)
+  {
+    // GTModelTypeGeoKey is unpopulated
+    if (raster_type == RasterPixelIsArea &&
+        linear_units == Linear_Meter)
+    {
+      asfPrintWarning("GeoTIFF contains linear meters but GTModelTypeGeoKey is\n"
+          "unpopulated ...can't tell if this is a map-projected GeoTIFF or only\n"
+          "a georeferenced GeoTIFF.\n"
+          "  Continuing ...but assuming that it is a map-projected GeoTIFF until\n"
+          "  reading more information from the file proves otherwise.\n");
+      model_type = ModelTypeProjected;
+      geotiff_data_exists = 1;
+    }
+  }
+  if (model_type == ModelTypeProjected &&
+      raster_type == RasterPixelIsArea &&
+      linear_units != Linear_Meter) {
     read_count
         = GTIFKeyGet (input_gtif, ProjLinearUnitsGeoKey, &linear_units, 0, 1);
     if (read_count == 0) {
       asfPrintWarning("Map-Projected GeoTIFF found, but the linear units GeoKey is not set.\n"
-          "Continuing ...but assuming Linear Meters.\n");
+          "  Continuing ...but assuming Linear Meters.\n");
       linear_units = Linear_Meter;
+      geotiff_data_exists = 1;
     }
   }
   asfPrintStatus ("Input GeoTIFF key GTModelTypeGeoKey is %s\n",
