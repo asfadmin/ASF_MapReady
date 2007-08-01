@@ -655,16 +655,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->general->orbit_direction = 'D';
   meta->general->bit_error_rate = 0.0;
 
-  if (ceos->product != SGI) {
-    firstTime = get_alos_firstTime(dataName[0]);
-    date_dssr2date(dssr->inp_sctim, &date, &time);
-    centerTime = date_hms2sec(&time);
-    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
-      / (meta->sar->original_line_count/2);
-
-    ceos_init_stVec(in_fName,ceos,meta);
-  }
-
   meta->general->band_count = nBands;
 
   // SAR block
@@ -696,6 +686,47 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->earth_radius = mpdr->distplat;
     meta->sar->chirp_rate = get_chirp_rate(in_fName);
   }
+
+  if (ceos->product == SGI) {
+    // experimental calculation -- not sure if this is really going to work!
+    double re = (meta_is_valid_double(meta->general->re_major))
+		       ? meta->general->re_major : 6378137.0;
+	double rp = (meta_is_valid_double(meta->general->re_minor))
+		       ? meta->general->re_minor : 6356752.31414;
+    double lat = D2R*dssr->plat_lat;
+    double er = (re*rp)
+		        / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+    date_dssr2date(dssr->inp_sctim, &date, &time);
+    centerTime = date_hms2sec(&time);
+    struct pos_data_rec ppdr;
+    get_ppdr(in_fName,&ppdr);
+    int i,closest=0;
+    double closest_diff=9999999;
+    for (i=0; i<ppdr.ndata; ++i) {
+      double diff = fabs(ppdr.gmt_sec + i*ppdr.data_int - centerTime);
+      if (diff < closest_diff) {
+          closest = i; closest_diff = diff;
+      }
+    }
+    double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
+        ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
+        ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
+    const double g = 9.81;
+    double orbit_vel = sqrt(g*er*er/ht);
+    double swath_vel = orbit_vel * er / ht;
+    meta->sar->azimuth_time_per_pixel =
+        meta->general->y_pixel_size / swath_vel;
+    printf("lat: %f\ner: %f\nht (new): %f\nht (old): %f\norbit_vel: %f\nswath_vel: %f\natpp: %f\n",
+        lat*R2D, er, ht, meta->sar->satellite_height, orbit_vel, swath_vel, meta->sar->azimuth_time_per_pixel);
+  } else {
+    firstTime = get_alos_firstTime(dataName[0]);
+    date_dssr2date(dssr->inp_sctim, &date, &time);
+    centerTime = date_hms2sec(&time);
+    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
+      / (meta->sar->original_line_count/2);
+  }
+
+  ceos_init_stVec(in_fName,ceos,meta);
 
   // Transformation block
   if (ceos->product != SLC) {
