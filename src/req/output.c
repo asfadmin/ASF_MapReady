@@ -1,4 +1,5 @@
 #include "req.h"
+#include <time.h>
 
 static void generate(char **dir, char **file)
 {
@@ -8,7 +9,6 @@ static void generate(char **dir, char **file)
     else
         *dir = STRDUP("");
 
-    char e = settings_get_is_emergency() ? 'E' : 'W';
     char *request_type;
     switch (settings_get_request_type()) {
         case OBSERVATION_REQUEST:
@@ -23,7 +23,17 @@ static void generate(char **dir, char **file)
     }
 
     *file = MALLOC(sizeof(char)*32);
-    sprintf(*file, "%s%c%06d", request_type, e, s->req_num);
+    if (settings_get_request_type()==ON_DEMAND_LEVEL_0) {
+        time_t t = time(NULL);
+        struct tm *ts = gmtime(&t);
+        snprintf(*file, 32, "%s%02d%02d%02d", request_type,
+            ts->tm_mon+1, ts->tm_mday, settings_get_sequence_number());
+    } else if (strcmp(request_type, "???") != 0) {
+        char e = settings_get_is_emergency() ? 'E' : 'W';
+        snprintf(*file, 32, "%s%c%06d", request_type, e, s->req_num);
+    } else {
+        snprintf(*file, 32, "%s", request_type);
+    }
 
     settings_free(s);
 }
@@ -35,8 +45,6 @@ void update_output_file()
 
     put_string_to_entry("output_dir_entry", dir);
     put_string_to_entry("output_file_entry", file);
-
-    //printf("update output file to: %s\n", file);
 
     FREE(dir);
     FREE(file);

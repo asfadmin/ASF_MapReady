@@ -1,6 +1,6 @@
 #include "req.h"
 
-#define VERSION "1.0.2"
+#define VERSION "2.0.0"
 
 /************************************************************************
  * Global variables...
@@ -47,7 +47,7 @@ main(int argc, char **argv)
     // add version number to window title
     char title[256];
     sprintf(title,
-        "The ALOS Observation Request Generator: Version %s", VERSION);
+        "The ALOS Request Generator: Version %s", VERSION);
 
     // pull out what is in the saved settings file
     apply_saved_settings();

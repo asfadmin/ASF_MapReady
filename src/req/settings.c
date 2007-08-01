@@ -287,15 +287,17 @@ int settings_get_next_req_id(void)
 
 void settings_set_next_req_id_and_incr_req_num(int req_id)
 {
-    Settings *s = settings_load();
-    if (req_id <= s->req_id)
-        printf("*** New request id is smaller!?\n");
-    s->req_id = req_id;
-    ++s->req_num;
-    settings_save(s);
-    apply_settings_to_gui(s);
-    settings_free(s);
-    update_output_file();
+    if (settings_get_request_type() != ON_DEMAND_LEVEL_0) {
+        Settings *s = settings_load();
+        if (req_id <= s->req_id)
+            printf("*** New request id is smaller!?\n");
+        s->req_id = req_id;
+        ++s->req_num;
+        settings_save(s);
+        apply_settings_to_gui(s);
+        settings_free(s);
+        update_output_file();
+    }
 }
 
 int settings_get_is_emergency()
@@ -304,33 +306,42 @@ int settings_get_is_emergency()
     return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(w));
 }
 
-int settings_get_request_type()
+int settings_get_sequence_number()
 {
-    GtkWidget *w = get_widget_checked("request_type_combobox");
-    int ret = gtk_combo_box_get_active(GTK_COMBO_BOX(w));
-
-    if (ret == -1) {
-        settings_set_request_type(UNSELECTED_REQUEST_TYPE);
-        return UNSELECTED_REQUEST_TYPE;
-    }
-
-    return ret;
+    return 1;
 }
 
 void settings_set_request_type(int request_type)
 {
-    GtkWidget *w = get_widget_checked("request_type_combobox");
+    GtkLabel *l = GTK_LABEL(get_widget_checked("request_type_label"));
 
     if (request_type==OBSERVATION_REQUEST)
-        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 1);
+        gtk_label_set_text(l, "Observation Request");
     else if (request_type==ACQUISITION_REQUEST)
-        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 2);
+        gtk_label_set_text(l, "Acquisition Request");
     else if (request_type==ON_DEMAND_LEVEL_0)
-        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 3);
+        gtk_label_set_text(l, "On-Demand Level 0");
     else if (request_type==UNSELECTED_REQUEST_TYPE)
-        gtk_combo_box_set_active(GTK_COMBO_BOX(w), 0);
+        gtk_label_set_text(l, "???");
     else
         assert(0);
+}
+
+int settings_get_request_type()
+{
+    GtkLabel *l = GTK_LABEL(get_widget_checked("request_type_label"));
+    const char *s = gtk_label_get_text(l);
+    if (strcmp(s, "Observation Request") == 0)
+        return OBSERVATION_REQUEST;
+    else if (strcmp(s, "Acquisition Request") == 0)
+        return ACQUISITION_REQUEST;
+    else if (strcmp(s, "On-Demand Level 0") == 0)
+        return ON_DEMAND_LEVEL_0;
+    else if (strcmp(s, "???") == 0)
+        return UNSELECTED_REQUEST_TYPE;
+
+    assert(0);
+    return 0;
 }
 
 const char *settings_get_station_code()

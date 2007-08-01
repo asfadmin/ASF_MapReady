@@ -88,6 +88,15 @@ void populate_csvs()
 SIGNAL_CALLBACK void
 on_csv_dir_combobox_changed(GtkWidget *w, gpointer callback_data)
 {
+    settings_set_request_type(UNSELECTED_REQUEST_TYPE);
+    settings_set_start_date(-1);
+    settings_set_end_date(-1);
+    gui_process(FALSE);
+}
+
+SIGNAL_CALLBACK void
+on_request_type_combobox_changed(GtkWidget *w, gpointer callback_data)
+{
     settings_set_start_date(-1);
     settings_set_end_date(-1);
     gui_process(FALSE);

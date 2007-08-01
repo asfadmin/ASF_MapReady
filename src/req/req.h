@@ -84,9 +84,10 @@ long settings_get_start_date(void);
 long settings_get_end_date(void);
 void settings_set_start_date(long l);
 void settings_set_end_date(long l);
-int settings_get_request_type(void);
 void settings_set_request_type(int request_type);
+int settings_get_request_type(void);
 const char *settings_get_station_code(void);
+int settings_get_sequence_number(void);
 
 /* csv_list.c */
 void populate_csvs(void);
@@ -94,8 +95,8 @@ void hook_up_csv_dir_entry_changed(void);
 void alert(const char *s);
 
 /* process.c */
-void process(const char *csv_file, char *req_file, int is_emergency,
-             int *req_id, long start_date, long end_date, int request_type);
+char *process(const char *csv_file, int is_emergency, int *req_id,
+              long start_date, long end_date);
 void gui_process(int for_real);
 
 /* output.c */

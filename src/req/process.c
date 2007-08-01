@@ -814,7 +814,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
         printf("No requests found!\n");
         strcpy(drf, "");
         first_date = last_date =
-            date_to_long(ts->tm_year, ts->tm_mon, ts->tm_mday);
+            date_to_long(ts->tm_year+1900, ts->tm_mon+1, ts->tm_mday);
     } else {
         printf("Found %d requests, range: %ld -> %ld\n",
             n_requests, first_date, last_date);
@@ -1178,14 +1178,14 @@ static void write_odl0(FILE *fout, char *downlink_segment_number,
                        char *l0_data_code)
 {
     char tmp_buf[64];
+    int i;
 
     snprintf(tmp_buf, 64, "%s,%s", downlink_segment_number, l0_data_code);
     assert(strlen(tmp_buf)==19);
 
     // pad the rest with blanks (length will be 40 characters)
-    tmp_buf[41] = '\0';
-    int i;
-    for (i=40; i>=strlen(tmp_buf); --i)
+    tmp_buf[40] = '\0';
+    for (i=strlen(tmp_buf); i<40; ++i)
         tmp_buf[i] = ' ';
     assert(strlen(tmp_buf)==40);
     fwrite(tmp_buf, sizeof(char), 40, fout);
@@ -1306,7 +1306,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
     //   0   16   Data Distribution Request ID
     //            Arbitrary, we choose: "AADNnnnnnnnnnnnn" (nnnnnnnnnnn=req #)
     //  16    1   Blank
-    snprintf(tmp_buf, 32, "AADN%12d ", *req_id);
+    snprintf(tmp_buf, 32, "AADN%012d ", *req_id);
     assert(strlen(tmp_buf)==17);
     fwrite(tmp_buf, sizeof(char), 17, fout);
     //  17    8   Data Request Type: "ALL     "
@@ -1318,7 +1318,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
     //  35    4   Destination Agency: "AADN"
     const char *c3 = "ALL      CD MD1   AADN";
     assert(strlen(c3)==22);
-    fwrite(tmp_buf, sizeof(char), 22, fout);
+    fwrite(c3, sizeof(char), 22, fout);
     //  39    1   HEX 0A
     tmp_buf[0] = 0x0A;
     fwrite(tmp_buf, sizeof(char), 1, fout);
@@ -1349,7 +1349,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
         int expected_size;
         
         expected_size = // header + descrip + per data recs
-            128 + 30 + n_requests*41;
+            128 + 40 + n_requests*41;
 
         if (expected_size < 32768) {
             char buf[32768];
@@ -1383,19 +1383,25 @@ void gui_process(int for_real)
                 put_string_in_textview("output_textview", buf);
             } else {
                 int req_id = settings_get_next_req_id();
-                char *outfile = get_output_file();
-                process(csv_file, outfile, settings_get_is_emergency(), &req_id,
-                    settings_get_start_date(), settings_get_end_date(), 
-                    settings_get_request_type());
-                put_file_in_textview(outfile, "output_textview");
-                if (for_real) {
-                    // update request num, id!
-                    settings_set_next_req_id_and_incr_req_num(req_id);
-                    sprintf(buf, "Generated output file: %s", outfile);
-                    put_string_to_label("generate_label", buf);
+                char *outfile =
+                    process(csv_file, settings_get_is_emergency(), &req_id,
+                        settings_get_start_date(), settings_get_end_date());
+                if (outfile) {
+                    put_file_in_textview(outfile, "output_textview");
+                    if (for_real) {
+                        // update request num, id!
+                        settings_set_next_req_id_and_incr_req_num(req_id);
+                        sprintf(buf, "Generated output file: %s", outfile);
+                        put_string_to_label("generate_label", buf);
+                    } else {
+                        // delete temp file
+                        remove(outfile);
+                    }
+                    free(outfile);
                 } else {
-                    // delete temp file
-                    remove(outfile);
+                    // an error should already have been put into
+                    // the textview - no action necessary
+
                 }
             }
         } else {
@@ -1410,18 +1416,24 @@ SIGNAL_CALLBACK void on_generate_button_clicked(GtkWidget *w)
     gui_process(TRUE);
 }
 
-void process(const char *csv_file, char *req_file, int is_emergency,
-             int *req_id, long start_date_user, long end_date_user,
-             int request_type)
+static char *update_request_type(int request_type)
 {
-    printf("Process> %s -> %s\n", csv_file, req_file);
+    settings_set_request_type(request_type);
+    update_output_file();
+    return get_output_file();
+}
+
+char *process(const char *csv_file, int is_emergency,
+              int *req_id, long start_date_user, long end_date_user)
+{
+    printf("Process> %s\n", csv_file);
 
     FILE *fin = fopen(csv_file, "r");
     if (!fin) {
         char buf[1024];
         sprintf(buf, "Failed to open CSV file: %s\n", csv_file);
         put_string_in_textview("output_textview", buf);
-        return;
+        return NULL;
     }
 
     const char *obs_expected_header =
@@ -1439,176 +1451,64 @@ void process(const char *csv_file, char *req_file, int is_emergency,
         "AVNIR_Gain,AVNIR_Exposure,PALSAR_Table_Number";
 
     const char *l0_expected_header =
-        "Downlink Segment Number,Level 0 Data Code";
+        "Downlink_Segment_Number,Level_0_Data_Code";
 
     char line[1024];
+    strcpy(line, "");
 
     // read header line
     fgets(line, 1024, fin);
     strip_end_whitesp(line);
 
-    if (request_type == OBSERVATION_REQUEST) {
-        if (strcmp(line, obs_expected_header) == 0) {
-            printf("Processing as an Observation Request.\n");
+    char *req_file=NULL;
 
-            // filename needs to be regenerated
-            settings_set_request_type(OBSERVATION_REQUEST);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
+    // request type needs to be figured out from the header
+    if (strcmp(line, obs_expected_header) == 0) {
+        printf("Processing as an Observation Request.\n");
+        req_file = update_request_type(OBSERVATION_REQUEST);
 
-            // process an observation request
-            obs_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
-        } else {
-            // they told it was an observation request -- clearly, not.
-            char buf[1024];
-            sprintf(buf, "CSV File header line differs from expected!\n\n"
-                        "Expected Observation Request Header String:\n"
-                        "  %s\n"
-                        "Got:\n%s\n",
-                obs_expected_header, line);
-
-            if (strcmp(line, acq_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be an acquisition request file.");
-            } else if (strcmp(line, l0_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be a on-demand level 0 request file.");
-            }
-
-            put_string_in_textview("output_textview", buf);
-
-            fclose(fin);
-            return;
-        }
+        obs_process(fin, csv_file, req_file, is_emergency, req_id,
+            start_date_user, end_date_user);
     }
-    else if (request_type == ACQUISITION_REQUEST) {
-        if (strcmp(line, acq_expected_header) == 0) {
-            printf("Processing as an Acquisition Request.\n");
+    else if (strcmp(line, acq_expected_header) == 0) {
+        printf("Processing as an Acquisition Request.\n");
+        req_file = update_request_type(ACQUISITION_REQUEST);
 
-            // filename needs to be regenerated
-            settings_set_request_type(ACQUISITION_REQUEST);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
+        acq_process(fin, csv_file, req_file, is_emergency, req_id,
+            start_date_user, end_date_user);
+    } 
+    else if (strcmp(line, l0_expected_header) == 0) {
+        printf("Processing as an On-Demand Level 0 Request.\n");
+        req_file = update_request_type(ON_DEMAND_LEVEL_0);
 
-            // process an acquisition request
-            acq_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
-
-        } else {
-            // they told it was an acquisition request -- clearly, not.
-            char buf[1024];
-            sprintf(buf, "CSV File header line differs from expected!\n\n"
-                        "Expected Acqusition Request Header String:\n"
-                        "  %s\n"
-                        "Got:\n%s\n",
-                acq_expected_header, line);
-
-            if (strcmp(line, obs_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be an observation request file.");
-            } else if (strcmp(line, l0_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be a on-demand level 0 request file.");
-            }
-
-            put_string_in_textview("output_textview", buf);
-
-            fclose(fin);
-            return;
-        }
+        odl0_process(fin, csv_file, req_file, is_emergency, req_id,
+            start_date_user, end_date_user);
     }
-    else if (request_type == ON_DEMAND_LEVEL_0) {
-        if (strcmp(line, l0_expected_header) == 0) {
-            printf("Processing as an On-Demand Level 0 Request.\n");
+    else {
+        // couldn't figure out what this file is, from the header!
+        printf("Failed.\n");
+        settings_set_request_type(0);
 
-            // filename needs to be regenerated
-            settings_set_request_type(ON_DEMAND_LEVEL_0);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
-
-            // process as on-demand level 0
-            odl0_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
+        char buf[1024];
+        if (strlen(line) == 0) {
+            snprintf(buf, 1024, 
+                        "No header line found.\n"
+                        "Input file is empty, or begins with a blank line.\n");
         } else {
-            char buf[1024];
-            sprintf(buf, "CSV File header line differs from expected!\n\n"
-                        "Expected On-Demand Level 0 Header String:\n"
-                        "  %s\n"
-                        "Got:\n%s\n",
-                l0_expected_header, line);
-
-            if (strcmp(line, acq_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be an acquisition request file.");
-            } else if (strcmp(line, obs_expected_header) == 0) {
-                strcat(buf, "\nFile appears to be an observation request file.");
-            }
-
-            put_string_in_textview("output_textview", buf);
-
-            fclose(fin);
-            return;
-        }
-    }
-    else if (request_type == UNSELECTED_REQUEST_TYPE) {
-        // request type needs to be figured out from the header, if possible
-        if (strcmp(line, obs_expected_header) == 0) {
-            printf("Processing as an Observation Request.\n");
-
-            // filename needs to be regenerated
-            settings_set_request_type(ACQUISITION_REQUEST);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
-
-            obs_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
-        }
-        else if (strcmp(line, acq_expected_header) == 0) {
-            printf("Processing as an Acquisition Request.\n");
-
-            // filename needs to be regenerated
-            settings_set_request_type(ACQUISITION_REQUEST);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
-
-            acq_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
-        } 
-        else if (strcmp(line, l0_expected_header) == 0) {
-            printf("Processing as an On-Demand Level 0 Request.\n");
-
-            // filename needs to be regenerated
-            settings_set_request_type(ACQUISITION_REQUEST);
-            update_output_file();
-            free(req_file);
-            req_file = get_output_file();
-
-            odl0_process(fin, csv_file, req_file, is_emergency, req_id,
-                start_date_user, end_date_user);
-        }
-        else {
-            // couldn't figure out what this file is, from the header!
-            char buf[1024];
-            sprintf(buf, "CSV File header line differs from expected!\n\n"
+            snprintf(buf, 1024, "CSV File header line differs from expected!\n\n"
                         "Expected one of these:\n"
                         "  Observation: %s\n"
                         "  Acquisition: %s\n"
                         "  Level 0: %s\n\n"
                         "Got:\n%s\n",
                 obs_expected_header, acq_expected_header, l0_expected_header, line);
-            put_string_in_textview("output_textview", buf);
-
-            fclose(fin);
-            return;
         }
-    }
-    else {
-        // this should never happen
-        char buf[1024];
-        sprintf(buf, "Unexpected request type %d!\n", request_type);
         put_string_in_textview("output_textview", buf);
+
         fclose(fin);
-        return;
+        return NULL;
     }
+
+    assert(req_file);
+    return req_file;
 }
