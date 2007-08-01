@@ -337,11 +337,7 @@ int settings_get_request_type()
         return ACQUISITION_REQUEST;
     else if (strcmp(s, "On-Demand Level 0") == 0)
         return ON_DEMAND_LEVEL_0;
-    else if (strcmp(s, "???") == 0)
-        return UNSELECTED_REQUEST_TYPE;
-
-    assert(0);
-    return 0;
+    return UNSELECTED_REQUEST_TYPE;
 }
 
 const char *settings_get_station_code()

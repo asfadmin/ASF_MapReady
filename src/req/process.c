@@ -1184,9 +1184,9 @@ static void write_odl0(FILE *fout, char *downlink_segment_number,
     assert(strlen(tmp_buf)==19);
 
     // pad the rest with blanks (length will be 40 characters)
-    tmp_buf[40] = '\0';
     for (i=strlen(tmp_buf); i<40; ++i)
         tmp_buf[i] = ' ';
+    tmp_buf[40] = '\0';
     assert(strlen(tmp_buf)==40);
     fwrite(tmp_buf, sizeof(char), 40, fout);
 
