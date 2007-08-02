@@ -235,6 +235,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->geocoding);
         }
         if (cfg->export) {
+            FREE(cfg->export->band);
             FREE(cfg->export->format);
             FREE(cfg->export->byte);
             FREE(cfg->export->rgb);
@@ -359,6 +360,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->byte, "SIGMA");
   cfg->export->rgb = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->export->rgb, "");
+  cfg->export->band = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->export->band, "");
   cfg->export->truecolor = 0;
   cfg->export->falsecolor = 0;
   cfg->export->pauli = 0;
@@ -506,6 +509,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->export->truecolor = read_int(line, "truecolor");
       if (strncmp(test, "falsecolor", 9)==0)
         cfg->export->falsecolor = read_int(line, "falsecolor");
+      if (strncmp(test, "band", 4)==0)
+        strcpy(cfg->export->band, read_str(line, "band"));
       if (strncmp(test, "pauli", 5)==0)
         cfg->export->pauli = read_int(line, "pauli");
       if (strncmp(test, "sinclair", 8)==0)
@@ -767,6 +772,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->export->truecolor = read_int(line, "truecolor");
       if (strncmp(test, "falsecolor", 10)==0)
         cfg->export->falsecolor = read_int(line, "falsecolor");
+      if (strncmp(test, "band", 4)==0)
+        strcpy(cfg->export->band, read_str(line, "band"));
       if (strncmp(test, "pauli", 5)==0)
         cfg->export->pauli = read_int(line, "pauli");
       if (strncmp(test, "sinclair", 8)==0)
@@ -1078,7 +1085,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
         fprintf(fConfig, "# The projection parameter files are located in:\n");
-	fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
+  fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)
@@ -1150,15 +1157,20 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# flag, band assignments will be R = 4, G = 3, and B = 2 and each band\n"
                 "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
                 "# visualization (use rgb banding if you desire raw data assignments.)\n\n");
-      fprintf(fConfig, "falsecolor = %i\n\n", cfg->export->falsecolor);
+      fprintf(fConfig, "falsecolor = %i\n", cfg->export->falsecolor);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you wish to export a single band from the list of\n"
+            "# available bands, e.g. HH, HV, VH, VV ...enter VV to export just\n"
+                "# the VV band (alone.)\n\n");
+      fprintf(fConfig, "band = %s\n\n", cfg->export->band);
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
-                "# you can use the standard Pauli decomposition to map the 4 bands to\n"
+            "# you can use the standard Pauli decomposition to map the 4 bands to\n"
                 "# the R, G, and B channels in the output image.  In this decomposition,\n"
                 "# red is HH-VV, green is HV, and blue is HH+VV.  In addition, each channel\n"
                 "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
                 "# visualization.\n\n");
-      fprintf(fConfig, "pauli = %i\n\n", cfg->export->pauli);
+      fprintf(fConfig, "pauli = %i\n", cfg->export->pauli);
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
                 "# you can use the standard Sinclair decomposition to map the 4 bands to\n"
