@@ -1193,7 +1193,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         else {
           if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
               // multi-band, exporting as separate greyscale files
-              asfPrintStatus("Exporting %d bands as separate greyscale files...\n",
+              asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
                              meta->general->band_count);
               check_return(asf_export_bands(format, scale, FALSE,
                                             0, 0, 0, 0, NULL,
@@ -1202,7 +1202,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
           else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
             // multi-band, exporting single band in one greyscale file
-            asfPrintStatus("Exporting band \"%s\" in a single greyscale file...\n",
+            asfPrintStatus("\nExporting band \"%s\" in a single greyscale file...\n",
                            cfg->export->band);
             int num_bands_found = 0;
             char **band_names = find_single_band(inFile, cfg->export->band,
