@@ -659,6 +659,15 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   meta->general->band_count = nBands;
 
+  if (ceos->product != SGI) {
+    firstTime = get_alos_firstTime(dataName[0]);
+    date_dssr2date(dssr->inp_sctim, &date, &time);
+    centerTime = date_hms2sec(&time);
+    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
+      / (meta->sar->original_line_count/2);
+    ceos_init_stVec(in_fName,ceos,meta);
+  }
+
   // SAR block
   if (ceos->product == SLC)
     meta->sar->image_type = 'S';
@@ -740,15 +749,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     if (workreport_atpp > 0)
         asfPrintStatus("  Using workreport: %.10f\n", workreport_atpp);
     asfPrintStatus("        Calculated: %.10f\n\n", meta->sar->azimuth_time_per_pixel);
-  } else {
-    firstTime = get_alos_firstTime(dataName[0]);
-    date_dssr2date(dssr->inp_sctim, &date, &time);
-    centerTime = date_hms2sec(&time);
-    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
-      / (meta->sar->original_line_count/2);
-  }
 
-  ceos_init_stVec(in_fName,ceos,meta);
+    ceos_init_stVec(in_fName,ceos,meta);
+  } 
+
 
   // Transformation block
   if (ceos->product != SLC) {
