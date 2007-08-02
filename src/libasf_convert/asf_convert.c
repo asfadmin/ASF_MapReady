@@ -260,7 +260,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     cfg = read_convert_config(configFileName);
   }
 
-  // Check for greyscale output versus selection of a color option
+  // Check for greyscale PGM output versus selection of a color option
   if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
       (strlen(cfg->export->rgb) > 0 ||
       cfg->export->truecolor        ||
@@ -273,6 +273,26 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         "(RGB, True Color, False Color, Pauli, or Sinclair) ...\n"
         "Defaulting to producing separate greyscale PGM files for each\n"
         "available band.\n");
+    strcpy(cfg->export->rgb, "");
+    cfg->export->truecolor = 0;
+    cfg->export->falsecolor = 0;
+    cfg->export->pauli = 0;
+    cfg->export->sinclair = 0;
+  }
+
+  // Check for greyscale single-band output versus selection of a color option
+  if (strlen(cfg->export->band) > 0 &&
+      (strlen(cfg->export->rgb) > 0 ||
+          cfg->export->truecolor        ||
+          cfg->export->falsecolor       ||
+          cfg->export->pauli            ||
+          cfg->export->sinclair)
+     )
+  {
+    asfPrintWarning("Single-band output is not compatible with color options:\n"
+        "(RGB, True Color, False Color, Pauli, or Sinclair) ...\n"
+        "Defaulting to producing a single greyscale file for the\n"
+        "selected band (%s).\n", cfg->export->band);
     strcpy(cfg->export->rgb, "");
     cfg->export->truecolor = 0;
     cfg->export->falsecolor = 0;
@@ -720,6 +740,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (!meta->optical && (truecolor || falsecolor)) {
       asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
     }
+    if (get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0) {
+      asfPrintError("Selected export band (%s) does not exist: \n"
+          "   Imported file: %s.img\n"
+          " Available bands: %s\n",
+                    cfg->export->band, cfg->general->in_name, meta->general->bands);
+    }
     meta_free(meta);
 
     if (cfg->general->sar_processing) {
@@ -1165,7 +1191,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
         }
         else {
-          if (meta->general->band_count != 1) {
+          if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
               // multi-band, exporting as separate greyscale files
               asfPrintStatus("Exporting %d bands as separate greyscale files...\n",
                              meta->general->band_count);
@@ -1173,6 +1199,23 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                             0, 0, 0, 0, NULL,
                                             inFile, outFile, NULL),
                            "exporting data file (asf_export), greyscale bands.\n");
+          }
+          else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
+            // multi-band, exporting single band in one greyscale file
+            asfPrintStatus("Exporting band \"%s\" in a single greyscale file...\n",
+                           cfg->export->band);
+            int num_bands_found = 0;
+            char **band_names = find_single_band(inFile, cfg->export->band,
+                                                &num_bands_found);
+            if (num_bands_found != 1) {
+              asfPrintError("Selected band for export not found.\n");
+            }
+            check_return(asf_export_bands(format, scale, FALSE,
+                         0, 0, 0, 0, NULL,
+                         inFile, outFile, band_names),
+            "exporting data file (asf_export), single selected greyscale band.\n");
+            if (*band_names) FREE(*band_names);
+            if (band_names) FREE(band_names);
           }
           else {
               // single band
