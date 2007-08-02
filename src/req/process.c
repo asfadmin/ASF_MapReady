@@ -1451,7 +1451,7 @@ char *process(const char *csv_file, int is_emergency,
         "AVNIR_Gain,AVNIR_Exposure,PALSAR_Table_Number";
 
     const char *l0_expected_header =
-        "Downlink_Segment_Number,Level_0_Data_Code";
+        "Downlink_Segment,Level0_Code";
 
     char line[1024];
     strcpy(line, "");

@@ -186,7 +186,7 @@ void settings_save(Settings *s)
                 "next request id = %d\r\n", s->req_id);
         if (s->station_code && !wrote_station_code)
             add_to_text(&new_sav_txt, &len,
-                "station_code = %s\r\n", s->station_code);
+                "station code = %s\r\n", s->station_code);
 
         fp = FOPEN(sav_file, "w");
         fprintf(fp, "%s", new_sav_txt);
