@@ -686,7 +686,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   }
   else {
     meta->sar->earth_radius = mpdr->distplat;
-    meta->sar->chirp_rate = get_chirp_rate(in_fName);
+    meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
   }
 
   if (ceos->product == SGI) {
