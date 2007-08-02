@@ -86,7 +86,9 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
         struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
+int get_alos_delta_time (const char *fileName, double *delta);
 double get_alos_firstTime (const char *fName);
+
 double get_chirp_rate (const char *fName);
 
 /* Prototypes from meta_init_stVec.c */
@@ -689,6 +691,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   if (ceos->product == SGI) {
     // experimental calculation -- not sure if this is really going to work!
+
+    // calculate earth radius at nadir (not at scene center)
     double re = (meta_is_valid_double(meta->general->re_major))
 		       ? meta->general->re_major : 6378137.0;
 	double rp = (meta_is_valid_double(meta->general->re_minor))
@@ -696,6 +700,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     double lat = D2R*dssr->plat_lat;
     double er = (re*rp)
 		        / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+
+    // find the state vector closest to the acquisition time
     date_dssr2date(dssr->inp_sctim, &date, &time);
     centerTime = date_hms2sec(&time);
     struct pos_data_rec ppdr;
@@ -708,16 +714,32 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
           closest = i; closest_diff = diff;
       }
     }
+
+    // compute satellite height from closest state vector
     double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
         ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
         ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
+
+    // velocity calculation
     const double g = 9.81;
     double orbit_vel = sqrt(g*er*er/ht);
+
+    // simple scaling to get swath velocity from orbit vel
     double swath_vel = orbit_vel * er / ht;
+
+    // calculate azimuth time per pixel from the swath velocity
     meta->sar->azimuth_time_per_pixel =
         meta->general->y_pixel_size / swath_vel;
-    printf("lat: %f\ner: %f\nht (new): %f\nht (old): %f\norbit_vel: %f\nswath_vel: %f\natpp: %f\n",
-        lat*R2D, er, ht, meta->sar->satellite_height, orbit_vel, swath_vel, meta->sar->azimuth_time_per_pixel);
+
+    // for comparison, calculate using the workreport file (old method)
+    double delta, workreport_atpp=-1;
+    if (get_alos_delta_time (in_fName, &delta))
+        workreport_atpp = delta / meta->sar->original_line_count;
+    
+    asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
+    if (workreport_atpp > 0)
+        asfPrintStatus("  Using workreport: %.10f\n", workreport_atpp);
+    asfPrintStatus("        Calculated: %.10f\n\n", meta->sar->azimuth_time_per_pixel);
   } else {
     firstTime = get_alos_firstTime(dataName[0]);
     date_dssr2date(dssr->inp_sctim, &date, &time);
@@ -2135,4 +2157,81 @@ double get_chirp_rate (const char *fName)
    FCLOSE(fp);
 
    return (double)bigInt16(linehdr.chirp_linear);
+}
+
+// Get the delta image time for ALOS data out of the summary file
+int get_alos_delta_time (const char *fileName, double *delta)
+{
+  FILE *fp;
+  struct dataset_sum_rec dssr;
+  hms_time dssr_time, summary_time, start_time, end_time;
+  ymd_date dssr_date, summary_date, start_date, end_date;
+  char *summaryFile, line[512], dateStr[30], *str;
+
+  get_dssr(fileName, &dssr);
+  date_dssr2date(dssr.inp_sctim, &dssr_date, &dssr_time);
+  summaryFile = (char *) MALLOC(sizeof(char)*(strlen(fileName)+5));
+  // Assume that workreport is following the basename paradigm
+  sprintf(summaryFile, "%s.txt", fileName);
+  if (!fileExists(summaryFile)) {
+      asfPrintWarning("Summary file '%s' not found.\nWill try 'workreport'\n",
+                      summaryFile);
+
+      // try "path/workreport"
+      char *path = getPath(fileName);
+      if (strlen(path) > 0)
+          sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
+      else
+          strcpy(summaryFile, "workreport");
+      FREE(path);
+
+      if (!fileExists(summaryFile)) {
+
+        asfPrintWarning("Summary file '%s' does not exist.\n"
+                        "If you received a 'workreport' file with this data "
+                        "please make sure it is\nin the same directory as "
+                        "the data file.\n",
+                        summaryFile);
+        FREE(summaryFile);
+        *delta = 0;
+        return 0;
+      } else
+          asfPrintStatus("Summary file 'workreport' found.\n");
+  }
+
+  fp = FOPEN(summaryFile, "r");
+  while (fgets(line, 512, fp)) {
+    if (strstr(line, "Img_SceneCenterDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &summary_date, &summary_time);
+      if (date_difference(&dssr_date, &dssr_time,
+			  &summary_date, &summary_time) > 0.0) {
+	asfPrintWarning("Summary file does not correspond to leader file.\n"
+                        "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
+        *delta = 0;
+        FCLOSE(fp);
+        FREE(summaryFile);
+        return 0;
+      }
+    }
+    else if (strstr(line, "Img_SceneStartDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &start_date, &start_time);
+    }
+    else if (strstr(line, "Img_SceneEndDateTime")) {
+      str = strchr(line, '"');
+      sprintf(dateStr, "%s", str+1);
+      dateStr[strlen(dateStr)-2] = '\0';
+      date_alos2date(dateStr, &end_date, &end_time);
+    }
+  }
+
+  *delta = date_difference(&start_date, &start_time, &end_date, &end_time);
+  FREE(summaryFile);
+  FCLOSE(fp);
+  return 1;
 }
