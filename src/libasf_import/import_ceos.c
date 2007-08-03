@@ -698,7 +698,13 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
   int lut_flag=FALSE;
   data_type_t ceos_data_type;
   meta_parameters *meta;
-
+  char cal_scale[16];
+  
+  if (db_flag)
+    strcpy (cal_scale,"decibel");
+  else
+    strcpy (cal_scale, "power scale");
+  	
   // Create metadata
   meta = meta_create(inMetaName);
   ceos_data_type = meta->general->data_type;
@@ -783,19 +789,22 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
     else if (radiometry == r_SIGMA) {
       sprintf(logbuf,
 	      "   Input data type: level one data\n"
-	      "   Output data type: calibrated image (sigma power scale values)\n");
+	      "   Output data type: calibrated image (sigma %s values)\n",
+	      cal_scale);
       meta->general->image_data_type = SIGMA_IMAGE;
     }
     else if (radiometry == r_GAMMA) {
       sprintf(logbuf,
 	      "   Input data type: level one data\n"
-	      "   Output data type: calibrated image (gamma power scale values)\n");
+	      "   Output data type: calibrated image (gamma %s values)\n",
+	      cal_scale);
       meta->general->image_data_type = GAMMA_IMAGE;
     }
     else if (radiometry == r_BETA) {
       sprintf(logbuf,
 	      "   Input data type: level one data\n"
-	      "   Output data type: calibrated image (beta power scale values)\n");
+	      "   Output data type: calibrated image (beta %s values)\n",
+	      cal_scale);
       meta->general->image_data_type = BETA_IMAGE;
     }
     else {
@@ -820,19 +829,22 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
   else if (radiometry == r_SIGMA) {
     sprintf(logbuf,
 	    "   Input data type: level one data\n"
-	    "   Output data type: calibrated image (sigma power scale values)\n");
+	    "   Output data type: calibrated image (sigma %s values)\n",
+	    cal_scale);
     meta->general->image_data_type = SIGMA_IMAGE;
   }
   else if (radiometry == r_GAMMA) {
     sprintf(logbuf,
 	    "   Input data type: level one data\n"
-	    "   Output data type: calibrated image (gamma power scale values)\n");
+	    "   Output data type: calibrated image (gamma %s values)\n",
+	    cal_scale);
     meta->general->image_data_type = GAMMA_IMAGE;
   }
   else if (radiometry == r_BETA) {
     sprintf(logbuf,
 	    "   Input data type: level one data\n"
-	    "   Output data type: calibrated image (beta power scale values)\n");
+	    "   Output data type: calibrated image (beta %s values)\n",
+	    cal_scale);
     meta->general->image_data_type = BETA_IMAGE;
   }
   else if (lut_flag) {
