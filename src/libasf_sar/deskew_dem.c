@@ -462,11 +462,13 @@ static void geo_compensate(struct deskew_dem_data *d,float *grDEM, float *in,
             (int)floor(SR2GR(d, max_valid_srX, max_valid_srX_height));
         int min_valid_grX =
             (int)ceil(SR2GR(d, min_valid_srX, min_valid_srX_height));
-        
-        for (i=max_valid_grX; i<ns; ++i)
-            mask[i] = MASK_INVALID_DATA;
-        for (i=min_valid_grX; i>=0; --i)
-            mask[i] = MASK_INVALID_DATA;
+
+        if (max_valid_grX < ns-1 && max_valid_grX >= 0)        
+            for (i=max_valid_grX; i<ns; ++i)
+                mask[i] = MASK_INVALID_DATA;
+        if (min_valid_grX < ns-1 && min_valid_grX >= 0)        
+            for (i=min_valid_grX; i>=0; --i)
+                mask[i] = MASK_INVALID_DATA;
 
         free(sr_hits);
     }
