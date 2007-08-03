@@ -1122,6 +1122,19 @@ void import_ceos_int_lut(char *inDataName, char *inMetaName, char *outDataName,
     else break;
   }
   min = n;
+  
+  // Look up the index for the maximum in the LUT 
+  n = 0;
+  old = 100000000;
+  for (ii=0; ii<nLut; ii++) {
+    new = max_incid - incid_table[ii];
+    if (fabs(new) < fabs(old)) {
+      old = new;
+      n++;
+    }
+    else break;
+  }
+  max = n;
 
   // Allocate memory
   short_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
@@ -1226,7 +1239,9 @@ void import_ceos_byte_cal(char *inDataName, char *inMetaName, char *outDataName,
   FILE *fpIn=NULL, *fpOut=NULL;
   unsigned char *byte_buf=NULL;
   float *out_buf=NULL;
-  int nl, ns, leftFill, rightFill, headerBytes;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  int leftFill, rightFill, headerBytes;
   long long ii, kk, offset;
   struct IOF_VFDR image_fdr;
   cal_params *cal_param=NULL;
@@ -1283,7 +1298,7 @@ void import_ceos_byte_cal(char *inDataName, char *inMetaName, char *outDataName,
     offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
     FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
-    
+
     /*Allocate noise table entries and/or update if needed.*/
     if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
       for (kk=0;kk<tableRes;kk++)
@@ -1360,7 +1375,9 @@ void import_ceos_int_cal(char *inDataName, char *inMetaName, char *outDataName,
   FILE *fpIn=NULL, *fpOut=NULL;
   unsigned short *short_buf=NULL;
   float *out_buf=NULL;
-  int nl, ns, leftFill, rightFill, headerBytes;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  int leftFill, rightFill, headerBytes;
   long long ii, kk, offset;
   struct IOF_VFDR image_fdr;
   cal_params *cal_param=NULL;
