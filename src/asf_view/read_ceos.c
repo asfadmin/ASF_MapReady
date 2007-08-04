@@ -80,8 +80,16 @@ meta_parameters *read_ceos_meta(const char *meta_name)
     baseName = MALLOC(sizeof(char)*(strlen(meta_name)+5));
 
     get_ceos_names(meta_name, baseName, &dataName, &metaName, &nBands, &trailer);
-
     free_ceos_names(dataName, metaName);
+
+    // if meta_name contains a path, must prepend it to the basename
+    char *path = get_dirname(meta_name);
+    if (path) {
+        char *tmp = STRDUP(baseName);
+        sprintf(baseName, "%s/%s", path, tmp);
+        free(tmp);
+    }
+
     meta_parameters *meta = meta_create(baseName);
     free(baseName);
 
