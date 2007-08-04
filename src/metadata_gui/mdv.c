@@ -367,13 +367,14 @@ put_text_in_textview(const char * text, const char * tv)
     append_output(text, w);
 }
 
-static void
+static int
 put_metadata_in_textview(const char * file, int reqrec, const char * tv)
 {
     char *rec = get_record_as_string((char*)file, reqrec);
+    int ret = strncmp("Record not found.", rec, 17) != 0;
     put_text_in_textview(rec, tv);
-
     FREE(rec);
+    return ret;
 }
 
 static void execute()
@@ -384,12 +385,12 @@ static void execute()
     const char * input_file =
         gtk_entry_get_text(GTK_ENTRY(input_file_entry));
 
-    put_metadata_in_textview(input_file, 10, "data_set_summary");
+    int found = put_metadata_in_textview(input_file, 10, "data_set_summary");
     put_metadata_in_textview(input_file, 18, "scene_header_record");
     put_metadata_in_textview(input_file, 20, "map_projection_data");
     put_metadata_in_textview(input_file, 30, "platform_position_data");
     put_metadata_in_textview(input_file, 40, "attitude_data");
-    put_metadata_in_textview(input_file, 44, "alos_map_projection_data");
+    //put_metadata_in_textview(input_file, 44, "alos_map_projection_data");
     put_metadata_in_textview(input_file, 50, "radiometric_data");
     put_metadata_in_textview(input_file, 51, "radiometric_compensation_data");
     put_metadata_in_textview(input_file, 60, "data_quality_summary");
@@ -400,6 +401,11 @@ static void execute()
     put_metadata_in_textview(input_file, 200, "facility_related_data");
     put_metadata_in_textview(input_file, 192, "image_file_descriptor");
     put_metadata_in_textview(input_file, 300, "leader_file_descriptor");
+
+    if (!found) {
+        GtkWidget *nb = glade_xml_get_widget(glade_xml, "mdv_notebook");
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
+    }
 }
 
 static void add_file (const gchar * filename)
