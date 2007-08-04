@@ -743,7 +743,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             /*Read in DEM line-by-line (keeping two lines buffered)*/
             float *tmp=grDEMline;
             grDEMline=grDEMlast;
-            grDEMline=tmp;
+            grDEMlast=tmp;
             if (dem_is_ground_range) {
                 get_float_line(inDemFp,inDemMeta,y,grDEMline);
             } else {
