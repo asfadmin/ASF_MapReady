@@ -94,6 +94,15 @@ char *get_record_as_string(char *fileName, int reqrec)
   metadata_ext = get_ceos_metadata_name(fileName, &metaName, &trailer);
   data_ext = get_ceos_data_name(fileName, baseName, &dataNames, &nBands);
 
+  // if fileName had a path -- add that back on to baseName
+  char *path = get_dirname(fileName);
+  if (path && strlen(path) > 0) {
+    char *tmp = STRDUP(baseName);
+    sprintf(baseName, "%s/%s", path, tmp);
+    free(tmp);
+  }
+  free(path);
+
   if (data_ext == NO_CEOS_DATA) {
     asfPrintWarning("Data file (%s) missing.\n"
 		    "Unable to extract Image File Descriptor Record.\n",

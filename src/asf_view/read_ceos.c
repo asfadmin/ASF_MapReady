@@ -84,11 +84,12 @@ meta_parameters *read_ceos_meta(const char *meta_name)
 
     // if meta_name contains a path, must prepend it to the basename
     char *path = get_dirname(meta_name);
-    if (path) {
+    if (path && strlen(path) > 0) {
         char *tmp = STRDUP(baseName);
         sprintf(baseName, "%s/%s", path, tmp);
         free(tmp);
     }
+    free(path);
 
     meta_parameters *meta = meta_create(baseName);
     free(baseName);
