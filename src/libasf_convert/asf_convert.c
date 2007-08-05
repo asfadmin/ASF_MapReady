@@ -740,7 +740,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (!meta->optical && (truecolor || falsecolor)) {
       asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
     }
-    if (get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0) {
+    if (cfg->export->band &&
+        strlen(cfg->export->band) > 0 &&
+        get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0)
+    {
       asfPrintError("Selected export band (%s) does not exist: \n"
           "   Imported file: %s.img\n"
           " Available bands: %s\n",
