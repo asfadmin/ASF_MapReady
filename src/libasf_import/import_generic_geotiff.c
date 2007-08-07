@@ -2286,7 +2286,6 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   short orientation;
   read_count = TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation); // top-left, left-top, bot-right, etc
   if (read_count < 1) {
-    asfPrintStatus ("\nImage orientation from TIFF tag is unknown.  Assuming (0,0) is top-left.\n\n"); // asfPrintError("Cannot read image orientation from TIFF file.\n");
     orientation = ORIENTATION_TOPLEFT;
   }
   if (read_count && orientation != ORIENTATION_TOPLEFT) {
@@ -2489,7 +2488,6 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   short orientation;
   read_count = TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation); // top-left, left-top, bot-right, etc
   if (read_count < 1) {
-    asfPrintStatus ("\nImage orientation from TIFF tag is unknown.  Assuming (0,0) is top-left.\n\n"); // asfPrintError("Cannot read image orientation from TIFF file.\n");
     orientation = ORIENTATION_TOPLEFT;
   }
   if (read_count && orientation != ORIENTATION_TOPLEFT) {
