@@ -2259,9 +2259,9 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   if (read_count < 1) {
     asfPrintError("Could not read the number of samples per pixel from TIFF file.\n");
   }
-  if (band < 0 || band > samples_per_pixel) {
+  if (band < 0 || band > samples_per_pixel - 1) {
     asfPrintError("Invalid band number (%d).  Band number should range from %d to %d.\n",
-                  0, samples_per_pixel);
+                  0, samples_per_pixel - 1);
   }
   uint32 height;
   read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of bands
@@ -2287,6 +2287,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   read_count = TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation); // top-left, left-top, bot-right, etc
   if (read_count < 1) {
     orientation = ORIENTATION_TOPLEFT;
+    read_count = 1;
   }
   if (read_count && orientation != ORIENTATION_TOPLEFT) {
     asfPrintError("Unsupported orientation found (%s)\n",
@@ -2470,9 +2471,9 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   if (read_count < 1) {
     asfPrintError("Could not read the number of samples per pixel from TIFF file.\n");
   }
-  if (band < 0 || band > samples_per_pixel) {
+  if (band < 0 || band > samples_per_pixel - 1) {
     asfPrintError("Invalid band number (%d).  Band number should range from %d to %d.\n",
-                  0, samples_per_pixel);
+                  0, samples_per_pixel - 1);
   }
   uint32 height;
   read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of bands
