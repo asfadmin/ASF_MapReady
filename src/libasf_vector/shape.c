@@ -7,8 +7,6 @@
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
 
-void write_esri_proj_file(char *inFile);
-
 void shape_init(char *inFile, format_type_t format)
 {
   char *dbaseFile;
@@ -241,7 +239,7 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list)
   else
     convert2shape(inFile, format, dbase, shape, 0);
 
-  if (format == META)
+  if (format == META || format == POINT || format == POLYGON)
     write_esri_proj_file(outFile);
 
   // Close business

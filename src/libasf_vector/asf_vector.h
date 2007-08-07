@@ -57,5 +57,6 @@ int read_shape(char *inFile, char *outFile, format_type_t format, int list);
 int write_shape(char *inFile, char *outFile, format_type_t format, int list);
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_shape(DBFHandle dbase, SHPHandle shape);
+void write_esri_proj_file(char *inFile);
 
 #endif
