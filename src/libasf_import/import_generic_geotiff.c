@@ -2450,10 +2450,19 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   }
 
   get_tiff_type(tif, &t);
+  if (t.format != TILED_TIFF) {
+    asfPrintError("Programmer error: ReadScanline_from_TIFF_TileRow() called when the TIFF file\n"
+        "was not a tiled TIFF.\n");
+  }
   uint32 tileSize = TIFFTileSize(tif);
-  tbuf = _TIFFmalloc(tileSize);
-  if (tbuf == NULL) {
-    asfPrintError("Unable to allocate tiled TIFF scanline buffer\n");
+  if (tileSize > 0) {
+    tbuf = _TIFFmalloc(tileSize);
+    if (tbuf == NULL) {
+      asfPrintError("Unable to allocate tiled TIFF scanline buffer\n");
+    }
+  }
+  else {
+    asfPrintError("Invalid TIFF tile size in tiled TIFF.\n");
   }
 
   short samples_per_pixel;
@@ -2508,7 +2517,13 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   // Develop a buffer with a line of data from a single band in it
   uint32 tile_row = (uint32)floor((float)(row/t.tileLength))*t.tileLength;
   uint32 row_in_tile = row - tile_row;
-  if (read_count) {
+  if (width > 0 &&
+      height > 0 &&
+      samples_per_pixel > 0 &&
+      bits_per_sample % 8 == 0 &&
+      t.tileWidth > 0 &&
+      t.tileLength > 0)
+  {
     uint32 tile_col;
     uint32 buf_col;
     for (tile_col = 0, buf_col = 0;
