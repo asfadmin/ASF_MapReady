@@ -34,7 +34,7 @@ INTRODUCTION:
 
 If you've gotten far enough to read this note, congratulations! You've
 uncompressed and untarred the software correctly. This note will tell
-you how to compile and install this ASF-TSO software you just untarred.
+you how to compile and install this ASF software you just untarred.
 
 WHAT YOU'VE DOWNLOADED:
 
@@ -58,7 +58,7 @@ asf_tools+----README_src.txt     This file.
          |         |
          |         +--asf_tools  Contains additional files needed by
          |                       the tools (projection parameter
-	 |       		 files, etc).  Like the bin directory,
+         |                       files, etc).  Like the bin directory,
          |                       it won't be populated until you
          |                       actually build the tools.
          |
@@ -180,13 +180,13 @@ you're running  Solaris and installed the software in your home
 directory  called '/user1/yourName/asf_tools', you need to:
 
 (ksh-- add these lines to your ~/.profile file)
-	PATH=/user1/yourName/asf_tools/bin/solaris:$PATH
-	export PATH
+  PATH=/user1/yourName/asf_tools/bin/solaris:$PATH
+  export PATH
       
-(csh-- add this line to your ~/.cshrc file) 
-	setenv PATH /user1/yourName/asf_tools/bin/solaris:$PATH
+(csh-- add this line to your ~/.cshrc file)
+  setenv PATH /user1/yourName/asf_tools/bin/solaris:$PATH
 
-(confused? Contact uso, uso@asf.alaska.edu)
+(confused? Contact USO, uso@asf.alaska.edu)
 
 ##############################################################################
 OTHER HELP:
@@ -197,4 +197,4 @@ is large (and growing)-- it has all the ASF software we offer, tutorials,
 further contacts, and more. Second, USO is available via e-mail at
 uso@asf.alaska.edu. Finally, there are help pages for each program.
  
-(confused? Contact TSO, tso@asf.alaska.edu)
+(confused? Contact USO, uso@asf.alaska.edu)

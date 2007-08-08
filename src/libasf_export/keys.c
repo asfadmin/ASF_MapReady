@@ -12,7 +12,7 @@ spheroid_type_t axis2spheroid (double re_major, double re_minor)
     spheroid_type_t spheroid;
     double diff;
   }
-  diff_array[10];
+  diff_array[11];
 
   // Find the fits (note: no guarantee that the enums will differ by whole numbers, so
   // step through manually rather than in a for-loop... )
