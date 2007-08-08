@@ -291,12 +291,12 @@ static char *check_for_error(gchar * txt)
                 else if (strstr(p, "Read past end of file") != NULL)
                    return STRDUP("Error: Read past end of file");
                 else if (strstr(p, "Error reading file") != NULL)
-                   return STRDUP("Error reading file"); 
+                   return STRDUP("Error reading file");
                 else if (strstr(p, "writing file") != NULL)
                    return STRDUP("Error writing file");
 
                 *q = '\n';
-               
+
                 // grab the next non-empty line
                 int n = 0;
                 do {
@@ -407,7 +407,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
                 g_error_free(err);
             }
         }
-        
+
         free(thumbnail_name);
     }
 }
@@ -643,8 +643,13 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
         tmp_dir = MALLOC(sizeof(char)*
             (strlen(output_dir)+strlen(out_nameonly)+32));
-        sprintf(tmp_dir, "%s/%s-%s", output_dir, out_nameonly,
-            time_stamp_dir());
+        if (strlen(output_dir) > 0) {
+          sprintf(tmp_dir, "%s%c%s-%s", output_dir, DIR_SEPARATOR,
+                  out_nameonly, time_stamp_dir());
+        }
+        else {
+          sprintf(tmp_dir, "%s-%s", out_nameonly, time_stamp_dir());
+        }
 
         create_clean_dir(tmp_dir);
         set_asf_tmp_dir(tmp_dir);
@@ -670,7 +675,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         err_string = check_for_error(cmd_output);
         if (err_string) {
             // unsuccessful
-            gtk_list_store_set(list_store, iter, COL_STATUS, err_string, 
+            gtk_list_store_set(list_store, iter, COL_STATUS, err_string,
                 COL_LOG, cmd_output, -1);
             FREE(err_string);
         }
@@ -780,12 +785,6 @@ on_execute_button_clicked (GtkWidget *button)
     }
 }
 
-SIGNAL_CALLBACK void
-on_stop_button_clicked(GtkWidget * widget)
-{
-    set_stop();
-}
-
 void set_stop()
 {
     if (!processing)
@@ -808,3 +807,8 @@ void set_stop()
     free(stop_file);
 }
 
+SIGNAL_CALLBACK void
+on_stop_button_clicked(GtkWidget * widget)
+{
+    set_stop();
+}

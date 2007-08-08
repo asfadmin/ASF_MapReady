@@ -518,6 +518,12 @@
                     Specifies the datum that is used when projecting.  The
                     datum applies to the target coordinate system.
                 </para>
+                <para>
+                    Note that the "Hughes" datum option is only
+                    applicable when using a Polar Stereographic
+                    projection.  Also, many GIS packages do not support
+                    the Hughes datum.
+                </para>
 
             </listitem>
             <listitem>

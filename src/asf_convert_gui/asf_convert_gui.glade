@@ -1299,6 +1299,7 @@
 			      <property name="tooltip" translatable="yes">The projection to use for geocoding.</property>
 			      <property name="can_focus">True</property>
 			      <property name="history">0</property>
+			      <signal name="changed" handler="on_projection_option_menu_changed" last_modification_time="Wed, 04 Apr 2007 19:52:32 GMT"/>
 
 			      <child>
 				<widget class="GtkMenu" id="menu5">
@@ -3463,7 +3464,6 @@
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">2</property>
-
 	      <child>
 		<widget class="GtkFrame" id="frame4">
 		  <property name="border_width">2</property>
@@ -3471,18 +3471,10 @@
 		  <property name="label_xalign">0</property>
 		  <property name="label_yalign">0.5</property>
 		  <property name="shadow_type">GTK_SHADOW_ETCHED_IN</property>
-
 		  <child>
 		    <widget class="GtkLabel" id="summary_label">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Import: STF (Lat: 65.332 - 65.334)
-Data type: Sigma
-Geocoding: UTM
-    Center: (45.821, -85.443)
-    Standard Parallels: (45.223, 45.227)
-    False N/E: 0/10000000
-Export: JPEG (size 1000)
-</property>
+		      <property name="label" translatable="yes"></property>
 		      <property name="use_underline">False</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -3520,15 +3512,14 @@ Export: JPEG (size 1000)
 		  <property name="fill">True</property>
 		</packing>
 	      </child>
-
 	      <child>
-		<widget class="GtkHBox" id="hbox57">
+		<widget class="GtkHBox" id="hbox55">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">0</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="label111">
+		    <widget class="GtkLabel" id="label110">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes"></property>
 		      <property name="use_underline">False</property>
@@ -3553,7 +3544,7 @@ Export: JPEG (size 1000)
 		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Save the current settings.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Save Settings</property>
+		      <property name="label" translatable="yes">  _Save Settings </property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -3571,7 +3562,7 @@ Export: JPEG (size 1000)
 		      <property name="visible">True</property>
 		      <property name="tooltip" translatable="yes">Load settings that you've previously saved.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Load Settings</property>
+		      <property name="label" translatable="yes">  _Load  Settings </property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -3580,6 +3571,27 @@ Export: JPEG (size 1000)
 		    <packing>
 		      <property name="padding">3</property>
 		      <property name="expand">False</property>
+		      <property name="fill">False</property>
+		    </packing>
+		  </child>
+
+		  <child>
+		    <widget class="GtkLabel" id="label111">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes"></property>
+		      <property name="use_underline">False</property>
+		      <property name="use_markup">False</property>
+		      <property name="justify">GTK_JUSTIFY_LEFT</property>
+		      <property name="wrap">False</property>
+		      <property name="selectable">False</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		    <packing>
+		      <property name="padding">0</property>
+		      <property name="expand">True</property>
 		      <property name="fill">False</property>
 		    </packing>
 		  </child>
@@ -4657,7 +4669,7 @@ Export: JPEG (size 1000)
 		</widget>
 		<packing>
 		  <property name="padding">0</property>
-		  <property name="expand">True</property>
+		  <property name="expand">False</property>
 		  <property name="fill">False</property>
 		</packing>
 	      </child>
@@ -4681,6 +4693,8 @@ Export: JPEG (size 1000)
 
 <widget class="GtkFileSelection" id="input_file_selection">
   <property name="border_width">10</property>
+  <property name="width_request">800</property>
+  <property name="height_request">600</property>
   <property name="title" translatable="yes">Select File</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -6291,6 +6305,92 @@ If you proceed, they will be overwritten.</property>
 	  <property name="fill">True</property>
 	</packing>
       </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkFileSelection" id="save_config_selection">
+  <property name="border_width">10</property>
+  <property name="width_request">800</property>
+  <property name="height_request">600</property>
+  <property name="title" translatable="yes">Save ASF Configuration (*.cfg) File</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="show_fileops">True</property>
+  <signal name="delete_event" handler="on_save_config_file_selection_delete_event" last_modification_time="Tue, 20 Mar 2007 22:26:17 GMT"/>
+  <signal name="destroy_event" handler="on_save_config_file_selection_destroy_event" last_modification_time="Tue, 20 Mar 2007 22:26:28 GMT"/>
+  <signal name="destroy" handler="on_save_config_file_selection_destroy" last_modification_time="Tue, 20 Mar 2007 22:26:41 GMT"/>
+
+  <child internal-child="cancel_button">
+    <widget class="GtkButton" id="button1">
+      <property name="visible">True</property>
+      <property name="can_default">True</property>
+      <property name="can_focus">True</property>
+      <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
+      <signal name="clicked" handler="on_save_config_file_selection_cancel_button_clicked" last_modification_time="Tue, 20 Mar 2007 22:27:24 GMT"/>
+    </widget>
+  </child>
+
+  <child internal-child="ok_button">
+    <widget class="GtkButton" id="button2">
+      <property name="visible">True</property>
+      <property name="can_default">True</property>
+      <property name="can_focus">True</property>
+      <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
+      <signal name="clicked" handler="on_save_config_file_selection_ok_button_clicked" last_modification_time="Tue, 20 Mar 2007 22:27:45 GMT"/>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkFileSelection" id="load_config_selection">
+  <property name="border_width">10</property>
+  <property name="width_request">800</property>
+  <property name="height_request">600</property>
+  <property name="title" translatable="yes">Load ASF Configuration (*.cfg) File</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="show_fileops">True</property>
+  <signal name="delete_event" handler="on_load_config_file_selection_delete_event" last_modification_time="Wed, 21 Mar 2007 21:17:12 GMT"/>
+  <signal name="destroy_event" handler="on_load_config_file_selection_destroy_event" last_modification_time="Wed, 21 Mar 2007 21:17:19 GMT"/>
+  <signal name="destroy" handler="on_load_config_file_selection_destroy" last_modification_time="Wed, 21 Mar 2007 21:17:46 GMT"/>
+
+  <child internal-child="cancel_button">
+    <widget class="GtkButton" id="button3">
+      <property name="visible">True</property>
+      <property name="can_default">True</property>
+      <property name="can_focus">True</property>
+      <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
+      <signal name="clicked" handler="on_load_config_file_selection_cancel_button_clicked" last_modification_time="Wed, 21 Mar 2007 21:19:13 GMT"/>
+    </widget>
+  </child>
+
+  <child internal-child="ok_button">
+    <widget class="GtkButton" id="button4">
+      <property name="visible">True</property>
+      <property name="can_default">True</property>
+      <property name="can_focus">True</property>
+      <property name="relief">GTK_RELIEF_NORMAL</property>
+      <property name="focus_on_click">True</property>
+      <signal name="clicked" handler="on_load_config_file_selection_ok_button_clicked" last_modification_time="Wed, 21 Mar 2007 21:19:29 GMT"/>
     </widget>
   </child>
 </widget>

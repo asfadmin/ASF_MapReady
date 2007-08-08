@@ -13,7 +13,7 @@ const char * datum_string(int datum)
     case DATUM_NAD83:
         return "NAD83";
     case DATUM_HUGHES:
-        return "HUGHES";
+        return "Hughes";
     }
 }
 
@@ -656,6 +656,12 @@ on_wgs84_activate(GtkWidget * widget)
 }
 
 SIGNAL_CALLBACK void
+on_hughes_activate(GtkWidget * widget)
+{
+    geocode_options_changed();
+}
+
+SIGNAL_CALLBACK void
 on_nad27_activate(GtkWidget * widget)
 {
     geocode_options_changed();
@@ -665,12 +671,6 @@ SIGNAL_CALLBACK void
 on_nad83_activate(GtkWidget * widget)
 {
     geocode_options_changed();
-}
-
-SIGNAL_CALLBACK void
-on_hughes_activate(GtkWidget * widget)
-{
-  geocode_options_changed();
 }
 
 SIGNAL_CALLBACK void
@@ -691,6 +691,69 @@ on_bicubic_activate(GtkWidget *widget)
     geocode_options_changed();
 }
 
+
+SIGNAL_CALLBACK void
+on_projection_option_menu_changed(GtkWidget * widget)
+{
+  GtkWidget * geocode_checkbutton;
+
+  GtkWidget * utm_zone_entry;
+  GtkWidget * central_meridian_entry;
+  GtkWidget * latitude_of_origin_entry;
+  GtkWidget * first_standard_parallel_entry;
+  GtkWidget * second_standard_parallel_entry;
+  GtkWidget * false_northing_entry;
+  GtkWidget * false_easting_entry;
+
+  gboolean geocode_projection_is_checked;
+
+  geocode_checkbutton =
+      get_widget_checked("geocode_checkbutton");
+
+  geocode_projection_is_checked =
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(geocode_checkbutton));
+
+  utm_zone_entry =
+      get_widget_checked("utm_zone_entry");
+
+  central_meridian_entry =
+      get_widget_checked("central_meridian_entry");
+
+  latitude_of_origin_entry =
+      get_widget_checked("latitude_of_origin_entry");
+
+  first_standard_parallel_entry =
+      get_widget_checked("first_standard_parallel_entry");
+
+  second_standard_parallel_entry =
+      get_widget_checked("second_standard_parallel_entry");
+
+  false_northing_entry =
+      get_widget_checked("false_northing_entry");
+
+  false_easting_entry =
+      get_widget_checked("false_easting_entry");
+
+  if (geocode_projection_is_checked)
+  {
+    gtk_entry_set_text(
+        GTK_ENTRY(utm_zone_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(central_meridian_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(latitude_of_origin_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(first_standard_parallel_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(second_standard_parallel_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(false_northing_entry), "");
+    gtk_entry_set_text(
+        GTK_ENTRY(false_easting_entry), "");
+
+    geocode_options_changed();
+  }
+}
 
 SIGNAL_CALLBACK void
 on_predefined_projection_option_menu_changed(GtkWidget * widget)

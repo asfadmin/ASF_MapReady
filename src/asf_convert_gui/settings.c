@@ -5,6 +5,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "get_ceos_names.h"
+#include <ctype.h>
 
 static int
 settings_get_input_data_format_allows_latitude(const Settings *s)
@@ -235,7 +236,7 @@ settings_apply_to_gui(const Settings * s)
                 // optical -- user defined
                 rb_select("rb_user_defined", TRUE);
                 rb_select("rb_optical", TRUE);
-
+                rb_select("rb_rgb", TRUE);
                 set_combo_box_entry_item("red_optical_combo", s->red);
                 set_combo_box_entry_item("green_optical_combo", s->green);
                 set_combo_box_entry_item("blue_optical_combo", s->blue);
@@ -303,10 +304,12 @@ settings_apply_to_gui(const Settings * s)
             put_double_to_entry("false_easting_entry", s->false_easting);
 
             set_checked("average_height_checkbutton", s->specified_height);
+
             if (s->specified_height)
                 put_double_to_entry("average_height_entry", s->height);
 
             set_checked("pixel_size_checkbutton", s->specified_pixel_size);
+
             if (s->specified_pixel_size)
                 put_double_to_entry("pixel_size_entry", s->pixel_size);
 
@@ -1378,7 +1381,7 @@ settings_to_config_file(const Settings *s,
 	  fprintf(pf, "[Polar Stereographic]\n");
 	  fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
 	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-	  fprintf(pf, "Northern Projection=%d\n", s->lat0 >=0 ? 1 : 0);
+          fprintf(pf, "Northern Projection=%d\n", (s->lat0 > 0 ? 1 : 0) || (s->plat1 > 0 ? 1 : 0));
 	  break;
 
 	case PROJ_ALBERS:
@@ -1757,27 +1760,28 @@ int apply_settings_from_config_file(char *configFile)
 
     settings_apply_to_gui(&s);
 
-    /* Files from the config file */
-    GtkTreeIter iter;
+    if (cfg->general->in_name && strlen(cfg->general->in_name) > 0) {
+      /* Files from the config file */
+      GtkTreeIter iter;
 
-    /* The config file contains the basename -- we must pass the actual
-     * data file name (CEOS), or leader file name (ALOS) to add_to_files_list
-     */
-    char **dataNames, **metaName, *baseName;
-    int trailer;
+      /* The config file contains the basename -- we must pass the actual
+       * data file name (CEOS), or leader file name (ALOS) to add_to_files_list
+       */
+      char **dataNames=NULL, **metaName=NULL, *baseName=NULL;
+      int trailer;
 
-    baseName = (char *) MALLOC(sizeof(char)*255);
+      baseName = (char *) MALLOC(sizeof(char)*255);
 
-    ceos_metadata_ext_t ext_type =
+      ceos_metadata_ext_t ext_type =
         get_ceos_metadata_name(cfg->general->in_name, &metaName, &trailer);
 
-    if (ext_type == CEOS_LED)
-    {
+      if (ext_type == CEOS_LED)
+      {
         // alos -- pass in metadata name
         add_to_files_list_iter(metaName[0], &iter);
-    }
-    else
-    {
+      }
+      else
+      {
         // regular ceos -- determine data file name
         int nBands;
 
@@ -1786,13 +1790,15 @@ int apply_settings_from_config_file(char *configFile)
         assert(nBands == 1);
 
         add_to_files_list_iter(dataNames[0], &iter);
+      }
+
+      free_ceos_names(dataNames, metaName);
+      set_output_name(&iter, cfg->general->out_name);
+    
+      FREE(baseName);
     }
 
-    set_output_name(&iter, cfg->general->out_name);
-
     FREE(cfg);
-    free_ceos_names(dataNames, metaName);
-    FREE(baseName);
 
     return 0;
 }

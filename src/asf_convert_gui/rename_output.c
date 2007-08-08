@@ -10,10 +10,10 @@ change_output_name_dialog_hide()
     change_output_name_dialog =
         get_widget_checked("change_output_name_dialog");
 
-    gtk_widget_hide(change_output_name_dialog);  
+    gtk_widget_hide(change_output_name_dialog);
 }
 
-static void
+void
 do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 {
     const gchar * ext;
@@ -41,7 +41,7 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
             int len = strlen(path);
             path = (gchar *) g_realloc(path, sizeof(gchar) * (len + 2));
             *(path + len) = DIR_SEPARATOR;
-            *(path + len + 1) = '\0';   
+            *(path + len + 1) = '\0';
         }
     }
 
@@ -133,7 +133,7 @@ rename_selected_output_filename()
         gchar *current_output_name;
         gchar *name_without_path;
 
-        GtkWidget *change_output_name_dialog, 
+        GtkWidget *change_output_name_dialog,
             *label_current_output_filename,
             *entry_new_output_filename;
 
@@ -146,7 +146,7 @@ rename_selected_output_filename()
         entry_new_output_filename =
             get_widget_checked("entry_new_output_filename");
 
-        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
             COL_OUTPUT_FILE, &current_output_name, -1);
 
         name_without_path = g_path_get_basename(current_output_name);
@@ -198,7 +198,7 @@ static void change_output_name_button_ok_clicked()
         do_rename_selected((gchar *)new_name);
     }
 
-    gtk_widget_hide(change_output_name_dialog);  
+    gtk_widget_hide(change_output_name_dialog);
 }
 
 SIGNAL_CALLBACK void
@@ -229,7 +229,7 @@ on_change_output_name_dialog_destroy_event(GtkWidget *w)
 }
 
 SIGNAL_CALLBACK gboolean
-on_change_output_name_dialog_key_press_event(GtkWidget * widget, 
+on_change_output_name_dialog_key_press_event(GtkWidget * widget,
                                              GdkEventKey * event,
                                              GtkWidget * win)
 {

@@ -23,7 +23,7 @@
 
 /* Gtk 2.6 has a very nice file chooser */
 /* On Windows, though, we'll still use the native one */
-#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 4 && !defined(win32)
+#if GTK_MAJOR_VERSION >= 2 && GTK_MINOR_VERSION >= 6 && !defined(win32)
 #define USE_GTK_FILE_CHOOSER
 #endif
 
@@ -288,6 +288,7 @@ char * escapify(const char * s);
 /* rename_output.c */
 gboolean rename_selected_output_filename();
 void do_rename_selected(const gchar *new_name);
+void do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name);
 
 /* file_selection.c */
 
