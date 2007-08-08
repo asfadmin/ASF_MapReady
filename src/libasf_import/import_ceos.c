@@ -1632,12 +1632,7 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
   else
     fpOut = fopenImage(outDataName, "ab");
   // Calculate header size
-  if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
-    get_ALOS_optical_ifiledr(inMetaName, &image_fdr);
-  }
-  else {
-    get_ifiledr(inMetaName,&image_fdr);
-  }
+  get_ifiledr(inMetaName,&image_fdr);
   if (strncmp(meta->general->sensor, "ALOS", 4) == 0 && meta->optical) {
     leftFill = image_fdr.predata+image_fdr.lbrdrpxl + 1;
     rightFill = image_fdr.sufdata+image_fdr.rbrdrpxl + 1;
@@ -1658,15 +1653,10 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
       /* Put the data in proper endian order before we do anything */
       big16(short_buf[kk]);
       /* Now do our stuff */
-      if (radiometry == r_POWER) {
+      if (radiometry == r_POWER)
 	out_buf[kk] = (float)(short_buf[kk]*short_buf[kk]);
-      }
-      else if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
-        out_buf[kk] = (float)byte_buf[kk+image_fdr.predata];
-      }
-      else {
+      else 
 	out_buf[kk] = (float)short_buf[kk];
-      } 
     }
     put_float_line(fpOut, meta, ii, out_buf);
     asfLineMeter(ii,nl);
