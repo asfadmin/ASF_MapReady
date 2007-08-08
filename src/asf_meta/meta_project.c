@@ -122,7 +122,10 @@ void scan_to_latlon(meta_parameters *meta,
             double sr = meta_get_slant(meta,line,samp);
             double er = proj->param.atct.rlocal;
             double ht = meta_get_sat_height(meta,line,samp);
-            double incid = PI-acos((SQR(sr) + SQR(er) - SQR(ht))/(2.0*sr*er));
+            double cos_ang = (SQR(sr) + SQR(er) - SQR(ht))/(2.0*sr*er);
+            if (cos_ang > 1) cos_ang = 1;
+            if (cos_ang < -1) cos_ang = -1;
+            double incid = PI-acos(cos_ang);
             x += z*tan(PI/2-incid);
         }
 

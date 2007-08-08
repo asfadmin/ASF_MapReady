@@ -720,7 +720,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     if (imd->general->image_data_type == COMPLEX_IMAGE) {
       asfPrintError("Geocoding of complex data not supported.\n");
     }
-    if (imd->sar && img->sar->image_type == 'S') {
+    if (imd->sar && imd->sar->image_type == 'S') {
       asfPrintError("Geocoding of slant rnage data not supported.\n");
     }
     if (imd->optical) {

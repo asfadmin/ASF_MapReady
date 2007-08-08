@@ -453,18 +453,33 @@ utm_projection_description(project_parameters_t * pps, datum_type_t datum)
   static char utm_projection_description[128];
 
   /* Establish description of output projection. */
-  if (pps->utm.zone == MAGIC_UNSET_INT)
-  {
+  if (datum != HUGHES_DATUM) {
+    if (pps->utm.zone == MAGIC_UNSET_INT)
+    {
       sprintf(utm_projection_description,
         "+proj=utm +lon_0=%f +datum=%s",
         utm_nudge(pps->utm.lon0), datum_str(datum));
-  }
-  else
-  {
+    } else {
       sprintf(utm_projection_description,
         "+proj=utm +zone=%d %s+datum=%s",
         pps->utm.zone, pps->utm.false_northing == 10000000 ? "+south " : "",
           datum_str(datum));
+    }
+  }
+  else { // HUGHES
+    if (pps->utm.zone == MAGIC_UNSET_INT) {
+      sprintf(utm_projection_description,
+              "+proj=utm +lon_0=%f +a=%f +rf=%f",
+              utm_nudge(pps->utm.lon0 * RAD_TO_DEG),
+              (float)HUGHES_SEMIMAJOR,
+              (float)HUGHES_INV_FLATTENING);
+    } else {
+      sprintf(utm_projection_description,
+              "+proj=utm +zone=%d %s+a=%f +rf=%f",
+              pps->utm.zone, pps->utm.false_northing == 10000000 ? "+south " : "",
+              (float)HUGHES_SEMIMAJOR,
+              (float)HUGHES_INV_FLATTENING);
+    }
   }
 
   return utm_projection_description;
@@ -590,11 +605,21 @@ static char * lamaz_projection_desc(project_parameters_t * pps,
   static char lamaz_projection_description[128];
 
   /* Establish description of output projection. */
-  sprintf(lamaz_projection_description,
-    "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
-    pps->lamaz.center_lat,
-    pps->lamaz.center_lon,
-    datum_str(datum));
+  if (datum != HUGHES_DATUM) {
+    sprintf(lamaz_projection_description,
+	    "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
+	    datum_str(datum));
+  }
+  else {
+    sprintf(lamaz_projection_description,
+	    "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->lamaz.center_lat,
+	    pps->lamaz.center_lon,
+            (float)HUGHES_SEMIMAJOR,
+            (float)HUGHES_INV_FLATTENING);
+  }
 
   return lamaz_projection_description;
 }
@@ -645,13 +670,25 @@ static char * lamcc_projection_desc(project_parameters_t * pps,
   static char lamcc_projection_description[128];
 
   /* Establish description of output projection. */
-  sprintf(lamcc_projection_description,
-    "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-    pps->lamcc.plat1,
-    pps->lamcc.plat2,
-    pps->lamcc.lat0,
-    pps->lamcc.lon0,
-    datum_str(datum));
+  if (datum != HUGHES_DATUM) {
+    sprintf(lamcc_projection_description,
+	    "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+	    pps->lamcc.plat1,
+	    pps->lamcc.plat2,
+	    pps->lamcc.lat0,
+	    pps->lamcc.lon0,
+	    datum_str(datum));
+  }
+  else {
+    sprintf(lamcc_projection_description,
+	    "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->lamcc.plat1,
+	    pps->lamcc.plat2,
+	    pps->lamcc.lat0,
+	    pps->lamcc.lon0,
+            (float)HUGHES_SEMIMAJOR,
+            (float)HUGHES_INV_FLATTENING);
+  }
 
   return lamcc_projection_description;
 }
@@ -702,13 +739,25 @@ static char * albers_projection_desc(project_parameters_t * pps,
   static char albers_projection_description[128];
 
   /* Establish description of output projection. */
-  sprintf(albers_projection_description,
-    "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-    pps->albers.std_parallel1,
-    pps->albers.std_parallel2,
-    pps->albers.orig_latitude,
-    pps->albers.center_meridian,
-    datum_str(datum));
+  if (datum != HUGHES_DATUM) {
+    sprintf(albers_projection_description,
+	    "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+	    pps->albers.std_parallel1,
+	    pps->albers.std_parallel2,
+	    pps->albers.orig_latitude,
+	    pps->albers.center_meridian,
+	    datum_str(datum));
+  }
+  else {
+    sprintf(albers_projection_description,
+	    "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+	    pps->albers.std_parallel1,
+	    pps->albers.std_parallel2,
+	    pps->albers.orig_latitude,
+	    pps->albers.center_meridian,
+            (float)HUGHES_SEMIMAJOR,
+            (float)HUGHES_INV_FLATTENING);
+  }
 
   return albers_projection_description;
 }
@@ -759,6 +808,9 @@ static char * pseudo_projection_description(datum_type_t datum)
 {
   static char pseudo_projection_description[128];
 
+  asfRequire(datum != HUGHES_DATUM,
+             "Using a Hughes-1980 ellipsoid with a pseudo lat/long "
+             "projection\nis not supported.\n");
   sprintf(pseudo_projection_description, "+proj=latlong +datum=%s",
           datum_str(datum));
 
