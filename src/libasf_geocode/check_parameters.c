@@ -29,6 +29,9 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
     report_func = asfPrintError;
   }
 
+  asfRequire(!(datum == HUGHES_DATUM && projection_type != POLAR_STEREOGRAPHIC),
+               "Hughes ellipsoid is only supported for polar stereographic projections.\n");
+
   switch (projection_type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
 
@@ -48,49 +51,64 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       }
       switch(datum) {
         case NAD27_DATUM:
+        {
+          // FIXME: Might want to consider keeping even the lowest latitude in the
+          // image inside the northern hemisphere
+          double lower_limiting_latitude = meta->general->center_latitude;
           if (pp->utm.zone < 2 || pp->utm.zone > 22)
             report_func("Zone '%i' outside the supported range (2 to 22) for NAD27...\n%s"
-                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
-                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
-                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
                 pp->utm.zone, !force_flag ?
                   "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
-          if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
-            report_func("Latitude of origin '%.4f' outside the supported range "
-                "(0 deg to 90 deg) for NAD27...\n%s"
-                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
-                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
-                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-                pp->utm.lat0, !force_flag ?
+          if (lower_limiting_latitude < 0 || lower_limiting_latitude > 90)
+            report_func("Image location (latitude %.4f) outside the supported range "
+                "(0 deg to +90 deg) for NAD27...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
+                lower_limiting_latitude, !force_flag ?
                   "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
+        }
           break;
         case NAD83_DATUM:
+        {
+          // FIXME: Might want to consider keeping even the lowest latitude in the
+          // image inside the northern hemisphere
+          double lower_limiting_latitude = meta->general->center_latitude;
           if (pp->utm.zone < 2 || pp->utm.zone > 23)
             report_func("Zone '%i' outside the supported range (2 to 23) for NAD83...\n%s"
-                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
-                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
-                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
                 pp->utm.zone, !force_flag ?
                   "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
-          if (pp->utm.lat0 < 0 || pp->utm.lat0 > 90)
-            report_func("Latitude of origin '%.4f' outside the supported range "
-                "(0 deg to 90 deg) for NAD83...\n%s"
-                "  WGS 84, Zone 1 thru 60, Latitude of Origin between -90 and +90\n"
-                "  NAD83, Zone 2 thru 23, Latitude of Origin between 0 and +90\n"
-                "  NAD27, Zone 2 thru 22, Latitude of Origin between 0 and +90\n\n",
-                pp->utm.lat0, !force_flag ?
+          if (lower_limiting_latitude < 0 || lower_limiting_latitude > 90)
+            report_func("Image location (latitude %.4f) outside the supported range "
+                "(0 deg to +90 deg) for NAD83...\n%s"
+                "  WGS 84, Zone 1 thru 60, Latitudes between -90 and +90\n"
+                "  NAD83,  Zone 2 thru 23, Latitudes between   0 and +90\n"
+                "  NAD27,  Zone 2 thru 22, Latitudes between   0 and +90\n\n",
+                lower_limiting_latitude, !force_flag ?
                   "\nUse the -force option (Ignore projection errors) or adjust the\n"
                   "selected projection parameters to something more appropriate:\n\n" : "");
+        }
           break;
         case WGS84_DATUM:
+        {
+          // FIXME: Technically, we should use the lowest attitude in the image to compare to -90
+          // and the highest latitude in the image to compare to +90...
+          double limiting_latitude = meta->general->center_latitude;
           if (pp->utm.zone < 1 || pp->utm.zone > 60)
             report_func("Zone '%i' outside the valid range of (1 to 60)\n", pp->utm.zone);
-          if (pp->utm.lat0 < -90 || pp->utm.lat0 > 90)
-            report_func("Latitude of origin '%.4f' outside the valid range "
-                "of (-90 deg to 90 deg)\n", pp->utm.lat0);
+          if (limiting_latitude < -90 || limiting_latitude > 90)
+            report_func("Image location (latitude %.4f) outside the valid range "
+                "of (-90 deg to +90 deg)\n", limiting_latitude);
+        }
           break;
         default:
           report_func("Unrecognized or unsupported datum found in projection parameters.\n");
@@ -184,7 +202,6 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       break;
 
     case POLAR_STEREOGRAPHIC:
-
       // Outside range tests
       if (!meta_is_valid_double(pp->ps.slat) || pp->ps.slat < -90 || pp->ps.slat > 90)
         report_func("Latitude of origin (%.4f) undefined or outside the defined range "

@@ -606,6 +606,10 @@ static datum_type_t parse_datum_option(int *argc, char **argv[])
     {
       the_datum = NAD83_DATUM;
     }
+    else if (g_ascii_strcasecmp(datum, "HUGHES") == 0)
+    {
+      the_datum = HUGHES_DATUM;
+    }
     else
     {
       asfPrintWarning("Unknown Datum: %s.  Using WGS84.\n", datum);

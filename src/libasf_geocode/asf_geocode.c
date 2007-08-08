@@ -717,6 +717,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Input metadata.
     meta_parameters *imd = meta_read (input_meta_data->str);
 
+    if (imd->general->image_data_type == COMPLEX_IMAGE) {
+      asfPrintError("Geocoding of complex data not supported.\n");
+    }
+    if (imd->sar && img->sar->image_type == 'S') {
+      asfPrintError("Geocoding of slant rnage data not supported.\n");
+    }
     if (imd->optical) {
         if (strcmp(imd->general->mode, "1A") == 0 ||
             strcmp(imd->general->mode, "1B1") == 0) {
@@ -769,6 +775,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                         "ALOS Prism/Avnir data.\n", average_height);
         average_height = 0.0;
     }
+
+    if (average_height != 0.0)
+        asfPrintStatus("Height correction: %fm.\n", average_height);
 
     // Old Scansar data needs a 400m height adjustment.
     if (imd->sar && imd->sar->image_type == 'P' &&
@@ -1190,6 +1199,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   omd->projection->startY = max_y;
   omd->projection->perX = pc_per_x;
   omd->projection->perY = -pc_per_y;
+  omd->projection->height = average_height;
   strcpy (omd->projection->units, "meters");
   if ( output_lat_0 > 0.0 ) {
     omd->projection->hem = 'N';

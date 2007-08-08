@@ -314,7 +314,7 @@ static void update_extents(int lineSAR, int sampSAR,
     int line, samp;      // line & samp in the DEM
 
     meta_get_latLon(metaSAR, lineSAR, sampSAR, 0.0, &lat, &lon);
-    latlon_to_proj(metaDEM->projection, metaDEM->sar->look_direction,
+    latlon_to_proj(metaDEM->projection, metaSAR->sar->look_direction,
         lat*D2R, lon*D2R, 0.0, &x, &y, &z);
 
     // these should work even if perX or perY is negative
