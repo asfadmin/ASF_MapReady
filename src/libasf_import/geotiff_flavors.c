@@ -52,6 +52,7 @@ detect_geotiff_flavor (const char *file)
       = GTIFKeyGet (gtif, GTModelTypeGeoKey, &model_type, 0, 1);
     asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
     if ( model_type == ModelTypeGeographic ) {
+      FREE(citation);
       GTIFFree(gtif);
       XTIFFClose(tiff);
       return import_usgs_seamless;
@@ -82,6 +83,7 @@ detect_geotiff_flavor (const char *file)
           case PS:      // Polar Stereographic
           case LAMAZ:   // Lambert Azimuthal Equal Area
             g_string_free(inGeotiffAuxName, TRUE);
+            FREE(citation);
             GTIFFree(gtif);
             XTIFFClose(tiff);
             return import_generic_geotiff;
@@ -91,6 +93,7 @@ detect_geotiff_flavor (const char *file)
             asfPrintWarning("Unable to determine projection type from\n"
                 "ArcGIS metadata (.aux) file.  Attempting the ingest without it...\n");
             g_string_free(inGeotiffAuxName, TRUE);
+            FREE(citation);
             GTIFFree(gtif);
             XTIFFClose(tiff);
             return import_generic_geotiff;
@@ -133,6 +136,7 @@ detect_geotiff_flavor (const char *file)
   //}
 
   // Couldn't determine any flavor we know.
+  FREE(citation);
   GTIFFree(gtif);
   XTIFFClose(tiff);
   return NULL;
