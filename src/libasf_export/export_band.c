@@ -242,6 +242,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
   ogtif = GTIFNew (otif);
   asfRequire (ogtif != NULL, "Error opening output GeoKey file descriptor.\n");
 
+  // Common tags
   if (map_projected)
   {
     // Write common tags for map-projected GeoTIFFs
@@ -262,6 +263,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
     re_minor = md->general->re_minor;
   }
 
+  // Pixel scale and tie points
   if (md->projection) {
     if (!(meta_is_valid_double(md->projection->startX) &&
           meta_is_valid_double(md->projection->startY))
@@ -274,12 +276,16 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
     if (!is_slant_range_image) {
       double tie_point[6];
       double pixel_scale[3];
-
+      // FIXME: Note that the following tie points are in meters, but that's
+      // because we assume linear meters and a map-projected image.  If we ever
+      // export a geographic (lat/long) geotiff, then this code will need to
+      // smarten-up and write the tie points in lat/long or meters depending on the
+      // type of image data.  Same thing applies to perX and perY etc etc.
       tie_point[0] = 0.0;
       tie_point[1] = 0.0;
       tie_point[2] = 0.0;
-      tie_point[3] = md->projection->startX;
-      tie_point[4] = md->projection->startY;
+      tie_point[3] = md->projection->startX; // meters
+      tie_point[4] = md->projection->startY; // meters
       tie_point[5] = 0.0;
       TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
@@ -337,9 +343,10 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           citation = MALLOC ((max_citation_length + 1) * sizeof (char));
           snprintf (citation, max_citation_length + 1,
                     "UTM zone %d %c projected GeoTIFF on %s "
-                    "datum written by Alaska Satellite Facility tools",
+                    "%s written by Alaska Satellite Facility tools.",
                     md->projection->param.utm.zone, md->projection->hem,
-                    datum_str);
+                    datum_str,
+                    md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
           append_band_names(band_names, rgb, citation);
           citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
@@ -364,22 +371,40 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     CT_AlbersEqualArea);
-        GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.std_parallel1);
-        GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.std_parallel2);
-        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.false_easting);
-        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.false_northing);
-        GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.orig_latitude);
-        // The following is where ArcGIS looks for the center meridian
-        GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.center_meridian);
-        // The following is where the center meridian _should_ be stored
-        GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.albers.center_meridian);
+        if (meta_is_valid_double(md->projection->param.albers.std_parallel1)) {
+          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.std_parallel1);
+        }
+        if (meta_is_valid_double(md->projection->param.albers.std_parallel2)) {
+          GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.std_parallel2);
+        }
+        if (meta_is_valid_double(md->projection->param.albers.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.false_easting);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.albers.false_northing)) {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.albers.orig_latitude)) {
+          GTIFKeySet (ogtif, ProjNatOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.orig_latitude);
+        }
+        if (meta_is_valid_double(md->projection->param.albers.center_meridian)) {
+          // The following is where ArcGIS looks for the center meridian
+          GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.center_meridian);
+          // The following is where the center meridian _should_ be stored
+          GTIFKeySet (ogtif, ProjNatOriginLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.albers.center_meridian);
+        }
         // This writes the GeographicTypeGeoKey
         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
@@ -389,8 +414,9 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
         snprintf (citation, max_citation_length + 1,
                   "Albers equal-area conic projected GeoTIFF using %s "
-                  "datum written by Alaska Satellite Facility "
-                  "tools", datum_str);
+                  "%s written by Alaska Satellite Facility "
+                  "tools.", datum_str,
+                      md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
         append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
@@ -411,19 +437,37 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     CT_LambertConfConic_2SP);
-        GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.plat1);
-        GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.plat2);
-        GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.false_easting);
-        GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.false_northing);
-        GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.lon0);
-        GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamcc.lat0);
-       // This writes the GeographicTypeGeoKey
+        if (meta_is_valid_double(md->projection->param.lamcc.plat1)) {
+          GTIFKeySet (ogtif, ProjStdParallel1GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.plat1);
+        }
+        if (meta_is_valid_double(md->projection->param.lamcc.plat2)) {
+          GTIFKeySet (ogtif, ProjStdParallel2GeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.plat2);
+        }
+        if (meta_is_valid_double(md->projection->param.lamcc.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.false_easting);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseOriginEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.lamcc.false_northing)) {
+          GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseOriginNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.lamcc.lon0)) {
+          GTIFKeySet (ogtif, ProjFalseOriginLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.lon0);
+        }
+        if (meta_is_valid_double(md->projection->param.lamcc.lat0)) {
+          GTIFKeySet (ogtif, ProjFalseOriginLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamcc.lat0);
+        }
+        // This writes the GeographicTypeGeoKey
         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
         /* Set the citation key.  */
@@ -432,8 +476,9 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
         snprintf (citation, max_citation_length + 1,
                   "Lambert conformal conic projected GeoTIFF using %s "
-                  "datum written by Alaska Satellite Facility "
-                  "tools", datum_str);
+                  "%s written by Alaska Satellite Facility "
+                  "tools.", datum_str,
+                  md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
         append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
@@ -500,19 +545,19 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
           // realm of 'normal' GeoTIFFs, we put all the pertinent projection parameters
           // into the citation strings to help users if their s/w doesn't 'like' user-defined
           // datums.
-          citation_length =
-              snprintf (citation, max_citation_length + 1,
-                        "Polar stereographic projected GeoTIFF using Hughes "
-                        "ellipsoid written by Alaska Satellite Facility "
-                        "tools, Natural Origin Latitude %lf, Straight Vertical "
-                        "Pole %lf.", md->projection->param.ps.slat,
-                        md->projection->param.ps.slon);
+          snprintf (citation, max_citation_length + 1,
+                    "Polar stereographic projected GeoTIFF using Hughes "
+                    "ellipsoid written by Alaska Satellite Facility "
+                    "tools, Natural Origin Latitude %lf, Straight Vertical "
+                    "Pole %lf.", md->projection->param.ps.slat,
+                    md->projection->param.ps.slon);
+          append_band_names(band_names, rgb, citation);
+          citation_length = strlen(citation);
           asfRequire (citation_length >= 0 &&
               citation_length <= max_citation_length,
           "bad citation length");
         }
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
-        // The following is recommended by the standard
         GTIFKeySet (ogtif, GTCitationGeoKey, TYPE_ASCII, 1, citation);
         free (citation);
       }
@@ -525,14 +570,28 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     user_defined_value_code);
         GTIFKeySet (ogtif, ProjCoordTransGeoKey, TYPE_SHORT, 1,
                     CT_LambertAzimEqualArea);
-        GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamaz.center_lon);
-        GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamaz.center_lat);
-        GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamaz.false_easting);
-        GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
-                    md->projection->param.lamaz.false_northing);
+        if (meta_is_valid_double(md->projection->param.lamaz.center_lon)) {
+          GTIFKeySet (ogtif, ProjCenterLongGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.center_lon);
+        }
+        if (meta_is_valid_double(md->projection->param.lamaz.center_lat)) {
+          GTIFKeySet (ogtif, ProjCenterLatGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.center_lat);
+        }
+        if (meta_is_valid_double(md->projection->param.lamaz.false_easting)) {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.false_easting);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseEastingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
+        if (meta_is_valid_double(md->projection->param.lamaz.false_northing)) {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1,
+                      md->projection->param.lamaz.false_northing);
+        }
+        else {
+          GTIFKeySet (ogtif, ProjFalseNorthingGeoKey, TYPE_DOUBLE, 1, 0.0);
+        }
         // This writes the GeographicTypeGeoKey
         write_datum_key (ogtif, md->projection->datum, re_major, re_minor);
 
@@ -542,13 +601,14 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
         citation = MALLOC ((max_citation_length + 1) * sizeof (char));
         snprintf (citation, max_citation_length + 1,
                   "Lambert azimuthal equal area projected GeoTIFF using "
-                  "%s datum written by Alaska Satellite "
-                  "Facility tools", datum_str);
+                  "%s %s written by Alaska Satellite "
+                      "Facility tools.", datum_str,
+                  md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
         append_band_names(band_names, rgb, citation);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
-                    citation_length <= max_citation_length,
-                    "bad citation length");
+            citation_length <= max_citation_length,
+                "bad citation length");
         // The following is not needed for any but UTM (according to the standard)
         // but it appears that everybody uses it anyway... so we'll write it
         GTIFKeySet (ogtif, PCSCitationGeoKey, TYPE_ASCII, 1, citation);
