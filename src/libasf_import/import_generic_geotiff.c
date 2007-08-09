@@ -66,8 +66,12 @@
 #define USER_DEFINED_KEY             32767
 #define BAND_NAME_LENGTH  12
 
-// If you change the BAND_ID_STRING here, make sure you make an identical
-// change in the export library ...the defs must match
+// Do not change the BAND_ID_STRING.  It will break ingest of legacy TIFFs exported with this
+// string in their citation strings.  If you are changing the citation string to have some _other_
+// identifying string, then use a _new_ definition rather than replace what is in this one.
+// Then, make sure that your code supports both the legacy string and the new string.
+// Also see the export library string definitions (which MUST match these here) and
+// for associated code that needs to reflect the changes you are making here.
 #define BAND_ID_STRING "Color Channel (Band) Contents in RGBA+ order"
 
 spheroid_type_t SpheroidName2spheroid(char *sphereName);
@@ -2214,23 +2218,6 @@ void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo)
       t->scanlineSize = ss;
     }
   }
-/*  asfPrintStatus("\nTIFF File Info:\n");
-  asfPrintStatus("File name       : %s\n",
-                 TIFFFileName(tif));
-  asfPrintStatus("TIFF type       : %s\n",
-         t->format == SCANLINE_TIFF ? "SCANLINE_TIFF" :
-         t->format == STRIP_TIFF ? "STRIP_TIFF" :
-         t->format == TILED_TIFF ? "TILED_TIFF" : "UNKNOWN_TIFF_TYPE");
-  asfPrintStatus("Scanline size   : %d\n", t->scanlineSize);
-  asfPrintStatus("Number of strips: %d\n", t->numStrips);
-  asfPrintStatus("Rows per strip  : %d\n", t->rowsPerStrip);
-  asfPrintStatus("Tile width      : %d\n", t->tileWidth);
-  asfPrintStatus("Tile length     : %d\n", t->tileLength);
-  asfPrintStatus("Images in file  : %d\n", t->imageCount);
-  asfPrintStatus("Dimensions      : %s\n\n",
-         t->volume_tiff == 0 ? "Standard 2D image" :
-         t->volume_tiff == 1 ? "Multi-dimensional image" : "Unknown");
-  */
 }
 
 void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
@@ -2306,21 +2293,30 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   }
 
   // Develop a buffer with a line of data from a single band in it
-  strip     = (uint32)floor((float)(row/t.rowsPerStrip))*t.rowsPerStrip;
-  strip_row = row - strip;
-  if (read_count && planar_config == PLANARCONFIG_SEPARATE) {
-    strip += band * height; // Add offset to correct plane if band-sequential
-    TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
+  strip     = TIFFComputeStrip(tif, row, band);
+  strip_row = row - (strip * t.rowsPerStrip);
+  tsize_t stripSize = TIFFStripSize(tif);
+  uint32 bytes_per_sample = bits_per_sample / 8;
+
+  tsize_t bytes_read = TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
+  if (read_count &&
+      bytes_read > 0 &&
+      planar_config == PLANARCONFIG_SEPARATE)
+  {
     uint32 col;
-    for (col = 0; col < width; col++) {
+    uint32 idx = 0;
+    for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
+      idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
+      if (idx * bytes_per_sample >= stripSize)
+        continue; // Prevents over-run if last strip or scanline (within a strip) is not complete
       switch (bits_per_sample) {
         case 8:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint8*)buf)[col] = ((uint8*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((uint8*)buf)[col] = ((uint8*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int8*)buf)[col] = ((int8*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((int8*)buf)[col] = ((int8*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2330,10 +2326,10 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
         case 16:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint16*)buf)[col] = ((uint16*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((uint16*)buf)[col] = ((uint16*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int16*)buf)[col] = ((int16*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((int16*)buf)[col] = ((int16*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2343,13 +2339,13 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
         case 32:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint32*)buf)[col] = ((uint32*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((uint32*)buf)[col] = ((uint32*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int32*)buf)[col] = ((int32*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((int32*)buf)[col] = ((int32*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_IEEEFP:
-              ((float*)buf)[col] = ((float*)sbuf)[(strip_row * t.scanlineSize) + col];
+              ((float*)buf)[col] = ((float*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2362,18 +2358,24 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
       }
     }
   }
-  else if (read_count && planar_config == PLANARCONFIG_CONTIG) {
-    TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
+  else if (read_count &&
+           bytes_read > 0 &&
+           planar_config == PLANARCONFIG_CONTIG)
+  {
     uint32 col;
-    for (col = 0; col < width; col++) {
+    uint32 idx = 0;
+    for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
+      idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
+      if (idx * bytes_per_sample >= stripSize)
+        continue; // Prevents over-run if last strip or scanline (within a strip) is not complete
       switch (bits_per_sample) {
         case 8:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint8*)buf)[col] = ((uint8*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((uint8*)buf)[col] = ((uint8*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int8*)buf)[col] = ((int8*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((int8*)buf)[col] = ((int8*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2383,10 +2385,10 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
         case 16:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint16*)buf)[col] = ((uint16*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((uint16*)buf)[col] = ((uint16*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int16*)buf)[col] = ((int16*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((int16*)buf)[col] = ((int16*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2396,13 +2398,13 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
         case 32:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint32*)buf)[col] = ((uint32*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((uint32*)buf)[col] = ((uint32*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_INT:
-              ((int32*)buf)[col] = ((int32*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((int32*)buf)[col] = ((int32*)sbuf)[idx];
               break;
             case SAMPLEFORMAT_IEEEFP:
-              ((float*)buf)[col] = ((float*)sbuf)[(strip_row * t.scanlineSize) + ((col*(uint32)samples_per_pixel) + (uint32)band)];
+              ((float*)buf)[col] = ((float*)sbuf)[idx];
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2418,27 +2420,6 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
 
   _TIFFfree(sbuf);
 }
-
-/* (Typical type of info for tiled tiffs...)
-TIFF File Info:
-File name       : tiled.tif
-TIFF type       : TILED_TIFF
-Scanline size   : 8528
-Number of strips: 0
-Rows per strip  : 0
-Tile width      : 64
-Tile length     : 64
-Images in file  : 1
-Dimensions      : Standard 2D image
-
-From a tiff_type_t *t:
-t->scanlineSize
-t->numStrips
-t->rowsPerStrip
-t->tileWidth
-t->tileLength
-t->imageCount
-*/
 
 void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
 {
