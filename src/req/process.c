@@ -708,6 +708,17 @@ static void strip_end_whitesp(char *s)
         *p-- = '\0';
 }
 
+static char *fix_underscores(char *s)
+{
+    static char ret[64];
+    strcpy(ret, s);
+
+    int i;
+    for (i=0; i<strlen(ret); ++i)
+        if (ret[i]=='_') ret[i]=' ';
+    return ret;
+}
+
 void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                      int is_emergency, int *req_id,
                      long start_date_user, long end_date_user,
@@ -897,7 +908,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     //  22    1   Blank
     //  23    4   EOC MMO Code (to): "HMMO"
     //  27    1   Blank
-    snprintf(tmp_buf, 32, "%s HMMO ", drf);
+    snprintf(tmp_buf, 32, "%s HMMO ", fix_underscores(drf));
     assert(strlen(tmp_buf)==10);
     fwrite(tmp_buf, sizeof(char), 10, fout);
     //  28    8   File Creation Date (UTC): YYYMMDD
@@ -1382,15 +1393,16 @@ void gui_process(int for_real)
                 sprintf(buf, "File doesn't have a csv extension: %s\n", csv_file);
                 put_string_in_textview("output_textview", buf);
             } else {
-                int req_id = settings_get_next_req_id();
+                int req_id, request_type;
                 char *outfile =
-                    process(csv_file, settings_get_is_emergency(), &req_id,
+                    process(csv_file, settings_get_is_emergency(),
+                        &req_id, &request_type,
                         settings_get_start_date(), settings_get_end_date());
                 if (outfile) {
                     put_file_in_textview(outfile, "output_textview");
                     if (for_real) {
                         // update request num, id!
-                        settings_set_next_req_id_and_incr_req_num(req_id);
+                        settings_set_next_req_id_and_incr_req_num(req_id, request_type);
                         sprintf(buf, "Generated output file: %s", outfile);
                         put_string_to_label("generate_label", buf);
                     } else {
@@ -1424,7 +1436,8 @@ static char *update_request_type(int request_type)
 }
 
 char *process(const char *csv_file, int is_emergency,
-              int *req_id, long start_date_user, long end_date_user)
+              int *req_id, int *request_type,
+              long start_date_user, long end_date_user)
 {
     printf("Process> %s\n", csv_file);
 
@@ -1467,12 +1480,18 @@ char *process(const char *csv_file, int is_emergency,
         printf("Processing as an Observation Request.\n");
         req_file = update_request_type(OBSERVATION_REQUEST);
 
+        *request_type = OBSERVATION_REQUEST;
+        *req_id = settings_get_next_req_id(OBSERVATION_REQUEST);
+
         obs_process(fin, csv_file, req_file, is_emergency, req_id,
             start_date_user, end_date_user);
     }
     else if (strcmp(line, acq_expected_header) == 0) {
         printf("Processing as an Acquisition Request.\n");
         req_file = update_request_type(ACQUISITION_REQUEST);
+
+        *request_type = ACQUISITION_REQUEST;
+        *req_id = settings_get_next_req_id(ACQUISITION_REQUEST);
 
         acq_process(fin, csv_file, req_file, is_emergency, req_id,
             start_date_user, end_date_user);
@@ -1481,6 +1500,9 @@ char *process(const char *csv_file, int is_emergency,
         printf("Processing as an On-Demand Level 0 Request.\n");
         req_file = update_request_type(ON_DEMAND_LEVEL_0);
 
+        *request_type = ON_DEMAND_LEVEL_0;
+        *req_id = settings_get_next_req_id(ON_DEMAND_LEVEL_0);
+
         odl0_process(fin, csv_file, req_file, is_emergency, req_id,
             start_date_user, end_date_user);
     }
@@ -1488,6 +1510,9 @@ char *process(const char *csv_file, int is_emergency,
         // couldn't figure out what this file is, from the header!
         printf("Failed.\n");
         settings_set_request_type(0);
+
+        *request_type = UNSELECTED_REQUEST_TYPE;
+        *req_id = 0;
 
         char buf[1024];
         if (strlen(line) == 0) {

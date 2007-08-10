@@ -9,32 +9,28 @@ static void generate(char **dir, char **file)
     else
         *dir = STRDUP("");
 
-    char *request_type;
-    switch (settings_get_request_type()) {
-        case OBSERVATION_REQUEST:
-            request_type="REQ"; break;
-        case ACQUISITION_REQUEST:
-            request_type="RQT"; break;
-        case ON_DEMAND_LEVEL_0:
-            request_type="L0MR"; break;
-        default:
-            // this will have to be filled in later, with what is detected
-            request_type="???"; break;
-    }
-
     *file = MALLOC(sizeof(char)*32);
-    if (settings_get_request_type()==ON_DEMAND_LEVEL_0) {
+
+    int request_type = settings_get_request_type();
+
+    if (request_type==ON_DEMAND_LEVEL_0) {
         time_t t = time(NULL);
         struct tm *ts = gmtime(&t);
-        snprintf(*file, 32, "%s%02d%02d%02d", request_type,
+        snprintf(*file, 32, "L0MR%02d%02d%02d",
             ts->tm_mon+1, ts->tm_mday, settings_get_sequence_number());
-    } else if (strcmp(request_type, "???") != 0) {
+    } else if (request_type != UNSELECTED_REQUEST_TYPE) {
         char e = settings_get_is_emergency() ? 'E' : 'W';
-        snprintf(*file, 32, "%s%c%06d", request_type, e, s->req_num);
+        if (request_type == OBSERVATION_REQUEST)
+            snprintf(*file, 32, "REQ%c%06d", e, s->obs_req_num);
+        else if (request_type == ACQUISITION_REQUEST)
+            snprintf(*file, 32, "RQT%c%06d", e, s->acq_req_num);
+        else
+            assert(FALSE); // can't happen
     } else {
-        snprintf(*file, 32, "%s", request_type);
+        strcpy(*file, "???");
     }
 
+    printf("Generated: %s\n", *file);
     settings_free(s);
 }
 

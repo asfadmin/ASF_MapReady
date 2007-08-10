@@ -34,8 +34,12 @@ typedef struct
 {
     char *csv_dir;
     char *output_dir;
-    int req_num;
-    int req_id;
+    int obs_req_num;
+    int obs_req_id;
+    int acq_req_num;
+    int acq_req_id;
+    int odl0_seq_num;
+    int odl0_req_id;
     char *station_code;
 }
 Settings;
@@ -77,8 +81,8 @@ char *settings_get_output_dir(void);
 char *settings_get_csv_dir(void);
 Settings *settings_load(void);
 void settings_free(Settings *s);
-int settings_get_next_req_id(void);
-void settings_set_next_req_id_and_incr_req_num(int req_id);
+int settings_get_next_req_id(int request_type);
+void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type);
 int settings_get_is_emergency(void);
 long settings_get_start_date(void);
 long settings_get_end_date(void);
@@ -95,8 +99,9 @@ void hook_up_csv_dir_entry_changed(void);
 void alert(const char *s);
 
 /* process.c */
-char *process(const char *csv_file, int is_emergency, int *req_id,
-              long start_date, long end_date);
+char *process(const char *csv_file, int is_emergency,
+              int *req_id, int *request_type,
+              long start_date_user, long end_date_user);
 void gui_process(int for_real);
 
 /* output.c */

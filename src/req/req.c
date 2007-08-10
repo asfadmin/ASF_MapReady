@@ -1,6 +1,5 @@
 #include "req.h"
-
-#define VERSION "2.0.0"
+#include "asf_version.h"
 
 /************************************************************************
  * Global variables...
@@ -14,9 +13,10 @@ char *find_in_share(const char * filename)
     char * ret = MALLOC(sizeof(char) *
         (strlen(get_asf_share_dir()) + strlen(filename) + 5));
     sprintf(ret, "%s/%s", get_asf_share_dir(), filename);
-    if (fileExists(ret))
+    if (fileExists(ret)) {
         return ret;
-    else {
+    } else {
+        printf("Trying to find req.glade file: %s\n", ret);
         free(ret);
         return NULL;
     }
@@ -42,12 +42,12 @@ main(int argc, char **argv)
 
     printf("Found req.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
-    g_free(glade_xml_file);
+    free(glade_xml_file);
 
     // add version number to window title
     char title[256];
     sprintf(title,
-        "The ALOS Request Generator: Version %s", VERSION);
+        "The ALOS Request Generator: Version %s", REQ_PACKAGE_VERSION_STRING);
 
     // pull out what is in the saved settings file
     apply_saved_settings();
