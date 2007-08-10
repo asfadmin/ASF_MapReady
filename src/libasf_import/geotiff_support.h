@@ -37,7 +37,7 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                                 short planar_config,
                                 int use_mask_value, double mask_value);
 void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo);
-void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band);
-void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band);
+void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int band);
+void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, int band);
 
 #endif

@@ -1694,22 +1694,16 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           }
           break;
         case STRIP_TIFF:
-          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-            ReadScanline_from_TIFF_Strip(tif, buf, ii, 0);
-          }
-          else {
-            // Planar configuration is band-sequential
-            ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
-          }
+          ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
           break;
         case TILED_TIFF:
-          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
-          }
-          else {
+//          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+//            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
+//          }
+//          else {
             // Planar configuration is band-sequential
-            ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
-          }
+          ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
+//          }
           break;
         default:
           asfPrintError("Invalid TIFF format found.\n");
@@ -1845,22 +1839,16 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           }
           break;
         case STRIP_TIFF:
-          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-            ReadScanline_from_TIFF_Strip(tif, buf, ii, 0);
-          }
-          else {
-            // Planar configuration is band-sequential
-            ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
-          }
+          ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
           break;
         case TILED_TIFF:
-          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
-          }
-          else {
+//          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+//            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
+//          }
+//          else {
             // Planar configuration is band-sequential
-            ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
-          }
+          ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
+//          }
           break;
         default:
           asfPrintError("Invalid TIFF format found.\n");
@@ -2063,22 +2051,16 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             }
             break;
           case STRIP_TIFF:
-            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-              ReadScanline_from_TIFF_Strip(tif, tif_buf, row, 0);
-            }
-            else {
-            // Planar configuration is band-sequential
-              ReadScanline_from_TIFF_Strip(tif, tif_buf, row, band);
-            }
+            ReadScanline_from_TIFF_Strip(tif, tif_buf, row, band);
             break;
           case TILED_TIFF:
-            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, 0);
-            }
-            else {
+//            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
+//              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, 0);
+//            }
+//            else {
             // Planar configuration is band-sequential
-              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, band);
-            }
+            ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, band);
+//            }
             break;
           default:
             asfPrintError("Invalid TIFF format found.\n");
@@ -2220,7 +2202,7 @@ void get_tiff_type(TIFF *tif, tiff_type_t *tiffInfo)
   }
 }
 
-void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
+void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int band)
 {
   int read_count;
   tiff_type_t t;
@@ -2284,7 +2266,7 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
                   orientation == ORIENTATION_LEFTTOP  ? "LEFT TOP" :
                   orientation == ORIENTATION_RIGHTTOP ? "RIGHT TOP" :
                   orientation == ORIENTATION_RIGHTBOT ? "RIGHT BOTTOM" :
-                      orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
+                  orientation == ORIENTATION_LEFTBOT  ? "LEFT BOTTOM" : "UNKNOWN");
   }
   // Check for valid row number
   if (row < 0 || row >= height) {
@@ -2300,72 +2282,19 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
 
   tsize_t bytes_read = TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
   if (read_count &&
-      bytes_read > 0 &&
-      planar_config == PLANARCONFIG_SEPARATE)
+      bytes_read > 0)
   {
     uint32 col;
     uint32 idx = 0;
     for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
-      idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
-      if (idx * bytes_per_sample >= stripSize)
-        continue; // Prevents over-run if last strip or scanline (within a strip) is not complete
-      switch (bits_per_sample) {
-        case 8:
-          switch (sample_format) {
-            case SAMPLEFORMAT_UINT:
-              ((uint8*)buf)[col] = ((uint8*)sbuf)[idx];
-              break;
-            case SAMPLEFORMAT_INT:
-              ((int8*)buf)[col] = ((int8*)sbuf)[idx];
-              break;
-            default:
-              asfPrintError("Unexpected data type in TIFF file\n");
-              break;
-          }
-          break;
-        case 16:
-          switch (sample_format) {
-            case SAMPLEFORMAT_UINT:
-              ((uint16*)buf)[col] = ((uint16*)sbuf)[idx];
-              break;
-            case SAMPLEFORMAT_INT:
-              ((int16*)buf)[col] = ((int16*)sbuf)[idx];
-              break;
-            default:
-              asfPrintError("Unexpected data type in TIFF file\n");
-              break;
-          }
-          break;
-        case 32:
-          switch (sample_format) {
-            case SAMPLEFORMAT_UINT:
-              ((uint32*)buf)[col] = ((uint32*)sbuf)[idx];
-              break;
-            case SAMPLEFORMAT_INT:
-              ((int32*)buf)[col] = ((int32*)sbuf)[idx];
-              break;
-            case SAMPLEFORMAT_IEEEFP:
-              ((float*)buf)[col] = ((float*)sbuf)[idx];
-              break;
-            default:
-              asfPrintError("Unexpected data type in TIFF file\n");
-              break;
-          }
-          break;
-        default:
-          asfPrintError("Usupported bits per sample found in TIFF file\n");
-          break;
+      // NOTE: t.scanlineSize is in bytes (not pixels)
+      if (planar_config == PLANARCONFIG_SEPARATE) {
+        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
       }
-    }
-  }
-  else if (read_count &&
-           bytes_read > 0 &&
-           planar_config == PLANARCONFIG_CONTIG)
-  {
-    uint32 col;
-    uint32 idx = 0;
-    for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
-      idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
+      else {
+        // PLANARCONFIG_CONTIG
+        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
+      }
       if (idx * bytes_per_sample >= stripSize)
         continue; // Prevents over-run if last strip or scanline (within a strip) is not complete
       switch (bits_per_sample) {
@@ -2421,11 +2350,11 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, int row, int band)
   _TIFFfree(sbuf);
 }
 
-void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
+void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, int band)
 {
   int read_count;
   tiff_type_t t;
-  tdata_t tbuf=0;
+  tdata_t tbuf;
 
   if (tif == NULL) {
     asfPrintError("TIFF file not open for read\n");
@@ -2436,7 +2365,7 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
     asfPrintError("Programmer error: ReadScanline_from_TIFF_TileRow() called when the TIFF file\n"
         "was not a tiled TIFF.\n");
   }
-  uint32 tileSize = TIFFTileSize(tif);
+  tsize_t tileSize = TIFFTileSize(tif);
   if (tileSize > 0) {
     tbuf = _TIFFmalloc(tileSize);
     if (tbuf == NULL) {
@@ -2445,6 +2374,12 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   }
   else {
     asfPrintError("Invalid TIFF tile size in tiled TIFF.\n");
+  }
+
+  short planar_config;    // TIFFTAG_PLANARCONFIG
+  read_count = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planar_config);
+  if (read_count < 1) {
+    asfPrintError("Cannot determine planar configuration from TIFF file.\n");
   }
 
   short samples_per_pixel;
@@ -2497,8 +2432,10 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
                   row, height - 1);
   }
   // Develop a buffer with a line of data from a single band in it
-  uint32 tile_row = (uint32)floor((float)(row/t.tileLength))*t.tileLength;
-  uint32 row_in_tile = row - tile_row;
+//  ttile_t tile;
+  uint32 bytes_per_sample = bits_per_sample / 8;
+  uint32 row_in_tile;
+
   if (width > 0 &&
       height > 0 &&
       samples_per_pixel > 0 &&
@@ -2508,21 +2445,41 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
   {
     uint32 tile_col;
     uint32 buf_col;
+    uint32 bytes_read;
     for (tile_col = 0, buf_col = 0;
          tile_col < width;
-         tile_col += t.tileWidth) {
-           TIFFReadTile(tif, tbuf, tile_col, tile_row, 0, band);
+         tile_col += t.tileWidth)
+    {
+      // NOTE:  t.tileLength and t.tileWidth are in pixels (not bytes)
+      // NOTE:  TIFFReadTile() is a wrapper over TIFFComputeTile() and
+      //        TIFFReadEncodedTile() ...in other words, it automatically
+      //        takes into account whether the file has contigious (interlaced)
+      //        color bands or separate color planes, and automagically
+      //        decompresses the tile during the read.  The return below,
+      //        is an uncompressed tile in raster format (row-order 2D array
+      //        in memory.)
+      bytes_read = TIFFReadTile(tif, tbuf, tile_col, row, 0, band);
+      uint32 num_preceding_tile_rows = floor(row / t.tileLength);
+      row_in_tile = row - (num_preceding_tile_rows * t.tileLength);
       uint32 i;
-      for (i = 0; i < t.tileWidth && buf_col < width; i++) {
+      uint32 idx = 0;
+      for (i = 0; i < t.tileWidth && buf_col < width && (idx * bytes_per_sample) < tileSize; i++) {
+        if (planar_config == PLANARCONFIG_SEPARATE) {
+          idx = row_in_tile * t.tileWidth + i;
+        }
+        else {
+          // PLANARCONFIG_CONTIG
+          idx = row_in_tile * (t.tileWidth * samples_per_pixel) + i * samples_per_pixel + band;
+        }
         switch (bits_per_sample) {
           case 8:
             switch (sample_format) {
               case SAMPLEFORMAT_UINT:
-                ((uint8*)buf)[buf_col] = ((uint8*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((uint8*)buf)[buf_col] = ((uint8*)tbuf)[idx];
                 buf_col++;
                 break;
               case SAMPLEFORMAT_INT:
-                ((int8*)buf)[buf_col] = ((int8*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((int8*)buf)[buf_col] = ((int8*)tbuf)[idx];
                 buf_col++;
                 break;
               default:
@@ -2533,11 +2490,11 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
           case 16:
             switch (sample_format) {
               case SAMPLEFORMAT_UINT:
-                ((uint16*)buf)[buf_col] = ((uint16*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((uint16*)buf)[buf_col] = ((uint16*)tbuf)[idx];
                 buf_col++;
                 break;
               case SAMPLEFORMAT_INT:
-                ((int16*)buf)[buf_col] = ((int16*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((int16*)buf)[buf_col] = ((int16*)tbuf)[idx];
                 buf_col++;
                 break;
               default:
@@ -2548,15 +2505,15 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, int row, int band)
           case 32:
             switch (sample_format) {
               case SAMPLEFORMAT_UINT:
-                ((uint32*)buf)[buf_col] = ((uint32*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((uint32*)buf)[buf_col] = ((uint32*)tbuf)[idx];
                 buf_col++;
                 break;
               case SAMPLEFORMAT_INT:
-                ((int32*)buf)[buf_col] = ((int32*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((int32*)buf)[buf_col] = ((int32*)tbuf)[idx];
                 buf_col++;
                 break;
               case SAMPLEFORMAT_IEEEFP:
-                ((float*)buf)[buf_col] = ((float*)tbuf)[(row_in_tile * t.tileWidth) + i];
+                ((float*)buf)[buf_col] = ((float*)tbuf)[idx];
                 buf_col++;
                 break;
               default:
