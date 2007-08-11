@@ -629,6 +629,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Scaling method for floating point GeoTIFFs
       if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
+        if (strlen(cfg->export->byte) < 1) {
+          strcpy(cfg->export->byte, "NONE");
+        }
         if (strncmp(uc(cfg->export->byte), "NONE", 4) != 0 &&
             strncmp(uc(cfg->export->byte), "SIGMA", 5) != 0 &&
             strncmp(uc(cfg->export->byte), "MINMAX", 6) != 0 &&
