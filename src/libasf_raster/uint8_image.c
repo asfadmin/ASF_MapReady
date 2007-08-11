@@ -1666,7 +1666,7 @@ uint8_image_sample (UInt8Image *self, double x, double y,
       // This path is kind of tricky.  It has come from float_image.c
       // and it should probably be verified to work correctly
       // independent of the other paths.
-      g_assert_not_reached ();
+      //g_assert_not_reached ();
 
       static gboolean first_time_through = TRUE;
       // Splines in the x direction, and their lookup accelerators.
@@ -1723,7 +1723,12 @@ uint8_image_sample (UInt8Image *self, double x, double y,
       }
       gsl_spline_init (ys, y_spline_indicies, y_spline_values, ss);
 
-      return gsl_spline_eval (ys, y, yia);
+      double ret_val = gsl_spline_eval (ys, y, yia);
+      if (ret_val > 255.0 || ret_val < 0.0) {
+        asfPrintError("Bicubic resampling of BYTE data returned out of range value (%f)\n",
+          ret_val);
+      }
+      return ret_val;
     }
     break;
   default:
