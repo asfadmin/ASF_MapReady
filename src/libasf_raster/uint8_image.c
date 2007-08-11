@@ -1219,7 +1219,7 @@ uint8_image_get_pixel_with_reflection (UInt8Image *self, ssize_t x, ssize_t y)
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
-  g_assert_not_reached ();
+  //g_assert_not_reached ();
 
   // Reflect at image edges as advertised.
   if ( x < 0 ) {
@@ -1725,8 +1725,20 @@ uint8_image_sample (UInt8Image *self, double x, double y,
 
       double ret_val = gsl_spline_eval (ys, y, yia);
       if (ret_val > 255.0 || ret_val < 0.0) {
-        asfPrintError("Bicubic resampling of BYTE data returned out of range value (%f)\n",
+        asfPrintWarning("Bicubic resampling of BYTE data returned out of range value (%f).\n"
+          "...Continuing, but negative values will be forced to zero, and values above 255\n"
+          " will be forced to 255\n",
           ret_val);
+        if (ret_val > 265.0) {
+          asfPrintError("Bicubic resampling of BYTE data returned a value (%f) too far above 255.0 to\n"
+            "cap to 255.0\n", ret_val);
+        }
+        if (ret_val < -10.0) {
+          asfPrintError("Bicubic resampling of BYTE data returned a value (%f) too far below 0.0 to\n"
+            "cap to 0.0\n", ret_val);
+        }
+        ret_val = ret_val < 0.0 ? 0.0 : ret_val;
+        ret_val = ret_val > 255.0 ? 255.0 : ret_val;
       }
       return ret_val;
     }
