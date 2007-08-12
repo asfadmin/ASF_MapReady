@@ -16,6 +16,7 @@ include ../../make_support/system_rules
 ###############################################################################
 
 SOURCES := diffmeta.c
+HEADERS := diffmeta_tolerances.h diffmeta.h
 
 ###############################################################################
 #
@@ -29,13 +30,27 @@ SOURCES := diffmeta.c
 ###############################################################################
 
 CFLAGS += \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PNG_CFLAGS) \
+	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 
 
 LIBS  = \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf.a \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(JPEG_LIBS) \
+	$(PNG_LIBS) \
+	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	-lm \
@@ -55,12 +70,13 @@ LDLIBS := $(LIBS)
 
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
-all: diffmeta
+all: $(PROGRAM)
 
-$(PROGRAM): $(OBJS)
+$(PROGRAM): $(OBJS) $(HEADERS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
-	mv diffmeta$(BIN_POSTFIX) $(BINDIR)
+	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
 
 .PHONY: clean
 clean:
 	rm -f $(PROGRAM) $(OBJS) core.* core
+
