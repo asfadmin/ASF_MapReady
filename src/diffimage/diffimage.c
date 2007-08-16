@@ -141,6 +141,7 @@ typedef struct {
   jmp_buf setjmp_buffer;
 } jpeg_error_hdlr_t;
 typedef struct {
+  uint32 byte_width;
   uint32 width;
   uint32 height;
   data_type_t data_type; // ASF data type
@@ -4780,7 +4781,8 @@ GLOBAL(void) get_jpeg_info_hdr_from_file(char *inFile, jpeg_info_t *jpg, char *o
   jpeg_read_header(&cinfo, TRUE);
 
   // Populate the header struct
-  jpg->width = cinfo.image_width * cinfo.num_components;
+  jpg->width = cinfo.image_width;
+  jpg->byte_width = cinfo.image_width * cinfo.num_components;
   jpg->height = cinfo.image_height;
   jpg->data_type = BYTE;
   jpg->num_bands = cinfo.num_components;
@@ -4854,7 +4856,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
 
   // Allocate buffer for reading jpeg
   jpg_buf = (*cinfo.mem->alloc_sarray) (
-      (j_common_ptr)&cinfo, JPOOL_IMAGE, jpg.width, 1);
+      (j_common_ptr)&cinfo, JPOOL_IMAGE, jpg.byte_width, 1);
 
   // If there is a mask value we are supposed to ignore,
   if ( use_mask_value ) {
@@ -5044,9 +5046,9 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
 
   // Allocate buffers for reading jpeg
   jpg_buf1 = (*cinfo1.mem->alloc_sarray) (
-      (j_common_ptr)&cinfo1, JPOOL_IMAGE, jpg1.width, 1);
+      (j_common_ptr)&cinfo1, JPOOL_IMAGE, jpg1.byte_width, 1);
   jpg_buf2 = (*cinfo2.mem->alloc_sarray) (
-      (j_common_ptr)&cinfo2, JPOOL_IMAGE, jpg2.width, 1);
+      (j_common_ptr)&cinfo2, JPOOL_IMAGE, jpg2.byte_width, 1);
 
   // Calculate the peak signal to noise ratio (PSNR) between the two images
   double sse;
@@ -5327,13 +5329,13 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   jpeg_error_hdlr_t jerr;
   JSAMPARRAY jpg_buf;
 
-  // Write out the (very very simple) metadata file ...only contains line_count, sample_count, and data_type
-  make_generic_meta(fft_meta_file, height, width, data_type);
-  md = meta_read(fft_meta_file);
-
-  buf = (float*)MALLOC(width * sizeof(float));
-  if (buf == NULL) {
-    sprintf(msg,"Cannot allocate float buffer...Aborting\n");
+  get_jpeg_info_hdr_from_file(inFile, &jpg, outfile);
+  if (jpg.width <= 0 ||
+      jpg.height <= 0 ||
+      jpg.data_type != BYTE ||
+      jpg.num_bands <= 0)
+  {
+    sprintf(msg,"Invalid JPEG found...Aborting\n");
     outFP = (FILE*)FOPEN(outfile,"a");
     if (outFP) {
       fprintf(outFP, msg);
@@ -5342,13 +5344,13 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
     asfPrintError(msg);
   }
 
-  get_jpeg_info_hdr_from_file(inFile, &jpg, outfile);
-  if (jpg.width <= 0 ||
-      jpg.height <= 0 ||
-      jpg.data_type != BYTE ||
-      jpg.num_bands <= 0)
-  {
-    sprintf(msg,"Invalid JPEG found...Aborting\n");
+  // Write out the (very very simple) metadata file ...only contains line_count, sample_count, and data_type
+  make_generic_meta(fft_meta_file, jpg.height, jpg.width, jpg.data_type);
+  md = meta_read(fft_meta_file);
+
+  buf = (float*)MALLOC(jpg.width * sizeof(float));
+  if (buf == NULL) {
+    sprintf(msg,"Cannot allocate float buffer...Aborting\n");
     outFP = (FILE*)FOPEN(outfile,"a");
     if (outFP) {
       fprintf(outFP, msg);
@@ -5395,7 +5397,7 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
 
   // Allocate buffer for reading jpeg
   jpg_buf = (*cinfo.mem->alloc_sarray) (
-      (j_common_ptr)&cinfo, JPOOL_IMAGE, jpg.width, 1);
+      (j_common_ptr)&cinfo, JPOOL_IMAGE, jpg.byte_width, 1);
 
   asfPrintStatus("Converting JPEG to ASF Internal Format .img file...\n");
   imgFP = (FILE*)FOPEN(fft_file, "wb");
