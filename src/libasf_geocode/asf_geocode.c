@@ -638,6 +638,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 {
   int i,ret;
   int process_as_byte=TRUE;
+  unsigned long out_of_range_negative = 0;
+  unsigned long out_of_range_positive = 0;
 
   // ref_input is which of the input images is the "reference" -- i.e.,
   // which will be used as the template for the output metadata.  This
@@ -995,8 +997,17 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // If all input metadata is byte, we will store everything as bytes,
     // in order to save memory.  (But the math will use floating point.)
-    if (imd->general->data_type != BYTE)
+    if (imd->general->data_type != BYTE || resample_method == RESAMPLE_BICUBIC)
         process_as_byte = FALSE;
+    if (imd->general->data_type == BYTE && resample_method == RESAMPLE_BICUBIC) {
+      asfPrintWarning(
+          "Using the BICUBIC resampling method for geocoding BYTE (typically optical)\n"
+          "data may result in out-of-range values, e.g. less than 0 or higher than 255.\n"
+          "Out-of-range values will be set to the closest in-range value, e.g. negative\n"
+          "resampled pixel values will be set to 0 (zero) and resampled pixel values that\n"
+          "turn out greater than 255 will be set to 255.\n"
+          "RECOMMENDATION: Select a different resampling method for geocoding.\n");
+    }
 
     // done with this image's metadata
     meta_free(imd);
@@ -1173,8 +1184,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // Update no data value
   if (!meta_is_valid_double(background_val)) background_val = 0;
-  if (process_as_byte && background_val < 0) background_val = 0;
-  if (process_as_byte && background_val > 255) background_val = 255;
+  //if (process_as_byte && background_val < 0) background_val = 0;
+  //if (process_as_byte && background_val > 255) background_val = 255;
+  if ((process_as_byte || omd->general->data_type == BYTE) && background_val < 0) background_val = 0;
+  if ((process_as_byte || omd->general->data_type == BYTE) && background_val > 255) background_val = 255;
   omd->general->no_data = background_val;
 
   omd->general->x_pixel_size = pixel_size;
@@ -1797,6 +1810,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 value =
                   float_image_sample(iim, input_x_pixel, input_y_pixel,
                     float_image_sample_method);
+                if (omd->general->data_type == BYTE && value < 0.0) {
+                  value = 0.0;
+                  out_of_range_negative++;
+                }
+                if (omd->general->data_type == BYTE && value > 255.0) {
+                  value = 255.0;
+                  out_of_range_positive++;
+                }
               }
 
               if (meta_is_valid_double(imd->general->no_data) &&
@@ -1965,6 +1986,21 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       float_image_band_store(fi, output_image->str, omd, kk>0);
     }
     banded_float_image_free(output_bfi);
+  }
+
+  if (resample_method == BICUBIC &&
+      omd->general->data_type == BYTE &&
+      (out_of_range_negative || out_of_range_positive))
+  {
+    float num_pixels = (float)(omd->general->line_count * omd->general->sample_count);
+    float pct_too_negative = 100.0 * ((float)out_of_range_negative / num_pixels);
+    float pct_too_positive = 100.0 * ((float)out_of_range_positive / num_pixels);
+    asfPrintWarning(
+        "Out of range values resulted from the BICUBIC resampling process on BYTE data:\n"
+        "  Too negative: %ld pixels (%0.1f%% of the image)\n"
+        "  Too positive: %ld pixels (%0.1f%% of the image)\n",
+        out_of_range_negative, pct_too_negative,
+        out_of_range_positive, pct_too_positive);
   }
 
   meta_free (omd);
