@@ -1663,11 +1663,10 @@ uint8_image_sample (UInt8Image *self, double x, double y,
     break;
   case UINT8_IMAGE_SAMPLE_METHOD_BICUBIC:
     {
-      // This path is kind of tricky.  It has come from float_image.c
-      // and it should probably be verified to work correctly
-      // independent of the other paths.
+      // Should never be here ...bicubic resampling can result in negative
+      // values and should not be used for resampling unsigned values...
       //g_assert_not_reached ();
-      asfPrintError ("Geocoding with BICUBIC resampling for BYTE data is not supported.\n");
+      asfPrintError ("BICUBIC resampling for BYTE data is not supported.\n");
 
       static gboolean first_time_through = TRUE;
       // Splines in the x direction, and their lookup accelerators.
@@ -1726,9 +1725,8 @@ uint8_image_sample (UInt8Image *self, double x, double y,
 
       double ret_val = gsl_spline_eval (ys, y, yia);
 // NOTE... NOTE... BICUBIC resample returns negative values if the byte values are
-// too close to zero... values come back lower than -11.  This is why we gracefully
-// exit if a user selects BICUBIC for byte data at this time rather than using the following
-// code.
+// too close to zero and the spline fit goes negative in the neighborhood of the pixel
+/*
       if (ret_val > 255.0 || ret_val < 0.0) {
         asfPrintWarning("Bicubic resampling of BYTE data returned out of range value (%f).\n"
           "...Continuing, but negative values will be forced to zero, and values above 255\n"
@@ -1745,6 +1743,7 @@ uint8_image_sample (UInt8Image *self, double x, double y,
         ret_val = ret_val < 0.0 ? 0.0 : ret_val;
         ret_val = ret_val > 255.0 ? 255.0 : ret_val;
       }
+*/
       return ret_val;
     }
     break;
