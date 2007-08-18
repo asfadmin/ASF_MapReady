@@ -600,60 +600,167 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version image_type (%c) invalid.  Expected\n %c, %c, %c, or %c\n",
-              mg2->image_type, 'S', 'G', 'R', 'P');
+              msar2->image_type, 'S', 'G', 'R', 'P');
       failed = 1;
     }
     if (msar2->look_direction != 'L' && msar2->look_direction != 'R') {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version look_direction (%c) invalid.  Expected\n %c or %c\n",
-              mg2->look_direction, 'L', 'R');
+              msar2->look_direction, 'L', 'R');
       failed = 1;
     }
     if (msar2->look_count < DM_MIN_LOOK_COUNT || msar2->look_count > DM_MAX_LOOK_COUNT) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version look_count (%d) invalid.  Expected\n %d to %d\n",
-              mg2->look_count, DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT);
+              msar2->look_count, DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT);
       failed = 1;
     }
     if (msar2->deskewed < DM_MIN_DESKEWED || msar2->deskewed > DM_MAX_DESKEWED) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version deskewed flag (%d) invalid.  Expected\n %d to %d\n",
-              mg2->deskewed, DM_MIN_DESKEWED, DM_MAX_DESKEWED);
+              msar2->deskewed, DM_MIN_DESKEWED, DM_MAX_DESKEWED);
       failed = 1;
     }
     if (msar2->original_line_count < DM_MIN_ORIGINAL_LINE_COUNT ||
         msar2->original_line_count > DM_MAX_ORIGINAL_LINE_COUNT) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version original_line_count (%d) invalid.  Expected\n %d to %d\n",
-              mg2->original_line_count, DM_MIN_ORIGINAL_LINE_COUNT, DM_MAX_ORIGINAL_LINE_COUNT);
+              msar2->original_line_count, DM_MIN_ORIGINAL_LINE_COUNT, DM_MAX_ORIGINAL_LINE_COUNT);
       failed = 1;
     }
     if (msar2->original_sample_count < DM_MIN_ORIGINAL_SAMPLE_COUNT ||
         msar2->original_sample_count > DM_MAX_ORIGINAL_SAMPLE_COUNT) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version original_sample_count (%d) invalid.  Expected\n %d to %d\n",
-              mg2->original_sample_count, DM_MIN_ORIGINAL_SAMPLE_COUNT, DM_MAX_ORIGINAL_SAMPLE_COUNT);
+              msar2->original_sample_count, DM_MIN_ORIGINAL_SAMPLE_COUNT, DM_MAX_ORIGINAL_SAMPLE_COUNT);
       failed = 1;
     }
     if (msar2->line_increment < DM_MIN_LINE_INCREMENT ||
         msar2->line_increment > DM_MAX_LINE_INCREMENT) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version line_increment (%f) invalid.  Expected\n %f to %f\n",
-              mg2->line_increment, DM_MIN_LINE_INCREMENT, DM_MAX_LINE_INCREMENT);
+              msar2->line_increment, DM_MIN_LINE_INCREMENT, DM_MAX_LINE_INCREMENT);
       failed = 1;
     }
     if (msar2->sample_increment < DM_MIN_SAMPLE_INCREMENT ||
         msar2->sample_increment > DM_MAX_SAMPLE_INCREMENT) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version sample_increment (%f) invalid.  Expected\n %f to %f\n",
-              mg2->sample_increment, DM_MIN_SAMPLE_INCREMENT, DM_MAX_SAMPLE_INCREMENT);
+              msar2->sample_increment, DM_MIN_SAMPLE_INCREMENT, DM_MAX_SAMPLE_INCREMENT);
       failed = 1;
     }
     if (msar2->range_time_per_pixel < DM_MIN_RANGE_TIME_PER_PIXEL ||
         msar2->range_time_per_pixel > DM_MAX_RANGE_TIME_PER_PIXEL) {
       sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
               "[SAR]\nNew version range_time_per_pixel (%f) invalid.  Expected\n %f to %f\n",
-              mg2->range_time_per_pixel, DM_MIN_RANGE_TIME_PER_PIXEL, DM_MAX_RANGE_TIME_PER_PIXEL);
+              msar2->range_time_per_pixel, DM_MIN_RANGE_TIME_PER_PIXEL, DM_MAX_RANGE_TIME_PER_PIXEL);
+      failed = 1;
+    }
+    if (msar2->azimuth_time_per_pixel < DM_MIN_AZIMUTH_TIME_PER_PIXEL ||
+        msar2->azimuth_time_per_pixel > DM_MAX_AZIMUTH_TIME_PER_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version azimuth_time_per_pixel (%f) invalid.  Expected\n %f to %f\n",
+              msar2->azimuth_time_per_pixel, DM_MIN_AZIMUTH_TIME_PER_PIXEL, DM_MAX_AZIMUTH_TIME_PER_PIXEL);
+      failed = 1;
+    }
+    if (msar2->slant_shift < DM_MIN_SLANT_SHIFT ||
+        msar2->slant_shift > DM_MAX_SLANT_SHIFT) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version slant_shift (%f) invalid.  Expected\n %f to %f\n",
+              msar2->slant_shift, DM_MIN_SLANT_SHIFT, DM_MAX_SLANT_SHIFT);
+      failed = 1;
+    }
+    if (msar2->time_shift < DM_MIN_TIME_SHIFT ||
+        msar2->time_shift > DM_MAX_TIME_SHIFT) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version time_shift (%f) invalid.  Expected\n %f to %f\n",
+              msar2->time_shift, DM_MIN_TIME_SHIFT, DM_MAX_TIME_SHIFT);
+      failed = 1;
+    }
+    if (msar2->slant_range_first_pixel < DM_MIN_SLANT_RANGE_FIRST_PIXEL ||
+        msar2->slant_range_first_pixel > DM_MAX_SLANT_RANGE_FIRST_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version slant_range_first_pixel (%f) invalid.  Expected\n %f to %f\n",
+              msar2->slant_range_first_pixel, DM_MIN_SLANT_RANGE_FIRST_PIXEL, DM_MAX_SLANT_RANGE_FIRST_PIXEL);
+      failed = 1;
+    }
+    if (msar2->wavelength < DM_MIN_WAVELENGTH ||
+        msar2->wavelength > DM_MAX_WAVELENGTH) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version wavelength (%f) invalid.  Expected\n %f to %f\n",
+              msar2->wavelength, DM_MIN_WAVELENGTH, DM_MAX_WAVELENGTH);
+      failed = 1;
+    }
+    if (msar2->prf < DM_MIN_PRF ||
+        msar2->prf > DM_MAX_PRF) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version prf (%f) invalid.  Expected\n %f to %f\n",
+              msar2->prf, DM_MIN_PRF, DM_MAX_PRF);
+      failed = 1;
+    }
+    if (msar2->earth_radius < DM_MIN_EARTH_RADIUS ||
+        msar2->earth_radius > DM_MAX_EARTH_RADIUS) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version earth_radius (%f) invalid.  Expected\n %f to %f\n",
+              msar2->earth_radius, DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS);
+      failed = 1;
+    }
+    if (msar2->earth_radius_pp < DM_MIN_EARTH_RADIUS ||
+        msar2->earth_radius_pp > DM_MAX_EARTH_RADIUS) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version earth_radius_pp (%f) invalid.  Expected\n %f to %f\n",
+              msar2->earth_radius_pp, DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS);
+      failed = 1;
+    }
+    if (msar2->satellite_height < DM_MIN_SATELLITE_HEIGHT ||
+        msar2->satellite_height > DM_MAX_SATELLITE_HEIGHT) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version satellite_height (%f) invalid.  Expected\n %f to %f\n",
+              msar2->satellite_height, DM_MIN_SATELLITE_HEIGHT, DM_MAX_SATELLITE_HEIGHT);
+      failed = 1;
+    }
+    // Ignore satellite_binary_time
+    // Ignore satellite_clock_time
+    if (msar2->range_doppler_coefficients[0] < DM_MIN_DOP_RANGE_CENTROID ||
+        msar2->range_doppler_coefficients[0] > DM_MAX_DOP_RANGE_CENTROID) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeCen (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[0], DM_MIN_DOP_RANGE_CENTROID, DM_MAX_DOP_RANGE_CENTROID);
+      failed = 1;
+    }
+    if (msar2->range_doppler_coefficients[1] < DM_MIN_DOP_RANGE_PER_PIXEL ||
+        msar2->range_doppler_coefficients[1] > DM_MAX_DOP_RANGE_PER_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeLin (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[1], DM_MIN_DOP_RANGE_PER_PIXEL, DM_MAX_DOP_RANGE_PER_PIXEL);
+      failed = 1;
+    }
+    if (msar2->range_doppler_coefficients[2] < DM_MIN_DOP_RANGE_QUAD ||
+        msar2->range_doppler_coefficients[2] > DM_MAX_DOP_RANGE_QUAD) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeQuad (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[2], DM_MIN_DOP_RANGE_QUAD, DM_MAX_DOP_RANGE_QUAD);
+      failed = 1;
+    }
+    if (msar2->range_doppler_coefficients[0] < DM_MIN_DOP_AZIMUTH_CENTROID ||
+        msar2->range_doppler_coefficients[0] > DM_MAX_DOP_AZIMUTH_CENTROID) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeCen (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[0], DM_MIN_DOP_AZIMUTH_CENTROID, DM_MAX_DOP_AZIMUTH_CENTROID);
+      failed = 1;
+    }
+    if (msar2->range_doppler_coefficients[1] < DM_MIN_DOP_AZIMUTH_PER_PIXEL ||
+        msar2->range_doppler_coefficients[1] > DM_MAX_DOP_AZIMUTH_PER_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeLin (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[1], DM_MIN_DOP_AZIMUTH_PER_PIXEL, DM_MAX_DOP_AZIMUTH_PER_PIXEL);
+      failed = 1;
+    }
+    if (msar2->range_doppler_coefficients[2] < DM_MIN_DOP_AZIMUTH_QUAD ||
+        msar2->range_doppler_coefficients[2] > DM_MAX_DOP_AZIMUTH_QUAD) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version dopRangeQuad (%f) invalid.  Expected\n %f to %f\n",
+              msar2->range_doppler_coefficients[2], DM_MIN_DOP_AZIMUTH_QUAD, DM_MAX_DOP_AZIMUTH_QUAD);
       failed = 1;
     }
     // SAR BLOCK REPORTING
@@ -683,6 +790,273 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   }
   //
   // End of SAR Block Validity Check
+  ////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////
+  // Check Optical Block
+  //
+  if (mo2) {
+    failed = 0;
+    strcpy(precheck_err_msgs, "");
+    // FIXME: Might need to add MAGIC_UNSET_STRING to lists of string comparisons
+    // in the optical block.
+    if (strncmp(uc(mo2->pointing_direction), "FORWARD", 6)   != 0 &&
+        strncmp(uc(mo2->pointing_direction), "BACKWARD", 7)  != 0 &&
+        strncmp(uc(mo2->pointing_direction), "NADIR", 5)     != 0 &&
+        strncmp(uc(mo2->pointing_direction), "OFF-NADIR", 9) != 0)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version pointing_direction (%s) invalid.  Expected one of:\n"
+              "  %s, or\n"
+              "  %s, or\n"
+              "  %s, or\n"
+              "  %s\n",
+              mo2->pointing_direction,
+              "Forward", "Backward", "Nadir", "Off-nadir");
+      failed = 1;
+    }
+    if (mo2->off_nadir_angle < DM_MIN_OFF_NADIR_ANGLE ||
+        mo2->off_nadir_angle > DM_MAX_OFF_NADIR_ANGLE) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version off_nadir_angle (%f) invalid.  Expected\n %f to %f\n",
+              mo2->off_nadir_angle, DM_MIN_OFF_NADIR_ANGLE, DM_MAX_OFF_NADIR_ANGLE);
+      failed = 1;
+    }
+    if (strncmp(uc(mo2->correction_level), "N", 1) != 0 &&
+        strncmp(uc(mo2->correction_level), "R", 1) != 0 &&
+        strncmp(uc(mo2->correction_level), "G", 1) != 0 &&
+        strncmp(uc(mo2->correction_level), "D", 1) != 0)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version correction_level (%s) invalid.  Expected one of:\n"
+                  "  %s, or\n"
+                  "  %s, or\n"
+                  "  %s, or\n"
+                  "  %s\n",
+              mo2->correction_level,
+              "N", "R", "G", "D");
+      failed = 1;
+    }
+    if (mo2->off_nadir_angle < DM_MIN_OFF_NADIR_ANGLE ||
+        mo2->off_nadir_angle > DM_MAX_OFF_NADIR_ANGLE) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version off_nadir_angle (%f) invalid.  Expected\n %f to %f\n",
+              mo2->off_nadir_angle, DM_MIN_OFF_NADIR_ANGLE, DM_MAX_OFF_NADIR_ANGLE);
+      failed = 1;
+    }
+    if (!ISNAN(mo2->cloud_percentage) &&
+        (mo2->cloud_percentage < DM_MIN_CLOUD_PERCENTAGE ||
+         mo2->cloud_percentage > DM_MAX_CLOUD_PERCENTAGE))
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version cloud_percentage (%f) invalid.  Expected\n %f to %f or NaN\n",
+              mo2->cloud_percentage, DM_MIN_CLOUD_PERCENTAGE, DM_MAX_CLOUD_PERCENTAGE);
+      failed = 1;
+    }
+    if (!ISNAN(mo2->sun_azimuth_angle) &&
+         (mo2->sun_azimuth_angle < DM_MIN_SUN_AZIMUTH_ANGLE ||
+         mo2->sun_azimuth_angle > DM_MAX_SUN_AZIMUTH_ANGLE))
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version sun_azimuth_angle (%f) invalid.  Expected\n %f to %f or NaN\n",
+              mo2->sun_azimuth_angle, DM_MIN_SUN_AZIMUTH_ANGLE, DM_MAX_SUN_AZIMUTH_ANGLE);
+      failed = 1;
+    }
+    if (!ISNAN(mo2->sun_elevation_angle) &&
+         (mo2->sun_elevation_angle < DM_MIN_SUN_ELEVATION_ANGLE ||
+         mo2->sun_elevation_angle > DM_MAX_SUN_ELEVATION_ANGLE))
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Optical]\nNew version sun_elevation_angle (%f) invalid.  Expected\n %f to %f or NaN\n",
+              mo2->sun_elevation_angle, DM_MIN_SUN_ELEVATION_ANGLE, DM_MAX_SUN_ELEVATION_ANGLE);
+      failed = 1;
+    }
+    // OPTICAL BLOCK REPORTING
+    // If any failures occurred, produce a report in the output file
+    if (failed) {
+      char msg[1024];
+      FILE *outFP = (FILE*)FOPEN(outputFile, "wa");
+      // Strict comparison utilizes all values
+      fprintf(outFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Comparing\n  %s\nto\n  %s\n\n",
+              metafile1, metafile2);
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+      sprintf(msg, "  Optical Block Errors:\n\n");
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outFP, precheck_err_msgs);
+      asfPrintStatus(precheck_err_msgs);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+      FCLOSE(outFP);
+    }
+  }
+  //
+  // End of Optical Block Validity Check
+  ////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////
+  // Check Thermal Block
+  //
+  /* THERMAL BLOCK IS IGNORED - UNUSED
+  if (mtherm2) {
+    failed = 0;
+    strcpy(precheck_err_msgs, "");
+    if (mtherm2->band_gain < DM_MIN_BAND_GAIN ||
+        mtherm2->band_gain > DM_MAX_BAND_GAIN)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Thermal]\nNew version band_gain (%f) invalid.  Expected %f to %f\n",
+              mtherm2->band_gain,
+              DM_MIN_BAND_GAIN, DM_MAX_BAND_GAIN);
+      failed = 1;
+    }
+    if (mtherm2->band_gain_change < DM_MIN_BAND_GAIN ||
+        mtherm2->band_gain_change > DM_MAX_BAND_GAIN)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Thermal]\nNew version band_gain_change (%f) invalid.  Expected %f to %f\n",
+              mtherm2->band_gain_change,
+              DM_MIN_BAND_GAIN, DM_MAX_BAND_GAIN);
+      failed = 1;
+    }
+    if (mtherm2->day != DM_DAY && mtherm2->day > DM_NIGHT)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Thermal]\nNew version day (%s) invalid.  Expected %s or %s\n",
+              (mtherm2->day == DM_DAY) ? "Day (1)" :
+                  (mtherm2->day == DM_NIGHT) ? "Night (0)" : "Unknown",
+              DM_DAY, DM_NIGHT);
+      failed = 1;
+    }
+    // THERMAL BLOCK REPORTING
+    // If any failures occurred, produce a report in the output file
+    if (failed) {
+      char msg[1024];
+      FILE *outFP = (FILE*)FOPEN(outputFile, "wa");
+      // Strict comparison utilizes all values
+      fprintf(outFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Comparing\n  %s\nto\n  %s\n\n",
+              metafile1, metafile2);
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+      sprintf(msg, "  Thermal Block Errors:\n\n");
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outFP, precheck_err_msgs);
+      asfPrintStatus(precheck_err_msgs);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+      FCLOSE(outFP);
+    }
+  }
+  //
+  // End of Thermal Block Validity Check
+  ////////////////////////////////////////////////////////////
+  */
+
+  ////////////////////////////////////////////////////////////
+  // Check Projection Block
+  //
+  if (mp2) {
+    failed = 0;
+    strcpy(precheck_err_msgs, "");
+    if (mp2->type != UNIVERSAL_TRANSVERSE_MERCATOR  &&
+        mp2->type != POLAR_STEREOGRAPHIC            &&
+        mp2->type != ALBERS_EQUAL_AREA              &&
+        mp2->type != LAMBERT_CONFORMAL_CONIC        &&
+        mp2->type != LAMBERT_AZIMUTHAL_EQUAL_AREA   &&
+        mp2->type != STATE_PLANE                    &&
+        mp2->type != SCANSAR_PROJECTION             &&
+        mp2->type != LAT_LONG_PSEUDO_PROJECTION     &&
+        mp2->type != UNKNOWN_PROJECTION)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Projection]\nNew version projection type (%s) invalid.  Expected one of:\n"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n, or"
+              "  %s\n",
+              (mp2->type == UNIVERSAL_TRANSVERSE_MERCATOR) ? "UNIVERSAL_TRANSVERSE_MERCATOR"  :
+              (mp2->type == POLAR_STEREOGRAPHIC)           ? "POLAR_STEREOGRAPHIC"            :
+              (mp2->type == ALBERS_EQUAL_AREA)             ? "ALBERS_EQUAL_AREA"              :
+              (mp2->type == LAMBERT_CONFORMAL_CONIC)       ? "LAMBERT_CONFORMAL_CONIC"        :
+              (mp2->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)  ? "LAMBERT_AZIMUTHAL_EQUAL_AREA"   :
+              (mp2->type == STATE_PLANE)                   ? "STATE_PLANE"                    :
+              (mp2->type == SCANSAR_PROJECTION)            ? "SCANSAR_PROJECTION"             :
+              (mp2->type == LAT_LONG_PSEUDO_PROJECTION)    ? "LAT_LONG_PSEUDO_PROJECTION"     :
+              (mp2->type == UNKNOWN_PROJECTION)            ? "UNKNOWN_PROJECTION"             :
+              "Unknown type found",
+              "UNIVERSAL_TRANSVERSE_MERCATOR",
+              "POLAR_STEREOGRAPHIC",
+              "ALBERS_EQUAL_AREA",
+              "LAMBERT_CONFORMAL_CONIC",
+              "LAMBERT_AZIMUTHAL_EQUAL_AREA",
+              "STATE_PLANE",
+              "SCANSAR_PROJECTION",
+              "LAT_LONG_PSEUDO_PROJECTION",
+              "UNKNOWN_PROJECTION");
+      failed = 1;
+    }
+    if (mp2->startX < DM_MIN_STARTX ||
+        mp2->startX > DM_MAX_STARTX)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Projection]\nNew version startX (%f) invalid.  Expected %f to %f\n",
+              mp2->startX,
+              DM_MIN_STARTX, DM_MAX_STARTX);
+      failed = 1;
+    }
+    if (mp2->startY < DM_MIN_STARTY ||
+        mp2->startY > DM_MAX_STARTY)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Projection]\nNew version startY (%f) invalid.  Expected %f to %f\n",
+              mp2->startY,
+              DM_MIN_STARTY, DM_MAX_STARTY);
+      failed = 1;
+    }
+    // PROJECTION BLOCK REPORTING
+    // If any failures occurred, produce a report in the output file
+    if (failed) {
+      char msg[1024];
+      FILE *outFP = (FILE*)FOPEN(outputFile, "wa");
+      // Strict comparison utilizes all values
+      fprintf(outFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Comparing\n  %s\nto\n  %s\n\n",
+              metafile1, metafile2);
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+      sprintf(msg, "  Projection Block Errors:\n\n");
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outFP, precheck_err_msgs);
+      asfPrintStatus(precheck_err_msgs);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+      FCLOSE(outFP);
+    }
+  }
+  //
+  // End of Projection Block Validity Check
   ////////////////////////////////////////////////////////////
 }
 
