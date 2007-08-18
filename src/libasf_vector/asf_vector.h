@@ -20,8 +20,33 @@ typedef enum {
   POINT,
   POLYGON,
   RGPS,
+  RGPS_WEATHER,
   URSA
 } format_type_t;
+
+typedef struct {
+  long cell_id;
+  int nVertices;
+  char date[20];
+  char sourceImage[20];
+  char targetImage[20];
+  char stream[3];
+  double area;
+  double multi_year_ice;
+  double open_water;
+  double incidence_angle;
+  double cell_x;
+  double cell_y;
+  double dudx;
+  double dudy;
+  double dvdx;
+  double dvdy;
+  double dtp;
+  double temperature;
+  double u_wind;
+  double v_wind;
+  int alive;
+} cell_t;
 
 // Prototypes from convert_kml.c
 void meta2kml(char *line, FILE *fp);
@@ -48,7 +73,9 @@ void write_kml_style_keys(FILE *kml_file);
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
-void rgps2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
+void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
+                DBFHandle dbase, SHPHandle shape, int n);
+void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void shape2text(char *inFile, FILE *fp);
 
 // Prototypes from shape.c

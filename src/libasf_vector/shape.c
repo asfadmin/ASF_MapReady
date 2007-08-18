@@ -78,7 +78,7 @@ void shape_init(char *inFile, format_type_t format)
     case RGPS:
       if (DBFAddField(dbase, "Cell", FTInteger, 6, 0) == -1)
 	asfPrintError("Could not add 'Cell' field to database file\n");
-      if (DBFAddField(dbase, "Vertices", FTInteger, 1, 0) == -1)
+      if (DBFAddField(dbase, "Vertices", FTInteger, 2, 0) == -1)
 	asfPrintError("Could not add 'Vertices' field to database file\n");
       if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
 	asfPrintError("Could not add 'Date' field to database file\n");
@@ -86,8 +86,6 @@ void shape_init(char *inFile, format_type_t format)
 	asfPrintError("Could not add 'Image' field to database file\n");
       if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
 	asfPrintError("Could not add 'Stream' field to database file\n");
-      if (DBFAddField(dbase, "Cycle", FTString, 10, 0) == -1)
-	asfPrintError("Could not add 'Cycle' field to database file\n");
       if (DBFAddField(dbase, "Area", FTDouble, 12, 3) == -1)
 	asfPrintError("Could not add 'Area' field to database file\n");
       if (DBFAddField(dbase, "MY_ice", FTDouble, 12, 3) == -1)
@@ -112,6 +110,26 @@ void shape_init(char *inFile, format_type_t format)
 	asfPrintError("Could not add 'dtp' field to database file\n");
       if (DBFAddField(dbase, "Temp", FTDouble, 12, 3) == -1)
 	asfPrintError("Could not add 'Temp' field to database file\n");
+      if (DBFAddField(dbase, "u_wind", FTDouble, 12, 6) == -1)
+        asfPrintError("Could not add 'u_wind' field to database file\n");
+      if (DBFAddField(dbase, "v_wind", FTDouble, 12, 6) == -1)
+        asfPrintError("Could not add 'v_wind' field to database file\n");
+      break;
+    case RGPS_WEATHER:
+      if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
+	asfPrintError("Could not add 'Date' field to database file\n");
+      if (DBFAddField(dbase, "Lat", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add 'Lat' field to database file\n");
+      if (DBFAddField(dbase, "Lon", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add 'Lon' field to database file\n");
+      if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add 'Direction' field to database file\n");
+      if (DBFAddField(dbase, "Speed", FTDouble, 5, 1) == -1)
+	asfPrintError("Could not add 'Speed' field to database file\n");
+      if (DBFAddField(dbase, "Temp", FTDouble, 5, 1) == -1)
+	asfPrintError("Could not add 'Temp' field to database file\n");
+      if (DBFAddField(dbase, "Pressure", FTDouble, 6, 1) == -1)
+	asfPrintError("Could not add 'Pressure' field to database file\n");
       break;
     case TEXT:
     case URSA:
@@ -124,7 +142,7 @@ void shape_init(char *inFile, format_type_t format)
   DBFClose(dbase);
 
   // Open shapefile for initialization
-  if (format == POINT)
+  if (format == POINT || format == RGPS_WEATHER)
     shape = SHPCreate(inFile, SHPT_POINT);
   else
     shape = SHPCreate(inFile, SHPT_POLYGON);
@@ -186,8 +204,7 @@ void convert2shape(char *line, format_type_t format,
       polygon2shape(line, dbase, shape, n);
       break;
     case RGPS:
-      rgps2shape(line, dbase, shape, n);
-      break;
+    case RGPS_WEATHER:
     case TEXT:
     case URSA:
     case KMLFILE:

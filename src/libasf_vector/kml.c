@@ -310,7 +310,6 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   julian_date jdate;
   ymd_date ymd;
   meta_parameters *meta;
-  FloatImage *image;
   char input_image[512], output_image[512];
   int nl, ns;
   double lat_UL, lon_UL;
@@ -476,6 +475,7 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
     case RGPS:
       rgps2kml(line, fp, name);
       break;
+    case RGPS_WEATHER:
     case TEXT:
     case URSA:
     case KMLFILE:

@@ -137,108 +137,74 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 }
 
 // Convert RGPS cell to shape
-void rgps2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
+void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
+		DBFHandle dbase, SHPHandle shape, int n)
 {
-  int ii, cell, vertices;
-  char date[25], image[25], stream[3], cycle[10];
-  double area, multiyear_ice, open_water, incidence_angle, cell_x, cell_y;
-  double dudx, dudy, dvdx, dvdy, dtp, temperature;
-  double *lat, *lon;
-  char *p, *p_lat, *p_lon;
-
-  // Read RGPS cell
-  sscanf(line, "%d", &cell);
-  p = strchr(line, ',');
-  sscanf(p+1, "%d", &vertices);
-  line = strchr(p+1, ',');
-  p = strchr(line+1, ',');
-  *p = '\0';
-  sprintf(date, "%s", line+1);
-  *p = ',';
-  line = strchr(p+1, ',');
-  *line = '\0';
-  sprintf(image, "%s", p+1);
-  *line = ',';
-  p = strchr(line+1, ',');
-  *p = '\0';
-  sprintf(stream, "%s", line+1);
-  *p = ',';
-  line = strchr(p+1, ',');
-  *line = '\0';
-  sprintf(cycle, "%s", p+1);
-  *line = ',';
-  sscanf(line+1, "%lf", &area);
-  p = strchr(line+1, ',');
-  sscanf(p+1, "%lf", &multiyear_ice);
-  line = strchr(p+1, ',');
-  sscanf(line+1, "%lf", &open_water);
-  p = strchr(line+1, ',');
-  sscanf(p+1, "%lf", &incidence_angle);
-  line = strchr(p+1, ',');
-  sscanf(line+1, "%lf", &cell_x);
-  p = strchr(line+1, ',');
-  sscanf(p+1, "%lf", &cell_y);
-  line = strchr(p+1, ',');
-  sscanf(line+1, "%lf", &dudx);
-  p = strchr(line+1, ',');
-  sscanf(p+1, "%lf", &dudy);
-  line = strchr(p+1, ',');
-  sscanf(line+1, "%lf", &dvdx);
-  p = strchr(line+1, ',');
-  sscanf(p+1, "%lf", &dvdy);
-  line = strchr(p+1, ',');
-  sscanf(line+1, "%lf", &dtp);
-  p = strchr(line+1, ',');
-  sscanf(line+1, "%lf", &temperature);
-  line = strchr(p+1, ',');
-
-  // Read coordinates of the vertices
-  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
-  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
-  p_lat = line;
-  for (ii=0; ii<vertices; ii++) {
-    sscanf(p_lat+1, "%lf", &lat[ii]);
-    p_lon = strchr(p_lat+1, ',');
-    sscanf(p_lon+1, "%lf", &lon[ii]);
-    p_lat = strchr(p_lon+1, ',');
-  } 
-  lat[vertices] = lat[0];
-  lon[vertices] = lon[0];
-
+  
   // Write information into database file
-  //  if (!DBFWriteIntegerAttribute(dbase, n, 0, cell))
-  //   asfPrintError("Could not write cell id '%d' into database\n", cell);
-  DBFWriteIntegerAttribute(dbase, n, 0, cell);
-  DBFWriteIntegerAttribute(dbase, n, 1, vertices);
-  DBFWriteStringAttribute(dbase, n, 2, date);
-  DBFWriteStringAttribute(dbase, n, 3, image);
-  DBFWriteStringAttribute(dbase, n, 4, stream);
-  DBFWriteStringAttribute(dbase, n, 5, cycle);
-  DBFWriteDoubleAttribute(dbase, n, 6, area);
-  DBFWriteDoubleAttribute(dbase, n, 7, multiyear_ice);
-  DBFWriteDoubleAttribute(dbase, n, 8, open_water);
-  DBFWriteDoubleAttribute(dbase, n, 9, incidence_angle);
-  DBFWriteDoubleAttribute(dbase, n, 10, cell_x);
-  DBFWriteDoubleAttribute(dbase, n, 11, cell_y);
-  DBFWriteDoubleAttribute(dbase, n, 12, dudx);
-  DBFWriteDoubleAttribute(dbase, n, 13, dudy);
-  DBFWriteDoubleAttribute(dbase, n, 14, dvdx);
-  DBFWriteDoubleAttribute(dbase, n, 15, dvdy);
-  DBFWriteDoubleAttribute(dbase, n, 16, dtp);
-  DBFWriteDoubleAttribute(dbase, n, 17, temperature);
+  DBFWriteIntegerAttribute(dbase, n, 0, cell.cell_id);
+  DBFWriteIntegerAttribute(dbase, n, 1, cell.nVertices);
+  DBFWriteStringAttribute(dbase, n, 2, cell.date);
+  DBFWriteStringAttribute(dbase, n, 3, cell.sourceImage);
+  DBFWriteStringAttribute(dbase, n, 4, cell.targetImage);
+  DBFWriteStringAttribute(dbase, n, 5, cell.stream);
+  DBFWriteDoubleAttribute(dbase, n, 6, cell.area);
+  DBFWriteDoubleAttribute(dbase, n, 7, cell.multi_year_ice);
+  DBFWriteDoubleAttribute(dbase, n, 8, cell.open_water);
+  DBFWriteDoubleAttribute(dbase, n, 9, cell.incidence_angle);
+  DBFWriteDoubleAttribute(dbase, n, 10, cell.cell_x);
+  DBFWriteDoubleAttribute(dbase, n, 11, cell.cell_y);
+  DBFWriteDoubleAttribute(dbase, n, 12, cell.dudx);
+  DBFWriteDoubleAttribute(dbase, n, 13, cell.dudy);
+  DBFWriteDoubleAttribute(dbase, n, 14, cell.dvdx);
+  DBFWriteDoubleAttribute(dbase, n, 15, cell.dvdy);
+  DBFWriteDoubleAttribute(dbase, n, 16, cell.dtp);
+  DBFWriteDoubleAttribute(dbase, n, 17, cell.temperature);
+  DBFWriteDoubleAttribute(dbase, n, 18, cell.u_wind);
+  DBFWriteDoubleAttribute(dbase, n, 19, cell.v_wind);
   
   // Write shape object
   SHPObject *shapeObject=NULL;
-  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, vertices+1, 
+  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, vertices+1,
 				      lon, lat, NULL);
   if (shapeObject == NULL)
     asfPrintError("Could not create shape object (%d)\n", n);
   SHPWriteObject(shape, -1, shapeObject);
   SHPDestroyObject(shapeObject);
 
-  FREE(lat);
-  FREE(lon);
-  
+  return;
+}
+
+// Convert RGPS weather data to shape
+void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
+{
+  double lat, lon, direction, speed, temperature, pressure;
+  char date[15], *p;
+
+  // Read weather information;
+  p = strchr(line, ',');
+  if (p) {
+    sscanf(p+1, "%lf,%lf,%lf,%lf,%lf,%lf", 
+	   &lat, &lon, &direction, &speed, &temperature, &pressure);
+    *p = 0;
+    sprintf(date, "%s", line);
+  }
+
+  // Write information into database file
+  DBFWriteStringAttribute(dbase, n, 0, date);
+  DBFWriteDoubleAttribute(dbase, n, 1, lat);
+  DBFWriteDoubleAttribute(dbase, n, 2, lon);
+  DBFWriteDoubleAttribute(dbase, n, 3, direction);
+  DBFWriteDoubleAttribute(dbase, n, 4, speed);
+  DBFWriteDoubleAttribute(dbase, n, 5, temperature);
+  DBFWriteDoubleAttribute(dbase, n, 6, pressure);
+
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+
   return;
 }
 
