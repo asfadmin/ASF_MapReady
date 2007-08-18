@@ -23,6 +23,7 @@ OBJLIB = 	\
 	read_srf.o \
 	determine_baseline.o \
 	generate_products.o \
+	baseline2html.o \
 	baseline_catalog.o
 
 all: lib exe clean

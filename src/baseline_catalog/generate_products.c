@@ -5,7 +5,16 @@ void init_baseline_shape(char *inFile);
 void open_baseline_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_baseline_shape(DBFHandle dbase, SHPHandle shape);
 
-void generate_products(struct base_pair *pairs, int nPairs)
+void pack_single_shape_file(char *name)
+{
+  char cmd[255];
+  
+  sprintf(cmd, "tar czf %s.tgz %s.shp %s.shx %s.dbf %s.prj", 
+	  name, name, name, name, name);
+  asfSystem(cmd);
+}
+
+void generate_products(char *output_dir, struct base_pair *pairs, int nPairs)
 {
   DBFHandle dbase=NULL;
   SHPHandle shape=NULL;
@@ -13,23 +22,36 @@ void generate_products(struct base_pair *pairs, int nPairs)
   char dbFile[255], textFile[255], kmlFile[255], shapeFile[255]; 
   int i, old_orbit=-99;
 
+  if (opendir(output_dir) == NULL)
+    mkdir(output_dir, 0755);
+  chdir(output_dir);
+
   for (i=0; i<nPairs; i++) {    
     if (pairs[i].master != old_orbit) {
       // Closing open files if necessary
-      if (fpDB)
+      if (fpDB) {
 	FCLOSE(fpDB);
-      if (fpText)
+	fpDB = NULL;
+      }
+      if (fpText) {
 	FCLOSE(fpText);
+	fpText = NULL;
+      }
       if (fpKml) {
 	kml_footer(fpKml);
 	FCLOSE(fpKml);
+	fpKml = NULL;
       }
-      if (dbase && shape)
+      if (dbase && shape) {
 	close_baseline_shape(dbase, shape);
+	dbase = NULL;
+	shape = NULL;
+	pack_single_shape_file(shapeFile);
+      }
 
       // Open database file and write header
-      sprintf(dbFile, "%s_%s_%d_%d.db", pairs[i].sensor, pairs[i].mode, 
-	      pairs[i].track, pairs[i].master);
+      sprintf(dbFile, "%s_%s_%d_%d.db", 
+	      pairs[i].sensor, pairs[i].mode, pairs[i].track, pairs[i].master);
       fpDB = FOPEN(dbFile, "wt");
       fprintf(fpDB, "Sensor\t");
       fprintf(fpDB, "Beam_mode\t");
@@ -72,7 +94,7 @@ void generate_products(struct base_pair *pairs, int nPairs)
       fprintf(fpText, "FE_lon\n");
 
       // Write baseline KML file
-      sprintf(kmlFile, "%s_%s_%d.kml", 
+      sprintf(kmlFile, "%s_%s_%d.kml",
 	      pairs[i].sensor, pairs[i].mode, pairs[i].master);
       fpKml = FOPEN(kmlFile, "wt");
       kml_header(fpKml);
@@ -82,6 +104,7 @@ void generate_products(struct base_pair *pairs, int nPairs)
 	      pairs[i].sensor, pairs[i].mode, pairs[i].master);
       init_baseline_shape(shapeFile);
       open_baseline_shape(shapeFile, &dbase, &shape);
+      write_esri_proj_file(shapeFile);
     }
 
     // Write into database file
@@ -128,10 +151,25 @@ void generate_products(struct base_pair *pairs, int nPairs)
     // Write into baseline shape file
     baseline2shape(i, pairs, dbase, shape);
 
+    old_orbit = pairs[i].master;
   }
-  FCLOSE(fpDB);
-  FCLOSE(fpText);
-  kml_footer(fpKml);
-  FCLOSE(fpKml);
-  close_baseline_shape(dbase, shape);
+  if (fpDB) {
+    FCLOSE(fpDB);
+    fpDB = NULL;
+  }
+  if (fpText) {
+    FCLOSE(fpText);
+    fpText = NULL;
+  }
+  if (fpKml) {
+    kml_footer(fpKml);
+    FCLOSE(fpKml);
+    fpKml = NULL;
+  }
+  if (dbase && shape) {
+    close_baseline_shape(dbase, shape);
+    dbase = NULL;
+    shape = NULL;
+    pack_single_shape_file(shapeFile);
+  }
 }

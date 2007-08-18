@@ -1,6 +1,7 @@
 #ifndef _ASF_BASELINE_H_
 #define _ASF_BASELINE_H_
 
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -16,8 +17,10 @@
 #include "dateUtil.h"
 #include "asf_vector.h"
 #include "shapefil.h"
+#include "gsl/gsl_sort.h"
 
-#define SIZE 10000
+#define SIZE 500000
+#define MAX_ORBITS 100 // in a month
 
 struct srf_orbit {
   char sensor[10];  
@@ -77,16 +80,17 @@ struct base_pair {
 void baseline2kml(int ii, struct base_pair *pairs, FILE *fp);
 void baseline2shape(int ii, struct base_pair *pairs, 
 		    DBFHandle dbase, SHPHandle shape);
-void baseline_catalog(char *beam_mode);
-void read_srf(char *mode, int track, struct srf_orbit *srf_orbit, int *nOrbits);
-/*
-void find_pairs(int track, char *list, char *pairs_list, int *nPairs);
-void read_srf(char *list, int nFiles, char *pairs_list, int nPairs, 
-	      char *sensor, char *beam_mode, 
-	      struct base_info **srf, struct base_pair **base_pairs);
-*/
-void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrbits,
-			struct base_pair *pairs, int *nPairs);
-void generate_products(struct base_pair *pairs, int nPairs);
+void baseline_catalog(char *sensor, char *beam_mode, int orbit,
+		      char *input, char *output_dir);
+void read_srf(char *input_dir, char *mode, int track, 
+	      struct srf_orbit **srf_orbits, int *nOrbits);
+void determine_baseline(char *sensor, char *mode, int track, int orbit,
+			struct srf_orbit *srf, int nOrbits, 
+			struct base_pair **pairs, int *nPairs);
+void generate_products(char *output_dir, struct base_pair *pairs, int nPairs);
+
+void month2html(char *output_dir, char *sensor, char *mode, int *orbits);
+void mode2html(char *output_dir, char *sensor, char *mode, int *months);
+void update_index(char *output_dir);
 
 #endif

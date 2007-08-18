@@ -1,8 +1,10 @@
 #include "asf_baseline.h"
 
-void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrbits,
-			struct base_pair *pairs, int *nPairs)
+void determine_baseline(char *sensor, char *mode, int track, int orbit,
+			struct srf_orbit *srf, int nOrbits, 
+			struct base_pair **base_pairs, int *nPairs)
 {
+  struct base_pair *pairs;
   GEOLOCATE_REC *g;
   stateVector stVec1, stVec2;
   julian_date jd1, jd2;
@@ -17,8 +19,10 @@ void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrb
   for (i=0; i<nOrbits; i++) { // Master image
     for (j=0; j<nOrbits; j++) { // Slave image
       
-      if(srf[i].orbit != srf[j].orbit && srf[i].frame == srf[j].frame) {
+      if(srf[i].orbit != srf[j].orbit && srf[i].frame == srf[j].frame &&
+	 (srf[i].orbit >= orbit || srf[j].orbit >= orbit)) {
 	sprintf(pairs[k].sensor, "%s", sensor);
+	sprintf(pairs[k].mode, "%s", mode);
 	pairs[k].track = track;
 	pairs[k].frame = srf[i].frame;
 	if (srf[i].orbit_dir == 'A')
@@ -98,9 +102,9 @@ void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrb
 	vecCross(alongBeam, beamNormal, &upBeam);
 	vecNormalize(&upBeam);
 	
-	// Now we have the second satellite sitting in the plane of the first beam,
-	// so we just separate that position into components along-beam and 
-	// across-beam, and return.
+	// Now we have the second satellite sitting in the plane of the first 
+	// beam, so we just separate that position into components along-beam 
+	// and across-beam, and return.
 	vecSub(stVec2.pos, stVec1.pos, &relPos);
 	Bp = vecDot(alongBeam, relPos);
 	Bn = vecDot(upBeam, relPos);
@@ -133,5 +137,6 @@ void determine_baseline(char *sensor, int track, struct srf_orbit *srf, int nOrb
       }
     }
   }
+  *base_pairs = pairs;
   *nPairs = k;
 }
