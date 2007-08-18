@@ -547,13 +547,13 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
             mg2->re_minor, DM_MIN_MINOR_AXIS, DM_MAX_MINOR_AXIS);
     failed = 1;
   }
-  if (mg2->bit_error_rate < DM_MAX_BIT_ERROR_RATE || mg2->bit_error_rate > DM_MAX_BIT_ERROR_RATE) {
+  if (mg2->bit_error_rate < DM_MIN_BIT_ERROR_RATE || mg2->bit_error_rate > DM_MAX_BIT_ERROR_RATE) {
     sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
             "[General]\nNew version bit_error_rate (%d) out of range.  Expected\n %d through %d\n",
             mg2->bit_error_rate, DM_MIN_BIT_ERROR_RATE, DM_MAX_BIT_ERROR_RATE);
     failed = 1;
   }
-  if (mg2->missing_lines < DM_MAX_MISSING_LINES || mg2->missing_lines > DM_MAX_MISSING_LINES) {
+  if (mg2->missing_lines < DM_MIN_MISSING_LINES || mg2->missing_lines > DM_MAX_MISSING_LINES) {
     sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
             "[General]\nNew version missing_lines (%d) out of range.  Expected\n %d through %d\n",
             mg2->missing_lines, DM_MIN_MISSING_LINES, DM_MAX_MISSING_LINES);
@@ -648,7 +648,14 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
               "[SAR]\nNew version sample_increment (%f) invalid.  Expected\n %f to %f\n",
               mg2->sample_increment, DM_MIN_SAMPLE_INCREMENT, DM_MAX_SAMPLE_INCREMENT);
       failed = 1;
-    }YO BRIAN
+    }
+    if (msar2->range_time_per_pixel < DM_MIN_RANGE_TIME_PER_PIXEL ||
+        msar2->range_time_per_pixel > DM_MAX_RANGE_TIME_PER_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[SAR]\nNew version range_time_per_pixel (%f) invalid.  Expected\n %f to %f\n",
+              mg2->range_time_per_pixel, DM_MIN_RANGE_TIME_PER_PIXEL, DM_MAX_RANGE_TIME_PER_PIXEL);
+      failed = 1;
+    }
     // SAR BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
     if (failed) {
