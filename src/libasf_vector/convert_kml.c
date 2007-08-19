@@ -111,81 +111,62 @@ void polygon2kml(char *line, FILE *fp, char *name)
   return;
 }
 
-// Convert RGPS to kml
-void rgps2kml(char *line, FILE *fp, char *name)
+// Convert RGPS cell information to kml
+void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
 {
-  int ii, cell, vertices, quality;
-  char date[25], image[25], stream[3], cycle[10];
-  double *lat, *lon;
-  char *p, *p_lat, *p_lon;
-
-  // Read RGPS cell
-  sscanf(line, "%d", &cell);
-  p = strchr(line, ',');
-  sscanf(p+1, "%d", &vertices);
-  line = strchr(p+1, ',');
-  p = strchr(line+1, ',');
-  *p = '\0';
-  sprintf(date, "%s", line+1);
-  *p = ',';
-  line = strchr(p+1, ',');
-  *line = '\0';
-  sprintf(image, "%s", p+1);
-  *line = ',';
-  p = strchr(line+1, ',');
-  *p = '\0';
-  sprintf(stream, "%s", line+1);
-  *p = ',';
-  line = strchr(p+1, ',');
-  *line = '\0';
-  sprintf(cycle, "%s", p+1);
-  *line = ',';
-  sscanf(line+1, "%d", &quality);
-  p = strchr(line+1, ',');
-  
-  // Read coordinates of the vertices
-  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
-  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
-  p_lat = p;
-  for (ii=0; ii<vertices; ii++) {
-    sscanf(p_lat+1, "%lf", &lat[ii]);
-    p_lon = strchr(p_lat+1, ',');
-    sscanf(p_lon+1, "%lf", &lon[ii]);
-    p_lat = strchr(p_lon+1, ',');
-  }
-  lat[vertices] = lat[0];
-  lon[vertices] = lon[0];
+  int ii;
 
   // Write information in kml file
   fprintf(fp, "<Placemark>\n");
   fprintf(fp, "  <description><![CDATA[\n");
-  fprintf(fp, "<strong>Cell</strong>: %d<br>\n", cell);
-  fprintf(fp, "<strong>Vertices</strong>: %d<br>\n", vertices);
-  for (ii=0; ii<vertices; ii++) {
+  fprintf(fp, "<strong>Cell</strong>: %ld<br>\n", cell.cell_id);
+  fprintf(fp, "<strong>Vertices</strong>: %d<br>\n", cell.nVertices);
+  for (ii=0; ii<cell.nVertices; ii++) {
     fprintf(fp, "<strong>%d</strong> - ", ii+1);
     fprintf(fp, "<strong>Lat</strong>: %9.4f, ", lat[ii]);
     fprintf(fp, "<strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
   }
-  fprintf(fp, "<strong>Date</strong>: %s<br>\n", date);
-  fprintf(fp, "<strong>Image</strong>: %s<br>\n", image);
-  fprintf(fp, "<strong>Stream</strong>: %s<br>\n", stream);
-  fprintf(fp, "<strong>Cycle</strong>: %s<br>\n", cycle);
-  fprintf(fp, "<strong>Quality</strong>: %d<br>\n", quality);
+  fprintf(fp, "<strong>Date</strong>: %s<br>\n", cell.date);
+  fprintf(fp, "<strong>Source image</strong>: %s<br>\n", cell.sourceImage);
+  fprintf(fp, "<strong>Target image</strong>: %s<br>\n", cell.targetImage);
+  fprintf(fp, "<strong>Stream</strong>: %s<br>\n", cell.stream);
+  fprintf(fp, "<strong>Area</strong>: %.1lf<br>\n", cell.area);
+  fprintf(fp, "<strong>Multi-year ice</strong>: %.3lf<br>\n", 
+	  cell.multi_year_ice);
+  fprintf(fp, "<strong>Open water</strong>: %.3lf<br>\n", cell.open_water);
+  fprintf(fp, "<strong>Incidence angle</strong>: %.4lf<br>\n", 
+	  cell.incidence_angle);
+  fprintf(fp, "<strong>Cell x</strong>: %.3lf<br>\n", cell.cell_x);
+  fprintf(fp, "<strong>Cell y</strong>: %.3lf<br>\n", cell.cell_y);
+  fprintf(fp, "<strong>dudx</strong>: %.4lf<br>\n", cell.dudx);
+  fprintf(fp, "<strong>dudy</strong>: %.4lf<br>\n", cell.dudy);
+  fprintf(fp, "<strong>dvdx</strong>: %.4lf<br>\n", cell.dvdx);
+  fprintf(fp, "<strong>dvdy</strong>: %.4lf<br>\n", cell.dvdy);
+  fprintf(fp, "<strong>dtp</strong>: %.4lf<br>\n", cell.dtp);
+  fprintf(fp, "<strong>temperature</strong>: %.1lf<br>\n", cell.temperature);
+  fprintf(fp, "<strong>u wind</strong>: %.3lf<br>\n", cell.u_wind);
+  fprintf(fp, "<strong>v wind</strong>: %.3lf<br>\n", cell.v_wind);
   fprintf(fp, "]]></description>\n");
-  fprintf(fp, "<name>%s</name>\n", name);
+  fprintf(fp, "<name>%ld</name>\n", cell.cell_id);
   fprintf(fp, "<LookAt>\n");
-  fprintf(fp, "<longitude>-170.0000</longitude>\n");
-  fprintf(fp, "<latitude>83.0000</latitude>\n");
-  fprintf(fp, "<range>3250000</range>\n");
+  fprintf(fp, "<longitude>%.4lf</longitude>\n", lon[0]);
+  fprintf(fp, "<latitude>%.4lf</latitude>\n", lat[0]);
+  fprintf(fp, "<range>400000</range>\n");
   fprintf(fp, "<heading>-90</heading>\n");
   fprintf(fp, "</LookAt>\n");
+  fprintf(fp, "<visibility>1</visibility>\n");
+  fprintf(fp, "<open>1</open>\n");
   write_kml_style_keys(fp);
   fprintf(fp, "<Polygon>\n");
+  fprintf(fp, "<extrude>1</extrude>\n");
+  fprintf(fp, "<altitudeMode>absolute</altitudeMode>\n");
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
   fprintf(fp, "<coordinates>\n");
-  for (ii=0; ii<=vertices; ii++)
-    fprintf(fp, "%.12f,%.12f,4000\n", lon[ii], lat[ii]);
+  
+  for (ii=0; ii<=cell.nVertices; ii++)
+    fprintf(fp, "%.12f,%.12f,7000\n", lon[ii], lat[ii]);
+  
   fprintf(fp, "</coordinates>\n");
   fprintf(fp, "</LinearRing>\n");
   fprintf(fp, "</outerBoundaryIs>\n");
@@ -193,6 +174,40 @@ void rgps2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "</Placemark>\n");
 
   return;
+}
+
+void rgps_grid2kml(grid_attr_t grid, FILE *fp)
+{
+  // Write information in kml file
+  fprintf(fp, "<Placemark>\n");
+  fprintf(fp, "<description><![CDATA[\n");
+  fprintf(fp, "<strong>Grid ID</strong>: %ld<br>\n", grid.grid_id);
+  fprintf(fp, "<strong>Date</strong>: %s<br>\n", grid.date);
+  fprintf(fp, "<strong>Day of the year</strong>: %.4lf<br>\n", grid.day);
+  fprintf(fp, "<strong>Grid x</strong>: %.3lf<br>\n", grid.grid_x);
+  fprintf(fp, "<strong>Grid y</strong>: %.3lf<br>\n", grid.grid_y);
+  fprintf(fp, "<strong>Source image</strong>: %s<br>\n", grid.sourceImage);
+  fprintf(fp, "<strong>Target image</strong>: %s<br>\n", grid.targetImage);
+  fprintf(fp, "<strong>Stream</strong>: %s<br>\n", grid.stream);
+  fprintf(fp, "<strong>Quality</strong>: %d<br>\n", grid.quality);
+  fprintf(fp, "]]></description>\n");
+  fprintf(fp, "<LookAt>\n");
+  fprintf(fp, "<longitude>%9.4f</longitude>\n", grid.lon);
+  fprintf(fp, "<latitude>%9.4f</latitude>\n", grid.lat);
+  fprintf(fp, "<range>400000</range>\n");
+  fprintf(fp, "</LookAt>\n");
+  fprintf(fp, "<Style>\n");
+  fprintf(fp, "<IconStyle>\n");
+  fprintf(fp, "<scale>0.5</scale>\n");
+  fprintf(fp, "<Icon>\n");
+  fprintf(fp, "<href>grid_point.png</href>\n");
+  fprintf(fp, "</Icon>\n");
+  fprintf(fp, "</IconStyle>\n");
+  fprintf(fp, "</Style>\n");
+  fprintf(fp, "<Point>\n");
+  fprintf(fp, "<coordinates>%f,%f,0</coordinates>\n", grid.lon, grid.lat);
+  fprintf(fp, "</Point>\n");
+  fprintf(fp, "</Placemark>\n");
 }
 
 void write_dbase_field_to_kml(DBFHandle dbase, int record, 

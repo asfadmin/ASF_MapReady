@@ -140,7 +140,6 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
 		DBFHandle dbase, SHPHandle shape, int n)
 {
-  
   // Write information into database file
   DBFWriteIntegerAttribute(dbase, n, 0, cell.cell_id);
   DBFWriteIntegerAttribute(dbase, n, 1, cell.nVertices);
@@ -167,6 +166,32 @@ void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
   SHPObject *shapeObject=NULL;
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, vertices+1,
 				      lon, lat, NULL);
+  if (shapeObject == NULL)
+    asfPrintError("Could not create shape object (%d)\n", n);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+
+  return;
+}
+
+// Convert RGPS grid points to shape
+void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, int n)
+{
+  // Write information into database file
+  DBFWriteIntegerAttribute(dbase, n, 0, grid.grid_id);
+  DBFWriteStringAttribute(dbase, n, 1, grid.date);
+  DBFWriteDoubleAttribute(dbase, n, 2, grid.day);
+  DBFWriteDoubleAttribute(dbase, n, 3, grid.grid_x);
+  DBFWriteDoubleAttribute(dbase, n, 4, grid.grid_y);
+  DBFWriteStringAttribute(dbase, n, 5, grid.sourceImage);
+  DBFWriteStringAttribute(dbase, n, 6, grid.targetImage);
+  DBFWriteStringAttribute(dbase, n, 7, grid.stream);
+  DBFWriteIntegerAttribute(dbase, n, 8, grid.quality);
+
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, 
+				      &grid.lon, &grid.lat, NULL);
   if (shapeObject == NULL)
     asfPrintError("Could not create shape object (%d)\n", n);
   SHPWriteObject(shape, -1, shapeObject);

@@ -473,8 +473,7 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
       polygon2kml(line, fp, name);
       break;
     case RGPS:
-      rgps2kml(line, fp, name);
-      break;
+    case RGPS_GRID:
     case RGPS_WEATHER:
     case TEXT:
     case URSA:

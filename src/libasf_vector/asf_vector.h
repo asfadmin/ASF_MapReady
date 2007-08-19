@@ -20,14 +20,43 @@ typedef enum {
   POINT,
   POLYGON,
   RGPS,
+  RGPS_GRID,
   RGPS_WEATHER,
   URSA
 } format_type_t;
 
+// RGPS grid point definition
+typedef struct {
+  long cell_id;
+  long grid_id;
+  int ordering;
+  double lat;
+  double lon;
+  int alive;
+} grid_t;
+
+typedef struct {
+  long grid_id;
+  char date[20];
+  double day;
+  double grid_x;
+  double grid_y;
+  double lat;
+  double lon;
+  char sourceImage[20];
+  char targetImage[20];
+  char stream[3];
+  int quality;
+  int alive;
+  int done;
+} grid_attr_t;
+
+// RGPS cell definition
 typedef struct {
   long cell_id;
   int nVertices;
   char date[20];
+  double day;
   char sourceImage[20];
   char targetImage[20];
   char stream[3];
@@ -52,7 +81,8 @@ typedef struct {
 void meta2kml(char *line, FILE *fp);
 void point2kml(char *line, FILE *fp);
 void polygon2kml(char *line, FILE *fp, char *name);
-void rgps2kml(char *line, FILE *fp, char *name);
+void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);
+void rgps_grid2kml(grid_attr_t grid, FILE *fp);
 void shape2kml(char *inFile, FILE *fp, char *name);
 
 // Prototypes from kml.c
@@ -75,6 +105,8 @@ void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
                 DBFHandle dbase, SHPHandle shape, int n);
+void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, 
+		     int n);
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void shape2text(char *inFile, FILE *fp);
 

@@ -76,14 +76,16 @@ void shape_init(char *inFile, format_type_t format)
 	asfPrintError("Could not add 'Vertices' field to database file\n");
       break;
     case RGPS:
-      if (DBFAddField(dbase, "Cell", FTInteger, 6, 0) == -1)
-	asfPrintError("Could not add 'Cell' field to database file\n");
+      if (DBFAddField(dbase, "Cell_ID", FTInteger, 6, 0) == -1)
+	asfPrintError("Could not add 'Cell_ID' field to database file\n");
       if (DBFAddField(dbase, "Vertices", FTInteger, 2, 0) == -1)
 	asfPrintError("Could not add 'Vertices' field to database file\n");
       if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
 	asfPrintError("Could not add 'Date' field to database file\n");
-      if (DBFAddField(dbase, "Image", FTString, 25, 0) == -1)
-	asfPrintError("Could not add 'Image' field to database file\n");
+      if (DBFAddField(dbase, "SrcImage", FTString, 25, 0) == -1)
+	asfPrintError("Could not add 'SrcImage' field to database file\n");
+      if (DBFAddField(dbase, "TrgImage", FTString, 25, 0) == -1)
+        asfPrintError("Could not add 'TrgImage' field to database file\n");
       if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
 	asfPrintError("Could not add 'Stream' field to database file\n");
       if (DBFAddField(dbase, "Area", FTDouble, 12, 3) == -1)
@@ -115,6 +117,26 @@ void shape_init(char *inFile, format_type_t format)
       if (DBFAddField(dbase, "v_wind", FTDouble, 12, 6) == -1)
         asfPrintError("Could not add 'v_wind' field to database file\n");
       break;
+    case RGPS_GRID:
+      if (DBFAddField(dbase, "Grid_ID", FTInteger, 6, 0) == -1)
+        asfPrintError("Could not add 'Grid_ID' field to database file\n");
+      if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
+        asfPrintError("Could not add 'Date' field to database file\n");
+      if (DBFAddField(dbase, "Day", FTDouble, 9, 4) == -1)
+        asfPrintError("Could not add 'Grid_x' field to database file\n");
+      if (DBFAddField(dbase, "Grid_x", FTDouble, 12, 3) == -1)
+        asfPrintError("Could not add 'Grid_x' field to database file\n");
+      if (DBFAddField(dbase, "Grid_y", FTDouble, 12, 3) == -1)
+        asfPrintError("Could not add 'Grid_y' field to database file\n");
+      if (DBFAddField(dbase, "SrcImage", FTString, 25, 0) == -1)
+        asfPrintError("Could not add 'SrcImage' field to database file\n");
+      if (DBFAddField(dbase, "TrgImage", FTString, 25, 0) == -1)
+        asfPrintError("Could not add 'TrgImage' field to database file\n");
+      if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
+        asfPrintError("Could not add 'Stream' field to database file\n");
+      if (DBFAddField(dbase, "Quality", FTInteger, 3, 0) == -1)
+        asfPrintError("Could not add 'Quality' field to database file\n");
+      break;
     case RGPS_WEATHER:
       if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
 	asfPrintError("Could not add 'Date' field to database file\n");
@@ -142,7 +164,7 @@ void shape_init(char *inFile, format_type_t format)
   DBFClose(dbase);
 
   // Open shapefile for initialization
-  if (format == POINT || format == RGPS_WEATHER)
+  if (format == POINT || format == RGPS_GRID || format == RGPS_WEATHER)
     shape = SHPCreate(inFile, SHPT_POINT);
   else
     shape = SHPCreate(inFile, SHPT_POLYGON);
@@ -204,6 +226,7 @@ void convert2shape(char *line, format_type_t format,
       polygon2shape(line, dbase, shape, n);
       break;
     case RGPS:
+    case RGPS_GRID:
     case RGPS_WEATHER:
     case TEXT:
     case URSA:
