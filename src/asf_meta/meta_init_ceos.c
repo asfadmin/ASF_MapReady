@@ -668,9 +668,21 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     ceos_init_stVec(in_fName,ceos,meta);
   }
 
+  // This is a kludge to detect the difference between geocoded and
+  // georeferenced ALOS data.  We aren't able to figure out how to
+  // tell them apart from the metadata, so we have this code that will
+  // check the filename.  The filename's third-from-the-end character
+  // is 'G' for geocoded data, '_' for georeferenced, according to
+  // the ALOS naming convention.
+  int is_geocoded = 
+      strncmp(metaName[0], "LED-", 4) == 0 &&
+      metaName[0][strlen(metaName[0])-3] == 'G';
+
   // SAR block
   if (ceos->product == SLC)
     meta->sar->image_type = 'S';
+  else if (is_geocoded)
+    meta->sar->image_type = 'P';
   else
     meta->sar->image_type = 'R';
   meta->sar->look_count = dssr->n_azilok;
