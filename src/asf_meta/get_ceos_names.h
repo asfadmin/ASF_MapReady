@@ -98,8 +98,9 @@ typedef enum {
   CEOS_ldr,
   CEOS_LEA,
   CEOS_lea,
-  CEOS_LEA_,
+  CEOS_lea_,
   CEOS_LED,
+  CEOS_LEA_,
   NUM_CEOS_METADATA_EXTS
 } ceos_metadata_ext_t;
 extern const char ceos_metadata_extensions[][12];
@@ -114,6 +115,7 @@ typedef enum {
   CEOS_raw,
   CEOS_DAT,
   CEOS_dat,
+  CEOS_dat_,
   CEOS_IMG,
   NUM_CEOS_DATA_EXTS
 } ceos_data_ext_t;

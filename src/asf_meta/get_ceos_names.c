@@ -11,9 +11,10 @@
 #include "meta_init.h"
 
 const char ceos_metadata_extensions[][12] =
-  {"","LEA_ TRA_",".sarl .sart",".L",".LDR",".ldr","LEA.","lea.","LEA_","LED-"};
+  {"","LEA_ TRA_",".sarl .sart",".L",".LDR",".ldr","LEA.","lea.","lea_",
+   "LED-","LEA_"};
 const char ceos_data_extensions[][12] =
-  {"","DAT_",".sard",".D",".RAW",".raw","DAT.","dat.","IMG-"};
+  {"","DAT_",".sard",".D",".RAW",".raw","DAT.","dat.","dat_","IMG-"};
 
 
 /******************************************************************************
@@ -597,7 +598,7 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
   if (data_ext == CEOS_DAT && metadata_ext == CEOS_LEA)
     return CEOS_DAT_LEA_PAIR;
 
-  if (data_ext == CEOS_dat && metadata_ext == CEOS_lea)
+  if (data_ext == CEOS_dat_ && metadata_ext == CEOS_lea_)
     return CEOS_dat_lea_PAIR;
 
   if (data_ext == CEOS_DAT_ && metadata_ext == CEOS_LEA_)
