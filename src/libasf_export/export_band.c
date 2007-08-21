@@ -183,6 +183,9 @@ void initialize_jpeg_file(const char *output_file_name,
     cinfo->input_components = 1;
   }
   jpeg_set_defaults (cinfo);   // Use default compression parameters.
+  jpeg_set_quality(cinfo, 100, 1);
+
+
   // Reassure libjpeg that we will be writing a complete JPEG file.
   jpeg_start_compress (cinfo, TRUE);
 
