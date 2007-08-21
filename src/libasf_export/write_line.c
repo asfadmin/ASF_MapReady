@@ -331,10 +331,7 @@ void write_png_byte2byte(FILE *opng, unsigned char *byte_line,
 {
   png_byte *row_pointer = g_new(png_byte, sample_count);
 
-  if (sample_mapping != NONE) {
-    // I don't think this path is even possible?
-    asfPrintError("byte 2 byte with a sample_mapping !?\n");
-    
+  if (sample_mapping != NONE) {    
     int jj;
     for (jj=0; jj<sample_count; jj++) {
       row_pointer[jj] =
