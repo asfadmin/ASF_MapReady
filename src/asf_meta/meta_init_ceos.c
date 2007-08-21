@@ -668,16 +668,35 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     ceos_init_stVec(in_fName,ceos,meta);
   }
 
-  // This is a kludge to detect the difference between geocoded and
-  // georeferenced ALOS data.  We aren't able to figure out how to
-  // tell them apart from the metadata, so we have this code that will
-  // check the filename.  The filename's third-from-the-end character
-  // is 'G' for geocoded data, '_' for georeferenced, according to
-  // the ALOS naming convention.
-  int is_geocoded = 
-      strncmp(metaName[0], "LED-", 4) == 0 &&
-      metaName[0][strlen(metaName[0])-3] == 'G';
+  // For ALOS data, the doppler centroid fields are all zero.
+  int is_geocoded = dssr->crt_dopcen[0] == 0.0 &&
+      dssr->crt_dopcen[1] == 0.0 &&
+      dssr->crt_dopcen[2] == 0.0;
 
+  // sanity check on the geocode test -- check the filename
+  if (!is_geocoded && strncmp(metaName[0], "LED-", 4) == 0 &&
+      metaName[0][strlen(metaName[0])-3] == 'G') {
+        asfPrintWarning(
+          "The filename suggests that this data is geocoded, however the\n"
+          "doppler centroid values are non-zero.  For ALOS data, the\n"
+          "values for the doppler centroid should all be zero:\n"
+          "  %f, %f, %f\n"
+          "Proceeding, but marking the data as georeferenced only.\n",
+          dssr->crt_dopcen[0], dssr->crt_dopcen[1], dssr->crt_dopcen[2]);
+  }
+  if (is_geocoded && strncmp(metaName[0], "LED-", 4) == 0 &&
+      metaName[0][strlen(metaName[0])-3] == '_') {
+        asfPrintWarning(
+          "The filename suggests that this data is non-geocoded, however the\n"
+          "doppler centroid values are all zero.  For ALOS data, the\n"
+          "values for the doppler centroid should all be zero only if the\n"
+          "data is geocoded.  Centroid values read are:\n"
+          "  %f, %f, %f\n"
+          "Proceeding, marking the data as georeferenced only.\n",
+          dssr->crt_dopcen[0], dssr->crt_dopcen[1], dssr->crt_dopcen[2]);
+        is_geocoded = FALSE;
+  }
+ 
   // SAR block
   if (ceos->product == SLC)
     meta->sar->image_type = 'S';
