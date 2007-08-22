@@ -311,6 +311,8 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->prc, "");
   cfg->import->output_db = 0;
+  cfg->import->complex_slc = 0;
+  cfg->import->multilook_slc = 0;
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
@@ -437,6 +439,10 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->import->lut, read_str(line, "look up table"));
       if (strncmp(test, "output db", 9)==0)
         cfg->import->output_db = read_int(line, "output db");
+      if (strncmp(test, "complex SLC", 11)==0)
+        cfg->import->complex_slc = read_int(line, "complex SLC");
+      if (strncmp(test, "multilook SLC", 13)==0)
+        cfg->import->multilook_slc = read_int(line, "multilook SLC");
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
@@ -660,6 +666,10 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->import->prc, read_str(line, "precise"));
       if (strncmp(test, "output db", 9)==0)
         cfg->import->output_db = read_int(line, "output db");
+      if (strncmp(test, "complex SLC", 11)==0)
+        cfg->import->complex_slc = read_int(line, "complex SLC");
+      if (strncmp(test, "multilook SLC", 13)==0)
+        cfg->import->multilook_slc = read_int(line, "multilook SLC");
       FREE(test);
     }
 
@@ -964,6 +974,16 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# gamma or beta.\n\n");
       fprintf(fConfig, "output db = %d\n\n", cfg->import->output_db);
     }
+    if (!shortFlag)
+      fprintf(fConfig, "\n# When the complex SLC flag in non-zero, single "
+	      "look complex data is stored in I/Q values. Otherwise SLC data\n"
+	      "# will be stored as amplitude/phase.\n\n");
+    fprintf(fConfig, "complex SLC = %d\n\n", cfg->import->complex_slc);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
+	      "look complex data that is stored as amplitude/phase is being\n"
+	      "# multilooked.\n\n");
+    fprintf(fConfig, "multilook SLC = %d\n\n", cfg->import->multilook_slc);
     // SAR processing
     if (cfg->general->sar_processing) {
       fprintf(fConfig, "\n[SAR processing]\n");

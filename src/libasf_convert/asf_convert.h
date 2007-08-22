@@ -46,6 +46,9 @@ typedef struct
                           //        implemented)
   int output_db;          // TRUE if the output is db.  Only applies to
                           //        SIGMA, GAMMA, BETA radiometries.
+  int complex_slc;        // flag to save complex data as I/Q
+                          // otherwise SLC data as stored as amp/phase
+  int multilook_slc;      // flag to multilook single look complex data
 } s_import;
 
 typedef struct

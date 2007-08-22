@@ -150,7 +150,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
-        asf_import(r_AMP, FALSE, "GEOTIFF", NULL, what, NULL,
+        asf_import(r_AMP, FALSE, FALSE, FALSE, "GEOTIFF", NULL, what, NULL,
                    NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
                    imported), status);
 
@@ -444,6 +444,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Precision state vector file check can only be done
       // from within asf_import
 
+
+      // Dealing with single look complex data
+      // Options -multilook and -complex are mutually exclusive
+      if (cfg->import->complex_slc && cfg->import->multilook_slc)
+	asfPrintError("Only single look complex data stored as "
+		      "amplitude and phase can be multilooked.\n");
+
       // Get input file name ready
       strcpy(inFile, cfg->general->in_name);
 /*
@@ -502,7 +509,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintWarning("SLC ingest with c2p is still underdevelopment.\n");
         // make sure input data has the extension .cpx
         char *ext = findExt(cfg->general->in_name);
-        if (strcmp_case(ext, ".cpx") != 0) {
+        if (strcmp_case(ext, ".img") != 0) {
             asfPrintWarning("Input data is not complex.  c2p flag ignored.\n");
             cfg->general->c2p = 0;
         }
@@ -730,6 +737,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
                               uc(cfg->import->format),
+			      cfg->import->complex_slc,
+			      cfg->import->multilook_slc,
                               NULL,
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
