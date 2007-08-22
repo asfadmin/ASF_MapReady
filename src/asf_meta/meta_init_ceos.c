@@ -285,6 +285,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->chirp_rate = dssr->phas_coef[2];
   meta->sar->pulse_duration = dssr->rng_length / 10000000;
   meta->sar->range_sampling_rate = dssr->rng_samp_rate * 1000000;
+  meta->sar->multilook = 1;
   
   /* FREE(dssr); Don't free dssr; it points to the ceos struct (ceos->dssr) */
   FREE(iof);

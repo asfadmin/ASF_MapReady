@@ -21,6 +21,9 @@ typedef enum {
 int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int db_flag,   // TRUE if the output should be in decibels
                               // only ok for radiometry=SIGMA,GAMMA,BETA
+	       int complex_flag, // TRUE if ingested SLC should in I/Q
+	       int multilook_flag, // TRUE is SLC should be multilooked while
+	                           // being ingested.
                char *format_type, // eg, "STF", "CEOS" - etc
                char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
                char *image_data_type, // "geocoded_image", "dem", or "mask"
@@ -53,7 +56,8 @@ void create_sprocket_layers(const char *asfName, const char *importName);
 void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
-                 char *inMetaNameOption, radiometry_t radiometry, int db_flag);
+                 char *inMetaNameOption, radiometry_t radiometry, int db_flag,
+		 int complex_flag, int multilook_flag);
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry, 
 		char *inMetaNameOption, int lat_constrained, double lowerLat, 
 		double upperLat, char *prcPath);

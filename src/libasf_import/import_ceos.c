@@ -15,11 +15,13 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
 void import_ceos_complex_int(char *inDataName, char *inMetaName,
            char *outDataName, char *outMetaName,
            char *bandExt, int band, int nBands,
-           radiometry_t radiometry, int import_single_band);
+           radiometry_t radiometry, int import_single_band,
+	   int complex_flag, int multilook_flag);
 void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
-             radiometry_t radiometry, int import_single_band);
+			       radiometry_t radiometry, int import_single_band,
+	     int complex_flag, int multilook_flag);
 void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, char *bandExt, int band, int nBands,
         radiometry_t radiometry, int import_single_band,
@@ -162,7 +164,8 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
      char *band_id, char *lutName, double *p_range_scale,
      double *p_azimuth_scale, double *p_correct_y_pixel_size,
-     char *inMetaNameOption, radiometry_t radiometry, int db_flag)
+     char *inMetaNameOption, radiometry_t radiometry, int db_flag,
+     int complex_flag, int multilook_flag)
 {
   char outDataName[256], outMetaName[256];
   ceos_description *ceos;
@@ -283,12 +286,12 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     else if (ceos->ceos_data_type == CEOS_SLC_DATA_INT)
       import_ceos_complex_int(inBandName[ii], inMetaName[0], outDataName,
             outMetaName, bandExt, band, nBands, radiometry,
-            import_single_band);
+            import_single_band, complex_flag, multilook_flag);
 
     else if (ceos->ceos_data_type == CEOS_SLC_DATA_FLOAT)
       import_ceos_complex_float(inBandName[ii], inMetaName[0], outDataName,
         outMetaName, bandExt, band, nBands, radiometry,
-        import_single_band);
+        import_single_band, complex_flag, multilook_flag);
 
     else if (ceos->ceos_data_type == CEOS_AMP_DATA)
       import_ceos_detected(inBandName[ii], inMetaName[0], outDataName,
@@ -418,15 +421,17 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
 void import_ceos_complex_int(char *inDataName, char *inMetaName,
            char *outDataName, char *outMetaName,
            char *bandExt, int band, int nBands,
-           radiometry_t radiometry, int import_single_band)
+           radiometry_t radiometry, int import_single_band,
+	   int complex_flag, int multilook_flag)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
   char bandStr[50];
   short *cpx_buf=NULL;
-  complexFloat cpx;
-  float *amp_buf=NULL, *phase_buf=NULL;
-  int nl, ns, tempFlag=FALSE, leftFill, rightFill, headerBytes;
-  long long ii, kk, offset;
+  complexFloat cpx, *cpxFloat_buf=NULL;
+  float *amp_buf=NULL, *phase_buf=NULL, fValue;
+  int nl, ns, lc, nLooks, tempFlag=FALSE, leftFill, rightFill, headerBytes;
+  int out=0;
+  long long ii, kk, ll, offset, index;
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
 
@@ -434,6 +439,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   meta = meta_create(inMetaName);
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
+  lc = nLooks = meta->sar->look_count;
   if (nBands == 1 && strlen(meta->sar->polarization) == 0)
     strcpy(meta->sar->polarization, bandExt);
   else if (nBands == 2)
@@ -450,8 +456,15 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   }
 
   /* Let the user know what format we are working on */
-  asfPrintStatus("   Input data type: single look complex\n"
-     "   Output data type: single look complex (2-band)\n");
+  if (complex_flag)
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: single look complex\n");
+  else if (multilook_flag)
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: multilooked complex (2-band)\n");
+  else
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: single look complex (2-band)\n");
   if (nBands > 1)
     asfPrintStatus("   Input band: %s\n", bandExt);
   if (band > 1) {
@@ -464,12 +477,11 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     strcpy(meta->general->bands, "");
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
-  if (strlen(bandExt) == 0)
+  if (complex_flag)
+    sprintf(bandStr, "COMPLEX-%s", meta->sar->polarization);
+  else 
     sprintf(bandStr, "AMP-%s,PHASE-%s",
-      meta->sar->polarization, meta->sar->polarization);
-  else
-    sprintf(bandStr, "AMP-%s,PHASE-%s", bandExt, bandExt);
-
+	    meta->sar->polarization, meta->sar->polarization);
   strcat(meta->general->bands, bandStr);
 
   /* Make sure that none of the detected level one flags are set */
@@ -489,9 +501,15 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     }
 
   /* Deal with metadata */
-  meta->general->data_type = REAL32;
+  if (complex_flag) {
+    meta->general->data_type = COMPLEX_REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
+  }
+  else {
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 2 : band*2;
+  }
   meta->general->image_data_type = COMPLEX_IMAGE;
-  meta->general->band_count = import_single_band ? 2 : band*2;
 
   /* Take care of image files and memory */
   strcat(outDataName, TOOLS_COMPLEX_EXT);
@@ -500,9 +518,13 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     fpOut = fopenImage(outDataName,"wb");
   else
     fpOut = fopenImage(outDataName,"ab");
-  cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
-  amp_buf = (float *) MALLOC(ns * sizeof(float));
-  phase_buf = (float *) MALLOC(ns * sizeof(float));
+  cpx_buf = (short *) MALLOC(2*ns * sizeof(short) * lc);
+  if (complex_flag)
+    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
+  else {
+    amp_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+    phase_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+  }
 
   /* Read single look complex data */
   get_ifiledr(inMetaName,&image_fdr);
@@ -517,32 +539,94 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     headerBytes = firstRecordLen(inDataName)
     + (image_fdr.reclen - ns * image_fdr.bytgroup);
   */
-  for (ii=0; ii<nl; ii++) {
+
+  if (multilook_flag) {
+    meta->general->line_count = (int)((float)nl / (float)nLooks + 0.99);
+    meta->general->y_pixel_size *= nLooks;
+    meta->sar->azimuth_time_per_pixel *= nLooks;
+  }
+
+  for (ii=0; ii<nl; ii+=nLooks) {
+    lc = meta->sar->look_count;
+    if (ii + lc > nl)
+      lc = nl - ii;
     offset = (long long)headerBytes + ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
-    FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
-    for (kk=0; kk<ns; kk++) {
-      /* Put read in data in proper endian format */
-      big16(cpx_buf[kk*2]);
-      big16(cpx_buf[kk*2+1]);
-      /* Now do our stuff */
-      cpx.real = (float)cpx_buf[kk*2];
-      cpx.imag = (float)cpx_buf[kk*2+1];
-      amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      phase_buf[kk] = atan2(cpx.imag, cpx.real);
+    FREAD(cpx_buf, sizeof(short), 2*ns*lc, fpIn);
+    // Caluculate power and phase for the entire buffer
+    for (ll=0; ll<lc; ll++) {
+      for (kk=0; kk<ns; kk++) {
+	index = ll*ns*2 + kk*2;
+	big16(cpx_buf[ll*ns*2 + kk*2]);
+	big16(cpx_buf[ll*ns*2 + kk*2+1]);
+	cpx.real = (float)cpx_buf[ll*ns*2 + kk*2];
+	cpx.imag = (float)cpx_buf[ll*ns*2 + kk*2+1];
+	if (complex_flag)
+	  cpxFloat_buf[ll*ns + kk] = cpx;
+	else if (cpx.real != 0.0 || cpx.imag != 0.0){
+	  amp_buf[ll*ns + kk] = cpx.real*cpx.real + cpx.imag*cpx.imag;
+	  phase_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
+	}
+	else
+	  amp_buf[index] = phase_buf[index] = 0.0;
+      }
     }
-    put_band_float_line(fpOut, meta, 0, ii, amp_buf);
-    put_band_float_line(fpOut, meta, 1, ii, phase_buf);
+    // Multilook if requested
+    if (multilook_flag) {
+      for (kk=0; kk<ns; kk++) {
+	fValue = 0.0;
+	for (ll=0; ll<lc; ll++)
+	  fValue += amp_buf[ll*ns + kk];
+	amp_buf[kk] = sqrt(fValue / (float)lc);
+	fValue = 0.0;
+	for (ll=0; ll<lc; ll++)
+	  fValue += phase_buf[ll*ns + kk];
+	phase_buf[kk] = fValue / (float)lc;
+      }
+    }
+    else {
+      for (kk=0; kk<lc*ns; kk++)
+	amp_buf[kk] = sqrt(amp_buf[kk]);
+    }
+    // Write out the various flavors
+    if (multilook_flag) {
+      put_band_float_line(fpOut, meta, 0, out, amp_buf);
+      put_band_float_line(fpOut, meta, 1, out, phase_buf);
+      out++;
+    }
+    else {
+      for (ll=0; ll<lc; ll++) {
+	if (complex_flag)
+	  put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf);
+	else {
+	  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf);
+	  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf);
+	}
+      }
+    }
     asfLineMeter(ii, nl);
   }
+  asfLineMeter(nl, nl);
+  asfPrintStatus("\n");
   FREE(cpx_buf);
-  FREE(amp_buf);
-  FREE(phase_buf);
+  if (complex_flag)
+    FREE(cpxFloat_buf);
+  else {      
+    FREE(amp_buf);
+    FREE(phase_buf);
+  }
   strcpy(meta->general->basename, inDataName);
-  meta->general->band_count = import_single_band ? 2 : ii*2;
-  if (nBands == 2 && meta->sar)
-    sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
-      meta->sar->polarization, meta->sar->polarization);
+  if (complex_flag) {
+    meta->general->band_count = import_single_band ? 1 : band;
+    if (nBands == 1 && meta->sar)
+      sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
+  }
+  else { 
+    meta->general->band_count = import_single_band ? 2 : band*2;
+    if (nBands == 2 && meta->sar)
+      sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
+	      meta->sar->polarization, meta->sar->polarization);
+  }
   meta_write(meta, outMetaName);
 
   if (isPP(meta))
@@ -561,13 +645,14 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
 void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
-             radiometry_t radiometry, int import_single_band)
+             radiometry_t radiometry, int import_single_band,
+             int complex_flag, int multilook_flag)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
   int nl, ns, tempFlag=FALSE, leftFill, rightFill, headerBytes;
   long long ii, kk, offset;
   float *cpx_buf=NULL;
-  complexFloat cpx;
+  complexFloat cpx, *cpxFloat_buf=NULL;
   float *amp_buf=NULL, *phase_buf=NULL;
   char bandStr[50];
   struct IOF_VFDR image_fdr;
@@ -593,8 +678,15 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
 
   /* Let the user know what format we are working on */
-  asfPrintStatus("   Input data type: single look complex\n"
-     "   Output data type: single look complex (2 band)\n");
+  if (complex_flag)
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: single look complex\n");
+  else if (multilook_flag)
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: multilooked complex (2-band)\n");
+  else
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: single look complex (2-band)\n");
   if (nBands > 1)
     asfPrintStatus("   Input band: %s\n", bandExt);
   if (band > 1) {
@@ -605,7 +697,19 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
-  sprintf(bandStr, "AMP-%s,PHASE-%s", bandExt, bandExt);
+  if (complex_flag) {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "COMPLEX-%s", meta->sar->polarization);
+    else
+      sprintf(bandStr, "COMPLEX-%s", bandExt);
+  }
+  else {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "AMP-%s,PHASE-%s",
+	      meta->sar->polarization, meta->sar->polarization);
+    else
+      sprintf(bandStr, "AMP-%s,PHASE-%s", bandExt, bandExt);
+  }
   strcat(meta->general->bands, bandStr);
 
   /* Make sure that none of the detected level one flags are set */
@@ -625,9 +729,15 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     }
 
   /* Deal with metadata */
-  meta->general->data_type = REAL32;
+  if (complex_flag) {
+    meta->general->data_type = COMPLEX_REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
+  }
+  else {
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 2 : band*2;
+  }
   meta->general->image_data_type = COMPLEX_IMAGE;
-  meta->general->band_count = import_single_band ? 2 : band*2;
 
   /* Take care of image files and memory */
   strcat(outDataName, TOOLS_COMPLEX_EXT);
@@ -637,8 +747,12 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   else
     fpOut = fopenImage(outDataName, "ab");
   cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
-  amp_buf = (float *) MALLOC(ns * sizeof(float));
-  phase_buf = (float *) MALLOC(ns * sizeof(float));
+  if (complex_flag)
+    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
+  else {
+    amp_buf = (float *) MALLOC(ns * sizeof(float));
+    phase_buf = (float *) MALLOC(ns * sizeof(float));
+  }
 
   /* Read single look complex data */
   get_ifiledr(inMetaName,&image_fdr);
@@ -664,17 +778,42 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
       /* Now do our stuff */
       cpx.real = cpx_buf[kk*2];
       cpx.imag = cpx_buf[kk*2+1];
-      amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      phase_buf[kk] = atan2(cpx.imag, cpx.real);
+      if (complex_flag)
+	cpxFloat_buf[kk] = cpx;
+      else {
+	amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+	phase_buf[kk] = atan2(cpx.imag, cpx.real);
+      }
     }
-    put_band_float_line(fpOut, meta, 0, ii, amp_buf);
-    put_band_float_line(fpOut, meta, 1, ii, phase_buf);
+    if (complex_flag)
+      put_complexFloat_line(fpOut, meta, ii, cpxFloat_buf);
+    else {
+      put_band_float_line(fpOut, meta, 0, ii, amp_buf);
+      put_band_float_line(fpOut, meta, 1, ii, phase_buf);
+    }
     asfLineMeter(ii, nl);
   }
+  asfLineMeter(nl, nl);
+  asfPrintStatus("\n");
   FREE(cpx_buf);
-  FREE(amp_buf);
-  FREE(phase_buf);
+  if (complex_flag)
+    FREE(cpxFloat_buf);
+  else {      
+    FREE(amp_buf);
+    FREE(phase_buf);
+  }
   strcpy(meta->general->basename, inDataName);
+  if (complex_flag) {
+    meta->general->band_count = import_single_band ? 1 : band;
+    if (nBands == 1 && meta->sar)
+      sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
+  }
+  else { 
+    meta->general->band_count = import_single_band ? 2 : band*2;
+    if (nBands == 2 && meta->sar)
+      sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
+	      meta->sar->polarization, meta->sar->polarization);
+  }
   meta_write(meta, outMetaName);
 
   if (isPP(meta))

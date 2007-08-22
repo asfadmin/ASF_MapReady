@@ -196,6 +196,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
 		    "SAR Satellite look direction [R=right; L=left]");
     meta_put_int   (fp,"look_count:",meta->sar->look_count,
 		    "Number of looks to take from SLC");
+    meta_put_int   (fp,"multilook:",meta->sar->multilook,
+		    "Image multilooked? [1=yes; 0=no]");
     meta_put_int   (fp,"deskewed:",meta->sar->deskewed,
 		    "Image moved to zero doppler? [1=yes; 0=no]");
     meta_put_int   (fp,"original_line_count:",meta->sar->original_line_count,

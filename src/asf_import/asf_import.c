@@ -26,7 +26,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "              [-format <inputFormat>] [-band <band_id | all>] [-image-data-type <type>]\n"\
 "              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
 "              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
-"              [-range-scale[=<scale>]\n"\
+"              [-range-scale[=<scale>] [-multilook] [-complex]\n"\
 "              [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
@@ -54,6 +54,11 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Create a calibrated image (beta power scale values).\n"\
 "   -power\n"\
 "        Create a power image.\n"\
+"   -complex\n"\
+"        Create a complex image (I+Q) (only for single look complex data).\n"\
+"   -multilook\n"\
+"        Create a multilooked image when ingesting single look complex data\n"\
+"        into a two-banded image with amplitude and phase\n"\
 "   -db  Output calibrated image in decibles. This can only be used with\n"\
 "        -sigma, -beta, or -gamma. When performing statistics on the imagery\n"\
 "        it is highly recommended that the image is left in power scale\n"\
@@ -167,6 +172,8 @@ typedef enum {
     f_BETA,
     f_GAMMA,
     f_POWER,
+    f_COMPLEX,
+    f_MULTILOOK,
     f_DB,
     f_SPROCKET,
     f_LUT,
@@ -329,6 +336,8 @@ int main(int argc, char *argv[])
     flags[f_BETA] = checkForOption("-beta", argc, argv);
     flags[f_GAMMA] = checkForOption("-gamma", argc, argv);
     flags[f_POWER] = checkForOption("-power", argc, argv);
+    flags[f_COMPLEX] = checkForOption("-complex", argc, argv);
+    flags[f_MULTILOOK] = checkForOption("-multilook", argc, argv);
     flags[f_DB] = checkForOption("-db", argc, argv);
     flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
     flags[f_LUT] = checkForOption("-lut", argc, argv);
@@ -356,6 +365,9 @@ int main(int argc, char *argv[])
     if (flags[f_FIX_META_YPIX] == FLAG_NOT_SET)
         flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix_meta_ypix", argc, argv);
 
+    if (flags[f_MULTILOOK] != FLAG_NOT_SET)
+      flags[f_COMPLEX] = FLAG_NOT_SET;
+ 
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
@@ -410,6 +422,8 @@ int main(int argc, char *argv[])
         if(flags[f_BETA] != FLAG_NOT_SET)     needed_args += 1;/*option*/
         if(flags[f_GAMMA] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
+        if(flags[f_COMPLEX] != FLAG_NOT_SET)  needed_args += 1;/*option*/
+        if(flags[f_MULTILOOK] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_DB] != FLAG_NOT_SET)       needed_args += 1;/*option*/
         if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_LUT] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
@@ -625,6 +639,8 @@ int main(int argc, char *argv[])
 
     { // scoping block
         int db_flag = flags[f_DB] != FLAG_NOT_SET;
+	int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
+	int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -645,10 +661,10 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
-        asf_import(radiometry, db_flag, format_type, band_id, image_data_type, lutName,
-                   prcPath, lowerLat, upperLat, p_range_scale, p_azimuth_scale,
-                   p_correct_y_pixel_size, inMetaNameOption,
-                   inBaseName, outBaseName);
+        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type, 
+		   band_id, image_data_type, lutName, prcPath, lowerLat, upperLat, 
+		   p_range_scale, p_azimuth_scale,p_correct_y_pixel_size, 
+		   inMetaNameOption, inBaseName, outBaseName);
     }
 
     if (lutName)
