@@ -47,7 +47,7 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     out_meta->general->data_type = meta_complex2polar(data_type);
 
     // set up input/output files
-    char *infile_img = appendExt(infile, ".cpx");
+    char *infile_img = appendExt(infile, ".img");
     if (!fileExists(infile_img))
         asfPrintError("The input file %s was not found.\n");
     FILE *fin = fopenImage(infile_img, "rb");
@@ -125,23 +125,19 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
                 float value = 0.0;
                 for (l=0; l<lc; ++l)
                     value += amp[l*ns + samp];
-                amp[samp] = value/(float)lc;
+                amp[samp] = sqrt(value/(float)lc);
 
                 value = 0.0;
                 for (l=0; l<lc; ++l)
                     value += phase[l*ns + samp];
                 phase[samp] = value/(float)lc;
             }
-        
-
-            // now compute amplitude from the (multilooked) power
-            for (samp=0; samp<ns; ++samp)
+        }
+        else {
+            for (samp=0; samp<ns*lc; ++samp)
                 amp[samp] = sqrt(amp[samp]);
-	} 
-	else {
-	  for (samp=0; samp<ns*lc; ++samp)
-	    amp[samp] = sqrt(amp[samp]);
-	}
+        }
+
         // write out a line (multilooked) or a bunch of lines (not multi)
         if (multilook) {
             if (banded) {
