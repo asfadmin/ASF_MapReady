@@ -90,6 +90,8 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     int samp;       // sample #, loop index
     int l;          // line loop index, iterates over the lines in the block
 
+    out_meta->general->line_count = (int)ceil((double)nl/(double)nlooks);
+
     for (line_in=0; line_in<nl; line_in+=nlooks)
     {
         // lc = "line count" -- how many lines to read. normally we will read
@@ -171,9 +173,12 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     if (fout_phase) fclose(fout_phase);
 
     if (multilook) {
-        out_meta->general->line_count = line_out;
+        if (out_meta->general->line_count != line_out)
+            asfPrintError("Line counts don't match: %d != %d\n",
+                out_meta->general->line_count, line_out);
         out_meta->general->y_pixel_size *= nlooks;
         out_meta->sar->azimuth_time_per_pixel *= nlooks;
+        out_meta->sar->multilook = TRUE;
     } else
         assert(line_out == nl);
 

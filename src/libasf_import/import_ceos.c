@@ -431,7 +431,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   float *amp_buf=NULL, *phase_buf=NULL, fValue;
   int nl, ns, lc, nLooks, tempFlag=FALSE, leftFill, rightFill, headerBytes;
   int out=0;
-  long long ii, kk, ll, offset, index;
+  long long ii, kk, ll, offset;
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
 
@@ -555,54 +555,54 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     FREAD(cpx_buf, sizeof(short), 2*ns*lc, fpIn);
     // Caluculate power and phase for the entire buffer
     for (ll=0; ll<lc; ll++) {
-      for (kk=0; kk<ns; kk++) {
-	index = ll*ns*2 + kk*2;
-	big16(cpx_buf[ll*ns*2 + kk*2]);
-	big16(cpx_buf[ll*ns*2 + kk*2+1]);
-	cpx.real = (float)cpx_buf[ll*ns*2 + kk*2];
-	cpx.imag = (float)cpx_buf[ll*ns*2 + kk*2+1];
-	if (complex_flag)
-	  cpxFloat_buf[ll*ns + kk] = cpx;
-	else if (cpx.real != 0.0 || cpx.imag != 0.0){
-	  amp_buf[ll*ns + kk] = cpx.real*cpx.real + cpx.imag*cpx.imag;
-	  phase_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
-	}
-	else
-	  amp_buf[index] = phase_buf[index] = 0.0;
-      }
+        for (kk=0; kk<ns; kk++) {
+            big16(cpx_buf[ll*ns*2 + kk*2]);
+            big16(cpx_buf[ll*ns*2 + kk*2+1]);
+            cpx.real = (float)cpx_buf[ll*ns*2 + kk*2];
+            cpx.imag = (float)cpx_buf[ll*ns*2 + kk*2+1];
+            if (complex_flag)
+                cpxFloat_buf[ll*ns + kk] = cpx;
+            else if (cpx.real != 0.0 || cpx.imag != 0.0){
+                amp_buf[ll*ns + kk] = cpx.real*cpx.real + cpx.imag*cpx.imag;
+                phase_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
+            }
+            else
+                amp_buf[ll*ns + kk] = phase_buf[ll*ns + kk] = 0.0;
+        }
     }
     // Multilook if requested
-    if (multilook_flag) {
-      for (kk=0; kk<ns; kk++) {
-	fValue = 0.0;
-	for (ll=0; ll<lc; ll++)
-	  fValue += amp_buf[ll*ns + kk];
-	amp_buf[kk] = sqrt(fValue / (float)lc);
-	fValue = 0.0;
-	for (ll=0; ll<lc; ll++)
-	  fValue += phase_buf[ll*ns + kk];
-	phase_buf[kk] = fValue / (float)lc;
-      }
-    }
-    else {
-      for (kk=0; kk<lc*ns; kk++)
-	amp_buf[kk] = sqrt(amp_buf[kk]);
+    if (!complex_flag) {
+        if (multilook_flag) {
+            for (kk=0; kk<ns; kk++) {
+                fValue = 0.0;
+                for (ll=0; ll<lc; ll++)
+                    fValue += amp_buf[ll*ns + kk];
+                amp_buf[kk] = sqrt(fValue / (float)lc);
+                fValue = 0.0;
+                for (ll=0; ll<lc; ll++)
+                    fValue += phase_buf[ll*ns + kk];
+                phase_buf[kk] = fValue / (float)lc;
+            }
+        } else {
+            for (kk=0; kk<lc*ns; kk++)
+                amp_buf[kk] = sqrt(amp_buf[kk]);
+        }
     }
     // Write out the various flavors
     if (multilook_flag) {
-      put_band_float_line(fpOut, meta, 0, out, amp_buf);
-      put_band_float_line(fpOut, meta, 1, out, phase_buf);
-      out++;
+        put_band_float_line(fpOut, meta, 0, out, amp_buf);
+        put_band_float_line(fpOut, meta, 1, out, phase_buf);
+        out++;
     }
     else {
-      for (ll=0; ll<lc; ll++) {
-	if (complex_flag)
-	  put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf);
-	else {
-	  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf);
-	  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf);
-	}
-      }
+        for (ll=0; ll<lc; ll++) {
+            if (complex_flag)
+                put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
+            else {
+                put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf+ll*ns);
+                put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf+ll*ns);
+            }
+        }
     }
     asfLineMeter(ii, nl);
   }
