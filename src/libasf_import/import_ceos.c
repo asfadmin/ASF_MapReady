@@ -877,7 +877,7 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
   /* FIXME! Temporary warning about unsupported ALOS radiometries */
   if (strcmp(meta->general->sensor, "ALOS") == 0) {
     if (radiometry == r_POWER)
-      ; //asfPrintError("POWER is a currently unsupported radiometry for ALOS!\n");
+      asfPrintError("POWER is a currently unsupported radiometry for ALOS!\n");
   }
 
   /* Let the user know what format we are working on */
