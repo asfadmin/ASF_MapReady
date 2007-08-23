@@ -247,6 +247,4 @@ void show_widget(const char *widget_name, int show)
         gtk_widget_show(w);
     else
         gtk_widget_hide(w);
-
-    printf("%s: %s\n", widget_name, show ? "Showing" : "Hiding");
 }

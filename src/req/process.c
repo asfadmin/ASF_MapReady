@@ -24,7 +24,7 @@ static int is_all_asterisks(char *s)
     return TRUE;
 }
 
-static char *my_parse_string(char *p, char *s)
+static char *my_parse_string(char *p, char *s, int max_len)
 {
     if (*p == '\0') {
         printf("  --> Unexpected end of string\n");
@@ -39,7 +39,7 @@ static char *my_parse_string(char *p, char *s)
     }
 
     *q = '\0'; // temporarily...
-    strcpy(s, p);
+    strncpy_safe(s, p, max_len);
     *q = ',';
 
     // point to beginning of next item
@@ -49,7 +49,7 @@ static char *my_parse_string(char *p, char *s)
 static char *my_parse_int(char *p, int *i)
 {
     char tmp[64];
-    p = my_parse_string(p, tmp);
+    p = my_parse_string(p, tmp, 64);
     if (p && strlen(tmp)>0 && !is_all_asterisks(tmp))
         *i = atoi(tmp);
     else
@@ -60,7 +60,7 @@ static char *my_parse_int(char *p, int *i)
 static char *my_parse_long(char *p, long *l)
 {
     char tmp[64];
-    p = my_parse_string(p, tmp);
+    p = my_parse_string(p, tmp, 64);
     if (p && strlen(tmp)>0 && !is_all_asterisks(tmp))
         *l = atol(tmp);
     else
@@ -71,7 +71,7 @@ static char *my_parse_long(char *p, long *l)
 static char *my_parse_double(char *p, double *d)
 {
     char tmp[64];
-    p = my_parse_string(p, tmp);
+    p = my_parse_string(p, tmp, 64);
     if (p && strlen(tmp)>0 && !is_all_asterisks(tmp))
         *d = atof(tmp);
     else
@@ -126,7 +126,7 @@ static int parse_line(// input
     int is_palsar = 0;
 
     // sensor
-    p = my_parse_string(p, sensor);
+    p = my_parse_string(p, sensor, 256);
     if (!p) return FALSE;
     if (strcmp(sensor, "PSM") == 0)
         is_prism = 1;
@@ -142,7 +142,7 @@ static int parse_line(// input
 
     // request_type
     char tmp[64];
-    p = my_parse_string(p, tmp);
+    p = my_parse_string(p, tmp, 64);
     if (!p) return FALSE;
     const char *t = request_type == OBSERVATION_REQUEST ? 
         "Observation" : "Acquisition";
@@ -153,7 +153,7 @@ static int parse_line(// input
 
     // for acquisition requests only -- drf
     if (request_type == ACQUISITION_REQUEST) {
-        p = my_parse_string(p, drf);
+        p = my_parse_string(p, drf, 16);
         if (!p) return FALSE;
         if (strlen(drf)>4) {
             printf("Truncating DRF to 4 characters: %s\n", drf);
@@ -203,7 +203,7 @@ static int parse_line(// input
     if (!p) return FALSE;
 
     // observation mode
-    p = my_parse_string(p, observation_mode);
+    p = my_parse_string(p, observation_mode, 256);
     if (!p) return FALSE;
     if (strlen(observation_mode) != 3) {
         printf("  -> Invalid observation mode: %s\n", observation_mode);
@@ -804,14 +804,19 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                 *drf_ret = MALLOC(sizeof(char)*10);
                 strcpy(*drf_ret, drf2);
                 *req_id = settings_get_next_req_id(request_type, drf);
-                printf("DRF: %s, id=%d\n", drf, *req_id);
+                printf("For DRF %s, next request ID is: %d\n", drf, *req_id);
             }
-        } else {
+        } else if (n_requests > 1) {
             // ensure all DRF values in the file are the same
             if (strcmp(drf, drf2) != 0) {
                 printf("DRF value on line %d doesn't match the first: %s\n",
                     line_no, drf2);
             }
+        } else {
+            // First line must have been invalid.
+            // Don't need to do anything, will initialize drf with the first
+            // valid line that we find.
+            ;
         }
 
         ++line_no;
@@ -835,8 +840,9 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
         first_date = last_date =
             date_to_long(ts->tm_year+1900, ts->tm_mon+1, ts->tm_mday);
     } else {
-        printf("Found %d requests, range: %ld -> %ld\n",
-            n_requests, first_date, last_date);
+        printf("Found %d request%s, range: %ld -> %ld\n",
+            n_requests, n_requests==1 ? "" : "s",
+            first_date, last_date);
     }
 
     // open output file
@@ -1165,7 +1171,7 @@ int odl0_parse_line(char *line, char *downlink_segment_number,
     char *p = line;
 
     // downlink segment number
-    p = my_parse_string(p, downlink_segment_number);
+    p = my_parse_string(p, downlink_segment_number, 256);
     if (!p) return FALSE;
     if (strlen(downlink_segment_number)!=14) {
         printf(
@@ -1176,7 +1182,7 @@ int odl0_parse_line(char *line, char *downlink_segment_number,
     }
 
     // L0 Data Code
-    p = my_parse_string(p, l0_data_code);
+    p = my_parse_string(p, l0_data_code, 256);
     if (!p) return FALSE;
     if (strlen(l0_data_code)!=4) {
         printf(
