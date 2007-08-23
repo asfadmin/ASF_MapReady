@@ -75,6 +75,7 @@ install: all
 	chmod a+x "@SHAREDIR@"/projections/*
 	chmod a+x "@SHAREDIR@"/asf_convert
 	chmod a+x "@SHAREDIR@"/proj
+	chmod -R ug+w "@SHAREDIR@"
 
 external_libs:
 	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
