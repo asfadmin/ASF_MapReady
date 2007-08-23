@@ -43,3 +43,19 @@ char *appendStr(const char *s1, const char *s2)
     strcat(strcpy(ret, s1), s2);
     return ret;
 }
+
+// copies not more than len-1 characters from the string 'src'
+// (including any terminating null characters), to 'dst'
+// If strlen(src)<len, null characters are appended to dst
+// to make the total len.
+// If strlen(src>=len, src is truncated to len-1 characters,
+// and a null terminating character is appended to dst.
+// Differs from strncpy in that:
+//  - only copies len-1 characters, instead of len.
+//  - dst is guaranteed null-terminated
+char *strncpy_safe(char *dst, const char *src, size_t len)
+{
+    strncpy(dst, src, len-1);
+    dst[len-1] = '\0';
+    return dst;
+}

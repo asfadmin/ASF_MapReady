@@ -136,6 +136,11 @@ int strncmp_case(const char *s1, const char *s2, size_t n);
 /* Allocate and return a new string which is s1+s2, neither of which are null*/
 char *appendStr(const char *s1, const char *s2);
 
+/* Wrapper for strncpy, guarantees result is null-terminated. */
+/* Important difference from strncpy:                         */
+/*                 ONLY COPIES len-1 CHARACTERS!              */
+char *strncpy_safe(char *dst, const char *src, size_t len);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
