@@ -19,8 +19,10 @@ static char * s_argv0 = 0;
 
 #ifdef BUILD_REQ
 static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\Req\\";
+static const char * s_version_string = REQ_PACKAGE_VERSION_STRING;
 #else
 static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\Convert\\";
+static const char * s_version_string = CONVERT_PACKAGE_VERSION_STRING;
 #endif
 
 static const char * s_asf_share_dir_key = "Install_Dir";
@@ -74,8 +76,8 @@ get_string_from_registry_ex(const char *folder, const char * key, char * str_val
 static char *form_asf_application_key()
 {
     // form the registry key entry:
-    //   \SOFTWARE\ASF_Tools\<version>
-    char *ver = STRDUP(CONVERT_PACKAGE_VERSION_STRING);
+    //   \SOFTWARE\ASF_Tools\<app>\<version>
+    char *ver = STRDUP(s_version_string);
 
     // strip out all but "major.minor"
     char *p = strchr(ver, '.');
