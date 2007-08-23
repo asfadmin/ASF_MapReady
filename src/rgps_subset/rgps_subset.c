@@ -155,12 +155,12 @@ int main(int argc, char **argv)
 
   // Ingesting CEOS files into ASF internal format
   asfPrintStatus("Ingesting source image: %s ...\n", srcImage);
-  asf_import(radiometry, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
+  asf_import(radiometry, FALSE, FALSE, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
 	     -99.0, -99.0, NULL, NULL, NULL, NULL, srcImage, srcImage);
   metaSrc = meta_read(srcImage);
 
   asfPrintStatus("Ingesting target image: %s ...\n", trgImage);
-  asf_import(radiometry, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
+  asf_import(radiometry, FALSE, FALSE, FALSE, "CEOS", "", "geocoded_image", NULL, NULL,
 	     -99.0, -99.0, NULL, NULL, NULL, NULL, trgImage, trgImage);
   metaTrg = meta_read(trgImage);
 
