@@ -30,7 +30,6 @@ static void generate(char **dir, char **file)
         strcpy(*file, "???");
     }
 
-    printf("Generated: %s\n", *file);
     settings_free(s);
 }
 

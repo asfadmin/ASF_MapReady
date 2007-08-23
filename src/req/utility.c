@@ -228,9 +228,25 @@ void put_string_in_textview(const char *widget_name, const char *txt)
     append_output(txt, tv);
 }
 
-void put_string_to_label(const char *widget_name, const char *txt)
+void put_string_to_label(const char *widget_name, const char *format, ...)
 {
+    char buffer[4096];
+    va_list ap;
+    va_start(ap, format);
+    vsprintf(buffer, format, ap);
+    va_end(ap);
+
     GtkWidget *w = get_widget_checked(widget_name);
-    gtk_label_set_text(GTK_LABEL(w), txt);
+    gtk_label_set_text(GTK_LABEL(w), buffer);
 }
 
+void show_widget(const char *widget_name, int show)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    if (show)
+        gtk_widget_show(w);
+    else
+        gtk_widget_hide(w);
+
+    printf("%s: %s\n", widget_name, show ? "Showing" : "Hiding");
+}

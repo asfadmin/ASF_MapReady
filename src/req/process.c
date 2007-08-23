@@ -719,10 +719,12 @@ static char *fix_underscores(char *s)
     return ret;
 }
 
+static
 void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                      int is_emergency, int *req_id,
                      long start_date_user, long end_date_user,
-                     const char *type_code, int request_type)
+                     const char *type_code, int request_type,
+                     char **drf_ret)
 {
     // temporary spot for the read line
     char line[1024];
@@ -795,10 +797,16 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
             printf("Invalid line %d in CSV file.\n", line_no);
         }
 
-        if (n_requests == 1)
+        if (n_requests == 1) {
             // first line is THE drf.
             strcpy(drf, drf2);
-        else {
+            if (drf_ret) { // return DRF to caller, if requested
+                *drf_ret = MALLOC(sizeof(char)*10);
+                strcpy(*drf_ret, drf2);
+                *req_id = settings_get_next_req_id(request_type, drf);
+                printf("DRF: %s, id=%d\n", drf, *req_id);
+            }
+        } else {
             // ensure all DRF values in the file are the same
             if (strcmp(drf, drf2) != 0) {
                 printf("DRF value on line %d doesn't match the first: %s\n",
@@ -1135,15 +1143,15 @@ void obs_process(FILE *fin, const char *csv_file, const char *req_file,
                  long end_date_user)
 {
     acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
-        start_date_user, end_date_user, "REQ", OBSERVATION_REQUEST);
+        start_date_user, end_date_user, "REQ", OBSERVATION_REQUEST, NULL);
 }
 
 void acq_process(FILE *fin, const char *csv_file, const char *req_file,
                  int is_emergency, int *req_id, long start_date_user,
-                 long end_date_user)
+                 long end_date_user, char **drf)
 {
     acq_obs_process(fin, csv_file, req_file, is_emergency, req_id,
-        start_date_user, end_date_user, "RQT", ACQUISITION_REQUEST);
+        start_date_user, end_date_user, "RQT", ACQUISITION_REQUEST, drf);
 }
 
 int odl0_parse_line(char *line, char *downlink_segment_number,
@@ -1394,15 +1402,16 @@ void gui_process(int for_real)
                 put_string_in_textview("output_textview", buf);
             } else {
                 int req_id, request_type;
+                char *drf=NULL;
                 char *outfile =
                     process(csv_file, settings_get_is_emergency(),
-                        &req_id, &request_type,
+                        &req_id, &request_type, &drf,
                         settings_get_start_date(), settings_get_end_date());
                 if (outfile) {
                     put_file_in_textview(outfile, "output_textview");
                     if (for_real) {
                         // update request num, id!
-                        settings_set_next_req_id_and_incr_req_num(req_id, request_type);
+                        settings_set_next_req_id_and_incr_req_num(req_id, request_type, drf);
                         sprintf(buf, "Generated output file: %s", outfile);
                         put_string_to_label("generate_label", buf);
                     } else {
@@ -1415,6 +1424,8 @@ void gui_process(int for_real)
                     // the textview - no action necessary
 
                 }
+                if (drf)
+                    free(drf);
             }
         } else {
             sprintf(buf, "File not found: %s\n", csv_file);
@@ -1436,7 +1447,7 @@ static char *update_request_type(int request_type)
 }
 
 char *process(const char *csv_file, int is_emergency,
-              int *req_id, int *request_type,
+              int *req_id, int *request_type, char **drf,
               long start_date_user, long end_date_user)
 {
     printf("Process> %s\n", csv_file);
@@ -1481,7 +1492,8 @@ char *process(const char *csv_file, int is_emergency,
         req_file = update_request_type(OBSERVATION_REQUEST);
 
         *request_type = OBSERVATION_REQUEST;
-        *req_id = settings_get_next_req_id(OBSERVATION_REQUEST);
+        *drf = STRDUP("");
+        *req_id = settings_get_next_req_id(OBSERVATION_REQUEST, *drf);
 
         obs_process(fin, csv_file, req_file, is_emergency, req_id,
             start_date_user, end_date_user);
@@ -1491,17 +1503,17 @@ char *process(const char *csv_file, int is_emergency,
         req_file = update_request_type(ACQUISITION_REQUEST);
 
         *request_type = ACQUISITION_REQUEST;
-        *req_id = settings_get_next_req_id(ACQUISITION_REQUEST);
 
         acq_process(fin, csv_file, req_file, is_emergency, req_id,
-            start_date_user, end_date_user);
+            start_date_user, end_date_user, drf);
     } 
     else if (strcmp(line, l0_expected_header) == 0) {
         printf("Processing as an On-Demand Level 0 Request.\n");
         req_file = update_request_type(ON_DEMAND_LEVEL_0);
 
         *request_type = ON_DEMAND_LEVEL_0;
-        *req_id = settings_get_next_req_id(ON_DEMAND_LEVEL_0);
+        *drf = STRDUP("");
+        *req_id = settings_get_next_req_id(ON_DEMAND_LEVEL_0, *drf);
 
         odl0_process(fin, csv_file, req_file, is_emergency, req_id,
             start_date_user, end_date_user);

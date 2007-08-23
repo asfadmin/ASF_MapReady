@@ -37,7 +37,8 @@ typedef struct
     int obs_req_num;
     int obs_req_id;
     int acq_req_num;
-    int acq_req_id;
+    char acq_req_stn_codes[5][5];
+    int acq_req_ids[5];
     int odl0_seq_num;
     int odl0_req_id;
     char *station_code;
@@ -70,7 +71,8 @@ char *get_string_from_comboboxentry(const char *widget_name);
 void put_string_to_comboboxentry(const char *widget_name, char *txt);
 void put_file_in_textview(const char *file, const char *widget_name);
 void put_string_in_textview(const char *widget_name, const char *txt);
-void put_string_to_label(const char *widget_name, const char *txt);
+void put_string_to_label(const char *widget_name, const char *format, ...);
+void show_widget(const char *widget_name, int show);
 
 /* req.c */
 char *find_in_share(const char * filename);
@@ -81,8 +83,9 @@ char *settings_get_output_dir(void);
 char *settings_get_csv_dir(void);
 Settings *settings_load(void);
 void settings_free(Settings *s);
-int settings_get_next_req_id(int request_type);
-void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type);
+int settings_get_next_req_id(int request_type, const char *drf);
+void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type,
+                                               const char *drf);
 int settings_get_is_emergency(void);
 long settings_get_start_date(void);
 long settings_get_end_date(void);
@@ -100,7 +103,7 @@ void alert(const char *s);
 
 /* process.c */
 char *process(const char *csv_file, int is_emergency,
-              int *req_id, int *request_type,
+              int *req_id, int *request_type, char **drf,
               long start_date_user, long end_date_user);
 void gui_process(int for_real);
 

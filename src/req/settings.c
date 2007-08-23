@@ -1,18 +1,28 @@
 #include "req.h"
 #include <ctype.h>
 
+#define MAX_STATIONS 5
+
 Settings *settings_new()
 {
     Settings *s = MALLOC(sizeof(Settings));
+
     s->csv_dir = NULL;
     s->output_dir = NULL;
     s->obs_req_num = 1;
     s->obs_req_id = 1;
     s->acq_req_num = 1;
-    s->acq_req_id = 1;
     s->odl0_seq_num = 1;
     s->odl0_req_id = 1;
+
     s->station_code = NULL;
+
+    int i;
+    for (i=0; i<MAX_STATIONS; ++i) {
+        strcpy(s->acq_req_stn_codes[i], "");
+        s->acq_req_ids[i] = 1;
+    }
+
     return s;
 }
 
@@ -33,6 +43,11 @@ static void read_string_param(const char *buf, const char *key, char **value)
 {
     if (matches(buf, key)) {
         char *p = strchr(buf, '=');
+        if (!p) {
+            printf("Ill-formed line in req_settings.txt:\n%s\n", buf);
+            *value = STRDUP("");
+            return;
+        }
 
         // skip past = sign, eat whitespace
         ++p;
@@ -65,14 +80,15 @@ static const char *obs_req_num_key = "next observation request number";
 static const char *obs_req_id_key = "next observation request id";
 static const char *acq_req_num_key = "next acquisition request number";
 static const char *acq_req_id_key = "next acquisition request id";
+static const char *acq_req_stn_code_key = "acquisition request station code";
 static const char *odl0_seq_num_key = "on-demand level 0 sequence number";
 static const char *odl0_req_id_key = "on-demand level 0 request id";
 static const char *station_code_key = "station code";
 
 Settings *settings_load()
 {
+    int i;
     Settings *s = settings_new();
-
     char *sav_file = find_in_share("req_settings.txt");
     if (fileExists(sav_file)) {
         FILE *fp = FOPEN(sav_file, "r");
@@ -84,10 +100,25 @@ Settings *settings_load()
                 read_int_param(buf, obs_req_num_key, &s->obs_req_num);
                 read_int_param(buf, obs_req_id_key, &s->obs_req_id);
                 read_int_param(buf, acq_req_num_key, &s->acq_req_num);
-                read_int_param(buf, acq_req_id_key, &s->acq_req_id);
                 read_int_param(buf, odl0_seq_num_key, &s->odl0_seq_num);
                 read_int_param(buf, odl0_req_id_key, &s->odl0_req_id);
                 read_string_param(buf, station_code_key, &s->station_code);
+                for (i=0; i<MAX_STATIONS; ++i) {
+                    char id_key[128], stn_code_key[128];
+                    snprintf(id_key, 128, "%s %d", acq_req_id_key, i+1);
+                    read_int_param(buf, id_key, &s->acq_req_ids[i]);
+                    snprintf(stn_code_key, 128, "%s %d", acq_req_stn_code_key, i+1);
+                    char *tmp=NULL;
+                    read_string_param(buf, stn_code_key, &tmp);
+                    if (tmp) {
+                        if (strlen(tmp) > 4)
+                            tmp[4] = '\0';
+                        strcpy(s->acq_req_stn_codes[i], tmp);
+                        free(tmp);
+                    } else {
+                        strcpy(s->acq_req_stn_codes[i], "");
+                    }
+                }
             }
             FCLOSE(fp);
         } else {
@@ -102,7 +133,8 @@ Settings *settings_load()
     if (s->obs_req_num < 1) s->obs_req_num = 1;
     if (s->obs_req_id < 1) s->obs_req_id = 1;
     if (s->acq_req_num < 1) s->acq_req_num = 1;
-    if (s->acq_req_id < 1) s->acq_req_id = 1;
+    for (i=0; i<MAX_STATIONS; ++i)
+        if (s->acq_req_ids[i] < 1) s->acq_req_ids[i] = 1;
     if (s->odl0_seq_num < 1) s->odl0_seq_num = 1;
     if (s->odl0_req_id < 1) s->odl0_req_id = 1;
 
@@ -119,9 +151,29 @@ static void apply_settings_to_gui(Settings *s)
     put_int_to_entry("next_obs_request_number_entry", s->obs_req_num);
     put_int_to_entry("next_obs_request_id_entry", s->obs_req_id);
     put_int_to_entry("next_acq_request_number_entry", s->acq_req_num);
-    put_int_to_entry("next_acq_request_id_entry", s->acq_req_id);
     put_int_to_entry("odl0_sequence_number_entry", s->odl0_seq_num);
     put_int_to_entry("next_odl0_request_id_entry", s->odl0_req_id);
+
+    int i;
+    for (i=0; i<MAX_STATIONS; ++i) {
+        char widget_name[128];
+        int visible = strlen(s->acq_req_stn_codes[i]) > 0;
+
+        snprintf(widget_name, 128, "next_acq_request_id_label%d", i+1);
+        if (visible)
+            put_string_to_label(widget_name, "Next Request ID (%s): ",
+                s->acq_req_stn_codes[i]);
+        else
+            put_string_to_label(widget_name, "");
+        show_widget(widget_name, visible);
+
+        snprintf(widget_name, 128, "next_acq_request_id_entry%d", i+1);
+        if (visible)
+            put_int_to_entry(widget_name, s->acq_req_ids[i]);
+        else
+            put_string_to_entry(widget_name, "");
+        show_widget(widget_name, visible);
+    }
 }
 
 void apply_saved_settings()
@@ -163,16 +215,22 @@ void settings_save(Settings *s)
         printf("Found settings file: %s\n", sav_file);
         char *new_sav_txt = MALLOC(sizeof(char)*1024);
         strcpy(new_sav_txt, "");
-        int len=1024;
+        int i,len=1024;
         int wrote_csv=FALSE,
             wrote_output=FALSE,
             wrote_obs_req_num=FALSE,
             wrote_obs_req_id=FALSE,
             wrote_acq_req_num=FALSE,
-            wrote_acq_req_id=FALSE,
             wrote_odl0_seq_num=FALSE,
             wrote_odl0_req_id=FALSE,
             wrote_station_code=FALSE;
+
+        int wrote_acq_req_id[MAX_STATIONS];
+        int wrote_acq_req_stn_code[MAX_STATIONS];
+        for (i=0; i<MAX_STATIONS; ++i) {
+            wrote_acq_req_id[i] = FALSE;
+            wrote_acq_req_stn_code[i] = FALSE;
+        }
 
         FILE *fp = FOPEN(sav_file, "r");
         if (!fp) {
@@ -202,10 +260,6 @@ void settings_save(Settings *s)
                 add_to_text(&new_sav_txt, &len,
                     "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
                 wrote_acq_req_num = TRUE;
-            } else if (matches(buf, acq_req_id_key)) {
-                add_to_text(&new_sav_txt, &len,
-                    "%s = %d\r\n", acq_req_id_key, s->acq_req_id);
-                wrote_acq_req_id = TRUE;
             } else if (matches(buf, odl0_seq_num_key)) {
                 add_to_text(&new_sav_txt, &len,
                     "%s = %d\r\n", odl0_seq_num_key, s->odl0_seq_num);
@@ -219,7 +273,25 @@ void settings_save(Settings *s)
                     "%s = %s\r\n", station_code_key, s->station_code);
                 wrote_station_code = TRUE;
             } else {
-                add_to_text(&new_sav_txt, &len, "%s", buf);
+                int found=0;
+                for (i=0; i<MAX_STATIONS; ++i) {
+                    char id_key[128], stn_code_key[128];
+                    snprintf(id_key, 128, "%s %d", acq_req_id_key, i+1);
+                    snprintf(stn_code_key, 128, "%s %d", acq_req_stn_code_key, i+1);
+                    if (matches(buf, id_key)) {
+                        add_to_text(&new_sav_txt, &len, "%s = %d\r\n",
+                            id_key, s->acq_req_ids[i]);
+                        found = TRUE;
+                        wrote_acq_req_id[i] = TRUE;
+                    } else if (matches(buf, stn_code_key)) {
+                        found = TRUE;
+                        add_to_text(&new_sav_txt, &len, "%s = %s\r\n",
+                            stn_code_key, s->acq_req_stn_codes[i]);
+                        wrote_acq_req_stn_code[i] = TRUE;
+                    }
+                }
+                if (!found)
+                    add_to_text(&new_sav_txt, &len, "%s", buf);
             }
         }
         FCLOSE(fp);
@@ -239,9 +311,6 @@ void settings_save(Settings *s)
         if (!wrote_acq_req_num && s->acq_req_num > 1)
             add_to_text(&new_sav_txt, &len,
                 "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
-        if (!wrote_acq_req_id && s->acq_req_id > 1)
-            add_to_text(&new_sav_txt, &len,
-                "%s = %d\r\n", s->acq_req_id);
         if (!wrote_odl0_seq_num && s->odl0_seq_num > 1)
             add_to_text(&new_sav_txt, &len,
                 "%s = %d\r\n", odl0_seq_num_key, s->odl0_seq_num);
@@ -251,6 +320,21 @@ void settings_save(Settings *s)
         if (s->station_code && !wrote_station_code)
             add_to_text(&new_sav_txt, &len,
                 "%s = %s\r\n", station_code_key, s->station_code);
+
+        for (i=0; i<MAX_STATIONS; ++i) {
+            if (!wrote_acq_req_id[i] && s->acq_req_ids[i] > 0 &&
+                !wrote_acq_req_stn_code[i] &&
+                strlen(s->acq_req_stn_codes[i]) > 0)
+            {
+                char id_key[128], stn_code_key[128];
+                snprintf(id_key, 128, "%s %d", acq_req_id_key, i+1);
+                snprintf(stn_code_key, 128, "%s %d", acq_req_stn_code_key, i+1);
+                add_to_text(&new_sav_txt, &len,
+                    "%s = %d\r\n", id_key, s->acq_req_ids[i]);
+                add_to_text(&new_sav_txt, &len,
+                    "%s = %d\r\n", stn_code_key, s->acq_req_stn_codes[i]);
+            }
+        }
 
         fp = FOPEN(sav_file, "w");
         fprintf(fp, "%s", new_sav_txt);
@@ -267,9 +351,19 @@ void settings_save(Settings *s)
         fprintf(fp, "%s = %d\r\n", obs_req_num_key, s->obs_req_num);
         fprintf(fp, "%s = %d\r\n", obs_req_id_key, s->obs_req_id);
         fprintf(fp, "%s = %d\r\n", acq_req_num_key, s->acq_req_num);
-        fprintf(fp, "%s = %d\r\n", acq_req_id_key, s->acq_req_id);
         fprintf(fp, "%s = %d\r\n", odl0_seq_num_key, s->odl0_seq_num);
         fprintf(fp, "%s = %d\r\n", odl0_req_id_key, s->odl0_req_id);
+
+        int i;
+        for (i=0; i<MAX_STATIONS; ++i) {
+            if (s->acq_req_ids[i] > 0 && strlen(s->acq_req_stn_codes[i]) > 0) {
+                char id_key[128], stn_code_key[128];
+                snprintf(id_key, 128, "%s %d", acq_req_id_key, i+1);
+                fprintf(fp, "%s = %d\r\n", id_key, s->acq_req_ids[i]);
+                snprintf(stn_code_key, 128, "%s %d", acq_req_stn_code_key, i+1);
+                fprintf(fp, "%s = %s\r\n", stn_code_key, s->acq_req_stn_codes[i]);
+            }
+        }
         if (s->station_code)
             fprintf(fp, "%s = %s\r\n", station_code_key, s->station_code);
         FCLOSE(fp);
@@ -294,10 +388,16 @@ Settings *settings_new_from_gui()
     s->obs_req_num = atoi(get_string_from_entry("next_obs_request_number_entry"));
     s->obs_req_id = atoi(get_string_from_entry("next_obs_request_id_entry"));
     s->acq_req_num = atoi(get_string_from_entry("next_acq_request_number_entry"));
-    s->acq_req_id = atoi(get_string_from_entry("next_acq_request_id_entry"));
     s->odl0_seq_num = atoi(get_string_from_entry("odl0_sequence_number_entry"));
     s->odl0_req_id = atoi(get_string_from_entry("next_odl0_request_id_entry"));
     s->station_code = STRDUP(settings_get_station_code());
+
+    int i;
+    for (i=0; i<MAX_STATIONS; ++i) {
+        char widget_name[128];
+        snprintf(widget_name, 128, "next_acq_request_id_entry%d", i+1);
+        s->acq_req_ids[i] = atoi(get_string_from_entry(widget_name));
+    }
 
     return s;
 }
@@ -349,21 +449,46 @@ SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *widget)
     }
 }
 
-int settings_get_next_req_id(int request_type)
+int settings_get_next_req_id(int request_type, const char *drf)
 {
     Settings *s = settings_load();
     int id;
     switch (request_type) {
-        case OBSERVATION_REQUEST:     id = s->obs_req_id;  break;
-        case ACQUISITION_REQUEST:     id = s->acq_req_id;  break;
-        case ON_DEMAND_LEVEL_0:       id = s->odl0_req_id; break;
-        case UNSELECTED_REQUEST_TYPE: id = 0;              break;
+        case OBSERVATION_REQUEST:
+            id = s->obs_req_id;
+            break;
+
+        case ACQUISITION_REQUEST:
+        {
+            int found=FALSE, i;
+            id = 1;
+            for (i=0; i<MAX_STATIONS; ++i) {
+                if (strncmp_case(drf, s->acq_req_stn_codes[i], strlen(drf)) == 0) {
+                    id = s->acq_req_ids[i];
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (!found) {
+                printf("Unknown station code '%s' - using request id = 1.\n", drf);
+            }
+            break;
+        }
+
+        case ON_DEMAND_LEVEL_0:
+            id = s->odl0_req_id;
+            break;
+
+        case UNSELECTED_REQUEST_TYPE:
+            id = 0;
+            break;
     }
     settings_free(s);
     return id;
 }
 
-void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type)
+void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type,
+                                               const char *drf)
 {
     Settings *s = settings_load();
 
@@ -376,11 +501,24 @@ void settings_set_next_req_id_and_incr_req_num(int req_id, int request_type)
             break;
 
         case ACQUISITION_REQUEST:
-            if (req_id <= s->acq_req_id)
-                printf("*** New acquisition request id is smaller!?\n");
-            s->acq_req_id = req_id;
+        {
+            int found=FALSE, i;
+            for (i=0; i<MAX_STATIONS; ++i) {
+                if (strncmp_case(drf, s->acq_req_stn_codes[i], strlen(drf)) == 0) {
+                    if (req_id <= s->acq_req_ids[i])
+                        printf("*** New acquisition request id for %s is smaller!?\n",
+                            drf);
+                    s->acq_req_ids[i] = req_id;
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (!found) {
+                printf("Unknown station code '%s' - can't increment request id.\n", drf);
+            }
             ++s->acq_req_num;
             break;
+        }
 
         case ON_DEMAND_LEVEL_0:
             if (req_id <= s->odl0_req_id)
