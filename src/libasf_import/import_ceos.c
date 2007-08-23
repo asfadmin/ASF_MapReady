@@ -16,12 +16,12 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
            char *outDataName, char *outMetaName,
            char *bandExt, int band, int nBands,
            radiometry_t radiometry, int import_single_band,
-	   int complex_flag, int multilook_flag);
+     int complex_flag, int multilook_flag);
 void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
-			       radiometry_t radiometry, int import_single_band,
-	     int complex_flag, int multilook_flag);
+             radiometry_t radiometry, int import_single_band,
+       int complex_flag, int multilook_flag);
 void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, char *bandExt, int band, int nBands,
         radiometry_t radiometry, int import_single_band,
@@ -48,7 +48,7 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
        char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands,
                          radiometry_t radiometry);
-
+int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName);
 
 /*
 These next few functions are used to fix scaling errors in the data that
@@ -422,7 +422,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
            char *outDataName, char *outMetaName,
            char *bandExt, int band, int nBands,
            radiometry_t radiometry, int import_single_band,
-	   int complex_flag, int multilook_flag)
+     int complex_flag, int multilook_flag)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
   char bandStr[50];
@@ -458,13 +458,13 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   /* Let the user know what format we are working on */
   if (complex_flag)
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: single look complex\n");
+       "   Output data type: single look complex\n");
   else if (multilook_flag)
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: multilooked complex (2-band)\n");
+       "   Output data type: multilooked complex (2-band)\n");
   else
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: single look complex (2-band)\n");
+       "   Output data type: single look complex (2-band)\n");
   if (nBands > 1)
     asfPrintStatus("   Input band: %s\n", bandExt);
   if (band > 1) {
@@ -479,9 +479,9 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     strcat(meta->general->bands, ",");
   if (complex_flag)
     sprintf(bandStr, "COMPLEX-%s", meta->sar->polarization);
-  else 
+  else
     sprintf(bandStr, "AMP-%s,PHASE-%s",
-	    meta->sar->polarization, meta->sar->polarization);
+      meta->sar->polarization, meta->sar->polarization);
   strcat(meta->general->bands, bandStr);
 
   /* Make sure that none of the detected level one flags are set */
@@ -611,7 +611,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   FREE(cpx_buf);
   if (complex_flag)
     FREE(cpxFloat_buf);
-  else {      
+  else {
     FREE(amp_buf);
     FREE(phase_buf);
   }
@@ -621,11 +621,11 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     if (nBands == 1 && meta->sar)
       sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
   }
-  else { 
+  else {
     meta->general->band_count = import_single_band ? 2 : band*2;
     if (nBands == 2 && meta->sar)
       sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
-	      meta->sar->polarization, meta->sar->polarization);
+        meta->sar->polarization, meta->sar->polarization);
   }
   meta_write(meta, outMetaName);
 
@@ -680,13 +680,13 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   /* Let the user know what format we are working on */
   if (complex_flag)
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: single look complex\n");
+       "   Output data type: single look complex\n");
   else if (multilook_flag)
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: multilooked complex (2-band)\n");
+       "   Output data type: multilooked complex (2-band)\n");
   else
     asfPrintStatus("   Input data type: single look complex\n"
-		   "   Output data type: single look complex (2-band)\n");
+       "   Output data type: single look complex (2-band)\n");
   if (nBands > 1)
     asfPrintStatus("   Input band: %s\n", bandExt);
   if (band > 1) {
@@ -706,7 +706,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   else {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "AMP-%s,PHASE-%s",
-	      meta->sar->polarization, meta->sar->polarization);
+        meta->sar->polarization, meta->sar->polarization);
     else
       sprintf(bandStr, "AMP-%s,PHASE-%s", bandExt, bandExt);
   }
@@ -779,10 +779,10 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
       cpx.real = cpx_buf[kk*2];
       cpx.imag = cpx_buf[kk*2+1];
       if (complex_flag)
-	cpxFloat_buf[kk] = cpx;
+  cpxFloat_buf[kk] = cpx;
       else {
-	amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	phase_buf[kk] = atan2(cpx.imag, cpx.real);
+  amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+  phase_buf[kk] = atan2(cpx.imag, cpx.real);
       }
     }
     if (complex_flag)
@@ -798,7 +798,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   FREE(cpx_buf);
   if (complex_flag)
     FREE(cpxFloat_buf);
-  else {      
+  else {
     FREE(amp_buf);
     FREE(phase_buf);
   }
@@ -808,11 +808,11 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     if (nBands == 1 && meta->sar)
       sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
   }
-  else { 
+  else {
     meta->general->band_count = import_single_band ? 2 : band*2;
     if (nBands == 2 && meta->sar)
       sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
-	      meta->sar->polarization, meta->sar->polarization);
+        meta->sar->polarization, meta->sar->polarization);
   }
   meta_write(meta, outMetaName);
 
@@ -873,10 +873,12 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
       asfPrintError("Unable to find calibration parameters "
         "in the metadata.\n");
   }
-
-  /* FIXME! Temporary warning about unsupported ALOS radiometries */
+  // FIXME! Temporary error-out for unsupported ALOS radiometries
+  // r_POWER should be supported for level 1.5R/G regardless,
+  // and levels below that need some evaluation to determine
+  // when to apply the power conversion
   if (strcmp(meta->general->sensor, "ALOS") == 0) {
-    if (radiometry == r_POWER)
+    if (radiometry == r_POWER && !is_alos_palsar_1_5_plus(inDataName, inMetaName))
       asfPrintError("POWER is a currently unsupported radiometry for ALOS!\n");
   }
 
@@ -1828,4 +1830,14 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
 
   FCLOSE(fpIn);
   FCLOSE(fpOut);
+}
+
+int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName)
+{
+  int ret=0;
+  ceos_description *ceos = get_ceos_description(inDataName, STATUS);
+  if (ceos->sensor == PALSAR && ceos->product == SGI)
+    ret=1;
+
+  return ret;
 }
