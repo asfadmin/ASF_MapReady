@@ -28,6 +28,7 @@
 
 #define BYTE __byte
 #include "asf.h"
+#include "asf_meta.h"
 #undef BYTE
 #include <windows.h>
 #undef DIR_SEPARATOR
@@ -123,6 +124,7 @@ void set_font ()
 #else /* defined(win32) */
 
 #include "asf.h"
+#include "asf_meta.h"
 
 /* on unix, GTK will select the appropriate fonts */
 void set_font () {}
@@ -278,8 +280,8 @@ static void load_images(const char *f1, const char *f2)
 
 static void do_wait(double secs)
 {
-    double micro_secs = 100000 * secs;
-    int interval = 100;
+    double micro_secs = 500000 * secs;
+    int interval = 500;
     int count = 0;
 
     while (count < micro_secs) {
