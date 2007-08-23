@@ -1,8 +1,9 @@
 include ../../make_support/system_rules
 
-LIBS :=	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/libasf_proj.a \
+LIBS :=	\
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \

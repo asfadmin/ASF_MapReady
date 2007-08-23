@@ -126,14 +126,14 @@ int main(int argc, char **argv)
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
 	sscanf(line, "%lf %lf", &lat, &lon);   
-	latLon2proj(lat, lon, 0.0, projFile, &projX, &projY, &projZ);
+	latLon2proj(lat, lon, 0.0, projFile, &projX, &projY);
 	printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
       }
     }
     FCLOSE(fp);
   }
   else {
-    latLon2proj(lat, lon, 0.0, projFile, &projX, &projY, &projZ);
+    latLon2proj(lat, lon, 0.0, projFile, &projX, &projY);
     printf("%.4lf\t%.4lf\t%.3lf\t%.3lf\n", lat, lon, projX, projY);
   }
 

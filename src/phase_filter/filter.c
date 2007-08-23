@@ -53,6 +53,7 @@ BUGS:
 *									      *
 ******************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "fft.h"
 #include "fft2d.h"
 #include "ddr.h"

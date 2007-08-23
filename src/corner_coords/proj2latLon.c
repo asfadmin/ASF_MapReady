@@ -156,15 +156,17 @@ int main(int argc, char **argv)
     fp = FOPEN(listFile, "r");
     while (fgets(line, 255, fp) != NULL) {
       if (strlen(line) > 1) {
+	double junk_height;
 	sscanf(line, "%lf %lf", &projX, &projY);   
-	proj_to_latlon(meta_proj, projX, projY, &lat, &lon);
+	proj_to_latlon(meta_proj, projX, projY, 0.0, &lat, &lon, &junk_height);
 	printf("%.3lf\t%.3lf\t%.4lf\t%.4lf\n", projX, projY, lat*R2D, lon*R2D);
       }
     }
     FCLOSE(fp);
   }
   else {
-    proj_to_latlon(meta_proj, projX, projY, &lat, &lon);
+    double junk_height;
+    proj_to_latlon(meta_proj, projX, projY, 0.0, &lat, &lon, &junk_height);
     printf("%.3lf\t%.3lf\t%.4lf\t%.4lf\n", projX, projY, lat*R2D, lon*R2D);
   }
 

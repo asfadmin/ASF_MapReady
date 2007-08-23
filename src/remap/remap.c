@@ -150,6 +150,7 @@ BUGS:
 ******************************************************************************/
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "las.h"
 #include "Matrix2D.h"
 #include "remap.h"

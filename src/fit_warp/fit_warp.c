@@ -67,6 +67,7 @@ BUGS: none known
 
 
 #include "asf.h"
+#include "asf_meta.h"
 
 float version=1.1;
 

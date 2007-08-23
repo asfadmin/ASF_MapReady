@@ -4,7 +4,8 @@
 include ../../make_support/system_rules
 
 CFLAGS += \
-	$(GSL_CLAGS) \
+	$(GSL_CFLAGS) \
+	$(PNG_CFLAGS) \
 	$(GEOTIFF_CFLAGS) \
 	$(TIFF_CFLAGS) \
 	$(JPEG_CFLAGS) \
@@ -27,7 +28,7 @@ LIBS = 	\
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	$(GSL_LIBS) \
-	$(LIBDIR)/libpng.a \
+	$(PNG_LIBS) \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
