@@ -736,9 +736,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
-                              uc(cfg->import->format),
 			      cfg->import->complex_slc,
 			      cfg->import->multilook_slc,
+                              uc(cfg->import->format),
                               NULL,
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
