@@ -561,22 +561,12 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta_get_sat_height(meta,
       meta->general->line_count/2,
       meta->general->sample_count/2);
-  if (ceos->product == SLC) {
-    meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
-    meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
-    meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
-    meta->sar->azimuth_doppler_coefficients[0] = dssr->alt_dopcen[0];
-    meta->sar->azimuth_doppler_coefficients[1] = dssr->alt_dopcen[1];
-    meta->sar->azimuth_doppler_coefficients[2] = dssr->alt_dopcen[2];
-  }
-  else {
-    meta->sar->range_doppler_coefficients[0] = 0.0;
-    meta->sar->range_doppler_coefficients[1] = 0.0;
-    meta->sar->range_doppler_coefficients[2] = 0.0;
-    meta->sar->azimuth_doppler_coefficients[0] = 0.0;
-    meta->sar->azimuth_doppler_coefficients[1] = 0.0;
-    meta->sar->azimuth_doppler_coefficients[2] = 0.0;
-  }
+  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
+  meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
+  meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
+  meta->sar->azimuth_doppler_coefficients[0] = dssr->alt_dopcen[0];
+  meta->sar->azimuth_doppler_coefficients[1] = dssr->alt_dopcen[1];
+  meta->sar->azimuth_doppler_coefficients[2] = dssr->alt_dopcen[2];
 
   // Location block
   if (ceos->product != RAW)
