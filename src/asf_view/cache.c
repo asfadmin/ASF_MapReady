@@ -53,6 +53,8 @@ static int data_size(CachedImage *self)
             return 3;
         case GREYSCALE_BYTE:
             return 1;
+        case RGB_FLOAT:
+            return 12;
         default:
             assert(FALSE);
             return 0;
@@ -284,7 +286,7 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp)
     else if (self->data_type == GREYSCALE_BYTE) {
         return (float) *(get_pixel(self, line, samp));
     }
-    else if (self->data_type == RGB_BYTE) {
+    else if (self->data_type == RGB_BYTE || self->data_type == RGB_FLOAT) {
         unsigned char r, g, b;
         cached_image_get_rgb(self, line, samp, &r, &g, &b);
         return ((float)r + (float)g + (float)b)/3.;
@@ -313,10 +315,48 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
         *g = uc[1];
         *b = uc[2];
     }
+    else if (self->data_type == RGB_FLOAT) {
+        float *f = (float*)get_pixel(self, line, samp);
+
+        *r = (unsigned char)calc_scaled_pixel_value(f[0]);
+        *g = (unsigned char)calc_scaled_pixel_value(f[1]);
+        *b = (unsigned char)calc_scaled_pixel_value(f[2]);
+    }
     else {
         // impossible!
         assert(0);
         *r = *g = *b = 0;
+    }
+}
+
+void cached_image_get_rgb_float(CachedImage *self, int line, int samp,
+                                float *r, float *g, float *b)
+{
+    if (self->data_type == GREYSCALE_FLOAT) {
+        float f = cached_image_get_pixel(self, line, samp);
+        *r = *g = *b = calc_scaled_pixel_value(f);
+    }
+    else if (self->data_type == GREYSCALE_BYTE) {
+        *r = *g = *b = (float)(*(get_pixel(self, line, samp)));
+    }
+    else if (self->data_type == RGB_BYTE) {
+        unsigned char *uc = get_pixel(self, line, samp);
+
+        *r = (float)(uc[0]);
+        *g = (float)(uc[1]);
+        *b = (float)(uc[2]);
+    }
+    else if (self->data_type == RGB_FLOAT) {
+        float *f = (float*)get_pixel(self, line, samp);
+
+        *r = f[0];
+        *g = f[1];
+        *b = f[2];
+    }
+    else {
+        // impossible!
+        assert(0);
+        *r = *g = *b = 0.;
     }
 }
 

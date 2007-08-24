@@ -148,12 +148,48 @@ int read_asf_client(int row_start, int n_rows_to_get,
             free(buf);
         }
     } else {
-        // this is the normal case, just reading in a strip of lines
-        // from the file directly into the floating point cache
-        assert(data_ci->data_type==GREYSCALE_FLOAT);
         float *dest = (float*)dest_void;
-        get_float_lines(info->fp, meta, row_start + nl*info->band_gs,
-                        n_rows_to_get, dest);
+        if (data_ci->data_type==GREYSCALE_FLOAT) {
+            // this is the normal case, just reading in a strip of lines
+            // from the file directly into the floating point cache
+            get_float_lines(info->fp, meta, row_start + nl*info->band_gs,
+                            n_rows_to_get, dest);
+        } else {
+            // grabbing 3 channels floating point data 
+            assert(data_ci->data_type==RGB_FLOAT);
+
+            // first set the cache's memory to all zeros, this way any
+            // rgb channels we don't populate will end up black
+            memset(dest, 0, n_rows_to_get*ns*3*sizeof(float));
+            float *buf = MALLOC(sizeof(float)*ns);
+            int i,j,k;
+
+            if (info->band_r >= 0) {
+                for (i=0; i<n_rows_to_get; ++i) {
+                    get_float_line(info->fp, meta, row_start + nl*info->band_r + i, buf);
+                    for (j=0, k=3*ns*i; j<ns; ++j, k += 3)
+                        dest[k] = buf[j];
+                }
+            }
+
+            if (info->band_g >= 0) {
+                for (i=0; i<n_rows_to_get; ++i) {
+                    get_float_line(info->fp, meta, row_start + nl*info->band_g + i, buf);
+                    for (j=0, k=3*ns*i+1; j<ns; ++j, k += 3)
+                        dest[k] = buf[j];
+                }
+            }
+
+            if (info->band_b >= 0) {
+                for (i=0; i<n_rows_to_get; ++i) {
+                    get_float_line(info->fp, meta, row_start + nl*info->band_b + i, buf);
+                    for (j=0, k=3*ns*i+2; j<ns; ++j, k += 3)
+                        dest[k] = buf[j];
+                }
+            }
+
+            free(buf);
+        }
     }
 
     return TRUE;
@@ -254,14 +290,74 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
         // this is the normal case -- regular old floating point data,
         // we just read with get_float_line and populate directly into
         // a floating point array
-        assert(data_ci->data_type==GREYSCALE_FLOAT);
-        int off = nl*info->band_gs;
         float *dest = (float*)dest_void;
-        for (i=0; i<thumb_size_y; ++i) {
-            get_float_line(info->fp, meta, i*sf + off, buf);
-            for (j=0; j<thumb_size_x; ++j)
-                dest[i*thumb_size_x+j] = buf[j*sf];
-            asfPercentMeter((float)i/(thumb_size_y-1));
+        if (data_ci->data_type == GREYSCALE_FLOAT) {
+            int off = nl*info->band_gs;
+            for (i=0; i<thumb_size_y; ++i) {
+                get_float_line(info->fp, meta, i*sf + off, buf);
+                for (j=0; j<thumb_size_x; ++j)
+                    dest[i*thumb_size_x+j] = buf[j*sf];
+                asfPercentMeter((float)i/(thumb_size_y-1));
+            }
+        } else if (data_ci->data_type == RGB_FLOAT) {
+            int off, k;
+
+            // first set dest buffer to all zeros.  This way, any bands that
+            // aren't set up will just come out black.
+            memset(dest, 0, 3*sizeof(float)*thumb_size_x*thumb_size_y);
+
+            // "tot" is to help with the PercentMeter -- the total number
+            // of lines that we will need to read.  "l" is the counter
+            int tot = (info->band_r>=0) + (info->band_g>=0) + (info->band_b>=0);
+            tot *= thumb_size_y;
+            int l=0;
+
+            // to do each of the bands, we read the data into a float array,
+            // then cast (back) to byte into the interleaved "dest" array
+            // (interleaved in the sense that we only populate every 3rd item
+            // each time through)
+
+            // red band
+            if (info->band_r >= 0) {
+                off = nl*info->band_r;
+                for (i=0; i<thumb_size_y; ++i) {
+                    k=3*i*thumb_size_x; // starting point in dest array
+                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    for (j=0; j<thumb_size_x; ++j, k += 3)
+                        dest[k] = buf[j*sf];
+                    asfPercentMeter((float)(l++)/(tot-1));
+                }
+            }
+
+            // green band
+            if (info->band_g >= 0) {
+                off = nl*info->band_g;
+                for (i=0; i<thumb_size_y; ++i) {
+                    k=3*i*thumb_size_x+1;
+                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    for (j=0; j<thumb_size_x; ++j, k += 3)
+                        dest[k] = buf[j*sf];
+                    asfPercentMeter((float)(l++)/(tot-1));
+                }
+            }
+
+            // blue band
+            if (info->band_b >= 0) {
+                off = nl*info->band_b;
+                for (i=0; i<thumb_size_y; ++i) {
+                    k=3*i*thumb_size_x+2;
+                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    for (j=0; j<thumb_size_x; ++j, k += 3)
+                        dest[k] = buf[j*sf];
+                    asfPercentMeter((float)(l++)/(tot-1));
+                }
+            }
+
+            //assert(l==tot);
+            if (l!=tot) printf("These are supposed to be equal: %d %d\n",
+                l, tot);
+        } else {
+            assert(FALSE);
         }
     }
 
@@ -360,7 +456,7 @@ int open_asf_data(const char *filename, const char *band,
     if (meta->general->data_type == BYTE)
         client->data_type = info->is_rgb ? RGB_BYTE : GREYSCALE_BYTE;
     else
-        client->data_type = GREYSCALE_FLOAT;
+        client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;
 
     return TRUE;
 }

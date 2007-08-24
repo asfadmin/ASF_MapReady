@@ -42,8 +42,6 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
 
         load_thumbnail_data(data_ci, tsx, tsy, fdata);
 
-        g_stats.act_max = g_stats.act_min = fdata[0];
-
         // split out the case where we have no ignore value --
         // should be quite a bit faster...
         if (meta_is_valid_double(meta->general->no_data)) {
@@ -54,8 +52,15 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
                     float v = fdata[jj+ii*tsx];
                     if (v != meta->general->no_data) {
                         g_stats.avg += v;
-                        if (v > g_stats.act_max) g_stats.act_max = v;
-                        if (v < g_stats.act_min) g_stats.act_min = v;
+
+                        // first valid pixel --> initialize max/min
+                        // subsequent pixels --> update max/min if needed
+                        if (n==0) {
+                            g_stats.act_max = g_stats.act_min = v;
+                        } else {
+                            if (v > g_stats.act_max) g_stats.act_max = v;
+                            if (v < g_stats.act_min) g_stats.act_min = v;
+                        }
                         ++n;
                     }
                 }
@@ -68,9 +73,10 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
                         g_stats.stddev += (v - g_stats.avg) * (v - g_stats.avg);
                 }
             }
-            g_stats.stddev = sqrt(g_stats.stddev / (double)(tsx*tsy));
+            g_stats.stddev = sqrt(g_stats.stddev / (double)n);
         } else {
             // Compute stats -- no ignore
+            g_stats.act_max = g_stats.act_min = fdata[0];
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = fdata[jj+ii*tsx];
@@ -204,6 +210,75 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         g_stats.stddev = sqrt(g_stats.stddev / (double)(tsx*tsy));
 
         free(gsdata);
+    }
+    else if (data_ci->data_type == RGB_FLOAT) {
+        // store data used to build the small image pixmap
+        // we will calculate the stats on this subset
+        float *fdata = MALLOC(sizeof(float)*tsx*tsy*3);
+        load_thumbnail_data(data_ci, tsx, tsy, fdata);
+
+        g_stats.act_max = g_stats.act_min = fdata[0];
+
+        int have_nd = meta_is_valid_double(meta->general->no_data);
+        double nd = meta->general->no_data;
+
+        // Use the average of the three RGB channels
+        int n=0;
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int kk = 3*(jj+ii*tsx);
+                int is_valid_data = !have_nd ||
+                    (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd);
+                if (is_valid_data)
+                {
+                    float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
+                    g_stats.avg += v;
+                    if (v > g_stats.act_max) g_stats.act_max = v;
+                    if (v < g_stats.act_min) g_stats.act_min = v;
+                    ++n;
+                }
+            }
+        }
+        g_stats.avg /= (double)n;
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int kk = 3*(jj+ii*tsx);
+                int is_valid_data = !have_nd ||
+                    (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd);
+                if (is_valid_data)
+                {
+                    float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
+                    g_stats.stddev += (v - g_stats.avg) * (v - g_stats.avg);
+                }
+            }
+        }
+        g_stats.stddev = sqrt(g_stats.stddev / (double)n);
+        g_stats.map_min = g_stats.avg - 2*g_stats.stddev;
+        g_stats.map_max = g_stats.avg + 2*g_stats.stddev;
+
+        // Scale the data
+        for (ii=0; ii<tsx*tsy*3; ++ii) {
+            if (have_nd && fdata[ii] == nd)
+                bdata[ii] = 0;
+            else if (fdata[ii] < g_stats.map_min)
+                bdata[ii] = 0;
+            else if (fdata[ii] > g_stats.map_max)
+                bdata[ii] = 255;
+            else
+                bdata[ii] = (unsigned char)(((fdata[ii]-g_stats.map_min)/(g_stats.map_max-g_stats.map_min))*255+0.5);
+        }
+
+        // Update the histogram
+        for ( ii = 0 ; ii < tsy ; ii++ ) {
+            for ( jj = 0 ; jj < tsx ; jj++ ) {
+                int kk = 3*(jj+ii*tsx);
+                unsigned char uval = (bdata[kk]+bdata[kk+1]+bdata[kk+2])/3;
+                g_stats.hist[uval] += 1;
+            }
+        }
+
+        // done with our subset
+        free(fdata);
     }
     else {
 	    asfPrintError("Unexpected data type: %d!\n", data_ci->data_type);

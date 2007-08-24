@@ -371,6 +371,18 @@ void update_pixel_info()
                 &r, &g, &b);
             sprintf(&buf[strlen(buf)], "Pixel Value: %d\n", (int)r);
         }
+        else if (data_ci->data_type == RGB_FLOAT) {
+            unsigned char r, g, b;
+            float rf, gf, bf;
+            cached_image_get_rgb(data_ci, crosshair_line, crosshair_samp,
+                &r, &g, &b);
+            cached_image_get_rgb_float(data_ci, crosshair_line, crosshair_samp,
+                &rf, &gf, &bf);
+            sprintf(&buf[strlen(buf)],  "Red: %f -> %d\n"
+                                        "Green: %f -> %d\n"
+                                        "Blue: %f -> %d\n",
+                rf, (int)r, gf, (int)g, bf, (int)b);
+        }
     }
 
     double lat=0, lon=0;

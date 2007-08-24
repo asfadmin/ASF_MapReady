@@ -30,7 +30,8 @@ typedef enum {
     UNDEFINED = 0,
     GREYSCALE_FLOAT = 1,
     GREYSCALE_BYTE = 2,
-    RGB_BYTE = 3
+    RGB_BYTE = 3,
+    RGB_FLOAT = 4
 } ssv_data_type_t;
 
 // NOTE: At the moment, the Pixbuf that contains the displayed data
@@ -88,6 +89,8 @@ float cached_image_get_pixel (CachedImage *self, int line, int samp);
 void cached_image_get_rgb(CachedImage *self, int line, int samp,
                           unsigned char *r, unsigned char *g,
                           unsigned char *b);
+void cached_image_get_rgb_float(CachedImage *self, int line, int samp,
+                                float *r, float *g, float *b);
 
 void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
                          void *dest);
