@@ -202,6 +202,74 @@ void usage(char *name)
   exit(1);
 }
 
+// User must free the returned string
+char *data_type2str(data_type_t data_type)
+{
+  char *retstr = (char*)CALLOC(64, sizeof(char));
+
+  switch (data_type) {
+    case BYTE:
+      strcpy(retstr, "BYTE");
+      break;
+    case INTEGER16:
+      strcpy(retstr, "INTEGER16");
+      break;
+    case INTEGER32:
+      strcpy(retstr, "INTEGER32");
+      break;
+    case REAL32:
+      strcpy(retstr, "REAL32");
+      break;
+    case REAL64:
+      strcpy(retstr, "REAL64");
+      break;
+    case COMPLEX_BYTE:
+      strcpy(retstr, "COMPLEX_BYTE");
+      break;
+    case COMPLEX_INTEGER16:
+      strcpy(retstr, "COMPLEX_INTEGER16");
+      break;
+    case COMPLEX_INTEGER32:
+      strcpy(retstr, "COMPLEX_INTEGER32");
+      break;
+    case COMPLEX_REAL32:
+      strcpy(retstr, "COMPLEX_REAL32");
+      break;
+    case COMPLEX_REAL64:
+      strcpy(retstr, "COMPLEX_REAL64");
+      break;
+    default:
+      strcpy(retstr, "UNKNOWN");
+      break;
+  }
+
+  return retstr;
+}
+
+void projection_type_2_str(projection_type_t proj, char *proj_str)
+{
+  switch (proj) {
+    case UNIVERSAL_TRANSVERSE_MERCATOR:
+      strcpy(proj_str, "UTM");
+      break;
+    case ALBERS_EQUAL_AREA:
+      strcpy(proj_str, "Albers Equal Area");
+      break;
+    case LAMBERT_CONFORMAL_CONIC:
+      strcpy(proj_str, "Lambert Conformal Conic");
+      break;
+    case POLAR_STEREOGRAPHIC:
+      strcpy(proj_str, "Polar Stereographic");
+      break;
+    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+      strcpy(proj_str, "Lambert Azimuthal Equal Area");
+      break;
+    default:
+      strcpy(proj_str, "Unknown");
+      break;
+  }
+}
+
 void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
 {
   projection_type ptype1, ptype2;
@@ -1060,70 +1128,3 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   ////////////////////////////////////////////////////////////
 }
 
-// User must free the returned string
-char *data_type2str(data_type_t data_type)
-{
-  char *retstr = (char*)CALLOC(64, sizeof(char));
-
-  switch (data_type) {
-    case BYTE:
-      strcpy(retstr, "BYTE");
-      break;
-    case INTEGER16:
-      strcpy(retstr, "INTEGER16");
-      break;
-    case INTEGER32:
-      strcpy(retstr, "INTEGER32");
-      break;
-    case REAL32:
-      strcpy(retstr, "REAL32");
-      break;
-    case REAL64:
-      strcpy(retstr, "REAL64");
-      break;
-    case COMPLEX_BYTE:
-      strcpy(retstr, "COMPLEX_BYTE");
-      break;
-    case COMPLEX_INTEGER16:
-      strcpy(retstr, "COMPLEX_INTEGER16");
-      break;
-    case COMPLEX_INTEGER32:
-      strcpy(retstr, "COMPLEX_INTEGER32");
-      break;
-    case COMPLEX_REAL32:
-      strcpy(retstr, "COMPLEX_REAL32");
-      break;
-    case COMPLEX_REAL64:
-      strcpy(retstr, "COMPLEX_REAL64");
-      break;
-    default:
-      strcpy(retstr, "UNKNOWN");
-      break;
-  }
-
-  return retstr;
-}
-
-void projection_type_2_str(projection_type_t proj, char *proj_str)
-{
-  switch (proj) {
-    case UNIVERSAL_TRANSVERSE_MERCATOR:
-      strcpy(proj_str, "UTM");
-      break;
-    case ALBERS_EQUAL_AREA:
-      strcpy(proj_str, "Albers Equal Area");
-      break;
-    case LAMBERT_CONFORMAL_CONIC:
-      strcpy(proj_str, "Lambert Conformal Conic");
-      break;
-    case POLAR_STEREOGRAPHIC:
-      strcpy(proj_str, "Polar Stereographic");
-      break;
-    case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      strcpy(proj_str, "Lambert Azimuthal Equal Area");
-      break;
-    default:
-      strcpy(proj_str, "Unknown");
-      break;
-  }
-}
