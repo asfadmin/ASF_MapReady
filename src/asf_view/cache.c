@@ -195,7 +195,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
 
         // this will fill the cache with the image data
         int sf = meta->general->line_count / thumb_size_y;
-        assert(sf==meta->general->sample_count / thumb_size_x);
+        assert(sf == meta->general->sample_count / thumb_size_x);
 
         // supress the "populating cache" msgs when loading the whole thing
         quiet=TRUE;
@@ -230,7 +230,8 @@ CachedImage * cached_image_new_from_file(
     self->client = client; // take ownership of this
     self->meta = meta;     // do NOT take ownership of this
 
-    self->nl = meta->general->line_count;
+    // line line_count may have been fudges, if we are multilooking
+    self->nl = meta->general->line_count; 
     self->ns = meta->general->sample_count;
     asfPrintStatus("Image is %dx%d LxS\n", self->nl, self->ns);
 
@@ -253,6 +254,7 @@ CachedImage * cached_image_new_from_file(
 
     int n_tiles_required = (int)ceil((double)self->nl / self->rows_per_tile);
     self->entire_image_fits = n_tiles_required <= MAX_TILES;
+    // self->entire_image_fits = FALSE; // uncomment for testing thumb_fn
 
     // at the beginning, we have no tiles
     self->n_tiles = 0;

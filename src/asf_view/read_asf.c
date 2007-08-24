@@ -7,6 +7,7 @@ typedef struct {
     int band_r;  // which band we are using for red (when rgb compositing)
     int band_g;  // which band we are using for green (when rgb compositing)
     int band_b;  // which band we are using for blue (when rgb compositing)
+    int ml;      // should data be multilooked for display?
 } ReadAsfClientInfo;
 
 int try_asf(const char *filename)
@@ -80,6 +81,85 @@ meta_parameters *read_asf_meta(const char *meta_name)
     return meta_read(meta_name);
 }
 
+static void get_asf_line(ReadAsfClientInfo *info, meta_parameters *meta,
+                         int row, float *buf)
+{
+    // wrapper for get_float_line() that multilooks if needed
+    if (info->ml) {
+        assert(meta->sar);
+        int k,j,nlooks = meta->sar->look_count;
+        row *= nlooks;
+
+        // we fudged the line count in the metadata for the 
+        // viewer (which is displaying a multilooked image), we must
+        // put the correct value back for the reader
+        int lc = meta->general->line_count;
+        meta->general->line_count = g_saved_line_count;
+
+        // FIXME: figure a nice way to avoid allocating every time we read a line
+        get_float_line(info->fp, meta, row, buf);
+        float *tmp = MALLOC(sizeof(float)*meta->general->sample_count);
+        for (k=1; k<nlooks; ++k) {
+            get_float_line(info->fp, meta, row+k, tmp);
+            for (j=0; j<meta->general->sample_count; ++j)
+                buf[j] += tmp[j];
+        }
+        for (j=0; j<meta->general->sample_count; ++j)
+            buf[j] /= nlooks;
+        free(tmp);
+
+        meta->general->line_count = lc;
+    }
+    else {
+        // no multilooking case
+        get_float_line(info->fp, meta, row, buf);
+    }
+}
+
+static void get_asf_lines(ReadAsfClientInfo *info, meta_parameters *meta,
+                          int row, int n, float *buf)
+{
+    // wrapper for get_float_line() that multilooks if needed
+    if (info->ml) {
+        assert(meta->sar);
+        int i,j,k;
+        int nlooks = meta->sar->look_count;
+        int ns = meta->general->sample_count;
+        row *= nlooks;
+
+        // we fudged the line count in the metadata for the 
+        // viewer (which is displaying a multilooked image), we must
+        // put the correct value back for the reader
+        int lc = meta->general->line_count;
+        meta->general->line_count = g_saved_line_count;
+
+        float *tmp = MALLOC(sizeof(float)*ns);
+        for (i=0; i<n; ++i) {
+            float *this_row = buf + i*ns;
+            get_float_line(info->fp, meta, row+i*nlooks, this_row);
+            int n_read = nlooks;
+            for (k=1; k<nlooks; ++k) {
+                if (row+n*nlooks+k >= meta->general->line_count) {
+                    --n_read;
+                } else {
+                    get_float_line(info->fp, meta, row+i*nlooks+k, tmp);
+                    for (j=0; j<meta->general->sample_count; ++j)
+                        this_row[j] += tmp[j];
+                }
+            }
+            for (j=0; j<meta->general->sample_count; ++j)
+                this_row[j] /= n_read;
+        }
+        free(tmp);
+
+        meta->general->line_count = lc;
+    }
+    else {
+        // no multilooking case
+        get_float_lines(info->fp, meta, row, n, buf);
+    }
+}
+
 int read_asf_client(int row_start, int n_rows_to_get,
                     void *dest_void, void *read_client_info,
                     meta_parameters *meta)
@@ -96,6 +176,9 @@ int read_asf_client(int row_start, int n_rows_to_get,
             FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
         }
         else {
+            // will have to figure this one out
+            assert(!info->ml);
+
             // Here we have to read three separate strips of the
             // file to compose into the byte cache (which has interleaved
             // rgb values -- red vals coming from the first strip we read,
@@ -152,8 +235,8 @@ int read_asf_client(int row_start, int n_rows_to_get,
         if (data_ci->data_type==GREYSCALE_FLOAT) {
             // this is the normal case, just reading in a strip of lines
             // from the file directly into the floating point cache
-            get_float_lines(info->fp, meta, row_start + nl*info->band_gs,
-                            n_rows_to_get, dest);
+            get_asf_lines(info, meta, row_start + nl*info->band_gs,
+                          n_rows_to_get, dest);
         } else {
             // grabbing 3 channels floating point data 
             assert(data_ci->data_type==RGB_FLOAT);
@@ -166,7 +249,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
 
             if (info->band_r >= 0) {
                 for (i=0; i<n_rows_to_get; ++i) {
-                    get_float_line(info->fp, meta, row_start + nl*info->band_r + i, buf);
+                    get_asf_line(info, meta, row_start + nl*info->band_r + i, buf);
                     for (j=0, k=3*ns*i; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }
@@ -174,7 +257,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
 
             if (info->band_g >= 0) {
                 for (i=0; i<n_rows_to_get; ++i) {
-                    get_float_line(info->fp, meta, row_start + nl*info->band_g + i, buf);
+                    get_asf_line(info, meta, row_start + nl*info->band_g + i, buf);
                     for (j=0, k=3*ns*i+1; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }
@@ -182,7 +265,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
 
             if (info->band_b >= 0) {
                 for (i=0; i<n_rows_to_get; ++i) {
-                    get_float_line(info->fp, meta, row_start + nl*info->band_b + i, buf);
+                    get_asf_line(info, meta, row_start + nl*info->band_b + i, buf);
                     for (j=0, k=3*ns*i+2; j<ns; ++j, k += 3)
                         dest[k] = buf[j];
                 }
@@ -219,7 +302,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
             // one band to display.
             int off = nl*info->band_gs;
             for (i=0; i<thumb_size_y; ++i) {
-                get_float_line(info->fp, meta, i*sf + off, buf);
+                get_asf_line(info, meta, i*sf + off, buf);
                 for (j=0; j<thumb_size_x; ++j)
                     dest[i*thumb_size_x+j] = (unsigned char)(buf[j*sf]);
                 asfPercentMeter((float)i/(thumb_size_y-1));
@@ -251,7 +334,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_r;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x; // starting point in dest array
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -263,7 +346,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_g;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x+1;
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -275,7 +358,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_b;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x+2;
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = (unsigned char)(buf[j*sf]);
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -294,7 +377,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
         if (data_ci->data_type == GREYSCALE_FLOAT) {
             int off = nl*info->band_gs;
             for (i=0; i<thumb_size_y; ++i) {
-                get_float_line(info->fp, meta, i*sf + off, buf);
+                get_asf_line(info, meta, i*sf + off, buf);
                 for (j=0; j<thumb_size_x; ++j)
                     dest[i*thumb_size_x+j] = buf[j*sf];
                 asfPercentMeter((float)i/(thumb_size_y-1));
@@ -322,7 +405,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_r;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x; // starting point in dest array
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = buf[j*sf];
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -334,7 +417,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_g;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x+1;
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = buf[j*sf];
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -346,7 +429,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                 off = nl*info->band_b;
                 for (i=0; i<thumb_size_y; ++i) {
                     k=3*i*thumb_size_x+2;
-                    get_float_line(info->fp, meta, i*sf + off, buf);
+                    get_asf_line(info, meta, i*sf + off, buf);
                     for (j=0; j<thumb_size_x; ++j, k += 3)
                         dest[k] = buf[j*sf];
                     asfPercentMeter((float)(l++)/(tot-1));
@@ -372,13 +455,14 @@ void free_asf_client_info(void *read_client_info)
     free(info);
 }
 
-int open_asf_data(const char *filename, const char *band,
+int open_asf_data(const char *filename, const char *band, int multilook,
                   meta_parameters *meta, ClientInterface *client)
 {
     ReadAsfClientInfo *info = MALLOC(sizeof(ReadAsfClientInfo));
 
     info->is_rgb = FALSE;
     info->band_gs = info->band_r = info->band_g = info->band_b = 0;
+    info->ml = multilook;
 
     // special hack for Avnir data!
     if (!band && strcmp_case(meta->general->sensor_name, "AVNIR")==0) {

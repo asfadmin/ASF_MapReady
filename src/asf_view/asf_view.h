@@ -69,7 +69,8 @@ void enable_widget(const char *widget_name, int enable);
 char *find_in_share(const char * filename);
 
 /* read.c */
-int read_file(const char *filename, const char *band, int on_fail_abort);
+int read_file(const char *filename, const char *band, int multilook,
+              int on_fail_abort);
 int try_ext(const char *filename, const char *ext);
 int try_prepension(const char *filename, const char *prepension);
 
@@ -78,7 +79,7 @@ int try_asf(const char *filename);
 int handle_asf_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_asf_meta(const char *meta_name);
-int open_asf_data(const char *filename, const char *band,
+int open_asf_data(const char *filename, const char *band, int multilook,
                   meta_parameters *meta, ClientInterface *client);
 void free_asf_client_info(void *read_client_info);
 
@@ -137,8 +138,8 @@ int open_google_earth(void);
 /* new.c */
 void new_file(void);
 void load_file(const char *file);
-void load_file_banded(const char *file, const char *band);
-void reload_file_banded(const char *file, const char *band);
+void load_file_banded(const char *file, const char *band, int multilook);
+void reload_file_banded(const char *file, const char *band, int multilook);
 void reset_globals(int reset_position);
 void set_title(int band_specified, const char *band);
 
@@ -208,5 +209,7 @@ extern double crosshair_line, crosshair_samp;
 extern char *g_filename;
 extern char *g_data_name;
 extern char *g_meta_name;
+
+extern int g_saved_line_count;
 
 #endif

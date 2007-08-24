@@ -265,7 +265,7 @@
 
 			  <child>
 			    <widget class="GtkLabel" id="upper_label">
-			      <property name="height_request">120</property>
+			      <property name="height_request">130</property>
 			      <property name="visible">True</property>
 			      <property name="label" translatable="yes"></property>
 			      <property name="use_underline">False</property>
@@ -615,8 +615,8 @@
 			      </child>
 			    </widget>
 			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
+			      <property name="padding">5</property>
+			      <property name="expand">False</property>
 			      <property name="fill">True</property>
 			    </packing>
 			  </child>
@@ -710,7 +710,7 @@
 				      <signal name="toggled" handler="on_single_band_as_greyscale_radiobutton_toggled" last_modification_time="Thu, 19 Jul 2007 06:54:38 GMT"/>
 				    </widget>
 				    <packing>
-				      <property name="padding">0</property>
+				      <property name="padding">2</property>
 				      <property name="expand">False</property>
 				      <property name="fill">False</property>
 				    </packing>
@@ -798,7 +798,7 @@
 				      <signal name="toggled" handler="on_combine_bands_into_rgb_radiobutton_toggled" last_modification_time="Thu, 19 Jul 2007 06:53:56 GMT"/>
 				    </widget>
 				    <packing>
-				      <property name="padding">0</property>
+				      <property name="padding">2</property>
 				      <property name="expand">False</property>
 				      <property name="fill">False</property>
 				    </packing>
@@ -915,7 +915,7 @@
 					  <child>
 					    <widget class="GtkComboBox" id="red_combobox">
 					      <property name="visible">True</property>
-    					  <property name="items" translatable="yes"></property>
+					      <property name="items" translatable="yes"></property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">1</property>
@@ -929,7 +929,7 @@
 					  <child>
 					    <widget class="GtkComboBox" id="green_combobox">
 					      <property name="visible">True</property>
-    					  <property name="items" translatable="yes"></property>
+					      <property name="items" translatable="yes"></property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">1</property>
@@ -944,7 +944,7 @@
 					  <child>
 					    <widget class="GtkComboBox" id="blue_combobox">
 					      <property name="visible">True</property>
-    					  <property name="items" translatable="yes"></property>
+					      <property name="items" translatable="yes"></property>
 					    </widget>
 					    <packing>
 					      <property name="left_attach">1</property>
@@ -975,6 +975,55 @@
 				  <property name="expand">True</property>
 				  <property name="fill">True</property>
 				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">5</property>
+			      <property name="expand">False</property>
+			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkHBox" id="hbox_multilook">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<widget class="GtkCheckButton" id="multilook_checkbutton">
+				  <property name="visible">True</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">Multilook</property>
+				  <property name="use_underline">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
+				  <property name="active">False</property>
+				  <property name="inconsistent">False</property>
+				  <property name="draw_indicator">True</property>
+				</widget>
+				<packing>
+				  <property name="padding">2</property>
+				  <property name="expand">False</property>
+				  <property name="fill">False</property>
+				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">0</property>
+			      <property name="expand">False</property>
+			      <property name="fill">True</property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkHBox" id="hbox33">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<placeholder/>
 			      </child>
 			    </widget>
 			    <packing>
@@ -1230,14 +1279,27 @@
 			      </child>
 			    </widget>
 			    <packing>
-			      <property name="padding">0</property>
+			      <property name="padding">5</property>
 			      <property name="expand">False</property>
 			      <property name="fill">True</property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <placeholder/>
+			    <widget class="GtkHBox" id="hbox34">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<placeholder/>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">5</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
 			  </child>
 			</widget>
 			<packing>

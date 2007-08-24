@@ -205,7 +205,7 @@ void reset_globals(int reset_location)
 }
 
 static void load_file_banded_imp(const char *file, const char *band,
-                                 int reset_location)
+                                 int reset_location, int multilook)
 {
     // unload the current file, clear current globals
     if (data_ci) cached_image_free(data_ci);
@@ -224,7 +224,7 @@ static void load_file_banded_imp(const char *file, const char *band,
     if (g_filename[strlen(g_filename)-1] == '.')
         g_filename[strlen(g_filename)-1] = '\0';
 
-    read_file(g_filename, band, FALSE);
+    read_file(g_filename, band, multilook, FALSE);
     set_title(band != NULL, band);
 
     // load the metadata & image data, other setup
@@ -237,19 +237,19 @@ static void load_file_banded_imp(const char *file, const char *band,
     setup_bands_tab(meta);
 }
 
-void reload_file_banded(const char *file, const char *band)
+void reload_file_banded(const char *file, const char *band, int multilook)
 {
-    load_file_banded_imp(file, band, FALSE);
+    load_file_banded_imp(file, band, FALSE, multilook);
 }
 
-void load_file_banded(const char *file, const char *band)
+void load_file_banded(const char *file, const char *band, int multilook)
 {
-    load_file_banded_imp(file, band, TRUE);
+    load_file_banded_imp(file, band, TRUE, multilook);
 }
 
 void load_file(const char *file)
 {
-    load_file_banded(file, NULL);
+    load_file_banded(file, NULL, FALSE);
 }
 
 SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)

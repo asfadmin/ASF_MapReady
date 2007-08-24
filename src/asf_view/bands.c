@@ -3,6 +3,8 @@
 // global variable for the band info
 BandConfig g_band_cfg;
 
+static int is_multiband = FALSE;
+
 void set_bands_rgb(int r, int g, int b)
 {
     g_band_cfg.is_rgb = TRUE;
@@ -25,7 +27,6 @@ static void single_band(const char *str)
 {
     show_widget("hbox_single", TRUE);
     show_widget("hbox_multi", FALSE);
-    show_widget("hbox_bands_buttons", FALSE);
 
     if (strlen(str)>0 && strcmp(str, MAGIC_UNSET_STRING)!=0) {
         char tmp[128];
@@ -33,17 +34,20 @@ static void single_band(const char *str)
         put_string_to_label("single_band_label", tmp);
     } else
         put_string_to_label("single_band_label", "Bands: -");
+
+    is_multiband = FALSE;
 }
 
 static void multi_band(const char *str)
 {
     show_widget("hbox_single", FALSE);
     show_widget("hbox_multi", TRUE);
-    show_widget("hbox_bands_buttons", TRUE);
 
     char tmp[128];
     snprintf(tmp, 128, "Bands: %s", str);
     put_string_to_label("multi_band_label", tmp);
+
+    is_multiband = TRUE;
 }
 
 static void disable_correct_hbox()
@@ -79,6 +83,8 @@ static void populate_combo_csv(const char *widget_name, char *csv, int i)
 
 void setup_bands_tab(meta_parameters *meta)
 {
+    int multilook, multiband;
+
     if (!meta ||
         meta->general->band_count == 1 || 
         meta->general->band_count == MAGIC_UNSET_INT ||
@@ -87,6 +93,7 @@ void setup_bands_tab(meta_parameters *meta)
         strcmp(meta->general->bands, MAGIC_UNSET_STRING) == 0)
     {
         single_band(meta->general->bands);
+        multiband = FALSE;
     }
     else {
         // populate band selectors
@@ -107,7 +114,19 @@ void setup_bands_tab(meta_parameters *meta)
         set_checked("single_band_as_greyscale_radiobutton", !g_band_cfg.is_rgb);
 
         disable_correct_hbox();
+        multiband = TRUE;
     }
+
+    //set_checked("multilook_checkbutton", FALSE);
+    if (!meta->sar || meta->sar->multilook) {
+        multilook = FALSE;
+        enable_widget("multilook_checkbutton", FALSE);
+    } else {
+        multilook = TRUE;
+        enable_widget("multilook_checkbutton", TRUE);
+    }
+
+    show_widget("hbox_bands_buttons", multilook || multiband);
 }
 
 SIGNAL_CALLBACK void
@@ -125,7 +144,15 @@ on_combine_bands_into_rgb_radiobutton_toggled(GtkWidget *w)
 SIGNAL_CALLBACK void
 on_bands_apply_button_clicked(GtkWidget *w)
 {
-    if (get_checked("combine_bands_into_rgb_radiobutton")) {
+    int ml = get_checked("multilook_checkbutton");
+    if (!is_multiband) {
+        // multilook checkbox only, single-band data
+        char *f = STRDUP(g_filename);
+        reload_file_banded(f, NULL, ml);
+        free(f);
+    }
+    else if (get_checked("combine_bands_into_rgb_radiobutton")) {
+        // multiband rgb
         char *r = get_band_combo_text("red_combobox");
         char *g = get_band_combo_text("green_combobox");
         char *b = get_band_combo_text("blue_combobox");
@@ -133,7 +160,7 @@ on_bands_apply_button_clicked(GtkWidget *w)
         sprintf(s,"%s,%s,%s",r?r:"-",g?g:"-",b?b:"-");
         printf("Load banded: %s, %s\n", g_filename, s);
         char *f = STRDUP(g_filename);
-        reload_file_banded(f, s);
+        reload_file_banded(f, s, ml);
         free(s);
         FREE(r); FREE(g); FREE(b);
         free(f);
@@ -142,7 +169,7 @@ on_bands_apply_button_clicked(GtkWidget *w)
         char *gs = get_band_combo_text("single_band_as_greyscale_combobox");
         if (gs) {
             char *f = STRDUP(g_filename);
-            reload_file_banded(f, gs);
+            reload_file_banded(f, gs, ml);
             FREE(gs);
             FREE(f);
         }

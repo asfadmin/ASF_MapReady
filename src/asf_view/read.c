@@ -37,7 +37,8 @@ int try_prepension(const char *filename, const char *prepension)
     return ret;
 }
 
-int read_file(const char *filename, const char *band, int on_fail_abort)
+int read_file(const char *filename, const char *band, int multilook,
+              int on_fail_abort)
 {
     if (meta)
         meta_free(meta);
@@ -62,7 +63,7 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
     if (try_asf(filename)) {
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
             meta = read_asf_meta(meta_name);
-            open_asf_data(data_name, band, meta, client);
+            open_asf_data(data_name, band, multilook, meta, client);
         } else {
             err_func(err);
             free(err);
@@ -90,8 +91,15 @@ int read_file(const char *filename, const char *band, int on_fail_abort)
         return FALSE;
     }
 
-    data_ci = cached_image_new_from_file(data_name, meta, client);
+    g_saved_line_count = meta->general->line_count;
+    if (multilook && meta->sar) {
+        // change the stored metadata!
+        meta->general->line_count /= meta->sar->look_count;
+        meta->sar->azimuth_time_per_pixel *= meta->sar->look_count;
+        meta->general->y_pixel_size *= meta->sar->look_count;
+    }
 
+    data_ci = cached_image_new_from_file(data_name, meta, client);
     assert(data_ci);
 
     nl = meta->general->line_count;

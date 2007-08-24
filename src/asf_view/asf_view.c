@@ -18,6 +18,7 @@ int nl, ns;
 double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
+int g_saved_line_count;
 
 // loaded filename
 char *g_filename;
@@ -91,7 +92,7 @@ main(int argc, char **argv)
     if (g_filename[strlen(g_filename)-1] == '.')
         g_filename[strlen(g_filename)-1] = '\0';
 
-    read_file(g_filename, band_specified ? band : NULL, TRUE);
+    read_file(g_filename, band_specified ? band : NULL, FALSE, TRUE);
 
     assert(g_data_name);
     assert(g_meta_name);
