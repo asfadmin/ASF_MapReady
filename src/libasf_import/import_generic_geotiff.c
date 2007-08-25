@@ -511,8 +511,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
         // Get the projection coordinate transformation key (identifies the projection type)
         read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-//        asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
-//                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
+        asfPrintWarning(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
+                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
 
         // Attempt to find a defined datum (the standard says to store it in GeographicTypeGeoKey)
         read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
@@ -887,7 +887,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                 "Unable to determine projection type from GeoTIFF file\n"
                 "using ProjectedCSTypeGeoKey or ProjCoordTransGeoKey\n");
             asfPrintWarning("Projection parameters missing in the GeoTIFF\n"
-                "file.  Projection parameters will be incomplete.\n");
+                "file.  Projection parameters may be incomplete unless\n"
+                "they are found in the associated .aux file (if it exists.)\n");
             break;
         }
       }
@@ -895,7 +896,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   } // End of reading projection parameters from geotiff ...if it existed
   else {
     asfPrintWarning("Projection parameters missing in the GeoTIFF\n"
-                "file.  Projection parameters will be incomplete.\n");
+                "file.  Projection parameters may be incomplete unless.\n"
+                "they are found in the associated .aux file (if it exists.)\n");
   }
 
   /***** CHECK TO SEE IF THIS IS AN ARCGIS GEOTIFF *****/
