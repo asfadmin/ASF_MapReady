@@ -20,9 +20,9 @@ int check_status(char *status)
 
 int check_parameter(char parameter, check_input_t check)
 {
-  char str[255];
-  int nParam;
-  double fParam;
+  //char str[255];
+  //int nParam;
+  //double fParam;
 
   if (check == FILE_EXISTS){
 
@@ -30,4 +30,6 @@ int check_parameter(char parameter, check_input_t check)
   if (check == FILE_TYPE) {
     
   }
+
+  return FALSE;
 }

@@ -547,14 +547,14 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
                 double average_height, datum_type_t datum, double pixel_size,
                 char *band_id, char *in_base_name, char *out_base_name, float background_val)
 {
-  char input_meta_data[1024];
+  char *input_meta_data;
   char *bands; // A string containing list of available band_id's
   int ret;
   int multiband = 1; // boolean - true means geocode all available bands, false means one band
   int band_count;
   int band_num = 0;
 
-  sprintf(input_meta_data, "%s.meta", in_base_name);
+  input_meta_data = appendExt(in_base_name, "meta");
   meta_parameters *imd = meta_read(input_meta_data);
   bands = STRDUP(imd->general->bands);
   band_count = imd->general->band_count;
@@ -653,10 +653,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   report_func = force_flag ? asfPrintWarning : asfPrintError;
 
   // Assign output filename
-  GString *output_image = g_string_new (out_base_name);
-  GString *output_meta_data = g_string_new (output_image->str);
-  g_string_append (output_meta_data, ".meta");
-  g_string_append (output_image, ".img");
+  char *output_image = appendExt(out_base_name, "img");
+  char *output_meta_data = appendExt(output_image, "meta");
 
   // Determine number of input images
   int n_input_images = 0;
@@ -713,11 +711,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     char *ext = findExt(in_base_name);
     if (ext) *ext = '\0';
 
-    GString *input_meta_data = g_string_new (in_base_name);
-    g_string_append (input_meta_data, ".meta");
+    char *input_meta_data = appendExt (in_base_name, "meta");
 
     // Input metadata.
-    meta_parameters *imd = meta_read (input_meta_data->str);
+    meta_parameters *imd = meta_read (input_meta_data);
 
     if (imd->general->image_data_type == COMPLEX_IMAGE) {
       asfPrintError("Geocoding of complex data not supported.\n");
@@ -1011,7 +1008,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // done with this image's metadata
     meta_free(imd);
-    g_string_free(input_meta_data, TRUE);
+    free(input_meta_data);
     free(in_base_name);
   }
 
@@ -1289,7 +1286,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     omd->general->band_count = 1;
   }
 
-  meta_write (omd, output_meta_data->str);
+  meta_write (omd, output_meta_data);
 
   //-----------------------------------------------------------------------------
   // Now working on generating the output images
@@ -1326,13 +1323,11 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     char *ext = findExt(in_base_name);
     if (ext) *ext = '\0';
 
-    GString *input_image = g_string_new (in_base_name);
-    GString *input_meta_data = g_string_new (input_image->str);
-    g_string_append (input_meta_data, ".meta");
-    g_string_append (input_image, ".img");
+    char *input_image = appendExt(in_base_name, "img");
+    char *input_meta_data = appendExt(in_base_name, "meta");
 
     // Input metadata.
-    meta_parameters *imd = meta_read (input_meta_data->str);
+    meta_parameters *imd = meta_read (input_meta_data);
 
     // Issue a warning when the chosen pixel size is smaller than the
     // input pixel size.
@@ -1728,9 +1723,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
         // open up the input image
         if (process_as_byte)
-          iim_b = uint8_image_band_new_from_metadata(imd, kk, input_image->str);
+          iim_b = uint8_image_band_new_from_metadata(imd, kk, input_image);
         else
-          iim = float_image_band_new_from_metadata(imd, kk, input_image->str);
+          iim = float_image_band_new_from_metadata(imd, kk, input_image);
 
         asfPrintStatus("Resampling input image into output image "
           "coordinate space...\n");
@@ -1738,7 +1733,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         FILE *outFp = NULL; // only used in the line-by-line output case
         if (output_by_line) {
           // open for append, if multiband && this isn't the first band
-          outFp = FOPEN(output_image->str, multiband && kk>0 ? "a" : "w");
+          outFp = FOPEN(output_image, multiband && kk>0 ? "a" : "w");
         }
 
         if (output_by_line)
@@ -1960,8 +1955,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     g_free (dtf.x_proj);
 
     // Done with the file name arguments.
-    g_string_free (input_meta_data, TRUE);
-    g_string_free (input_image, TRUE);
+    free(input_meta_data);
+    free(input_image);
     free(in_base_name);
     meta_free(imd);
   }
@@ -1983,7 +1978,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     asfPrintStatus("\nGenerating final output.\n");
     for (kk=0; kk<omd->general->band_count; ++kk) {
       FloatImage *fi = banded_float_image_get_band(output_bfi, kk);
-      float_image_band_store(fi, output_image->str, omd, kk>0);
+      float_image_band_store(fi, output_image, omd, kk>0);
     }
     banded_float_image_free(output_bfi);
   }
@@ -2004,8 +1999,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
 
   meta_free (omd);
-  g_string_free (output_meta_data, TRUE);
-  g_string_free (output_image, TRUE);
+  free(output_meta_data);
+  free(output_image);
 
   asfPrintStatus("Geocoding complete.\n\n");
   return 0;

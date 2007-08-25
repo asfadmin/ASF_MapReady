@@ -126,6 +126,10 @@ char *appendExt(const char *name, const char *newExt)
   if (ret[strlen(ret)-1] == '.')
       ret[strlen(ret)-1] = '\0';
 
+  /* if the new extension doesn't begin with ".", add one */
+  if (newExt[0] != '.')
+      strcat(ret, ".");
+
   /* Put new extension on the end.  */
   strcat (ret, newExt);
 
@@ -195,7 +199,19 @@ void append_ext_if_needed(char *file_name, const char *newExt,
   }
 
   // If we haven't returned yet, we need to apply the extension
-  strcat(file_name, newExt);
+
+  // don't append any "." if one is already there
+  char *p = newExt;
+  if (file_name[strlen(file_name)-1] == '.')
+      ++p;
+
+  // if the basename doesn't end with a "." and the given extension
+  // doesn't have a leader ".", we will add one ourselves
+  if (file_name[strlen(file_name)-1] != '.' && p[0] != '.')
+      strcat(file_name, ".");
+
+  // now can append given extension
+  strcat(file_name, p);
 }
 
 // Strip of known extension and return file name with band extension added

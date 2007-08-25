@@ -23,59 +23,61 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
                      char *look_up_table_name, char *in_base_name,
                      char *output_name, char **band_name)
 {
-  char in_meta_name[255], in_data_name[255];
-  char *out_name = (char*)MALLOC(512*sizeof(char));
+  char *in_meta_name=NULL, *in_data_name=NULL, *out_name=NULL;
 
   asfPrintStatus("Exporting ...\n\n");
 
   // Do that exporting magic!
   if ( format == ENVI ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    sprintf(out_name, "%s.envi", output_name);
-    export_as_envi (in_meta_name, in_data_name, out_name);
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = appendExt(output_name, ".envi");
+      export_as_envi (in_meta_name, in_data_name, out_name);
   }
   else if ( format == ESRI ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    sprintf(out_name, "%s.esri", output_name);
-    export_as_esri (in_meta_name, in_data_name, out_name);
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = appendExt(output_name, ".esri");
+      export_as_esri (in_meta_name, in_data_name, out_name);
   }
   else if ( format == TIF ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (output_name, ".tif", ".tiff");
-    export_band_image(in_meta_name, in_data_name, output_name,
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      append_ext_if_needed (output_name, ".tif", ".tiff");
+      export_band_image(in_meta_name, in_data_name, output_name,
 		      sample_mapping, band_name, rgb,
-                      true_color, false_color, pauli, sinclair,
+              true_color, false_color, pauli, sinclair,
 		      look_up_table_name, TIF);
   }
   else if ( format == GEOTIFF ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (output_name, ".tif", ".tiff");
-    export_band_image(in_meta_name, in_data_name, output_name,
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      append_ext_if_needed (output_name, ".tif", ".tiff");
+      export_band_image(in_meta_name, in_data_name, output_name,
 		      sample_mapping, band_name, rgb,
-                      true_color, false_color, pauli, sinclair,
+              true_color, false_color, pauli, sinclair,
 		      look_up_table_name, GEOTIFF);
   }
   else if ( format == JPEG ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (output_name, ".jpg", ".jpeg");
-    export_band_image(in_meta_name, in_data_name, output_name,
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = MALLOC(sizeof(char)*(strlen(output_name)+6));
+      append_ext_if_needed (output_name, ".jpg", ".jpeg");
+      export_band_image(in_meta_name, in_data_name, output_name,
 		      sample_mapping, band_name, rgb,
-                      true_color, false_color, pauli, sinclair,
-                      look_up_table_name, JPEG);
+              true_color, false_color, pauli, sinclair,
+              look_up_table_name, JPEG);
   }
   else if ( format == PNG ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (output_name, ".png", NULL);
-    export_band_image(in_meta_name, in_data_name, output_name,
-		      sample_mapping, band_name, rgb,
-                      true_color, false_color, pauli, sinclair,
-                      look_up_table_name, PNG);
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = appendExt(output_name, ".png");
+      export_band_image(in_meta_name, in_data_name, output_name,
+                        sample_mapping, band_name, rgb,
+                        true_color, false_color, pauli, sinclair,
+                        look_up_table_name, PNG);
   }
   else if ( format == PGM ) {
     if (rgb || true_color || false_color || pauli || sinclair) {
@@ -90,19 +92,23 @@ int asf_export_bands(output_format_t format, scale_t sample_mapping, int rgb,
       pauli = 0;
       sinclair = 0;
     }
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    append_ext_if_needed (output_name, ".pgm", ".pgm");
-    export_band_image(in_meta_name, in_data_name, output_name,
-		      sample_mapping, band_name, rgb,
-                      true_color, false_color, pauli, sinclair,
-                      look_up_table_name, PGM);
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      out_name = appendExt(output_name, ".pgm");
+      export_band_image(in_meta_name, in_data_name, output_name,
+                        sample_mapping, band_name, rgb,
+                        true_color, false_color, pauli, sinclair,
+                        look_up_table_name, PGM);
   }
   else if ( format == KML ) {
-    sprintf(in_data_name, "%s.img", in_base_name);
-    sprintf(in_meta_name, "%s.meta", in_base_name);
-    write_kml_overlay (in_data_name);
+      in_data_name = appendExt(in_base_name, ".img");
+      in_meta_name = appendExt(in_base_name, ".meta");
+      write_kml_overlay (in_data_name);
   }
+
+  FREE(in_data_name);
+  FREE(in_meta_name);
+  FREE(out_name);
 
   asfPrintStatus("Export successful!\n\n");
   return (EXIT_SUCCESS);
