@@ -110,9 +110,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   int count;
   int read_count;
   int ret;
-  short model_type;
-  short raster_type;
-  short linear_units;
+  short model_type=-1;
+  short raster_type=-1;
+  short linear_units=-1;
   double scale_factor;
   TIFF *input_tiff;
   GTIF *input_gtif;
@@ -511,8 +511,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
         // Get the projection coordinate transformation key (identifies the projection type)
         read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-        asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
-                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
+//        asfRequire(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
+//                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
 
         // Attempt to find a defined datum (the standard says to store it in GeographicTypeGeoKey)
         read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
@@ -598,7 +598,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
             }
           }
           else {
-            datum = HUGHES_DATUM;
+            datum = UNKNOWN_DATUM;
           }
         }
         if (datum == UNKNOWN_DATUM) {
