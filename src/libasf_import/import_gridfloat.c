@@ -45,7 +45,7 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
           prj_file, fileExists(prj_file) ? "Found" : "NOT FOUND",
           hdr_file, fileExists(hdr_file) ? "Found" : "NOT FOUND");
     }
-    
+
     asfPrintStatus("Parsing %s ...\n", hdr_file);
 
     // Info we'll get from the header file
@@ -96,8 +96,8 @@ void import_gridfloat(char *inBaseName, char *outBaseName)
     // PRJ File
     asfPrintStatus("Parsing %s ...\n", prj_file);
 
-    datum_type_t datum;
-    spheroid_type_t spheroid;
+    datum_type_t datum=UNKNOWN_DATUM;
+    spheroid_type_t spheroid=UNKNOWN_SPHEROID;
 
     fp = FOPEN(prj_file, "r");
     while (NULL!=fgets(line, 1024, fp)) {

@@ -823,7 +823,7 @@ void DHFAGetIntegerValFromOffset(FILE *fp, unsigned long offset,
 /*                                                                 */
 void DHFAGetIntegerVal(FILE *fp, long *val, char type)
 {
-  char* pTmpWord;
+  char* pTmpWord=NULL;
 
   /* Just in case the definitions change, use the type lengths */
   /* for the fread() etc.                                      */
@@ -938,7 +938,7 @@ void DHFAGetStringValFromOffset(FILE *fp, unsigned long offset,
 void DHFAGetStringVal(FILE *fp, unsigned long strLen, char *str)
 {
   unsigned long i;
-  char *pTmpStr;
+  char *pTmpStr=NULL;
 
   if (strLen > 0) {
     pTmpStr = MALLOC(strLen);
@@ -1798,7 +1798,7 @@ void getArcgisProjParameters(char *infile, arcgisProjParms_t *proParms)
 
 spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName)
 {
-  spheroid_type_t rtnVal;
+  spheroid_type_t rtnVal=UNKNOWN_SPHEROID;
 
   if (
       strncmp(sphereName,
@@ -1879,6 +1879,11 @@ spheroid_type_t arcgisSpheroidName2spheroid(char *sphereName)
           )
   {
     rtnVal = WGS84_SPHEROID;
+  }
+  else {
+    rtnVal = WGS84_SPHEROID;
+    asfPrintWarning("Unrecognized spheroid name, \"%s\".  Defaulting to\n"
+        "WGS-84.  Inaccuracies may result.\n", sphereName);
   }
 
   return rtnVal;
@@ -2317,10 +2322,10 @@ int isArcgisGeotiff(const char *inFile)
   return 0; // Shouldn't reach here
 }
 
-void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
+int readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
 {
-  short projection_type;
-  double scale_factor;
+  short projection_type = -1;
+  double scale_factor = 1.0;
   GString *inTiffName;
   GString *inGeotiffAuxName;
   arcgisProjParms_t arcgisProjParms; // Keep this
@@ -2361,7 +2366,7 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
         "Only the projection parameters available in the GeoTIFF will\n"
         "be utilized.  For ArcGIS / IMAGINE type GeoTIFFs, this may result\n"
         "in incomplete projection descriptions.\n");
-    return;
+    return -1;
   }
   if ( inGeotiffAuxName != NULL ) { // ArcGIS metadata file (.aux) exists
     asfPrintStatus("Found ArcGIS / IMAGINE type metadata (.aux) file.\n"
@@ -2376,7 +2381,7 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
     {
       //asfPrintWarning ("Missing or unsupported projection parameters found in\n"
           //"ArcGIS metadata (.aux) file\n");
-      return;
+      return -1;
     }
     else {
       if ( proj_type == UTM     ||
@@ -2392,7 +2397,7 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
                               &arcgisProjParms);
       if (arcgisProjParms.proNumber == MAGIC_UNSET_INT) {
         // Failed to read projection parameters
-        return;
+        return -1;
       }
       // Try to get datum record from .aux file
       getArcgisDatumParameters(inGeotiffAuxName->str, &arcgisDatumParms);
@@ -2400,7 +2405,7 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
           strncmp(arcgisDatumParms.datumname, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
       {
         // Failed to read valid datum name
-        return;
+        return -1;
       }
       if (strncmp(arcgisDatumParms.datumname, ARCGIS_NAD27_DATUM, strlen(ARCGIS_NAD27_DATUM)) == 0) {
         datum = NAD27_DATUM;
@@ -2424,7 +2429,7 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
           strncmp(arcgisMapInfo.proName, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
       {
         // Failed to read valid map info (projection name, tie point, pixel size, units, etc)
-        return;
+        return -1;
       }
     }
   }
@@ -2577,4 +2582,6 @@ void readArcgisAuxProjectionParameters(const char *inFile, meta_projection *mp)
   // Clean up
   GTIFFree(input_gtif);
   XTIFFClose(input_tiff);
+
+  return 0;
 }

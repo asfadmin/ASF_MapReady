@@ -42,7 +42,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // Open the structure that contains the geotiff keys.
   GTIF *input_gtif = GTIFNew (input_tiff);
   asfRequire (input_gtif != NULL,
-	      "Error reading GeoTIFF keys from input TIFF file.\n");
+        "Error reading GeoTIFF keys from input TIFF file.\n");
 
   // Counts holding the size of the returns from gt_methods.get method
   // calls.  The geo_keyp.h header has the interface specification for
@@ -66,7 +66,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // need).
   double *tie_point;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
-			       &tie_point);
+             &tie_point);
   assert (count == 6);
   //  TIFFGetField (input_tiff, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
@@ -74,7 +74,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // raster pixels and geographic coordinate space.
   double *pixel_scale;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
-			       &pixel_scale);
+             &pixel_scale);
   assert (count == 3);
   //  TIFFGetField (input_tiff, TIFFTAG_GEOPIXELSCALE, 3, pixel_scale);
 
@@ -84,8 +84,8 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
     = GTIFKeyGet (input_gtif, GTModelTypeGeoKey, &model_type, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
   asfRequire (model_type == ModelTypeGeographic, "Input GeoTIFF key "
-	      "GTModelTypeGeoKey does not have the value "
-	      "'ModelTypeGeographic' expected for this input file type.\n");
+        "GTModelTypeGeoKey does not have the value "
+        "'ModelTypeGeographic' expected for this input file type.\n");
 
   // It seem the USGS people have (possibly accidently through ESRI)
   // chosen to set GTRasterTypeGeoKey to RasterPixelIsArea.  This is
@@ -113,7 +113,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
     = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geographic_type, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
 
-  datum_type_t datum;
+  datum_type_t datum = UNKNOWN_DATUM;
   switch ( geographic_type ) {
   case GCS_WGS_84:
     datum = WGS84_DATUM;
@@ -137,8 +137,8 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
     = GTIFKeyGet (input_gtif, GeogAngularUnitsGeoKey, &angular_units, 0, 1);
   asfRequire (read_count == 1, "GTIFKeyGet failed.\n");
   asfRequire (angular_units == Angular_Degree, "Input GeoTIFF key "
-	      "GeogAngularUnitsGeoKey does not have the value 'Angular_Degree "
-	      "expected for this input file type.\n");
+        "GeogAngularUnitsGeoKey does not have the value 'Angular_Degree "
+        "expected for this input file type.\n");
 
   asfPrintStatus("\nConverting GeoTIFF to float image...\n");
   FloatImage *image = tiff_to_float_image (input_tiff);
@@ -184,7 +184,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   // Fill in metadata as best we can.
 
-  meta_general *mg = meta_out->general;	// Convenience alias.
+  meta_general *mg = meta_out->general; // Convenience alias.
 
   char *sensor_string = "USGS Seamless data (e.g., NED, SRTM)";
   assert (strlen (sensor_string) < FIELD_STRING_MAX);
@@ -222,7 +222,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // we are cheating a bit here, forcing the result to be to the nearest
   // 10m.  This is ok -- the one where accuracy is important is the
   // value in the projection block, this one is used by geocode when
-  // deciding how large the pixels should be in the output.  
+  // deciding how large the pixels should be in the output.
   int pixel_size_meters = 10*(int)(11131.95 * pixel_scale[0] + .5);
 
   // USGS data is currently 30, 60 or 90m.  Since we are cheating, we
@@ -245,7 +245,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus("Gathering image statistics...\n");
   float min, max, mean, standard_deviation;
   float_image_statistics (image, &min, &max, &mean, &standard_deviation,
-			  FLOAT_IMAGE_DEFAULT_MASK);
+        FLOAT_IMAGE_DEFAULT_MASK);
   spheroid_axes_lengths (spheroid, &mg->re_major, &mg->re_minor);
 
   meta_projection *mp = meta_out->projection; // Convenience alias.
@@ -314,7 +314,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   asfPrintStatus("Writing ASF .img and .meta output files...\n");
   int return_code = write_meta_and_img (outBaseName, meta_out, image);
   asfRequire (return_code == 0,
-	      "Failed to write new '.meta' and '.img' files.");
+        "Failed to write new '.meta' and '.img' files.");
   asfPrintStatus("\n");
 
 #ifdef DEBUG_IMPORT_USGS_SEAMLESS_JPEG_OUTPUT
@@ -328,9 +328,9 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
     // Hopefully values like that don't occur much in DEMs.
 
     GString *out_data_file_jpeg = g_string_append (g_string_new (outBaseName),
-						   "_debug.jpeg");
+               "_debug.jpeg");
     g_print ("Making JPEG of output image named %s for debugging...\n",
-	     out_data_file_jpeg->str);
+       out_data_file_jpeg->str);
     float_image_export_as_jpeg_with_mask_interval
       (image, out_data_file_jpeg->str, width > height ? width : height,
        -FLT_MAX, -1e16);

@@ -511,8 +511,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
         // Get the projection coordinate transformation key (identifies the projection type)
         read_count = GTIFKeyGet (input_gtif, ProjCoordTransGeoKey, &proj_coords_trans, 0, 1);
-        asfPrintWarning(read_count == 1 && proj_coords_trans != UNKNOWN_PROJECTION_TYPE,
-                  "Unable to determine type of projection coordinate system in GeoTIFF file\n");
+        if (read_count != 1 || proj_coords_trans == UNKNOWN_PROJECTION_TYPE) {
+          asfPrintWarning("Unable to determine type of projection coordinate system in GeoTIFF file\n");
+        }
 
         // Attempt to find a defined datum (the standard says to store it in GeographicTypeGeoKey)
         read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &geokey_datum, 0, 1);
@@ -907,9 +908,14 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // projection parameters from the aux file (if it exists)
     asfPrintStatus("Checking ArcGIS GeoTIFF auxiliary file (.aux) for\n"
         "projection parameters...\n");
-    readArcgisAuxProjectionParameters(inFileName, mp);
+    int ret = readArcgisAuxProjectionParameters(inFileName, mp);
     if (mp->datum != UNKNOWN_DATUM) {
       datum = mp->datum;
+    }
+    if (ret == 0) {
+      asfPrintStatus("\nSUCCESS ...Found projection parameters in the .aux file.\n"
+          "(These will supercede any found in the TIFF - which should have been\n"
+          " the same anyway.)\n\n");
     }
   }
   /*                                                   */
@@ -1659,7 +1665,7 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
   // Minimum and maximum sample values as integers.
   double fmin = FLT_MAX;
   double fmax = -FLT_MAX;
-  double cs; // Current sample value
+  double cs=0.0; // Current sample value
 
   stats->mean = 0.0;
   double s = 0.0;
@@ -2356,7 +2362,7 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
 {
   int read_count;
   tiff_type_t t;
-  tdata_t tbuf;
+  tdata_t tbuf=NULL;
 
   if (tif == NULL) {
     asfPrintError("TIFF file not open for read\n");

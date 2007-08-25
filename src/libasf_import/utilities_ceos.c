@@ -74,7 +74,7 @@ void createMeta_ceos(bin_state *s, struct dataset_sum_rec *dssr, char *inN,
 bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
                                 readPulseFunc *readNextPulse)
 {
-  bin_state *s;
+  bin_state *s=NULL;
   struct dataset_sum_rec dssr;
   char *satName;
 
