@@ -117,19 +117,29 @@ char *get_record_as_string(char *fileName, int reqrec)
   if (!dataNameExists && !leaderNameExists)
       return STRDUP("Unable to open data (.D) or leader (.L) file.\n");
 
+  // need to figure out if this is ALOS or not, how some records are
+  // read depends on this.
+  char sensor[16];
+  dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+  if (leaderNameExists) {
+    if (get_dssr(metaName[0],dssr) >= 0)
+        strcpy(sensor, dssr->mission_id);
+    else if (trailer && get_dssr(metaName[1],dssr) >= 0)
+        strcpy(sensor, dssr->mission_id);
+    else
+        strcpy(sensor, MAGIC_UNSET_STRING);
+  } else 
+     strcpy(sensor, MAGIC_UNSET_STRING);
+  if (strcmp(sensor, MAGIC_UNSET_STRING) == 0) {
+      free(dssr);
+      dssr = NULL;
+  }
+
   switch (reqrec) 
     {
-    case (10): 
-      dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-      if (leaderNameExists) {
-	if (get_dssr(metaName[0],dssr) >= 0 )
-	  ret = sprn_dssr(dssr,1);
-	else if (trailer) {
-	  if (get_dssr(metaName[1],dssr) >= 0 )
-	    ret = sprn_dssr(dssr,1);
-	}
-      }
-      FREE(dssr);
+    case (10):
+      if (dssr)
+        ret = sprn_dssr(dssr,1);
       break;
     case (18):
       shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
@@ -191,28 +201,31 @@ char *get_record_as_string(char *fileName, int reqrec)
       }
       FREE(ampr);
       break;
-    case (50):	
-      raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
-      if (leaderNameExists) {
-	if (get_raddr(metaName[0],raddr) >= 0)
-	  ret = sprn_raddr(raddr);
-	else if (trailer) {
-	  if (get_raddr(metaName[1],raddr) >= 0)
-	    ret = sprn_raddr(raddr);
-	}
-      }
-      FREE(raddr);
-      ardr = (struct alos_rad_data_rec *) 
-	MALLOC(sizeof(struct alos_rad_data_rec));
-      if (leaderNameExists) {
-	if (get_ardr(metaName[0],ardr) >= 0)
-	  ret = sprn_ardr(ardr);
-	else if (trailer) {
-	  if (get_ardr(metaName[1],ardr) >= 0)
-	    ret = sprn_ardr(ardr);
-	}
-      }
-      FREE(ardr);
+    case (50):
+        if (strncmp(sensor, "ALOS", 4) == 0) {
+            ardr = (struct alos_rad_data_rec *) 
+                MALLOC(sizeof(struct alos_rad_data_rec));
+            if (leaderNameExists) {
+                if (get_ardr(metaName[0],ardr) >= 0)
+                    ret = sprn_ardr(ardr);
+                else if (trailer) {
+                    if (get_ardr(metaName[1],ardr) >= 0)
+                        ret = sprn_ardr(ardr);
+                }
+            }
+            FREE(ardr);
+        } else {
+            raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
+            if (leaderNameExists) {
+                if (get_raddr(metaName[0],raddr) >= 0)
+                    ret = sprn_raddr(raddr);
+                else if (trailer) {
+                    if (get_raddr(metaName[1],raddr) >= 0)
+                        ret = sprn_raddr(raddr);
+                }
+            }
+            FREE(raddr);
+        }
       break;
     case (51):
       rcdr = (struct radio_comp_data_rec *) 
@@ -336,6 +349,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       printf("Not Valid Record Type\n");
       break;
     }
+  FREE(dssr);
   FREE(baseName);
   free_ceos_names(dataNames, metaName);
   if (!ret)
