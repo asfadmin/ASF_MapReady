@@ -258,7 +258,7 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
 {
   vector relPos,sarPos,targetPos;
   stateVector outVec;
-  double time,slantRange,look,yaw,lat,lat_geod,re2,rp2,a,b,c,d,e,old;
+  double time,slantRange,look,yaw,lat,lat_geod,re2,rp2,a,b,c,d,e,old=0;
   int done=0,check=0;
   float inc=1.0;
   GEOLOCATE_REC *g;
@@ -298,8 +298,8 @@ void lat2time(stateVector locVec, double loc_sec, double targetLat,
     slantRange =(-b - sqrt(d))/(2.0*a);
     vecScale(&relPos,slantRange);
     vecAdd(sarPos,relPos,&targetPos);
-    lat=atan2(targetPos.z, 
-	      sqrt(targetPos.x*targetPos.x+targetPos.y*targetPos.y));
+    lat=atan2(targetPos.z,
+        sqrt(targetPos.x*targetPos.x+targetPos.y*targetPos.y));
     g->earth_radius = (g->re*g->rp) /
       sqrt(rp2*cos(lat)*cos(lat) + re2*sin(lat)*sin(lat));
 
@@ -407,8 +407,8 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
     lowerTime = upperTime;
     upperTime = line;
   }
-  asfPrintStatus(logbuf,"   Starting line of subset: %ld (%lf)\n", 
-		 *imgStart, upperTime);
+  asfPrintStatus(logbuf,"   Starting line of subset: %ld (%lf)\n",
+     *imgStart, upperTime);
   asfPrintStatus(logbuf, "   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
 
   // Clean up
