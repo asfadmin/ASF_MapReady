@@ -471,7 +471,9 @@ static char **find_overlapping_dems(meta_parameters *meta,
 static int try_ext(const char *filename, const char *ext)
 {
     char *buf = MALLOC(sizeof(char)*(strlen(filename)+strlen(ext)+5));
-    if (ext[0]=='.')
+    if (ext[0]=='.' && filename[strlen(filename)-1]=='.')
+        sprintf(buf, "%s%s", filename, ext+1);
+    else if (ext[0]=='.' || filename[strlen(filename)-1]=='.')
         sprintf(buf, "%s%s", filename, ext);
     else
         sprintf(buf, "%s.%s", filename, ext);

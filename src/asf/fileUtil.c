@@ -41,8 +41,7 @@ int fileSize(const char *name)
   return file_size;
 }
 
-int fileExists(const char 
-*name)
+int fileExists(const char *name)
 {
   FILE *f = fopen (name,"r");
   if (f == NULL)
@@ -154,6 +153,10 @@ char * appendToBasename(const char *inFile, const char *suffix)
     strcat(ret, ".");
     strcat(ret, ext);
     free(ext);
+  } else if (ret[strlen(ret)-1]=='.') {
+    /* handle the "." case specially... */
+    ret[strlen(ret)-1]='\0';
+    strcat(ret, suffix);
   } else {
     /* no extension found - just add the suffix */
     strcat(ret, suffix);
@@ -201,7 +204,7 @@ void append_ext_if_needed(char *file_name, const char *newExt,
   // If we haven't returned yet, we need to apply the extension
 
   // don't append any "." if one is already there
-  char *p = newExt;
+  const char *p = newExt;
   if (file_name[strlen(file_name)-1] == '.')
       ++p;
 
