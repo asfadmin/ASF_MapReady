@@ -122,6 +122,10 @@ char *appendExt(const char *name, const char *newExt)
        is clipped).  */
     *ext = '\0';
 
+  /* if the final characters is a dot, trim it */
+  if (ret[strlen(ret)-1] == '.')
+      ret[strlen(ret)-1] = '\0';
+
   /* Put new extension on the end.  */
   strcat (ret, newExt);
 
