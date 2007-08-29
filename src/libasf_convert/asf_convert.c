@@ -681,7 +681,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (!cfg->general->import && !cfg->general->sar_processing &&
         !cfg->general->terrain_correct && !cfg->general->geocoding &&
         !cfg->general->export) {
-      asfPrintError("Nothing to be done\n");
+      asfPrintError("Invalid configuration file found (%s) or no processing\n"
+                    "is enabled, e.g. import, terrain correction, geocoding,\n"
+                    "and export processing flags are all set to zero in the\n"
+                    "configuration file.\n", configFileName);
     }
 
     //---------------------------------------------------------------
