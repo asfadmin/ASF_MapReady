@@ -376,7 +376,7 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   meta->general->bit_error_rate = asf_facdr->biterrrt;
 
   // State vector block
-  ceos_init_stVec(in_fName, ceos, meta);
+  //ceos_init_stVec(in_fName, ceos, meta);
 
   // SAR block
   if (0==strncmp(asf_facdr->grndslnt,"GROUND",6))
