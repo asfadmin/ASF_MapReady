@@ -129,8 +129,6 @@ static int checkForOption(char* key, int argc, char* argv[])
   return(FLAG_NOT_SET);
 }
 
-#define REQUIRED_ARGS 1
-
 int main(int argc, char *argv[])
 {
   char configFileName[255];
@@ -158,9 +156,10 @@ int main(int argc, char *argv[])
 
   // We need to make sure the user specified the proper number of arguments
   int needed_args = 1 + REQUIRED_ARGS;               // command & REQUIRED_ARGS
-  if (create_f != FLAG_NOT_SET)  needed_args += 1; // option
-  if (log_f    != FLAG_NOT_SET)  needed_args += 2; // option & param
-  if (quiet_f  != FLAG_NOT_SET)  needed_args += 1; // option
+  int num_flags = 0;
+  if (create_f != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
+  if (log_f    != FLAG_NOT_SET) {needed_args += 2; num_flags++;} // option & param
+  if (quiet_f  != FLAG_NOT_SET) {needed_args += 1; num_flags++;} // option
 
   // Make sure we have the right number of args
   if(argc != needed_args) {
@@ -173,6 +172,22 @@ int main(int argc, char *argv[])
     if ( (argv[log_f+1][0]=='-') || (log_f>=(argc-REQUIRED_ARGS)) ) {
       print_usage();
     }
+  }
+
+  // Make sure all options occur before the config file name argument
+  if (num_flags == 1 &&
+      (create_f > 1 ||
+       log_f    > 1 ||
+       quiet_f  > 1))
+  {
+    print_usage();
+  }
+  else if (num_flags > 1 &&
+           (create_f >= argc - REQUIRED_ARGS - 1 ||
+            log_f    >= argc - REQUIRED_ARGS - 1 ||
+            quiet_f  >= argc - REQUIRED_ARGS - 1))
+  {
+    print_usage();
   }
 
   // Do the actual flagging & such for each flag
