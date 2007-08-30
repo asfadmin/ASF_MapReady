@@ -501,7 +501,10 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
       }
       meta->sar->image_type = 'P';
       mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
-      get_mpdr(in_fName, mpdr);
+      if (get_mpdr(in_fName, mpdr) < 0) {
+        if (mpdr) FREE(mpdr);
+        mpdr = NULL;
+      }
       ceos_init_scansar(in_fName, meta, dssr, mpdr, NULL);
     }
     else if (ppr)
