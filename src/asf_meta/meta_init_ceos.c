@@ -254,6 +254,18 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->range_time_per_pixel = dssr->n_rnglok
     / (dssr->rng_samp_rate * get_units(dssr->rng_samp_rate,EXPECTED_FS));
   meta->sar->slant_shift = 0.0;
+
+  // Azimuth time per pixel needs to be known for state vector propagation
+  char **dataName;
+  double firstTime, centerTime;
+  require_ceos_data(in_fName, &dataName, &nBands);
+  firstTime = get_firstTime(dataName[0]);
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  meta->sar->azimuth_time_per_pixel =
+      (centerTime - firstTime) / (meta->sar->original_line_count/2);
+
+
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
