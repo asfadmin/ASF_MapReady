@@ -56,7 +56,8 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 	  || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
 
     /*Slant or ground range -- easy.*/
-	if (meta->sar->image_type=='S' || meta->sar->image_type=='G')
+	if (meta->sar->image_type=='S' || meta->sar->image_type=='G' ||
+            (meta->sar->image_type=='P' && meta->projection->type==SCANSAR_PROJECTION))
 		return yLine*meta->sar->azimuth_time_per_pixel+meta->sar->time_shift;
     /*Map projected -- not as easy.*/
 	else if (meta->sar->image_type=='P' || meta->sar->image_type=='R')
