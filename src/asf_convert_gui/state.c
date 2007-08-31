@@ -1,11 +1,11 @@
 #ifdef win32
   #define BYTE __byte
-  #include "asf.h"
+  #include "asf_meta.h"
   #undef BYTE
   #include <windows.h>
   #undef DIR_SEPARATOR
 #else
-  #include "asf.h"
+  #include "asf_meta.h"
 #endif
 
 #include "asf_convert_gui.h"
