@@ -30,6 +30,7 @@ typedef struct {
   int byte_order;            /* 0 - little endian,
 				1 - big endian */
   char projection[50];       /* Projection name */
+  char datum[32];            /* Datum name */
   int ref_pixel_x;           /* Reference pixel in x */
   int ref_pixel_y;           /* Reference pixel in y */
   double pixel_easting;      /* Pixel easting */
