@@ -950,7 +950,14 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   sprintf(meta->sar->polarization, "HH");
   strncpy(buf, &dssr->product_id[7], 4);
   buf[3] = 0;
-  meta->general->frame = atoi(buf);
+  if (!isdigit(buf[0])) {
+    // The Scene Descriptor Record is not the usual R1ooooofff-- type of
+    // descriptor ("fff" being the frame number) ...probably this is MDA (CDPF, RSI, etc)
+    // type of data
+    asfPrintWarning("Cannot determine frame number from leader data - Might be\n"
+        "MDA (CDPF etc) type of data.  Frame number defaulting to zero (0).\n");
+  }
+  meta->general->frame = atoi(buf);  // Frame will be zero if buf is not a valid frame num (alpha str)
   if (meta->general->line_count == 0 || meta->general->sample_count == 0) {
     meta->general->line_count   = dssr->sc_lin*2;
     meta->general->sample_count = dssr->sc_pix*2;
