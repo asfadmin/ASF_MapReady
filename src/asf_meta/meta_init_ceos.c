@@ -637,7 +637,6 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     meta->sar->image_type = 'G';
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
-  meta->sar->time_shift = 0;
   date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
   date_dssr2date(dssr->inp_sctim, &date, &time);
@@ -648,6 +647,11 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     meta_get_earth_radius(meta,
         meta->general->line_count/2,
         meta->general->sample_count/2);
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   meta->sar->satellite_height =
     meta_get_sat_height(meta,
       meta->general->line_count/2,
@@ -747,7 +751,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
   meta->sar->slant_shift = 0;
-  meta->sar->time_shift = 0;
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
   meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
@@ -808,6 +811,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // calculate azimuth time per pixel from the swath velocity
     meta->sar->azimuth_time_per_pixel =
         meta->general->y_pixel_size / swath_vel;
+    if (meta->general->orbit_direction == 'D')
+      meta->sar->time_shift = 0.0;
+    else if (meta->general->orbit_direction == 'A')
+      meta->sar->time_shift = fabs(meta->sar->original_line_count *
+          meta->sar->azimuth_time_per_pixel);
 
     // for comparison, calculate using the workreport file (old method)
     double delta, workreport_atpp=-1;
@@ -962,7 +970,11 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
   meta->sar->slant_shift = 0;
-  meta->sar->time_shift = 0;
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   meta->sar->range_doppler_coefficients[0] = dssr->crt_rate[0];
   meta->sar->range_doppler_coefficients[1] = dssr->crt_rate[1];
   meta->sar->range_doppler_coefficients[2] = dssr->crt_rate[2];
@@ -1081,7 +1093,6 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
-  meta->sar->time_shift = 0;
   date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
   date_dssr2time(dssr->az_time_center, &date, &time);
@@ -1090,6 +1101,11 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
     (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = // two-way range time
     dssr->crt_dopcen[1] / (speedOfLight * 2);
@@ -1152,7 +1168,6 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
-  meta->sar->time_shift = 0;
   date_dssr2time(dssr->az_time_first, &date, &time);
   firstTime = date_hms2sec(&time);
   date_dssr2time(dssr->az_time_center, &date, &time);
@@ -1161,6 +1176,11 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
     (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = // two-way range time
     dssr->crt_dopcen[1] / (speedOfLight * 2);
@@ -1220,12 +1240,16 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
-  meta->sar->time_shift = 0;
   firstTime = get_firstTime(in_fName);
   date_dssr2time(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
     (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   ceos_init_stVec(in_fName,ceos,meta);
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = // two-way range time
