@@ -84,6 +84,10 @@
 #define DM_MAX_STARTX				1.0e6
 #define DM_MIN_STARTY				-1.0e6
 #define DM_MAX_STARTY				1.0e6
+#define DM_MIN_PERX   1
+#define DM_MAX_PERX   100
+#define DM_MIN_PERY   1
+#define DM_MAX_PERY   100
 
 
 

@@ -25,6 +25,8 @@ BUGS:
 *******************************************************************************/
 #include "asf.h"
 #include "asf_nan.h"
+#include "asf_meta.h"
+#include "libasf_proj.h"
 #include <math.h>
 #include <ctype.h>
 #include "typlim.h"
@@ -272,7 +274,8 @@ void projection_type_2_str(projection_type_t proj, char *proj_str)
 
 void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
 {
-  projection_type ptype1, ptype2;
+  projection_type_t ptype1, ptype2;
+  int failed = 0;
   char precheck_err_msgs[8192];
   char compare_err_msgs[8192];
 
@@ -289,13 +292,13 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   meta_location *mloc1, *mloc2;
 
   // Element level convenience pointers
-  param_t *albers1, *albers2; // Albers conical equal area
-  param_t *atct1, *atct2;     // Along track - cross track
-  param_t *lamaz1, *lamaz2;   // Lambert Azimuthal Equal Area
-  param_t *lamcc1, *lamcc2;   // Lambert Conformal Conic
-  param_t *ps1, *ps2;         // Polar Stereographic
-  param_t *utm1, *utm2;       // Universal Transverse Mercator
-  param_t *state1 *state2;    // State Plane
+  proj_albers *albers1, *albers2; // Albers conical equal area
+  proj_atct   *atct1, *atct2;     // Along track - cross track
+  proj_lamaz  *lamaz1, *lamaz2;   // Lambert Azimuthal Equal Area
+  proj_lamcc  *lamcc1, *lamcc2;   // Lambert Conformal Conic
+  proj_ps     *ps1, *ps2;         // Polar Stereographic
+  proj_utm    *utm1, *utm2;       // Universal Transverse Mercator
+  proj_state  *state1, *state2;   // State Plane
 
   // Read metadata and set up convenience pointers
   meta_parameters *meta1 = meta_read(metafile1);
@@ -320,20 +323,20 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   mstatev2 = meta2->state_vectors;
   mloc1 = meta1->location;
   mloc2 = meta1->location;
-  albers1 = mp1->param.albers;
-  albers2 = mp2->param.albers;
-  atct1 = mp1->param.atct;
-  atct2 = mp2->param.atct;
-  lamaz1 = mp1->param.lamaz;
-  lamaz2 = mp2->param.lamaz;
-  lamcc1 = mp1->param.lamcc;
-  lamcc2 = mp2->param.lamcc;
-  ps1 = mp1->param.ps;
-  ps2 = mp2->param.ps;
-  utm1 = mp1->param.utm;
-  utm2 = mp2->param.utm;
-  state1 = mp1->param.state;
-  state2 = mp2->param.state;
+  albers1 = &mp1->param.albers;
+  albers2 = &mp2->param.albers;
+  atct1 = &mp1->param.atct;
+  atct2 = &mp2->param.atct;
+  lamaz1 = &mp1->param.lamaz;
+  lamaz2 = &mp2->param.lamaz;
+  lamcc1 = &mp1->param.lamcc;
+  lamcc2 = &mp2->param.lamcc;
+  ps1 = &mp1->param.ps;
+  ps2 = &mp2->param.ps;
+  utm1 = &mp1->param.utm;
+  utm2 = &mp2->param.utm;
+  state1 = &mp1->param.state;
+  state2 = &mp2->param.state;
 
   ////////////////////////////////////////////////////////////
   // PRECHECK
@@ -365,8 +368,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       strncmp(mg2->sensor, "RSAT-1", 6) != 0)
   {
     // Unrecognized sensor (platform name)
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nInvalid sensor field in new version file: %s\n", mg2->sensor);
+    sprintf(precheck_err_msgs, "%s%s%s\n", precheck_err_msgs,
+            "[General]\nInvalid sensor field in new version file: \n", mg2->sensor);
     failed = 1;
   }
   if (strlen(mg2->sensor_name) > 0                &&
@@ -375,8 +378,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       strncmp(mg2->sensor_name, "PRISM", 5) != 0)
   {
     // Invalid sensor name
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nInvalid sensor_name field in new version file: %s\n", mg2->sensor_name);
+    sprintf(precheck_err_msgs, "%s%s%s\n", precheck_err_msgs,
+            "[General]\nInvalid sensor_name field in new version file: \n", mg2->sensor_name);
     failed = 1;
   }
   if (strlen(mg2->mode) > 0                 &&
@@ -386,12 +389,12 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       strcmp(mg2->mode, "1A") != 0          &&
       strcmp(mg2->mode, "1B1") != 0         &&
       strcmp(mg2->mode, "1B2R") != 0        &&
-      strncmp(mg2->mode, "1B2G", ) != 0)
+      strncmp(mg2->mode, "1B2G", 4) != 0)
   {
     // Unrecognized non-ALOS mode
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nInvalid (non-ALOS) mode field in new version file: %s\n"
-            " Should be STD, 1A, 1B1, 1B2R, or 1B2R for non-ALOS data\n", mg2->mode);
+    sprintf(precheck_err_msgs, "%s%s%s%s\n", precheck_err_msgs,
+            "[General]\nInvalid (non-ALOS) mode field in new version file: \n", mg2->mode,
+            " Should be STD, 1A, 1B1, 1B2R, or 1B2R for non-ALOS data\n");
     failed = 1;
   }
   if (strlen(mg2->mode) > 0 &&
@@ -420,54 +423,74 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
         strncmp(beam, "LR", 2) != 0)
     {
       // Unrecognized or missing ALOS beam mode
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) mode field in new version file: %s\n"
-                  " Should be FBSx, FBDx, WBx, DSNx, or PLRx, where 'x' is beam number\n", mg2->mode);
+      sprintf(precheck_err_msgs, "%s%s%s%s\n", precheck_err_msgs,
+              "[General]\nInvalid (ALOS) mode field in new version file: %s\n", mg2->mode,
+                  " Should be FBSx, FBDx, WBx, DSNx, or PLRx, where 'x' is beam number\n");
       failed = 1;
     }
     if (strncmp(beam, "BS", 2) == 0 &&
         (beam_num < 1 || beam_num > 18))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\n"
-                  "Mode field is %s\nBeam number is %d\nAllowed range is %d to %d\n",
-              mg2->mode, beam_num, 1, 18);
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n",
+              precheck_err_msgs,
+              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\nMode field is ",
+              mg2->mode,
+              "\nBeam number is ",
+              beam_num,
+              "\nAllowed range is ",
+              1, 18);
       failed = 1;
     }
     if (strncmp(beam, "BD", 2) == 0 &&
         (beam_num < 1 || beam_num > 18))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\n"
-                  "Mode field is %s\nBeam number is %d\nAllowed range is %d to %d\n",
-              mg2->mode, beam_num, 1, 18);
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n",
+              precheck_err_msgs,
+              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\nMode field is ",
+              mg2->mode,
+              "\nBeam number is ",
+              beam_num,
+              "\nAllowed range is ",
+              1, 18);
       failed = 1;
     }
     if (strncmp(beam, "WB", 2) == 0 &&
         (beam_num < 1 || beam_num > 2))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\n"
-                  "Mode field is %s\nBeam number is %d\nAllowed range is %d to %d\n",
-              mg2->mode, beam_num, 1, 2);
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n",
+              precheck_err_msgs,
+              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\nMode field is ",
+              mg2->mode,
+              "\nBeam number is ",
+              beam_num,
+              "\nAllowed range is ",
+              1, 2);
       failed = 1;
     }
     if (strncmp(beam, "SN", 2) == 0 &&
         (beam_num < 1 || beam_num > 18))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\n"
-                  "Mode field is %s\nBeam number is %d\nAllowed range is %d to %d\n",
-              mg2->mode, beam_num, 1, 18);
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n",
+              precheck_err_msgs,
+              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\nMode field is ",
+              mg2->mode,
+              "\nBeam number is ",
+              beam_num,
+              "\nAllowed range is ",
+              1, 18);
       failed = 1;
     }
     if (strncmp(beam, "LR", 2) == 0 &&
         (beam_num < 1 || beam_num > 12))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\n"
-                  "Mode field is %s\nBeam number is %d\nAllowed range is %d to %d\n",
-              mg2->mode, beam_num, 1, 12);
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n",
+              precheck_err_msgs,
+              "[General]\nInvalid (ALOS) beam number in mode field in new version file.\nMode field is ",
+              mg2->mode,
+              "\nBeam number is ",
+              beam_num,
+              "\nAllowed range is ",
+              1, 12);
       failed = 1;
     }
   }
@@ -477,14 +500,17 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
             "[General]\nprocessor field in new version file is blank\n");
     failed = 1;
   }
-  if (strlen(mg2->acquisition_date <= 0) {
+  if (strlen(mg2->acquisition_date) <= 0) {
     sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
             "[General]\nacquisition_date field in new version file is blank\n");
     failed = 1;
   }
   if (strncmp(mg2->system, "lil_ieee", 8) != 0) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nUnexpected system field in new version file: %s\nExpected lil_ieee\n", mg2->system);
+    sprintf(precheck_err_msgs, "%s%s%s%s\n",
+            precheck_err_msgs,
+            "[General]\nUnexpected system field in new version file: ",
+            mg2->system,
+            "\nExpected lil_ieee\n");
     failed = 1;
   }
   if (mg2->data_type != BYTE              &&
@@ -502,18 +528,22 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
             "[General]\nUnrecognized data_type field in new version file\n");
     failed = 1;
   }
-  if (mg2->image_data_type != RAW             &&
-      mg2->image_data_type != COMPLEX         &&
-      mg2->image_data_type != AMPLITUDE       &&
-      mg2->image_data_type != PHASE           &&
-      mg2->image_data_type != POWER           &&
-      mg2->image_data_type != SIGMA           &&
-      mg2->image_data_type != GAMMA           &&
-      mg2->image_data_type != BETA            &&
-      mg2->image_data_type != COHERENCE       &&
-      mg2->image_data_type != GEOCODED_IMAGE  &&
-      mg2->image_data_type != DEM             &&
-      mg2->image_data_type != IMAGE)
+  if (mg2->image_data_type != RAW_IMAGE             &&
+      mg2->image_data_type != COMPLEX_IMAGE         &&
+      mg2->image_data_type != AMPLITUDE_IMAGE       &&
+      mg2->image_data_type != PHASE_IMAGE           &&
+      mg2->image_data_type != POWER_IMAGE           &&
+      mg2->image_data_type != SIGMA_IMAGE           &&
+      mg2->image_data_type != GAMMA_IMAGE           &&
+      mg2->image_data_type != BETA_IMAGE            &&
+      mg2->image_data_type != COHERENCE_IMAGE       &&
+      mg2->image_data_type != GEOREFERENCED_IMAGE   &&
+      mg2->image_data_type != GEOCODED_IMAGE        &&
+      mg2->image_data_type != LUT_IMAGE             &&
+      mg2->image_data_type != ELEVATION             &&
+      mg2->image_data_type != DEM                   &&
+      mg2->image_data_type != IMAGE                 &&
+      mg2->image_data_type != MASK)
   {
     sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
             "[General]\nUnrecognized image_data_type field in new version file\n");
@@ -1032,6 +1062,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   ////////////////////////////////////////////////////////////
   */
 
+  // FIXME: Insert meta_transform check here
+
   ////////////////////////////////////////////////////////////
   // Check Projection Block
   //
@@ -1096,6 +1128,24 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
               "[Projection]\nNew version startY (%f) invalid.  Expected %f to %f\n",
               mp2->startY,
               DM_MIN_STARTY, DM_MAX_STARTY);
+      failed = 1;
+    }
+    if (mp2->perX < DM_MIN_PERX ||
+        mp2->perX > DM_MAX_PERX)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Projection]\nNew version perX (%f) invalid.  Expected %f to %f\n",
+              mp2->perX,
+              DM_MIN_PERX, DM_MAX_PERX);
+      failed = 1;
+    }
+    if (mp2->perY < DM_MIN_PERY ||
+        mp2->perY > DM_MAX_PERY)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
+              "[Projection]\nNew version perY (%f) invalid.  Expected %f to %f\n",
+              mp2->perY,
+              DM_MIN_PERY, DM_MAX_PERY);
       failed = 1;
     }
     // PROJECTION BLOCK REPORTING
