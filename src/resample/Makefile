@@ -1,22 +1,22 @@
-# Makefile for 		:  resample
-# Module Author 	:  Tom Logan & Mike Shindle
-
 include ../../make_support/system_rules
 
-OLIBS = $(LIBDIR)/libasf_raster.a \
+LIBS = $(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
-	$(PROJ_LIBS)
+	$(PROJ_LIBS) \
+	$(GSL_LIBS) \
+	-lm
 
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
-LIBS = $(OLIBS) -lm
+OBJS = resample.o
 
-resample:  resample.c $(OLIBS)
-	$(CC) $(CFLAGS) -o resample resample.c $(OBJS) $(LIBS) $(LDFLAGS)
-	rm -f *.o
+all: resample
+	-rm *.o
+
+resample:  $(OBJS)
+	$(CC) $(CFLAGS) -o resample $(OBJS) $(LIBS) $(LDFLAGS)
 	mv resample$(BIN_POSTFIX) $(BINDIR)
 	cp resample.1 ../../man/man1/resample.1
 
