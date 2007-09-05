@@ -682,7 +682,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   dssr = &ceos->dssr;
   mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
-  get_mpdr(in_fName, mpdr);
+  if (get_mpdr(in_fName, mpdr) == -1) {
+    FREE(mpdr);
+    mpdr = NULL;
+  }
   require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
