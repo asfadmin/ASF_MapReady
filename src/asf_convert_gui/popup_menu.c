@@ -829,11 +829,13 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
                 COMP_COL_OUTPUT_FILE, &out_name,
                 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
                 -1);
+            metadata_name = build_asf_metadata_filename(out_name);
         } else {
             gtk_tree_model_get(model, &iter, 
                 COL_DATA_FILE, &input_name, 
                 COL_OUTPUT_FILE, &out_name,
                 -1);
+            metadata_name = meta_file_name(input_name);
         }
 
         if (first)
@@ -864,10 +866,9 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             first = FALSE;
         }
 
-        metadata_name = build_asf_metadata_filename(out_name);
         char *base_output_name = get_basename(out_name);
-        
-        if (fileExists(metadata_name)) 
+
+        if (fileExists(metadata_name))
             meta = meta_read(metadata_name);
         else
             meta = meta_create(metadata_name);

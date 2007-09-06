@@ -6,9 +6,7 @@ static const int max_line_len = 2048;
 
 gchar * build_asf_metadata_filename(gchar * name)
 {
-    gchar * p;
-
-    p = strrchr(name, '.');
+    char *p = findExt(name);
     if (!p)
     {
         return g_strdup(name);
