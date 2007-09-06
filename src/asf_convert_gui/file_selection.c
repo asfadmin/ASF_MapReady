@@ -195,7 +195,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
     }
 
     free(dir);
-	show_queued_thumbnails();
+  show_queued_thumbnails();
 
 #else // #ifdef win32
 
@@ -286,16 +286,17 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     {
         if (n == 1 || i == 0)
         {
-            message_box("Error: Unrecognized extension.");
+            message_box("Error: Unrecognized file type or file extension.\n"
+                "Please select the leader (.L, LED-, etc) file.\n");
         }
         else
         {
-            message_box("Some of the files were not added -- unknown extensions.");
+            message_box("Some of the files were not added -- unknown types or extensions.");
         }
     }
 
     g_strfreev(selections);
     gtk_widget_hide(file_selection_dialog);
 
-	show_queued_thumbnails();
+  show_queued_thumbnails();
 }
