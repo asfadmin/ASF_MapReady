@@ -905,8 +905,28 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->location->lon_end_far_range = mpdr->blclong;
     }
   }
-  else
+  else {
     meta_get_corner_coords(meta);
+    // If the scene center lat/long is not valid (usually because of
+    // 0's in the dssr) then calculate it from the center line/sample
+    double min_lat;
+    double max_lat;
+    double min_long;
+    double max_long;
+    if (meta->general->center_latitude < min_lat   ||
+        meta->general->center_latitude > max_lat   ||
+        meta->general->center_longitude < min_long ||
+        meta->general->center_longitude > max_long)
+    {
+      asfPrintStatus("\nApproximate scene center latitude and longitude\n"
+          "(%0.2f, %0.2f) appear outside the bounds of the image\n"
+          "...Recalculating from center line and sample instead.\n\n",
+          meta->general->center_latitude, meta->general->center_longitude);
+      meta_get_latLon(meta,
+                      meta->general->line_count/2, meta->general->sample_count/2, 0,
+                      &(meta->general->center_latitude), &(meta->general->center_longitude));
+    }
+  }
 
   // Clean up
   FREE(mpdr);
