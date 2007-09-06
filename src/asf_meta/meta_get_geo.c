@@ -266,83 +266,10 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
   return 0;
 }
 
-#ifdef HEIGHT_CORRECT_ITERATE
-static int alos_get_lineSamp(meta_parameters *meta,
-                      double lat,double lon,double elev,
-                      double *yLine,double *xSamp)
-{
-    assert(FALSE);
-
-    int ii;
-    double i,j,p[10],l[10];
-    
-    assert(meta->transform);
-    assert(meta->transform->parameter_count == 4 ||
-           meta->transform->parameter_count == 10);
-    
-    for (ii=0; ii<meta->transform->parameter_count; ii++) {
-        p[ii] = meta->transform->l[ii];
-        l[ii] = meta->transform->s[ii];
-    }
-    i = lat;
-    j = lon;
-    // optical data transformation
-    if (meta->transform->parameter_count == 10) { 
-        *yLine = p[0] + p[1]*i + p[2]*j + p[3]*i*j + p[4]*i*i + p[5]*j*j +
-            p[6]*i*i*j + p[7]*i*j*j + p[8]*i*i*i + p[9]*j*j*j - 1;
-        *xSamp = l[0] + l[1]*i + l[2]*j + l[3]*i*j + l[4]*i*i + l[5]*j*j +
-            l[6]*i*i*j + l[7]*i*j*j + l[8]*i*i*i + l[9]*j*j*j - 1;
-    }
-    // SAR data transformation
-    else if (meta->transform->parameter_count == 4) {
-        *yLine = p[0] + p[1]*j + p[2]*i + p[3]*i*j -1;
-        *xSamp = l[0] + l[1]*j + l[2]*i + l[3]*i*j -1;
-    }
-
-    if (elev != 0.0) {
-        // height correction applies directly to y (range direction)
-        assert(meta->transform->parameter_count == 4);
-
-        double err = 999;
-        int n = 0;
-
-        //printf("Working on: %f, %f -> %f, %f\n", lat, lon, *xSamp, *yLine);
-        double initial_xSamp = *xSamp;
-        double prev_xSamp = initial_xSamp, new_xSamp = initial_xSamp;
-
-        //printf("Initial Correction: %f, %f\n", *xSamp, *yLine);
-        while (err > .1) {
-            ++n;
-            double incid = meta_incid(meta, *yLine, new_xSamp);
-            new_xSamp = initial_xSamp -
-                elev*tan(PI/2-incid)/meta->general->x_pixel_size;
-                
-            err = fabs(new_xSamp - prev_xSamp);
-            //printf("%d: %f old:%f new:%f %f\n", n, incid, *xSamp, new_xSamp, err);
-            prev_xSamp = new_xSamp;
-            if (n > 10) {
-                *xSamp = initial_xSamp;
-                return 1; // not converging!
-            }
-        }
-        *xSamp = new_xSamp;
-    }
-
-    return 0;
-}
-#endif
-
 int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
 {
-    // turning off the alos_get_lineSamp call for now... we'll just
-    // continue to use the meta_get_lineSamp iterative method, which is
-    // used for all the other stuff
-  if (FALSE && meta->transform) {
-      return alos_get_lineSamp(meta,lat,lon,elev,yLine,xSamp);
-  }
-  else {
     // It should be totally easy to make this work (since pixels
     // correspond to lat/long values) No effort has been made to make
     // this routine work with pseudoprojected images yet though.
@@ -361,60 +288,59 @@ int meta_get_lineSamp(meta_parameters *meta,
     // was fixed up in another way.
     while (++num_iter <= 6)
     {
-      //if (num_iter > 1)
-      //  printf("Iteration #%d: tolerance: %f\n", num_iter, tol);
+        //if (num_iter > 1)
+        //  printf("Iteration #%d: tolerance: %f\n", num_iter, tol);
 
-      x0 = meta->general->sample_count/2;
-      y0 = meta->general->line_count/2;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      // First attempt failed to converge... try another starting location,
-      // near one of the corners.  If this corner fails, then we'll try each
-      // of the other corners.
-      //printf("Failed to converge at center point... trying UL corner.\n");
-      x0 = meta->general->sample_count/8;
-      y0 = meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at UL corner... trying LR corner.\n");
-      x0 = 7*meta->general->sample_count/8;
-      y0 = 7*meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at LR corner... trying LL corner.\n");
-      x0 = meta->general->sample_count/8;
-      y0 = 7*meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at LL corner... trying UR corner.\n");
-      x0 = 7*meta->general->sample_count/8;
-      y0 = meta->general->line_count/8;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
-      
-      //printf("Failed to converge at UR corner... trying (0,0) ??\n");
-      x0 = y0 = 0.0;
-      err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
-                                  yLine, xSamp, tol);
-      if (!err) return 0;
+        x0 = meta->general->sample_count/2;
+        y0 = meta->general->line_count/2;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+            yLine, xSamp, tol);
+        if (!err) return 0;
 
-      tol += 0.2;
+        // First attempt failed to converge... try another starting location,
+        // near one of the corners.  If this corner fails, then we'll try each
+        // of the other corners.
+        //printf("Failed to converge at center point... trying UL corner.\n");
+        x0 = meta->general->sample_count/8;
+        y0 = meta->general->line_count/8;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
+            yLine, xSamp, tol);
+        if (!err) return 0;
+
+        //printf("Failed to converge at UL corner... trying LR corner.\n");
+        x0 = 7*meta->general->sample_count/8;
+        y0 = 7*meta->general->line_count/8;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+            yLine, xSamp, tol);
+        if (!err) return 0;
+
+        //printf("Failed to converge at LR corner... trying LL corner.\n");
+        x0 = meta->general->sample_count/8;
+        y0 = 7*meta->general->line_count/8;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+            yLine, xSamp, tol);
+        if (!err) return 0;
+
+        //printf("Failed to converge at LL corner... trying UR corner.\n");
+        x0 = 7*meta->general->sample_count/8;
+        y0 = meta->general->line_count/8;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+            yLine, xSamp, tol);
+        if (!err) return 0;
+
+        //printf("Failed to converge at UR corner... trying (0,0) ??\n");
+        x0 = y0 = 0.0;
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
+            yLine, xSamp, tol);
+        if (!err) return 0;
+
+        tol += 0.2;
     }
 
     // Return center point just for something to return...
     *xSamp = meta->general->sample_count/2;
     *yLine = meta->general->line_count/2;
     return 1;
-  }
 }
 
 void meta_get_corner_coords(meta_parameters *meta)
