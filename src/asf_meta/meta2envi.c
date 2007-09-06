@@ -5,6 +5,20 @@
 #include "asf_nan.h"
 #include "time.h"
 
+int datatype2envi(int data_type)
+{
+  switch (data_type) 
+  {
+    case BYTE: return 1;
+    case INTEGER16: return 2;
+    case INTEGER32: return 3;
+    case REAL32: return 4;
+    case REAL64: return 5;
+    case COMPLEX_REAL32: return 6;
+    default: return -1;
+   }
+}
+
 envi_header* meta2envi(meta_parameters *meta)
 {
   envi_header *envi;
@@ -42,24 +56,16 @@ envi_header* meta2envi(meta_parameters *meta)
   envi->pixel_size_x = MAGIC_UNSET_DOUBLE;
   envi->pixel_size_y = MAGIC_UNSET_DOUBLE;
   sprintf(envi->default_stretch, "%s", MAGIC_UNSET_STRING);
+  envi->data_type = datatype2envi(meta->general->data_type);
+  if (envi->data_type == -1) {
+      sprintf(errbuf,"\n   ERROR: Unsupported data type\n\n");
+      printErr(errbuf);
+  }
 
   /* Fill the values in from the metadata */
   envi->samples = meta->general->sample_count;
   envi->lines = meta->general->line_count;
   envi->bands = meta->general->band_count;
-  switch (meta->general->data_type) 
-    {
-    case BYTE: envi->data_type = 1; break;
-    case INTEGER16: envi->data_type = 2; break;
-    case INTEGER32: envi->data_type = 3; break;
-    case REAL32: envi->data_type = 4; break;
-    case REAL64: envi->data_type = 5; break;
-    case COMPLEX_REAL32: envi->data_type = 6; break;
-    default: 
-      sprintf(errbuf,"\n   ERROR: Unsupported data type\n\n");
-      printErr(errbuf);
-      break;
-    }
   if (strcmp(meta->general->sensor, "RSAT-1")==0)
     sprintf(envi->sensor_type, "RADARSAT");
   else if (strncmp(meta->general->sensor, "ERS", 3)==0)

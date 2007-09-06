@@ -1468,6 +1468,10 @@ settings_to_config_file(const Settings *s,
     }
     // fprintf(cf, "precise =\n");
     fprintf(cf, "output db = %d\n", s->output_db);
+    // can't currently handle complex, L0 data in the envi dump
+    if (s->input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
+        s->input_data_format != INPUT_FORMAT_ASF_INTERNAL)
+        fprintf(cf, "dump envi header = 0\n");
     fprintf(cf, "\n");
 
     if (s->process_to_level1) {

@@ -593,6 +593,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   if (mpdr)
     FREE(mpdr);
   FREE(ppr);
+  FREE(iof);
   if (esa_facdr) FREE(esa_facdr);
 }
 

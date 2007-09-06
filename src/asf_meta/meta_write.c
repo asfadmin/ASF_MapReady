@@ -26,11 +26,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
   FILE *fp = FOPEN(file_name_with_extension, "w");
   char comment[256];
 
+  // dump the envi header if we were told to do so, and envi supports
+  // the type of data that we have
   if (dump_envi_header) {
-    file_name_with_extension = appendExt(file_name, ".hdr");
-    envi_header *envi = meta2envi(meta);
-    write_envi_header(file_name_with_extension, meta, envi);
-    FREE(envi);
+      if (datatype2envi(meta->general->data_type) != -1) {
+          file_name_with_extension = appendExt(file_name, ".hdr");
+          envi_header *envi = meta2envi(meta);
+          write_envi_header(file_name_with_extension, meta, envi);
+          FREE(envi);
+      } else {
+          // no need to get all "***WARNING!!!***" about this
+          printf("Not dumping ENVI header for this data type.\n");
+      }
   }
 
   FREE(file_name_with_extension);
