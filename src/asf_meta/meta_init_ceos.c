@@ -568,6 +568,11 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     asfPrintError("Invalid or missing orbit direction in metadata: orbit_direction = '%c'\n",
         meta->general->orbit_direction);
   }
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
         meta->general->line_count/2,
@@ -713,6 +718,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       / (meta->sar->original_line_count/2);
     ceos_init_stVec(in_fName,ceos,meta);
   }
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count *
+        meta->sar->azimuth_time_per_pixel);
 
   // For ALOS data, the doppler centroid fields are all zero.
   int is_geocoded = dssr->crt_dopcen[0] == 0.0 &&
@@ -758,7 +768,15 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
   meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
-  meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
+  if (mpdr) {
+    meta->sar->satellite_height = mpdr->distplat + mpdr->altplat;
+  }
+  else {
+    meta->sar->satellite_height =
+        meta_get_sat_height(meta,
+                            meta->general->line_count/2,
+                            meta->general->sample_count/2);
+  }
   if (ceos->product == SLC) {
     meta->sar->earth_radius =
       meta_get_earth_radius(meta,
