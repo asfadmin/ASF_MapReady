@@ -71,9 +71,7 @@ int meta_get_latLon(meta_parameters *meta,
     if (meta->sar->image_type=='S' || meta->sar->image_type=='G') {
       /*Slant or ground range.  Use state vectors and doppler.*/
       double slant,doppler,time;
-      meta_get_timeSlantDop(meta,yLine + meta->general->start_line,
-			    xSample + meta->general->start_sample,
-			    &time,&slant,&doppler);
+      meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,&doppler);
       return meta_timeSlantDop2latLon(meta,
 				      time,slant,doppler,elev,
 				      lat,lon);

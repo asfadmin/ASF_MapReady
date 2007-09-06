@@ -57,11 +57,13 @@ double meta_get_time(meta_parameters *meta,double yLine, double xSample)
 
     /*Slant or ground range -- easy.*/
 	if (meta->sar->image_type=='S' || meta->sar->image_type=='G' ||
-            (meta->sar->image_type=='P' && meta->projection->type==SCANSAR_PROJECTION))
-		return yLine*meta->sar->azimuth_time_per_pixel+meta->sar->time_shift;
+        (meta->sar->image_type=='P' && meta->projection->type==SCANSAR_PROJECTION))
+    {
+		return (yLine+meta->general->start_line)*meta->sar->azimuth_time_per_pixel+
+            meta->sar->time_shift;
+    } 
     /*Map projected -- not as easy.*/
-	else if (meta->sar->image_type=='P' || meta->sar->image_type=='R')
-	{
+    else if (meta->sar->image_type=='P' || meta->sar->image_type=='R') {
 		double time,slant;
 		meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,NULL);
 		return time + meta->sar->time_shift;
@@ -83,7 +85,7 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 
 	if (meta->sar->image_type=='S')/*Slant range is easy.*/
 		return meta->sar->slant_range_first_pixel
-			+ xSample * meta->general->x_pixel_size
+			+ (xSample+meta->general->start_sample) * meta->general->x_pixel_size
 			+ meta->sar->slant_shift;
 	else if (meta->sar->image_type=='G')/*Ground range is tougher.*/
 	{/*We figure out the ground angle, phi, for this pixel, then
@@ -92,7 +94,8 @@ double meta_get_slant(meta_parameters *meta,double yLine, double xSample)
 		double ht = meta_get_sat_height(meta,yLine,xSample);
 		double minPhi = acos((SQR(ht)+SQR(er)
 			- SQR(meta->sar->slant_range_first_pixel)) / (2.0*ht*er));
-		double phi = minPhi+xSample*(meta->general->x_pixel_size / er);
+		double phi = minPhi+
+            (xSample+meta->general->start_sample)*(meta->general->x_pixel_size / er);
 		double slantRng = sqrt(SQR(ht)+SQR(er)-2.0*ht*er*cos(phi));
 		return slantRng + meta->sar->slant_shift;
 	} 
@@ -120,6 +123,9 @@ double meta_get_dop(meta_parameters *meta,double yLine, double xSample)
 {
   assert (meta->sar && (meta->sar->image_type == 'S'
 			|| meta->sar->image_type == 'G'));
+
+    yLine += meta->general->start_line;
+    xSample += meta->general->start_sample;
 
 	return meta->sar->range_doppler_coefficients[0]+
 	       meta->sar->range_doppler_coefficients[1]*xSample+
