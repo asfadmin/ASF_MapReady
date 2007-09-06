@@ -1447,7 +1447,8 @@ settings_to_config_file(const Settings *s,
         FCLOSE(fpDefs);
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
-    fprintf(cf, "thumbnail = 1\n");
+    fprintf(cf, "thumbnail = %d\n",
+        s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1 ? 1 : 0);
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
