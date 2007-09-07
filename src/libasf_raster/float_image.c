@@ -668,8 +668,8 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
 
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
-  g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
-					     * sizeof (float))));
+  //g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
+  //					     * sizeof (float))));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -698,15 +698,14 @@ non_native_byte_order (float_image_byte_order_t byte_order)
 }
 
 // Return true iff file referred to by file_pointer is larger than size.
-static gboolean
-file_pointed_to_larger_than (FILE *file_pointer, off_t size)
-{
-  struct stat stat_buffer;
-  int return_code = fstat (fileno (file_pointer), &stat_buffer);
-  g_assert (return_code == 0);
-  return stat_buffer.st_size >= size;
-}
-
+//static gboolean
+//file_pointed_to_larger_than (FILE *file_pointer, off_t size)
+//{
+//  struct stat stat_buffer;
+//  int return_code = fstat (fileno (file_pointer), &stat_buffer);
+//  g_assert (return_code == 0);
+//  return stat_buffer.st_size >= size;
+//}
 
 FloatImage *
 float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
@@ -717,9 +716,9 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
   // Check in advance if the source file looks big enough (we will
   // still C:\temp\envi_reader_for_arcgisneed to check return codes as we read() data, of course).
-  g_assert (file_pointed_to_larger_than (file_pointer,
-					 offset + ((off_t) size_x * size_y
-						   * sizeof (float))));
+  //g_assert (file_pointed_to_larger_than (file_pointer,
+  //					 offset + ((off_t) size_x * size_y
+  //						   * sizeof (float))));
 
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
 
@@ -754,6 +753,8 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     // Reorganize data into tiles in tile oriented disk file.
     size_t ii = 0;
     for ( ii = 0 ; ii < self->tile_count_y ; ii++ ) {
+      asfPercentMeter((float)ii/(self->tile_count_y-1));
+
       // The "effective_height" of the strip is the portion of the
       // strip for which data actually exists.  If the effective
       // height is less than self->tile>size, we will have to add some

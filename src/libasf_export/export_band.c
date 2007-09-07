@@ -672,44 +672,57 @@ void finalize_ppm_file(FILE *oppm)
   FCLOSE(oppm);
 }
 
-static double pauli_red(double HH, double VV, double no_data)
+static double pauli_red(double *band_values, double no_data)
 {
-    if (!meta_is_valid_double(no_data))
-    {
-        if (meta_is_valid_double(HH) && meta_is_valid_double(VV))
-            return HH-VV;
-        else
-            return no_data;
-    }
-    else
-    {
-        if (HH==no_data || VV==no_data)
-            return no_data;
-        else
-            return HH-VV;
-    }
+    double HH_amp = band_values[0];
+    double HH_phase = band_values[1];
+    double VV_amp = band_values[2];
+    double VV_phase = band_values[3];
+
+    // |HH-VV|
+
+    double HH_re = HH_amp*cos(HH_phase);
+    double HH_im = HH_amp*sin(HH_phase);
+    double VV_re = VV_amp*cos(VV_phase);
+    double VV_im = VV_amp*sin(VV_phase);
+
+    double re = HH_re - VV_re;
+    double im = HH_im - VV_im;
+
+    return sqrt(re*re + im*im);
 }
 
-static double pauli_blue(double HH, double VV, double no_data)
+static double pauli_blue(double *band_values, double no_data)
 {
-    if (!meta_is_valid_double(no_data))
-    {
-        if (meta_is_valid_double(HH) && meta_is_valid_double(VV))
-            return HH+VV;
-        else
-            return no_data;
-    }
-    else
-    {
-        if (HH==no_data || VV==no_data)
-            return no_data;
-        else
-            return HH+VV;
-    }
+    double HH_amp = band_values[0];
+    double HH_phase = band_values[1];
+    double VV_amp = band_values[2];
+    double VV_phase = band_values[3];
+
+    // |HH+VV|
+
+    double HH_re = HH_amp*cos(HH_phase);
+    double HH_im = HH_amp*sin(HH_phase);
+    double VV_re = VV_amp*cos(VV_phase);
+    double VV_im = VV_amp*sin(VV_phase);
+
+    double re = HH_re + VV_re;
+    double im = HH_im + VV_im;
+
+    return sqrt(re*re + im*im);
 }
 
-static double sinclair_green(double HV, double VH, double no_data)
+static double pauli_green(double *band_values, double no_data)
 {
+    // |HV|
+    return band_values[0];
+}
+
+static double sinclair_green(double *band_values, double no_data)
+{
+    double HV = band_values[0];
+    double VH = band_values[1];
+
     if (!meta_is_valid_double(no_data))
     {
         if (meta_is_valid_double(HV) && meta_is_valid_double(VH))
@@ -797,8 +810,13 @@ export_band_image (const char *metadata_file_name,
       ignored[ii] = strncmp("IGNORE", uc(band_name[ii]), 6) == 0 ? 1 : 0;
     }
 
-    // these are used only in the pauli & sinclair decompositions
+    // these are used only in the sinclair decompositions
     int HH_channel=0, VV_channel=0, HV_channel=0, VH_channel=0;
+    // these are used only in the pauli decomposition
+    int HH_amp_channel=0, HH_phase_channel=0,
+        HV_amp_channel=0, HV_phase_channel=0,
+        VH_amp_channel=0, VH_phase_channel=0,
+        VV_amp_channel=0, VV_phase_channel=0;
 
     channel_stats_t red_stats, blue_stats, green_stats;
     red_stats.hist = NULL; red_stats.hist_pdf = NULL;
@@ -810,21 +828,37 @@ export_band_image (const char *metadata_file_name,
                   "Size of the unsigned char data type on this machine is "
                   "different than expected.\n");
 
-      if (pauli || sinclair)
+      if (sinclair)
       {
           // Sanity checks -- require quad-pole data
-          asfRequire(strcmp(band_name[0], "HH") == 0 &&
+          asfRequire(md->general->band_count == 4 &&
+                     strcmp(band_name[0], "HH") == 0 &&
                      strcmp(band_name[1], "HV") == 0 &&
                      strcmp(band_name[2], "VH") == 0 &&
                      strcmp(band_name[3], "VV") == 0,
-              "Attempted to apply Pauli or Sinclair to non-quad pole data.\n");
+              "Attempted to apply Sinclair to non-quad pole data.\n");
+      }
+      else if (pauli) 
+      {
+          // Sanity checks -- require quad-pole complex data
+          asfRequire(md->general->band_count == 8 &&
+                     strcmp(band_name[0], "AMP-HH") == 0 &&
+                     strcmp(band_name[1], "PHASE-HH") == 0 &&
+                     strcmp(band_name[2], "AMP-HV") == 0 &&
+                     strcmp(band_name[3], "PHASE-HV") == 0 &&
+                     strcmp(band_name[4], "AMP-VH") == 0 &&
+                     strcmp(band_name[5], "PHASE-VH") == 0 &&
+                     strcmp(band_name[6], "AMP-VV") == 0 &&
+                     strcmp(band_name[7], "PHASE-VV") == 0,
+              "Attempted to apply Pauli to non-quad pole, non-complex data.\n");
       }
 
       if (pauli && sample_mapping != NONE)
       {
         // Red channel statistics
-  asfPrintStatus("\nGathering red channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
+        asfPrintStatus("\nGathering red channel statistics ...\n");
+        calc_stats_from_file_with_formula(image_data_file_name,
+                             "AMP-HH,PHASE-HH,AMP-VV,PHASE-VV",
                              pauli_red, md->general->no_data,
                              &red_stats.min, &red_stats.max, &red_stats.mean,
                              &red_stats.standard_deviation, &red_stats.hist);
@@ -841,8 +875,9 @@ export_band_image (const char *metadata_file_name,
 
         // Green channel statistics
         asfPrintStatus("\nGathering green channel statistics ...\n");
-        calc_stats_from_file(image_data_file_name, "HV",
-                             md->general->no_data,
+        calc_stats_from_file_with_formula(image_data_file_name,
+                             "AMP-HV",
+                             pauli_green, md->general->no_data,
                              &green_stats.min, &green_stats.max,
                              &green_stats.mean,
                              &green_stats.standard_deviation,
@@ -860,12 +895,13 @@ export_band_image (const char *metadata_file_name,
 
         // Blue channel statistics
         asfPrintStatus("\nGathering blue channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name, "HH", "VV",
-                               pauli_blue, md->general->no_data,
-                               &blue_stats.min, &blue_stats.max,
-                               &blue_stats.mean,
-                               &blue_stats.standard_deviation,
-                               &blue_stats.hist);
+        calc_stats_from_file_with_formula(image_data_file_name,
+                             "AMP-HH,PHASE-HH,AMP-VV,PHASE-VV",
+                             pauli_blue, md->general->no_data,
+                             &blue_stats.min, &blue_stats.max,
+                             &blue_stats.mean,
+                             &blue_stats.standard_deviation,
+                             &blue_stats.hist);
         if (sample_mapping == SIGMA) {
             double omin = blue_stats.mean - 2*blue_stats.standard_deviation;
             double omax = blue_stats.mean + 2*blue_stats.standard_deviation;
@@ -898,7 +934,7 @@ export_band_image (const char *metadata_file_name,
 
         // Green channel statistics
         asfPrintStatus("\nGathering green channel statistics ...\n");
-        calc_stats_from_file_with_formula(image_data_file_name, "HV", "VH",
+        calc_stats_from_file_with_formula(image_data_file_name, "HV,VH",
                              sinclair_green, md->general->no_data,
                              &green_stats.min, &green_stats.max,
                              &green_stats.mean,
@@ -1002,7 +1038,7 @@ export_band_image (const char *metadata_file_name,
     }
 
     // Get channel numbers
-    if (pauli || sinclair) {
+    if (sinclair) {
         HH_channel = get_band_number(md->general->bands,
                                      md->general->band_count, "HH");
         HV_channel = get_band_number(md->general->bands,
@@ -1011,6 +1047,23 @@ export_band_image (const char *metadata_file_name,
                                      md->general->band_count, "VH");
         VV_channel = get_band_number(md->general->bands,
                                      md->general->band_count, "VV");
+    } else if (pauli) {
+        HH_amp_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "AMP-HH");
+        HV_amp_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "AMP-HV");
+        VH_amp_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "AMP-VH");
+        VV_amp_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "AMP-VV");
+        HH_phase_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "PHASE-HH");
+        HV_phase_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "PHASE-HV");
+        VH_phase_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "PHASE-VH");
+        VV_phase_channel = get_band_number(md->general->bands,
+                                     md->general->band_count, "PHASE-VV");
     } else {
         red_channel = get_band_number(md->general->bands,
                                       md->general->band_count,
@@ -1040,6 +1093,13 @@ export_band_image (const char *metadata_file_name,
     float *red_float_line = NULL;
     float *green_float_line = NULL;
     float *blue_float_line = NULL;
+
+    // these are only used by the pauli decomposition
+    float *amp_HH_buf = NULL;
+    float *phase_HH_buf = NULL;
+    float *amp_VV_buf = NULL;
+    float *phase_VV_buf = NULL;
+
     unsigned char *red_byte_line = NULL;
     unsigned char *green_byte_line = NULL;
     unsigned char *blue_byte_line = NULL;
@@ -1089,6 +1149,14 @@ export_band_image (const char *metadata_file_name,
           blue_float_line[i] = md->general->no_data;
         }
       }
+    }
+
+    if (pauli) {
+        // these are temporary arrays for values used in the pauli calculation
+        amp_HH_buf = MALLOC(sample_count * sizeof(float));
+        phase_HH_buf = MALLOC(sample_count * sizeof(float));
+        amp_VV_buf = MALLOC(sample_count * sizeof(float));
+        phase_VV_buf = MALLOC(sample_count * sizeof(float));
     }
 
     double r_omin=0, r_omax=0;
@@ -1171,21 +1239,24 @@ export_band_image (const char *metadata_file_name,
                                   sample_count);
       }
       else if (pauli) {
-        // first need HH-VV && HH+VV
-        // => load HH into red, VV into blue
-        // => then HH-VV into red, at the same time as HH+VV into blue
-        get_float_line(fp, md, ii+HH_channel*offset, red_float_line);
-        get_float_line(fp, md, ii+VV_channel*offset, blue_float_line);
+        // first need HH-VV && HH+VV into red & blue
+        get_float_line(fp, md, ii+HH_amp_channel*offset, amp_HH_buf);
+        get_float_line(fp, md, ii+HH_phase_channel*offset, phase_HH_buf);
+        get_float_line(fp, md, ii+VV_amp_channel*offset, amp_VV_buf);
+        get_float_line(fp, md, ii+VV_phase_channel*offset, phase_VV_buf);
         int jj;
         for (jj=0; jj<md->general->sample_count; ++jj) {
-          double HH = red_float_line[jj];
-          double VV = blue_float_line[jj];
-          red_float_line[jj] = pauli_red(HH, VV, md->general->no_data);
-          blue_float_line[jj] = pauli_blue(HH, VV, md->general->no_data);
+          double val_arr[4];
+          val_arr[0] = amp_HH_buf[jj];
+          val_arr[1] = phase_HH_buf[jj];
+          val_arr[2] = amp_VV_buf[jj];
+          val_arr[3] = phase_VV_buf[jj];
+          red_float_line[jj] = pauli_red(val_arr, md->general->no_data);
+          blue_float_line[jj] = pauli_blue(val_arr, md->general->no_data);
         }
 
         // now HV into green
-        get_float_line(fp, md, ii+HV_channel*offset, green_float_line);
+        get_float_line(fp, md, ii+HV_amp_channel*offset, green_float_line);
 
         // write out as normal
         if (format == TIF || format == GEOTIFF)
@@ -1212,9 +1283,10 @@ export_band_image (const char *metadata_file_name,
 
         int jj;
         for (jj=0; jj<md->general->sample_count; ++jj) {
-          double HV = red_float_line[jj];
-          double VH = blue_float_line[jj];
-          green_float_line[jj] = sinclair_green(HV, VH, md->general->no_data);
+            double val_arr[2];
+            val_arr[0] = red_float_line[jj]; // HV
+            val_arr[0] = blue_float_line[jj]; // VH
+            green_float_line[jj] = sinclair_green(val_arr, md->general->no_data);
         }
 
         // now VV into red, and HH into blue
@@ -1290,7 +1362,12 @@ export_band_image (const char *metadata_file_name,
       if (green_float_line) FREE(green_float_line);
       if (blue_float_line) FREE(blue_float_line);
     }
-
+    if (pauli) {
+        FREE(amp_HH_buf);
+        FREE(phase_HH_buf);
+        FREE(amp_VV_buf);
+        FREE(phase_VV_buf);
+    }
     // Finalize the chosen format
     if (format == TIF || format == GEOTIFF)
       finalize_tiff_file(otif, ogtif, is_geotiff);
