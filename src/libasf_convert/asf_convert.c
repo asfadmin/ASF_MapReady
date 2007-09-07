@@ -448,8 +448,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Dealing with single look complex data
       // Options -multilook and -complex are mutually exclusive
       if (cfg->import->complex_slc && cfg->import->multilook_slc)
-	asfPrintError("Only single look complex data stored as "
-		      "amplitude and phase can be multilooked.\n");
+  asfPrintError("Only single look complex data stored as "
+          "amplitude and phase can be multilooked.\n");
 
       // Get input file name ready
       strcpy(inFile, cfg->general->in_name);
@@ -736,11 +736,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
       }
-
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
-			      cfg->import->complex_slc,
-			      cfg->import->multilook_slc,
+            cfg->import->complex_slc,
+            cfg->import->multilook_slc,
                               uc(cfg->import->format),
                               NULL,
                               MAGIC_UNSET_STRING,
@@ -1289,9 +1288,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             strcat(outFile, ".png");
             free(tmp);
         }
-
-  check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
-         "resampling data to thumbnail size (resample)\n");
+        check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
+                     "resampling data to thumbnail size (resample)\n");
 
         if (strlen(cfg->export->rgb) > 0) {
            char *red, *green, *blue;

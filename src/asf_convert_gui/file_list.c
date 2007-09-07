@@ -156,7 +156,7 @@ static char *build_band_list(const char *file)
         char filename[255], dirname[255];
 
         char **dataName, *baseName;
-	baseName = MALLOC(sizeof(char)*255);
+  baseName = MALLOC(sizeof(char)*255);
 
         split_dir_and_file(file, dirname, filename);
         char *s = MALLOC(sizeof(char)*(strlen(file)+1));
@@ -202,7 +202,7 @@ static char *build_band_list(const char *file)
 
         free_ceos_names(dataName, NULL);
         FREE(s);
-	FREE(baseName);
+  FREE(baseName);
 
         return ret;
     }
