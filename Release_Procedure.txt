@@ -72,6 +72,7 @@ src/convert2vector
 src/deskew
 src/diffimage
 src/create_thumbs
+src/shift_geolocation
 doc
 
 10. Run the autotar script:
@@ -83,29 +84,22 @@ doc
 12. Edit the .spec file in ../rpmbuild to use the correct version,
     then rename the file to match.
       cd ../rpmbuild
-      vi asf_convert-3.1.0-1.spec
-      mv asf_convert-3.1.0-1.spec asf_convert-3.1.X-1.spec
+      vi asf_convert-3.2.0-1.spec
+      mv asf_convert-3.2.0-1.spec asf_convert-3.2.X-1.spec
 
 13. Build the rpm:
-      rpmbuild -ba asf_convert-3.1.X-1.spec
+      rpmbuild -ba asf_convert-3.2.X-1.spec
 
 14. Create tarballs of the rpms.  The binary rpm will also contain the
     README_rpm.txt file from ../../asf_tools.
       ./tarrpms asf_convert convert
 
-15. *** SKIP - Quantum no longer exists - need a new canonical place to put
-               the releases!
+15. Put the built files on dq:
 
-    Put the built files on quantum or someplace:
-      scp RPMS/asf_convert-3.1.X-rpm.*
-          'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
-      #We aren't actually putting the source rpms anywhere now
-      #scp SRPMS/asf_convert-3.1.X-rpm-src.*
-      #    'quantum://shares/utd/Releases\ for\ Data\ Quality/Linux'
-      scp Source/* 'quantum://shares/utd/Releases\ for\ Data\ Quality/Source'
-    
-    *** END SKIP ***
-    
+      mkdir ~/builds/v3.2.X
+      cp RPMS/convert-3.2.X-rpm.* Source/convert-3.2.X-src.* ~/builds/v.3.2.X
+      chmod 755 ~/builds/v3.2.X ; chmod 644 ~/builds/v3.2.X/*
+
 16. Bump the version in include/asf_version.h, add "-dev" to the end.
 
 17. The windows procedure is the same as described below.  (Step 10)
