@@ -1387,7 +1387,7 @@ export_band_image (const char *metadata_file_name,
 
     int free_band_names=FALSE;
     int band_count = md->general->band_count;
-    char base_name[255], bands[25];
+    char base_name[255], bands[1024];
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
 
