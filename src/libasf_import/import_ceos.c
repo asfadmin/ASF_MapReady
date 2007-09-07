@@ -606,8 +606,6 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     }
     asfLineMeter(ii, nl);
   }
-  asfLineMeter(nl, nl);
-  asfPrintStatus("\n");
   FREE(cpx_buf);
   if (complex_flag)
     FREE(cpxFloat_buf);
@@ -793,8 +791,6 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     }
     asfLineMeter(ii, nl);
   }
-  asfLineMeter(nl, nl);
-  asfPrintStatus("\n");
   FREE(cpx_buf);
   if (complex_flag)
     FREE(cpxFloat_buf);
