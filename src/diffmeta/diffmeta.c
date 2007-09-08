@@ -274,7 +274,6 @@ void projection_type_2_str(projection_type_t proj, char *proj_str)
 
 void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
 {
-  projection_type_t ptype1, ptype2;
   int failed = 0;
   char precheck_err_msgs[8192];
   char compare_err_msgs[8192];
@@ -401,7 +400,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       strlen(mg2->sensor) > 0 &&
       strncmp(mg2->sensor, "ALOS", 4) == 0)
   {
-    int mode_num, beam_num=0;
+    int beam_num=0;
     char beam[3], *s;
     if (strncmp(mg2->mode, "WB", 2) == 0) {
       strncpy(beam, mg2->mode, 2);
@@ -550,111 +549,194 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     failed = 1;
   }
   if (mg2->orbit < 0 || mg2->orbit > DM_MAX_ORBIT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version orbit number out of range (%d).  Expected\n%d through %d\n",
-           mg2->orbit, 0, DM_MAX_ORBIT);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version orbit number out of range (",
+            mg2->orbit,
+            ").  Expected\n",
+            0,
+            "through ",
+            DM_MAX_ORBIT);
     failed = 1;
   }
   if (mg2->orbit_direction != 'A' && mg2->orbit_direction != 'D') {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nInvalid orbit_dirction in new version file ('%c').  Expected 'A' or 'D'\n",
-           mg2->orbit_direction);
+    sprintf(precheck_err_msgs, "%s%s%c%s\n",
+            precheck_err_msgs,
+            "[General]\nInvalid orbit_direction in new version file ('",
+            mg2->orbit_direction,
+            "').  Expected 'A' or 'D'\n");
     failed = 1;
   }
   if (mg2->frame < DM_MIN_FRAME || mg2->frame > DM_MAX_FRAME) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version frame number out of range (%d).  Expected\n%d through %d\n",
-            mg2->frame, DM_MIN_FRAME, DM_MAX_FRAME);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version frame number out of range (",
+            mg2->frame,
+            ").  Expected\n",
+            DM_MIN_FRAME,
+            "through ",
+            DM_MAX_FRAME);
     failed = 1;
   }
-  if (mg2->band_count < 1 || mg2->band_count > DM_MAX_BANDCOUNT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version band_count out of range (%d).  Expected\n%d through %d\n",
-            mg2->band_count, 1, DM_MAX_BANDCOUNT);
+  if (mg2->band_count < DM_MIN_BANDCOUNT || mg2->band_count > DM_MAX_BANDCOUNT) {
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version band count out of range (",
+            mg2->band_count,
+            ").  Expected\n",
+            DM_MIN_BANDCOUNT,
+            "through ",
+            DM_MAX_BANDCOUNT);
     failed = 1;
   }
   if (mg2->line_count < DM_MIN_LINECOUNT || mg2->line_count > DM_MAX_LINECOUNT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version line_count out of range (%d).  Expected\n%d through %d\n",
-            mg2->line_count, DM_MIN_LINECOUNT, DM_MAX_LINECOUNT);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version line count out of range (",
+            mg2->line_count,
+            ").  Expected\n",
+            DM_MIN_LINECOUNT,
+            "through ",
+            DM_MAX_LINECOUNT);
     failed = 1;
   }
   if (mg2->sample_count < DM_MIN_SAMPLECOUNT || mg2->sample_count > DM_MAX_SAMPLECOUNT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version sample_count out of range (%d).  Expected\n%d through %d\n",
-            mg2->sample_count, DM_MIN_SAMPLECOUNT, DM_MAX_SAMPLECOUNT);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version sample count out of range (",
+            mg2->sample_count,
+            ").  Expected\n",
+            DM_MIN_SAMPLECOUNT,
+            "through ",
+            DM_MAX_SAMPLECOUNT);
     failed = 1;
   }
-  if (mg2->start_line < DM_MIN_STARTLINE || mg2->start_line >= DM_MAX_LINECOUNT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version start_line out of range (%d).  Expected\n%d through %d\n",
-            mg2->start_line, DM_MIN_STARTLINE, DM_MAX_STARTLINE);
+  if (mg2->start_line < DM_MIN_STARTLINE || mg2->start_line >= DM_MAX_STARTLINE) {
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version start_line out of range (",
+            mg2->start_line,
+            ").  Expected\n",
+            DM_MIN_STARTLINE,
+            "through ",
+            DM_MAX_STARTLINE);
     failed = 1;
   }
   if (mg2->start_line >= mg2->line_count) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version start_line (%d) greater than line_count (%d)\n",
-            mg2->start_line, mg2->line_count);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s\n", precheck_err_msgs,
+            "[General]\nNew version start_line (",
+            mg2->start_line,
+            ") greater than line_count (",
+            mg2->line_count,
+            ")\n");
     failed = 1;
   }
-  if (mg2->start_sample < DM_MIN_STARTSAMPLE || mg2->start_sample >= DM_MAX_SAMPLECOUNT) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version start_sample out of range (%d).  Expected\n%d through %d\n",
-            mg2->start_sample, DM_MIN_STARTSAMPLE, DM_MAX_STARTSAMPLE);
+  if (mg2->start_sample < DM_MIN_STARTSAMPLE || mg2->start_sample >= DM_MAX_STARTSAMPLE) {
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version start_sample out of range (",
+            mg2->start_sample,
+            ").  Expected\n",
+            DM_MIN_STARTSAMPLE,
+            "through ",
+            DM_MAX_STARTSAMPLE);
     failed = 1;
   }
   if (mg2->start_sample >= mg2->sample_count) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version start_sample (%d) greater than sample_count (%d)\n",
-            mg2->start_sample, mg2->sample_count);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s\n", precheck_err_msgs,
+            "[General]\nNew version start_sample (",
+            mg2->start_sample,
+            ") greater than sample_count (",
+            mg2->sample_count,
+            ")\n");
     failed = 1;
   }
   if (mg2->x_pixel_size < DM_MIN_PIXELSIZE || mg2->x_pixel_size > DM_MAX_PIXELSIZE) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version x_pixel_size (%f) out of range.  Expected\n %f through %f\n",
-            mg2->x_pixel_size, DM_MIN_PIXELSIZE, DM_MAX_PIXELSIZE);
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version x_pixel_size out of range (",
+            mg2->x_pixel_size,
+            ").  Expected\n",
+            DM_MIN_PIXELSIZE,
+            "through ",
+            DM_MAX_PIXELSIZE);
     failed = 1;
   }
   if (mg2->y_pixel_size < DM_MIN_PIXELSIZE || mg2->y_pixel_size > DM_MAX_PIXELSIZE) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version y_pixel_size (%f) out of range.  Expected\n %f through %f\n",
-            mg2->y_pixel_size, DM_MIN_PIXELSIZE, DM_MAX_PIXELSIZE);
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version y_pixel_size out of range (",
+            mg2->y_pixel_size,
+            ").  Expected\n",
+            DM_MIN_PIXELSIZE,
+            "through ",
+            DM_MAX_PIXELSIZE);
     failed = 1;
   }
-  if (mg2->center_latitude < -90.0 || mg2->center_latitude > 90.0) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version center_latitude (%f) out of range.  Expected\n %f through %f\n",
-            mg2->center_latitude, -90.0, 90.0);
+  if (mg2->center_latitude < DM_MIN_LATITUDE || mg2->center_latitude > DM_MAX_LATITUDE) {
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version center_latitude out of range (",
+            mg2->center_latitude,
+            ").  Expected\n",
+            DM_MIN_LATITUDE,
+            "through ",
+            DM_MAX_LATITUDE);
     failed = 1;
   }
-  if (mg2->center_longitude < -180.0 || mg2->center_longitude > 180.0) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version center_longitude (%f) out of range.  Expected\n %f through %f\n",
-            mg2->center_longitude, -180.0, 180.0);
+  if (mg2->center_longitude < DM_MIN_LONGITUDE || mg2->center_longitude > DM_MAX_LONGITUDE) {
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version center_longitude out of range (",
+            mg2->center_longitude,
+            ").  Expected\n",
+            DM_MIN_LONGITUDE,
+            "through ",
+            DM_MAX_LONGITUDE);
     failed = 1;
   }
   if (mg2->re_major < DM_MIN_MAJOR_AXIS || mg2->re_major > DM_MAX_MAJOR_AXIS) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version re_major (%f) out of range.  Expected\n %f through %f\n",
-            mg2->re_major, DM_MIN_MAJOR_AXIS, DM_MAX_MAJOR_AXIS);
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version re_major out of range (",
+            mg2->re_major,
+            ").  Expected\n",
+            DM_MIN_MAJOR_AXIS,
+            "through ",
+            DM_MAX_MAJOR_AXIS);
     failed = 1;
   }
   if (mg2->re_minor < DM_MIN_MINOR_AXIS || mg2->re_minor > DM_MAX_MINOR_AXIS) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version re_minor (%f) out of range.  Expected\n %f through %f\n",
-            mg2->re_minor, DM_MIN_MINOR_AXIS, DM_MAX_MINOR_AXIS);
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version re_minor out of range (",
+            mg2->re_minor,
+            ").  Expected\n",
+            DM_MIN_MINOR_AXIS,
+            "through ",
+            DM_MAX_MINOR_AXIS);
     failed = 1;
   }
   if (mg2->bit_error_rate < DM_MIN_BIT_ERROR_RATE || mg2->bit_error_rate > DM_MAX_BIT_ERROR_RATE) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version bit_error_rate (%d) out of range.  Expected\n %d through %d\n",
-            mg2->bit_error_rate, DM_MIN_BIT_ERROR_RATE, DM_MAX_BIT_ERROR_RATE);
+    sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+            precheck_err_msgs,
+            "[General]\nNew version bit_error_rate out of range (",
+            mg2->bit_error_rate,
+            ").  Expected\n",
+            DM_MIN_BIT_ERROR_RATE,
+            "through ",
+            DM_MAX_BIT_ERROR_RATE);
     failed = 1;
   }
   if (mg2->missing_lines < DM_MIN_MISSING_LINES || mg2->missing_lines > DM_MAX_MISSING_LINES) {
-    sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-            "[General]\nNew version missing_lines (%d) out of range.  Expected\n %d through %d\n",
-            mg2->missing_lines, DM_MIN_MISSING_LINES, DM_MAX_MISSING_LINES);
+    sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+            precheck_err_msgs,
+            "[General]\nNew version missing_lines out of range (",
+            mg2->missing_lines,
+            ").  Expected\n",
+            DM_MIN_MISSING_LINES,
+            "through ",
+            DM_MAX_MISSING_LINES);
     failed = 1;
   }
   // GENERAL BLOCK REPORTING
@@ -696,169 +778,284 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
         msar2->image_type != 'R' &&
         msar2->image_type != 'P')
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version image_type (%c) invalid.  Expected\n %c, %c, %c, or %c\n",
-              msar2->image_type, 'S', 'G', 'R', 'P');
+      sprintf(precheck_err_msgs, "%s%s%c%s%c, %c, %c, or %c\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version image_type (",
+              msar2->image_type,
+              ") invalid.  Expected\n ",
+              'S', 'G', 'R', 'P');
       failed = 1;
     }
     if (msar2->look_direction != 'L' && msar2->look_direction != 'R') {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version look_direction (%c) invalid.  Expected\n %c or %c\n",
-              msar2->look_direction, 'L', 'R');
+      sprintf(precheck_err_msgs, "%s%s'%c'%s\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version look_direction (",
+              msar2->look_direction,
+              ") invalid.  Expected\n 'L' or 'R'\n");
       failed = 1;
     }
     if (msar2->look_count < DM_MIN_LOOK_COUNT || msar2->look_count > DM_MAX_LOOK_COUNT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version look_count (%d) invalid.  Expected\n %d to %d\n",
-              msar2->look_count, DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT);
+      sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version look_count out of range (",
+              msar2->look_count,
+              ").  Expected\n",
+              DM_MIN_LOOK_COUNT,
+              "through ",
+              DM_MAX_LOOK_COUNT);
       failed = 1;
     }
     if (msar2->deskewed < DM_MIN_DESKEWED || msar2->deskewed > DM_MAX_DESKEWED) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version deskewed flag (%d) invalid.  Expected\n %d to %d\n",
-              msar2->deskewed, DM_MIN_DESKEWED, DM_MAX_DESKEWED);
+      sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version deskewed out of range (",
+              msar2->deskewed,
+              ").  Expected\n",
+              DM_MIN_DESKEWED,
+              "through ",
+              DM_MAX_DESKEWED);
       failed = 1;
     }
     if (msar2->original_line_count < DM_MIN_ORIGINAL_LINE_COUNT ||
         msar2->original_line_count > DM_MAX_ORIGINAL_LINE_COUNT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version original_line_count (%d) invalid.  Expected\n %d to %d\n",
-              msar2->original_line_count, DM_MIN_ORIGINAL_LINE_COUNT, DM_MAX_ORIGINAL_LINE_COUNT);
+      sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version original_line_count out of range (",
+              msar2->original_line_count,
+              ").  Expected\n",
+              DM_MIN_ORIGINAL_LINE_COUNT,
+              "through ",
+              DM_MAX_ORIGINAL_LINE_COUNT);
       failed = 1;
     }
     if (msar2->original_sample_count < DM_MIN_ORIGINAL_SAMPLE_COUNT ||
         msar2->original_sample_count > DM_MAX_ORIGINAL_SAMPLE_COUNT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version original_sample_count (%d) invalid.  Expected\n %d to %d\n",
-              msar2->original_sample_count, DM_MIN_ORIGINAL_SAMPLE_COUNT, DM_MAX_ORIGINAL_SAMPLE_COUNT);
+      sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version original_sample_count out of range (",
+              msar2->original_sample_count,
+              ").  Expected\n",
+              DM_MIN_ORIGINAL_SAMPLE_COUNT,
+              "through ",
+              DM_MAX_ORIGINAL_SAMPLE_COUNT);
       failed = 1;
     }
     if (msar2->line_increment < DM_MIN_LINE_INCREMENT ||
         msar2->line_increment > DM_MAX_LINE_INCREMENT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version line_increment (%f) invalid.  Expected\n %f to %f\n",
-              msar2->line_increment, DM_MIN_LINE_INCREMENT, DM_MAX_LINE_INCREMENT);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version line_increment out of range (",
+              msar2->line_increment,
+              ").  Expected\n",
+              DM_MIN_LINE_INCREMENT,
+              "through ",
+              DM_MAX_LINE_INCREMENT);
       failed = 1;
     }
     if (msar2->sample_increment < DM_MIN_SAMPLE_INCREMENT ||
         msar2->sample_increment > DM_MAX_SAMPLE_INCREMENT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version sample_increment (%f) invalid.  Expected\n %f to %f\n",
-              msar2->sample_increment, DM_MIN_SAMPLE_INCREMENT, DM_MAX_SAMPLE_INCREMENT);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version sample_increment out of range (",
+              msar2->sample_increment,
+              ").  Expected\n",
+              DM_MIN_SAMPLE_INCREMENT,
+              "through ",
+              DM_MAX_SAMPLE_INCREMENT);
       failed = 1;
     }
     if (msar2->range_time_per_pixel < DM_MIN_RANGE_TIME_PER_PIXEL ||
         msar2->range_time_per_pixel > DM_MAX_RANGE_TIME_PER_PIXEL) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version range_time_per_pixel (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_time_per_pixel, DM_MIN_RANGE_TIME_PER_PIXEL, DM_MAX_RANGE_TIME_PER_PIXEL);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version range_time_per_pixel out of range (",
+              msar2->range_time_per_pixel,
+              ").  Expected\n",
+              DM_MIN_RANGE_TIME_PER_PIXEL,
+              "through ",
+              DM_MAX_RANGE_TIME_PER_PIXEL);
       failed = 1;
     }
     if (msar2->azimuth_time_per_pixel < DM_MIN_AZIMUTH_TIME_PER_PIXEL ||
         msar2->azimuth_time_per_pixel > DM_MAX_AZIMUTH_TIME_PER_PIXEL) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version azimuth_time_per_pixel (%f) invalid.  Expected\n %f to %f\n",
-              msar2->azimuth_time_per_pixel, DM_MIN_AZIMUTH_TIME_PER_PIXEL, DM_MAX_AZIMUTH_TIME_PER_PIXEL);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version azimuth_time_per_pixel out of range (",
+              msar2->azimuth_time_per_pixel,
+              ").  Expected\n",
+              DM_MIN_AZIMUTH_TIME_PER_PIXEL,
+              "through ",
+              DM_MAX_AZIMUTH_TIME_PER_PIXEL);
       failed = 1;
     }
     if (msar2->slant_shift < DM_MIN_SLANT_SHIFT ||
         msar2->slant_shift > DM_MAX_SLANT_SHIFT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version slant_shift (%f) invalid.  Expected\n %f to %f\n",
-              msar2->slant_shift, DM_MIN_SLANT_SHIFT, DM_MAX_SLANT_SHIFT);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version slant_shift out of range (",
+              msar2->slant_shift,
+              ").  Expected\n",
+              DM_MIN_SLANT_SHIFT,
+              "through ",
+              DM_MAX_SLANT_SHIFT);
       failed = 1;
     }
     if (msar2->time_shift < DM_MIN_TIME_SHIFT ||
         msar2->time_shift > DM_MAX_TIME_SHIFT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version time_shift (%f) invalid.  Expected\n %f to %f\n",
-              msar2->time_shift, DM_MIN_TIME_SHIFT, DM_MAX_TIME_SHIFT);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version time_shift out of range (",
+              msar2->time_shift,
+              ").  Expected\n",
+              DM_MIN_TIME_SHIFT,
+              "through ",
+              DM_MAX_TIME_SHIFT);
       failed = 1;
     }
     if (msar2->slant_range_first_pixel < DM_MIN_SLANT_RANGE_FIRST_PIXEL ||
         msar2->slant_range_first_pixel > DM_MAX_SLANT_RANGE_FIRST_PIXEL) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version slant_range_first_pixel (%f) invalid.  Expected\n %f to %f\n",
-              msar2->slant_range_first_pixel, DM_MIN_SLANT_RANGE_FIRST_PIXEL, DM_MAX_SLANT_RANGE_FIRST_PIXEL);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version slant_range_first_pixel out of range (",
+              msar2->slant_range_first_pixel,
+              ").  Expected\n",
+              DM_MIN_SLANT_RANGE_FIRST_PIXEL,
+              "through ",
+              DM_MAX_SLANT_RANGE_FIRST_PIXEL);
       failed = 1;
     }
     if (msar2->wavelength < DM_MIN_WAVELENGTH ||
         msar2->wavelength > DM_MAX_WAVELENGTH) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version wavelength (%f) invalid.  Expected\n %f to %f\n",
-              msar2->wavelength, DM_MIN_WAVELENGTH, DM_MAX_WAVELENGTH);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version wavelength out of range (",
+              msar2->wavelength,
+              ").  Expected\n",
+              DM_MIN_WAVELENGTH,
+              "through ",
+              DM_MAX_WAVELENGTH);
       failed = 1;
     }
     if (msar2->prf < DM_MIN_PRF ||
         msar2->prf > DM_MAX_PRF) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version prf (%f) invalid.  Expected\n %f to %f\n",
-              msar2->prf, DM_MIN_PRF, DM_MAX_PRF);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version prf out of range (",
+              msar2->prf,
+              ").  Expected\n",
+              DM_MIN_PRF,
+              "through ",
+              DM_MAX_PRF);
       failed = 1;
     }
     if (msar2->earth_radius < DM_MIN_EARTH_RADIUS ||
         msar2->earth_radius > DM_MAX_EARTH_RADIUS) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version earth_radius (%f) invalid.  Expected\n %f to %f\n",
-              msar2->earth_radius, DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version earth_radius out of range (",
+              msar2->earth_radius,
+              ").  Expected\n",
+              DM_MIN_EARTH_RADIUS,
+              "through ",
+              DM_MAX_EARTH_RADIUS);
       failed = 1;
     }
     if (msar2->earth_radius_pp < DM_MIN_EARTH_RADIUS ||
         msar2->earth_radius_pp > DM_MAX_EARTH_RADIUS) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version earth_radius_pp (%f) invalid.  Expected\n %f to %f\n",
-              msar2->earth_radius_pp, DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version earth_radius out of range (",
+              msar2->earth_radius_pp,
+              ").  Expected\n",
+              DM_MIN_EARTH_RADIUS,
+              "through ",
+              DM_MAX_EARTH_RADIUS);
       failed = 1;
     }
     if (msar2->satellite_height < DM_MIN_SATELLITE_HEIGHT ||
         msar2->satellite_height > DM_MAX_SATELLITE_HEIGHT) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version satellite_height (%f) invalid.  Expected\n %f to %f\n",
-              msar2->satellite_height, DM_MIN_SATELLITE_HEIGHT, DM_MAX_SATELLITE_HEIGHT);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version satellite_height out of range (",
+              msar2->satellite_height,
+              ").  Expected\n",
+              DM_MIN_SATELLITE_HEIGHT,
+              "through ",
+              DM_MAX_SATELLITE_HEIGHT);
       failed = 1;
     }
     // Ignore satellite_binary_time
     // Ignore satellite_clock_time
     if (msar2->range_doppler_coefficients[0] < DM_MIN_DOP_RANGE_CENTROID ||
         msar2->range_doppler_coefficients[0] > DM_MAX_DOP_RANGE_CENTROID) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeCen (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[0], DM_MIN_DOP_RANGE_CENTROID, DM_MAX_DOP_RANGE_CENTROID);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version doppler_coefficients[0] out of range (",
+              msar2->range_doppler_coefficients[0],
+              ").  Expected\n",
+              DM_MIN_DOP_RANGE_CENTROID,
+              "through ",
+              DM_MAX_DOP_RANGE_CENTROID);
       failed = 1;
     }
     if (msar2->range_doppler_coefficients[1] < DM_MIN_DOP_RANGE_PER_PIXEL ||
         msar2->range_doppler_coefficients[1] > DM_MAX_DOP_RANGE_PER_PIXEL) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeLin (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[1], DM_MIN_DOP_RANGE_PER_PIXEL, DM_MAX_DOP_RANGE_PER_PIXEL);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version doppler_coefficients[1] out of range (",
+              msar2->range_doppler_coefficients[1],
+              ").  Expected\n",
+              DM_MIN_DOP_RANGE_PER_PIXEL,
+              "through ",
+              DM_MAX_DOP_RANGE_PER_PIXEL);
       failed = 1;
     }
     if (msar2->range_doppler_coefficients[2] < DM_MIN_DOP_RANGE_QUAD ||
         msar2->range_doppler_coefficients[2] > DM_MAX_DOP_RANGE_QUAD) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeQuad (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[2], DM_MIN_DOP_RANGE_QUAD, DM_MAX_DOP_RANGE_QUAD);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version doppler_coefficients[2] out of range (",
+              msar2->range_doppler_coefficients[2],
+              ").  Expected\n",
+              DM_MIN_DOP_RANGE_QUAD,
+              "through ",
+              DM_MAX_DOP_RANGE_QUAD);
       failed = 1;
     }
-    if (msar2->range_doppler_coefficients[0] < DM_MIN_DOP_AZIMUTH_CENTROID ||
-        msar2->range_doppler_coefficients[0] > DM_MAX_DOP_AZIMUTH_CENTROID) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeCen (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[0], DM_MIN_DOP_AZIMUTH_CENTROID, DM_MAX_DOP_AZIMUTH_CENTROID);
+    if (msar2->azimuth_doppler_coefficients[0] < DM_MIN_DOP_AZIMUTH_CENTROID ||
+        msar2->azimuth_doppler_coefficients[0] > DM_MAX_DOP_AZIMUTH_CENTROID) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version doppler_coefficients[0] out of azimuth (",
+              msar2->azimuth_doppler_coefficients[0],
+              ").  Expected\n",
+              DM_MIN_DOP_AZIMUTH_CENTROID,
+              "through ",
+              DM_MAX_DOP_AZIMUTH_CENTROID);
       failed = 1;
     }
-    if (msar2->range_doppler_coefficients[1] < DM_MIN_DOP_AZIMUTH_PER_PIXEL ||
-        msar2->range_doppler_coefficients[1] > DM_MAX_DOP_AZIMUTH_PER_PIXEL) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeLin (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[1], DM_MIN_DOP_AZIMUTH_PER_PIXEL, DM_MAX_DOP_AZIMUTH_PER_PIXEL);
+    if (msar2->azimuth_doppler_coefficients[1] < DM_MIN_DOP_AZIMUTH_PER_PIXEL ||
+        msar2->azimuth_doppler_coefficients[1] > DM_MAX_DOP_AZIMUTH_PER_PIXEL) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version azimuth_doppler_coefficients[1] out of azimuth (",
+              msar2->azimuth_doppler_coefficients[1],
+              ").  Expected\n",
+              DM_MIN_DOP_AZIMUTH_PER_PIXEL,
+              "through ",
+              DM_MAX_DOP_AZIMUTH_PER_PIXEL);
       failed = 1;
     }
-    if (msar2->range_doppler_coefficients[2] < DM_MIN_DOP_AZIMUTH_QUAD ||
-        msar2->range_doppler_coefficients[2] > DM_MAX_DOP_AZIMUTH_QUAD) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[SAR]\nNew version dopRangeQuad (%f) invalid.  Expected\n %f to %f\n",
-              msar2->range_doppler_coefficients[2], DM_MIN_DOP_AZIMUTH_QUAD, DM_MAX_DOP_AZIMUTH_QUAD);
+    if (msar2->azimuth_doppler_coefficients[2] < DM_MIN_DOP_AZIMUTH_QUAD ||
+        msar2->azimuth_doppler_coefficients[2] > DM_MAX_DOP_AZIMUTH_QUAD) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[SAR]\nNew version azimuth_doppler_coefficients[2] out of azimuth (",
+              msar2->azimuth_doppler_coefficients[2],
+              ").  Expected\n",
+              DM_MIN_DOP_AZIMUTH_QUAD,
+              "through ",
+              DM_MAX_DOP_AZIMUTH_QUAD);
       failed = 1;
     }
     // SAR BLOCK REPORTING
@@ -903,21 +1100,24 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
         strncmp(uc(mo2->pointing_direction), "NADIR", 5)     != 0 &&
         strncmp(uc(mo2->pointing_direction), "OFF-NADIR", 9) != 0)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version pointing_direction (%s) invalid.  Expected one of:\n"
-              "  %s, or\n"
-              "  %s, or\n"
-              "  %s, or\n"
-              "  %s\n",
+      sprintf(precheck_err_msgs, "%s%s%s%s %s, or\n %s, or\n %s, or\n %s\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version pointing_direction (",
               mo2->pointing_direction,
+              ") invalid.  Expected one of:\n",
               "Forward", "Backward", "Nadir", "Off-nadir");
       failed = 1;
     }
     if (mo2->off_nadir_angle < DM_MIN_OFF_NADIR_ANGLE ||
         mo2->off_nadir_angle > DM_MAX_OFF_NADIR_ANGLE) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version off_nadir_angle (%f) invalid.  Expected\n %f to %f\n",
-              mo2->off_nadir_angle, DM_MIN_OFF_NADIR_ANGLE, DM_MAX_OFF_NADIR_ANGLE);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version off_nadir_angle (",
+              mo2->off_nadir_angle,
+              ") invalid.  Expected\n ",
+              DM_MIN_OFF_NADIR_ANGLE,
+              " to \n",
+              DM_MAX_OFF_NADIR_ANGLE);
       failed = 1;
     }
     if (strncmp(uc(mo2->correction_level), "N", 1) != 0 &&
@@ -925,48 +1125,54 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
         strncmp(uc(mo2->correction_level), "G", 1) != 0 &&
         strncmp(uc(mo2->correction_level), "D", 1) != 0)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version correction_level (%s) invalid.  Expected one of:\n"
-                  "  %s, or\n"
-                  "  %s, or\n"
-                  "  %s, or\n"
-                  "  %s\n",
+      sprintf(precheck_err_msgs, "%s%s%s%s %s, %s, %s, or %s\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version correction_level (",
               mo2->correction_level,
+              ") invalid.  Expected one of:\n",
               "N", "R", "G", "D");
-      failed = 1;
-    }
-    if (mo2->off_nadir_angle < DM_MIN_OFF_NADIR_ANGLE ||
-        mo2->off_nadir_angle > DM_MAX_OFF_NADIR_ANGLE) {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version off_nadir_angle (%f) invalid.  Expected\n %f to %f\n",
-              mo2->off_nadir_angle, DM_MIN_OFF_NADIR_ANGLE, DM_MAX_OFF_NADIR_ANGLE);
       failed = 1;
     }
     if (!ISNAN(mo2->cloud_percentage) &&
         (mo2->cloud_percentage < DM_MIN_CLOUD_PERCENTAGE ||
          mo2->cloud_percentage > DM_MAX_CLOUD_PERCENTAGE))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version cloud_percentage (%f) invalid.  Expected\n %f to %f or NaN\n",
-              mo2->cloud_percentage, DM_MIN_CLOUD_PERCENTAGE, DM_MAX_CLOUD_PERCENTAGE);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version cloud_percentage (",
+              mo2->cloud_percentage,
+              ") invalid.  Expected\n ",
+              DM_MIN_CLOUD_PERCENTAGE,
+              " to \n",
+              DM_MAX_CLOUD_PERCENTAGE);
       failed = 1;
     }
     if (!ISNAN(mo2->sun_azimuth_angle) &&
          (mo2->sun_azimuth_angle < DM_MIN_SUN_AZIMUTH_ANGLE ||
          mo2->sun_azimuth_angle > DM_MAX_SUN_AZIMUTH_ANGLE))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version sun_azimuth_angle (%f) invalid.  Expected\n %f to %f or NaN\n",
-              mo2->sun_azimuth_angle, DM_MIN_SUN_AZIMUTH_ANGLE, DM_MAX_SUN_AZIMUTH_ANGLE);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version sun_azimuth_angle (",
+              mo2->sun_azimuth_angle,
+              ") invalid.  Expected\n ",
+              DM_MIN_SUN_AZIMUTH_ANGLE,
+              " to \n",
+              DM_MAX_SUN_AZIMUTH_ANGLE);
       failed = 1;
     }
     if (!ISNAN(mo2->sun_elevation_angle) &&
          (mo2->sun_elevation_angle < DM_MIN_SUN_ELEVATION_ANGLE ||
          mo2->sun_elevation_angle > DM_MAX_SUN_ELEVATION_ANGLE))
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Optical]\nNew version sun_elevation_angle (%f) invalid.  Expected\n %f to %f or NaN\n",
-              mo2->sun_elevation_angle, DM_MIN_SUN_ELEVATION_ANGLE, DM_MAX_SUN_ELEVATION_ANGLE);
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Optical]\nNew version sun_elevation_angle (",
+              mo2->sun_elevation_angle,
+              ") invalid.  Expected\n ",
+              DM_MIN_SUN_ELEVATION_ANGLE,
+              " to \n",
+              DM_MAX_SUN_ELEVATION_ANGLE);
       failed = 1;
     }
     // OPTICAL BLOCK REPORTING
@@ -1001,35 +1207,46 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   ////////////////////////////////////////////////////////////
   // Check Thermal Block
   //
-  /* THERMAL BLOCK IS IGNORED - UNUSED
   if (mtherm2) {
     failed = 0;
     strcpy(precheck_err_msgs, "");
     if (mtherm2->band_gain < DM_MIN_BAND_GAIN ||
         mtherm2->band_gain > DM_MAX_BAND_GAIN)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Thermal]\nNew version band_gain (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Thermal]\nNew version band_gain (",
               mtherm2->band_gain,
-              DM_MIN_BAND_GAIN, DM_MAX_BAND_GAIN);
+              ") invalid.  Expected ",
+              DM_MIN_BAND_GAIN,
+              " to ",
+              DM_MAX_BAND_GAIN);
       failed = 1;
     }
     if (mtherm2->band_gain_change < DM_MIN_BAND_GAIN ||
         mtherm2->band_gain_change > DM_MAX_BAND_GAIN)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Thermal]\nNew version band_gain_change (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Thermal]\nNew version band_gain_change (",
               mtherm2->band_gain_change,
-              DM_MIN_BAND_GAIN, DM_MAX_BAND_GAIN);
+              ") invalid.  Expected ",
+              DM_MIN_BAND_GAIN,
+              " to ",
+              DM_MAX_BAND_GAIN);
       failed = 1;
     }
-    if (mtherm2->day != DM_DAY && mtherm2->day > DM_NIGHT)
+    if (mtherm2->day != DM_DAY && mtherm2->day != DM_NIGHT)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Thermal]\nNew version day (%s) invalid.  Expected %s or %s\n",
+      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d\n",
+              precheck_err_msgs,
+              "[Thermal]\nNew version day (",
               (mtherm2->day == DM_DAY) ? "Day (1)" :
                   (mtherm2->day == DM_NIGHT) ? "Night (0)" : "Unknown",
-              DM_DAY, DM_NIGHT);
+              ") invalid.  Expected ",
+              DM_DAY,
+              " or ",
+              DM_NIGHT);
       failed = 1;
     }
     // THERMAL BLOCK REPORTING
@@ -1060,9 +1277,55 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   //
   // End of Thermal Block Validity Check
   ////////////////////////////////////////////////////////////
-  */
 
-  // FIXME: Insert meta_transform check here
+  ////////////////////////////////////////////////////////////
+  // Check Transform Block
+  //
+  if (mtrans2) {
+    failed = 0;
+    strcpy(precheck_err_msgs, "");
+    if (mtrans2->band_gain < DM_MIN_BAND_GAIN ||
+START HERE        mtrans2->band_gain > DM_MAX_BAND_GAIN)
+    {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Transform]\nNew version band_gain (",
+              mtrans2->band_gain,
+              ") invalid.  Expected ",
+              DM_MIN_BAND_GAIN,
+              " to ",
+              DM_MAX_BAND_GAIN);
+      failed = 1;
+    }
+    // THERMAL BLOCK REPORTING
+    // If any failures occurred, produce a report in the output file
+    if (failed) {
+      char msg[1024];
+      FILE *outFP = (FILE*)FOPEN(outputFile, "wa");
+      // Strict comparison utilizes all values
+      fprintf(outFP, "\n-----------------------------------------------\n");
+      asfPrintStatus("\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Comparing\n  %s\nto\n  %s\n\n",
+              metafile1, metafile2);
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+      sprintf(msg, "  Transform Block Errors:\n\n");
+      fprintf(outFP, msg);
+      asfPrintStatus(msg);
+
+      fprintf(outFP, precheck_err_msgs);
+      asfPrintStatus(precheck_err_msgs);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+      asfPrintStatus("-----------------------------------------------\n\n");
+      FCLOSE(outFP);
+    }
+  }
+  //
+  // End of Transform Block Validity Check
+  ////////////////////////////////////////////////////////////
+
 
   ////////////////////////////////////////////////////////////
   // Check Projection Block
@@ -1080,17 +1343,11 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
         mp2->type != LAT_LONG_PSEUDO_PROJECTION     &&
         mp2->type != UNKNOWN_PROJECTION)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Projection]\nNew version projection type (%s) invalid.  Expected one of:\n"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n, or"
-              "  %s\n",
+      sprintf(precheck_err_msgs,
+              "%s%s%s%s  %s, or\n  %s, or\n  %s, or\n  %s, or\n  %s, or\n  %s, or\n"
+              "  %s, or\n  %s, or\n  %s\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version projection type (",
               (mp2->type == UNIVERSAL_TRANSVERSE_MERCATOR) ? "UNIVERSAL_TRANSVERSE_MERCATOR"  :
               (mp2->type == POLAR_STEREOGRAPHIC)           ? "POLAR_STEREOGRAPHIC"            :
               (mp2->type == ALBERS_EQUAL_AREA)             ? "ALBERS_EQUAL_AREA"              :
@@ -1101,6 +1358,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
               (mp2->type == LAT_LONG_PSEUDO_PROJECTION)    ? "LAT_LONG_PSEUDO_PROJECTION"     :
               (mp2->type == UNKNOWN_PROJECTION)            ? "UNKNOWN_PROJECTION"             :
               "Unknown type found",
+              ") invalid.\nExpected one of:\n",
               "UNIVERSAL_TRANSVERSE_MERCATOR",
               "POLAR_STEREOGRAPHIC",
               "ALBERS_EQUAL_AREA",
@@ -1115,38 +1373,512 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     if (mp2->startX < DM_MIN_STARTX ||
         mp2->startX > DM_MAX_STARTX)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Projection]\nNew version startX (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version startX (",
               mp2->startX,
-              DM_MIN_STARTX, DM_MAX_STARTX);
+              ") invalid.  Expected ",
+              DM_MIN_STARTX,
+              " to ",
+              DM_MAX_STARTX);
       failed = 1;
     }
     if (mp2->startY < DM_MIN_STARTY ||
         mp2->startY > DM_MAX_STARTY)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Projection]\nNew version startY (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version startY (",
               mp2->startY,
-              DM_MIN_STARTY, DM_MAX_STARTY);
+              ") invalid.  Expected ",
+              DM_MIN_STARTY,
+              " to ",
+              DM_MAX_STARTY);
       failed = 1;
     }
     if (mp2->perX < DM_MIN_PERX ||
         mp2->perX > DM_MAX_PERX)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Projection]\nNew version perX (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version perX (",
               mp2->perX,
-              DM_MIN_PERX, DM_MAX_PERX);
+              ") invalid.  Expected ",
+              DM_MIN_PERX,
+              " to ",
+              DM_MAX_PERX);
       failed = 1;
     }
     if (mp2->perY < DM_MIN_PERY ||
         mp2->perY > DM_MAX_PERY)
     {
-      sprintf(precheck_err_msgs, "%s%s\n", precheck_err_msgs,
-              "[Projection]\nNew version perY (%f) invalid.  Expected %f to %f\n",
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version perY (",
               mp2->perY,
-              DM_MIN_PERY, DM_MAX_PERY);
+              ") invalid.  Expected ",
+              DM_MIN_PERY,
+              " to ",
+              DM_MAX_PERY);
       failed = 1;
+    }
+    if (strncmp(uc(mp2->units), "METERS",  6) != 0 &&
+        strncmp(uc(mp2->units), "ARCSEC",  6) != 0 &&
+        strncmp(uc(mp2->units), "DEGREES", 7) != 0)
+    {
+      sprintf(precheck_err_msgs, "%s%s%s%s\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version units are invalid (",
+              mp2->units,
+              ").  Expected \"meters\", \"arcsec\", or \"desgrees\"");
+      failed = 1;
+    }
+    if (mp2->hem != 'N' && mp2->hem != 'S') {
+      sprintf(precheck_err_msgs, "%s%s%c%s\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version hem (hemisphere) invalid (",
+              mp2->hem,
+              ").  Expected 'N' or 'S'");
+      failed = 1;
+    }
+    if (mp2->spheroid != BESSEL_SPHEROID            &&
+        mp2->spheroid != CLARKE1866_SPHEROID        &&
+        mp2->spheroid != CLARKE1880_SPHEROID        &&
+        mp2->spheroid != GEM6_SPHEROID              &&
+        mp2->spheroid != GEM10C_SPHEROID            &&
+        mp2->spheroid != GRS1980_SPHEROID           &&
+        mp2->spheroid != INTERNATIONAL1924_SPHEROID &&
+        mp2->spheroid != INTERNATIONAL1967_SPHEROID &&
+        mp2->spheroid != WGS72_SPHEROID             &&
+        mp2->spheroid != WGS84_SPHEROID             &&
+        mp2->spheroid != HUGHES_SPHEROID            &&
+        mp2->spheroid != UNKNOWN_SPHEROID)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version spheroid invalid or unrecognized.  Expected one of:\n"
+                  "  BESSEL, or \n"
+                  "  CLARKE1866, or \n"
+                  "  CLARKE1880, or \n"
+                  "  GEM6, or \n"
+                  "  GEM10C, or \n"
+                  "  GRS1980, or \n"
+                  "  INTERNATIONAL1924, or \n"
+                  "  INTERNATIONAL1967, or \n"
+                  "  WGS72, or \n"
+                  "  WGS84, or \n"
+                  "  HUGHES, or \n"
+                  "  UNKNOWN (enum spheroid_type_t UNKNOWN_SPHEROID)\n");
+      failed = 1;
+    }
+    if (mp2->re_major < DM_MIN_MAJOR_AXIS || mp2->re_major > DM_MAX_MAJOR_AXIS) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version re_major out of range (",
+              mp2->re_major,
+              ").  Expected\n",
+              DM_MIN_MAJOR_AXIS,
+              "through ",
+              DM_MAX_MAJOR_AXIS);
+      failed = 1;
+    }
+    if (mp2->re_minor < DM_MIN_MINOR_AXIS || mp2->re_minor > DM_MAX_MINOR_AXIS) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version re_minor out of range (",
+              mp2->re_minor,
+              ").  Expected\n",
+              DM_MIN_MINOR_AXIS,
+              "through ",
+              DM_MAX_MINOR_AXIS);
+      failed = 1;
+    }
+    if (mp2->datum != EGM96_DATUM &&
+        mp2->datum != ED50_DATUM &&
+        mp2->datum != ETRF89_DATUM &&
+        mp2->datum != ETRS89_DATUM &&
+        mp2->datum != ITRF97_DATUM &&
+        mp2->datum != NAD27_DATUM &&
+        mp2->datum != NAD83_DATUM &&
+        mp2->datum != WGS72_DATUM &&
+        mp2->datum != WGS84_DATUM &&
+        mp2->datum != HUGHES_DATUM &&
+        mp2->datum != UNKNOWN_DATUM)
+    {
+      sprintf(precheck_err_msgs, "%s%s\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version datum invalid or unrecognized.  Expected one of:\n"
+                  "  EGM96\n"
+                  "  ED50\n"
+                  "  ETRF89\n"
+                  "  ETRS89\n"
+                  "  ITRF97\n"
+                  "  NAD27\n"
+                  "  NAD83\n"
+                  "  WGS72\n"
+                  "  WGS84\n"
+                  "  HUGHES\n"
+                  "  UNKNOWN (enum datum_type_t UNKNOWN_DATUM)\n");
+      failed = 1;
+    }
+    if (mp2->height < DM_MIN_TERRAIN_HEIGHT || mp2->height > DM_MAX_TERRAIN_HEIGHT) {
+      sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+              precheck_err_msgs,
+              "[Projection]\nNew version height out of range (",
+              mp2->height,
+              ").  Expected\n",
+              DM_MIN_TERRAIN_HEIGHT,
+              "through ",
+              DM_MAX_TERRAIN_HEIGHT);
+      failed = 1;
+    }
+    switch (mp2->type) {
+      case UNIVERSAL_TRANSVERSE_MERCATOR:
+        if (mp2->param.utm.zone < DM_MIN_UTM_ZONE ||
+            mp2->param.utm.zone > DM_MAX_UTM_ZONE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.utm.false_easting != DM_UTM_FALSE_EASTING)
+        {
+          failed = 1;
+        }
+        if (mp2->param.utm.false_northing != DM_N_UTM_FALSE_NORTHING &&
+            mp2->param.utm.false_northing != DM_S_UTM_FALSE_NORTHING)
+        {
+          failed = 1;
+        }
+        if (mp2->param.utm.lat0 < DM_MIN_LATITUDE ||
+            mp2->param.utm.lat0 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][UTM]\nNew version lat0 out of range (",
+                  mp2->param.utm.lat0,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.utm.lon0 < DM_MIN_LONGITUDE ||
+            mp2->param.utm.lon0 > DM_MAX_LONGITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][UTM]\nNew version lon0 out of range (",
+                  mp2->param.utm.lon0,
+                  ").  Expected\n",
+                  DM_MIN_LONGITUDE,
+                  "through ",
+                  DM_MAX_LONGITUDE);
+          failed = 1;
+        }
+        if (mp2->param.utm.scale_factor != DM_UTM_SCALE_FACTOR &&
+            mp2->param.utm.scale_factor != DM_DEFAULT_SCALE_FACTOR)
+        {
+          failed = 1;
+        }
+        break;
+      case POLAR_STEREOGRAPHIC:
+        if (mp2->param.ps.slat < DM_MIN_LATITUDE ||
+            mp2->param.ps.slat > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][PS]\nNew version slat out of range (",
+                  mp2->param.ps.slat,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.ps.slon < DM_MIN_LONGITUDE ||
+            mp2->param.ps.slon > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.ps.is_north_pole != 0 &&
+            mp2->param.ps.is_north_pole != 1)
+        {
+          failed = 1;
+        }
+        if (mp2->param.ps.false_easting < DM_MIN_LONGITUDE ||
+            mp2->param.ps.false_easting > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.ps.false_northing < DM_MIN_LATITUDE ||
+            mp2->param.ps.false_northing > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][PS]\nNew version false_northing out of range (",
+                  mp2->param.ps.false_northing,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        break;
+      case ALBERS_EQUAL_AREA:
+        if (mp2->param.albers.std_parallel1 < DM_MIN_LATITUDE ||
+            mp2->param.albers.std_parallel1 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ALBERS]\nNew version std_parallel1 out of range (",
+                  mp2->param.albers.std_parallel1,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.albers.std_parallel2 < DM_MIN_LATITUDE ||
+            mp2->param.albers.std_parallel2 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ALBERS]\nNew version std_parallel2 out of range (",
+                  mp2->param.albers.std_parallel2,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.albers.center_meridian < DM_MIN_LONGITUDE ||
+            mp2->param.albers.center_meridian > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.albers.orig_latitude < DM_MIN_LATITUDE ||
+            mp2->param.albers.orig_latitude > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ALBERS]\nNew version orig_latitude out of range (",
+                  mp2->param.albers.orig_latitude,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.albers.false_easting < DM_MIN_LATITUDE ||
+            mp2->param.albers.false_easting > DM_MAX_LATITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.albers.false_northing < DM_MIN_LATITUDE ||
+            mp2->param.albers.false_northing > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ALBERS]\nNew version false_northing out of range (",
+                  mp2->param.albers.false_northing,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        break;
+      case LAMBERT_CONFORMAL_CONIC:
+        if (mp2->param.lamcc.plat1 < DM_MIN_LATITUDE ||
+            mp2->param.lamcc.plat1 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMCC]\nNew version plat1 out of range (",
+                  mp2->param.lamcc.plat1,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.lamcc.plat2 < DM_MIN_LATITUDE ||
+            mp2->param.lamcc.plat2 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMCC]\nNew version plat2 out of range (",
+                  mp2->param.lamcc.plat2,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.lamcc.lat0 < DM_MIN_LATITUDE ||
+            mp2->param.lamcc.lat0 > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMCC]\nNew version lat0 out of range (",
+                  mp2->param.lamcc.lat0,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.lamcc.lon0 < DM_MIN_LONGITUDE ||
+            mp2->param.lamcc.lon0 > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.lamcc.false_easting < DM_MIN_LONGITUDE ||
+            mp2->param.lamcc.false_easting > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.lamcc.false_northing < DM_MIN_LATITUDE ||
+            mp2->param.lamcc.false_northing > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMCC]\nNew version false_northing out of range (",
+                  mp2->param.lamcc.false_northing,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.lamcc.scale_factor < DM_MIN_LAMCC_SCALE_FACTOR ||
+            mp2->param.lamcc.scale_factor > DM_MAX_LAMCC_SCALE_FACTOR)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMCC]\nNew version scale_factor out of range (",
+                  mp2->param.lamcc.scale_factor,
+                  ").  Expected\n",
+                  DM_MIN_LAMCC_SCALE_FACTOR,
+                  "through ",
+                  DM_MAX_LAMCC_SCALE_FACTOR);
+          failed = 1;
+        }
+        break;
+      case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+        if (mp2->param.lamaz.center_lon < DM_MIN_LONGITUDE ||
+            mp2->param.lamaz.center_lon > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.lamaz.center_lat < DM_MIN_LATITUDE ||
+            mp2->param.lamaz.center_lat > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMAZ]\nNew version center_lat out of range (",
+                  mp2->param.lamaz.center_lat,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        if (mp2->param.lamaz.false_easting < DM_MIN_LONGITUDE ||
+            mp2->param.lamaz.false_easting > DM_MAX_LONGITUDE)
+        {
+          failed = 1;
+        }
+        if (mp2->param.lamaz.false_northing < DM_MIN_LATITUDE ||
+            mp2->param.lamaz.false_northing > DM_MAX_LATITUDE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][LAMAZ]\nNew version false_northing out of range (",
+                  mp2->param.lamaz.false_northing,
+                  ").  Expected\n",
+                  DM_MIN_LATITUDE,
+                  "through ",
+                  DM_MAX_LATITUDE);
+          failed = 1;
+        }
+        break;
+      case STATE_PLANE:
+        if (mp2->param.state.zone < DM_MIN_STATE_PLANE_ZONE ||
+            mp2->param.state.zone > DM_MAX_STATE_PLANE_ZONE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%d%s%d%s%d\n",
+                  precheck_err_msgs,
+                  "[Projection][STATE_PLANE]\nNew version state plane zone out of range (",
+                  mp2->param.state.zone,
+                  ").  Expected\n",
+                  DM_MIN_STATE_PLANE_ZONE,
+                  "through ",
+                  DM_MAX_STATE_PLANE_ZONE);
+          failed = 1;
+        }
+        break;
+      case SCANSAR_PROJECTION:
+        if (mp2->param.atct.rlocal < DM_MIN_EARTH_RADIUS ||
+            mp2->param.atct.rlocal > DM_MAX_EARTH_RADIUS)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ATCT - SCANSAR PROJECTION]\nNew version rlocal out of range (",
+                  mp2->param.atct.rlocal,
+                  ").  Expected\n",
+                  DM_MIN_EARTH_RADIUS,
+                  "through ",
+                  DM_MAX_EARTH_RADIUS);
+          failed = 1;
+        }
+        if (mp2->param.atct.alpha1 < DM_MIN_ROTATION_ANGLE ||
+            mp2->param.atct.alpha1 > DM_MAX_ROTATION_ANGLE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ATCT - SCANSAR PROJECTION]\nNew version alpha1 out of range (",
+                  mp2->param.atct.alpha1,
+                  ").  Expected\n",
+                  DM_MIN_ROTATION_ANGLE,
+                  "through ",
+                  DM_MAX_ROTATION_ANGLE);
+          failed = 1;
+        }
+        if (mp2->param.atct.alpha2 < DM_MIN_ROTATION_ANGLE ||
+            mp2->param.atct.alpha2 > DM_MAX_ROTATION_ANGLE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ATCT - SCANSAR PROJECTION]\nNew version alpha2 out of range (",
+                  mp2->param.atct.alpha2,
+                  ").  Expected\n",
+                  DM_MIN_ROTATION_ANGLE,
+                  "through ",
+                  DM_MAX_ROTATION_ANGLE);
+          failed = 1;
+        }
+        if (mp2->param.atct.alpha3 < DM_MIN_ROTATION_ANGLE ||
+            mp2->param.atct.alpha3 > DM_MAX_ROTATION_ANGLE)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+                  precheck_err_msgs,
+                  "[Projection][ATCT - SCANSAR PROJECTION]\nNew version alpha3 out of range (",
+                  mp2->param.atct.alpha3,
+                  ").  Expected\n",
+                  DM_MIN_ROTATION_ANGLE,
+                  "through ",
+                  DM_MAX_ROTATION_ANGLE);
+          failed = 1;
+        }
+        break;
+      case LAT_LONG_PSEUDO_PROJECTION:
+      case UNKNOWN_PROJECTION:
+        break;
+      default:
+        sprintf(precheck_err_msgs, "%s%s\n",
+                precheck_err_msgs,
+                "[Projection]\nUnexpected projection type found");
+        failed = 1;
     }
     // PROJECTION BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
