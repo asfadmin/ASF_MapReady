@@ -116,8 +116,11 @@ cal_params *create_cal_params(const char *inSAR)
 	if (strncmp(dssr.mission_id, "ALOS", 4) == 0) {
 	  get_ardr(sarName, &ardr);
 	  p->a0 = 0.0;
-	  p->a1 = pow(10, ardr.calibration_factor/10);
 	  p->a2 = 0.0;
+	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) 
+	    p->a1 = pow(10, (ardr.calibration_factor-32)/10.0);
+	  else if (strncmp(dssr.lev_code, "1.5", 3) == 0)
+            p->a1 = pow(10, ardr.calibration_factor/10.0);
 	  p->noise_type=by_pixel;
 
 	  return p;

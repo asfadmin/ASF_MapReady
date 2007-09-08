@@ -20,8 +20,8 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
 void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
-             radiometry_t radiometry, int import_single_band,
-       int complex_flag, int multilook_flag);
+	     radiometry_t radiometry, int import_single_band,
+	     int complex_flag, int multilook_flag, int db_flag);
 void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, char *bandExt, int band, int nBands,
         radiometry_t radiometry, int import_single_band,
@@ -291,7 +291,7 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     else if (ceos->ceos_data_type == CEOS_SLC_DATA_FLOAT)
       import_ceos_complex_float(inBandName[ii], inMetaName[0], outDataName,
         outMetaName, bandExt, band, nBands, radiometry,
-        import_single_band, complex_flag, multilook_flag);
+        import_single_band, complex_flag, multilook_flag, db_flag);
 
     else if (ceos->ceos_data_type == CEOS_AMP_DATA)
       import_ceos_detected(inBandName[ii], inMetaName[0], outDataName,
@@ -425,7 +425,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
      int complex_flag, int multilook_flag)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
-  char bandStr[50];
+  char bandStr[50];           ;
   short *cpx_buf=NULL;
   complexFloat cpx, *cpxFloat_buf=NULL;
   float *amp_buf=NULL, *phase_buf=NULL, fValue;
@@ -644,22 +644,29 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
              radiometry_t radiometry, int import_single_band,
-             int complex_flag, int multilook_flag)
+             int complex_flag, int multilook_flag, int db_flag)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
-  int nl, ns, tempFlag=FALSE, leftFill, rightFill, headerBytes;
-  long long ii, kk, offset;
+  int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
+  int out=0;
+  long long ii, kk, ll, offset;
   float *cpx_buf=NULL;
   complexFloat cpx, *cpxFloat_buf=NULL;
-  float *amp_buf=NULL, *phase_buf=NULL;
-  char bandStr[50];
+  float *amp_buf=NULL, *phase_buf=NULL, fValue;
+  char bandStr[50], calStr[10];
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
+  cal_params *cal_param=NULL;
+  int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
+  double noise_table[MAX_tableRes];       /* Noise table for calibration */
+  double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
+  double incid_sin[MAX_tableRes];         /* Sine of the incidence angle */
 
   /* Create metadata */
   meta = meta_create(inMetaName);
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
+  lc = nLooks = meta->sar->look_count;
   if (nBands == 1)
     strcpy(meta->sar->polarization, bandExt);
   else if (nBands == 2)
@@ -673,12 +680,43 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     double pp_er, pp_atpp;
     pp_get_corrected_vals(inMetaName, &pp_er, &pp_atpp);
     if (meta->sar) meta->sar->earth_radius_pp = pp_er;
+  } 
+  if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+      radiometry == r_BETA) {
+    // Read calibration parameters if required
+    if (nl < 1500) tableRes = 128;
+    else if (nl < 3000) tableRes = 256;
+    tablePix = ((ns+(tableRes-1)) / tableRes);
+    cal_param = create_cal_params(inMetaName);
+    if (cal_param == NULL) /* Die if we can't get the calibration params */
+      asfPrintError("Unable to extract calibration parameters from CEOS "
+		    "file.");
+    if (radiometry == r_SIGMA) {
+      cal_param->output_type = sigma_naught;
+      sprintf(calStr, "SIGMA");
+    }
+    else if (radiometry == r_GAMMA) {
+      cal_param->output_type = gamma_naught;
+      sprintf(calStr, "GAMMA");
+    }
+    else if (radiometry == r_BETA) {
+      cal_param->output_type = beta_naught;
+      sprintf(calStr, "BETA");
+    }
   }
 
   /* Let the user know what format we are working on */
-  if (complex_flag)
+  if ((radiometry == r_SIGMA || radiometry == r_GAMMA ||
+            radiometry == r_BETA) && db_flag)
+     asfPrintStatus("   Input data type: single look complex\n"
+                    "   Output data type: calibrated (%s) in dB\n", calStr);
+  else if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+           radiometry == r_BETA)
     asfPrintStatus("   Input data type: single look complex\n"
-       "   Output data type: single look complex\n");
+                   "   Output data type: calibrated (%s)\n", calStr);
+  else if (complex_flag)
+    asfPrintStatus("   Input data type: single look complex\n"
+		   "   Output data type: single look complex\n");
   else if (multilook_flag)
     asfPrintStatus("   Input data type: single look complex\n"
        "   Output data type: multilooked complex (2-band)\n");
@@ -695,7 +733,13 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
-  if (complex_flag) {
+  if (radiometry == r_SIGMA || radiometry == r_GAMMA || radiometry == r_BETA) {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "%s", meta->sar->polarization);
+    else
+      sprintf(bandStr, "%s", bandExt);
+  }
+  else if (complex_flag) {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "COMPLEX-%s", meta->sar->polarization);
     else
@@ -727,7 +771,11 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     }
 
   /* Deal with metadata */
-  if (complex_flag) {
+  if (radiometry == r_SIGMA || radiometry == r_GAMMA || radiometry == r_BETA) {
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
+  }
+  else if (complex_flag) {
     meta->general->data_type = COMPLEX_REAL32;
     meta->general->band_count = import_single_band ? 1 : band;
   }
@@ -735,71 +783,183 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     meta->general->data_type = REAL32;
     meta->general->band_count = import_single_band ? 2 : band*2;
   }
-  meta->general->image_data_type = COMPLEX_IMAGE;
+  if (radiometry == r_SIGMA)
+    meta->general->image_data_type = SIGMA_IMAGE;
+  else if (radiometry == r_GAMMA)
+    meta->general->image_data_type = GAMMA_IMAGE;
+  else if (radiometry == r_BETA)
+    meta->general->image_data_type = BETA_IMAGE;
+  else
+    meta->general->image_data_type = COMPLEX_IMAGE;
 
   /* Take care of image files and memory */
   strcat(outDataName, TOOLS_COMPLEX_EXT);
   fpIn  = fopenImage(inDataName, "rb");
-  if (band == 1)
+  if (band == 0)
     fpOut = fopenImage(outDataName, "wb");
   else
     fpOut = fopenImage(outDataName, "ab");
-  cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
+  cpx_buf = (float *) MALLOC(2*ns * sizeof(float) * lc);
   if (complex_flag)
-    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat));
+    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
   else {
-    amp_buf = (float *) MALLOC(ns * sizeof(float));
-    phase_buf = (float *) MALLOC(ns * sizeof(float));
+    amp_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+    phase_buf = (float *) MALLOC(ns * sizeof(float) * lc);
   }
 
   /* Read single look complex data */
   get_ifiledr(inMetaName,&image_fdr);
-  /* file + line header *
-     Same change as for regular imagery. To be tested. */
   leftFill = image_fdr.lbrdrpxl;
   rightFill = image_fdr.rbrdrpxl;
   headerBytes = firstRecordLen(inDataName)
     + (image_fdr.reclen - (ns + leftFill + rightFill)
        * image_fdr.bytgroup);
-  /*
-    headerBytes = firstRecordLen(inDataName)
-    + (image_fdr.reclen - ns * image_fdr.bytgroup);
-  */
-  for (ii=0; ii<nl; ii++) {
+
+  if (multilook_flag) {
+    meta->general->line_count = (int)((float)nl / (float)nLooks + 0.99);
+    meta->general->y_pixel_size *= nLooks;
+    meta->sar->azimuth_time_per_pixel *= nLooks;
+  }
+
+  for (ii=0; ii<nl; ii+=nLooks) {
+    lc = meta->sar->look_count;
+    if (ii + lc > nl)
+      lc = nl - ii;
     offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
     FREAD(cpx_buf, sizeof(float), 2*ns, fpIn);
+
+    if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
+	radiometry == r_BETA) {
+      // Allocate noise table entries and/or update if needed.
+      if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
+	for (kk=0; kk<tableRes; kk++)
+	  noise_table[kk] = get_noise(cal_param,kk*tablePix,ii);
+      if (radiometry == r_GAMMA)
+	// Allocate incidence table entries or update.
+	if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
+	  for (kk=0; kk<tableRes; kk++)
+	    incid_cos[kk]=get_invCosIncAngle(cal_param,kk*tablePix,ii);
+      if (radiometry == r_BETA)
+	// Allocate incidence table entries or update.
+	if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
+	  for (kk=0; kk<tableRes; kk++)
+	    incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
+    }
+
     for (kk=0; kk<ns; kk++) {
-      /* Put read in data in proper endian format */
+      // Put read in data in proper endian format
       big32(cpx_buf[kk*2]);
       big32(cpx_buf[kk*2+1]);
-      /* Now do our stuff */
+      // Now do our stuff 
       cpx.real = cpx_buf[kk*2];
       cpx.imag = cpx_buf[kk*2+1];
-      if (complex_flag)
+      if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
+	  radiometry == r_BETA) {
+        //fValue = cpx.real*cpx.real + cpx.imag*cpx.imag;
+        fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);	
+        if (fValue != 0.0) {
+          // Interpolate noise table to find this pixel's noise.
+          double index = (float)kk/tablePix;
+          int    base = (int)index;
+          double frac = index-base;
+          double noise = noise_table[base] + frac*(noise_table[base+1] -
+                                                   noise_table[base]);
+          double incid = 1.0;
+          if (cal_param->output_type == gamma_naught)
+            incid = incid_cos[base] + frac*(incid_cos[base+1]-incid_cos[base]);
+          if (cal_param->output_type == beta_naught)
+            incid = incid_sin[base] + frac*(incid_sin[base+1]-incid_sin[base]);
+          if (db_flag) {
+            amp_buf[kk] =
+              get_cal_dn_in_db(cal_param, noise, incid, (int)fValue);
+          }
+          else {
+            amp_buf[kk] =
+              get_cal_dn(cal_param, noise, incid, (int)fValue);
+          }
+        }
+	else
+	  amp_buf[kk]= 0.0;
+      }
+      else if (complex_flag)
   cpxFloat_buf[kk] = cpx;
       else {
   amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
   phase_buf[kk] = atan2(cpx.imag, cpx.real);
       }
     }
-    if (complex_flag)
-      put_complexFloat_line(fpOut, meta, ii, cpxFloat_buf);
+
+    // Multilook if requested
+    if (!complex_flag) {
+      if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+	  radiometry == r_BETA) {
+        for (kk=0; kk<ns; kk++) {
+          fValue = 0.0;
+          for (ll=0; ll<lc; ll++)
+            fValue += amp_buf[ll*ns + kk];;
+          amp_buf[kk] = fValue / (float)lc;
+	}
+      }
+      else if (multilook_flag) {
+	for (kk=0; kk<ns; kk++) {
+	  fValue = 0.0;
+	  for (ll=0; ll<lc; ll++)
+	    fValue += amp_buf[ll*ns + kk];
+	  amp_buf[kk] = sqrt(fValue / (float)lc);
+	  fValue = 0.0;
+	  for (ll=0; ll<lc; ll++)
+	    fValue += phase_buf[ll*ns + kk];
+	  phase_buf[kk] = fValue / (float)lc;
+	}
+      } 
+      else {
+	for (kk=0; kk<lc*ns; kk++)
+	  amp_buf[kk] = sqrt(amp_buf[kk]);
+      }
+    }
+
+
+    // Write out the various flavors
+    if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+        radiometry == r_BETA) {
+      put_float_line(fpOut, meta, out, amp_buf);
+      out++;
+    }
+    else if (multilook_flag) {
+      put_band_float_line(fpOut, meta, 0, out, amp_buf);
+      put_band_float_line(fpOut, meta, 1, out, phase_buf);
+      out++;
+    }
     else {
-      put_band_float_line(fpOut, meta, 0, ii, amp_buf);
-      put_band_float_line(fpOut, meta, 1, ii, phase_buf);
+      for (ll=0; ll<lc; ll++) {
+	if (complex_flag)
+	  put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
+	else {
+	  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf+ll*ns);
+	  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf+ll*ns);
+	}
+      }
     }
     asfLineMeter(ii, nl);
   }
+
   FREE(cpx_buf);
-  if (complex_flag)
+  if (cpxFloat_buf)
     FREE(cpxFloat_buf);
-  else {
+  if (amp_buf)      
     FREE(amp_buf);
+  if (phase_buf)
     FREE(phase_buf);
-  }
+
   strcpy(meta->general->basename, inDataName);
-  if (complex_flag) {
+  if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+      radiometry == r_BETA) {
+    meta->general->band_count = import_single_band ? 1 : band;
+    if (nBands == 1 && meta->sar)
+      sprintf(meta->general->bands, "%s", meta->sar->polarization);
+  }
+  else if (complex_flag) {
     meta->general->band_count = import_single_band ? 1 : band;
     if (nBands == 1 && meta->sar)
       sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
@@ -1555,7 +1715,7 @@ void import_ceos_int_cal(char *inDataName, char *inMetaName, char *outDataName,
 
   // Open image files
   fpIn=fopenImage(inDataName,"rb");
-  if (band == 1)
+  if (band == 0)
     fpOut=fopenImage(outDataName,"wb");
     else
     fpOut=fopenImage(outDataName,"ab");

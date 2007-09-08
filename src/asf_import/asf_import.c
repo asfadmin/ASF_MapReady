@@ -364,9 +364,6 @@ int main(int argc, char *argv[])
     flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix-meta-ypix", argc, argv);
     if (flags[f_FIX_META_YPIX] == FLAG_NOT_SET)
         flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix_meta_ypix", argc, argv);
-
-    if (flags[f_MULTILOOK] != FLAG_NOT_SET)
-      flags[f_COMPLEX] = FLAG_NOT_SET;
  
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;

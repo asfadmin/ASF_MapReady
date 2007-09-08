@@ -59,3 +59,23 @@ char *strncpy_safe(char *dst, const char *src, size_t len)
     dst[len-1] = '\0';
     return dst;
 }
+
+char *trim_spaces(const char *s)
+{
+  char *p1, *p2;
+
+  p1 = (char *) MALLOC(sizeof(char)*strlen(s));
+  strcpy(p1, s);
+  strtok(p1, " ");
+  p2 = strchr(p1, ' ');
+  if (p2) {
+    while (strncmp(p2, " ", 1) == 0)
+      p2++;
+  }
+  else {
+    p2 = (char *) MALLOC(sizeof(char)*strlen(s));
+    strcpy(p2, p1);
+  }
+  FREE(p1);
+  return p2;
+}

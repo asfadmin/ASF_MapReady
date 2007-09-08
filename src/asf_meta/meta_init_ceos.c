@@ -91,6 +91,10 @@ double get_alos_firstTime (const char *fName);
 
 double get_chirp_rate (const char *fName);
 
+void get_azimuth_time(ceos_description *ceos, const char *in_fName,
+		      meta_parameters *meta);
+
+
 /* Prototypes from meta_init_stVec.c */
 void ceos_init_stVec(const char *fName,ceos_description *ceos,meta_parameters *sar);
 double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
@@ -193,7 +197,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   strcpy(fac,dssr->fac_id); strtok(fac," "); // Remove spaces from field
   strcpy(sys,dssr->sys_id); strtok(sys," "); // Remove spaces from field
   strcpy(ver,dssr->ver_id); strtok(ver," "); // Remove spaces from field
-  sprintf(meta->general->processor, "%s/%s/%s", fac, sys, ver);
+  sprintf(meta->general->processor, "%s/%s/%s", trim_spaces(fac), sys, ver);
   // FOCUS data header is erroneous, hence the if statement
   if ((iof->bitssamp*iof->sampdata)>(iof->bytgroup*8)) iof->bitssamp /= 2;
   dataSize = (iof->bitssamp+7)/8 + (iof->sampdata-1)*5;
@@ -537,7 +541,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->sar->image_type = 'S';
     meta->sar->look_count = 1;
   }
-  else if (ceos->product == SGF) {
+  else if (ceos->product == SGF || ceos->product == SGX) {
     meta->sar->image_type = 'G';
     meta->sar->look_count = 1;
   }
@@ -662,11 +666,14 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     meta_get_sat_height(meta,
       meta->general->line_count/2,
       meta->general->sample_count/2);
+  /*
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = // two-way range time
     dssr->crt_dopcen[1] / (speedOfLight * 2);
   meta->sar->range_doppler_coefficients[2] = // two-way range time
     dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
+  */
+  meta->sar->range_doppler_coefficients[0] = 0.0;
 
   // Location block
   if (ceos->product != RAW)
@@ -1007,6 +1014,10 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   meta->general->bit_error_rate = 0;
 
   // SAR block
+  if (ceos->product == RAW) {
+    meta->sar->image_type = 'S';
+    meta->sar->look_count = 1;
+  }
   if (ceos->product == SGF || ceos->product == SGX) {
     meta->sar->image_type = 'G';
     meta->sar->look_count = 1;
@@ -1294,17 +1305,23 @@ void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
     (centerTime - firstTime) / (meta->sar->original_line_count/2);
+
+  get_azimuth_time(ceos, in_fName, meta);
+
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
+
   ceos_init_stVec(in_fName,ceos,meta);
+  /*
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = // two-way range time
     dssr->crt_dopcen[1] / (speedOfLight * 2);
   meta->sar->range_doppler_coefficients[2] = // two-way range time
     dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
+  */
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
                           meta->general->line_count/2,
@@ -1831,7 +1848,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
   struct IOF_VFDR *iof=NULL;
   int sar_image, dataSize;;
   char *versPtr,*satStr;
-  char *sensorStr,*prodStr,*procStr;
+  char *sensorStr,*prodStr,*procStr, *facStr;
   ceos_description *ceos = (ceos_description *)MALLOC(sizeof(ceos_description));
   memset(ceos, 0, sizeof(ceos_description));
 
@@ -1895,11 +1912,12 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     /*Set other fields to unknown (to be filled out by other init routines)*/
     procStr = ceos->dssr.sys_id;
     prodStr = ceos->dssr.product_type;
+    facStr = trim_spaces(ceos->dssr.fac_id);
     ceos->processor = unknownProcessor;
     ceos->product = unknownProduct;
 
     /*Determine the facility that processed the data.*/
-    if (0==strncmp(ceos->dssr.fac_id,"ASF",3))
+    if (0==strncmp(facStr, "ASF", 3))
     {/*Alaska SAR Facility Image*/
       /*Determine the image type and processor ID.*/
       ceos->facility=ASF;
@@ -1974,7 +1992,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
       }
 
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"ES",2))
+    else if (0==strncmp(facStr, "ES", 2))
     {/*European Space Agency Image*/
       asfReport(level, "   Data set processed by ESA\n");
       ceos->facility = ESA;
@@ -1989,7 +2007,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"CDPF",4))
+    else if (0==strncmp(facStr, "CDPF", 4))
     {
       asfReport(level, "   Data set processed by CDPF\n");
       ceos->facility = CDPF;
@@ -2000,6 +2018,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = SCANSAR;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15))
         ceos->product = SGF;
+      else if (0==strncmp(prodStr, "SAR GEOREF EXTRA FINE",21))
+        ceos->product = SGX;
       else if (0==strncmp(prodStr, "SYSTEMATIC GEOCODED UTM", 23))
         ceos->product = SSG;
       else {
@@ -2008,7 +2028,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"D-PAF",5)) {
+    else if (0==strncmp(facStr, "D-PAF", 5)) {
       asfReport(level, "   Data set processed by D-PAF\n");
       ceos->facility = DPAF;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14))
@@ -2021,7 +2041,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"I-PAF",5)) {
+    else if (0==strncmp(facStr, "I-PAF", 5)) {
       asfReport(level, "   Data set processed by I-PAF\n");
       ceos->facility = IPAF;
       if (0==strncmp(prodStr,"SAR RAW SIGNAL",14))
@@ -2034,7 +2054,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"EOC",3)) {
+    else if (0==strncmp(facStr, "EOC", 3)) {
       asfReport(level, "   Data set processed by EOC\n");
       ceos->facility = EOC;
       if (0==strncmp(ceos->dssr.lev_code, "1.0", 3))
@@ -2049,7 +2069,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"RSI",3)) {
+    else if (0==strncmp(facStr, "RSI", 3)) {
       asfReport(level, "   Data set processed by RSI\n");
       ceos->facility = RSI;
       if (0==strncmp(prodStr, "SCANSAR WIDE",12))
@@ -2060,13 +2080,15 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = SCN;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15))
         ceos->product = SGF;
+      else if (0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA",23))
+	ceos->product = RAW;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown RSI product type '%s'!\n", prodStr);
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"JPL",3)) {
+    else if (0==strncmp(facStr, "JPL", 3)) {
       asfReport(level, "   Data set processed by JPL\n");
       ceos->facility = JPL;
       if (0==strncmp(prodStr, "REFORMATTED SIGNAL DATA", 23))
@@ -2077,7 +2099,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"CSTARS",6)) {
+    else if (0==strncmp(facStr, "CSTARS", 6)) {
       asfReport(level, "   Data set processed by CSTARS\n");
       ceos->facility = CSTARS;
       if (0==strncmp(procStr,"FOCUS",5))
@@ -2090,7 +2112,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->product = unknownProduct;
       }
     }
-    else if (0==strncmp(ceos->dssr.fac_id,"         Beijing",16)) {
+    else if (0==strncmp(facStr, "Beijing", 7)) {
       asfReport(level, "   Data set processed by Beijing\n");
       ceos->facility = BEIJING;
       if (0==strncmp(prodStr,"SAR RAW DATA",12))
@@ -2379,4 +2401,54 @@ int get_alos_delta_time (const char *fileName, double *delta)
   FREE(summaryFile);
   FCLOSE(fp);
   return 1;
+}
+
+void get_azimuth_time(ceos_description *ceos, const char *in_fName,
+		      meta_parameters *meta)
+{
+  struct dataset_sum_rec *dssr=NULL;
+  ymd_date date;
+  hms_time time;
+  double centerTime;
+
+  dssr = &ceos->dssr;
+
+  // calculate earth radius at nadir (not at scene center)
+  double re = (meta_is_valid_double(meta->general->re_major))
+    ? meta->general->re_major : 6378137.0;
+  double rp = (meta_is_valid_double(meta->general->re_minor))
+    ? meta->general->re_minor : 6356752.31414;
+  double lat = D2R*dssr->plat_lat;
+  double er = (re*rp)
+    / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+  
+  // find the state vector closest to the acquisition time
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  struct pos_data_rec ppdr;
+  get_ppdr(in_fName,&ppdr);
+  int i,closest=0;
+  double closest_diff=9999999;
+  for (i=0; i<ppdr.ndata; ++i) {
+    double diff = fabs(ppdr.gmt_sec + i*ppdr.data_int - centerTime);
+    if (diff < closest_diff) {
+      closest = i; closest_diff = diff;
+    }
+  }
+  
+  // compute satellite height from closest state vector
+  double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
+		   ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
+		   ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
+  
+  // velocity calculation
+  const double g = 9.81;
+  double orbit_vel = sqrt(g*er*er/ht);
+  
+  // simple scaling to get swath velocity from orbit vel
+  double swath_vel = orbit_vel * er / ht;
+  
+  // calculate azimuth time per pixel from the swath velocity
+  meta->sar->azimuth_time_per_pixel =
+    meta->general->y_pixel_size / swath_vel;
 }

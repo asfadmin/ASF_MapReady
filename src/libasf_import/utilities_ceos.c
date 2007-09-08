@@ -100,8 +100,13 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
   createMeta_ceos(s,&dssr,inN,outN);
 
 /*Write out ARDOP input parameter files.*/
-  writeARDOPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
-                  dssr.crt_dopcen[2]);
+  if (fabs(dssr.crt_dopcen[0]) > 15000) 
+    writeARDOPparams(s,outN, 0, -99, -99);
+  else if (fabs(dssr.crt_dopcen[1]) > 1)
+    writeARDOPparams(s,outN, dssr.crt_dopcen[0], -99*s->prf, -99*s->prf);
+  else
+    writeARDOPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
+		     dssr.crt_dopcen[2]);
   writeARDOPformat(s,outN);
 
   *nLines=s->nLines;

@@ -141,6 +141,9 @@ char *appendStr(const char *s1, const char *s2);
 /*                 ONLY COPIES len-1 CHARACTERS!              */
 char *strncpy_safe(char *dst, const char *src, size_t len);
 
+// Trim leading and trailing white spaces from a string
+char *trim_spaces(const char *s);
+
 /******************************************************************************
  * FileUtil:
  * A collection of file name and I/O utilities. Implemented * in
