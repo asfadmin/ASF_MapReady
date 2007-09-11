@@ -150,7 +150,7 @@ void import_bil(char *inBaseName, char *outBaseName)
                 datum = NAD27_DATUM;
             else if (strcmp_case(value, "NAD83") == 0)
                 datum = NAD83_DATUM;
-            else if (strcmp_case(value, "WGS83") == 0)
+            else if (strcmp_case(value, "WGS84") == 0)
                 datum = WGS84_DATUM;
             else
                 asfPrintError(
