@@ -180,6 +180,10 @@ int main(int argc, char **argv)
     FCLOSE(outFP);
   }
 
+  if (strcmp(inFile1, inFile2) == 0) {
+    asfPrintStatus("\nInput files are the same - PASS.\n\n");
+    exit(0);
+  }
   metafile1 = STRDUP(inFile1);
   metafile2 = STRDUP(inFile2);
   append_ext_if_needed(metafile1, ".meta", ".meta");
@@ -788,18 +792,40 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                 "General", "sensor_name",
                 1, &failed);
 
-# define NUM_MODE_STRINGS 6
+# define NUM_MODE_STRINGS 164
   char *mode_strings[NUM_MODE_STRINGS] =
-    {"ALOS",  "STD",
-     "1A", "1B1", "1B2R", "1B2G"};
+    {
+      "ALOS","STD",
+      "1A","1B1","1B2R","1B2G",
+      "SWA","SWB","SNA", "SNB",
+      "ST1","ST2","ST3","ST4","ST5","ST6","ST7",
+      "WD1","WD2","WD3",
+      "EL1",
+      "EH1","EH2","EH3","EH4","EH5","EH6",
+      "FN1","FN2","FN3","FN4","FN5",
+      "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+      "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+      "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+      "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+      "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+      "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+      "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+      "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+      "WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2",
+      "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+      "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+      "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+      "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+      "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
+      "PLR11","PLR12"};
   verify_string(precheck_err_msgs, mg2->mode,
                 mode_strings, NUM_MODE_STRINGS,
                 "General", "mode",
                 1, &failed);
 
-  if (meta_is_valid_string(mg2->mode) &&
-      strlen(mg2->mode) > 0           &&
-      strlen(mg2->sensor) > 0         &&
+  if (meta_is_valid_string(mg2->mode)      &&
+      strlen(mg2->mode) > 0                &&
+      strlen(mg2->sensor) > 0              &&
       strncmp(mg2->sensor, "ALOS", 4) == 0)
   {
     int beam_num=0;
@@ -817,6 +843,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       s += 2;
       beam_num = atoi(s);
     }
+    // Check last 2 characters of ALOS beam
     if (strncmp(beam, "BS", 2) != 0 &&
         strncmp(beam, "BD", 2) != 0 &&
         strncmp(beam, "WB", 2) != 0 &&
