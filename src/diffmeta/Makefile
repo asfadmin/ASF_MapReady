@@ -30,28 +30,15 @@ HEADERS := diffmeta_tolerances.h diffmeta.h
 ###############################################################################
 
 CFLAGS += \
-	$(GEOTIFF_CFLAGS) \
-	$(TIFF_CFLAGS) \
-	$(JPEG_CFLAGS) \
-	$(PNG_CFLAGS) \
 	$(PROJ_CFLAGS) \
-	$(GLIB_CFLAGS) \
 	$(GSL_CFLAGS)
 
 
 LIBS  = \
-	$(LIBDIR)/libasf_import.a \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf.a \
-	$(GEOTIFF_LIBS) \
-	$(TIFF_LIBS) \
-	$(JPEG_LIBS) \
-	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
-	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	-lm \
 	-lz
