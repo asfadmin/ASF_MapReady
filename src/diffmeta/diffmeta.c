@@ -792,6 +792,10 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                 "General", "sensor_name",
                 1, &failed);
 
+  // FIXME: All of these strings are probably in a .h file.  If not, then they
+  // need to be put into a .h file.  The code here should develop the array of
+  // valid mode strings at run time.  The same thing may apply to the sensor_name,
+  // sensor, and other strings or lists of characters...
 # define NUM_MODE_STRINGS 164
   char *mode_strings[NUM_MODE_STRINGS] =
     {
@@ -822,107 +826,6 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                 mode_strings, NUM_MODE_STRINGS,
                 "General", "mode",
                 1, &failed);
-
-  if (meta_is_valid_string(mg2->mode)      &&
-      strlen(mg2->mode) > 0                &&
-      strlen(mg2->sensor) > 0              &&
-      strncmp(mg2->sensor, "ALOS", 4) == 0)
-  {
-    int beam_num=0;
-    char beam[3], *s;
-    if (strncmp(mg2->mode, "WB", 2) == 0) {
-      strncpy(beam, mg2->mode, 2);
-      s = mg2->mode;
-      s += 2;
-      beam_num = atoi(s);
-    }
-    else {
-      s = mg2->mode;
-      s++;
-      strncpy(beam, s, 2);
-      s += 2;
-      beam_num = atoi(s);
-    }
-    // Check last 2 characters of ALOS beam
-    if (strncmp(beam, "BS", 2) != 0 &&
-        strncmp(beam, "BD", 2) != 0 &&
-        strncmp(beam, "WB", 2) != 0 &&
-        strncmp(beam, "SN", 2) != 0 &&
-        strncmp(beam, "LR", 2) != 0)
-    {
-      // Unrecognized or missing ALOS beam mode
-      sprintf(precheck_err_msgs, "%s%s%s%s\n", precheck_err_msgs,
-              "[General] Invalid (ALOS) mode field in new version file:\n  %s\n", mg2->mode,
-                  "  Expected one of:\n    FBSx\n    FBDx\n    WBx\n    DSNx\n"
-                  "    PLRx,\n    where 'x' is beam number\n\n");
-      failed = 1;
-    }
-    if (strncmp(beam, "BS", 2) == 0 &&
-        (beam_num < 1 || beam_num > 18))
-    {
-      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n\n",
-              precheck_err_msgs,
-              "[General] Invalid (ALOS) beam number in mode field in new version file:\n  Mode = ",
-              mg2->mode,
-              "\n  Beam number = ",
-              beam_num,
-              "\n  Expected beam number in range:\n    ",
-              1, 18);
-      failed = 1;
-    }
-    if (strncmp(beam, "BD", 2) == 0 &&
-        (beam_num < 1 || beam_num > 18))
-    {
-      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n\n",
-              precheck_err_msgs,
-              "[General] Invalid (ALOS) beam number in mode field in new version file:\n  Mode = ",
-              mg2->mode,
-              "\n  Beam number = ",
-              beam_num,
-              "\n  Expected beam number in range:\n    ",
-              1, 18);
-      failed = 1;
-    }
-    if (strncmp(beam, "WB", 2) == 0 &&
-        (beam_num < 1 || beam_num > 2))
-    {
-      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n\n",
-              precheck_err_msgs,
-              "[General] Invalid (ALOS) beam number in mode field in new version file:\n  Mode = ",
-              mg2->mode,
-              "\n  Beam number = ",
-              beam_num,
-              "\n  Expected beam number in range:\n    ",
-              1, 2);
-      failed = 1;
-    }
-    if (strncmp(beam, "SN", 2) == 0 &&
-        (beam_num < 1 || beam_num > 18))
-    {
-      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n\n",
-              precheck_err_msgs,
-              "[General] Invalid (ALOS) beam number in mode field in new version file:\n  Mode = ",
-              mg2->mode,
-              "\n  Beam number = ",
-              beam_num,
-              "\n  Expected beam number in range:\n    ",
-              1, 18);
-      failed = 1;
-    }
-    if (strncmp(beam, "LR", 2) == 0 &&
-        (beam_num < 1 || beam_num > 12))
-    {
-      sprintf(precheck_err_msgs, "%s%s%s%s%d%s%d to %d.\n\n",
-              precheck_err_msgs,
-              "[General] Invalid (ALOS) beam number in mode field in new version file:\n  Mode = ",
-              mg2->mode,
-              "\n  Beam number = ",
-              beam_num,
-              "\n  Expected beam number in range:\n    ",
-              1, 12);
-      failed = 1;
-    }
-  }
 
   if (mg2->data_type != BYTE              &&
       mg2->data_type != INTEGER16         &&
