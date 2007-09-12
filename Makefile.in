@@ -47,6 +47,7 @@ MODULES = \
 	src/create_thumbs \
 	src/llh2ls \
 	src/convert2vector \
+	src/diffmeta \
 	src/diffimage \
 	@ASF_GUI@
 # src_x/sarview

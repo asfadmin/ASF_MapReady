@@ -19,7 +19,7 @@
 #define DM_MAX_START_LINE     DM_MAX_LINE_COUNT
 #define DM_MIN_START_SAMPLE   0
 #define DM_MAX_START_SAMPLE   DM_MAX_SAMPLE_COUNT
-#define DM_MIN_PIXEL_SIZE     1.0
+#define DM_MIN_PIXEL_SIZE     0.2
 #define DM_MAX_PIXEL_SIZE     1500.0
 #define DM_MIN_X_PIXEL_SIZE   DM_MIN_PIXEL_SIZE
 #define DM_MAX_X_PIXEL_SIZE   DM_MAX_PIXEL_SIZE
@@ -67,18 +67,18 @@
 #define DM_MAX_PRF                      10000.0
 #define DM_MIN_EARTH_RADIUS             6355000.0
 #define DM_MAX_EARTH_RADIUS             6380000.0
-#define DM_MIN_SATELLITE_HEIGHT         7000000.0
+#define DM_MIN_SATELLITE_HEIGHT         6800000.0
 #define DM_MAX_SATELLITE_HEIGHT         7500000.0
 #define DM_MIN_DOP_RANGE_CENTROID       0.0
-#define DM_MAX_DOP_RANGE_CENTROID       3000.0
-#define DM_MIN_DOP_RANGE_PER_PIXEL      -0.1
-#define DM_MAX_DOP_RANGE_PER_PIXEL      0.1
+#define DM_MAX_DOP_RANGE_CENTROID       15000.0
+#define DM_MIN_DOP_RANGE_PER_PIXEL      -0.15
+#define DM_MAX_DOP_RANGE_PER_PIXEL      0.15
 #define DM_MIN_DOP_RANGE_QUAD           -1.0e-5
 #define DM_MAX_DOP_RANGE_QUAD           1.0e-5
 #define DM_MIN_DOP_AZIMUTH_CENTROID     0.0
-#define DM_MAX_DOP_AZIMUTH_CENTROID     3000.0
-#define DM_MIN_DOP_AZIMUTH_PER_PIXEL    -0.1
-#define DM_MAX_DOP_AZIMUTH_PER_PIXEL    0.1
+#define DM_MAX_DOP_AZIMUTH_CENTROID     15000.0
+#define DM_MIN_DOP_AZIMUTH_PER_PIXEL    -0.15
+#define DM_MAX_DOP_AZIMUTH_PER_PIXEL    0.15
 #define DM_MIN_DOP_AZIMUTH_QUAD         -1.0e-5
 #define DM_MAX_DOP_AZIMUTH_QUAD         1.0e-5
 
@@ -105,11 +105,11 @@
 #define DM_MAX_STARTX             1.0e6
 #define DM_MIN_STARTY             -1.0e6
 #define DM_MAX_STARTY             1.0e6
-#define DM_MIN_PERX               1.0
-#define DM_MAX_PERX               100.0
-#define DM_MIN_PERY               1.0
-#define DM_MAX_PERY               100.0
-#define DM_MIN_HEIGHT             -1000.0
+#define DM_MIN_PERX               0.2
+#define DM_MAX_PERX               1500.0
+#define DM_MIN_PERY               0.2
+#define DM_MAX_PERY               1500.0
+#define DM_MIN_HEIGHT             -2000.0
 #define DM_MAX_HEIGHT             25000.0
 //      UTM
 #define DM_MIN_UTM_ZONE           1
@@ -165,16 +165,16 @@
 #define DM_RANGE_TIME_PER_PIXEL_TOL     2.5e-09
 #define DM_SLANT_SHIFT_TOL              1.0
 #define DM_TIME_SHIFT_TOL               0.5
-#define DM_SLANT_RANGE_FIRST_PIXEL_TOL  20.0
+#define DM_SLANT_RANGE_FIRST_PIXEL_TOL  10.0
 #define DM_WAVELENGTH_TOL               0.0025
 #define DM_PRF_TOL                      0.5
 #define DM_EARTH_RADIUS_TOL             3.0
-#define DM_SATELLITE_HEIGHT_TOL         10.0
+#define DM_SATELLITE_HEIGHT_TOL         3.0
 #define DM_DOP_RANGE_CENTROID_TOL       1.0
-#define DM_DOP_RANGE_PER_PIXEL_TOL      0.05
+#define DM_DOP_RANGE_PER_PIXEL_TOL      0.005
 #define DM_DOP_RANGE_QUAD_TOL           5.0e-07
 #define DM_DOP_AZIMUTH_CENTROID_TOL     1.0
-#define DM_DOP_AZIMUTH_PER_PIXEL_TOL    0.05
+#define DM_DOP_AZIMUTH_PER_PIXEL_TOL    0.005
 #define DM_DOP_AZIMUTH_QUAD_TOL         5.0e-07
 #define DM_OFF_NADIR_ANGLE_TOL          0.25
 #define DM_CLOUD_PERCENTAGE_TOL         15.0
@@ -206,10 +206,10 @@
 #define DM_PERX_TOL                     0.001
 #define DM_PERY_TOL                     0.001
 #define DM_HEIGHT_TOL                   1.0
-#define DM_LATITUDE_TOL                 0.005
-#define DM_LONGITUDE_TOL                0.005
+#define DM_LATITUDE_TOL                 0.0005
+#define DM_LONGITUDE_TOL                0.0005
 #define DM_SCALE_FACTOR_TOL             0.0001
-#define DM_ALPHA_ROTATION_TOL           0.001
+#define DM_ALPHA_ROTATION_TOL           0.0005
 // Stats Block
 #define DM_STATS_MIN_TOL                0.2
 #define DM_STATS_MAX_TOL                0.2
@@ -217,8 +217,8 @@
 #define DM_STATS_STD_DEVIATION_TOL      0.2
 // State Vector Block
 #define DM_SECONDS_TOL                  0.001
-#define DM_XYZ_TOL                      0.001
-#define DM_XYZ_VEL_TOL                  0.001
+#define DM_XYZ_TOL                      0.005
+#define DM_XYZ_VEL_TOL                  0.005
 
 #endif // _DIFFMETA_TOLERANCES_H_
 
