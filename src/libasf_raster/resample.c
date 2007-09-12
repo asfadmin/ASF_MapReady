@@ -99,9 +99,9 @@ resample_impl(char *infile, char *outfile,
              xbase,ybase,           /* base sample/line               */
              xrate,yrate;           /* # input pixels/output pixel    */
 
-    asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
-    asfPrintStatus("  Input image is %s\n",infile);
-    asfPrintStatus("  Output image is %s\n\n",outfile);
+    //asfPrintStatus("\n\n\nResample: Performing filtering and subsampling..\n\n");
+    //asfPrintStatus("  Input image is %s\n",infile);
+    //asfPrintStatus("  Output image is %s\n\n",outfile);
 
     metaIn = meta_read(infile);
     metaOut = meta_read(infile);
@@ -138,7 +138,8 @@ resample_impl(char *infile, char *outfile,
     // workreport file without the usual ".txt" extension ...just the basename
     // with no extension, then fopenImage() will preferentially open that file.
     // It is likely that many read errors will occur if you run into this situation.
-    char *infile_img = STRDUP(infile);
+    char *infile_img = MALLOC(sizeof(char) * (10 + strlen(infile)));
+    strcpy(infile_img, infile);
     append_ext_if_needed(infile_img, ".img", NULL);
     fpin=fopenImage(infile_img,"rb");
     if (fpin == NULL)
