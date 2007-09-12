@@ -126,6 +126,7 @@ void import_bil(char *inBaseName, char *outBaseName)
 
     datum_type_t datum=UNKNOWN_DATUM;
     spheroid_type_t spheroid=UNKNOWN_SPHEROID;
+    int dd=TRUE; // dd=decimal degrees, other possibility is ds (dec secs)
 
     fp = FOPEN(prj_file, "r");
     while (NULL!=fgets(line, 1024, fp)) {
@@ -136,8 +137,12 @@ void import_bil(char *inBaseName, char *outBaseName)
                     value);
         } else if (matches(line, "Units")) {
             get_value(line, value);
-            if (strcmp(value, "DD") != 0)
-                asfPrintError("Unsupported Units (should be DD): %s\n",
+            if (strcmp(value, "DD") == 0)
+                dd=TRUE;
+            else if (strcmp(value, "DS") == 0)
+                dd=FALSE;
+            else
+                asfPrintError("Unsupported Units (should be DD or DS): %s\n",
                     value);
         } else if (matches(line, "Zunits")) {
             get_value(line, value);
@@ -183,6 +188,21 @@ void import_bil(char *inBaseName, char *outBaseName)
         }
     }
     fclose(fp);
+
+    if (!dd) {
+        // If units were in seconds, convert to degrees
+        cell_size_vert /= 60*60;
+        cell_size_horiz /= 60*60;
+        lon_ul /= 60*60;
+        lat_ul /= 60*60;
+    }
+
+    if (lat_ul <= -90 || lat_ul >= 90 ||
+        lon_ul <= -360 || lon_ul >= 360)
+    {
+        asfPrintError("Lat/Lon UL corner value is out of range:\n"
+            "  Latitude: %f\n  Longitude: %f\n", lat_ul, lon_ul);
+    }
 
     // create the metadata
     char *meta_filename = appendExt(outBaseName, ".meta");
