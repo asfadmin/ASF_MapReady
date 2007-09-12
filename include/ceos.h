@@ -187,6 +187,52 @@ struct SHEADER {
                 yaw[4];
 };
 
+// processed data record: ALOS comes with this (replaces signal
+// data record in processed data)
+struct PHEADER {
+  unsigned char line_num[4],
+                rec_num[4],
+                n_left_pixel[4],
+                n_data_pixel[4],
+                n_right_pixel[4],
+                sensor_updf[4],
+                acq_year[4],
+                acq_day[4],
+                acq_msec[4],
+                sar_cib[2],
+                sar_chan_code[2],
+                tran_polar[2],
+                recv_polar[2],
+                prf[4],
+                scan_id[4],
+                sr_first[4],
+                sr_mid[4],
+                sr_last[4],
+                dop_first[4],
+                dop_mid[4],
+                dop_last[4],
+                fmr_first[4],
+                fmr_mid[4],
+                fmr_last[4],
+                nadir_look[4],
+                squint_angle[4],
+                spare1[20],
+                update_flag[4],
+                lat_first[4],
+                lat_mid[4],
+                lat_last[4],
+                lon_first[4],
+                lon_mid[4],
+                lon_last[4],
+                northing_first[4],
+                spare2[4],
+                northing_last[4],
+                easting_first[4],
+                spare3[4],
+                easting_last[4],
+                heading[4],
+                spare4[8];
+};
 
 /* Radiometric Data Record */
 struct RADDR {
@@ -217,6 +263,7 @@ struct VRADDR {
    char   spare2[5];
    double noise[256];   /* noise values */
 };
+
 /* Values for the RSI format Radiometric Data Record */
 struct RSI_VRADDR {
   short seq_num;          /* Record sequence number */

@@ -269,7 +269,6 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
 
-
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
@@ -680,6 +679,62 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     ceos_init_location_block(meta);
 }
 
+static double calc_swath_velocity(struct dataset_sum_rec *dssr,
+                                  const char *in_fName, meta_parameters *meta)
+{
+  // calculate earth radius at nadir (not at scene center)
+  double re = (meta_is_valid_double(meta->general->re_major))
+          ? meta->general->re_major : 6378137.0;
+  double rp = (meta_is_valid_double(meta->general->re_minor))
+          ? meta->general->re_minor : 6356752.31414;
+  double lat = D2R*dssr->plat_lat;
+  double er = (re*rp)
+          / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+
+  // find the state vector closest to the acquisition time
+  ymd_date date;
+  hms_time time;
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  double centerTime = date_hms2sec(&time);
+  struct pos_data_rec ppdr;
+  get_ppdr(in_fName,&ppdr);
+  int i,closest=0;
+  double closest_diff=9999999;
+  for (i=0; i<ppdr.ndata; ++i) {
+      double diff = fabs(ppdr.gmt_sec + i*ppdr.data_int - centerTime);
+      if (diff < closest_diff) {
+          closest = i; closest_diff = diff;
+      }
+  }
+
+  // compute satellite height from closest state vector
+  double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
+      ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
+      ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
+
+  // velocity calculation
+  const double g = 9.81;
+  double orbit_vel = sqrt(g*er*er/ht);
+
+  // simple scaling to get swath velocity from orbit vel
+  return orbit_vel * er / ht;
+}
+
+static void get_alos_linehdr(struct PHEADER *linehdr, const char *fName)
+{
+    int length;
+    char buff[25600];
+    struct HEADER hdr;
+
+    FILE *fp = FOPEN(fName, "rb");
+    FREAD(&hdr, sizeof(struct HEADER), 1, fp);
+    length = bigInt32(hdr.recsiz)-12;
+    FREAD(buff, length, 1, fp);
+    FREAD(&hdr, sizeof(struct HEADER), 1, fp);
+    FREAD(linehdr, sizeof(struct PHEADER), 1, fp);
+    fclose(fp);
+}
+
 // Only deal with ALOS data
 void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
            meta_parameters *meta)
@@ -799,45 +854,27 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->chirp_rate = get_chirp_rate(dataName[0]);
   }
 
-  if (ceos->product == SGI) {
-    // experimental calculation -- not sure if this is really going to work!
+  if (ceos->product == SLC) {
 
-    // calculate earth radius at nadir (not at scene center)
-    double re = (meta_is_valid_double(meta->general->re_major))
-           ? meta->general->re_major : 6378137.0;
-  double rp = (meta_is_valid_double(meta->general->re_minor))
-           ? meta->general->re_minor : 6356752.31414;
-    double lat = D2R*dssr->plat_lat;
-    double er = (re*rp)
-            / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-
-    // find the state vector closest to the acquisition time
-    date_dssr2date(dssr->inp_sctim, &date, &time);
-    centerTime = date_hms2sec(&time);
-    struct pos_data_rec ppdr;
-    get_ppdr(in_fName,&ppdr);
-    int i,closest=0;
-    double closest_diff=9999999;
-    for (i=0; i<ppdr.ndata; ++i) {
-      double diff = fabs(ppdr.gmt_sec + i*ppdr.data_int - centerTime);
-      if (diff < closest_diff) {
-          closest = i; closest_diff = diff;
-      }
+    // fix x_pixel_size & y_pixel_size values if needed
+    if (meta->general->x_pixel_size == 0) {
+        meta->general->x_pixel_size =
+            speedOfLight * meta->sar->range_time_per_pixel / 2.;
+        printf("Calculated x pixel size: %f\n", meta->general->x_pixel_size);
     }
+    if (meta->general->y_pixel_size == 0) {
+        double swath_val = calc_swath_velocity(dssr,dataName[0],meta);
+        meta->general->y_pixel_size =
+            meta->sar->azimuth_time_per_pixel * swath_val;
+        printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
+    }
+  }
 
-    // compute satellite height from closest state vector
-    double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
-        ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
-        ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
-
-    // velocity calculation
-    const double g = 9.81;
-    double orbit_vel = sqrt(g*er*er/ht);
-
-    // simple scaling to get swath velocity from orbit vel
-    double swath_vel = orbit_vel * er / ht;
+  if (ceos->product == SGI) {
 
     // calculate azimuth time per pixel from the swath velocity
+    double swath_vel = calc_swath_velocity(dssr,in_fName,meta);
+
     meta->sar->azimuth_time_per_pixel =
         meta->general->y_pixel_size / swath_vel;
     if (meta->general->orbit_direction == 'D')
@@ -858,7 +895,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
     ceos_init_stVec(in_fName,ceos,meta);
   }
-
 
   // Transformation block
   if (ceos->product != SLC) {
@@ -2236,20 +2272,8 @@ double get_firstTime (const char *fName)
 // out of the ALOS line header
 double get_alos_firstTime (const char *fName)
 {
-   FILE *fp;
-   struct HEADER hdr;
-   struct SHEADER linehdr;
-   int length;
-   char buff[25600];
-
-   fp = FOPEN(fName, "r");
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   length = bigInt32(hdr.recsiz)-12;
-   FREAD (buff, length, 1, fp);
-   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
-   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
-   FCLOSE(fp);
-
+   struct PHEADER linehdr;
+   get_alos_linehdr(&linehdr, fName);
    return ((double)bigInt32(linehdr.acq_msec)/1000.0);
 }
 
