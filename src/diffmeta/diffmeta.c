@@ -69,6 +69,10 @@ void verify_double(char *err_msgs, double num,
                    double lower_lim, double upper_lim,
                    char *block_id, char *var_name,
                    int required, int *failed);
+void verify_double_with_mask(char *err_msgs, double num, double mask,
+                   double lower_lim, double upper_lim,
+                   char *block_id, char *var_name,
+                   int required, int *failed);
 void compare_meta_string(char *err_msgs, char *block_id, char *var_name,
                       char *var1, char *var2, int *failed);
 void compare_meta_enum(char *err_msgs, char *block_id, char *var_name,
@@ -586,25 +590,43 @@ void verify_double(char *err_msgs, double num,
   {
     if (num < lower_lim || num > upper_lim)
     {
-      if (num < 1e-5) {
-        sprintf(err_msgs,
-                "%s  [%s] The %s field is out of range:\n    %0.4e\n\n"
-                    "    Expected:\n      %0.4e to %0.4e\n\n",
-                err_msgs, block_id, var_name, num, lower_lim, upper_lim);
-      }
-      else {
-        sprintf(err_msgs,
-                "%s  [%s] The %s field is out of range:\n    %f\n\n"
-                "    Expected:\n      %f to %f\n\n",
-                err_msgs, block_id, var_name, num, lower_lim, upper_lim);
-      }
+      sprintf(err_msgs,
+              "%s  [%s] The %s field is out of range:\n    %0.9f\n\n"
+              "    Expected:\n      %0.9f to %0.9f\n\n",
+              err_msgs, block_id, var_name, num, lower_lim, upper_lim);
       *failed = 1;
     }
   }
   else if (required) {
     sprintf(err_msgs,
             "%s  [%s] The %s field is missing.\n\n"
-            "    Expected:\n      %f to %f\n\n",
+            "    Expected:\n      %0.9f to %0.9f\n\n",
+            err_msgs, block_id, var_name, lower_lim, upper_lim);
+    *failed = 1;
+  }
+}
+
+void verify_double_with_mask(char *err_msgs, double num, double mask,
+                   double lower_lim, double upper_lim,
+                   char *block_id, char *var_name,
+                   int required, int *failed)
+{
+  if (meta_is_valid_double(num))
+  {
+    if (!FLOAT_COMPARE_TOLERANCE(num, mask, 0.0000000001) &&
+        (num < lower_lim || num > upper_lim))
+    {
+      sprintf(err_msgs,
+              "%s  [%s] The %s field is out of range:\n    %0.9f\n\n"
+                  "    Expected:\n      %0.9f to %0.9f\n\n",
+              err_msgs, block_id, var_name, num, lower_lim, upper_lim);
+      *failed = 1;
+    }
+  }
+  else if (required) {
+    sprintf(err_msgs,
+            "%s  [%s] The %s field is missing.\n\n"
+                "    Expected:\n      %0.9f to %0.9f\n\n",
             err_msgs, block_id, var_name, lower_lim, upper_lim);
     *failed = 1;
   }
@@ -781,11 +803,12 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                   "General", "acquisition_date",
                   &failed);
 
-# define NUM_SENSOR_STRINGS 6
+# define NUM_SENSOR_STRINGS 7
   char *sensor_strings[NUM_SENSOR_STRINGS] =
     {"SIR-C", "ERS1",
      "ERS2",  "JERS1",
-     "ALOS",  "RSAT-1"};
+     "ALOS",  "RSAT-1",
+     "AIRSAR"};
   verify_string(precheck_err_msgs, mg2->sensor,
                 sensor_strings, NUM_SENSOR_STRINGS,
                 "General", "sensor",
@@ -832,8 +855,10 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   verify_string(precheck_err_msgs, mg2->mode,
                 mode_strings, NUM_MODE_STRINGS,
                 "General", "mode",
-                1, &failed);
+                0, &failed);
 
+  // FIXME: Add a verify_enum() function and let it use a hook to a
+  // function that tells if the value is a valid member or not.
   if (mg2->data_type != BYTE              &&
       mg2->data_type != INTEGER16         &&
       mg2->data_type != INTEGER32         &&
@@ -886,6 +911,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
              "General", "orbit",
              0, &failed);
 
+  // FIXME: Write a verify_char_with_mask() so we can ignore single
+  // values, e.g. MAGIC_UNSET_CHAR.  NOTE: AirSAR will ignore the unset char
 # define NUM_ORBIT_DIRECTION_CHARS 2
   char orbit_direction_chars[NUM_ORBIT_DIRECTION_CHARS] =
     {'A', 'D'};
@@ -953,12 +980,12 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   verify_double(precheck_err_msgs, mg2->center_latitude,
                 DM_MIN_LATITUDE, DM_MAX_LATITUDE,
                 "General", "center_latitude",
-                1, &failed);
+                0, &failed);
 
   verify_double(precheck_err_msgs, mg2->center_longitude,
                 DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
                 "General", "center_longitude",
-                1, &failed);
+                0, &failed);
 
   verify_double(precheck_err_msgs, mg2->re_major,
                 DM_MIN_RE_MAJOR, DM_MAX_RE_MAJOR,
@@ -1025,7 +1052,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     verify_int(precheck_err_msgs, msar2->look_count,
                DM_MIN_LOOK_COUNT, DM_MAX_LOOK_COUNT,
                "SAR", "look_count",
-               0, &failed);
+               1, &failed);
 
     verify_int(precheck_err_msgs, msar2->deskewed,
                DM_MIN_DESKEWED, DM_MAX_DESKEWED,
@@ -1082,10 +1109,10 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                   "SAR", "wavelength",
                   1, &failed);
 
-    verify_double(precheck_err_msgs, msar2->prf,
+    verify_double_with_mask(precheck_err_msgs, msar2->prf, 0.0,
                   DM_MIN_PRF, DM_MAX_PRF,
                   "SAR", "prf",
-                  1, &failed);
+                  0, &failed);
 
     verify_double(precheck_err_msgs, msar2->earth_radius,
                   DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS,
@@ -1094,8 +1121,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
 
     verify_double(precheck_err_msgs, msar2->earth_radius_pp,
                   DM_MIN_EARTH_RADIUS, DM_MAX_EARTH_RADIUS,
-                  "SAR", "earth_radius",
-                  1, &failed);
+                  "SAR", "earth_radius_pp",
+                  0, &failed);
 
     verify_double(precheck_err_msgs, msar2->satellite_height,
                   DM_MIN_SATELLITE_HEIGHT, DM_MAX_SATELLITE_HEIGHT,
@@ -1108,7 +1135,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     verify_double(precheck_err_msgs, msar2->range_doppler_coefficients[0],
                   DM_MIN_DOP_RANGE_CENTROID, DM_MAX_DOP_RANGE_CENTROID,
                   "SAR", "range_doppler_coefficients[0]",
-                  0, &failed);
+                  1, &failed);
 
     verify_double(precheck_err_msgs, msar2->range_doppler_coefficients[1],
                   DM_MIN_DOP_RANGE_PER_PIXEL, DM_MAX_DOP_RANGE_PER_PIXEL,
@@ -1123,7 +1150,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     verify_double(precheck_err_msgs, msar2->azimuth_doppler_coefficients[0],
                   DM_MIN_DOP_AZIMUTH_CENTROID, DM_MAX_DOP_AZIMUTH_CENTROID,
                   "SAR", "azimuth_doppler_coefficients[0]",
-                  0, &failed);
+                  1, &failed);
 
     verify_double(precheck_err_msgs, msar2->azimuth_doppler_coefficients[1],
                   DM_MIN_DOP_AZIMUTH_PER_PIXEL, DM_MAX_DOP_AZIMUTH_PER_PIXEL,
@@ -1183,12 +1210,12 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     verify_double(precheck_err_msgs, mo2->sun_azimuth_angle,
                   DM_MIN_SUN_AZIMUTH_ANGLE, DM_MAX_SUN_AZIMUTH_ANGLE,
                   "Optical", "sun_azimuth_angle",
-                  0, &failed);
+                  1, &failed);
 
     verify_double(precheck_err_msgs, mo2->sun_elevation_angle,
                   DM_MIN_SUN_ELEVATION_ANGLE, DM_MAX_SUN_ELEVATION_ANGLE,
                   "Optical", "sun_elevation_angle",
-                  0, &failed);
+                  1, &failed);
 
     // OPTICAL BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
@@ -1211,17 +1238,17 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     verify_double(precheck_err_msgs, mtherm2->band_gain,
                   DM_MIN_BAND_GAIN, DM_MAX_BAND_GAIN,
                   "Thermal", "band_gain",
-                  0, &failed);
+                  1, &failed);
 
     verify_double(precheck_err_msgs, mtherm2->band_gain_change,
                   DM_MIN_BAND_GAIN_CHANGE, DM_MAX_BAND_GAIN_CHANGE,
                   "Thermal", "band_gain_change",
-                  0, &failed);
+                  1, &failed);
 
     verify_int(precheck_err_msgs, mtherm2->day,
                DM_MIN_DAY, DM_MAX_DAY,
                "Thermal", "day",
-               0, &failed);
+               1, &failed);
 
     // THERMAL BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
@@ -1267,6 +1294,8 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   //
   // End of Transform Block Validity Check
   ////////////////////////////////////////////////////////////
+
+  // FIXME: Add AirSAR block (7 doubles, all required)
 
   ////////////////////////////////////////////////////////////
   // Check Projection Block
@@ -1430,23 +1459,30 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                    "Projection - UTM", "zone",
                    1, &failed);
 
-        verify_double(precheck_err_msgs, mp2->param.utm.false_easting,
-                      DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
-                      "Projection - UTM", "false_easting",
-                      0, &failed);
+        if (meta_is_valid_double(mp2->param.utm.false_easting) &&
+            mp2->param.utm.false_easting != DM_UTM_FALSE_EASTING)
+        {
+          sprintf(precheck_err_msgs, "%s%s%f%s%f\n\n",
+                  precheck_err_msgs,
+                  "  [Projection - UTM] New version false_easting invalid (",
+                  mp2->param.utm.false_easting,
+                  ").\n    Expected:\n      ",
+                  DM_UTM_FALSE_EASTING);
+          failed = 1;
+        }
 
         if (meta_is_valid_double(mp2->param.utm.false_northing)      &&
             mp2->param.utm.false_northing != DM_N_UTM_FALSE_NORTHING &&
             mp2->param.utm.false_northing != DM_S_UTM_FALSE_NORTHING)
         {
-          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n\n",
                   precheck_err_msgs,
-                  "  [Projection - UTM] New version false_northing out of range (",
+                  "  [Projection - UTM] New version false_northing invalid (",
                   mp2->param.utm.false_northing,
                   ").\n    Expected:\n      ",
-                  DM_MIN_LATITUDE,
-                  " through ",
-                  DM_MAX_LATITUDE);
+                  DM_N_UTM_FALSE_NORTHING,
+                  " or ",
+                  DM_S_UTM_FALSE_NORTHING);
           failed = 1;
         }
 
@@ -1464,9 +1500,9 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
             (mp2->param.utm.scale_factor != DM_UTM_SCALE_FACTOR &&
              mp2->param.utm.scale_factor != DM_DEFAULT_SCALE_FACTOR))
         {
-          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n",
+          sprintf(precheck_err_msgs, "%s%s%f%s%f%s%f\n\n",
                   precheck_err_msgs,
-                  "  [Projection - UTM] New version scale_factor out of range (",
+                  "  [Projection - UTM] New version scale_factor invalid (",
                   mp2->param.utm.scale_factor,
                   ").\n    Expected:\n      ",
                   DM_UTM_SCALE_FACTOR,
@@ -1533,6 +1569,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                       0, &failed);
         break;
       case LAMBERT_CONFORMAL_CONIC:
+        // FIXME: Double check what should be required, and not.
         verify_double(precheck_err_msgs, mp2->param.lamcc.plat1,
                       DM_MIN_LATITUDE, DM_MAX_LATITUDE,
                       "Projection - LAMCC", "plat1",
@@ -1569,6 +1606,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                       0, &failed);
         break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
+        // FIXME: Double check what should be required, and not.
         verify_double(precheck_err_msgs, mp2->param.lamaz.center_lon,
                       DM_MIN_LONGITUDE, DM_MAX_LONGITUDE,
                       "Projection - LAMAZ", "center_lon",
@@ -1620,6 +1658,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
       case UNKNOWN_PROJECTION:
         break;
       default:
+        // Should never be here
         sprintf(precheck_err_msgs, "%s%s\n",
                 precheck_err_msgs,
                 "  [Projection] Unexpected projection type found.");
@@ -2034,58 +2073,90 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   if (mtrans1 && mtrans2) {
     compare_meta_int(compare_err_msgs, "Transform", "parameter_count",
                      mtrans1->parameter_count, mtrans2->parameter_count, &failed);
-    //FIXME: parameter_count is always 4 ...but fix the following to use a loop anyway
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Phi(0)", "y[0]",
-                                       mtrans1->y[0], mtrans2->y[0],
-                                       DM_PHI0_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Phi(1)", "y[1]",
-                                       mtrans1->y[1], mtrans2->y[1],
-                                       DM_PHI1_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Phi(2)", "y[2]",
-                                       mtrans1->y[2], mtrans2->y[2],
-                                       DM_PHI2_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Phi(3)", "y[3]",
-                                       mtrans1->y[3], mtrans2->y[3],
-                                       DM_PHI3_TOL, &failed);
-
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Lambda(0)", "x[0]",
-                                       mtrans1->x[0], mtrans2->x[0],
-                                       DM_LAMBDA0_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Lambda(1)", "x[1]",
-                                       mtrans1->x[1], mtrans2->x[1],
-                                       DM_LAMBDA1_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Lambda(2)", "x[2]",
-                                       mtrans1->x[2], mtrans2->x[2],
-                                       DM_LAMBDA2_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - Lambda(3)", "x[3]",
-                                       mtrans1->x[3], mtrans2->x[3],
-                                       DM_LAMBDA3_TOL, &failed);
-
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - i(0)", "s[0]",
-                                       mtrans1->s[0], mtrans2->s[0],
-                                       DM_I0_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - i(1)", "s[1]",
-                                       mtrans1->s[1], mtrans2->s[1],
-                                       DM_I1_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - i(2)", "s[2]",
-                                       mtrans1->s[2], mtrans2->s[2],
-                                       DM_I2_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - i(3)", "s[3]",
-                                       mtrans1->s[3], mtrans2->s[3],
-                                       DM_I3_TOL, &failed);
-
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - j(0)", "l[0]",
-                                       mtrans1->l[0], mtrans2->l[0],
-                                       DM_J0_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - j(1)", "l[1]",
-                                       mtrans1->l[1], mtrans2->l[1],
-                                       DM_J1_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - j(2)", "l[2]",
-                                       mtrans1->l[2], mtrans2->l[2],
-                                       DM_J2_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Transform - j(3)", "l[3]",
-                                       mtrans1->l[3], mtrans2->l[3],
-                                       DM_J3_TOL, &failed);
+    if (meta_is_valid_int(mtrans1->parameter_count) &&
+        meta_is_valid_int(mtrans2->parameter_count) &&
+        mtrans1->parameter_count == mtrans2->parameter_count)
+    {
+      char block_id[256] = "";
+      char var_name[256] = "";
+      int i;
+      for (i=0; i<mtrans2->parameter_count; i++) {
+        sprintf(block_id, "Transform - Phi(%d)", i);
+        sprintf(var_name, "y[%d]", i);
+        compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                           mtrans1->y[i], mtrans2->y[i],
+                                           (i == 0)  ? DM_PHI0_TOL :
+                                           (i == 1)  ? DM_PHI1_TOL :
+                                           (i == 2)  ? DM_PHI2_TOL :
+                                           (i == 3)  ? DM_PHI3_TOL :
+                                           (i == 4)  ? DM_PHI4_TOL :
+                                           (i == 5)  ? DM_PHI5_TOL :
+                                           (i == 6)  ? DM_PHI6_TOL :
+                                           (i == 7)  ? DM_PHI7_TOL :
+                                           (i == 8)  ? DM_PHI8_TOL :
+                                           (i == 9)  ? DM_PHI9_TOL :
+                                           (i == 10) ? DM_PHI10_TOL :
+                                           0.0001,
+                                           &failed);
+      }
+      for (i=0; i<mtrans2->parameter_count; i++) {
+        sprintf(block_id, "Transform - Lambda(%d)", i);
+        sprintf(var_name, "x[%d]", i);
+        compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                           mtrans1->x[i], mtrans2->x[i],
+                                           (i == 0)  ? DM_LAMBDA0_TOL :
+                                           (i == 1)  ? DM_LAMBDA1_TOL :
+                                           (i == 2)  ? DM_LAMBDA2_TOL :
+                                           (i == 3)  ? DM_LAMBDA3_TOL :
+                                           (i == 4)  ? DM_LAMBDA4_TOL :
+                                           (i == 5)  ? DM_LAMBDA5_TOL :
+                                           (i == 6)  ? DM_LAMBDA6_TOL :
+                                           (i == 7)  ? DM_LAMBDA7_TOL :
+                                           (i == 8)  ? DM_LAMBDA8_TOL :
+                                           (i == 9)  ? DM_LAMBDA9_TOL :
+                                           (i == 10) ? DM_LAMBDA10_TOL :
+                                           0.0001,
+                                           &failed);
+      }
+      for (i=0; i<mtrans2->parameter_count; i++) {
+        sprintf(block_id, "Transform - i(%d)", i);
+        sprintf(var_name, "s[%d]", i);
+        compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                           mtrans1->s[i], mtrans2->s[i],
+                                           (i == 0)  ? DM_I0_TOL :
+                                           (i == 1)  ? DM_I1_TOL :
+                                           (i == 2)  ? DM_I2_TOL :
+                                           (i == 3)  ? DM_I3_TOL :
+                                           (i == 4)  ? DM_I4_TOL :
+                                           (i == 5)  ? DM_I5_TOL :
+                                           (i == 6)  ? DM_I6_TOL :
+                                           (i == 7)  ? DM_I7_TOL :
+                                           (i == 8)  ? DM_I8_TOL :
+                                           (i == 9)  ? DM_I9_TOL :
+                                           (i == 10) ? DM_I10_TOL :
+                                           0.0001,
+                                           &failed);
+      }
+      for (i=0; i<mtrans2->parameter_count; i++) {
+        sprintf(block_id, "Transform - j(%d)", i);
+        sprintf(var_name, "l[%d]", i);
+        compare_meta_double_with_tolerance(compare_err_msgs, block_id, var_name,
+                                           mtrans1->l[i], mtrans2->l[i],
+                                           (i == 0)  ? DM_J0_TOL :
+                                           (i == 1)  ? DM_J1_TOL :
+                                           (i == 2)  ? DM_J2_TOL :
+                                           (i == 3)  ? DM_J3_TOL :
+                                           (i == 4)  ? DM_J4_TOL :
+                                           (i == 5)  ? DM_J5_TOL :
+                                           (i == 6)  ? DM_J6_TOL :
+                                           (i == 7)  ? DM_J7_TOL :
+                                           (i == 8)  ? DM_J8_TOL :
+                                           (i == 9)  ? DM_J9_TOL :
+                                           (i == 10) ? DM_J10_TOL :
+                                           0.0001,
+                                           &failed);
+      }
+    }
   }
   ////////////////////////////////////////////////////////////
   // Transform Block Reporting

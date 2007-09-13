@@ -57,11 +57,13 @@ LDLIBS := $(LIBS)
 
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 
-all: $(PROGRAM)
+all: $(PROGRAM) $(HEADERS)
 
-$(PROGRAM): $(OBJS) $(HEADERS)
+$(PROGRAM): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LDLIBS)
 	mv $(PROGRAM)$(BIN_POSTFIX) $(BINDIR)
+
+$(OBJS): $(HEADERS)
 
 .PHONY: clean
 clean:
