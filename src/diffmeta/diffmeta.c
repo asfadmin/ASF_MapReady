@@ -184,10 +184,18 @@ int main(int argc, char **argv)
     FCLOSE(outFP);
   }
 
-  if (strcmp(inFile1, inFile2) == 0) {
-    asfPrintStatus("\nInput files are the same - PASS.\n\n");
+  // Check for diff against self
+  char *basename1, *basename2;
+  basename1 = get_basename(inFile1);
+  basename2 = get_basename(inFile2);
+  if (strcmp(inFile1, inFile2)     == 0 ||
+      strcmp(basename1, basename2) == 0)
+  {
+    asfPrintStatus("\nInput metadata files are the same - PASS.\n\n");
     exit(0);
   }
+
+  // Look for metadata files ..be forgiving of name goofs
   metafile1 = STRDUP_PLUS(inFile1, 4);
   metafile2 = STRDUP_PLUS(inFile2, 4);
   appendExt(metafile1, ".meta");
@@ -215,6 +223,8 @@ int main(int argc, char **argv)
   if (outputFile) FREE (outputFile);
   if (metafile1) FREE (metafile1);
   if (metafile2) FREE (metafile2);
+  if (basename1) FREE (basename1);
+  if (basename2) FREE (basename2);
   return (0);
 }
 
