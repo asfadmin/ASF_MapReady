@@ -586,10 +586,18 @@ void verify_double(char *err_msgs, double num,
   {
     if (num < lower_lim || num > upper_lim)
     {
-      sprintf(err_msgs,
-              "%s  [%s] The %s field is out of range:\n    %f\n\n"
-              "    Expected:\n      %f to %f\n\n",
-              err_msgs, block_id, var_name, num, lower_lim, upper_lim);
+      if (num < 1e-5) {
+        sprintf(err_msgs,
+                "%s  [%s] The %s field is out of range:\n    %0.4e\n\n"
+                    "    Expected:\n      %0.4e to %0.4e\n\n",
+                err_msgs, block_id, var_name, num, lower_lim, upper_lim);
+      }
+      else {
+        sprintf(err_msgs,
+                "%s  [%s] The %s field is out of range:\n    %f\n\n"
+                "    Expected:\n      %f to %f\n\n",
+                err_msgs, block_id, var_name, num, lower_lim, upper_lim);
+      }
       *failed = 1;
     }
   }
