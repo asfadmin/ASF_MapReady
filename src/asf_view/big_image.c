@@ -311,7 +311,7 @@ static GdkPixbuf * make_big_image()
 
 static void line_samp_to_proj(double line, double samp, double *x, double *y)
 {
-    if (meta->projection || meta->sar || meta->transform) {
+    if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform) {
         double lat, lon, projZ;
         meta_get_latLon(meta, line, samp, 0, &lat, &lon);
         if (meta->projection) {
@@ -386,7 +386,7 @@ void update_pixel_info()
     }
 
     double lat=0, lon=0;
-    if (meta->projection || meta->sar || meta->transform) {
+    if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform) {
         meta_get_latLon(meta, y, x, 0, &lat, &lon);
         sprintf(&buf[strlen(buf)], "Lat: %.4f, Lon: %.4f (deg)\n", lat, lon);
     }
