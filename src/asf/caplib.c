@@ -490,4 +490,36 @@ char *STRDUP (const char *s)
   return result;
 }
 
+// Some systems don't seem to have "strdup" ... here we define
+// one for ourselves -- also, it goes through our checked-malloc,
+// MALLOC, so now all memory is really checked, plus if we ever
+// add mem-leak detection in MALLOC we can trace strdup's usage
+// as well.
+//
+// STRDUP_PLUS is the same as STRDUP except it allows you to
+// create a dup'd string with additional space, e.g. for adding
+// an extension.
+//
+char *STRDUP_PLUS (const char *s, int addl_chars)
+{
+  char *result;
+
+  if (s != NULL) {
+    result = MALLOC (sizeof (char) * (strlen (s) + addl_chars + 1));
+
+    int idx = 0;
+    while ( s[idx] != '\0') {
+      result[idx] = s[idx];
+      idx++;
+    }
+
+    result[idx] = '\0';
+  }
+  else {
+    result = NULL;
+  }
+
+  return result;
+}
+
 

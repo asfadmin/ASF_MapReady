@@ -31,6 +31,7 @@ long long FTELL64(FILE *stream);
 int FCLOSE(FILE *stream);
 int FFLUSH(FILE *stream);
 char *STRDUP(const char *string);
+char *STRDUP_PLUS(const char *string, int addl_chars);
 
 void programmer_error(char *mess);
 

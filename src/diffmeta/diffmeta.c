@@ -184,10 +184,14 @@ int main(int argc, char **argv)
     asfPrintStatus("\nInput files are the same - PASS.\n\n");
     exit(0);
   }
-  metafile1 = STRDUP(inFile1);
-  metafile2 = STRDUP(inFile2);
-  append_ext_if_needed(metafile1, ".meta", ".meta");
-  append_ext_if_needed(metafile2, ".meta", ".meta");
+//  metafile1 = (char*)MALLOC(sizeof(char)*(strlen(inFile1) + 4));
+//  metafile2 = (char*)MALLOC(sizeof(char)*(strlen(inFile2) + 4));
+//  strcpy(metafile1, inFile1);
+//  strcpy(metafile2, inFile2);
+  metafile1 = STRDUP_PLUS(inFile1, 4);
+  metafile2 = STRDUP_PLUS(inFile2, 4);
+  appendExt(metafile1, ".meta");
+  appendExt(metafile2, ".meta");
   if (strcmp(metafile1, metafile2) == 0) {
     if (outputFile) FREE(outputFile);
     FREE(outputFile);
@@ -208,7 +212,6 @@ int main(int argc, char **argv)
   diff_check_metadata(outputFile, metafile1, metafile2);
 
   // Cleanup
-  FCLOSE(outFP);
   if (outputFile) FREE (outputFile);
   if (metafile1) FREE (metafile1);
   if (metafile2) FREE (metafile2);
