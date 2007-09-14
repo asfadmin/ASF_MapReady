@@ -123,6 +123,7 @@ void fill_small_have_data(ThumbnailData *thumbnail_data);
 char * escapify(const char * s);
 void fill_meta_info(void);
 void open_mdv(void);
+char *br(const char *s);
 
 /* stats.c */
 unsigned char *generate_thumbnail_data(int tsx, int tsy);

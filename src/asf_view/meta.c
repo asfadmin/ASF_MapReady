@@ -1,6 +1,45 @@
 #include "asf_view.h"
 #include "asf_geocode.h"
 
+// returns a pointer to static memory -- don't free or keep
+// pointers to!
+char *br(const char *s)
+{
+    static char out[512];
+
+    const int MAX = 28;
+    if (strlen(s) < MAX) {
+        // no line breaking necessary
+        strcpy(out, s);
+    } else {
+        char *str = STRDUP(s); // because we will need to modify
+        char *curr = str;
+        char *prev = curr;
+        char *next = curr;
+        strcpy(out, "");
+        while (1) {
+            next = strchr(prev, ',');
+            if (!next) {
+                // reached end of string -- put what we have in output
+                strcat(out, ",\n   ");
+                strcat(out, curr);
+                break;
+            }
+            else if (next-curr > MAX) {
+                // too many characters -- copy what we have
+                if (strlen(out) > 0)
+                    strcat(out, ",\n   ");
+                *next = '\0';
+                strcat(out, curr);
+                curr = next+1;
+            }
+            prev = next+1;
+        }
+        free(str);
+    }
+    return out;
+}
+
 void fill_meta_info()
 {
     char s[1024];
@@ -27,7 +66,7 @@ void fill_meta_info()
             "Direction: %s\n"
             "Bands: %s\n\n",
                 meta->general->orbit_direction == 'A' ? "Ascending" : "Descending",
-                strlen(meta->general->bands) > 0 ? meta->general->bands : "-");
+                strlen(meta->general->bands) > 0 ? br(meta->general->bands) : "-");
       }
       if (meta->sar) {
         // don't show the polarization for ALOS data, it is usually wrong...

@@ -44,7 +44,7 @@ static void multi_band(const char *str)
     show_widget("hbox_multi", TRUE);
 
     char tmp[128];
-    snprintf(tmp, 128, "Bands: %s", str);
+    snprintf(tmp, 128, "Bands: %s", br(str));
     put_string_to_label("multi_band_label", tmp);
 
     is_multiband = TRUE;
