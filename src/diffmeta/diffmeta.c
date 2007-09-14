@@ -729,7 +729,6 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   meta_projection *mp1, *mp2;
   meta_transform *mtrans1, *mtrans2;
   meta_stats *mstats1, *mstats2;
-  meta_band_stats *mbstats1, *mbstats2;
   meta_state_vectors *mstatev1, *mstatev2;
   meta_location *mloc1, *mloc2;
 
@@ -759,8 +758,6 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   mtrans2 = meta2->transform;
   mstats1 = meta1->stats;
   mstats2 = meta2->stats;
-  mbstats1 = meta1->band;
-  mbstats2 = meta2->band;
   mstatev1 = meta1->state_vectors;    // Can be NULL
   mstatev2 = meta2->state_vectors;
   mloc1 = meta1->location;
@@ -1688,32 +1685,32 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   ////////////////////////////////////////////////////////////
   // Check Stats Block(s)
   //
-  if (mstats2) {
-    failed = 0;
-    strcpy(precheck_err_msgs, "");
+//  if (mstats2) {
+//    failed = 0;
+//    strcpy(precheck_err_msgs, "");
 
-    validate_double(precheck_err_msgs, mstats2->min,
-                    "Stats", "min", &failed);
+//    validate_double(precheck_err_msgs, mstats2->min,
+//                    "Stats", "min", &failed);
 
-    validate_double(precheck_err_msgs, mstats2->max,
-                    "Stats", "max", &failed);
+//    validate_double(precheck_err_msgs, mstats2->max,
+//                    "Stats", "max", &failed);
 
-    validate_double(precheck_err_msgs, mstats2->mean,
-                    "Stats", "mean", &failed);
+//    validate_double(precheck_err_msgs, mstats2->mean,
+//                    "Stats", "mean", &failed);
 
     // rmse ignored
 
-    validate_double(precheck_err_msgs, mstats2->std_deviation,
-                    "Stats", "std_deviation", &failed);
+//    validate_double(precheck_err_msgs, mstats2->std_deviation,
+//                    "Stats", "std_deviation", &failed);
 
     // mask ignored
     // STATS BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
-    if (failed) {
-      report_validation_errors(outputFile, metafile2,
-                               precheck_err_msgs, "STATS");
-    }
-  }
+//    if (failed) {
+//      report_validation_errors(outputFile, metafile2,
+//                               precheck_err_msgs, "STATS");
+//    }
+//  }
   //
   // End of Stats Block Validity Check
   ////////////////////////////////////////////////////////////
@@ -2368,29 +2365,29 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   // Compare Stats Blocks
   failed = 0;
   strcpy(compare_err_msgs, "");
-  if (mstats1 && mstats2) {
-    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "min",
-                                       mstats1->min, mstats2->min,
-                                       DM_STATS_MIN_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "max",
-                                       mstats1->max, mstats2->max,
-                                       DM_STATS_MAX_TOL, &failed);
-    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "mean",
-                                       mstats1->mean, mstats2->mean,
-                                       DM_STATS_MEAN_TOL, &failed);
+//  if (mstats1 && mstats2) {
+//    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "min",
+//                                       mstats1->min, mstats2->min,
+//                                       DM_STATS_MIN_TOL, &failed);
+//    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "max",
+//                                       mstats1->max, mstats2->max,
+//                                       DM_STATS_MAX_TOL, &failed);
+//    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "mean",
+//                                       mstats1->mean, mstats2->mean,
+//                                       DM_STATS_MEAN_TOL, &failed);
     // rmse is ignored
-    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "std_deviation",
-                                       mstats1->std_deviation, mstats2->std_deviation,
-                                       DM_STATS_STD_DEVIATION_TOL, &failed);
+//    compare_meta_double_with_tolerance(compare_err_msgs, "Stats", "std_deviation",
+//                                       mstats1->std_deviation, mstats2->std_deviation,
+//                                       DM_STATS_STD_DEVIATION_TOL, &failed);
     // mask is ignored
-  }
+//  }
   ////////////////////////////////////////////////////////////
   // Stats Block Reporting
-  if (failed) {
-    report_difference_errors(outputFile,
-                             metafile1, metafile2,
-                             compare_err_msgs, "STATS");
-  }
+//  if (failed) {
+//    report_difference_errors(outputFile,
+//                             metafile1, metafile2,
+//                             compare_err_msgs, "STATS");
+//  }
   // End Compare Stats Blocks
   ////////////////////////////////////////////////////////////
 
