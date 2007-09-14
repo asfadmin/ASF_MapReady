@@ -1937,7 +1937,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   strcpy(compare_err_msgs, "");
 
   if (msar1 && msar2) {
-    compare_meta_int(compare_err_msgs, "SAR", "image_type",
+    compare_meta_char(compare_err_msgs, "SAR", "image_type",
                     msar1->image_type, msar2->image_type, &failed);
     compare_meta_char(compare_err_msgs, "SAR", "look_direction",
                     msar1->look_direction, msar2->look_direction, &failed);
