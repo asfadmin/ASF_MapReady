@@ -64,7 +64,7 @@ char *trim_spaces(const char *s)
 {
   char *p1, *p2;
 
-  p1 = (char *) MALLOC(sizeof(char)*strlen(s));
+  p1 = (char *) MALLOC(sizeof(char)*(1+strlen(s)));
   strcpy(p1, s);
   strtok(p1, " ");
   p2 = strchr(p1, ' ');
