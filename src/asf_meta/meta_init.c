@@ -160,6 +160,19 @@ meta_transform *meta_transform_init(void)
   return map;
 }
 
+meta_airsar *meta_airsar_init(void)
+{
+  meta_airsar *airsar = (meta_airsar *) MALLOC(sizeof(meta_airsar));
+  airsar->scale_factor = MAGIC_UNSET_DOUBLE;
+  airsar->gps_altitude = MAGIC_UNSET_DOUBLE;
+  airsar->lat_peg_point = MAGIC_UNSET_DOUBLE;
+  airsar->lon_peg_point = MAGIC_UNSET_DOUBLE;
+  airsar->head_peg_point = MAGIC_UNSET_DOUBLE;
+  airsar->along_track_offset = MAGIC_UNSET_DOUBLE;
+  airsar->cross_track_offset = MAGIC_UNSET_DOUBLE;
+  return airsar;
+}
+
 /*******************************************************************************
  * meta_state_vectors_init():
  * Allocate memory for and initialize elements of a meta_state_vectors structure.
@@ -252,6 +265,7 @@ meta_parameters *raw_init(void)
   meta->thermal         = NULL;  /* Not yet in use */
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->transform       = NULL;
+  meta->airsar          = NULL;
   meta->stats           = NULL;
   meta->band            = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
@@ -398,6 +412,8 @@ void meta_free(meta_parameters *meta)
     meta->location = NULL;
     FREE(meta->transform);
     meta->transform = NULL;
+    FREE(meta->airsar);
+    meta->airsar = NULL;
 
     /*
     FREE(meta->geo);

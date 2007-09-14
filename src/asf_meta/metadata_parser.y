@@ -126,6 +126,7 @@ void error_message(const char *err_mes, ...)
 #define MSTATS ( (meta_stats *) current_block)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
+#define MAIRSAR ( (meta_airsar *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -189,6 +190,13 @@ void select_current_block(char *block_name)
     if (MTL->transform == NULL)
        { MTL->transform = meta_transform_init();}
     current_block = MTL->transform;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "airsar") ) {
+    if (MTL->airsar == NULL)
+       { MTL->airsar = meta_airsar_init();}
+    current_block = MTL->airsar;
     goto MATCHED;
   }
 
@@ -840,6 +848,24 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(field_name, coeff) )
   { MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
     }
+  }
+
+  // Fields which normally go in the airsar block of the metadata file
+  if ( !strcmp(stack_top->block_name, "airsar") ) {
+    if ( !strcmp(field_name, "scale_factor") )
+      { MAIRSAR->scale_factor = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "gps_altitude") )
+      { MAIRSAR->gps_altitude = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lat_peg_point") )
+      { MAIRSAR->lat_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "lon_peg_point") )
+      { MAIRSAR->lon_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "head_peg_point") )
+      { MAIRSAR->head_peg_point = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "along_track_offset") )
+      { MAIRSAR->along_track_offset = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "cross_track_offset") )
+      { MAIRSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */

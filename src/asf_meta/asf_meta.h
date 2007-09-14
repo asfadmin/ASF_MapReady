@@ -34,7 +34,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.2
+#define META_VERSION 2.3
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -81,6 +81,7 @@ typedef enum {
   COHERENCE_IMAGE,
   GEOREFERENCED_IMAGE,
   GEOCODED_IMAGE,
+  POLARIMETRIC_IMAGE,
   LUT_IMAGE,
   ELEVATION,
   DEM,
@@ -230,6 +231,17 @@ typedef struct {
   double s[10];            // Transformation coefficients for samples
 } meta_transform;
 
+// meta_airsar: parameters for AirSAR geocoding
+typedef struct {
+  double scale_factor;        // General scale factor
+  double gps_altitude;        // GPS altitude [m]
+  double lat_peg_point;       // Latitude of peg point [degrees]
+  double lon_peg_point;       // Longitude of peg point [degrees]
+  double head_peg_point;      // Heading at peg point [degrees]
+  double along_track_offset;  // Along-track offset S0 [m]
+  double cross_track_offset;  // Cross-track offset C0 [m]
+} meta_airsar;
+
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
@@ -362,6 +374,7 @@ typedef struct {
   meta_thermal       *thermal;         /* Can be NULL (check!).  */
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
+  meta_airsar        *airsar;          // Can be NULL (check!)
   meta_stats         *stats;
   meta_band_stats    *band;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
@@ -414,6 +427,7 @@ meta_sar *meta_sar_init(void);
 meta_optical *meta_optical_init(void);
 meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
+meta_airsar *meta_airsar_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_stats *meta_stats_init(void);
 meta_band_stats *meta_band_stats_init(int band_count);

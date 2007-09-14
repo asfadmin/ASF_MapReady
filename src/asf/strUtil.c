@@ -14,6 +14,18 @@ char *uc (const char *string)
   return out;
 }
 
+char *lc (const char *string)
+{
+  static char out[1024];
+  int ii;
+
+  for (ii=0; ii<strlen(string); ii++)
+    out[ii]=tolower(string[ii]);
+  out[ii]='\0';
+
+  return out;
+}
+
 int strcmp_case(const char *s1, const char *s2)
 {
     const char *p1 = s1;

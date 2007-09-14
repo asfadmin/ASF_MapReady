@@ -128,6 +128,7 @@ int check_status(char *status);
    Do not allocate or free memory for this string, only point at it.
    This function is case insensitive. */
 char *uc (const char *string);
+char *lc (const char *string);
 
 /* Case-insensitive string comparison */
 int strcmp_case(const char *s1, const char *s2);
