@@ -22,7 +22,14 @@
 "     the DEM, need to be in the ASF internal format, and you should just\n"\
 "     specify the basename (i.e., do not give the file's extension) of each.\n"\
 "     The input SAR image can be in either slant range or ground range.  If\n"\
-"     it is in ground range, it will be converted to slant range.\n"
+"     it is in ground range, it will be converted to slant range.\n\n"\
+"     Alternatively, instead of a DEM you may provide a directory containing\n"\
+"     DEMs (in ASF Internal Format, with both .img and .meta files).\n"\
+"     In this case, a suitable DEM will be selected from the DEMs in the\n"\
+"     directory (including all subdirectories, recursively searched), or\n"\
+"     one will be composed (i.e., mosaicked) from the DEMs in the given\n"\
+"     directory.  All DEMs covering the given SAR scene are included in\n"\
+"     the mosaic.\n"
 
 #define ASF_OUTPUT_STRING \
 "     The base name of the terrain corrected image to produce.  The output\n"\
