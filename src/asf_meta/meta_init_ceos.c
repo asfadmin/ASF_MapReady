@@ -159,7 +159,7 @@ void ceos_init_sar(ceos_description *ceos, const char *in_fName,
     asfPrintError("Unknown CEOS facility! Data cannot be imported "
       "at this time.\n");
   else
-    asfPrintError("Should never got here!\n");
+    asfPrintError("Should never get here!\n");
 }
 
 void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
@@ -758,7 +758,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
-
   strcpy(meta->general->sensor,"ALOS");
   strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
   strncpy(buf, &dssr->product_id[11], 4);
@@ -862,11 +861,21 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
             speedOfLight * meta->sar->range_time_per_pixel / 2.;
         printf("Calculated x pixel size: %f\n", meta->general->x_pixel_size);
     }
+
     if (meta->general->y_pixel_size == 0) {
-        double swath_val = calc_swath_velocity(dssr,dataName[0],meta);
-        meta->general->y_pixel_size =
-            meta->sar->azimuth_time_per_pixel * swath_val;
+        double lat, lon, x1, y1, x2, y2;
+        meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+        latLon2UTM(lat, lon, 0, &x1, &y1);
+
+        int nl = meta->general->line_count;
+        meta_get_latLon(meta, nl-1, 0, 0, &lat, &lon);
+        latLon2UTM(lat, lon, 0, &x2, &y2);
+
+        meta->general->y_pixel_size = hypot(x1-x2, y1-y2)/(double)nl;
         printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
+
+        double swath_val = calc_swath_velocity(dssr,dataName[0],meta);
+        printf("     Other method gives: %f\n", meta->sar->azimuth_time_per_pixel * swath_val);
     }
   }
 
