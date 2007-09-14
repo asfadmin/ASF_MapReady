@@ -155,7 +155,7 @@ initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
   if ( largest_dimension * largest_dimension * sizeof (uint8_t)
        <= default_cache_size ) {
     self->cache_space = (largest_dimension * largest_dimension
-			 * sizeof (uint8_t));
+       * sizeof (uint8_t));
     self->cache_area = self->cache_space / sizeof (uint8_t);
     self->tile_size = largest_dimension;
     self->cache_size_in_tiles = 1;
@@ -257,7 +257,7 @@ initialize_uint8_image_structure (ssize_t size_x, ssize_t size_y)
 UInt8Image *
 uint8_image_thaw (FILE *file_pointer)
 {
-  FILE *fp = file_pointer;	// Convenience alias.
+  FILE *fp = file_pointer;  // Convenience alias.
 
   g_assert (file_pointer != NULL);
 
@@ -314,7 +314,7 @@ uint8_image_thaw (FILE *file_pointer)
     // the end of the uint8_image_new method).
     self->tile_addresses[0] = self->cache;
     read_count = fread (self->tile_addresses[0], sizeof (uint8_t),
-			self->tile_area, fp);
+      self->tile_area, fp);
     g_assert (read_count == self->tile_area);
   }
   // otherwise, an empty tile queue needs to be initialized, and the
@@ -328,20 +328,20 @@ uint8_image_thaw (FILE *file_pointer)
       read_count = fread (buffer, sizeof (uint8_t), self->tile_area, fp);
       g_assert (read_count == self->tile_area);
       size_t write_count = fwrite (buffer, sizeof (uint8_t), self->tile_area,
-				   self->tile_file);
+           self->tile_file);
       if ( write_count < self->tile_area ) {
-	if ( feof (self->tile_file) ) {
-	  fprintf (stderr,
-		   "Premature end of file while trying to thaw UInt8Image "
-		   "instance\n");
-	}
-	else {
-	  g_assert (ferror (self->tile_file));
-	  fprintf (stderr,
-		   "Error writing tile cache file for UInt8Image instance "
-		   "during thaw: %s\n", strerror (errno));
-	}
-	exit (EXIT_FAILURE);
+  if ( feof (self->tile_file) ) {
+    fprintf (stderr,
+       "Premature end of file while trying to thaw UInt8Image "
+       "instance\n");
+  }
+  else {
+    g_assert (ferror (self->tile_file));
+    fprintf (stderr,
+       "Error writing tile cache file for UInt8Image instance "
+       "during thaw: %s\n", strerror (errno));
+  }
+  exit (EXIT_FAILURE);
       }
       g_assert (write_count == self->tile_area);
     }
@@ -516,7 +516,7 @@ uint8_image_copy (UInt8Image *model)
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       uint8_image_set_pixel (self, jj, ii,
-			     uint8_image_get_pixel (model, jj, ii));
+           uint8_image_get_pixel (model, jj, ii));
     }
   }
 
@@ -533,7 +533,7 @@ uint8_image_new_from_model_scaled (UInt8Image *model, ssize_t scale_factor)
 
   UInt8Image *self
     = uint8_image_new (round ((double) model->size_x / scale_factor),
-		       round ((double) model->size_y / scale_factor));
+           round ((double) model->size_y / scale_factor));
 
   // This method hasn't yet made the jump from FloatImage to here.
   // The implementation should ultimately follow the one in FloatImage
@@ -545,7 +545,7 @@ uint8_image_new_from_model_scaled (UInt8Image *model, ssize_t scale_factor)
 
 UInt8Image *
 uint8_image_new_subimage (UInt8Image *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y)
+        ssize_t size_x, ssize_t size_y)
 {
   // Upper left corner must be in model.
   g_assert (x >= 0 && y >= 0);
@@ -606,7 +606,7 @@ uint8_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
-					     * sizeof (uint8_t))));
+               * sizeof (uint8_t))));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -647,8 +647,8 @@ uint8_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (file_pointed_to_larger_than (file_pointer,
-					 offset + ((off_t) size_x * size_y
-						   * sizeof (uint8_t))));
+           offset + ((off_t) size_x * size_y
+               * sizeof (uint8_t))));
 
   UInt8Image *self = initialize_uint8_image_structure (size_x, size_y);
 
@@ -674,7 +674,7 @@ uint8_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
     // size of the tile instead of the size of the file.
     g_assert (self->tile_size <= SSIZE_MAX);
     uint8_t *zero_line = g_new0 (uint8_t, (size_x > (ssize_t) self->tile_size ?
-					   (size_t) size_x : self->tile_size));
+             (size_t) size_x : self->tile_size));
     g_assert (0 == 0x0);
 
     // Buffer capable of holding a full strip.
@@ -774,8 +774,8 @@ uint8_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
     // Did we write the correct total amount of data?
     g_assert (ftello (self->tile_file)
-	      == ((off_t) self->tile_area * self->tile_count
-		  * sizeof (uint8_t)));
+        == ((off_t) self->tile_area * self->tile_count
+      * sizeof (uint8_t)));
 
     // Free temporary buffers.
     g_free (buffer);
@@ -795,7 +795,7 @@ uint8_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
       // Read the data.
       size_t read_count = fread (row_address, sizeof (uint8_t), self->size_x,
-				 fp);
+         fp);
       g_assert (read_count == self->size_x);
     }
   }
@@ -807,7 +807,7 @@ UInt8Image *
 uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
                                   ssize_t original_size_x,
                                   ssize_t original_size_y,
-				  const char *file, off_t offset)
+          const char *file, off_t offset)
 {
   // This method has been carefully translated from the corresponding
   // method in float_image.c, but it hasn't been tested yet.
@@ -823,16 +823,16 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (is_large_enough (file,
-			     offset + ((off_t) original_size_x
-				       * original_size_y
-				       * sizeof (uint8_t))));
+           offset + ((off_t) original_size_x
+               * original_size_y
+               * sizeof (uint8_t))));
 
   // Find the stride that we need to use in each dimension to evenly
   // cover the original image space.
   double stride_x = (size_x == 1 ? 0.0
-		     : (double) (original_size_x - 1) / (size_x - 1));
+         : (double) (original_size_x - 1) / (size_x - 1));
   double stride_y = (size_y == 1 ? 0.0
-		     : (double) (original_size_y - 1) / (size_y - 1));
+         : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -895,8 +895,8 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ul_x < original_size_x);
       size_t in_ul_y = in_ray;
       off_t sample_offset
-	= offset + sizeof (uint8_t) * ((off_t) in_ul_y * original_size_x
-				       + in_ul_x);
+  = offset + sizeof (uint8_t) * ((off_t) in_ul_y * original_size_x
+               + in_ul_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(uls[jj]), sizeof (uint8_t), 1, fp);
@@ -925,8 +925,8 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ll_x < original_size_x);
       size_t in_ll_y = in_rby;
       off_t sample_offset
-	= offset + sizeof (uint8_t) * ((off_t) in_ll_y * original_size_x
-				       + in_ll_x);
+  = offset + sizeof (uint8_t) * ((off_t) in_ll_y * original_size_x
+               + in_ll_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(lls[jj]), sizeof (uint8_t), 1, fp);
@@ -948,8 +948,8 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       double delta_x = stride_x * jj - floor (stride_x * jj);
       double delta_y = -(stride_y * ii - floor (stride_y * ii));
       float interpolated_value = bilinear_interpolate (delta_x, delta_y,
-						       uls[jj], urs[jj],
-						       lls[jj], lrs[jj]);
+                   uls[jj], urs[jj],
+                   lls[jj], lrs[jj]);
       g_assert (interpolated_value >= 0);
       g_assert (interpolated_value <= UINT8_MAX);
       interpolated_values[jj] = round (interpolated_value);
@@ -974,7 +974,7 @@ uint8_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Slurp the scaled file back in as an instance.
   UInt8Image *self
     = uint8_image_new_from_file_pointer (size_x, size_y, reduced_image,
-					 (off_t) 0);
+           (off_t) 0);
 
   // Now that we have an instantiated version of the image we are done
   // with this temporary file.
@@ -994,7 +994,7 @@ uint8_image_new_from_metadata(meta_parameters *meta, const char *file)
 // given metadata.
 UInt8Image *
 uint8_image_band_new_from_metadata(meta_parameters *meta,
-				   int band, const char *file)
+           int band, const char *file)
 {
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
@@ -1035,12 +1035,12 @@ cached_tile_to_disk (UInt8Image *self, size_t tile_offset)
 
   int return_code
     = fseeko (self->tile_file,
-	      (off_t) tile_offset * self->tile_area * sizeof (uint8_t),
-	      SEEK_SET);
+        (off_t) tile_offset * self->tile_area * sizeof (uint8_t),
+        SEEK_SET);
   g_assert (return_code == 0);
   size_t write_count = fwrite (self->tile_addresses[tile_offset],
-			       sizeof (uint8_t), self->tile_area,
-			       self->tile_file);
+             sizeof (uint8_t), self->tile_area,
+             self->tile_file);
   g_assert (write_count == self->tile_area);
 }
 
@@ -1242,7 +1242,7 @@ uint8_image_get_pixel_with_reflection (UInt8Image *self, ssize_t x, ssize_t y)
 void
 uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
                         double *mean, double *standard_deviation,
-			gboolean use_mask_value, uint8_t mask_value)
+      gboolean use_mask_value, uint8_t mask_value)
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
@@ -1266,16 +1266,16 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
       asfPercentMeter((double)ii/(double)(self->size_y));
       uint8_image_get_row (self, ii, row_buffer);
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-      	uint8_t cs = row_buffer[jj];   // Current sample.
-      	if ( cs == mask_value ) {
-      	  continue;
-      	}
-      	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
-      	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-      	double old_mean = *mean;
-      	*mean += (cs - *mean) / (sample_count + 1);
-      	s += (cs - old_mean) * (cs - *mean);
-      	sample_count++;
+        uint8_t cs = row_buffer[jj];   // Current sample.
+        if ( cs == mask_value ) {
+          continue;
+        }
+        if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+        if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+        double old_mean = *mean;
+        *mean += (cs - *mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - *mean);
+        sample_count++;
       }
     }
     asfPercentMeter(1.0);
@@ -1287,13 +1287,13 @@ uint8_image_statistics (UInt8Image *self, uint8_t *min, uint8_t *max,
       asfPercentMeter((double)ii/(double)(self->size_y));
       uint8_image_get_row (self, ii, row_buffer);
       for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-      	uint8_t cs = row_buffer[jj];   // Current sample.
-      	if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
-      	if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-      	double old_mean = *mean;
-      	*mean += (cs - *mean) / (sample_count + 1);
-      	s += (cs - old_mean) * (cs - *mean);
-      	sample_count++;
+        uint8_t cs = row_buffer[jj];   // Current sample.
+        if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
+        if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
+        double old_mean = *mean;
+        *mean += (cs - *mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - *mean);
+        sample_count++;
       }
     }
     asfPercentMeter(1.0);
@@ -1319,7 +1319,7 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
                              int line_count, int band_no,
                              gboolean use_mask_value, uint8_t mask_value)
 {
-  // Carefully clone-and-modified over from float_image.c, but not
+  // Carefully cloned-and-modified over from float_image.c, but not
   // tested yet.
   //g_assert_not_reached ();
 
@@ -1329,7 +1329,7 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
   // Buffer for one row of samples.
   uint8_t *row_buffer = g_new (uint8_t, self->size_x);
 
-  stats->mean = 0.0;
+  stats->band_stats[band_no].mean = 0.0;
   double s = 0.0;
 
   size_t sample_count = 0;      // Samples considered so far.
@@ -1350,9 +1350,9 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
         }
         if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
         if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-        double old_mean = stats->mean;
-        stats->mean += (cs - stats->mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->mean);
+        double old_mean = stats->band_stats[band_no].mean;
+        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
         sample_count++;
       }
     }
@@ -1371,9 +1371,9 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
         uint8_t cs = row_buffer[jj];   // Current sample.
         if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
         if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-        double old_mean = stats->mean;
-        stats->mean += (cs - stats->mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->mean);
+        double old_mean = stats->band_stats[band_no].mean;
+        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
         sample_count++;
       }
     }
@@ -1390,19 +1390,19 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
   if (imin < 0 || imax > UINT8_MAX)
     return 1;
 
-  stats->min = imin;
-  stats->max = imax;
-  stats->std_deviation = sqrt (s / (sample_count - 1));
+  stats->band_stats[band_no].min = imin;
+  stats->band_stats[band_no].max = imax;
+  stats->band_stats[band_no].std_deviation = sqrt (s / (sample_count - 1));
 
   return 0;
 }
 
 void
 uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min,
-					   uint8_t *max, double *mean,
-					   double *standard_deviation,
-					   uint8_t interval_start,
-					   uint8_t interval_end)
+             uint8_t *max, double *mean,
+             double *standard_deviation,
+             uint8_t interval_start,
+             uint8_t interval_end)
 {
   // This method is a trivial clone-and-modify of
   // float_image_statistics, but it is totally untested at the moment.
@@ -1426,7 +1426,7 @@ uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min,
       // If in the mask interval, do not consider this pixel any
       // further.
       if ( cs >= interval_start && cs <= interval_end ) {
-	continue;
+  continue;
       }
       if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
       if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
@@ -1455,8 +1455,8 @@ uint8_image_statistics_with_mask_interval (UInt8Image *self, uint8_t *min,
 void
 uint8_image_approximate_statistics (UInt8Image *self, size_t stride,
                                     double *mean, double *standard_deviation,
-				    gboolean use_mask_value,
-				    uint8_t mask_value)
+            gboolean use_mask_value,
+            uint8_t mask_value)
 {
   // Rows and columns of samples that fit in image given stride
   // stride.
@@ -1535,8 +1535,8 @@ uint8_image_approximate_statistics_with_mask_interval
   // inaccurate).
   uint8_t min, max;
   uint8_image_statistics_with_mask_interval (sample_image, &min, &max,
-					     mean, standard_deviation,
-					     interval_start, interval_end);
+               mean, standard_deviation,
+               interval_start, interval_end);
 
   uint8_image_free (sample_image);
 }
@@ -1573,7 +1573,7 @@ uint8_image_gsl_histogram (UInt8Image *self, double min, double max,
 
 double
 uint8_image_apply_kernel (UInt8Image *self, ssize_t x, ssize_t y,
-			  gsl_matrix *kern)
+        gsl_matrix *kern)
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
@@ -1764,15 +1764,15 @@ uint8_image_equals (UInt8Image *self, UInt8Image *other)
     return FALSE;
   }
 
-  size_t sz = self->size_x;	// Convenience alias.
+  size_t sz = self->size_x; // Convenience alias.
 
   // Compare image pixels.
   size_t ii, jj;
   for ( ii = 0 ; ii < sz ; ii++ ) {
     for ( jj = 0 ; jj < sz ; jj++ ) {
       if ( G_UNLIKELY (uint8_image_get_pixel (self, jj, ii)
-		       != uint8_image_get_pixel (other, jj, ii)) ) {
-	return FALSE;
+           != uint8_image_get_pixel (other, jj, ii)) ) {
+  return FALSE;
       }
     }
   }
@@ -1792,7 +1792,7 @@ synchronize_tile_file_with_memory_cache (UInt8Image *self)
   guint ii;
   for ( ii = 0 ; ii < self->tile_queue->length ; ii++ ) {
     size_t tile_offset = GPOINTER_TO_INT (g_queue_peek_nth (self->tile_queue,
-							    ii));
+                  ii));
     cached_tile_to_disk (self, tile_offset);
   }
 }
@@ -1800,7 +1800,7 @@ synchronize_tile_file_with_memory_cache (UInt8Image *self)
 void
 uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
 {
-  FILE *fp = file_pointer;	// Convenience alias.
+  FILE *fp = file_pointer;  // Convenience alias.
 
   g_assert (file_pointer != NULL);
 
@@ -1847,12 +1847,12 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
   if ( self->tile_queue == NULL ) {
     // We store the contents of the first tile and are done.
     write_count = fwrite (self->tile_addresses[0], sizeof (uint8_t),
-			  self->tile_area, fp);
+        self->tile_area, fp);
     if ( write_count < self->tile_area ) {
       if ( ferror (fp) ) {
-	fprintf (stderr, "Error writing serialized UInt8Image instance during "
-		 "freeze: %s\n", strerror (errno));
-	exit (EXIT_FAILURE);
+  fprintf (stderr, "Error writing serialized UInt8Image instance during "
+     "freeze: %s\n", strerror (errno));
+  exit (EXIT_FAILURE);
       }
     }
     g_assert (write_count == self->tile_area);
@@ -1868,7 +1868,7 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
     g_assert (return_code == 0);
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
       size_t read_count = fread (buffer, sizeof (uint8_t), self->tile_area,
-				 self->tile_file);
+         self->tile_file);
       g_assert (read_count == self->tile_area);
       write_count = fwrite (buffer, sizeof (uint8_t), self->tile_area, fp);
       g_assert (write_count == self->tile_area);
@@ -1881,7 +1881,7 @@ uint8_image_freeze (UInt8Image *self, FILE *file_pointer)
 
 int
 uint8_image_band_store(UInt8Image *self, const char *file,
-		       meta_parameters *meta, int append_flag)
+           meta_parameters *meta, int append_flag)
 {
   // Give status
   if (meta->general->band_count == 1)
@@ -1954,7 +1954,7 @@ uint8_image_store (UInt8Image *self, const char *file)
 int
 uint8_image_export_as_jpeg (UInt8Image *self, const char *file,
                             size_t max_dimension, gboolean use_mask_value,
-			    uint8_t mask_value)
+          uint8_t mask_value)
 {
   // Carefully clone-and-modified over from float_image.c, but not
   // tested yet.
@@ -2036,17 +2036,17 @@ uint8_image_export_as_jpeg (UInt8Image *self, const char *file,
     for ( jj = 0 ; jj < osx ; jj++ ) {
       // Input image average pixel value.
       double ival = uint8_image_apply_kernel (self, jj * sample_stride,
-					      ii * sample_stride,
-					      averaging_kernel);
+                ii * sample_stride,
+                averaging_kernel);
       // Set output value.
       int32_t oval = round (ival);
       // In case floating point arithmetic wierdness gets us in
       // trouble, we correct.
       if ( oval < 0 ) {
-	oval = 0;
+  oval = 0;
       }
       else if ( oval > UINT8_MAX ) {
-	oval = UINT8_MAX;
+  oval = UINT8_MAX;
       }
       pixels[ii * osx + jj] = oval;
     }

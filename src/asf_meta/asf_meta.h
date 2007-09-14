@@ -24,7 +24,7 @@
 #define __ASF_META_H__
 
 #include "ddr.h"
-#include "geolocate.h"		/* For stateVector.  */
+#include "geolocate.h"    /* For stateVector.  */
 #include "ceos.h"
 #include "get_ceos_names.h"
 #include "asf_complex.h"
@@ -137,7 +137,7 @@ typedef struct {
  *      ???           other-msc      Misc. Other systems not covered       */
   char acquisition_date[FIELD_STRING_MAX]; // Data acquisition date
   int orbit;                 /* Orbit number of satellite.                 */
-  char orbit_direction;	     /* Ascending 'A', or descending 'D'.          */
+  char orbit_direction;      /* Ascending 'A', or descending 'D'.          */
   int frame;                 /* Frame for this image or -1 if inapplicable.*/
   int band_count;            /* Number of bands in image                   */
   char bands[100];            // Band combination
@@ -161,7 +161,7 @@ typedef struct {
  * meta_sar: SAR specific parameters
  */
 typedef struct {
-  /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected; 
+  /* 'S'-> Slant Range; 'G'-> Ground Range; 'P'-> Map Projected;
      'R'-> Georeferenced */
   char image_type;
   char look_direction;            /* 'L'-> Left Looking; 'R'-> Right Looking*/
@@ -272,17 +272,18 @@ typedef meta_projection proj_parameters;
  * meta_stats: statistical info about the image
  */
 typedef struct {
-  char band_id[10];          // band name - version 2.1
+  char   band_id[64];        // band name
   double min, max;           /* Minimum and maximum image values      */
   double mean;               /* Mean average of image values          */
   double rmse;               /* Root mean squared error               */
   double std_deviation;      /* Standard deviation                    */
   double mask;               /* Value ignored while taking statistics */
+} stats_block;
+typedef struct {
+  int band_count;            // Number of statistics blocks
+  stats_block band_stats[1]; // Array sized at run time
 } meta_stats;
 
-typedef struct {
-  meta_stats stats[1];
-} meta_band_stats;
 
 /********************************************************************
  * State_vectors: Some collection of fixed-earth state vectors around
@@ -376,11 +377,10 @@ typedef struct {
   meta_transform     *transform;       // Can be NULL (check!)
   meta_airsar        *airsar;          // Can be NULL (check!)
   meta_stats         *stats;
-  meta_band_stats    *band;
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;
     /* Deprecated elements from old metadata format.  */
-  meta_state_vectors *stVec;	       /* Can be NULL (check!).  */
+  meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
   ifm_parameters  *ifm;
   extra_info      *info;               /* Can be NULL (check!).  */
@@ -389,7 +389,7 @@ typedef struct {
 
 /****************** Creation/IO *********************
  * meta_init: in meta_init.c
- *	Extracts and returns SAR parameters from CEOS metadata.
+ *  Extracts and returns SAR parameters from CEOS metadata.
 */
 /*In meta_init.c.
  * These are the routines to use, generally.*/
@@ -429,8 +429,7 @@ meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
-meta_stats *meta_stats_init(void);
-meta_band_stats *meta_band_stats_init(int band_count);
+meta_stats *meta_stats_init(int band_count);
 meta_location *meta_location_init(void);
 meta_parameters *raw_init(void);
 
@@ -470,13 +469,13 @@ double meta_get_dop(meta_parameters *sar,double yLine, double xSample);
 stateVector meta_get_stVec(meta_parameters *sar,double time_arg);
 
 /*Return the incidence angle: this is the angle measured
-	by the target between straight up and the satellite.
-	Returns radians.*/
+  by the target between straight up and the satellite.
+  Returns radians.*/
 double meta_incid(meta_parameters *sar,double y,double x);
 
 /*Return the look angle: this is the angle measured
-	by the satellite between earth's center and the target point.
-	Returns radians.*/
+  by the satellite between earth's center and the target point.
+  Returns radians.*/
 double meta_look(meta_parameters *sar,double y,double x);
 
 /************* Geolocation ***********************
@@ -486,12 +485,12 @@ Here, latitude and longitude are always in degrees.*/
 /* Converts a given line and sample to that for the non-multilooked,
    non-windowed, equivalent image.*/
 void meta_get_original_line_sample(meta_parameters *meta, int line,
-				   int sample, int *original_line,
-				   int *original_sample);
+           int sample, int *original_line,
+           int *original_sample);
 
 /* DEPRECATED.  You probably want meta_get_original_line_sample.  */
 void meta_get_orig(void *ddr,
-	int y, int x,int *yOrig,int *xOrig);
+  int y, int x,int *yOrig,int *xOrig);
 
 /* Converts given line and sample to geodetic
 latitude and longitude.  Works with all image types.
@@ -510,20 +509,20 @@ int meta_get_lineSamp(meta_parameters *meta,
 slant-range, and doppler.  Works with all image types.
 */
 void meta_get_timeSlantDop(meta_parameters *sar,
-	double yLine,double xSample,
-	double *time_arg,double *slant,double *dop);
+  double yLine,double xSample,
+  double *time_arg,double *slant,double *dop);
 
 /*Converts the given time, slant range, doppler, and elevation
 off earth's surface into a latitude and longitude.*/
 int meta_timeSlantDop2latLon(meta_parameters *sar,
-	double time_arg, double slant,double dop,double elev,
-	double *lat,double *lon);
+  double time_arg, double slant,double dop,double elev,
+  double *lat,double *lon);
 
 /*Convert given latitude and longitude to time, slant
 range, and doppler, using state vectors.*/
 void latLon2timeSlant(meta_parameters *sar,
-	double lat,double lon,
-	double *time_arg,double *slant,double *dop);
+  double lat,double lon,
+  double *time_arg,double *slant,double *dop);
 
 int getLatLongMeta(const stateVector stVec,meta_parameters *meta,
                    double range,double doppler,double elev,
@@ -561,7 +560,7 @@ double meta_get_k(meta_parameters *sar);
 double meta_scene_frac(meta_parameters *sar,int y);
 
 /*Return the "flat earth" look deviation--
-	this is the x look angle minus the center look angle.*/
+  this is the x look angle minus the center look angle.*/
 double meta_flat(meta_parameters *sar,double y,double x);
 
 /* Convert meta->general->data_type field from complex to polar and visa versa.
@@ -587,9 +586,9 @@ void propagate_state(meta_parameters *meta,int nStVec,double data_int);
 
 /* Reads a subset of an image */
 void readSubset(char *fileName, int width, int height, int posX, int posY,
-		float *subset);
-void readComplexSubset(char *fileName, int width, int height, int posX, int posY, 
-		       complexFloat *subset);
+    float *subset);
+void readComplexSubset(char *fileName, int width, int height, int posX, int posY,
+           complexFloat *subset);
 
 /* From pp_corrected_vals.c */
 void pp_get_corrected_vals(char *sarName, double *corrected_earth_radius,
@@ -602,7 +601,7 @@ void xpyp_getVelocities(meta_parameters *meta, float *pp_velocity,
                         float *corrected_velocity);
 
 /* Scansar projection functions, in jpl_proj.c */
-void ll_ac(meta_projection *proj, char look_dir, double lat, double lon, 
+void ll_ac(meta_projection *proj, char look_dir, double lat, double lon,
            double *c1, double *c2);
 void ac_ll(meta_projection *proj, char look_dir, double c1, double c2,
            double *lat_d, double *lon);
@@ -633,50 +632,50 @@ int get_byte_line(FILE *file, meta_parameters *meta, int line_number,
 int get_byte_lines(FILE *file, meta_parameters *meta, int line_number,
                    int num_lines_to_get, unsigned char *dest);
 int get_float_line(FILE *file, meta_parameters *meta, int line_number,
-		float *dest);
+    float *dest);
 int get_band_float_line(FILE *file, meta_parameters *meta, int band_number,
                         int line_number_in_band, float *dest);
 int get_float_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, float *dest);
+    int num_lines_to_get, float *dest);
 int get_double_line(FILE *file, meta_parameters *meta, int line_number,
-		double *dest);
+    double *dest);
 int get_double_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, double *dest);
+    int num_lines_to_get, double *dest);
 int get_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
-		complexFloat *dest);
+    complexFloat *dest);
 int get_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_get, complexFloat *dest);
+    int num_lines_to_get, complexFloat *dest);
 int put_float_line(FILE *file, meta_parameters *meta, int line_number,
-		const float *source);
+    const float *source);
 int put_band_float_line(FILE *file, meta_parameters *meta, int band_number,
                         int line_number, const float *source);
 int put_float_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const float *source);
+    int num_lines_to_put, const float *source);
 int put_band_float_lines(FILE *file, meta_parameters *meta, int band_number,
                          int line_number, int num_lines_to_put,
                          const float *source);
 int put_double_line(FILE *file, meta_parameters *meta, int line_number,
-		const double *source);
+    const double *source);
 int put_double_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const double *source);
+    int num_lines_to_put, const double *source);
 int put_complexFloat_line(FILE *file, meta_parameters *meta, int line_number,
-		const complexFloat *source);
+    const complexFloat *source);
 int put_complexFloat_lines(FILE *file, meta_parameters *meta, int line_number,
-		int num_lines_to_put, const complexFloat *source);
+    int num_lines_to_put, const complexFloat *source);
 
-int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number, 
-			  int sample_number, int num_samples_to_get, 
-			  unsigned char *dest);
-int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number, 
-			   int num_lines_to_get, int sample_number, 
-			   int num_samples_to_get, unsigned char *dest);
-int get_partial_float_line(FILE *file, meta_parameters *meta, int line_number, 
-			   int sample_number, int num_samples_to_get,
-			   float *dest);
-int get_partial_float_lines(FILE *file, meta_parameters *meta, 
-			    int line_number, int num_lines_to_get,
-			    int sample_number, int num_samples_to_get,
-			    float *dest);
+int get_partial_byte_line(FILE *file, meta_parameters *meta, int line_number,
+        int sample_number, int num_samples_to_get,
+        unsigned char *dest);
+int get_partial_byte_lines(FILE *file, meta_parameters *meta, int line_number,
+         int num_lines_to_get, int sample_number,
+         int num_samples_to_get, unsigned char *dest);
+int get_partial_float_line(FILE *file, meta_parameters *meta, int line_number,
+         int sample_number, int num_samples_to_get,
+         float *dest);
+int get_partial_float_lines(FILE *file, meta_parameters *meta,
+          int line_number, int num_lines_to_get,
+          int sample_number, int num_samples_to_get,
+          float *dest);
 
 // Prototypes from meta_init_ceos.c
 char *get_polarization (const char *fName);
@@ -689,19 +688,19 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level);
   coordinates.
 ***************************************************************************/
 void proj_to_latlon(meta_projection *proj, double x, double y, double z,
-		    double *lat, double *lon, double *height);
+        double *lat, double *lon, double *height);
 void alos_to_latlon(meta_parameters *meta,
-		    double xSample, double yLine, double z,
-		    double *lat_d, double *lon, double *height);
+        double xSample, double yLine, double z,
+        double *lat_d, double *lon, double *height);
 void scan_to_latlon(meta_parameters *meta,
-		    double x, double y, double z,
-		    double *lat, double *lon, double *height);
+        double x, double y, double z,
+        double *lat, double *lon, double *height);
 void latlon_to_proj(meta_projection *proj, char look_dir,
-		    double lat, double lon, double height,
+        double lat, double lon, double height,
                     double *x, double *y, double *z);
 
-void latLon2proj(double lat, double lon, double elev, char *projFile, 
-		 double *projX, double *projY);
+void latLon2proj(double lat, double lon, double elev, char *projFile,
+     double *projX, double *projY);
 
 void fill_in_utm(double lat, double lon, project_parameters_t *pps);
 void latLon2UTM(double lat, double lon, double elev,
@@ -715,7 +714,7 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   Functions for dealing with projection parameter files.
 ***************************************************************************/
 void read_proj_file(char * file, project_parameters_t * pps,
-		    projection_type_t * proj_type);
+        projection_type_t * proj_type);
 
 /***************************************************************************
   Misc projection-related functions

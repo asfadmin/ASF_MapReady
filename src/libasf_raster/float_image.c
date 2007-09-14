@@ -270,7 +270,7 @@ initialize_float_image_structure (ssize_t size_x, ssize_t size_y)
 FloatImage *
 float_image_thaw (FILE *file_pointer)
 {
-  FILE *fp = file_pointer;	// Convenience alias.
+  FILE *fp = file_pointer;  // Convenience alias.
 
   g_assert (file_pointer != NULL);
 
@@ -327,7 +327,7 @@ float_image_thaw (FILE *file_pointer)
     // the end of the float_image_new method).
     self->tile_addresses[0] = self->cache;
     read_count = fread (self->tile_addresses[0], sizeof (float),
-			self->tile_area, fp);
+      self->tile_area, fp);
     g_assert (read_count == self->tile_area);
   }
   // otherwise, an empty tile queue needs to be initialized, and the
@@ -341,20 +341,20 @@ float_image_thaw (FILE *file_pointer)
       read_count = fread (buffer, sizeof (float), self->tile_area, fp);
       g_assert (read_count == self->tile_area);
       size_t write_count = fwrite (buffer, sizeof (float), self->tile_area,
-				   self->tile_file);
+           self->tile_file);
       if ( write_count < self->tile_area ) {
-	if ( feof (self->tile_file) ) {
-	  fprintf (stderr,
-		   "Premature end of file while trying to thaw FloatImage "
-		   "instance\n");
-	}
-	else {
-	  g_assert (ferror (self->tile_file));
-	  fprintf (stderr,
-		   "Error writing tile cache file for FloatImage instance "
-		   "during thaw: %s\n", strerror (errno));
-	}
-	exit (EXIT_FAILURE);
+  if ( feof (self->tile_file) ) {
+    fprintf (stderr,
+       "Premature end of file while trying to thaw FloatImage "
+       "instance\n");
+  }
+  else {
+    g_assert (ferror (self->tile_file));
+    fprintf (stderr,
+       "Error writing tile cache file for FloatImage instance "
+       "during thaw: %s\n", strerror (errno));
+  }
+  exit (EXIT_FAILURE);
       }
       g_assert (write_count == self->tile_area);
     }
@@ -462,7 +462,7 @@ float_image_new_with_value (ssize_t size_x, ssize_t size_y, float value)
         // so print an error message,
         fprintf (stderr,
                  "Error writing tile cache file for FloatImage instance: %s\n",
-		 strerror (errno));
+     strerror (errno));
         // and exit.
         exit (EXIT_FAILURE);
       }
@@ -547,7 +547,7 @@ float_image_copy (FloatImage *model)
   for ( ii = 0 ; ii < self->size_y ; ii++ ) {
     for ( jj = 0 ; jj < self->size_x ; jj++ ) {
       float_image_set_pixel (self, jj, ii,
-			     float_image_get_pixel (model, jj, ii));
+           float_image_get_pixel (model, jj, ii));
     }
   }
 
@@ -579,7 +579,7 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
 
   FloatImage *self
     = float_image_new (round ((double) model->size_x / scale_factor),
-		       round ((double) model->size_y / scale_factor));
+           round ((double) model->size_y / scale_factor));
 
   // Form an averaging kernel of the required size.
   size_t kernel_size = scale_factor;
@@ -610,7 +610,7 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor)
 
 FloatImage *
 float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y)
+        ssize_t size_x, ssize_t size_y)
 {
   g_assert (model->reference_count > 0); // Harden against missed ref=1 in new
 
@@ -669,7 +669,7 @@ float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   //g_assert (is_large_enough (file, offset + ((off_t) size_x * size_y
-  //					     * sizeof (float))));
+  //               * sizeof (float))));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -717,8 +717,8 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still C:\temp\envi_reader_for_arcgisneed to check return codes as we read() data, of course).
   //g_assert (file_pointed_to_larger_than (file_pointer,
-  //					 offset + ((off_t) size_x * size_y
-  //						   * sizeof (float))));
+  //           offset + ((off_t) size_x * size_y
+  //               * sizeof (float))));
 
   FloatImage *self = initialize_float_image_structure (size_x, size_y);
 
@@ -861,7 +861,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
     // Did we write the correct total amount of data?
     g_assert (ftello (self->tile_file)
-	      == (off_t) (self->tile_area * self->tile_count * sizeof (float)));
+        == (off_t) (self->tile_area * self->tile_count * sizeof (float)));
 
     // Free temporary buffers.
     g_free (buffer);
@@ -881,7 +881,7 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 
       // Read the data.
       size_t read_count = fread (row_address, sizeof (float), self->size_x,
-				 fp);
+         fp);
       g_assert (read_count == self->size_x);
 
       // Convert from the byte order on disk to the host byte order,
@@ -890,11 +890,11 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
       // their macros, and the perl documentation says it can't be
       // done in a truly portable way... but it seems to work.
       if ( non_native_byte_order (byte_order) ) {
-	g_assert (sizeof (float) == 4);
-	size_t jj;
-	for ( jj = 0 ; jj < self->size_x ; jj++ ) {
-	  swap_bytes_32 ((unsigned char *) &(row_address[jj]));
-	}
+  g_assert (sizeof (float) == 4);
+  size_t jj;
+  for ( jj = 0 ; jj < self->size_x ; jj++ ) {
+    swap_bytes_32 ((unsigned char *) &(row_address[jj]));
+  }
       }
     }
   }
@@ -919,16 +919,16 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
   // Check in advance if the source file looks big enough (we will
   // still need to check return codes as we read() data, of course).
   g_assert (is_large_enough (file,
-			     offset + ((off_t) original_size_x
-				       * original_size_y
-				       * sizeof (float))));
+           offset + ((off_t) original_size_x
+               * original_size_y
+               * sizeof (float))));
 
   // Find the stride that we need to use in each dimension to evenly
   // cover the original image space.
   double stride_x = (size_x == 1 ? 0.0
-		     : (double) (original_size_x - 1) / (size_x - 1));
+         : (double) (original_size_x - 1) / (size_x - 1));
   double stride_y = (size_y == 1 ? 0.0
-		     : (double) (original_size_y - 1) / (size_y - 1));
+         : (double) (original_size_y - 1) / (size_y - 1));
 
   // Open the file to read data from.
   FILE *fp = fopen (file, "r");
@@ -991,8 +991,8 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ul_x < original_size_x);
       size_t in_ul_y = in_ray;
       off_t sample_offset
-	= offset + sizeof (float) * ((off_t) in_ul_y * original_size_x
-				     + in_ul_x);
+  = offset + sizeof (float) * ((off_t) in_ul_y * original_size_x
+             + in_ul_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(uls[jj]), sizeof (float), 1, fp);
@@ -1021,8 +1021,8 @@ float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
       g_assert (in_ll_x < original_size_x);
       size_t in_ll_y = in_rby;
       off_t sample_offset
-	= offset + sizeof (float) * ((off_t) in_ll_y * original_size_x
-				     + in_ll_x);
+  = offset + sizeof (float) * ((off_t) in_ll_y * original_size_x
+             + in_ll_x);
       return_code = fseeko (fp, sample_offset, SEEK_SET);
       g_assert (return_code == 0);
       read_count = fread (&(lls[jj]), sizeof (float), 1, fp);
@@ -1107,7 +1107,7 @@ float_image_new_from_metadata(meta_parameters *meta, const char *file)
 // given metadata.
 FloatImage *
 float_image_band_new_from_metadata(meta_parameters *meta,
-				   int band, const char *file)
+           int band, const char *file)
 {
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
@@ -1149,12 +1149,12 @@ cached_tile_to_disk (FloatImage *self, size_t tile_offset)
 
   int return_code
     = fseeko (self->tile_file,
-	      (off_t) tile_offset * self->tile_area * sizeof (float),
-	      SEEK_SET);
+        (off_t) tile_offset * self->tile_area * sizeof (float),
+        SEEK_SET);
   g_assert (return_code == 0);
   size_t write_count = fwrite (self->tile_addresses[tile_offset],
-			       sizeof (float), self->tile_area,
-			       self->tile_file);
+             sizeof (float), self->tile_area,
+             self->tile_file);
   g_assert (write_count == self->tile_area);
 }
 
@@ -1413,8 +1413,8 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
-  stats->min = FLT_MAX;
-  stats->max = -FLT_MAX;
+  stats->band_stats[band_no].min = FLT_MAX;
+  stats->band_stats[band_no].max = -FLT_MAX;
 
   // Buffer for one row of samples.
   float *row_buffer = g_new (float, self->size_x);
@@ -1436,8 +1436,8 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
       float cs = row_buffer[jj];   // Current sample.
       if ( !isnan (mask) && (gsl_fcmp (cs, mask, 0.00000000001) == 0) )
         continue;
-      if ( G_UNLIKELY (cs < stats->min) ) { stats->min = cs; }
-      if ( G_UNLIKELY (cs > stats->max) ) { stats->max = cs; }
+      if ( G_UNLIKELY (cs < stats->band_stats[band_no].min) ) { stats->band_stats[band_no].min = cs; }
+      if ( G_UNLIKELY (cs > stats->band_stats[band_no].max) ) { stats->band_stats[band_no].max = cs; }
       double old_mean = mean_as_double;
       mean_as_double += (cs - mean_as_double) / (sample_count + 1);
       s += (cs - old_mean) * (cs - mean_as_double);
@@ -1448,7 +1448,7 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
 
   g_free (row_buffer);
 
-  if (stats->min == FLT_MAX || stats->max == -FLT_MAX)
+  if (stats->band_stats[band_no].min == FLT_MAX || stats->band_stats[band_no].max == -FLT_MAX)
     return 1;
 
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
@@ -1457,18 +1457,18 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
       fabs (standard_deviation_as_double) > FLT_MAX)
     return 1;
 
-  stats->mean = mean_as_double;
-  stats->std_deviation = standard_deviation_as_double;
+  stats->band_stats[band_no].mean = mean_as_double;
+  stats->band_stats[band_no].std_deviation = standard_deviation_as_double;
 
   return 0;
 }
 
 void
 float_image_statistics_with_mask_interval (FloatImage *self, float *min,
-					   float *max, float *mean,
-					   float *standard_deviation,
-					   double interval_start,
-					   double interval_end)
+             float *max, float *mean,
+             float *standard_deviation,
+             double interval_start,
+             double interval_end)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
@@ -1491,7 +1491,7 @@ float_image_statistics_with_mask_interval (FloatImage *self, float *min,
       float cs = row_buffer[jj];   // Current sample.
       // If in the mask interval, do not consider this pixel any further.
       if ( cs >= interval_start && cs <= interval_end ) {
-	continue;
+  continue;
       }
       if ( G_UNLIKELY (cs < *min) ) { *min = cs; }
       if ( G_UNLIKELY (cs > *max) ) { *max = cs; }
@@ -1598,8 +1598,8 @@ float_image_approximate_statistics_with_mask_interval
   // inaccurate).
   float min, max;
   float_image_statistics_with_mask_interval (sample_image, &min, &max,
-					     mean, standard_deviation,
-					     interval_start, interval_end);
+               mean, standard_deviation,
+               interval_start, interval_end);
 
   float_image_free (sample_image);
 }
@@ -1799,7 +1799,7 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
     return FALSE;
   }
 
-  size_t sz_x = self->size_x;	// Convenience alias.
+  size_t sz_x = self->size_x; // Convenience alias.
   size_t sz_y = self->size_y;
 
   // Compare image pixels.
@@ -1807,9 +1807,9 @@ float_image_equals (FloatImage *self, FloatImage *other, float epsilon)
   for ( ii = 0 ; ii < sz_y ; ii++ ) {
     for ( jj = 0 ; jj < sz_x ; jj++ ) {
       if ( G_UNLIKELY (gsl_fcmp (float_image_get_pixel (self, jj, ii),
-				 float_image_get_pixel (other, jj, ii),
-				 epsilon) != 0) ) {
-	return FALSE;
+         float_image_get_pixel (other, jj, ii),
+         epsilon) != 0) ) {
+  return FALSE;
       }
     }
   }
@@ -1867,7 +1867,7 @@ synchronize_tile_file_with_memory_cache (FloatImage *self)
   guint ii;
   for ( ii = 0 ; ii < self->tile_queue->length ; ii++ ) {
     size_t tile_offset = GPOINTER_TO_INT (g_queue_peek_nth (self->tile_queue,
-							    ii));
+                  ii));
     cached_tile_to_disk (self, tile_offset);
   }
 }
@@ -1877,7 +1877,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
-  FILE *fp = file_pointer;	// Convenience alias.
+  FILE *fp = file_pointer;  // Convenience alias.
 
   g_assert (file_pointer != NULL);
 
@@ -1924,12 +1924,12 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
   if ( self->tile_queue == NULL ) {
     // We store the contents of the first tile and are done.
     write_count = fwrite (self->tile_addresses[0], sizeof (float),
-			  self->tile_area, fp);
+        self->tile_area, fp);
     if ( write_count < self->tile_area ) {
       if ( ferror (fp) ) {
-	fprintf (stderr, "Error writing serialized FloatImage instance during "
-		 "freeze: %s\n", strerror (errno));
-	exit (EXIT_FAILURE);
+  fprintf (stderr, "Error writing serialized FloatImage instance during "
+     "freeze: %s\n", strerror (errno));
+  exit (EXIT_FAILURE);
       }
     }
     g_assert (write_count == self->tile_area);
@@ -1945,7 +1945,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
     g_assert (return_code == 0);
     for ( ii = 0 ; ii < self->tile_count ; ii++ ) {
       size_t read_count = fread (buffer, sizeof (float), self->tile_area,
-				 self->tile_file);
+         self->tile_file);
       g_assert (read_count == self->tile_area);
       write_count = fwrite (buffer, sizeof (float), self->tile_area, fp);
       g_assert (write_count == self->tile_area);
@@ -1958,7 +1958,7 @@ float_image_freeze (FloatImage *self, FILE *file_pointer)
 
 int
 float_image_band_store(FloatImage *self, const char *file,
-		       meta_parameters *meta, int append_flag)
+           meta_parameters *meta, int append_flag)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
@@ -2054,9 +2054,9 @@ float_image_store (FloatImage *self, const char *file,
  * Here's the extended error handler struct:
  */
 struct my_error_mgr {
-  struct jpeg_error_mgr pub;	/* "public" fields */
+  struct jpeg_error_mgr pub;  /* "public" fields */
 
-  jmp_buf setjmp_buffer;	/* for return to caller */
+  jmp_buf setjmp_buffer;  /* for return to caller */
 };
 
 typedef struct my_error_mgr * my_error_ptr;
@@ -2136,7 +2136,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
      * We need to clean up the JPEG object, close the input file, and return.
      */
     jpeg_destroy_compress(&cinfo);
-	g_free(pixels);
+  g_free(pixels);
     fclose(fp);
     return 1;
   }
@@ -2264,10 +2264,10 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 
 int
 float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
-					       const char *file,
-					       ssize_t max_dimension,
-					       double interval_start,
-					       double interval_end)
+                 const char *file,
+                 ssize_t max_dimension,
+                 double interval_start,
+                 double interval_end)
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
@@ -2332,9 +2332,9 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   // the output.
   float min, max, mean, standard_deviation;
   float_image_statistics_with_mask_interval (self, &min, &max, &mean,
-					     &standard_deviation,
-					     interval_start,
-					     interval_end);
+               &standard_deviation,
+               interval_start,
+               interval_end);
 
   // If the statistics don't work, something is beastly wrong and we
   // don't want to deal with it.
@@ -2455,7 +2455,7 @@ float_image_export_as_csv (FloatImage *self, const char * filename)
   for (ii = 0; ii < self->size_x; ++ii) {
     for (jj = 0; jj < self->size_y; ++jj) {
       fprintf(fout, "%5.3f%c", float_image_get_pixel(self, ii, jj),
-	      jj == self->size_y - 1 ? '\n' : ',');
+        jj == self->size_y - 1 ? '\n' : ',');
     }
   }
 

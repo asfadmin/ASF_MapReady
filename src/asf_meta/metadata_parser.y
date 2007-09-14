@@ -67,6 +67,12 @@ static int vector_count;
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
 
+/* Arrays of stats blocks are stored in the metadata structure, this keeps
+   track of how many of them we have seen so far.  */
+static int stats_block_count;
+/* allocation routine for meta_stats */
+meta_stats *meta_stats_init(int num_of_stats_blocks);
+
 
 char current_file[MAX_FILE_NAME];
 extern int line_number;         /* Line number of file being parsed.  */
@@ -124,6 +130,7 @@ void error_message(const char *err_mes, ...)
 #define MPROJ ( (meta_projection *) current_block)
 #define MPARAM ( (param_t *) current_block)
 #define MSTATS ( (meta_stats *) current_block)
+#define MSTATSBLOCK ( (stats_block *) current_block)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
@@ -202,8 +209,14 @@ void select_current_block(char *block_name)
 
   if ( !strcmp(block_name, "stats") ) {
     if (MTL->stats == NULL)
-       { MTL->stats = meta_stats_init(); }
+       { MTL->stats = meta_stats_init(stats_block_count); }
     current_block = MTL->stats;
+    goto MATCHED;
+  }
+  if ( !strcmp(block_name, "band_stats") ) {
+    global_meta->stats = realloc( global_meta->stats,
+                      sizeof(meta_stats) + (stats_block_count+1)*sizeof(stats_block));
+    current_block = &( global_meta->stats->band_stats[stats_block_count++]);
     goto MATCHED;
   }
 
@@ -870,18 +883,24 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the statistics block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "stats") ) {
+    if ( !strcmp(field_name, "band_count") )
+    { MSTATS->band_count = VALP_AS_INT; return; }
+  }
+  if ( !strcmp(stack_top->block_name, "statsblock") ) {
+    if ( !strcmp(field_name, "band_id") )
+    { strcpy(MSTATSBLOCK->band_id, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "min") )
-      { (MSTATS)->min = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->min = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "max") )
-      { (MSTATS)->max = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->max = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mean") )
-      { (MSTATS)->mean = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->mean = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "rmse") )
-      { (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
-      { (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->std_deviation = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
-      { (MSTATS)->mask = VALP_AS_DOUBLE; return; }
+    { (MSTATSBLOCK)->mask = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which go in the location block of the metadata file. */
@@ -998,6 +1017,15 @@ int parse_metadata(meta_parameters *dest, char *file_name)
                     dest->state_vectors->vector_count, vector_count);
     dest->state_vectors->vector_count = vector_count;
     dest->state_vectors->num = vector_count; /* Backward compat alias.  */
+  }
+
+  /* Fill in number of stats blocks seen.  */
+  if ((dest->stats->band_count) && (dest->stats->band_count != stats_block_count)) {
+    warning_message("Said number of stats blocks in stats (%d)\n"
+        "differs from the actual amount of stats blocks (%d)...\n"
+        "Using actual number of stats blocks for stats_blocks_count.",
+    dest->stats->band_count, stats_block_count);
+    dest->stats->band_count = stats_block_count;
   }
 
   /* Done with the block stack, so empty it.  */

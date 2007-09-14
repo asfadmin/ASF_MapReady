@@ -1108,14 +1108,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   asfPrintStatus("\nGathering image statistics (per available band)...\n");
   int *ignore;
-//  float min, max;
-//  float mean, standard_deviation;
-  meta_stats *band_stats[MAX_BANDS]; // min, max, mean, rmse, std_deviation, mask: all doubles
-  int ii;
-  for (ii=0; ii<MAX_BANDS; ii++) {
-    band_stats[ii] = meta_stats_init();
-  }
+  meta_stats *stats; // band_count and array of stats per band (min, max, mean, rmse, std_deviation, mask: all doubles)
   double mask_value;
+  stats = meta_stats_init(MAX_BANDS);
   switch(meta_out->general->data_type) {
     case BYTE:
     case INTEGER16:
@@ -1130,27 +1125,28 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       break;
   }
   ignore = CALLOC(MAX_BANDS, sizeof(int)); // Contains '1' if a band is to be ignored (empty band)
+  int ii;
   for (ii=0; ii<num_bands; ii++) {
     int ret;
     ret = tiff_image_band_statistics(input_tiff, meta_out,
-                                     band_stats[ii],
+                                     stats,
                                      num_bands, ii,
                                      bits_per_sample, sample_format,
                                      planar_config, 0, mask_value);
     if (ret != 0 ||
-        (band_stats[ii]->mean == band_stats[ii]->min &&
-         band_stats[ii]->mean == band_stats[ii]->max &&
-         band_stats[ii]->mean == band_stats[ii]->std_deviation)) {
+        (stats->band_stats[ii].mean == stats->band_stats[ii].min &&
+         stats->band_stats[ii].mean == stats->band_stats[ii].max &&
+         stats->band_stats[ii].mean == stats->band_stats[ii].std_deviation)) {
       // Band data is blank, e.g. no variation ...all pixels the same
       asfPrintStatus("\nFound empty band (see statistics below):\n"
           "   min = %f\n"
           "   max = %f\n"
           "  mean = %f\n"
           "  sdev = %f\n\n",
-          band_stats[ii]->min,
-          band_stats[ii]->max,
-          band_stats[ii]->mean,
-          band_stats[ii]->std_deviation);
+          stats->band_stats[ii].min,
+          stats->band_stats[ii].max,
+          stats->band_stats[ii].mean,
+          stats->band_stats[ii].std_deviation);
 
       ignore[ii] = 1;
     }
@@ -1160,10 +1156,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
           "   max = %f\n"
           "  mean = %f\n"
           "  sdev = %f\n\n",
-          band_stats[ii]->min,
-          band_stats[ii]->max,
-          band_stats[ii]->mean,
-          band_stats[ii]->std_deviation);
+        stats->band_stats[ii].min,
+        stats->band_stats[ii].max,
+        stats->band_stats[ii].mean,
+        stats->band_stats[ii].std_deviation);
     }
   }
 
@@ -1291,9 +1287,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   GTIFFree(input_gtif);
   XTIFFClose(input_tiff);
   meta_free (meta_out);
-  for (ii=0; ii<MAX_BANDS; ii++) {
-    FREE(band_stats[ii]);
-  }
+  FREE(stats);
   FREE(ignore);
 
   // We must be done with the citation string too :)
@@ -1667,7 +1661,7 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
   double fmax = -FLT_MAX;
   double cs=0.0; // Current sample value
 
-  stats->mean = 0.0;
+  stats->band_stats[band_no].mean = 0.0;
   double s = 0.0;
   uint32 scanlineSize = 0;
   uint32 sample_count = 0;      // Samples considered so far.
@@ -1821,9 +1815,9 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
         }
         if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
         if ( G_UNLIKELY (cs > fmax) ) { fmax = cs; }
-        double old_mean = stats->mean;
-        stats->mean += (cs - stats->mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->mean);
+        double old_mean = stats->band_stats[band_no].mean;
+        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
         sample_count++;
       }
     }
@@ -1961,9 +1955,9 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
         }
         if ( G_UNLIKELY (cs < fmin) ) { fmin = cs; }
         if ( G_UNLIKELY (cs > fmax) ) { fmax = cs; }
-        double old_mean = stats->mean;
-        stats->mean += (cs - stats->mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->mean);
+        double old_mean = stats->band_stats[band_no].mean;
+        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
         sample_count++;
       }
     }
@@ -1977,12 +1971,12 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
       gsl_fcmp (fmax, -FLT_MAX, 0.00000000001) == 0)
     return 1;
 
-  stats->min = fmin;
-  stats->max = fmax;
-  stats->std_deviation = sqrt (s / (sample_count - 1));
+  stats->band_stats[band_no].min = fmin;
+  stats->band_stats[band_no].max = fmax;
+  stats->band_stats[band_no].std_deviation = sqrt (s / (sample_count - 1));
 
   // The new extrema had better be in the range supported range
-  if (fabs(stats->mean) > FLT_MAX || fabs(stats->std_deviation) > FLT_MAX)
+  if (fabs(stats->band_stats[band_no].mean) > FLT_MAX || fabs(stats->band_stats[band_no].std_deviation) > FLT_MAX)
     return 1;
 
   return 0;

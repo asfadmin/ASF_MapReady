@@ -44,12 +44,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
 
   /* Write an 'about meta file' comment  */
   fprintf(fp,
-  	"# This file contains the metadata for satellite capture file of the same base name.\n"
-	"#      '%c' is likely an unknown single character value.\n"
-	"#      '%s' is likely an unknown string of characters.\n"
-	"#      '%d' is likely an unknown integer value.\n"
-	"#      '%lf' is likely an unknown Real value.\n\n",
-	MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT, MAGIC_UNSET_DOUBLE);
+    "# This file contains the metadata for satellite capture file of the same base name.\n"
+  "#      '%c' is likely an unknown single character value.\n"
+  "#      '%s' is likely an unknown string of characters.\n"
+  "#      '%d' is likely an unknown integer value.\n"
+  "#      '%lf' is likely an unknown Real value.\n\n",
+  MAGIC_UNSET_CHAR, MAGIC_UNSET_STRING, MAGIC_UNSET_INT, MAGIC_UNSET_DOUBLE);
 
   /* We always write out files corresponding to the latest meta version.  */
   fprintf(fp, "meta_version: %.2f\n\n", META_VERSION);
@@ -101,219 +101,216 @@ void meta_write(meta_parameters *meta, const char *file_name)
     strcpy(comment,"Image data type (e.g. AMPLITUDE_IMAGE)");
     switch (meta->general->image_data_type) {
       case RAW_IMAGE:
-	meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
+  break;
       case COMPLEX_IMAGE:
-	meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
+  break;
       case AMPLITUDE_IMAGE:
-	meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
+  break;
       case PHASE_IMAGE:
-	meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
+  break;
       case POWER_IMAGE:
-	meta_put_string(fp,"image_data_type:","POWER_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","POWER_IMAGE",comment);
+  break;
       case SIGMA_IMAGE:
-	meta_put_string(fp,"image_data_type:","SIGMA_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","SIGMA_IMAGE",comment);
+  break;
       case GAMMA_IMAGE:
-	meta_put_string(fp,"image_data_type:","GAMMA_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","GAMMA_IMAGE",comment);
+  break;
       case BETA_IMAGE:
-	meta_put_string(fp,"image_data_type:","BETA_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","BETA_IMAGE",comment);
+  break;
       case COHERENCE_IMAGE:
-	meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
+  break;
       case GEOCODED_IMAGE:
-	meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
+  break;
       case LUT_IMAGE:
-	meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
-	break;
-      case POLARIMETRIC_IMAGE:
-	meta_put_string(fp,"image_data_type:","POLARIMETRIC_IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
+  break;
       case ELEVATION:
-	meta_put_string(fp,"image_data_type:","ELEVATION",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","ELEVATION",comment);
+  break;
       case DEM:
-	meta_put_string(fp,"image_data_type:","DEM",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","DEM",comment);
+  break;
       case IMAGE:
-	meta_put_string(fp,"image_data_type:","IMAGE",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","IMAGE",comment);
+  break;
       case MASK:
         meta_put_string(fp,"image_data_type:","MASK",comment);
         break;
       default:
-	meta_put_string(fp,"image_data_type:","???",comment);
-	break;
+  meta_put_string(fp,"image_data_type:","???",comment);
+  break;
     }
   }
   meta_put_string(fp,"system:", meta->general->system,
-		  "System of samples (e.g. big_ieee)");
+      "System of samples (e.g. big_ieee)");
   meta_put_string(fp,"acquisition_date:", meta->general->acquisition_date,
-		  "Acquisition date of the data");
+      "Acquisition date of the data");
   meta_put_int   (fp,"orbit:", meta->general->orbit,
-		  "Orbit Number for this datatake");
+      "Orbit Number for this datatake");
   meta_put_char  (fp,"orbit_direction:", meta->general->orbit_direction,
-		  "Ascending 'A', or descending 'D'");
+      "Ascending 'A', or descending 'D'");
   meta_put_int   (fp,"frame:", meta->general->frame,
-		  "Frame for this image [-1 if n/a]");
+      "Frame for this image [-1 if n/a]");
   meta_put_int   (fp,"band_count:", meta->general->band_count,
-		  "Number of bands in image");
+      "Number of bands in image");
   meta_put_string(fp,"bands:", meta->general->bands,
-		  "Band of the sensor");
+      "Band of the sensor");
   meta_put_int   (fp,"line_count:", meta->general->line_count,
-		  "Number of lines in image");
+      "Number of lines in image");
   meta_put_int   (fp,"sample_count:", meta->general->sample_count,
-		  "Number of samples in image");
+      "Number of samples in image");
   meta_put_int   (fp,"start_line:", meta->general->start_line,
-		  "First line relative to original image");
+      "First line relative to original image");
   meta_put_int   (fp,"start_sample:", meta->general->start_sample,
-		  "First sample relative to original image");
+      "First sample relative to original image");
   meta_put_double(fp,"x_pixel_size:", meta->general->x_pixel_size,
-		  "Range pixel size [m]");
+      "Range pixel size [m]");
   meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
-		  "Azimuth pixel size [m]");
+      "Azimuth pixel size [m]");
   meta_put_double(fp,"center_latitude:", meta->general->center_latitude,
-		  "Approximate image center latitude");
+      "Approximate image center latitude");
   meta_put_double(fp,"center_longitude:", meta->general->center_longitude,
-		  "Approximate image center longitude");
+      "Approximate image center longitude");
   meta_put_double(fp,"re_major:", meta->general->re_major,
-		  "Major (equator) Axis of earth [m]");
+      "Major (equator) Axis of earth [m]");
   meta_put_double(fp,"re_minor:", meta->general->re_minor,
-		  "Minor (polar) Axis of earth [m]");
+      "Minor (polar) Axis of earth [m]");
   meta_put_double(fp,"bit_error_rate:", meta->general->bit_error_rate,
-		  "Fraction of bits which are in error");
+      "Fraction of bits which are in error");
   meta_put_int   (fp,"missing_lines:", meta->general->missing_lines,
-		  "Number of missing lines in data take");
+      "Number of missing lines in data take");
   meta_put_double(fp,"no_data:", meta->general->no_data,
-		  "Value indicating no data for a pixel");
+      "Value indicating no data for a pixel");
   meta_put_string(fp,"}", "","End general");
 
   /* SAR block.  */
   if (meta->sar) {
     meta_put_string(fp,"sar {","","Begin parameters used specifically in SAR imaging");
     meta_put_string(fp,"polarization:",meta->sar->polarization,
-		    "Signal polarization");
+        "Signal polarization");
     meta_put_char  (fp,"image_type:", meta->sar->image_type,
-		    "[S=slant range; G=ground range; P=map projected; R=georeferenced]");
+        "[S=slant range; G=ground range; P=map projected; R=georeferenced]");
     meta_put_char  (fp,"look_direction:",meta->sar->look_direction,
-		    "SAR Satellite look direction [R=right; L=left]");
+        "SAR Satellite look direction [R=right; L=left]");
     meta_put_int   (fp,"look_count:",meta->sar->look_count,
-		    "Number of looks to take from SLC");
+        "Number of looks to take from SLC");
     meta_put_int   (fp,"multilook:",meta->sar->multilook,
-		    "Image multilooked? [1=yes; 0=no]");
+        "Image multilooked? [1=yes; 0=no]");
     meta_put_int   (fp,"deskewed:",meta->sar->deskewed,
-		    "Image moved to zero doppler? [1=yes; 0=no]");
+        "Image moved to zero doppler? [1=yes; 0=no]");
     meta_put_int   (fp,"original_line_count:",meta->sar->original_line_count,
-		    "Number of lines in original image");
+        "Number of lines in original image");
     meta_put_int   (fp,"original_sample_count:",meta->sar->original_sample_count,
-		    "Number of samples in original image");
+        "Number of samples in original image");
     meta_put_double(fp,"line_increment:",meta->sar->line_increment,
-		    "Line increment for sampling");
+        "Line increment for sampling");
     meta_put_double(fp,"sample_increment:",meta->sar->sample_increment,
-		    "Sample increment for sampling");
+        "Sample increment for sampling");
     meta_put_double(fp,"range_time_per_pixel:",meta->sar->range_time_per_pixel,
-		    "Time per pixel in range [s]");
+        "Time per pixel in range [s]");
     meta_put_double(fp,"azimuth_time_per_pixel:",meta->sar->azimuth_time_per_pixel,
-		    "Time per pixel in azimuth [s]");
+        "Time per pixel in azimuth [s]");
     meta_put_double(fp,"slant_range_first_pixel:",meta->sar->slant_range_first_pixel,
-		    "Slant range to first pixel [m]");
+        "Slant range to first pixel [m]");
     meta_put_double(fp,"slant_shift:",meta->sar->slant_shift,
-		    "Error correction factor, in slant range [m]");
+        "Error correction factor, in slant range [m]");
     meta_put_double(fp,"time_shift:",meta->sar->time_shift,
-		    "Error correction factor, in time [s]");
+        "Error correction factor, in time [s]");
     meta_put_double(fp,"wavelength:",meta->sar->wavelength,
-		    "SAR carrier wavelength [m]");
+        "SAR carrier wavelength [m]");
     meta_put_double(fp,"prf:",meta->sar->prf,"Pulse Repetition Frequency [Hz]");
     meta_put_double(fp,"earth_radius:",meta->sar->earth_radius,
-		    "Earth radius at scene center [m]");
+        "Earth radius at scene center [m]");
     meta_put_double(fp,"earth_radius_pp:",meta->sar->earth_radius_pp,
-		    "Earth radius used by the PP during L0 processsing. [m]");
+        "Earth radius used by the PP during L0 processsing. [m]");
     meta_put_double(fp,"satellite_height:",meta->sar->satellite_height,
-		    "Satellite height from earth's center [m]");
+        "Satellite height from earth's center [m]");
     meta_put_string(fp,"satellite_binary_time:",meta->sar->satellite_binary_time,
-		    "Satellite Binary Time");
+        "Satellite Binary Time");
     meta_put_string(fp,"satellite_clock_time:",meta->sar->satellite_clock_time,
-		    "Satellite Clock Time (UTC)");
+        "Satellite Clock Time (UTC)");
     meta_put_double(fp,"dopRangeCen:",meta->sar->range_doppler_coefficients[0],
-		    "Range doppler centroid [Hz]");
+        "Range doppler centroid [Hz]");
     meta_put_double(fp,"dopRangeLin:",meta->sar->range_doppler_coefficients[1],
-		    "Range doppler per range pixel [Hz/pixel]");
+        "Range doppler per range pixel [Hz/pixel]");
     meta_put_double(fp,"dopRangeQuad:",meta->sar->range_doppler_coefficients[2],
-		    "Range doppler per range pixel sq. [Hz/(pixel^2)]");
+        "Range doppler per range pixel sq. [Hz/(pixel^2)]");
     meta_put_double(fp,"dopAzCen:",meta->sar->azimuth_doppler_coefficients[0],
-		    "Azimuth doppler centroid [Hz]");
+        "Azimuth doppler centroid [Hz]");
     meta_put_double(fp,"dopAzLin:",meta->sar->azimuth_doppler_coefficients[1],
-		    "Azimuth doppler per azimuth pixel [Hz/pixel]");
+        "Azimuth doppler per azimuth pixel [Hz/pixel]");
     meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],
-		    "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+        "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
     if (META_VERSION >= 1.4) {
       meta_put_double(fp,"azimuth_bandwidth:",meta->sar->azimuth_processing_bandwidth,
-		      "Azimuth processing bandwidth [Hz]");
+          "Azimuth processing bandwidth [Hz]");
       meta_put_double(fp,"chirp_rate:",meta->sar->chirp_rate,
-		      "Chirp rate [Hz/sec]");
+          "Chirp rate [Hz/sec]");
       meta_put_double(fp,"pulse_duration:",meta->sar->pulse_duration,
-		      "Pulse duration [s]");
+          "Pulse duration [s]");
       meta_put_double(fp,"range_samp_rate:",meta->sar->range_sampling_rate,
-		      "Range sampling rate [Hz]");
+          "Range sampling rate [Hz]");
     }
     meta_put_string(fp,"}","","End sar");
   }
 
   if (meta->optical) {
     meta_put_string(fp,"optical {","","Begin parameters used specifically in "
-		    "optical imaging");
+        "optical imaging");
     meta_put_string(fp,"pointing_direction:",meta->optical->pointing_direction,
-		    "Pointing direction of the sensor");
+        "Pointing direction of the sensor");
     meta_put_double(fp,"off_nadir_angle:",meta->optical->off_nadir_angle,
-		    "Off-nadir angle of the sensor [degrees]");
+        "Off-nadir angle of the sensor [degrees]");
     meta_put_string(fp,"correction_level:",meta->optical->correction_level,
-		    "N - uncorr, R - georef, G - geocoded, D - DEM corr");
+        "N - uncorr, R - georef, G - geocoded, D - DEM corr");
     meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,
-		    "Cloud cover percentage [%]");
+        "Cloud cover percentage [%]");
     meta_put_double(fp,"sun_azimuth_angle:",meta->optical->sun_azimuth_angle,
-		    "Sun azimuth angle [degrees]");
+        "Sun azimuth angle [degrees]");
     meta_put_double(fp,"sun_elevation_angle:",meta->optical->sun_elevation_angle,
-		    "Sun elevation angle [degrees]");
+        "Sun elevation angle [degrees]");
     meta_put_string(fp,"}","","End optical");
   }
 
   /* State block.  */
   if (meta->state_vectors) {
     meta_put_string(fp,"state {","",
-		    "Begin list of state vectors for satellite, over image");
+        "Begin list of state vectors for satellite, over image");
     meta_put_int   (fp,"year:",meta->state_vectors->year,"Year of image start");
     meta_put_int   (fp,"julDay:",meta->state_vectors->julDay,
-		    "Julian day of the year for image start");
+        "Julian day of the year for image start");
     meta_put_double(fp,"second:",meta->state_vectors->second,
-		    "Second of the day for image start");
+        "Second of the day for image start");
     meta_put_int   (fp,"vector_count:",meta->state_vectors->vector_count,
-		    "Number of state vectors below");
+        "Number of state vectors below");
     {
       int ii;
       for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
-	meta_put_string(fp,"vector {","","Begin a single state vector");
-	meta_put_double(fp,"time:",meta->state_vectors->vecs[ii].time,
-			"Time, relative to image start [s]");
-	meta_put_double(fp,"x:",meta->state_vectors->vecs[ii].vec.pos.x,
-			"X Coordinate, earth-fixed [m]");
-	meta_put_double(fp,"y:",meta->state_vectors->vecs[ii].vec.pos.y,
-			"Y Coordinate, earth-fixed [m]");
-	meta_put_double(fp,"z:",meta->state_vectors->vecs[ii].vec.pos.z,
-			"Z Coordinate, earth-fixed [m]");
-	meta_put_double(fp,"vx:",meta->state_vectors->vecs[ii].vec.vel.x,
-			"X Velocity, earth-fixed [m/s]");
-	meta_put_double(fp,"vy:",meta->state_vectors->vecs[ii].vec.vel.y,
-			"Y Velocity, earth-fixed [m/s]");
-	meta_put_double(fp,"vz:",meta->state_vectors->vecs[ii].vec.vel.z,
-			"Z Velocity, earth-fixed [m/s]");
-	meta_put_string(fp,"}","","End a single state vector");
+  meta_put_string(fp,"vector {","","Begin a single state vector");
+  meta_put_double(fp,"time:",meta->state_vectors->vecs[ii].time,
+      "Time, relative to image start [s]");
+  meta_put_double(fp,"x:",meta->state_vectors->vecs[ii].vec.pos.x,
+      "X Coordinate, earth-fixed [m]");
+  meta_put_double(fp,"y:",meta->state_vectors->vecs[ii].vec.pos.y,
+      "Y Coordinate, earth-fixed [m]");
+  meta_put_double(fp,"z:",meta->state_vectors->vecs[ii].vec.pos.z,
+      "Z Coordinate, earth-fixed [m]");
+  meta_put_double(fp,"vx:",meta->state_vectors->vecs[ii].vec.vel.x,
+      "X Velocity, earth-fixed [m/s]");
+  meta_put_double(fp,"vy:",meta->state_vectors->vecs[ii].vec.vel.y,
+      "Y Velocity, earth-fixed [m/s]");
+  meta_put_double(fp,"vz:",meta->state_vectors->vecs[ii].vec.vel.z,
+      "Z Velocity, earth-fixed [m/s]");
+  meta_put_string(fp,"}","","End a single state vector");
       }
     }
     meta_put_string(fp,"}","","End the list of state vectors");
@@ -326,135 +323,135 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"projection {","","Map Projection parameters");
     switch (meta->projection->type) {
       case UNIVERSAL_TRANSVERSE_MERCATOR:
-	meta_put_string(fp,"type:","UNIVERSAL_TRANSVERSE_MERCATOR","Projection Type");
-	break;
+  meta_put_string(fp,"type:","UNIVERSAL_TRANSVERSE_MERCATOR","Projection Type");
+  break;
       case POLAR_STEREOGRAPHIC:
-	meta_put_string(fp,"type:","POLAR_STEREOGRAPHIC","Projection Type");
+  meta_put_string(fp,"type:","POLAR_STEREOGRAPHIC","Projection Type");
         break;
       case ALBERS_EQUAL_AREA:
-	meta_put_string(fp,"type:","ALBERS_EQUAL_AREA","Projection Type");
-	break;
+  meta_put_string(fp,"type:","ALBERS_EQUAL_AREA","Projection Type");
+  break;
       case LAMBERT_CONFORMAL_CONIC:
-	meta_put_string(fp,"type:","LAMBERT_CONFORMAL_CONIC","Projection Type");
-	break;
+  meta_put_string(fp,"type:","LAMBERT_CONFORMAL_CONIC","Projection Type");
+  break;
       case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-	meta_put_string(fp,"type:","LAMBERT_AZIMUTHAL_EQUAL_AREA","Projection Type");
-	break;
+  meta_put_string(fp,"type:","LAMBERT_AZIMUTHAL_EQUAL_AREA","Projection Type");
+  break;
       case STATE_PLANE:
-	meta_put_string(fp,"type:","STATE_PLANE","Projection Type");
-	break;
+  meta_put_string(fp,"type:","STATE_PLANE","Projection Type");
+  break;
       case SCANSAR_PROJECTION:
-	meta_put_string(fp,"type:","SCANSAR_PROJECTION","Projection Type");
-	break;
+  meta_put_string(fp,"type:","SCANSAR_PROJECTION","Projection Type");
+  break;
       case LAT_LONG_PSEUDO_PROJECTION:
-	meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
-			 "Projection Type");
-	break;
+  meta_put_string (fp, "type:", "LAT_LONG_PSEUDO_PROJECTION",
+       "Projection Type");
+  break;
       case UNKNOWN_PROJECTION:
         meta_put_string(fp,"type:","UNKNOWN_PROJECTION","Projection Type");
-	break;
+  break;
     }
     meta_put_double(fp,"startX:",meta->projection->startX,
-		    "Projection Coordinate at top-left, X direction");
+        "Projection Coordinate at top-left, X direction");
     meta_put_double(fp,"startY:",meta->projection->startY,
-		    "Projection Coordinate at top-left, Y direction");
+        "Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",meta->projection->perX,
-		    "Projection Coordinate per pixel, X direction");
+        "Projection Coordinate per pixel, X direction");
     meta_put_double(fp,"perY:",meta->projection->perY,
-		    "Projection Coordinate per pixel, Y direction");
+        "Projection Coordinate per pixel, Y direction");
     meta_put_string(fp,"units:",meta->projection->units,
-		    "Units of projection [meters, seconds, degrees]");
+        "Units of projection [meters, seconds, degrees]");
     meta_put_char  (fp,"hem:",meta->projection->hem,
-		    "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
+        "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     if (META_VERSION >= 1.3) {
         meta_put_string(fp,"spheroid:",
                         spheroid_toString(meta->projection->spheroid),"Spheroid");
     }
     meta_put_double(fp,"re_major:",meta->projection->re_major,
-		    "Major Axis (equator) of earth [m]");
+        "Major Axis (equator) of earth [m]");
     meta_put_double(fp,"re_minor:",meta->projection->re_minor,
-		    "Minor Axis (polar) of earth [m]");
+        "Minor Axis (polar) of earth [m]");
     if (META_VERSION >= 1.3) {
         meta_put_string(fp,"datum:",datum_toString(meta->projection->datum),
                         "Geodetic Datum");
     }
     if (META_VERSION >= 1.6)
       meta_put_double(fp, "height:", meta->projection->height,
-		      "Height [m]");
+          "Height [m]");
     meta_put_string(fp,"param {","","Projection specific parameters");
     switch ( meta->projection->type ) {
     case SCANSAR_PROJECTION: /* Along-track/cross-track projection.  */
       meta_put_string(fp,"atct {","","Begin along-track/cross-track projection");
       meta_put_double(fp,"rlocal:",meta->projection->param.atct.rlocal,
-		      "Local earth radius [m]");
+          "Local earth radius [m]");
       meta_put_double(fp,"alpha1:",meta->projection->param.atct.alpha1,
-		      "First rotation angle [degrees]");
+          "First rotation angle [degrees]");
       meta_put_double(fp,"alpha2:",meta->projection->param.atct.alpha2,
-		      "Second rotation angle [degrees]");
+          "Second rotation angle [degrees]");
       meta_put_double(fp,"alpha3:",meta->projection->param.atct.alpha3,
-		      "Third rotation angle [degrees]");
+          "Third rotation angle [degrees]");
       meta_put_string(fp,"}","","End atct");
       break;
     case ALBERS_EQUAL_AREA:
       meta_put_string(fp,"albers {","","Begin Albers Conical Equal Area projection");
       meta_put_double(fp,"std_parallel1:",
-		      meta->projection->param.albers.std_parallel1,
-		      "First standard parallel [degrees]");
+          meta->projection->param.albers.std_parallel1,
+          "First standard parallel [degrees]");
       meta_put_double(fp,"std_parallel2:",
-		      meta->projection->param.albers.std_parallel2,
-		      "Second standard parallel [degrees]");
+          meta->projection->param.albers.std_parallel2,
+          "Second standard parallel [degrees]");
       meta_put_double(fp,"center_meridian:",
-		      meta->projection->param.albers.center_meridian,
-		      "Longitude of center meridian [degrees]");
+          meta->projection->param.albers.center_meridian,
+          "Longitude of center meridian [degrees]");
       meta_put_double(fp,"orig_latitude:",
-		      meta->projection->param.albers.orig_latitude,
-		      "Latitude of the projection origin [degrees]");
+          meta->projection->param.albers.orig_latitude,
+          "Latitude of the projection origin [degrees]");
       if (META_VERSION >= 1.3) {
-	meta_put_double(fp,"false_easting:",
-			meta->projection->param.albers.false_easting,
-			"False easting [m]");
-	meta_put_double(fp,"false_northing:",
-			meta->projection->param.albers.false_northing,
-			"False northing [m]");
+  meta_put_double(fp,"false_easting:",
+      meta->projection->param.albers.false_easting,
+      "False easting [m]");
+  meta_put_double(fp,"false_northing:",
+      meta->projection->param.albers.false_northing,
+      "False northing [m]");
       }
       meta_put_string(fp,"}","","End albers");
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       meta_put_string(fp,"lamaz {","","Begin Lambert Azimuthal Equal Area projection");
       meta_put_double(fp,"center_lon:",meta->projection->param.lamaz.center_lon,
-		      "Longitude at center of projection");
+          "Longitude at center of projection");
       meta_put_double(fp,"center_lat:",meta->projection->param.lamaz.center_lat,
-		      "Latitude at center of projection");
+          "Latitude at center of projection");
       if (META_VERSION >= 1.3) {
-	meta_put_double(fp,"false_easting:",
-			meta->projection->param.lamaz.false_easting,
-			"False easting [m]");
-	meta_put_double(fp,"false_northing:",
-			meta->projection->param.lamaz.false_northing,
-			"False northing [m]");
+  meta_put_double(fp,"false_easting:",
+      meta->projection->param.lamaz.false_easting,
+      "False easting [m]");
+  meta_put_double(fp,"false_northing:",
+      meta->projection->param.lamaz.false_northing,
+      "False northing [m]");
       }
       meta_put_string(fp,"}","","End lamaz");
       break;
     case LAMBERT_CONFORMAL_CONIC:/*Lambert conformal conic projection.*/
       meta_put_string(fp,"lamcc {","","Begin Lambert Conformal Conic projection");
       meta_put_double(fp,"plat1:",meta->projection->param.lamcc.plat1,
-		      "First standard parallel");
+          "First standard parallel");
       meta_put_double(fp,"plat2:",meta->projection->param.lamcc.plat2,
-		      "Second standard parallel");
+          "Second standard parallel");
       meta_put_double(fp,"lat0:",meta->projection->param.lamcc.lat0,
-		      "Original latitude");
+          "Original latitude");
       meta_put_double(fp,"lon0:",meta->projection->param.lamcc.lon0,
-		      "Original longitude");
+          "Original longitude");
       if (META_VERSION >= 1.3) {
-	meta_put_double(fp,"false_easting:",
-			meta->projection->param.lamcc.false_easting,
-			"False easting [m]");
-	meta_put_double(fp,"false_northing:",
-			meta->projection->param.lamcc.false_northing,
-			"False northing [m]");
-	meta_put_double(fp,"scale_factor:",
-			meta->projection->param.lamcc.scale_factor,
-			"Scaling factor");
+  meta_put_double(fp,"false_easting:",
+      meta->projection->param.lamcc.false_easting,
+      "False easting [m]");
+  meta_put_double(fp,"false_northing:",
+      meta->projection->param.lamcc.false_northing,
+      "False northing [m]");
+  meta_put_double(fp,"scale_factor:",
+      meta->projection->param.lamcc.scale_factor,
+      "Scaling factor");
       }
       meta_put_string(fp,"}","","End lamcc");
       break;
@@ -463,11 +460,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"slat:",meta->projection->param.ps.slat,"Reference Latitude");
       meta_put_double(fp,"slon:",meta->projection->param.ps.slon,"Reference Longitude");
       if (META_VERSION >= 1.3) {
-	meta_put_double(fp,"false_easting:",
-			meta->projection->param.ps.false_easting, "False easting [m]");
-	meta_put_double(fp,"false_northing:",
-			meta->projection->param.ps.false_northing,
-			"False northing [m]");
+  meta_put_double(fp,"false_easting:",
+      meta->projection->param.ps.false_easting, "False easting [m]");
+  meta_put_double(fp,"false_northing:",
+      meta->projection->param.ps.false_northing,
+      "False northing [m]");
       }
       meta_put_string(fp,"}","","End ps");
       break;
@@ -475,18 +472,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"utm {","","Begin Universal Transverse Mercator Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       if (META_VERSION >= 1.3) {
-	meta_put_double(fp,"false_easting:",
-			meta->projection->param.utm.false_easting,
-			"False easting [m]");
-	meta_put_double(fp,"false_northing:",
-			meta->projection->param.utm.false_northing,
-			"False northing [m]");
-	meta_put_double(fp,"latitude:",meta->projection->param.utm.lat0,
-			"Latitude [degrees]");
-	meta_put_double(fp,"longitude:",meta->projection->param.utm.lon0,
-			"Longitude [degrees]");
-	meta_put_double(fp,"scale_factor:", meta->projection->param.utm.scale_factor,
-			"Scaling factor");
+  meta_put_double(fp,"false_easting:",
+      meta->projection->param.utm.false_easting,
+      "False easting [m]");
+  meta_put_double(fp,"false_northing:",
+      meta->projection->param.utm.false_northing,
+      "False northing [m]");
+  meta_put_double(fp,"latitude:",meta->projection->param.utm.lat0,
+      "Latitude [degrees]");
+  meta_put_double(fp,"longitude:",meta->projection->param.utm.lon0,
+      "Longitude [degrees]");
+  meta_put_double(fp,"scale_factor:", meta->projection->param.utm.scale_factor,
+      "Scaling factor");
       }
       meta_put_string(fp,"}","","End utm");
       break;
@@ -498,8 +495,8 @@ void meta_write(meta_parameters *meta, const char *file_name)
     case LAT_LONG_PSEUDO_PROJECTION:
     case UNKNOWN_PROJECTION:
       /* This projection type doesn't need its own parameter block,
-	 since all its values are specified in the main projection
-	 structure.  */
+   since all its values are specified in the main projection
+   structure.  */
       break;
       /*
     default:
@@ -516,63 +513,49 @@ void meta_write(meta_parameters *meta, const char *file_name)
     int ii;
     char coeff[15];
     meta_put_string(fp,"transform {","",
-		    "Block containing ALOS coordinate transformation parameters");
+        "Block containing ALOS coordinate transformation parameters");
     meta_put_int(fp,"parameter_count:",meta->transform->parameter_count,
-		 "Number of transformation parameters");
+     "Number of transformation parameters");
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "phi(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->y[ii],
-		      "latitude transformation parameter");
+          "latitude transformation parameter");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "lambda(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->x[ii],
-		      "longitude transformation parameter");
+          "longitude transformation parameter");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "i(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->s[ii],
-		      "pixel transformation parameter");
+          "pixel transformation parameter");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "j(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->l[ii],
-			"line transformation parameter");
+      "line transformation parameter");
     }
     meta_put_string(fp,"}","","End transform");
   }
 
-  if (meta->airsar) {
-    meta_put_string(fp,"airsar {","",
-		    "Block containing AirSAR parameters for geocoding");
-    meta_put_double(fp, "scale_factor:",meta->airsar->scale_factor,
-		    "General scale factor");
-    meta_put_double(fp, "gps_altitude:",meta->airsar->gps_altitude,
-		    "GPS altitude [m]");
-    meta_put_double(fp, "lat_peg_point:",meta->airsar->lat_peg_point,
-		    "Latitude of peg point [degrees]");
-    meta_put_double(fp, "lon_peg_point:",meta->airsar->lon_peg_point,
-		    "Longitude of peg point [degrees]");
-    meta_put_double(fp, "head_peg_point:",meta->airsar->head_peg_point,
-		    "Heading at peg point [degrees]");
-    meta_put_double(fp, "along_track_offset:",meta->airsar->along_track_offset,
-		    "Along-track offset S0 [m]");
-    meta_put_double(fp, "cross_track_offset:",meta->airsar->cross_track_offset,
-		    "Cross-track offset C0 [m]");
-    meta_put_string(fp,"}","","End airsar");
-  }
-
   /* Write out statistics block */
   if (meta->stats) {
+    int ii;
     meta_put_string(fp,"stats {","","Block containing basic image statistics");
-    meta_put_double(fp,"min:",meta->stats->min,"Minimum sample value");
-    meta_put_double(fp,"max:",meta->stats->max,"Maximum sample value");
-    meta_put_double(fp,"mean:",meta->stats->mean,"Mean average of sample values");
-    meta_put_double(fp,"rmse:",meta->stats->rmse,"Root mean squared error");
-    meta_put_double(fp,"std_deviation:",meta->stats->std_deviation,
-		    "Standard deviation");
-    meta_put_double(fp,"mask:",meta->stats->mask,
-		    "Value ignored while taking statistics");
+    meta_put_int(fp, "band_count:", meta->stats->band_count,"Number of statistics blocks (1 per band)");
+    for (ii=0; ii<meta->stats->band_count; ii++) {
+      meta_put_string(fp,"stats_block {","","Block containing band statistics");
+      meta_put_double(fp,"min:",meta->stats->band_stats[ii].min,"Minimum sample value");
+      meta_put_double(fp,"max:",meta->stats->band_stats[ii].max,"Maximum sample value");
+      meta_put_double(fp,"mean:",meta->stats->band_stats[ii].mean,"Mean average of sample values");
+      meta_put_double(fp,"rmse:",meta->stats->band_stats[ii].rmse,"Root mean squared error");
+      meta_put_double(fp,"std_deviation:",meta->stats->band_stats[ii].std_deviation,
+          "Standard deviation");
+      meta_put_double(fp,"mask:",meta->stats->band_stats[ii].mask,
+          "Value ignored while taking statistics");
+      meta_put_string(fp,"}","","End band statistics block");
+    }
     meta_put_string(fp,"}","","End stats");
   }
 
@@ -580,21 +563,21 @@ void meta_write(meta_parameters *meta, const char *file_name)
   if (meta->location) {
     meta_put_string(fp,"location {","","Block containing image corner coordinates");
     meta_put_double(fp,"lat_start_near_range:",meta->location->lat_start_near_range,
-		    "Latitude at image start in near range");
+        "Latitude at image start in near range");
     meta_put_double(fp,"lon_start_near_range:",meta->location->lon_start_near_range,
-		    "Longitude at image start in near range");
+        "Longitude at image start in near range");
     meta_put_double(fp,"lat_start_far_range:",meta->location->lat_start_far_range,
-		    "Latitude at image start in far range");
+        "Latitude at image start in far range");
     meta_put_double(fp,"lon_start_far_range:",meta->location->lon_start_far_range,
-		    "Longitude at image start in far range");
+        "Longitude at image start in far range");
     meta_put_double(fp,"lat_end_near_range:",meta->location->lat_end_near_range,
-		    "Latitude at image end in near range");
+        "Latitude at image end in near range");
     meta_put_double(fp,"lon_end_near_range:",meta->location->lon_end_near_range,
-		    "Longitude at image end in near range");
+        "Longitude at image end in near range");
     meta_put_double(fp,"lat_end_far_range:",meta->location->lat_end_far_range,
-		    "Latitude at image end in far range");
+        "Latitude at image end in far range");
     meta_put_double(fp,"lon_end_far_range:",meta->location->lon_end_far_range,
-		    "Longitude at image end in far range");
+        "Longitude at image end in far range");
     meta_put_string(fp,"}","","End location");
   }
 
@@ -630,55 +613,55 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 /*Geolocation parameters.*/
   meta_put_string(fp,"geo {","","begin parameters used in geolocating the image.");
   meta_put_char(fp,"type:",geo->type,
-		"Image type: [S=slant range; G=ground range; P=map projected]");
+    "Image type: [S=slant range; G=ground range; P=map projected]");
   if (geo->type=='P')
   {/*Projection Parameters.*/
     char oldproj=0;
     proj_parameters *proj=meta->geo->proj;
     meta_put_string(fp,"proj {","","Map Projection parameters");
     meta_put_double(fp,"startX:",proj->startX,
-		    "Projection Coordinate at top-left, X direction");
+        "Projection Coordinate at top-left, X direction");
     meta_put_double(fp,"startY:",proj->startY,
-		    "Projection Coordinate at top-left, Y direction");
+        "Projection Coordinate at top-left, Y direction");
     meta_put_double(fp,"perX:",proj->perX,
-		    "Projection Coordinate per pixel, X direction");
+        "Projection Coordinate per pixel, X direction");
     meta_put_double(fp,"perY:",proj->perY,
-		    "Projection Coordinate per pixel, X direction");
+        "Projection Coordinate per pixel, X direction");
     meta_put_char(fp,"hem:",proj->hem,
-		  "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
+      "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     meta_put_double(fp,"re_major:",proj->re_major,
-		    "Major (equator) Axis of earth (meters)");
+        "Major (equator) Axis of earth (meters)");
     meta_put_double(fp,"re_minor:",proj->re_minor,
-		    "Minor (polar) Axis of earth (meters)");
+        "Minor (polar) Axis of earth (meters)");
     switch(proj->type)
     {
       case SCANSAR_PROJECTION:/*Along-track/cross-track projection.*/
         oldproj='A';
-	meta_put_double(fp,"rlocal:",proj->param.atct.rlocal,"Local earth radius [m]");
+  meta_put_double(fp,"rlocal:",proj->param.atct.rlocal,"Local earth radius [m]");
         meta_put_double(fp,"atct_alpha1:",proj->param.atct.alpha1,
-			"at/ct projection parameter");
+      "at/ct projection parameter");
         meta_put_double(fp,"atct_alpha2:",proj->param.atct.alpha2,
-			"at/ct projection parameter");
+      "at/ct projection parameter");
         meta_put_double(fp,"atct_alpha3:",proj->param.atct.alpha3,
-			"at/ct projection parameter");
+      "at/ct projection parameter");
         break;
       case LAMBERT_CONFORMAL_CONIC:/*Lambert Conformal Conic projection.*/
         oldproj='L';
         meta_put_double(fp,"lam_plat1:",proj->param.lamcc.plat1,
-			"Lambert first standard parallel");
+      "Lambert first standard parallel");
         meta_put_double(fp,"lam_plat2:",proj->param.lamcc.plat2,
-			"Lambert second standard parallel");
+      "Lambert second standard parallel");
         meta_put_double(fp,"lam_lat:",proj->param.lamcc.lat0,
-			"Lambert original latitude");
+      "Lambert original latitude");
         meta_put_double(fp,"lam_lon:",proj->param.lamcc.lon0,
-			"Lambert original longitude");
+      "Lambert original longitude");
         break;
       case POLAR_STEREOGRAPHIC:/*Polar Stereographic Projection.*/
         oldproj='P';
         meta_put_double(fp,"ps_lat:",proj->param.ps.slat,
-			"Polar Stereographic reference Latitude");
+      "Polar Stereographic reference Latitude");
         meta_put_double(fp,"ps_lon:",proj->param.ps.slon,
-			"Polar Stereographic reference Longitude");
+      "Polar Stereographic reference Longitude");
         break;
       case UNIVERSAL_TRANSVERSE_MERCATOR:/*Universal Trasnverse Mercator Projection.*/
         oldproj='U';
@@ -695,35 +678,35 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
     }
     if (oldproj) {
       meta_put_char(fp,"type:",oldproj,
-		  "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
+      "Projection Type: [U=utm; P=ps; L=Lambert; A=at/ct]");
     }
     meta_put_string(fp,"}","","end proj");
   }
   meta_put_char(fp,"lookDir:",geo->lookDir,
-		"SAR Satellite look direction (normally R) [R=right; L=left]");
+    "SAR Satellite look direction (normally R) [R=right; L=left]");
   meta_put_int(fp,"deskew:",geo->deskew,"Image moved to zero doppler? [1=yes; 0=no]");
   meta_put_double(fp,"xPix:",geo->xPix,"Pixel size in X direction [m]");
   meta_put_double(fp,"yPix:",geo->yPix,"Pixel size in Y direction [m]");
   meta_put_double(fp,"rngPixTime:",geo->rngPixTime,
-		  "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
+      "Time/pixel, range (xPix/(c/2.0), or 1/fs) [s]");
   meta_put_double(fp,"azPixTime:",geo->azPixTime,
-		  "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
+      "Time/pixel, azimuth (yPix/swathVel, or 1/prf) [s]");
   meta_put_double(fp,"slantShift:",geo->slantShift,
-		  "Error correction factor, in slant range [m]");
+      "Error correction factor, in slant range [m]");
   meta_put_double(fp,"timeShift:",geo->timeShift,
-		  "Error correction factor, in time [s]");
+      "Error correction factor, in time [s]");
   meta_put_double(fp,"slantFirst:",geo->slantFirst,
-		  "Slant range to first image pixel [m]");
+      "Slant range to first image pixel [m]");
   meta_put_double(fp,"wavelength:",geo->wavelen,"SAR Carrier Wavelength [m]");
   meta_put_double(fp,"dopRangeCen:",geo->dopRange[0],"Doppler centroid [Hz]");
   meta_put_double(fp,"dopRangeLin:",geo->dopRange[1],
-		  "Doppler per range pixel [Hz/pixel]");
+      "Doppler per range pixel [Hz/pixel]");
   meta_put_double(fp,"dopRangeQuad:",geo->dopRange[2],
-		  "Doppler per range pixel sq. [Hz/(pixel^2)]");
+      "Doppler per range pixel sq. [Hz/(pixel^2)]");
   meta_put_double(fp,"dopAzCen:",geo->dopAz[0],"Doppler centroid [Hz]");
   meta_put_double(fp,"dopAzLin:",geo->dopAz[1],"Doppler per azimuth pixel [Hz/pixel]");
   meta_put_double(fp,"dopAzQuad:",geo->dopAz[2],
-		  "Doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+      "Doppler per azimuth pixel sq. [Hz/(pixel^2)]");
   meta_put_string(fp,"}","","end geo");
 
 /*Interferometry parameters:*/
@@ -733,38 +716,38 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
   meta_put_int(fp,"nLooks:",ifm->nLooks,"Number of looks to take from SLC");
   meta_put_int(fp,"orig_lines:",ifm->orig_nLines,"Number of lines in original image");
   meta_put_int(fp,"orig_samples:",ifm->orig_nSamples,
-	       "Number of samples in original image");
+         "Number of samples in original image");
   meta_put_string(fp,"}","","end ifm");
 
 /*State Vectors:*/
   if (meta->stVec!=NULL) {
     meta_put_string(fp,"state {","",
-		    "begin list of state vectors for satellite, over image");
+        "begin list of state vectors for satellite, over image");
     meta_put_int   (fp,"year:",meta->state_vectors->year,"Year of image start");
     meta_put_int   (fp,"day:",meta->state_vectors->julDay,
-		    "Julian day of the year for image start");
+        "Julian day of the year for image start");
     meta_put_double(fp,"second:",meta->state_vectors->second,
-		    "Second of the day for image start");
+        "Second of the day for image start");
     meta_put_int   (fp,"number:",meta->state_vectors->vector_count,
-		    "Number of state vectors below");
+        "Number of state vectors below");
     {
       int ii;
       for (ii = 0; ii < meta->state_vectors->vector_count; ii++ ) {
         meta_put_string(fp,"vector {","","begin a single state vector");
         meta_put_double(fp,"time:",meta->state_vectors->vecs[ii].time,
-			"Time, relative to image start [s]");
+      "Time, relative to image start [s]");
         meta_put_double(fp,"x:",meta->state_vectors->vecs[ii].vec.pos.x,
-			"X Coordinate, earth-fixed [m]");
+      "X Coordinate, earth-fixed [m]");
         meta_put_double(fp,"y:",meta->state_vectors->vecs[ii].vec.pos.y,
-			"Y Coordinate, earth-fixed [m]");
+      "Y Coordinate, earth-fixed [m]");
         meta_put_double(fp,"z:",meta->state_vectors->vecs[ii].vec.pos.z,
-			"Z Coordinate, earth-fixed [m]");
+      "Z Coordinate, earth-fixed [m]");
         meta_put_double(fp,"vx:",meta->state_vectors->vecs[ii].vec.vel.x,
-			"X Velocity, earth-fixed [m/s]");
+      "X Velocity, earth-fixed [m/s]");
         meta_put_double(fp,"vy:",meta->state_vectors->vecs[ii].vec.vel.y,
-			"Y Velocity, earth-fixed [m/s]");
+      "Y Velocity, earth-fixed [m/s]");
         meta_put_double(fp,"vz:",meta->state_vectors->vecs[ii].vec.vel.z,
-			"Z Velocity, earth-fixed [m/s]");
+      "Z Velocity, earth-fixed [m/s]");
         meta_put_string(fp,"}","","end vector");
       }
     }
@@ -776,12 +759,12 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
   meta_put_string(fp,"sensor:",meta->info->sensor,"Imaging sensor");
   meta_put_string(fp,"mode:",meta->info->mode,"Imaging mode");
   meta_put_string(fp,"processor:",meta->info->processor,
-		  "Name & Version of SAR Processor");
+      "Name & Version of SAR Processor");
   meta_put_int(fp,"orbit:",meta->info->orbit,"Orbit Number for this datatake");
   meta_put_double(fp,"bitErrorRate:",meta->info->bitErrorRate,"Bit Error Rate");
   meta_put_string(fp,"satBinTime:",meta->info->satBinTime,"Satellite Binary Time");
   meta_put_string(fp,"satClkTime:",meta->info->satClkTime,
-		  "Satellite Clock Time (UTC)");
+      "Satellite Clock Time (UTC)");
   meta_put_double(fp,"prf:",meta->info->prf,"Pulse Repition Frequency");
   meta_put_string(fp,"}","","end extra");
 
@@ -793,87 +776,87 @@ void meta_write_old(meta_parameters *meta, const char *file_name)
 
 int is_empty(char *string)
 {
-	int ii;
-	for (ii=0; ii<strlen(string); ii++) {
-		if (!isspace(string[ii])) return 0;
-	}
-	return 1;
+  int ii;
+  for (ii=0; ii<strlen(string); ii++) {
+    if (!isspace(string[ii])) return 0;
+  }
+  return 1;
 }
 void meta_put_string(FILE *meta_file,char *name,char *value,char *comment)
 {
-	int ii;
-	int malloc_flag=0;
-	char line[255];/*The line to be written to the file.*/
-	static int depth=0;
-	strcpy(line,"");
+  int ii;
+  int malloc_flag=0;
+  char line[255];/*The line to be written to the file.*/
+  static int depth=0;
+  strcpy(line,"");
 
 /*Deal with indentation.*/
-	if (strchr(name,'}'))/*If the string has a closing brace, indent less.*/
-		depth--;
-	if (depth<0)
-		{printf("ERROR!  Too many '}' in meta file!\n"); exit(1);}
+  if (strchr(name,'}'))/*If the string has a closing brace, indent less.*/
+    depth--;
+  if (depth<0)
+    {printf("ERROR!  Too many '}' in meta file!\n"); exit(1);}
 
-	for (ii=0; ii<depth; ii++)
-		strcat(line,"    ");/*Indent the appropriate number of spaces.*/
+  for (ii=0; ii<depth; ii++)
+    strcat(line,"    ");/*Indent the appropriate number of spaces.*/
 
 /*Append parameter and value.*/
-	strcat(line,name);/*Append parameter name*/
-	strcat(line," ");
-	if (is_empty(value) && !strchr(name,'{') && !strchr(name,'}')){
-		value = (char*)MALLOC(sizeof(char)*4);
-		malloc_flag=1;
-		strcpy(value,MAGIC_UNSET_STRING);
-	}
-	strcat(line,value);/*Append parameter value.*/
-	if (malloc_flag==1) {free(value);}
+  strcat(line,name);/*Append parameter name*/
+  strcat(line," ");
+  if (is_empty(value) && !strchr(name,'{') && !strchr(name,'}')){
+    value = (char*)MALLOC(sizeof(char)*4);
+    malloc_flag=1;
+    strcpy(value,MAGIC_UNSET_STRING);
+  }
+  strcat(line,value);/*Append parameter value.*/
+  if (malloc_flag==1) {free(value);}
 
 /* Append comment if applicable */
-	if (comment!=NULL)
-	{
-	/*Space over to the comment section.*/
-		ii=strlen(line);
-		while (ii < 42+depth*4) /*Fill spaces out to about column 50.*/
-			line[ii++]=' ';
-		line[ii++]='\0';        /*Append trailing NULL.*/
+  if (comment!=NULL)
+  {
+  /*Space over to the comment section.*/
+    ii=strlen(line);
+    while (ii < 42+depth*4) /*Fill spaces out to about column 50.*/
+      line[ii++]=' ';
+    line[ii++]='\0';        /*Append trailing NULL.*/
 
-	/*Add the comment.*/
-		strcat(line," # ");     /*Signal beginning of comment.*/
-		strcat(line,comment);   /*Append comment.*/
-	}
+  /*Add the comment.*/
+    strcat(line," # ");     /*Signal beginning of comment.*/
+    strcat(line,comment);   /*Append comment.*/
+  }
 
 /*If the string has a closing brace, append newline*/
-	if (strchr(name,'}') && (depth==0))
-		strcat(line,"\n");
+  if (strchr(name,'}') && (depth==0))
+    strcat(line,"\n");
 
 /*More indentation.*/
-	if (strchr(name,'{'))/*If the string has an opening brace, indent more.*/
-		depth++;
+  if (strchr(name,'{'))/*If the string has an opening brace, indent more.*/
+    depth++;
 
 /*Finally, write the line to the file.*/
-	fprintf(meta_file,"%s\n",line);
+  fprintf(meta_file,"%s\n",line);
 }
 
 void meta_put_double(FILE *meta_file,char *name,double value,char *comment)
 {
-	char param[64];
-	sprintf(param,"%-16.11g",value);
-	strtok(param," ");/*remove all trailing spaces */
-	if (is_empty(param)) { strcpy(param,"NaN"); }
-	meta_put_string(meta_file,name,param,comment);
+  char param[64];
+  sprintf(param,"%-16.11g",value);
+  strtok(param," ");/*remove all trailing spaces */
+  if (is_empty(param)) { strcpy(param,"NaN"); }
+  meta_put_string(meta_file,name,param,comment);
 }
 
 void meta_put_int(FILE *meta_file,char *name,int value,char *comment)
 {
-	char param[64];
-	sprintf(param,"%i",value);
-	if (is_empty(param)) { strcpy(param,"-999999999"); }
-	meta_put_string(meta_file,name,param,comment);
+  char param[64];
+  sprintf(param,"%i",value);
+  if (is_empty(param)) { strcpy(param,"-999999999"); }
+  meta_put_string(meta_file,name,param,comment);
 }
 
 void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 {
-	char param[2];
-	sprintf(param,"%c",value);
-	if (is_empty(param)) { strcpy(param,"?"); }
-	meta_put_string(meta_file,name,param,comment);
+  char param[2];
+  sprintf(param,"%c",value);
+  if (is_empty(param)) { strcpy(param,"?"); }
+  meta_put_string(meta_file,name,param,comment);
 }

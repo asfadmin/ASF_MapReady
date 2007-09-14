@@ -26,7 +26,7 @@ meta_parameters *meta_copy(meta_parameters *src)
     memcpy(ret->state_vectors, src->state_vectors, sizeof(meta_state_vectors)+vector_count*sizeof(state_loc));
   }
   if (src->stats) {
-    ret->stats = meta_stats_init();
+    ret->stats = meta_stats_init(src->stats->band_count);
     memcpy(ret->stats, src->stats, sizeof(meta_stats));
   }
 

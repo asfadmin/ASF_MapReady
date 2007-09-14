@@ -173,7 +173,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   meta_out->optical = NULL;
   meta_out->thermal = NULL;
   meta_out->projection = meta_projection_init ();
-  meta_out->stats = meta_stats_init ();
+  meta_out->stats = meta_stats_init (1);
   meta_out->state_vectors = NULL;
   meta_out->location = meta_location_init ();
   // Don't set any of the deprecated structure elements.
@@ -283,15 +283,15 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // it are reflected in the above.
 
   meta_stats *ms = meta_out->stats; // Convenience alias.
-  ms->mean = mean;
+  ms->band_stats[0].mean = mean;
   // The root mean square error and standard deviation are very close
   // by definition when the number of samples is large, there seems to
   // be some confusion about the definitions of one relative to the
   // other, and I don't think its worth agonizing about the best thing
   // to do.
-  ms->rmse = standard_deviation;
-  ms->std_deviation = standard_deviation;
-  ms->mask = FLOAT_IMAGE_DEFAULT_MASK;
+  ms->band_stats[0].rmse = standard_deviation;
+  ms->band_stats[0].std_deviation = standard_deviation;
+  ms->band_stats[0].mask = FLOAT_IMAGE_DEFAULT_MASK;
 
   meta_location *ml = meta_out->location; // Convenience alias.
   //ml->lat_start_near_range = mp->startX;

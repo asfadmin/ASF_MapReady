@@ -4,7 +4,7 @@ FUNCTION NAME:
 DESCRIPTION:
 
 RETURN VALUE:
-   
+
 SPECIAL CONSIDERATIONS:
 
 PROGRAM HISTORY:
@@ -15,16 +15,16 @@ PROGRAM HISTORY:
 #include "asf_nan.h" /* needed for MAGIC_UNSET_DOUBLE */
 
 META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS] = {
-	{ "", NULL, NULL},
-	{ "", NULL, NULL},
-	{ "", NULL, NULL}
+  { "", NULL, NULL},
+  { "", NULL, NULL},
+  { "", NULL, NULL}
 };
 
 meta_general       *meta_general_init(void);
 meta_sar           *meta_sar_init(void);
 meta_projection    *meta_projection_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
-meta_stats         *meta_stats_init(void);
+meta_stats         *meta_stats_init(int band_count);
 
 
 /********************************************************
@@ -76,7 +76,7 @@ meta_sar *meta_sar_init(void)
 
   /* Fill with ludicrous values.  */
   strcpy(sar->polarization, MAGIC_UNSET_STRING);
-  sar->image_type = MAGIC_UNSET_CHAR; 
+  sar->image_type = MAGIC_UNSET_CHAR;
   sar->look_direction = MAGIC_UNSET_CHAR;
   sar->look_count = MAGIC_UNSET_INT;
   sar->deskewed = MAGIC_UNSET_INT;
@@ -99,9 +99,9 @@ meta_sar *meta_sar_init(void)
   sar->range_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
   sar->range_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
   sar->range_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
-  sar->azimuth_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE; 
-  sar->azimuth_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE; 
-  sar->azimuth_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE; 
+  sar->azimuth_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
+  sar->azimuth_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
+  sar->azimuth_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
 
   return sar;
 }
@@ -184,6 +184,8 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
 {
   meta_state_vectors *state_vectors;
   int ii=0;
+
+  state_vectors->vector_count = vector_count > 0 ? vector_count : 0; // Prevent eternal loop
   state_vectors = (meta_state_vectors *)MALLOC(  sizeof(meta_state_vectors)
                                                + vector_count * sizeof(state_loc)
                                               );
@@ -191,7 +193,6 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
   state_vectors->year = MAGIC_UNSET_INT;
   state_vectors->julDay = MAGIC_UNSET_INT;
   state_vectors->second = MAGIC_UNSET_DOUBLE;
-  state_vectors->vector_count = vector_count;
   state_vectors->num = state_vectors->vector_count;
   for (ii=0; ii<state_vectors->vector_count; ii++) {
     state_vectors->vecs[ii].time = MAGIC_UNSET_DOUBLE;
@@ -209,30 +210,26 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
  * meta_stats_init():
  * Allocate memory for and initialize elements of a meta
  * stats structure */
-meta_stats *meta_stats_init(void)
+meta_stats *meta_stats_init(int band_count)
 {
-  meta_stats *stats = (meta_stats *)MALLOC(sizeof(meta_stats));
-  strcpy (stats->band_id, MAGIC_UNSET_STRING);
-  stats->min = MAGIC_UNSET_DOUBLE;
-  stats->max = MAGIC_UNSET_DOUBLE;
-  stats->mean = MAGIC_UNSET_DOUBLE;
-  stats->rmse = MAGIC_UNSET_DOUBLE;
-  stats->std_deviation = MAGIC_UNSET_DOUBLE;
-  stats->mask = MAGIC_UNSET_DOUBLE;
+  int i = 0;
+  meta_stats *stats;
+
+  stats->band_count = band_count > 0 ? band_count : 0; // Prevent eternal loop
+  stats = (meta_stats *)MALLOC(  sizeof(meta_stats)
+                               + band_count * sizeof(stats_block)
+                              );
+  for (i=0; i<stats->band_count; i++) {
+    strcpy (stats->band_stats[i].band_id, MAGIC_UNSET_STRING);
+    stats->band_stats[i].min           = MAGIC_UNSET_DOUBLE;
+    stats->band_stats[i].max           = MAGIC_UNSET_DOUBLE;
+    stats->band_stats[i].mean          = MAGIC_UNSET_DOUBLE;
+    stats->band_stats[i].rmse          = MAGIC_UNSET_DOUBLE;
+    stats->band_stats[i].std_deviation = MAGIC_UNSET_DOUBLE;
+    stats->band_stats[i].mask          = MAGIC_UNSET_DOUBLE;
+  }
   return stats;
 }
-
-meta_band_stats *meta_band_stats_init(int band_count)
-{
-  meta_band_stats *band;
-
-  band = (meta_band_stats *) MALLOC(sizeof(meta_stats)*band_count);
-
-  //  for (ii=0; ii<band_count; ii++)
-  //  band[ii]->stats = meta_stats_init();
-  return band;
-}
-
 
 /*******************************************************************
  * meta_location_init():
@@ -267,9 +264,7 @@ meta_parameters *raw_init(void)
   meta->transform       = NULL;
   meta->airsar          = NULL;
   meta->stats           = NULL;
-  meta->band            = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
-  //meta->location        = meta_location_init();  
   meta->location        = NULL;
 
   meta->meta_version = META_VERSION;
@@ -282,7 +277,7 @@ meta_parameters *raw_init(void)
   meta->ifm   = MALLOC(sizeof(ifm_parameters));
   meta->stVec = meta->state_vectors; // Compatability alias.
   meta->info  = NULL;
-  
+
   // Guess at conceivable values for deprecated elements.
   meta->geo->type = 'G';
   meta->geo->proj = NULL;
@@ -300,22 +295,22 @@ meta_parameters *raw_init(void)
   meta->geo->dopAz[0] = MAGIC_UNSET_DOUBLE;
   meta->geo->dopAz[1] = MAGIC_UNSET_DOUBLE;
   meta->geo->dopAz[2] = MAGIC_UNSET_DOUBLE;
-  
+
   meta->ifm->er = 6360000.989;
   meta->ifm->ht = meta->ifm->er+700000.0;
   meta->ifm->nLooks = 5;
   meta->ifm->orig_nLines = 25989;
   meta->ifm->orig_nSamples = 5989;
   //  meta->ifm->lookCenter = 19.989;*/
-  
+
   return meta;
 }
 
 /******************************************************
- * meta_init_old: 
+ * meta_init_old:
  * Reads in a new meta_parameters record from disk with
  * the given filename.  If no .meta exists, it calls
- * meta_create to construct one.  
+ * meta_create to construct one.
  * THIS SHOULD EVENTUALLY BE REMOVED AND raw_init SHOULD
  * TAKE ITS NAME   */
 meta_parameters *meta_init(const char *fName)
@@ -390,7 +385,7 @@ int get_meta_ddr_struct_index(const char *name)
  * Disposes of a given metadata parameters record.  */
 void meta_free(meta_parameters *meta)
 {
-  
+
   int ii;
 
   if (meta != NULL) {
@@ -427,10 +422,10 @@ void meta_free(meta_parameters *meta)
 
     for (ii=0; ii<NUM_META_DDR_STRUCTS; ii++) {
       if (meta_ddr_structs[ii].meta == meta)
-        { 
-	  meta_ddr_structs[ii].meta = NULL; 
-	  strcpy(meta_ddr_structs[ii].base_name, "");
-	}
+        {
+    meta_ddr_structs[ii].meta = NULL;
+    strcpy(meta_ddr_structs[ii].base_name, "");
+  }
     }
 
     FREE(meta);
