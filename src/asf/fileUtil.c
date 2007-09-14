@@ -343,12 +343,13 @@ FILE *fopenImage(const char *fName,const char *access)
 	{
 	  if ( (0==strcmp(ext,".ddr")) || (0==strcmp(ext,".meta")))
 	    ext[0]=0;/*Clip off stupid extention-- will append .img later*/
-	  else if ( ((0==strcmp(ext,".D"))||(0==strcmp(ext,".L"))) && access[0]=='w')
+	  else if ( ((0==strcmp(ext,".D"))||(0==strcmp(ext,".L"))) && 
+          (access[0]=='w' || access[0]=='a'))
 	    ext[0]=0;/*Clip off stupid extention-- will append .img later*/
 	}
 
 /*Find the file's actual name, with the correct extension.*/
-	if (access[0]=='w')
+	if (access[0]=='w' || access[0]=='a')
 	{/*We're opening for writing-- we have to be conservative.*/
 		forWriting=1;
 		if (NULL==findExt((char *)fName))/*If there is no extension,*/
