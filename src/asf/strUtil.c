@@ -85,7 +85,7 @@ char *trim_spaces(const char *s)
       p2++;
   }
   else {
-    p2 = (char *) MALLOC(sizeof(char)*strlen(s));
+    p2 = (char *) MALLOC(sizeof(char)*(1+strlen(s)));
     strcpy(p2, p1);
   }
   FREE(p1);

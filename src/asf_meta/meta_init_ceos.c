@@ -92,7 +92,7 @@ double get_alos_firstTime (const char *fName);
 double get_chirp_rate (const char *fName);
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
-		      meta_parameters *meta);
+          meta_parameters *meta);
 
 
 /* Prototypes from meta_init_stVec.c */
@@ -188,10 +188,11 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   // Fill meta->general structure
   char *basename = get_basename(in_fName);
   strcpy(meta->general->basename, basename);
+  if(basename)FREE(basename);
   strcpy(meta->general->sensor, dssr->mission_id);
   strtok(meta->general->sensor, " "); // Remove spaces from field.
   sprintf(meta->general->sensor_name, "SAR");
-  if (strlen(dssr->beam1) <= (MODE_FIELD_STRING_MAX)) {
+  if (strlen(dssr->beam1) > 0 && strlen(dssr->beam1) <= (MODE_FIELD_STRING_MAX)) {
     strcpy(meta->general->mode, dssr->beam1);
   }
   strcpy(fac,dssr->fac_id); strtok(fac," "); // Remove spaces from field
@@ -264,6 +265,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   double firstTime, centerTime;
   require_ceos_data(in_fName, &dataName, &nBands);
   firstTime = get_firstTime(dataName[0]);
+  free_ceos_names(dataName, NULL);
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
@@ -785,7 +787,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
 
-  // For ALOS data, the doppler centroid fields are all zero.
+  // For geocoded ALOS data, the doppler centroid fields are all zero.
   int is_geocoded = dssr->crt_dopcen[0] == 0.0 &&
       dssr->crt_dopcen[1] == 0.0 &&
       dssr->crt_dopcen[2] == 0.0;
@@ -797,7 +799,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
           "The filename suggests that this data is geocoded, however the\n"
           "doppler centroid values are non-zero.  For ALOS data, the\n"
           "values for the doppler centroid should all be zero:\n"
-          "  %f, %f, %f\n"
+          "  %f, %f, %f if it is actually geocoded (per spec).\n"
           "Proceeding, but marking the data as georeferenced only.\n",
           dssr->crt_dopcen[0], dssr->crt_dopcen[1], dssr->crt_dopcen[2]);
   }
@@ -809,7 +811,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
           "values for the doppler centroid should all be zero only if the\n"
           "data is geocoded.  Centroid values read are:\n"
           "  %f, %f, %f\n"
-          "Proceeding, marking the data as georeferenced only.\n",
+          "Proceeding, but marking the data as georeferenced only.\n",
           dssr->crt_dopcen[0], dssr->crt_dopcen[1], dssr->crt_dopcen[2]);
         is_geocoded = FALSE;
   }
@@ -2126,7 +2128,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
       else if (0==strncmp(prodStr, "SAR GEOREF FINE",15))
         ceos->product = SGF;
       else if (0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA",23))
-	ceos->product = RAW;
+  ceos->product = RAW;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown RSI product type '%s'!\n", prodStr);
@@ -2379,10 +2381,16 @@ int get_alos_delta_time (const char *fileName, double *delta)
 
       // try "path/workreport"
       char *path = getPath(fileName);
-      if (strlen(path) > 0)
-          sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
-      else
-          strcpy(summaryFile, "workreport");
+      if (strlen(path) > 0) {
+        if(summaryFile)FREE(summaryFile);
+        summaryFile = (char*) MALLOC(sizeof(char) * (strlen(path) + 12));
+        sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
+      }
+      else {
+        if(summaryFile)FREE(summaryFile);
+        summaryFile = (char*) MALLOC(sizeof(char) * 12);
+        strcpy(summaryFile, "workreport");
+      }
       FREE(path);
 
       if (!fileExists(summaryFile)) {
@@ -2407,8 +2415,9 @@ int get_alos_delta_time (const char *fileName, double *delta)
       dateStr[strlen(dateStr)-2] = '\0';
       date_alos2date(dateStr, &summary_date, &summary_time);
       if (date_difference(&dssr_date, &dssr_time,
-        &summary_date, &summary_time) > 0.0) {
-  asfPrintWarning("Summary file does not correspond to leader file.\n"
+          &summary_date, &summary_time) > 0.0)
+      {
+        asfPrintWarning("Summary file does not correspond to leader file.\n"
                         "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
         *delta = 0;
         FCLOSE(fp);
@@ -2437,7 +2446,7 @@ int get_alos_delta_time (const char *fileName, double *delta)
 }
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
-		      meta_parameters *meta)
+          meta_parameters *meta)
 {
   struct dataset_sum_rec *dssr=NULL;
   ymd_date date;
@@ -2454,7 +2463,7 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
   double lat = D2R*dssr->plat_lat;
   double er = (re*rp)
     / sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
-  
+
   // find the state vector closest to the acquisition time
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
@@ -2468,19 +2477,19 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
       closest = i; closest_diff = diff;
     }
   }
-  
+
   // compute satellite height from closest state vector
   double ht = sqrt(ppdr.pos_vec[closest][0] * ppdr.pos_vec[closest][0] +
-		   ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
-		   ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
-  
+       ppdr.pos_vec[closest][1] * ppdr.pos_vec[closest][1] +
+       ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
+
   // velocity calculation
   const double g = 9.81;
   double orbit_vel = sqrt(g*er*er/ht);
-  
+
   // simple scaling to get swath velocity from orbit vel
   double swath_vel = orbit_vel * er / ht;
-  
+
   // calculate azimuth time per pixel from the swath velocity
   meta->sar->azimuth_time_per_pixel =
     meta->general->y_pixel_size / swath_vel;

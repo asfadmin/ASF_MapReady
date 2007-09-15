@@ -12,7 +12,7 @@
 #include "caplib.h"
 #include "lex_yacc.h"
 
-  extern report_level_t level; // default: WARNING
+extern report_level_t level; // default: WARNING
 
 /* We don't always have strdup() around.  */
 static char *
@@ -883,8 +883,24 @@ void fill_structure_field(char *field_name, void *valp)
 
   /* Fields which normally go in the statistics block of the metadata file. */
   if ( !strcmp(stack_top->block_name, "stats") ) {
-    if ( !strcmp(field_name, "band_count") )
-    { MSTATS->band_count = VALP_AS_INT; return; }
+    //if (global_meta->meta_version >= 2.4) {
+      if ( !strcmp(field_name, "band_count") )
+      { MSTATS->band_count = VALP_AS_INT; return; }
+    //}
+    //else {
+      //if ( !strcmp(field_name, "min") )
+      //{ (MSTATS)->min = VALP_AS_DOUBLE; return; }
+      //if ( !strcmp(field_name, "max") )
+      //{ (MSTATS)->max = VALP_AS_DOUBLE; return; }
+      //if ( !strcmp(field_name, "mean") )
+      //{ (MSTATS)->mean = VALP_AS_DOUBLE; return; }
+      //if ( !strcmp(field_name, "rmse") )
+      //{ (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
+      //if ( !strcmp(field_name, "std_deviation") )
+      //{ (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
+      //if ( !strcmp(field_name, "mask") )
+      //{ (MSTATS)->mask = VALP_AS_DOUBLE; return; }
+    //}
   }
   if ( !strcmp(stack_top->block_name, "statsblock") ) {
     if ( !strcmp(field_name, "band_id") )
@@ -1020,7 +1036,10 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   }
 
   /* Fill in number of stats blocks seen.  */
-  if ((dest->stats->band_count) && (dest->stats->band_count != stats_block_count)) {
+  if (dest->stats             &&
+      dest->stats->band_count &&
+      dest->stats->band_count != stats_block_count)
+  {
     warning_message("Said number of stats blocks in stats (%d)\n"
         "differs from the actual amount of stats blocks (%d)...\n"
         "Using actual number of stats blocks for stats_blocks_count.",

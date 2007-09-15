@@ -184,12 +184,14 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
 {
   meta_state_vectors *state_vectors;
   int ii=0;
+  int vc;
 
-  state_vectors->vector_count = vector_count > 0 ? vector_count : 0; // Prevent eternal loop
+  vc = vector_count > 0 ? vector_count : 0;
   state_vectors = (meta_state_vectors *)MALLOC(  sizeof(meta_state_vectors)
-                                               + vector_count * sizeof(state_loc)
+                                               + vc * sizeof(state_loc)
                                               );
   /* Fill with ludicrous values.  */
+  state_vectors->vector_count = vc;
   state_vectors->year = MAGIC_UNSET_INT;
   state_vectors->julDay = MAGIC_UNSET_INT;
   state_vectors->second = MAGIC_UNSET_DOUBLE;
@@ -213,12 +215,14 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
 meta_stats *meta_stats_init(int band_count)
 {
   int i = 0;
+  int bc;
   meta_stats *stats;
 
-  stats->band_count = band_count > 0 ? band_count : 0; // Prevent eternal loop
+  bc = band_count > 0 ? band_count : 0;
   stats = (meta_stats *)MALLOC(  sizeof(meta_stats)
-                               + band_count * sizeof(stats_block)
+                               + bc * sizeof(stats_block)
                               );
+  stats->band_count = bc;
   for (i=0; i<stats->band_count; i++) {
     strcpy (stats->band_stats[i].band_id, MAGIC_UNSET_STRING);
     stats->band_stats[i].min           = MAGIC_UNSET_DOUBLE;
