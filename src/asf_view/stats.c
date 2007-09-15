@@ -50,7 +50,7 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = fdata[jj+ii*tsx];
-                    if (v != meta->general->no_data) {
+                    if (meta_is_valid_double(v) && v != meta->general->no_data) {
                         g_stats.avg += v;
 
                         // first valid pixel --> initialize max/min
@@ -69,27 +69,30 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = fdata[jj+ii*tsx];
-                    if (v != meta->general->no_data)
+                    if (meta_is_valid_double(v) && v != meta->general->no_data)
                         g_stats.stddev += (v - g_stats.avg) * (v - g_stats.avg);
                 }
             }
             g_stats.stddev = sqrt(g_stats.stddev / (double)n);
         } else {
-            // Compute stats -- no ignore
+            // Compute stats -- no ignore (actually, do ignore data that is NaN)
             g_stats.act_max = g_stats.act_min = fdata[0];
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = fdata[jj+ii*tsx];
-                    g_stats.avg += v;
-                    if (v > g_stats.act_max) g_stats.act_max = v;
-                    if (v < g_stats.act_min) g_stats.act_min = v;
+                    if (meta_is_valid_double(v)) {
+                        g_stats.avg += v;
+                        if (v > g_stats.act_max) g_stats.act_max = v;
+                        if (v < g_stats.act_min) g_stats.act_min = v;
+                    }
                 }
             }
             g_stats.avg /= (double)(tsx*tsy);
             for ( ii = 0 ; ii < tsy ; ii++ ) {
                 for ( jj = 0 ; jj < tsx ; jj++ ) {
                     float v = fdata[jj+ii*tsx];
-                    g_stats.stddev += (v - g_stats.avg) * (v - g_stats.avg);
+                    if (meta_is_valid_double(v))
+                        g_stats.stddev += (v - g_stats.avg) * (v - g_stats.avg);
                 }
             }
             g_stats.stddev = sqrt(g_stats.stddev / (double)(tsx*tsy));
@@ -111,7 +114,9 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
                 float val = fdata[index];
 
                 unsigned char uval;
-                if (have_no_data && val == meta->general->no_data)
+                if (!meta_is_valid_double(val))
+                    uval = 0;
+                else if (have_no_data && val == meta->general->no_data)
                     uval = 0;
                 else if (val < g_stats.map_min)
                     uval = 0;
@@ -227,8 +232,14 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
                 int kk = 3*(jj+ii*tsx);
-                int is_valid_data = !have_nd ||
-                    (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd);
+
+                int is_valid_data = 
+                    meta_is_valid_double(fdata[kk]) &&
+                    meta_is_valid_double(fdata[kk+1]) &&
+                    meta_is_valid_double(fdata[kk+2]) &&
+                    (!have_nd ||
+                        (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd));
+    
                 if (is_valid_data)
                 {
                     float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
@@ -243,8 +254,14 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
                 int kk = 3*(jj+ii*tsx);
-                int is_valid_data = !have_nd ||
-                    (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd);
+
+                int is_valid_data = 
+                    meta_is_valid_double(fdata[kk]) &&
+                    meta_is_valid_double(fdata[kk+1]) &&
+                    meta_is_valid_double(fdata[kk+2]) &&
+                    (!have_nd ||
+                        (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd));
+
                 if (is_valid_data)
                 {
                     float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
@@ -258,7 +275,9 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
 
         // Scale the data
         for (ii=0; ii<tsx*tsy*3; ++ii) {
-            if (have_nd && fdata[ii] == nd)
+            if (!meta_is_valid_double(fdata[ii]))
+                bdata[ii] = 0;
+            else if (have_nd && fdata[ii] == nd)
                 bdata[ii] = 0;
             else if (fdata[ii] < g_stats.map_min)
                 bdata[ii] = 0;

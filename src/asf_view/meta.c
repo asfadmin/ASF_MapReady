@@ -5,7 +5,8 @@
 // pointers to!
 char *br(const char *s)
 {
-    static char out[512];
+#define N 512
+    static char out[N];
 
     const int MAX = 28;
     if (strlen(s) < MAX) {
@@ -21,23 +22,33 @@ char *br(const char *s)
             next = strchr(prev, ',');
             if (!next) {
                 // reached end of string -- put what we have in output
-                strcat(out, ",\n   ");
-                strcat(out, curr);
+                if (strlen(out) + strlen(curr) < N-MAX) {
+                    if (strlen(out) > 0)
+                        strcat(out, ",\n   ");
+                    strcat(out, curr);
+                }
                 break;
             }
             else if (next-curr > MAX) {
                 // too many characters -- copy what we have
-                if (strlen(out) > 0)
-                    strcat(out, ",\n   ");
-                *next = '\0';
-                strcat(out, curr);
+                if (strlen(out) + strlen(curr) < N-MAX) {
+                    if (strlen(out) > 0)
+                        strcat(out, ",\n   ");
+                    *next = '\0';
+                    strcat(out, curr);
+                }
+                else
+                    break; // getting too long
                 curr = next+1;
             }
             prev = next+1;
+            if (strlen(out) > N-2*MAX) // prevent buffer overrun
+                break;                 // plenty of safety margin
         }
         free(str);
     }
     return out;
+#undef N
 }
 
 void fill_meta_info()
