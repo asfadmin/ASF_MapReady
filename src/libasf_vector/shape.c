@@ -153,6 +153,30 @@ void shape_init(char *inFile, format_type_t format)
       if (DBFAddField(dbase, "Pressure", FTDouble, 6, 1) == -1)
 	asfPrintError("Could not add 'Pressure' field to database file\n");
       break;
+    case MULTIMATCH:
+      if (DBFAddField(dbase, "Ref_x", FTDouble, 9, 2) == -1)
+	asfPrintError("Could not add 'Ref_x' field to database file\n");
+      if (DBFAddField(dbase, "Ref_y", FTDouble, 9, 2) == -1)
+	asfPrintError("Could not add 'Ref_y' field to database file\n");
+      if (DBFAddField(dbase, "Ref_z", FTDouble, 9, 2) == -1)
+        asfPrintError("Could not add 'Ref_z' field to database file\n");
+      if (DBFAddField(dbase, "Search_x", FTDouble, 9, 2) == -1)
+        asfPrintError("Could not add 'Ref_x' field to database file\n");
+      if (DBFAddField(dbase, "Search_y", FTDouble, 9, 2) == -1)
+        asfPrintError("Could not add 'Ref_y' field to database file\n");
+      if (DBFAddField(dbase, "Search_z", FTDouble, 9, 2) == -1)
+        asfPrintError("Could not add 'Ref_z' field to database file\n");
+      if (DBFAddField(dbase, "dx", FTDouble, 7, 2) == -1)
+	asfPrintError("Could not add 'dx' field to database file\n");
+      if (DBFAddField(dbase, "dy", FTDouble, 7, 2) == -1)
+	asfPrintError("Could not add 'dy' field to database file\n");
+      if (DBFAddField(dbase, "dh", FTDouble, 7, 3) == -1)
+	asfPrintError("Could not add 'dh' field to database file\n");
+      if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
+	asfPrintError("Could not add 'Direction' field to database file\n");
+      if (DBFAddField(dbase, "Speed", FTDouble, 6, 1) == -1)
+	asfPrintError("Could not add 'Speed' field to database file\n");
+      break;
     case TEXT:
     case URSA:
     case KMLFILE:
@@ -164,7 +188,8 @@ void shape_init(char *inFile, format_type_t format)
   DBFClose(dbase);
 
   // Open shapefile for initialization
-  if (format == POINT || format == RGPS_GRID || format == RGPS_WEATHER)
+  if (format == POINT || format == RGPS_GRID || format == RGPS_WEATHER ||
+      format == MULTIMATCH)
     shape = SHPCreate(inFile, SHPT_POINT);
   else
     shape = SHPCreate(inFile, SHPT_POLYGON);
@@ -225,6 +250,7 @@ void convert2shape(char *line, format_type_t format,
     case POLYGON:
       polygon2shape(line, dbase, shape, n);
       break;
+    case MULTIMATCH:
     case RGPS:
     case RGPS_GRID:
     case RGPS_WEATHER:
@@ -279,7 +305,8 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list)
   else
     convert2shape(inFile, format, dbase, shape, 0);
 
-  if (format == META || format == POINT || format == POLYGON)
+  if (format == META || format == POINT || format == POLYGON ||
+      format == MULTIMATCH)
     write_esri_proj_file(outFile);
 
   // Close business

@@ -7,6 +7,7 @@
 #include "libasf_proj.h"
 #include <stdio.h>
 #include <math.h>
+#include <ctype.h>
 
 /* 
    When invoking google earth from the command line, you can put a kml
@@ -475,6 +476,7 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
     case RGPS:
     case RGPS_GRID:
     case RGPS_WEATHER:
+    case MULTIMATCH:
     case TEXT:
     case URSA:
     case KMLFILE:
