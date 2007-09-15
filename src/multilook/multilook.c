@@ -258,13 +258,13 @@ int main(int argc, char *argv[])
 	
         /* calculate mean value */
         if (meta_stat->stats)
-          avg = meta_stat->stats->mean;
+          avg = meta_stat->stats->band_stats[0].mean;
         else {
           sprintf(cmd, "stats -overmeta -overstat \"%s\"\n", fnm1);
           asfSystem(cmd);
           meta_free(meta_stat);
           meta_stat = meta_read(fnm1);
-          avg = meta_stat->stats->mean;
+          avg = meta_stat->stats->band_stats[0].mean;
         }
 
 	/* create a colortable to be used with c2i */

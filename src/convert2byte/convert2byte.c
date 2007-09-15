@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 	}
 
 	/* if a mask was used in prior stats, move them, and get new stats */
-	if (meta_is_valid_double(inMeta->stats->mask)) {
+	if (meta_is_valid_double(inMeta->stats->band_stats[0].mask)) {
 		char command[1024];
 
 		if (!quietflag) {

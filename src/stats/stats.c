@@ -426,13 +426,13 @@ int main(int argc, char **argv)
 
 /* Populate meta->stats structure */
   if (!meta->stats)
-    meta->stats = meta_stats_init();
-  meta->stats->min = stats.min;
-  meta->stats->max = stats.max;
-  meta->stats->mean = stats.mean;
-  meta->stats->rmse = stats.rmse;
-  meta->stats->std_deviation = stats.std_deviation;
-  meta->stats->mask = stats.mask;
+    meta->stats = meta_stats_init(1);	// assumes single band for now
+  meta->stats->band_stats[0].min = stats.min;
+  meta->stats->band_stats[0].max = stats.max;
+  meta->stats->band_stats[0].mean = stats.mean;
+  meta->stats->band_stats[0].rmse = stats.rmse;
+  meta->stats->band_stats[0].std_deviation = stats.std_deviation;
+  meta->stats->band_stats[0].mask = stats.mask;
 
 /* Print findings to the screen (and log file if applicable)*/
   if (!quietflag) {

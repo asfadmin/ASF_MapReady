@@ -47,8 +47,10 @@ void linear_conversion(FILE *fpin, FILE *fpout, meta_parameters *inMeta,
 	 * 0    = slope * min + offset
 	 * 255  = slope * max + offset
 	 * Therefore: */
-	slope = 255.0 / (inMeta->stats->max - inMeta->stats->min);
-	offset = -slope * inMeta->stats->min;
+	slope = 255.0 / 
+	       (inMeta->stats->band_stats[0].max
+	        - inMeta->stats->band_stats[0].min);
+	offset = -slope * inMeta->stats->band_stats[0].min;
 
 	percent_complete=0;
 	for (line=0; line<num_lines; line++) {
@@ -95,7 +97,7 @@ void multilook(FILE *fpin, FILE *fpout,
     int extraArea = (lookLine-stepLine) * inMeta->general->sample_count;
     int stepArea = stepLine * inMeta->general->sample_count;
     int percent_complete;
-    double mult = 128.0 / inMeta->stats->mean;
+    double mult = 128.0 / inMeta->stats->band_stats[0].mean;
     double *tempBuffer;
     double *inBuffer;
     double *outBuffer;
