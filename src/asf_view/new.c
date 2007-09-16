@@ -226,6 +226,7 @@ static void load_file_banded_imp(const char *file, const char *band,
 
     read_file(g_filename, band, multilook, FALSE);
     set_title(band != NULL, band);
+    check_lut();
 
     // load the metadata & image data, other setup
     fill_small_force_reload();

@@ -108,29 +108,57 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         // Now actually scale the data, and convert to bytes.
         // Note that we need 3 values, one for each of the RGB channels.
         int have_no_data = meta_is_valid_double(meta->general->no_data);
-        for ( ii = 0 ; ii < tsy ; ii++ ) {
-            for ( jj = 0 ; jj < tsx ; jj++ ) {
-                int index = jj+ii*tsx;
-                float val = fdata[index];
+        if (have_lut()) {
+            // look up table case -- no scaling, just use the lut
+            // to convert from float to rgb byte
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    int index = jj+ii*tsx;
+                    int n = 3*index;
+                    float val = fdata[index];
 
-                unsigned char uval;
-                if (!meta_is_valid_double(val))
-                    uval = 0;
-                else if (have_no_data && val == meta->general->no_data)
-                    uval = 0;
-                else if (val < g_stats.map_min)
-                    uval = 0;
-                else if (val > g_stats.map_max)
-                    uval = 255;
-                else
-                    uval = (unsigned char)(((val-g_stats.map_min)/(g_stats.map_max-g_stats.map_min))*255+0.5);
-            
-                int n = 3*index;
-                bdata[n] = uval;
-                bdata[n+1] = uval;
-                bdata[n+2] = uval;
+                    unsigned char uval;
+                    if (!meta_is_valid_double(val) ||
+                        (have_no_data && val == meta->general->no_data) ||
+                        val < 0)
+                        uval = 0;
+                    else if (val > 255)
+                        uval = 255;
+                    else
+                        uval = (unsigned char)val;
 
-                g_stats.hist[uval] += 1;
+                    apply_lut(uval, &bdata[n], &bdata[n+1], &bdata[n+2]);
+                    g_stats.hist[uval] += 1;
+                }
+            }
+
+        } else {
+            // normal case -- no lut, apply 2-sigma scaling to convert from
+            // floating point to byte for display
+            for ( ii = 0 ; ii < tsy ; ii++ ) {
+                for ( jj = 0 ; jj < tsx ; jj++ ) {
+                    int index = jj+ii*tsx;
+                    float val = fdata[index];
+
+                    unsigned char uval;
+                    if (!meta_is_valid_double(val))
+                        uval = 0;
+                    else if (have_no_data && val == meta->general->no_data)
+                        uval = 0;
+                    else if (val < g_stats.map_min)
+                        uval = 0;
+                    else if (val > g_stats.map_max)
+                        uval = 255;
+                    else
+                        uval = (unsigned char)(((val-g_stats.map_min)/(g_stats.map_max-g_stats.map_min))*255+0.5);
+                
+                    int n = 3*index;
+                    bdata[n] = uval;
+                    bdata[n+1] = uval;
+                    bdata[n+2] = uval;
+
+                    g_stats.hist[uval] += 1;
+                }
             }
         }
 
@@ -193,8 +221,13 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
         for ( ii = 0 ; ii < tsy ; ii++ ) {
             for ( jj = 0 ; jj < tsx ; jj++ ) {
                 unsigned char uval = gsdata[jj+ii*tsx];
-                int index = 3*(jj+ii*tsx);
-                bdata[index] = bdata[index+1] = bdata[index+2] = uval;
+                int kk = 3*(jj+ii*tsx);
+
+                if (have_lut()) {
+                    apply_lut(uval, &bdata[kk], &bdata[kk+1], &bdata[kk+2]);
+                } else {
+                    bdata[kk] = bdata[kk+1] = bdata[kk+2] = uval;
+                }
 
                 g_stats.avg += uval;
                 g_stats.hist[uval] += 1;

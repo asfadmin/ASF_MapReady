@@ -115,6 +115,7 @@ main(int argc, char **argv)
     // set up window title, etc
     set_title(band_specified, band);
     set_toolbar_images();
+    populate_lut_combo();
 
     // load the metadata & image data, other setup
     fill_small_have_data(thumbnail_data);

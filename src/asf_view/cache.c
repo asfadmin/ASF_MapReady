@@ -305,10 +305,25 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
 {
     if (self->data_type == GREYSCALE_FLOAT) {
         float f = cached_image_get_pixel(self, line, samp);
-        *r = *g = *b = (unsigned char)calc_scaled_pixel_value(f);
+        if (have_lut()) {
+            // do not scale in the case of a lut
+            unsigned char uc;
+            if (f < 0)
+                uc = 0;
+            else if (f > 255)
+                uc = 255;
+            else
+                uc = (unsigned char)f;
+            apply_lut(uc, r, g, b);
+        } else {
+            *r = *g = *b = (unsigned char)calc_scaled_pixel_value(f);
+        }
     }
     else if (self->data_type == GREYSCALE_BYTE) {
-        *r = *g = *b = *(get_pixel(self, line, samp));
+        if (have_lut())
+            apply_lut(*(get_pixel(self, line, samp)), r, g, b);
+        else
+            *r = *g = *b = *(get_pixel(self, line, samp));
     }
     else if (self->data_type == RGB_BYTE) {
         unsigned char *uc = get_pixel(self, line, samp);

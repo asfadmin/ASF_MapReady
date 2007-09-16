@@ -156,6 +156,13 @@ void set_bands_greyscale(int b);
 /* info.c */
 void update_pixel_info(void);
 
+/* lut.c */
+void populate_lut_combo(void);
+void check_lut(void);
+int have_lut(void);
+void apply_lut(unsigned char val, unsigned char *r,
+               unsigned char *g, unsigned char *b);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR

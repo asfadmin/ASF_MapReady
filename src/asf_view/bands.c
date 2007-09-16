@@ -55,6 +55,7 @@ static void disable_correct_hbox()
     int is_rgb = get_checked("combine_bands_into_rgb_radiobutton");
     enable_widget("single_band_as_greyscale_hbox", !is_rgb);
     enable_widget("combine_bands_into_rgb_hbox", is_rgb);
+    enable_widget("lut_optionmenu", !is_rgb);
 }
 
 static void populate_combo_csv(const char *widget_name, char *csv, int i)
@@ -126,7 +127,7 @@ void setup_bands_tab(meta_parameters *meta)
         enable_widget("multilook_checkbutton", TRUE);
     }
 
-    show_widget("hbox_bands_buttons", multilook || multiband);
+    //show_widget("hbox_bands_buttons", multilook || multiband);
 }
 
 SIGNAL_CALLBACK void
