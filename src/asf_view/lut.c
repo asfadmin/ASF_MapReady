@@ -103,7 +103,7 @@ void check_lut()
         sprintf(path_and_file, "%s/%s", lut_loc, filename);
         free(lut_loc);
 
-        g_lut_buffer = MALLOC(sizeof(unsigned char) * 768);
+        g_lut_buffer = MALLOC(sizeof(unsigned char) * MAX_LUT_DN*3);
 
         read_lut(path_and_file, g_lut_buffer);
         g_have_lut = TRUE;
@@ -117,11 +117,16 @@ int have_lut()
     return g_have_lut;
 }
 
-void apply_lut(unsigned char val, unsigned char *r,
+void apply_lut(int val, unsigned char *r,
                unsigned char *g, unsigned char *b)
 {
     assert(g_have_lut);
     assert(g_lut_buffer);
+
+    if (val>MAX_LUT_DN-1)
+        val = MAX_LUT_DN-1;
+    else if (val<0)
+        val = 0;
 
     *r = g_lut_buffer[val*3];
     *g = g_lut_buffer[val*3+1];

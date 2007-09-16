@@ -117,17 +117,25 @@ unsigned char *generate_thumbnail_data(int tsx, int tsy)
                     int n = 3*index;
                     float val = fdata[index];
 
-                    unsigned char uval;
+                    int ival;
                     if (!meta_is_valid_double(val) ||
                         (have_no_data && val == meta->general->no_data) ||
                         val < 0)
+                        ival = 0;
+                    else
+                        ival = (int)val;
+
+                    apply_lut(ival, &bdata[n], &bdata[n+1], &bdata[n+2]);
+
+                    // histogram will appear as if we were scaling to greyscale byte
+                    unsigned char uval;
+                    if (ival <= 0 || val < g_stats.map_min)
                         uval = 0;
-                    else if (val > 255)
+                    else if (val > g_stats.map_max)
                         uval = 255;
                     else
-                        uval = (unsigned char)val;
+                        uval = (unsigned char)(((val-g_stats.map_min)/(g_stats.map_max-g_stats.map_min))*255+0.5);
 
-                    apply_lut(uval, &bdata[n], &bdata[n+1], &bdata[n+2]);
                     g_stats.hist[uval] += 1;
                 }
             }

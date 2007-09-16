@@ -160,7 +160,7 @@ void update_pixel_info(void);
 void populate_lut_combo(void);
 void check_lut(void);
 int have_lut(void);
-void apply_lut(unsigned char val, unsigned char *r,
+void apply_lut(int val, unsigned char *r,
                unsigned char *g, unsigned char *b);
 
 #ifdef win32

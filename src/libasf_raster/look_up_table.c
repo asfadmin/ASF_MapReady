@@ -2,6 +2,8 @@
 #include "asf_meta.h"
 #include "asf_raster.h"
 
+static const int MAX_DN = MAX_LUT_DN;
+
 static void lut_interp(unsigned char *buf, int left, int right)
 {
   int ii;
@@ -25,7 +27,7 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
   int n,ii;
 
   // fill with zeroes initially
-  for (ii=0; ii<768; ii++)
+  for (ii=0; ii<MAX_DN*3; ii++)
       lut_buffer[ii] = 0;
 
   fp = fopen(lutFile, "r");
@@ -56,7 +58,7 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
   int l=0, vl=0, dn, dn_prev=0, style=0;
   char *p;
 
-  for (ii=0; ii<768; ii+=3) {
+  for (ii=0; ii<MAX_DN*3; ii+=3) {
     int red, green, blue;
 
     p = fgets(heading, 1024, fp);
@@ -108,7 +110,7 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
 
     ++vl; // increment valid data line count
 
-    if (dn<0 || dn>255 || red<0 || red>255 || green<0 || green>255 ||
+    if (dn<0 || dn>MAX_DN-1 || red<0 || red>255 || green<0 || green>255 ||
         blue<0 || blue>255) 
     {
         asfPrintError("read_lut> Illegal values on line %d in %s: "
@@ -135,7 +137,7 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
   FCLOSE(fp);
 }
 
-void apply_look_up_table(char *lutFile, unsigned char *in_buffer,
+void apply_look_up_table_byte(char *lutFile, unsigned char *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer)
 {
   int ii;
@@ -152,7 +154,7 @@ void apply_look_up_table(char *lutFile, unsigned char *in_buffer,
       if (lut_filename) FREE(lut_filename);
 
       // Read look up table
-      lut_buffer = (unsigned char *) MALLOC(sizeof(unsigned char) * 768);
+      lut_buffer = (unsigned char *) MALLOC(sizeof(unsigned char) * MAX_DN*3);
       read_lut(lutFile, lut_buffer);
 
       // save this filename for future calls
@@ -164,5 +166,40 @@ void apply_look_up_table(char *lutFile, unsigned char *in_buffer,
     rgb_buffer[ii*3] = lut_buffer[in_buffer[ii]*3];
     rgb_buffer[(ii*3)+1] = lut_buffer[in_buffer[ii]*3+1];
     rgb_buffer[(ii*3)+2] = lut_buffer[in_buffer[ii]*3+2];
+  }
+}
+
+void apply_look_up_table_int(char *lutFile, int *in_buffer,
+			 int pixel_count, unsigned char *rgb_buffer)
+{
+  int ii;
+
+  // These store the most-recently-used buffer info, and the filename
+  // for that buffer.  So, if this function is called a bunch of times
+  // with the same lutFile, we won't read in the same file over&over again
+  static unsigned char *lut_buffer=NULL;
+  static char *lut_filename=NULL;
+
+  if (!lut_filename || strcmp(lut_filename, lutFile) != 0) {
+      // Free previous buffer, if any
+      if (lut_buffer) FREE(lut_buffer);
+      if (lut_filename) FREE(lut_filename);
+
+      // Read look up table
+      lut_buffer = (unsigned char *) MALLOC(sizeof(unsigned char) * MAX_DN*3);
+      read_lut(lutFile, lut_buffer);
+
+      // save this filename for future calls
+      lut_filename = STRDUP(lutFile);
+  }
+
+  // Apply the look up table
+  for (ii=0; ii<pixel_count; ii++) {
+    int v = in_buffer[ii];
+    if (v>MAX_DN-1) v=MAX_DN-1;
+    if (v<0) v=0;
+    rgb_buffer[ii*3] = lut_buffer[v*3];
+    rgb_buffer[(ii*3)+1] = lut_buffer[v*3+1];
+    rgb_buffer[(ii*3)+2] = lut_buffer[v*3+2];
   }
 }
