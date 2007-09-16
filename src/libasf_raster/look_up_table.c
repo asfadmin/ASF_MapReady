@@ -2,7 +2,7 @@
 #include "asf_meta.h"
 #include "asf_raster.h"
 
-static void interp(unsigned char *buf, int left, int right)
+static void lut_interp(unsigned char *buf, int left, int right)
 {
   int ii;
   float r,g,b;
@@ -18,7 +18,7 @@ static void interp(unsigned char *buf, int left, int right)
   }
 }
 
-static void read_lut(char *lutFile, unsigned char *lut_buffer)
+void read_lut(char *lutFile, unsigned char *lut_buffer)
 {
   FILE *fp;
   char heading[1024];
@@ -128,7 +128,7 @@ static void read_lut(char *lutFile, unsigned char *lut_buffer)
     lut_buffer[dn*3+2] = (unsigned char)blue;
 
     if (dn-dn_prev > 1)
-        interp(lut_buffer,dn_prev,dn);
+        lut_interp(lut_buffer,dn_prev,dn);
 
     dn_prev=dn;
   }
