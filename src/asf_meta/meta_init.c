@@ -80,6 +80,7 @@ meta_sar *meta_sar_init(void)
   sar->look_direction = MAGIC_UNSET_CHAR;
   sar->look_count = MAGIC_UNSET_INT;
   sar->deskewed = MAGIC_UNSET_INT;
+  sar->multilook = TRUE;
   sar->original_line_count = MAGIC_UNSET_INT;
   sar->original_sample_count = MAGIC_UNSET_INT;
   sar->line_increment = MAGIC_UNSET_DOUBLE;
