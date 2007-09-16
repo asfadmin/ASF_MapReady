@@ -153,6 +153,9 @@ void setup_bands_tab(meta_parameters *meta);
 void set_bands_rgb(int r, int g, int b);
 void set_bands_greyscale(int b);
 
+/* info.c */
+void update_pixel_info(void);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
