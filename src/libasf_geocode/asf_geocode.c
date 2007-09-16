@@ -1627,7 +1627,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                                 ret2 ? "meta_get_lineSamp returned error" : "");
             }
             if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
-                asfPrintWarning("\nFailed symmetry test: x- |%.5f-%.5f| = %.5f\n"
+                asfPrintWarning("Failed symmetry test: x- |%.5f-%.5f| = %.5f\n"
                         "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
                         strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
 
@@ -1812,7 +1812,17 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 }
               }
 
-              if (meta_is_valid_double(imd->general->no_data) &&
+              // Now we are ready to put the pixel value into the output image
+              if (i > 0 && imd->general->image_data_type == DEM && 
+                  (value == 0 || value < -900))
+              {
+                // Special case for DEMs -- we don't want to overwrite
+                // "good" elevations with 0s, or "no data" values
+                // (<-900 means "no data" for DEMs)
+                // So, in this situation, we don't do anything
+                ;
+              }
+              else if (meta_is_valid_double(imd->general->no_data) &&
                 value == imd->general->no_data)
               {
                 // pixel is the "no data" value -- only the first image
@@ -1826,6 +1836,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 }
               }
               else {
+                // Normal case, set the output pixel value
                 oix_last_valid = oix;
                 if (oix_first_valid == -1) oix_first_valid = oix;
 
