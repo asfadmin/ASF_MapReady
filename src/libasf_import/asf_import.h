@@ -76,4 +76,6 @@ void import_gridfloat(char *inBaseName, char *outBaseName);
 
 void import_airsar(const char *inFileName, const char *outBaseName);
 
+void import_gamma_isp(const char *inBaseName, const char *outBaseName);
+
 #endif

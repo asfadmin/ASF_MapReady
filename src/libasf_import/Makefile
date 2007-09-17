@@ -68,6 +68,7 @@ OBJS  = ardop_write.o \
 	import_bil.o \
 	import_gridfloat.o \
 	import_airsar.o \
+	import_gamma.o \
 	least_squares.o \
 	matrix.o \
 	missing.o \
