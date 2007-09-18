@@ -703,6 +703,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // Loop over the input images to determine output extent
   for (i=0; i<n_input_images; ++i)
   {
+    double height_correction = 0;
+
     char *in_base_name = STRDUP(in_base_names[i]);
     if (n_input_images > 1)
         asfPrintStatus("Working on input image #%d: %s\n", i+1, in_base_name);
@@ -780,6 +782,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         imd->projection && imd->projection->type == SCANSAR_PROJECTION) {
         asfPrintStatus("Will apply 400m height correction for SCANSAR data.\n");
         average_height -= 400;
+        height_correction = 400;
     }
 
     project_set_avg_height (average_height);
@@ -1007,6 +1010,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     meta_free(imd);
     free(input_meta_data);
     free(in_base_name);
+
+    // reset average_height (don't want to apply scansar correction twice,
+    // if we're mosaicking two scansars)
+    average_height += height_correction;
   }
 
   asfPrintStatus("Done.\n\nProcessing this data as: %s\n",
@@ -1325,6 +1332,16 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // Input metadata.
     meta_parameters *imd = meta_read (input_meta_data);
+
+    // 400m correction for ScanSAR (again -- we reloaded the metadata &
+    // reset the average height)
+    double height_correction = 0;
+    if (imd->sar && imd->sar->image_type == 'P' &&
+        imd->projection && imd->projection->type == SCANSAR_PROJECTION)
+    {
+        average_height -= 400;
+        height_correction = 400;
+    }
 
     // Issue a warning when the chosen pixel size is smaller than the
     // input pixel size.
@@ -1967,6 +1984,9 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     free(input_image);
     free(in_base_name);
     meta_free(imd);
+
+    // reset average_height (avoid double correction for scansar 400m)
+    average_height += height_correction;
   }
   if (band_name) {
     int kk;
