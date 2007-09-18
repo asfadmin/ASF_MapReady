@@ -65,13 +65,13 @@ static void *block_stack_pop(block_stack_node **stack_top_p)
    track of how many of them we have seen so far.  */
 static int vector_count;
 /* allocation routine for meta_state_vectors */
-meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
+//meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
 
 /* Arrays of stats blocks are stored in the metadata structure, this keeps
    track of how many of them we have seen so far.  */
 static int stats_block_count;
 /* allocation routine for meta_stats */
-meta_stats *meta_stats_init(int num_of_stats_blocks);
+//meta_statistics *meta_statistics_init(int num_of_stats_blocks);
 
 
 char current_file[MAX_FILE_NAME];
@@ -129,8 +129,11 @@ void error_message(const char *err_mes, ...)
 #define MVECTOR ( (state_loc *) current_block)
 #define MPROJ ( (meta_projection *) current_block)
 #define MPARAM ( (param_t *) current_block)
-#define MSTATS ( (meta_stats *) current_block)
-#define MSTATSBLOCK ( (stats_block *) current_block)
+// MSTATS for metadata version prior to v2.4
+// #define MSTATS ( (meta_stats *) current_block)
+// MSTATISTICS for metadata version 2.4 and beyond (multi-band)
+#define MSTATISTICS ( (meta_statistics *) current_block)
+//#define MSTATSBLOCK ( (meta_stats *) current_block)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
@@ -207,15 +210,21 @@ void select_current_block(char *block_name)
     goto MATCHED;
   }
 
-  if ( !strcmp(block_name, "stats") ) {
+  if ( !strcmp(block_name, "stats") ) { // Stats block for versions lower than v2.4 (single-band stats)
     if (MTL->stats == NULL)
-       { MTL->stats = meta_stats_init(stats_block_count); }
+    { MTL->stats = meta_statistics_init(1); }
     current_block = MTL->stats;
     goto MATCHED;
   }
-  if ( !strcmp(block_name, "band_stats") ) {
+  if ( !strcmp(block_name, "statistics") ) { // Stats block for v2.4+ (multi-band stats)
+    if (MTL->stats == NULL)
+       { MTL->stats = meta_statistics_init(stats_block_count); }
+    current_block = MTL->stats;
+    goto MATCHED;
+  }
+  if ( !strcmp(block_name, "band_stats") ) { // Band stats blocks for v2.4+ (multi-band stats)
     global_meta->stats = realloc( global_meta->stats,
-                      sizeof(meta_stats) + (stats_block_count+1)*sizeof(stats_block));
+                      sizeof(meta_statistics) + (stats_block_count+1)*sizeof(meta_stats));
     current_block = &( global_meta->stats->band_stats[stats_block_count++]);
     goto MATCHED;
   }
@@ -393,7 +402,7 @@ void fill_structure_field(char *field_name, void *valp)
       }
       else {
         warning_message("Bad value: orbit_direction = '%s'.\n",
-      VALP_AS_CHAR_POINTER);
+                        VALP_AS_CHAR_POINTER);
         return;
       }
     }
@@ -403,12 +412,12 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->band_count = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "bands") ) {
       if (strlen(VALP_AS_CHAR_POINTER) == 0) {
-  char tmp[10];
-  sprintf(tmp, "0%.0lf" , VALP_AS_DOUBLE);
-  strcpy(MGENERAL->bands, tmp);
+        char tmp[10];
+        sprintf(tmp, "0%.0lf" , VALP_AS_DOUBLE);
+        strcpy(MGENERAL->bands, tmp);
       }
       else
-  strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER);
+        strcpy(MGENERAL->bands, VALP_AS_CHAR_POINTER);
       return;
     }
     if ( !strcmp(field_name, "line_count") )
@@ -703,23 +712,23 @@ void fill_structure_field(char *field_name, void *valp)
       { MPROJ->re_minor = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "datum") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "EGM96") )
-  MPROJ->datum = EGM96_DATUM;
+        MPROJ->datum = EGM96_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ED50") )
-  MPROJ->datum = ED50_DATUM;
+        MPROJ->datum = ED50_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRF89") )
-  MPROJ->datum = ETRF89_DATUM;
+        MPROJ->datum = ETRF89_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ETRS89") )
-  MPROJ->datum = ETRS89_DATUM;
+        MPROJ->datum = ETRS89_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ITRF97") )
-  MPROJ->datum = ITRF97_DATUM;
+        MPROJ->datum = ITRF97_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD27") )
-  MPROJ->datum = NAD27_DATUM;
+        MPROJ->datum = NAD27_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "NAD83") )
-  MPROJ->datum = NAD83_DATUM;
+        MPROJ->datum = NAD83_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS72") )
-  MPROJ->datum = WGS72_DATUM;
+        MPROJ->datum = WGS72_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "WGS84") )
-  MPROJ->datum = WGS84_DATUM;
+        MPROJ->datum = WGS84_DATUM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "HUGHES") )
         MPROJ->datum = HUGHES_DATUM;
       else {
@@ -844,22 +853,22 @@ void fill_structure_field(char *field_name, void *valp)
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "phi(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-  { MTRANSFORM->y[ii] = VALP_AS_DOUBLE; return; }
+      { MTRANSFORM->y[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "lambda(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-  { MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
+      { MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "i(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-  { MTRANSFORM->s[ii] = VALP_AS_DOUBLE; return; }
+      { MTRANSFORM->s[ii] = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "j(%d)", ii);
       if ( !strcmp(field_name, coeff) )
-  { MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
+      { MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
     }
   }
 
@@ -882,41 +891,33 @@ void fill_structure_field(char *field_name, void *valp)
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */
-  if ( !strcmp(stack_top->block_name, "stats") ) {
-    //if (global_meta->meta_version >= 2.4) {
-      if ( !strcmp(field_name, "band_count") )
-      { MSTATS->band_count = VALP_AS_INT; return; }
-    //}
-    //else {
-      //if ( !strcmp(field_name, "min") )
-      //{ (MSTATS)->min = VALP_AS_DOUBLE; return; }
-      //if ( !strcmp(field_name, "max") )
-      //{ (MSTATS)->max = VALP_AS_DOUBLE; return; }
-      //if ( !strcmp(field_name, "mean") )
-      //{ (MSTATS)->mean = VALP_AS_DOUBLE; return; }
-      //if ( !strcmp(field_name, "rmse") )
-      //{ (MSTATS)->rmse = VALP_AS_DOUBLE; return; }
-      //if ( !strcmp(field_name, "std_deviation") )
-      //{ (MSTATS)->std_deviation = VALP_AS_DOUBLE; return; }
-      //if ( !strcmp(field_name, "mask") )
-      //{ (MSTATS)->mask = VALP_AS_DOUBLE; return; }
-    //}
+  //
+  //
+  // Statistics block(s) for metadata v2.4 and beyond (multi-band)
+  if ( !strcmp(stack_top->block_name, "statistics") ) {
+    if ( !strcmp(field_name, "band_count") )
+    { (MSTATISTICS)->band_count = VALP_AS_INT; return; }
   }
-  if ( !strcmp(stack_top->block_name, "statsblock") ) {
+  // Band stats block for metadata v2.4+
+  if ( !strcmp(stack_top->block_name, "band_stats") ||
+       !strcmp(stack_top->block_name, "stats")      )
+  {
+    int band_num =
+        !strcmp(stack_top->block_name, "band_stats") ? stats_block_count - 1 : 0;
     if ( !strcmp(field_name, "band_id") )
-    { strcpy(MSTATSBLOCK->band_id, VALP_AS_CHAR_POINTER); return; }
+    { strcpy((MSTATISTICS)->band_stats[band_num].band_id, VALP_AS_CHAR_POINTER); return; }
     if ( !strcmp(field_name, "min") )
-    { (MSTATSBLOCK)->min = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].min = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "max") )
-    { (MSTATSBLOCK)->max = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].max = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mean") )
-    { (MSTATSBLOCK)->mean = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].mean = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "rmse") )
-    { (MSTATSBLOCK)->rmse = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].rmse = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "std_deviation") )
-    { (MSTATSBLOCK)->std_deviation = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].std_deviation = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "mask") )
-    { (MSTATSBLOCK)->mask = VALP_AS_DOUBLE; return; }
+    { (MSTATISTICS)->band_stats[band_num].mask = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which go in the location block of the metadata file. */

@@ -1329,7 +1329,7 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
   // Buffer for one row of samples.
   uint8_t *row_buffer = g_new (uint8_t, self->size_x);
 
-  stats->band_stats[band_no].mean = 0.0;
+  stats->mean = 0.0;
   double s = 0.0;
 
   size_t sample_count = 0;      // Samples considered so far.
@@ -1350,9 +1350,9 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
         }
         if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
         if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-        double old_mean = stats->band_stats[band_no].mean;
-        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
+        double old_mean = stats->mean;
+        stats->mean += (cs - stats->mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->mean);
         sample_count++;
       }
     }
@@ -1371,9 +1371,9 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
         uint8_t cs = row_buffer[jj];   // Current sample.
         if ( G_UNLIKELY (cs < imin) ) { imin = cs; }
         if ( G_UNLIKELY (cs > imax) ) { imax = cs; }
-        double old_mean = stats->band_stats[band_no].mean;
-        stats->band_stats[band_no].mean += (cs - stats->band_stats[band_no].mean) / (sample_count + 1);
-        s += (cs - old_mean) * (cs - stats->band_stats[band_no].mean);
+        double old_mean = stats->mean;
+        stats->mean += (cs - stats->mean) / (sample_count + 1);
+        s += (cs - old_mean) * (cs - stats->mean);
         sample_count++;
       }
     }
@@ -1390,9 +1390,9 @@ uint8_image_band_statistics (UInt8Image *self, meta_stats *stats,
   if (imin < 0 || imax > UINT8_MAX)
     return 1;
 
-  stats->band_stats[band_no].min = imin;
-  stats->band_stats[band_no].max = imax;
-  stats->band_stats[band_no].std_deviation = sqrt (s / (sample_count - 1));
+  stats->min = imin;
+  stats->max = imax;
+  stats->std_deviation = sqrt (s / (sample_count - 1));
 
   return 0;
 }

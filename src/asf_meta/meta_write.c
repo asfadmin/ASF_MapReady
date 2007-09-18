@@ -365,15 +365,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
         "Hemisphere: [N=northern hemisphere; S=southern hemisphere]");
     if (META_VERSION >= 1.3) {
         meta_put_string(fp,"spheroid:",
-                        spheroid_toString(meta->projection->spheroid),"Spheroid");
+                        (char*)spheroid_toString(meta->projection->spheroid),"Spheroid");
     }
     meta_put_double(fp,"re_major:",meta->projection->re_major,
         "Major Axis (equator) of earth [m]");
     meta_put_double(fp,"re_minor:",meta->projection->re_minor,
         "Minor Axis (polar) of earth [m]");
     if (META_VERSION >= 1.3) {
-        meta_put_string(fp,"datum:",datum_toString(meta->projection->datum),
-                        "Geodetic Datum");
+      meta_put_string(fp,"datum:",(char*)datum_toString(meta->projection->datum),
+                      "Geodetic Datum");
     }
     if (META_VERSION >= 1.6)
       meta_put_double(fp, "height:", meta->projection->height,
@@ -542,10 +542,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
   /* Write out statistics block */
   if (meta->stats) {
     int ii;
-    meta_put_string(fp,"stats {","","Block containing basic image statistics");
+    meta_put_string(fp,"statistics {","","Block containing basic image statistics");
     meta_put_int(fp, "band_count:", meta->stats->band_count,"Number of statistics blocks (1 per band)");
     for (ii=0; ii<meta->stats->band_count; ii++) {
-      meta_put_string(fp,"stats_block {","","Block containing band statistics");
+      meta_put_string(fp,"band_stats {","","Block containing band statistics");
+      meta_put_string(fp,"band_id:",meta->stats->band_stats[ii].band_id,"Band name");
       meta_put_double(fp,"min:",meta->stats->band_stats[ii].min,"Minimum sample value");
       meta_put_double(fp,"max:",meta->stats->band_stats[ii].max,"Maximum sample value");
       meta_put_double(fp,"mean:",meta->stats->band_stats[ii].mean,"Mean average of sample values");

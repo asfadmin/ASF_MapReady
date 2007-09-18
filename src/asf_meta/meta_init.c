@@ -20,11 +20,11 @@ META_DDR_STRUCT meta_ddr_structs[NUM_META_DDR_STRUCTS] = {
   { "", NULL, NULL}
 };
 
-meta_general       *meta_general_init(void);
-meta_sar           *meta_sar_init(void);
-meta_projection    *meta_projection_init(void);
-meta_state_vectors *meta_state_vectors_init(int vector_count);
-meta_stats         *meta_stats_init(int band_count);
+//meta_general       *meta_general_init(void);
+//meta_sar           *meta_sar_init(void);
+//meta_projection    *meta_projection_init(void);
+//meta_state_vectors *meta_state_vectors_init(int vector_count);
+//meta_statistics    *meta_statistics_init(int band_count);
 
 
 /********************************************************
@@ -210,31 +210,51 @@ meta_state_vectors *meta_state_vectors_init(int vector_count)
 }
 
 /********************************************************
- * meta_stats_init():
+ * meta_statistics_init():
  * Allocate memory for and initialize elements of a meta
- * stats structure */
-meta_stats *meta_stats_init(int band_count)
+ * statistics structure (metadata v2.4+) */
+meta_statistics *meta_statistics_init(int band_count)
 {
   int i = 0;
   int bc;
-  meta_stats *stats;
+  meta_statistics *statistics;
 
   bc = band_count > 0 ? band_count : 0;
-  stats = (meta_stats *)MALLOC(  sizeof(meta_stats)
-                               + bc * sizeof(stats_block)
-                              );
-  stats->band_count = bc;
-  for (i=0; i<stats->band_count; i++) {
-    strcpy (stats->band_stats[i].band_id, MAGIC_UNSET_STRING);
-    stats->band_stats[i].min           = MAGIC_UNSET_DOUBLE;
-    stats->band_stats[i].max           = MAGIC_UNSET_DOUBLE;
-    stats->band_stats[i].mean          = MAGIC_UNSET_DOUBLE;
-    stats->band_stats[i].rmse          = MAGIC_UNSET_DOUBLE;
-    stats->band_stats[i].std_deviation = MAGIC_UNSET_DOUBLE;
-    stats->band_stats[i].mask          = MAGIC_UNSET_DOUBLE;
+  statistics = (meta_statistics *)MALLOC(sizeof(meta_statistics)
+                                         + bc * sizeof(meta_stats)
+                                        );
+  if (statistics) {
+    statistics->band_count = bc;
+    for (i=0; i<statistics->band_count; i++) {
+      strcpy (statistics->band_stats[i].band_id, MAGIC_UNSET_STRING);
+      statistics->band_stats[i].min            = MAGIC_UNSET_DOUBLE;
+      statistics->band_stats[i].max            = MAGIC_UNSET_DOUBLE;
+      statistics->band_stats[i].mean           = MAGIC_UNSET_DOUBLE;
+      statistics->band_stats[i].rmse           = MAGIC_UNSET_DOUBLE;
+      statistics->band_stats[i].std_deviation  = MAGIC_UNSET_DOUBLE;
+      statistics->band_stats[i].mask           = MAGIC_UNSET_DOUBLE;
+    }
   }
+  return statistics;
+}
+
+/********************************************************
+ * meta_stats_init():
+ * Allocate memory for and initialize elements of a meta
+ * stats structure (metadata prior to v2.4)
+meta_stats *meta_stats_init()
+{
+  meta_stats *stats = (meta_stats *)MALLOC(sizeof(meta_stats));
+  strcpy (stats->band_id, MAGIC_UNSET_STRING);
+  stats->min            = MAGIC_UNSET_DOUBLE;
+  stats->max            = MAGIC_UNSET_DOUBLE;
+  stats->mean           = MAGIC_UNSET_DOUBLE;
+  stats->rmse           = MAGIC_UNSET_DOUBLE;
+  stats->std_deviation  = MAGIC_UNSET_DOUBLE;
+  stats->mask           = MAGIC_UNSET_DOUBLE;
   return stats;
 }
+*/
 
 /*******************************************************************
  * meta_location_init():

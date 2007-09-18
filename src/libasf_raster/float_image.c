@@ -1413,8 +1413,8 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
 {
   g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
 
-  stats->band_stats[band_no].min = FLT_MAX;
-  stats->band_stats[band_no].max = -FLT_MAX;
+  stats->min = FLT_MAX;
+  stats->max = -FLT_MAX;
 
   // Buffer for one row of samples.
   float *row_buffer = g_new (float, self->size_x);
@@ -1436,8 +1436,8 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
       float cs = row_buffer[jj];   // Current sample.
       if ( !isnan (mask) && (gsl_fcmp (cs, mask, 0.00000000001) == 0) )
         continue;
-      if ( G_UNLIKELY (cs < stats->band_stats[band_no].min) ) { stats->band_stats[band_no].min = cs; }
-      if ( G_UNLIKELY (cs > stats->band_stats[band_no].max) ) { stats->band_stats[band_no].max = cs; }
+      if ( G_UNLIKELY (cs < stats->min) ) { stats->min = cs; }
+      if ( G_UNLIKELY (cs > stats->max) ) { stats->max = cs; }
       double old_mean = mean_as_double;
       mean_as_double += (cs - mean_as_double) / (sample_count + 1);
       s += (cs - old_mean) * (cs - mean_as_double);
@@ -1448,7 +1448,7 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
 
   g_free (row_buffer);
 
-  if (stats->band_stats[band_no].min == FLT_MAX || stats->band_stats[band_no].max == -FLT_MAX)
+  if (stats->min == FLT_MAX || stats->max == -FLT_MAX)
     return 1;
 
   double standard_deviation_as_double = sqrt (s / (sample_count - 1));
@@ -1457,8 +1457,8 @@ float_image_band_statistics (FloatImage *self, meta_stats *stats,
       fabs (standard_deviation_as_double) > FLT_MAX)
     return 1;
 
-  stats->band_stats[band_no].mean = mean_as_double;
-  stats->band_stats[band_no].std_deviation = standard_deviation_as_double;
+  stats->mean = mean_as_double;
+  stats->std_deviation = standard_deviation_as_double;
 
   return 0;
 }

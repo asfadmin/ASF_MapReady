@@ -426,7 +426,7 @@ int main(int argc, char **argv)
 
 /* Populate meta->stats structure */
   if (!meta->stats)
-    meta->stats = meta_stats_init(1);	// assumes single band for now
+    meta->stats = meta_statistics_init(1);  // assumes single band for now
   meta->stats->band_stats[0].min = stats.min;
   meta->stats->band_stats[0].max = stats.max;
   meta->stats->band_stats[0].mean = stats.mean;

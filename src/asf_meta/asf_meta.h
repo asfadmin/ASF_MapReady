@@ -270,19 +270,25 @@ typedef meta_projection proj_parameters;
 
 /********************************************************************
  * meta_stats: statistical info about the image
+ *  (Used alone for metadata files versions prior to v2.4)
  */
 typedef struct {
-  char   band_id[64];        // band name
-  double min, max;           /* Minimum and maximum image values      */
-  double mean;               /* Mean average of image values          */
-  double rmse;               /* Root mean squared error               */
-  double std_deviation;      /* Standard deviation                    */
-  double mask;               /* Value ignored while taking statistics */
-} stats_block;
-typedef struct {
-  int band_count;            // Number of statistics blocks
-  stats_block band_stats[1]; // Array sized at run time
+  char   band_id[64];           // band name
+  double min, max;              /* Minimum and maximum image values      */
+  double mean;                  /* Mean average of image values          */
+  double rmse;                  /* Root mean squared error               */
+  double std_deviation;         /* Standard deviation                    */
+  double mask;                  /* Value ignored while taking statistics */
 } meta_stats;
+/********************************************************************
+ * meta_statistics: statistical info about the image
+ *  Supercedes meta_stats in metadata version 2.4 and beyond (adds
+ *  multi-band statistics support)
+ */
+typedef struct {
+  int band_count;               // Number of statistics blocks
+  meta_stats band_stats[1];     // Array sized at run time
+} meta_statistics;              // meta_statistics for v2.4 metadata and beyond
 
 
 /********************************************************************
@@ -376,9 +382,9 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
   meta_airsar        *airsar;          // Can be NULL (check!)
-  meta_stats         *stats;
+  meta_statistics    *stats;           // Can be NULL
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
-  meta_location      *location;
+  meta_location      *location;        // Can be NULL
     /* Deprecated elements from old metadata format.  */
   meta_state_vectors *stVec;         /* Can be NULL (check!).  */
   geo_parameters  *geo;
@@ -429,7 +435,8 @@ meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
-meta_stats *meta_stats_init(int band_count);
+meta_statistics *meta_statistics_init(int band_count);
+//meta_stats *meta_stats_init(void);
 meta_location *meta_location_init(void);
 meta_parameters *raw_init(void);
 

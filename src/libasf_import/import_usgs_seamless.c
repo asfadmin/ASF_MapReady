@@ -173,7 +173,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   meta_out->optical = NULL;
   meta_out->thermal = NULL;
   meta_out->projection = meta_projection_init ();
-  meta_out->stats = meta_stats_init (1);
+  meta_out->stats = meta_statistics_init (1);
   meta_out->state_vectors = NULL;
   meta_out->location = meta_location_init ();
   // Don't set any of the deprecated structure elements.
@@ -282,7 +282,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
   // special project_parameters structure, since all the details about
   // it are reflected in the above.
 
-  meta_stats *ms = meta_out->stats; // Convenience alias.
+  meta_statistics *ms = meta_out->stats; // Convenience alias.
   ms->band_stats[0].mean = mean;
   // The root mean square error and standard deviation are very close
   // by definition when the number of samples is large, there seems to

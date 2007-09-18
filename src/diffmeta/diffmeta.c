@@ -175,15 +175,6 @@ int main(int argc, char **argv)
     usage(argv[0]);
   }
 
-  // Create blank output file
-  FILE *outFP=(FILE*)FOPEN(outputFile, "w");
-  if(outFP == NULL) {
-    asfPrintError("Cannot open output file for write:\n%s\n", outputFile);
-  }
-  else {
-    FCLOSE(outFP);
-  }
-
   // Check for diff against self
   char *basename1, *basename2;
   basename1 = get_basename(inFile1);
@@ -214,6 +205,15 @@ int main(int argc, char **argv)
     sprintf(msg, "File not found: %s\n", metafile2);
     FREE(outputFile);
     asfPrintError(msg);
+  }
+
+  // Create blank output file
+  FILE *outFP=(FILE*)FOPEN(outputFile, "w");
+  if(outFP == NULL) {
+    asfPrintError("Cannot open output file for write:\n%s\n", outputFile);
+  }
+  else {
+    FCLOSE(outFP);
   }
 
   /***** And away we go.... *****/
@@ -728,7 +728,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   meta_thermal *mtherm1, *mtherm2;
   meta_projection *mp1, *mp2;
   meta_transform *mtrans1, *mtrans2;
-  meta_stats *mstats1, *mstats2;
+  meta_statistics *mstats1, *mstats2;
   meta_state_vectors *mstatev1, *mstatev2;
   meta_location *mloc1, *mloc2;
 
@@ -1685,32 +1685,49 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   ////////////////////////////////////////////////////////////
   // Check Stats Block(s)
   //
-//  if (mstats2) {
-//    failed = 0;
-//    strcpy(precheck_err_msgs, "");
+  if (mstats2) {
+    int band_no;
+    failed = 0;
+    strcpy(precheck_err_msgs, "");
 
-//    validate_double(precheck_err_msgs, mstats2->min,
-//                    "Stats", "min", &failed);
+    verify_int(precheck_err_msgs, mstats2->band_count,
+               DM_MIN_BAND_COUNT, DM_MAX_BAND_COUNT,
+               "Stats", "band_count",
+               1, &failed);
+    for (band_no=0; mstats2->band_count > 0 && band_no<mstats2->band_count; band_no++) {
+      char block_id[96];
+      if (meta_is_valid_string(mstats2->band_stats[band_no].band_id) &&
+          strlen(mstats2->band_stats[band_no].band_id)) {
+        sprintf(block_id, "Stats - Band %s", mstats2->band_stats[band_no].band_id);
+      }
+      else {
+        sprintf(block_id, "Stats - Band %02d", band_no);
+      }
+      validate_string(precheck_err_msgs, mstats2->band_stats[band_no].band_id,
+                      block_id, "band_id", &failed);
+      validate_double(precheck_err_msgs, mstats2->band_stats[band_no].min,
+                      block_id, "min", &failed);
 
-//    validate_double(precheck_err_msgs, mstats2->max,
-//                    "Stats", "max", &failed);
+      validate_double(precheck_err_msgs, mstats2->band_stats[band_no].max,
+                      block_id, "max", &failed);
 
-//    validate_double(precheck_err_msgs, mstats2->mean,
-//                    "Stats", "mean", &failed);
+      validate_double(precheck_err_msgs, mstats2->band_stats[band_no].mean,
+                      block_id, "mean", &failed);
 
-    // rmse ignored
+      // rmse ignored
 
-//    validate_double(precheck_err_msgs, mstats2->std_deviation,
-//                    "Stats", "std_deviation", &failed);
+      validate_double(precheck_err_msgs, mstats2->band_stats[band_no].std_deviation,
+                      block_id, "std_deviation", &failed);
+    }
 
     // mask ignored
     // STATS BLOCK REPORTING
     // If any failures occurred, produce a report in the output file
-//    if (failed) {
-//      report_validation_errors(outputFile, metafile2,
-//                               precheck_err_msgs, "STATS");
-//    }
-//  }
+    if (failed) {
+      report_validation_errors(outputFile, metafile2,
+                               precheck_err_msgs, "STATS");
+    }
+  }
   //
   // End of Stats Block Validity Check
   ////////////////////////////////////////////////////////////
