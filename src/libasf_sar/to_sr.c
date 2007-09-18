@@ -8,6 +8,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_statistics_double.h>
+#include <assert.h>
 
 static void copyImgAndMeta(const char *src, const char *dst)
 {
@@ -189,23 +190,27 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
             // in this case, the original data has a SAR block, we will use the
             // same azimuth time per pixel.
             time_incr = inMeta->sar->azimuth_time_per_pixel;
+
+            // we always want to be DECREASING in time
+            // latest time is on top (line 1), earliest on bottom (line ONL)
             if (time_incr > 0) {
-                time_start = time_min;
-                time_end = time_max;
+                time_incr = -time_incr;
+                inMeta->sar->azimuth_time_per_pixel =
+                    -inMeta->sar->azimuth_time_per_pixel;
             }
-            else {
-                time_start = time_max;
-                time_end = time_min;
-            }
+
+            time_start = time_max;
+            time_end = time_min;
+
             onl = (time_end - time_start) / time_incr;
         }
         else {
             // here, no sar block in the original data, just make a square
-            // image with increasing time
+            // image with decreasing time
             onl = ons;
-            time_incr = (time_max - time_min) / (double)onl;
-            time_start = time_min;
-            time_end = time_max;
+            time_incr = (time_min - time_max) / (double)onl;
+            time_start = time_max;
+            time_end = time_min;
         }
     }
     else {
@@ -214,29 +219,36 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         if (inMeta->sar) {
             // use the same azimuth time per pixel.
             time_incr = inMeta->sar->azimuth_time_per_pixel;
+
+            // we always want to be DECREASING in time
+            // latest time is on top (line 1), earliest on bottom (line ONL)
             if (time_incr > 0) {
-                time_start = time_min;
-                time_end = time_max;
+                time_incr = -time_incr;
+                inMeta->sar->azimuth_time_per_pixel =
+                    -inMeta->sar->azimuth_time_per_pixel;
             }
-            else {
-                time_start = time_max;
-                time_end = time_min;
-            }
+
+            time_start = time_max;
+            time_end = time_min;
+
             onl = (time_end - time_start) / time_incr;
         }
         else {
             // no info... determine azimuth time per pixel by keeping
             // the height the same as in the original image
             onl = nl;
-            time_incr = (time_max - time_min) / (double)onl;
-            time_start = time_min;
-            time_end = time_max;
+            time_incr = (time_min - time_max) / (double)onl;
+            time_start = time_max;
+            time_end = time_min;
         }
 
         // make it square, to get the slant range pixel size
         ons = onl;
         pixel_size = slant_incr = (slant_end - slant_start) / (double)ons;
     }
+
+    asfRequire(onl > 0, "Internal Error: Invalid output line count: %d\n", onl);
+    asfRequire(ons > 0, "Internal Error: Invalid output sample count: %d\n", ons);
 
     asfPrintStatus("  Slant range values: %f -> %f\n", slant_start, slant_end);
     asfPrintStatus("  Slant range pixel size: %f\n", pixel_size);
@@ -274,7 +286,12 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
         double slant = slant_start + jj*slant_grid_incr;
 
         for (ii=0; ii<n; ++ii) {
-            time_in[ii] = time_start + ii*time_grid_incr;
+            // splines need strictly increasing range variables
+            if (time_grid_incr > 0)
+                time_in[ii] = time_start + ii*time_grid_incr;
+            else
+                time_in[ii] = time_end - ii*time_grid_incr;
+
             ts2ls(inMeta, time_in[ii], slant, &line_out[ii], &samp_out[ii]);
         }
 
@@ -326,10 +343,13 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
     outMeta->sar->image_type = 'S';
 
     outMeta->sar->azimuth_time_per_pixel = time_incr;
+    assert(outMeta->sar->azimuth_time_per_pixel < 0);
+
     outMeta->sar->time_shift = time_start;
 
     outMeta->general->y_pixel_size = inMeta->sar->azimuth_time_per_pixel / 
                                      time_incr * inMeta->general->y_pixel_size;
+    assert(outMeta->general->y_pixel_size > 0);
 
     outMeta->sar->slant_range_first_pixel = slant_start;
     outMeta->general->x_pixel_size = slant_incr;
@@ -371,12 +391,15 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
             gsl_interp_accel *line_accel = gsl_interp_accel_alloc();
             gsl_spline *line_spline = gsl_spline_alloc(gsl_interp_cspline, n);
 
+            //printf("time: %f slant: %f\n", time, slant_start);
             for (jj=0; jj<n; ++jj) {
                 slant_in[jj] = slant_start + jj * slant_grid_incr;
+                //printf("time: %f slant: %f\n", time, slant_in[jj]);
                 samp_out[jj] = gsl_spline_eval(samp_splines[jj], time,
                                                samp_accels[jj]);
                 line_out[jj] = gsl_spline_eval(line_splines[jj], time,
                                                line_accels[jj]);
+                //printf("samp_out: %f line_out: %f\n", samp_out[jj], line_out[jj]);
             }
 
             gsl_spline_init(samp_spline, slant_in, samp_out, n);
@@ -395,9 +418,9 @@ proj_to_sr(const char *infile, const char *outfile, double pixel_size)
                 {
                     double samp_real, line_real;
                     ts2ls(inMeta, time, slant, &line_real, &samp_real);
-                    
-                    double err = (line-line_real) * (line-line_real) +
-                                 (samp-samp_real) * (samp-samp_real);
+
+                    double err = (line-line_real)*(line-line_real) +
+                                 (samp-samp_real)*(samp-samp_real);
 
                     //printf("(%d,%d) -- Actual: (%f,%f) Splined: (%f,%f)\n",
                     //       ii, jj, line_real, samp_real, line, samp);
