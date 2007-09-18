@@ -59,7 +59,7 @@
 #define DM_MAX_SLANT_SHIFT              100.0
 #define DM_MIN_TIME_SHIFT               -100.0
 #define DM_MAX_TIME_SHIFT               100.0
-#define DM_MIN_SLANT_RANGE_FIRST_PIXEL  750000.0
+#define DM_MIN_SLANT_RANGE_FIRST_PIXEL  650000.0
 #define DM_MAX_SLANT_RANGE_FIRST_PIXEL  1200000.0
 #define DM_MIN_WAVELENGTH               0.01
 #define DM_MAX_WAVELENGTH               1.1
