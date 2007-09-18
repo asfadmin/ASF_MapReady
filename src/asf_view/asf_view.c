@@ -115,7 +115,20 @@ main(int argc, char **argv)
     // set up window title, etc
     set_title(band_specified, band);
     set_toolbar_images();
+
+    // populate the look up table list, and apply the default
+    // look-up-table, if there is one.  In this case, we will need to
+    // apply it retroactively to the thumbnail data we already loaded
+    // (In new.c, this kludge isn't required - we load/apply in the
+    // same pass -- here it is required because we pre-load the thumbnail)
     populate_lut_combo();
+    if (meta && meta->general)  {
+        if (set_lut_based_on_image_type(meta->general->image_data_type)) {
+            check_lut();
+            // data we loaded needs to be lutted
+            apply_lut_to_data(thumbnail_data);
+        }
+    }
 
     // load the metadata & image data, other setup
     fill_small_have_data(thumbnail_data);

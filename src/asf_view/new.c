@@ -225,6 +225,8 @@ static void load_file_banded_imp(const char *file, const char *band,
         g_filename[strlen(g_filename)-1] = '\0';
 
     read_file(g_filename, band, multilook, FALSE);
+    if (reset_location && meta && meta->general)
+        set_lut_based_on_image_type(meta->general->image_data_type);
     set_title(band != NULL, band);
     check_lut();
 

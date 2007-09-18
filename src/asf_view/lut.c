@@ -4,6 +4,12 @@
 static int g_have_lut = FALSE;
 static unsigned char *g_lut_buffer = NULL;
 
+// kludge, here --
+// all items we will want to pre-select should have their indexes
+// memorized here.  This will work around a deficiency in the GTK
+// menu widget, we can't iterate through the items
+static int g_dem_index = 0;
+
 static int my_strcmp(const void *s1, const void *s2)
 {
     return strcmp_case((const char*)s1, (const char*)s2);
@@ -63,6 +69,10 @@ void populate_lut_combo()
             g_object_set_data(G_OBJECT(item), "file", (gpointer)names[i]);
             gtk_menu_append(GTK_MENU(menu), item);
             gtk_widget_show(item);
+
+            // memorize the indexes we will need later
+            if (strncmp_case(names[i], "dem", 3) == 0)
+                g_dem_index = i+2;
         }
     }
 
@@ -133,3 +143,41 @@ void apply_lut(int val, unsigned char *r,
     *b = g_lut_buffer[val*3+2];
 }
 
+static int get_default_lut(image_data_type_t image_data_type)
+{
+    // for now, just return 0 -- always default to no LUT
+    return 0;
+    //int which=0;
+    //if (image_data_type == DEM) {
+    //    // DEMs use the awesome "dem.lut"
+    //    printf("Preselecting color look-up-table: DEM\n");
+    //    which = g_dem_index;
+    //}
+    //return which;
+}
+
+int set_lut_based_on_image_type(image_data_type_t image_data_type)
+{
+    int which = get_default_lut(image_data_type);
+    GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
+    GtkWidget *menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
+    gtk_menu_set_active(GTK_MENU(menu), which);
+    return which > 0;
+}
+
+void apply_lut_to_data(ThumbnailData *td)
+{
+    assert(g_have_lut);
+    unsigned char *data = td->data;
+
+    int ii, jj;
+    for ( ii = 0 ; ii < td->size_y ; ii++ ) {
+        for ( jj = 0 ; jj < td->size_x ; jj++ ) {
+            int index = jj+ii*td->size_x;
+            int n = 3*index;
+            unsigned char uval = data[n];
+            double val = (((double)uval - .5) * (g_stats.map_max-g_stats.map_min)) / 255. + g_stats.map_min; 
+            apply_lut((int)(val+.5), &data[n], &data[n+1], &data[n+2]);
+        }
+    }
+}

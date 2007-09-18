@@ -162,6 +162,8 @@ void check_lut(void);
 int have_lut(void);
 void apply_lut(int val, unsigned char *r,
                unsigned char *g, unsigned char *b);
+int set_lut_based_on_image_type(image_data_type_t image_data_type);
+void apply_lut_to_data(ThumbnailData *thumbnail_data);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
