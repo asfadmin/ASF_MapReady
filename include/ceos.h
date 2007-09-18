@@ -27,7 +27,6 @@ VERSION         DATE   AUTHOR
 
 #include <stdio.h>
 
-
 /*** MODES *****/
 #define CEOS_SLC     0
 #define CEOS_FUL     1
@@ -1626,6 +1625,7 @@ void   Code_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir);
 void   Code_MPDR(unsigned char *bf, struct VMPDREC* q,codingDir dir);
 void   Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir dir);
 void   Code_PPDR (unsigned char *bf, struct pos_data_rec* q, codingDir dir);
+void   Code_ALOS_optical_IOF(unsigned char *bf, struct IOF_VFDR* q,codingDir dir);
 void   Code_ATDR(unsigned char *bf, struct att_data_rec *q, codingDir dir);
 int    Code_ATVR(unsigned char *bf, struct att_vect_rec *q, codingDir dir);
 void   Code_RADDR(unsigned char *bf, struct VRADDR* q,codingDir dir);
