@@ -68,7 +68,7 @@ void write_tiff_byte2lut(TIFF *otif, unsigned char *byte_line,
   rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   TIFFWriteScanline (otif, rgb_line, line, 0);
@@ -149,7 +149,7 @@ void write_tiff_float2lut(TIFF *otif, float *float_line,
 		       stats.hist_pdf, NAN);
   }
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   TIFFWriteScanline (otif, rgb_line, line, 0);
@@ -241,7 +241,7 @@ void write_jpeg_byte2lut(FILE *ojpeg, unsigned char *byte_line,
   rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
@@ -312,7 +312,7 @@ void write_jpeg_float2lut(FILE *ojpeg, float *float_line,
 		       stats.hist_pdf, NAN);
   }
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
@@ -400,7 +400,7 @@ void write_png_byte2lut(FILE *opng, unsigned char *byte_line,
   rgb_line = (unsigned char *)
     MALLOC(sizeof(unsigned char) * sample_count * 3);
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
@@ -466,7 +466,7 @@ void write_png_float2lut(FILE *opng, float *float_line,
 		       stats.hist_pdf, NAN);
   }
 
-  apply_look_up_table(look_up_table_name, byte_line, sample_count,
+  apply_look_up_table_byte(look_up_table_name, byte_line, sample_count,
 		      rgb_line);
 
   for (jj=0; jj<sample_count*3; jj++)
