@@ -1,73 +1,34 @@
-#
 # Makefile for subsystem Graph program (dgx)
-#
-SHELL=/bin/sh
 
-INCDIR = ../inc
-BINDIR = ../bin
-LIBS   = -lXm -lXt -lX11 -lm
+BINDIR  = ../bin
+XHOME   = -L/usr/X11R6/lib
+LIBS    = $(XHOME) -lXm -lXt -lX11 -lm
+OPTFLAG = -O2
+HP_SGI = -DSGI -DM4 -DIO64
 
-# 
-# For SGI
-# 
-FC     = f77
-FFLAGS = -O2 -DSGI -DM4 -DIO64 -bytereclen -extend_source -OPT:Olimit=4500 -I$(INCDIR) 
+FC     = g77
+FFLAGS = $(OPTFLAG) $(HP_SGI) -ffixed-line-length-132
 
-CC     = cc 
-CFLAGS = -O2 -DSGI -DM4 -DIO64 -I$(INCDIR)
+CC     = gcc
+CFLAGS = $(OPTFLAG) $(HP_SGI)
 
-LC     = f77  
-LFLAGS = $(LIBS)
+DGX_C_SRC = graphx.c
+DGX_C_OBJ = $(DGX_C_SRC:.c=.o)
+# use .fpp extension instead of .f so that the preprocessor runs on it
+DGX_F_SRC = dgx.fpp
+DGX_F_OBJ = $(DGX_F_SRC:.fpp=.o)
+DGX_OBJS = $(DGX_F_OBJ) $(DGX_C_OBJ)
 
-# 
-# For MachTen
-# 
-#FC     = /usr/bin/g77
-#FFLAGS = -DM10 -ffixed-line-length-none
-# 
-#CC     = /usr/bin/cc
-#CFLAGS = -DM10
-# 
-#LC     = /usr/bin/g77
-#LFLAGS = $(LIBS)
+all: dgx clean
 
-CSOURCES = graphx.c
-COBJECTS = $(CSOURCES:.c=.o)
+$(DGX_C_OBJ): $(DGX_C_SRC)
+	$(CC) $(CFLAGS) -c $(DGX_C_SRC)
+$(DGX_F_OBJ): $(DGX_F_SRC)
+	$(FC) $(FFLAGS) -c $(DGX_F_SRC)
+dgx: $(DGX_OBJS) Makefile 
+	$(FC) $(OPTFLAG) -o dgx $(DGX_OBJS) $(LIBS)
+	mv dgx $(BINDIR)
 
-FSOURCES = dgx.f 
-FOBJECTS = $(FSOURCES:.f=.o)
-
-BINLIST	= $(BINDIR)/dgx
-
-# 
-# Standard targets for overall system makefiles
-# 
-bins : $(BINLIST)
-
-SOURCES: $(FSOURCES) $(CSOURCES)
-
-# Make all sybsystem main programs, scripts, IDL procedures, etc.
-
-
-# C executables
-
-graphx.o	: graphx.c 
-		$(CC) $(CFLAGS) -c graphx.c
-
-# Fortran executables 
-
-dgx.o	: dgx.f
-		$(FC) $(FFLAGS) -c dgx.f
-
-# exe only
-
-$(BINDIR)/dgx: $(FOBJECTS) $(COBJECTS)
-	$(LC) -o $@ $(FOBJECTS) $(COBJECTS) $(LFLAGS)
-
-
-
-
-
-
-
+clean:
+	rm -f *.o
 
