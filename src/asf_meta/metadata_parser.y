@@ -1018,6 +1018,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* (Re)set file scope variable which counts number of vector blocks seen.  */
   vector_count = 0;
+  stats_block_count = 0;
 
   meta_yyin = FOPEN(file_name, "r");
   stack_top = NULL;
