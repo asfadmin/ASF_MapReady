@@ -164,17 +164,24 @@ void new_file(void)
 void set_title(int band_specified, const char *band_in)
 {
     char title[256];
-    char *band = STRDUP(band_in); // local non-const copy we can change
-    sprintf(title, "asf_view ver %s: %s", VERSION, g_filename);
+    char band[16];
+
+    if (band_in)
+        strncpy_safe(band, band_in, sizeof(band));
+    else
+        strcpy(band, "");
+
+    char *basename = get_basename(g_filename);
+    snprintf(title, 239, "asf_view ver %s: %s", VERSION, basename);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
     } else if (meta && meta->general && meta->general->band_count > 1) {
         if (strlen(meta->general->bands) > 0) {
-            strcpy(band, meta->general->bands);
+            strncpy_safe(band, meta->general->bands, sizeof(band));
             char *p = strchr(band, ',');
             if (p) *p = '\0';
-        } else if (strncmp_case(g_filename, "IMG-", 4) == 0) {
-            strcpy(band, g_filename+4);
+        } else if (strncmp_case(basename, "IMG-", 4) == 0) {
+            strncpy_safe(band, basename+4, sizeof(band));
             char *p = strchr(band, '-');
             if (p) *p = '\0';
         } else {
@@ -183,11 +190,10 @@ void set_title(int band_specified, const char *band_in)
         if (strlen(band) > 0)
             sprintf(&title[strlen(title)], " (%s)", band);
     }
+    free(basename);
 
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget), title);
-    // FIX ME: free dies for complex data
-    // free(band);
 }
 
 void reset_globals(int reset_location)
