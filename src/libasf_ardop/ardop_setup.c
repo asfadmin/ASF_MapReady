@@ -36,7 +36,7 @@
 #include "asf_meta.h"
 #include "odl.h"
 #include <math.h>
-
+#include <assert.h>
 
 /*-------------------------------------------------------------------------*/
 /*    The following is the list of all parameters needed to run ardop.c      */
