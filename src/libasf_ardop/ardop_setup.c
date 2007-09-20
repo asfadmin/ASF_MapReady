@@ -208,6 +208,7 @@ satellite *newSatellite(void)
 	the gain vectors and put them in the satellite structure */
 	if(strcmp(g.CALPRMS,"NO")!=0)
 	{
+                assert(0);
 		/* If we have a CalParams file, then lets allocate the required memory for the vectors,
 		   255 was chosen as an arbitrary length, I think that they are less than 100 entries but...*/
 		s->ang_vec=(double *)MALLOC(sizeof(double)*255);
