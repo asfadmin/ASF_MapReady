@@ -157,7 +157,7 @@ int main(int argc, char **argv)
   meta_parameters *meta;       /* SAR meta data structure               */
   char sar_name[256];          /* SAR file name WITH extention          */
   FILE *sar_file;              /* SAR data file pointer to take stats on*/
-  stat_parameters stats;       /* Statistics structure                  */
+  stat_parameters *stats;      /* Statistics structure                  */
   char stat_name[261];         /* Stats file name                       */
   extern int currArg;          /* Pre-initialized to 1                  */
 
@@ -333,106 +333,132 @@ int main(int argc, char **argv)
 
 /* Allocate line buffer */
   data_line = (double *)MALLOC(sizeof(double)*num_samples);
-
-/* Find min, max, and mean values */
-  if (!quietflag) printf("\n");
-  if (logflag && !quietflag) fprintf(fLog,"\n");
-  min = 100000000;
-  max = -100000000;
-  sum_of_samples=0.0;
-  sum_of_squared_samples=0.0;
-  percent_complete=0;
-  for (line=start_line; line<start_line+window_height-1; line++) {
-    if (((line-start_line)*100/window_height==percent_complete)
-                    && !quietflag) {
-      printf("\rFirst data sweep: %3d%% complete.",
-        percent_complete++);
-      fflush(NULL);
+  if (meta->stats) FREE(meta->stats);
+  if (meta->general->band_count <= 0) {
+    printf(" ** Band count in the existing data is missing or less than zero.\nDefaulting to one band.\n");
+    if (logflag) {
+      fprintf(fLog, " ** Band count in the existing data is missing or less than zero.\nDefaulting to one band.\n");
     }
-    get_double_line(sar_file, meta, line, data_line);
-    for (sample=start_sample; sample<start_sample+window_width-1; sample++) {
-      if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],mask) )
-        continue;
-      if (data_line[sample] < min) min=data_line[sample];
-      if (data_line[sample] > max) max=data_line[sample];
-      sum_of_samples += data_line[sample];
-      sum_of_squared_samples += SQR(data_line[sample]);
-      samples_counted++;
-    }
+    meta->general->band_count = 1;
   }
-  if (!quietflag) printf("\rFirst data sweep: 100%% complete.\n");
-
-  FREE(data_line);
-  FCLOSE(sar_file);
-
-  stats.min = min;
-  stats.max = max;
-  stats.upper_left_line = start_line;
-  stats.upper_left_samp = start_sample;
-  stats.lower_right_line = start_line + window_height;
-  stats.lower_right_samp = start_sample + window_width;
-  stats.mask = mask;
-
-  stats = calc_hist(stats, sar_name, meta, sum_of_samples,
-                    samples_counted, mask_flag);
-
-
-/* Remove outliers and trim the histogram by resetting the minimum and
-   and maximum */
-  if (trim_flag) {
-    register int sum=0, num_pixels, minDex=0, maxDex=255;
-    double overshoot, width;
-
-    num_pixels = (int)(samples_counted*trim_fraction);
-    minDex = 0;
-    while (sum < num_pixels)
-      sum += stats.histogram[minDex++];
-    if (minDex-1>=0)
-      overshoot = (double)(num_pixels-sum)/stats.histogram[minDex-1];
-    else
-      overshoot = 0;
-    stats.min = (minDex-overshoot-stats.offset)/stats.slope;
-
-    sum=0;
-    while (sum < num_pixels)
-      sum += stats.histogram[maxDex--];
-    if (maxDex+1<256)
-      overshoot = (double)(num_pixels-sum)/stats.histogram[maxDex+1];
-    else
-      overshoot = 0;
-    stats.max = (maxDex+1+overshoot-stats.offset)/stats.slope;
-
-    /* Widening the range for better visual effect */
-    width = (stats.max-stats.min)*(1/(1.0-2*trim_fraction)-1);
-    stats.min -= width/2;
-    stats.max += width/2;
-
-    /* Couple useful corrections borrowed from SARview */
-    if ((stats.max-stats.min) < 0.01*(max-min)) {
-      stats.max = max;
-      stats.min = min;
+  meta->stats = meta_statistics_init(meta->general->band_count);
+  if (!meta->stats) {
+    printf(" ** Cannot allocate memory for statistics data structures.\n");
+    if (logflag) {
+      fprintf(fLog, " ** Cannot allocate memory for statistics data structures.\n");
     }
-    if (min == 0.0)
-      stats.min=0.0;
-    if (stats.min == stats.max)
-      stats.max = stats.min + MICRON;
+    exit(EXIT_FAILURE);
+  }
+  stats = (stat_parameters *)MALLOC(sizeof(stat_parameters) * meta->stats->band_count);
+  if (!stats) {
+    printf(" ** Cannot allocate memory for statistics data structures.\n");
+    if (logflag) {
+      fprintf(fLog, " ** Cannot allocate memory for statistics data structures.\n");
+    }
+    exit(EXIT_FAILURE);
+  }
 
-    stats.slope = 255.0/(stats.max-stats.min);
-    stats.offset = -stats.slope*stats.min;
+  int band;
+  for (band = 0; band < meta->stats->band_count; band++) {
+    /* Find min, max, and mean values */
+    if (!quietflag) printf("\n");
+    if (logflag && !quietflag) fprintf(fLog,"\n");
+    min = 100000000;
+    max = -100000000;
+    sum_of_samples=0.0;
+    sum_of_squared_samples=0.0;
+    percent_complete=0;
+    for (line=start_line; line<start_line+window_height-1; line++) {
+      if (((line-start_line)*100/window_height==percent_complete)
+                      && !quietflag) {
+        printf("\rFirst data sweep: %3d%% complete.",
+          percent_complete++);
+        fflush(NULL);
+      }
+      get_double_line(sar_file, meta, line, data_line);
+      for (sample=start_sample; sample<start_sample+window_width-1; sample++) {
+        if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],mask) )
+          continue;
+        if (data_line[sample] < min) min=data_line[sample];
+        if (data_line[sample] > max) max=data_line[sample];
+        sum_of_samples += data_line[sample];
+        sum_of_squared_samples += SQR(data_line[sample]);
+        samples_counted++;
+      }
+    }
+    if (!quietflag) printf("\rFirst data sweep: 100%% complete.\n");
 
-    stats = calc_hist(stats, sar_name, meta, sum_of_samples,
+    FREE(data_line);
+    FCLOSE(sar_file);
+
+    stats[band].min = min;
+    stats[band].max = max;
+    stats[band].upper_left_line = start_line;
+    stats[band].upper_left_samp = start_sample;
+    stats[band].lower_right_line = start_line + window_height;
+    stats[band].lower_right_samp = start_sample + window_width;
+    stats[band].mask = mask;
+
+    stats[band] = calc_hist(stats[band], sar_name, meta, sum_of_samples,
                       samples_counted, mask_flag);
-  }
 
-/* Populate meta->stats structure */
-  if (!meta->stats)
-    meta->stats = meta_statistics_init(1);  // assumes single band for now
-  meta->stats->band_stats[0].min = stats.min;
-  meta->stats->band_stats[0].max = stats.max;
-  meta->stats->band_stats[0].mean = stats.mean;
-  meta->stats->band_stats[0].rmse = stats.rmse;
-  meta->stats->band_stats[0].std_deviation = stats.std_deviation;
-  meta->stats->band_stats[0].mask = stats.mask;
+
+  /* Remove outliers and trim the histogram by resetting the minimum and
+    and maximum */
+    if (trim_flag) {
+      register int sum=0, num_pixels, minDex=0, maxDex=255;
+      double overshoot, width;
+
+      num_pixels = (int)(samples_counted*trim_fraction);
+      minDex = 0;
+      while (sum < num_pixels)
+        sum += stats[band].histogram[minDex++];
+      if (minDex-1>=0)
+        overshoot = (double)(num_pixels-sum)/stats[band].histogram[minDex-1];
+      else
+        overshoot = 0;
+      stats[band].min = (minDex-overshoot-stats[band].offset)/stats[band].slope;
+
+      sum=0;
+      while (sum < num_pixels)
+        sum += stats[band].histogram[maxDex--];
+      if (maxDex+1<256)
+        overshoot = (double)(num_pixels-sum)/stats[band].histogram[maxDex+1];
+      else
+        overshoot = 0;
+      stats[band].max = (maxDex+1+overshoot-stats[band].offset)/stats[band].slope;
+
+      /* Widening the range for better visual effect */
+      width = (stats[band].max-stats[band].min)*(1/(1.0-2*trim_fraction)-1);
+      stats[band].min -= width/2;
+      stats[band].max += width/2;
+
+      /* Couple useful corrections borrowed from SARview */
+      if ((stats[band].max-stats[band].min) < 0.01*(max-min)) {
+        stats[band].max = max;
+        stats[band].min = min;
+      }
+      if (min == 0.0)
+        stats[band].min=0.0;
+      if (stats[band].min == stats[band].max)
+        stats[band].max = stats[band].min + MICRON;
+
+      stats[band].slope = 255.0/(stats[band].max-stats[band].min);
+      stats[band].offset = -stats[band].slope*stats[band].min;
+
+      stats[band] = calc_hist(stats[band], sar_name, meta, sum_of_samples,
+                        samples_counted, mask_flag);
+    }
+  }
+  /* Populate meta->stats structure */
+  for (band = 0; band < meta->stats->band_count; band++) {
+    meta->stats->band_stats[band].min = stats[band].min;
+    meta->stats->band_stats[band].max = stats[band].max;
+    meta->stats->band_stats[band].mean = stats[band].mean;
+    meta->stats->band_stats[band].rmse = stats[band].rmse;
+    meta->stats->band_stats[band].std_deviation = stats[band].std_deviation;
+    meta->stats->band_stats[band].mask = stats[band].mask;
+  }
 
 /* Print findings to the screen (and log file if applicable)*/
   if (!quietflag) {
@@ -440,62 +466,69 @@ int main(int argc, char **argv)
     printf("Statistics found:\n");
     if (mask_flag)
       { printf("Used mask %-16.11g\n",mask); }
-    printf("Minimum = %-16.11g\n",stats.min);
-    printf("Maximum = %-16.11g\n",stats.max);
-    printf("Mean = %-16.11g\n",stats.mean);
-    printf("Root mean squared error = %-16.11g\n",
-           stats.rmse);
-    printf("Standard deviation = %-16.11g\n",
-           stats.std_deviation);
-    printf("\n");
-    printf("Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
-           stats.slope, stats.offset);
-                if (trim_flag)
-                  printf("Trimming fraction = %.3g\n", trim_fraction);
-    printf("\n");
-    printf("Histogram:\n");
-    for (ii=0; ii<256; ii++) {
-      if (ii%8 == 0) {
-        printf("%s%3i-%3i:",
-          (ii==0) ? "" : "\n",
-          ii, ii+7);
+    printf("Number of bands: %d\n", meta->stats->band_count);
+    for (band=0; band<meta->stats->band_count; bands++) {
+      printf("Minimum = %-16.11g\n",stats[band].min);
+      printf("Maximum = %-16.11g\n",stats[band].max);
+      printf("Mean = %-16.11g\n",stats[band].mean);
+      printf("Root mean squared error = %-16.11g\n",
+            stats[band].rmse);
+      printf("Standard deviation = %-16.11g\n",
+            stats[band].std_deviation);
+      printf("\n");
+      printf("Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
+            stats[band].slope, stats[band].offset);
+                  if (trim_flag)
+                    printf("Trimming fraction = %.3g\n", trim_fraction);
+      printf("\n");
+      printf("Histogram:\n");
+      for (ii=0; ii<256; ii++) {
+        if (ii%8 == 0) {
+          printf("%s%3i-%3i:",
+            (ii==0) ? "" : "\n",
+            ii, ii+7);
+        }
+        printf(" %8i", stats[band].histogram[ii]);
       }
-      printf(" %8i", stats.histogram[ii]);
+      printf("\n");
     }
-    printf("\n");
   }
   if (logflag && !quietflag) {
     fprintf(fLog,"Statistics found:\n");
     if (mask_flag)
       { fprintf(fLog,"Used mask %-16.11g\n",mask); }
-    fprintf(fLog,"Minimum = %-16.11g\n",stats.min);
-    fprintf(fLog,"Maximum = %-16.11g\n",stats.max);
-    fprintf(fLog,"Mean = %-16.11g\n",stats.mean);
-    fprintf(fLog,"Root mean squared error = %-16.11g\n", stats.rmse);
-    fprintf(fLog,"Standard deviation = %-16.11g\n", stats.std_deviation);
-    fprintf(fLog,"\n");
-    fprintf(fLog,
-      "Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
-      stats.slope, stats.offset);
-    if (trim_flag)
-      fprintf(fLog, "Trimming fraction = %.3g\n", trim_fraction);
-    fprintf(fLog,"\n");
-    fprintf(fLog,"Histogram:\n");
-    for (ii=0; ii<256; ii++) {
-      if (ii%8 == 0) {
-        fprintf(fLog,"%s%3i-%3i:",
-          (ii==0) ? "" : "\n",
-          ii, ii+7);
+    fprintf(fLog,"Number of bands: %d\n", meta->stats->band_count);
+    for (band=0; band<meta->stats->band_count; bands++) {
+      fprintf(fLog,"Minimum = %-16.11g\n",stats[band].min);
+      fprintf(fLog,"Maximum = %-16.11g\n",stats[band].max);
+      fprintf(fLog,"Mean = %-16.11g\n",stats[band].mean);
+      fprintf(fLog,"Root mean squared error = %-16.11g\n",
+             stats[band].rmse);
+      fprintf(fLog,"Standard deviation = %-16.11g\n",
+             stats[band].std_deviation);
+      fprintf(fLog,"\n");
+      fprintf(fLog,"Data fit to [0..255] using equation:  byte = %g * sample + %g\n",
+             stats[band].slope, stats[band].offset);
+      if (trim_flag)
+        fprintf(fLog,"Trimming fraction = %.3g\n", trim_fraction);
+      fprintf(fLog,"\n");
+      fprintf(fLog,"Histogram:\n");
+      for (ii=0; ii<256; ii++) {
+        if (ii%8 == 0) {
+          fprintf(fLog,"%s%3i-%3i:",
+                 (ii==0) ? "" : "\n",
+                 ii, ii+7);
+        }
+        fprintf(fLog," %8i", stats[band].histogram[ii]);
       }
-      fprintf(fLog," %8i", stats.histogram[ii]);
+      fprintf(fLog,"\n");
     }
-    fprintf(fLog,"\n");
   }
 
 /* Write out .meta and .stat files */
   if (!nometa_flag) meta_write(meta, meta_name);
   meta_free(meta);
-  if (!nostat_flag) stat_write(&stats, stat_name);
+  if (!nostat_flag) stat_write(&stats, stat_name); // YO BRIAN: START HERE
 
 /* Report */
   if (!quietflag) {
