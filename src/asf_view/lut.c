@@ -89,8 +89,10 @@ void populate_lut_combo()
 
 void check_lut()
 {
-    if (g_lut_buffer)
+    if (g_lut_buffer) {
         free(g_lut_buffer);
+        g_lut_buffer = NULL;
+    }
 
     GtkWidget *option_menu = get_widget_checked("lut_optionmenu");
     GtkWidget *menu = gtk_option_menu_get_menu(GTK_OPTION_MENU(option_menu));
