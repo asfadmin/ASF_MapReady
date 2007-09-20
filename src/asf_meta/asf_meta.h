@@ -242,6 +242,13 @@ typedef struct {
   double cross_track_offset;  // Cross-track offset C0 [m]
 } meta_airsar;
 
+// meta_calibrate: parameters for calibration efforts
+typedef struct {
+  double coefficient_a1;
+  double coefficient_a2;
+  double coefficient_a3;
+} meta_calibrate;
+
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
  * Projection parameter components: one for each projection.
@@ -382,6 +389,7 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
   meta_airsar        *airsar;          // Can be NULL (check!)
+  meta_calibrate     *calibrate;       // Can be NULL (check!)
   meta_statistics    *stats;           // Can be NULL
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;        // Can be NULL
@@ -434,6 +442,7 @@ meta_optical *meta_optical_init(void);
 meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);
+meta_calibrate *meta_calibrate_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_statistics *meta_statistics_init(int band_count);
 //meta_stats *meta_stats_init(void);

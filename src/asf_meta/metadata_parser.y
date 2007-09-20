@@ -137,6 +137,7 @@ void error_message(const char *err_mes, ...)
 #define MLOCATION ( (meta_location *) current_block)
 #define MTRANSFORM ( (meta_transform *) current_block)
 #define MAIRSAR ( (meta_airsar *) current_block)
+#define MCALIBRATE ( (meta_calibrate *) current_block)
 
 void select_current_block(char *block_name)
 {
@@ -207,6 +208,13 @@ void select_current_block(char *block_name)
     if (MTL->airsar == NULL)
        { MTL->airsar = meta_airsar_init();}
     current_block = MTL->airsar;
+    goto MATCHED;
+  }
+
+  if ( !strcmp(block_name, "calibrate") ) {
+    if (MTL->calibrate == NULL)
+      { MTL->calibrate = meta_calibrate_init();}
+    current_block = MTL->calibrate;
     goto MATCHED;
   }
 
@@ -888,6 +896,16 @@ void fill_structure_field(char *field_name, void *valp)
       { MAIRSAR->along_track_offset = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "cross_track_offset") )
       { MAIRSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
+  }
+
+  // Fields which normally go in the calibrate block of the metadata file
+  if ( !strcmp(stack_top->block_name, "calibrate") ) {
+    if ( !strcmp(field_name, "coefficient_a1") )
+      { MCALIBRATE->coefficient_a1 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "coefficient_a2") )
+      { MCALIBRATE->coefficient_a2 = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "coefficient_a3") )
+      { MCALIBRATE->coefficient_a3 = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */

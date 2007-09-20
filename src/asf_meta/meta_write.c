@@ -539,6 +539,42 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_string(fp,"}","","End transform");
   }
 
+  // Write out airsar geocoding parameters
+  if (meta->airsar) {
+    meta_put_string(fp, "airsar {", "",
+		    "Block containing AirSAR parameters for geocoding");
+    meta_put_double(fp, "scale_factor:", meta->airsar->scale_factor,
+		    "General scale factor");
+    meta_put_double(fp, "gps_altitude:", meta->airsar->gps_altitude,
+		    "GPS altitude [m]");
+    meta_put_double(fp, "lat_peg_point:", meta->airsar->lat_peg_point,
+		    "Latitude of peg point [degrees]");
+    meta_put_double(fp, "lon_peg_point:", meta->airsar->lon_peg_point,
+		    "Longitude of peg point [degrees]");
+    meta_put_double(fp, "head_peg_point:", meta->airsar->head_peg_point,
+		    "Heading at peg point [degrees]");
+    meta_put_double(fp, "along_track_offset:", 
+		    meta->airsar->along_track_offset,
+		    "Along-track offset S0 [m]");
+    meta_put_double(fp, "cross_track_offset:", 
+		    meta->airsar->cross_track_offset,
+		    "Cross-track offset C0 [m]");
+    meta_put_string(fp, "}", "", "End airsar");
+  }
+
+  // Write out calibration parameters
+  if (meta->calibrate) {
+    meta_put_string(fp, "calibrate {", "",
+		    "Block containing calibration parameters");
+    meta_put_double(fp, "coefficient_a1:", meta->calibrate->coefficient_a1,
+		    "Calibration coefficient a1");
+    meta_put_double(fp, "coefficient_a2:", meta->calibrate->coefficient_a2,
+		    "Calibration coefficient a2");
+    meta_put_double(fp, "coefficient_a3:", meta->calibrate->coefficient_a3,
+		    "Calibration coefficient a3");
+    meta_put_string(fp, "}", "", "End calibrate");
+  }
+
   /* Write out statistics block */
   if (meta->stats) {
     int ii;

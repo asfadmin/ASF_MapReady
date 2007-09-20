@@ -174,6 +174,16 @@ meta_airsar *meta_airsar_init(void)
   return airsar;
 }
 
+meta_calibrate *meta_calibrate_init(void)
+{
+  meta_calibrate *calibrate = 
+    (meta_calibrate *) MALLOC(sizeof(meta_calibrate));
+  calibrate->coefficient_a1 = MAGIC_UNSET_DOUBLE;
+  calibrate->coefficient_a2 = MAGIC_UNSET_DOUBLE;
+  calibrate->coefficient_a3 = MAGIC_UNSET_DOUBLE;
+  return calibrate;
+}
+
 /*******************************************************************************
  * meta_state_vectors_init():
  * Allocate memory for and initialize elements of a meta_state_vectors structure.
@@ -288,6 +298,7 @@ meta_parameters *raw_init(void)
   meta->projection      = NULL;  /* Allocated later if geocoded */
   meta->transform       = NULL;
   meta->airsar          = NULL;
+  meta->calibrate       = NULL;
   meta->stats           = NULL;
   meta->state_vectors   = NULL;  /* Allocated upon discovery of state vectors */
   meta->location        = NULL;
@@ -434,6 +445,8 @@ void meta_free(meta_parameters *meta)
     meta->transform = NULL;
     FREE(meta->airsar);
     meta->airsar = NULL;
+    FREE(meta->calibrate);
+    meta->calibrate = NULL;
 
     /*
     FREE(meta->geo);

@@ -310,6 +310,21 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
     FREE(mpdr);
 }
 
+void ceos_init_sar_calibrate(const char *in_fName, meta_parameters *meta)
+{
+  struct VRADDR *radr;
+  
+  radr = (struct VRADDR *) MALLOC(sizeof(struct VRADDR));
+  get_raddr(in_fName, radr);
+  
+  meta->calibrate = meta_calibrate_init();
+  meta->calibrate->coefficient_a1 = radr->a[0];
+  meta->calibrate->coefficient_a2 = radr->a[1];
+  meta->calibrate->coefficient_a3 = radr->a[2];
+
+  FREE(radr);    
+}
+
 ////////////////////////////////////////
 // Individual facility initialization //
 ////////////////////////////////////////
@@ -433,6 +448,9 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   // Initialize map projection for projected images
   if (meta->sar->image_type=='P' && mpdr)
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
+
+  // Calibration block
+  ceos_init_sar_calibrate(in_fName, meta);
 
   // Location block
   if (!meta->location && ceos->product != RAW)
