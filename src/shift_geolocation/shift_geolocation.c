@@ -8,7 +8,10 @@
 "     This program adjusts the time_shift and slant_shift values\n"\
 "     in the metadata, to produce geolocations shifted by the given\n"\
 "     amounts.  The x-shift and y-shift values are in units of\n"\
-"     pixels or meters (to specify meters, add an 'm').\n"
+"     pixels or meters (to specify meters, add an 'm').\n"\
+"     If the image is already geocoded, then the startX/Y values\n"\
+"     are adjusted by the specified amounts, instead of the time\n"\
+"     and slant shift values.\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"\
@@ -219,18 +222,32 @@ main (int argc, char *argv[])
       outFile = argv[currArg+3];
   }
 
-  double t_shift, slant_shift;
-  refine_offset(x_shift, y_shift, meta, &t_shift, &slant_shift);
+  if (meta->projection) {
+    // projected data -- update startX/Y
+    asfPrintStatus("  StartX: %f -> %f\n"
+                   "  StartY: %f -> %f\n",
+        meta->projection->startX,
+        meta->projection->startX + x_shift_m,
+        meta->projection->startY,
+        meta->projection->startY + y_shift_m);
 
-  asfPrintStatus("  Time Shift: %f -> %f\n"
-                 "  Slant Shift: %f -> %f\n",
-        meta->sar->time_shift,
-        meta->sar->time_shift + t_shift,
-        meta->sar->slant_shift,
-        meta->sar->slant_shift + slant_shift);
+    meta->projection->startX += x_shift_m;
+    meta->projection->startY += y_shift_m;
+  } else {
+    // unprojected data -- shifting in time/slant coordinates
+    double t_shift, slant_shift;
+    refine_offset(x_shift, y_shift, meta, &t_shift, &slant_shift);
 
-  meta->sar->time_shift += t_shift;
-  meta->sar->slant_shift += slant_shift;
+    asfPrintStatus("  Time Shift: %f -> %f\n"
+                   "  Slant Shift: %f -> %f\n",
+          meta->sar->time_shift,
+          meta->sar->time_shift + t_shift,
+          meta->sar->slant_shift,
+          meta->sar->slant_shift + slant_shift);
+
+    meta->sar->time_shift += t_shift;
+    meta->sar->slant_shift += slant_shift;
+  }
 
   if (update_flag) {
       asfPrintStatus("Updating %s\n", meta_name);
