@@ -26,7 +26,7 @@ all: pta clean
 
 pta: $(OBJS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o pta $(OBJS) $(LIBS)
-	cp pta$(BIN_POSTFIX) $(BINDIR)
+	mv pta$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core *.o
