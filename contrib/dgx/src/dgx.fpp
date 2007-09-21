@@ -1,4 +1,4 @@
-*****************************************************************
+c*****************************************************************
 
       Program dgx
       
@@ -848,27 +848,27 @@ c     open image file
 
       if (a_rmgfile .ne. ' ') then
           open( 21,file=a_rmgfile,form='unformatted',recl=1,
-     &       access='direct',status='old',readonly)
+     &       access='direct',status='old')
           close(21)
           if (i_debug .ge. 1) write(6,*) 'Opening: ',a_rmgfile(1:60)
           i_rmgfile = initdk(21,a_rmgfile)
       else if (a_cmpfile .ne. ' ') then
           open( 21,file=a_cmpfile,form='unformatted',recl=1,
-     &       access='direct',status='old',readonly)
+     &       access='direct',status='old')
           close(21)
           if (i_debug .ge. 1) write(6,*) 'Opening Complex file: ',a_cmpfile(1:60)
           i_cmpfile = initdk(21,a_cmpfile)
       else
         if (a_magfile .ne. ' ') then
           open( 22,file=a_magfile,form='unformatted',recl=1,
-     &      access='direct',status='old',readonly)
+     &      access='direct',status='old')
           close(22)
           if (i_debug .ge. 1) write(6,*) 'Opening mag file: ',a_magfile(1:60)
           i_magfile = initdk(22,a_magfile)
         end if
         if (a_dtefile .ne. ' ') then
           open( 23,file=a_dtefile,form='unformatted',recl=1,
-     &      access='direct',status='old',readonly)
+     &      access='direct',status='old')
           close(23)
           if (i_debug .ge. 1) write(6,*) 'Opening dte file: ',a_dtefile(1:60)
           i_dtefile = initdk(23,a_dtefile)
@@ -3556,7 +3556,7 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
         external length
         
         if (a_cmdfile .ne. ' ') then
-          open(unit=30,file=a_cmdfile,form='formatted',status='old',readonly,iostat=i_stat)
+          open(unit=30,file=a_cmdfile,form='formatted',status='old',iostat=i_stat)
           if (i_stat .eq. 0) then
             read(30,'(a)',iostat=i_stat) a_prtcmnd
             read(30,'(a)',iostat=i_stat) a_pltcmnd
@@ -3566,14 +3566,14 @@ c     &                     'display=',i_bdat(1,1),i_bdat(2,1),i_bdat(3,1),i_bda
             write(6,*) '*** ERROR opening cmnd file: ',a_cmdfile(1:max(1,length(a_cmdfile)))
           endif
         else
-          open(unit=30,file='./dgxcmnds.dat',form='formatted',status='old',readonly,iostat=i_stat)
+          open(unit=30,file='./dgxcmnds.dat',form='formatted',status='old',iostat=i_stat)
           if (i_stat .eq. 0) then
             read(30,'(a)',iostat=i_stat) a_prtcmnd
             read(30,'(a)',iostat=i_stat) a_pltcmnd
             read(30,'(a)',iostat=i_stat) a_jpgcmnd
             close(30)
           else
-            open(unit=30,file='~/dgxcmnds.dat',form='formatted',status='old',readonly,iostat=i_stat)
+            open(unit=30,file='~/dgxcmnds.dat',form='formatted',status='old',iostat=i_stat)
             if (i_stat .eq. 0) then
               read(30,'(a)',iostat=i_stat) a_prtcmnd
               read(30,'(a)',iostat=i_stat) a_pltcmnd
@@ -3851,7 +3851,7 @@ c          i_doff = 0
           integer length
           external length
 
-            open(unit=20,file=a_filename,status='old',form='formatted',readonly,err=880)
+            open(unit=20,file=a_filename,status='old',form='formatted',err=880)
             write(6,*) 'Opening ASCII colortable file: ',a_filename(1:max(1,length(a_filename)))
 
             i_colnum=0
@@ -3887,7 +3887,7 @@ c              write(6,*) i,')  rgb = ',i_colors(i,1),i_colors(i,2),i_colors(i,3
           external length
 
             open(unit=20,file=a_filename,status='old',form='unformatted',access='direct',
-     &           recl=3,readonly,err=880)
+     &           recl=3,err=880)
             write(6,*) 'Reading colortable file: ',a_filename(1:max(1,length(a_filename)))
             i_colnum=0
             do i=0,255

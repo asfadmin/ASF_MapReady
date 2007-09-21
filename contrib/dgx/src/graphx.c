@@ -1236,7 +1236,7 @@ void get_dialog_test(a_msg,a_rsp)
                   else { strcat(a_rsp,buffer); } }
                 else if ((keysym == XK_BackSpace) || (keysym == XK_Delete)) {
                   if ((length = strlen(a_rsp)) > 0) {
-                    a_rsp[length - 1] = NULL;
+                    a_rsp[length - 1] = '\0';
                     XClearWindow(dgx,pop_win);  }
                   else {
                     XBell(dgx,100); } }
@@ -1401,7 +1401,7 @@ void get_dialog(a_msg,a_rsp)
                   else { strcat(a_rsp,buffer); } }
                 else if ((keysym == XK_BackSpace) || (keysym == XK_Delete)) {
                   if ((length = strlen(a_rsp)) > 0) {
-                    a_rsp[length - 1] = NULL;
+                    a_rsp[length - 1] = '\0';
                     XClearWindow(dgx,pop_win);  }
                   else {
                     XBell(dgx,100); } }
@@ -2951,6 +2951,8 @@ char *buff;
         move abs(loc_byte) from the current location.
         
 */
+
+typedef long long off64_t;
 
 #ifdef SGI
 off64_t ioseek64_(chan, loc_byte)
