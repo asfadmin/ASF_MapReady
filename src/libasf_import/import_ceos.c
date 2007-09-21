@@ -424,8 +424,6 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
            radiometry_t radiometry, int import_single_band,
      int complex_flag, int multilook_flag)
 {
-    printf("import_ceos_complex_int!\n");
-
   FILE *fpIn=NULL, *fpOut=NULL;
   char bandStr[50];           ;
   short *cpx_buf=NULL;
@@ -651,9 +649,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
              radiometry_t radiometry, int import_single_band,
              int complex_flag, int multilook_flag, int db_flag)
 {
-    printf("import_ceos_complex_float!\n");
-
-    FILE *fpIn=NULL, *fpOut=NULL;
+  FILE *fpIn=NULL, *fpOut=NULL;
   int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
   int out=0;
   long long ii, kk, ll, offset;
@@ -673,6 +669,63 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   meta = meta_create(inMetaName);
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
+
+  /* Fudge the look count for ALOS data */
+  if (FALSE && strcmp_case(meta->general->sensor, "ALOS") == 0) {
+      // spec says that the number of looks is:
+      //   high-rez mode (single polarization), pixel-spacing  6.25 => 2
+      //                                                      12.5  => 4
+      //   direct down-link mode, pixel-spacing 12.5                => 4
+      //   wide observation mode, pixel-spacing 100                 => 8
+      //   polarimetry mode, pixel-spacing 12.5                     => 4
+      // we can figure out which mode we are in from the sensor_id in
+      // the dataset summary record, characters 12 & 13 of that string.
+      // we can distinguish between single/dual high resolution mode by
+      // checking the nchn field.
+      struct dataset_sum_rec dssr;
+      get_dssr(inMetaName, &dssr);
+      char D='-', E='-';
+      if (strlen(dssr.sensor_id) >= 13) {
+        D = dssr.sensor_id[12];
+        E = dssr.sensor_id[13];
+      }
+      if (D == '6' && E == '0' && dssr.nchn == 1) {
+          // high-rez mode, single polarization
+          asfPrintStatus("High-resolution (single polarization): look count = 2\n");
+          meta->sar->look_count = 2;
+      } else if (D == '6' && E == '0' && dssr.nchn == 2) {
+          // high-rez mode, dual polarization
+          asfPrintStatus("High-resolution (dual polarization): look count = 4\n");
+          meta->sar->look_count = 4;
+      } else if (D == '6' && E == '1') {
+          // wide observation mode
+          asfPrintStatus("Wide observation data: look count = 8\n");
+          meta->sar->look_count = 8;
+      } else if (D == '6' && E == '2') {
+          // polarimetry mode
+          asfPrintStatus("Polarimetric data: look count = 4\n");
+          meta->sar->look_count = 4;
+      } else if (D == '6' && E == '3') {
+          // direct downlink mode
+          asfPrintStatus("Direct downlink data: look count = 4\n");
+          meta->sar->look_count = 4;
+      } else {
+        // We have the following kludge for now ... but we should never get
+        // here.  perhaps an asfPrintError would be better.
+        asfPrintStatus(
+            "Estimating look count based on square pixel assumption...\n");
+        int pix_ratio = (int)floor(0.5 + meta->general->x_pixel_size /
+                                        meta->general->y_pixel_size);
+        if (pix_ratio == 2 || pix_ratio == 4 || pix_ratio == 8) {
+            meta->sar->look_count = pix_ratio;
+            asfPrintStatus("Estimated look count: %d\n", pix_ratio);
+        } else {
+            asfPrintStatus("Couldn't figure out look count.  Leaving as %d.\n",
+                meta->sar->look_count);
+        }
+      }
+  }
+
   lc = nLooks = meta->sar->look_count;
   if (nBands == 1)
     strcpy(meta->sar->polarization, bandExt);

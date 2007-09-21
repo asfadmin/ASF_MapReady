@@ -159,7 +159,7 @@ on_bands_apply_button_clicked(GtkWidget *w)
         char *b = get_band_combo_text("blue_combobox");
         char *s = MALLOC(sizeof(char)*(strlen(r)+strlen(g)+strlen(b)+10));
         sprintf(s,"%s,%s,%s",r?r:"-",g?g:"-",b?b:"-");
-        printf("Load banded: %s, %s\n", g_filename, s);
+        //printf("Load banded: %s, %s\n", g_filename, s);
         char *f = STRDUP(g_filename);
         reload_file_banded(f, s, ml);
         free(s);
