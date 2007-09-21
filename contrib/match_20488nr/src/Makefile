@@ -42,19 +42,19 @@ $(MATCH_F_OBJ): $(MATCH_F_SRC)
 	$(FC) $(FFLAGS) -c $(MATCH_F_SRC)
 multimatch: $(MATCH_OBJS) Makefile
 	$(FC) $(FFLAGS) -o multimatch $(MATCH_OBJS) $(LIBS)
-	cp -p multimatch$(BIN_POSTFIX) $(BINDIR)
+	mv multimatch$(BIN_POSTFIX) $(BINDIR)
 	@echo "XXXXXXXX   Multimatch Built!   XXXXXXXX"
 	@echo ""
 
 multicull: $(CULL_OBJS) Makefile
 	$(FC) $(FFLAGS) -o multicull $(CULL_OBJS)
-	cp -p multicull$(BIN_POSTFIX) $(BINDIR)
+	mv multicull$(BIN_POSTFIX) $(BINDIR)
 	@echo "XXXXXXXX   Multicull Built!   XXXXXXXX"
 	@echo ""
 
 multitps: $(TPS_OBJS) Makefile
 	$(FC) $(FFLAGS) -o multitps $(TPS_OBJS)
-	cp -p multitps$(BIN_POSTFIX) $(BINDIR)
+	mv multitps$(BIN_POSTFIX) $(BINDIR)
 	@echo "XXXXXXXX   Multitps Built!   XXXXXXXX"
 	@echo ""
 
