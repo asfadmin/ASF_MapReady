@@ -5,7 +5,7 @@
 
 include ../../../make_support/system_rules
 
-BINDIR  = ../bin
+BINDIR  = ../../../bin
 LIBS    = -L$(XHOME) -lXm -lXt -lX11 -lm
 HP_SGI = -DSGI
 
