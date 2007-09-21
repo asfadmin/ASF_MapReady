@@ -424,6 +424,8 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
            radiometry_t radiometry, int import_single_band,
      int complex_flag, int multilook_flag)
 {
+    printf("import_ceos_complex_int!\n");
+
   FILE *fpIn=NULL, *fpOut=NULL;
   char bandStr[50];           ;
   short *cpx_buf=NULL;
@@ -518,7 +520,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     fpOut = fopenImage(outDataName,"wb");
   else
     fpOut = fopenImage(outDataName,"ab");
-  cpx_buf = (short *) MALLOC(2*ns * sizeof(short) * lc);
+  cpx_buf = (short *) MALLOC(2*ns * sizeof(short));
   if (complex_flag)
     cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
   else {
@@ -544,22 +546,25 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     meta->general->line_count = (int)((float)nl / (float)nLooks + 0.99);
     meta->general->y_pixel_size *= nLooks;
     meta->sar->azimuth_time_per_pixel *= nLooks;
+    meta->sar->multilook = 1;
+  } else {
+    meta->sar->multilook = 0;
   }
 
   for (ii=0; ii<nl; ii+=nLooks) {
     lc = meta->sar->look_count;
     if (ii + lc > nl)
       lc = nl - ii;
-    offset = (long long)headerBytes + ii*(long long)image_fdr.reclen;
-    FSEEK64(fpIn, offset, SEEK_SET);
-    FREAD(cpx_buf, sizeof(short), 2*ns*lc, fpIn);
     // Caluculate power and phase for the entire buffer
     for (ll=0; ll<lc; ll++) {
+        offset = (long long)headerBytes + (ii+ll)*(long long)image_fdr.reclen;
+        FSEEK64(fpIn, offset, SEEK_SET);
+        FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
         for (kk=0; kk<ns; kk++) {
-            big16(cpx_buf[ll*ns*2 + kk*2]);
-            big16(cpx_buf[ll*ns*2 + kk*2+1]);
-            cpx.real = (float)cpx_buf[ll*ns*2 + kk*2];
-            cpx.imag = (float)cpx_buf[ll*ns*2 + kk*2+1];
+            big16(cpx_buf[kk*2]);
+            big16(cpx_buf[kk*2+1]);
+            cpx.real = (float)(cpx_buf[kk*2]);
+            cpx.imag = (float)(cpx_buf[kk*2+1]);
             if (complex_flag)
                 cpxFloat_buf[ll*ns + kk] = cpx;
             else if (cpx.real != 0.0 || cpx.imag != 0.0){
@@ -646,7 +651,9 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
              radiometry_t radiometry, int import_single_band,
              int complex_flag, int multilook_flag, int db_flag)
 {
-  FILE *fpIn=NULL, *fpOut=NULL;
+    printf("import_ceos_complex_float!\n");
+
+    FILE *fpIn=NULL, *fpOut=NULL;
   int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
   int out=0;
   long long ii, kk, ll, offset;
@@ -799,7 +806,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     fpOut = fopenImage(outDataName, "wb");
   else
     fpOut = fopenImage(outDataName, "ab");
-  cpx_buf = (float *) MALLOC(2*ns * sizeof(float) * lc);
+  cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
   if (complex_flag)
     cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
   else {
