@@ -63,6 +63,7 @@ static gboolean file_is_valid(const gchar * data_file)
         return TRUE;
     }
 
+    printf("Checking: %s\n", data_file);
     gchar * p;
 
     p = findExt(data_file);
@@ -81,7 +82,8 @@ static gboolean file_is_valid(const gchar * data_file)
             /*strcmp_case(p, "meta") == 0 ||*/
             strcmp_case(p, "raw") == 0 ||
             strcmp_case(p, "000") == 0 ||
-            (strcmp_case(p, "tif") == 0 || strcmp_case(p, "tiff")))
+            strcmp_case(p, "tif") == 0 ||
+            strcmp_case(p, "tiff") == 0)
         {
             return TRUE;
         }
