@@ -3,18 +3,17 @@
 #	multicull	description
 #	multitps	description
 
+include ../../../make_support/system_rules
 
 BINDIR  = ../bin
-XHOME   = -L/usr/X11R6/lib
-LIBS    = $(XHOME) -lXm -lXt -lX11 -lm
-OPTFLAG = -O2
+LIBS    = -L$(XHOME) -lXm -lXt -lX11 -lm
 HP_SGI = -DSGI
 
 FC     = g77
-FFLAGS = $(OPTFLAG) $(HP_SGI) -ffixed-line-length-132
+FFLAGS = $(OPTFLAG) $(HP_SGI) $(LARGEFILE_FLAGS) -ffixed-line-length-132
 
 CC     = gcc
-CFLAGS = $(OPTFLAG) $(HP_SGI)
+CFLAGS = $(OPTFLAG) $(HP_SGI) $(LARGEFILE_FLAGS)
 
 MATCH_C_SRC = graphx.c
 MATCH_C_OBJ = $(MATCH_C_SRC:.c=.o)
@@ -42,7 +41,7 @@ $(MATCH_C_OBJ): $(MATCH_C_SRC)
 $(MATCH_F_OBJ): $(MATCH_F_SRC)
 	$(FC) $(FFLAGS) -c $(MATCH_F_SRC)
 multimatch: $(MATCH_OBJS) Makefile
-	$(FC) $(OPTFLAG) -o multimatch $(MATCH_OBJS) $(LIBS)
+	$(FC) $(FFLAGS) -o multimatch $(MATCH_OBJS) $(LIBS)
 	cp -p multimatch$(BIN_POSTFIX) $(BINDIR)
 	@echo "XXXXXXXX   Multimatch Built!   XXXXXXXX"
 	@echo ""
