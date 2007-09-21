@@ -82,18 +82,21 @@ BUGS: None known
 
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_nan.h"
+#include "asf_raster.h"
 #include "stats.h"
 
 #define VERSION 1.3
 
 /* For floating point comparisons.  */
 #define MICRON 0.00000001
-#define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
+#ifdef FLOAT_EQUIVALENT
+#  undef  FLOAT_EQUIVALENT
+#  define FLOAT_EQUIVALENT(a, b) (fabs(a - b) < MICRON ? 1 : 0)
+#endif
 
 #define SQR(X) ((X)*(X))
 
-stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters *meta,
+stat_parameters calc_hist(stat_parameters stats, char *sar_name, int band, meta_parameters *meta,
                           double sum_of_samples, long samples_counted, int mask_flag);
 
 static void
@@ -142,9 +145,9 @@ int main(int argc, char **argv)
   double trim_fraction;        /* Fraction used to trim the histogram   */
   int ii;                      /* Loop index                            */
   long samples_counted=0;      /* Number of all samples accounted for   */
-  double *data_line;           /* Buffer for a line of samples          */
-  int line, sample;            /* Line and sample indices               */
-  int num_lines, num_samples;  /* Number of lines and samples           */
+  float *data_line;           /* Buffer for a line of samples          */
+  long line, sample;            /* Line and sample indices               */
+  long num_lines, num_samples;  /* Number of lines and samples           */
   int percent_complete=0;      /* Percent of data sweep completed       */
   int overmeta_flag=FALSE;     /* If TRUE write over current .meta file */
   int overstat_flag=FALSE;     /* If TRUE write over current .stat file */
@@ -162,10 +165,10 @@ int main(int argc, char **argv)
   extern int currArg;          /* Pre-initialized to 1                  */
 
   /* We initialize these to a magic number for checking. */
-  int start_line = -1;         /* Window starting line.                 */
-  int start_sample = -1;       /* Window starting sample.               */
-  int window_height = -1;      /* Window height in lines.               */
-  int window_width = -1;       /* Window width in samples.              */
+  long start_line = -1;         /* Window starting line.                 */
+  long start_sample = -1;       /* Window starting sample.               */
+  long window_height = -1;      /* Window height in lines.               */
+  long window_width = -1;       /* Window width in samples.              */
 
 /* parse command line */
   logflag=quietflag=FALSE;
@@ -243,18 +246,21 @@ int main(int argc, char **argv)
 
   if ((argc-currArg)<1) {printf("Insufficient arguments.\n"); usage(argv[0]);}
   strcpy (sar_name, argv[currArg]);
+  char *ext = findExt(sar_name);
+  if (ext == NULL || strcmp("IMG", uc(ext)) != 0) {
+    strcpy(sar_name, appendExt(sar_name, ".img"));
+  }
   create_name(meta_name, sar_name, ".meta");
   create_name(stat_name, sar_name, ".stat");
 
-  printf("Date: ");
-  fflush(NULL);
-  system("date");
-  printf("Program: stats\n\n");
+  printf("\nProgram: stats\n\n");
   if (logflag) {
-    fprintf(fLog, "Program: stats\n\n");
+    fprintf(fLog, "\nProgram: stats\n\n");
   }
-
-  sar_file = FOPEN(sar_name, "r");
+  printf("\nCalculating statistics for %s\n\n", sar_name);
+  if (logflag) {
+    fprintf(fLog,"\nCalculating statistics for %s\n\n", sar_name);
+  }
   meta = meta_read(meta_name);
   num_lines = meta->general->line_count;
   num_samples = meta->general->sample_count;
@@ -316,15 +322,15 @@ int main(int argc, char **argv)
   if ((start_line!=0) || (start_sample!=0)
       || (window_height!=num_lines) || (window_width!=num_samples)) {
         if (!quietflag) {
-      printf("Taking statistics on a window with upper left corner (%d,%d)\n"
-      "  and lower right corner (%d,%d)\n",
+      printf("Taking statistics on a window with upper left corner (%ld,%ld)\n"
+      "  and lower right corner (%ld,%ld)\n",
       start_sample, start_line,
       window_width+start_sample, window_height+start_line);
     }
     if (logflag && !quietflag) {
       fprintf(fLog,
-        "Taking statistics on a window with upper left corner (%d,%d)\n"
-      "  and lower right corner (%d,%d)\n",
+        "Taking statistics on a window with upper left corner (%ld,%ld)\n"
+      "  and lower right corner (%ld,%ld)\n",
       start_sample, start_line,
       window_width+start_sample, window_height+start_line);
     }
@@ -332,7 +338,7 @@ int main(int argc, char **argv)
   }
 
 /* Allocate line buffer */
-  data_line = (double *)MALLOC(sizeof(double)*num_samples);
+  data_line = (float *)MALLOC(sizeof(float)*num_samples);
   if (meta->stats) FREE(meta->stats);
   if (meta->general->band_count <= 0) {
     printf(" ** Band count in the existing data is missing or less than zero.\nDefaulting to one band.\n");
@@ -358,7 +364,8 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  int band;
+  int  band;
+  long band_offset;
   for (band = 0; band < meta->stats->band_count; band++) {
     /* Find min, max, and mean values */
     if (!quietflag) printf("\n");
@@ -368,15 +375,12 @@ int main(int argc, char **argv)
     sum_of_samples=0.0;
     sum_of_squared_samples=0.0;
     percent_complete=0;
-    for (line=start_line; line<start_line+window_height-1; line++) {
-      if (((line-start_line)*100/window_height==percent_complete)
-                      && !quietflag) {
-        printf("\rFirst data sweep: %3d%% complete.",
-          percent_complete++);
-        fflush(NULL);
-      }
-      get_double_line(sar_file, meta, line, data_line);
-      for (sample=start_sample; sample<start_sample+window_width-1; sample++) {
+    band_offset = band * meta->general->line_count;
+    sar_file = FOPEN(sar_name, "r");
+    for (line=start_line+band_offset; line<start_line+window_height+band_offset; line++) {
+      if (!quietflag) asfPercentMeter((float)(line-start_line-band_offset)/(float)(window_height-start_line));
+      get_float_line(sar_file, meta, line, data_line);
+      for (sample=start_sample; sample<start_sample+window_width; sample++) {
         if ( mask_flag && FLOAT_EQUIVALENT(data_line[sample],mask) )
           continue;
         if (data_line[sample] < min) min=data_line[sample];
@@ -386,9 +390,8 @@ int main(int argc, char **argv)
         samples_counted++;
       }
     }
-    if (!quietflag) printf("\rFirst data sweep: 100%% complete.\n");
-
-    FREE(data_line);
+    if (!quietflag) asfPercentMeter(1.0);
+//    if (!quietflag) printf("\rFirst data sweep: 100%% complete.\n");
     FCLOSE(sar_file);
 
     stats[band].min = min;
@@ -399,7 +402,7 @@ int main(int argc, char **argv)
     stats[band].lower_right_samp = start_sample + window_width;
     stats[band].mask = mask;
 
-    stats[band] = calc_hist(stats[band], sar_name, meta, sum_of_samples,
+    stats[band] = calc_hist(stats[band], sar_name, band, meta, sum_of_samples,
                       samples_counted, mask_flag);
 
 
@@ -446,18 +449,45 @@ int main(int argc, char **argv)
       stats[band].slope = 255.0/(stats[band].max-stats[band].min);
       stats[band].offset = -stats[band].slope*stats[band].min;
 
-      stats[band] = calc_hist(stats[band], sar_name, meta, sum_of_samples,
+      stats[band] = calc_hist(stats[band], sar_name, band, meta, sum_of_samples,
                         samples_counted, mask_flag);
     }
   }
+  if(data_line)FREE(data_line);
+
   /* Populate meta->stats structure */
-  for (band = 0; band < meta->stats->band_count; band++) {
-    meta->stats->band_stats[band].min = stats[band].min;
-    meta->stats->band_stats[band].max = stats[band].max;
-    meta->stats->band_stats[band].mean = stats[band].mean;
-    meta->stats->band_stats[band].rmse = stats[band].rmse;
-    meta->stats->band_stats[band].std_deviation = stats[band].std_deviation;
-    meta->stats->band_stats[band].mask = stats[band].mask;
+  char **band_names = NULL;
+  if (meta_is_valid_string(meta->general->bands) &&
+      strlen(meta->general->bands)               &&
+      meta->general->band_count > 0)
+  {
+    band_names = extract_band_names(meta->general->bands, meta->general->band_count);
+  }
+  else {
+    if (meta->general->band_count <= 0) meta->general->band_count = 1;
+    band_names = (char **) MALLOC (meta->general->band_count * sizeof(char *));
+    int i;
+    for (i=0; i<meta->general->band_count; i++) {
+      band_names[i] = (char *) MALLOC (64 * sizeof(char));
+      sprintf(band_names[i], "%02d", i);
+    }
+  }
+  int band_no;
+  for (band_no = 0; band_no < meta->stats->band_count; band_no++) {
+    strcpy(meta->stats->band_stats[band_no].band_id, band_names[band_no]);
+    meta->stats->band_stats[band_no].min = stats[band_no].min;
+    meta->stats->band_stats[band_no].max = stats[band_no].max;
+    meta->stats->band_stats[band_no].mean = stats[band_no].mean;
+    meta->stats->band_stats[band_no].rmse = stats[band_no].rmse;
+    meta->stats->band_stats[band_no].std_deviation = stats[band_no].std_deviation;
+    meta->stats->band_stats[band_no].mask = stats[band_no].mask;
+  }
+  if (band_names) {
+    int i;
+    for (i=0; i<meta->general->band_count; i++) {
+      if (band_names[i]) FREE (band_names[i]);
+    }
+    FREE(band_names);
   }
 
 /* Print findings to the screen (and log file if applicable)*/
@@ -467,7 +497,8 @@ int main(int argc, char **argv)
     if (mask_flag)
       { printf("Used mask %-16.11g\n",mask); }
     printf("Number of bands: %d\n", meta->stats->band_count);
-    for (band=0; band<meta->stats->band_count; bands++) {
+    for (band=0; band<meta->stats->band_count; band++) {
+      printf("\n\nBand name = \"%s\"\n", meta->stats->band_stats[band].band_id);
       printf("Minimum = %-16.11g\n",stats[band].min);
       printf("Maximum = %-16.11g\n",stats[band].max);
       printf("Mean = %-16.11g\n",stats[band].mean);
@@ -498,7 +529,8 @@ int main(int argc, char **argv)
     if (mask_flag)
       { fprintf(fLog,"Used mask %-16.11g\n",mask); }
     fprintf(fLog,"Number of bands: %d\n", meta->stats->band_count);
-    for (band=0; band<meta->stats->band_count; bands++) {
+    for (band=0; band<meta->stats->band_count; band++) {
+      fprintf(fLog,"\n\nBand name = \"%s\"\n", meta->stats->band_stats[band].band_id);
       fprintf(fLog,"Minimum = %-16.11g\n",stats[band].min);
       fprintf(fLog,"Maximum = %-16.11g\n",stats[band].max);
       fprintf(fLog,"Mean = %-16.11g\n",stats[band].mean);
@@ -527,8 +559,10 @@ int main(int argc, char **argv)
 
 /* Write out .meta and .stat files */
   if (!nometa_flag) meta_write(meta, meta_name);
+  if (!nostat_flag) stat_write(stats, stat_name, meta->stats->band_count);
+
+/* Free the metadata structure */
   meta_free(meta);
-  if (!nostat_flag) stat_write(&stats, stat_name); // YO BRIAN: START HERE
 
 /* Report */
   if (!quietflag) {
@@ -560,20 +594,21 @@ int main(int argc, char **argv)
 
 /* Create histogram of the data and get the summation of the
  * square of (sample-mean) to use in calculation of rmse & stdev */
-stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters *meta,
+stat_parameters calc_hist(stat_parameters stats, char *sar_name, int band, meta_parameters *meta,
                           double sum_of_samples, long samples_counted, int mask_flag)
 {
-  FILE *fp;
-  int start_line, start_sample, window_height, window_width;
-  int percent_complete, line, sample, ii;
-  double diff_squared_sum=0.0, *data_line;
+  FILE   *fp;
+  long   start_line, start_sample, window_height, window_width;
+  long   percent_complete, line, sample, ii, band_offset;
+  double diff_squared_sum=0.0;
+  float  *data_line;
 
   start_line = stats.upper_left_line;
   start_sample = stats.upper_left_samp;
   window_height = stats.lower_right_line - start_line;
   window_width = stats.lower_right_samp - start_sample;
 
-  data_line = (double *)MALLOC(sizeof(double)*meta->general->sample_count);
+  data_line = (float *)MALLOC(sizeof(float)*meta->general->sample_count);
   fp = FOPEN(sar_name, "r");
 
   /* Initialize the histogram array */
@@ -593,14 +628,10 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters
    * histogram; otherwise use slope & offset to scale the data */
   stats.mean = sum_of_samples / (double)samples_counted;
   percent_complete=0;
-  for (line=start_line; line<start_line+window_height; line++) {
-    if (((line-start_line)*100/window_height==percent_complete)
-        && !quietflag) {
-      printf("\rSecond data sweep: %3d%% complete.",
-        percent_complete++);
-      fflush(NULL);
-    }
-    get_double_line(fp, meta, line, data_line);
+  band_offset = band * meta->general->line_count;
+  for (line=start_line+band_offset; line<start_line+window_height+band_offset; line++) {
+    if (!quietflag) asfPercentMeter((float)(line-start_line-band_offset)/(float)(window_height-start_line));
+    get_float_line(fp, meta, line, data_line);
     for (sample=start_sample; sample<start_sample+window_width; sample++) {
       int bin = (meta->general->data_type == BYTE)
         ? (int)data_line[sample]
@@ -613,7 +644,7 @@ stat_parameters calc_hist(stat_parameters stats, char *sar_name, meta_parameters
       diff_squared_sum += SQR(data_line[sample] - stats.mean);
     }
   }
-  if (!quietflag) printf("\rSecond data sweep: 100%% complete.\n");
+  if (!quietflag) asfPercentMeter(1.0);
 
   FREE(data_line);
   FCLOSE(fp);

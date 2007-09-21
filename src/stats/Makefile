@@ -8,7 +8,13 @@ LIBS  = \
 	$(LIBDIR)/libasf_proj.a \
 	$(PROJ_LIBS) \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_raster.a \
 	-lm
+
+CFLAGS += \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(GSL_CFLAGS)
 
 OBJS  = statIO.o \
 	stats.o
@@ -19,10 +25,6 @@ stats: $(OBJS)
 	$(CC) $(CFLAGS) -o stats $(OBJS) $(LIBS) $(LDFLAGS)
 	mv stats$(BIN_POSTFIX) $(BINDIR)
 	cp stats.1 ../../man/man1/.
-
-check: stats_tester.c statIO.o
-	$(CC) $(CFLAGS) -o stats_tester $< statIO.o -lm -lcheck $(LDFLAGS) $(LIBS)
-	./stats_tester
 
 clean:
 	rm -f stats_tester $(OBJS)

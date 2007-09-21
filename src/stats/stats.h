@@ -16,7 +16,7 @@ typedef struct {
   int histogram[256];    /* Histogram of data fit to [0..255]                 */
 } stat_parameters;  
 
-void stat_read(stat_parameters *stats, const char *file_name);
-void stat_write(stat_parameters *stats, const char *file_name);
+//void stat_read(stat_parameters *stats, const char *file_name);
+void stat_write(stat_parameters *stats, const char *file_name, const int num_bands);
 
 #endif
