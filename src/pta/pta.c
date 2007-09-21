@@ -851,7 +851,7 @@ bool outOfBounds(int x, int y, int srcSize)
 bool findPeak(float *s, int size, float *peakX, float *peakY)
 {
   float max=-10000000.0;
-  int ii, kk, bestX, bestY;
+  int ii, kk, bestX=0, bestY=0;
   float bestLocX, bestLocY;
   
   // Search for the amplitude peak
