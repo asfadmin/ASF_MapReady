@@ -18,6 +18,7 @@ ISSUES:
 *******************************************************************************/
 #include "asf.h"
 #include "asf_nan.h"
+#include <unistd.h>
 #include <math.h>
 #include <ctype.h>
 #include "fft.h"

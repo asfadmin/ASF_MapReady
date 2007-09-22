@@ -1,6 +1,7 @@
 #ifndef FUNCTIONS_H
 #define FUNCTIONS_H
 
+#include <asf_export.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +10,6 @@
 #include <asf_import.h>
 #include <asf_terrcorr.h>
 #include <asf_geocode.h>
-#include <asf_export.h>
 
 int exit_code;
 

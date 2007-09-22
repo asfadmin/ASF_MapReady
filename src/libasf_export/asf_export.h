@@ -1,8 +1,12 @@
+#ifndef ASF_EXPORT_INCLUDED
+#define ASF_EXPORT_INCLUDED
+
+#include <unistd.h>
 #include <tiffio.h>
+#include <png.h>
 #include <geotiffio.h>
 #include <jpeglib.h>
-#include <png.h>
-
+#include <stdlib.h>
 #include "asf_raster.h"
 #include "libasf_proj.h"
 #include "asf_nan.h"
@@ -257,3 +261,5 @@ void write_pgm_byte2byte(FILE *opgm, unsigned char *byte_line,
 void write_pgm_float2byte(FILE *opgm, float *float_line,
 			  channel_stats_t blue_stats, scale_t sample_mapping,
 			  float no_data, int sample_count);
+
+#endif

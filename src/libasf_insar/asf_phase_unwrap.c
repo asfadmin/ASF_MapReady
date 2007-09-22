@@ -1,8 +1,9 @@
+
+#include "asf_export.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_insar.h"
 #include "asf_raster.h"
-#include "asf_export.h"
 
 int dem2phase(char *demFile, char *baseFile, char *phaseFile)
 {
