@@ -563,14 +563,15 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
             big16(cpx_buf[kk*2+1]);
             cpx.real = (float)(cpx_buf[kk*2]);
             cpx.imag = (float)(cpx_buf[kk*2+1]);
-            if (complex_flag)
+            if (complex_flag) {
                 cpxFloat_buf[ll*ns + kk] = cpx;
-            else if (cpx.real != 0.0 || cpx.imag != 0.0){
+            } else if (cpx.real != 0.0 || cpx.imag != 0.0) {
                 amp_buf[ll*ns + kk] = cpx.real*cpx.real + cpx.imag*cpx.imag;
                 phase_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
             }
-            else
+            else {
                 amp_buf[ll*ns + kk] = phase_buf[ll*ns + kk] = 0.0;
+            }
         }
     }
     // Multilook if requested
@@ -643,45 +644,22 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   FCLOSE(fpOut);
 }
 
-void import_ceos_complex_float(char *inDataName, char *inMetaName,
-             char *outDataName, char *outMetaName,
-             char *bandExt, int band, int nBands,
-             radiometry_t radiometry, int import_single_band,
-             int complex_flag, int multilook_flag, int db_flag)
+static void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
 {
-  FILE *fpIn=NULL, *fpOut=NULL;
-  int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
-  int out=0;
-  long long ii, kk, ll, offset;
-  float *cpx_buf=NULL;
-  complexFloat cpx, *cpxFloat_buf=NULL;
-  float *amp_buf=NULL, *phase_buf=NULL, fValue;
-  char bandStr[50], calStr[10];
-  struct IOF_VFDR image_fdr;
-  meta_parameters *meta;
-  cal_params *cal_param=NULL;
-  int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
-  double noise_table[MAX_tableRes];       /* Noise table for calibration */
-  double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
-  double incid_sin[MAX_tableRes];         /* Sine of the incidence angle */
-
-  /* Create metadata */
-  meta = meta_create(inMetaName);
-  nl = meta->general->line_count;
-  ns = meta->general->sample_count;
-
-  /* Fudge the look count for ALOS data */
-  if (FALSE && strcmp_case(meta->general->sensor, "ALOS") == 0) {
-      // spec says that the number of looks is:
+  if (strcmp_case(meta->general->sensor, "ALOS") == 0)
+  {
+      // The ALOS spec says that the number of looks is:
       //   high-rez mode (single polarization), pixel-spacing  6.25 => 2
       //                                                      12.5  => 4
       //   direct down-link mode, pixel-spacing 12.5                => 4
       //   wide observation mode, pixel-spacing 100                 => 8
       //   polarimetry mode, pixel-spacing 12.5                     => 4
-      // we can figure out which mode we are in from the sensor_id in
+
+      // We can figure out which mode we are in from the sensor_id in
       // the dataset summary record, characters 12 & 13 of that string.
       // we can distinguish between single/dual high resolution mode by
       // checking the nchn field.
+
       struct dataset_sum_rec dssr;
       get_dssr(inMetaName, &dssr);
       char D='-', E='-';
@@ -689,6 +667,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
         D = dssr.sensor_id[12];
         E = dssr.sensor_id[13];
       }
+
+      // now we see if the mode matches the list above
       if (D == '6' && E == '0' && dssr.nchn == 1) {
           // high-rez mode, single polarization
           asfPrintStatus("High-resolution (single polarization): look count = 2\n");
@@ -724,9 +704,43 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
                 meta->sar->look_count);
         }
       }
+      if (meta->sar->look_count > 1)
+          meta->sar->multilook = 0;
   }
+}
 
+void import_ceos_complex_float(char *inDataName, char *inMetaName,
+             char *outDataName, char *outMetaName,
+             char *bandExt, int band, int nBands,
+             radiometry_t radiometry, int import_single_band,
+             int complex_flag, int multilook_flag, int db_flag)
+{
+  FILE *fpIn=NULL, *fpOut=NULL;
+  int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
+  int out=0;
+  long long ii, kk, ll, offset;
+  float *cpx_buf=NULL;
+  complexFloat cpx, *cpxFloat_buf=NULL;
+  float *amp_buf=NULL, *phase_buf=NULL, fValue;
+  char bandStr[50], calStr[10];
+  struct IOF_VFDR image_fdr;
+  meta_parameters *meta;
+  cal_params *cal_param=NULL;
+  int tableRes=MAX_tableRes, tablePix=0;        /* Calibration variables */
+  double noise_table[MAX_tableRes];       /* Noise table for calibration */
+  double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
+  double incid_sin[MAX_tableRes];         /* Sine of the incidence angle */
+
+  /* Create metadata */
+  meta = meta_create(inMetaName);
+
+  /* Fudge the look count for ALOS data */
+  set_alos_look_count(meta, inMetaName);
+
+  nl = meta->general->line_count;
+  ns = meta->general->sample_count;
   lc = nLooks = meta->sar->look_count;
+
   if (nBands == 1)
     strcpy(meta->sar->polarization, bandExt);
   else if (nBands == 2)
@@ -843,6 +857,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     meta->general->data_type = REAL32;
     meta->general->band_count = import_single_band ? 2 : band*2;
   }
+
   if (radiometry == r_SIGMA)
     meta->general->image_data_type = SIGMA_IMAGE;
   else if (radiometry == r_GAMMA)
@@ -879,156 +894,166 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
     meta->general->line_count = (int)((float)nl / (float)nLooks + 0.99);
     meta->general->y_pixel_size *= nLooks;
     meta->sar->azimuth_time_per_pixel *= nLooks;
+    meta->sar->multilook = 1;
+  } else {
+    meta->sar->multilook = 0;
   }
 
   for (ii=0; ii<nl; ii+=nLooks) {
-    lc = meta->sar->look_count;
-    if (ii + lc > nl)
-      lc = nl - ii;
-    offset = (long long)headerBytes+ii*(long long)image_fdr.reclen;
-    FSEEK64(fpIn, offset, SEEK_SET);
-    FREAD(cpx_buf, sizeof(float), 2*ns, fpIn);
+      lc = meta->sar->look_count;
+      if (ii + lc > nl)
+          lc = nl - ii;
 
-    if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
-	radiometry == r_BETA) {
-      // Allocate noise table entries and/or update if needed.
-      if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
-	for (kk=0; kk<tableRes; kk++)
-	  noise_table[kk] = get_noise(cal_param,kk*tablePix,ii);
-      if (radiometry == r_GAMMA)
-	// Allocate incidence table entries or update.
-	if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
-	  for (kk=0; kk<tableRes; kk++)
-	    incid_cos[kk]=get_invCosIncAngle(cal_param,kk*tablePix,ii);
-      if (radiometry == r_BETA)
-	// Allocate incidence table entries or update.
-	if (ii==0 || (ii%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel))
-	  for (kk=0; kk<tableRes; kk++)
-	    incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,ii);
-    }
+      for (ll=0; ll<lc; ll++) {
+          int line = ii+ll;
+          asfLineMeter(line, nl);
 
-    for (kk=0; kk<ns; kk++) {
-      // Put read in data in proper endian format
-      big32(cpx_buf[kk*2]);
-      big32(cpx_buf[kk*2+1]);
-      // Now do our stuff 
-      cpx.real = cpx_buf[kk*2];
-      cpx.imag = cpx_buf[kk*2+1];
-      if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
-	  radiometry == r_BETA) {
-        //fValue = cpx.real*cpx.real + cpx.imag*cpx.imag;
-        fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);	
-        if (fValue != 0.0) {
-          // Interpolate noise table to find this pixel's noise.
-          double index = (float)kk/tablePix;
-          int    base = (int)index;
-          double frac = index-base;
-          double noise = noise_table[base] + frac*(noise_table[base+1] -
-                                                   noise_table[base]);
-          double incid = 1.0;
-          if (cal_param->output_type == gamma_naught)
-            incid = incid_cos[base] + frac*(incid_cos[base+1]-incid_cos[base]);
-          if (cal_param->output_type == beta_naught)
-            incid = incid_sin[base] + frac*(incid_sin[base+1]-incid_sin[base]);
-          if (db_flag) {
-            amp_buf[kk] =
-              get_cal_dn_in_db(cal_param, noise, incid, (int)fValue);
+          offset = (long long)headerBytes+line*(long long)image_fdr.reclen;
+          FSEEK64(fpIn, offset, SEEK_SET);
+          FREAD(cpx_buf, sizeof(float), 2*ns, fpIn);
+
+          if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
+              radiometry == r_BETA)
+          {
+              // Allocate noise table entries and/or update if needed.
+              if (line==0 || (line%(nl/tableRes)==0 && cal_param->noise_type!=by_pixel)) {
+                  for (kk=0; kk<tableRes; kk++)
+                      noise_table[kk] = get_noise(cal_param,kk*tablePix,line);
+
+                  if (radiometry == r_GAMMA) {
+                      // Allocate incidence table entries or update.
+                      for (kk=0; kk<tableRes; kk++)
+                          incid_cos[kk]=get_invCosIncAngle(cal_param,kk*tablePix,line);
+                  } else if (radiometry == r_BETA) {
+                      // Allocate incidence table entries or update.
+                      for (kk=0; kk<tableRes; kk++)
+                          incid_sin[kk]=get_invSinIncAngle(cal_param,kk*tablePix,line);
+                  }
+              }
           }
+
+          for (kk=0; kk<ns; kk++) {
+              // Put read in data in proper endian format
+              big32(cpx_buf[kk*2]);
+              big32(cpx_buf[kk*2+1]);
+              // Now do our stuff 
+              cpx.real = cpx_buf[kk*2];
+              cpx.imag = cpx_buf[kk*2+1];
+              if (radiometry == r_SIGMA || radiometry == r_GAMMA || 
+                  radiometry == r_BETA)
+              {
+                  fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);	
+                  if (fValue != 0.0) {
+                      // Interpolate noise table to find this pixel's noise.
+                      double index = (float)kk/tablePix;
+                      int    base = (int)index;
+                      double frac = index-base;
+                      double noise = noise_table[base] + frac*(noise_table[base+1] -
+                          noise_table[base]);
+                      double incid = 1.0;
+                      if (cal_param->output_type == gamma_naught)
+                          incid = incid_cos[base] + frac*(incid_cos[base+1]-incid_cos[base]);
+                      else if (cal_param->output_type == beta_naught)
+                          incid = incid_sin[base] + frac*(incid_sin[base+1]-incid_sin[base]);
+
+                      if (db_flag) {
+                          amp_buf[ll*ns + kk] =
+                              get_cal_dn_in_db(cal_param, noise, incid, (int)fValue);
+                      } else {
+                          amp_buf[ll*ns + kk] =
+                              get_cal_dn(cal_param, noise, incid, (int)fValue);
+                      }
+                  } else {
+                      amp_buf[ll*ns + kk]= 0.0;
+                  }
+              } else if (complex_flag) {
+                  cpxFloat_buf[ll*ns + kk] = cpx;
+              } else if (cpx.real != 0.0 || cpx.imag != 0.0) {
+                  amp_buf[ll*ns + kk] = cpx.real*cpx.real + cpx.imag*cpx.imag;
+                  phase_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
+              } else {
+                  amp_buf[ll*ns + kk] = phase_buf[ll*ns + kk] = 0.0;
+              }
+          }
+      }
+
+      // Multilook if requested
+      if (!complex_flag) {
+          if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
+              radiometry == r_BETA)
+          {
+              for (kk=0; kk<ns; kk++) {
+                  fValue = 0.0;
+                  for (ll=0; ll<lc; ll++)
+                      fValue += amp_buf[ll*ns + kk];
+                  amp_buf[kk] = fValue / (float)lc;
+              }
+          }
+          else if (multilook_flag) {
+              for (kk=0; kk<ns; kk++) {
+                  fValue = 0.0;
+                  for (ll=0; ll<lc; ll++)
+                      fValue += amp_buf[ll*ns + kk];
+                  amp_buf[kk] = sqrt(fValue / (float)lc);
+                  fValue = 0.0;
+                  for (ll=0; ll<lc; ll++)
+                      fValue += phase_buf[ll*ns + kk];
+                  phase_buf[kk] = fValue / (float)lc;
+              }
+          } 
           else {
-            amp_buf[kk] =
-              get_cal_dn(cal_param, noise, incid, (int)fValue);
+              for (kk=0; kk<lc*ns; kk++)
+                  amp_buf[kk] = sqrt(amp_buf[kk]);
           }
-        }
-	else
-	  amp_buf[kk]= 0.0;
       }
-      else if (complex_flag)
-  cpxFloat_buf[kk] = cpx;
-      else {
-  amp_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-  phase_buf[kk] = atan2(cpx.imag, cpx.real);
-      }
-    }
 
-    // Multilook if requested
-    if (!complex_flag) {
+      // Write out the various flavors
       if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
-	  radiometry == r_BETA) {
-        for (kk=0; kk<ns; kk++) {
-          fValue = 0.0;
-          for (ll=0; ll<lc; ll++)
-            fValue += amp_buf[ll*ns + kk];;
-          amp_buf[kk] = fValue / (float)lc;
-	}
+          radiometry == r_BETA)
+      {
+          put_float_line(fpOut, meta, out, amp_buf);
+          out++;
       }
       else if (multilook_flag) {
-	for (kk=0; kk<ns; kk++) {
-	  fValue = 0.0;
-	  for (ll=0; ll<lc; ll++)
-	    fValue += amp_buf[ll*ns + kk];
-	  amp_buf[kk] = sqrt(fValue / (float)lc);
-	  fValue = 0.0;
-	  for (ll=0; ll<lc; ll++)
-	    fValue += phase_buf[ll*ns + kk];
-	  phase_buf[kk] = fValue / (float)lc;
-	}
-      } 
+          put_band_float_line(fpOut, meta, 0, out, amp_buf);
+          put_band_float_line(fpOut, meta, 1, out, phase_buf);
+          out++;
+      }
       else {
-	for (kk=0; kk<lc*ns; kk++)
-	  amp_buf[kk] = sqrt(amp_buf[kk]);
+          for (ll=0; ll<lc; ll++) {
+              if (complex_flag)
+                  put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
+              else {
+                  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf+ll*ns);
+                  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf+ll*ns);
+              }
+          }
       }
-    }
-
-
-    // Write out the various flavors
-    if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
-        radiometry == r_BETA) {
-      put_float_line(fpOut, meta, out, amp_buf);
-      out++;
-    }
-    else if (multilook_flag) {
-      put_band_float_line(fpOut, meta, 0, out, amp_buf);
-      put_band_float_line(fpOut, meta, 1, out, phase_buf);
-      out++;
-    }
-    else {
-      for (ll=0; ll<lc; ll++) {
-	if (complex_flag)
-	  put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
-	else {
-	  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf+ll*ns);
-	  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf+ll*ns);
-	}
-      }
-    }
-    asfLineMeter(ii, nl);
   }
 
   FREE(cpx_buf);
-  if (cpxFloat_buf)
-    FREE(cpxFloat_buf);
-  if (amp_buf)      
-    FREE(amp_buf);
-  if (phase_buf)
-    FREE(phase_buf);
+  FREE(cpxFloat_buf);
+  FREE(amp_buf);
+  FREE(phase_buf);
 
   strcpy(meta->general->basename, inDataName);
   if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
-      radiometry == r_BETA) {
-    meta->general->band_count = import_single_band ? 1 : band;
-    if (nBands == 1 && meta->sar)
-      sprintf(meta->general->bands, "%s", meta->sar->polarization);
+      radiometry == r_BETA)
+  {
+      meta->general->band_count = import_single_band ? 1 : band;
+      if (nBands == 1 && meta->sar)
+          sprintf(meta->general->bands, "%s", meta->sar->polarization);
   }
   else if (complex_flag) {
-    meta->general->band_count = import_single_band ? 1 : band;
-    if (nBands == 1 && meta->sar)
-      sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
+      meta->general->band_count = import_single_band ? 1 : band;
+      if (nBands == 1 && meta->sar)
+          sprintf(meta->general->bands, "COMPLEX-%s", meta->sar->polarization);
   }
   else {
-    meta->general->band_count = import_single_band ? 2 : band*2;
-    if (nBands == 2 && meta->sar)
-      sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
-        meta->sar->polarization, meta->sar->polarization);
+      meta->general->band_count = import_single_band ? 2 : band*2;
+      if (nBands == 2 && meta->sar)
+          sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
+          meta->sar->polarization, meta->sar->polarization);
   }
   meta_write(meta, outMetaName);
 
@@ -1036,7 +1061,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   {
       asfPrintStatus("PP Earth Radius: %.3lf\n", meta->sar->earth_radius_pp);
       asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
-                     meta->sar->earth_radius);
+          meta->sar->earth_radius);
   }
 
   meta_free(meta);
