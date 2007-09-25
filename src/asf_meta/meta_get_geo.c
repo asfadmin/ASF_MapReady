@@ -57,7 +57,17 @@ int meta_get_latLon(meta_parameters *meta,
 {
   double hgt;
 
-  if (meta->transform) {
+  if (meta->airsar) {
+      double l = yLine, s = xSample;
+      if (meta->sar) {
+          l = (double)meta->sar->original_line_count/
+              (double)meta->general->line_count * yLine;
+          s = (double)meta->sar->original_sample_count/
+              (double)meta->general->sample_count * xSample;
+      }
+      airsar_to_latlon(meta, s, l, elev, lat, lon);
+  }
+  else if (meta->transform) {
       double l = yLine, s = xSample;
       if (meta->sar) {
           l = (double)meta->sar->original_line_count/
@@ -97,10 +107,11 @@ int meta_get_latLon(meta_parameters *meta,
     asfPrintError(
       "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
       "meta->transform = %p, so it isn't ALOS.\n"
+      "meta->airsar = %p, so it isn't Airsar.\n"
       "meta->sar = %p, so it isn't Slant/Ground range.\n"
       "meta->projection = %p, so it isn't Projected, or Scansar.\n"
       "meta->general->name: %s\n",
-      meta->transform, meta->sar, meta->projection,
+      meta->transform, meta->airsar, meta->sar, meta->projection,
       meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }

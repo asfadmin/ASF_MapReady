@@ -1,9 +1,9 @@
 #include "asf_meta.h"
 #include "jpl_proj.h"
 #include "asf_nan.h"
+#include "ifm.h"
 #include <assert.h>
 
-#define SQR(A)  ((A)*(A))
 #define ecc2 (sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)) \
             * sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)))
 
@@ -62,6 +62,126 @@ void rotate_y(vector *v,double theta)
   zNew = v->z*cosd(theta)+v->x*sind(theta);
   xNew = -v->z*sind(theta)+v->x*cosd(theta);
   v->x = xNew; v->z = zNew;
+}
+
+void airsar_to_latlon(meta_parameters *meta,
+                      double xSample, double yLine, double height,
+                      double *lat, double *lon)
+{
+    if (!meta->airsar)
+        asfPrintError("airsar_to_latlon() called with no airsar block!\n");
+
+    const double a = 6378137.0;		        // semi-major axis
+    const double b = 6356752.3412;	        // semi-minor axis
+    const double e2 = 0.00669437999014; 	// ellipticity
+    const double e12 = 0.00673949674228;	// second eccentricity
+
+    // we try to cache the matrices needed for the computation
+    // this makes sure we don't reuse the cache incorrectly (i.e., on
+    // data (=> an airsar block) which doesn't match what we cached for)
+    static meta_airsar *cached_airsar_block = NULL;
+
+    // these are the cached transformation parameters
+    static float **m = NULL;
+    static double ra = -999, o1 = -999, o2 = -999, o3 = -999;
+
+    if (!m)
+        m = matrix(1,3,1,3); // only needs to be done once
+
+    int recalc = !cached_airsar_block ||
+        cached_airsar_block->lat_peg_point != meta->airsar->lat_peg_point ||
+        cached_airsar_block->lon_peg_point != meta->airsar->lon_peg_point ||
+        cached_airsar_block->head_peg_point != meta->airsar->head_peg_point ||
+        cached_airsar_block->along_track_offset != meta->airsar->along_track_offset ||
+        cached_airsar_block->cross_track_offset != meta->airsar->cross_track_offset;
+
+    if (recalc) {
+        // cache airsar block, so we can be sure we're not reusing
+        // the stored data incorrectly
+        if (cached_airsar_block)
+            free(cached_airsar_block);
+        cached_airsar_block = meta_airsar_init();
+        *cached_airsar_block = *(meta->airsar);
+
+        asfPrintStatus("Calculating airsar transformation parameters...\n");
+
+        // now precalculate data
+        double lat_peg = meta->airsar->lat_peg_point;
+        double lon_peg = meta->airsar->lon_peg_point;
+        double head_peg = meta->airsar->head_peg_point;
+        double re = a / sqrt(1-e2*sin(lat_peg)*sin(lat_peg));
+        double rn = (a*(1-e2)) / pow(1-e2*sin(lat_peg)*sin(lat_peg), 1.5);
+        ra = (re*rn) / (re*cos(head_peg)*cos(head_peg)+rn*sin(head_peg)*sin(head_peg));
+
+        float **m1, **m2;
+        m1 = matrix(1,3,1,3);
+        m2 = matrix(1,3,1,3);
+
+        m1[1][1] = -sin(lon_peg);
+        m1[1][2] = -sin(lat_peg)*cos(lon_peg);
+        m1[1][3] = cos(lat_peg)*cos(lon_peg);
+        m1[2][1] = cos(lon_peg);
+        m1[2][2] = -sin(lat_peg)*sin(lon_peg);
+        m1[2][3] = cos(lat_peg)*sin(lon_peg);
+        m1[3][1] = 0.0;
+        m1[3][2] = cos(lat_peg);
+        m1[3][3] = sin(lat_peg);
+      
+        m2[1][1] = 0.0;
+        m2[1][2] = sin(head_peg);
+        m2[1][3] = -cos(head_peg);
+        m2[2][1] = 0.0;
+        m2[2][2] = cos(head_peg);
+        m2[2][3] = sin(head_peg);
+        m2[3][1] = 1.0;
+        m2[3][2] = 0.0;
+        m2[3][3] = 0.0;
+
+        o1 = re*cos(lat_peg)*cos(lon_peg)-ra*cos(lat_peg)*cos(lon_peg);
+        o2 = re*cos(lat_peg)*sin(lon_peg)-ra*cos(lat_peg)*sin(lon_peg);
+        o3 = re*(1-e2)*sin(lat_peg)-ra*sin(lat_peg);
+
+        matrix_multiply(m1,m2,m,3,3,3);
+        free_matrix(m1,1,3,1,3);
+        free_matrix(m2,1,3,1,3);
+    }
+
+    // Make sure we didn't miss anything
+    assert(ra != -999 && o1 != -999 && o2 != -999 && o3 != -999);
+
+    //------------------------------------------------------------------
+    // Now the actual computation, using the cached matrix etc
+
+    // convenience aliases
+    double c0 = meta->airsar->cross_track_offset;
+    double s0 = meta->airsar->along_track_offset;
+    double ypix = meta->general->y_pixel_size;
+    double xpix = meta->general->x_pixel_size;
+
+    // radar coordinates
+    double c_lat = (xSample * ypix + c0) / ra;
+    double s_lon = (yLine * xpix + s0) / ra;
+
+    // radar coordinates in WGS84
+    double t1 = (ra+height)*cos(c_lat)*cos(s_lon);
+    double t2 = (ra+height)*cos(c_lat)*sin(s_lon);
+    double t3 = (ra+height)*sin(c_lat);
+      
+    double c1 = m[1][1]*t1 + m[1][2]*t2 + m[1][3]*t3;
+    double c2 = m[2][1]*t1 + m[2][2]*t2 + m[2][3]*t3;
+    double c3 = m[3][1]*t1 + m[3][2]*t2 + m[3][3]*t3;
+      
+    // shift into local Cartesian coordinates
+    double x = c1 + o1;// + 9.0;
+    double y = c2 + o2;// - 161.0;
+    double z = c3 + o3;// - 179.0;
+      
+    // local Cartesian coordinates into geographic coordinates
+    double d = sqrt(x*x+y*y);
+    double theta = atan2(z*a, d*b);
+    *lat = atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta), 
+            d-e2*a*cos(theta)*cos(theta)*cos(theta));
+    *lon = atan2(y, x);
 }
 
 void alos_to_latlon(meta_parameters *meta,

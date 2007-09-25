@@ -705,6 +705,9 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level);
 ***************************************************************************/
 void proj_to_latlon(meta_projection *proj, double x, double y, double z,
         double *lat, double *lon, double *height);
+void airsar_to_latlon(meta_parameters *meta,
+        double xSample, double yLine, double z,
+        double *lat, double *lon);
 void alos_to_latlon(meta_parameters *meta,
         double xSample, double yLine, double z,
         double *lat_d, double *lon, double *height);
@@ -713,7 +716,7 @@ void scan_to_latlon(meta_parameters *meta,
         double *lat, double *lon, double *height);
 void latlon_to_proj(meta_projection *proj, char look_dir,
         double lat, double lon, double height,
-                    double *x, double *y, double *z);
+        double *x, double *y, double *z);
 
 void latLon2proj(double lat, double lon, double elev, char *projFile,
      double *projX, double *projY);
