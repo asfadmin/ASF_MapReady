@@ -233,70 +233,70 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     // Check to see if the user forced a band extension
     // (band_id) upon us... override the above if so
     if (band_id && strlen(band_id)) {
-      // Force ii index to point at correct filename,
-      // dying if it can't be found.
-      char file_prefix[256];
-      int found=0;
+        // Force ii index to point at correct filename,
+        // dying if it can't be found.
+        char file_prefix[256];
+        int found=0;
 
-      // Be forgiving on numeric-only band IDs and let
-      // the user enter digits with or without leading
-      // zeros, e.g. 01 or 1 ...they are equivalent
-      int iBandNo = atoi(band_id);
-      if (iBandNo > 0 && iBandNo <= MAX_BANDS) {
-  // band_id appears to be a valid numeric band number
-  int alpha = 0;
-  char *s = band_id;
-  while (*s != '\0') {
-    if (isalpha((int)*s)) alpha = 1;
-    s++;
-  }
-  if (!alpha)
-    sprintf(band_id, "%02d", iBandNo);
-      }
-      band = atoi(band_id);
-      sprintf(file_prefix, "IMG-%s-", band_id);
-      ii = 0;
-      do {
-  if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0)
-    found = 1;
-  ii++;
-  if (ii > nBands)
-    asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band data "
-      "and\n"
-      "selected band (\"%s\") file was not found \"%s\"\n",
-      band_id, strcat(file_prefix, inBaseName));
-      } while (!found);
-      if (found) {
-  ii--;
-  import_single_band = 1;
-  strcpy(bandExt, band_id);
-      }
+        // Be forgiving on numeric-only band IDs and let
+        // the user enter digits with or without leading
+        // zeros, e.g. 01 or 1 ...they are equivalent
+        int iBandNo = atoi(band_id);
+        if (iBandNo > 0 && iBandNo <= MAX_BANDS) {
+            // band_id appears to be a valid numeric band number
+            int alpha = 0;
+            char *s = band_id;
+            while (*s != '\0') {
+                if (isalpha((int)*s)) alpha = 1;
+                s++;
+            }
+            if (!alpha)
+                sprintf(band_id, "%02d", iBandNo);
+        }
+        band = atoi(band_id);
+        sprintf(file_prefix, "IMG-%s-", band_id);
+        ii = 0;
+        do {
+            if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0)
+                found = 1;
+            ii++;
+            if (ii > nBands)
+                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band data "
+                "and\n"
+                "selected band (\"%s\") file was not found \"%s\"\n",
+                band_id, strcat(file_prefix, inBaseName));
+        } while (!found);
+        if (found) {
+            ii--;
+            import_single_band = 1;
+            strcpy(bandExt, band_id);
+        }
     }
     else
-      band = ii+1;
+        band = ii+1;
     asfPrintStatus("   File: %s\n", inBandName[ii]);
     if (import_single_band)
-      nBands = 1;
+        nBands = 1;
 
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA)
-      import_ceos_raw(inBandName[ii], inMetaName[0], outDataName, outMetaName,
-          bandExt, band, nBands, radiometry, import_single_band);
+        import_ceos_raw(inBandName[ii], inMetaName[0], outDataName, outMetaName,
+        bandExt, band, nBands, radiometry, import_single_band);
 
     else if (ceos->ceos_data_type == CEOS_SLC_DATA_INT)
-      import_ceos_complex_int(inBandName[ii], inMetaName[0], outDataName,
-            outMetaName, bandExt, band, nBands, radiometry,
-            import_single_band, complex_flag, multilook_flag);
+        import_ceos_complex_int(inBandName[ii], inMetaName[0], outDataName,
+        outMetaName, bandExt, band, nBands, radiometry,
+        import_single_band, complex_flag, multilook_flag);
 
     else if (ceos->ceos_data_type == CEOS_SLC_DATA_FLOAT)
-      import_ceos_complex_float(inBandName[ii], inMetaName[0], outDataName,
+        import_ceos_complex_float(inBandName[ii], inMetaName[0], outDataName,
         outMetaName, bandExt, band, nBands, radiometry,
         import_single_band, complex_flag, multilook_flag, db_flag);
 
     else if (ceos->ceos_data_type == CEOS_AMP_DATA)
-      import_ceos_detected(inBandName[ii], inMetaName[0], outDataName,
-         outMetaName, bandExt, band, nBands, radiometry,
-         import_single_band, lutName, db_flag);
+        import_ceos_detected(inBandName[ii], inMetaName[0], outDataName,
+        outMetaName, bandExt, band, nBands, radiometry,
+        import_single_band, lutName, db_flag);
   }
 
   // Resample, if necessary
@@ -870,7 +870,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   /* Take care of image files and memory */
   strcat(outDataName, TOOLS_COMPLEX_EXT);
   fpIn  = fopenImage(inDataName, "rb");
-  if (band == 0)
+  if (band == 1)
     fpOut = fopenImage(outDataName, "wb");
   else
     fpOut = fopenImage(outDataName, "ab");
@@ -1015,8 +1015,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
           out++;
       }
       else if (multilook_flag) {
-          put_band_float_line(fpOut, meta, 0, out, amp_buf);
-          put_band_float_line(fpOut, meta, 1, out, phase_buf);
+          put_band_float_line(fpOut, meta, (band-1)*2+0, out, amp_buf);
+          put_band_float_line(fpOut, meta, (band-1)*2+1, out, phase_buf);
           out++;
       }
       else {
@@ -1024,8 +1024,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
               if (complex_flag)
                   put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
               else {
-                  put_band_float_line(fpOut, meta, 0, ii+ll, amp_buf+ll*ns);
-                  put_band_float_line(fpOut, meta, 1, ii+ll, phase_buf+ll*ns);
+                  put_band_float_line(fpOut, meta, (band-1)*2+0, ii+ll, amp_buf+ll*ns);
+                  put_band_float_line(fpOut, meta, (band-1)*2+1, ii+ll, phase_buf+ll*ns);
               }
           }
       }
@@ -1035,6 +1035,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   FREE(cpxFloat_buf);
   FREE(amp_buf);
   FREE(phase_buf);
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
 
   strcpy(meta->general->basename, inDataName);
   if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
@@ -1065,9 +1067,6 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
 
   meta_free(meta);
-
-  FCLOSE(fpIn);
-  FCLOSE(fpOut);
 }
 
 void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
