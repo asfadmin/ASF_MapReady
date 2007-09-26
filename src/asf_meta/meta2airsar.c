@@ -101,10 +101,10 @@ meta_parameters* airsar2meta(airsar_general *general,
   meta->location->lon_start_near_range = general->corner1_lon;
   meta->location->lat_start_far_range = general->corner2_lat;
   meta->location->lon_start_far_range = general->corner2_lon;
-  meta->location->lat_end_near_range = general->corner3_lat;
-  meta->location->lon_end_near_range = general->corner3_lon;
-  meta->location->lat_end_far_range = general->corner4_lat;
-  meta->location->lon_end_far_range = general->corner4_lon;
+  meta->location->lat_end_near_range = general->corner4_lat;
+  meta->location->lon_end_near_range = general->corner4_lon;
+  meta->location->lat_end_far_range = general->corner3_lat;
+  meta->location->lon_end_far_range = general->corner3_lon;
 
   return meta;
 }

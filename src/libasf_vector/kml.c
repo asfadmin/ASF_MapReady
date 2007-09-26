@@ -81,21 +81,10 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_LL, lon_LL;
     double lat_LR, lon_LR;
 
-    if (meta->location) {
-        lat_UL = meta->location->lat_start_near_range;
-        lon_UL = meta->location->lon_start_near_range;
-        lat_UR = meta->location->lat_start_far_range;
-        lon_UR = meta->location->lon_start_far_range;
-        lat_LR = meta->location->lat_end_far_range;
-        lon_LR = meta->location->lon_end_far_range;
-        lat_LL = meta->location->lat_end_near_range;
-        lon_LL = meta->location->lon_end_near_range;
-    } else {
-        meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-        meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-        meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-        meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-    }
+    meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
+    meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
+    meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
+    meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
 
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
@@ -149,7 +138,35 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "      <LinearRing>\n");
     fprintf(kml_file, "        <coordinates>\n");
 
-    if (!png_filename || !meta->projection)
+    double h = 0.0;
+    double clat = meta->general->center_latitude;
+    double clon = meta->general->center_longitude;
+    printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
+    meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
+    printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+
+    double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
+        ctr_x, ctr_y;
+    double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
+        ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
+    double lat_UL_rot, lon_UL_rot;
+    double lat_UR_rot, lon_UR_rot;
+    double lat_LR_rot, lon_LR_rot;
+    double lat_LL_rot, lon_LL_rot;
+
+    int zone = utm_zone(clon);
+    
+    latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
+    latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
+    latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
+    latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
+    latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
+
+    double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
+    double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
+    double ang = (ang1+ang2)/2;
+
+    if (!png_filename || !meta->projection || fabs(ang) > .1)
     {
         fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
         fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
@@ -163,7 +180,10 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "  </Polygon>\n");
         fprintf(kml_file, "</Placemark>\n");
 
-        printf("No overlay: unprojected data.\n");
+        if (!png_filename || !meta->projection)
+            printf("No overlay: unprojected data.\n");
+        else
+            printf("No overlay: rotation angle too large: %lf\n", ang*R2D);
     }
     else
     {
@@ -173,44 +193,6 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             asfPrintError("Must pass in a directory for the overlay files!\n");
         else
         {
-            double h = 0.0;
-
-            if (meta->location) {
-                // override what we found earlier, when drawing the box, here
-                // we want the actual bounding box, not the satellite swath
-                meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
-                meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
-                meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
-                meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-            }
-
-            double clat = meta->general->center_latitude;
-            double clon = meta->general->center_longitude;
-            printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
-            meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
-            printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
-
-            double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
-                ctr_x, ctr_y;
-            double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
-                ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
-            double lat_UL_rot, lon_UL_rot;
-            double lat_UR_rot, lon_UR_rot;
-            double lat_LR_rot, lon_LR_rot;
-            double lat_LL_rot, lon_LL_rot;
-
-            int zone = utm_zone(clon);
-            
-            latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
-            latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
-            latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
-            latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
-            latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
-
-            double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
-            double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
-            double ang = (ang1+ang2)/2;
-
             printf("UL: %lf,%lf\n", ul_x,ul_y);
             printf("UR: %lf,%lf\n", ur_x,ur_y);
             printf("LL: %lf,%lf\n", ll_x,ll_y);
