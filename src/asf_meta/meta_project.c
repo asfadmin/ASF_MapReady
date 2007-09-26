@@ -83,11 +83,13 @@ void airsar_to_latlon(meta_parameters *meta,
 
     // these are the cached transformation parameters
     static float **m = NULL;
-    static double ra = -999, o1 = -999, o2 = -999, o3 = -999;
+    static double ra=-999, o1=-999, o2=-999, o3=-999;
 
     if (!m)
         m = matrix(1,3,1,3); // only needs to be done once
 
+    // if we aren't calculating with the exact same airsar block, we
+    // need to recalculate the transformation block
     int recalc = !cached_airsar_block ||
         cached_airsar_block->lat_peg_point != meta->airsar->lat_peg_point ||
         cached_airsar_block->lon_peg_point != meta->airsar->lon_peg_point ||
@@ -106,9 +108,9 @@ void airsar_to_latlon(meta_parameters *meta,
         asfPrintStatus("Calculating airsar transformation parameters...\n");
 
         // now precalculate data
-        double lat_peg = meta->airsar->lat_peg_point;
-        double lon_peg = meta->airsar->lon_peg_point;
-        double head_peg = meta->airsar->head_peg_point;
+        double lat_peg = meta->airsar->lat_peg_point*D2R;
+        double lon_peg = meta->airsar->lon_peg_point*D2R;
+        double head_peg = meta->airsar->head_peg_point*D2R;
         double re = a / sqrt(1-e2*sin(lat_peg)*sin(lat_peg));
         double rn = (a*(1-e2)) / pow(1-e2*sin(lat_peg)*sin(lat_peg), 1.5);
         ra = (re*rn) / (re*cos(head_peg)*cos(head_peg)+rn*sin(head_peg)*sin(head_peg));
@@ -159,8 +161,8 @@ void airsar_to_latlon(meta_parameters *meta,
     double xpix = meta->general->x_pixel_size;
 
     // radar coordinates
-    double c_lat = (xSample * ypix + c0) / ra;
-    double s_lon = (yLine * xpix + s0) / ra;
+    double c_lat = (xSample*xpix+c0)/ra;
+    double s_lon = (yLine*ypix+s0)/ra;
 
     // radar coordinates in WGS84
     double t1 = (ra+height)*cos(c_lat)*cos(s_lon);
@@ -175,13 +177,13 @@ void airsar_to_latlon(meta_parameters *meta,
     double x = c1 + o1;// + 9.0;
     double y = c2 + o2;// - 161.0;
     double z = c3 + o3;// - 179.0;
-      
+
     // local Cartesian coordinates into geographic coordinates
     double d = sqrt(x*x+y*y);
     double theta = atan2(z*a, d*b);
-    *lat = atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta), 
-            d-e2*a*cos(theta)*cos(theta)*cos(theta));
-    *lon = atan2(y, x);
+    *lat = R2D*atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta), 
+                     d-e2*a*cos(theta)*cos(theta)*cos(theta));
+    *lon = R2D*atan2(y, x);
 }
 
 void alos_to_latlon(meta_parameters *meta,
@@ -232,22 +234,22 @@ void scan_to_latlon(meta_parameters *meta,
   double qlat, qlon;
   double lat,radius;
   vector pos;
-        meta_projection *proj = meta->projection;
+  meta_projection *proj = meta->projection;
 
-        if (z != 0.0) {
-            // height correction applies directly to y (range direction)
-            double line, samp;
-            line = (y-proj->startY)/proj->perY - meta->general->start_line;
-            samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
-            double sr = meta_get_slant(meta,line,samp);
-            double er = proj->param.atct.rlocal;
-            double ht = meta_get_sat_height(meta,line,samp);
-            double cos_ang = (sr*sr + er*er - ht*ht)/(2.0*sr*er);
-            if (cos_ang > 1) cos_ang = 1;
-            if (cos_ang < -1) cos_ang = -1;
-            double incid = PI-acos(cos_ang);
-            x += z*tan(PI/2-incid);
-        }
+  if (z != 0.0) {
+      // height correction applies directly to y (range direction)
+      double line, samp;
+      line = (y-proj->startY)/proj->perY - meta->general->start_line;
+      samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
+      double sr = meta_get_slant(meta,line,samp);
+      double er = proj->param.atct.rlocal;
+      double ht = meta_get_sat_height(meta,line,samp);
+      double cos_ang = (sr*sr + er*er - ht*ht)/(2.0*sr*er);
+      if (cos_ang > 1) cos_ang = 1;
+      if (cos_ang < -1) cos_ang = -1;
+      double incid = PI-acos(cos_ang);
+      x += z*tan(PI/2-incid);
+  }
 
   if (meta->sar->look_direction=='R')
     qlat = -x/proj->param.atct.rlocal; /* Right looking sar */
@@ -265,7 +267,7 @@ void scan_to_latlon(meta_parameters *meta,
   *lon *= R2D;
   lat *= R2D;
   *lat_d = atand(tand(lat) / (1-ecc2));
-        *height = z;  // FIXME: Do we need to correct the height at all?
+  *height = z;  // FIXME: Do we need to correct the height at all?
 }
 
 
