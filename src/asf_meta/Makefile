@@ -91,6 +91,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	ioLine.o \
 	latLon2timeSlant.o \
 	lzFetch.o \
+	matrix.o \
 	meta_complex2polar.o \
 	meta_copy.o \
 	meta_create.o \
