@@ -91,7 +91,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	ioLine.o \
 	latLon2timeSlant.o \
 	lzFetch.o \
-	matrix.o \
 	meta_complex2polar.o \
 	meta_copy.o \
 	meta_create.o \
@@ -123,7 +122,6 @@ OBJS =  $(LEX_YACC_OBJS) \
 	unpacked_deg.o \
 	utc2gha.o \
 	util3d.o \
-	vector.o \
 	yaw2doppler.o \
 	xpix_ypix.o \
 	pp_corrected_vals.o \

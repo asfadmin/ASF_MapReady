@@ -24,13 +24,15 @@ OBJS  = caplib.o \
 	license.o \
 	splash_screen.o \
 	print_alerts.o \
-	diagnostics.o
+	diagnostics.o \
+	matrix.o \
+	vector.o
 
 CFLAGS += -D_XOPEN_SOURCE=600
 
 all: build_only
 	mv asf.a $(LIBDIR)
-	cp asf.h asf_glib.h asf_complex.h $(ASF_INCLUDE_DIR)
+	cp asf.h asf_glib.h asf_complex.h vector.h matrix.h $(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)
