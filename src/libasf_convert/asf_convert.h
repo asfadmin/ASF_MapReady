@@ -9,6 +9,8 @@ typedef struct
 {
   char *in_name;          // input file name
   char *out_name;         // output file name
+  char *default_in_dir;   // default input directory
+  char *default_out_dir;  // default output directory
   int import;             // import flag
   int sar_processing;     // SAR processing flag
   int c2p;                // complex -> polar flag

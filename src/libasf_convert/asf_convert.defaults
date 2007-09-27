@@ -1,3 +1,5 @@
+default input dir = 
+default output dir = 
 import = 1
 sar processing = 0
 geocoding = 1

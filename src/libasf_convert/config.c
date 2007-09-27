@@ -16,6 +16,42 @@ static int strindex(char s[], char t[])
   return -1;
 }
 
+static void apply_default_dirs(convert_config *cfg)
+{ 
+  // apply default dir to input name if there isn't a dir there already
+  char file_dir[4096], file[4096];
+  split_dir_and_file(cfg->general->in_name, file_dir, file);
+  int file_len = strlen(file);
+  int file_dir_len = strlen(file_dir);
+  int def_dir_len = strlen(cfg->general->default_in_dir);
+  if (file_dir_len==0 && def_dir_len!=0) {
+    char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
+    strcpy(tmpstr, cfg->general->default_in_dir);
+    strcat(tmpstr, DIR_SEPARATOR_STR);
+    strcat(tmpstr, file);
+    cfg->general->in_name = (char*)realloc(cfg->general->in_name,
+                                           sizeof(char)*(strlen(tmpstr)));
+    strcpy(cfg->general->in_name, tmpstr);
+    FREE(tmpstr);
+  }
+
+  // apply default dir to output name if there isn't a dir there already
+  split_dir_and_file(cfg->general->out_name, file_dir, file);
+  file_len = strlen(file);
+  file_dir_len = strlen(file_dir);
+  def_dir_len = strlen(cfg->general->default_out_dir);
+  if (file_dir_len==0 && def_dir_len!=0) {
+    char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
+    strcpy(tmpstr, cfg->general->default_out_dir);
+    strcat(tmpstr, DIR_SEPARATOR_STR);
+    strcat(tmpstr, file);
+    cfg->general->out_name = (char*)realloc(cfg->general->out_name,
+                                            sizeof(char)*(strlen(tmpstr)));
+    strcpy(cfg->general->out_name, tmpstr);
+    FREE(tmpstr);
+  }
+}
+
 static char *read_param(char *line)
 {
   int i, k;
@@ -87,9 +123,19 @@ int init_convert_config(char *configFile)
   // input file
   fprintf(fConfig, "# This parameter looks for the basename of the input file\n\n");
   fprintf(fConfig, "input file = \n\n");
+  // default input directory
+  fprintf(fConfig, "# Directory where to look for the input file(s). If there is a\n"
+                   "# directory already specified in the input file parameter, this\n"
+		   "# value will be ignored.\n\n");
+  fprintf(fConfig, "default input dir = \n\n");
   // output file
   fprintf(fConfig, "# This parameter looks for the basename of the output file\n\n");
   fprintf(fConfig, "output file = \n\n");
+  // default output directory
+  fprintf(fConfig, "# Directory where to put the output file(s). If there is a\n"
+                   "# directory already specified in the output file parameter, this\n"
+		   "# value will be ignored.\n\n");
+  fprintf(fConfig, "default output dir = \n\n");
   // import flag
   fprintf(fConfig, "# The import flag indicates whether the data needs to be run through\n"
           "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
@@ -193,6 +239,8 @@ void free_convert_config(convert_config *cfg)
         if (cfg->general) {
             FREE(cfg->general->in_name);
             FREE(cfg->general->out_name);
+            FREE(cfg->general->default_in_dir);
+            FREE(cfg->general->default_out_dir);
             FREE(cfg->general->batchFile);
             FREE(cfg->general->defaults);
             FREE(cfg->general->prefix);
@@ -248,9 +296,10 @@ void free_convert_config(convert_config *cfg)
 convert_config *init_fill_convert_config(char *configFile)
 {
 #define newStruct(type) (type *)MALLOC(sizeof(type))
+#define LINE_LEN 8196
 
   FILE *fConfig, *fDefaults;
-  char line[255], params[25];
+  char line[LINE_LEN], params[25];
   char *test;
   int i;
 
@@ -270,10 +319,14 @@ convert_config *init_fill_convert_config(char *configFile)
   // Initialize structure
   strcpy(cfg->comment, "asf_convert configuration file");
 
-  cfg->general->in_name = (char *)MALLOC(sizeof(char)*255);
+  cfg->general->in_name = (char *)MALLOC(sizeof(char)*1200);
   strcpy(cfg->general->in_name, "");
-  cfg->general->out_name = (char *)MALLOC(sizeof(char)*255);
+  cfg->general->out_name = (char *)MALLOC(sizeof(char)*1200);
   strcpy(cfg->general->out_name, "");
+  cfg->general->default_in_dir = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->general->default_in_dir, "");
+  cfg->general->default_out_dir = (char *)MALLOC(sizeof(char)*1024);
+  strcpy(cfg->general->default_out_dir, "");
   cfg->general->import = 0;
   cfg->general->sar_processing = 0;
   cfg->general->c2p = 0;
@@ -373,7 +426,7 @@ convert_config *init_fill_convert_config(char *configFile)
   fConfig = fopen(configFile, "r");
   if (fConfig) {
     i=0;
-    while (fgets(line, 255, fConfig) != NULL) {
+    while (fgets(line, LINE_LEN, fConfig) != NULL) {
         if (i==0) strcpy(cfg->comment, line);
         i++;
 
@@ -393,9 +446,13 @@ convert_config *init_fill_convert_config(char *configFile)
     if (!fileExists(cfg->general->defaults))
       check_return(1, "Default values file does not exist\n");
     fDefaults = FOPEN(cfg->general->defaults, "r");
-    while (fgets(line, 255, fDefaults) != NULL) {
+    while (fgets(line, LINE_LEN, fDefaults) != NULL) {
       test = read_param(line);
       // General
+      if (strncmp(test, "default input dir", 17)==0)
+        strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
+      if (strncmp(test, "default output dir", 18)==0)
+        strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "sar processing", 14)==0)
@@ -529,7 +586,7 @@ convert_config *init_fill_convert_config(char *configFile)
   fConfig = fopen(configFile, "r");
   if (fConfig) {
     i=0;
-    while (fgets(line, 255, fConfig) != NULL) {
+    while (fgets(line, LINE_LEN, fConfig) != NULL) {
         if (i==0) strcpy(cfg->comment, line);
         i++;
 
@@ -540,6 +597,10 @@ convert_config *init_fill_convert_config(char *configFile)
             strcpy(cfg->general->in_name, read_str(line, "input file"));
         if (strncmp(test, "output file", 11)==0)
             strcpy(cfg->general->out_name, read_str(line, "output file"));
+        if (strncmp(test, "default input dir", 17)==0)
+            strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
+        if (strncmp(test, "default output dir", 18)==0)
+            strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
         if (strncmp(test, "import", 6)==0)
             cfg->general->import = read_int(line, "import");
         if (strncmp(test, "sar processing", 14)==0)
@@ -584,6 +645,8 @@ convert_config *init_fill_convert_config(char *configFile)
     FCLOSE(fConfig);
   }
 
+  apply_default_dirs(cfg);
+    
   return cfg;
 }
 
@@ -608,6 +671,10 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->general->in_name, read_str(line, "input file"));
       if (strncmp(test, "output file", 11)==0)
         strcpy(cfg->general->out_name, read_str(line, "output file"));
+      if (strncmp(test, "default input dir", 17)==0)
+          strcpy(cfg->general->default_in_dir, read_str(line, "default input dir"));
+      if (strncmp(test, "default output dir", 18)==0)
+          strcpy(cfg->general->default_out_dir, read_str(line, "default output dir"));
       if (strncmp(test, "import", 6)==0)
         cfg->general->import = read_int(line, "import");
       if (strncmp(test, "sar processing", 14)==0)
@@ -792,6 +859,8 @@ convert_config *read_convert_config(char *configFile)
     }
   }
 
+  apply_default_dirs(cfg);
+    
   FCLOSE(fConfig);
 
   return cfg;
@@ -820,6 +889,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (!shortFlag)
       fprintf(fConfig, "\n# This parameter looks for the basename of the output file\n\n");
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# Default directory to find files in. If there is no directory in\n"
+                       " input file, this directory will be appended to it.\n\n");
+    fprintf(fConfig, "default input dir = %s\n", cfg->general->default_in_dir);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# Default directory to put files in. If there is no directory in\n"
+                       " output file, this directory will be appended to it.\n\n");
+    fprintf(fConfig, "default output dir = %s\n", cfg->general->default_out_dir);
     if (!shortFlag) {
       fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
               "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
@@ -1105,7 +1182,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
         fprintf(fConfig, "# The projection parameter files are located in:\n");
-  fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
+	fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)

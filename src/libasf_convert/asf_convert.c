@@ -74,12 +74,20 @@ void check_return(int ret, char *msg)
 
 // If a temporary directory has not been specified, create one using the time
 // stamp as the name of the temporary directory
-static void create_and_set_tmp_dir(char *basename, char *tmp_dir)
+static void create_and_set_tmp_dir(char *basename, char *out_dir, char *tmp_dir)
 {
-  int empty_name = strlen(tmp_dir)==0;
+  int tmp_len = strlen(tmp_dir);
+  int out_len = strlen(out_dir);
 
-  if (empty_name) {
-    strcpy(tmp_dir, basename);
+  if (0==tmp_len) {
+    if (0==out_len) {
+      strcpy(tmp_dir, "");
+    }
+    else {
+      strcpy(tmp_dir, out_dir);
+      strcat(tmp_dir, DIR_SEPARATOR_STR);
+    }
+    strcat(tmp_dir, basename);
     strcat(tmp_dir, "-");
     strcat(tmp_dir, time_stamp_dir());
     create_clean_dir(tmp_dir);
@@ -321,7 +329,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       split_dir_and_file(batchItem, batchPreDir, fileName);
 
       // Create temporary configuration file
-      create_and_set_tmp_dir(fileName, tmp_dir);
+      create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
       FILE *fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
@@ -349,8 +357,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // this method.  (Otherwise, we'd have to teach asfPrintError to
       // get us back here, to continue the loop.)
       asfPrintStatus("\nProcessing %s ...\n", batchItem);
-      int ret = asfSystem("%sasf_convert%s -log %s.log %s",
-          get_argv0(), bin_postfix(), batchItem, tmpCfgName);
+      char cmd[1024];
+      if (logflag) {
+        sprintf(cmd, "%sasf_convert%s -log %s %s",
+                get_argv0(), bin_postfix(), logFile, tmpCfgName);
+      }
+      else {
+        sprintf(cmd, "%sasf_convert%s %s",
+                get_argv0(), bin_postfix(), tmpCfgName);
+      }
+      int ret = asfSystem(cmd);
 
       if (ret != 0) {
           asfPrintStatus("%s: failed\n", batchItem);
@@ -375,12 +391,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   // Regular processing
   else {
 
+
+    char out_dir[255], junk[255];
+
     if (cfg->general->status_file && strlen(cfg->general->status_file) > 0)
       set_status_file(cfg->general->status_file);
 
     update_status("Processing...");
 
-    create_and_set_tmp_dir(cfg->general->in_name, cfg->general->tmp_dir);
+    split_dir_and_file(cfg->general->out_name, out_dir, junk);
+    create_and_set_tmp_dir(cfg->general->in_name, out_dir,
+                           cfg->general->tmp_dir);
 
     // Check that input name isn't the same as the output name
     // (This can happen with CEOS Level 0-- both use .raw)
@@ -717,6 +738,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               radiometry = r_GAMMA;
           } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
               radiometry = r_BETA;
+          } else {
+	      radiometry = r_AMP;  // Default to something (silence compiler)
           }
       }
 
