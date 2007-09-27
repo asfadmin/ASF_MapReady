@@ -1738,37 +1738,29 @@ int apply_settings_from_config_file(char *configFile)
         // - If reading from a proj file, allow THAT datum to override all else
         s.datum = DATUM_WGS84;
         if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
-          printf("\n\nYO BRIAN: Found WGS84 in configuration file\n\n");
           s.datum = DATUM_WGS84;
         }
         else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
-          printf("\n\nYO BRIAN: Found NAD27 in configuration file\n\n");
           s.datum = DATUM_NAD27;
         }
         else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
-          printf("\n\nYO BRIAN: Found NAD83 in configuration file\n\n");
           s.datum = DATUM_NAD83;
         }
         else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0) {
-          printf("\n\nYO BRIAN: Found HUGHES in configuration file\n\n");
           s.datum = DATUM_HUGHES;
         }
         datum_type_t datum_type = get_datum_from_proj_file(cfg->geocoding->projection, type);
         switch(datum_type) {
           case WGS84_DATUM:
-            printf("\n\nYO BRIAN: Found WGS84 in proj file\n\n");
             s.datum = DATUM_WGS84;
             break;
           case NAD27_DATUM:
-            printf("\n\nYO BRIAN: Found NAD27 in proj file\n\n");
             s.datum = DATUM_NAD27;
             break;
           case NAD83_DATUM:
-            printf("\n\nYO BRIAN: Found NAD83 in proj file\n\n");
             s.datum = DATUM_NAD83;
             break;
           case HUGHES_DATUM:
-            printf("\n\nYO BRIAN: Found HUGHES in proj file\n\n");
             s.datum = DATUM_HUGHES;
             break;
           case EGM96_DATUM:
@@ -1778,7 +1770,6 @@ int apply_settings_from_config_file(char *configFile)
           case ITRF97_DATUM:
           case UNKNOWN_DATUM:
           default:
-            printf("\n\nYO BRIAN: Found UNKNOWN in proj file\n\n");
             s.datum = DATUM_WGS84;
             break;
         }
