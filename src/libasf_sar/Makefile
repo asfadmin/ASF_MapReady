@@ -11,7 +11,6 @@ OBJS = \
 	deskew_dem.o \
 	deskew.o \
 	create_dem_grid.o \
-	matrix.o \
 	poly.o \
 	fit_poly.o \
 	fetcher.o \
@@ -34,7 +33,7 @@ LIBS = \
 
 all: build_only
 	cp libasf_sar.a $(LIBDIR)
-	cp asf_sar.h poly.h matrix.h $(ASF_INCLUDE_DIR)
+	cp asf_sar.h poly.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_sar.a

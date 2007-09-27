@@ -70,7 +70,6 @@ OBJS  = ardop_write.o \
 	import_airsar.o \
 	import_gamma.o \
 	least_squares.o \
-	matrix.o \
 	missing.o \
 	projected_image_import.o \
         tiff_to_byte_image.o \

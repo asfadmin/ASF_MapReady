@@ -80,15 +80,18 @@ static void clean(const char *file)
     {
         char * img_file = appendExt(file, ".img");
         char * meta_file = appendExt(file, ".meta");
+        char * hdr_file = appendExt(file, ".hdr");
         char * ddr_file = appendExt(file, ".ddr");
 
         remove_file(img_file);
         remove_file(meta_file);
+        remove_file(hdr_file);
         remove_file(ddr_file);
         remove_file(file);
 
         free(img_file);
         free(meta_file);
+        free(hdr_file);
         free(ddr_file);
     }
 }
@@ -1186,9 +1189,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      clean(padFile);
-      clean(deskewDemFile);
-      clean(deskewDemMask);
+      //clean(padFile);
+      //clean(deskewDemFile);
+      //clean(deskewDemMask);
 
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);

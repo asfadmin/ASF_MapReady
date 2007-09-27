@@ -82,11 +82,11 @@ void airsar_to_latlon(meta_parameters *meta,
     static meta_airsar *cached_airsar_block = NULL;
 
     // these are the cached transformation parameters
-    static float **m = NULL;
+    static matrix *m = NULL;
     static double ra=-999, o1=-999, o2=-999, o3=-999;
 
     if (!m)
-        m = matrix(1,3,1,3); // only needs to be done once
+        m = matrix_alloc(3,3); // only needs to be done once
 
     // if we aren't calculating with the exact same airsar block, we
     // need to recalculate the transformation block
@@ -115,37 +115,37 @@ void airsar_to_latlon(meta_parameters *meta,
         double rn = (a*(1-e2)) / pow(1-e2*sin(lat_peg)*sin(lat_peg), 1.5);
         ra = (re*rn) / (re*cos(head_peg)*cos(head_peg)+rn*sin(head_peg)*sin(head_peg));
 
-        float **m1, **m2;
-        m1 = matrix(1,3,1,3);
-        m2 = matrix(1,3,1,3);
+        matrix *m1, *m2;
+        m1 = matrix_alloc(3,3);
+        m2 = matrix_alloc(3,3);
 
-        m1[1][1] = -sin(lon_peg);
-        m1[1][2] = -sin(lat_peg)*cos(lon_peg);
-        m1[1][3] = cos(lat_peg)*cos(lon_peg);
-        m1[2][1] = cos(lon_peg);
-        m1[2][2] = -sin(lat_peg)*sin(lon_peg);
-        m1[2][3] = cos(lat_peg)*sin(lon_peg);
-        m1[3][1] = 0.0;
-        m1[3][2] = cos(lat_peg);
-        m1[3][3] = sin(lat_peg);
+        m1->coeff[1][1] = -sin(lon_peg);
+        m1->coeff[1][2] = -sin(lat_peg)*cos(lon_peg);
+        m1->coeff[1][3] = cos(lat_peg)*cos(lon_peg);
+        m1->coeff[2][1] = cos(lon_peg);
+        m1->coeff[2][2] = -sin(lat_peg)*sin(lon_peg);
+        m1->coeff[2][3] = cos(lat_peg)*sin(lon_peg);
+        m1->coeff[3][1] = 0.0;
+        m1->coeff[3][2] = cos(lat_peg);
+        m1->coeff[3][3] = sin(lat_peg);
       
-        m2[1][1] = 0.0;
-        m2[1][2] = sin(head_peg);
-        m2[1][3] = -cos(head_peg);
-        m2[2][1] = 0.0;
-        m2[2][2] = cos(head_peg);
-        m2[2][3] = sin(head_peg);
-        m2[3][1] = 1.0;
-        m2[3][2] = 0.0;
-        m2[3][3] = 0.0;
+        m2->coeff[1][1] = 0.0;
+        m2->coeff[1][2] = sin(head_peg);
+        m2->coeff[1][3] = -cos(head_peg);
+        m2->coeff[2][1] = 0.0;
+        m2->coeff[2][2] = cos(head_peg);
+        m2->coeff[2][3] = sin(head_peg);
+        m2->coeff[3][1] = 1.0;
+        m2->coeff[3][2] = 0.0;
+        m2->coeff[3][3] = 0.0;
 
         o1 = re*cos(lat_peg)*cos(lon_peg)-ra*cos(lat_peg)*cos(lon_peg);
         o2 = re*cos(lat_peg)*sin(lon_peg)-ra*cos(lat_peg)*sin(lon_peg);
         o3 = re*(1-e2)*sin(lat_peg)-ra*sin(lat_peg);
 
-        matrix_multiply(m1,m2,m,3,3,3);
-        free_matrix(m1,1,3,1,3);
-        free_matrix(m2,1,3,1,3);
+        matrix_multiply(m,m1,m2);
+        matrix_free(m1);
+        matrix_free(m2);
     }
 
     // Make sure we didn't miss anything
@@ -169,9 +169,9 @@ void airsar_to_latlon(meta_parameters *meta,
     double t2 = (ra+height)*cos(c_lat)*sin(s_lon);
     double t3 = (ra+height)*sin(c_lat);
       
-    double c1 = m[1][1]*t1 + m[1][2]*t2 + m[1][3]*t3;
-    double c2 = m[2][1]*t1 + m[2][2]*t2 + m[2][3]*t3;
-    double c3 = m[3][1]*t1 + m[3][2]*t2 + m[3][3]*t3;
+    double c1 = m->coeff[1][1]*t1 + m->coeff[1][2]*t2 + m->coeff[1][3]*t3;
+    double c2 = m->coeff[2][1]*t1 + m->coeff[2][2]*t2 + m->coeff[2][3]*t3;
+    double c3 = m->coeff[3][1]*t1 + m->coeff[3][2]*t2 + m->coeff[3][3]*t3;
       
     // shift into local Cartesian coordinates
     double x = c1 + o1;// + 9.0;

@@ -1,6 +1,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include <assert.h>
 
 static const int MAX_DN = MAX_LUT_DN;
 
@@ -14,6 +15,7 @@ static void lut_interp(unsigned char *buf, int left, int right)
   b = (float)(buf[right*3+2] - buf[left*3+2]) / (float)(right-left);
 
   for (ii=left+1; ii<right; ++ii) {
+      assert(ii*3+2 < MAX_LUT_DN*3);
       buf[ii*3] = (unsigned char)((r * (ii-left) + 0.5) + buf[left*3]);
       buf[ii*3+1] = (unsigned char)((g * (ii-left) + 0.5) + buf[left*3+1]);
       buf[ii*3+2] = (unsigned char)((b * (ii-left) + 0.5) + buf[left*3+2]);
@@ -125,6 +127,7 @@ void read_lut(char *lutFile, unsigned char *lut_buffer)
                       lutFile, l, dn_prev, dn);
     }
 
+    assert(dn*3+2 < MAX_LUT_DN*3);
     lut_buffer[dn*3] = (unsigned char)red;
     lut_buffer[dn*3+1] = (unsigned char)green;
     lut_buffer[dn*3+2] = (unsigned char)blue;
