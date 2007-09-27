@@ -40,76 +40,99 @@ typedef int unproject_arr_t(project_parameters_t *pps, double *x, double *y,
       double **height, long length, datum_type_t dtm);
 
 char *proj_info_as_string(projection_type_t projection_type,
-                          project_parameters_t *pp)
+                          project_parameters_t *pp, datum_type_t *datum)
 {
-    static char ret[256];
+  static char ret[256];
+  char datum_str[256];
 
-    switch (projection_type)
-    {
+  switch (projection_type)
+  {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
-        sprintf(ret, "Projection: UTM\n   Zone: %d\n\n", pp->utm.zone);
-        break;
+      if (datum) {
+        sprintf(datum_str, "   Datum: %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret, "Projection: UTM\n"
+          "   Zone : %d\n%s",
+          pp->utm.zone,
+          (datum) ? datum_str : "\n");
+      break;
 
     case POLAR_STEREOGRAPHIC:
-        sprintf(ret,
-            "Projection: Polar Stereographic\n"
-            "   Standard parallel: %.4f\n"
-            "   Central meridian: %.4f\n"
-            "   Hemisphere: %c\n\n",
-            pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S');
-        break;
+      if (datum) {
+        sprintf(datum_str, "   Reference spheroid: %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Polar Stereographic\n"
+         "   Standard parallel : %.4f\n"
+         "   Central meridian  : %.4f\n"
+         "   Hemisphere        : %c\n%s",
+         pp->ps.slat, pp->ps.slon, pp->ps.is_north_pole ? 'N' : 'S',
+         (datum) ? datum_str : "\n");
+      break;
 
     case ALBERS_EQUAL_AREA:
-        sprintf(ret,
-            "Projection: Albers Equal Area Conic\n"
-            "   First standard parallel: %.4f\n"
-            "   Second standard parallel: %.4f\n"
-            "   Central meridian: %.4f\n"
-            "   Latitude of origin: %.4f\n\n",
-            pp->albers.std_parallel1, pp->albers.std_parallel2,
-            pp->albers.center_meridian, pp->albers.orig_latitude);
-        break;
+      if (datum) {
+        sprintf(datum_str, "   Datum                   : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Albers Equal Area Conic\n"
+         "   First standard parallel : %.4f\n"
+         "   Second standard parallel: %.4f\n"
+         "   Central meridian        : %.4f\n"
+         "   Latitude of origin      : %.4f\n%s",
+         pp->albers.std_parallel1, pp->albers.std_parallel2,
+         pp->albers.center_meridian, pp->albers.orig_latitude,
+         (datum) ? datum_str : "\n");
+      break;
 
     case LAMBERT_CONFORMAL_CONIC:
-        sprintf(ret,
-            "Projection: Lambert Conformal Conic\n"
-            "   First standard parallel: %.4f\n"
-            "   Second standard parallel: %.4f\n"
-            "   Central meridian: %.4f\n"
-            "   Latitude of origin: %.4f\n\n",
-            pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0);
-        break;
+      if (datum) {
+        sprintf(datum_str, "   Datum                   : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Lambert Conformal Conic\n"
+         "   First standard parallel : %.4f\n"
+         "   Second standard parallel: %.4f\n"
+         "   Central meridian        : %.4f\n"
+         "   Latitude of origin      : %.4f\n%s",
+         pp->lamcc.plat1, pp->lamcc.plat2, pp->lamcc.lon0, pp->lamcc.lat0,
+         (datum) ? datum_str : "\n");
+      break;
 
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-        sprintf(ret,
-            "Projection: Lambert Azimuthal Equal Area\n"
-            "   Latitude of origin: %.4f\n"
-            "   Central meridian: %.4f\n\n",
-            pp->lamaz.center_lat, pp->lamaz.center_lon);
-        break;
+      if (datum) {
+        sprintf(datum_str, "   Datum             : %s\n\n", datum_toString(*datum));
+      }
+      sprintf(ret,
+         "Projection: Lambert Azimuthal Equal Area\n"
+         "   Latitude of origin: %.4f\n"
+         "   Central meridian  : %.4f\n%s",
+         pp->lamaz.center_lat, pp->lamaz.center_lon,
+         (datum) ? datum_str : "\n");
+      break;
 
     case SCANSAR_PROJECTION:
-        sprintf(ret,
-            "Projection: ScanSAR\n");
-        break;
+      sprintf(ret,
+         "Projection: ScanSAR\n");
+      break;
 
     case LAT_LONG_PSEUDO_PROJECTION:
-        sprintf(ret,
-            "Projection: Lat/Lon (pseudoprojection)\n");
-        break;
+      sprintf(ret,
+         "Projection: Lat/Lon (pseudoprojection)\n");
+      break;
 
     default:
-        asfPrintError("Projection type not supported!\n");
-        break;
-    }
+      asfPrintError("Projection type not supported!\n");
+      break;
+  }
 
-    return ret;
+  return ret;
 }
 
 static void print_proj_info(projection_type_t projection_type,
-                            project_parameters_t *pp)
+                            project_parameters_t *pp, datum_type_t datum)
 {
-    asfPrintStatus(proj_info_as_string(projection_type, pp));
+    asfPrintStatus(proj_info_as_string(projection_type, pp, &datum));
 }
 
 // Blurb about what the user can do if projection errors are too
@@ -535,8 +558,7 @@ int asf_geocode_from_proj_file(const char *projection_file,
   project_parameters_t pp;
   projection_type_t projection_type;
 
-  parse_proj_args_file(projection_file, &pp, &projection_type);
-
+  parse_proj_args_file(projection_file, &pp, &projection_type, &datum);
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
          average_height, datum, pixel_size, band_id,
                      in_base_name, out_base_name, background_val);
@@ -1106,7 +1128,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   asfPrintStatus("Pixel size: %.1f m\n", pixel_size);
   if (average_height != 0.0)
       asfPrintStatus("Height correction: %fm.\n", average_height);
-  print_proj_info(projection_type, pp);
+  print_proj_info(projection_type, pp, datum);
 
   // Translate the command line notion of the resampling method into
   // the lingo known by the float_image and uint8_image classes.
@@ -1830,7 +1852,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
               }
 
               // Now we are ready to put the pixel value into the output image
-              if (i > 0 && imd->general->image_data_type == DEM && 
+              if (i > 0 && imd->general->image_data_type == DEM &&
                   (value == 0 || value < -900))
               {
                 // Special case for DEMs -- we don't want to overwrite

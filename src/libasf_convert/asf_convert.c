@@ -267,7 +267,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   else {
     cfg = read_convert_config(configFileName);
   }
-
   // Check for greyscale PGM output versus selection of a color option
   if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
       (strlen(cfg->export->rgb) > 0 ||
@@ -306,6 +305,30 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     cfg->export->falsecolor = 0;
     cfg->export->pauli = 0;
     cfg->export->sinclair = 0;
+  }
+
+  // Check for and resolve input/output name clashes
+  // - Only applies to importing ASF-internal format files combined
+  //   with non-export processing that will not change the file extension,
+  //   otherwise name clashes are already resolved by the change in file
+  //   extension that occurs.
+  // - When checking for same-name, do it in all caps since Windows is
+  //   not case-sensitive in the file naming.
+  //
+  if ((!cfg->general->import ||
+              (cfg->general->import && strncmp(uc(cfg->import->format), "ASF", 3) == 0))  &&
+       !cfg->general->export                                                              &&
+      (strlen(cfg->general->out_name) <= 0 ||
+              (strlen(cfg->general->in_name) == strlen(cfg->general->out_name) &&
+               strcmp(uc(cfg->general->in_name), uc(cfg->general->out_name)) == 0))       &&
+       strlen(cfg->general->prefix) <= 0                                                  &&
+       strlen(cfg->general->suffix) <= 0                                                   )
+  {
+    if (cfg->general->terrain_correct || cfg->general->geocoding) {
+      sprintf(cfg->general->suffix, "%s%s",
+              cfg->general->suffix,
+              "_out");
+    }
   }
 
   // Batch mode processing
@@ -469,8 +492,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Dealing with single look complex data
       // Options -multilook and -complex are mutually exclusive
       if (cfg->import->complex_slc && cfg->import->multilook_slc)
-  asfPrintError("Only single look complex data stored as "
-          "amplitude and phase can be multilooked.\n");
+        asfPrintError("Only single look complex data stored as "
+                      "amplitude and phase can be multilooked.\n");
 
       // Get input file name ready
       strcpy(inFile, cfg->general->in_name);
@@ -591,7 +614,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Check for pixel size smaller than threshold ???
 
       // Datum
-      if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5)  != 0 &&
+      if (meta_is_valid_string(cfg->geocoding->datum)          &&
+          strlen(cfg->geocoding->datum) > 0                    &&
+          strncmp(uc(cfg->geocoding->datum), "NONE", 4)   != 0 &&
+          strncmp(uc(cfg->geocoding->datum), "WGS84", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "NAD27", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "NAD83", 5)  != 0 &&
           strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) != 0) {
@@ -710,10 +736,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     //---------------------------------------------------------------
     // Let's finally get to work
-    sprintf(outFile, "%s", cfg->general->in_name);
     if (strlen(cfg->general->out_name) == 0) {
       sprintf(cfg->general->out_name, "%s", cfg->general->in_name);
     }
+    sprintf(outFile, "%s", cfg->general->out_name);
 
     // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
     dump_envi_header = cfg->general->dump_envi;
@@ -773,7 +799,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                    "ingesting data file (asf_import)\n");
     }
     // Make sure truecolor/falsecolor are only specified for optical data
-    meta_parameters *meta = meta_read(outFile);
+    strcpy(inFile, cfg->general->in_name);
+    meta_parameters *meta = meta_read(inFile);
     if (!meta->optical && (truecolor || falsecolor)) {
       asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
     }
@@ -996,7 +1023,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     datum_type_t datum = WGS84_DATUM;
 
     if (cfg->general->geocoding) {
-
       update_status("Geocoding...");
       int force_flag = cfg->geocoding->force;
       resample_method_t resample_method = RESAMPLE_BILINEAR;
@@ -1019,14 +1045,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
         datum = WGS84_DATUM;
       }
-      if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
+      else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
         datum = NAD27_DATUM;
       }
-      if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
+      else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
         datum = NAD83_DATUM;
       }
-      if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0 ) {
+      else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0 ) {
         datum = HUGHES_DATUM;
+      }
+      else {
+        datum = WGS84_DATUM;
+        asfPrintWarning("Unrecognized, missing, or unsupported datum found in configuration\n"
+            "file (%s).  Defaulting to WGS-84 unless reading parameters from a\n"
+            "projection definition (*.proj) file.  The proj file settings will\n"
+            "override all else.\n", uc(cfg->geocoding->datum));
       }
 
       // Resampling method
@@ -1039,14 +1072,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) == 0) {
         resample_method = RESAMPLE_BICUBIC;
       }
-
       // Pass in command line
-      sprintf(inFile, "%s", outFile);
+      //sprintf(inFile, "%s", outFile);
       if (cfg->general->export) {
         sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
       }
       else {
-        sprintf(outFile, "%s", cfg->general->out_name);
+        sprintf(outFile, "%s%s%s",
+                cfg->general->prefix,
+                cfg->general->out_name,
+                cfg->general->suffix);
       }
 
       check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,

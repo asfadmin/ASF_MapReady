@@ -34,15 +34,21 @@ project_parameters_t * get_geocode_options(int *argc, char **argv[],
   parse_log_options(argc, argv);
 
   /* get the projection params out of the cmd line & remove from cmd line */
-  pps = parse_projection_options(argc, argv, proj_type,
+  *datum = WGS84_DATUM; // Default datum
+  pps = parse_projection_options(argc, argv, proj_type, datum,
                                  &did_write_proj_file);
 
   if (pps)
   {
     /* "other" options include: 'height', 'pixel-size', 'force'
         and 'resample_method'.  */
-    parse_other_options(argc, argv, height, pixel_size, datum,
+    datum_type_t tmp_datum;
+    parse_other_options(argc, argv, height, pixel_size, &tmp_datum,
                         resample_method, override_checks, band_id);
+    if (tmp_datum != UNKNOWN_DATUM) {
+      // Command line datum overrides default or proj file datum
+      *datum = tmp_datum;
+    }
 
     /* here the semantics of the projection parameters are applied */
     sanity_check(*proj_type, pps);

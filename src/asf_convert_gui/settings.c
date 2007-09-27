@@ -2,10 +2,13 @@
 #include "asf_convert.h"
 #include "asf_raster.h"
 #include "libasf_proj.h"
+#include "asf_geocode.h"
 #include "asf.h"
 #include "asf_meta.h"
 #include "get_ceos_names.h"
 #include <ctype.h>
+
+datum_type_t get_datum_from_proj_file(char *file, projection_type_t type);
 
 static int
 settings_get_input_data_format_allows_latitude(const Settings *s)
@@ -117,9 +120,9 @@ settings_apply_to_gui(const Settings * s)
     if (s->output_db)
     {
         GtkWidget *checkbutton_db =
-	  get_widget_checked("checkbutton_db");
+    get_widget_checked("checkbutton_db");
 
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
     }
 
     input_data_type_changed();
@@ -342,8 +345,8 @@ settings_apply_to_gui(const Settings * s)
         dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(dem_checkbutton), TRUE);
 
-	dem_entry = get_widget_checked("dem_entry");
-	gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
+  dem_entry = get_widget_checked("dem_entry");
+  gtk_entry_set_text(GTK_ENTRY(dem_entry), s->dem_file);
         interp_dem_holes_checkbutton =
             get_widget_checked("interp_dem_holes_checkbutton");
 
@@ -459,8 +462,8 @@ settings_apply_to_gui(const Settings * s)
         GtkWidget *dem_entry;
         GtkWidget *dem_checkbutton;
 
-	dem_entry = get_widget_checked("dem_entry");
-	gtk_entry_set_text(GTK_ENTRY(dem_entry), "");
+  dem_entry = get_widget_checked("dem_entry");
+  gtk_entry_set_text(GTK_ENTRY(dem_entry), "");
 
         dem_checkbutton = get_widget_checked("dem_checkbutton");
         gtk_toggle_button_set_active(
@@ -1022,7 +1025,7 @@ settings_equal(const Settings *s1, const Settings *s2)
         s1->output_db == s2->output_db &&
         s1->output_format == s2->output_format &&
         s1->keep_files == s2->keep_files &&
-	s1->terrcorr_is_checked == s2->terrcorr_is_checked &&
+  s1->terrcorr_is_checked == s2->terrcorr_is_checked &&
         s1->apply_metadata_fix == s2->apply_metadata_fix)
     {
         gchar * lat1 =
@@ -1056,16 +1059,16 @@ settings_equal(const Settings *s1, const Settings *s2)
                         g_strdup(settings_get_geocode_options(s2));
 
                     if (0 == strcmp(geo1, geo2))
-		    {
-		        if (s1->terrcorr_is_checked == s2->terrcorr_is_checked)
-		        {
-			    if (!s1->terrcorr_is_checked ||
-				strcmp(s1->dem_file, s2->dem_file) == 0)
-			    {
-			        equal = TRUE;
-			    }
-			}
-		    }
+        {
+            if (s1->terrcorr_is_checked == s2->terrcorr_is_checked)
+            {
+          if (!s1->terrcorr_is_checked ||
+        strcmp(s1->dem_file, s2->dem_file) == 0)
+          {
+              equal = TRUE;
+          }
+      }
+        }
 
                     g_free(geo1);
                     g_free(geo2);
@@ -1329,8 +1332,8 @@ settings_update_mask(Settings *s, const char *output_path, int is_first)
 
 char *
 settings_to_config_file(const Settings *s,
-			const gchar *input_file, const gchar *output_full,
-			const gchar *output_path, const gchar *tmp_dir)
+      const gchar *input_file, const gchar *output_full,
+      const gchar *output_path, const gchar *tmp_dir)
 {
     char *tmp_projfile = NULL;
     char *tmp_cfgfile;
@@ -1372,38 +1375,54 @@ settings_to_config_file(const Settings *s,
 
       switch (s->projection)
       {
-	case PROJ_UTM:
-	  fprintf(pf, "[Universal Transverse Mercator]\n");
-	  fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
-	  break;
+        case PROJ_UTM:
+          fprintf(pf, "[Universal Transverse Mercator]\n");
+          fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
+          fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+          break;
 
-	case PROJ_PS:
-	  fprintf(pf, "[Polar Stereographic]\n");
-	  fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
-	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-          fprintf(pf, "Northern Projection=%d\n", (s->lat0 > 0 ? 1 : 0) || (s->plat1 > 0 ? 1 : 0));
-	  break;
+        case PROJ_PS:
+          {
+            char spheroid_str[256];
+            strcpy(spheroid_str, "WGS84");
+            if (s->datum == DATUM_HUGHES) {
+              strcpy(spheroid_str, "WGS84");
+            }
+            fprintf(pf, "[Polar Stereographic]\n");
+            fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
+            fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+            fprintf(pf, "Northern Projection=%d\n", (s->lat0 > 0 ? 1 : 0) || (s->plat1 > 0 ? 1 : 0));
+            fprintf(pf, "Spheroid=%s\n", spheroid_str);
+          }
+          break;
 
-	case PROJ_ALBERS:
-	  fprintf(pf, "[Albers Conical Equal Area]\n");
-	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
-	  fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
-	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-	  break;
+        case PROJ_ALBERS:
+          fprintf(pf, "[Albers Conical Equal Area]\n");
+          fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
+          fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
+          fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+          fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+          fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+          break;
 
-	case PROJ_LAMAZ:
-	  fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
-	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
-	  break;
+        case PROJ_LAMAZ:
+          fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
+          fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+          fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+          fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+          break;
 
-	case PROJ_LAMCC:
-	  fprintf(pf, "[Lambert Conformal Conic]\n");
-	  fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
-	  fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
-	  fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-	  fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+        case PROJ_LAMCC:
+          fprintf(pf, "[Lambert Conformal Conic]\n");
+          fprintf(pf, "First standard parallel=%.10f\n", s->plat1);
+          fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
+          fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
+          fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+          fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+          break;
+
+        default:
+          break;
       }
       fclose(pf);
     }
@@ -1516,12 +1535,12 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "[Geocoding]\n");
       fprintf(cf, "projection = %s\n", tmp_projfile);
       if (s->specified_pixel_size)
-	fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
+  fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
       if (s->specified_height)
-	fprintf(cf, "height = %.2f\n", s->height);
+  fprintf(cf, "height = %.2f\n", s->height);
       fprintf(cf, "datum = %s\n", datum_string(s->datum));
       fprintf(cf, "resampling = %s\n",
-	      resample_method_string(s->resample_method));
+        resample_method_string(s->resample_method));
       fprintf(cf, "force = %d\n", s->geocode_force);
       fprintf(cf, "\n");
     }
@@ -1713,15 +1732,56 @@ int apply_settings_from_config_file(char *configFile)
         s.pixel_size = cfg->geocoding->pixel;
         s.geocode_force = cfg->geocoding->force;
 
+        // GET DATUM
+        // - Default to WGS84, then
+        // - If the datum is appropriately set in the config file, use that, then
+        // - If reading from a proj file, allow THAT datum to override all else
         s.datum = DATUM_WGS84;
-        if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0)
+        if (strncmp(uc(cfg->geocoding->datum), "WGS84", 5) == 0) {
+          printf("\n\nYO BRIAN: Found WGS84 in configuration file\n\n");
+          s.datum = DATUM_WGS84;
+        }
+        else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0) {
+          printf("\n\nYO BRIAN: Found NAD27 in configuration file\n\n");
+          s.datum = DATUM_NAD27;
+        }
+        else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0) {
+          printf("\n\nYO BRIAN: Found NAD83 in configuration file\n\n");
+          s.datum = DATUM_NAD83;
+        }
+        else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0) {
+          printf("\n\nYO BRIAN: Found HUGHES in configuration file\n\n");
+          s.datum = DATUM_HUGHES;
+        }
+        datum_type_t datum_type = get_datum_from_proj_file(cfg->geocoding->projection, type);
+        switch(datum_type) {
+          case WGS84_DATUM:
+            printf("\n\nYO BRIAN: Found WGS84 in proj file\n\n");
             s.datum = DATUM_WGS84;
-        else if (strncmp(uc(cfg->geocoding->datum), "NAD27", 5) == 0)
+            break;
+          case NAD27_DATUM:
+            printf("\n\nYO BRIAN: Found NAD27 in proj file\n\n");
             s.datum = DATUM_NAD27;
-        else if (strncmp(uc(cfg->geocoding->datum), "NAD83", 5) == 0)
+            break;
+          case NAD83_DATUM:
+            printf("\n\nYO BRIAN: Found NAD83 in proj file\n\n");
             s.datum = DATUM_NAD83;
-        else if (strncmp(uc(cfg->geocoding->datum), "HUGHES", 6) == 0)
+            break;
+          case HUGHES_DATUM:
+            printf("\n\nYO BRIAN: Found HUGHES in proj file\n\n");
             s.datum = DATUM_HUGHES;
+            break;
+          case EGM96_DATUM:
+          case ED50_DATUM:
+          case ETRF89_DATUM:
+          case ETRS89_DATUM:
+          case ITRF97_DATUM:
+          case UNKNOWN_DATUM:
+          default:
+            printf("\n\nYO BRIAN: Found UNKNOWN in proj file\n\n");
+            s.datum = DATUM_WGS84;
+            break;
+        }
 
         s.resample_method = RESAMPLE_BILINEAR;
         if (strncmp(uc(cfg->geocoding->resampling),"NEAREST_NEIGHBOR",16) == 0)
@@ -1799,7 +1859,7 @@ int apply_settings_from_config_file(char *configFile)
 
       free_ceos_names(dataNames, metaName);
       set_output_name(&iter, cfg->general->out_name);
-    
+
       FREE(baseName);
     }
 
@@ -1807,3 +1867,39 @@ int apply_settings_from_config_file(char *configFile)
 
     return 0;
 }
+
+datum_type_t get_datum_from_proj_file(char *file, projection_type_t type)
+{
+  datum_type_t datum;
+  FILE *fp = FOPEN(file, "r");
+
+  if (type != POLAR_STEREOGRAPHIC) {
+    datum = get_datum(fp);
+  }
+  else {
+    spheroid_type_t spheroid = get_spheroid(fp);
+    switch(spheroid) {
+      case HUGHES_SPHEROID:
+        datum = HUGHES_DATUM;
+        break;
+      case WGS84_SPHEROID:
+      case BESSEL_SPHEROID:
+      case CLARKE1866_SPHEROID:
+      case CLARKE1880_SPHEROID:
+      case GEM6_SPHEROID:
+      case GEM10C_SPHEROID:
+      case GRS1980_SPHEROID:
+      case INTERNATIONAL1924_SPHEROID:
+      case INTERNATIONAL1967_SPHEROID:
+      case WGS72_SPHEROID:
+      case UNKNOWN_SPHEROID:
+      default:
+        datum = WGS84_DATUM;
+        break;
+    }
+  }
+  FCLOSE(fp);
+
+  return datum;
+}
+

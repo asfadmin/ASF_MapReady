@@ -84,12 +84,12 @@ enum Datums
     DATUM_HUGHES = 3
 };
 
-enum
+/*enum
 {
   RESAMPLE_NEAREST_NEIGHBOR = 0,
   RESAMPLE_BILINEAR = 1,
   RESAMPLE_BICUBIC = 2
-};
+};*/
 
 
 /* for win32, need __declspec(dllexport) on all signal handlers. */
@@ -220,8 +220,8 @@ void settings_delete(Settings *);
 void settings_update_dem(Settings *s, const char *output_path, int is_first);
 void settings_update_mask(Settings *s, const char *output_path, int is_first);
 char * settings_to_config_file(const Settings *s,
-			     const gchar *input_file, const gchar *output_file,
-			     const gchar *output_path, const gchar *tmp_dir);
+           const gchar *input_file, const gchar *output_file,
+           const gchar *output_path, const gchar *tmp_dir);
 int apply_settings_from_config_file(char *configFile);
 
 /* find_in_path.c */
@@ -323,7 +323,8 @@ void set_font();
 
 /* projfile.c */
 project_parameters_t *
-  load_selected_predefined_projection_parameters(int projection);
+  load_selected_predefined_projection_parameters(int projection,
+                                                 datum_type_t *datum);
 
 void set_predefined_projections(int projection);
 void release_predefined_projections();
@@ -349,7 +350,7 @@ typedef struct {        // for the fake motion signal callback
     gboolean is_valid;
     GtkWidget *widget;
     GdkEventMotion *event;
-    gdouble x, y;			/* x and y of fake event.  */
+    gdouble x, y;     /* x and y of fake event.  */
 } fake_motion_signal_args_t;
 
 gboolean files_list_motion_notify_event_handler(GtkWidget *,

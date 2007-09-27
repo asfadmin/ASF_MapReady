@@ -3,6 +3,7 @@
 
 #include "asf_convert_gui.h"
 #include "asf_version.h"
+#include "asf_geocode.h"
 
 GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
@@ -133,7 +134,7 @@ main(int argc, char **argv)
 
     /* set up the rgb stuff on the export tab */
     rgb_combo_box_setup();
-    
+
     /* enters the main GTK loop */
     gtk_main ();
 

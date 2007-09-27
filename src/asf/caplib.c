@@ -326,6 +326,7 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
                             exit(204);
                         else
                             return ret;
+fprintf(stderr, error_message); exit(204);
 		}
 
 		sprintf(error_message,

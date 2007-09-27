@@ -29,7 +29,7 @@ NamingScheme * naming_scheme_new( const gchar * prefix,
     else
         ns->scheme = g_strdup(scheme);
 
-    return ns;    
+    return ns;
 }
 
 NamingScheme * naming_scheme_default( )
@@ -427,7 +427,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         basename = g_path_get_basename(data_file_name);
         filename = g_strdup(basename + prepension);
         //printf("Filename: %s\n", filename);
-    } else { 
+    } else {
         basename = g_strdup(data_file_name);
         p = findExt(basename);
         if (p)
@@ -450,7 +450,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         g_free(tmp);
     }
 
-    basename = (gchar *) 
+    basename = (gchar *)
         g_realloc(basename,
         sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
 
@@ -463,17 +463,22 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     user_settings = settings_get_from_gui();
     ext = settings_get_output_format_extension(user_settings);
 
-    output_name_full = 
-        (gchar *) g_malloc(sizeof(gchar) * 
+    output_name_full =
+        (gchar *) g_malloc(sizeof(gchar) *
         (strlen(basename) + strlen(ext) + 10));
 
     g_sprintf(output_name_full, "%s.%s", basename, ext);
 
     // CEOS Level 0 uses RAW and raw as default extensions...
-    // so we have this kludge to avoid constant Errors due to the same
-    // input and output filename.
-    if (strcmp_case(output_name_full, data_file_name) == 0)
-        g_sprintf(output_name_full, "%s_out.%s", basename, ext);
+    // And, importing an ASF internal format file and processing it
+    // with no export (to a graphics file format) can result in an
+    // input/output name clash ...
+    //
+    // ...So we have this kludge to avoid errors and overwriting of
+    // input files with output data
+    if (strcmp_case(output_name_full, data_file_name) == 0) {
+      g_sprintf(output_name_full, "%s_out.%s", basename, ext);
+    }
 
     g_free(basename);
     settings_delete(user_settings);

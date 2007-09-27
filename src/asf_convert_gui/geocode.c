@@ -1,4 +1,5 @@
 #include "asf_convert_gui.h"
+#include "asf_geocode.h"
 #include "asf_nan.h"
 
 const char * datum_string(int datum)
@@ -13,7 +14,7 @@ const char * datum_string(int datum)
     case DATUM_NAD83:
         return "NAD83";
     case DATUM_HUGHES:
-        return "Hughes";
+        return "HUGHES";
     }
 }
 
@@ -209,6 +210,7 @@ void geocode_options_changed()
     GtkWidget * hbox_pixel_size;
 
     GtkWidget * datum_hbox;
+    GtkWidget * datum_option_menu;
 
     GtkWidget * resample_hbox;
     GtkWidget * force_checkbutton;
@@ -289,6 +291,9 @@ void geocode_options_changed()
     false_easting_entry =
         get_widget_checked("false_easting_entry");
 
+    datum_option_menu =
+        get_widget_checked("datum_option_menu");
+
     projection =
         gtk_option_menu_get_history(GTK_OPTION_MENU(projection_option_menu));
 
@@ -297,18 +302,21 @@ void geocode_options_changed()
 
     if (geocode_projection_is_checked)
     {
+        datum_type_t datum = WGS84_DATUM;
+        int datum_selection = DATUM_WGS84;
         predefined_projection_is_selected =
             0 < gtk_option_menu_get_history(
             GTK_OPTION_MENU(predefined_projection_option_menu));
 
         enable_projection_option_menu = TRUE;
         enable_predefined_projection_option_menu = TRUE;
+        enable_datum_hbox = TRUE;
 
         if (predefined_projection_is_selected)
         {
             /* all widgets remain disabled -- load settings from file */
             project_parameters_t * pps =
-                load_selected_predefined_projection_parameters(projection);
+                load_selected_predefined_projection_parameters(projection, &datum);
 
             if (!pps)
             {
@@ -330,6 +338,23 @@ void geocode_options_changed()
                     GTK_ENTRY(false_northing_entry), "");
                 gtk_entry_set_text(
                     GTK_ENTRY(false_easting_entry), "");
+                switch(datum) {
+                  case NAD27_DATUM:
+                    datum_selection = DATUM_NAD27;
+                    break;
+                  case NAD83_DATUM:
+                    datum_selection = DATUM_NAD83;
+                    break;
+                  case HUGHES_DATUM:
+                    datum_selection = DATUM_HUGHES;
+                    break;
+                  case WGS84_DATUM:
+                  default:
+                    datum_selection = DATUM_WGS84;
+                    break;
+                }
+                set_combo_box_item(datum_option_menu, datum_selection);
+                enable_datum_hbox = FALSE;
 
                 switch (projection)
                 {
@@ -394,7 +419,7 @@ void geocode_options_changed()
                     break;
                 }
 
-    g_free(pps);
+                g_free(pps);
             }
         }
 
@@ -453,7 +478,6 @@ void geocode_options_changed()
         }
 
         enable_pixel_size_checkbutton = TRUE;
-        enable_datum_hbox = TRUE;
         enable_resample_hbox = TRUE;
         enable_force_checkbutton = TRUE;
 
