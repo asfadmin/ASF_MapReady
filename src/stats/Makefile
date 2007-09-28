@@ -17,14 +17,14 @@ CFLAGS += \
 	$(GSL_CFLAGS)
 
 OBJS  = statIO.o \
-	stats1.o
+	stats.o
 
-all: stats1 clean
+all: stats clean
 
 
-stats1: $(OBJS)
-	$(CC) $(CFLAGS) -o stats1 $(OBJS) $(LIBS) $(LDFLAGS)
-	mv stats1$(BIN_POSTFIX) $(BINDIR)
+stats: $(OBJS)
+	$(CC) $(CFLAGS) -o stats $(OBJS) $(LIBS) $(LDFLAGS)
+	mv stats$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f $(OBJS)
