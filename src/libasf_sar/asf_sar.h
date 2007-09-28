@@ -93,4 +93,13 @@ void deskew(const char *infile, const char *outfile);
 /* Prototypes from c2p.c */
 void c2p(const char *infile, const char *outfile, int multilook, int banded);
 
+/* Prototypes from polarimetry.c */
+void polarimetric_decomp(const char *inFile, const char *outFile,
+                         int pauli_1_band,
+                         int pauli_2_band,
+                         int pauli_3_band,
+                         int entrpy_band,
+                         int anisotropy_band,
+                         int alpha_band);
+
 #endif

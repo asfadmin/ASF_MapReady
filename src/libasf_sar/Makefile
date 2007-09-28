@@ -19,6 +19,7 @@ OBJS = \
 	to_sr.o \
 	refine_offset.o \
 	interp_dem_holes.o \
+	polarimetry.o \
 	c2p.o
 
 LIBS = \
