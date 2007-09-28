@@ -2711,6 +2711,7 @@
 
 					      <child>
 						<widget class="GtkRadioButton" id="rb_pauli">
+						  <property name="visible">True</property>
 						  <property name="tooltip" translatable="yes">Pauli Decomposition.  Red: HH-VV, Green: HV, Blue: HH+VV</property>
 						  <property name="can_focus">True</property>
 						  <property name="label" translatable="yes">Pauli</property>
