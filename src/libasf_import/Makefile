@@ -83,6 +83,7 @@ all: build_only
 	mv libasf_import.a $(LIBDIR)
 	cp asf_import.h $(ASF_INCLUDE_DIR)
 	cp geotiff_support.h $(ASF_INCLUDE_DIR)
+	cp gamma.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_import.a
