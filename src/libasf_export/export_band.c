@@ -786,7 +786,7 @@ static double sinclair_green_cpx(double *band_values, double no_data)
     double re = HV_re + VH_re;
     double im = HV_im + VH_im;
 
-    return hypot(re, im);
+    return .5*hypot(re, im);
 }
 
 void
@@ -1500,7 +1500,7 @@ export_band_image (const char *metadata_file_name,
                                   sample_count);
       }
       else if (pauli) {
-        // first need HH-VV && HH+VV into red & blue
+        // first need HH-VV && HH+VV, into red & blue, respectively
         get_float_line(fp, md, ii+HH_amp_channel*offset, amp_HH_buf);
         get_float_line(fp, md, ii+HH_phase_channel*offset, phase_HH_buf);
         get_float_line(fp, md, ii+VV_amp_channel*offset, amp_VV_buf);
@@ -1681,6 +1681,8 @@ export_band_image (const char *metadata_file_name,
     if (green_stats.hist_pdf) gsl_histogram_pdf_free(green_stats.hist_pdf);
     if (blue_stats.hist) gsl_histogram_free(blue_stats.hist);
     if (blue_stats.hist_pdf) gsl_histogram_pdf_free(blue_stats.hist_pdf);
+
+    FCLOSE(fp);
   }
   else {
     // Single-band image output (one grayscale file for each available band)
@@ -1938,6 +1940,8 @@ export_band_image (const char *metadata_file_name,
           finalize_png_file(opng, png_ptr, png_info_ptr);
         else if (format == PGM)
           finalize_ppm_file(opgm);
+
+        FCLOSE(fp);
       }
     } // End for each band (kk is band number)
 

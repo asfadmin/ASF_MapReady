@@ -671,36 +671,36 @@ static void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
       // now we see if the mode matches the list above
       if (D == '6' && E == '0' && dssr.nchn == 1) {
           // high-rez mode, single polarization
-          asfPrintStatus("High-resolution (single polarization): look count = 2\n");
+          asfPrintStatus("   High-resolution, single-pol (look count = 2)\n");
           meta->sar->look_count = 2;
       } else if (D == '6' && E == '0' && dssr.nchn == 2) {
           // high-rez mode, dual polarization
-          asfPrintStatus("High-resolution (dual polarization): look count = 4\n");
+          asfPrintStatus("   High-resolution, dual-pol (look count = 4)\n");
           meta->sar->look_count = 4;
       } else if (D == '6' && E == '1') {
           // wide observation mode
-          asfPrintStatus("Wide observation data: look count = 8\n");
+          asfPrintStatus("   Wide observation data (look count = 8)\n");
           meta->sar->look_count = 8;
       } else if (D == '6' && E == '2') {
           // polarimetry mode
-          asfPrintStatus("Polarimetric data: look count = 4\n");
+          asfPrintStatus("   Polarimetric data (look count = 4)\n");
           meta->sar->look_count = 4;
       } else if (D == '6' && E == '3') {
           // direct downlink mode
-          asfPrintStatus("Direct downlink data: look count = 4\n");
+          asfPrintStatus("   Direct downlink data (look count = 4)\n");
           meta->sar->look_count = 4;
       } else {
         // We have the following kludge for now ... but we should never get
         // here.  perhaps an asfPrintError would be better.
         asfPrintStatus(
-            "Estimating look count based on square pixel assumption...\n");
+            "   Estimating look count based on square pixel assumption...\n");
         int pix_ratio = (int)floor(0.5 + meta->general->x_pixel_size /
                                         meta->general->y_pixel_size);
         if (pix_ratio == 2 || pix_ratio == 4 || pix_ratio == 8) {
             meta->sar->look_count = pix_ratio;
-            asfPrintStatus("Estimated look count: %d\n", pix_ratio);
+            asfPrintStatus("   Estimated look count: %d\n", pix_ratio);
         } else {
-            asfPrintStatus("Couldn't figure out look count.  Leaving as %d.\n",
+            asfPrintStatus("   Couldn't figure out look count.  Leaving as %d.\n",
                 meta->sar->look_count);
         }
       }
@@ -1079,7 +1079,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
       meta->general->band_count = import_single_band ? 2 : band*2;
       if (nBands == 2 && meta->sar)
           sprintf(meta->general->bands, "AMP-%s,PHASE-%s",
-          meta->sar->polarization, meta->sar->polarization);
+            meta->sar->polarization, meta->sar->polarization);
   }
   meta_write(meta, outMetaName);
 
