@@ -453,6 +453,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
           strncmp(uc(cfg->import->format), "STF", 3) != 0 &&
+          //strncmp(uc(cfg->import->format), "AIRSAR", 6) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Chosen import format not supported\n");
       }
@@ -497,31 +498,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Get input file name ready
       strcpy(inFile, cfg->general->in_name);
-/*
- * Taking the extension-adding and existence check out on the input file
- *
- * asf_import already does all of this, and it does it better since it
- * handles prepension schemes (alos), and has better handling of basename
- * versus the extension-already-there case, etc.
- *
-      if (strcmp_case(cfg->import->format, "ASF")) == 0) {
-        create_name(inFile, cfg->general->in_name, ".img");
-      }
-      else if (strcmp_case(cfg->import->format, "CEOS")) == 0) {
-        create_name(inFile, cfg->general->in_name, ".D");
-        if (!fileExists(inFile)) {
-            create_name(inFile, cfg->general->in_name, ".RAW");
-        }
-      }
-      else if (strcmp_case(cfg->import->format, "STF")) == 0)
-        strcpy(inFile, cfg->general->in_name);
-
-      // Data file existence check
-      if (!fileExists(inFile))
-          asfPrintError("Import data file '%s' does not exist!\n", inFile);
-
- * ... end of the commented out input-file-existence-check code.
- */
 
       // Can skip import if the input is already asf internal.
       if (strncmp(uc(cfg->import->format), "ASF", 3) == 0) {

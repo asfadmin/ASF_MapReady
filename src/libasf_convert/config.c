@@ -1049,13 +1049,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
           fprintf(fConfig, "\n# When the output db flag is non-zero, the calibrated image\n"
                 "# is output in decibels.  It only applies when the radiometry is sigma,\n"
                 "# gamma or beta.\n\n");
-      fprintf(fConfig, "output db = %d\n\n", cfg->import->output_db);
+      fprintf(fConfig, "output db = %d\n", cfg->import->output_db);
     }
     if (!shortFlag)
       fprintf(fConfig, "\n# When the complex SLC flag in non-zero, single "
 	      "look complex data is stored in I/Q values. Otherwise SLC data\n"
 	      "# will be stored as amplitude/phase.\n\n");
-    fprintf(fConfig, "complex SLC = %d\n\n", cfg->import->complex_slc);
+    fprintf(fConfig, "complex SLC = %d\n", cfg->import->complex_slc);
     if (!shortFlag)
       fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
 	      "look complex data that is stored as amplitude/phase is being\n"
@@ -1259,7 +1259,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# If you wish to export a single band from the list of\n"
             "# available bands, e.g. HH, HV, VH, VV ...enter VV to export just\n"
                 "# the VV band (alone.)\n\n");
-      fprintf(fConfig, "band = %s\n\n", cfg->export->band);
+      fprintf(fConfig, "band = %s\n", cfg->export->band);
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
             "# you can use the standard Pauli decomposition to map the 4 bands to\n"
