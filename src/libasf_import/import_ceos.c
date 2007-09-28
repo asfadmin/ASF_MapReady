@@ -715,7 +715,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
              radiometry_t radiometry, int import_single_band,
              int complex_flag, int multilook_flag, int db_flag)
 {
-  FILE *fpIn=NULL, *fpOut=NULL;
+  FILE *fpIn=NULL;
   int nl, ns, lc, nLooks,tempFlag=FALSE, leftFill, rightFill, headerBytes;
   int out=0;
   long long ii, kk, ll, offset;
@@ -730,6 +730,22 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   double noise_table[MAX_tableRes];       /* Noise table for calibration */
   double incid_cos[MAX_tableRes];       /* Cosine of the incidence angle */
   double incid_sin[MAX_tableRes];         /* Sine of the incidence angle */
+
+  // Output file will stay open through multiple calls to this function.
+  // We open it on first call, try to close it on the last call.
+  // Attempt to detect if we are called again after file was closed
+  // using the "output_file_closed" flag -- die if set.
+  // To handle batch mode, we reset the "output_file_closed" flag if we
+  // are going to open the file.
+  static FILE *fpOut=NULL;
+  static int output_file_closed=FALSE;
+  if (band==1 || import_single_band) {
+      if (fpOut)
+          asfPrintError("Impossible: Output file should not be opened!\n");
+      output_file_closed = FALSE;
+  }
+  if (output_file_closed)
+      asfPrintError("Impossible: Output file has already been closed!\n");
 
   /* Create metadata */
   meta = meta_create(inMetaName);
@@ -870,10 +886,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   /* Take care of image files and memory */
   strcat(outDataName, TOOLS_COMPLEX_EXT);
   fpIn  = fopenImage(inDataName, "rb");
-  if (band == 1)
+  if (!fpOut)
     fpOut = fopenImage(outDataName, "wb");
-  else
-    fpOut = fopenImage(outDataName, "ab");
   cpx_buf = (float *) MALLOC(2*ns * sizeof(float));
   if (complex_flag)
     cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
@@ -1007,6 +1021,11 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
           }
       }
 
+      // unless we are outputting as complex, we are actually outputting
+      // two bands -- "out_band" is the first of the two (the amplitude),
+      // the phase is out_band+1.
+      int out_band = import_single_band ? 0 : (band-1)*2;
+
       // Write out the various flavors
       if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
           radiometry == r_BETA)
@@ -1015,8 +1034,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
           out++;
       }
       else if (multilook_flag) {
-          put_band_float_line(fpOut, meta, (band-1)*2+0, out, amp_buf);
-          put_band_float_line(fpOut, meta, (band-1)*2+1, out, phase_buf);
+          put_band_float_line(fpOut, meta, out_band+0, out, amp_buf);
+          put_band_float_line(fpOut, meta, out_band+1, out, phase_buf);
           out++;
       }
       else {
@@ -1024,8 +1043,8 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
               if (complex_flag)
                   put_complexFloat_line(fpOut, meta, ii+ll, cpxFloat_buf+ll*ns);
               else {
-                  put_band_float_line(fpOut, meta, (band-1)*2+0, ii+ll, amp_buf+ll*ns);
-                  put_band_float_line(fpOut, meta, (band-1)*2+1, ii+ll, phase_buf+ll*ns);
+                  put_band_float_line(fpOut, meta, out_band+0, ii+ll, amp_buf+ll*ns);
+                  put_band_float_line(fpOut, meta, out_band+1, ii+ll, phase_buf+ll*ns);
               }
           }
       }
@@ -1036,7 +1055,12 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   FREE(amp_buf);
   FREE(phase_buf);
   FCLOSE(fpIn);
-  FCLOSE(fpOut);
+
+  if (import_single_band || band == nBands) {
+      FCLOSE(fpOut);
+      fpOut = NULL;
+      output_file_closed = TRUE;
+  }
 
   strcpy(meta->general->basename, inDataName);
   if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
