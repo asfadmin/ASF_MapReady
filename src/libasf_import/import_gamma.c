@@ -2,6 +2,8 @@
 #include "asf_meta.h"
 #include "dateUtil.h"
 
+gamma_isp *gamma_isp_init();
+
 void import_gamma_isp(const char *inBaseName, const char *outBaseName)
 {
   gamma_isp *gamma;
@@ -14,8 +16,8 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
   int ii, vectors;
   double interval;
 
-  // Allocate memory
-  gamma = (gamma_isp *) MALLOC(sizeof(gamma_isp));
+  // Initialize the gamma ISP struct
+  gamma = gamma_isp_init();
 
   // Read GAMMA ISP parameter file
   sprintf(inFile, "%s.slc.par", inBaseName);
@@ -28,15 +30,22 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
       value = p+1;
       if (strncmp(key, "title:", 6) == 0) {
         str = trim_spaces(value);
-        sprintf(gamma->title, "%s", str);
+        sprintf(gamma->title, "%s, %s", inBaseName, str);
+        char *s;
+        s = &str[strlen(str)-1];
+        while (isdigit((int)*s) || *s == '.') s--;
+        s++;
+        if (isdigit((int)*s)) g->orbit = atoi(s);
       }
       else if (strncmp(key, "sensor:", 7) == 0) {
         str = trim_spaces(value);
         sprintf(gamma->sensor, "%s", str);
       }
       else if (strncmp(key, "date:", 5) == 0)
-        sscanf(value, "%d\t%d\t%d", &gamma->acquisition[0],
-               &gamma->acquisition[1], &gamma->acquisition[2]);
+        sscanf(value, "%d %d %d %d %d %f",
+               &gamma->acquisition.year,   &gamma->acquisition.month,
+               &gamma->acquisition.day,    &gamma->acquisition.hour,
+               &gamma->acquisition.minute, &gamma->acquisition.seconds);
       else if (strncmp(key, "start_time:", 11) == 0)
         gamma->start_time = atof(value);
       else if (strncmp(key, "center_time:", 12) == 0)
@@ -188,14 +197,155 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
     }
   }
   FCLOSE(fp);
-  
+
   // Generate metadata
-  sprintf(outFile, "%s.img", outBaseName);
+  sprintf(outFile, "%s.meta", outBaseName);
   meta = gamma_isp2meta(gamma, stVec);
   meta_write(meta, outFile);
-  
+
   // Copy generic binary file
   sprintf(inFile, "%s.slc", inBaseName);
+  sprintf(outFile, "%s.img", outBaseName);
   fileCopy(inFile, outFile);
+
+  // Cleanup
+  if(gamma)FREE(gamma);
+}
+
+gamma_isp *gamma_isp_init();
+{
+  int i;
+  gamma_isp *g = (gamma_isp *) MALLOC(sizeof(gamma_isp));
+
+  strcpy(g->title, MAGIC_UNSET_STRING);
+  g->orbit = MAGIC_UNSET_INT;
+  strcpy(g->sensor, MAGIC_UNSET_STRING);
+  g->acquisition.year    = MAGIC_UNSET_INT;
+  g->acquisition.month   = MAGIC_UNSET_INT;
+  g->acquisition.day     = MAGIC_UNSET_INT;
+  g->acquisition.hour    = MAGIC_UNSET_INT;
+  g->acquisition.minute  = MAGIC_UNSET_INT;
+  g->acquisition.seconds = MAGIC_UNSET_DOUBLE;
+  g->start_time = MAGIC_UNSET_DOUBLE;
+  g->center_time = MAGIC_UNSET_DOUBLE;
+  g->end_time = MAGIC_UNSET_DOUBLE;
+  g->azimuth_line_time = MAGIC_UNSET_DOUBLE;
+  g->line_header_size = MAGIC_UNSET_INT;
+  g->range_samples = MAGIC_UNSET_INT;
+  g->azimuth_lines = MAGIC_UNSET_INT;
+  g->range_looks = MAGIC_UNSET_INT;
+  g->azimuth_looks = MAGIC_UNSET_INT;
+  strcpy(g->image_format, MAGIC_UNSET_STRING);
+  strcpy(g->image_geometry, MAGIC_UNSET_STRING);
+  g->range_scale_factor = MAGIC_UNSET_DOUBLE;
+  g->azimuth_scale_factor = MAGIC_UNSET_DOUBLE;
+  g->center_latitude = MAGIC_UNSET_DOUBLE;
+  g->center_longitude = MAGIC_UNSET_DOUBLE;
+  g->heading = MAGIC_UNSET_DOUBLE;
+  g->range_pixel_spacing = MAGIC_UNSET_DOUBLE;
+  g->azimuth_pixel_spacing = MAGIC_UNSET_DOUBLE;
+  g->near_range_slc = MAGIC_UNSET_DOUBLE;
+  g->center_range_slc = MAGIC_UNSET_DOUBLE;
+  g->far_range_slc = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<6; i++) g->first_slant_range_polynomial[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<6; i++) g->center_slant_range_polynomial[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<6; i++) g->last_slant_range_polynomial[i] = MAGIC_UNSET_DOUBLE;
+  g->incidence_angle = MAGIC_UNSET_DOUBLE;
+  g->azimuth_deskew = MAGIC_UNSET_INT;
+  g->azimuth_angle = MAGIC_UNSET_DOUBLE;
+  g->radar_frequency = MAGIC_UNSET_DOUBLE;
+  g->adc_sampling_rate = MAGIC_UNSET_DOUBLE;
+  g->chirp_bandwidth = MAGIC_UNSET_DOUBLE;
+  g->prf = MAGIC_UNSET_DOUBLE;
+  g->azimuth_proc_bandwidth = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_polynomial[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_poly_dot[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_poly_ddot[i] = MAGIC_UNSET_DOUBLE;
+  g->receiver_gain = MAGIC_UNSET_DOUBLE;
+  g->calibration_gain = MAGIC_UNSET_DOUBLE;
+  g->sar_to_earth_center = MAGIC_UNSET_DOUBLE;
+  g->earth_radius_below_sensor = MAGIC_UNSET_DOUBLE;
+  g->earth_semi_major_axis = MAGIC_UNSET_DOUBLE;
+  g->earth_semi_minor_axis = MAGIC_UNSET_DOUBLE;
+
+  return g;
+}
+
+gamma_msp *gamma_msp_init();
+{
+  int i;
+  gamma_msp *g = (gamma_msp *) MALLOC(sizeof(gamma_msp));
+
+  strcpy(g->title, MAGIC_UNSET_STRING);
+  g->acquisition.year    = MAGIC_UNSET_INT;
+  g->acquisition.month   = MAGIC_UNSET_INT;
+  g->acquisition.day     = MAGIC_UNSET_INT;
+  g->acquisition.hour    = MAGIC_UNSET_INT;
+  g->acquisition.minute  = MAGIC_UNSET_INT;
+  g->acquisition.seconds = MAGIC_UNSET_DOUBLE;
+  g->raw_data_start_time.hour = MAGIC_UNSET_INT;
+  g->raw_data_start_time.minute = MAGIC_UNSET_INT;
+  g->raw_data_start_time.seconds = MAGIC_UNSET_DOUBLE;
+  strcpy(g->band, MAGIC_UNSET_STRING);
+  g->earth_semi_major_axis = MAGIC_UNSET_DOUBLE;
+  g->earth_semi_minor_axis = MAGIC_UNSET_DOUBLE;
+  g->scene_center_latitude = MAGIC_UNSET_DOUBLE;
+  g->scene_center_longitude = MAGIC_UNSET_DOUBLE;
+  g->track_angle = MAGIC_UNSET_DOUBLE;
+  g->platform_altitude = MAGIC_UNSET_DOUBLE;
+  g->terrain_height = MAGIC_UNSET_DOUBLE;
+  g->sensor_position_vector.x = MAGIC_UNSET_DOUBLE;
+  g->sensor_position_vector.y = MAGIC_UNSET_DOUBLE;
+  g->sensor_position_vector.z = MAGIC_UNSET_DOUBLE;
+  g->sensor_velocity_vector.vx = MAGIC_UNSET_DOUBLE;
+  g->sensor_velocity_vector.vy = MAGIC_UNSET_DOUBLE;
+  g->sensor_velocity_vector.vz = MAGIC_UNSET_DOUBLE;
+  g->sensor_acceleration_vector.ax = MAGIC_UNSET_DOUBLE;
+  g->sensor_acceleration_vector.ay = MAGIC_UNSET_DOUBLE;
+  g->sensor_acceleration_vector.az = MAGIC_UNSET_DOUBLE;
+  g->prf = MAGIC_UNSET_DOUBLE;
+  g->I_bias = MAGIC_UNSET_DOUBLE;
+  g->Q_bias = MAGIC_UNSET_DOUBLE;
+  g->I_sigma = MAGIC_UNSET_DOUBLE;
+  g->Q_sigma = MAGIC_UNSET_DOUBLE;
+  g->IQ_corr = MAGIC_UNSET_DOUBLE;
+  g->SNR_range_spectrum = MAGIC_UNSET_DOUBLE;
+  g->DAR_doppler = MAGIC_UNSET_DOUBLE;
+  g->DAR_snr = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_polynomial[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_poly_dot[i] = MAGIC_UNSET_DOUBLE;
+  for (i=0; i<4; i++) g->doppler_poly_ddot[i] = MAGIC_UNSET_DOUBLE;
+  g->sec_range_mig = MAGIC_UNSET_INT;
+  g->az_deskew = MAGIC_UNSET_INT;
+  g->autofocus_snr = MAGIC_UNSET_DOUBLE;
+  g->echo_time_delay = MAGIC_UNSET_DOUBLE;
+  g->receiver_gain = MAGIC_UNSET_DOUBLE;
+  g->calibration_gain = MAGIC_UNSET_DOUBLE;
+  g->near_range_raw = MAGIC_UNSET_DOUBLE;
+  g->center_range_raw = MAGIC_UNSET_DOUBLE;
+  g->far_range_raw = MAGIC_UNSET_DOUBLE;
+  g->near_range_slc = MAGIC_UNSET_DOUBLE;
+  g->center_range_slc = MAGIC_UNSET_DOUBLE;
+  g->far_range_slc = MAGIC_UNSET_DOUBLE;
+  g->range_pixel_spacing = MAGIC_UNSET_DOUBLE;
+  g->range_resolution = MAGIC_UNSET_DOUBLE;
+  g->azimuth_bandwidth_fraction = MAGIC_UNSET_DOUBLE;
+  g->prefilter_azimuth_offset = MAGIC_UNSET_INT;
+  g->total_raw_echoes = MAGIC_UNSET_INT;
+  g->range_offset = MAGIC_UNSET_INT;
+  g->raw_range_samples = MAGIC_UNSET_INT;
+  g->near_range_extension = MAGIC_UNSET_INT;
+  g->far_range_extension = MAGIC_UNSET_INT;
+  g->range_looks = MAGIC_UNSET_INT;
+  g->azimuth_looks = MAGIC_UNSET_INT;
+  g-> = MAGIC_UNSET_DOUBLE;
+
+
+
+
+  g-> = MAGIC_UNSET_DOUBLE;
+  g-> = MAGIC_UNSET_INT;
+
+  return g;
 }
 

@@ -7,22 +7,22 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec)
 {
   meta_parameters *meta;
   char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
-		 "Oct","Nov","Dec"};
+     "Oct","Nov","Dec"};
 
   // Initialize the meta structure
   meta = raw_init();
 
   // Fill general block
-  strcpy(meta->general->basename, gamma->title);
+  strcpy(meta->general->basename, gamma->title); // FIXME: Shouldn't use "title" ...use basename of data and parms files
   strcpy(meta->general->sensor, gamma->sensor);
-  // no sensor name, mode and processor
-  if (strncmp(gamma->image_format, "FCOMPLEX", 8) == 0)
+  // no sensor name, mode and processor          // FIXME: Set to MAGIC_UNSET_STRING
+  if (strncmp(gamma->image_format, "FCOMPLEX", 8) == 0) // FIXME: Use full list of data types in Gamma's type .h file
     meta->general->data_type = COMPLEX_REAL32;
-  meta->general->image_data_type = COMPLEX_IMAGE;
+  meta->general->image_data_type = COMPLEX_IMAGE;  // FIXME: Base this on the image_format
   strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
-	  gamma->acquisition[2], mon[gamma->acquisition[1]], 
-	  gamma->acquisition[0]);
+    gamma->acquisition[2], mon[gamma->acquisition[1]],
+    gamma->acquisition[0]);
   // no orbit number
   // orbit direction from heading or azimuth angle?
   // no frame number
@@ -80,7 +80,7 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec)
   return meta;
 }
 
-gamma_isp* meta2gamma_isp(meta_parameters *meta) 
+gamma_isp* meta2gamma_isp(meta_parameters *meta)
 {
   gamma_isp *gamma = MALLOC(sizeof(gamma_isp));
   char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
@@ -91,14 +91,14 @@ gamma_isp* meta2gamma_isp(meta_parameters *meta)
   strcpy(gamma->title, meta->general->basename);
   strcpy(gamma->sensor, meta->general->sensor);
   sscanf(meta->general->acquisition_date, "%d-%s-%d",
-	 &gamma->acquisition[2], str, &gamma->acquisition[0]);
+   &gamma->acquisition[2], str, &gamma->acquisition[0]);
   for (ii=1; ii<13; ii++) {
     if (strcmp(str, mon[ii]) == 0)
       gamma->acquisition[1] = ii;
   }
   gamma->start_time = meta->state_vectors->vecs[0].time;
   gamma->end_time = meta->state_vectors->vecs[2].time;
-  gamma->center_time = 
+  gamma->center_time =
     gamma->start_time + (gamma->end_time - gamma->start_time) / 2;
   gamma->azimuth_line_time = meta->sar->azimuth_time_per_pixel;
   gamma->line_header_size = 0;
@@ -118,7 +118,7 @@ gamma_isp* meta2gamma_isp(meta_parameters *meta)
   gamma->range_pixel_spacing = meta->general->x_pixel_size;
   gamma->azimuth_pixel_spacing = meta->general->y_pixel_size;
   gamma->near_range_slc = meta->sar->slant_range_first_pixel;
-  gamma->center_range_slc = gamma->near_range_slc + 
+  gamma->center_range_slc = gamma->near_range_slc +
     gamma->range_samples/2 * gamma->range_pixel_spacing;
   gamma->far_range_slc = gamma->near_range_slc +
     gamma->range_samples * gamma->range_pixel_spacing;
@@ -126,7 +126,7 @@ gamma_isp* meta2gamma_isp(meta_parameters *meta)
   double first_slant_range_polynomial[6]; // First slant range polynomial
   double center_slant_range_polynomial[6];// Center slant range polynomial
   double last_slant_range_polynomial[6];  // Last slant range polynomial
-  gamma->incidence_angle = 
+  gamma->incidence_angle =
     meta_incid(meta, gamma->azimuth_lines/2, gamma->range_samples/2);
   gamma->azimuth_deskew = meta->sar->deskewed;
   // FIXME: Work out azimuth angle
@@ -150,8 +150,8 @@ gamma_isp* meta2gamma_isp(meta_parameters *meta)
   return gamma;
 }
 
-void write_gamma_isp_header(const char *inFile, gamma_isp *gamma, 
-			    meta_state_vectors *stVec)
+void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
+          meta_state_vectors *stVec)
 {
   FILE *fp;
   int ii;
@@ -159,11 +159,11 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
 
   fp = FOPEN(inFile, "w");
   fprintf(fp, "Gamma Interferometric SAR Processor (ISP) - "
-	  "Image Parameter File\n\n");
+    "Image Parameter File\n\n");
   fprintf(fp, "title:\t%s\n", gamma->title);
   fprintf(fp, "sensor:\t%s\n", gamma->sensor);
-  fprintf(fp, "date: \t%d\t%d\t%d\n", gamma->acquisition[0], 
-	  gamma->acquisition[1], gamma->acquisition[2]);
+  fprintf(fp, "date: \t%d\t%d\t%d\n", gamma->acquisition[0],
+    gamma->acquisition[1], gamma->acquisition[2]);
   fprintf(fp, "start_time:\t\t%15.5lf   s\n", gamma->start_time);
   fprintf(fp, "center_time:\t\t%15.5lf   s\n", gamma->center_time);
   fprintf(fp, "end_time:\t\t%15.5lf   s\n", gamma->end_time);
@@ -177,28 +177,28 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
   fprintf(fp, "image_geometry:\t\t%s\n", gamma->image_geometry);
   fprintf(fp, "range_scale_factor:\t%e\n", gamma->range_scale_factor);
   fprintf(fp, "azimuth_scale_factor:\t%e\n", gamma->azimuth_scale_factor);
-  fprintf(fp, "center_latitude:\t\t%12.7lf   degrees\n", 
-	  gamma->center_latitude);
+  fprintf(fp, "center_latitude:\t\t%12.7lf   degrees\n",
+    gamma->center_latitude);
   fprintf(fp, "center_longitude:\t\t%12.7lf   degrees\n",
-	  gamma->center_longitude);
+    gamma->center_longitude);
   fprintf(fp, "heading:\t\t\t%12.7lf   degrees\n", gamma->heading);
-  fprintf(fp, "range_pixel_spacing:\t\t%12.6lf   m\n", 
-	  gamma->range_pixel_spacing);
+  fprintf(fp, "range_pixel_spacing:\t\t%12.6lf   m\n",
+    gamma->range_pixel_spacing);
   fprintf(fp, "azimuth_pixel_spacing:\t%12.6lf   m\n",
-	  gamma->azimuth_pixel_spacing);
+    gamma->azimuth_pixel_spacing);
   fprintf(fp, "near_range_slc:\t\t%12.4lf   m\n", gamma->near_range_slc);
   fprintf(fp, "center_range_slc:\t\t%12.4lf   m\n", gamma->center_range_slc);
   fprintf(fp, "far_range_slc:\t\t%12.4lf   m\n", gamma->far_range_slc);
   fprintf(fp, "first_slant_range_polynomial: %12.5lf %12.5lf %e %e %e %e  "
-	  "s m 1 m^-1 m^-2 m^-3\n", 
-	  gamma->first_slant_range_polynomial[0],
-	  gamma->first_slant_range_polynomial[1],
-	  gamma->first_slant_range_polynomial[2],
-	  gamma->first_slant_range_polynomial[3],
-	  gamma->first_slant_range_polynomial[4],
-	  gamma->first_slant_range_polynomial[5]);
+    "s m 1 m^-1 m^-2 m^-3\n",
+    gamma->first_slant_range_polynomial[0],
+    gamma->first_slant_range_polynomial[1],
+    gamma->first_slant_range_polynomial[2],
+    gamma->first_slant_range_polynomial[3],
+    gamma->first_slant_range_polynomial[4],
+    gamma->first_slant_range_polynomial[5]);
   fprintf(fp, "center_slant_range_polynomial: %12.5lf %12.5lf %e %e %e %e"
-	  "  s m 1 m^-1 m^-2 m^-3\n",
+    "  s m 1 m^-1 m^-2 m^-3\n",
           gamma->center_slant_range_polynomial[0],
           gamma->center_slant_range_polynomial[1],
           gamma->center_slant_range_polynomial[2],
@@ -213,8 +213,8 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
           gamma->last_slant_range_polynomial[3],
           gamma->last_slant_range_polynomial[4],
           gamma->last_slant_range_polynomial[5]);
-  fprintf(fp, "incidence_angle:\t\t%12.4lf   degrees\n", 
-	  gamma->incidence_angle);
+  fprintf(fp, "incidence_angle:\t\t%12.4lf   degrees\n",
+    gamma->incidence_angle);
   if (gamma->azimuth_deskew == 1)
     fprintf(fp, "azimuth_deskew:          ON\n");
   else
@@ -224,11 +224,11 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
   fprintf(fp, "adc_sampling_rate:\t%15e   Hz\n", gamma->adc_sampling_rate);
   fprintf(fp, "chirp_bandwidth:\t%15e   Hz\n", gamma->chirp_bandwidth);
   fprintf(fp, "prf:\t\t\t%14.5lf   Hz\n", gamma->prf);
-  fprintf(fp, "azimuth_proc_bandwidth:%13.5lf   Hz\n", 
-	  gamma->azimuth_proc_bandwidth);
+  fprintf(fp, "azimuth_proc_bandwidth:%13.5lf   Hz\n",
+    gamma->azimuth_proc_bandwidth);
   fprintf(fp, "doppler_polynomial:\t%14.5lf %e %e %e    "
-	  "Hz     Hz/m     Hz/m^2     Hz/m^3\n",
-	  gamma->doppler_polynomial[0],
+    "Hz     Hz/m     Hz/m^2     Hz/m^3\n",
+    gamma->doppler_polynomial[0],
           gamma->doppler_polynomial[1],
           gamma->doppler_polynomial[2],
           gamma->doppler_polynomial[3]);
@@ -246,26 +246,26 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
           gamma->doppler_poly_ddot[3]);
   fprintf(fp, "receiver_gain:\t%15.5lf   dB\n", gamma->receiver_gain);
   fprintf(fp, "calibration_gain:\t%15.5lf   dB\n", gamma->calibration_gain);
-  fprintf(fp, "sar_to_earth_center:\t\t%15.4lf   m\n", 
-	  gamma->sar_to_earth_center);
+  fprintf(fp, "sar_to_earth_center:\t\t%15.4lf   m\n",
+    gamma->sar_to_earth_center);
   fprintf(fp, "earth_radius_below_sensor:\t%15.4lf   m\n",
-	  gamma->earth_radius_below_sensor);
+    gamma->earth_radius_below_sensor);
   fprintf(fp, "earth_semi_major_axis:\t%15.4lf   m\n",
-	  gamma->earth_semi_major_axis);
+    gamma->earth_semi_major_axis);
   fprintf(fp, "earth_semi_minor_axis:\t%15.4lf   m\n",
-	  gamma->earth_semi_minor_axis);
+    gamma->earth_semi_minor_axis);
   fprintf(fp, "number_of_state_vectors:\t\t%7d\n", stVec->vector_count);
-  fprintf(fp, "time_of_first_state_vector:\t%15.5lf   s\n", 
-	  stVec->vecs[0].time);
+  fprintf(fp, "time_of_first_state_vector:\t%15.5lf   s\n",
+    stVec->vecs[0].time);
   interval = stVec->vecs[1].time - stVec->vecs[0].time;
   fprintf(fp, "state_vector_interval:\t%15.5lf   s\n", interval);
   for (ii=0; ii<stVec->vector_count; ii++) {
     fprintf(fp, "state_vector_position_%d:%15.4lf %15.4lf %15.4lf   m   m   "
-	    "m\n", ii+1, stVec->vecs[ii].vec.pos.x, stVec->vecs[ii].vec.pos.y, 
-	    stVec->vecs[ii].vec.pos.z);
+      "m\n", ii+1, stVec->vecs[ii].vec.pos.x, stVec->vecs[ii].vec.pos.y,
+      stVec->vecs[ii].vec.pos.z);
     fprintf(fp, "state_vector_velocity_%d:%15.4lf %15.4lf %15.4lf   m/s m/s "
-	    "m/s\n", ii+1, stVec->vecs[ii].vec.vel.x, 
-	    stVec->vecs[ii].vec.vel.y, stVec->vecs[ii].vec.vel.z);
+      "m/s\n", ii+1, stVec->vecs[ii].vec.vel.x,
+      stVec->vecs[ii].vec.vel.y, stVec->vecs[ii].vec.vel.z);
   }
   FCLOSE(fp);
 
