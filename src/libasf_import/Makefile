@@ -68,7 +68,6 @@ OBJS  = ardop_write.o \
 	import_bil.o \
 	import_gridfloat.o \
 	import_airsar.o \
-	import_gamma.o \
 	least_squares.o \
 	missing.o \
 	projected_image_import.o \
@@ -83,7 +82,6 @@ all: build_only
 	mv libasf_import.a $(LIBDIR)
 	cp asf_import.h $(ASF_INCLUDE_DIR)
 	cp geotiff_support.h $(ASF_INCLUDE_DIR)
-	cp gamma.h $(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f libasf_import.a
