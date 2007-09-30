@@ -16,22 +16,36 @@ static int find_band(meta_parameters *meta, char *name, int *ok)
 }
 
 typedef struct {
+   complexFloat hh;
+   complexFloat hv;
+   complexFloat vh;
+   complexFloat vv;
+} quadPolFloat;
+
+typedef struct {
+    complexFloat A;
+    complexFloat B;
+    complexFloat C;
+} complexVector;
+
+typedef struct {
+    int rows, columns;
+    complexFloat **coeff;
+} complexMatrix;
+
+typedef struct {
    int current_row;
    int nrows; // # in held in memory, not total image rows
    meta_parameters *meta;
 
-   float *hh_amp, *hh_phase;
-   float *hv_amp, *hv_phase;
-   float *vh_amp, *vh_phase;
-   float *vv_amp, *vv_phase;
+   quadPolFloat *data_buffer;
+   quadPolFloat **lines;
 
-   float **hh_amp_lines, **hh_phase_lines;
-   float **hv_amp_lines, **hv_phase_lines;
-   float **vh_amp_lines, **vh_phase_lines;
-   float **vv_amp_lines, **vv_phase_lines;
+   complexVector *pauli_buffer;
+   complexVector **pauli_lines;
 
-   complexFloat *pauli_1, *pauli_2, *pauli_3;
-   complexFloat **pauli_1_lines, **pauli_2_lines, **pauli_3_lines;
+   complexMatrix **coh_buffer;
+   complexMatrix ***coh_lines;
 
    int hh_amp_band, hh_phase_band;
    int hv_amp_band, hv_phase_band;
@@ -39,89 +53,6 @@ typedef struct {
    int vv_amp_band, vv_phase_band;
 
 } PolarimetricImageRows;
-
-static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
-                                                          int nrows)
-{
-    PolarimetricImageRows *self = MALLOC(sizeof(PolarimetricImageRows));
-
-    self->nrows = nrows;
-    self->meta = meta;
-
-    // nrows must be odd
-    assert((self->nrows-1)%2==0);
-    self->current_row = -(nrows-1)/2;
-
-    int ns = meta->general->sample_count;
-
-    self->hh_amp = CALLOC(nrows*ns, sizeof(float));
-    self->hh_phase = CALLOC(nrows*ns, sizeof(float));
-    self->hh_amp_lines = CALLOC(nrows, sizeof(float*));
-    self->hh_phase_lines = CALLOC(nrows, sizeof(float*));
-
-    self->hv_amp = CALLOC(nrows*ns, sizeof(float));
-    self->hv_phase = CALLOC(nrows*ns, sizeof(float));
-    self->hv_amp_lines = CALLOC(nrows, sizeof(float*));
-    self->hv_phase_lines = CALLOC(nrows, sizeof(float*));
-
-    self->vh_amp = CALLOC(nrows*ns, sizeof(float));
-    self->vh_phase = CALLOC(nrows*ns, sizeof(float));
-    self->vh_amp_lines = CALLOC(nrows, sizeof(float*));
-    self->vh_phase_lines = CALLOC(nrows, sizeof(float*));
-
-    self->vv_amp = CALLOC(nrows*ns, sizeof(float));
-    self->vv_phase = CALLOC(nrows*ns, sizeof(float));
-    self->vv_amp_lines = CALLOC(nrows, sizeof(float*));
-    self->vv_phase_lines = CALLOC(nrows, sizeof(float*));
-
-    // initially, the line pointers point at their natural locations in
-    // the buffer
-    int i;
-    for (i=0; i<nrows; ++i) {
-        self->hh_amp_lines[i] = &(self->hh_amp[ns*i]);
-        self->hh_phase_lines[i] = &(self->hh_phase[ns*i]);
-        self->hv_amp_lines[i] = &(self->hv_amp[ns*i]);
-        self->hv_phase_lines[i] = &(self->hv_phase[ns*i]);
-        self->vh_amp_lines[i] = &(self->vh_amp[ns*i]);
-        self->vh_phase_lines[i] = &(self->vh_phase[ns*i]);
-        self->vv_amp_lines[i] = &(self->vv_amp[ns*i]);
-        self->vv_phase_lines[i] = &(self->vv_phase[ns*i]);
-    }
-
-    // these guys are the pauli basis elements we've calculated for the
-    // loaded rows
-    self->pauli_1 = CALLOC(nrows*ns, sizeof(complexFloat));
-    self->pauli_1_lines = CALLOC(nrows, sizeof(complexFloat*));
-    self->pauli_2 = CALLOC(nrows*ns, sizeof(complexFloat));
-    self->pauli_2_lines = CALLOC(nrows, sizeof(complexFloat*));
-    self->pauli_3 = CALLOC(nrows*ns, sizeof(complexFloat));
-    self->pauli_3_lines = CALLOC(nrows, sizeof(complexFloat*));
-
-    // coherency matrix elements for the loaded rows
-    //  ...
-
-    // band numbers in the input file
-    self->hh_amp_band = self->hh_phase_band = -1;
-    self->hv_amp_band = self->hv_phase_band = -1;
-    self->vh_amp_band = self->vh_phase_band = -1;
-    self->vv_amp_band = self->vv_phase_band = -1;
-
-    return self;
-}
-
-static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
-{
-    int ok=TRUE;
-    self->hh_amp_band = find_band(self->meta, "HH-AMP", &ok);
-    self->hh_phase_band = find_band(self->meta, "HH-PHASE", &ok);
-    self->hv_amp_band = find_band(self->meta, "HV-AMP", &ok);
-    self->hv_phase_band = find_band(self->meta, "HV-PHASE", &ok);
-    self->vh_amp_band = find_band(self->meta, "VH-AMP", &ok);
-    self->vh_phase_band = find_band(self->meta, "VH-PHASE", &ok);
-    self->vv_amp_band = find_band(self->meta, "VV-AMP", &ok);
-    self->vv_phase_band = find_band(self->meta, "VV-PHASE", &ok);
-    return ok;
-}
 
 static complexFloat complex_new(float re, float im)
 {
@@ -137,6 +68,11 @@ static complexFloat complex_new_polar(float amp, float phase)
     ret.real = amp * cos(phase);
     ret.imag = amp * sin(phase);
     return ret;
+}
+
+static complexFloat complex_zero()
+{
+    return complex_new(0,0);
 }
 
 static complexFloat complex_sub(complexFloat a, complexFloat b)
@@ -170,23 +106,140 @@ static complexFloat complex_mul(complexFloat a, complexFloat b)
                        a.real*b.imag + a.imag*b.real);
 }
 
+static complexVector complex_vector_new(complexFloat a,
+                                        complexFloat b,
+                                        complexFloat c)
+{
+    complexVector ret;
+    ret.A = a;
+    ret.B = b;
+    ret.C = c;
+    return ret;
+}
+
+static complexVector complex_vector_conj(complexVector v)
+{
+    return complex_vector_new(complex_conj(v.A),
+        complex_conj(v.B), complex_conj(v.C));
+}
+
+static complexVector complex_vector_zero()
+{
+    return complex_vector_new(complex_zero(), complex_zero(), complex_zero());
+}
+
+static quadPolFloat qual_pol_zero()
+{
+    quadPolFloat ret;
+    ret.hh = complex_zero();
+    ret.vh = complex_zero();
+    ret.hv = complex_zero();
+    ret.vv = complex_zero();
+    return ret;
+}
+
+static complexMatrix *complex_matrix_new(int rows, int columns)
+{
+    int i,j;
+    complexMatrix *ret = MALLOC(sizeof(complexMatrix));
+    ret->rows = rows;
+    ret->columns = columns;
+    ret->coeff = (complexFloat**)MALLOC(sizeof(complexFloat*)*rows);
+    for (i=0; i<rows; ++i) {
+        ret->coeff[i]=(complexFloat*)MALLOC(sizeof(complexFloat)*columns);
+        for (j=0; j<columns; ++j)
+            ret->coeff[i][j] = complex_zero();
+    }
+    return ret;
+}
+
+static void complex_matrix_free(complexMatrix *doomed)
+{
+    int i;
+    for (i=0; i<doomed->rows; ++i)
+        FREE(doomed->coeff[i]);
+    FREE(doomed->coeff);
+    FREE(doomed);
+}
+
+static void complex_matrix_set(complexMatrix *self, int row, int column,
+                               complexFloat value)
+{
+    self->coeff[row][column] = value;
+}
+
+static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
+                                                          int nrows)
+{
+    PolarimetricImageRows *self = MALLOC(sizeof(PolarimetricImageRows));
+
+    self->nrows = nrows;
+    self->meta = meta;
+
+    // nrows must be odd
+    assert((self->nrows-1)%2==0);
+    self->current_row = -(nrows-1)/2;
+
+    int ns = meta->general->sample_count;
+
+    self->data_buffer = CALLOC(nrows*ns, sizeof(quadPolFloat));
+    self->lines = CALLOC(nrows, sizeof(quadPolFloat*));
+
+    // initially, the line pointers point at their natural locations in
+    // the buffer
+    int i;
+    for (i=0; i<nrows; ++i)
+        self->lines[i] = &(self->data_buffer[ns*i]);
+
+    // these guys are the pauli basis elements we've calculated for the
+    // loaded rows
+    self->pauli_buffer = CALLOC(nrows*ns, sizeof(complexVector));
+    self->pauli_lines = CALLOC(nrows, sizeof(complexVector*));
+    for (i=0; i<nrows; ++i)
+        self->pauli_lines[i] = &(self->pauli_buffer[ns*i]);
+
+    // coherency matrix elements for the loaded rows
+    self->coh_buffer = MALLOC(nrows*ns*sizeof(complexMatrix*));
+    for (i=0; i<nrows*ns; ++i)
+        self->coh_buffer[i] = complex_matrix_new(3,3);
+    self->coh_lines = MALLOC(nrows*sizeof(complexMatrix**));
+    for (i=0; i<nrows; ++i)
+        self->coh_lines[i] = &(self->coh_buffer[ns*i]);
+
+    // band numbers in the input file
+    self->hh_amp_band = self->hh_phase_band = -1;
+    self->hv_amp_band = self->hv_phase_band = -1;
+    self->vh_amp_band = self->vh_phase_band = -1;
+    self->vv_amp_band = self->vv_phase_band = -1;
+
+    return self;
+}
+
+static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
+{
+    int ok=TRUE;
+    self->hh_amp_band = find_band(self->meta, "HH-AMP", &ok);
+    self->hh_phase_band = find_band(self->meta, "HH-PHASE", &ok);
+    self->hv_amp_band = find_band(self->meta, "HV-AMP", &ok);
+    self->hv_phase_band = find_band(self->meta, "HV-PHASE", &ok);
+    self->vh_amp_band = find_band(self->meta, "VH-AMP", &ok);
+    self->vh_phase_band = find_band(self->meta, "VH-PHASE", &ok);
+    self->vv_amp_band = find_band(self->meta, "VV-AMP", &ok);
+    self->vv_phase_band = find_band(self->meta, "VV-PHASE", &ok);
+    return ok;
+}
+
 static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 {
     int j, ns=self->meta->general->sample_count;
     for (j=0; j<ns; ++j) {
-        complexFloat hh = complex_new_polar(self->hh_amp_lines[n][j],
-                                            self->hh_phase_lines[n][j]);
-        complexFloat hv = complex_new_polar(self->hv_amp_lines[n][j],
-                                            self->hv_phase_lines[n][j]);
-        //complexFloat vh = complex_new_polar(self->vh_amp_lines[n][j],
-        //                                    self->vh_phase_lines[n][j]);
-        complexFloat vv = complex_new_polar(self->vv_amp_lines[n][j],
-                                            self->vv_phase_lines[n][j]);
+        quadPolFloat q = self->lines[n][j];
 
-        // |HH-VV|
-        self->pauli_1_lines[n][j] = complex_sub(hh, vv);
-        self->pauli_2_lines[n][j] = complex_scale(hv, 2);
-        self->pauli_3_lines[n][j] = complex_add(hh, vv);
+        // HH-VV, 2*HV, HH+VV
+        self->pauli_lines[n][j] = complex_vector_new(
+            complex_sub(q.hh, q.vv),
+            complex_scale(q.hv, 2),
+            complex_add(q.hh, q.vv));
     }
 }
 
@@ -197,25 +250,22 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     // [ A*C  B*C  C*C ]    C = 2*HV
     int j, ns=self->meta->general->sample_count;
     for (j=0; j<ns; ++j) {
-        complexFloat A = self->pauli_3_lines[n][j];
-        complexFloat B = self->pauli_1_lines[n][j];
-        complexFloat C = self->pauli_2_lines[n][j];
+        complexVector v = self->pauli_lines[n][j];
+        complexVector vc = complex_vector_conj(v);
+        
+        complexMatrix *m = self->coh_lines[n][j];
 
-        complexFloat Ac = complex_conj(A);
-        complexFloat Bc = complex_conj(B);
-        complexFloat Cc = complex_conj(C);
+        complex_matrix_set(m,0,0,complex_mul(vc.A, v.A));
+        complex_matrix_set(m,0,1,complex_mul(vc.A, v.B));
+        complex_matrix_set(m,0,2,complex_mul(vc.A, v.C));
 
-        //self->coh11[n][j] = complex_mul(Ac, A);
-        //self->coh12[n][j] = complex_mul(Ac, B);
-        //self->coh13[n][j] = complex_mul(Ac, C);
+        complex_matrix_set(m,1,0,complex_mul(vc.B, v.A));
+        complex_matrix_set(m,1,1,complex_mul(vc.B, v.B));
+        complex_matrix_set(m,1,2,complex_mul(vc.B, v.C));
 
-        //self->coh21[n][j] = complex_mul(Bc, A);
-        //self->coh22[n][j] = complex_mul(Bc, B);
-        //self->coh23[n][j] = complex_mul(Bc, C);
-
-        //self->coh31[n][j] = complex_mul(Cc, A);
-        //self->coh32[n][j] = complex_mul(Cc, B);
-        //self->coh33[n][j] = complex_mul(Cc, C);
+        complex_matrix_set(m,2,0,complex_mul(vc.C, v.A));
+        complex_matrix_set(m,2,1,complex_mul(vc.C, v.B));
+        complex_matrix_set(m,2,2,complex_mul(vc.C, v.C));
     }
 }
 
@@ -228,61 +278,47 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
     // don't actually move any data -- update pointers into the
     // buffers
 
-    // FIRST -- slide pointers
+    // FIRST -- slide row pointers
     int k;
     for (k=0; k<self->nrows-1; ++k) {
-      self->hh_amp_lines[k] = self->hh_amp_lines[k+1];
-      self->hh_phase_lines[k] = self->hh_phase_lines[k+1];
-      self->hv_amp_lines[k] = self->hv_amp_lines[k+1];
-      self->hv_phase_lines[k] = self->hv_phase_lines[k+1];
-      self->vh_amp_lines[k] = self->vh_amp_lines[k+1];
-      self->vh_phase_lines[k] = self->vh_phase_lines[k+1];
-      self->vv_amp_lines[k] = self->vv_amp_lines[k+1];
-      self->vv_phase_lines[k] = self->vv_phase_lines[k+1];
-
-      self->pauli_1_lines[k] = self->pauli_1_lines[k+1];
-      self->pauli_2_lines[k] = self->pauli_2_lines[k+1];
-      self->pauli_3_lines[k] = self->pauli_3_lines[k+1];
+      self->lines[k] = self->lines[k+1];
+      self->pauli_lines[k] = self->pauli_lines[k+1];
     }
 
     // the next line to load will go into the spot we just dumped
     int last = self->nrows - 1;
-    self->hh_amp_lines[last] = self->hh_amp_lines[0];
-    self->hh_phase_lines[last] = self->hh_amp_lines[0];
-    self->hv_amp_lines[last] = self->hv_amp_lines[0];
-    self->hv_phase_lines[last] = self->hv_amp_lines[0];
-    self->vh_amp_lines[last] = self->vh_amp_lines[0];
-    self->vh_phase_lines[last] = self->vh_amp_lines[0];
-    self->vv_amp_lines[last] = self->vv_amp_lines[0];
-    self->vv_phase_lines[last] = self->vv_amp_lines[0];
-
-    self->pauli_1_lines[last] = self->pauli_1_lines[0];
-    self->pauli_2_lines[last] = self->pauli_2_lines[0];
-    self->pauli_3_lines[last] = self->pauli_3_lines[0];
+    self->lines[last] = self->lines[0];
+    self->pauli_lines[last] = self->pauli_lines[0];
 
     self->current_row++;
 
     // NEXT, load in new row into the final row
     // if we have moved off the top of the image, we will need to
     // fill with zeros, instead of loading a row
+    int ns = self->meta->general->sample_count;
+    float *amp_buf = MALLOC(sizeof(float)*ns);
+    float *phase_buf = MALLOC(sizeof(float)*ns);
     int row = self->current_row + (self->nrows-1)/2;
     if (row < self->meta->general->line_count) {
-      get_band_float_line(fin, self->meta, self->hh_amp_band,
-          row, self->hh_amp_lines[last]);
-      get_band_float_line(fin, self->meta, self->hh_phase_band,
-          row, self->hh_phase_lines[last]);
-      get_band_float_line(fin, self->meta, self->hv_amp_band,
-          row, self->hv_amp_lines[last]);
-      get_band_float_line(fin, self->meta, self->hv_phase_band,
-          row, self->hv_phase_lines[last]);
-      get_band_float_line(fin, self->meta, self->vh_amp_band,
-          row, self->vh_amp_lines[last]);
-      get_band_float_line(fin, self->meta, self->vh_phase_band,
-          row, self->vh_phase_lines[last]);
-      get_band_float_line(fin, self->meta, self->vv_amp_band,
-          row, self->vv_amp_lines[last]);
-      get_band_float_line(fin, self->meta, self->vv_phase_band,
-          row, self->vv_phase_lines[last]);
+      get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+          self->lines[row][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+
+      get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+          self->lines[row][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+
+      get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+          self->lines[row][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+
+      get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
+      get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
+      for (k=0; k<ns; ++k)
+          self->lines[row][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
 
       calculate_pauli_for_row(self, last);
       calculate_coherence_for_row(self, last);
@@ -290,39 +326,28 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
     else {
       // window has scrolled off top of image -- fill with zeros
       for (k=0; k<self->meta->general->sample_count; ++k) {
-          self->hh_amp_lines[last][k] = self->hh_phase_lines[last][k] = 0.0;
-          self->hv_amp_lines[last][k] = self->hv_phase_lines[last][k] = 0.0;
-          self->vh_amp_lines[last][k] = self->vh_phase_lines[last][k] = 0.0;
-          self->vv_amp_lines[last][k] = self->vv_phase_lines[last][k] = 0.0;
-
-          self->pauli_1_lines[last][k] = complex_new(0,0);
-          self->pauli_2_lines[last][k] = complex_new(0,0);
-          self->pauli_3_lines[last][k] = complex_new(0,0);
+          self->lines[last][k] = qual_pol_zero();
+          self->pauli_lines[last][k] = complex_vector_zero();
       }
     }
+
+    free(amp_buf);
+    free(phase_buf);
 }
 
 static void polarimetric_image_rows_free(PolarimetricImageRows* self)
 {
-    free(self->hh_amp);
-    free(self->hh_phase);
-    free(self->hh_amp_lines);
-    free(self->hh_phase_lines);
+    free(self->data_buffer);
+    free(self->lines);
+    free(self->pauli_buffer);
+    free(self->pauli_lines);
 
-    free(self->hv_amp);
-    free(self->hv_phase);
-    free(self->hv_amp_lines);
-    free(self->hv_phase_lines);
+    int i;
+    for (i=0; i<self->nrows*self->meta->general->sample_count; ++i)
+        complex_matrix_free(self->coh_buffer[i]);
 
-    free(self->vh_amp);
-    free(self->vh_phase);
-    free(self->vh_amp_lines);
-    free(self->vh_phase_lines);
-
-    free(self->vv_amp);
-    free(self->vv_phase);
-    free(self->vv_amp_lines);
-    free(self->vv_phase_lines);
+    free(self->coh_buffer);
+    free(self->coh_lines);
 
     free(self);
 }
@@ -343,7 +368,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
   int i, j;
   const int chunk_size = 5;
-  assert(chunk_size-1%2==0); // chunk_size should be odd
+  assert((chunk_size-1)%2==0); // chunk_size should be odd
 
   // aliases
   int nl = meta->general->line_count;
@@ -401,9 +426,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       // calculate the pauli output (magnitude of already-calculated
       // complex pauli basis elements)
       for (j=0; j<ns; ++j) {
-          pauli_1[j] = complex_amp(img_rows->pauli_1_lines[i][j]);
-          pauli_2[j] = complex_amp(img_rows->pauli_2_lines[i][j]);
-          pauli_3[j] = complex_amp(img_rows->pauli_3_lines[i][j]);
+          pauli_1[j] = complex_amp(img_rows->pauli_lines[i][j].A);
+          pauli_2[j] = complex_amp(img_rows->pauli_lines[i][j].B);
+          pauli_3[j] = complex_amp(img_rows->pauli_lines[i][j].C);
       }
 
       // save the pauli bands in the output
