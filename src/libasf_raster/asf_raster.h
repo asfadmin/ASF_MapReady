@@ -139,7 +139,7 @@ void create_image_tiles(char *inFile, char *outBaseName, int tile_size);
 void create_image_hierarchy(char *inFile, char *outBaseName, int tile_size);
 
 // Prototypes from look_up_table.c
-#define MAX_LUT_DN 2048
+#define MAX_LUT_DN 8192
 void apply_look_up_table_byte(char *lutFile, unsigned char *in_buffer,
 			 int pixel_count, unsigned char *rgb_buffer);
 void apply_look_up_table_int(char *lutFile, int *in_buffer,
