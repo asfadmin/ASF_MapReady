@@ -61,5 +61,7 @@ int lay_seeds(int num_seeds, float *mask, long ns, long nl,
 /* Prototypes from build_dem.c */
 char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
                 const char *dir_for_tmp_dem);
+int get_dem_chunk(char *dem_in, char *dem_out, meta_parameters *metaDEM,
+                  meta_parameters *metaSAR);
 
 #endif

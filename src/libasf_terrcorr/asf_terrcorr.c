@@ -1144,10 +1144,30 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
 
   lsMaskFile = appendToBasename(outFile, "_mask");
 
+  // If we have a huge DEM, we can get much better performance by chopping
+  // a chunk out of it now, with generous padding.
+  char *demChunk;
+  if (metaDEM->general->line_count > 10000 &&
+      metaDEM->general->sample_count > 10000)
+  {
+     demChunk = outputName(output_dir, demFile, "_chunk");
+     if (get_dem_chunk(demFile, demChunk, metaDEM, metaSAR)) {
+        meta_free(metaDEM);
+        metaDEM = meta_read(demChunk);
+     } else {
+        free(demChunk);
+        demChunk = STRDUP(demFile);
+     }
+  }
+  else {
+     // no need to chunk out a piece, just use the whole thing
+     demChunk = STRDUP(demFile);
+  }
+
   // Assign a couple of file names and match the DEM
-  demTrimSimAmp = outputName(output_dir, demFile, "_sim_amp_trim");
-  demTrimSlant = outputName(output_dir, demFile, "_slant_trim");
-  match_dem(metaSAR, sarFile, demFile, srFile, output_dir, userMaskFile,
+  demTrimSimAmp = outputName(output_dir, demChunk, "_sim_amp_trim");
+  demTrimSlant = outputName(output_dir, demChunk, "_slant_trim");
+  match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
             demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification, FALSE,
             TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
@@ -1189,9 +1209,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       trim_zeros(deskewDemFile, outFile, &startx, &endx);
       trim(deskewDemMask, lsMaskFile, startx, 0, endx,
            metaSAR->general->line_count);
-      //clean(padFile);
-      //clean(deskewDemFile);
-      //clean(deskewDemMask);
+      clean(padFile);
+      clean(deskewDemFile);
+      clean(deskewDemMask);
 
       meta_free(metaSAR);
       metaSAR = meta_read(outFile);
@@ -1232,11 +1252,13 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   if (save_clipped_dem)
   {
     asfPrintStatus("Cutting out portion of the DEM...\n");
-    cut_dem(metaSAR, metaDEM, demFile, output_dir);
+    cut_dem(metaSAR, metaDEM, demChunk, output_dir);
   }
 
   if (clean_files) {
     asfPrintStatus("Removing intermediate files...\n");
+    if (strcmp(demChunk, demFile) != 0)
+        clean(demChunk);
     clean(demTrimSlant);
     clean(demTrimSimAmp);
     if (clean_resample_file) // false when resample file is the original image
@@ -1269,6 +1291,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   FREE(demFile);
   FREE(sarFile);
   FREE(outFile);
+  FREE(demChunk);
 
   meta_free(metaSAR);
   meta_free(metaDEM);

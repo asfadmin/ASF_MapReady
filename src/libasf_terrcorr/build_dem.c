@@ -20,6 +20,7 @@
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
 #include "asf_geocode.h"
+#include "asf_raster.h"
 #include "libasf_proj.h"
 
 static int iabs(int i)
@@ -503,9 +504,9 @@ static void update_extents(double lat, double lon,
     if (lon > *lon_hi) *lon_hi = lon;
 }
 
-static void get_bounding_box(meta_parameters *meta,
-                             double *lat_lo, double *lat_hi,
-                             double *lon_lo, double *lon_hi)
+static void get_bounding_box_latlon(meta_parameters *meta,
+                                    double *lat_lo, double *lat_hi,
+                                    double *lon_lo, double *lon_hi)
 {
     *lat_lo = *lon_lo = 999;
     *lat_hi = *lon_hi = -999;
@@ -569,6 +570,65 @@ static void get_bounding_box(meta_parameters *meta,
 
     *lon_lo -= lon_fudge;
     *lon_hi += lon_fudge;
+}
+
+static void get_bounding_box_linesamp(meta_parameters *metaSAR,
+                                      meta_parameters *metaDEM,
+                                      double *line_lo, double *line_hi,
+                                      double *samp_lo, double *samp_hi,
+                                      int h_padding, int v_padding)
+{
+    *line_lo = metaDEM->general->line_count;
+    *samp_lo = metaDEM->general->sample_count;
+    *line_hi = *samp_hi = 0;
+
+    // must call meta_get_latLon for each corner
+    int nl = metaSAR->general->line_count;
+    int ns = metaSAR->general->sample_count;
+    double lat, lon, line, samp;
+
+    meta_get_latLon(metaSAR, 0, 0, 0, &lat, &lon);
+    meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
+    if (meta_is_valid_double(line) && meta_is_valid_double(samp))
+        update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
+
+    meta_get_latLon(metaSAR, 0, ns-1, 0, &lat, &lon);
+    meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
+    if (meta_is_valid_double(line) && meta_is_valid_double(samp))
+        update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
+
+    meta_get_latLon(metaSAR, nl-1, 0, 0, &lat, &lon);
+    meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
+    if (meta_is_valid_double(line) && meta_is_valid_double(samp))
+        update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
+
+    meta_get_latLon(metaSAR, nl-1, ns-1, 0, &lat, &lon);
+    meta_get_lineSamp(metaDEM, lat, lon, 0, &line, &samp);
+    if (meta_is_valid_double(line) && meta_is_valid_double(samp))
+        update_extents(line, samp, line_lo, line_hi, samp_lo, samp_hi);
+
+    // Add a little bit of fudge to each -- we want there to be some room
+    // for adjustment via the co-registration.
+    
+    // Add about some pixels worth to each top/left/bottom/right.
+    nl = metaDEM->general->line_count;
+    ns = metaDEM->general->sample_count;
+
+    *line_lo -= v_padding;
+    if (*line_lo < 0) *line_lo = 0;
+    if (*line_lo > nl-1) *line_lo = nl-1;
+
+    *line_hi += v_padding;
+    if (*line_hi < 0) *line_hi = 0;
+    if (*line_hi > nl-1) *line_hi = nl-1;
+
+    *samp_lo -= h_padding;
+    if (*samp_lo < 0) *samp_lo = 0;
+    if (*samp_lo > ns-1) *samp_lo = ns-1;
+
+    *samp_hi += h_padding;
+    if (*samp_hi < 0) *samp_hi = 0;
+    if (*samp_hi > ns-1) *samp_hi = ns-1;
 }
 
 static int asf_mosaic_utm(char **files, char *outfile, int zone,
@@ -655,7 +715,7 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
     if (list_of_dems) {
         // form a bounding box
         double lat_lo, lat_hi, lon_lo, lon_hi;
-        get_bounding_box(meta, &lat_lo, &lat_hi, &lon_lo, &lon_hi);
+        get_bounding_box_latlon(meta, &lat_lo, &lat_hi, &lon_lo, &lon_hi);
 
         // hard-coded name of the built dem
         char *built_dem;
@@ -677,5 +737,47 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
     else {
         asfPrintError("DEM not found: %s\n", dem_cla_arg);
         return NULL; // not reached
+    }
+}
+
+// External entry point
+int get_dem_chunk(char *dem_in, char *dem_out, meta_parameters *metaDEM,
+                  meta_parameters *metaSAR)
+{
+    // this is the amount of padding that is added to the edge of
+    // the cut dem.  We add quite a bit, especially in the vertical
+    // direction, since it is not unusual to see JERS imagery, for
+    // example, shifting by 800 pixels in azimuth.
+    const int h_padding = 200;
+    const int v_padding = 800;
+
+    // find bounding line/sample box
+    double line_lo, line_hi, samp_lo, samp_hi;
+    get_bounding_box_linesamp(metaSAR, metaDEM,
+        &line_lo, &line_hi, &samp_lo, &samp_hi, h_padding, v_padding);
+
+    int nl = metaDEM->general->line_count;
+    int ns = metaDEM->general->sample_count;
+    int lines = (int)(line_hi - line_lo);
+    int samps = (int)(samp_hi - samp_lo);
+    double pct = 100. * (float)lines/(float)nl * (float)samps / (float)ns;
+
+    asfPrintStatus("DEM size: %dx%d LxS\n", metaDEM->general->line_count,
+        metaDEM->general->sample_count);
+    asfPrintStatus("SAR image occupies lines %d-%d, samples %d-%d in the DEM. (%.2f%%)\n",
+        (int)line_lo, (int)line_hi, (int)samp_lo, (int)samp_hi, pct);
+
+    // chop out a section if we cover less than 20%
+    if (pct < 20)
+    {
+        asfPrintStatus("Cutting out a section of the DEM...\n");
+
+        // cut out this piece
+        trim(dem_in, dem_out, (int)samp_lo, (int)line_lo, samps, lines);
+        return TRUE;
+    }
+    else {
+        // no action needed
+        return FALSE;
     }
 }
