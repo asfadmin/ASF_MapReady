@@ -1,6 +1,10 @@
 #include "asf_sar.h"
 #include "asf_raster.h"
 #include <assert.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_complex.h>
+#include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_eigen.h>
 
 static int find_band(meta_parameters *meta, char *name, int *ok)
 {
@@ -356,7 +360,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int pauli_1_band,
                          int pauli_2_band,
                          int pauli_3_band,
-                         int entrpy_band,
+                         int entropy_band,
                          int anisotropy_band,
                          int alpha_band)
 {
@@ -392,9 +396,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   float *pauli_1 = MALLOC(sizeof(float)*ns);
   float *pauli_2 = MALLOC(sizeof(float)*ns);
   float *pauli_3 = MALLOC(sizeof(float)*ns);
-  //float *entropy = MALLOC(sizeof(float)*ns);
-  //float *anisotropy = MALLOC(sizeof(float)*ns);
-  //float *alpha = MALLOC(sizeof(float)*ns);
+  float *entropy = MALLOC(sizeof(float)*ns);
+  float *anisotropy = MALLOC(sizeof(float)*ns);
+  float *alpha = MALLOC(sizeof(float)*ns);
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
   //   XX_amp_lines[0] = ALL ZEROS
@@ -420,15 +424,29 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       polarimetric_image_rows_load_next_row(img_rows, fin);
   assert(img_rows->current_row == 0);
 
+  // size of the horizontal window, used for ensemble averaging
+  // actual window size is w*2+1
+  const int w = 2;
+
+  gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
+  gsl_vector *eval = gsl_vector_alloc(3);
+  gsl_matrix_complex *evec = gsl_matrix_complex_alloc(3,3);
+  gsl_eigen_hermv_workspace *ws = gsl_eigen_hermv_alloc(3);
+
   // now loop through the lines of the output image
   for (i=0; i<nl; ++i) {
+
+      // indicates which line in the various *lines arrays contains
+      // what corresponds to line i in the output. since the line pointers
+      // slide, this never changes
+      const int l = (chunk_size-1)/2;
 
       // calculate the pauli output (magnitude of already-calculated
       // complex pauli basis elements)
       for (j=0; j<ns; ++j) {
-          pauli_1[j] = complex_amp(img_rows->pauli_lines[i][j].A);
-          pauli_2[j] = complex_amp(img_rows->pauli_lines[i][j].B);
-          pauli_3[j] = complex_amp(img_rows->pauli_lines[i][j].C);
+          pauli_1[j] = complex_amp(img_rows->pauli_lines[l][j].A);
+          pauli_2[j] = complex_amp(img_rows->pauli_lines[l][j].B);
+          pauli_3[j] = complex_amp(img_rows->pauli_lines[l][j].C);
       }
 
       // save the pauli bands in the output
@@ -439,7 +457,58 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       if (pauli_3_band > 0)
           put_band_float_line(fout, meta, pauli_3_band, i, pauli_3);
 
-      // now coherence
+      // now coherence -- do averaging for each element
+      for (j=0; j<ns; ++j) {          
+          int ii,jj,m;
+          for (ii=0; ii<3; ++ii) {
+              for (jj=0; jj<3; ++jj) {
+                  gsl_complex c = gsl_complex_rect(0,0);
+                  int k,n=0;
+                  for (m=0; m<chunk_size; ++m) {
+                      for (k=-w;k<=w;++k) {
+                          if (k>0 && k<ns && i>l && i<ns-l) {
+                              ++n;
+                              complexFloat f =
+                                  img_rows->coh_lines[m][k]->coeff[ii][jj];
+                              // cheat for speed
+                              c.dat[0] += f.real; c.dat[1] += f.imag;
+                          }
+                      }
+                  }
+                  c.dat[0] /= (float)n;
+                  c.dat[1] /= (float)n;
+                  gsl_matrix_complex_set(T,ii,jj,c);
+              }
+          }
+
+          gsl_eigen_hermv(T, eval, evec, ws);
+          gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
+
+          double e1 = gsl_vector_get(eval, 0);
+          double e2 = gsl_vector_get(eval, 1);
+          double e3 = gsl_vector_get(eval, 2);
+          double eT = e1+e2+e3;
+          double P1 = e1/eT;
+          double P2 = e2/eT;
+          double P3 = e3/eT;
+
+          entropy[j] = -P1*log(P1) - P2*log(P2) - P3*log(P3);
+          anisotropy[j] = (e2-e3)/(e2+e3);
+      }
+
+      // alpha
+      for (j=0; j<ns; ++j) {
+          alpha[j] = acos(pauli_1[j] / 
+              sqrt(pauli_1[j]*pauli_1[j] + pauli_2[j]*pauli_2[j] +
+                  pauli_3[j]*pauli_3[j]));
+      }
+
+      if (entropy_band > 0)
+          put_band_float_line(fout, meta, entropy_band, i, entropy);
+      if (anisotropy_band > 0)
+          put_band_float_line(fout, meta, anisotropy_band, i, anisotropy);
+      if (alpha_band > 0)
+          put_band_float_line(fout, meta, alpha_band, i, alpha);
 
       // load the next row, if there are still more to go
       if (i<nl-1) {
@@ -448,10 +517,22 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       }
   }
 
+  gsl_vector_free(eval);
+  gsl_eigen_hermv_free(ws);
+  gsl_matrix_complex_free(evec);
+  gsl_matrix_complex_free(T);
+
   polarimetric_image_rows_free(img_rows);
 
   fclose(fin);
   fclose(fout);
+
+  free(pauli_1);
+  free(pauli_2);
+  free(pauli_3);
+  free(entropy);
+  free(anisotropy);
+  free(alpha);
 
   free(out_img_name);
   free(in_img_name);
