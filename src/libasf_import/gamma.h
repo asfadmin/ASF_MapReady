@@ -3,10 +3,14 @@
 
 #include "asf_meta.h"
 
+typedef struct {int year, month, day, hour, minute; double seconds;} DATE;
+typedef struct {int hour, minute; double seconds;} TIME;
+typedef struct {double x,y,z;} POS;           // x,y,z position vector [m]
+typedef struct {double vx,vy,vz;} VEL;        // vx,vy,vz velocity vector [m/s]
+typedef struct {double ax,ay,az;} ACC;        // ax,ay,az acceleration vector [m/s^2]
+typedef struct{double lat,lon,alt;} POSITION;	// position in lat/lon and altitude (WGS-84), [degrees] [degrees] [m]
+
 // Structure of GAMMA ISP parameter file
-// NOTE: Does not include the satellite state vectors ...they are written directly into our
-//       metadata structure during initialization
-typedef struct {int year, month, day, hour, minute; double seconds} DATE;
 typedef struct {
   char title[FIELD_STRING_MAX];            // Title, usually "Platform name nnnnn", nnnnn is orbit no.
   int orbit;                               // Extracted from title, 'nnnnn'
@@ -89,18 +93,14 @@ typedef struct {
   double earth_radius_below_sensor;       // Geocentric earth radius [m]
   double earth_semi_major_axis;           // Semimajor axis [m]
   double earth_semi_minor_axis;           // Semiminor axis [m]
-  // State vector data is ignored (because upon ingest, it is written directly into
-  // the corresponding ASF metadata fields
+  int number_of_state_vectors;            // Number of satellite position/velocity state vectors
+  meta_state_vectors *stVec;               // Array of state vectors (x,y,z,vx,vy,vz) [m] and [m/s]
 } gamma_isp;
 
 // Structure of GAMMA MSP parameter file
-typedef struct {int hour, minute; double seconds;} TIME;
-typedef struct {double x,y,z;} POS;           // x,y,z position vector [m]
-typedef struct {double vx,vy,vz;} VEL;        // vx,vy,vz velocity vector [m/s]
-typedef struct {double ax,ay,az;} ACC;        // ax,ay,az acceleration vector [m/s^2]
-typedef struct{double lat,lon,alt;} POSITION;	// position in lat/lon and altitude (WGS-84), [degrees] [degrees] [m]
 typedef struct {
   char title[FIELD_STRING_MAX];           // Title
+  int orbit;                              // Orbit number
   DATE acquisition;                       // Acquisition date - 2007 1 15
   TIME raw_data_start_time;               // Hrs, mins, seconds - 7 26 38.548176
   char band[FIELD_STRING_MAX];            // Polarization or channel; HH, HV, VH, VV, CH1, CH2 etc
@@ -127,8 +127,8 @@ typedef struct {
                                              fd(t,r) = c0 + c1*r + c2*r^2 + c3*r^3                                   */
   double doppler_poly_dot[4];             // First derivative of doppler_polynomial w.r.t. along-track time
   double doppler_poly_ddot[4];            // Second derivative of doppler_polynomial w.r.t. along-track time
-  int sec_range_mig;                      // Secondary range migration flag, (on or off)
-  int az_deskew;                          // Azimuth SAR processing deskew flag (on or off)
+  int sec_range_migration;                // Secondary range migration flag, (on or off)
+  int azimuth_deskew;                     // Azimuth SAR processing deskew flag (on or off)
   double autofocus_snr;                   // Autofocus SNR
   double echo_time_delay;                 // Time delay between trans. of pulse and first sample of echo [s]
   double receiver_gain;                   // Receiver gain (attenuation) used for relative calibration [dB]
@@ -153,7 +153,6 @@ typedef struct {
   int far_range_extension;                // Far range swath extension [samples]
   int range_looks;                        // Number of range looks per sub-aperture
   int azimuth_looks;                      // Number of range looks per sub-aperture
-
   double azimuth_offset;                  // Along-track azimuth offset to first image line from start of SAR raw data [s]
   double azimuth_pixel_spacing;           // Azimuth image pixel spacing [m]
   double azimuth_resolution;              // Azimuth image resolution [m]
@@ -175,18 +174,16 @@ typedef struct {
   POSITION map_coordinate_3;              // Geodetic latitude, longitude, and altitude of last record near range (WGS-84)
   POSITION map_coordinate_4;              // Geodetic latitude, longitude, and altitude of last record far range (WGS-84)
   POSITION map_coordinate_5;              // Geodetic latitude, longitude, and altitude of center line/sample (WGS-84)
-  // State vector data is ignored (because upon ingest, it is written directly into
-  // the corresponding ASF metadata fields
+  int number_of_state_vectors;            // Number of satellite position/velocity state vectors
+  meta_state_vectors *stVec;               // Array of state vectors (x,y,z,vx,vy,vz) [m] and [m/s]
 } gamma_msp;
 
 // Function prototypes
-meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec);
+meta_parameters* gamma_isp2meta(gamma_isp *gamma);
 meta_parameters* gamma_msp2meta(gamma_msp *gamma);
 gamma_isp* meta2gamma_isp(meta_parameters *meta);
 gamma_msp* meta2gamma_msp(meta_parameters *meta);
-void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
-                            meta_state_vectors *stVec);
-void write_gamma_msp_header(const char *inFile, gamma_msp *gamma,
-                            meta_state_vectors *stVec);
+void write_gamma_isp_header(const char *inFile, gamma_isp *gamma);
+void write_gamma_msp_header(const char *inFile, gamma_msp *gamma);
 
 #endif

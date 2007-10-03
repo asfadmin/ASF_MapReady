@@ -3,7 +3,10 @@
 #include "gamma.h"
 #include "asf_nan.h"
 
-meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec)
+double get_gamma_msp_azimuth_time_per_pixel(gamma_msp *g);
+double get_gamma_msp_earth_radius_below_sensor(gamma_msp *gamma);
+
+meta_parameters* gamma_isp2meta(gamma_isp *gamma)
 {
   meta_parameters *meta;
   char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
@@ -13,21 +16,42 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec)
   meta = raw_init();
 
   // Fill general block
-  strcpy(meta->general->basename, gamma->title); // FIXME: Shouldn't use "title" ...use basename of data and parms files
+  strcpy(meta->general->basename, gamma->title);
   strcpy(meta->general->sensor, gamma->sensor);
-  // no sensor name, mode and processor          // FIXME: Set to MAGIC_UNSET_STRING
-  if (strncmp(gamma->image_format, "FCOMPLEX", 8) == 0) // FIXME: Use full list of data types in Gamma's type .h file
+  strcpy(meta->general->sensor_name, MAGIC_UNSET_STRING); // Sensor name not available in ISP metadata
+  strcpy(meta->general->mode, MAGIC_UNSET_STRING); // Mode not available in ISP metadata
+  strcpy(meta->general->processor, MAGIC_UNSET_STRING); // Processor not available in ISP metadata
+  if (strncmp(uc(gamma->image_format), "FCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_REAL32;
-  meta->general->image_data_type = COMPLEX_IMAGE;  // FIXME: Base this on the image_format
+  else if (strncmp(uc(gamma->image_format), "SCOMPLEX", 8) == 0)
+    meta->general->data_type = COMPLEX_INTEGER16;
+  else if (strncmp(uc(gamma->image_format), "FLOAT", 8) == 0) // Should never happen ...isp files should be SLCs
+    meta->general->data_type = REAL32;
+  else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0) // Should never happen ...isp files should be SLCs
+    meta->general->data_type = INTEGER16;
+  else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0) // Should never happen ...isp files should be SLCs
+    meta->general->data_type = BYTE;
+  switch(meta->general->data_type) {
+    case COMPLEX_REAL32:
+    case COMPLEX_INTEGER16:
+      meta->general->image_data_type = COMPLEX_IMAGE;
+      break;
+    default:
+      meta->general->image_data_type = IMAGE;
+      break;
+  }
   strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
-    gamma->acquisition[2], mon[gamma->acquisition[1]],
-    gamma->acquisition[0]);
-  // no orbit number
-  // orbit direction from heading or azimuth angle?
-  // no frame number
+    gamma->acquisition.day, mon[gamma->acquisition.month],
+    gamma->acquisition.year);
+  meta->general->orbit = gamma->orbit;
+  if (gamma->heading > 90.0 && gamma->heading < 270.0)
+    meta->general->orbit_direction = 'D';
+  else
+    meta->general->orbit_direction = 'A';
+  meta->general->frame = MAGIC_UNSET_INT;
   meta->general->band_count = 1;
-  // no bands information
+  strcpy(meta->general->bands, MAGIC_UNSET_STRING);
   meta->general->line_count = gamma->azimuth_lines;
   meta->general->sample_count = gamma->range_samples;
   meta->general->start_line = 0;
@@ -38,48 +62,73 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma, meta_state_vectors *stVec)
   meta->general->center_longitude = gamma->center_longitude;
   meta->general->re_major = gamma->earth_semi_major_axis;
   meta->general->re_minor = gamma->earth_semi_minor_axis;
-  // no information on bit error rate, missing lines and no data
+  meta->general->bit_error_rate = MAGIC_UNSET_DOUBLE;
+  meta->general->missing_lines = 0;
+  meta->general->no_data = MAGIC_UNSET_DOUBLE;
 
   // Fill SAR block
   meta->sar = meta_sar_init();
-  if (strncmp(gamma->image_geometry, "SLANT_RANGE", 11) == 0)
+  if (strncmp(uc(gamma->image_geometry), "SLANT_RANGE", 11) == 0)
     meta->sar->image_type = 'S';
-  meta->sar->look_direction = 'R';
+  else if (strncmp(uc(gamma->image_geometry), "GROUND_RANGE", 11) == 0)
+    meta->sar->image_type = 'G';
+  else
+    meta->sar->image_type = MAGIC_UNSET_CHAR;
+  if (gamma->azimuth_angle >= 0.0)
+    meta->sar->look_direction = 'R';
+  else
+    meta->sar->look_direction = 'L';
   meta->sar->look_count = gamma->azimuth_looks;
   meta->sar->deskewed = gamma->azimuth_deskew;
-  meta->sar->original_line_count = 0;
-  meta->sar->original_sample_count = 0;
+  meta->sar->original_line_count = meta->general->line_count;
+  meta->sar->original_sample_count = meta->general->sample_count;
   meta->sar->line_increment = 1;
   meta->sar->sample_increment = 1;
-  // no range time per pixel
+  meta->sar->range_time_per_pixel = fabs((2.0 * gamma->range_pixel_spacing) / SPD_LIGHT);
   meta->sar->azimuth_time_per_pixel = gamma->azimuth_line_time;
   meta->sar->slant_range_first_pixel = gamma->near_range_slc;
   meta->sar->slant_shift = 0.0;
-  meta->sar->time_shift = 0.0;
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count * meta->sar->azimuth_time_per_pixel);
+  else
+    meta->sar->time_shift = MAGIC_UNSET_DOUBLE;
   meta->sar->wavelength = SPD_LIGHT / gamma->radar_frequency;
   meta->sar->prf = gamma->prf;
   meta->sar->earth_radius = gamma->earth_radius_below_sensor;
-  // earth radius pp ignored
+  meta->sar->earth_radius_pp = meta->sar->earth_radius; // KLUDGE: This value is actually unknown in ISP metadata
   meta->sar->satellite_height = gamma->sar_to_earth_center;
-  // satellites times ignored
-  // FIXME: work out Doppler values
-  double doppler_polynomial[4];           // Doppler polynomial [Hz]
-  double doppler_poly_dot[4];             // Doppler rate polynomial [Hz]
-  double doppler_poly_ddot[4];            // Doppler second order [Hz]
+  strcpy(meta->sar->satellite_binary_time, MAGIC_UNSET_STRING);
+  strcpy(meta->sar->satellite_clock_time, MAGIC_UNSET_STRING);
+  int i;
+  if (gamma->doppler_polynomial[3] > 0.0001) {
+    // FIXME: If this error ever fires, then we should insert a function that does a
+    // quadratic fit to the cubic function.  Then we can derive close 'nuf quadratic
+    // values from a set of points generated by the cubic and use those.
+    asfPrintError("GAMMA doppler polynomial has a large cubic term\n"
+        "(%lf versus limit of 0.0001) and is not well modeled by a\nquadratic.",
+        gamma->doppler_polynomial[3]);
+  }
+  for (i=0; i<3; i++) {
+    meta->sar->range_doppler_coefficients[i] = gamma->doppler_polynomial[i];
+    meta->sar->azimuth_doppler_coefficients[i] = 0.0; // FIXME: We have gamma->radar_frequency and state vectors ...we should estimate the azimuth doppler stuff
+  }
   meta->sar->azimuth_processing_bandwidth = gamma->azimuth_proc_bandwidth;
   meta->sar->chirp_rate = gamma->chirp_bandwidth;
-  // no pulse duration
+  meta->sar->pulse_duration = MAGIC_UNSET_DOUBLE;
   meta->sar->range_sampling_rate = gamma->adc_sampling_rate;
-  // no polarization
+  strcpy(meta->sar->polarization, MAGIC_UNSET_STRING);
   meta->sar->multilook = 0;
 
   // Fill state vector structure
   meta->state_vectors = meta_state_vectors_init(3);
-  meta->state_vectors = stVec;
+  meta->state_vectors = gamma->stVec;
 
   return meta;
 }
 
+/*
 gamma_isp* meta2gamma_isp(meta_parameters *meta)
 {
   gamma_isp *gamma = MALLOC(sizeof(gamma_isp));
@@ -107,9 +156,9 @@ gamma_isp* meta2gamma_isp(meta_parameters *meta)
   gamma->range_looks = 1;
   gamma->azimuth_looks = meta->sar->look_count;
   if (meta->general->data_type == COMPLEX_REAL32)
-    strcpy(gamma->image_format, "FCOMPLEX");
+    strcpy(uc(gamma->image_format), "FCOMPLEX");
   if (meta->sar->image_type == 'S')
-    strcpy(gamma->image_geometry, "SLANT_RANGE");
+    strcpy(uc(gamma->image_geometry), "SLANT_RANGE");
   gamma->range_scale_factor = 1;
   gamma->azimuth_scale_factor = 1;
   gamma->center_latitude = meta->general->center_latitude;
@@ -271,3 +320,196 @@ void write_gamma_isp_header(const char *inFile, gamma_isp *gamma,
 
   return;
 }
+*/
+
+meta_parameters* gamma_msp2meta(gamma_msp *gamma)
+{
+  meta_parameters *meta;
+  char *mon[13]={"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep",
+    "Oct","Nov","Dec"};
+
+  // Initialize the meta structure
+  meta = raw_init();
+
+  // Fill general block
+  strcpy(meta->general->basename, gamma->title);
+  strcpy(meta->general->sensor, MAGIC_UNSET_STRING); // Sensor not available in MSP metadata
+  strcpy(meta->general->sensor_name, MAGIC_UNSET_STRING); // Sensor name not available in MSP metadata
+  strcpy(meta->general->mode, MAGIC_UNSET_STRING); // Mode not available in MSP metadata
+  strcpy(meta->general->processor, MAGIC_UNSET_STRING); // Processor not available in MSP metadata
+  if (strncmp(uc(gamma->image_format), "FCOMPLEX", 8) == 0)
+    meta->general->data_type = COMPLEX_REAL32;
+  else if (strncmp(uc(gamma->image_format), "SCOMPLEX", 8) == 0)
+    meta->general->data_type = COMPLEX_INTEGER16;
+  else if (strncmp(uc(gamma->image_format), "FLOAT", 8) == 0)
+    meta->general->data_type = REAL32;
+  else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0)
+    meta->general->data_type = INTEGER16;
+  else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
+    meta->general->data_type = BYTE;
+  switch(meta->general->data_type) {
+    case COMPLEX_REAL32:
+    case COMPLEX_INTEGER16:
+      meta->general->image_data_type = COMPLEX_IMAGE;
+      break;
+    default:
+      meta->general->image_data_type = IMAGE;
+      break;
+  }
+  strcpy(meta->general->system, meta_get_system());
+  sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
+          gamma->acquisition.day, mon[gamma->acquisition.month],
+          gamma->acquisition.year);
+  meta->general->orbit = gamma->orbit;
+  if (gamma->track_angle < -90.0)
+    meta->general->orbit_direction = 'D';
+  else
+    meta->general->orbit_direction = 'A';
+  meta->general->frame = MAGIC_UNSET_INT;
+  meta->general->band_count = 1;
+  strcpy(meta->general->bands, gamma->band);
+  meta->general->line_count = gamma->azimuth_pixels;
+  meta->general->sample_count = gamma->range_pixels;
+  meta->general->start_line = 0;
+  meta->general->start_sample = 0;
+  meta->general->x_pixel_size = gamma->range_pixel_spacing;
+  meta->general->y_pixel_size = gamma->azimuth_pixel_spacing;
+  meta->general->center_latitude = gamma->scene_center_latitude;
+  meta->general->center_longitude = gamma->scene_center_longitude;
+  meta->general->re_major = gamma->earth_semi_major_axis;
+  meta->general->re_minor = gamma->earth_semi_minor_axis;
+  meta->general->bit_error_rate = MAGIC_UNSET_DOUBLE;
+  meta->general->missing_lines = 0;
+  meta->general->no_data = MAGIC_UNSET_DOUBLE;
+  // Fill SAR block
+  meta->sar = meta_sar_init();
+  meta->sar->image_type = MAGIC_UNSET_CHAR;
+  meta->sar->look_direction = MAGIC_UNSET_CHAR;
+  meta->sar->look_count = gamma->azimuth_looks;
+  meta->sar->deskewed = gamma->azimuth_deskew;
+  meta->sar->original_line_count = gamma->offset_to_first_echo_to_process + gamma->echoes_to_process;
+  meta->sar->original_sample_count = gamma->range_offset + gamma->raw_range_samples;
+  meta->sar->line_increment = 1;
+  meta->sar->sample_increment = 1;
+  meta->sar->range_time_per_pixel = fabs((2.0 * gamma->range_pixel_spacing) / SPD_LIGHT);
+  meta->sar->azimuth_time_per_pixel = get_gamma_msp_azimuth_time_per_pixel(gamma);
+  meta->sar->slant_range_first_pixel = gamma->near_range_slc;
+  meta->sar->slant_shift = 0.0;
+  if (meta->general->orbit_direction == 'D')
+    meta->sar->time_shift = 0.0;
+  else if (meta->general->orbit_direction == 'A')
+    meta->sar->time_shift = fabs(meta->sar->original_line_count * meta->sar->azimuth_time_per_pixel);
+  else
+    meta->sar->time_shift = MAGIC_UNSET_DOUBLE;
+  meta->sar->wavelength = MAGIC_UNSET_DOUBLE;
+  meta->sar->prf = gamma->prf;
+  meta->sar->earth_radius = get_gamma_msp_earth_radius_below_sensor(gamma);
+  meta->sar->earth_radius_pp = meta->sar->earth_radius; // KLUDGE: This value is actually unknown in MSP metadata
+  meta->sar->satellite_height = sqrt(gamma->sensor_position_vector.x*gamma->sensor_position_vector.x +
+      gamma->sensor_position_vector.y*gamma->sensor_position_vector.y +
+      gamma->sensor_position_vector.z*gamma->sensor_position_vector.z);
+  strcpy(meta->sar->satellite_binary_time, MAGIC_UNSET_STRING);
+  strcpy(meta->sar->satellite_clock_time, MAGIC_UNSET_STRING);
+  int i;
+  if (gamma->doppler_polynomial[3] > 0.0001) {
+    // FIXME: If this error ever fires, then we should insert a function that does a
+    // quadratic fit to the cubic function.  Then we can derive close 'nuf quadratic
+    // values from a set of points generated by the cubic and use those.
+    asfPrintError("GAMMA doppler polynomial has a large cubic term\n"
+           "(%lf versus limit of 0.0001) and is not well modeled by a\nquadratic.",
+       gamma->doppler_polynomial[3]);
+  }
+  for (i=0; i<3; i++) {
+    meta->sar->range_doppler_coefficients[i] = gamma->doppler_polynomial[i];
+    meta->sar->azimuth_doppler_coefficients[i] = 0.0; // FIXME: We have gamma->radar_frequency and state vectors ...we should estimate the azimuth doppler stuff
+  }
+  meta->sar->azimuth_processing_bandwidth = MAGIC_UNSET_DOUBLE;
+  meta->sar->chirp_rate = MAGIC_UNSET_DOUBLE;
+  meta->sar->pulse_duration = MAGIC_UNSET_DOUBLE;
+  meta->sar->range_sampling_rate = MAGIC_UNSET_DOUBLE;
+  strcpy(meta->sar->polarization, MAGIC_UNSET_STRING);
+  meta->sar->multilook = 0;
+
+  // Fill state vector structure
+  meta->state_vectors = meta_state_vectors_init(3);
+  meta->state_vectors = gamma->stVec;
+
+  // Fill location block
+  meta->location = meta_location_init();
+  if (meta->general->orbit_direction == 'D') {
+    // See comments in gamma.h for map coordinate identification
+    meta->location->lat_start_near_range = gamma->map_coordinate_2.lat;
+    meta->location->lon_start_near_range = gamma->map_coordinate_2.lon;
+    meta->location->lat_start_far_range = gamma->map_coordinate_1.lat;
+    meta->location->lon_start_far_range = gamma->map_coordinate_1.lon;
+    meta->location->lat_end_near_range = gamma->map_coordinate_4.lat;
+    meta->location->lon_end_near_range = gamma->map_coordinate_4.lon;
+    meta->location->lat_end_far_range = gamma->map_coordinate_3.lat;
+    meta->location->lon_end_far_range = gamma->map_coordinate_3.lon;
+  }
+  else {
+    meta->location->lat_start_near_range = gamma->map_coordinate_3.lat;
+    meta->location->lon_start_near_range = gamma->map_coordinate_3.lon;
+    meta->location->lat_start_far_range = gamma->map_coordinate_4.lat;
+    meta->location->lon_start_far_range = gamma->map_coordinate_4.lon;
+    meta->location->lat_end_near_range = gamma->map_coordinate_1.lat;
+    meta->location->lon_end_near_range = gamma->map_coordinate_1.lon;
+    meta->location->lat_end_far_range = gamma->map_coordinate_2.lat;
+    meta->location->lon_end_far_range = gamma->map_coordinate_2.lon;
+  }
+
+  return meta;
+}
+
+double get_gamma_msp_azimuth_time_per_pixel(gamma_msp *g)
+{
+  double  re = g->earth_semi_major_axis;
+  double  rp = g->earth_semi_minor_axis;
+  double lat = g->sensor_latitude * D2R;        // Platform geodetic latitude at scene center
+  double  ht;                                   // Satellite height from earth center
+  double  er;                                   // Earth radius at scene center
+  POS pos    = g->sensor_position_vector;       // Platform position (x,y,z) at scene center
+  double  atpp, orbit_vel, swath_vel, grav = 9.81;
+
+  er = (re*rp) /
+      sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+  ht = sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z);
+  orbit_vel = sqrt(grav*er*er/ht);
+  swath_vel = orbit_vel*er/ht;
+  atpp = g->azimuth_pixel_spacing/swath_vel;
+
+  return atpp;
+}
+
+double get_gamma_msp_earth_radius_below_sensor(gamma_msp *g)
+{
+  double  re = g->earth_semi_major_axis;
+  double  rp = g->earth_semi_minor_axis;
+  double lat = g->sensor_latitude * D2R;        // Platform geodetic latitude at scene center
+  double  er;                                   // Earth radius at scene center
+
+  er = (re*rp) /
+      sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+
+  return er;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

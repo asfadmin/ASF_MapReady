@@ -1,13 +1,14 @@
+#include <ctype.h>
 #include "gamma.h"
 #include "asf_meta.h"
 #include "dateUtil.h"
 
 gamma_isp *gamma_isp_init();
+gamma_msp *gamma_msp_init();
 
 void import_gamma_isp(const char *inBaseName, const char *outBaseName)
 {
   gamma_isp *gamma;
-  meta_state_vectors *stVec=NULL;
   meta_parameters *meta=NULL;
   FILE *fp;
   ymd_date ymd;
@@ -35,14 +36,14 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
         s = &str[strlen(str)-1];
         while (isdigit((int)*s) || *s == '.') s--;
         s++;
-        if (isdigit((int)*s)) g->orbit = atoi(s);
+        if (isdigit((int)*s)) gamma->orbit = atoi(s);
       }
       else if (strncmp(key, "sensor:", 7) == 0) {
         str = trim_spaces(value);
         sprintf(gamma->sensor, "%s", str);
       }
       else if (strncmp(key, "date:", 5) == 0)
-        sscanf(value, "%d %d %d %d %d %f",
+        sscanf(value, "%d %d %d %d %d %lf",
                &gamma->acquisition.year,   &gamma->acquisition.month,
                &gamma->acquisition.day,    &gamma->acquisition.hour,
                &gamma->acquisition.minute, &gamma->acquisition.seconds);
@@ -168,30 +169,30 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
       else if (strncmp(key, "earth_semi_minor_axis:", 22) == 0)
         gamma->earth_semi_minor_axis = atof(value);
       else if (strncmp(key, "number_of_state_vectors:", 24) == 0) {
-        vectors = atoi(value);
-        stVec = meta_state_vectors_init(vectors);
-        fscanf(fp, "time_of_first_state_vector: %lf   s\n", &stVec->second);
+        gamma->number_of_state_vectors = atoi(value);
+        gamma->stVec = meta_state_vectors_init(vectors);
+        fscanf(fp, "time_of_first_state_vector: %lf   s\n", &gamma->stVec->second);
         fscanf(fp, "state_vector_interval: %lf   s\n", &interval);
-        stVec->year = gamma->acquisition[0];
-        ymd.year = gamma->acquisition[0];
-        ymd.month = gamma->acquisition[1];
-        ymd.day = gamma->acquisition[2];
+        gamma->stVec->year = gamma->acquisition.year;
+        ymd.year = gamma->acquisition.year;
+        ymd.month = gamma->acquisition.month;
+        ymd.day = gamma->acquisition.day;
         date_ymd2jd(&ymd, &jd);
-        stVec->julDay = jd.jd;
-        for (ii=0; ii<stVec->vector_count; ii++) {
-          stVec->vecs[ii].time = stVec->second + ii*interval;
+        gamma->stVec->julDay = jd.jd;
+        for (ii=0; ii<gamma->stVec->vector_count; ii++) {
+          gamma->stVec->vecs[ii].time = gamma->stVec->second + ii*interval;
           fgets(line, 1024, fp);
           sscanf(line, "%s:%s", key, value);
           sscanf(value, "%lf %lf %lf",
-                 &stVec->vecs[ii].vec.pos.x,
-                 &stVec->vecs[ii].vec.pos.y,
-                 &stVec->vecs[ii].vec.pos.z);
+                 &gamma->stVec->vecs[ii].vec.pos.x,
+                 &gamma->stVec->vecs[ii].vec.pos.y,
+                 &gamma->stVec->vecs[ii].vec.pos.z);
           fgets(line, 1024, fp);
           sscanf(line, "%s:%s", key, value);
           sscanf(value, "%lf %lf %lf",
-                 &stVec->vecs[ii].vec.vel.x,
-                 &stVec->vecs[ii].vec.vel.y,
-                 &stVec->vecs[ii].vec.vel.z);
+                 &gamma->stVec->vecs[ii].vec.vel.x,
+                 &gamma->stVec->vecs[ii].vec.vel.y,
+                 &gamma->stVec->vecs[ii].vec.vel.z);
         }
       }
     }
@@ -200,7 +201,7 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
 
   // Generate metadata
   sprintf(outFile, "%s.meta", outBaseName);
-  meta = gamma_isp2meta(gamma, stVec);
+  meta = gamma_isp2meta(gamma);
   meta_write(meta, outFile);
 
   // Copy generic binary file
@@ -212,7 +213,244 @@ void import_gamma_isp(const char *inBaseName, const char *outBaseName)
   if(gamma)FREE(gamma);
 }
 
-gamma_isp *gamma_isp_init();
+void import_gamma_msp(const char *inBaseName, const char *outBaseName)
+{
+  gamma_msp *gamma;
+  meta_parameters *meta=NULL;
+  FILE *fp;
+  ymd_date ymd;
+  julian_date jd;
+  char inFile[255], outFile[255], line[1024], *p, key[512], *value, *str;
+  int ii, vectors;
+  double interval;
+
+  // Initialize the gamma ISP struct
+  gamma = gamma_msp_init();
+
+  // Read GAMMA MSP parameter file
+  sprintf(inFile, "%s.mli.par", inBaseName);
+
+  fp = FOPEN(inFile, "r");
+  while (fgets(line, 1024, fp)) {
+    p = strchr(line, ':');
+    if (p) {
+      sscanf(line, "%s:", key);
+      value = p+1;
+      if (strncmp(key, "title:", 6) == 0) {
+        str = trim_spaces(value);
+        sprintf(gamma->title, "%s, %s", inBaseName, str);
+        char *s;
+        s = &str[strlen(str)-1];
+        while (isdigit((int)*s) || *s == '.') s--;
+        s++;
+        if (isdigit((int)*s)) gamma->orbit = atoi(s);
+}
+      else if (strncmp(key, "date:", 5) == 0)
+        sscanf(value, "%d %d %d %d %d %lf",
+               &gamma->acquisition.year,   &gamma->acquisition.month,
+               &gamma->acquisition.day,    &gamma->acquisition.hour,
+               &gamma->acquisition.minute, &gamma->acquisition.seconds);
+      else if (strncmp(key, "raw_data_start_time:", 11) == 0)
+        sscanf(value, "%d %d %lf",
+               &gamma->raw_data_start_time.hour,
+               &gamma->raw_data_start_time.minute,
+               &gamma->raw_data_start_time.seconds);
+      else if (strncmp(key, "channel", 7) == 0) {
+        str = trim_spaces(value);
+        sprintf(gamma->band, "%s", str);
+      }
+      else if (strncmp(key, "earth_semi_major_axis:", 22) == 0)
+        gamma->earth_semi_major_axis = atof(value);
+      else if (strncmp(key, "earth_semi_minor_axis:", 22) == 0)
+        gamma->earth_semi_minor_axis = atof(value);
+      else if (strncmp(key, "scene_center_latitude:", 22) == 0)
+        gamma->scene_center_latitude = atof(value);
+      else if (strncmp(key, "scene_center_longitude:", 23) == 0)
+        gamma->scene_center_longitude = atof(value);
+      else if (strncmp(key, "track_angle:", 12) == 0)
+        gamma->track_angle = atof(value);
+      else if (strncmp(key, "platform_altitude:", 18) == 0)
+        gamma->platform_altitude = atof(value);
+      else if (strncmp(key, "terrain_height:", 15) == 0)
+        gamma->terrain_height = atof(value);
+      else if (strncmp(key, "sensor_position_vector:", 23) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->sensor_position_vector.x,
+               &gamma->sensor_position_vector.y,
+               &gamma->sensor_position_vector.z);
+      else if (strncmp(key, "sensor_velocity_vector:", 23) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->sensor_velocity_vector.vx,
+               &gamma->sensor_velocity_vector.vy,
+               &gamma->sensor_velocity_vector.vz);
+      else if (strncmp(key, "sensor_acceleration_vector:", 27) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->sensor_acceleration_vector.ax,
+               &gamma->sensor_acceleration_vector.ay,
+               &gamma->sensor_acceleration_vector.az);
+      else if (strncmp(key, "pulse_repetition_frequency:", 27) == 0)
+        gamma->prf = atof(value);
+      else if (strncmp(key, "I_bias:", 7) == 0)
+        gamma->I_bias = atof(value);
+      else if (strncmp(key, "Q_bias:", 7) == 0)
+        gamma->Q_bias = atof(value);
+      else if (strncmp(key, "I_sigma:", 8) == 0)
+        gamma->I_sigma = atof(value);
+      else if (strncmp(key, "Q_sigma:", 8) == 0)
+        gamma->Q_sigma = atof(value);
+      else if (strncmp(key, "IQ_corr:", 8) == 0)
+        gamma->IQ_corr = atof(value);
+      else if (strncmp(key, "SNR_range_spectrum:", 19) == 0)
+        gamma->SNR_range_spectrum = atof(value);
+      else if (strncmp(key, "DAR_doppler:", 12) == 0)
+        gamma->DAR_doppler = atof(value);
+      else if (strncmp(key, "DAR_snr:", 8) == 0)
+        gamma->DAR_snr = atof(value);
+      else if (strncmp(key, "doppler_polynomial:", 19) == 0)
+        sscanf(value, "%lf %lf %lf %lf",
+               &gamma->doppler_polynomial[0], &gamma->doppler_polynomial[1],
+               &gamma->doppler_polynomial[2], &gamma->doppler_polynomial[3]); // Might need to be exp. format
+      else if (strncmp(key, "doppler_poly_dot:", 19) == 0)
+        sscanf(value, "%lf %lf %lf %lf",
+               &gamma->doppler_poly_dot[0], &gamma->doppler_poly_dot[1],
+               &gamma->doppler_poly_dot[2], &gamma->doppler_poly_dot[3]); // Might need to be exp. format
+      else if (strncmp(key, "doppler_poly_ddot:", 19) == 0)
+        sscanf(value, "%lf %lf %lf %lf",
+               &gamma->doppler_poly_ddot[0], &gamma->doppler_poly_ddot[1],
+               &gamma->doppler_poly_ddot[2], &gamma->doppler_poly_ddot[3]); // Might need to be exp. format
+      else if (strncmp(key, "sec_range_migration:", 20) == 0)
+        gamma->sec_range_migration = strncmp(uc(value), "ON", 2) == 0 ? 1 : 0;
+      else if (strncmp(key, "azimuth_deskew:", 15) == 0)
+        gamma->azimuth_deskew = strncmp(uc(value), "ON", 2) == 0 ? 1 : 0;
+      else if (strncmp(key, "autofocus_snr:", 14) == 0)
+        gamma->autofocus_snr = atof(value);
+      else if (strncmp(key, "echo_time_delay:", 16) == 0)
+        gamma->echo_time_delay = atof(value);
+      else if (strncmp(key, "receiver_gain:", 14) == 0)
+        gamma->receiver_gain = atof(value);
+      else if (strncmp(key, "calibration_gain:", 17) == 0)
+        gamma->calibration_gain = atof(value);
+      else if (strncmp(key, "near_range_raw:", 15) == 0)
+        gamma->near_range_raw = atof(value);
+      else if (strncmp(key, "center_range_raw:", 15) == 0)
+        gamma->center_range_raw = atof(value);
+      else if (strncmp(key, "far_range_raw:", 15) == 0)
+        gamma->far_range_raw = atof(value);
+      else if (strncmp(key, "range_pixel_spacing:", 20) == 0)
+        gamma->range_pixel_spacing = atof(value);
+      else if (strncmp(key, "range_resolution:", 17) == 0)
+        gamma->range_resolution = atof(value);
+      else if (strncmp(key, "azimuth_bandwidth_fraction:", 27) == 0)
+        gamma->azimuth_bandwidth_fraction = atof(value);
+      else if (strncmp(key, "prefilter_azimuth_offset:", 25) == 0)
+        gamma->prefilter_azimuth_offset = atoi(value);
+      else if (strncmp(key, "total_raw_echoes:", 17) == 0)
+        gamma->total_raw_echoes = atoi(value);
+      else if (strncmp(key, "offset_to_first_echo_to_process:", 32) == 0)
+        gamma->offset_to_first_echo_to_process = atoi(value);
+      else if (strncmp(key, "echoes_to_process:", 18) == 0)
+        gamma->echoes_to_process = atoi(value);
+      else if (strncmp(key, "range_offset:", 13) == 0)
+        gamma->range_offset = atoi(value);
+      else if (strncmp(key, "raw_range_samples:", 18) == 0)
+        gamma->raw_range_samples = atoi(value);
+      else if (strncmp(key, "near_range_extension:", 21) == 0)
+        gamma->near_range_extension = atoi(value);
+      else if (strncmp(key, "far_range_extension:", 20) == 0)
+        gamma->far_range_extension = atoi(value);
+      else if (strncmp(key, "range_looks:", 12) == 0)
+        gamma->range_looks = atoi(value);
+      else if (strncmp(key, "azimuth_looks:", 14) == 0)
+        gamma->azimuth_looks = atoi(value);
+      else if (strncmp(key, "azimuth_offset:", 15) == 0)
+        gamma->azimuth_offset = atof(value);
+      else if (strncmp(key, "azimuth_pixel_spacing:", 22) == 0)
+        gamma->azimuth_pixel_spacing = atof(value);
+      else if (strncmp(key, "azimuth_resolution:", 19) == 0)
+        gamma->azimuth_resolution = atof(value);
+      else if (strncmp(key, "range_pixels:", 13) == 0)
+        gamma->range_pixels = atoi(value);
+      else if (strncmp(key, "azimuth_pixels:", 15) == 0)
+        gamma->azimuth_pixels = atof(value);
+      else if (strncmp(key, "image_format:", 13) == 0)
+        sprintf(gamma->image_format, "%s", uc(value));
+      else if (strncmp(key, "sensor_latitude:", 16) == 0)
+        gamma->sensor_latitude = atof(value);
+      else if (strncmp(key, "sensor_longitude:", 17) == 0)
+        gamma->sensor_longitude = atof(value);
+      else if (strncmp(key, "sensor_track_angle:", 19) == 0)
+        gamma->sensor_track_angle = atof(value);
+      else if (strncmp(key, "map_coordinate_1:", 17) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->map_coordinate_1.lat,
+               &gamma->map_coordinate_1.lon,
+               &gamma->map_coordinate_1.alt);
+      else if (strncmp(key, "map_coordinate_2:", 17) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->map_coordinate_2.lat,
+               &gamma->map_coordinate_2.lon,
+               &gamma->map_coordinate_2.alt);
+      else if (strncmp(key, "map_coordinate_3:", 17) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->map_coordinate_3.lat,
+               &gamma->map_coordinate_3.lon,
+               &gamma->map_coordinate_3.alt);
+      else if (strncmp(key, "map_coordinate_4:", 17) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->map_coordinate_4.lat,
+               &gamma->map_coordinate_4.lon,
+               &gamma->map_coordinate_4.alt);
+      else if (strncmp(key, "map_coordinate_5:", 17) == 0)
+        sscanf(value, "%lf %lf %lf",
+               &gamma->map_coordinate_5.lat,
+               &gamma->map_coordinate_5.lon,
+               &gamma->map_coordinate_5.alt);
+      else if (strncmp(key, "number_of_state_vectors:", 24) == 0) {
+        gamma->number_of_state_vectors = atoi(value);
+        gamma->stVec = meta_state_vectors_init(vectors);
+        fscanf(fp, "time_of_first_state_vector: %lf   s\n", &gamma->stVec->second);
+        fscanf(fp, "state_vector_interval: %lf   s\n", &interval);
+        gamma->stVec->year = gamma->acquisition.year;
+        ymd.year = gamma->acquisition.year;
+        ymd.month = gamma->acquisition.month;
+        ymd.day = gamma->acquisition.day;
+        date_ymd2jd(&ymd, &jd);
+        gamma->stVec->julDay = jd.jd;
+        for (ii=0; ii<gamma->stVec->vector_count; ii++) {
+          gamma->stVec->vecs[ii].time = gamma->stVec->second + ii*interval;
+          fgets(line, 1024, fp);
+          sscanf(line, "%s:%s", key, value);
+          sscanf(value, "%lf %lf %lf",
+                 &gamma->stVec->vecs[ii].vec.pos.x,
+                 &gamma->stVec->vecs[ii].vec.pos.y,
+                 &gamma->stVec->vecs[ii].vec.pos.z);
+          fgets(line, 1024, fp);
+          sscanf(line, "%s:%s", key, value);
+          sscanf(value, "%lf %lf %lf",
+                 &gamma->stVec->vecs[ii].vec.vel.x,
+                 &gamma->stVec->vecs[ii].vec.vel.y,
+                 &gamma->stVec->vecs[ii].vec.vel.z);
+        }
+      }
+    }
+  }
+  FCLOSE(fp);
+
+  // Generate metadata
+  sprintf(outFile, "%s.meta", outBaseName);
+  meta = gamma_msp2meta(gamma);
+  meta_write(meta, outFile);
+
+  // Copy generic binary file
+  sprintf(inFile, "%s.mli", inBaseName);
+  sprintf(outFile, "%s.img", outBaseName);
+  fileCopy(inFile, outFile);
+
+  // Cleanup
+  if(gamma)FREE(gamma);
+}
+
+gamma_isp *gamma_isp_init()
 {
   int i;
   gamma_isp *g = (gamma_isp *) MALLOC(sizeof(gamma_isp));
@@ -271,7 +509,7 @@ gamma_isp *gamma_isp_init();
   return g;
 }
 
-gamma_msp *gamma_msp_init();
+gamma_msp *gamma_msp_init()
 {
   int i;
   gamma_msp *g = (gamma_msp *) MALLOC(sizeof(gamma_msp));
@@ -315,8 +553,8 @@ gamma_msp *gamma_msp_init();
   for (i=0; i<4; i++) g->doppler_polynomial[i] = MAGIC_UNSET_DOUBLE;
   for (i=0; i<4; i++) g->doppler_poly_dot[i] = MAGIC_UNSET_DOUBLE;
   for (i=0; i<4; i++) g->doppler_poly_ddot[i] = MAGIC_UNSET_DOUBLE;
-  g->sec_range_mig = MAGIC_UNSET_INT;
-  g->az_deskew = MAGIC_UNSET_INT;
+  g->sec_range_migration = MAGIC_UNSET_INT;
+  g->azimuth_deskew = MAGIC_UNSET_INT;
   g->autofocus_snr = MAGIC_UNSET_DOUBLE;
   g->echo_time_delay = MAGIC_UNSET_DOUBLE;
   g->receiver_gain = MAGIC_UNSET_DOUBLE;
@@ -338,13 +576,29 @@ gamma_msp *gamma_msp_init();
   g->far_range_extension = MAGIC_UNSET_INT;
   g->range_looks = MAGIC_UNSET_INT;
   g->azimuth_looks = MAGIC_UNSET_INT;
-  g-> = MAGIC_UNSET_DOUBLE;
-
-
-
-
-  g-> = MAGIC_UNSET_DOUBLE;
-  g-> = MAGIC_UNSET_INT;
+  g->azimuth_offset = MAGIC_UNSET_DOUBLE;
+  g->azimuth_pixel_spacing = MAGIC_UNSET_DOUBLE;
+  g->azimuth_resolution = MAGIC_UNSET_DOUBLE;
+  g->range_pixels = MAGIC_UNSET_INT;
+  strcpy(g->image_format, MAGIC_UNSET_STRING);
+  g->sensor_latitude = MAGIC_UNSET_DOUBLE;
+  g->sensor_longitude = MAGIC_UNSET_DOUBLE;
+  g->sensor_track_angle = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_1.lat = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_1.lon = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_1.alt = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_2.lat = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_2.lon = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_2.alt = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_3.lat = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_3.lon = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_3.alt = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_4.lat = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_4.lon = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_4.alt = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_5.lat = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_5.lon = MAGIC_UNSET_DOUBLE;
+  g->map_coordinate_5.alt = MAGIC_UNSET_DOUBLE;
 
   return g;
 }
