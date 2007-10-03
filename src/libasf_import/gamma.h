@@ -181,9 +181,9 @@ typedef struct {
 // Function prototypes
 meta_parameters* gamma_isp2meta(gamma_isp *gamma);
 meta_parameters* gamma_msp2meta(gamma_msp *gamma);
-gamma_isp* meta2gamma_isp(meta_parameters *meta);
-gamma_msp* meta2gamma_msp(meta_parameters *meta);
-void write_gamma_isp_header(const char *inFile, gamma_isp *gamma);
-void write_gamma_msp_header(const char *inFile, gamma_msp *gamma);
+//gamma_isp* meta2gamma_isp(meta_parameters *meta);
+//gamma_msp* meta2gamma_msp(meta_parameters *meta);
+//void write_gamma_isp_header(const char *inFile, gamma_isp *gamma);
+//void write_gamma_msp_header(const char *inFile, gamma_msp *gamma);
 
 #endif

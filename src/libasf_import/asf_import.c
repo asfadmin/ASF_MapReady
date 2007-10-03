@@ -91,10 +91,14 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: %s\n", format_type);
     import_airsar(inBaseName, outBaseName);
   }
-  //else if (strncmp(format_type, "GAMMA_ISP", 9) == 0) {
-    //asfPrintStatus("   Data format: %s\n", format_type);
-    //import_gamma_isp(inBaseName, outBaseName);
-  //}
+  else if (strncmp(format_type, "GAMMA_MSP", 9) == 0) {
+    asfPrintStatus("   Data format: %s\n", format_type);
+    import_gamma_msp(inBaseName, outBaseName);
+  }
+  else if (strncmp(format_type, "GAMMA_ISP", 9) == 0) {
+    asfPrintStatus("   Data format: %s\n", format_type);
+    import_gamma_isp(inBaseName, outBaseName);
+  }
   // Don't recognize this data format; report & quit
   else {
     asfPrintError("Unrecognized data format: '%s'\n",format_type);
