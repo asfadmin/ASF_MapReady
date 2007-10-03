@@ -127,6 +127,16 @@ static complexVector complex_vector_conj(complexVector v)
         complex_conj(v.B), complex_conj(v.C));
 }
 
+static complexVector complex_vector_normalize(complexVector v)
+{
+    complexVector ret;
+    double mag = complex_amp(v.A) + complex_amp(v.B) + complex_amp(v.C);
+    ret.A.real = v.A.real/mag;   ret.A.imag = v.A.imag/mag;
+    ret.B.real = v.B.real/mag;   ret.B.imag = v.B.imag/mag;
+    ret.C.real = v.C.real/mag;   ret.C.imag = v.C.imag/mag;
+    return ret;
+}
+
 static complexVector complex_vector_zero()
 {
     return complex_vector_new(complex_zero(), complex_zero(), complex_zero());
@@ -182,7 +192,7 @@ static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
 
     // nrows must be odd
     assert((self->nrows-1)%2==0);
-    self->current_row = -(nrows-1)/2;
+    self->current_row = -(nrows+1)/2;
 
     int ns = meta->general->sample_count;
 
@@ -222,14 +232,14 @@ static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
 static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
 {
     int ok=TRUE;
-    self->hh_amp_band = find_band(self->meta, "HH-AMP", &ok);
-    self->hh_phase_band = find_band(self->meta, "HH-PHASE", &ok);
-    self->hv_amp_band = find_band(self->meta, "HV-AMP", &ok);
-    self->hv_phase_band = find_band(self->meta, "HV-PHASE", &ok);
-    self->vh_amp_band = find_band(self->meta, "VH-AMP", &ok);
-    self->vh_phase_band = find_band(self->meta, "VH-PHASE", &ok);
-    self->vv_amp_band = find_band(self->meta, "VV-AMP", &ok);
-    self->vv_phase_band = find_band(self->meta, "VV-PHASE", &ok);
+    self->hh_amp_band = find_band(self->meta, "AMP-HH", &ok);
+    self->hh_phase_band = find_band(self->meta, "PHASE-HH", &ok);
+    self->hv_amp_band = find_band(self->meta, "AMP-HV", &ok);
+    self->hv_phase_band = find_band(self->meta, "PHASE-HV", &ok);
+    self->vh_amp_band = find_band(self->meta, "AMP-VH", &ok);
+    self->vh_phase_band = find_band(self->meta, "PHASE-VH", &ok);
+    self->vv_amp_band = find_band(self->meta, "AMP-VV", &ok);
+    self->vv_phase_band = find_band(self->meta, "PHASE-VV", &ok);
     return ok;
 }
 
@@ -240,10 +250,11 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
         quadPolFloat q = self->lines[n][j];
 
         // HH-VV, 2*HV, HH+VV
-        self->pauli_lines[n][j] = complex_vector_new(
-            complex_sub(q.hh, q.vv),
-            complex_scale(q.hv, 2),
-            complex_add(q.hh, q.vv));
+        self->pauli_lines[n][j] = complex_vector_normalize(
+	    complex_vector_new(
+                complex_sub(q.hh, q.vv),
+                complex_scale(q.hv, 2),
+                complex_add(q.hh, q.vv)));
     }
 }
 
@@ -307,22 +318,22 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
       get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
       for (k=0; k<ns; ++k)
-          self->lines[row][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+          self->lines[last][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
 
       get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
       for (k=0; k<ns; ++k)
-          self->lines[row][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+          self->lines[last][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
 
       get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
       for (k=0; k<ns; ++k)
-          self->lines[row][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+          self->lines[last][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
 
       get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
       get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
       for (k=0; k<ns; ++k)
-          self->lines[row][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+          self->lines[last][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
 
       calculate_pauli_for_row(self, last);
       calculate_coherence_for_row(self, last);
@@ -353,7 +364,14 @@ static void polarimetric_image_rows_free(PolarimetricImageRows* self)
     free(self->coh_buffer);
     free(self->coh_lines);
 
+    // do not free metadata pointer!
+
     free(self);
+}
+
+static double log3(double v)
+{
+    return log(v)/log(3.);
 }
 
 void polarimetric_decomp(const char *inFile, const char *outFile,
@@ -391,7 +409,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   int ok = polarimetric_image_rows_get_bands(img_rows);
 
   if (!ok)
-      asfPrintError("Not all required bands found -- is this quad-pole data?\n");
+      asfPrintError("Not all required bands found-- is this quad-pol data?\n");
 
   float *pauli_1 = MALLOC(sizeof(float)*ns);
   float *pauli_2 = MALLOC(sizeof(float)*ns);
@@ -401,17 +419,17 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   float *alpha = MALLOC(sizeof(float)*ns);
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
-  //   XX_amp_lines[0] = ALL ZEROS
-  //   XX_amp_lines[1] = ALL ZEROS
-  //   XX_amp_lines[2] = line 0 of the image
-  //   XX_amp_lines[3] = line 1 of the image
-  //   XX_amp_lines[4] = line 2 of the image
+  //   *lines[0] = ALL ZEROS
+  //   *lines[1] = ALL ZEROS
+  //   *lines[2] = line 0 of the image
+  //   *lines[3] = line 1 of the image
+  //   *lines[4] = line 2 of the image
   // next time through the loop:
-  //   XX_amp_lines[0] = ALL ZEROS
-  //   XX_amp_lines[1] = line 0 of the image
-  //   XX_amp_lines[2] = line 1 of the image
-  //   XX_amp_lines[3] = line 2 of the image
-  //   XX_amp_lines[4] = line 3 of the image
+  //   *lines[0] = ALL ZEROS
+  //   *lines[1] = line 0 of the image
+  //   *lines[2] = line 1 of the image
+  //   *lines[3] = line 2 of the image
+  //   *lines[4] = line 3 of the image
   // we don't actually move the data from line n to line n-1, we just move
   // the pointers.  initially, the pointers will match the buffer (as set
   // in the loop directly above), but the second time through the pointers
@@ -425,8 +443,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   assert(img_rows->current_row == 0);
 
   // size of the horizontal window, used for ensemble averaging
-  // actual window size is w*2+1
-  const int w = 2;
+  // actual window size is hw*2+1
+  const int hw = 2;
 
   gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
   gsl_vector *eval = gsl_vector_alloc(3);
@@ -450,64 +468,84 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       }
 
       // save the pauli bands in the output
-      if (pauli_1_band > 0)
+      if (pauli_1_band >= 0)
           put_band_float_line(fout, meta, pauli_1_band, i, pauli_1);
-      if (pauli_2_band > 0)
+      if (pauli_2_band >= 0)
           put_band_float_line(fout, meta, pauli_2_band, i, pauli_2);
-      if (pauli_3_band > 0)
+      if (pauli_3_band >= 0)
           put_band_float_line(fout, meta, pauli_3_band, i, pauli_3);
 
-      // now coherence -- do averaging for each element
-      for (j=0; j<ns; ++j) {          
-          int ii,jj,m;
-          for (ii=0; ii<3; ++ii) {
-              for (jj=0; jj<3; ++jj) {
-                  gsl_complex c = gsl_complex_rect(0,0);
-                  int k,n=0;
-                  for (m=0; m<chunk_size; ++m) {
-                      for (k=-w;k<=w;++k) {
-                          if (k>0 && k<ns && i>l && i<ns-l) {
-                              ++n;
-                              complexFloat f =
-                                  img_rows->coh_lines[m][k]->coeff[ii][jj];
-                              // cheat for speed
-                              c.dat[0] += f.real; c.dat[1] += f.imag;
+      if (alpha_band >= 0 || entropy_band >= 0 || anisotropy_band >= 0)
+      {
+          // coherence -- do ensemble averaging for each element
+          for (j=0; j<ns; ++j) {          
+              int ii,jj,m;
+              for (ii=0; ii<3; ++ii) {
+                  for (jj=0; jj<3; ++jj) {
+                      gsl_complex c = gsl_complex_rect(0,0);
+                      int k,n=0;
+                      for (m=0; m<chunk_size; ++m) {
+                          for (k=j-hw;k<=j+hw;++k) {
+                              if (k>=0 && k<ns && m+i>l && m+i<nl-l) {
+                                  ++n;
+                                  complexFloat f =
+                                    img_rows->coh_lines[m][k]->coeff[ii][jj];
+                                  // cheat for speed
+                                  c.dat[0] += f.real;
+                                  c.dat[1] += f.imag;
+                              }
                           }
                       }
+                      if (n>0) {
+                          c.dat[0] /= (float)n;
+                          c.dat[1] /= (float)n;
+                      }
+                      gsl_matrix_complex_set(T,ii,jj,c);
                   }
-                  c.dat[0] /= (float)n;
-                  c.dat[1] /= (float)n;
-                  gsl_matrix_complex_set(T,ii,jj,c);
               }
+
+              gsl_eigen_hermv(T, eval, evec, ws);
+              gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
+
+              double e1 = gsl_vector_get(eval, 0);
+              double e2 = gsl_vector_get(eval, 1);
+              double e3 = gsl_vector_get(eval, 2);
+
+              double eT = e1+e2+e3;
+
+              double P1 = e1/eT;
+              double P2 = e2/eT;
+              double P3 = e3/eT;
+
+              double P1l3 = log3(P1);
+              double P2l3 = log3(P2);
+              double P3l3 = log3(P3);
+
+              // If a Pn value is small enough, the log value will be NaN.
+              // In this case, the value of -Pn*log3(Pn) is supposed to be
+              // zero - we have to force it.
+              entropy[j] = 
+                  meta_is_valid_double(P1l3) ? -P1*P1l3 : 0 +
+                  meta_is_valid_double(P2l3) ? -P2*P2l3 : 0 +
+                  meta_is_valid_double(P3l3) ? -P3*P3l3 : 0;
+
+              anisotropy[j] = (e2-e3)/(e2+e3);
           }
-
-          gsl_eigen_hermv(T, eval, evec, ws);
-          gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
-
-          double e1 = gsl_vector_get(eval, 0);
-          double e2 = gsl_vector_get(eval, 1);
-          double e3 = gsl_vector_get(eval, 2);
-          double eT = e1+e2+e3;
-          double P1 = e1/eT;
-          double P2 = e2/eT;
-          double P3 = e3/eT;
-
-          entropy[j] = -P1*log(P1) - P2*log(P2) - P3*log(P3);
-          anisotropy[j] = (e2-e3)/(e2+e3);
       }
 
-      // alpha
+      // alpha: arccos of the 1st pauli vector element
       for (j=0; j<ns; ++j) {
-          alpha[j] = acos(pauli_1[j] / 
-              sqrt(pauli_1[j]*pauli_1[j] + pauli_2[j]*pauli_2[j] +
-                  pauli_3[j]*pauli_3[j]));
+          alpha[j] = acos(pauli_1[j]);
+          //alpha[j] = acos(pauli_1[j] / 
+          //      sqrt(pauli_1[j]*pauli_1[j] + pauli_2[j]*pauli_2[j] +
+          //          pauli_3[j]*pauli_3[j]));
       }
 
-      if (entropy_band > 0)
+      if (entropy_band >= 0)
           put_band_float_line(fout, meta, entropy_band, i, entropy);
-      if (anisotropy_band > 0)
+      if (anisotropy_band >= 0)
           put_band_float_line(fout, meta, anisotropy_band, i, anisotropy);
-      if (alpha_band > 0)
+      if (alpha_band >= 0)
           put_band_float_line(fout, meta, alpha_band, i, alpha);
 
       // load the next row, if there are still more to go
@@ -515,6 +553,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           polarimetric_image_rows_load_next_row(img_rows, fin);
           assert(img_rows->current_row == i+1);
       }
+
+      asfLineMeter(i,nl);
   }
 
   gsl_vector_free(eval);
@@ -537,5 +577,40 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   free(out_img_name);
   free(in_img_name);
   free(meta_name);
+
+  // output metadata differs from input only in the number
+  // of bands, and the band names
+  char *out_meta_name = appendExt(outFile, ".meta");
+  int nBands =
+      pauli_1_band>=0 + pauli_2_band>=0 + pauli_3_band>=0 +
+      entropy_band>=0 + anisotropy_band>=0 + alpha_band>=0;
+
+  char bands[255];
+  strcpy(bands, "");
+
+  for (i=0; i<6; ++i) {
+      if (pauli_1_band == i)
+          strcat(bands, "PAULI1,");
+      else if (pauli_2_band == i)
+          strcat(bands, "PAULI2,");
+      else if (pauli_3_band == i)
+          strcat(bands, "PAULI3,");
+      else if (entropy_band == i)
+          strcat(bands, "ENTROPY,");
+      else if (anisotropy_band == i)
+          strcat(bands, "ANISOTROPY,");
+      else if (alpha_band == i)
+          strcat(bands, "ALPHA,");
+      else
+          break;
+  }
+  if (strlen(bands) > 0) // chop last comma
+      bands[strlen(bands)-1] = '\0';
+
+  meta->general->band_count = nBands;
+  strcpy(meta->general->bands, bands);
+
+  meta_write(meta, out_meta_name);
   meta_free(meta);
+  free(out_meta_name);
 }
