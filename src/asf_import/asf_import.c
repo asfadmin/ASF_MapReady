@@ -65,7 +65,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'gamma', 'geotiff', 'airsar' and 'gamma_isp'.\n"\
+"        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', and 'airsar'.\n"\
 "        'CEOS' is the default behavior.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
