@@ -411,12 +411,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (!ok)
       asfPrintError("Not all required bands found-- is this quad-pol data?\n");
 
-  float *pauli_1 = MALLOC(sizeof(float)*ns);
-  float *pauli_2 = MALLOC(sizeof(float)*ns);
-  float *pauli_3 = MALLOC(sizeof(float)*ns);
+  float *buf = MALLOC(sizeof(float)*ns);
   float *entropy = MALLOC(sizeof(float)*ns);
   float *anisotropy = MALLOC(sizeof(float)*ns);
-  float *alpha = MALLOC(sizeof(float)*ns);
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
   //   *lines[0] = ALL ZEROS
@@ -460,22 +457,25 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       const int l = (chunk_size-1)/2;
 
       // calculate the pauli output (magnitude of already-calculated
-      // complex pauli basis elements)
-      for (j=0; j<ns; ++j) {
-          pauli_1[j] = complex_amp(img_rows->pauli_lines[l][j].A);
-          pauli_2[j] = complex_amp(img_rows->pauli_lines[l][j].B);
-          pauli_3[j] = complex_amp(img_rows->pauli_lines[l][j].C);
+      // complex pauli basis elements), and save the requested pauli
+      // bands in the output
+      if (pauli_1_band >= 0) {
+          for (j=0; j<ns; ++j)
+              buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
+          put_band_float_line(fout, meta, pauli_1_band, i, buf);
+      }
+      if (pauli_2_band >= 0) {
+          for (j=0; j<ns; ++j)
+              buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
+          put_band_float_line(fout, meta, pauli_2_band, i, buf);
+      }
+      if (pauli_3_band >= 0) {
+          for (j=0; j<ns; ++j)
+              buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
+          put_band_float_line(fout, meta, pauli_3_band, i, buf);
       }
 
-      // save the pauli bands in the output
-      if (pauli_1_band >= 0)
-          put_band_float_line(fout, meta, pauli_1_band, i, pauli_1);
-      if (pauli_2_band >= 0)
-          put_band_float_line(fout, meta, pauli_2_band, i, pauli_2);
-      if (pauli_3_band >= 0)
-          put_band_float_line(fout, meta, pauli_3_band, i, pauli_3);
-
-      if (alpha_band >= 0 || entropy_band >= 0 || anisotropy_band >= 0)
+      if (entropy_band >= 0 || anisotropy_band >= 0)
       {
           // coherence -- do ensemble averaging for each element
           for (j=0; j<ns; ++j) {          
@@ -531,22 +531,19 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
               anisotropy[j] = (e2-e3)/(e2+e3);
           }
+
+          if (entropy_band >= 0)
+              put_band_float_line(fout, meta, entropy_band, i, entropy);
+          if (anisotropy_band >= 0)
+              put_band_float_line(fout, meta, anisotropy_band, i, anisotropy);
       }
 
-      // alpha: arccos of the 1st pauli vector element
-      for (j=0; j<ns; ++j) {
-          alpha[j] = acos(pauli_1[j]);
-          //alpha[j] = acos(pauli_1[j] / 
-          //      sqrt(pauli_1[j]*pauli_1[j] + pauli_2[j]*pauli_2[j] +
-          //          pauli_3[j]*pauli_3[j]));
+      if (alpha_band >= 0) {
+          // alpha: arccos of the 1st pauli vector element
+          for (j=0; j<ns; ++j)
+              buf[j] = acos(complex_amp(img_rows->pauli_lines[l][j].A));
+          put_band_float_line(fout, meta, alpha_band, i, buf);
       }
-
-      if (entropy_band >= 0)
-          put_band_float_line(fout, meta, entropy_band, i, entropy);
-      if (anisotropy_band >= 0)
-          put_band_float_line(fout, meta, anisotropy_band, i, anisotropy);
-      if (alpha_band >= 0)
-          put_band_float_line(fout, meta, alpha_band, i, alpha);
 
       // load the next row, if there are still more to go
       if (i<nl-1) {
@@ -567,12 +564,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   fclose(fin);
   fclose(fout);
 
-  free(pauli_1);
-  free(pauli_2);
-  free(pauli_3);
+  free(buf);
   free(entropy);
   free(anisotropy);
-  free(alpha);
 
   free(out_img_name);
   free(in_img_name);
