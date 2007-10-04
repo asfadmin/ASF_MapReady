@@ -133,7 +133,8 @@ all: asf_meta
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
-	cp asf_meta.h get_ceos_names.h get_stf_names.h $(ASF_INCLUDE_DIR)
+	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h \
+		$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
 	rm -f asf_meta.a
