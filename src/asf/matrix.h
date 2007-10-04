@@ -16,7 +16,7 @@ void matrix_free(matrix *doomed);
 void matrix_print(matrix *this,const char *message,FILE *stream);
 
 /*Matrix multiplication*/
-void matrix_multiply(matrix *result, matrix *a, matrix *b);
+void matrix_mult(matrix *result, matrix *a, matrix *b);
 
 /*Row operations: Swap rows A and B.*/
 void matrix_rowSwap(matrix *this,int A,int B);

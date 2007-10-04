@@ -143,7 +143,7 @@ void airsar_to_latlon(meta_parameters *meta,
         o2 = re*cos(lat_peg)*sin(lon_peg)-ra*cos(lat_peg)*sin(lon_peg);
         o3 = re*(1-e2)*sin(lat_peg)-ra*sin(lat_peg);
 
-        matrix_multiply(m,m1,m2);
+        matrix_mult(m,m1,m2);
         matrix_free(m1);
         matrix_free(m2);
     }

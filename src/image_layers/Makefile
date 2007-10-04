@@ -12,8 +12,7 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf.a \
 	-lm
 
-OBJS  = least_squares.o \
-	matrix.o
+OBJS  = least_squares.o
 
 all: image_layers clean
 

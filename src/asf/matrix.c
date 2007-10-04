@@ -45,7 +45,7 @@ void matrix_free(matrix *doomed)
 	FREE(doomed);
 }
 
-void matrix_multiply(matrix *result, matrix *a, matrix *b)
+void matrix_mult(matrix *result, matrix *a, matrix *b)
 {
    int i, j, k;
    double sum;

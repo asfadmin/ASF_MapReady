@@ -12,7 +12,6 @@ LIBS  = $(LIBDIR)/asf_meta.a \
 	-lm
 
 OBJS  = least_squares.o \
-	matrix.o \
 	meta_util.o \
 	plot.o \
 	utilities.o
