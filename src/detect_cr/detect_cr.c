@@ -200,9 +200,7 @@ int main(int argc, char *argv[])
   float dx_pix, dy_pix, dx_m, dy_m, max_dx_pix, max_dy_pix;
   double lat, lon, elev, posX, posY, magnitude;
   FILE *fpIn, *fpOut;
-  meta_parameters *meta, *metaChip;
-  project_parameters_t pps;
-  projection_type_t proj_type;
+  meta_parameters *meta;
   flag_indices_t flags[NUM_FLAGS];
 
   /* Set all flags to 'not set' */
@@ -437,6 +435,7 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
   meta_parameters *meta, *metaChip, *metaText;
   project_parameters_t pps;
   projection_type_t proj_type;
+  datum_type_t datum;
   static float *s=NULL;
   float max=-10000000.0;
   char szChip[255], szText[255], szChipGeo[255];
@@ -507,12 +506,8 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
     s = NULL;
     sprintf(szChipGeo, "%s_geo", chip);
     metaChip = meta_read(chip);
-    parse_proj_args_file(projFile, &pps, &proj_type);
-    // Note: Datum hardwired in here. Might want to consider to pass the entire
-    // projection block into the function. Projection parameter files include
-    // information about datum and spheroid. Certainly required for datum 
-    // conversions.
-    asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, WGS84_DATUM,
+    parse_proj_args_file(projFile, &pps, &proj_type, &datum);
+    asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, datum,
 		 metaChip->general->x_pixel_size, NULL, chip, szChipGeo, 0.0);
     meta = meta_read(szChipGeo);
     lines = meta->general->line_count;
@@ -526,6 +521,7 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
   }
 
   /* Search for the amplitude peak */
+  bestX=bestY=0;
   for (ii=0; ii<lines; ii++)
     for (kk=0; kk<samples; kk++)
       if (s[ii*samples+kk] > max) {
