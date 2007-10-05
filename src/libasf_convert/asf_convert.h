@@ -55,6 +55,15 @@ typedef struct
 
 typedef struct
 {
+  int dem;                // should we ingest the airsar DEM?
+  int coh;                // should we ingest the airsar coherence image?
+  int c_band;             // should we ingest the airsar C-band image?
+  int l_band;             // should we ingest the airsar L-band image?
+  int p_band;             // should we ingest the airsar P-band image?
+} s_airsar;
+
+typedef struct
+{
   char *radiometry;       // data type: AMPLITUDE_IMAGE,
                           // POWER_IMAGE,
                           // SIGMA_IMAGE,
@@ -130,6 +139,7 @@ typedef struct
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
+  s_airsar *airsar;                    // airsar processing parameters
   s_sar_processing *sar_processing;    // SAR processing parameters
   s_c2p *c2p;                          // complex -> polar parameters
   s_image_stats *image_stats;          // image stats parameters

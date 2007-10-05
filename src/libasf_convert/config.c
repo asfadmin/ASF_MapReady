@@ -256,6 +256,9 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->import->prc);
             FREE(cfg->import);
         }
+        if (cfg->airsar) {
+            FREE(cfg->airsar);
+        }
         if (cfg->sar_processing) {
             FREE(cfg->sar_processing->radiometry);
             FREE(cfg->sar_processing);
@@ -308,6 +311,7 @@ convert_config *init_fill_convert_config(char *configFile)
   convert_config *cfg = newStruct(convert_config);
   cfg->general = newStruct(s_general);
   cfg->import = newStruct(s_import);
+  cfg->airsar = newStruct(s_airsar);
   cfg->sar_processing = newStruct(s_sar_processing);
   cfg->c2p = newStruct(s_c2p);
   cfg->image_stats = newStruct(s_image_stats);
@@ -366,6 +370,12 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->output_db = 0;
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
+
+  cfg->airsar->dem = 0;
+  cfg->airsar->coh = 0;
+  cfg->airsar->c_band = 0;
+  cfg->airsar->l_band = 0;
+  cfg->airsar->p_band = 0;
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
@@ -500,6 +510,17 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+      // AirSAR
+      if (strncmp(test, "airsar dem", 10)==0)
+        cfg->airsar->dem = read_int(line, "airsar dem");
+      if (strncmp(test, "airsar coherence", 16)==0)
+        cfg->airsar->coh = read_int(line, "airsar coherence");
+      if (strncmp(test, "airsar c-band", 13)==0)
+        cfg->airsar->c_band = read_int(line, "airsar c-band");
+      if (strncmp(test, "airsar l-band", 13)==0)
+        cfg->airsar->l_band = read_int(line, "airsar l-band");
+      if (strncmp(test, "airsar p-band", 13)==0)
+        cfg->airsar->p_band = read_int(line, "airsar p-band");
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
@@ -737,6 +758,22 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+      FREE(test);
+    }
+
+    if (strncmp(line, "[AirSAR]", 8)==0) strcpy(params, "AirSAR");
+    if (strncmp(params, "AirSAR", 6)==0) {
+      test = read_param(line);
+      if (strncmp(test, "airsar dem", 10)==0)
+        cfg->airsar->dem = read_int(line, "airsar dem");
+      if (strncmp(test, "airsar coherence", 16)==0)
+        cfg->airsar->coh = read_int(line, "airsar coherence");
+      if (strncmp(test, "airsar c-band", 13)==0)
+        cfg->airsar->c_band = read_int(line, "airsar c-band");
+      if (strncmp(test, "airsar l-band", 13)==0)
+        cfg->airsar->l_band = read_int(line, "airsar l-band");
+      if (strncmp(test, "airsar p-band", 13)==0)
+        cfg->airsar->p_band = read_int(line, "airsar p-band");
       FREE(test);
     }
 
@@ -1014,9 +1051,10 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->import) {
       fprintf(fConfig, "\n\n[Import]\n");
       if (!shortFlag)
-        fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS and STF.\n"
-                "# Defining ASF, being the internal format, as the import format is\n"
-                "# just another way of actually skipping the import step.\n\n");
+        fprintf(fConfig, "\n# The recognized import formats are: ASF, CEOS, AirSAR, and\n"
+                "# STF.  Defining ASF, being the internal format, as the import format is\n"
+                "# just another way of actually skipping the import step.  For AirSAR,\n"
+                "# you can configure which products are processed with the AirSAR block.\n\n");
       fprintf(fConfig, "format = %s\n", cfg->import->format);
       if (!shortFlag)
         fprintf(fConfig, "\n# The radiometry can be one of the following: AMPLITUDE_IMAGE,\n"
@@ -1061,6 +1099,28 @@ int write_convert_config(char *configFile, convert_config *cfg)
 	      "look complex data that is stored as amplitude/phase is being\n"
 	      "# multilooked.\n\n");
     fprintf(fConfig, "multilook SLC = %d\n\n", cfg->import->multilook_slc);
+
+    // AirSAR -- only write out if the import format is AirSAR
+    if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {
+      fprintf(fConfig, "\n\n[AirSAR]\n");
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Flag indicating that the AirSAR DEM should be imported.\n\n");
+      fprintf(fConfig, "airsar dem = %d\n", cfg->airsar->dem);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Flag indicating that the AirSAR coherence image should be\n"
+                "# imported.\n\n");
+      fprintf(fConfig, "airsar coherence = %d\n", cfg->airsar->coh);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Flag indicating that the AirSAR C-band image should be imported.\n\n");
+      fprintf(fConfig, "airsar c-band = %d\n", cfg->airsar->c_band);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Flag indicating that the AirSAR L-band image should be imported.\n\n");
+      fprintf(fConfig, "airsar l-band = %d\n", cfg->airsar->l_band);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Flag indicating that the AirSAR P-band image should be imported.\n\n");
+      fprintf(fConfig, "airsar p-band = %d\n\n", cfg->airsar->p_band);
+    }
+
     // SAR processing
     if (cfg->general->sar_processing) {
       fprintf(fConfig, "\n[SAR processing]\n");

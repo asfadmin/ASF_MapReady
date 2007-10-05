@@ -139,7 +139,9 @@ char *appendExt(const char *name, const char *newExt)
 
 char * appendToBasename(const char *inFile, const char *suffix)
 {
-  char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix)+5));
+  /* adding a lot of padding here... sometimes returned values get
+     passed to append_ext_if_needed()... */
+  char *ret = MALLOC(sizeof(char)*(strlen(inFile)+strlen(suffix)+20));
   strcpy(ret, inFile);
 
   /* find the extension */

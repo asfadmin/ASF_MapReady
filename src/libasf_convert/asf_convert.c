@@ -125,6 +125,23 @@ static int has_tiff_ext(const char *f)
         return FALSE;
 }
 
+static output_format_t get_format(convert_config *cfg)
+{
+  output_format_t format = JPEG;
+  if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
+    format = TIF;
+  } else if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
+    format = GEOTIFF;
+  } else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0) {
+    format = JPEG;
+  } else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0) {
+    format = PGM;
+  } else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0) {
+    format = PNG;
+  }
+  return format;
+}
+
 static char *
 convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
              int save_converted)
@@ -239,10 +256,120 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     return STRDUP(geocoded);
 }
 
+static int geocode_airsar(convert_config *cfg, const char *projection_file,
+                          int force_flag, resample_method_t resample_method,
+                          double average_height, datum_type_t datum, double pixel_size,
+                          char *band_id, char *inFile, char *outFile,
+                          float background_val)
+{
+    asfPrintStatus("\nGeocoding AirSAR products...\n");
+    if (cfg->airsar->dem)
+    {
+        update_status("Geocoding DEM...");
+        char *in_tmp = appendToBasename(inFile, "_c_dem");
+        char *out_tmp = appendToBasename(outFile, "_c_dem");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                in_tmp, out_tmp, background_val),
+              "geocoding dem (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR DEM.\n");
+    }
+
+    if (cfg->airsar->coh) {
+        update_status("Geocoding Coherence Image...");
+        char *in_tmp = appendToBasename(inFile, "_c_coh");
+        char *out_tmp = appendToBasename(outFile, "_c_coh");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                in_tmp, out_tmp, background_val),
+              "geocoding coherence (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR coherence image.\n");
+    }
+
+    if (cfg->airsar->c_band) {
+        update_status("Geocoding C-band...");
+        char *in_tmp = appendToBasename(inFile, "_c_vv");
+        char *out_tmp = appendToBasename(outFile, "_c_vv");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                in_tmp, out_tmp, background_val),
+              "geocoding C-band (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR C-band image.\n");
+    }
+
+    if (cfg->airsar->p_band) {
+        update_status("Geocoding P-band...");
+        char *in_tmp = appendToBasename(inFile, "_p");
+        char *out_tmp = appendToBasename(outFile, "_p");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                in_tmp, out_tmp, background_val),
+              "geocoding P-band (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR P-band image.\n");
+    }
+
+    if (cfg->airsar->l_band) {
+        update_status("Geocoding L-band...");
+        char *in_tmp = appendToBasename(inFile, "_l");
+        char *out_tmp = appendToBasename(outFile, "_l");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                in_tmp, out_tmp, background_val),
+              "geocoding L-band (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR L-band image.\n");
+    }
+
+    return 0; // success
+}
+
+static int check_airsar(char *outFile, char *suffix)
+{
+  char *base = appendToBasename(outFile, suffix);
+  
+  char *full_img = appendExt(base, ".img");
+  char *full_meta = appendExt(base, ".meta");
+  
+  int ret = fileExists(full_img) && fileExists(full_meta);
+  
+  free(full_img);
+  free(full_meta);
+  free(base);
+  
+  return ret;
+}
+
+static void do_export(convert_config *cfg, char *inFile, char *outFile);
+
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 {
   convert_config *cfg;
   char inFile[255], outFile[255];
+  int is_airsar=0;
 
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
@@ -453,10 +580,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
           strncmp(uc(cfg->import->format), "STF", 3) != 0 &&
-          //strncmp(uc(cfg->import->format), "AIRSAR", 6) != 0 &&
+          strncmp(uc(cfg->import->format), "AIRSAR", 6) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Chosen import format not supported\n");
       }
+
+      is_airsar = strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0;
 
       // Radiometry
       if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) != 0 &&
@@ -484,6 +613,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintError("When using Sigma, Beta, or Gamma radiometry and "
                         "applying terrain correction,\nyou should output "
                         "in dB.\n");
+      }
+
+      // When importing AirSAR data, don't allow terrain correction
+      if (is_airsar && cfg->general->terrain_correct) {
+        asfPrintError("Terrain correction of AirSAR data is not supported.\n");
       }
 
       // Precision state vector file check can only be done
@@ -773,32 +907,62 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               NULL, NULL, NULL, NULL,
                               cfg->general->in_name, outFile),
                    "ingesting data file (asf_import)\n");
+
+      // For AirSAR data, let's see what we actually got.
+      // Not all products are always present - update settings to
+      // disable processing of products not present
+      if (is_airsar) {
+        if (cfg->airsar->l_band && !check_airsar(outFile, "_l")) {
+          asfPrintStatus("No L-band AirSAR product present.\n");
+          cfg->airsar->l_band = 0;
+        }
+        if (cfg->airsar->p_band && !check_airsar(outFile, "_p")) {
+          asfPrintStatus("No P-band AirSAR product present.\n");
+          cfg->airsar->p_band = 0;
+        }
+        if (cfg->airsar->c_band && !check_airsar(outFile, "_c_vv")) {
+          asfPrintStatus("No C-band AirSAR product present.\n");
+          cfg->airsar->c_band = 0;
+        }
+        if (cfg->airsar->dem && !check_airsar(outFile, "_c_dem")) {
+          asfPrintStatus("No DEM AirSAR product present.\n");
+          cfg->airsar->dem = 0;
+        }
+        if (cfg->airsar->coh && !check_airsar(outFile, "_c_coh")) {
+          asfPrintStatus("No Coherence AirSAR product present.\n");
+          cfg->airsar->coh = 0;
+        }
+      }
     }
-    // Make sure truecolor/falsecolor are only specified for optical data
-    strcpy(inFile, cfg->general->in_name);
-    meta_parameters *meta = meta_read(inFile);
-    if (!meta->optical && (truecolor || falsecolor)) {
-      asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
+
+    if (!is_airsar) {
+      // Make sure truecolor/falsecolor are only specified for optical data
+      strcpy(inFile, cfg->general->in_name);
+      meta_parameters *meta = meta_read(inFile);
+      if (!meta->optical && (truecolor || falsecolor)) {
+        asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
+      }
+      if (cfg->export->band &&
+          strlen(cfg->export->band) > 0 &&
+          get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0)
+      {
+        asfPrintError("Selected export band (%s) does not exist: \n"
+                      "   Imported file: %s.img\n"
+                      " Available bands: %s\n",
+                      cfg->export->band, cfg->general->in_name, meta->general->bands);
+      }
+      meta_free(meta);
     }
-    if (cfg->export->band &&
-        strlen(cfg->export->band) > 0 &&
-        get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0)
-    {
-      asfPrintError("Selected export band (%s) does not exist: \n"
-          "   Imported file: %s.img\n"
-          " Available bands: %s\n",
-                    cfg->export->band, cfg->general->in_name, meta->general->bands);
-    }
-    meta_free(meta);
 
     if (cfg->general->sar_processing) {
-      meta_parameters *meta;
+      if (is_airsar)
+        asfPrintError("Cannot perform SAR Processing on AirSAR data.\n");
 
       update_status("Running ArDop...");
 
       // Check whether the input file is a raw image.
       // If not, skip the SAR processing step
-      meta = meta_read(outFile);
+      meta_parameters *meta = meta_read(outFile);
       if (meta->general->image_data_type == RAW_IMAGE) {
 
           sprintf(inFile, "%s", outFile);
@@ -1049,7 +1213,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         resample_method = RESAMPLE_BICUBIC;
       }
       // Pass in command line
-      //sprintf(inFile, "%s", outFile);
+      if (is_airsar)
+        sprintf(inFile, "%s", outFile);
       if (cfg->general->export) {
         sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
       }
@@ -1060,224 +1225,171 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 cfg->general->suffix);
       }
 
-      check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                                              force_flag, resample_method,
-                                              average_height, datum,
-                                              pixel_size, NULL, inFile, outFile,
-                                              background_val),
-                   "geocoding data file (asf_geocode)\n");
+      if (is_airsar) {
+        // airsar -- geocode only what was asked for
+        check_return(geocode_airsar(cfg, cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum, pixel_size, NULL,
+                inFile, outFile, background_val),
+              "geocoding airsar (asf_geocode)\n");
 
-      // Move the .meta file to be ready for export
-      //   ... I don't think we need this now ??  causes problems if
-      //       input file is on a read-only filesystem.
-      //copy_meta(outFile, cfg->general->in_name);
+      } else {
+        // normal geocoding
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                                                force_flag, resample_method,
+                                                average_height, datum,
+                                                pixel_size, NULL, inFile, outFile,
+                                                background_val),
+                   "geocoding data file (asf_geocode)\n");
+      }
     }
 
-    output_format_t format = JPEG;
-
     if (cfg->general->export) {
-      int true_color = cfg->export->truecolor == 0 ? 0 : 1;
-      int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
 
-      scale_t scale = SIGMA;
-      update_status("Exporting...");
-
-      // Format
-      if (strncmp(uc(cfg->export->format), "TIFF", 4) == 0) {
-        format = TIF;
-      } else if (strncmp(uc(cfg->export->format), "GEOTIFF", 7) == 0) {
-        format = GEOTIFF;
-      } else if (strncmp(uc(cfg->export->format), "JPEG", 4) == 0) {
-        format = JPEG;
-      } else if (strncmp(uc(cfg->export->format), "PGM", 3) == 0) {
-        format = PGM;
-      } else if (strncmp(uc(cfg->export->format), "PNG", 3) == 0) {
-        format = PNG;
-      }
-
-      // Byte scaling
-      if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
-        scale = TRUNCATE;
-      } else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0) {
-        scale = MINMAX;
-      } else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0) {
-        scale = SIGMA;
-      } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
-        scale = HISTOGRAM_EQUALIZE;
-      } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
-        scale = NONE;
-      }
-
-      // Pass in command line
+      // Set up filenames
       sprintf(inFile, "%s", outFile);
       sprintf(outFile, "%s", cfg->general->out_name);
 
-      // Move the .meta file out of temporary status
-      // Don't need to do this if we skipped import, we'd already have .meta
-      if (cfg->general->import)
-          copy_meta(inFile, outFile);
-
-      if (strlen(cfg->export->rgb) > 0) {
-          // user has requested banding
-          char *red,  *green, *blue;
-          if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
-              int num_found;
-              char **bands = find_bands(inFile, TRUE, red, green, blue,
-                                        &num_found);
-              if (num_found > 0) {
-                asfPrintStatus("\nExporting RGB bands into single color file:\n"
-                    "Red band  : %s\n"
-                    "Green band: %s\n"
-                    "Blue band : %s\n\n",
-                              red, green, blue);
-    check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
-                                                inFile, outFile, bands),
-                               "export data file (asf_export), banded.\n");
-                  int i;
-                  for (i = 0; i<num_found; i++) {
-                    FREE(bands[i]);
-                  }
-                  FREE(bands);
-              } else {
-                  asfPrintError("The requested bands (%s) "
-                                "were not available in the file: %s\n",
-                                cfg->export->rgb, inFile);
-                  strcpy(cfg->export->rgb, "");
-              }
-              FREE(red); FREE(green); FREE(blue);
-          } else {
-              asfPrintError("Invalid listing of RGB bands: %s\n",
-                            cfg->export->rgb);
-              strcpy(cfg->export->rgb, "");
-          }
-      }
-
-      if (strlen(cfg->export->rgb) == 0)
+      if (!is_airsar)
       {
-        meta_parameters *meta = meta_read(inFile);
-        if (cfg->export->pauli || cfg->export->sinclair) {
-            asfPrintStatus("\nExporting %s-decomposition file...\n\n\n",
-                           pauli ? "Pauli" : sinclair ? "Sinclair" : "Unknown");
-          if (strstr(meta->general->bands, "HH") == NULL ||
-              strstr(meta->general->bands, "VV") == NULL ||
-              strstr(meta->general->bands, "VH") == NULL ||
-              strstr(meta->general->bands, "VV") == NULL)
-          {
-            asfPrintError("Imported file does not contain required bands\n"
-                "necessary for pauli or sinclair output (HH, VV, HV, VH)\n");
-          }
-          char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-          if (meta->general->band_count >= 4 && bands != NULL) {
-            check_return(asf_export_bands(format, SIGMA, TRUE,
-                        0, 0, pauli, sinclair, NULL,
-                        inFile, outFile, bands),
-            "exporting data file (asf_export), color banded.\n");
-            int i;
-            for (i=0; i < meta->general->band_count; i++) {
-              FREE (bands[i]);
-            }
-            FREE(bands);
-          }
-          else {
-            asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
-                          inFile);
-          }
-        }
-        else if (meta->optical && (true_color || false_color)) {
-          // Multi-band optical data, exporting as true or false color single file
-          asfPrintStatus("\nExporting %s file...\n\n\n",
-                         true_color ? "True Color" : false_color ? "False Color" : "Unknown");
-          if (true_color &&
-              (strstr(meta->general->bands, "01") == NULL ||
-               strstr(meta->general->bands, "02") == NULL ||
-               strstr(meta->general->bands, "03") == NULL)
-             )
-          {
-            asfPrintError("Imported file does not contain required color bands\n"
-                "necessary for true color output (03, 02, 01)\n");
-          }
-          if (false_color &&
-              (strstr(meta->general->bands, "02") == NULL ||
-               strstr(meta->general->bands, "03") == NULL ||
-               strstr(meta->general->bands, "04") == NULL)
-             )
-          {
-            asfPrintError("Imported file does not contain required color bands\n"
-                "necessary for false color output (04, 03, 02)\n");
-          }
-          if (scale != NONE) {
-            asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
-                "True Color or False Color output was selected, the byte conversion\n"
-                "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
-          }
-          char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-          if (meta->general->band_count >= 4 && bands != NULL) {
-            // The imported file IS a multiband file with enough bands,
-            // but the extract bands need to be ordered correctly
-            if (true_color) {
-              strcpy(bands[0], "03");
-              strcpy(bands[1], "02");
-              strcpy(bands[2], "01");
-              strcpy(bands[3], "");
-            }
-            else {
-              strcpy(bands[0], "04");
-              strcpy(bands[1], "03");
-              strcpy(bands[2], "02");
-              strcpy(bands[3], "");
-            }
-            check_return(asf_export_bands(format, NONE, TRUE,
-                        true_color, false_color, 0, 0, NULL,
-                        inFile, outFile, bands),
-            "exporting data file (asf_export), color banded.\n");
-            int i;
-            for (i=0; i < meta->general->band_count; i++) {
-              FREE (bands[i]);
-            }
-            FREE(bands);
-          }
-          else {
-            asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
-                          inFile);
-          }
+        // Do normal export
+        do_export(cfg, inFile, outFile);
+      }
+      else
+      {
+        // AirSAR export -- must export a bunch of different stuff
+
+        // do multi-band stuff first
+        asfPrintStatus("\nExporting AirSAR products...\n");
+        if (cfg->airsar->p_band) {
+          update_status("Exporting P-band...");
+          char *in_tmp = appendToBasename(inFile, "_p");
+          char *out_tmp = appendToBasename(outFile, "_p");
+          
+          asfPrintStatus("Exporting P-band: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
         }
         else {
-          if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
-              // multi-band, exporting as separate greyscale files
-              asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
-                             meta->general->band_count);
-              check_return(asf_export_bands(format, scale, FALSE,
-                                            0, 0, 0, 0, NULL,
-                                            inFile, outFile, NULL),
-                           "exporting data file (asf_export), greyscale bands.\n");
-          }
-          else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
-            // multi-band, exporting single band in one greyscale file
-            asfPrintStatus("\nExporting band \"%s\" in a single greyscale file...\n",
-                           cfg->export->band);
-            int num_bands_found = 0;
-            char **band_names = find_single_band(inFile, cfg->export->band,
-                                                &num_bands_found);
-            if (num_bands_found != 1) {
-              asfPrintError("Selected band for export not found.\n");
-            }
-            check_return(asf_export_bands(format, scale, FALSE,
-                         0, 0, 0, 0, NULL,
-                         inFile, outFile, band_names),
-            "exporting data file (asf_export), single selected greyscale band.\n");
-            if (*band_names) FREE(*band_names);
-            if (band_names) FREE(band_names);
-          }
-          else {
-              // single band
-              check_return(asf_export(format, scale, inFile, outFile),
-                           "exporting data file (asf_export), single band.\n");
-          }
+          asfPrintStatus("Skipping export of AirSAR P-band data.\n");
         }
-        meta_free(meta);
+
+        if (cfg->airsar->l_band) {
+          update_status("Exporting L-band...");
+          char *in_tmp = appendToBasename(inFile, "_l");
+          char *out_tmp = appendToBasename(outFile, "_l");
+          
+          asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+        }
+        else {
+          asfPrintStatus("Skipping export of AirSAR L-band data.\n");
+        }
+
+
+        // those were the two multi-band images -- the rest are single.
+        // so they must be export as greyscale, no matter what the user
+        // actually asked for... temporarily reset the convert_config
+        char *rgb = STRDUP(cfg->export->rgb);
+        strcpy(cfg->export->rgb, "");
+
+        int pauli = cfg->export->pauli;
+        int sinclair = cfg->export->sinclair;
+        cfg->export->pauli = 0;
+        cfg->export->sinclair = 0;
+
+        if (pauli)
+          asfPrintStatus("Disabling Pauli export for C-band data.\n");
+        if (sinclair)
+          asfPrintStatus("Disabling Sinclair export for C-band data.\n");
+
+        if (cfg->airsar->c_band) {
+          update_status("Exporting C-band...");
+          char *in_tmp = appendToBasename(inFile, "_c_vv");
+          char *out_tmp = appendToBasename(outFile, "_c_vv");
+          
+          asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+        }
+        else {
+          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
+        }
+
+        if (cfg->airsar->dem)
+        {
+          update_status("Exporting DEM...");
+          char *in_tmp = appendToBasename(inFile, "_c_dem");
+          char *out_tmp = appendToBasename(outFile, "_c_dem");
+          
+          asfPrintStatus("Exporting DEM: %s -> %s\n", in_tmp, out_tmp);
+
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+        }
+        else {
+          asfPrintStatus("Skipping export of AirSAR DEM.\n");
+        }
+
+        if (cfg->airsar->coh) {
+          update_status("Exporting Coherence Image...");
+          char *in_tmp = appendToBasename(inFile, "_c_coh");
+          char *out_tmp = appendToBasename(outFile, "_c_coh");
+          
+          asfPrintStatus("Exporting Coherence: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+        }
+        else {
+          asfPrintStatus("Skipping export of AirSAR Coherence.\n");
+        }
+
+
+        // export the POWER bands of L & P as greyscale, unless:
+        //   we already did (because user exported as greyscale), or
+        //   user has already requested specific bands be exported
+        if (strlen(rgb) > 0 && strlen(cfg->export->band) == 0) {
+          // exporting only the POWER band
+          strcpy(cfg->export->band, "POWER");
+          if (cfg->airsar->p_band) {
+            update_status("Exporting P-band power...");
+            char *in_tmp = appendToBasename(inFile, "_p");
+            char *out_tmp = appendToBasename(outFile, "_p");
+            
+            asfPrintStatus("Exporting P-band power: %s -> %s\n", in_tmp, out_tmp);
+            do_export(cfg, in_tmp, out_tmp);
+            free(in_tmp); free(out_tmp);
+          }
+          if (cfg->airsar->l_band) {
+            update_status("Exporting L-band power...");
+            char *in_tmp = appendToBasename(inFile, "_l");
+            char *out_tmp = appendToBasename(outFile, "_l");
+            
+            asfPrintStatus("Exporting L-band power: %s -> %s\n", in_tmp, out_tmp);
+            do_export(cfg, in_tmp, out_tmp);
+            free(in_tmp); free(out_tmp);
+          }
+          // reset config to what it was before
+          strcpy(cfg->export->band, "");
+        }
+
+        // now put back the user's rgb settings
+        strcpy(cfg->export->rgb, rgb);
+        free(rgb);
+
+        cfg->export->pauli = pauli;
+        cfg->export->sinclair = sinclair;
+
+        // airsar metadata... 
+        if (cfg->general->import) {
+          // export c_vv band's metadata as the "official" metadata
+          char *in_tmp = appendToBasename(inFile, "_c_vv");
+          copy_meta(in_tmp, outFile);
+          free(in_tmp);
+        }
       }
     }
-
+    
     //---------------------------------------------------------------------
     // At this point the processing of the SAR image is done.
     // We'll now do some of the extra stuff the user may have asked for.
@@ -1333,7 +1445,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                    check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
                                                  tmpFile, outFile, bands),
                      "exporting thumbnail data file (asf_export), banded\n");
-                   for (i=0; i<n; ++i) FREE(bands[i]);
+                   for (i=0; i<n; ++i)
+                     FREE(bands[i]);
                    FREE(bands);
                }
            }
@@ -1348,10 +1461,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                                                 0, 0, cfg->export->pauli, cfg->export->sinclair, NULL,
                                                 tmpFile, outFile, bands),
                                "exporting thumbnail data file (asf_export), color banded.\n");
-                  int i;
-                  for (i=0; i < meta->general->band_count; i++) {
-                      FREE (bands[i]);
-                  }
+                  for (i=0; i<meta->general->band_count; ++i)
+                    FREE (bands[i]);
                   FREE(bands);
               }
           }
@@ -1379,10 +1490,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              true_color, false_color, 0, 0, NULL,
                              tmpFile, outFile, bands),
                              "exporting thumbnail data file (asf_export), color banded.\n");
-                int i;
-                for (i=0; i < meta->general->band_count; i++) {
+                for (i=0; i<meta->general->band_count; ++i)
                   FREE (bands[i]);
-                }
                 FREE(bands);
               }
             }
@@ -1412,8 +1521,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               else {
                 sprintf(banded_name, "%s_thumb_%s.png",
                         cfg->general->out_name, bands[0]);
-                char *tmp =
-                    appendToBasename(cfg->general->out_name, "_thumb");
+                char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
                 strcpy(outFile, tmp);
                 strcat(outFile, ".png");
                 free(tmp);
@@ -1453,7 +1561,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             update_status("Exporting clipped DEM...");
 
             check_return(
-                asf_export(format, SIGMA, inFile, outFile),
+                asf_export(get_format(cfg), SIGMA, inFile, outFile),
                 "exporting clipped dem (asf_export)\n");
         }
         else {
@@ -1490,7 +1598,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         if (cfg->general->export) {
             update_status("Exporting layover mask...");
             check_return(
-                asf_export_bands(format, TRUNCATE, 1, 0, 0, 0, 0,
+                asf_export_bands(get_format(cfg), TRUNCATE, 1, 0, 0, 0, 0,
                                  "layover_mask.lut", inFile, outFile, NULL),
                 "exporting layover mask (asf_export)\n");
         }
@@ -1523,3 +1631,188 @@ int asf_convert(int createflag, char *configFileName)
 {
     return asf_convert_ext(createflag, configFileName, FALSE);
 }
+
+static void do_export(convert_config *cfg, char *inFile, char *outFile)
+{
+  int true_color = cfg->export->truecolor == 0 ? 0 : 1;
+  int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+  output_format_t format = get_format(cfg);
+  scale_t scale = SIGMA;
+
+  update_status("Exporting...");
+  
+  // Byte scaling
+  if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
+    scale = TRUNCATE;
+  } else if (strncmp(uc(cfg->export->byte), "MINMAX", 6) == 0) {
+    scale = MINMAX;
+  } else if (strncmp(uc(cfg->export->byte), "SIGMA", 5) == 0) {
+    scale = SIGMA;
+  } else if (strncmp(uc(cfg->export->byte), "HISTOGRAM_EQUALIZE", 18) == 0) {
+    scale = HISTOGRAM_EQUALIZE;
+  } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
+    scale = NONE;
+  }
+  
+  // Move the .meta file out of temporary status
+  // Don't need to do this if we skipped import, we'd already have .meta
+  int i,is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
+  if (cfg->general->import && !is_airsar)
+    copy_meta(inFile, outFile);
+    
+  if (strlen(cfg->export->rgb) > 0) {
+    // user has requested banding
+    char *red,  *green, *blue;
+    if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
+      int num_found;
+      char **bands = find_bands(inFile, TRUE, red, green, blue,
+                                &num_found);
+      if (num_found > 0) {
+        asfPrintStatus("\nExporting RGB bands into single color file:\n"
+                       "Red band  : %s\n"
+                       "Green band: %s\n"
+                       "Blue band : %s\n\n",
+                       red, green, blue);
+        check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+                                      inFile, outFile, bands),
+                     "export data file (asf_export), banded.\n");
+        for (i=0; i<num_found; i++)
+          FREE(bands[i]);
+        FREE(bands);
+      } else {
+        asfPrintError("The requested bands (%s) "
+                      "were not available in the file: %s\n",
+                      cfg->export->rgb, inFile);
+        strcpy(cfg->export->rgb, "");
+      }
+      FREE(red); FREE(green); FREE(blue);
+    } else {
+      asfPrintError("Invalid listing of RGB bands: %s\n",
+                    cfg->export->rgb);
+      strcpy(cfg->export->rgb, "");
+    }
+  }
+    
+  if (strlen(cfg->export->rgb) == 0)
+  {
+    meta_parameters *meta = meta_read(inFile);
+    if (cfg->export->pauli || cfg->export->sinclair) {
+      asfPrintStatus("\nExporting %s-decomposition file...\n\n\n",
+                     cfg->export->pauli ? "Pauli" : 
+                     cfg->export->sinclair ? "Sinclair" : "Unknown");
+      if (strstr(meta->general->bands, "HH") == NULL ||
+          strstr(meta->general->bands, "VV") == NULL ||
+          strstr(meta->general->bands, "VH") == NULL ||
+          strstr(meta->general->bands, "VV") == NULL)
+      {
+        asfPrintError("Imported file does not contain required bands\n"
+                      "necessary for pauli or sinclair output (HH, VV, HV, VH)\n");
+      }
+      char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+      if (meta->general->band_count >= 4 && bands != NULL) {
+        check_return(asf_export_bands(format, SIGMA, TRUE,
+                                      0, 0, cfg->export->pauli, cfg->export->sinclair, NULL,
+                                      inFile, outFile, bands),
+                     "exporting data file (asf_export), color banded.\n");
+        for (i=0; i < meta->general->band_count; i++)
+          FREE(bands[i]);
+        FREE(bands);
+      }
+      else {
+        asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
+                      inFile);
+      }
+    }
+    else if (meta->optical && (true_color || false_color)) {
+      // Multi-band optical data, exporting as true or false color single file
+      asfPrintStatus("\nExporting %s file...\n\n\n",
+                     true_color ? "True Color" : false_color ? "False Color" : "Unknown");
+      if (true_color &&
+          (strstr(meta->general->bands, "01") == NULL ||
+           strstr(meta->general->bands, "02") == NULL ||
+           strstr(meta->general->bands, "03") == NULL)
+        )
+      {
+        asfPrintError("Imported file does not contain required color bands\n"
+                      "necessary for true color output (03, 02, 01)\n");
+      }
+      if (false_color &&
+          (strstr(meta->general->bands, "02") == NULL ||
+           strstr(meta->general->bands, "03") == NULL ||
+           strstr(meta->general->bands, "04") == NULL)
+        )
+      {
+        asfPrintError("Imported file does not contain required color bands\n"
+                      "necessary for false color output (04, 03, 02)\n");
+      }
+      if (scale != NONE) {
+        asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
+                        "True Color or False Color output was selected, the byte conversion\n"
+                        "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
+      }
+      char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+      if (meta->general->band_count >= 4 && bands != NULL) {
+        // The imported file IS a multiband file with enough bands,
+        // but the extract bands need to be ordered correctly
+        if (true_color) {
+          strcpy(bands[0], "03");
+          strcpy(bands[1], "02");
+          strcpy(bands[2], "01");
+          strcpy(bands[3], "");
+        }
+        else {
+          strcpy(bands[0], "04");
+          strcpy(bands[1], "03");
+          strcpy(bands[2], "02");
+          strcpy(bands[3], "");
+        }
+        check_return(asf_export_bands(format, NONE, TRUE,
+                                      true_color, false_color, 0, 0, NULL,
+                                      inFile, outFile, bands),
+                     "exporting data file (asf_export), color banded.\n");
+        for (i=0; i<meta->general->band_count; ++i)
+          FREE (bands[i]);
+        FREE(bands);
+      }
+      else {
+        asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
+                      inFile);
+      }
+    }
+    else {
+      if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
+        // multi-band, exporting as separate greyscale files
+        asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
+                       meta->general->band_count);
+        check_return(asf_export_bands(format, scale, FALSE,
+                                      0, 0, 0, 0, NULL,
+                                      inFile, outFile, NULL),
+                     "exporting data file (asf_export), greyscale bands.\n");
+      }
+      else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
+        // multi-band, exporting single band in one greyscale file
+        asfPrintStatus("\nExporting band \"%s\" in a single greyscale file...\n",
+                       cfg->export->band);
+        int num_bands_found = 0;
+        char **band_names = find_single_band(inFile, cfg->export->band,
+                                             &num_bands_found);
+        if (num_bands_found != 1) {
+          asfPrintError("Selected band for export not found.\n");
+        }
+        check_return(asf_export_bands(format, scale, FALSE,
+                                      0, 0, 0, 0, NULL,
+                                      inFile, outFile, band_names),
+                     "exporting data file (asf_export), single selected greyscale band.\n");
+        if (*band_names) FREE(*band_names);
+        if (band_names) FREE(band_names);
+      }
+      else {
+        // single band
+        check_return(asf_export(format, scale, inFile, outFile),
+                     "exporting data file (asf_export), single band.\n");
+      }
+    }
+    meta_free(meta);
+  }
+}
+
