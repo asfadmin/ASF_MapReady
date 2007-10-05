@@ -38,6 +38,7 @@
       src/ardop
       src/llh2ls
       src/diffimage
+      src/diffmeta
 
  7. Check out the important parts of the release directory:
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
@@ -97,7 +98,7 @@ doc
 15. Put the built files on dq:
 
       mkdir ~/builds/v3.2.X
-      cp RPMS/convert-3.2.X-rpm.* Source/convert-3.2.X-src.* ~/builds/v.3.2.X
+      cp RPMS/convert-3.2.X-rpm.* Source/convert-3.2.X-src.* ~/builds/v3.2.X
       chmod 755 ~/builds/v3.2.X ; chmod 644 ~/builds/v3.2.X/*
 
 16. Bump the version in include/asf_version.h, add "-dev" to the end.
