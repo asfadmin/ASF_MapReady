@@ -3998,7 +3998,7 @@
 		      <child>
 			<widget class="GtkButton" id="view_input_button">
 			  <property name="visible">True</property>
-			  <property name="tooltip" translatable="yes">Open with SarView</property>
+			  <property name="tooltip" translatable="yes">View Input</property>
 			  <property name="can_focus">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
