@@ -119,25 +119,25 @@ void airsar_to_latlon(meta_parameters *meta,
         m1 = matrix_alloc(3,3);
         m2 = matrix_alloc(3,3);
 
-        m1->coeff[1][1] = -sin(lon_peg);
-        m1->coeff[1][2] = -sin(lat_peg)*cos(lon_peg);
-        m1->coeff[1][3] = cos(lat_peg)*cos(lon_peg);
-        m1->coeff[2][1] = cos(lon_peg);
-        m1->coeff[2][2] = -sin(lat_peg)*sin(lon_peg);
-        m1->coeff[2][3] = cos(lat_peg)*sin(lon_peg);
-        m1->coeff[3][1] = 0.0;
-        m1->coeff[3][2] = cos(lat_peg);
-        m1->coeff[3][3] = sin(lat_peg);
+        m1->coeff[0][0] = -sin(lon_peg);
+        m1->coeff[0][1] = -sin(lat_peg)*cos(lon_peg);
+        m1->coeff[0][2] = cos(lat_peg)*cos(lon_peg);
+        m1->coeff[1][0] = cos(lon_peg);
+        m1->coeff[1][1] = -sin(lat_peg)*sin(lon_peg);
+        m1->coeff[1][2] = cos(lat_peg)*sin(lon_peg);
+        m1->coeff[2][0] = 0.0;
+        m1->coeff[2][1] = cos(lat_peg);
+        m1->coeff[2][2] = sin(lat_peg);
       
-        m2->coeff[1][1] = 0.0;
+        m2->coeff[0][0] = 0.0;
+        m2->coeff[0][1] = sin(head_peg);
+        m2->coeff[0][2] = -cos(head_peg);
+        m2->coeff[1][0] = 0.0;
+        m2->coeff[1][1] = cos(head_peg);
         m2->coeff[1][2] = sin(head_peg);
-        m2->coeff[1][3] = -cos(head_peg);
+        m2->coeff[2][0] = 1.0;
         m2->coeff[2][1] = 0.0;
-        m2->coeff[2][2] = cos(head_peg);
-        m2->coeff[2][3] = sin(head_peg);
-        m2->coeff[3][1] = 1.0;
-        m2->coeff[3][2] = 0.0;
-        m2->coeff[3][3] = 0.0;
+        m2->coeff[2][2] = 0.0;
 
         o1 = re*cos(lat_peg)*cos(lon_peg)-ra*cos(lat_peg)*cos(lon_peg);
         o2 = re*cos(lat_peg)*sin(lon_peg)-ra*cos(lat_peg)*sin(lon_peg);
@@ -169,9 +169,9 @@ void airsar_to_latlon(meta_parameters *meta,
     double t2 = (ra+height)*cos(c_lat)*sin(s_lon);
     double t3 = (ra+height)*sin(c_lat);
       
-    double c1 = m->coeff[1][1]*t1 + m->coeff[1][2]*t2 + m->coeff[1][3]*t3;
-    double c2 = m->coeff[2][1]*t1 + m->coeff[2][2]*t2 + m->coeff[2][3]*t3;
-    double c3 = m->coeff[3][1]*t1 + m->coeff[3][2]*t2 + m->coeff[3][3]*t3;
+    double c1 = m->coeff[0][0]*t1 + m->coeff[0][1]*t2 + m->coeff[0][2]*t3;
+    double c2 = m->coeff[1][0]*t1 + m->coeff[1][1]*t2 + m->coeff[1][2]*t3;
+    double c3 = m->coeff[2][0]*t1 + m->coeff[2][1]*t2 + m->coeff[2][2]*t3;
       
     // shift into local Cartesian coordinates
     double x = c1 + o1;// + 9.0;

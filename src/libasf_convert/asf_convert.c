@@ -1252,6 +1252,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (!is_airsar)
       {
         // Do normal export
+        update_status("Exporting...");
         do_export(cfg, inFile, outFile);
       }
       else
@@ -1639,8 +1640,6 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   output_format_t format = get_format(cfg);
   scale_t scale = SIGMA;
 
-  update_status("Exporting...");
-  
   // Byte scaling
   if (strncmp(uc(cfg->export->byte), "TRUNCATE", 8) == 0) {
     scale = TRUNCATE;

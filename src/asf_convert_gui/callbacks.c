@@ -56,6 +56,11 @@ input_data_format_combobox_changed()
         *latitude_hi_label,
         *latitude_hi_entry,
         *process_to_level1_checkbutton,
+        *airsar_p_checkbutton,
+        *airsar_l_checkbutton,
+        *airsar_c_vv_checkbutton,
+        *airsar_dem_checkbutton,
+        *airsar_coh_checkbutton,
         *vbox_export,
         *vbox_terrain_correction,
         *vbox_geocode;
@@ -67,6 +72,7 @@ input_data_format_combobox_changed()
     gboolean show_terrain_correction_section;
     gboolean show_geocode_section;
     gboolean show_process_to_level1_checkbutton;
+    gboolean show_airsar_checkbuttons;
 
     input_data_format_combobox =
         get_widget_checked("input_data_format_combobox");
@@ -79,16 +85,19 @@ input_data_format_combobox_changed()
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = TRUE;
             show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = FALSE;
             break;
         case INPUT_FORMAT_COMPLEX:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = FALSE;
             break;
         case INPUT_FORMAT_CEOS_LEVEL0:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = TRUE;
+            show_airsar_checkbuttons = FALSE;
             break;
         default:
         case INPUT_FORMAT_CEOS_LEVEL1:
@@ -98,11 +107,19 @@ input_data_format_combobox_changed()
             show_data_type_combobox = TRUE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = FALSE;
             break;
         case INPUT_FORMAT_ASF_INTERNAL:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
             show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = FALSE;
+            break;
+      case INPUT_FORMAT_AIRSAR:
+            show_data_type_combobox = FALSE;
+            show_latitude_spinbuttons = FALSE;
+            show_process_to_level1_checkbutton = FALSE;
+            show_airsar_checkbuttons = TRUE;
             break;
     }
 
@@ -121,6 +138,26 @@ input_data_format_combobox_changed()
     gtk_widget_set_sensitive(latitude_hi_entry, show_latitude_spinbuttons);
     gtk_widget_set_sensitive(process_to_level1_checkbutton,
                              show_process_to_level1_checkbutton);
+
+    airsar_p_checkbutton = get_widget_checked("airsar_p_checkbutton");
+    airsar_l_checkbutton = get_widget_checked("airsar_l_checkbutton");
+    airsar_c_vv_checkbutton = get_widget_checked("airsar_c_vv_checkbutton");
+    airsar_dem_checkbutton = get_widget_checked("airsar_dem_checkbutton");
+    airsar_coh_checkbutton = get_widget_checked("airsar_coh_checkbutton");
+
+    if (show_airsar_checkbuttons) {
+      gtk_widget_show(airsar_p_checkbutton);
+      gtk_widget_show(airsar_l_checkbutton);
+      gtk_widget_show(airsar_c_vv_checkbutton);
+      gtk_widget_show(airsar_dem_checkbutton);
+      gtk_widget_show(airsar_coh_checkbutton);
+    } else {
+      gtk_widget_hide(airsar_p_checkbutton);
+      gtk_widget_hide(airsar_l_checkbutton);
+      gtk_widget_hide(airsar_c_vv_checkbutton);
+      gtk_widget_hide(airsar_dem_checkbutton);
+      gtk_widget_hide(airsar_coh_checkbutton);
+    }
 
     show_export_section = TRUE;
     show_geocode_section = TRUE;
@@ -154,7 +191,6 @@ input_data_format_combobox_changed()
 
     gtk_widget_set_sensitive(input_data_type_combobox, show_data_type_combobox);
     gtk_widget_set_sensitive(input_data_type_label, show_data_type_combobox);
-
 
     if (!show_latitude_spinbuttons)
     {
@@ -382,6 +418,13 @@ on_geotiff_input_activate(GtkWidget *widget)
 
 SIGNAL_CALLBACK void
 on_asf_internal_activate(GtkWidget *widget)
+{
+  input_data_format_combobox_changed();
+  update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_airsar_activate(GtkWidget *widget)
 {
   input_data_format_combobox_changed();
   update_summary();

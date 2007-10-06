@@ -86,6 +86,25 @@ void update_summary()
       case INPUT_FORMAT_GEOTIFF:
         strcat(text, "Geocoded GeoTIFF");
         break;
+
+      case INPUT_FORMAT_AIRSAR:
+        strcat(text, "AirSAR\n  (");
+        if (s->airsar_dem)
+          strcat(text, "dem,");
+        if (s->airsar_coh)
+          strcat(text, "coherence,");
+        if (s->airsar_c_vv)
+          strcat(text, "c-band,");
+        if (s->airsar_l)
+          strcat(text, "l-band,");
+        if (s->airsar_p)
+          strcat(text, "p-band,");
+        if (text[strlen(text)-1]==',') {
+          text[strlen(text)-1]='\0';
+          strcat(text, ")");
+        } else {
+          strcat(text, "none)");
+        } 
     }
 
 

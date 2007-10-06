@@ -430,8 +430,14 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
     } else {
         basename = g_strdup(data_file_name);
         p = findExt(basename);
-        if (p)
-            *p = '\0';
+        if (p) {
+            if (strcmp_case(p, ".airsar") == 0) {
+              p = strstr(basename, "_meta");
+              if (p) *p = '\0';
+            } else {
+              *p = '\0';
+            }
+        }
 
         filename = g_path_get_basename(basename);
     }
@@ -450,8 +456,7 @@ determine_default_output_file_name_schemed(const gchar *data_file_name,
         g_free(tmp);
     }
 
-    basename = (gchar *)
-        g_realloc(basename,
+    basename = (gchar *) g_realloc(basename,
         sizeof(gchar) * (strlen(path) + strlen(schemed_filename) + 2));
 
     sprintf(basename, "%s%s", path, schemed_filename);

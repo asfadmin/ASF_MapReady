@@ -176,10 +176,16 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   airsar_parameters *params=NULL;
   meta_parameters *metaIn, *metaOut;
 
-  if (strncmp(inBaseName, "ts", 2) == 0) {
+  char *basename = get_basename(inBaseName);
+  char *dir = get_dirname(inBaseName);
+
+  if (strncmp(basename, "ts", 2) == 0) {
     // Read specific parameter file
     params = (airsar_parameters *) MALLOC(sizeof(airsar_parameters));
-    sprintf(metaFile, "hd%s.log", inBaseName+2);
+    if (strlen(dir) > 0)
+      sprintf(metaFile, "%s/hd%s.log", dir, basename+2);
+    else
+      sprintf(metaFile, "hd%s.log", basename+2);
     fpIn = FOPEN(metaFile, "r");
     
     while (NULL != fgets(line, 255, fpIn)) {
@@ -325,6 +331,9 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
     }
     FCLOSE(fpIn);
   }
+
+  free(basename);
+  free(dir);
 
   // Read general metadata file
   general = (airsar_general *) MALLOC(sizeof(airsar_general));

@@ -109,6 +109,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(alos_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
 
+    GtkFileFilter *airsar_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(airsar_filt, "AirSAR Leader Files (*.airsar)");
+    gtk_file_filter_add_pattern(airsar_filt, "*.airsar");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
+
     GtkFileFilter *img_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(img_filt, "ASF Internal Files (*.img)");
     gtk_file_filter_add_pattern(img_filt, "*.img");
@@ -157,6 +162,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
         "GeoTIFF Files (*.tif)\0*.tif\0"
         "Complex Files (*.cpx)\0*.cpx\0"
         "ALOS Files (LED-*)\0LED-*\0"
+        "AirSAR Files (*.airsar)\0*.airsar\0"
         "ASF Internal Files (*.img)\0*.img\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
@@ -184,7 +190,8 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 
     if (*p) {
         while (*p) {
-            char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
+            char * dir_and_file =
+                malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
             sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
             add_to_files_list(dir_and_file);
             p += strlen(p) + 1;

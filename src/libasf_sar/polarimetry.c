@@ -576,8 +576,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   // of bands, and the band names
   char *out_meta_name = appendExt(outFile, ".meta");
   int nBands =
-      pauli_1_band>=0 + pauli_2_band>=0 + pauli_3_band>=0 +
-      entropy_band>=0 + anisotropy_band>=0 + alpha_band>=0;
+      (pauli_1_band>=0) + (pauli_2_band>=0) + (pauli_3_band>=0) +
+      (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0);
 
   char bands[255];
   strcpy(bands, "");
@@ -605,6 +605,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   strcpy(meta->general->bands, bands);
 
   meta_write(meta, out_meta_name);
-  meta_free(meta);
   free(out_meta_name);
+
+  meta_free(meta);
 }

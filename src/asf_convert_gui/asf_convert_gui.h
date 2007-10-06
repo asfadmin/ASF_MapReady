@@ -43,11 +43,12 @@ enum InputFormat
     INPUT_FORMAT_CEOS_LEVEL0 = 0,
     INPUT_FORMAT_CEOS_LEVEL1 = 1,
     INPUT_FORMAT_STF = 2,
-    INPUT_FORMAT_COMPLEX = 3,
-    INPUT_FORMAT_ESRI = 4,
-    INPUT_FORMAT_ENVI = 5,
-    INPUT_FORMAT_ASF_INTERNAL = 6,
-    INPUT_FORMAT_GEOTIFF = 7
+    INPUT_FORMAT_GEOTIFF = 3,
+    INPUT_FORMAT_COMPLEX = 4,
+    INPUT_FORMAT_ASF_INTERNAL = 5,
+    INPUT_FORMAT_AIRSAR = 6,
+    INPUT_FORMAT_ESRI = 7, // not implemented
+    INPUT_FORMAT_ENVI = 8  // not implemented
 };
 
 enum InputType
@@ -106,6 +107,11 @@ typedef struct
   /* import */
   int input_data_format;
   int process_to_level1;
+  int airsar_p;
+  int airsar_l;
+  int airsar_c_vv;
+  int airsar_dem;
+  int airsar_coh;
 
   /* transformations */
   int data_type;

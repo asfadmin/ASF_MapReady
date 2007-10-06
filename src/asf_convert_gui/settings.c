@@ -103,6 +103,9 @@ settings_apply_to_gui(const Settings * s)
       case INPUT_FORMAT_ASF_INTERNAL:
         set_combo_box_item(input_data_format_combobox, 5);
         break;
+      case INPUT_FORMAT_AIRSAR:
+        set_combo_box_item(input_data_format_combobox, 6);
+        break;
     }
 
     set_combo_box_item(input_data_type_combobox, s->data_type);
@@ -119,10 +122,8 @@ settings_apply_to_gui(const Settings * s)
 
     if (s->output_db)
     {
-        GtkWidget *checkbutton_db =
-    get_widget_checked("checkbutton_db");
-
-  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
+        GtkWidget *checkbutton_db = get_widget_checked("checkbutton_db");
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(checkbutton_db), TRUE);
     }
 
     input_data_type_changed();
@@ -524,10 +525,18 @@ settings_get_from_gui()
         ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
         break;
       case 6:
+        ret->input_data_format = INPUT_FORMAT_AIRSAR;
+        ret->airsar_p = get_checked("airsar_p_checkbutton");
+        ret->airsar_l = get_checked("airsar_l_checkbutton");
+        ret->airsar_c_vv = get_checked("airsar_c_vv_checkbutton");
+        ret->airsar_dem = get_checked("airsar_dem_checkbutton");
+        ret->airsar_coh = get_checked("airsar_coh_checkbutton");
+        break;
+      case 7:
         // Caution: Not implemented in the GUI
         ret->input_data_format = INPUT_FORMAT_ENVI;
         break;
-      case 7:
+      case 8:
         // Caution: Not implemented in the GUI
         ret->input_data_format = INPUT_FORMAT_ESRI;
         break;
@@ -991,23 +1000,14 @@ settings_get_input_data_format_string(const Settings *s)
     case INPUT_FORMAT_GEOTIFF:
         format_arg_to_import = "geotiff";
         break;
+
+    case INPUT_FORMAT_AIRSAR:
+        format_arg_to_import = "airsar";
+        break;
     }
 
     return format_arg_to_import;
 }
-
-/*
-static void settings_print(Settings *s)
-{
-printf("(%d,%d,%d,%s,%s,%s)\n",
-s->input_data_format,
-s->data_type,
-s->output_format,
-settings_get_latitude_argument(s),
-settings_get_size_argument(s),
-settings_get_output_bytes_argument(s));
-}
-*/
 
 int
 settings_equal(const Settings *s1, const Settings *s2)
@@ -1121,6 +1121,7 @@ settings_get_output_format_extension(const Settings *s)
     case INPUT_FORMAT_ASF_INTERNAL:
     case INPUT_FORMAT_GEOTIFF:
     case INPUT_FORMAT_CEOS_LEVEL1:
+    case INPUT_FORMAT_AIRSAR:
         if (s->export_is_checked)
         {
             switch (s->output_format)
@@ -1444,8 +1445,18 @@ settings_to_config_file(const Settings *s,
         char *tmp = stripExt(input_basename);
         fprintf(cf, "input file = %s\n", tmp);
         free(tmp);
-    } else
+    }
+    // must strip _meta.airsar for airsar
+    else if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
+        char *tmp = STRDUP(input_basename);
+        char *p = strstr(tmp, "_meta.airsar");
+        if (p) *p = '\0';
+        fprintf(cf, "input file = %s\n", tmp);
+        free(tmp);
+    } 
+    else {
         fprintf(cf, "input file = %s\n", input_basename);
+    }
     fprintf(cf, "output file = %s\n", output_file);
     fprintf(cf, "import = %d\n",
         s->input_data_format == INPUT_FORMAT_ASF_INTERNAL ? 0 : 1);
@@ -1494,6 +1505,16 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "dump envi header = 0\n");
     fprintf(cf, "\n");
 
+    if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
+        fprintf(cf, "[AirSAR]\n");
+        fprintf(cf, "airsar dem = %d\n", s->airsar_dem);
+        fprintf(cf, "airsar coherence = %d\n", s->airsar_coh);
+        fprintf(cf, "airsar c-band = %d\n", s->airsar_c_vv);
+        fprintf(cf, "airsar l-band = %d\n", s->airsar_l);
+        fprintf(cf, "airsar p-band = %d\n", s->airsar_p);
+        fprintf(cf, "\n");
+    }
+
     if (s->process_to_level1) {
         fprintf(cf, "[SAR processing]\n");
         fprintf(cf, "radiometry = %s_image\n",
@@ -1535,9 +1556,9 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "[Geocoding]\n");
       fprintf(cf, "projection = %s\n", tmp_projfile);
       if (s->specified_pixel_size)
-  fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
+        fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
       if (s->specified_height)
-  fprintf(cf, "height = %.2f\n", s->height);
+        fprintf(cf, "height = %.2f\n", s->height);
       fprintf(cf, "datum = %s\n", datum_string(s->datum));
       fprintf(cf, "resampling = %s\n",
         resample_method_string(s->resample_method));
@@ -1549,8 +1570,10 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "[Export]\n");
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
       if (s->output_bytes && !s->truecolor_is_checked &&
-          !s->falsecolor_is_checked && !s->pauli_is_checked &&
-          !s->sinclair_is_checked)
+          !s->falsecolor_is_checked)
+        // these conditions used to be there as well, but I don't
+        // see why...
+        //    && !s->pauli_is_checked && !s->sinclair_is_checked)
       {
           fprintf(cf, "byte conversion = %s\n",
             scaling_method_string(s->scaling_method));
@@ -1609,8 +1632,20 @@ int apply_settings_from_config_file(char *configFile)
         s.input_data_format = INPUT_FORMAT_STF;
     else if (strncmp(uc(cfg->import->format), "ASF", 3) == 0)
         s.input_data_format = INPUT_FORMAT_ASF_INTERNAL;
-    else if (strncmp(uc(cfg->import->format), "GEOTIFF", 3) == 0)
+    else if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) == 0)
       s.input_data_format = INPUT_FORMAT_GEOTIFF;
+    else if (strncmp(uc(cfg->import->format), "AIRSAR", 6) == 0)
+      s.input_data_format = INPUT_FORMAT_AIRSAR;
+
+    if (s.input_data_format == INPUT_FORMAT_AIRSAR) {
+      s.airsar_dem = cfg->airsar->dem;
+      s.airsar_coh = cfg->airsar->coh;
+      s.airsar_c_vv = cfg->airsar->c_band;
+      s.airsar_l = cfg->airsar->l_band;
+      s.airsar_p = cfg->airsar->p_band;
+    } else {
+      s.airsar_dem=s.airsar_coh=s.airsar_c_vv=s.airsar_l=s.airsar_p=0;
+    }
 
     s.data_type = INPUT_TYPE_AMP;
     if (strncmp(uc(cfg->import->radiometry), "AMPLITUDE_IMAGE", 15) == 0)
