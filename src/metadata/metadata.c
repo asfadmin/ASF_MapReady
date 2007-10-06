@@ -103,13 +103,17 @@ char *get_record_as_string(char *fileName, int reqrec)
   }
   free(path);
 
-  if (data_ext == NO_CEOS_DATA) {
-    asfPrintWarning("Data file (%s) missing.\n"
-		    "Unable to extract Image File Descriptor Record.\n",
-		    dataNames[0]);
+  if (data_ext == NO_CEOS_DATA && reqrec == 192) {
+    if (nBands > 0)
+      asfPrintWarning("Data file (%s) missing.\n"
+                      "Unable to extract Image File Descriptor Record.\n",
+                      dataNames[0]);
+    else
+      asfPrintWarning("Data file missing.\n"
+                      "Unable to extract Image File Descriptor Record.\n");
     dataNameExists = 0;
   }
-  if (metadata_ext == NO_CEOS_METADATA) {
+  if (metadata_ext == NO_CEOS_METADATA && reqrec != 192) {
     asfPrintWarning("Leader (meta data) file missing.\n"
 		    "ONLY able to extract Image File Descriptor Record.\n");
     leaderNameExists = 0;
