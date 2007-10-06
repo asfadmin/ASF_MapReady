@@ -45,8 +45,8 @@ ranlib="@echo do not need to run ranlib on this system on file: "
 optFlag="-O4"
 case "${osType}:${versMajor}:${versMinor}" in
 	SunOS:*:*)
-		sys="solaris" 
-		c99="--std=c99" ;;
+#		c99="--std=c99"
+		sys="solaris" ;;
 	Linux:*:*)
 		sys="linux" ;;
 	CYGWIN*:*:*)
