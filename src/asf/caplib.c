@@ -414,8 +414,8 @@ int FSEEK64(FILE *stream,long long offset,int ptrname)
 #if defined(irix)
 	ret=fseek64(stream,offset,ptrname);
 #elif defined(win32)
-    // On cygwin, the fseeko function is 64-bit ready
-    ret=fseeko(stream,offset,ptrname);
+	// On cygwin, the fseeko function is 64-bit ready
+	ret=fseeko(stream,offset,ptrname);
 #else
 	ret=fseeko64(stream,offset,ptrname);
 #endif

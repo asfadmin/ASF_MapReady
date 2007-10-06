@@ -28,11 +28,13 @@ OBJS  = caplib.o \
 	matrix.o \
 	vector.o
 
-CFLAGS += -D_XOPEN_SOURCE=600
+# CFLAGS += -D_XOPEN_SOURCE=600
+#CFLAGS += -ansi -pedantic
 
 all: build_only
 	mv asf.a $(LIBDIR)
-	cp asf.h asf_glib.h asf_complex.h vector.h matrix.h $(ASF_INCLUDE_DIR)
+	cp asf.h asf_glib.h asf_complex.h caplib.h vector.h matrix.h \
+		$(ASF_INCLUDE_DIR)
 	rm *.o
 
 build_only: $(OBJS)

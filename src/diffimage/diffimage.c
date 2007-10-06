@@ -1754,13 +1754,13 @@ float get_maxval(data_type_t data_type)
   // Only non-complex types with 32 bits or less are supported
   switch (data_type) {
     case BYTE:
-      ret = powf(2, sizeof(unsigned char)) - 1.0;
+      ret = pow(2, sizeof(unsigned char)) - 1;
       break;
     case INTEGER16:
-      ret = powf(2, sizeof(short int)) - 1.0;
+      ret = pow(2, sizeof(short int)) - 1;
       break;
     case INTEGER32:
-      ret = powf(2, sizeof(int)) - 1.0;
+      ret = pow(2, sizeof(int)) - 1;
       break;
     case REAL32:
       ret = MAXREAL;
@@ -4262,15 +4262,15 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
 
   //// Determine byte-boundary bit-depth and ASF data type for holding
   //// the PPM/PGM file's image data
-  if (powf(2.0, 32.0) > pgm->max_val) {
+  if ((float)pow(20, 32) > pgm->max_val) {
     pgm->bit_depth = 8;
     pgm->data_type = BYTE;
   }
-  else if (powf(2.0, 16.0) > pgm->max_val) {
+  else if ((float)pow(2, 16) > pgm->max_val) {
     pgm->bit_depth = 16;
     pgm->data_type = INTEGER16;
   }
-  else if (powf(2.0, 8.0) > pgm->max_val) {
+  else if ((float)pow(2, 8) > pgm->max_val) {
     pgm->bit_depth = 32;
     pgm->data_type = INTEGER32;
   }

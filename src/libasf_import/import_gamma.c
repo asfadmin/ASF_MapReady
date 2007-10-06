@@ -2,6 +2,7 @@
 #include "gamma.h"
 #include "asf_meta.h"
 #include "dateUtil.h"
+#include "asf_nan.h"
 
 gamma_isp *gamma_isp_init();
 gamma_msp *gamma_msp_init();
