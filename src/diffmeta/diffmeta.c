@@ -1189,7 +1189,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
     char *pointing_direction_strings[NUM_POINTING_DIRECTION_STRINGS] =
       {"FORWARD", "BACKWARD",
        "NADIR",  "OFF-NADIR"};
-    verify_string(precheck_err_msgs, mo2->pointing_direction,
+    verify_string(precheck_err_msgs, uc(mo2->pointing_direction),
                   pointing_direction_strings, NUM_POINTING_DIRECTION_STRINGS,
                   "Optical", "pointing_direction",
                   1, &failed);
@@ -2036,7 +2036,7 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   strcpy(compare_err_msgs, "");
   if (mo1 && mo2) {
     compare_meta_string(compare_err_msgs, "Optical", "pointing_direction",
-                        mo1->pointing_direction, mo2->pointing_direction, &failed);
+                        uc(mo1->pointing_direction), uc(mo2->pointing_direction), &failed);
     compare_meta_double_with_tolerance(compare_err_msgs, "Optical", "off_nadir_angle",
                         mo1->off_nadir_angle, mo2->off_nadir_angle,
                         DM_OFF_NADIR_ANGLE_TOL, &failed);
