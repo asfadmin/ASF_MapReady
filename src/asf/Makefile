@@ -28,8 +28,7 @@ OBJS  = caplib.o \
 	matrix.o \
 	vector.o
 
-# CFLAGS += -D_XOPEN_SOURCE=600
-#CFLAGS += -ansi -pedantic
+CFLAGS += -D_XOPEN_SOURCE=600
 
 all: build_only
 	mv asf.a $(LIBDIR)
