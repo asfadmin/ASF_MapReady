@@ -137,10 +137,11 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
   if (ppdr.hr_angle<=-99.0)
     areInertial=0;/*Bogus GHA-- must be fixed-earth*/
   
-  if (ceos->facility==ASF && ceos->processor==SP2 && ceos->version <=2.50)
+  if (ceos->facility==ASF && ceos->processor==SP2 && ceos->version <=2.50) {
     /*The SCANSAR processor made very odd state vectors before 2.51*/
-    areInertial=0,areInertialVelocity=1;
-  
+    areInertial=0; areInertialVelocity=1;
+  }
+
   /*Fill output record with inital time.*/
   if (ceos->facility==ASF && ceos->processor!=LZP)
     {/* ASF's state vectors start at the 
@@ -157,8 +158,9 @@ void ceos_init_stVec(const char *fName, ceos_description *ceos,
       s->year   = (int) ppdr.year;
       s->julDay = (int) ppdr.gmt_day;
       s->second = ppdr.gmt_sec;
-      if (ceos->facility==RSI)
-	areInertialVelocity = 1;
+      // Taking this out... doesn't seem to be the case for RSI data
+      // if (ceos->facility==RSI)
+        // areInertialVelocity = 1;
     }
   
   /*Fill ouput record with state vectors.*/
