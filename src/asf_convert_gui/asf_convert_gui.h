@@ -107,11 +107,11 @@ typedef struct
   /* import */
   int input_data_format;
   int process_to_level1;
-  int airsar_p;
-  int airsar_l;
+  int airsar_l_vv;
   int airsar_c_vv;
-  int airsar_dem;
-  int airsar_coh;
+  int airsar_l_pol;
+  int airsar_c_pol;
+  int airsar_p_pol;
 
   /* transformations */
   int data_type;

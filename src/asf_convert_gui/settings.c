@@ -526,11 +526,11 @@ settings_get_from_gui()
         break;
       case 6:
         ret->input_data_format = INPUT_FORMAT_AIRSAR;
-        ret->airsar_p = get_checked("airsar_p_checkbutton");
-        ret->airsar_l = get_checked("airsar_l_checkbutton");
+        ret->airsar_p_pol = get_checked("airsar_p_pol_checkbutton");
+        ret->airsar_l_pol = get_checked("airsar_l_pol_checkbutton");
+        ret->airsar_c_pol = get_checked("airsar_c_pol_checkbutton");
         ret->airsar_c_vv = get_checked("airsar_c_vv_checkbutton");
-        ret->airsar_dem = get_checked("airsar_dem_checkbutton");
-        ret->airsar_coh = get_checked("airsar_coh_checkbutton");
+        ret->airsar_l_vv = get_checked("airsar_l_vv_checkbutton");
         break;
       case 7:
         // Caution: Not implemented in the GUI
@@ -1478,7 +1478,9 @@ settings_to_config_file(const Settings *s,
     }
     fprintf(cf, "tmp dir = %s\n", tmp_dir);
     fprintf(cf, "thumbnail = %d\n",
-        s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1 ? 1 : 0);
+            s->input_data_format == INPUT_FORMAT_CEOS_LEVEL1 ||
+            s->input_data_format == INPUT_FORMAT_AIRSAR 
+                ? 1 : 0);
     fprintf(cf, "\n");
 
     fprintf(cf, "[Import]\n");
@@ -1507,11 +1509,11 @@ settings_to_config_file(const Settings *s,
 
     if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
         fprintf(cf, "[AirSAR]\n");
-        fprintf(cf, "airsar dem = %d\n", s->airsar_dem);
-        fprintf(cf, "airsar coherence = %d\n", s->airsar_coh);
-        fprintf(cf, "airsar c-band = %d\n", s->airsar_c_vv);
-        fprintf(cf, "airsar l-band = %d\n", s->airsar_l);
-        fprintf(cf, "airsar p-band = %d\n", s->airsar_p);
+        fprintf(cf, "airsar c interferometric = %d\n", s->airsar_c_vv);
+        fprintf(cf, "airsar l interferometric = %d\n", s->airsar_l_vv);
+        fprintf(cf, "airsar c polarimetric = %d\n", s->airsar_c_pol);
+        fprintf(cf, "airsar l polarimetric = %d\n", s->airsar_l_pol);
+        fprintf(cf, "airsar p polarimetric = %d\n", s->airsar_p_pol);
         fprintf(cf, "\n");
     }
 
@@ -1638,13 +1640,17 @@ int apply_settings_from_config_file(char *configFile)
       s.input_data_format = INPUT_FORMAT_AIRSAR;
 
     if (s.input_data_format == INPUT_FORMAT_AIRSAR) {
-      s.airsar_dem = cfg->airsar->dem;
-      s.airsar_coh = cfg->airsar->coh;
-      s.airsar_c_vv = cfg->airsar->c_band;
-      s.airsar_l = cfg->airsar->l_band;
-      s.airsar_p = cfg->airsar->p_band;
+      s.airsar_c_vv = cfg->airsar->c_vv;
+      s.airsar_l_vv = cfg->airsar->l_vv;
+      s.airsar_c_pol = cfg->airsar->c_pol;
+      s.airsar_l_pol = cfg->airsar->l_pol;
+      s.airsar_p_pol = cfg->airsar->p_pol;
     } else {
-      s.airsar_dem=s.airsar_coh=s.airsar_c_vv=s.airsar_l=s.airsar_p=0;
+      s.airsar_c_vv=0;
+      s.airsar_l_vv=0;
+      s.airsar_c_pol=0;
+      s.airsar_l_pol=0;
+      s.airsar_p_pol=0;
     }
 
     s.data_type = INPUT_TYPE_AMP;

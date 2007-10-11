@@ -160,13 +160,12 @@ message_box(const gchar * message)
 gchar *
 meta_file_name(const gchar * data_file_name)
 {
+    // data file is really the meta file, for ALOS
     if (has_prepension(data_file_name))
-    {
-        // data file is really the meta file, for ALOS
         return g_strdup(data_file_name);
-    }
 
     char *p = findExt(data_file_name);
+
     if (!p)
     {
         gchar * ret =
@@ -177,15 +176,17 @@ meta_file_name(const gchar * data_file_name)
         return ret;
     }
 
-    if (strcmp(p, ".D") == 0)
-    {
+    // data file is really the meta file, for AirSAR
+    if (strcmp_case(p, ".airsar") == 0)
+        return g_strdup(data_file_name);
+
+    if (strcmp(p, ".D") == 0) {
         gchar * ret = g_strdup(data_file_name);
         ret[strlen(data_file_name) - 1] = 'L';
         return ret;
     }
 
-    if (strcmp(p, ".img") == 0)
-    {
+    if (strcmp(p, ".img") == 0) {
         gchar * ret =
             (gchar *) g_malloc(sizeof(gchar) * (strlen(data_file_name) + 5));
         strcpy(ret, data_file_name);

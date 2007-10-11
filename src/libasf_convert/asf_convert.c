@@ -263,85 +263,135 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
                           float background_val)
 {
     asfPrintStatus("\nGeocoding AirSAR products...\n");
-    if (cfg->airsar->dem)
+    if (cfg->airsar->c_vv)
     {
-        update_status("Geocoding DEM...");
+        update_status("Geocoding C-band DEM...");
         char *in_tmp = appendToBasename(inFile, "_c_dem");
         char *out_tmp = appendToBasename(outFile, "_c_dem");
 
         asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                in_tmp, out_tmp, background_val),
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
               "geocoding dem (asf_geocode)\n");
         free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR DEM.\n");
-    }
 
-    if (cfg->airsar->coh) {
-        update_status("Geocoding Coherence Image...");
-        char *in_tmp = appendToBasename(inFile, "_c_coh");
-        char *out_tmp = appendToBasename(outFile, "_c_coh");
+        update_status("Geocoding C-band coherence...");
+        in_tmp = appendToBasename(inFile, "_c_coh");
+        out_tmp = appendToBasename(outFile, "_c_coh");
 
         asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                in_tmp, out_tmp, background_val),
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
               "geocoding coherence (asf_geocode)\n");
         free(in_tmp); free(out_tmp);
-    }
-    else {
-        asfPrintStatus("Skipping geocoding of AirSAR coherence image.\n");
-    }
 
-    if (cfg->airsar->c_band) {
-        update_status("Geocoding C-band...");
-        char *in_tmp = appendToBasename(inFile, "_c_vv");
-        char *out_tmp = appendToBasename(outFile, "_c_vv");
+        update_status("Geocoding C-band data...");
+        in_tmp = appendToBasename(inFile, "_c_vv");
+        out_tmp = appendToBasename(outFile, "_c_vv");
 
         asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                in_tmp, out_tmp, background_val),
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
               "geocoding C-band (asf_geocode)\n");
         free(in_tmp); free(out_tmp);
     }
     else {
-        asfPrintStatus("Skipping geocoding of AirSAR C-band image.\n");
+        asfPrintStatus("Skipping geocoding of AirSAR C-band "
+                       "interferometric data.\n");
     }
 
-    if (cfg->airsar->p_band) {
-        update_status("Geocoding P-band...");
+    if (cfg->airsar->l_vv)
+    {
+        update_status("Geocoding L-band DEM...");
+        char *in_tmp = appendToBasename(inFile, "_l_dem");
+        char *out_tmp = appendToBasename(outFile, "_l_dem");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
+              "geocoding dem (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+
+        update_status("Geocoding L-band coherence...");
+        in_tmp = appendToBasename(inFile, "_l_coh");
+        out_tmp = appendToBasename(outFile, "_l_coh");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
+              "geocoding coherence (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+
+        update_status("Geocoding L-band data...");
+        in_tmp = appendToBasename(inFile, "_l_vv");
+        out_tmp = appendToBasename(outFile, "_l_vv");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
+              "geocoding C-band (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR L-band "
+                       "interferometric data.\n");
+    }
+
+    if (cfg->airsar->p_pol) {
+        update_status("Geocoding Polarimetric P-band...");
         char *in_tmp = appendToBasename(inFile, "_p");
         char *out_tmp = appendToBasename(outFile, "_p");
 
         asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                in_tmp, out_tmp, background_val),
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
               "geocoding P-band (asf_geocode)\n");
         free(in_tmp); free(out_tmp);
     }
     else {
-        asfPrintStatus("Skipping geocoding of AirSAR P-band image.\n");
+        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
+                       "P-band image.\n");
     }
 
-    if (cfg->airsar->l_band) {
-        update_status("Geocoding L-band...");
+    if (cfg->airsar->l_pol) {
+        update_status("Geocoding Polarimetric L-band...");
         char *in_tmp = appendToBasename(inFile, "_l");
         char *out_tmp = appendToBasename(outFile, "_l");
 
         asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                in_tmp, out_tmp, background_val),
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
               "geocoding L-band (asf_geocode)\n");
         free(in_tmp); free(out_tmp);
     }
     else {
-        asfPrintStatus("Skipping geocoding of AirSAR L-band image.\n");
+        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
+                       "L-band image.\n");
+    }
+
+    if (cfg->airsar->c_pol) {
+        update_status("Geocoding Polarimetric C-band...");
+        char *in_tmp = appendToBasename(inFile, "_c");
+        char *out_tmp = appendToBasename(outFile, "_c");
+
+        asfPrintStatus("Geocoding: %s -> %s\n", in_tmp, out_tmp);
+        check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, in_tmp, out_tmp, background_val),
+              "geocoding C-band (asf_geocode)\n");
+        free(in_tmp); free(out_tmp);
+    }
+    else {
+        asfPrintStatus("Skipping geocoding of AirSAR Polarimetric "
+                       "C-band image.\n");
     }
 
     return 0; // success
@@ -912,46 +962,48 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Not all products are always present - update settings to
       // disable processing of products not present
       if (is_airsar) {
-        if (cfg->airsar->l_band && !check_airsar(outFile, "_l")) {
-          asfPrintStatus("No L-band AirSAR product present.\n");
-          cfg->airsar->l_band = 0;
+        if (cfg->airsar->l_pol && !check_airsar(outFile, "_l")) {
+          asfPrintStatus("No L-band polarimetric AirSAR product.\n");
+          cfg->airsar->l_pol = 0;
         }
-        if (cfg->airsar->p_band && !check_airsar(outFile, "_p")) {
-          asfPrintStatus("No P-band AirSAR product present.\n");
-          cfg->airsar->p_band = 0;
+        if (cfg->airsar->p_pol && !check_airsar(outFile, "_p")) {
+          asfPrintStatus("No P-band polarimetric AirSAR product.\n");
+          cfg->airsar->p_pol = 0;
         }
-        if (cfg->airsar->c_band && !check_airsar(outFile, "_c_vv")) {
-          asfPrintStatus("No C-band AirSAR product present.\n");
-          cfg->airsar->c_band = 0;
+        if (cfg->airsar->c_pol && !check_airsar(outFile, "_c")) {
+          asfPrintStatus("No C-band polarimetric AirSAR product.\n");
+          cfg->airsar->c_pol = 0;
         }
-        if (cfg->airsar->dem && !check_airsar(outFile, "_c_dem")) {
-          asfPrintStatus("No DEM AirSAR product present.\n");
-          cfg->airsar->dem = 0;
+        if (cfg->airsar->c_vv && !check_airsar(outFile, "_c_vv")) {
+          asfPrintStatus("No C-band interferometric AirSAR product.\n");
+          cfg->airsar->c_vv = 0;
         }
-        if (cfg->airsar->coh && !check_airsar(outFile, "_c_coh")) {
-          asfPrintStatus("No Coherence AirSAR product present.\n");
-          cfg->airsar->coh = 0;
+        if (cfg->airsar->l_vv && !check_airsar(outFile, "_l_vv")) {
+          asfPrintStatus("No L-band interferometric AirSAR product.\n");
+          cfg->airsar->l_vv = 0;
         }
       }
-    }
 
-    if (!is_airsar) {
-      // Make sure truecolor/falsecolor are only specified for optical data
-      strcpy(inFile, cfg->general->in_name);
-      meta_parameters *meta = meta_read(inFile);
-      if (!meta->optical && (truecolor || falsecolor)) {
-        asfPrintError("Cannot select True Color or False Color output with non-optical data\n");
+      if (!is_airsar) {
+        // Make sure truecolor/falsecolor are only specified for optical data
+        meta_parameters *meta = meta_read(outFile);
+        if (!meta->optical && (truecolor || falsecolor)) {
+          asfPrintError("Cannot select True Color or False Color output "
+                        "with non-optical data\n");
+        }
+        if (cfg->export->band &&
+            strlen(cfg->export->band) > 0 &&
+            get_band_number(meta->general->bands, 
+                            meta->general->band_count, cfg->export->band) < 0)
+        {
+          asfPrintError("Selected export band (%s) does not exist: \n"
+                        "   Imported file: %s.img\n"
+                        " Available bands: %s\n",
+                        cfg->export->band, cfg->general->in_name,
+                        meta->general->bands);
+        }
+        meta_free(meta);
       }
-      if (cfg->export->band &&
-          strlen(cfg->export->band) > 0 &&
-          get_band_number(meta->general->bands, meta->general->band_count, cfg->export->band) < 0)
-      {
-        asfPrintError("Selected export band (%s) does not exist: \n"
-                      "   Imported file: %s.img\n"
-                      " Available bands: %s\n",
-                      cfg->export->band, cfg->general->in_name, meta->general->bands);
-      }
-      meta_free(meta);
     }
 
     if (cfg->general->sar_processing) {
@@ -1212,9 +1264,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (strncmp(uc(cfg->geocoding->resampling), "BICUBIC", 7) == 0) {
         resample_method = RESAMPLE_BICUBIC;
       }
-      // Pass in command line
-      if (is_airsar)
-        sprintf(inFile, "%s", outFile);
+
+      sprintf(inFile, "%s", outFile);
       if (cfg->general->export) {
         sprintf(outFile, "%s/geocoding", cfg->general->tmp_dir);
       }
@@ -1224,22 +1275,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 cfg->general->out_name,
                 cfg->general->suffix);
       }
-
+      
+      // Pass in command line
       if (is_airsar) {
         // airsar -- geocode only what was asked for
         check_return(geocode_airsar(cfg, cfg->geocoding->projection,
-                force_flag, resample_method, average_height, datum, pixel_size, NULL,
-                inFile, outFile, background_val),
+                force_flag, resample_method, average_height, datum, pixel_size,
+                NULL, inFile, outFile, background_val),
               "geocoding airsar (asf_geocode)\n");
 
       } else {
         // normal geocoding
         check_return(asf_geocode_from_proj_file(cfg->geocoding->projection,
-                                                force_flag, resample_method,
-                                                average_height, datum,
-                                                pixel_size, NULL, inFile, outFile,
-                                                background_val),
-                   "geocoding data file (asf_geocode)\n");
+                force_flag, resample_method, average_height, datum,
+                pixel_size, NULL, inFile, outFile, background_val),
+              "geocoding data file (asf_geocode)\n");
       }
     }
 
@@ -1261,8 +1311,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         // do multi-band stuff first
         asfPrintStatus("\nExporting AirSAR products...\n");
-        if (cfg->airsar->p_band) {
-          update_status("Exporting P-band...");
+        if (cfg->airsar->p_pol) {
+          update_status("Exporting polarimetric P-band...");
           char *in_tmp = appendToBasename(inFile, "_p");
           char *out_tmp = appendToBasename(outFile, "_p");
           
@@ -1274,8 +1324,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintStatus("Skipping export of AirSAR P-band data.\n");
         }
 
-        if (cfg->airsar->l_band) {
-          update_status("Exporting L-band...");
+        if (cfg->airsar->l_pol) {
+          update_status("Exporting polarimetric L-band...");
           char *in_tmp = appendToBasename(inFile, "_l");
           char *out_tmp = appendToBasename(outFile, "_l");
           
@@ -1287,8 +1337,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintStatus("Skipping export of AirSAR L-band data.\n");
         }
 
+        if (cfg->airsar->c_pol) {
+          update_status("Exporting polarimetric C-band...");
+          char *in_tmp = appendToBasename(inFile, "_c");
+          char *out_tmp = appendToBasename(outFile, "_c");
+          
+          asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+        }
+        else {
+          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
+        }
 
-        // those were the two multi-band images -- the rest are single.
+        // those were two multi-band images -- the rest are single.
         // so they must be export as greyscale, no matter what the user
         // actually asked for... temporarily reset the convert_config
         char *rgb = STRDUP(cfg->export->rgb);
@@ -1300,11 +1362,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         cfg->export->sinclair = 0;
 
         if (pauli)
-          asfPrintStatus("Disabling Pauli export for C-band data.\n");
+          asfPrintStatus("Disabling Pauli export for non-quad-pol data.\n");
         if (sinclair)
-          asfPrintStatus("Disabling Sinclair export for C-band data.\n");
+          asfPrintStatus("Disabling Sinclair export for non-quad-pol data.\n");
 
-        if (cfg->airsar->c_band) {
+        if (cfg->airsar->c_vv) {
           update_status("Exporting C-band...");
           char *in_tmp = appendToBasename(inFile, "_c_vv");
           char *out_tmp = appendToBasename(outFile, "_c_vv");
@@ -1312,66 +1374,60 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
-        }
-        else {
-          asfPrintStatus("Skipping export of AirSAR C-band data.\n");
-        }
 
-        if (cfg->airsar->dem)
-        {
-          update_status("Exporting DEM...");
-          char *in_tmp = appendToBasename(inFile, "_c_dem");
-          char *out_tmp = appendToBasename(outFile, "_c_dem");
+          update_status("Exporting C-band DEM...");
+          in_tmp = appendToBasename(inFile, "_c_dem");
+          out_tmp = appendToBasename(outFile, "_c_dem");
           
-          asfPrintStatus("Exporting DEM: %s -> %s\n", in_tmp, out_tmp);
+          asfPrintStatus("Exporting C-band DEM: %s -> %s\n", in_tmp, out_tmp);
 
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+
+          update_status("Exporting C-band coherence...");
+          in_tmp = appendToBasename(inFile, "_c_coh");
+          out_tmp = appendToBasename(outFile, "_c_coh");
+          
+          asfPrintStatus("Exporting C-band coherence: %s -> %s\n",
+                         in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
         }
         else {
-          asfPrintStatus("Skipping export of AirSAR DEM.\n");
+          asfPrintStatus("Skipping export of AirSAR C-band interferometric "
+                         "data.\n");
         }
 
-        if (cfg->airsar->coh) {
-          update_status("Exporting Coherence Image...");
-          char *in_tmp = appendToBasename(inFile, "_c_coh");
-          char *out_tmp = appendToBasename(outFile, "_c_coh");
+        if (cfg->airsar->l_vv) {
+          update_status("Exporting L-band...");
+          char *in_tmp = appendToBasename(inFile, "_l_vv");
+          char *out_tmp = appendToBasename(outFile, "_l_vv");
           
-          asfPrintStatus("Exporting Coherence: %s -> %s\n", in_tmp, out_tmp);
+          asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+
+          update_status("Exporting L-band DEM...");
+          in_tmp = appendToBasename(inFile, "_l_dem");
+          out_tmp = appendToBasename(outFile, "_l_dem");
+          
+          asfPrintStatus("Exporting L-band DEM: %s -> %s\n", in_tmp, out_tmp);
+
+          do_export(cfg, in_tmp, out_tmp);
+          free(in_tmp); free(out_tmp);
+
+          update_status("Exporting L-band coherence...");
+          in_tmp = appendToBasename(inFile, "_l_coh");
+          out_tmp = appendToBasename(outFile, "_l_coh");
+          
+          asfPrintStatus("Exporting L-band coherence: %s -> %s\n",
+                         in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
         }
         else {
-          asfPrintStatus("Skipping export of AirSAR Coherence.\n");
-        }
-
-
-        // export the POWER bands of L & P as greyscale, unless:
-        //   we already did (because user exported as greyscale), or
-        //   user has already requested specific bands be exported
-        if (strlen(rgb) > 0 && strlen(cfg->export->band) == 0) {
-          // exporting only the POWER band
-          strcpy(cfg->export->band, "POWER");
-          if (cfg->airsar->p_band) {
-            update_status("Exporting P-band power...");
-            char *in_tmp = appendToBasename(inFile, "_p");
-            char *out_tmp = appendToBasename(outFile, "_p");
-            
-            asfPrintStatus("Exporting P-band power: %s -> %s\n", in_tmp, out_tmp);
-            do_export(cfg, in_tmp, out_tmp);
-            free(in_tmp); free(out_tmp);
-          }
-          if (cfg->airsar->l_band) {
-            update_status("Exporting L-band power...");
-            char *in_tmp = appendToBasename(inFile, "_l");
-            char *out_tmp = appendToBasename(outFile, "_l");
-            
-            asfPrintStatus("Exporting L-band power: %s -> %s\n", in_tmp, out_tmp);
-            do_export(cfg, in_tmp, out_tmp);
-            free(in_tmp); free(out_tmp);
-          }
-          // reset config to what it was before
-          strcpy(cfg->export->band, "");
+          asfPrintStatus("Skipping export of AirSAR L-band interferometric "
+                         "data.\n");
         }
 
         // now put back the user's rgb settings
@@ -1383,10 +1439,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
         // airsar metadata... 
         if (cfg->general->import) {
-          // export c_vv band's metadata as the "official" metadata
-          char *in_tmp = appendToBasename(inFile, "_c_vv");
-          copy_meta(in_tmp, outFile);
-          free(in_tmp);
+          // export c/l_vv band's metadata as the "official" metadata
+          char *in_tmp=NULL;
+          if (cfg->airsar->c_vv) {
+            in_tmp = appendToBasename(inFile, "_c_vv");
+          } else if (cfg->airsar->l_vv) {
+            in_tmp = appendToBasename(inFile, "_l_vv");
+          } else {
+            // .meta should already be there, even if user did not request
+            // it, because asf_import imports everything anyway
+            in_tmp = appendToBasename(inFile, "_c_vv");
+          }
+          if (in_tmp) {
+            copy_meta(in_tmp, outFile);
+            free(in_tmp);
+          }
         }
       }
     }

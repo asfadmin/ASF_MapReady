@@ -55,11 +55,11 @@ typedef struct
 
 typedef struct
 {
-  int dem;                // should we ingest the airsar DEM?
-  int coh;                // should we ingest the airsar coherence image?
-  int c_band;             // should we ingest the airsar C-band image?
-  int l_band;             // should we ingest the airsar L-band image?
-  int p_band;             // should we ingest the airsar P-band image?
+  int c_vv;               // ingest the airsar C-band interferometric data?
+  int l_vv;               // ingest the airsar L-band interferometric data?
+  int c_pol;              // ingest the airsar C-band polarimetric image?
+  int l_pol;              // ingest the airsar L-band polarimetric image?
+  int p_pol;              // ingest the airsar P-band polarimetric image?
 } s_airsar;
 
 typedef struct

@@ -88,22 +88,32 @@ void update_summary()
         break;
 
       case INPUT_FORMAT_AIRSAR:
-        strcat(text, "AirSAR\n  (");
-        if (s->airsar_dem)
-          strcat(text, "dem,");
-        if (s->airsar_coh)
-          strcat(text, "coherence,");
-        if (s->airsar_c_vv)
-          strcat(text, "c-band,");
-        if (s->airsar_l)
-          strcat(text, "l-band,");
-        if (s->airsar_p)
-          strcat(text, "p-band,");
-        if (text[strlen(text)-1]==',') {
-          text[strlen(text)-1]='\0';
-          strcat(text, ")");
+        strcat(text, "AirSAR\n  ");
+        if (s->airsar_c_vv || s->airsar_l_vv) {
+          strcat(text, "Interferometric (");
+          if (s->airsar_c_vv && s->airsar_l_vv)
+            strcat(text, "c,l), ");
+          else if (s->airsar_c_vv)
+            strcat(text, "c), ");
+          else
+            strcat(text, "l), ");
+        }
+        if (s->airsar_l_pol || s->airsar_p_pol || s->airsar_c_pol) {
+          strcat(text, "Polarimetric (");
+          if (s->airsar_c_pol)
+            strcat(text, "c,");
+          if (s->airsar_l_pol)
+            strcat(text, "l,");
+          if (s->airsar_p_pol)
+            strcat(text, "p,");
+          if (text[strlen(text)-1]==',') // should always be true
+            text[strlen(text)-1]='\0';
+          strcat(text, "), ");
+        }
+        if (text[strlen(text)-2]==',') {
+          text[strlen(text)-2]='\0';
         } else {
-          strcat(text, "none)");
+          strcat(text, "none");
         } 
     }
 

@@ -1,6 +1,10 @@
 #ifndef _ASF_IMPORT_H_
 #define _ASF_IMPORT_H_
 
+#ifndef __ASF_META_H__
+#include "asf_meta.h"
+#endif
+
 #define TOOLS_META_EXT    ".meta"
 #define TOOLS_IMAGE_EXT   ".img"
 #define TOOLS_RAW_EXT     ".img"
@@ -75,6 +79,7 @@ void import_bil(char *inBaseName, char *outBaseName);
 void import_gridfloat(char *inBaseName, char *outBaseName);
 
 void import_airsar(const char *inFileName, const char *outBaseName);
+meta_parameters *import_airsar_meta(const char *inBaseName);
 
 //void import_gamma_isp(const char *inBaseName, const char *outBaseName);
 

@@ -422,10 +422,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckButton" id="airsar_dem_checkbutton">
+		    <widget class="GtkCheckButton" id="airsar_c_vv_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">C-band interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Process AirSAR DEM</property>
+		      <property name="label" translatable="yes">Process AirSAR C-band cross track interferometric data</property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -442,10 +443,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckButton" id="airsar_coh_checkbutton">
+		    <widget class="GtkCheckButton" id="airsar_l_vv_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">L-band interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Process AirSAR Coherence Image</property>
+		      <property name="label" translatable="yes">Process AirSAR L-band cross track interferometric data</property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -462,10 +464,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckButton" id="airsar_c_vv_checkbutton">
+		    <widget class="GtkCheckButton" id="airsar_c_pol_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">C-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Process AirSAR C-band (VV) data</property>
+		      <property name="label" translatable="yes">Process AirSAR C-band polarimetric data</property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -482,10 +485,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckButton" id="airsar_l_checkbutton">
+		    <widget class="GtkCheckButton" id="airsar_l_pol_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">L-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Process AirSAR L-band (quad-pol) data</property>
+		      <property name="label" translatable="yes">Process AirSAR L-band polarimetric data</property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>
@@ -502,10 +506,11 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckButton" id="airsar_p_checkbutton">
+		    <widget class="GtkCheckButton" id="airsar_p_pol_checkbutton">
 		      <property name="visible">True</property>
+		      <property name="tooltip" translatable="yes">P-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 		      <property name="can_focus">True</property>
-		      <property name="label" translatable="yes">Process AirSAR P-band (quad-pol) data</property>
+		      <property name="label" translatable="yes">Process AirSAR P-band polarimetric data</property>
 		      <property name="use_underline">True</property>
 		      <property name="relief">GTK_RELIEF_NORMAL</property>
 		      <property name="focus_on_click">True</property>

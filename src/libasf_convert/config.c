@@ -371,11 +371,11 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
 
-  cfg->airsar->dem = 0;
-  cfg->airsar->coh = 0;
-  cfg->airsar->c_band = 0;
-  cfg->airsar->l_band = 0;
-  cfg->airsar->p_band = 0;
+  cfg->airsar->c_vv = 0;
+  cfg->airsar->l_vv = 0;
+  cfg->airsar->c_pol = 0;
+  cfg->airsar->l_pol = 0;
+  cfg->airsar->p_pol = 0;
 
   cfg->sar_processing->radiometry = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->sar_processing->radiometry, "AMPLITUDE_IMAGE");
@@ -511,16 +511,16 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
       // AirSAR
-      if (strncmp(test, "airsar dem", 10)==0)
-        cfg->airsar->dem = read_int(line, "airsar dem");
-      if (strncmp(test, "airsar coherence", 16)==0)
-        cfg->airsar->coh = read_int(line, "airsar coherence");
-      if (strncmp(test, "airsar c-band", 13)==0)
-        cfg->airsar->c_band = read_int(line, "airsar c-band");
-      if (strncmp(test, "airsar l-band", 13)==0)
-        cfg->airsar->l_band = read_int(line, "airsar l-band");
-      if (strncmp(test, "airsar p-band", 13)==0)
-        cfg->airsar->p_band = read_int(line, "airsar p-band");
+      if (strncmp(test, "airsar c interferometric", 24)==0)
+        cfg->airsar->c_vv = read_int(line, "airsar c interferometric");
+      if (strncmp(test, "airsar l interferometric", 24)==0)
+        cfg->airsar->l_vv = read_int(line, "airsar l interferometric");
+      if (strncmp(test, "airsar c polarimetric", 21)==0)
+        cfg->airsar->c_pol = read_int(line, "airsar c polarimetric");
+      if (strncmp(test, "airsar l polarimetric", 21)==0)
+        cfg->airsar->l_pol = read_int(line, "airsar l polarimetric");
+      if (strncmp(test, "airsar p polarimetric", 21)==0)
+        cfg->airsar->p_pol = read_int(line, "airsar p polarimetric");
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
@@ -764,16 +764,16 @@ convert_config *read_convert_config(char *configFile)
     if (strncmp(line, "[AirSAR]", 8)==0) strcpy(params, "AirSAR");
     if (strncmp(params, "AirSAR", 6)==0) {
       test = read_param(line);
-      if (strncmp(test, "airsar dem", 10)==0)
-        cfg->airsar->dem = read_int(line, "airsar dem");
-      if (strncmp(test, "airsar coherence", 16)==0)
-        cfg->airsar->coh = read_int(line, "airsar coherence");
-      if (strncmp(test, "airsar c-band", 13)==0)
-        cfg->airsar->c_band = read_int(line, "airsar c-band");
-      if (strncmp(test, "airsar l-band", 13)==0)
-        cfg->airsar->l_band = read_int(line, "airsar l-band");
-      if (strncmp(test, "airsar p-band", 13)==0)
-        cfg->airsar->p_band = read_int(line, "airsar p-band");
+      if (strncmp(test, "airsar c interferometric", 24)==0)
+        cfg->airsar->c_vv = read_int(line, "airsar c interferometric");
+      if (strncmp(test, "airsar l interferometric", 24)==0)
+        cfg->airsar->l_vv = read_int(line, "airsar l interferometric");
+      if (strncmp(test, "airsar c polarimetric", 21)==0)
+        cfg->airsar->c_pol = read_int(line, "airsar c polarimetric");
+      if (strncmp(test, "airsar l polarimetric", 21)==0)
+        cfg->airsar->l_pol = read_int(line, "airsar l polarimetric");
+      if (strncmp(test, "airsar p polarimetric", 21)==0)
+        cfg->airsar->p_pol = read_int(line, "airsar p polarimetric");
       FREE(test);
     }
 
@@ -1104,21 +1104,33 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {
       fprintf(fConfig, "\n\n[AirSAR]\n");
       if (!shortFlag)
-        fprintf(fConfig, "\n# Flag indicating that the AirSAR DEM should be imported.\n\n");
-      fprintf(fConfig, "airsar dem = %d\n", cfg->airsar->dem);
+        fprintf(fConfig, "\n# Flag indicating if the AirSAR C-band cross-track interferometric data\n"
+                "# (containing a VV image, a DEM, and a coherence image) should be processed.\n"
+                "# Not all AirSAR data sets will contain this type of data.\n\n");
+      fprintf(fConfig, "airsar c interferometric = %d\n", cfg->airsar->c_vv);
       if (!shortFlag)
-        fprintf(fConfig, "\n# Flag indicating that the AirSAR coherence image should be\n"
-                "# imported.\n\n");
-      fprintf(fConfig, "airsar coherence = %d\n", cfg->airsar->coh);
+        fprintf(fConfig, "\n# Flag indicating if the AirSAR L-band cross-track interferometric data\n"
+                "# (containing a VV image, a DEM, and a coherence image) should be processed.\n"
+                "# Not all AirSAR data sets will contain this type of data.\n\n");
+      fprintf(fConfig, "airsar l interferometric = %d\n", cfg->airsar->l_vv);
       if (!shortFlag)
-        fprintf(fConfig, "\n# Flag indicating that the AirSAR C-band image should be imported.\n\n");
-      fprintf(fConfig, "airsar c-band = %d\n", cfg->airsar->c_band);
+        fprintf(fConfig, "\n# Flag indicating if the AirSAR C-band polarimetric data (containing\n"
+                "# 9 bands: power, and amplitude & phase for each of VV, HV, VH, and VV)\n"
+                "# should be processed.  Not all AirSAR data sets will contain this type\n"
+                "# of data.\n\n");
+      fprintf(fConfig, "airsar c polarimetric = %d\n", cfg->airsar->c_pol);
       if (!shortFlag)
-        fprintf(fConfig, "\n# Flag indicating that the AirSAR L-band image should be imported.\n\n");
-      fprintf(fConfig, "airsar l-band = %d\n", cfg->airsar->l_band);
+        fprintf(fConfig, "\n# Flag indicating if the AirSAR L-band polarimetric data (containing\n"
+                "# 9 bands: power, and amplitude & phase for each of VV, HV, VH, and VV)\n"
+                "# should be processed.  Not all AirSAR data sets will contain this type\n"
+                "# of data.\n\n");
+      fprintf(fConfig, "airsar l polarimetric = %d\n", cfg->airsar->l_pol);
       if (!shortFlag)
-        fprintf(fConfig, "\n# Flag indicating that the AirSAR P-band image should be imported.\n\n");
-      fprintf(fConfig, "airsar p-band = %d\n\n", cfg->airsar->p_band);
+        fprintf(fConfig, "\n# Flag indicating if the AirSAR P-band polarimetric data (containing\n"
+                "# 9 bands: power, and amplitude & phase for each of VV, HV, VH, and VV)\n"
+                "# should be processed.  Not all AirSAR data sets will contain this type\n"
+                "# of data.\n\n");
+      fprintf(fConfig, "airsar p polarimetric = %d\n", cfg->airsar->p_pol);
     }
 
     // SAR processing

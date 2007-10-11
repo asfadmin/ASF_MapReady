@@ -165,19 +165,17 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   FREE(svv_phase);
   FREE(inFile);
   FREE(outFile);
+  FREE(byteBuf);
 }
 
-void import_airsar(const char *inBaseName, const char *outBaseName)
+static airsar_parameters *read_airsar_params(const char *inBaseName)
 {
-  FILE *fpIn;
-  char metaFile[255];
-  char line[256]="", *value, str[50]="", *p;
-  airsar_general *general=NULL;
   airsar_parameters *params=NULL;
-  meta_parameters *metaIn, *metaOut;
+  char line[256]="", *value, str[50]="";
 
   char *basename = get_basename(inBaseName);
   char *dir = get_dirname(inBaseName);
+  char *metaFile = MALLOC(sizeof(char)*(strlen(inBaseName)+20));
 
   if (strncmp(basename, "ts", 2) == 0) {
     // Read specific parameter file
@@ -186,7 +184,7 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
       sprintf(metaFile, "%s/hd%s.log", dir, basename+2);
     else
       sprintf(metaFile, "hd%s.log", basename+2);
-    fpIn = FOPEN(metaFile, "r");
+    FILE *fpIn = FOPEN(metaFile, "r");
     
     while (NULL != fgets(line, 255, fpIn)) {
       
@@ -334,11 +332,24 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
 
   free(basename);
   free(dir);
+  free(metaFile);
 
+  return params;
+}
+
+static airsar_general *read_airsar_general(const char *inBaseName)
+{
   // Read general metadata file
+  airsar_general *general=NULL;
+  char line[256]="", *value, *p;
+
   general = (airsar_general *) MALLOC(sizeof(airsar_general));
+
+  char *metaFile = MALLOC(sizeof(char)*(strlen(inBaseName)+20));
   sprintf(metaFile, "%s_meta.airsar", inBaseName);
-  fpIn = FOPEN(metaFile, "r");
+
+  FILE *fpIn = FOPEN(metaFile, "r");
+
   while (NULL != fgets(line, 255, fpIn)) {
     p = strchr(line, '=');
     if (p) {
@@ -451,9 +462,32 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   }
   FCLOSE(fpIn);
 
+  free(metaFile);
+  return general;
+}
+
+meta_parameters *import_airsar_meta(const char *inBaseName)
+{
+  airsar_general *general = read_airsar_general(inBaseName);
+  airsar_parameters *params = read_airsar_params(inBaseName);
+
+  meta_parameters *ret = airsar2meta(general, params);
+
+  free(general);
+  free(params);
+
+  return ret;
+}
+
+void import_airsar(const char *inBaseName, const char *outBaseName)
+{
+  // Read AirSAR parameters files
+  airsar_general *general = read_airsar_general(inBaseName);
+  airsar_parameters *params = read_airsar_params(inBaseName);
+
   // Generate metadata
-  metaIn = airsar2meta(general, params);
-  metaOut = airsar2meta(general, params);
+  meta_parameters *metaIn = airsar2meta(general, params);
+  meta_parameters *metaOut = airsar2meta(general, params);
 
   // Check for interferometric data
   if (general->c_cross_data) {
@@ -486,6 +520,9 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
     ingest_polsar_data(inBaseName, outBaseName, metaOut, 'p',
 		       params->calibration_header_offset*10);
   }
+
+  free(general);
+  free(params);
   
   meta_free(metaIn);
   meta_free(metaOut);
