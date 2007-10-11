@@ -184,15 +184,15 @@ static double get_distance(lat_lon one,lat_lon two)
 {
   double dlat=one.lat-two.lat;
   double dlon;
-  if ( one.lon < -170 && two.lon > 170 ) {
-    dlon = (180 + one.lon) + (180 - two.lon);
+
+  // some kludgery to handle crossing the meridian
+  // get "two" to be on the same side as "one"
+  if (fabs(one.lon-two.lon) > 300) {
+    if (one.lon < 0 && two.lon > 0) two.lon -= 360;
+    if (one.lon > 0 && two.lon < 0) two.lon += 360;
   }
-  else if ( one.lon > 170 && two.lon < -170 ) {
-    dlon = (180 - one.lon) + (180 + two.lon);
-  }
-  else {
-    dlon = one.lon - two.lon;
-  }
+
+  dlon = one.lon - two.lon;
 
   /* Scale longitude difference to take into accound the fact
      that longitude lines are a lot closer at the pole.  */
@@ -240,8 +240,6 @@ static int meta_get_lineSamp_imp(meta_parameters *meta,
   while (fabs(x-x_old)+fabs(y-y_old)>DELTA*tolerance)
   {
     double cur_err, tmp, del_x, del_y, rad;
-
-//printf("iter %d: x=%6.1f; y=%6.1f, cur_err=",iter,x,y);
 
     err = get_error(meta,target,elev,x,y,&cur_err);
 //printf("%lf, err=%d\n", cur_err, err);
