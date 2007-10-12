@@ -24,7 +24,7 @@ static void apply_default_dirs(convert_config *cfg)
   int file_len = strlen(file);
   int file_dir_len = strlen(file_dir);
   int def_dir_len = strlen(cfg->general->default_in_dir);
-  if (file_dir_len==0 && def_dir_len!=0) {
+  if (file_dir_len==0 && def_dir_len!=0 && file_len>0) {
     char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
     strcpy(tmpstr, cfg->general->default_in_dir);
     strcat(tmpstr, DIR_SEPARATOR_STR);
@@ -40,7 +40,7 @@ static void apply_default_dirs(convert_config *cfg)
   file_len = strlen(file);
   file_dir_len = strlen(file_dir);
   def_dir_len = strlen(cfg->general->default_out_dir);
-  if (file_dir_len==0 && def_dir_len!=0) {
+  if (file_dir_len==0 && def_dir_len!=0 && file_len>0) {
     char *tmpstr = (char*)MALLOC(sizeof(char)*(file_len+def_dir_len+2));
     strcpy(tmpstr, cfg->general->default_out_dir);
     strcat(tmpstr, DIR_SEPARATOR_STR);
@@ -928,11 +928,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
     fprintf(fConfig, "output file = %s\n", cfg->general->out_name);
     if (!shortFlag)
       fprintf(fConfig, "\n# Default directory to find files in. If there is no directory in\n"
-                       " input file, this directory will be appended to it.\n\n");
+                       "# the input file value, this directory will be appended to it.\n\n");
     fprintf(fConfig, "default input dir = %s\n", cfg->general->default_in_dir);
     if (!shortFlag)
       fprintf(fConfig, "\n# Default directory to put files in. If there is no directory in\n"
-                       " output file, this directory will be appended to it.\n\n");
+                       "# the output file value, this directory will be appended to it.\n\n");
     fprintf(fConfig, "default output dir = %s\n", cfg->general->default_out_dir);
     if (!shortFlag) {
       fprintf(fConfig, "\n# The import flag indicates whether the data needs to be run through\n"
