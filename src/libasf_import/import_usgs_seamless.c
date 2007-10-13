@@ -346,4 +346,7 @@ import_usgs_seamless (const char *inFileName, const char *outBaseName, ...)
 
   // We must be done with the citation string too :)
   FREE (citation);
+
+  FREE(tie_point);
+  FREE(pixel_scale);
 }

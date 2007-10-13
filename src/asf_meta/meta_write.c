@@ -30,10 +30,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
   // the type of data that we have
   if (dump_envi_header) {
       if (datatype2envi(meta->general->data_type) != -1) {
-          file_name_with_extension = appendExt(file_name, ".hdr");
+          char *hdr_file_name_with_extension = appendExt(file_name, ".hdr");
           envi_header *envi = meta2envi(meta);
-          write_envi_header(file_name_with_extension, meta, envi);
+          write_envi_header(hdr_file_name_with_extension, meta, envi);
           FREE(envi);
+          FREE(hdr_file_name_with_extension);
       } else {
           // no need to get all "***WARNING!!!***" about this
           printf("Not dumping ENVI header for this data type.\n");

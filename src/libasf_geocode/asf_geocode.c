@@ -832,14 +832,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
             ok = test_nad27(lat, lon);
 
             meta_get_latLon (imd, ii_size_y, 0, average_height, &lat, &lon);
-            ok &= test_nad27(lat, lon);
+            ok |= test_nad27(lat, lon);
 
             meta_get_latLon (imd, 0, ii_size_x, average_height, &lat, &lon);
-            ok &= test_nad27(lat, lon);
+            ok |= test_nad27(lat, lon);
 
             meta_get_latLon (imd, ii_size_y, ii_size_x, average_height,
                             &lat, &lon);
-            ok &= test_nad27(lat, lon);
+            ok |= test_nad27(lat, lon);
         }
 
         if (!ok) {

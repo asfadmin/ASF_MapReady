@@ -59,20 +59,23 @@ static float filter(      /****************************************/
            i, j;                           /* loop counters       */
                                            /***********************/
     for (i = 0; i < nl; i++)
+    {
+      for (j = x-half; j <= x+half; j++)
       {
-       for (j = x-half; j <= x+half; j++)
-         {
-          if (inbuf[base] != 0 && j < ns)
-           {
-             kersum += inbuf[base];
-             total  += 1;
-           }
-          base++;
-         }
-       base += ns;
-       base -= nsk;
+        if (base>=0 && base<nl*ns && inbuf[base] != 0 && j < ns)
+        {
+          kersum += inbuf[base];
+          total++;
+        }
+        base++;
       }
-    if (total != 0) kersum /= (float) total;
+      base += ns;
+      base -= nsk;
+    }
+
+    if (total != 0)
+      kersum /= (float) total;
+
     return (kersum);
 }
 
@@ -88,9 +91,9 @@ resample_impl(char *infile, char *outfile,
              onp, onl,              /* out number of pixels,lines     */
              xnsk,                  /* kernel size in samples (x)     */
              ynsk,                  /* kernel size in samples (y)     */
-       xhalf,yhalf,     /* half of the kernel size        */
-       n_lines,       /* number of lines in this kernel */
-       s_line,        /* start line for input file      */
+             xhalf,yhalf,           /* half of the kernel size        */
+             n_lines,               /* number of lines in this kernel */
+             s_line,                /* start line for input file      */
              xi = 0,                /* inbuf int x sample #           */
              yi = 0,                /* inbuf int y line #             */
              i,j,k;                 /* loop counters                  */

@@ -74,6 +74,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	  if (nOccurences==recordNo)
 	    { /*This is the correct occurence! Clean up and return.*/
 	      FCLOSE(fp);
+              free_ceos_names(dataName, metaName);
 	      return era;
 	    }
 	  else /*Move on.*/

@@ -51,6 +51,12 @@ SIGNAL_CALLBACK void new_ok_clicked()
     }
 }
 
+SIGNAL_CALLBACK void browse_widget_destroy()
+{
+    gtk_widget_destroy(browse_widget);
+    browse_widget = NULL;
+}
+
 // sets up the file chooser dialog
 static void create_file_chooser_dialog()
 {
@@ -76,6 +82,12 @@ static void create_file_chooser_dialog()
         G_CALLBACK(new_cancel_clicked), NULL);
     g_signal_connect((gpointer)ok_btn, "clicked",
         G_CALLBACK(new_ok_clicked), NULL);
+    g_signal_connect(browse_widget, "destroy",
+        G_CALLBACK(browse_widget_destroy), NULL);
+    g_signal_connect(browse_widget, "destroy_event",
+        G_CALLBACK(browse_widget_destroy), NULL);
+    g_signal_connect(browse_widget, "delete_event",
+        G_CALLBACK(browse_widget_destroy), NULL);
 
     // add the filters
     GtkFileFilter *D_filt = gtk_file_filter_new();
