@@ -9,7 +9,7 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
 
   char *p;
   int found=FALSE;
-  double look=0, width=0, length=0;
+  float look=0, width=0, length=0;
 
   while (1) {
     char line[1024];

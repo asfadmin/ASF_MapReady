@@ -1,7 +1,7 @@
-#ifndef PLAN_H
-#define PLAN_H
+#ifndef BEAM_MODE_TABLE_H
+#define BEAM_MKDE_TABLE_H
 
-typdef struct
+typedef struct
 {
     double look_angle;
     double width_m;

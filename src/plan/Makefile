@@ -31,6 +31,7 @@ all: prog
 prog: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
+	cp beam_modes.txt $(SHAREDIR)
 
 clean:
 	rm -f core $(OBJS) *.o

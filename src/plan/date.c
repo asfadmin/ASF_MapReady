@@ -34,7 +34,7 @@ int is_valid_date(long l)
     int m = atoi(month);
     int d = atoi(day);
 
-    if (y >= 2007 && y <= 9999 &&  // year between 2007 and 9999
+    if (y >= 1900 && y <= 9999 &&  // year between 1900 and 9999
         m >= 1    && m <= 12   &&  // month between 1 and 12
         d >= 1    && d <= 31)      // day between 1 and 31
     {

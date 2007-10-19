@@ -53,6 +53,7 @@
 #include <libasf_proj.h>
 #include <polygon.h>
 #include <date.h>
+#include <plan.h>
 
 // Print minimalistic usage info & exit
 static void usage(const char *name)
@@ -106,7 +107,7 @@ int
 main (int argc, char *argv[])
 {
   int currArg = 1;
-  int NUM_ARGS = 9;
+  int NUM_ARGS = 10;
 
   // process log/quiet/license/etc options
   handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
@@ -139,12 +140,12 @@ main (int argc, char *argv[])
 
   char *satellite = argv[currArg];
   char *beam_mode = argv[currArg+1];
-  long startdate = atol(argv[currArg+2]);
-  if (!is_valid_date(startdate))
+  long startdt = atol(argv[currArg+2]);
+  if (!is_valid_date(startdt))
     asfPrintError("Invalid date: %s\nFormat should be: YYYYMMDD\n",
                   argv[currArg+2]);
-  long enddate = atol(argv[currArg+3]);
-  if (!is_valid_date(enddate))
+  long enddt = atol(argv[currArg+3]);
+  if (!is_valid_date(enddt))
     asfPrintError("Invalid date: %s\nFormat should be: YYYYMMDD\n",
                   argv[currArg+3]);
   double lat_min = atof(argv[currArg+4]);
@@ -154,9 +155,12 @@ main (int argc, char *argv[])
   char *metaFile = argv[currArg+8];
   char *outFile = argv[currArg+9];
 
+  double clat = (lat_max+lat_min)/2.;
+  double clon = (lon_max+lon_min)/2.;
+
   // create lat/lon polygon in UTM coords
   double x[4], y[4];
-  int zone = utm_zone((lon_max-lon_min)/2.);
+  int zone = utm_zone(clon);
   latLon2UTM_zone(lat_min, lon_min, 0, zone, &x[0], &y[0]);
   latLon2UTM_zone(lat_min, lon_max, 0, zone, &x[1], &y[1]);
   latLon2UTM_zone(lat_max, lon_max, 0, zone, &x[2], &y[2]);
@@ -164,7 +168,7 @@ main (int argc, char *argv[])
   Polygon *box = polygon_new_closed(4, x, y);
 
   meta_parameters *meta = meta_read(metaFile);
-  plan(satellite, beam_mode, startdate, enddate, box, meta, outFile);
+  plan(satellite, beam_mode, startdt, enddt, clat, clon, box, meta, outFile);
 
   meta_free(meta);
   polygon_free(box);
