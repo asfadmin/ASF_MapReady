@@ -527,20 +527,43 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (p) *p = '\0';
 
       split_dir_and_file(batchItem, batchPreDir, fileName);
-
+      
+      char *tmpDir = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
+      char *tmpFile = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
+      split_dir_and_file(cfg->general->defaults, tmpDir, tmpFile);
+      char cwd[10000];
+      getcwd(cwd,10000);
+      int defaultsLen;
+      if (strlen(cfg->general->defaults) > strlen(cwd)+strlen(tmpFile)) {
+        defaultsLen = strlen(cfg->general->defaults);
+      } else {
+        defaultsLen = strlen(cwd)+strlen(tmpFile);
+      }
+      char *defaults = MALLOC(sizeof(char)*defaultsLen+2);
+      if (0==strlen(tmpDir)) {
+        sprintf(defaults,"%s/%s",cwd,tmpFile);
+      } else {
+        strcpy(defaults,cfg->general->defaults);
+      }
+      FREE(tmpDir);
+      FREE(tmpFile);
+ 
       // Create temporary configuration file
-      create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
+      create_and_set_tmp_dir(fileName, cfg->general->default_out_dir, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
+      
+      
       FILE *fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
       fprintf(fConfig, "[General]\n");
-      fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
+      fprintf(fConfig, "default values = %s\n", defaults);
       fprintf(fConfig, "input file = %s\n", batchItem);
-      fprintf(fConfig, "output file = %s%s%s\n", cfg->general->prefix,
-                                                 fileName,
-                                                 cfg->general->suffix);
+      fprintf(fConfig, "output file = %s%c%s%s%s\n",
+                       cfg->general->default_out_dir, DIR_SEPARATOR,
+                       cfg->general->prefix, fileName, cfg->general->suffix);
       fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
       FCLOSE(fConfig);
+      FREE(defaults);
 
       // Extend the temporary configuration file
       tmp_cfg = read_convert_config(tmpCfgName);
@@ -626,11 +649,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
 
-      // Import format: ASF, CEOS or STF, GeoTIFF
+      // Import format
       if (strncmp(uc(cfg->import->format), "ASF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "CEOS", 4) != 0 &&
           strncmp(uc(cfg->import->format), "STF", 3) != 0 &&
           strncmp(uc(cfg->import->format), "AIRSAR", 6) != 0 &&
+          strncmp(uc(cfg->import->format), "BIL", 3) != 0 &&
+          strncmp(uc(cfg->import->format), "GRIDFLOAT", 9) != 0 &&
+          strncmp(uc(cfg->import->format), "GAMMA", 5) != 0 &&
           strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0) {
         asfPrintError("Chosen import format not supported\n");
       }
