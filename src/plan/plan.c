@@ -7,6 +7,8 @@
 #include "dateUtil.h"
 #include "beam_mode_table.h"
 
+#include "asf_vector.h"
+
 #include <stdlib.h>
 
 typedef struct {
@@ -14,7 +16,43 @@ typedef struct {
     Polygon *viewable_region;
     int utm_zone;
     stateVector state_vector;
+    double t, clat, clon;
 } OverlapInfo;
+
+typedef struct {
+    int num;
+    OverlapInfo **overlaps;
+} PassInfo;
+
+PassInfo *pass_info_new()
+{
+  PassInfo *ret = MALLOC(sizeof(PassInfo));
+  ret->num = 0;
+  ret->overlaps = NULL;
+  return ret;
+}
+
+void pass_info_add(PassInfo *pi, OverlapInfo *oi)
+{
+  pi->num += 1;
+  
+  OverlapInfo **overlaps = MALLOC(sizeof(OverlapInfo*)*(pi->num));
+  
+  int i;
+  for (i=0; i<pi->num-1; ++i)
+    overlaps[i] = pi->overlaps[i];
+  overlaps[pi->num-1] = oi;
+  pi->overlaps = overlaps;
+}
+
+void pass_info_free(PassInfo *pi)
+{
+  int i;
+  for (i=0; i<pi->num-1; ++i)
+    free(pi->overlaps[i]);
+  free(pi->overlaps);
+  free(pi);
+}
 
 static int iabs(int a)
 {
@@ -82,29 +120,29 @@ int get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
 
 Polygon *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi,
-                    double target_lat, double target_lon,
-                    int *zone)
+                    double target_lat, double target_lon)
 {
   int target_zone = utm_zone(target_lon);
 
   double center_lat, center_lon, center_x, center_y;
   get_target_latlon(st, bmi->look_angle, &center_lat, &center_lon);
 
-  *zone = utm_zone(center_lon);
+  int zone = utm_zone(center_lon);
 
   // return NULL if we are "far away"
-  if (iabs(*zone - target_zone) > 1)
+  if (iabs(zone - target_zone) > 1)
     return NULL;
   if (fabs(center_lat - target_lat) > 20)
     return NULL;
 
-  latLon2UTM_zone(center_lat, center_lon, 0, *zone, &center_x, &center_y);
+  latLon2UTM_zone(center_lat, center_lon, 0, target_zone,
+                  &center_x, &center_y);
 
   // location of a point just a bit ahead of us
   stateVector ahead_st = propagate(*st, 0, 1);
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
   get_target_latlon(&ahead_st, bmi->look_angle, &ahead_lat, &ahead_lon);
-  latLon2UTM_zone(ahead_lat, ahead_lon, 0, *zone, &ahead_x, &ahead_y);
+  latLon2UTM_zone(ahead_lat, ahead_lon, 0, target_zone, &ahead_x, &ahead_y);
 
   // now we know the orientation of the rectangle on the ground
   // ==> can find the 4 corners
@@ -157,10 +195,9 @@ int print_polys(Polygon *p1, Polygon *p2)
 }
 
 int overlap(double t, stateVector *st, BeamModeInfo *bmi,
-            double clat, double clon, Polygon *aoi, OverlapInfo *overlap_info)
+            double clat, double clon, Polygon *aoi, OverlapInfo **overlap_info)
 {
-  int zone;
-  Polygon *viewable_region = get_viewable_region(st, bmi, clat, clon, &zone);
+  Polygon *viewable_region = get_viewable_region(st, bmi, clat, clon);
 
   if (!viewable_region)
     return FALSE; // no overlap
@@ -186,13 +223,17 @@ int overlap(double t, stateVector *st, BeamModeInfo *bmi,
       }
     }
 
-    overlap_info->pct = ((double)pct)/((double)n);
-    printf("Coverage: %d %d %f%%\n", pct, n, 100*overlap_info->pct);
-    overlap_info->viewable_region = viewable_region;
-    overlap_info->utm_zone = zone;
-    overlap_info->state_vector = *st;
+    OverlapInfo *oi = MALLOC(sizeof(OverlapInfo));
+    oi->pct = ((double)pct)/((double)n);
+    oi->viewable_region = viewable_region;
+    oi->utm_zone = utm_zone(clon);
+    oi->state_vector = *st;
+    oi->clat = clat;
+    oi->clon = clon;
+    oi->t = t;
+    *overlap_info = oi;
 
-    print_polys(viewable_region, aoi);
+    //print_polys(viewable_region, aoi);
     return TRUE;
   }
   else {
@@ -274,8 +315,186 @@ static double seconds_from_l(long date)
   return date2sec(&jd, &t);
 }
 
+void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi)
+{
+  double lat_UL, lon_UL;
+  double lat_UR, lon_UR;
+  double lat_LL, lon_LL;
+  double lat_LR, lon_LR;
+
+  int z = utm_zone(clon);
+  UTM2latLon(aoi->x[0], aoi->y[0], 0.0, z, &lat_UL, &lon_UL);
+  UTM2latLon(aoi->x[1], aoi->y[1], 0.0, z, &lat_UR, &lon_UR);
+  UTM2latLon(aoi->x[2], aoi->y[2], 0.0, z, &lat_LR, &lon_LR);
+  UTM2latLon(aoi->x[3], aoi->y[3], 0.0, z, &lat_LL, &lon_LL);
+
+  double lat_min=lat_UL, lat_max=lat_UL;
+  double lon_min=lon_UL, lon_max=lon_UL;
+
+  if (lat_UR < lat_min) lat_min = lat_UR;
+  if (lat_LL < lat_min) lat_min = lat_LL;
+  if (lat_LR < lat_min) lat_min = lat_LR;
+
+  if (lat_UR > lat_max) lat_max = lat_UR;
+  if (lat_LL > lat_max) lat_max = lat_LL;
+  if (lat_LR > lat_max) lat_max = lat_LR;
+
+  if (lon_UR < lon_min) lon_min = lon_UR;
+  if (lon_LL < lon_min) lon_min = lon_LL;
+  if (lon_LR < lon_min) lon_min = lon_LR;
+
+  if (lon_UR > lon_max) lon_max = lon_UR;
+  if (lon_LL > lon_max) lon_max = lon_LL;
+  if (lon_LR > lon_max) lon_max = lon_LR;
+
+  fprintf(kml_file, "<Placemark>\n");
+  fprintf(kml_file, "  <description><![CDATA[\n");
+  //fprintf(kml_file, "<strong>Area Of Interest</strong>\n");
+  fprintf(kml_file, "<strong>Latitude Range</strong>: %5.1f to %5.1f<br>\n",
+          lat_min, lat_max);
+  fprintf(kml_file, "<strong>Longitude Range</strong>: %5.1f to %5.1f<br>\n",
+          lon_min, lon_max);
+  fprintf(kml_file, "  ]]></description>\n");
+  fprintf(kml_file, "  <name>Area Of Interest</name>\n");
+  fprintf(kml_file, "  <LookAt>\n");
+  fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
+  fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
+  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <tilt>30</tilt>\n");
+  fprintf(kml_file, "  </LookAt>\n");
+  fprintf(kml_file, "  <visibility>1</visibility>\n");
+  fprintf(kml_file, "  <open>1</open>\n");
+  fprintf(kml_file, "  <Style>\n");
+  fprintf(kml_file, "    <LineStyle>\n");
+  fprintf(kml_file, "      <color>ff0033ff</color>\n");
+  fprintf(kml_file, "      <width>3</width>\n");
+  fprintf(kml_file, "    </LineStyle>\n");
+  fprintf(kml_file, "    <PolyStyle>\n");
+  //fprintf(kml_file, "      <color>1fff5500</color>\n");
+  fprintf(kml_file, "      <color>1f0011ff</color>\n");
+  fprintf(kml_file, "    </PolyStyle>\n");
+  fprintf(kml_file, "  </Style>\n");
+  fprintf(kml_file, "  <Polygon>\n");
+  fprintf(kml_file, "    <extrude>1</extrude>\n");
+  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(kml_file, "    <outerBoundaryIs>\n");
+  fprintf(kml_file, "      <LinearRing>\n");
+  fprintf(kml_file, "        <coordinates>\n");
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "        </coordinates>\n");
+  fprintf(kml_file, "      </LinearRing>\n");
+  fprintf(kml_file, "    </outerBoundaryIs>\n");
+  fprintf(kml_file, "  </Polygon>\n");
+  fprintf(kml_file, "</Placemark>\n");
+}
+
+void kml_overlap(FILE *kml_file, OverlapInfo *oi)
+{
+  double lat_UL, lon_UL;
+  double lat_UR, lon_UR;
+  double lat_LL, lon_LL;
+  double lat_LR, lon_LR;
+
+  UTM2latLon(oi->viewable_region->x[0], oi->viewable_region->y[0], 0.0,
+             oi->utm_zone, &lat_UL, &lon_UL);
+  UTM2latLon(oi->viewable_region->x[1], oi->viewable_region->y[1], 0.0,
+             oi->utm_zone, &lat_UR, &lon_UR);
+  UTM2latLon(oi->viewable_region->x[2], oi->viewable_region->y[2], 0.0,
+             oi->utm_zone, &lat_LR, &lon_LR);
+  UTM2latLon(oi->viewable_region->x[3], oi->viewable_region->y[3], 0.0,
+             oi->utm_zone, &lat_LL, &lon_LL);
+
+  fprintf(kml_file, "  <Polygon>\n");
+  fprintf(kml_file, "    <extrude>1</extrude>\n");
+  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(kml_file, "    <outerBoundaryIs>\n");
+  fprintf(kml_file, "      <LinearRing>\n");
+  fprintf(kml_file, "        <coordinates>\n");
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "        </coordinates>\n");
+  fprintf(kml_file, "      </LinearRing>\n");
+  fprintf(kml_file, "    </outerBoundaryIs>\n");
+  fprintf(kml_file, "  </Polygon>\n");
+
+  free(oi->viewable_region);
+}
+
+void found(FILE *kml_file, double t, double lat, double lon, PassInfo *pi)
+{
+  int i;
+
+  fprintf(kml_file, "<Placemark>\n");
+  fprintf(kml_file, "  <description><![CDATA[\n");
+  fprintf(kml_file, "<strong>Time</strong>: %s<br>\n", date_str(t));
+  fprintf(kml_file, "Contains %d frames<br><br>\n", pi->num);
+  
+  for (i=0; i<pi->num; ++i) {
+    fprintf(kml_file, "  <strong>Frame %d</strong><br>\n", i+1);
+    OverlapInfo *oi = pi->overlaps[i];
+    fprintf(kml_file, "    Time: %s<br>    Overlap: %5.1f%%<br>\n",
+            date_str(oi->t), oi->pct*100);
+  }
+
+  fprintf(kml_file, "  ]]></description>\n");
+  fprintf(kml_file, "  <name>%s</name>\n", date_str(t));
+  fprintf(kml_file, "  <LookAt>\n");
+  fprintf(kml_file, "    <longitude>%.10f</longitude>\n", lon);
+  fprintf(kml_file, "    <latitude>%.10f</latitude>\n", lat);
+  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <tilt>30</tilt>\n");
+  fprintf(kml_file, "  </LookAt>\n");
+  fprintf(kml_file, "  <visibility>1</visibility>\n");
+  fprintf(kml_file, "  <open>1</open>\n");
+  fprintf(kml_file, "  <Style>\n");
+  fprintf(kml_file, "    <LineStyle>\n");
+  fprintf(kml_file, "      <color>ffff9900</color>\n");
+  fprintf(kml_file, "      <width>3</width>\n");
+  fprintf(kml_file, "    </LineStyle>\n");
+  fprintf(kml_file, "    <PolyStyle>\n");
+  fprintf(kml_file, "      <color>1fff5500</color>\n");
+  fprintf(kml_file, "    </PolyStyle>\n");
+  fprintf(kml_file, "  </Style>\n");
+  fprintf(kml_file, "  <MultiGeometry>\n");
+
+  for (i=0; i<pi->num; ++i) {
+    kml_overlap(kml_file, pi->overlaps[i]);
+  }
+
+  fprintf(kml_file, "  </MultiGeometry>\n");
+  fprintf(kml_file, "</Placemark>\n");
+
+/*
+      printf("Found one (#%d in this sequence):\n"
+             "   Time: %s\n"
+             "   State Vector: position= %f, %f, %f\n"
+             "                 velocity= %f, %f, %f\n"
+             "   Imaged area: zone= %d\n"
+             "                %f %f\n"
+             "                %f %f\n"
+             "                %f %f\n"
+             "                %f %f\n"
+             "   Percentage: %f\n",
+             n, date_str(t), st->pos.x, st->pos.y, st->pos.z,
+             st->vel.x, st->vel.y, st->vel.z,
+             oi->utm_zone,
+             oi->viewable_region->x[0], oi->viewable_region->y[0],
+             oi->viewable_region->x[1], oi->viewable_region->y[1],
+             oi->viewable_region->x[2], oi->viewable_region->y[2],
+             oi->viewable_region->x[3], oi->viewable_region->y[3],
+             oi->pct);
+*/
+}
+
 void plan(const char *satellite, const char *beam_mode,
-          long startdate, long enddate,
+          long startdate, long enddate, double min_lat, double max_lat,
           double clat, double clon, Polygon *aoi,
           meta_parameters *meta, const char *outFile)
 {
@@ -288,7 +507,9 @@ void plan(const char *satellite, const char *beam_mode,
   double start_secs = seconds_from_l(startdate);
   double end_secs = seconds_from_l(enddate);
 
-  const double delta = 15; //hmm
+  const double normal_delta = 1;
+  const double end_delta = .0002;
+  double delta = normal_delta;
 
   stateVector start_stVec = propagate(meta->state_vectors->vecs[0].vec,
                                       img_secs, start_secs);
@@ -305,51 +526,221 @@ void plan(const char *satellite, const char *beam_mode,
          aoi->x[2], aoi->y[2],
          aoi->x[3], aoi->y[3]);
 
-  double curr = start_secs;
-  while (curr < end_secs) {
+  FILE *ofp = FOPEN(outFile, "w");
+  kml_header(ofp);
+  kml_aoi(ofp, clat, clon, aoi);
 
-    stateVector st = propagate(start_stVec, start_secs, curr);
+  // new plan.
+  // keep iterating until we circle the earth once
+  // having done this, we have:
+  //  -- 2 passes between the given latitude range (A&D)
+  //  -- how long it takes to circle the earth
+  double start_lat, start_lon;
+  get_target_latlon(&start_stVec, 0, &start_lat, &start_lon);
+
+  printf("Start latitude: %f\n", start_lat);
+
+  double time1_in=-1, time1_out=-1,
+    time2_in=-1, time2_out=-1, full_cycle_time=-1;
+  int ncrossings_target=0, ncrossings_startlat=0;
+  int in_target_lat_range = FALSE;
+
+  double curr = start_secs;
+  stateVector st = start_stVec;
+
+  double lat_prev = -999;
+  int iter=0;
+
+  // First loop: don't even check for overlap
+  while (1) {
+    ++iter;
 
     double lat, lon, llat, llon;
     get_target_latlon(&st, 0, &lat, &lon);
     get_target_latlon(&st, bmi->look_angle, &llat, &llon);
 
-    //if (fabs(llat-clat)<1 && fabs(llon-clon)<1) {
-    //  printf("t=%s  Satellite location: %10.3f %10.3f\n", date_str(curr),
-    //         lat, lon);
-    //  printf("                         Looking at        : %10.3f %10.3f\n",
-    //         llat, llon);
-    //}
-    //printf("%f %f %f\n", curr-start_secs, llat, llon);
+    // looking for two crossings:
+    //  1) crossing the target latitude (moving into from top or bottom)
+    //  2) crossing the starting latitude
 
-    OverlapInfo overlap_info;
-    if (overlap(curr, &st, bmi, clat, clon, aoi, &overlap_info)) {
-      printf("Found one:\n"
-             "   Time: %s\n"
-             "   State Vector: position= %f, %f, %f\n"
-             "                 velocity= %f, %f, %f\n"
-             "   Imaged area: zone= %d\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "   Percentage: %f\n",
-             date_str(curr), st.pos.x, st.pos.y, st.pos.z,
-             st.vel.x, st.vel.y, st.vel.z,
-             overlap_info.utm_zone,
-             overlap_info.viewable_region->x[0],
-             overlap_info.viewable_region->y[0],
-             overlap_info.viewable_region->x[1],
-             overlap_info.viewable_region->y[1],
-             overlap_info.viewable_region->x[2],
-             overlap_info.viewable_region->y[2],
-             overlap_info.viewable_region->x[3],
-             overlap_info.viewable_region->y[3],
-             overlap_info.pct);
+    if (lat_prev != -999 && iter > 1) {
+      if ((lat_prev < start_lat && lat > start_lat) ||
+          (lat_prev > start_lat && lat < start_lat)) {
+        printf("Crossed starting latitude at t=%f, lat=%f, iter=%d\n",
+               curr-start_secs, lat, iter);
 
-      free(overlap_info.viewable_region);
+        ncrossings_startlat++;
+        if (ncrossings_startlat == 2) {
+          printf(" --> Finished complete cycle: t=%f\n", curr-start_secs);
+          if (delta == end_delta) {
+            full_cycle_time=curr-start_secs;
+            break;
+          } else {
+            printf("     Refining full cycle time estimate.\n");
+            printf("     Backing up to time = %f\n", curr-2*delta-start_secs);
+            ncrossings_startlat = 1;
+            curr -= 2*delta;
+            delta = end_delta;
+            lat=lat_prev;
+            lat_prev=-999;
+            st = propagate(start_stVec, start_secs, curr);
+          }
+        }
+      }
     }
+
+    if (lat_prev != -999) {
+      if (((lat_prev < min_lat && lat > min_lat) ||
+           (lat_prev > min_lat && lat < min_lat)) ||
+          ((lat_prev < max_lat && lat > max_lat) ||
+           (lat_prev > max_lat && lat < max_lat)))
+      {
+        // either crossed into or out of the target latitude range
+        in_target_lat_range = !in_target_lat_range;
+
+        if (in_target_lat_range) {
+          printf("Crossed into target range at t=%f, lat=%f, iter=%d\n",
+                 curr-start_secs, lat, iter);
+        } else {
+          printf("Crossed out of target range at t=%f, lat=%f, iter=%d\n",
+                 curr-start_secs, lat, iter);
+        }
+
+        if (in_target_lat_range) {
+          if (ncrossings_target == 0) {
+            time1_in = curr-start_secs;
+          } else if (ncrossings_target == 1) {
+            time2_in = curr-start_secs;
+          } else {
+            printf("No way dude!\n");
+          }
+          ++ncrossings_target;
+        } else {
+          if (ncrossings_target == 1) {
+            time1_out = curr-start_secs;
+          } else if (ncrossings_target == 2) {
+            time2_out = curr-start_secs;
+          } else {
+            printf("No way dude!\n");
+          }
+        }
+      }
+    }
+
+    lat_prev = lat;
+    // The first of these is much slower, theoretically more accurate
+    // but from my experimentation not much more accurate...
+    //st = propagate(start_stVec, start_secs, curr+delta);
+    st = propagate(st, curr, curr+delta);
 
     curr += delta;
   }
+
+  delta = 15; // eh?
+  printf("Time to first target crossing: %f\n", time1_in);
+  printf("Time to end of first target crossing: %f\n", time1_out);
+  printf("Time to second target crossing: %f\n", time2_in);
+  printf("Time to end of second target crossing: %f\n", time2_out);
+  printf("Time for complete cycle: %f\n", full_cycle_time);
+
+  curr = start_secs;
+  st = start_stVec;
+
+  // second loop: looking for overlaps
+  while (curr < end_secs) {
+    OverlapInfo *overlap_info;
+    int num=0;
+    int still_overlapping = FALSE;
+    double pass_start_time = -1;
+
+    double t1 = time1_in - 4;
+    stateVector st1 = propagate(st, curr, t1+curr);
+    PassInfo *pi = pass_info_new();
+
+    while (t1 < time1_out || still_overlapping) {
+
+      double t = t1 + curr;
+      ++num;
+
+      //{
+      //  double lat, lon, llat, llon;
+      //  get_target_latlon(&st1, 0, &lat, &lon);
+      //  get_target_latlon(&st1, bmi->look_angle, &llat, &llon);
+      //  printf("1: t=%s  Satellite location: "
+      //         "%10.3f %10.3f\n", 
+      //         date_str(t), lat, lon);
+      //  printf("1:                          Looking at        : "
+      //         "%10.3f %10.3f\n",
+      //         llat, llon);
+      //}
+
+      if (overlap(t, &st1, bmi, clat, clon, aoi, &overlap_info)) {
+        if (pass_start_time == -1)
+          pass_start_time = t;
+        pass_info_add(pi, overlap_info);
+        //found(ofp, num, curr, &st1, &overlap_info);
+        still_overlapping=TRUE;
+      } else {
+        still_overlapping=FALSE;
+      }
+
+      st1 = propagate(st1, t, t+delta);
+      //st1 = propagate(st, curr, t+delta);
+      t1 += delta;
+    }
+
+    if (pass_start_time > 0)
+      found(ofp, pass_start_time, clat, clon, pi);
+
+    pass_info_free(pi);
+    pi = pass_info_new();
+
+    double t2 = time2_in - 4;
+    stateVector st2 = propagate(st, curr, t2+curr);
+    num = 0;
+    still_overlapping = FALSE;
+    pass_start_time = -1;
+
+    while (t2 < time2_out || still_overlapping) {
+
+      double t = t2 + curr;
+
+      //{
+      //  double lat, lon, llat, llon;
+      //  get_target_latlon(&st2, 0, &lat, &lon);
+      //  get_target_latlon(&st2, bmi->look_angle, &llat, &llon);
+      //  printf("2: t=%s  Satellite location: "
+      //         "%10.3f %10.3f\n",
+      //         date_str(t), lat, lon);
+      //  printf("2:                          Looking at        : "
+      //         "%10.3f %10.3f\n",
+      //         llat, llon);
+      //}
+
+      if (overlap(t, &st2, bmi, clat, clon, aoi, &overlap_info)) {
+        if (pass_start_time == -1)
+          pass_start_time = t;
+        pass_info_add(pi, overlap_info);
+        //found(ofp, num, curr, &st2, &overlap_info);
+        still_overlapping=TRUE;
+      } else {
+        still_overlapping=FALSE;
+      }
+
+      st2 = propagate(st2, t, t+delta);
+      //st2 = propagate(st, curr, t+delta);
+      t2 += delta;
+    }
+
+    if (pass_start_time > 0)
+      found(ofp, pass_start_time, clat, clon, pi);
+
+    pass_info_free(pi);
+
+    st = propagate(st, curr, curr+full_cycle_time);
+    curr += full_cycle_time;
+  }
+
+  kml_footer(ofp);
+  fclose(ofp);
 }

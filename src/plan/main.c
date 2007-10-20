@@ -168,7 +168,8 @@ main (int argc, char *argv[])
   Polygon *box = polygon_new_closed(4, x, y);
 
   meta_parameters *meta = meta_read(metaFile);
-  plan(satellite, beam_mode, startdt, enddt, clat, clon, box, meta, outFile);
+  plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
+       clat, clon, box, meta, outFile);
 
   meta_free(meta);
   polygon_free(box);
