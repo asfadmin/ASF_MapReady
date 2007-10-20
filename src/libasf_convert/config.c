@@ -30,7 +30,7 @@ static void apply_default_dirs(convert_config *cfg)
     strcat(tmpstr, DIR_SEPARATOR_STR);
     strcat(tmpstr, file);
     cfg->general->in_name = (char*)realloc(cfg->general->in_name,
-                                           sizeof(char)*(strlen(tmpstr)));
+                                           sizeof(char)*(strlen(tmpstr)+2));
     strcpy(cfg->general->in_name, tmpstr);
     FREE(tmpstr);
   }
@@ -46,7 +46,7 @@ static void apply_default_dirs(convert_config *cfg)
     strcat(tmpstr, DIR_SEPARATOR_STR);
     strcat(tmpstr, file);
     cfg->general->out_name = (char*)realloc(cfg->general->out_name,
-                                            sizeof(char)*(strlen(tmpstr)));
+                                            sizeof(char)*(strlen(tmpstr)+2));
     strcpy(cfg->general->out_name, tmpstr);
     FREE(tmpstr);
   }
