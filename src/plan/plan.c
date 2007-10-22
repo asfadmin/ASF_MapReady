@@ -4,25 +4,15 @@
 #include "asf_meta.h"
 
 #include "date.h"
-#include "dateUtil.h"
+#include "date_util.h"
 #include "beam_mode_table.h"
 
 #include "asf_vector.h"
 
 #include <stdlib.h>
 
-typedef struct {
-    double pct;
-    Polygon *viewable_region;
-    int utm_zone;
-    stateVector state_vector;
-    double t, clat, clon;
-} OverlapInfo;
-
-typedef struct {
-    int num;
-    OverlapInfo **overlaps;
-} PassInfo;
+void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi);
+void write_pass_to_kml(FILE *kml_file, double t, double lat, double lon, PassInfo *pi);
 
 PassInfo *pass_info_new()
 {
@@ -242,256 +232,6 @@ int overlap(double t, stateVector *st, BeamModeInfo *bmi,
   }
 }
 
-/*Extract date from the metadata-style given string:
-instr="DD-MMM-YYYY, hh:mm:ss"
-index  000000000011111111112
-index  012345678901234567890
-*/
-static void parse_date(const char *inStr,ymd_date *date,hms_time *time)
-{
-  char mon[][5]= 
-    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-  char buf[100];
-  int i,sec;
-#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
-  subStr(7,4,&date->year);
-  for (i=0; i<13; i++) {
-    strncpy(buf, &inStr[3], 3);
-    buf[3] = 0;
-    if (strcmp_case(uc(buf), mon[i]) == 0)
-      date->month = i;
-  }
-  subStr(0,2,&date->day);
-  subStr(13,2,&time->hour);
-  subStr(16,2,&time->min);
-  subStr(19,2,&sec);
-  time->sec=sec;
-#undef subStr
-}
-
-const char *date_str(double s)
-{
-  char mon[][5]= 
-    {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
-  julian_date jd;
-  hms_time t;
-  ymd_date d;
-  static char buf[64];
-
-  sec2date(s, &jd, &t);
-  date_jd2ymd(&jd, &d);
-
-  sprintf(buf, "%02d-%s-%4d, %02d:%02d:%02d", d.day, mon[d.month], d.year,
-          t.hour, t.min, (int)(t.sec+.5));
-  return buf;
-}
-
-static double seconds_from_s(const char *date_str)
-{
-  ymd_date d;
-  hms_time t;
-  parse_date(date_str, &d, &t);
-  t.sec = 0;
-
-  julian_date jd;
-  date_ymd2jd(&d, &jd);
-
-  return date2sec(&jd, &t);
-}
-         
-static double seconds_from_l(long date)
-{
-  ymd_date d;
-  long_to_date(date, &d.year, &d.month, &d.day);
-
-  julian_date jd;
-  date_ymd2jd(&d, &jd);
-
-  hms_time t;
-  t.hour = 0;
-  t.min = 0;
-  t.sec = 0.001;
-
-  return date2sec(&jd, &t);
-}
-
-void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi)
-{
-  double lat_UL, lon_UL;
-  double lat_UR, lon_UR;
-  double lat_LL, lon_LL;
-  double lat_LR, lon_LR;
-
-  int z = utm_zone(clon);
-  UTM2latLon(aoi->x[0], aoi->y[0], 0.0, z, &lat_UL, &lon_UL);
-  UTM2latLon(aoi->x[1], aoi->y[1], 0.0, z, &lat_UR, &lon_UR);
-  UTM2latLon(aoi->x[2], aoi->y[2], 0.0, z, &lat_LR, &lon_LR);
-  UTM2latLon(aoi->x[3], aoi->y[3], 0.0, z, &lat_LL, &lon_LL);
-
-  double lat_min=lat_UL, lat_max=lat_UL;
-  double lon_min=lon_UL, lon_max=lon_UL;
-
-  if (lat_UR < lat_min) lat_min = lat_UR;
-  if (lat_LL < lat_min) lat_min = lat_LL;
-  if (lat_LR < lat_min) lat_min = lat_LR;
-
-  if (lat_UR > lat_max) lat_max = lat_UR;
-  if (lat_LL > lat_max) lat_max = lat_LL;
-  if (lat_LR > lat_max) lat_max = lat_LR;
-
-  if (lon_UR < lon_min) lon_min = lon_UR;
-  if (lon_LL < lon_min) lon_min = lon_LL;
-  if (lon_LR < lon_min) lon_min = lon_LR;
-
-  if (lon_UR > lon_max) lon_max = lon_UR;
-  if (lon_LL > lon_max) lon_max = lon_LL;
-  if (lon_LR > lon_max) lon_max = lon_LR;
-
-  fprintf(kml_file, "<Placemark>\n");
-  fprintf(kml_file, "  <description><![CDATA[\n");
-  //fprintf(kml_file, "<strong>Area Of Interest</strong>\n");
-  fprintf(kml_file, "<strong>Latitude Range</strong>: %5.1f to %5.1f<br>\n",
-          lat_min, lat_max);
-  fprintf(kml_file, "<strong>Longitude Range</strong>: %5.1f to %5.1f<br>\n",
-          lon_min, lon_max);
-  fprintf(kml_file, "  ]]></description>\n");
-  fprintf(kml_file, "  <name>Area Of Interest</name>\n");
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
-  fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
-  fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>30</tilt>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <visibility>1</visibility>\n");
-  fprintf(kml_file, "  <open>1</open>\n");
-  fprintf(kml_file, "  <Style>\n");
-  fprintf(kml_file, "    <LineStyle>\n");
-  fprintf(kml_file, "      <color>ff0033ff</color>\n");
-  fprintf(kml_file, "      <width>3</width>\n");
-  fprintf(kml_file, "    </LineStyle>\n");
-  fprintf(kml_file, "    <PolyStyle>\n");
-  //fprintf(kml_file, "      <color>1fff5500</color>\n");
-  fprintf(kml_file, "      <color>1f0011ff</color>\n");
-  fprintf(kml_file, "    </PolyStyle>\n");
-  fprintf(kml_file, "  </Style>\n");
-  fprintf(kml_file, "  <Polygon>\n");
-  fprintf(kml_file, "    <extrude>1</extrude>\n");
-  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
-  fprintf(kml_file, "    <outerBoundaryIs>\n");
-  fprintf(kml_file, "      <LinearRing>\n");
-  fprintf(kml_file, "        <coordinates>\n");
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "        </coordinates>\n");
-  fprintf(kml_file, "      </LinearRing>\n");
-  fprintf(kml_file, "    </outerBoundaryIs>\n");
-  fprintf(kml_file, "  </Polygon>\n");
-  fprintf(kml_file, "</Placemark>\n");
-}
-
-void kml_overlap(FILE *kml_file, OverlapInfo *oi)
-{
-  double lat_UL, lon_UL;
-  double lat_UR, lon_UR;
-  double lat_LL, lon_LL;
-  double lat_LR, lon_LR;
-
-  UTM2latLon(oi->viewable_region->x[0], oi->viewable_region->y[0], 0.0,
-             oi->utm_zone, &lat_UL, &lon_UL);
-  UTM2latLon(oi->viewable_region->x[1], oi->viewable_region->y[1], 0.0,
-             oi->utm_zone, &lat_UR, &lon_UR);
-  UTM2latLon(oi->viewable_region->x[2], oi->viewable_region->y[2], 0.0,
-             oi->utm_zone, &lat_LR, &lon_LR);
-  UTM2latLon(oi->viewable_region->x[3], oi->viewable_region->y[3], 0.0,
-             oi->utm_zone, &lat_LL, &lon_LL);
-
-  fprintf(kml_file, "  <Polygon>\n");
-  fprintf(kml_file, "    <extrude>1</extrude>\n");
-  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
-  fprintf(kml_file, "    <outerBoundaryIs>\n");
-  fprintf(kml_file, "      <LinearRing>\n");
-  fprintf(kml_file, "        <coordinates>\n");
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "        </coordinates>\n");
-  fprintf(kml_file, "      </LinearRing>\n");
-  fprintf(kml_file, "    </outerBoundaryIs>\n");
-  fprintf(kml_file, "  </Polygon>\n");
-
-  free(oi->viewable_region);
-}
-
-void found(FILE *kml_file, double t, double lat, double lon, PassInfo *pi)
-{
-  int i;
-
-  fprintf(kml_file, "<Placemark>\n");
-  fprintf(kml_file, "  <description><![CDATA[\n");
-  fprintf(kml_file, "<strong>Time</strong>: %s<br>\n", date_str(t));
-  fprintf(kml_file, "Contains %d frames<br><br>\n", pi->num);
-  
-  for (i=0; i<pi->num; ++i) {
-    fprintf(kml_file, "  <strong>Frame %d</strong><br>\n", i+1);
-    OverlapInfo *oi = pi->overlaps[i];
-    fprintf(kml_file, "    Time: %s<br>    Overlap: %5.1f%%<br>\n",
-            date_str(oi->t), oi->pct*100);
-  }
-
-  fprintf(kml_file, "  ]]></description>\n");
-  fprintf(kml_file, "  <name>%s</name>\n", date_str(t));
-  fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%.10f</longitude>\n", lon);
-  fprintf(kml_file, "    <latitude>%.10f</latitude>\n", lat);
-  fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>30</tilt>\n");
-  fprintf(kml_file, "  </LookAt>\n");
-  fprintf(kml_file, "  <visibility>1</visibility>\n");
-  fprintf(kml_file, "  <open>1</open>\n");
-  fprintf(kml_file, "  <Style>\n");
-  fprintf(kml_file, "    <LineStyle>\n");
-  fprintf(kml_file, "      <color>ffff9900</color>\n");
-  fprintf(kml_file, "      <width>3</width>\n");
-  fprintf(kml_file, "    </LineStyle>\n");
-  fprintf(kml_file, "    <PolyStyle>\n");
-  fprintf(kml_file, "      <color>1fff5500</color>\n");
-  fprintf(kml_file, "    </PolyStyle>\n");
-  fprintf(kml_file, "  </Style>\n");
-  fprintf(kml_file, "  <MultiGeometry>\n");
-
-  for (i=0; i<pi->num; ++i) {
-    kml_overlap(kml_file, pi->overlaps[i]);
-  }
-
-  fprintf(kml_file, "  </MultiGeometry>\n");
-  fprintf(kml_file, "</Placemark>\n");
-
-/*
-      printf("Found one (#%d in this sequence):\n"
-             "   Time: %s\n"
-             "   State Vector: position= %f, %f, %f\n"
-             "                 velocity= %f, %f, %f\n"
-             "   Imaged area: zone= %d\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "                %f %f\n"
-             "   Percentage: %f\n",
-             n, date_str(t), st->pos.x, st->pos.y, st->pos.z,
-             st->vel.x, st->vel.y, st->vel.z,
-             oi->utm_zone,
-             oi->viewable_region->x[0], oi->viewable_region->y[0],
-             oi->viewable_region->x[1], oi->viewable_region->y[1],
-             oi->viewable_region->x[2], oi->viewable_region->y[2],
-             oi->viewable_region->x[3], oi->viewable_region->y[3],
-             oi->pct);
-*/
-}
 
 void plan(const char *satellite, const char *beam_mode,
           long startdate, long enddate, double min_lat, double max_lat,
@@ -530,11 +270,11 @@ void plan(const char *satellite, const char *beam_mode,
   kml_header(ofp);
   kml_aoi(ofp, clat, clon, aoi);
 
-  // new plan.
-  // keep iterating until we circle the earth once
-  // having done this, we have:
-  //  -- 2 passes between the given latitude range (A&D)
-  //  -- how long it takes to circle the earth
+  // Iteration #1
+  // Circle the Earth once, to get the time (measured from the
+  // given state vector's time) to get to the crossings for:
+  //  - the bottm & top latitudes of the target area (twice each)
+  //  - back to the starting latitude (a second time, after a full circle)
   double start_lat, start_lon;
   get_target_latlon(&start_stVec, 0, &start_lat, &start_lon);
 
@@ -636,7 +376,7 @@ void plan(const char *satellite, const char *beam_mode,
     curr += delta;
   }
 
-  delta = 15; // eh?
+  delta = bmi->image_time;
   printf("Time to first target crossing: %f\n", time1_in);
   printf("Time to end of first target crossing: %f\n", time1_out);
   printf("Time to second target crossing: %f\n", time2_in);
@@ -646,14 +386,16 @@ void plan(const char *satellite, const char *beam_mode,
   curr = start_secs;
   st = start_stVec;
 
-  // second loop: looking for overlaps
+  // Iteration #2
+  // Looking for overlaps.  Use time info gathered above to propagate
+  // straight to the areas of interest.
   while (curr < end_secs) {
     OverlapInfo *overlap_info;
     int num=0;
     int still_overlapping = FALSE;
     double pass_start_time = -1;
 
-    double t1 = time1_in - 4;
+    double t1 = time1_in - 4; // the -4 is just some padding
     stateVector st1 = propagate(st, curr, t1+curr);
     PassInfo *pi = pass_info_new();
 
@@ -690,7 +432,7 @@ void plan(const char *satellite, const char *beam_mode,
     }
 
     if (pass_start_time > 0)
-      found(ofp, pass_start_time, clat, clon, pi);
+      write_pass_to_kml(ofp, pass_start_time, clat, clon, pi);
 
     pass_info_free(pi);
     pi = pass_info_new();
@@ -733,7 +475,7 @@ void plan(const char *satellite, const char *beam_mode,
     }
 
     if (pass_start_time > 0)
-      found(ofp, pass_start_time, clat, clon, pi);
+      write_pass_to_kml(ofp, pass_start_time, clat, clon, pi);
 
     pass_info_free(pi);
 

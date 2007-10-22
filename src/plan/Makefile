@@ -25,6 +25,8 @@ OBJS  = $(TARGET).o \
 	date.o \
 	polygon.o \
 	beam_mode_table.o \
+	date_util.o \
+	kml.o \
 	main.o
 
 all: prog
