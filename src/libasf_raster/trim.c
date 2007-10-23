@@ -57,8 +57,6 @@ int trim(char *infile, char *outfile, long long startX, long long startY,
     bX = metaIn->projection->startX;
     mY = metaIn->projection->perY;
     mX = metaIn->projection->perX;
-    metaOut->projection->startY = bY + mY * startY;
-    metaOut->projection->startX = bX + mX * startX;
   }
 
   meta_write(metaOut, outfile);
