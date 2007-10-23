@@ -176,8 +176,8 @@ getProjection(float x,float y,cornerCoords *cc,int val,int ns, int nl)
 	return upint+(loint-upint)*dy;
 }
 
-static double get_proj_coords(meta_parameters *meta, double line, double samp, 
-                              double *x, double *y)
+static void get_proj_coords(meta_parameters *meta, double line, double samp, 
+                            double *x, double *y)
 {
     *x = meta->projection->startX +
       (samp + meta->general->start_sample) * meta->projection->perX;
@@ -205,10 +205,10 @@ static void update_projection(meta_parameters *in_meta, polyMapRec *map,
   assert(in_meta->projection);
   meta_projection *proj = in_meta->projection;
 
-  get_proj_coords(meta, 0, 0, &in.upleft[1], &in.upleft[0]);
-  get_proj_coords(meta, nl, 0, &in.loleft[1], &in.loleft[0]);
-  get_proj_coords(meta, 0, ns, &in.upright[1], &in.upright[0]);
-  get_proj_coords(meta, nl, ns, &in.loright[1], &in.loright[0]);
+  get_proj_coords(in_meta, 0, 0, &in.upleft[1], &in.upleft[0]);
+  get_proj_coords(in_meta, nl, 0, &in.loleft[1], &in.loleft[0]);
+  get_proj_coords(in_meta, 0, ns, &in.upright[1], &in.upright[0]);
+  get_proj_coords(in_meta, nl, ns, &in.loright[1], &in.loright[0]);
 
   //in.upleft[0] = proj->startY;
   //in.upleft[1] = proj->startX;
