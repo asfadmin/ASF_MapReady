@@ -172,9 +172,9 @@ int create_dem_grid_ext(const char *demName, const char *sarName,
 		     &demProj_z);
       /*Compute the line,sample coordinates of this location in the DEM.*/
       dem_x = (demProj_x - metaDem->projection->startX) /
-          metaDem->projection->perX; //- metaDem->general->start_sample;
+          metaDem->projection->perX - metaDem->general->start_sample;
       dem_y = (demProj_y - metaDem->projection->startY) /
-          metaDem->projection->perY; //- metaDem->general->start_line;
+          metaDem->projection->perY - metaDem->general->start_line;
 
       if (dem_x > 0 && dem_y > 0 &&
 	  dem_x < metaDem->general->sample_count &&
