@@ -103,6 +103,18 @@ int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 
+/* read_png.c */
+int try_png(const char *filename);
+int handle_png_file(const char *filename, char *meta_name, char *data_name,
+                     char **err);
+meta_parameters* open_png(const char *data_name, ClientInterface *client);
+
+/* read_png.c */
+int try_pgm(const char *filename);
+int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
+                     char **err);
+meta_parameters* open_pgm(const char *data_name, ClientInterface *client);
+
 /* big_image.c */
 void fill_big(void);
 void update_pixel_info(void);

@@ -378,7 +378,8 @@ void cached_image_free (CachedImage *self)
             free(self->cache[i]);
     }
 
-    self->client->free_fn(self->client->read_client_info);
+    if (self->client->free_fn)
+      self->client->free_fn(self->client->read_client_info);
 
     free(self->rowstarts);
     free(self->access_counts);

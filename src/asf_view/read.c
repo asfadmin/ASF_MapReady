@@ -86,8 +86,32 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
+    } else if (try_png(filename)) {
+        if (handle_png_file(filename, meta_name, data_name, &err)) {
+            meta = open_png(data_name, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    } else if (try_pgm(filename)) {
+        if (handle_pgm_file(filename, meta_name, data_name, &err)) {
+            meta = open_pgm(data_name, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
     } else {
         err_func("Don't know how to load file: %s\n", filename);
+        return FALSE;
+    }
+
+    if (!meta) {
+        char err_str[1024];
+        snprintf(err_str, 1024, "Error creating metadata for: %s\n",
+                 filename);
+        err_func(err_str);
         return FALSE;
     }
 

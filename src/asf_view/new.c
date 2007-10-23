@@ -176,7 +176,7 @@ void new_file(void)
 void set_title(int band_specified, const char *band_in)
 {
     char title[256];
-    char band[16];
+    char band[128];
 
     if (band_in)
         strncpy_safe(band, band_in, sizeof(band));
