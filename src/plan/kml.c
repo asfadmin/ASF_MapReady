@@ -1,4 +1,5 @@
 #include "plan.h"
+#include "plan_internal.h"
 
 void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi)
 {
@@ -93,28 +94,29 @@ static void kml_overlap(FILE *kml_file, OverlapInfo *oi)
   UTM2latLon(oi->viewable_region->x[3], oi->viewable_region->y[3], 0.0,
              oi->utm_zone, &lat_LL, &lon_LL);
 
-  fprintf(kml_file, "  <Polygon>\n");
-  fprintf(kml_file, "    <extrude>1</extrude>\n");
-  fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
-  fprintf(kml_file, "    <outerBoundaryIs>\n");
-  fprintf(kml_file, "      <LinearRing>\n");
-  fprintf(kml_file, "        <coordinates>\n");
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-  fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-  fprintf(kml_file, "        </coordinates>\n");
-  fprintf(kml_file, "      </LinearRing>\n");
-  fprintf(kml_file, "    </outerBoundaryIs>\n");
-  fprintf(kml_file, "  </Polygon>\n");
+  fprintf(kml_file, "    <Polygon>\n");
+  fprintf(kml_file, "      <extrude>1</extrude>\n");
+  fprintf(kml_file, "      <altitudeMode>absolute</altitudeMode>\n");
+  fprintf(kml_file, "      <outerBoundaryIs>\n");
+  fprintf(kml_file, "        <LinearRing>\n");
+  fprintf(kml_file, "          <coordinates>\n");
+  fprintf(kml_file, "            %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "            %.12f,%.12f,7000\n", lon_LL, lat_LL);
+  fprintf(kml_file, "            %.12f,%.12f,7000\n", lon_LR, lat_LR);
+  fprintf(kml_file, "            %.12f,%.12f,7000\n", lon_UR, lat_UR);
+  fprintf(kml_file, "            %.12f,%.12f,7000\n", lon_UL, lat_UL);
+  fprintf(kml_file, "          </coordinates>\n");
+  fprintf(kml_file, "        </LinearRing>\n");
+  fprintf(kml_file, "      </outerBoundaryIs>\n");
+  fprintf(kml_file, "    </Polygon>\n");
 
   free(oi->viewable_region);
 }
 
-void write_pass_to_kml(FILE *kml_file, double t, double lat, double lon, PassInfo *pi)
+void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *pi)
 {
   int i;
+  double t = pi->start_time;
 
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");

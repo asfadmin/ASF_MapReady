@@ -1,4 +1,5 @@
 #include "plan.h"
+#include "plan_internal.h"
 
 #include "asf.h"
 #include "asf_meta.h"
@@ -11,18 +12,18 @@
 
 #include <stdlib.h>
 
-void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi);
-void write_pass_to_kml(FILE *kml_file, double t, double lat, double lon, PassInfo *pi);
-
-PassInfo *pass_info_new()
+static PassInfo *pass_info_new()
 {
   PassInfo *ret = MALLOC(sizeof(PassInfo));
+
   ret->num = 0;
   ret->overlaps = NULL;
+  ret->start_time = -1;
+
   return ret;
 }
 
-void pass_info_add(PassInfo *pi, OverlapInfo *oi)
+static void pass_info_add(PassInfo *pi, OverlapInfo *oi)
 {
   pi->num += 1;
   
@@ -35,7 +36,7 @@ void pass_info_add(PassInfo *pi, OverlapInfo *oi)
   pi->overlaps = overlaps;
 }
 
-void pass_info_free(PassInfo *pi)
+static void pass_info_free(PassInfo *pi)
 {
   int i;
   for (i=0; i<pi->num-1; ++i)
@@ -49,8 +50,9 @@ static int iabs(int a)
   return a > 0 ? a : -a;
 }
 
-void get_target_position(stateVector *st, double look, double yaw,
-                         double sr, vector *targPos)
+static void
+get_target_position(stateVector *st, double look, double yaw,
+                    double sr, vector *targPos)
 {
   vector relPos = vecNew(sin(yaw), -sin(look)*cos(yaw), -cos(look)*cos(yaw));
 
@@ -70,7 +72,8 @@ void get_target_position(stateVector *st, double look, double yaw,
   vecAdd(relPos,st->pos,targPos);
 }
 
-int get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
+static int
+get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
 {
   // satellite height, from the state vector
   double ht = vecMagnitude(st->pos);
@@ -108,7 +111,7 @@ int get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
   return 1;
 }
 
-Polygon *
+static Polygon *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi,
                     double target_lat, double target_lon)
 {
@@ -167,7 +170,7 @@ static double random_in_interval(double lo, double hi)
   return lo + (hi-lo)*((double)rand() / ((double)(RAND_MAX)));
 }
 
-int print_polys(Polygon *p1, Polygon *p2)
+static int print_polys(Polygon *p1, Polygon *p2)
 {
   printf("p1 = [ %f %f; %f %f; %f %f; %f %f; %f %f ]; "
          "p2 = [ %f %f; %f %f; %f %f; %f %f; %f %f ];\n",
@@ -184,8 +187,9 @@ int print_polys(Polygon *p1, Polygon *p2)
   return 1;
 }
 
-int overlap(double t, stateVector *st, BeamModeInfo *bmi,
-            double clat, double clon, Polygon *aoi, OverlapInfo **overlap_info)
+static int
+overlap(double t, stateVector *st, BeamModeInfo *bmi,
+        double clat, double clon, Polygon *aoi, OverlapInfo **overlap_info)
 {
   Polygon *viewable_region = get_viewable_region(st, bmi, clat, clon);
 
@@ -232,66 +236,76 @@ int overlap(double t, stateVector *st, BeamModeInfo *bmi,
   }
 }
 
-
-void plan(const char *satellite, const char *beam_mode,
-          long startdate, long enddate, double min_lat, double max_lat,
-          double clat, double clon, Polygon *aoi,
-          meta_parameters *meta, const char *outFile)
+static void
+check_crossing(FILE *ofp, double start_time, double end_time,
+               double state_vector_time, stateVector *st,
+               BeamModeInfo *bmi, double clat, double clon, Polygon *aoi)
 {
-  BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
-  if (!bmi)
-    asfPrintError("Invalid satellite/beam mode.\n");
+    double t1 = start_time;
+    PassInfo *pi = pass_info_new();
+    double delta = bmi->image_time;
 
-  double img_secs = seconds_from_s(meta->general->acquisition_date);
+    OverlapInfo *overlap_info;
+    int is_overlap;
 
-  double start_secs = seconds_from_l(startdate);
-  double end_secs = seconds_from_l(enddate);
+    do {
+      double t = t1 + state_vector_time;
+
+      //{
+      //  double lat, lon, llat, llon;
+      //  get_target_latlon(&st1, 0, &lat, &lon);
+      //  get_target_latlon(&st1, bmi->look_angle, &llat, &llon);
+      //  printf("1: t=%s  Satellite location: "
+      //         "%10.3f %10.3f\n", 
+      //         date_str(t), lat, lon);
+      //  printf("1:                          Looking at        : "
+      //         "%10.3f %10.3f\n",
+      //         llat, llon);
+      //}
+
+      is_overlap = overlap(t, st, bmi, clat, clon, aoi, &overlap_info);
+      if (is_overlap) {
+        if (pi->start_time == -1)
+          pi->start_time = t;
+        pass_info_add(pi, overlap_info);
+      }
+
+      *st = propagate(*st, t, t+delta);
+      t1 += delta;
+    }
+    while (t1 < end_time || is_overlap);
+    
+    if (pi->num > 0)
+      write_pass_to_kml(ofp, clat, clon, pi);
+
+    pass_info_free(pi);
+}
+
+static void
+find_crossings(BeamModeInfo *bmi, double start_secs,
+               stateVector *start_stVec, double start_lat,
+               double min_lat, double max_lat,
+               double *time1_in, double *time1_out,
+               double *time2_in, double *time2_out,
+               double *full_cycle_time)
+{
+  *time1_in = *time1_out = -1;
+  *time2_in = *time2_out = -1;
+  *full_cycle_time = -1;
+
+  int ncrossings_target=0, ncrossings_startlat=0;
+  int in_target_lat_range = FALSE;
 
   const double normal_delta = 1;
   const double end_delta = .0002;
   double delta = normal_delta;
 
-  stateVector start_stVec = propagate(meta->state_vectors->vecs[0].vec,
-                                      img_secs, start_secs);
-
-  printf("Target:\n"
-         "  UTM:  zone=%d\n"
-         "        %f %f\n"
-         "        %f %f\n"
-         "        %f %f\n"
-         "        %f %f\n",
-         utm_zone(clon),
-         aoi->x[0], aoi->y[0],
-         aoi->x[1], aoi->y[1],
-         aoi->x[2], aoi->y[2],
-         aoi->x[3], aoi->y[3]);
-
-  FILE *ofp = FOPEN(outFile, "w");
-  kml_header(ofp);
-  kml_aoi(ofp, clat, clon, aoi);
-
-  // Iteration #1
-  // Circle the Earth once, to get the time (measured from the
-  // given state vector's time) to get to the crossings for:
-  //  - the bottm & top latitudes of the target area (twice each)
-  //  - back to the starting latitude (a second time, after a full circle)
-  double start_lat, start_lon;
-  get_target_latlon(&start_stVec, 0, &start_lat, &start_lon);
-
-  printf("Start latitude: %f\n", start_lat);
-
-  double time1_in=-1, time1_out=-1,
-    time2_in=-1, time2_out=-1, full_cycle_time=-1;
-  int ncrossings_target=0, ncrossings_startlat=0;
-  int in_target_lat_range = FALSE;
-
   double curr = start_secs;
-  stateVector st = start_stVec;
+  stateVector st = *start_stVec;
 
   double lat_prev = -999;
   int iter=0;
 
-  // First loop: don't even check for overlap
   while (1) {
     ++iter;
 
@@ -313,7 +327,7 @@ void plan(const char *satellite, const char *beam_mode,
         if (ncrossings_startlat == 2) {
           printf(" --> Finished complete cycle: t=%f\n", curr-start_secs);
           if (delta == end_delta) {
-            full_cycle_time=curr-start_secs;
+            *full_cycle_time=curr-start_secs;
             break;
           } else {
             printf("     Refining full cycle time estimate.\n");
@@ -323,7 +337,7 @@ void plan(const char *satellite, const char *beam_mode,
             delta = end_delta;
             lat=lat_prev;
             lat_prev=-999;
-            st = propagate(start_stVec, start_secs, curr);
+            st = propagate(*start_stVec, start_secs, curr);
           }
         }
       }
@@ -348,18 +362,18 @@ void plan(const char *satellite, const char *beam_mode,
 
         if (in_target_lat_range) {
           if (ncrossings_target == 0) {
-            time1_in = curr-start_secs;
+            *time1_in = curr-start_secs;
           } else if (ncrossings_target == 1) {
-            time2_in = curr-start_secs;
+            *time2_in = curr-start_secs;
           } else {
             printf("No way dude!\n");
           }
           ++ncrossings_target;
         } else {
           if (ncrossings_target == 1) {
-            time1_out = curr-start_secs;
+            *time1_out = curr-start_secs;
           } else if (ncrossings_target == 2) {
-            time2_out = curr-start_secs;
+            *time2_out = curr-start_secs;
           } else {
             printf("No way dude!\n");
           }
@@ -368,118 +382,89 @@ void plan(const char *satellite, const char *beam_mode,
     }
 
     lat_prev = lat;
+
     // The first of these is much slower, theoretically more accurate
     // but from my experimentation not much more accurate...
     //st = propagate(start_stVec, start_secs, curr+delta);
     st = propagate(st, curr, curr+delta);
-
     curr += delta;
   }
+}
 
-  delta = bmi->image_time;
+void plan(const char *satellite, const char *beam_mode,
+          long startdate, long enddate, double min_lat, double max_lat,
+          double clat, double clon, Polygon *aoi,
+          meta_parameters *meta, const char *outFile)
+{
+  BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
+  if (!bmi)
+    asfPrintError("Invalid satellite/beam mode.\n");
+
+  double img_secs = seconds_from_s(meta->general->acquisition_date);
+
+  double start_secs = seconds_from_l(startdate);
+  double end_secs = seconds_from_l(enddate);
+
+  stateVector start_stVec = propagate(meta->state_vectors->vecs[0].vec,
+                                      img_secs, start_secs);
+
+  printf("Target:\n"
+         "  UTM:  zone=%d\n"
+         "        %f %f\n"
+         "        %f %f\n"
+         "        %f %f\n"
+         "        %f %f\n",
+         utm_zone(clon),
+         aoi->x[0], aoi->y[0],
+         aoi->x[1], aoi->y[1],
+         aoi->x[2], aoi->y[2],
+         aoi->x[3], aoi->y[3]);
+
+  FILE *ofp = FOPEN(outFile, "w");
+  kml_header(ofp);
+  kml_aoi(ofp, clat, clon, aoi);
+
+  double start_lat, start_lon;
+  get_target_latlon(&start_stVec, 0, &start_lat, &start_lon);
+  printf("Starting latitude: %f\n", start_lat);
+
+  double time1_in, time1_out, time2_in, time2_out, full_cycle_time;
+
+  // Look for the times when we cross the latitude range of the area of
+  // interest.  Also, figure out the time required for a full revolution.
+  find_crossings(bmi, start_secs, &start_stVec, start_lat, min_lat, max_lat,
+                 &time1_in, &time1_out, &time2_in, &time2_out,
+                 &full_cycle_time);
+
+  // move the start times back a little, as a safety margin
+  time1_in -= 4;
+  time2_in -= 4;
+
   printf("Time to first target crossing: %f\n", time1_in);
   printf("Time to end of first target crossing: %f\n", time1_out);
   printf("Time to second target crossing: %f\n", time2_in);
   printf("Time to end of second target crossing: %f\n", time2_out);
   printf("Time for complete cycle: %f\n", full_cycle_time);
 
-  curr = start_secs;
-  st = start_stVec;
+  double curr = start_secs;
+  stateVector st = start_stVec;
 
-  // Iteration #2
-  // Looking for overlaps.  Use time info gathered above to propagate
-  // straight to the areas of interest.
+  // Iteration #2: Looking for overlaps.
+
+  // Use time info gathered above to propagate straight to the areas of
+  // interest.  There are two crossings to check, since we cross the latitude
+  // range twice on each circuit.
   while (curr < end_secs) {
-    OverlapInfo *overlap_info;
-    int num=0;
-    int still_overlapping = FALSE;
-    double pass_start_time = -1;
 
-    double t1 = time1_in - 4; // the -4 is just some padding
-    stateVector st1 = propagate(st, curr, t1+curr);
-    PassInfo *pi = pass_info_new();
+    double t = curr + time1_in;
+    stateVector st1 = propagate(st, curr, t);
+    check_crossing(ofp, time1_in, time1_out, t, &st1, bmi, clat, clon, aoi);
 
-    while (t1 < time1_out || still_overlapping) {
+    t = curr + time2_in;
+    stateVector st2 = propagate(st, curr, t);
+    check_crossing(ofp, time2_in, time2_out, t, &st2, bmi, clat, clon, aoi);
 
-      double t = t1 + curr;
-      ++num;
-
-      //{
-      //  double lat, lon, llat, llon;
-      //  get_target_latlon(&st1, 0, &lat, &lon);
-      //  get_target_latlon(&st1, bmi->look_angle, &llat, &llon);
-      //  printf("1: t=%s  Satellite location: "
-      //         "%10.3f %10.3f\n", 
-      //         date_str(t), lat, lon);
-      //  printf("1:                          Looking at        : "
-      //         "%10.3f %10.3f\n",
-      //         llat, llon);
-      //}
-
-      if (overlap(t, &st1, bmi, clat, clon, aoi, &overlap_info)) {
-        if (pass_start_time == -1)
-          pass_start_time = t;
-        pass_info_add(pi, overlap_info);
-        //found(ofp, num, curr, &st1, &overlap_info);
-        still_overlapping=TRUE;
-      } else {
-        still_overlapping=FALSE;
-      }
-
-      st1 = propagate(st1, t, t+delta);
-      //st1 = propagate(st, curr, t+delta);
-      t1 += delta;
-    }
-
-    if (pass_start_time > 0)
-      write_pass_to_kml(ofp, pass_start_time, clat, clon, pi);
-
-    pass_info_free(pi);
-    pi = pass_info_new();
-
-    double t2 = time2_in - 4;
-    stateVector st2 = propagate(st, curr, t2+curr);
-    num = 0;
-    still_overlapping = FALSE;
-    pass_start_time = -1;
-
-    while (t2 < time2_out || still_overlapping) {
-
-      double t = t2 + curr;
-
-      //{
-      //  double lat, lon, llat, llon;
-      //  get_target_latlon(&st2, 0, &lat, &lon);
-      //  get_target_latlon(&st2, bmi->look_angle, &llat, &llon);
-      //  printf("2: t=%s  Satellite location: "
-      //         "%10.3f %10.3f\n",
-      //         date_str(t), lat, lon);
-      //  printf("2:                          Looking at        : "
-      //         "%10.3f %10.3f\n",
-      //         llat, llon);
-      //}
-
-      if (overlap(t, &st2, bmi, clat, clon, aoi, &overlap_info)) {
-        if (pass_start_time == -1)
-          pass_start_time = t;
-        pass_info_add(pi, overlap_info);
-        //found(ofp, num, curr, &st2, &overlap_info);
-        still_overlapping=TRUE;
-      } else {
-        still_overlapping=FALSE;
-      }
-
-      st2 = propagate(st2, t, t+delta);
-      //st2 = propagate(st, curr, t+delta);
-      t2 += delta;
-    }
-
-    if (pass_start_time > 0)
-      write_pass_to_kml(ofp, pass_start_time, clat, clon, pi);
-
-    pass_info_free(pi);
-
-    st = propagate(st, curr, curr+full_cycle_time);
+    st = propagate(st, curr, curr + full_cycle_time);
     curr += full_cycle_time;
   }
 

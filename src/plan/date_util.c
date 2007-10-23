@@ -1,5 +1,6 @@
 #include "date.h"
 #include "dateUtil.h"
+#include "asf.h"
 
 /*Extract date from the metadata-style given string:
 instr="DD-MMM-YYYY, hh:mm:ss"

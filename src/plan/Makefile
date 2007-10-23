@@ -2,8 +2,6 @@ include ../../make_support/system_rules
 
 TARGET = plan
 
-CFLAGS += $(GLIBS_CFLAGS)
-
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
