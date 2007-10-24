@@ -336,7 +336,7 @@ void set_predefined_projections(int projection);
 void release_predefined_projections();
 
 /* view_output.c */
-void show_output_image(const gchar * filename);
+void show_image_with_asf_view(gchar * in_name);
 
 /* share.c */
 char * find_in_bin(const char *);
