@@ -239,7 +239,7 @@ void select_current_block(char *block_name)
   }
 
   /* Got an unknown block name, so report.  */
-  warning_message("unknown block name: %s", block_name);
+  warning_message("unknown block name: %s\n", block_name);
 
 MATCHED:
   block_stack_push(&stack_top, block_name, current_block);
@@ -1058,7 +1058,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   if ((dest->state_vectors) && (dest->state_vectors->vector_count != vector_count)) {
     warning_message("Said number of vectors in state vector block (%d)\n"
                     "differs from the actual amount of vectors (%d)...\n"
-                    "Using actual number of vectors for vector_count.",
+                    "Using actual number of vectors for vector_count.\n",
                     dest->state_vectors->vector_count, vector_count);
     dest->state_vectors->vector_count = vector_count;
     dest->state_vectors->num = vector_count; /* Backward compat alias.  */
@@ -1071,7 +1071,7 @@ int parse_metadata(meta_parameters *dest, char *file_name)
   {
     warning_message("Said number of stats blocks in stats (%d)\n"
         "differs from the actual amount of stats blocks (%d)...\n"
-        "Using actual number of stats blocks for stats_blocks_count.",
+        "Using actual number of stats blocks for stats_blocks_count.\n",
     dest->stats->band_count, stats_block_count);
     dest->stats->band_count = stats_block_count;
   }
