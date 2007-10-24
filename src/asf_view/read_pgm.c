@@ -152,19 +152,26 @@ meta_parameters* open_pgm(const char *data_name, ClientInterface *client)
       if (line[0] != '#' || feof(info->fp)) break;
     }
 
-    int width, height;
-    int n = sscanf(line, "%d %d\n", &width, &height);
-    if (n == 1) {
-      fgets(line, 255, info->fp);
-      sscanf(line, "%d\n", &height);
-    }
-
-    // read "255b" ('b' could be newline or just a space)
-    FREAD(line, sizeof(unsigned char), 4, info->fp);
-    if (line[0] != '2' || line[1] != '5' || line[2] != '5' ||
-        !isspace(line[3])) {
-      printf("Suspicious: '%c%c%c%c' != '255 '\n",
-             line[0], line[1], line[2], line[3]);
+    int width, height, marker;
+    int n = sscanf(line, "%d %d %d\n", &width, &height, &marker);
+    if (n == 3) {
+      if (marker != 255) {
+        printf("Suspicious: %d != 255\n", marker);
+      }
+    } else if (n == 2 || n == 1) {
+      if (n == 1) {
+        fgets(line, 255, info->fp);
+        sscanf(line, "%d\n", &height);
+      }
+      // read "255b" ('b' could be newline or just a space)
+      FREAD(line, sizeof(unsigned char), 4, info->fp);
+      if (line[0] != '2' || line[1] != '5' || line[2] != '5' ||
+          !isspace(line[3])) {
+        printf("Suspicious: '%c%c%c%c' != '255 '\n",
+               line[0], line[1], line[2], line[3]);
+      }
+    } else {
+      printf("Did not find start of data marker...\n");
     }
 
     client->data_type = info->rgb_flag ? RGB_BYTE : GREYSCALE_BYTE;

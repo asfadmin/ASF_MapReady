@@ -105,6 +105,26 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(img_filt, "*.img");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
 
+    GtkFileFilter *jpg_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(jpg_filt, "JPEG Image Files (*.jpg)");
+    gtk_file_filter_add_pattern(jpg_filt, "*.jpg");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), jpg_filt);
+
+    GtkFileFilter *png_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(png_filt, "PNG Image Files (*.png)");
+    gtk_file_filter_add_pattern(png_filt, "*.png");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), png_filt);
+
+    GtkFileFilter *pgm_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(pgm_filt, "PGM Image Files (*.pgm)");
+    gtk_file_filter_add_pattern(pgm_filt, "*.pgm");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), pgm_filt);
+
+    //GtkFileFilter *ppm_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(ppm_filt, "PPM Image Files (*.ppm)");
+    //gtk_file_filter_add_pattern(ppm_filt, "*.ppm");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ppm_filt);
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
@@ -143,6 +163,9 @@ void new_file(void)
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
         "ALOS Image (IMG-*)\0IMG-*\0"
         "ASF Internal (*.img)\0*.img\0"
+        "JPG (*.jpg)\0*.jpg\0"
+        "PNG (*.png)\0*.png\0"
+        "PGM (*.pgm)\0*.pgm\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;

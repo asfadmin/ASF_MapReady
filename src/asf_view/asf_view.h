@@ -109,7 +109,7 @@ int handle_png_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_png(const char *data_name, ClientInterface *client);
 
-/* read_png.c */
+/* read_pgm.c */
 int try_pgm(const char *filename);
 int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
