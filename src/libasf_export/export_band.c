@@ -819,9 +819,9 @@ export_band_image (const char *metadata_file_name,
                  md->general->image_data_type == BETA_IMAGE  ||
                  md->general->image_data_type == GAMMA_IMAGE)
                ),
-              "Remapping a power (sigma, beta, or gamma) type image into\n"
-              "a byte image using truncation is not supported.  All values\n"
-              "would map to black...\n");
+              "Downsampling a Sigma, Beta, or Gamma type image (power or dB)\n"
+              "from floating point to byte using truncation is not supported.\n"
+              "All values would map to black.\n");
 
   if (md->general->band_count < 1 || md->general->band_count > MAX_BANDS) {
     asfPrintError ("Unsupported number of channels found (%d).  Only 1 through\n"
