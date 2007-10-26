@@ -57,37 +57,7 @@ int meta_get_latLon(meta_parameters *meta,
 {
   double hgt;
 
-  if (meta->airsar) {
-      double l = yLine, s = xSample;
-      if (meta->sar) {
-          l = (double)meta->sar->original_line_count/
-              (double)meta->general->line_count * yLine;
-          s = (double)meta->sar->original_sample_count/
-              (double)meta->general->sample_count * xSample;
-      }
-      airsar_to_latlon(meta, s, l, elev, lat, lon);
-  }
-  else if (meta->transform) {
-      double l = yLine, s = xSample;
-      if (meta->sar) {
-          l = (double)meta->sar->original_line_count/
-              (double)meta->general->line_count * yLine;
-          s = (double)meta->sar->original_sample_count/
-              (double)meta->general->sample_count * xSample;
-      }
-      alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
-  }
-  else if(meta->sar && !meta->projection) {
-    if (meta->sar->image_type=='S' || meta->sar->image_type=='G') {
-      /*Slant or ground range.  Use state vectors and doppler.*/
-      double slant,doppler,time;
-      meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,&doppler);
-      return meta_timeSlantDop2latLon(meta,
-				      time,slant,doppler,elev,
-				      lat,lon);
-    }
-  }
-  else if (meta->projection) {
+  if (meta->projection) {
     /*Map-Projected. Use projection information to calculate lat & lon.*/
     double px,py,pz=0.0;
     px = meta->projection->startX + ((xSample + meta->general->start_sample)
@@ -103,12 +73,43 @@ int meta_get_latLon(meta_parameters *meta,
         *lat *= R2D; *lon *= R2D;
     }
     return 0;
+  }
+  else if (meta->airsar) {
+      double l = yLine, s = xSample;
+      if (meta->sar) {
+          l = (double)meta->sar->original_line_count/
+              (double)meta->general->line_count * yLine;
+          s = (double)meta->sar->original_sample_count/
+              (double)meta->general->sample_count * xSample;
+      }
+      airsar_to_latlon(meta, s, l, elev, lat, lon);
+      return 0;
+  }
+  else if (meta->transform) {
+      double l = yLine, s = xSample;
+      if (meta->sar) {
+          l = (double)meta->sar->original_line_count/
+              (double)meta->general->line_count * yLine;
+          s = (double)meta->sar->original_sample_count/
+              (double)meta->general->sample_count * xSample;
+      }
+      alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
+      return 0;
+  }
+  else if (meta->sar &&
+           (meta->sar->image_type=='S' || meta->sar->image_type=='G')) {
+      /*Slant or ground range.  Use state vectors and doppler.*/
+      double slant,doppler,time;
+      meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,&doppler);
+      return meta_timeSlantDop2latLon(meta,
+				      time,slant,doppler,elev,
+				      lat,lon);
   } else { /*Bogus image type.*/
     asfPrintError(
       "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
       "meta->transform = %p, so it isn't ALOS.\n"
       "meta->airsar = %p, so it isn't Airsar.\n"
-      "meta->sar = %p, so it isn't Slant/Ground range.\n"
+      "meta->sar = %p, and it isn't Slant/Ground range.\n"
       "meta->projection = %p, so it isn't Projected, or Scansar.\n"
       "meta->general->name: %s\n",
       meta->transform, meta->airsar, meta->sar, meta->projection,

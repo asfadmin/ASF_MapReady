@@ -93,9 +93,7 @@ void airsar_to_latlon(meta_parameters *meta,
     int recalc = !cached_airsar_block ||
         cached_airsar_block->lat_peg_point != meta->airsar->lat_peg_point ||
         cached_airsar_block->lon_peg_point != meta->airsar->lon_peg_point ||
-        cached_airsar_block->head_peg_point != meta->airsar->head_peg_point ||
-        cached_airsar_block->along_track_offset != meta->airsar->along_track_offset ||
-        cached_airsar_block->cross_track_offset != meta->airsar->cross_track_offset;
+        cached_airsar_block->head_peg_point != meta->airsar->head_peg_point;
 
     if (recalc) {
         // cache airsar block, so we can be sure we're not reusing
@@ -163,6 +161,8 @@ void airsar_to_latlon(meta_parameters *meta,
     // radar coordinates
     double c_lat = (xSample*xpix+c0)/ra;
     double s_lon = (yLine*ypix+s0)/ra;
+
+    //height += meta->airsar->gps_altitude;
 
     // radar coordinates in WGS84
     double t1 = (ra+height)*cos(c_lat)*cos(s_lon);
