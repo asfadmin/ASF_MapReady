@@ -72,9 +72,11 @@ main(int argc, char **argv)
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
 
-    if (argc != 2) {
+    if (argc < 2) {
         g_filename = STRDUP(find_in_share("startup.jpg"));
     } else {
+        if (argc > 2)
+          asfPrintWarning("Extraneous command-line arguments ignored.\n");
         g_filename = STRDUP(argv[1]);
     }
 
