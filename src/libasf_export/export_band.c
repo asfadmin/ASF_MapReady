@@ -41,17 +41,17 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
-                           int rgb, char **band_names);
+                           int rgb, char **band_names, int have_look_up_table);
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                              int rgb, char **band_names);
+                              int rgb, char **band_names, int have_look_up_table);
 void finalize_tiff_file(TIFF *otif, GTIF *ogtif, int is_geotiff);
-void append_band_names(char **band_names, int rgb, char *citation);
+void append_band_names(char **band_names, int rgb, char *citation, int have_look_up_table);
 
 void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
                            const char *output_file_name,
                            const char *metadata_file_name,
                            int is_geotiff, scale_t sample_mapping,
-                           int rgb, char **band_names)
+                           int rgb, char **band_names, int have_look_up_table)
 {
   unsigned short sample_size;
   unsigned short sample_format;
@@ -105,7 +105,7 @@ void initialize_tiff_file (TIFF **otif, GTIF **ogtif,
   TIFFSetField(*otif, TIFFTAG_SAMPLEFORMAT, sample_format);
 
   if (is_geotiff) {
-    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names);
+    *ogtif = write_tags_for_geotiff (*otif, metadata_file_name, rgb, band_names, have_look_up_table);
   }
 }
 
@@ -208,7 +208,7 @@ void initialize_pgm_file(const char *output_file_name,
 }
 
 GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
-                             int rgb, char **band_names)
+                             int rgb, char **band_names, int have_look_up_table)
 {
   /* Get the image metadata.  */
   meta_parameters *md = meta_read (metadata_file_name);
@@ -350,7 +350,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     md->projection->param.utm.zone, md->projection->hem,
                     datum_str,
                     md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-          append_band_names(band_names, rgb, citation);
+          append_band_names(band_names, rgb, citation, have_look_up_table);
           citation_length = strlen(citation);
           asfRequire((citation_length >= 0) && (citation_length <= max_citation_length),
                      "GeoTIFF citation too long" );
@@ -420,7 +420,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s written by Alaska Satellite Facility "
                   "tools.", datum_str,
                       md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation);
+        append_band_names(band_names, rgb, citation, have_look_up_table);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -482,7 +482,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s written by Alaska Satellite Facility "
                   "tools.", datum_str,
                   md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation);
+        append_band_names(band_names, rgb, citation, have_look_up_table);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 && citation_length <= max_citation_length,
                     "bad citation length");
@@ -536,7 +536,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     "Polar stereographic projected GeoTIFF using %s "
                     "datum written by Alaska Satellite Facility "
                     "tools", datum_str);
-          append_band_names(band_names, rgb, citation);
+          append_band_names(band_names, rgb, citation, have_look_up_table);
           citation_length = strlen(citation);
           asfRequire (citation_length >= 0 &&
                       citation_length <= max_citation_length,
@@ -554,7 +554,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                     "tools, Natural Origin Latitude %lf, Straight Vertical "
                     "Pole %lf.", md->projection->param.ps.slat,
                     md->projection->param.ps.slon);
-          append_band_names(band_names, rgb, citation);
+          append_band_names(band_names, rgb, citation, have_look_up_table);
           citation_length = strlen(citation);
           asfRequire (citation_length >= 0 &&
               citation_length <= max_citation_length,
@@ -607,7 +607,7 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
                   "%s %s written by Alaska Satellite "
                       "Facility tools.", datum_str,
                   md->projection->datum == HUGHES_DATUM ? "ellipsoid" : "datum");
-        append_band_names(band_names, rgb, citation);
+        append_band_names(band_names, rgb, citation, have_look_up_table);
         citation_length = strlen(citation);
         asfRequire (citation_length >= 0 &&
             citation_length <= max_citation_length,
@@ -840,12 +840,12 @@ export_band_image (const char *metadata_file_name,
       is_geotiff = 0;
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, band_name);
+         sample_mapping, rgb, band_name, have_look_up_table);
     }
     else if (format == GEOTIFF) {
       initialize_tiff_file(&otif, &ogtif, output_file_name,
          metadata_file_name, is_geotiff,
-         sample_mapping, rgb, band_name);
+         sample_mapping, rgb, band_name, have_look_up_table);
     }
     else if (format == JPEG) {
       initialize_jpeg_file(output_file_name, md, &ojpeg, &cinfo, rgb);
@@ -1762,32 +1762,42 @@ export_band_image (const char *metadata_file_name,
     strcpy(base_name, output_file_name);
 
     if (!band_name) {
-        if (band_count == 1) {
-            // allow passing in NULL for the band names to mean "who cares!"
-            // when exporting a single band image (mostly useful with a
-            // look up table).
-            band_name = (char **) MALLOC(sizeof(char*)*1);
-            band_name[0] = (char*) MALLOC(sizeof(char)*4);
-            strcpy(band_name[0], "???");
+      band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
+      if (band_count == 1) {
+        // allow passing in NULL for the band names to mean "who cares!"
+        // when exporting a single band image (mostly useful with a
+        // look up table).
+        int i;
+        if (have_look_up_table) {
+          for (i=0; i<3; i++) {
+            band_name[i] = (char*) MALLOC(sizeof(char)*100);
+            sprintf(band_name[i], "%02d", i + 1);
             free_band_names = TRUE;
+          }
         }
         else {
-            // caller did not pass the band names -- get them ourselves
-            int n;
-            char *b = stripExt(image_data_file_name);
-            band_name = find_single_band(b, "all", &n);
-            asfRequire (n == band_count, "Band count inconsistent: %d != %d\n",
-                        n, band_count);
-            free_band_names = TRUE;
-            FREE(b);
+          band_name[0] = (char*) MALLOC(sizeof(char)*100);
+          strcpy(band_name[0], "01");
+          free_band_names = TRUE;
         }
+      }
+    }
+    else {
+      // caller did not pass the band names -- get them ourselves
+      int n;
+      char *b = stripExt(image_data_file_name);
+      band_name = find_single_band(b, "all", &n);
+      asfRequire (n == band_count, "Band count inconsistent: %d != %d\n",
+                  n, band_count);
+      free_band_names = TRUE;
+      FREE(b);
     }
 
     int kk;
     for (kk=0; kk<band_count; kk++) {
       if (band_name[kk]) {
 
-        if (strcmp(band_name[0], "???") != 0)
+        if (strcmp(band_name[0], MAGIC_UNSET_STRING) != 0)
           asfPrintStatus("Writing band '%s' ...\n", band_name[kk]);
 
         // Initialize the chosen format
@@ -1801,13 +1811,13 @@ export_band_image (const char *metadata_file_name,
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           initialize_tiff_file(&otif, &ogtif, output_file_name,
                   metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, band_name);
+                  sample_mapping, rgb, band_name, have_look_up_table);
         }
         else if (format == GEOTIFF) {
           append_ext_if_needed (output_file_name, ".tif", ".tiff");
           initialize_tiff_file(&otif, &ogtif, output_file_name,
                   metadata_file_name, is_geotiff,
-                  sample_mapping, rgb, band_name);
+                  sample_mapping, rgb, band_name, have_look_up_table);
         }
         else if (format == JPEG) {
           append_ext_if_needed (output_file_name, ".jpg", ".jpeg");
@@ -2035,26 +2045,52 @@ export_band_image (const char *metadata_file_name,
   meta_free (md);
 }
 
-void append_band_names(char **band_names, int rgb, char *citation)
+void append_band_names(char **band_names, int rgb, char *citation, int have_look_up_table)
 {
   char band_name[256];
-  int i;
+  int i=0;
   sprintf(citation, "%s, %s: ", citation, BAND_ID_STRING);
-  if (rgb) {
-    for (i=0; i<2; i++) {
-      if (band_names[i] != NULL && strlen(band_names[i]) > 0) {
-        sprintf(band_name, "%s,", strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+  if (band_names) {
+    if (rgb || have_look_up_table) {
+      for (i=0; i<2; i++) {
+        // First 2 bands have a comma after the band name
+        if (band_names[i] != NULL && strlen(band_names[i]) > 0 &&
+            strncmp(band_names[i], MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
+        {
+          sprintf(band_name, "%s,", strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+          strcat(citation, band_name);
+        }
+        else {
+          sprintf(band_name, "%02d,", i + 1);
+          strcat(citation, band_name);
+        }
+      }
+      if (band_names[i] != NULL && strlen(band_names[i]) > 0 &&
+          strncmp(band_names[i], MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
+      {
+        strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+      }
+      else {
+        sprintf(band_name, "%02d", i + 1);
         strcat(citation, band_name);
       }
     }
-    if (band_names[i] != NULL && strlen(band_names[i]) > 0) {
-      strcat(citation, strncmp("IGNORE", uc(band_names[i]), 6) == 0 ? "Empty" : band_names[i]);
+    else {
+      if (band_names[0] != NULL && strlen(band_names[0]) > 0 &&
+          strncmp(band_names[i], MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
+      {
+        strcat(citation, strncmp("IGNORE", uc(band_names[0]), 6) == 0 ? "Empty" : band_names[0]);
+      }
+      else {
+        strcat(citation, "01");
+      }
     }
   }
   else {
-    if (band_names[0] != NULL && strlen(band_names[0]) > 0) {
-      strcat(citation, strncmp("IGNORE", uc(band_names[0]), 6) == 0 ? "Empty" : band_names[0]);
-    }
+    if (rgb || have_look_up_table)
+      strcat(citation, "01,02,03");
+    else
+      strcat(citation, "01");
   }
 }
 

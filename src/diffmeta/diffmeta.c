@@ -97,6 +97,9 @@ int main(int argc, char **argv)
   extern FILE *fLog;            /* output file descriptor, stdout or log file */
   FILE *fError;                 /* Error log, stderr or log file */
   extern int logflag, quietflag;
+  int formatflag;
+  int is_not_a_geotiff=1; // GeoTIFFs don't require the same fields
+  char format[64];
   int outputflag=0;
   char msg[1024];
 
@@ -105,9 +108,19 @@ int main(int argc, char **argv)
   outputFile=(char*)CALLOC(1024, sizeof(char));
 
   /* process command line */
-  while ((c=getopt(argc,argv,"o:l:")) != EOF)
+  while ((c=getopt(argc,argv,"o:l:f:")) != EOF)
   {
     switch (c) {
+      case 'f':/* -format <format type> */
+        if (0==strncmp(optarg,"ormat",5)) {
+          sscanf(argv[optind++], "%s", format);
+          formatflag=1;
+        }
+        else {
+          FREE(outputFile);
+          usage(argv[0]);
+        }
+        break;
       case 'l':/* -log <filename>, get logfile; this is sorta hacked */
         if (0==strncmp(optarg,"og",2)) {
           sscanf(argv[optind++], "%s", logFile);
@@ -214,8 +227,15 @@ int main(int argc, char **argv)
     FCLOSE(outFP);
   }
 
+  if (formatflag && strncmp(uc(format), "GEOTIFF", 7) == 0) {
+    is_not_a_geotiff=0; // Input file is a geotiff
+  }
+  else {
+    is_not_a_geotiff=1; // It's not a geotiff format input file
+  }
+
   /***** And away we go.... *****/
-  diff_check_metadata(outputFile, metafile1, metafile2);
+  diff_check_metadata(outputFile, is_not_a_geotiff, metafile1, metafile2);
 
   // Cleanup
   if (outputFile) FREE (outputFile);
@@ -229,12 +249,18 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-         "   %s <-output <diff_output_file>> [-log <file>] <metafile1> <metafile2>\n"
+         "   %s <-output <diff_output_file>> [-format <type>] [-log <file>] <metafile1> <metafile2>\n"
          "\nOPTIONS:\n"
       "   -output <diff_output_file>:  output to write metadata differencing\n"
       "                 results to (required.)\n"
       "   -log <file>:  allows the output to be written to a log file\n"
       "                 in addition to stdout (not required but strongly suggested.)\n"
+      "   -format <format>: allows modified checking of the metadata based on what\n"
+      "                 type the imported data was.  Example: Importing a GeoTIFF\n"
+      "                 results in unknown sensor and mode parameters (etc) and should\n"
+      "                 not be required.  Currently, only geotiff is supported for the\n"
+      "                 format flag:\n\n"
+      "                   diffmeta -format geotiff -output <report file> <metafile1> <metafile2>\n"
       "\nINPUTS:\n"
       "   <metafile1>:  ASF metadata file to compare to.  File extension not required.\n"
       "   <metafile2>:  ASF metadata file to look for differences in.  File extenstion\n"
@@ -713,7 +739,7 @@ void compare_meta_double_with_tolerance(char *err_msgs, char *block_id, char *va
   }
 }
 
-void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
+void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1, char *metafile2)
 {
   int failed = 0;
   char precheck_err_msgs[8192];
@@ -786,81 +812,82 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   failed = 0; // Start out with no failures
   strcpy(precheck_err_msgs, "");
   // These strings are required
-  validate_string(precheck_err_msgs, mg2->basename,
-                  "General", "basename",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->sensor,
-                  "General", "sensor",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->sensor_name,
-                  "General", "sensor_name",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->mode,
-                  "General", "mode",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->processor,
-                  "General", "processor",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->system,
-                  "General", "system",
-                  &failed);
-  validate_string(precheck_err_msgs, mg2->acquisition_date,
-                  "General", "acquisition_date",
-                  &failed);
-
+  if (is_not_a_geotiff) {
+    validate_string(precheck_err_msgs, mg2->basename,
+                    "General", "basename",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->sensor,
+                    "General", "sensor",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->sensor_name,
+                    "General", "sensor_name",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->mode,
+                    "General", "mode",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->processor,
+                    "General", "processor",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->system,
+                    "General", "system",
+                    &failed);
+    validate_string(precheck_err_msgs, mg2->acquisition_date,
+                    "General", "acquisition_date",
+                    &failed);
 # define NUM_SENSOR_STRINGS 7
-  char *sensor_strings[NUM_SENSOR_STRINGS] =
-    {"SIR-C", "ERS1",
-     "ERS2",  "JERS1",
-     "ALOS",  "RSAT-1",
-     "AIRSAR"};
-  verify_string(precheck_err_msgs, mg2->sensor,
-                sensor_strings, NUM_SENSOR_STRINGS,
-                "General", "sensor",
-                1, &failed);
+    char *sensor_strings[NUM_SENSOR_STRINGS] =
+      {"SIR-C", "ERS1",
+       "ERS2",  "JERS1",
+       "ALOS",  "RSAT-1",
+       "AIRSAR"};
+    verify_string(precheck_err_msgs, mg2->sensor,
+                  sensor_strings, NUM_SENSOR_STRINGS,
+                  "General", "sensor",
+                  1, &failed);
 
 # define NUM_SENSOR_NAME_STRINGS 3
-  char *sensor_name_strings[NUM_SENSOR_NAME_STRINGS] =
-    {"SAR", "AVNIR", "PRISM"};
-  verify_string(precheck_err_msgs, mg2->sensor_name,
-                sensor_name_strings, NUM_SENSOR_NAME_STRINGS,
-                "General", "sensor_name",
-                1, &failed);
+    char *sensor_name_strings[NUM_SENSOR_NAME_STRINGS] =
+      {"SAR", "AVNIR", "PRISM"};
+    verify_string(precheck_err_msgs, mg2->sensor_name,
+                  sensor_name_strings, NUM_SENSOR_NAME_STRINGS,
+                  "General", "sensor_name",
+                  1, &failed);
 
   // FIXME: All of these strings are probably in a .h file.  If not, then they
   // need to be put into a .h file.  The code here should develop the array of
   // valid mode strings at run time.  The same thing may apply to the sensor_name,
   // sensor, and other strings or lists of characters...
 # define NUM_MODE_STRINGS 164
-  char *mode_strings[NUM_MODE_STRINGS] =
-    {
-      "ALOS","STD",
-      "1A","1B1","1B2R","1B2G",
-      "SWA","SWB","SNA", "SNB",
-      "ST1","ST2","ST3","ST4","ST5","ST6","ST7",
-      "WD1","WD2","WD3",
-      "EL1",
-      "EH1","EH2","EH3","EH4","EH5","EH6",
-      "FN1","FN2","FN3","FN4","FN5",
-      "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
-      "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
-      "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
-      "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
-      "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
-      "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
-      "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
-      "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
-      "WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2",
-      "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
-      "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
-      "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
-      "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
-      "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
-      "PLR11","PLR12"};
-  verify_string(precheck_err_msgs, mg2->mode,
-                mode_strings, NUM_MODE_STRINGS,
-                "General", "mode",
-                0, &failed);
+    char *mode_strings[NUM_MODE_STRINGS] =
+      {
+        "ALOS","STD",
+        "1A","1B1","1B2R","1B2G",
+        "SWA","SWB","SNA", "SNB",
+        "ST1","ST2","ST3","ST4","ST5","ST6","ST7",
+        "WD1","WD2","WD3",
+        "EL1",
+        "EH1","EH2","EH3","EH4","EH5","EH6",
+        "FN1","FN2","FN3","FN4","FN5",
+        "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+        "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+        "FBS1","FBS2","FBS3","FBS4","FBS5","FBS6","FBS7","FBS8","FBS9","FBS10",
+        "FBS11","FBS12","FBS13","FBS14","FBS15","FBS16","FBS17","FBS18",
+        "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+        "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+        "FBD1","FBD2","FBD3","FBD4","FBD5","FBD6","FBD7","FBD8","FBD9","FBD10",
+        "FBD11","FBD12","FBD13","FBD14","FBD15","FBD16","FBD17","FBD18",
+        "WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2","WD1","WD2",
+        "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+        "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+        "DSN1","DSN2","DSN3","DSN4","DSN5","DSN6","DSN7","DSN8","DSN9","DSN10",
+        "DSN11","DSN12","DSN13","DSN14","DSN15","DSN16","DSN17","DSN18",
+        "PLR1","PLR2","PLR3","PLR4","PLR5","PLR6","PLR7","PLR8","PLR9","PLR10",
+        "PLR11","PLR12"};
+    verify_string(precheck_err_msgs, mg2->mode,
+                  mode_strings, NUM_MODE_STRINGS,
+                  "General", "mode",
+                  0, &failed);
+  }
 
   // FIXME: Add a verify_enum() function and let it use a hook to a
   // function that tells if the value is a valid member or not.
@@ -919,12 +946,14 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
   // FIXME: Write a verify_char_with_mask() so we can ignore single
   // values, e.g. MAGIC_UNSET_CHAR.  NOTE: AirSAR will ignore the unset char
 # define NUM_ORBIT_DIRECTION_CHARS 2
-  char orbit_direction_chars[NUM_ORBIT_DIRECTION_CHARS] =
-    {'A', 'D'};
-  verify_char(precheck_err_msgs, mg2->orbit_direction,
-              orbit_direction_chars, NUM_ORBIT_DIRECTION_CHARS,
-              "General", "orbit_direction",
-              1, &failed);
+  if (is_not_a_geotiff) {
+    char orbit_direction_chars[NUM_ORBIT_DIRECTION_CHARS] =
+      {'A', 'D'};
+    verify_char(precheck_err_msgs, mg2->orbit_direction,
+                orbit_direction_chars, NUM_ORBIT_DIRECTION_CHARS,
+                "General", "orbit_direction",
+                1, &failed);
+  }
 
   verify_int(precheck_err_msgs, mg2->frame,
              DM_MIN_FRAME, DM_MAX_FRAME,
@@ -1002,10 +1031,10 @@ void diff_check_metadata(char *outputFile, char *metafile1, char *metafile2)
                 "General", "re_minor",
                 1, &failed);
 
-  verify_int(precheck_err_msgs, mg2->bit_error_rate,
-             DM_MIN_BIT_ERROR_RATE, DM_MAX_BIT_ERROR_RATE,
-             "General", "bit_error_rate",
-             0, &failed);
+  verify_double(precheck_err_msgs, mg2->bit_error_rate,
+                DM_MIN_BIT_ERROR_RATE, DM_MAX_BIT_ERROR_RATE,
+                "General", "bit_error_rate",
+                0, &failed);
 
   int max_missing_lines;
   if (meta_is_valid_int(mg2->line_count) &&

@@ -53,8 +53,8 @@
 #define DM_MAX_SAMPLE_INCREMENT         100.0
 #define DM_MIN_RANGE_TIME_PER_PIXEL     1.0e-08
 #define DM_MAX_RANGE_TIME_PER_PIXEL     1.0e-05
-#define DM_MIN_AZIMUTH_TIME_PER_PIXEL   -0.01
-#define DM_MAX_AZIMUTH_TIME_PER_PIXEL   0.01
+#define DM_MIN_AZIMUTH_TIME_PER_PIXEL   -0.07
+#define DM_MAX_AZIMUTH_TIME_PER_PIXEL   0.07
 #define DM_MIN_SLANT_SHIFT              -100.0
 #define DM_MAX_SLANT_SHIFT              100.0
 #define DM_MIN_TIME_SHIFT               -100.0
@@ -69,18 +69,18 @@
 #define DM_MAX_EARTH_RADIUS             6380000.0
 #define DM_MIN_SATELLITE_HEIGHT         6800000.0
 #define DM_MAX_SATELLITE_HEIGHT         7500000.0
-#define DM_MIN_DOP_RANGE_CENTROID       0.0
+#define DM_MIN_DOP_RANGE_CENTROID       -15000.0
 #define DM_MAX_DOP_RANGE_CENTROID       15000.0
-#define DM_MIN_DOP_RANGE_PER_PIXEL      -0.20
-#define DM_MAX_DOP_RANGE_PER_PIXEL      0.20
-#define DM_MIN_DOP_RANGE_QUAD           -2.0e-5
-#define DM_MAX_DOP_RANGE_QUAD           2.0e-5
-#define DM_MIN_DOP_AZIMUTH_CENTROID     0.0
+#define DM_MIN_DOP_RANGE_PER_PIXEL      -0.80
+#define DM_MAX_DOP_RANGE_PER_PIXEL      0.80
+#define DM_MIN_DOP_RANGE_QUAD           -4.0e-5
+#define DM_MAX_DOP_RANGE_QUAD           4.0e-5
+#define DM_MIN_DOP_AZIMUTH_CENTROID     -15000.0
 #define DM_MAX_DOP_AZIMUTH_CENTROID     15000.0
-#define DM_MIN_DOP_AZIMUTH_PER_PIXEL    -0.20
-#define DM_MAX_DOP_AZIMUTH_PER_PIXEL    0.20
-#define DM_MIN_DOP_AZIMUTH_QUAD         -2.0e-5
-#define DM_MAX_DOP_AZIMUTH_QUAD         2.0e-5
+#define DM_MIN_DOP_AZIMUTH_PER_PIXEL    -0.80
+#define DM_MAX_DOP_AZIMUTH_PER_PIXEL    0.80
+#define DM_MIN_DOP_AZIMUTH_QUAD         -4.0e-5
+#define DM_MAX_DOP_AZIMUTH_QUAD         4.0e-5
 
 // Optical Block
 #define DM_MIN_OFF_NADIR_ANGLE      0.0
@@ -101,10 +101,10 @@
 #define DM_MAX_DAY                1
 
 // Projection Block
-#define DM_MIN_STARTX             -1.0e6
-#define DM_MAX_STARTX             1.0e6
-#define DM_MIN_STARTY             -1.0e6
-#define DM_MAX_STARTY             1.0e6
+#define DM_MIN_STARTX             -1.0e7
+#define DM_MAX_STARTX             1.0e7
+#define DM_MIN_STARTY             -1.0e7
+#define DM_MAX_STARTY             1.0e7
 #define DM_MIN_PERX               0.2
 #define DM_MAX_PERX               1500.0
 #define DM_MIN_PERY               -DM_MAX_PERX
@@ -123,8 +123,8 @@
 #define DM_MIN_STATE_PLANE_ZONE   1
 #define DM_MAX_STATE_PLANE_ZONE   100
 //      ATCT
-#define DM_MIN_ROTATION_ANGLE     -180.0
-#define DM_MAX_ROTATION_ANGLE     180.0
+#define DM_MIN_ROTATION_ANGLE     0.0
+#define DM_MAX_ROTATION_ANGLE     360.0
 //      LAMCC
 // Note: The LAMCC scale factor only applies to the single standard
 // parallel case for LAMCC.  If used, then it will be 1.0 to

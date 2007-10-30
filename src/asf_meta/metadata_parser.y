@@ -214,7 +214,7 @@ void select_current_block(char *block_name)
 
   if ( !strcmp(block_name, "stats") ) { // Stats block for versions lower than v2.4 (single-band stats)
     if (MTL->stats == NULL)
-    { MTL->stats = meta_statistics_init(1); }
+    { MTL->stats = meta_statistics_init(1); stats_block_count++;}
     current_block = MTL->stats;
     goto MATCHED;
   }
@@ -1066,7 +1066,6 @@ int parse_metadata(meta_parameters *dest, char *file_name)
 
   /* Fill in number of stats blocks seen.  */
   if (dest->stats             &&
-      dest->stats->band_count &&
       dest->stats->band_count != stats_block_count)
   {
     warning_message("Said number of stats blocks in stats (%d)\n"

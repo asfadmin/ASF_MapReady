@@ -128,39 +128,39 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
   switch (src->type) {
     case UNIVERSAL_TRANSVERSE_MERCATOR:
       dest->param.utm.zone = src->param.utm.zone;
-      dest->param.utm.lat0 = D2R*src->param.utm.lat0;
-      dest->param.utm.lon0 = D2R*src->param.utm.lon0;
+      dest->param.utm.lat0 = src->param.utm.lat0;
+      dest->param.utm.lon0 = src->param.utm.lon0;
       dest->param.utm.false_easting = src->param.utm.false_easting;
       dest->param.utm.false_northing = src->param.utm.false_northing;
       dest->param.utm.scale_factor = src->param.utm.scale_factor;
       break;
     case POLAR_STEREOGRAPHIC:
-      dest->param.ps.slat = D2R*src->param.ps.slat;
-      dest->param.ps.slon = D2R*src->param.ps.slon;
+      dest->param.ps.slat = src->param.ps.slat;
+      dest->param.ps.slon = src->param.ps.slon;
       dest->param.ps.is_north_pole = src->param.ps.is_north_pole;
       dest->param.ps.false_easting = src->param.ps.false_easting;
       dest->param.ps.false_northing = src->param.ps.false_northing;
       break;
     case ALBERS_EQUAL_AREA:
-      dest->param.albers.std_parallel1 = D2R*src->param.albers.std_parallel1;
-      dest->param.albers.std_parallel2 = D2R*src->param.albers.std_parallel2;
-      dest->param.albers.center_meridian = D2R*src->param.albers.center_meridian;
-      dest->param.albers.orig_latitude = D2R*src->param.albers.orig_latitude;
+      dest->param.albers.std_parallel1 = src->param.albers.std_parallel1;
+      dest->param.albers.std_parallel2 = src->param.albers.std_parallel2;
+      dest->param.albers.center_meridian = src->param.albers.center_meridian;
+      dest->param.albers.orig_latitude = src->param.albers.orig_latitude;
       dest->param.albers.false_easting = src->param.albers.false_easting;
       dest->param.albers.false_northing = src->param.albers.false_northing;
       break;
     case LAMBERT_CONFORMAL_CONIC:
-      dest->param.lamcc.plat1 = D2R*src->param.lamcc.plat1;
-      dest->param.lamcc.plat2 = D2R*src->param.lamcc.plat2;
-      dest->param.lamcc.lat0 = D2R*src->param.lamcc.lat0;
-      dest->param.lamcc.lon0 = D2R*src->param.lamcc.lon0;
+      dest->param.lamcc.plat1 = src->param.lamcc.plat1;
+      dest->param.lamcc.plat2 = src->param.lamcc.plat2;
+      dest->param.lamcc.lat0 = src->param.lamcc.lat0;
+      dest->param.lamcc.lon0 = src->param.lamcc.lon0;
       dest->param.lamcc.false_easting = src->param.lamcc.false_easting;
       dest->param.lamcc.false_northing = src->param.lamcc.false_northing;
       dest->param.lamcc.scale_factor = src->param.lamcc.scale_factor;
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
-      dest->param.lamaz.center_lon = D2R*src->param.lamaz.center_lon;
-      dest->param.lamaz.center_lat = D2R*src->param.lamaz.center_lat;
+      dest->param.lamaz.center_lon = src->param.lamaz.center_lon;
+      dest->param.lamaz.center_lat = src->param.lamaz.center_lat;
       dest->param.lamaz.false_easting = src->param.lamaz.false_easting;
       dest->param.lamaz.false_northing = src->param.lamaz.false_northing;
       break;
@@ -172,7 +172,7 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
 
 int get_tiff_data_config(TIFF *tif,
                          short *sample_format, short *bits_per_sample, short *planar_config,
-                         data_type_t *data_type, int *num_bands,
+                         data_type_t *data_type, short *num_bands,
                          int *is_scanline_format)
 {
   int     ret = 0, read_count;

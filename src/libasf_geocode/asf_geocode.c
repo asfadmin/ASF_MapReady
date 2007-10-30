@@ -1183,7 +1183,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   // and add the geocoding parameters.
   meta_parameters *omd = meta_read (in_base_names[ref_input]);
   g_assert(omd->general->band_count == n_bands);
-
+  if (omd->stats != NULL) {
+    // Geocoding results in resampling.  Consequently, the stats info
+    // that may have existed in the metadata is no longer accurate.
+    // Best to remove it now and let it get recalculated 'just in time'
+    // when some other later process needs it.
+    FREE(omd->stats);
+    omd->stats = NULL;
+  }
   double y_pixel_size = omd->general->y_pixel_size;
 
   // I can't figure out what this code is for.  Commenting out for now

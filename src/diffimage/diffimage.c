@@ -105,7 +105,7 @@ typedef struct {
   short bits_per_sample;
   short planar_config;
   data_type_t data_type; // ASF data type
-  int num_bands;
+  short num_bands;
   int is_scanline_format;
 } tiff_data_t;
 
@@ -4379,12 +4379,12 @@ void get_band_names(char *inFile, FILE *outputFP,
       get_geotiff_keys(inFile, &g);
       if (g.gtif_data_exists && g.GTcitation != NULL && strlen(g.GTcitation) > 0) {
         char *tmp_citation = STRDUP(g.GTcitation);
-        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation);
+        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation, 0);
         FREE(tmp_citation);
       }
       else if (g.gtif_data_exists && g.PCScitation != NULL && strlen(g.PCScitation) > 0) {
         char *tmp_citation = STRDUP(g.PCScitation);
-        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation);
+        get_bands_from_citation(num_extracted_bands, &band_str, empty, tmp_citation, 0);
         FREE(tmp_citation);
       }
       if (*num_extracted_bands <= 0) {

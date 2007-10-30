@@ -25,9 +25,9 @@ typedef enum {
 int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int db_flag,   // TRUE if the output should be in decibels
                               // only ok for radiometry=SIGMA,GAMMA,BETA
-	       int complex_flag, // TRUE if ingested SLC should in I/Q
-	       int multilook_flag, // TRUE is SLC should be multilooked while
-	                           // being ingested.
+         int complex_flag, // TRUE if ingested SLC should in I/Q
+         int multilook_flag, // TRUE is SLC should be multilooked while
+                             // being ingested.
                char *format_type, // eg, "STF", "CEOS" - etc
                char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
                char *image_data_type, // "geocoded_image", "dem", or "mask"
@@ -61,10 +61,10 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-		 int complex_flag, int multilook_flag);
-void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry, 
-		char *inMetaNameOption, int lat_constrained, double lowerLat, 
-		double upperLat, char *prcPath);
+     int complex_flag, int multilook_flag);
+void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
+    char *inMetaNameOption, int lat_constrained, double lowerLat,
+    double upperLat, char *prcPath);
 
 void
 import_usgs_seamless (const char *inFileName, const char *outBaseName, ...);
@@ -81,6 +81,6 @@ void import_gridfloat(char *inBaseName, char *outBaseName);
 void import_airsar(const char *inFileName, const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *inBaseName);
 
-//void import_gamma_isp(const char *inBaseName, const char *outBaseName);
+void import_gamma_isp(const char *inBaseName, const char *outBaseName);
 
 #endif

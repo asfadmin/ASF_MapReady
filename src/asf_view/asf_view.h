@@ -103,6 +103,13 @@ int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 
+/* read_tiff.c */
+int try_tiff(const char *filename);
+int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
+                      char **err);
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client);
+int open_tiff_data(const char *data_name, const char *band, ClientInterface *client);
+
 /* read_png.c */
 int try_png(const char *filename);
 int handle_png_file(const char *filename, char *meta_name, char *data_name,

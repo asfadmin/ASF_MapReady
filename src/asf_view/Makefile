@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_view
-SRCS = asf_view.c utility.c font.c small_image.c read.c read_asf.c read_ceos.c read_jpeg.c read_png.c read_pgm.c big_image.c meta.c stats.c google.c new.c cache.c subset.c bands.c info.c lut.c
+SRCS = asf_view.c utility.c font.c small_image.c read.c read_asf.c read_ceos.c read_jpeg.c read_tiff.c read_png.c read_pgm.c big_image.c meta.c stats.c google.c new.c cache.c subset.c bands.c info.c lut.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -102,6 +102,8 @@ CFLAGS += \
 	$(shell /usr/bin/pkg-config --cflags libglade-2.0) \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
 	$(JPEG_CFLAGS)
 
 LDLIBS = \
@@ -109,12 +111,15 @@ LDLIBS = \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libshp.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(GTK_LIBS) \

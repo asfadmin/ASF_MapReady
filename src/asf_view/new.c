@@ -105,6 +105,11 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(img_filt, "*.img");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
 
+    GtkFileFilter *tiff_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(tiff_filt, "GeoTIFF Image Files (*.tif)");
+    gtk_file_filter_add_pattern(tiff_filt, "*.tif");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), tiff_filt);
+
     GtkFileFilter *jpg_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(jpg_filt, "JPEG Image Files (*.jpg)");
     gtk_file_filter_add_pattern(jpg_filt, "*.jpg");
@@ -163,6 +168,7 @@ void new_file(void)
     of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
         "ALOS Image (IMG-*)\0IMG-*\0"
         "ASF Internal (*.img)\0*.img\0"
+        "GeoTIFF Image (*.tif)\0*.tif\0"
         "JPG (*.jpg)\0*.jpg\0"
         "PNG (*.png)\0*.png\0"
         "PGM (*.pgm)\0*.pgm\0"
@@ -298,5 +304,5 @@ void load_file(const char *file)
 
 SIGNAL_CALLBACK void on_new_button_clicked(GtkWidget *w)
 {
-    new_file();    
+    new_file();
 }

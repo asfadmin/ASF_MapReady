@@ -57,6 +57,7 @@ S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 
 all: external_libs
 	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
+	cp doc/*.pdf doc/asf_convert-version_history.txt $(S_SHAREDIR)/doc
 	cp LICENSE.txt $(S_SHAREDIR)
 	echo "@VERSION@" > $(S_SHAREDIR)/convert_version.txt
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true

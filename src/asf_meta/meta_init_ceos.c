@@ -84,7 +84,7 @@ void ceos_init_location_block(meta_parameters *meta);
 
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
-        struct alos_map_proj_rec *ampr);
+                    struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
 int get_alos_delta_time (const char *fileName, double *delta);
 double get_alos_firstTime (const char *fName);
@@ -313,16 +313,16 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
 void ceos_init_sar_calibrate(const char *in_fName, meta_parameters *meta)
 {
   struct VRADDR *radr;
-  
+
   radr = (struct VRADDR *) MALLOC(sizeof(struct VRADDR));
   get_raddr(in_fName, radr);
-  
+
   meta->calibrate = meta_calibrate_init();
   meta->calibrate->coefficient_a1 = radr->a[0];
   meta->calibrate->coefficient_a2 = radr->a[1];
   meta->calibrate->coefficient_a3 = radr->a[2];
 
-  FREE(radr);    
+  FREE(radr);
 }
 
 ////////////////////////////////////////
@@ -520,12 +520,12 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     if (ceos->product == SCANSAR || ceos->product == SCN) {
       meta->sar->look_count = 4;
       rcdr = (struct radio_comp_data_rec *)
-  MALLOC(sizeof(struct radio_comp_data_rec));
+      MALLOC(sizeof(struct radio_comp_data_rec));
       get_rcdr(in_fName, rcdr);
       if (rcdr->num_rec == 2)
-  strcpy(beamname, "SNA");
+        strcpy(beamname, "SNA");
       else if (rcdr->num_rec == 3)
-  strcpy(beamname, "SNB");
+        strcpy(beamname, "SNB");
       else if (rcdr->num_rec == 4) {
   // We assume a nominal center look angle of 40.45 degrees for SWA
   if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65)
@@ -542,8 +542,34 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
       }
       ceos_init_scansar(in_fName, meta, dssr, mpdr, NULL);
     }
-    else if (ppr)
-      strcpy(beamname, ppr->beam_type);
+    else if (ppr) {
+      if (strncmp(ppr->beam_type, "F5", 2) == 0)
+        strcpy(beamname, "FN5");
+      else if (strncmp(ppr->beam_type, "F4", 2) == 0)
+        strcpy(beamname, "FN4");
+      else if (strncmp(ppr->beam_type, "F3", 2) == 0)
+        strcpy(beamname, "FN3");
+      else if (strncmp(ppr->beam_type, "F2", 2) == 0)
+        strcpy(beamname, "FN2");
+      else if (strncmp(ppr->beam_type, "F1", 2) == 0)
+        strcpy(beamname, "FN1");
+      else if (strncmp(ppr->beam_type, "S7", 2) == 0)
+        strcpy(beamname, "ST7");
+      else if (strncmp(ppr->beam_type, "S6", 2) == 0)
+        strcpy(beamname, "ST6");
+      else if (strncmp(ppr->beam_type, "S5", 2) == 0)
+        strcpy(beamname, "ST5");
+      else if (strncmp(ppr->beam_type, "S4", 2) == 0)
+        strcpy(beamname, "ST4");
+      else if (strncmp(ppr->beam_type, "S3", 2) == 0)
+        strcpy(beamname, "ST3");
+      else if (strncmp(ppr->beam_type, "S2", 2) == 0)
+        strcpy(beamname, "ST2");
+      else if (strncmp(ppr->beam_type, "S1", 2) == 0)
+        strcpy(beamname, "ST1");
+      else
+        strcpy(beamname, ppr->beam_type);
+    }
     strcpy(meta->general->mode, beamname);
     sprintf(meta->sar->polarization, "HH");
     strncpy(buf, &dssr->product_id[7], 3);
@@ -1064,26 +1090,59 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
       strcpy(beamtype,rcdr->beam_type[3]);
       strtok(beamtype," ");
       if (strcmp(beamtype," S7")==0)
-  strcpy(beamname, "SWA");
+        strcpy(beamname, "SWA");
       else if (strcmp(beamtype," S6")==0)
-  strcpy(beamname, "SWB");
+        strcpy(beamname, "SWB");
     }
     strcpy(meta->general->mode, beamname);
   }
-  else if (ppr)
-    strcpy(beamname, ppr->beam_type);
+  else if (ppr) {
+    if (strncmp(ppr->beam_type, "F5", 2) == 0)
+      strcpy(beamname, "FN5");
+    else if (strncmp(ppr->beam_type, "F4", 2) == 0)
+      strcpy(beamname, "FN4");
+    else if (strncmp(ppr->beam_type, "F3", 2) == 0)
+      strcpy(beamname, "FN3");
+    else if (strncmp(ppr->beam_type, "F2", 2) == 0)
+      strcpy(beamname, "FN2");
+    else if (strncmp(ppr->beam_type, "F1", 2) == 0)
+      strcpy(beamname, "FN1");
+    else if (strncmp(ppr->beam_type, "S7", 2) == 0)
+      strcpy(beamname, "ST7");
+    else if (strncmp(ppr->beam_type, "S6", 2) == 0)
+      strcpy(beamname, "ST6");
+    else if (strncmp(ppr->beam_type, "S5", 2) == 0)
+      strcpy(beamname, "ST5");
+    else if (strncmp(ppr->beam_type, "S4", 2) == 0)
+      strcpy(beamname, "ST4");
+    else if (strncmp(ppr->beam_type, "S3", 2) == 0)
+      strcpy(beamname, "ST3");
+    else if (strncmp(ppr->beam_type, "S2", 2) == 0)
+      strcpy(beamname, "ST2");
+    else if (strncmp(ppr->beam_type, "S1", 2) == 0)
+      strcpy(beamname, "ST1");
+    else
+      strcpy(beamname, ppr->beam_type);
+  }
   strcpy(meta->general->mode, beamname);
   sprintf(meta->sar->polarization, "HH");
   strncpy(buf, &dssr->product_id[7], 4);
   buf[3] = 0;
-  if (!isdigit(buf[0])) {
-    // The Scene Descriptor Record is not the usual R1ooooofff-- type of
-    // descriptor ("fff" being the frame number) ...probably this is MDA (CDPF, RSI, etc)
-    // type of data
-    asfPrintWarning("Cannot determine frame number from leader data - Might be\n"
-        "MDA (CDPF etc) type of data.  Frame number defaulting to zero (0).\n");
+  if (!isdigit((int)buf[0])) {
+    if (ceos->facility=RSI) {
+      meta->general->frame = asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
+    }
+    else {
+      // The Scene Descriptor Record is not the usual R1ooooofff-- type of
+      // descriptor ("fff" being the frame number) ...probably this is MDA (CDPF, RSI, etc)
+      // type of data
+      asfPrintWarning("Cannot determine frame number from leader data - Might be\n"
+          "MDA (CDPF, RSI etc) type of data.  Frame number defaulting to zero (0).\n");
+    }
   }
-  meta->general->frame = atoi(buf);  // Frame will be zero if buf is not a valid frame num (alpha str)
+  else {
+    meta->general->frame = atoi(buf);
+  }
   if (meta->general->line_count == 0 || meta->general->sample_count == 0) {
     meta->general->line_count   = dssr->sc_lin*2;
     meta->general->sample_count = dssr->sc_pix*2;
@@ -1112,11 +1171,14 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
-  meta->sar->range_doppler_coefficients[0] = dssr->crt_rate[0];
-  meta->sar->range_doppler_coefficients[1] = dssr->crt_rate[1];
-  meta->sar->range_doppler_coefficients[2] = dssr->crt_rate[2];
+  meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
+  meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
+  meta->sar->range_doppler_coefficients[2] = dssr->crt_dopcen[2];
+  meta->sar->azimuth_doppler_coefficients[0] = dssr->alt_dopcen[0];
+  meta->sar->azimuth_doppler_coefficients[1] = dssr->alt_dopcen[1];
+  meta->sar->azimuth_doppler_coefficients[2] = dssr->alt_dopcen[2];
   meta->sar->earth_radius =
-    meta_get_earth_radius(meta,
+      meta_get_earth_radius(meta,
         meta->general->line_count/2,
         meta->general->sample_count/2);
   meta->sar->satellite_height =
@@ -1475,14 +1537,16 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   meta->general->data_type = BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   strcpy(meta->general->system, meta_get_system());
-  if (ceos->shr.sc_time[0] == ' ')
+  if (ceos->shr.sc_time[0] == ' ') {
     date_shr2date_stamp(ceos->shr.acq_date, meta->general->acquisition_date);
-  else {
+  } else if (strlen(ceos->dssr.inp_sctim) > 0) {
     if (ceos->facility == BEIJING)
       date_dssr2time(ceos->dssr.inp_sctim, &date, &time);
     else
       date_dssr2date(ceos->dssr.inp_sctim, &date, &time);
     date_dssr2time_stamp(&date, &time, meta->general->acquisition_date);
+  } else {
+    strcpy(meta->general->acquisition_date, MAGIC_UNSET_STRING);
   }
   meta->general->orbit = ceos->shr.orbit;
   meta->general->orbit_direction = ceos->shr.orbit_dir[0];
@@ -1509,9 +1573,9 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     meta->general->re_major = ampr->ref_major_axis;
     meta->general->re_minor = ampr->ref_minor_axis;
   }
-  // bit_error_rate
-  // missing_lines
-  // no_data
+  meta->general->bit_error_rate = MAGIC_UNSET_DOUBLE;
+  meta->general->missing_lines = MAGIC_UNSET_DOUBLE;
+  meta->general->no_data = MAGIC_UNSET_DOUBLE;
 
   // Optical block
   substr = ceos->shr.product_id;

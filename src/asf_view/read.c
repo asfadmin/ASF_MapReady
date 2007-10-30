@@ -86,6 +86,15 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
+    } else if (try_tiff(filename)) {
+        if (handle_tiff_file(filename, meta_name, data_name, &err)) {
+          open_tiff_data(data_name, band, client); // Must be called before read_tiff_meta()
+          meta = read_tiff_meta(meta_name, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
     } else if (try_png(filename)) {
         if (handle_png_file(filename, meta_name, data_name, &err)) {
             meta = open_png(data_name, client);

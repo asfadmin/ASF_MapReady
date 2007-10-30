@@ -34,6 +34,7 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
+#include "asf_raster.h"
 
 #include "projected_image_import.h"
 #include "tiff_to_float_image.h"
@@ -47,6 +48,9 @@
 
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define IMPORT_GENERIC_FLOAT_MICRON 0.000000001
+#ifdef  FLOAT_EQUIVALENT
+#undef  FLOAT_EQUIVALENT
+#endif
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, IMPORT_GENERIC_FLOAT_MICRON))
 #define FLOAT_TOLERANCE 0.00001
@@ -80,10 +84,10 @@ int  band_float_image_write(FloatImage *oim, meta_parameters *meta_out,
                             const char *outBaseName, int num_bands, int *ignore);
 int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
                            const char *outBaseName, int num_bands, int *ignore);
-int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
-                             const char *outBaseName, int num_bands,
-                             int *ignore, short bits_per_sample,
-                             short sample_format, short planar_config);
+int check_for_vintage_asf_utm_geotiff(const char *citation, int *geotiff_data_exists,
+                                      short *model_type, short *raster_type, short *linear_units);
+int vintage_utm_citation_to_pcs(const char *citation, int *zone, char *hem, datum_type_t *datum, short *pcs);
+static int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
 
 // Import an ERDAS ArcGIS GeoTIFF (a projected GeoTIFF flavor), including
 // projection data from its metadata file (ERDAS MIF HFA .aux file) into
@@ -91,21 +95,127 @@ int geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
 //
 void import_generic_geotiff (const char *inFileName, const char *outBaseName, ...)
 {
-  // Counts holding the size of the returns from gt_methods.get method
-  // calls.  The geo_keyp.h header has the interface specification for
-  // this method.  gt_methods.get doesn't seem to be documented as
-  // part of the public GeoTIFF API, however, it works, unlike the
-  // TIFFGetField call, which seg faults.  Maybe I'm missing some
-  // setup call that I need, but: a. I can't find anything in the
-  // incomplete API documentation telling me what that might be, and
-  // b. I'm using a sequence of calls analogous to that use in
-  // export_as_geotiff, which works, and c. suspiciously, the listgeo
-  // program that comes with libgeotiff also uses this gt_methods.get
-  // approach and doesn't use TIFFGetField at all so far as I can
-  // tell.
+  TIFF *input_tiff;
+  meta_parameters *meta;
+  data_type_t data_type;
+  int is_scanline_format;
+  short num_bands;
+  short int bits_per_sample, sample_format, planar_config;
+  va_list ap;
+  char image_data_type[256];
+  char *pTmpChar;
+  int ignore[MAX_BANDS]; // Array of band flags ...'1' if a band is to be ignored (empty band)
+                         // Do NOT allocate less than MAX_BANDS bands since other tools will
+                         // receive the 'ignore' array and may assume there are MAX_BANDS in
+                         // the array, e.g. read_tiff_meta() in the asf_view tool.
+
+  // Open the input tiff file.
+  input_tiff = XTIFFOpen (inFileName, "r");
+  if (input_tiff == NULL)
+    asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
+
+  if (get_tiff_data_config(input_tiff,
+                           &sample_format,    // TIFF type (uint, int, float)
+                           &bits_per_sample,  // 8, 16, or 32
+                           &planar_config,    // Contiguous (RGB or RGBA) or separate (band sequential, not interlaced)
+                           &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
+                           &num_bands,        // Initial number of bands
+                           &is_scanline_format))
+  {
+    // Failed to determine tiff info or tiff info was bad
+    char msg[1024];
+    tiff_type_t t;
+    get_tiff_type(input_tiff, &t);
+    sprintf(msg, "FOUND TIFF tag data as follows:\n"
+        "         Sample Format: %s\n"
+        "       Bits per Sample: %d\n"
+        "  Planar Configuration: %s\n"
+        "       Number of Bands: %d\n"
+        "                Format: %s\n",
+        (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
+        (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
+        (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported",
+        bits_per_sample,
+        (planar_config == PLANARCONFIG_CONTIG) ? "Contiguous (chunky RGB or RGBA etc) / Interlaced" :
+          (planar_config == PLANARCONFIG_SEPARATE) ? "Separate planes (band-sequential)" :
+            "Unknown or unrecognized",
+        num_bands,
+        t.format == SCANLINE_TIFF ? "SCANLINE TIFF" :
+        t.format == STRIP_TIFF ? "STRIP TIFF" :
+        t.format == TILED_TIFF ? "TILED TIFF" : "UNKNOWN");
+    switch (t.format) {
+      case STRIP_TIFF:
+        sprintf(msg, "%s"
+                "        Rows per Strip: %d\n",
+                msg, t.rowsPerStrip);
+        break;
+      case TILED_TIFF:
+        sprintf(msg, "%s"
+                "            Tile Width: %d\n"
+                "           Tile Height: %d\n",
+                msg, t.tileWidth, t.tileLength);
+        break;
+      case SCANLINE_TIFF:
+      default:
+        break;
+    }
+    asfPrintWarning(msg);
+
+    XTIFFClose(input_tiff);
+    asfPrintError("  Unsupported TIFF type found or required TIFF tags are missing\n"
+        "    in TIFF File \"%s\"\n\n"
+        "  TIFFs must contain the following:\n"
+        "        Sample format: Unsigned or signed integer or IEEE floating point data\n"
+        "                       (ASF is not yet supporting TIFF files with complex number type data),\n"
+        "        Planar config: Contiguous (Greyscale, RGB, or RGBA) or separate planes (band-sequential.)\n"
+        "      Bits per sample: 8, 16, or 32\n"
+        "      Number of bands: 1 through %d bands allowed.\n"
+        "               Format: Scanline, strip, or tiled\n",
+        inFileName, MAX_BANDS);
+  }
+  XTIFFClose(input_tiff);
+
+  // Get the image data type from the variable arguments list
+  va_start(ap, outBaseName);
+  pTmpChar = (char *)va_arg(ap, char *);
+  va_end(ap);
+
+  // Read the metadata (map-projection data etc) from the TIFF
+  asfPrintStatus("\nImporting TIFF/GeoTIFF image to ASF Internal format...\n\n");
+  int i;
+  for (i=0; i<MAX_BANDS; i++) ignore[i]=0;
+  if (pTmpChar != NULL) {
+    strcpy(image_data_type, pTmpChar);
+    meta = read_generic_geotiff_metadata(inFileName, ignore, image_data_type);
+  }
+  else {
+    meta = read_generic_geotiff_metadata(inFileName, ignore);
+  }
+
+  // Write the Metadata file
+  meta_write(meta, outBaseName);
+
+  // Write the binary file
+  input_tiff = XTIFFOpen (inFileName, "r");
+  if (input_tiff == NULL)
+    asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
+  if (geotiff_band_image_write(input_tiff, meta, outBaseName, num_bands, ignore,
+                               bits_per_sample, sample_format, planar_config))
+  {
+    XTIFFClose(input_tiff);
+    meta_free(meta);
+    meta=NULL;
+    asfPrintError("Unable to write binary image...\n    %s\n", outBaseName);
+  }
+  XTIFFClose(input_tiff);
+  if (meta) meta_free(meta);
+}
+
+meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ignore, ...)
+{
   int geotiff_data_exists;
+  short num_bands;
   char *bands[MAX_BANDS]; // list of band IDs
-  int num_bands;
   int band_num = 0;
   int count;
   int read_count;
@@ -116,7 +226,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   double scale_factor;
   TIFF *input_tiff;
   GTIF *input_gtif;
-  meta_parameters *meta_out;
+  meta_parameters *meta_out; // Return value
   data_type_t data_type;
   datum_type_t datum;
   va_list ap;
@@ -142,20 +252,22 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   meta_general *mg = meta_out->general;
   meta_projection *mp = meta_out->projection;
   meta_sar *msar = meta_out->sar;
-//  meta_stats *ms = meta_out->stats; // Convenience alias.
-  meta_location *ml = meta_out->location; // Convenience alias.
+  meta_location *ml = meta_out->location;
 
   // Init
   mp->spheroid = UNKNOWN_SPHEROID; // meta_projection_init() 'should' initialize this, but doesn't
 
   // Open the input tiff file.
   input_tiff = XTIFFOpen (inFileName, "r");
-  asfRequire (input_tiff != NULL, "Error opening input TIFF file.\n");
+  if (input_tiff == NULL) {
+    asfPrintError("Error opening input TIFF file:\n  %s\n", inFileName);
+  }
 
   // Open the structure that contains the geotiff keys.
   input_gtif = GTIFNew (input_tiff);
-  asfRequire (input_gtif != NULL,
-        "Error reading GeoTIFF keys from input TIFF file.\n");
+  if (input_gtif == NULL) {
+    asfPrintError("Error reading GeoTIFF keys from input TIFF file:\n  %s\n", inFileName);
+  }
 
 
   /***** GET WHAT WE CAN FROM THE TIFF FILE *****/
@@ -243,11 +355,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   asfPrintStatus("\n   Found %d-banded Generic GeoTIFF with %d-bit %s type data\n"
       "        (Note: Empty or missing bands will be ignored)\n",
                  num_bands, bits_per_sample,
-      (sample_format == SAMPLEFORMAT_UINT) ? "Unsigned Integer" :
-          (sample_format == SAMPLEFORMAT_INT) ? "Signed Integer" :
-              (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point" : "Unknown or Unsupported");
-  asfPrintStatus
-      ("   Output data type: ASF format\n");
+      (sample_format == SAMPLEFORMAT_UINT)   ? "Unsigned Integer" :
+      (sample_format == SAMPLEFORMAT_INT)    ? "Signed Integer"   :
+      (sample_format == SAMPLEFORMAT_IEEEFP) ? "Floating Point"   : "Unknown or Unsupported");
 
   char *citation = NULL;
   int citation_length;
@@ -322,9 +432,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // type).  See the if(geotiff_data_exists) section on reading parameters below.
     geotiff_data_exists = 1;
   }
-
   else {
     geotiff_data_exists = 0;
+    read_count = check_for_vintage_asf_utm_geotiff(citation, &geotiff_data_exists,
+                                                   &model_type, &raster_type, &linear_units);
   }
   // Try to do some intelligent guess-work to make up for missing keys...
   if (model_type != ModelTypeProjected &&
@@ -442,6 +553,14 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     ///////// STANDARD UTM (PCS CODE) //////////
     // Get datum and zone as appropriate
     read_count = GTIFKeyGet (input_gtif, ProjectedCSTypeGeoKey, &pcs, 0, 1);
+    if (!read_count) {
+      // Check to see if this is a vintage ASF UTM geotiff (they only had the UTM
+      // description in the UTM string rather than in the ProejctedCSTypeGeoKey)
+      int sleepy;
+      datum_type_t dopey;
+      char sneezy;
+      read_count = vintage_utm_citation_to_pcs(citation, &sleepy, &sneezy, &dopey, &pcs);
+    }
     if (read_count == 1 && PCS_2_UTM(pcs, &hemisphere, &datum, &pro_zone)) {
       mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
       mp->hem = hemisphere;
@@ -559,6 +678,11 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
         // typically defined by the major and inv-flattening
         // FIXME: There are several ways of representing otherwise-undefined datum
         // datum types ...maybe consider supporting those?  (Probably not...)
+        // FIXME: Found out that there is an EPSG GCS code for NSIDC SSM/I polar
+        // stereo ...for PS using Hughes, we should write this numeric value out
+        // and avoid using a user-defined datum (technically there is no such thing as
+        // a 'hughes datum' ...it's an earth-centered reference spheroid and the datum
+        // is undetermined.  Sigh... works exactly the same either way blah blah blah.)
         if (datum == UNKNOWN_DATUM) {
           short int ellipsoid_key;
           read_count = GTIFKeyGet(input_gtif, GeogEllipsoidGeoKey, &ellipsoid_key, 0, 1);
@@ -620,27 +744,19 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
           case CT_TransvMercator_SouthOriented:
             read_count = GTIFKeyGet (input_gtif, ProjFalseEastingGeoKey, &false_easting, 0, 1);
             if (read_count != 1) {
-    //          asfPrintWarning(
-    //                   "Unable to determine false easting from GeoTIFF file\n"
-    //                   "using ProjFalseEastingGeoKey\n");
+              asfPrintStatus("No false easting in ProjFalseEastingGeoKey ...OK for a UTM\n");
             }
             read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
             if (read_count != 1) {
-    //          asfPrintWarning(
-    //                   "Unable to determine false northing from GeoTIFF file\n"
-    //                   "using ProjFalseNorthingGeoKey\n");
+              asfPrintStatus("No false northing in ProjFalseNorthingGeoKey ...OK for a UTM\n");
             }
             read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
             if (read_count != 1) {
-    //          asfPrintWarning(
-    //              "Unable to determine center longitude from GeoTIFF file\n"
-    //              "using ProjNatOriginLongGeoKey\n");
+              asfPrintStatus("No center longitude in ProjNatOriginLongGeoKey ...OK for a UTM\n");
             }
             read_count = GTIFKeyGet (input_gtif, ProjNatOriginLatGeoKey, &latOrigin, 0, 1);
             if (read_count != 1) {
-    //          asfPrintWarning(
-    //              "Unable to determine center latitude from GeoTIFF file\n"
-    //              "using ProjNatOriginLatGeoKey\n");
+              asfPrintStatus("No center latitude in ProjNatOriginLatGeoKey ...OK for a UTM\n");
             }
             else {
               latOrigin = 0.0;
@@ -650,11 +766,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
               scale_factor = DEFAULT_UTM_SCALE_FACTOR;
 
               char msg[256];
-    //          sprintf(msg,
-    //                  "UTM scale factor from ProjScaleAtNatOriginGeoKey not found in GeoTIFF ...defaulting to %0.4lf\n",
-    //                  scale_factor);
-    //          asfPrintWarning(msg);
-              sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", scale_factor);
+              sprintf(msg,"UTM scale factor defaulting to %0.4lf ...OK for a UTM\n", scale_factor);
               asfPrintStatus(msg);
             }
             mp->type = UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -921,11 +1033,11 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   /*                                                   */
   /*****************************************************/
 
-  asfPrintStatus("\nConverting input TIFF image into %d-banded %s ASF-format image...\n\n",
+  asfPrintStatus("\nLoading input TIFF/GeoTIFF file into %d-banded %s image structure...\n\n",
                  num_bands, (data_type == BYTE) ? "8-bit byte" :
-                                (data_type == INTEGER16) ? "16-bit integer" :
-                                    (data_type == INTEGER32) ? "32-bit integer" :
-                                        (data_type == REAL32) ? "32-bit float" : "unknown(?)");
+                            (data_type == INTEGER16) ? "16-bit integer" :
+                            (data_type == INTEGER32) ? "32-bit integer" :
+                            (data_type == REAL32)    ? "32-bit float"   : "unknown(?)");
 
   // Get the raster width and height of the image.
   uint32 width;
@@ -944,11 +1056,16 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
 
   // Get the image data type from the variable arguments list
   char image_data_type[256];
-  char *pTmpChar;
-  va_start(ap, outBaseName); // outBaseName is the last argument before ", ..."
+  char *pTmpChar=NULL;
+  va_start(ap, ignore); // 'ignore' is the last argument before ", ..."
   pTmpChar = (char *)va_arg(ap, char *);
-  if (pTmpChar != NULL) {
-    strcpy(image_data_type, pTmpChar);
+  if (pTmpChar != NULL &&
+      strlen(pTmpChar) >= 3 &&
+      (strncmp(uc(pTmpChar), "GEOCODED_IMAGE", 14) == 0 ||
+       strncmp(uc(pTmpChar), "DEM", 3) == 0 ||
+       strncmp(uc(pTmpChar), "MASK", 4) == 0))
+  {
+    strcpy(image_data_type, uc(pTmpChar));
   }
   else {
     if (geotiff_data_exists) {
@@ -959,7 +1076,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
       strcpy(image_data_type, "GEOREFERENCED_IMAGE");
     }
     else {
-      strcpy(image_data_type, MAGIC_UNSET_STRING);
+      strcpy(image_data_type, "IMAGE");
     }
   }
   va_end(ap);
@@ -975,7 +1092,9 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   else if (strncmp(image_data_type, "MASK", 4) == 0) {
     mg->image_data_type = MASK;
   }
-  // else leave it at the initialized value
+  if (strncmp(image_data_type, "IMAGE", 5) == 0) {
+    mg->image_data_type = IMAGE;
+  }
 
   mg->line_count = height;
   mg->sample_count = width;
@@ -1006,8 +1125,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   // Coordinates of tie point in projection space.
   // NOTE: These are called tp_lon and tp_lat ...but the tie points
   // will be in either linear units (meters typ.) *OR* lat/long depending
-  // on what type of image data is in the file, e.g. map-projected or
-  // geographic respectively (but we only support map-projected at this point.)
+  // on what type of image data is in the file, e.g. map-projected geographic or
+  // geocentric respectively (but we only support map-projected at this point.)
   double tp_lon = tie_point[3]; // x
   double tp_lat = tie_point[4]; // y, Note: [5] is zero for 2D space
 
@@ -1106,76 +1225,88 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   }
 #endif
 
-  asfPrintStatus("\nGathering image statistics (per available band)...\n");
-  int *ignore;
-  meta_statistics *stats;
-  double mask_value;
-  stats = meta_statistics_init(MAX_BANDS);
-  switch(meta_out->general->data_type) {
-    case BYTE:
-    case INTEGER16:
-    case INTEGER32:
-      mask_value = UINT8_IMAGE_DEFAULT_MASK;
-      break;
-    case REAL32:
-      mask_value = FLOAT_IMAGE_DEFAULT_MASK;
-      break;
-    default:
-      mask_value = 0.0;
-      break;
-  }
-  ignore = CALLOC(MAX_BANDS, sizeof(int)); // Contains '1' if a band is to be ignored (empty band)
-  int ii;
-  for (ii=0; ii<num_bands; ii++) {
-    int ret;
-    ret = tiff_image_band_statistics(input_tiff, meta_out,
-                                     &stats->band_stats[ii],
-                                     num_bands, ii,
-                                     bits_per_sample, sample_format,
-                                     planar_config, 0, mask_value);
-    if (ret != 0 ||
-        (stats->band_stats[ii].mean == stats->band_stats[ii].min &&
-         stats->band_stats[ii].mean == stats->band_stats[ii].max &&
-         stats->band_stats[ii].mean == stats->band_stats[ii].std_deviation)) {
-      // Band data is blank, e.g. no variation ...all pixels the same
-      asfPrintStatus("\nFound empty band (see statistics below):\n"
-          "   min = %f\n"
-          "   max = %f\n"
-          "  mean = %f\n"
-          "  sdev = %f\n\n",
-          stats->band_stats[ii].min,
-          stats->band_stats[ii].max,
-          stats->band_stats[ii].mean,
-          stats->band_stats[ii].std_deviation);
-
-      ignore[ii] = 1;
-    }
-    else {
-      asfPrintStatus("\nBand Statistics:\n"
-          "   min = %f\n"
-          "   max = %f\n"
-          "  mean = %f\n"
-          "  sdev = %f\n\n",
-        stats->band_stats[ii].min,
-        stats->band_stats[ii].max,
-        stats->band_stats[ii].mean,
-        stats->band_stats[ii].std_deviation);
-    }
-  }
-
   // Fill out the number of bands and the band names
   strcpy(mg->bands, "");
   mg->band_count = num_bands;
   int *empty = (int*)CALLOC(num_bands, sizeof(int)); // Defaults to 'no empty bands'
   char *band_str;
-  band_str = (char*)MALLOC(25*sizeof(char)); // '25' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
+  band_str = (char*)MALLOC(100*sizeof(char)); // '100' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
   int num_found_bands;
   char *tmp_citation = (citation != NULL) ? STRDUP(citation) : NULL;
-  get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation);
-  if (num_found_bands < 1) {
-    asfPrintWarning("No ASF-exported band names found in GeoTIFF citation tag.\n"
-       "Band names will be assigned in numerical order.\n");
+  int is_asf_geotiff = strstr(tmp_citation, "Alaska Satellite Fac") ? 1 : 0;
+  get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
+  meta_statistics *stats = NULL;
+  double mask_value;
+  if (!is_asf_geotiff) {
+    asfPrintStatus("\nNo ASF-exported band names found in GeoTIFF citation tag.\n"
+        "Band names will be assigned in numerical order.\n");
+    mg->no_data = MAGIC_UNSET_DOUBLE;
   }
+  else {
+    // This is an ASF GeoTIFF so we must check to see if any bands are empty (blank)
+    // Since some blank-band GeoTIFFs exported by ASF tools do NOT have the list of
+    // bands placed in the citation string, we will need to make a best-guess based
+    // on band statistics... but only if the citation isn't cooperating.
+    if (num_found_bands < 1) {
+      asfPrintStatus("\nGathering image statistics (per available band)...\n");
+      switch(meta_out->general->data_type) {
+        case BYTE:
+        case INTEGER16:
+        case INTEGER32:
+          mask_value = UINT8_IMAGE_DEFAULT_MASK;
+          break;
+        case REAL32:
+          mask_value = FLOAT_IMAGE_DEFAULT_MASK;
+          break;
+        default:
+          mask_value = 0.0;
+          break;
+      }
+      mg->no_data = mask_value;
+      // If there are no band names in the citation, then collect stats and check for empty
+      // bands that way
+      stats = meta_statistics_init(num_bands);
+      if(!stats) asfPrintError("Out of memory.  Cannot allocate statistics struct.\n");
+      int ii, nb;
+      for (ii=0, nb=num_bands; ii<num_bands; ii++) {
+        int ret;
+        ret = tiff_image_band_statistics(input_tiff, meta_out,
+                                      &stats->band_stats[ii],
+                                      num_bands, ii,
+                                      bits_per_sample, sample_format,
+                                      planar_config, 0, mask_value);
+        if (ret != 0 ||
+            (stats->band_stats[ii].mean == stats->band_stats[ii].min &&
+            stats->band_stats[ii].mean == stats->band_stats[ii].max &&
+            stats->band_stats[ii].mean == stats->band_stats[ii].std_deviation)) {
+          // Band data is blank, e.g. no variation ...all pixels the same
+          asfPrintStatus("\nFound empty band (see statistics below):\n"
+              "   min = %f\n"
+              "   max = %f\n"
+              "  mean = %f\n"
+              "  sdev = %f\n\n",
+              stats->band_stats[ii].min,
+              stats->band_stats[ii].max,
+              stats->band_stats[ii].mean,
+              stats->band_stats[ii].std_deviation);
+          ignore[ii] = 1; // EMPTY BAND FOUND
+          nb--;
+        }
+        else {
+          asfPrintStatus("\nBand Statistics:\n"
+              "   min = %f\n"
+              "   max = %f\n"
+              "  mean = %f\n"
+              "  sdev = %f\n\n",
+            stats->band_stats[ii].min,
+            stats->band_stats[ii].max,
+            stats->band_stats[ii].mean,
+            stats->band_stats[ii].std_deviation);
+        }
+      }
+    }
+  }
+
   if ( num_found_bands > 0 && strlen(band_str) > 0) {
     // If a valid list of bands were in the citation string, then let the empty[] array,
     // which indicates which bands in the TIFF were listed as 'empty' overrule the
@@ -1183,15 +1314,17 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     //
     // Note:  The ignore[] array will be used when writing the binary file so that empty
     // bands in the TIFF won't be written to the output file
-    int band_no;
+    int band_no, num_empty = 0;
     for (band_no=0; band_no<num_bands; band_no++) {
       ignore[band_no] = empty[band_no];
+      num_empty += ignore[band_no] ? 1 : 0;
     }
 
     // Note: mg->band_count is set to the number of found bands after the
     // binary file is written ...if you do it before, then put_band_float_line()
     // will fail.
     strcpy(mg->bands, band_str);
+    mg->band_count -= num_empty;
   }
   else {
     // Use the default band names if none were found in the citation string
@@ -1201,32 +1334,66 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     // The only way, in that case, to know if a band is empty is
     // to rely on the band statistics from above.  The results
     // of this analysis is stored in the 'ignore[<band_no>]' array.
-    int band_no;
 
     // Note: num_bands is from the samples per pixel TIFF tag and is
     // the maximum number of valid (non-ignored) bands in the file
-    for (band_no=0; band_no<num_bands-1; band_no++) {
+    int band_no, tmp_num_bands = num_bands;
+    for (band_no=0; band_no<tmp_num_bands; band_no++) {
       if (ignore[band_no]) {
         // Decrement the band count for each ignored band
         num_bands--;
       }
       else {
         // Band is not ignored, so give it a band name
-        sprintf(mg->bands, "%s%s,", mg->bands, bands[band_no]);
+        if (band_no == 0) {
+          sprintf(mg->bands, "%s", bands[band_no]);
+        }
+        else {
+          sprintf(mg->bands, "%s,%s", mg->bands, bands[band_no]);
+        }
       }
-    }
-    if (ignore[band_no]) {
-      // Decrement the band count for each ignored band
-      num_bands--;
-    }
-    else {
-      // Band is not ignored, so give it a band name
-      sprintf(mg->bands, "%s%s", mg->bands, bands[band_no]);
     }
     mg->band_count = num_bands;
   }
   if (mg->band_count <= 0 || strlen(mg->bands) <= 0) {
     asfPrintError("GeoTIFF file must contain at least one non-empty color channel (band)\n");
+  }
+
+  // Populate band stats if it makes sense
+  if (is_asf_geotiff && num_found_bands < 1 && stats) {
+    // If this is an ASF GeoTIFF and no band names were found in the citation string,
+    // then we HAD to have tried to identify blank bands with statistics ...if so, then
+    // we may as well save the stats results in the metadata so some other processing
+    // step can use them if it needs them (without having to recalculate them)
+    char **band_names=NULL;
+    if (strlen(mg->bands) && strncmp(mg->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0) {
+      band_names = extract_band_names(mg->bands, mg->band_count);
+    }
+    int bn;
+    meta_out->stats = meta_statistics_init(num_bands);
+    meta_statistics *ms = meta_out->stats;
+    if (ms) {
+      int ii;
+      for (ii=0, bn=0; ii<num_bands; ii++) {
+        if (!ignore[ii]) {
+          if (band_names && band_names[bn] != NULL) {
+            strcpy(ms->band_stats[bn].band_id, band_names[bn]);
+          }
+          else {
+            sprintf(ms->band_stats[bn].band_id, "%02d", bn + 1);
+          }
+          ms->band_stats[bn].min = stats->band_stats[ii].min;
+          ms->band_stats[bn].max = stats->band_stats[ii].max;
+          ms->band_stats[bn].mean = stats->band_stats[ii].mean;
+          ms->band_stats[bn].rmse = meta_is_valid_double(stats->band_stats[ii].rmse) ?
+              stats->band_stats[ii].rmse : stats->band_stats[ii].std_deviation;
+          ms->band_stats[bn].std_deviation = stats->band_stats[ii].std_deviation;
+          ms->band_stats[bn].mask = mask_value;
+          bn++;
+        }
+      }
+    }
+    else asfPrintError("Out of memory.  Cannot allocate statistics struct.\n");
   }
 
   // Calculate the center latitude and longitude now that the projection
@@ -1268,31 +1435,19 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
   ml->lat_end_far_range = R2D*lat;
   ml->lon_end_far_range = R2D*lon;
 
-  asfPrintStatus("\nWriting new '.meta' and '.img' files...\n");
-
-  // Write the binary file
-  ret = geotiff_band_image_write(input_tiff, meta_out, outBaseName, num_bands, ignore,
-                                 bits_per_sample, sample_format, planar_config);
-  // Write the Metadata file
-  if ( num_found_bands > 0 && strlen(band_str) > 0) {
-    mg->band_count = num_found_bands;
-  }
-  meta_write(meta_out, outBaseName);
-
-  if (ret != 0) {
-    asfPrintError("Unable to write binary image...\n");
-  }
-
   // We're now done with the data and metadata.
   GTIFFree(input_gtif);
   XTIFFClose(input_tiff);
-  meta_free (meta_out);
-  FREE(stats);
-  FREE(ignore);
+  if(stats)FREE(stats);
 
   // We must be done with the citation string too :)
   FREE (tmp_citation);
   FREE (citation);
+  for (band_num = 0; band_num < MAX_BANDS; band_num++) {
+    FREE(bands[band_num]);
+  }
+
+  return meta_out;
 }
 
 // Checking routine for projection parameter input.
@@ -1574,7 +1729,7 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *omd,
   return 0;
 }
 
-int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation)
+int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation, int expected_count)
 {
   char *s;
   int band_no;
@@ -1594,34 +1749,47 @@ int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *c
     // Get the first band (token)
     band_no = 0;
     s += strlen(BAND_ID_STRING) + 2;
-    if (s > citation + strlen(citation)) {
-      return 0;
+    if (s && strlen(s) && strncmp(s, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0) {
+      *num_bands = 0;
+      strcpy(*band_str, "");
     }
-    pcTmp = strtok_r(s, ",", &pcTmp2);
-    if (pcTmp != NULL) {
-      if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
-        *num_bands += 1;
-        strcat(*band_str, pcTmp);
-        empty[band_no] = 0;
+    else {
+      if (s > citation + strlen(citation)) {
+        return 0;
       }
-      else {
-        empty[band_no] = 1;
+      pcTmp = strtok_r(s, ",", &pcTmp2);
+      if (pcTmp != NULL) {
+        if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
+          *num_bands += 1;
+          strcat(*band_str, pcTmp);
+          empty[band_no] = 0;
+        }
+        else {
+          empty[band_no] = 1;
+        }
       }
-    }
 
-    // Get subsequent bands (tokens)
-    pcTmp = strtok_r(NULL, ",", &pcTmp2);
-    while (pcTmp != NULL) {
-      band_no++;
-      if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
-        *num_bands += 1;
-        sprintf(*band_str, "%s,%s", *band_str, pcTmp);
-        empty[band_no] = 0;
-      }
-      else {
-        empty[band_no] = 1;
-      }
+      // Get subsequent bands (tokens)
       pcTmp = strtok_r(NULL, ",", &pcTmp2);
+      while (pcTmp != NULL) {
+        band_no++;
+        if (strncmp(uc(pcTmp), "EMPTY", 5) != 0) {
+          *num_bands += 1;
+          sprintf(*band_str, "%s,%s", *band_str, pcTmp);
+          empty[band_no] = 0;
+        }
+        else {
+          empty[band_no] = 1;
+        }
+        pcTmp = strtok_r(NULL, ",", &pcTmp2);
+      }
+      int num_empty, i;
+      for (i=0, num_empty = 0; i<expected_count; i++) num_empty += empty[i] ? 1 : 0;
+      if (expected_count > 0 && *num_bands != expected_count - num_empty) {
+        // The correct number of bands was not found, so zero everything out as a failure
+        *num_bands = 0;
+        strcpy(*band_str, "");
+      }
     }
   }
 
@@ -1844,13 +2012,8 @@ int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
           ReadScanline_from_TIFF_Strip(tif, buf, ii, band_no);
           break;
         case TILED_TIFF:
-//          if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-//            ReadScanline_from_TIFF_TileRow(tif, buf, ii, 0);
-//          }
-//          else {
             // Planar configuration is band-sequential
           ReadScanline_from_TIFF_TileRow(tif, buf, ii, band_no);
-//          }
           break;
         default:
           asfPrintError("Invalid TIFF format found.\n");
@@ -1988,6 +2151,7 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
                               short sample_format, short planar_config)
 {
   char *outName;
+  int num_ignored;
   uint32 row, col, band;
   float *buf;
   tsize_t scanlineSize;
@@ -2028,8 +2192,11 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
     return 1;
   }
   tdata_t *tif_buf = _TIFFmalloc(scanlineSize);
+  if (!tif_buf) {
+    asfPrintError("Cannot allocate buffer for reading TIFF lines\n");
+  }
 
-  for (band=0; band < num_bands; band++) {
+  for (band=0, num_ignored=0; band < num_bands; band++) {
     if (num_bands > 1) {
       asfPrintStatus("\nWriting band %02d...\n", band+1);
     }
@@ -2056,13 +2223,8 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             ReadScanline_from_TIFF_Strip(tif, tif_buf, row, band);
             break;
           case TILED_TIFF:
-//            if (planar_config == PLANARCONFIG_CONTIG || num_bands == 1) {
-//              ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, 0);
-//            }
-//            else {
             // Planar configuration is band-sequential
             ReadScanline_from_TIFF_TileRow(tif, tif_buf, row, band);
-//            }
             break;
           default:
             asfPrintError("Invalid TIFF format found.\n");
@@ -2123,11 +2285,12 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
               break;
           }
         }
-        put_band_float_line(fp, omd, band, (int)row, buf);
+        put_band_float_line(fp, omd, band - num_ignored, (int)row, buf);
       }
     }
     else {
       asfPrintStatus("  Empty band found ...ignored\n");
+      num_ignored++;
     }
     FCLOSE(fp);
   }
@@ -2235,22 +2398,22 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
                   0, samples_per_pixel - 1);
   }
   uint32 height;
-  read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of bands
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height); // Number of rows
   if (read_count < 1) {
     asfPrintError("Could not read the number of lines from TIFF file.\n");
   }
   uint32 width;
-  read_count = TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width); // Number of bands
+  read_count = TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width); // Number of pixels per row
   if (read_count < 1) {
     asfPrintError("Could not read the number of pixels per line from TIFF file.\n");
   }
   short sample_format;
-  read_count = TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sample_format); // Number of bands
+  read_count = TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sample_format); // int or float, signed or unsigned
   if (read_count < 1) {
     asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
   }
   short bits_per_sample;
-  read_count = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample); // Number of bands
+  read_count = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
   if (read_count < 1) {
     asfPrintError("Could not read the sample format (data type) from TIFF file.\n");
   }
@@ -2276,12 +2439,17 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
                   row, height - 1);
   }
 
-  // Develop a buffer with a line of data from a single band in it
+  // Reading a contiguous RGB strip results in a strip (of several rows) with rgb data
+  // in each row, but reading a strip from a file with separate color planes results in
+  // a strip with just the one color in each strip (and row)
   strip     = TIFFComputeStrip(tif, row, band);
   strip_row = row - (strip * t.rowsPerStrip);
   tsize_t stripSize = TIFFStripSize(tif);
-  uint32 bytes_per_sample = bits_per_sample / 8;
+  uint32 bytes_per_sample = (bits_per_sample / 8);
 
+  // This returns a decoded strip which contains 1 or more rows.  The index calculated
+  // below needs to take the row into account ...the strip_row is the row within a strip
+  // assuming the first row in a strip is '0'.
   tsize_t bytes_read = TIFFReadEncodedStrip(tif, strip, sbuf, (tsize_t) -1);
   if (read_count &&
       bytes_read > 0)
@@ -2291,11 +2459,13 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
     for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
       // NOTE: t.scanlineSize is in bytes (not pixels)
       if (planar_config == PLANARCONFIG_SEPARATE) {
-        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
+        //idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
+        idx = strip_row * width + col;
       }
       else {
         // PLANARCONFIG_CONTIG
-        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
+        //idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
+        idx = strip_row * (width * samples_per_pixel) + col*samples_per_pixel + band;
       }
       if (idx * bytes_per_sample >= stripSize)
         continue; // Prevents over-run if last strip or scanline (within a strip) is not complete
@@ -2303,10 +2473,10 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
         case 8:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint8*)buf)[col] = ((uint8*)sbuf)[idx];
+              ((uint8*)buf)[col] = (uint8)(((uint8*)sbuf)[idx]);
               break;
             case SAMPLEFORMAT_INT:
-              ((int8*)buf)[col] = ((int8*)sbuf)[idx];
+              ((int8*)buf)[col] = (int8)(((int8*)sbuf)[idx]);
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2316,10 +2486,10 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
         case 16:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint16*)buf)[col] = ((uint16*)sbuf)[idx];
+              ((uint16*)buf)[col] = (uint16)(((uint16*)sbuf)[idx]);
               break;
             case SAMPLEFORMAT_INT:
-              ((int16*)buf)[col] = ((int16*)sbuf)[idx];
+              ((int16*)buf)[col] = (int16)(((int16*)sbuf)[idx]);
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2329,13 +2499,13 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
         case 32:
           switch (sample_format) {
             case SAMPLEFORMAT_UINT:
-              ((uint32*)buf)[col] = ((uint32*)sbuf)[idx];
+              ((uint32*)buf)[col] = (uint32)(((uint32*)sbuf)[idx]);
               break;
             case SAMPLEFORMAT_INT:
-              ((int32*)buf)[col] = ((int32*)sbuf)[idx];
+              ((long*)buf)[col] = (long)(((long*)sbuf)[idx]);
               break;
             case SAMPLEFORMAT_IEEEFP:
-              ((float*)buf)[col] = ((float*)sbuf)[idx];
+              ((float*)buf)[col] = (float)(((float*)sbuf)[idx]);
               break;
             default:
               asfPrintError("Unexpected data type in TIFF file\n");
@@ -2534,30 +2704,174 @@ void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, i
   if (tbuf) _TIFFfree(tbuf);
 }
 
+int check_for_vintage_asf_utm_geotiff(const char *citation, int *geotiff_data_exists,
+                                      short *model_type, short *raster_type, short *linear_units)
+{
+  int ret=0;
+  int zone=0, is_utm=0;
+  datum_type_t datum=UNKNOWN_DATUM;
+  char hem='\0';
 
+  if (citation && strstr(citation, "Alaska Satellite Facility")) {
+    short pcs=0;
+    is_utm = vintage_utm_citation_to_pcs(citation, &zone, &hem, &datum, &pcs);
+  }
+  if (is_utm &&
+      zone >=1 && zone <= 60 &&
+      (hem == 'N' || hem == 'S') &&
+      datum == WGS84_DATUM)
+  {
+    *model_type = ModelTypeProjected;
+    *raster_type = RasterPixelIsArea;
+    *linear_units = Linear_Meter;
+    *geotiff_data_exists = 1;
+    ret = 3; // As though the three geokeys were read successfully
+  }
 
+  return ret;
+}
 
+// Copied from libasf_import:keys.c ...Didn't want to introduce a dependency on
+// the export library or vice versa
+static int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem)
+{
+  // The GeoTIFF standard defines the UTM zones numerically in a way that
+  // let's us pick off the data mathematically (NNNzz where zz is the zone
+  // number):
+  //
+  // For NAD83 datums, Zones 3N through 23N, NNN == 269
+  // For NAD27 datums, Zones 3N through 22N, NNN == 267
+  // For WGS72 datums, Zones 1N through 60N, NNN == 322
+  // For WGS72 datums, Zones 1S through 60S, NNN == 323
+  // For WGS84 datums, Zones 1N through 60N, NNN == 326
+  // For WGS84 datums, Zones 1S through 60S, NNN == 327
+  // For user-defined and unsupported UTM projections, NNN can be
+  //   a variety of other numbers (see the GeoTIFF Standard)
+  //
+  // NOTE: For NAD27 and NAD83, only the restricted range of zones
+  // above is supported by the GeoTIFF standard.
+  //
+  // NOTE: For ALOS's ITRF97 datum, note that it is based on
+  // WGS84 and subsituting WGS84 for ITRF97 because the GeoTIFF
+  // standard does not contain a PCS for ITRF97 (or any ITRFxx)
+  // will result in errors of less than one meter.  So when
+  // writing GeoTIFFs, we choose to use WGS84 when ITRF97 is
+  // desired.
+  //
 
+  const short NNN_NAD27N = 267;
+  const short NNN_NAD83N = 269;
+  //const short NNN_WGS72N = 322; // Currently unsupported
+  //const short NNN_WGS72S = 323; // Currently unsupported
+  const short NNN_WGS84N = 326;
+  const short NNN_WGS84S = 327;
+  char uc_hem;
+  int supportedUTM;
+  int valid_Zone_and_Datum_and_Hemisphere;
 
+  // Substitute WGS84 for ITRF97 per comment above
+  if (datum == ITRF97_DATUM) {
+    datum = WGS84_DATUM;
+  }
 
+  // Check for valid datum, hemisphere, and zone combination
+  uc_hem = toupper(hem);
+  valid_Zone_and_Datum_and_Hemisphere =
+      (
+      (datum == NAD27_DATUM && uc_hem == 'N' && zone >= 3 && zone <= 22) ||
+      (datum == NAD83_DATUM && uc_hem == 'N' && zone >= 3 && zone <= 23) ||
+      (datum == WGS84_DATUM                  && zone >= 1 && zone <= 60)
+      ) ? 1 : 0;
 
+  // Build the key for ProjectedCSTypeGeoKey, GCS_WGS84 etc
+  if (valid_Zone_and_Datum_and_Hemisphere) {
+    supportedUTM = 1;
+    switch (datum) {
+      case NAD27_DATUM:
+        *pcs = (short)zone + NNN_NAD27N * 100;
+        break;
+      case NAD83_DATUM:
+        *pcs = (short)zone + NNN_NAD83N * 100;
+        break;
+      case WGS84_DATUM:
+        if (uc_hem == 'N') {
+          *pcs = (short)zone + NNN_WGS84N * 100;
+        }
+        else {
+          *pcs = (short)zone + NNN_WGS84S * 100;
+        }
+        break;
+      default:
+        supportedUTM = 0;
+        *pcs = 0;
+        break;
+    }
+  }
+  else {
+    supportedUTM = 0;
+    *pcs = 0;
+  }
 
+  return supportedUTM;
+}
 
+// If the UTM description is in citation, then pick the data out and return it
+int vintage_utm_citation_to_pcs(const char *citation, int *zone, char *hem, datum_type_t *datum, short *pcs)
+{
+  int is_utm=0;
+  int found_zone=0, found_utm=0;
 
+  *zone=0;
+  *hem='\0';
+  *datum=UNKNOWN_DATUM;
+  *pcs=0;
 
+  if (citation && strstr(citation, "Alaska Satellite Facility")) {
+    char *s = STRDUP(citation);
+    char *tokp;
 
+    tokp = strtok(s, " ");
+    do
+    {
+      if (strncmp(uc(tokp),"UTM",3) == 0) {
+        found_utm = 1;
+        found_zone=0;
+      }
+      else if (strncmp(uc(tokp),"ZONE",1) == 0) {
+        if (*zone == 0) found_zone=1;
+      }
+      else if (found_zone && isdigit((int)*tokp)) {
+        *zone = (int)strtol(tokp,(char**)NULL,10);
+        found_zone=0;
+      }
+      else if (strlen(tokp) == 1 && (*(uc(tokp)) == 'N' || *(uc(tokp)) == 'S')) {
+        *hem = *(uc(tokp)) == 'N' ? 'N' : 'S';
+        found_zone=0;
+      }
+      else if (strncmp(uc(tokp),"WGS84",5) == 0) {
+        *datum = WGS84_DATUM;
+        found_zone=0;
+      }
+    } while (tokp && (tokp = strtok(NULL, " ")));
 
+    if (s) FREE (s);
+  }
+  if (found_utm &&
+      *zone >=1 && *zone <= 60 &&
+      (*hem == 'N' || *hem == 'S') &&
+      *datum == WGS84_DATUM)
+  {
+    is_utm=1;
+    UTM_2_PCS(pcs, *datum, *zone, *hem);
+  }
+  else {
+    is_utm = 0;
+    *zone=0;
+    *hem='\0';
+    *datum=UNKNOWN_DATUM;
+    *pcs=0;
+  }
 
-
-
-
-
-
-
-
-
-
-
-
-
+  return is_utm;
+}
 
