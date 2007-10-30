@@ -255,16 +255,6 @@ static void update_projection(meta_parameters *in_meta, polyMapRec *map,
     (out_meta->general->line_count + out_meta->general->start_line);
   proj->perX = (out.loright[1] - proj->startX) / 
     (out_meta->general->sample_count + out_meta->general->start_sample);
-  printf("---> perX/perY calculation!\n"
-         "Using Method A:\n"
-         "     perX: %f\n"
-         "     perY: %f\n", proj->perX, proj->perY);
-  proj->perY = (out.loright[0]-out.upleft[0])/out_meta->general->line_count;
-  proj->perX = (out.loright[1]-out.upleft[1])/out_meta->general->sample_count;
-  printf("Using Method B:\n"
-         "     perX: %f\n"
-         "     perY: %f\n", proj->perX, proj->perY);
-  
   proj->hem = (out_meta->general->center_latitude>0) ? 'N' : 'S';
 }
 

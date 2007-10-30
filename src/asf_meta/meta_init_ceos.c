@@ -792,16 +792,16 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   meta->general->band_count = nBands;
 
   if (ceos->product != SGI) {
-    firstTime = get_alos_firstTime(dataName[0]);
-    date_dssr2date(dssr->inp_sctim, &date, &time);
-    centerTime = date_hms2sec(&time);
-    meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
-      / (meta->sar->original_line_count/2);
+    // calculate azimuth time per pixel from the swath velocity
+    double swath_vel = calc_swath_velocity(dssr,in_fName,meta);
+
+    meta->sar->azimuth_time_per_pixel =
+        meta->general->y_pixel_size / swath_vel;
     ceos_init_stVec(in_fName,ceos,meta);
   }
-  if (meta->general->orbit_direction == 'D')
+  if (meta->general->orbit_direction == 'A') 
     meta->sar->time_shift = 0.0;
-  else if (meta->general->orbit_direction == 'A')
+  else if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
 
@@ -976,6 +976,18 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->location->lat_end_far_range = mpdr->blclat;
       meta->location->lon_end_far_range = mpdr->blclong;
     }
+    // Troubleshooting
+    printf("\nReading the corners for location block:\n");
+    printf("Lat1: %10.4lf\n", meta->location->lat_start_near_range);
+    printf("Lon1: %10.4lf\n", meta->location->lon_start_near_range);
+    printf("Lat2: %10.4lf\n", meta->location->lat_start_far_range);
+    printf("Lon2: %10.4lf\n", meta->location->lon_start_far_range);
+    printf("Lat3: %10.4lf\n", meta->location->lat_end_near_range);
+    printf("Lon3: %10.4lf\n", meta->location->lon_end_near_range);
+    printf("Lat4: %10.4lf\n", meta->location->lat_end_far_range);
+    printf("Lon4: %10.4lf\n", meta->location->lon_end_far_range);
+
+    //meta_get_corner_coords(meta);
   }
   else {
     meta_get_corner_coords(meta);
@@ -2512,3 +2524,4 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
   meta->sar->azimuth_time_per_pixel =
     meta->general->y_pixel_size / swath_vel;
 }
+

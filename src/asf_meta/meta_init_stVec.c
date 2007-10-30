@@ -80,13 +80,18 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 		imgSec=date2sec(&imgJD,&imgTime);
 	}
 	else if (ceos->facility==EOC) 
-	{ /* EOC CEOS BUG FIX: center *line* number is stored in sc_pix */
-		imgSec-=ceos->dssr.sc_pix*fabs(meta->sar->azimuth_time_per_pixel);
+	{ 
+		imgSec-=ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
 	}
 	else {/*Convert scene center time to scene *start* time, by
 	   subtracting off the center line # * the time/line */
 		imgSec-=ceos->dssr.sc_lin*fabs(meta->sar->azimuth_time_per_pixel);
 	}
+	// Complex ALOS data have an additional 1 sec shift
+	// Still under investigation: Need word from DQ on this
+	if (ceos->facility==EOC && ceos->product==SLC) 
+	  imgSec -= 1.0;
+
 	/*Convert scene center # of seconds back to date/time*/
 	sec2date(imgSec,&imgJD,&imgTime);
 
