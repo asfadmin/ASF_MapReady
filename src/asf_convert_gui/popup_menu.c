@@ -655,6 +655,20 @@ handle_rename()
   return rename_selected_output_filename();
 }
 
+static int try_suffix(const gchar *in_name, const char *suffix,
+                      char **out_name)
+{
+    char *tmp = appendToBasename(in_name, suffix);
+    if (g_file_test(tmp, G_FILE_TEST_EXISTS)) {
+        *out_name = STRDUP(tmp);
+        free(tmp);
+        return TRUE;
+    } else {
+        free(tmp);
+        return FALSE;
+    }
+}
+
 static int
 handle_view_output()
 {
@@ -676,10 +690,34 @@ handle_view_output()
 	}
 	else
 	{
-	    char msg[2048];
-	    sprintf(msg, "Processing on selected file not complete OR\noutput image file was not found:\n"
-		         "   %s\n", out_name);
-	    message_box(msg);
+            // could be that band names were appended
+            char *tmp_out=NULL;
+
+            if (try_suffix(out_name, "_HH", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_VV", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_HV", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_VH", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_01", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_02", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_03", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_04", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else {
+                char msg[2048];
+                sprintf(msg, "Processing on selected file not complete OR\n"
+                             "output image file was not found:\n"
+		             "   %s\n", out_name);
+                message_box(msg);
+            }
+
+            FREE(tmp_out);
 	}
 
         g_free(out_name);

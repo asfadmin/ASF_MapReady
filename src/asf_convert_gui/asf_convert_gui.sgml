@@ -3,7 +3,7 @@
    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
     <bookinfo>
-        <date>2007-02-27</date>
+        <date>2007-10-29</date>
         <title>The ASF Data Conversion Tool</title>
     </bookinfo>
     <toc></toc>
@@ -190,10 +190,6 @@
             Checking the DEM checkbox indicates that you do have a DEM
             available for the scene(s) you are processing.  Note that at
             this time a single DEM must apply to all of the scenes.
-        </para>
-        <para>
-            NOTE: In this release, terrain correction of ALOS data or
-            ScanSAR data is not supported.
         </para>
         <orderedlist>
             <listitem>
@@ -661,7 +657,7 @@
                     name is appended to the output filename, just
                     before the extension.  So, for example, if you've
                     set your output filename to "test", and you are
-                    processing quad-pole data to geotiff, you will
+                    processing quad-pol data to geotiff, you will
                     get four greyscale files: test_HH.tif, test_HV.tif,
                     test_VH.tif, and test_VV.tif
                 </para>
@@ -942,13 +938,19 @@
 
             </listitem>
             <listitem>
-                <para>View Output</para>
+                <para>View Input/Output</para>
 
                 <para>
-                    Open up a new window, containing the generated output
-                    file.  This option is not yet able to display GeoTIFF data,
-                    so if this Format has been selected, the right-click option
-                    will not be available.
+                    Opens up the input file (or, for the Completed
+                    Files section, the output file) with asf_view.
+                </para>
+
+            </listitem>
+            <listitem>
+                <para>View Google Earth</para>
+
+                <para>
+                    Opens up the file with Google Earth.
                 </para>
 
             </listitem>
