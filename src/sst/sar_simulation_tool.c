@@ -2,6 +2,68 @@
 
 #define VERSION 1.0
 
+static void
+get_target_position(stateVector *st, double look, double yaw,
+                    double sr, vector *targPos)
+{
+  vector relPos = vecNew(sin(yaw), -sin(look)*cos(yaw), -cos(look)*cos(yaw));
+
+  // relPos unit vector points from s/c to targPos.
+  // Rotate into earth axes
+  vector look_matrix[3];
+  look_matrix[2] = st->pos;
+  vecNormalize(&look_matrix[2]);
+  vector v = st->vel;
+  vecNormalize(&v);
+  vecCross(st->pos,v,&look_matrix[1]);
+  vecCross(look_matrix[1],st->pos,&look_matrix[0]);
+  vecMul(look_matrix,relPos,&relPos);
+
+  // scale relPos so it reaches from s/c to targPos
+  vecScale(&relPos,sr);
+  vecAdd(relPos,st->pos,targPos);
+}
+
+static int
+get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
+{
+  // satellite height, from the state vector
+  double ht = vecMagnitude(st->pos);
+
+  // earth radius, calculate from WGS84 values, and approx latitude
+  double re = 6378137.0;
+  double rp = 6356752.31414;
+  double lat = asin(st->pos.z/ht);
+  double er = re*rp/sqrt(rp*rp*cos(lat)*cos(lat)+re*re*sin(lat)*sin(lat));
+
+  // calculate slant range by law of cosines
+  // (where we know two sides, but not the angle between them)
+  double D = er*er - ht*ht*sin(look)*sin(look);
+  if (D < 0)
+    return 0; // can't see the Earth from here
+  double sr1 = -ht*cos(look) + sqrt(D);
+  double sr2 = -ht*cos(look) - sqrt(D);
+  double sr = sr1>sr2 ? sr2 : sr1;
+
+  // target position, first in inertial coords, then convert to lat/lon
+  vector target;
+  get_target_position(st, look, sr, 0, &target);
+
+  double glat; // geocentric
+  cart2sph(target,&er,&glat,tlon);
+
+  // tlon should be -180,180
+  // tlat needs to be geodetic
+  // both should be degrees
+  *tlon *= R2D;
+  if (*tlon < -180.) *tlon += 360.;
+
+  *tlat = R2D*atan(tan(glat)*re*re/(rp*rp));
+
+  return 1;
+}
+
+
 static char *outputName(const char *dir, const char *base, const char *suffix)
 {
   int dirlen = strlen(dir);
@@ -101,26 +163,27 @@ void read_tle(char *tleFile, char *satellite, tle_t *tle)
   FREE(s);
 }
 
-void read_satellite_config(char *satelliteFile, char *satellite, char *beam_mode, 
-			   satellite_t *sat)
+void read_satellite_config(char *satelliteFile, char *header, satellite_t *sat)
 {
   FILE *fp;
   char line[512], *s;
 
   s = (char *) MALLOC(sizeof(char)*25);
-  sprintf(s, "[%s %s]", satellite, beam_mode);
+  sprintf(s, "[%s]", header);
   fp = FOPEN(satelliteFile, "r");
 
   while (fgets(line, 512, fp)) {
     if (strncmp(line, s, strlen(s))==0) {
       fgets(line, 512, fp);
+      sscanf(line, "satellite = %s", sat->satellite);
+      fgets(line, 512, fp);
+      sscanf(line, "sensor = %s", sat->sensor);
+      fgets(line, 512, fp);
+      sscanf(line, "beam mode = %s", sat->beam_mode);
+      fgets(line, 512, fp);
       sscanf(line, "look angle = %lf", &sat->look_angle);
       fgets(line, 512, fp);
       sscanf(line, "pixel size = %lf", &sat->pixel_size);
-      fgets(line, 512, fp);
-      sscanf(line, "orbital inclination = %lf", &sat->orbital_inclination);
-      fgets(line, 512, fp);
-      sscanf(line, "wavelength = %lf", &sat->wavelength);
     }
   }
 
@@ -204,27 +267,27 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   char *output_dir, orbit_direction;
   double satellite_height, orbital_inclination, look_angle;
   double delta=0.1, delta_lat, old_lat;
-  double period, velocity, time, radius, angle, wavelength, lat, lon;
+  double period, velocity, time, radius, angle, lat, lon;
   double pixel_size, acquisition_length, swath_velocity, latitude, longitude;
   double earth_radius, slant_range_first_pixel, slant_range_center_pixel;
-  int demHeight;
+  double range_time_per_pixel, azimuth_time_per_pixel, orbital_velocity;
+  int ii, demHeight;
   int dem_grid_size = 20;
   int clean_files = TRUE;
-  double azimuth_time_per_pixel = 0.002; // [s] - realistic, yet simple
   double cutoff = -900.0; // [m] - any height below this is considered hole
   int size = 7500; // [pixels] - size of the output image, want that fixed
-  double re = 6378144.0; //[m] - semimajor axis WGS84
-  double rp = 6356754.9; //[m] - semiminor axis WGS84
+  double re = 6378137.0; //[m] - semimajor axis WGS84
+  double rp = 6356752.314; //[m] - semiminor axis WGS84
+  const double g = 9.81; // [m/s^2] 
 
   // Read parameters out of satellite structure
-  orbital_inclination = sat->orbital_inclination;
-  look_angle = sat->look_angle;;
+  orbital_inclination = tle->inclination;
+  look_angle = sat->look_angle;
   if (strcmp(sat->orbit_direction, "ascending")==0)
     orbit_direction = 'A';
   else if (strcmp(sat->orbit_direction, "descending")==0)
     orbit_direction = 'D';
   pixel_size = sat->pixel_size;
-  wavelength = sat->wavelength;
 
   /*
   // Generate a temporary directory for the output
@@ -241,7 +304,7 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   ko = (keplerian_orbit_t *) MALLOC(sizeof(keplerian_orbit_t));
   ko->a = GM/velocity/velocity;
   ko->e = tle->eccentricity;
-  ko->i = sat->orbital_inclination;
+  ko->i = tle->inclination;
   ko->cap_omega = tle->cap_omega;
   ko->omega = 90.0;
   ko->ea = kepler_equation(tle->mean_anomaly, tle->eccentricity);
@@ -251,6 +314,14 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   keplerian_to_cartesian(ko, co);
 
   // Fill in the initial state vector in structure
+  /*
+  co->x = 584232.29179;
+  co->y = -7026717.2561;
+  co->z = 1265873.4131;
+  co->vx = -1526.010755;
+  co->vy = -1444.1538116;
+  co->vz = -7258.2851562;
+  */
   vec.pos.x = co->x;
   vec.pos.y = co->y;
   vec.pos.z = co->z;
@@ -267,6 +338,7 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   // Calculate slant range
   satellite_height = sqrt(co->x*co->x + co->y*co->y + co->z*co->z);
   lat = asin(co->z / satellite_height);
+  printf("lat: %.4lf\n", lat*R2D);
   earth_radius = (re*rp) / 
     sqrt(rp*rp*cos(lat)*cos(lat) + re*re*sin(lat)*sin(lat));
   angle = asin(satellite_height/earth_radius*sin(look_angle*D2R))*R2D 
@@ -274,35 +346,63 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   slant_range_center_pixel = 
     sqrt(satellite_height*satellite_height + earth_radius*earth_radius -
 	 2*satellite_height*earth_radius*cos(angle*D2R));
-  angle -= size/2 * pixel_size / earth_radius * R2D;
+  angle -= size/2 * pixel_size / earth_radius * R2D;;
   slant_range_first_pixel = 
     sqrt(satellite_height*satellite_height + earth_radius*earth_radius -
 	 2*satellite_height*earth_radius*cos(angle*D2R));
+  printf("look angle = %.4lf, slant range = %.3lf, angle = %.4lf\n",
+	 look_angle, slant_range_first_pixel, angle);
 
   // Generate the necessary metadata for artifical SAR image in slant range
-  swath_velocity = pixel_size / azimuth_time_per_pixel;
+  orbital_velocity = sqrt(g * earth_radius * earth_radius / satellite_height);
+  printf("er: %.3lf, ht: %.3lf, orbit vel: %.4lf\n", earth_radius,
+	 satellite_height, orbital_velocity);
+  swath_velocity = orbital_velocity * earth_radius / satellite_height;
+  azimuth_time_per_pixel = pixel_size / swath_velocity;
+  printf("swath vel: %.3lf, atpp: %.8lf\n", swath_velocity,
+	 azimuth_time_per_pixel);
   acquisition_length = azimuth_time_per_pixel * size;
+  // FIXME: Close but not quite right
+  range_time_per_pixel = 2 * pixel_size / speedOfLight;
 
   // Fill in metadata fields
   metaSAR = raw_init();
+  sprintf(metaSAR->general->basename, "%s", metaDEM->general->basename);
+  sprintf(metaSAR->general->sensor, "%s", sat->satellite);
+  sprintf(metaSAR->general->sensor_name, "%s", sat->sensor);
+  sprintf(metaSAR->general->mode, "%s", sat->beam_mode);
+  sprintf(metaSAR->general->processor, "SAR simulation");
+  metaSAR->general->data_type = REAL32;
   metaSAR->general->line_count = size;
   metaSAR->general->sample_count = size;
   metaSAR->general->orbit_direction = orbit_direction;
-  metaSAR->general->x_pixel_size = pixel_size;
-  metaSAR->general->y_pixel_size = pixel_size;
   metaSAR->general->start_line = 0;
   metaSAR->general->start_sample = 0;
+  metaSAR->general->x_pixel_size = pixel_size;
+  metaSAR->general->y_pixel_size = pixel_size;
+  metaSAR->general->center_latitude = metaDEM->general->center_latitude;
+  metaSAR->general->center_longitude = metaDEM->general->center_longitude;
+  metaSAR->general->re_major = re;
+  metaSAR->general->re_minor = rp;
   metaSAR->sar = meta_sar_init();
   metaSAR->sar->image_type = 'S';
   metaSAR->sar->look_direction = 'R';
   metaSAR->sar->deskewed = 1;
+  metaSAR->sar->range_time_per_pixel = range_time_per_pixel;
   metaSAR->sar->azimuth_time_per_pixel = azimuth_time_per_pixel;
   metaSAR->sar->earth_radius = earth_radius;
   metaSAR->sar->satellite_height = satellite_height;
   metaSAR->sar->slant_range_first_pixel = slant_range_first_pixel;
   metaSAR->sar->time_shift = 0.0;
   metaSAR->sar->slant_shift = 0.0;
-  metaSAR->sar->wavelength = wavelength;
+  metaSAR->sar->original_line_count = size;
+  metaSAR->sar->original_sample_count = size;
+  metaSAR->sar->line_increment = 1;
+  metaSAR->sar->sample_increment = 1;
+  for (ii=0; ii<3; ii++) {
+    metaSAR->sar->range_doppler_coefficients[ii] = 0.0;
+    metaSAR->sar->azimuth_doppler_coefficients[ii] = 0.0;
+  }
   metaSAR->state_vectors = meta_state_vectors_init(3);
   metaSAR->state_vectors->year = tle->year;
   metaSAR->state_vectors->julDay = tle->day;
@@ -316,6 +416,7 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   metaSAR->state_vectors->vecs[2].vec = 
     propagate(vec, tle->time, tle->time+acquisition_length);
   metaSAR->state_vectors->vecs[2].time = acquisition_length;
+  meta_write(metaSAR, "test");
 
   meta_get_latLon(metaSAR, size/2, size/2, 0.0, &lat, &lon);
   printf("lat: %.4lf, lon: %.4lf\n", lat, lon);
@@ -323,23 +424,37 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
 
   printf("period: %.6lf\n", period);
 
-  while (1) {
+  char out[15];
+  delta = 480;
+  for (ii=1; ii<=3; ii++) {
+    /*
+    metaSAR->state_vectors->second = tle->time+ii*delta;
     metaSAR->state_vectors->vecs[0].vec = 
-      propagate(vec, tle->time, tle->time+delta);
+      propagate(vec, tle->time, tle->time+ii*delta);
     metaSAR->state_vectors->vecs[1].vec = 
-      propagate(vec, tle->time, tle->time+delta+acquisition_length/2);
+      propagate(vec, tle->time, tle->time+ii*delta+acquisition_length/2);
     metaSAR->state_vectors->vecs[2].vec = 
-      propagate(vec, tle->time, tle->time+delta+acquisition_length);
-    metaSAR->state_vectors->second = tle->time+delta;
+      propagate(vec, tle->time, tle->time+ii*delta+acquisition_length);
+    sprintf(out, "test%d", ii);
+    meta_write(metaSAR, out);
     meta_get_latLon(metaSAR, size/2, size/2, 0.0, &lat, &lon);
+    */
+    /*
     delta_lat = lat - old_lat;
     old_lat = lat;
     delta += 0.1;
     if (fabs(latitude-lat) < 0.005) {
-      printf("lat: %.4lf, lon: %.4lf\n", lat, lon);
+    */
+    st = propagate(vec, tle->time, tle->time+ii*delta);
+    get_target_latlon(&st, look_angle, &lat, &lon);
+    printf("%3d - lat: %.4lf, lon: %.4lf\n", ii, lat, lon);
+      /*
       break;
     }
+      */
   }
+  meta_write(metaSAR, "test2");
+  exit(0);
 
   while (1) {
     metaSAR->state_vectors->vecs[0].vec = 
@@ -364,6 +479,7 @@ void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle)
   else
     printf("descending node\n");
 
+  meta_write(metaSAR, "test");
   exit(0);
 
   // Interpolate over holes in the DEM. No need to generate any artifacts 

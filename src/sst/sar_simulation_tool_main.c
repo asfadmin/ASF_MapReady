@@ -11,8 +11,8 @@ void usage(char *name)
   printf("\n"
 	 "REQUIRED ARGUMENTS:\n"
 	 "   dem:              DEM the simulated amplitude image is derived from\n"
-	 "   satellite:        satellite height above the ground\n"
-	 "   beam mode:        look angle at scene center\n"
+	 "   satellite:        satellite name\n"
+	 "   beam mode:        beam mode \n"
          "   tle:              name of the TLE file containing orbit information\n"
 	 "   orbit direction:  'ascending' or 'descending'\n");
   printf("\n"
@@ -29,6 +29,7 @@ int main(int argc, char *argv[])
   satellite_t *sat;
   tle_t *tle;
   char *demFile, *satellite, *beam_mode, *orbit_direction, *tleFile;
+  char header[30];
 
   // Allocate some memory
   demFile = (char *) MALLOC(sizeof(char)*255);
@@ -56,7 +57,8 @@ int main(int argc, char *argv[])
   read_tle(tleFile, satellite, tle);
 
   // Read satellite configuration file
-  read_satellite_config("satellite.config", satellite, beam_mode, sat);
+  sprintf(header, "%s %s", satellite, beam_mode);
+  read_satellite_config("satellite.config", header, sat);
 
   // Simulate SAR image
   sar_simulation_tool(demFile, sat, tle);

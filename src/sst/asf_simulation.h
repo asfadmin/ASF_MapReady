@@ -6,9 +6,9 @@
 #include "asf_sar.h"
 #include "asf_terrcorr.h"
 
-#define GM 3.9860045e+14        // Gravitational constant [m^3 / s^2].
-#define ECC 8.1827385e-02       // GEM6 model eccentricity of the Earth.
-
+#define GM 3.9860045e+14         // Gravitational constant [m^3 / s^2].
+#define ECC 8.1827385e-02        // GEM6 model eccentricity of the Earth.
+#define speedOfLight 299792458.0 // Speed of light in vacuum [m/s] 
 typedef struct {
   double a;                     // Semi-major axis.
   double e;                     // Eccentricity.
@@ -23,11 +23,12 @@ typedef struct {
 } cartesian_orbit_t;
 
 typedef struct {
+  char satellite[25];           // Name of satellite
+  char sensor[25];              // Name of sensor
+  char beam_mode[10];           // Beam mode of sensor
   char orbit_direction[15];     // 'ascending' or 'descending'
-  double orbital_inclination;   // Orbital inclination (yaw angle)
   double look_angle;            // Look angle at scene center
   double pixel_size;            // Pixel size of the SAR image
-  double wavelength;            // Wavelength of the sensor
 } satellite_t;
 
 typedef struct {
@@ -45,7 +46,7 @@ typedef struct {
 
 // Prototypes from sar_simulation_tool.c
 void read_tle(char *tleFile, char *satellite, tle_t *tle);
-void read_satellite_config(char *satelliteFile, char *satellite, char *beam_mode, 
+void read_satellite_config(char *satelliteFile, char *header, 
 			   satellite_t *sat);
 void sar_simulation_tool(char *demFile, satellite_t *sat, tle_t *tle);
 
