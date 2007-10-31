@@ -662,6 +662,10 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	outMeta->sar->image_type='G';
 	outMeta->general->x_pixel_size = d.grPixelSize;
 
+/* We use 0 to fill in around the edges (currently user can't configure
+   this value), so set the no_data value accordingly */
+        outMeta->general->no_data = 0.0;
+
 /*Open files.*/
 	inDemFp = fopenImage(inDemName,"rb");
 	outFp   = fopenImage(outName,"wb");

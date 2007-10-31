@@ -525,9 +525,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
               // In this case, the value of -Pn*log3(Pn) is supposed to be
               // zero - we have to force it.
               entropy[j] = 
-                  meta_is_valid_double(P1l3) ? -P1*P1l3 : 0 +
-                  meta_is_valid_double(P2l3) ? -P2*P2l3 : 0 +
-                  meta_is_valid_double(P3l3) ? -P3*P3l3 : 0;
+                  (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
+                  (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
+                  (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
 
               anisotropy[j] = (e2-e3)/(e2+e3);
           }
