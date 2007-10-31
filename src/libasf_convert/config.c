@@ -401,6 +401,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct->fill_value = 0;
   cfg->terrain_correct->do_radiometric = 0;
   cfg->terrain_correct->smooth_dem_holes = 0;
+  cfg->terrain_correct->no_resampling = 0;
   cfg->terrain_correct->save_terrcorr_dem = 0;
   cfg->terrain_correct->save_terrcorr_layover_mask = 0;
   strcpy(cfg->terrain_correct->mask, "");
@@ -554,6 +555,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+      if (strncmp(test, "no resampling", 13)==0)
+        cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem =
             read_int(line, "save terrcorr dem");
@@ -839,6 +842,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->terrain_correct->do_radiometric = read_int(line, "do radiometric");
       if (strncmp(test, "smooth dem holes", 16)==0)
         cfg->terrain_correct->smooth_dem_holes = read_int(line, "smooth dem holes");
+      if (strncmp(test, "no resampling", 13)==0)
+        cfg->terrain_correct->no_resampling = read_int(line, "no resampling");
       if (strncmp(test, "save terrcorr dem", 17)==0)
         cfg->terrain_correct->save_terrcorr_dem =
             read_int(line, "save terrcorr dem");
@@ -1216,6 +1221,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
                   "# in the terrain corrected product.  This option will attempt to replace DEM holes\n"
                   "# with interpolated values.\n\n");
       fprintf(fConfig, "smooth dem holes = %d\n", cfg->terrain_correct->smooth_dem_holes);
+      if (!shortFlag)
+          fprintf(fConfig, "\n# If the DEM has a pixel size that is significantly larger (a factor\n"
+                  "# of 2) than the SAR image, by default the SAR image is downsampled\n"
+                  "# to a pixel size half that of the DEM.  With this option set to 1, no\n"
+                  "# resampling of this type will be done.  However, the quality of the\n"
+                  "# terrain corrected product is still limited by the resolution of\n"
+                  "# the DEM.  By default, this option is off (0).\n\n");
+      fprintf(fConfig, "no resampling = %d\n", cfg->terrain_correct->no_resampling);
       if (!shortFlag)
         fprintf(fConfig, "\n# Even if you don't want to change the image via terrain correction,\n"
                 "# you may still wish to use the DEM to refine the geolocation of the SAR image.\n"

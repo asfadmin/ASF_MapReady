@@ -108,6 +108,7 @@ typedef struct
   int do_radiometric;     // If TRUE, apply radiometric terrain correction in 
                           // addition to geometric terrain correction
   int smooth_dem_holes;   // If TRUE, try to smooth over holes in the DEM
+  int no_resampling;      // If TRUE, SAR image is not downsampled to match DEM
 } s_terrain_correct;
 
 typedef struct
