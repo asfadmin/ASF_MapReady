@@ -679,8 +679,7 @@ handle_view_output()
 
     if (get_iter_to_first_selected_row(completed_files_list, &iter))
     {
-        gchar * out_name;
-
+        gchar *out_name;
         gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter, 
             COMP_COL_OUTPUT_FILE, &out_name, -1);
 
@@ -709,6 +708,14 @@ handle_view_output()
                 show_image_with_asf_view(tmp_out);
             else if (try_suffix(out_name, "_04", &tmp_out))
                 show_image_with_asf_view(tmp_out);
+
+            // some airsar possibilities
+            else if (try_suffix(out_name, "_c_vv", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+            else if (try_suffix(out_name, "_l_vv", &tmp_out))
+                show_image_with_asf_view(tmp_out);
+
+            // give up
             else {
                 char msg[2048];
                 sprintf(msg, "Processing on selected file not complete OR\n"

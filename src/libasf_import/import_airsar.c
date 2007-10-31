@@ -184,7 +184,7 @@ static airsar_parameters *read_airsar_params(const char *inBaseName)
 
   if (strncmp(basename, "ts", 2) == 0) {
     // Read specific parameter file
-    params = (airsar_parameters *) MALLOC(sizeof(airsar_parameters));
+    params = (airsar_parameters *) CALLOC(1, sizeof(airsar_parameters));
     if (strlen(dir) > 0)
       sprintf(metaFile, "%s/hd%s.log", dir, basename+2);
     else
@@ -348,7 +348,7 @@ static airsar_general *read_airsar_general(const char *inBaseName)
   airsar_general *general=NULL;
   char line[256]="", *value, *p;
 
-  general = (airsar_general *) MALLOC(sizeof(airsar_general));
+  general = (airsar_general *) CALLOC(1, sizeof(airsar_general));
 
   char *metaFile = MALLOC(sizeof(char)*(strlen(inBaseName)+20));
   sprintf(metaFile, "%s_meta.airsar", inBaseName);
@@ -597,7 +597,7 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
                     0., &line, &samp);
   err += hypot(line-(double)nl,samp-(double)ns);
 
-  printf("getObjective> [%f,%f] -> %f\n", c0, s0, err);
+  //printf("getObjective> [%f,%f] -> %f\n", c0, s0, err);
 
   gsl_vector_set(f,0,err);
   gsl_vector_set(f,1,err);

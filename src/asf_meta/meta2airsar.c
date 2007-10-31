@@ -17,7 +17,12 @@ meta_parameters* airsar2meta(airsar_general *general,
   sprintf(meta->general->sensor, "AIRSAR");
   strcpy(meta->general->mode, general->mode);
   // no sensor mode
-  strcpy(meta->general->processor, params->processor);
+  if (strlen(params->processor)>0) {
+    strcpy(meta->general->processor, "airsar ");
+    strcat(meta->general->processor, params->processor);
+  } else {
+    strcpy(meta->general->processor, MAGIC_UNSET_STRING);
+  }
   // FIXME: various data types - InSAR vs. polarimetric
   sprintf(meta->general->system, "big_ieee");
   date_sec2hms(params->acquisition_seconds, &hms);
