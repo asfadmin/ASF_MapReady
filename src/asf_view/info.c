@@ -147,6 +147,7 @@ void update_pixel_info()
         sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
     }
 
-    GtkWidget *lbl = get_widget_checked("upper_label");
-    gtk_label_set_text(GTK_LABEL(lbl), buf);
+    put_text_in_textview(buf, "info_textview");
+    //GtkWidget *lbl = get_widget_checked("upper_label");
+    //gtk_label_set_text(GTK_LABEL(lbl), buf);
 }

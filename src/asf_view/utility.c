@@ -192,8 +192,8 @@ GtkWidget *get_widget_checked(const char *widget_name)
     return w;
 }
 
-void
-append_output(const gchar * txt, GtkWidget * textview_output)
+static void
+put_text_in_textview_impl(const gchar * txt, GtkWidget * textview_output)
 {
     GtkTextBuffer * text_buffer;
     GtkTextIter end;
@@ -206,16 +206,13 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 
     if (!tt)
     {
-
 #ifdef win32
-        const char *fnt = "Courier";
-#else
-	const char *fnt = "Mono";
-#endif
-
-
 	tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
-					"font", fnt, NULL);
+					"font", "Courier", NULL);
+#else
+	tt = gtk_text_buffer_create_tag(text_buffer, "mono", "font", "Mono",
+                                        "size-points", (double)8.0, NULL);
+#endif
     }
 
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
@@ -240,9 +237,15 @@ void put_file_in_textview(const char *file, const char *widget_name)
         char buf[MAX];
         GtkWidget *tv = get_widget_checked(widget_name);
         fread(buf, sizeof(char), MAX, f);
-        append_output(buf, tv);
+        put_text_in_textview_impl(buf, tv);
         fclose(f);
     }
+}
+
+void put_text_in_textview(const char *txt, const char *widget_name)
+{
+    GtkWidget *tv = get_widget_checked(widget_name);
+    put_text_in_textview_impl(txt, tv);
 }
 
 void put_string_to_label(const char *widget_name, const char *txt)

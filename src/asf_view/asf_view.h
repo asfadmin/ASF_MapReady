@@ -61,6 +61,7 @@ void put_string_to_entry(const char *widget_name, char *txt);
 char *get_string_from_comboboxentry(const char *widget_name);
 void put_string_to_comboboxentry(const char *widget_name, char *txt);
 void put_file_in_textview(const char *file, const char *widget_name);
+void put_text_in_textview(const char *txt, const char *widget_name);
 void put_string_to_label(const char *widget_name, const char *txt);
 void show_widget(const char *widget_name, int show);
 void enable_widget(const char *widget_name, int enable);
