@@ -367,6 +367,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = COHERENCE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
         MGENERAL->image_data_type = GEOCODED_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_IMAGE") )
+        MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION") )
         MGENERAL->image_data_type = ELEVATION;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "DEM") )

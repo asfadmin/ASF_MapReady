@@ -1761,36 +1761,38 @@ export_band_image (const char *metadata_file_name,
     strcpy(bands, md->general->bands);
     strcpy(base_name, output_file_name);
 
-    if (!band_name) {
-      band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
+    if (!band_name)
+    {
+      // caller did not pass in the band names -- we will have
+      // to come up with some band names ourselves
       if (band_count == 1) {
-        // allow passing in NULL for the band names to mean "who cares!"
-        // when exporting a single band image (mostly useful with a
-        // look up table).
+        // only one band, just call it "01"
+        band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
+        band_name[0] = (char*) MALLOC(sizeof(char)*100);
+        strcpy(band_name[0], "01");
+      }
+      else if (have_look_up_table) {
+        // when exporting a look up table, number the bands
+        band_name = (char **) CALLOC(MAX_BANDS, sizeof(char*));
         int i;
-        if (have_look_up_table) {
-          for (i=0; i<3; i++) {
-            band_name[i] = (char*) MALLOC(sizeof(char)*100);
-            sprintf(band_name[i], "%02d", i + 1);
-            free_band_names = TRUE;
-          }
-        }
-        else {
-          band_name[0] = (char*) MALLOC(sizeof(char)*100);
-          strcpy(band_name[0], "01");
-          free_band_names = TRUE;
+        for (i=0; i<3; i++) {
+          band_name[i] = (char*) MALLOC(sizeof(char)*100);
+          sprintf(band_name[i], "%02d", i + 1);
         }
       }
-    }
-    else {
-      // caller did not pass the band names -- get them ourselves
-      int n;
-      char *b = stripExt(image_data_file_name);
-      band_name = find_single_band(b, "all", &n);
-      asfRequire (n == band_count, "Band count inconsistent: %d != %d\n",
-                  n, band_count);
+      else {
+        // get what is in the metadata
+        int n;
+        char *b = stripExt(image_data_file_name);
+        band_name = find_single_band(b, "all", &n);
+        asfRequire (n == band_count, "Band count inconsistent: %d != %d\n",
+                    n, band_count);
+        FREE(b);
+      }
+
+      // in all three cases, we must free "band_name"
+      // (normally not freed, it the caller's)
       free_band_names = TRUE;
-      FREE(b);
     }
 
     int kk;

@@ -1008,6 +1008,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           asfPrintStatus("No L-band interferometric AirSAR product.\n");
           cfg->airsar->l_vv = 0;
         }
+
+        if (!cfg->airsar->l_pol && !cfg->airsar->p_pol &&
+            !cfg->airsar->c_pol && !cfg->airsar->c_vv &&
+            !cfg->airsar->l_vv)
+          asfPrintError("No airsar products to process!\n");
       }
 
       if (!is_airsar) {
@@ -1047,10 +1052,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           if (cfg->general->image_stats || cfg->general->detect_cr ||
               cfg->general->sar_processing || cfg->general->terrain_correct ||
               cfg->general->geocoding || cfg->general->export) {
-              sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
+            sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
           }
           else {
-              sprintf(outFile, "%s", cfg->general->out_name);
+            sprintf(outFile, "%s", cfg->general->out_name);
           }
 
           struct INPUT_ARDOP_PARAMS *params_in;
@@ -1475,7 +1480,30 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           } else {
             // .meta should already be there, even if user did not request
             // it, because asf_import imports everything anyway
-            in_tmp = appendToBasename(inFile, "_c_vv");
+            // ==> however, it will be called "import_c_vv"
+            char *dir = get_dirname(inFile);
+            in_tmp = MALLOC(sizeof(char)*(strlen(dir)+32));
+            
+            if (strlen(dir) > 0)
+              sprintf(in_tmp, "%simport_c_vv.meta", dir);
+            else
+              strcpy(in_tmp, "import_c_vv.meta");
+
+            if (!fileExists(in_tmp)) {
+              // try "import_l_vv", data may not have contained c-band
+              // interferometric data...
+              if (strlen(dir) > 0)
+                sprintf(in_tmp, "%simport_l_vv.meta", dir);
+              else
+                strcpy(in_tmp, "import_l_vv.meta");
+              
+              if (!fileExists(in_tmp)) {
+                // this is bad - we can't produce an output metadata file!
+                asfPrintWarning("Failed to generate an output metadata file!\n");
+                free(in_tmp);
+                in_tmp = NULL;
+              }
+            }
           }
           if (in_tmp) {
             copy_meta(in_tmp, outFile);
