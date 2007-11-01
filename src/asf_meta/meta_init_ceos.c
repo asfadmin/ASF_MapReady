@@ -868,7 +868,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   else
     meta->sar->image_type = 'R';
   meta->sar->look_count = dssr->n_azilok;
-  meta->sar->deskewed = 1;
+  if (ceos->product == SLC)
+    meta->sar->deskewed = 0;
+  else
+    meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;
   meta->sar->slant_shift = 0;
@@ -1002,18 +1005,6 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->location->lat_end_far_range = mpdr->blclat;
       meta->location->lon_end_far_range = mpdr->blclong;
     }
-    // Troubleshooting
-    printf("\nReading the corners for location block:\n");
-    printf("Lat1: %10.4lf\n", meta->location->lat_start_near_range);
-    printf("Lon1: %10.4lf\n", meta->location->lon_start_near_range);
-    printf("Lat2: %10.4lf\n", meta->location->lat_start_far_range);
-    printf("Lon2: %10.4lf\n", meta->location->lon_start_far_range);
-    printf("Lat3: %10.4lf\n", meta->location->lat_end_near_range);
-    printf("Lon3: %10.4lf\n", meta->location->lon_end_near_range);
-    printf("Lat4: %10.4lf\n", meta->location->lat_end_far_range);
-    printf("Lon4: %10.4lf\n", meta->location->lon_end_far_range);
-
-    //meta_get_corner_coords(meta);
   }
   else {
     meta_get_corner_coords(meta);

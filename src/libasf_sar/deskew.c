@@ -31,11 +31,18 @@ static double calc_shift(meta_parameters *meta, double line, double samp)
 
   double time, slant, dop;
   meta_get_timeSlantDop(meta, line, samp, &time, &slant, &dop);
+  //printf("time: %.8lf, slant: %.3lf, doppler: %.6lf\n", time, slant, dop);
 
   double look, yaw, fac;
   getLookYaw(g, slant, dop, &look, &yaw);
+  //printf("look angle: %.4lf, yaw: %.4lf\n", look*R2D, yaw*R2D);
   fac = sin(look)*sin(yaw);
   free_geolocate(g);
+  // Hack for ALOS processing
+  // Needed to changed the sign of the shift to get the terrain correction
+  // for Palsar SLC to work. Under investigation
+  fac *= -1;
+  // End of hack
 
   return fac;
 }
