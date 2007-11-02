@@ -56,7 +56,7 @@ S_SHAREDIR := $(shell echo "$(SHAREDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
 
 all: external_libs
-	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
+	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib $(S_SHAREDIR)/doc
 	cp doc/*.pdf doc/asf_convert-version_history.txt $(S_SHAREDIR)/doc
 	cp LICENSE.txt $(S_SHAREDIR)
 	echo "@VERSION@" > $(S_SHAREDIR)/convert_version.txt
@@ -66,8 +66,6 @@ all: external_libs
 	@ echo ""
 
 install: all
-	mkdir -p $(S_SHAREDIR)/doc
-	cp doc/*.pdf doc/asf_convert-version_history.txt $(S_SHAREDIR)/doc
 	mkdir -p "@BINDIR@" "@prefix@"/lib "@SHAREDIR@"
 	cp -R $(S_BINDIR)/* "@BINDIR@"
 	cp -R lib/* "@prefix@"/lib
