@@ -194,7 +194,23 @@ void check_parameters(projection_type_t projection_type, datum_type_t datum,
       if (zone < min_zone) min_zone = zone;
       if (zone > max_zone) max_zone = zone;
 
-      if (pp->utm.zone < min_zone || pp->utm.zone > max_zone + 1) {
+      // Handle special cases, where the center of the image is in
+      // zone 1, or 60, and the edges are one zone over, accross the
+      // 1/60 boundary.  These are the cases (left, center, right):
+      //   (60,1,1), (60,1,2), (59,60,1), (60,60,1)
+      if ((pp->utm.zone == 1 &&
+           ((min_zone == 1 && max_zone == 60) ||
+            (min_zone == 2 && max_zone == 60)))
+          ||
+          (pp->utm.zone == 60 &&
+           ((min_zone == 1 && max_zone == 59) ||
+            (min_zone == 1 && max_zone == 60))))
+      {
+        // this is okay, and happens sometimes with scansar images
+        // no action necessary
+        ;
+
+      } else if (pp->utm.zone < min_zone || pp->utm.zone > max_zone + 1) {
         report_func("Zone '%i' outside the range of corresponding image "
 		      "coordinates (%i to %i)\n", pp->utm.zone, min_zone,
 		      max_zone);
