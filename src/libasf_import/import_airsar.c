@@ -623,18 +623,18 @@ static void coarse_search(double c0_extent_min, double c0_extent_max,
     double s0_extent = s0_extent_max - s0_extent_min;
     gsl_vector *v = gsl_vector_alloc(2);
     gsl_vector *u = gsl_vector_alloc(2);
-    printf("           ");
-    for (j = 0; j <= k; ++j) {
-        double s0 = s0_extent_min + ((double)j)/k*s0_extent;
-        printf("%9.3f ", s0);
-    }
-    printf("\n           ");
-    for (j = 0; j <= k; ++j)
-        printf("--------- ");
-    printf("\n");
+    //printf("           ");
+    //for (j = 0; j <= k; ++j) {
+    //    double s0 = s0_extent_min + ((double)j)/k*s0_extent;
+    //    printf("%9.3f ", s0);
+    //}
+    //printf("\n           ");
+    //for (j = 0; j <= k; ++j)
+    //    printf("--------- ");
+    //printf("\n");
     for (i = 0; i <= k; ++i) {
         double c0 = c0_extent_min + ((double)i)/k*c0_extent;
-        printf("%9.3f | ", c0);
+        //printf("%9.3f | ", c0);
 
         for (j = 0; j <= k; ++j) {
             double s0 = s0_extent_min + ((double)j)/k*s0_extent;
@@ -643,14 +643,14 @@ static void coarse_search(double c0_extent_min, double c0_extent_max,
             gsl_vector_set(v, 1, s0);
             getObjective(v,(void*)(&params), u);
             double n = gsl_vector_get(u,0);
-            printf("%9.3f ", n);
+            //printf("%9.3f ", n);
             if (n<the_min) { 
                 the_min=n;
                 min_c0=gsl_vector_get(v,0);
                 min_s0=gsl_vector_get(v,1);
             }
         }
-        printf("\n");
+        //printf("\n");
     }
 
     *c0_min = min_c0;
@@ -675,7 +675,8 @@ generate_start(meta_parameters *meta, double c0, double s0,
     double c0_range = extent_c0_max - extent_c0_min;
     double s0_range = extent_s0_max - extent_s0_min;
 
-    for (i = 0; i < 12; ++i)
+    for (i=0; i<12; ++i)
+    //for (i=0; i<4; ++i)
     {
         coarse_search(extent_c0_min, extent_c0_max,
                       extent_s0_min, extent_s0_max,
@@ -690,50 +691,51 @@ generate_start(meta_parameters *meta, double c0, double s0,
         extent_s0_min = *start_s0 - s0_range/2.;
         extent_s0_max = *start_s0 + s0_range/2.;
 
-        printf("refining search to region: cross: (%9.3f,%9.3f)\n"
-               "                           along: (%9.3f,%9.3f)\n",
-               extent_c0_min, extent_c0_max,
-               extent_s0_min, extent_s0_max);
+        //printf("refining search to region: cross: (%9.3f,%9.3f)\n"
+        //       "                           along: (%9.3f,%9.3f)\n",
+        //       extent_c0_min, extent_c0_max,
+        //       extent_s0_min, extent_s0_max);
     }
 }
 
-static void show_error(meta_parameters *meta)
+static void show_error(meta_parameters *meta, const char *descrip)
 {
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
   double line, samp, err=0;
 
+  asfPrintStatus("Computing known corner coordinates vs. calculated "
+                 "metadata differences:\n");
+
   meta_get_lineSamp(meta, meta->location->lat_start_near_range,
                           meta->location->lon_start_near_range,
                     0., &line, &samp);
-  printf("Start Near: %f (%d) %f (%d)\n", line, 0, samp, 0);
+  asfPrintStatus("  Start Near: %f (%d) %f (%d)\n", line, 0, samp, 0);
   err += hypot(line, samp);
 
   meta_get_lineSamp(meta, meta->location->lat_start_far_range,
                           meta->location->lon_start_far_range,
                     0., &line, &samp);
-  printf("Start Far: %f (%d) %f (%d)\n", line, 0, samp, ns);
+  asfPrintStatus("  Start Far: %f (%d) %f (%d)\n", line, 0, samp, ns);
   err += hypot(line, samp-(double)ns);
 
   meta_get_lineSamp(meta, meta->location->lat_end_near_range,
                           meta->location->lon_end_near_range,
                     0., &line, &samp);
-  printf("End Near: %f (%d) %f (%d)\n", line, nl, samp, 0);
+  asfPrintStatus("  End Near: %f (%d) %f (%d)\n", line, nl, samp, 0);
   err += hypot(line-(double)nl, samp);
 
   meta_get_lineSamp(meta, meta->location->lat_end_far_range,
                           meta->location->lon_end_far_range,
                     0., &line, &samp);
-  printf("End Far: %f (%d) %f (%d)\n", line, nl, samp, ns);
+  asfPrintStatus("  End Far: %f (%d) %f (%d)\n", line, nl, samp, ns);
   err += hypot(line-(double)nl, samp-(double)ns);
 
-  printf("Total error: %f pixels.\n", err);
+  asfPrintStatus("%s, average corner error: %.2f pixels\n", descrip, err/4.);
 }
 
 static void fudge_airsar_params(meta_parameters *meta)
 {
-  show_error(meta);
-
   int status, iter = 0, max_iter = 1000;
   const gsl_multiroot_fsolver_type *T;
   gsl_multiroot_fsolver *s;
@@ -741,20 +743,25 @@ static void fudge_airsar_params(meta_parameters *meta)
   struct fudge_airsar_params params;
   const size_t n = 2;
   double c0_initial, s0_initial;
+  double out_c0, out_s0;
 
   params.meta = meta;
 
-  printf("Refining cross-track and along-track offsets to "
+  asfPrintStatus("Refining airsar cross-track and along-track offsets to "
          "match corner locations.\n");
 
-  printf("Prior to coarse refinement (original metadata values):\n");
-  printf("  cross track offset: %fm\n", meta->airsar->cross_track_offset);
-  printf("  along track offset: %fm\n", meta->airsar->along_track_offset);
+  show_error(meta, "Prior to airsar geolocation refinement");
+
+  asfPrintStatus("Prior to coarse refinement (original metadata values):\n");
+  asfPrintStatus("  cross track offset: %.1fm\n",
+                 meta->airsar->cross_track_offset);
+  asfPrintStatus("  along track offset: %.1fm\n",
+                 meta->airsar->along_track_offset);
   generate_start(meta, meta->airsar->cross_track_offset,
                  meta->airsar->along_track_offset, &c0_initial, &s0_initial);
-  printf("Starting iterative search with:\n");
-  printf("  cross track offset: %fm\n", c0_initial);
-  printf("  along track offset: %fm\n", s0_initial);
+  asfPrintStatus("Starting iterative search with:\n");
+  asfPrintStatus("  cross track offset: %.1fm\n", c0_initial);
+  asfPrintStatus("  along track offset: %.1fm\n", s0_initial);
 
   gsl_multiroot_function F = {&getObjective, n, &params};
   gsl_vector *x = gsl_vector_alloc(n);
@@ -778,31 +785,34 @@ static void fudge_airsar_params(meta_parameters *meta)
     status = gsl_multiroot_test_residual (s->f, 1e-8);
   } while (status == GSL_CONTINUE && iter < max_iter);
 
-  double out_c0 = gsl_vector_get(s->x, 0);
-  double out_s0 = gsl_vector_get(s->x, 1);
+  // we allow GSL_ENOPROG (not making progress), since often the coarse
+  // search ends up at or very close to the minimum
+  if (status == GSL_SUCCESS || status == GSL_ENOPROG) {
+    asfPrintStatus("Converged after %d iteration%s.\n",
+                   iter, iter==1 ? "" : "s");
+    out_c0 = gsl_vector_get(s->x, 0);
+    out_s0 = gsl_vector_get(s->x, 1);
 
-  gsl_vector *retrofit = gsl_vector_alloc(n);
-  gsl_vector_set(retrofit, 0, out_c0);
-  gsl_vector_set(retrofit, 1, out_s0);
-  gsl_vector *output = gsl_vector_alloc(n);
-  getObjective(retrofit, (void*)(&params), output);
-  double val= gsl_vector_get(output,0);
-  printf("GSL Result: %f at (cross:%f, along:%f)\n", val, out_c0, out_s0);
-  gsl_vector_free(retrofit);
-  gsl_vector_free(output);
+    asfPrintStatus("Final values:\n");
+    asfPrintStatus("  cross track offset: %.1fm [adjusted by %.1fm]\n",
+                   out_c0, fabs(out_c0-meta->airsar->cross_track_offset));
+    asfPrintStatus("  along track offset: %.1fm [adjusted by %.1fm]\n",
+                   out_s0, fabs(out_s0-meta->airsar->along_track_offset));
+
+    meta->airsar->cross_track_offset = out_c0;
+    meta->airsar->along_track_offset = out_s0;
+
+    show_error(meta, "After airsar geolocation refinement");
+  }
+  else {
+    asfPrintStatus("After %d iterations, failed to converge:\n  %s\n"
+                   "Metadata parameters left unchanged.\n",
+                   iter, gsl_strerror(status));
+    out_c0 = out_s0 = 0;
+  }
 
   gsl_multiroot_fsolver_free(s);
   gsl_vector_free(x);
   gsl_set_error_handler(prev);
 
-  printf("Final values:\n");
-  printf("  cross track offset: %fm [adjusted by %fm]\n",
-        out_c0, fabs(out_c0-meta->airsar->cross_track_offset));
-  printf("  along track offset: %fm [adjusted by %fm]\n\n",
-        out_s0, fabs(out_s0-meta->airsar->along_track_offset));
-
-  meta->airsar->cross_track_offset = out_c0;
-  meta->airsar->along_track_offset = out_s0;
-
-  show_error(meta);
 }
