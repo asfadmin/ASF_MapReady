@@ -823,11 +823,23 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
-  if (radiometry == r_SIGMA || radiometry == r_GAMMA || radiometry == r_BETA) {
+  if (radiometry == r_SIGMA) {
     if (strlen(bandExt) == 0)
-      sprintf(bandStr, "%s", meta->sar->polarization);
+      sprintf(bandStr, "SIGMA-%s", meta->sar->polarization);
     else
-      sprintf(bandStr, "%s", bandExt);
+      sprintf(bandStr, "SIGMA-%s", bandExt);
+  }
+  else if (radiometry == r_GAMMA) {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "GAMMA-%s", meta->sar->polarization);
+    else
+      sprintf(bandStr, "GAMMA-%s", bandExt);
+  }
+  else if (radiometry == r_BETA) {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "BETA-%s", meta->sar->polarization);
+    else
+      sprintf(bandStr, "BETA-%s", bandExt);
   }
   else if (complex_flag) {
     if (strlen(bandExt) == 0)
@@ -1030,7 +1042,7 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
       if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
           radiometry == r_BETA)
       {
-          put_float_line(fpOut, meta, out, amp_buf);
+          put_band_float_line(fpOut, meta, out_band/2, out, amp_buf);
           out++;
       }
       else if (multilook_flag) {
@@ -1063,12 +1075,23 @@ void import_ceos_complex_float(char *inDataName, char *inMetaName,
   }
 
   strcpy(meta->general->basename, inDataName);
-  if (radiometry == r_SIGMA || radiometry == r_GAMMA ||
-      radiometry == r_BETA)
+  if (radiometry == r_SIGMA)
   {
       meta->general->band_count = import_single_band ? 1 : band;
       if (nBands == 1 && meta->sar)
-          sprintf(meta->general->bands, "%s", meta->sar->polarization);
+          sprintf(meta->general->bands, "SIGMA-%s", meta->sar->polarization);
+  }
+  else if (radiometry == r_GAMMA)
+  {
+      meta->general->band_count = import_single_band ? 1 : band;
+      if (nBands == 1 && meta->sar)
+          sprintf(meta->general->bands, "GAMMA-%s", meta->sar->polarization);
+  }
+  else if (radiometry == r_BETA)
+  {
+      meta->general->band_count = import_single_band ? 1 : band;
+      if (nBands == 1 && meta->sar)
+          sprintf(meta->general->bands, "BETA-%s", meta->sar->polarization);
   }
   else if (complex_flag) {
       meta->general->band_count = import_single_band ? 1 : band;

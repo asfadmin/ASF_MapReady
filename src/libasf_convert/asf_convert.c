@@ -558,9 +558,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       fprintf(fConfig, "[General]\n");
       fprintf(fConfig, "default values = %s\n", defaults);
       fprintf(fConfig, "input file = %s\n", batchItem);
-      fprintf(fConfig, "output file = %s%c%s%s%s\n",
-                       cfg->general->default_out_dir, DIR_SEPARATOR,
-                       cfg->general->prefix, fileName, cfg->general->suffix);
+      if (strlen(cfg->general->default_out_dir) == 0)
+      fprintf(fConfig, "output file = %s%s%s\n",
+	      cfg->general->prefix, fileName, cfg->general->suffix);
+      else
+	fprintf(fConfig, "output file = %s%c%s%s%s\n",
+		cfg->general->default_out_dir, DIR_SEPARATOR,
+		cfg->general->prefix, fileName, cfg->general->suffix);
       fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
       FCLOSE(fConfig);
       FREE(defaults);
