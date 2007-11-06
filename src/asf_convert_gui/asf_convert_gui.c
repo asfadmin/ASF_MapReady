@@ -113,8 +113,8 @@ main(int argc, char **argv)
     current_naming_scheme = naming_scheme_default();
 
     /* set initial vpanel setting */
-    widget = get_widget_checked("vertical_pane");
-    gtk_paned_set_position(GTK_PANED(widget), 240);
+    //widget = get_widget_checked("vertical_pane");
+    //gtk_paned_set_position(GTK_PANED(widget), 240);
 
     /* Connect signal handlers.  */
     glade_xml_signal_autoconnect (glade_xml);
