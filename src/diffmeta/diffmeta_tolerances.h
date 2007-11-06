@@ -123,7 +123,7 @@
 #define DM_MIN_STATE_PLANE_ZONE   1
 #define DM_MAX_STATE_PLANE_ZONE   100
 //      ATCT
-#define DM_MIN_ROTATION_ANGLE     0.0
+#define DM_MIN_ROTATION_ANGLE     -360.0
 #define DM_MAX_ROTATION_ANGLE     360.0
 //      LAMCC
 // Note: The LAMCC scale factor only applies to the single standard

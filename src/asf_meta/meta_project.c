@@ -4,8 +4,7 @@
 #include "matrix.h"
 #include <assert.h>
 
-#define ecc2 (sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)) \
-            * sqrt(1.0 - (proj->re_minor*proj->re_minor)/(proj->re_major*proj->re_major)))
+#define ecc2(minor,major) (1.0 - ((minor*minor)/(major*major)))
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
 void proj_to_latlon(meta_projection *proj, double x, double y, double z,
@@ -71,10 +70,10 @@ void airsar_to_latlon(meta_parameters *meta,
     if (!meta->airsar)
         asfPrintError("airsar_to_latlon() called with no airsar block!\n");
 
-    const double a = 6378137.0;		        // semi-major axis
-    const double b = 6356752.3412;	        // semi-minor axis
-    const double e2 = 0.00669437999014; 	// ellipticity
-    const double e12 = 0.00673949674228;	// second eccentricity
+    const double a = 6378137.0;           // semi-major axis
+    const double b = 6356752.3412;          // semi-minor axis
+    const double e2 = 0.00669437999014;   // ellipticity
+    const double e12 = 0.00673949674228;  // second eccentricity
 
     // we try to cache the matrices needed for the computation
     // this makes sure we don't reuse the cache incorrectly (i.e., on
@@ -126,7 +125,7 @@ void airsar_to_latlon(meta_parameters *meta,
         m1->coeff[2][0] = 0.0;
         m1->coeff[2][1] = cos(lat_peg);
         m1->coeff[2][2] = sin(lat_peg);
-      
+
         m2->coeff[0][0] = 0.0;
         m2->coeff[0][1] = sin(head_peg);
         m2->coeff[0][2] = -cos(head_peg);
@@ -168,11 +167,11 @@ void airsar_to_latlon(meta_parameters *meta,
     double t1 = (ra+height)*cos(c_lat)*cos(s_lon);
     double t2 = (ra+height)*cos(c_lat)*sin(s_lon);
     double t3 = (ra+height)*sin(c_lat);
-      
+
     double c1 = m->coeff[0][0]*t1 + m->coeff[0][1]*t2 + m->coeff[0][2]*t3;
     double c2 = m->coeff[1][0]*t1 + m->coeff[1][1]*t2 + m->coeff[1][2]*t3;
     double c3 = m->coeff[2][0]*t1 + m->coeff[2][1]*t2 + m->coeff[2][2]*t3;
-      
+
     // shift into local Cartesian coordinates
     double x = c1 + o1;// + 9.0;
     double y = c2 + o2;// - 161.0;
@@ -181,7 +180,7 @@ void airsar_to_latlon(meta_parameters *meta,
     // local Cartesian coordinates into geographic coordinates
     double d = sqrt(x*x+y*y);
     double theta = atan2(z*a, d*b);
-    *lat = R2D*atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta), 
+    *lat = R2D*atan2(z+e12*b*sin(theta)*sin(theta)*sin(theta),
                      d-e2*a*cos(theta)*cos(theta)*cos(theta));
     *lon = R2D*atan2(y, x);
 }
@@ -266,7 +265,7 @@ void scan_to_latlon(meta_parameters *meta,
   cart2sph(pos,&radius,&lat,lon);
   *lon *= R2D;
   lat *= R2D;
-  *lat_d = atand(tand(lat) / (1-ecc2));
+  *lat_d = atand(tand(lat) / (1-ecc2(proj->re_minor,proj->re_major)));
   *height = z;  // FIXME: Do we need to correct the height at all?
 }
 
@@ -277,7 +276,7 @@ void ll_ac(meta_projection *proj, char look_dir, double lat_d, double lon, doubl
   double lat,radius;
   vector pos;
 
-  lat= atand(tand(lat_d)*(1 - ecc2));
+  lat= atand(tand(lat_d)*(1 - ecc2(proj->re_minor,proj->re_major)));
   sph2cart(proj->param.atct.rlocal,lat*D2R,lon*D2R,&pos);
 
   rotate_z(&pos,proj->param.atct.alpha1);

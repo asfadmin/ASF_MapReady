@@ -115,10 +115,10 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
     asfPrintError ("Error opening input TIFF file:\n    %s\n", inFileName);
 
   if (get_tiff_data_config(input_tiff,
-                           &sample_format,    // TIFF type (uint, int, float)
+                           &sample_format,    // TIFF type (uint == 1, int == 2, float == 3)
                            &bits_per_sample,  // 8, 16, or 32
-                           &planar_config,    // Contiguous (RGB or RGBA) or separate (band sequential, not interlaced)
-                           &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
+                           &planar_config,    // Contiguous == 1 (RGB or RGBA) or separate == 2 (separate bands)
+                           &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex)
                            &num_bands,        // Initial number of bands
                            &is_scanline_format))
   {
@@ -1233,7 +1233,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   band_str = (char*)MALLOC(100*sizeof(char)); // '100' is the array length of mg->bands (see asf_meta.h) ...yes, I know.
   int num_found_bands;
   char *tmp_citation = (citation != NULL) ? STRDUP(citation) : NULL;
-  int is_asf_geotiff = strstr(tmp_citation, "Alaska Satellite Fac") ? 1 : 0;
+  int is_asf_geotiff = 0;
+  if (tmp_citation) is_asf_geotiff = strstr(tmp_citation, "Alaska Satellite Fac") ? 1 : 0;
   get_bands_from_citation(&num_found_bands, &band_str, empty, tmp_citation, num_bands);
   meta_statistics *stats = NULL;
   double mask_value;
@@ -2235,10 +2236,10 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 8:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint8*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((uint8*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((int8*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((int8*)tif_buf)[col]);
                   break;
                 default:
                   // No such thing as an 8-bit IEEE float
@@ -2250,10 +2251,10 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 16:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint16*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((uint16*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((int16*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((int16*)tif_buf)[col]);
                   break;
                 default:
                   // No such thing as an 16-bit IEEE float
@@ -2265,13 +2266,13 @@ int  geotiff_band_image_write(TIFF *tif, meta_parameters *omd,
             case 32:
               switch(sample_format) {
                 case SAMPLEFORMAT_UINT:
-                  buf[col] = (float)(((uint32*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((uint32*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_INT:
-                  buf[col] = (float)(((long*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((long*)tif_buf)[col]);
                   break;
                 case SAMPLEFORMAT_IEEEFP:
-                  buf[col] = (float)(((float*)tif_buf)[col]);
+                  ((float*)buf)[col] = (float)(((float*)tif_buf)[col]);
                   break;
                 default:
                   asfPrintError("Unexpected data type in TIFF file ...cannot write ASF-internal\n"
@@ -2459,13 +2460,11 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
     for (col = 0; col < width && (idx * bytes_per_sample) < stripSize; col++) {
       // NOTE: t.scanlineSize is in bytes (not pixels)
       if (planar_config == PLANARCONFIG_SEPARATE) {
-        //idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
-        idx = strip_row * width + col;
+        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel;
       }
       else {
         // PLANARCONFIG_CONTIG
-        //idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
-        idx = strip_row * (width * samples_per_pixel) + col*samples_per_pixel + band;
+        idx = strip_row * (t.scanlineSize / bytes_per_sample) + col*samples_per_pixel + band;
       }
       if (idx * bytes_per_sample >= stripSize)
         continue; // Prevents over-run if last strip or scanline (within a strip) is not complete

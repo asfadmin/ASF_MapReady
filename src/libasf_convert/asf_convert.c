@@ -400,16 +400,16 @@ static int geocode_airsar(convert_config *cfg, const char *projection_file,
 static int check_airsar(char *outFile, char *suffix)
 {
   char *base = appendToBasename(outFile, suffix);
-  
+
   char *full_img = appendExt(base, ".img");
   char *full_meta = appendExt(base, ".meta");
-  
+
   int ret = fileExists(full_img) && fileExists(full_meta);
-  
+
   free(full_img);
   free(full_meta);
   free(base);
-  
+
   return ret;
 }
 
@@ -527,7 +527,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (p) *p = '\0';
 
       split_dir_and_file(batchItem, batchPreDir, fileName);
-      
+
       char *tmpDir = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
       char *tmpFile = MALLOC(sizeof(char)*(strlen(cfg->general->defaults)+1));
       split_dir_and_file(cfg->general->defaults, tmpDir, tmpFile);
@@ -547,12 +547,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       FREE(tmpDir);
       FREE(tmpFile);
- 
+
       // Create temporary configuration file
       create_and_set_tmp_dir(fileName, cfg->general->default_out_dir, tmp_dir);
       sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
-      
-      
+
+
       FILE *fConfig = FOPEN(tmpCfgName, "w");
       fprintf(fConfig, "asf_convert temporary configuration file\n\n");
       fprintf(fConfig, "[General]\n");
@@ -560,11 +560,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       fprintf(fConfig, "input file = %s\n", batchItem);
       if (strlen(cfg->general->default_out_dir) == 0)
       fprintf(fConfig, "output file = %s%s%s\n",
-	      cfg->general->prefix, fileName, cfg->general->suffix);
+        cfg->general->prefix, fileName, cfg->general->suffix);
       else
-	fprintf(fConfig, "output file = %s%c%s%s%s\n",
-		cfg->general->default_out_dir, DIR_SEPARATOR,
-		cfg->general->prefix, fileName, cfg->general->suffix);
+  fprintf(fConfig, "output file = %s%c%s%s%s\n",
+    cfg->general->default_out_dir, DIR_SEPARATOR,
+    cfg->general->prefix, fileName, cfg->general->suffix);
       fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
       FCLOSE(fConfig);
       FREE(defaults);
@@ -955,7 +955,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           } else if (strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0) {
               radiometry = r_BETA;
           } else {
-	      radiometry = r_AMP;  // Default to something (silence compiler)
+        radiometry = r_AMP;  // Default to something (silence compiler)
           }
       }
 
@@ -986,7 +986,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->import->lat_begin, cfg->import->lat_end,
                               NULL, NULL, NULL, NULL,
                               cfg->general->in_name, outFile),
-                   "ingesting data file (asf_import)\n");
+                              "ingesting data file (asf_import)\n");
 
       // For AirSAR data, let's see what we actually got.
       // Not all products are always present - update settings to
@@ -1022,13 +1022,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (!is_airsar) {
         // Make sure truecolor/falsecolor are only specified for optical data
         meta_parameters *meta = meta_read(outFile);
+        if (meta->optical && cfg->general->terrain_correct) {
+          asfPrintError("Terrain correction cannot be applied to optical images (...and\n"
+              "orthorectification is not yet supported.)\n");
+        }
         if (!meta->optical && (truecolor || falsecolor)) {
           asfPrintError("Cannot select True Color or False Color output "
                         "with non-optical data\n");
         }
         if (cfg->export->band &&
             strlen(cfg->export->band) > 0 &&
-            get_band_number(meta->general->bands, 
+            get_band_number(meta->general->bands,
                             meta->general->band_count, cfg->export->band) < 0)
         {
           asfPrintError("Selected export band (%s) does not exist: \n"
@@ -1311,7 +1315,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 cfg->general->out_name,
                 cfg->general->suffix);
       }
-      
+
       // Pass in command line
       if (is_airsar) {
         // airsar -- geocode only what was asked for
@@ -1351,7 +1355,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting polarimetric P-band...");
           char *in_tmp = appendToBasename(inFile, "_p");
           char *out_tmp = appendToBasename(outFile, "_p");
-          
+
           asfPrintStatus("Exporting P-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
@@ -1364,7 +1368,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting polarimetric L-band...");
           char *in_tmp = appendToBasename(inFile, "_l");
           char *out_tmp = appendToBasename(outFile, "_l");
-          
+
           asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
@@ -1377,7 +1381,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting polarimetric C-band...");
           char *in_tmp = appendToBasename(inFile, "_c");
           char *out_tmp = appendToBasename(outFile, "_c");
-          
+
           asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
@@ -1406,7 +1410,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting C-band...");
           char *in_tmp = appendToBasename(inFile, "_c_vv");
           char *out_tmp = appendToBasename(outFile, "_c_vv");
-          
+
           asfPrintStatus("Exporting C-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
@@ -1414,7 +1418,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting C-band DEM...");
           in_tmp = appendToBasename(inFile, "_c_dem");
           out_tmp = appendToBasename(outFile, "_c_dem");
-          
+
           asfPrintStatus("Exporting C-band DEM: %s -> %s\n", in_tmp, out_tmp);
 
           do_export(cfg, in_tmp, out_tmp);
@@ -1423,7 +1427,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting C-band coherence...");
           in_tmp = appendToBasename(inFile, "_c_coh");
           out_tmp = appendToBasename(outFile, "_c_coh");
-          
+
           asfPrintStatus("Exporting C-band coherence: %s -> %s\n",
                          in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
@@ -1438,7 +1442,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting L-band...");
           char *in_tmp = appendToBasename(inFile, "_l_vv");
           char *out_tmp = appendToBasename(outFile, "_l_vv");
-          
+
           asfPrintStatus("Exporting L-band: %s -> %s\n", in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
           free(in_tmp); free(out_tmp);
@@ -1446,7 +1450,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting L-band DEM...");
           in_tmp = appendToBasename(inFile, "_l_dem");
           out_tmp = appendToBasename(outFile, "_l_dem");
-          
+
           asfPrintStatus("Exporting L-band DEM: %s -> %s\n", in_tmp, out_tmp);
 
           do_export(cfg, in_tmp, out_tmp);
@@ -1455,7 +1459,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           update_status("Exporting L-band coherence...");
           in_tmp = appendToBasename(inFile, "_l_coh");
           out_tmp = appendToBasename(outFile, "_l_coh");
-          
+
           asfPrintStatus("Exporting L-band coherence: %s -> %s\n",
                          in_tmp, out_tmp);
           do_export(cfg, in_tmp, out_tmp);
@@ -1473,7 +1477,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         cfg->export->pauli = pauli;
         cfg->export->sinclair = sinclair;
 
-        // airsar metadata... 
+        // airsar metadata...
         if (cfg->general->import) {
           // export c/l_vv band's metadata as the "official" metadata
           char *in_tmp=NULL;
@@ -1487,7 +1491,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             // ==> however, it will be called "import_c_vv"
             char *dir = get_dirname(inFile);
             in_tmp = MALLOC(sizeof(char)*(strlen(dir)+32));
-            
+
             if (strlen(dir) > 0)
               sprintf(in_tmp, "%simport_c_vv.meta", dir);
             else
@@ -1500,7 +1504,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                 sprintf(in_tmp, "%simport_l_vv.meta", dir);
               else
                 strcpy(in_tmp, "import_l_vv.meta");
-              
+
               if (!fileExists(in_tmp)) {
                 // this is bad - we can't produce an output metadata file!
                 asfPrintWarning("Failed to generate an output metadata file!\n");
@@ -1516,7 +1520,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         }
       }
     }
-    
+
     //---------------------------------------------------------------------
     // At this point the processing of the SAR image is done.
     // We'll now do some of the extra stuff the user may have asked for.
@@ -1602,7 +1606,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // Put the thumbnail in the intermediates directory, if it is
           // being kept, otherwise in the output directory.
           char *basename = get_basename(cfg->general->out_name);
-          
+
           if (cfg->general->intermediates) {
             sprintf(outFile, "%s/%s_thumb.png",
                     cfg->general->tmp_dir, basename);
@@ -1617,7 +1621,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
           check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
                        "resampling data to thumbnail size (resample)\n");
-          
+
           if (strlen(cfg->export->rgb) > 0) {
             char *red, *green, *blue;
             if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
@@ -1714,7 +1718,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               }
             }
           }
-          
+
           meta_free(meta);
           free(basename);
         }
@@ -1833,13 +1837,13 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
     scale = NONE;
   }
-  
+
   // Move the .meta file out of temporary status
   // Don't need to do this if we skipped import, we'd already have .meta
   int i,is_airsar = strncmp_case(cfg->import->format, "AIRSAR", 6)==0;
   if (cfg->general->import && !is_airsar)
     copy_meta(inFile, outFile);
-    
+
   if (strlen(cfg->export->rgb) > 0) {
     // user has requested banding
     char *red,  *green, *blue;
@@ -1872,13 +1876,13 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
       strcpy(cfg->export->rgb, "");
     }
   }
-    
+
   if (strlen(cfg->export->rgb) == 0)
   {
     meta_parameters *meta = meta_read(inFile);
     if (cfg->export->pauli || cfg->export->sinclair) {
       asfPrintStatus("\nExporting %s-decomposition file...\n\n\n",
-                     cfg->export->pauli ? "Pauli" : 
+                     cfg->export->pauli ? "Pauli" :
                      cfg->export->sinclair ? "Sinclair" : "Unknown");
       if (strstr(meta->general->bands, "HH") == NULL ||
           strstr(meta->general->bands, "VV") == NULL ||

@@ -102,8 +102,8 @@ int meta_get_latLon(meta_parameters *meta,
       double slant,doppler,time;
       meta_get_timeSlantDop(meta,yLine,xSample,&time,&slant,&doppler);
       return meta_timeSlantDop2latLon(meta,
-				      time,slant,doppler,elev,
-				      lat,lon);
+              time,slant,doppler,elev,
+              lat,lon);
   } else { /*Bogus image type.*/
     asfPrintError(
       "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
@@ -161,7 +161,7 @@ void meta_get_timeSlantDop(meta_parameters *meta,
         *dop=meta_get_dop(meta,yLine,xSample);
     }
   } else if (meta->sar->image_type=='P' ||
-	         meta->sar->image_type=='R')
+             meta->sar->image_type=='R')
   {
     double lat,lon;
     meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);
@@ -283,9 +283,9 @@ int meta_get_lineSamp(meta_parameters *meta,
     // It should be totally easy to make this work (since pixels
     // correspond to lat/long values) No effort has been made to make
     // this routine work with pseudoprojected images yet though.
-    assert (meta->projection == NULL
-	    || meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-    
+    assert (meta->projection == NULL ||
+            meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
+
     double x0, y0;
     int err;
     double tol = 0.2;
@@ -313,7 +313,7 @@ int meta_get_lineSamp(meta_parameters *meta,
         //printf("Failed to converge at center point... trying UL corner.\n");
         x0 = meta->general->sample_count/8;
         y0 = meta->general->line_count/8;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
             yLine, xSamp, tol);
         if (!err) return 0;
 
@@ -340,8 +340,8 @@ int meta_get_lineSamp(meta_parameters *meta,
 
         //printf("Failed to converge at UR corner... trying (0,0) ??\n");
         x0 = y0 = 0.0;
-        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev, 
-            yLine, xSamp, tol);
+        err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
+                                    yLine, xSamp, tol);
         if (!err) return 0;
 
         tol += 0.2;

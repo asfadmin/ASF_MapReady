@@ -35,6 +35,7 @@ typedef enum {
 } spheroid_type_t;
 
 typedef enum {
+  UNKNOWN_DATUM = 0,
   EGM96_DATUM,   /* Earth Gravity Model 1996 (spheroid: WGS84) */
   ED50_DATUM,    /* European Datum 1950 (International 1924) */
   ETRF89_DATUM,  /* European Terrestrial Reference Frame 1989 (WGS84) */
@@ -44,8 +45,7 @@ typedef enum {
   NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
   WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
   WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
-  HUGHES_DATUM,
-  UNKNOWN_DATUM
+  HUGHES_DATUM
 } datum_type_t;
 
  /* Albers Conical Equal Area. */
@@ -121,7 +121,7 @@ typedef param_t project_parameters_t;
    purposes of the data on the insdie of the ASF tools world, however,
    we consider the correspondence to be as described in this function.
    So be sure to test on import if this correspondence is really
-   true!  
+   true!
 
    This function fails if given a datum it hasn't been taught about
    yet.  */
@@ -179,7 +179,7 @@ FILE *fopen_proj_file(const char *file, const char *mode);
 
    Please see project.t.c for usage examples
 */
-int 
+int
 project_utm(project_parameters_t * pps, double lat, double lon,
             double height, double *x, double *y, double *z,
             datum_type_t datum);
@@ -215,8 +215,8 @@ project_utm(project_parameters_t * pps, double lat, double lon,
 
 int project_utm_arr (project_parameters_t * pps,
                      double *lat, double *lon, double *height,
-                     double **projected_x, double **projected_y, 
-		             double **projected_z, long length,
+                     double **projected_x, double **projected_y,
+                 double **projected_z, long length,
                      datum_type_t datum);
 
 /*--------------------------------------------------------------------------
@@ -334,7 +334,7 @@ int project_ps(project_parameters_t * pps,
 
    Please see project.t.c for usage examples
 */
-int 
+int
 project_ps_arr(project_parameters_t * pps,
                double *lat, double *lon, double *height,
                double **projected_x, double **projected_y,
@@ -361,7 +361,7 @@ project_ps_arr(project_parameters_t * pps,
 
    Please see project.t.c for usage examples
 */
-int 
+int
 project_ps_inv(project_parameters_t * pps, double x, double y, double z,
                double *lat, double *lon, double *height, datum_type_t datum);
 
@@ -400,7 +400,7 @@ int project_ps_arr_inv(project_parameters_t * pps,
   www.remotesensing.org/geotiff/proj_list/lambert_azimuthal_equal_area.html
 ****************************************************************************/
 int project_lamaz(project_parameters_t * pps,
-                  double lat, double lon, double height, 
+                  double lat, double lon, double height,
                   double *x, double *y, double *z, datum_type_t datum);
 int project_lamaz_arr(project_parameters_t *pps,
                       double *lat, double *lon, double *height,
@@ -419,7 +419,7 @@ int project_lamaz_arr_inv(project_parameters_t * pps,
   www.remotesensing.org/geotiff/proj_list/lambert_conic_conformal_2sp.html
 ****************************************************************************/
 int project_lamcc(project_parameters_t * pps,
-                  double lat, double lon, double height, 
+                  double lat, double lon, double height,
                   double *x, double *y, double *z, datum_type_t datum);
 int project_lamcc_arr(project_parameters_t *pps,
                       double *lat, double *lon, double *height,
@@ -476,11 +476,11 @@ int project_albers_arr_inv(project_parameters_t *pps,
 ******************************************************************************/
 
 int project_pseudo (project_parameters_t *pps, double lat, double lon,
-                    double height, double *x, double *y, double *z, 
+                    double height, double *x, double *y, double *z,
                     datum_type_t datum);
 
 int project_pseudo_inv (project_parameters_t *pps, double x, double y,
-                        double z, double *lat, double *lon, double *height, 
+                        double z, double *lat, double *lon, double *height,
                         datum_type_t datum);
 
 int project_pseudo_arr (project_parameters_t *pps, double *lat, double *lon,

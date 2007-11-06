@@ -22,12 +22,17 @@ PROGRAM HISTORY:
 #include "asf_meta.h"
 #include "asf_nan.h"
 #include <ctype.h>
+#include "typlim.h"
 #include "meta_init.h"
 #include "asf_endian.h"
 #include "dateUtil.h"
 #include "get_ceos_names.h"
 #include "libasf_proj.h"
 #include "spheroids.h"
+
+#ifndef MIN
+#  define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+#endif
 
 // ALOS beam modes
 char *alos_beam_mode[132]={
@@ -72,6 +77,11 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
 void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
+int  meta_sar_to_startXY (meta_parameters *meta,
+                          double *startX, double *startY);
+spheroid_type_t axis_to_spheroid (double re_major, double re_minor);
+double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor);
+datum_type_t spheroid_datum (spheroid_type_t spheroid);
 
 // Importing CEOS optical data
 void ceos_init_optical(const char *in_fName,meta_parameters *meta);
@@ -637,6 +647,15 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   meta->sar->azimuth_doppler_coefficients[1] = dssr->alt_dopcen[1];
   meta->sar->azimuth_doppler_coefficients[2] = dssr->alt_dopcen[2];
 
+  // Check to see if we need special startX / startY initialization
+  if (!mpdr && !meta->transform && meta->projection) {
+    if (!meta_is_valid_double(meta->projection->startX) ||
+        !meta_is_valid_double(meta->projection->startY))
+    {
+      meta_sar_to_startXY(meta, &meta->projection->startX, &meta->projection->startY);
+    }
+  }
+
   // Location block
   if (ceos->product != RAW)
     ceos_init_location_block(meta);
@@ -825,7 +844,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
         meta->general->y_pixel_size / swath_vel;
     ceos_init_stVec(in_fName,ceos,meta);
   }
-  if (meta->general->orbit_direction == 'A') 
+  if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
@@ -1120,7 +1139,7 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   strncpy(buf, &dssr->product_id[7], 4);
   buf[3] = 0;
   if (!isdigit((int)buf[0])) {
-    if (ceos->facility=RSI) {
+    if (ceos->facility==RSI) {
       meta->general->frame = asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
     }
     else {
@@ -1565,7 +1584,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
     meta->general->re_minor = ampr->ref_minor_axis;
   }
   meta->general->bit_error_rate = MAGIC_UNSET_DOUBLE;
-  meta->general->missing_lines = MAGIC_UNSET_DOUBLE;
+  meta->general->missing_lines = MAGIC_UNSET_INT;
   meta->general->no_data = MAGIC_UNSET_DOUBLE;
 
   // Optical block
@@ -1678,10 +1697,14 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
     meta->sar->satellite_height = meta->sar->earth_radius + asf_facdr->scalt*1000;
   }
 
-  projection = (meta_projection *)MALLOC(sizeof(meta_projection));
-  meta->projection = projection;
-
+  meta->projection = projection = meta_projection_init();
   projection->type = SCANSAR_PROJECTION;
+  projection->param.atct.rlocal =
+      meta_get_earth_radius(meta, meta->general->line_count/2, 0);
+  st_start = meta_get_stVec(meta,0.0);
+  fixed2gei(&st_start,0.0);/* Remove earth's spin JPL's AT/CT projection requires this */
+  atct_init(projection,st_start);
+
   if (mpdr) { // all ASF ScanSAR have a map projection record
     projection->startY = mpdr->tlceast;
     projection->startX = mpdr->tlcnorth;
@@ -1697,24 +1720,47 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
     // needs atct initialized
     // center lat/lon at mid-point of first line
 
-    projection->startX = 0.0;
-    projection->startY = 0.0;
+    // CSTARS ScanSAR is missing a map projection record, so startX and startY need
+    // to be initialized with meta_sar_to_latLon() after the SAR block is populated
+
+    projection->startX = MAGIC_UNSET_DOUBLE;
+    projection->startY = MAGIC_UNSET_DOUBLE;
     projection->perX = meta->general->x_pixel_size;
     projection->perY = -meta->general->y_pixel_size;
   }
-
-  projection->param.atct.rlocal =
-    meta_get_earth_radius(meta, meta->general->line_count/2, 0);
-  st_start = meta_get_stVec(meta,0.0);
-  fixed2gei(&st_start,0.0);/*Remove earth's spin JPL's AT/CT projection
-           requires this*/
-  atct_init(meta->projection,st_start);
 
   strcpy(projection->units,"meters");
   projection->hem = (dssr->pro_lat>0.0) ? 'N' : 'S';
   projection->re_major = dssr->ellip_maj*1000;
   projection->re_minor = dssr->ellip_min*1000;
   projection->height = 0.0;
+
+  if (strncmp(uc(meta->general->sensor), "ALOS", 4) == 0) {
+    projection->spheroid = GRS1980_SPHEROID; // This is an assumption
+    projection->datum = ITRF97_DATUM; // This is in the spec
+  }
+  else if (strncmp(uc(dssr->ellip_des), "GRS80", 5) == 0) {
+    projection->spheroid = GRS1980_SPHEROID;
+    projection->datum = NAD83_DATUM; // This is an assumption
+  }
+  else if (strncmp(uc(dssr->ellip_des), "GEM06", 5) == 0) {
+    projection->spheroid = GEM6_SPHEROID;
+    projection->datum = WGS84_DATUM;
+  }
+  else {
+    projection->spheroid = axis_to_spheroid(projection->re_major, projection->re_minor); //WGS84_SPHEROID;
+    projection->datum = spheroid_datum(projection->spheroid); //WGS84_DATUM;
+  }
+
+  // Overrides if an mpdr exists and it's a PS-SMM/I projection
+  if (mpdr &&
+      (strncmp(mpdr->mpdesig, "PS-SMM/I", 8) == 0 || strncmp(mpdr->mpdesig, "PS-SSM/I", 8) == 0))
+  {
+    projection->spheroid = HUGHES_SPHEROID;
+    projection->datum    = HUGHES_DATUM;
+    projection->re_major = HUGHES_SEMIMAJOR;
+    projection->re_minor = HUGHES_SEMIMAJOR - (1.0 / HUGHES_INV_FLATTENING) * HUGHES_SEMIMAJOR;
+  }
 }
 
 // ceos_init_proj_x functions
@@ -2580,3 +2626,313 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
     meta->general->y_pixel_size / swath_vel;
 }
 
+// Returns startX and startY in meters given meta->sar and meta->state_vectors
+// => Use this when missing startX, startY and a transform block.
+//
+// FIXME: No height correction
+       //
+       int meta_sar_to_startXY (meta_parameters *meta,
+                                double *startX, double *startY)
+{
+  int ret;
+  double hgt = 0.0;
+  double time, slant, doppler;
+  double lat, lon;
+  double x, y, z;
+  projection_type_t old_projection_type;
+
+  // Zooper datacheck to make sure we have all we need to proceed
+  if (!meta->general) asfPrintError("Missing General block in metadata.\n");
+  if (!meta->sar) asfPrintError("Missing SAR block in metadata.\n");
+  if (!meta->state_vectors) asfPrintError("Missing State Vectors block in metadata.\n");
+  if (!meta_is_valid_int(meta->general->start_line)                     ||
+       !meta_is_valid_int(meta->general->start_sample)                   ||
+       !meta_is_valid_double(meta->sar->slant_range_first_pixel)         ||
+       !meta_is_valid_double(meta->sar->slant_shift)                     ||
+       !meta_is_valid_double(meta->sar->azimuth_time_per_pixel)          ||
+       !meta_is_valid_double(meta->sar->time_shift)                      ||
+       !meta_is_valid_double(meta->sar->deskewed)                        ||
+       !meta_is_valid_double(meta->sar->range_doppler_coefficients[0])   ||
+       !meta_is_valid_double(meta->sar->azimuth_doppler_coefficients[0]) ||
+       (meta->sar->look_direction != 'R' && meta->sar->look_direction != 'L'))
+  {
+    asfPrintError("One or more necessary metadata values are missing.  Need:\n"
+        "SAR block, State Vectors block, start_line, start_sample, slant_range_first_pixel\n"
+        "slant_shift, azimuth_time_per_pixel, time_shift, look_direction, and all doppler\n"
+        "coefficients.\n");
+  }
+
+  slant = meta->sar->slant_range_first_pixel +
+      meta->general->start_sample +
+      meta->sar->slant_shift;
+  time  = meta->general->start_line * meta->sar->azimuth_time_per_pixel +
+      meta->sar->time_shift;
+  if (meta->sar->deskewed) {
+    doppler = 0.0;
+  }
+  else {
+    double sample = meta->general->start_sample;
+    doppler = meta->sar->range_doppler_coefficients[0] +
+          meta->sar->range_doppler_coefficients[1] * sample +
+          meta->sar->range_doppler_coefficients[2] * sample * sample;
+  }
+  if (meta->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+    // Kludge so meta_timeSlantDop2latlon() won't bail...
+    old_projection_type = meta->projection->type;
+    meta->projection->type = SCANSAR_PROJECTION;
+  }
+  ret = meta_timeSlantDop2latLon(meta, time, slant, doppler, hgt, &lat, &lon);
+  if (!ret) {
+    latlon_to_proj(meta->projection, meta->sar->look_direction, lat, lon, hgt, &x, &y, &z);
+    *startX = x;
+    *startY = y;
+  }
+  else {
+    *startX = MAGIC_UNSET_DOUBLE;
+    *startY = MAGIC_UNSET_DOUBLE;
+  }
+  if (old_projection_type == LAT_LONG_PSEUDO_PROJECTION) {
+    // Undo the kludge if necessary
+    meta->projection->type = old_projection_type;
+  }
+
+  return ret;
+}
+
+spheroid_type_t axis_to_spheroid (double re_major, double re_minor)
+{
+  struct fit {
+    spheroid_type_t spheroid;
+    double diff;
+  }
+  diff_array[11];
+
+  // Find the fits (note: no guarantee that the enums will differ by whole numbers, so
+  // step through manually rather than in a for-loop... )
+  diff_array[0].spheroid = BESSEL_SPHEROID;
+  diff_array[0].diff = spheroidDiffFromAxis(diff_array[0].spheroid, re_major, re_minor);
+
+  diff_array[1].spheroid = CLARKE1866_SPHEROID;
+  diff_array[1].diff = spheroidDiffFromAxis(diff_array[1].spheroid, re_major, re_minor);
+
+  diff_array[2].spheroid = CLARKE1880_SPHEROID;
+  diff_array[2].diff = spheroidDiffFromAxis(diff_array[2].spheroid, re_major, re_minor);
+
+  diff_array[3].spheroid = GEM6_SPHEROID;
+  diff_array[3].diff = spheroidDiffFromAxis(diff_array[3].spheroid, re_major, re_minor);
+
+  diff_array[4].spheroid = GEM10C_SPHEROID;
+  diff_array[4].diff = spheroidDiffFromAxis(diff_array[4].spheroid, re_major, re_minor);
+
+  diff_array[5].spheroid = GRS1980_SPHEROID;
+  diff_array[5].diff = spheroidDiffFromAxis(diff_array[5].spheroid, re_major, re_minor);
+
+  diff_array[6].spheroid = INTERNATIONAL1924_SPHEROID;
+  diff_array[6].diff = spheroidDiffFromAxis(diff_array[6].spheroid, re_major, re_minor);
+
+  diff_array[7].spheroid = INTERNATIONAL1967_SPHEROID;
+  diff_array[7].diff = spheroidDiffFromAxis(diff_array[7].spheroid, re_major, re_minor);
+
+  diff_array[8].spheroid = WGS72_SPHEROID;
+  diff_array[8].diff = spheroidDiffFromAxis(diff_array[8].spheroid, re_major, re_minor);
+
+  diff_array[9].spheroid = WGS84_SPHEROID;
+  diff_array[9].diff = spheroidDiffFromAxis(diff_array[9].spheroid, re_major, re_minor);
+
+  diff_array[10].spheroid = HUGHES_SPHEROID;
+  diff_array[10].diff = spheroidDiffFromAxis(diff_array[10].spheroid, re_major, re_minor);
+
+  // NOTE: Counting down (see below) rather than up puts a preference on using a newer or
+  // more common spheroids rather than an older or less common ...look at the list above.
+  // => GRS1980 and GEM10C will have similar results in general, so in this case in particular,
+  // counting down will 'prefer' GRS1980 rather than GEM10C
+  int min = 0;
+  int i;
+  for (i=9; i>=0; i--) {
+    min = (diff_array[i].diff < diff_array[min].diff) ? i : min;
+  }
+
+  return diff_array[min].spheroid;
+}
+
+double spheroidDiffFromAxis (spheroid_type_t spheroid, double n_semi_major, double n_semi_minor)
+{
+  double s_semi_major = 0.0;
+  double s_semi_minor = 0.0;
+
+  asfRequire(n_semi_major >= 0.0 && n_semi_minor >= 0,
+             "Negative semi-major or semi-minor values found\n");
+  asfRequire(n_semi_major <= MAXREAL && n_semi_minor <= MAXREAL,
+             "Semi-major and/or semi-minor axis too large.\n");
+
+  switch (spheroid) {
+    case BESSEL_SPHEROID:
+      s_semi_major = BESSEL_SEMIMAJOR;
+      s_semi_minor = BESSEL_SEMIMAJOR * (1.0 - 1.0/BESSEL_INV_FLATTENING);
+      break;
+    case CLARKE1866_SPHEROID:
+      s_semi_major = CLARKE1866_SEMIMAJOR;
+      s_semi_minor = CLARKE1866_SEMIMAJOR * (1.0 - 1.0/CLARKE1866_INV_FLATTENING);
+      break;
+    case CLARKE1880_SPHEROID:
+      s_semi_major = CLARKE1880_SEMIMAJOR;
+      s_semi_minor = CLARKE1880_SEMIMAJOR * (1.0 - 1.0/CLARKE1880_INV_FLATTENING);
+      break;
+    case GEM6_SPHEROID:
+      s_semi_major = GEM6_SEMIMAJOR;
+      s_semi_minor = GEM6_SEMIMAJOR * (1.0 - 1.0/GEM6_INV_FLATTENING);
+      break;
+    case GEM10C_SPHEROID:
+      s_semi_major = GEM10C_SEMIMAJOR;
+      s_semi_minor = GEM10C_SEMIMAJOR * (1.0 - 1.0/GEM10C_INV_FLATTENING);
+      break;
+    case GRS1980_SPHEROID:
+      s_semi_major = GRS1980_SEMIMAJOR;
+      s_semi_minor = GRS1980_SEMIMAJOR * (1.0 - 1.0/GRS1980_INV_FLATTENING);
+      break;
+    case INTERNATIONAL1924_SPHEROID:
+      s_semi_major = INTERNATIONAL1924_SEMIMAJOR;
+      s_semi_minor = INTERNATIONAL1924_SEMIMAJOR * (1.0 - 1.0/INTERNATIONAL1924_INV_FLATTENING);
+      break;
+    case INTERNATIONAL1967_SPHEROID:
+      s_semi_major = INTERNATIONAL1967_SEMIMAJOR;
+      s_semi_minor = INTERNATIONAL1967_SEMIMAJOR * (1.0 - 1.0/INTERNATIONAL1967_INV_FLATTENING);
+      break;
+    case WGS72_SPHEROID:
+      s_semi_major = WGS72_SEMIMAJOR;
+      s_semi_minor = WGS72_SEMIMAJOR * (1.0 - 1.0/WGS72_INV_FLATTENING);
+      break;
+    case WGS84_SPHEROID:
+      s_semi_major = WGS84_SEMIMAJOR;
+      s_semi_minor = WGS84_SEMIMAJOR * (1.0 - 1.0/WGS84_INV_FLATTENING);
+      break;
+    case HUGHES_SPHEROID:
+      s_semi_major = HUGHES_SEMIMAJOR;
+      s_semi_minor = HUGHES_SEMIMAJOR * (1.0 - 1.0/HUGHES_INV_FLATTENING);
+      break;
+    default:
+      asfPrintError("ERROR: Unsupported spheroid type in spheroid_axis_fit()\n");
+      break;
+  }
+
+  // The following calculates an approximation of the sum-squared-error (SSE)
+  // over a quarter-span of an ellipse defined by the passed-in semi-major/semi-minor
+  // axis versus an ellipse defined by the semi-major/semi-minor axis from one of
+  // our supported types of spheroids.  The square root of this value is returned
+  // as a measure of fit between the two.
+  //
+  // Method:
+  // The calculated x,y for one ellipse is used as a first reference point, then
+  // for that x and y, points are found on the second ellipse by first using the
+  // x and then by using the y.  This defines 2 points on the second ellipse over
+  // a short span.  The average of these 2 points is fairly close to where a
+  // normal (from either ellipse) would subtend the second ellipse.  We define this
+  // as a second reference point.  The distance between these two reference points
+  // is interpreted as the 'error' between the curves and what we square and sum
+  // over the quarter-ellipse.
+  //
+  // This summation is a very good approximation of the true SSE if the two ellipsis
+  // are not too different from each other, and for map projection spheroids,
+  // this is a good assumption to make.
+  //
+  // FIXME: We can probably optimize the math below for better speed, but for now,
+  // the code shows the goings-on in an intuitive manner instead.  I'll profile the
+  // code later... although it won't get called much and speed shouldn't really BE
+  // an issue :)
+         //
+  // Off we go...
+         double SSE = 0.0;
+     double x1, y1, x2, y2, xt1, yt1, xt2, yt2; // 2 ref pts, 2 tmp pts
+  // 100,000 angular steps from 0 to PI/2 radians results in steps of about
+  // 1 km in size along the surface.  The worst-case SSE caculated below
+  // will still be far within max double limits ...but a higher or lower number
+  // will slow or speed these calcs.  I think this number of steps is somewhat
+  // optimal, noting that this function should rarely be called anyway.
+     double dx, dy;
+     double num_steps = 100000.0;
+     double theta;
+     double angular_step_size = (PI/2.0) / num_steps;
+
+  // Use the minimum of the major axis for converting angle to x
+  // since this is the upper limit for x, not because it is the
+  // best answer (least-bias answer would be to use average of
+  // all 4 axii).  A circle approximation should be close 'nuf
+  // for determining x and x-step size.  Angular steps result in
+  // (nearly) equal-distance steps along the ellipse's locus of
+  // points (no polar or equatorial bias.)
+     double h = MIN(s_semi_major, n_semi_major);
+     double pi_over_2 = PI / 2.0;
+
+     for (theta = 0.0; theta <= pi_over_2; theta += angular_step_size) {
+    // Find first reference point, (x1, y1), on first ellipse
+       x1 = h * cos(theta);
+       y1 = sqrt(fabs(s_semi_minor * s_semi_minor *
+           (1.0 - (x1 * x1)/(s_semi_major * s_semi_major))));
+
+    // Find first temporary point, (xt1, yt1), on second ellipse
+       xt1 = x1;
+       yt1 = sqrt(fabs(n_semi_minor * n_semi_minor *
+           (1.0 - (xt1 * xt1)/(n_semi_major * n_semi_major))));
+
+    // Find second temporary point, (xt2, yt2), on second ellipse and
+    // average the two temporary points
+       yt2 = y1;
+       xt2 = sqrt(fabs(n_semi_major * n_semi_major *
+           (1.0 - (yt2 * yt2)/(n_semi_minor * n_semi_minor))));
+
+    // On the chord from (xt1, yt1) to (xt2, yt2), find the
+    // mid-point and 'pretend' it's on the second ellipse and
+    // along the normal from the first to second (or vice versa).
+    // => For small (dxt, dyt), this is a valid approximation.
+       x2 = (xt1 + xt2)/2.0;
+       y2 = (yt1 + yt2)/2.0;
+
+    // Sum the squared Euclidean distance (the error between ellipsis)
+    // into the sum-squared-error (SSE)
+       dx = x2 - x1;
+       dy = y2 - y1;
+       SSE += dx*dx + dy*dy;
+     }
+  // Add in the error at theta = 0 and theta = PI/2
+     dy = s_semi_minor - n_semi_minor;
+     dx = s_semi_major - n_semi_major;
+     SSE +=  dx*dx + dy*dy;
+
+  // Return the square root of the SSE as a measure of fit
+     return sqrt(SSE);
+}
+
+// This function makes some rash assumptions based on
+// typical associations ...and when no 'typical association'
+// exists, it just returns WGS84.  Awful...
+datum_type_t spheroid_datum (spheroid_type_t spheroid)
+{
+  datum_type_t datum = WGS84_DATUM;
+
+  switch(spheroid) {
+    case CLARKE1866_SPHEROID:
+      datum = NAD27_DATUM;
+      break;
+    case GRS1980_SPHEROID:
+      datum = NAD83_DATUM;
+      break;
+    case WGS84_DATUM:
+      datum = WGS84_SPHEROID;
+      break;
+    case HUGHES_DATUM:
+      datum = HUGHES_SPHEROID;
+      break;
+    case BESSEL_SPHEROID:
+    case CLARKE1880_SPHEROID:
+    case GEM6_SPHEROID:
+    case GEM10C_SPHEROID:
+    case INTERNATIONAL1924_SPHEROID:
+    case INTERNATIONAL1967_SPHEROID:
+    case WGS72_SPHEROID:
+    default:
+      datum = WGS84_DATUM;
+      break;
+  }
+
+  return datum;
+}
