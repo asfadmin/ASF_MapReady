@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = proj2proj
-SRCS = proj2proj.c utility.c font.c projfile.c geocode.c execute.c
+SRCS = proj2proj.c utility.c font.c projfile.c geocode.c execute.c new.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)

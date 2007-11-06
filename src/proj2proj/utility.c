@@ -195,26 +195,8 @@ GtkWidget *get_widget_checked2(int source, const char *widget_name)
 static void
 put_text_in_textview_impl(const gchar * txt, GtkWidget * textview_output)
 {
-    GtkTextBuffer * text_buffer;
-    GtkTextIter end;
-    GtkTextTag *tt;
-    GtkTextTagTable *tt_table;
-
+    GtkTextBuffer *text_buffer;
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
-    tt_table = gtk_text_buffer_get_tag_table(text_buffer);    
-    tt = gtk_text_tag_table_lookup(tt_table, "mono");
-
-    if (!tt)
-    {
-#ifdef win32
-	tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
-					"font", "Courier", NULL);
-#else
-	tt = gtk_text_buffer_create_tag(text_buffer, "mono", "font", "Mono",
-                                        "size-points", (double)8.0, NULL);
-#endif
-    }
-
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
     {
         GtkTextIter b, e;
@@ -224,8 +206,10 @@ put_text_in_textview_impl(const gchar * txt, GtkWidget * textview_output)
         gtk_text_buffer_delete(text_buffer, &b, &e);
     }
 
+    GtkTextIter end;
     gtk_text_buffer_get_end_iter(text_buffer, &end);
-    gtk_text_buffer_insert_with_tags(text_buffer, &end, txt, -1, tt, NULL);
+
+    gtk_text_buffer_insert(text_buffer, &end, txt, -1);
 }
 
 void put_file_in_textview(const char *file, const char *widget_name)
@@ -234,9 +218,20 @@ void put_file_in_textview(const char *file, const char *widget_name)
     if (f) {
         // only put the first MAX chars, actually
         int MAX=32768;
-        char buf[MAX];
+        char buf[MAX+1];
         GtkWidget *tv = get_widget_checked(widget_name);
-        fread(buf, sizeof(char), MAX, f);
+
+        int len = fread(buf, sizeof(char), MAX, f);
+        buf[len] = '\0';
+
+        // remove EOF character
+        buf[strlen(buf)-1]='\0';
+
+        // hack: ensure valid ascii
+        int i;
+        for (i=0; i<strlen(buf); ++i)
+          buf[i] &= 0x7F;
+
         put_text_in_textview_impl(buf, tv);
         fclose(f);
     }

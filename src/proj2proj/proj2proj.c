@@ -35,11 +35,21 @@ main(int argc, char **argv)
 
     glade_xml_signal_autoconnect(glade_xml);
 
+    // default to lat/lon -> UTM
+    GtkWidget *w = get_widget_checked("source_projection_option_menu");
+    set_combo_box_item(w, 5);
+
     geocode_options_changed(TRUE);
     geocode_options_changed(FALSE);
+
+    if (argc > 1) {
+        put_file_in_textview(argv[1], "source_textview");
+        forward();
+    }
 
     gtk_main ();
 
     exit (EXIT_SUCCESS);
 }
+
 

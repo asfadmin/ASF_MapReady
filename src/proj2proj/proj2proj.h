@@ -90,6 +90,10 @@ void set_predefined_projections(int is_source, int projection);
 /* geocode.c */
 void geocode_options_changed(int is_source);
 
+/* execute.c */
+void forward();
+void backward();
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
