@@ -736,6 +736,9 @@ on_rb_user_defined_radar_toggled(GtkWidget *widget)
     update_summary();
 }
 
+static int files_is_shown = TRUE;
+static int completed_files_is_shown = FALSE;
+
 static void show_widget(const char *widget_name, int show)
 {
     GtkWidget *w = get_widget_checked(widget_name);
@@ -762,27 +765,39 @@ on_settings_button_collapsed_clicked(GtkWidget *widget)
 SIGNAL_CALLBACK void
 on_files_button_expanded_clicked(GtkWidget *widget)
 {
+    files_is_shown = FALSE;
     show_widget("files_hbox_collapsed", TRUE);
     show_widget("files_hbox_expanded", FALSE);
+    show_widget("hbox_spacer",
+                !completed_files_is_shown && !files_is_shown);
 }
 
 SIGNAL_CALLBACK void
 on_files_button_collapsed_clicked(GtkWidget *widget)
 {
+    files_is_shown = TRUE;
     show_widget("files_hbox_collapsed", FALSE);
     show_widget("files_hbox_expanded", TRUE);
+    show_widget("hbox_spacer",
+                !completed_files_is_shown && !files_is_shown);
 }
 
 SIGNAL_CALLBACK void
 on_completed_files_button_expanded_clicked(GtkWidget *widget)
 {
+    completed_files_is_shown = FALSE;
     show_widget("completed_files_hbox_collapsed", TRUE);
     show_widget("completed_files_hbox_expanded", FALSE);
+    show_widget("hbox_spacer",
+                !completed_files_is_shown && !files_is_shown);
 }
 
 SIGNAL_CALLBACK void
 on_completed_files_button_collapsed_clicked(GtkWidget *widget)
 {
+    completed_files_is_shown = TRUE;
     show_widget("completed_files_hbox_collapsed", FALSE);
     show_widget("completed_files_hbox_expanded", TRUE);
+    show_widget("hbox_spacer",
+                !completed_files_is_shown && !files_is_shown);
 }
