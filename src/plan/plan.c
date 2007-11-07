@@ -394,19 +394,21 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
 void plan(const char *satellite, const char *beam_mode,
           long startdate, long enddate, double min_lat, double max_lat,
           double clat, double clon, Polygon *aoi,
-          meta_parameters *meta, const char *outFile)
+          const char *tle_filename, const char *outFile)
 {
   BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
   if (!bmi)
     asfPrintError("Invalid satellite/beam mode.\n");
 
-  double img_secs = seconds_from_s(meta->general->acquisition_date);
-
   double start_secs = seconds_from_l(startdate);
   double end_secs = seconds_from_l(enddate);
 
-  stateVector start_stVec = propagate(meta->state_vectors->vecs[0].vec,
-                                      img_secs, start_secs);
+  stateVector tle_stVec;
+  double tle_secs;
+
+  read_tle(tle_filename, satellite, &tle_stVec, &tle_secs);
+
+  stateVector start_stVec = propagate(tle_stVec, tle_secs, start_secs);
 
   printf("Target:\n"
          "  UTM:  zone=%d\n"

@@ -4,7 +4,7 @@
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet]\n"\
 "          <satellite> <beam-mode> <start-date> <end-date>\n"\
 "          <lat-min> <lat-max> <lon-min> <lon-max>\n"\
-"          <meta-file> <out file>\n"
+"          <tle-file> <out file>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program is an acquisition planner.\n"
@@ -19,7 +19,7 @@
 "       <lat-max>    :  in degrees\n"\
 "       <lon-min>    :  in degrees\n"\
 "       <lon-max>    :  in degrees\n"\
-"       <meta-file>  :  only uses state vectors\n"
+"       <tle-file>   :  Two-Line Element filename\n"
 
 #define ASF_OUTPUT_STRING \
 "     Output:\n"\
@@ -152,7 +152,7 @@ main (int argc, char *argv[])
   double lat_max = atof(argv[currArg+5]);
   double lon_min = atof(argv[currArg+6]);
   double lon_max = atof(argv[currArg+7]);
-  char *metaFile = argv[currArg+8];
+  char *tleFile = argv[currArg+8];
   char *outFile = argv[currArg+9];
 
   double clat = (lat_max+lat_min)/2.;
@@ -167,11 +167,9 @@ main (int argc, char *argv[])
   latLon2UTM_zone(lat_max, lon_min, 0, zone, &x[3], &y[3]);
   Polygon *box = polygon_new_closed(4, x, y);
 
-  meta_parameters *meta = meta_read(metaFile);
   plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
-       clat, clon, box, meta, outFile);
+       clat, clon, box, tleFile, outFile);
 
-  meta_free(meta);
   polygon_free(box);
 
   asfPrintStatus("Done.\n");

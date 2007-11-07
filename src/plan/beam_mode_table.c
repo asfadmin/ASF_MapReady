@@ -17,7 +17,7 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
     if (!p) {
       // eof, not found!
       asfPrintError(
-        "Satellite: %s, Beam Mode: %s not found in beam_mode.txt!\n",
+        "Satellite: %s, Beam Mode: %s not found in beam_modes.txt!\n",
         satellite, beam_mode);
       break;
     }
