@@ -17,16 +17,18 @@
 
 #ifndef win32
 
+static GtkWidget *save_widget = NULL;
 static GtkWidget *browse_widget = NULL;
+
 static const char *last_tv_name = NULL;
 
-// called when "cancel" clicked on the GtkFileChooser
+// called when "cancel" clicked on the "Load" GtkFileChooser
 SIGNAL_CALLBACK void new_cancel_clicked()
 {
     gtk_widget_hide(browse_widget);
 }
 
-// called when "ok" clicked on the GtkFileChooser
+// called when "ok" clicked on the "Load" GtkFileChooser
 SIGNAL_CALLBACK void new_ok_clicked()
 {
     GSList *files = gtk_file_chooser_get_filenames(
@@ -53,6 +55,105 @@ SIGNAL_CALLBACK void browse_widget_destroy()
 {
     gtk_widget_destroy(browse_widget);
     browse_widget = NULL;
+}
+
+SIGNAL_CALLBACK void save_widget_destroy()
+{
+    gtk_widget_destroy(save_widget);
+    save_widget = NULL;
+}
+
+// called when "cancel" clicked on the "Save" GtkFileChooser
+static SIGNAL_CALLBACK void save_cancel_clicked()
+{
+  gtk_widget_hide(save_widget);
+}
+
+static void save(const char *filename, const char *widget_name)
+{
+    GtkTextIter start, end;
+    GtkWidget *tv = get_widget_checked(widget_name);
+    GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
+    gtk_text_buffer_get_start_iter(tb, &start);
+    gtk_text_buffer_get_end_iter(tb, &end);
+    char *txt = gtk_text_buffer_get_text(tb, &start, &end, FALSE);
+
+    FILE *fout = FOPEN(filename, "w");
+    fprintf(fout, "%s", txt);
+    fclose(fout);
+}
+
+// called when "ok" clicked on the "Save" GtkFileChooser
+static SIGNAL_CALLBACK void save_ok_clicked()
+{
+  GSList *files = gtk_file_chooser_get_filenames(
+    GTK_FILE_CHOOSER(save_widget));
+
+  gtk_widget_hide(save_widget);
+
+  if (files) {
+    save((char *) files->data, last_tv_name);
+    char msg[2304];
+    char *filename = get_filename((char*)files->data);
+    sprintf(msg," Saved: %s", filename);
+    char name[255];
+    strncpy_safe(name, last_tv_name, 7);
+    strcat(name, "_message_label");
+    put_string_to_label(name, msg);
+    free(filename);
+
+    g_slist_free(files);
+  }
+}
+
+// sets up the save file chooser dialog
+static void create_save_file_chooser_dialog()
+{
+  GtkWidget *parent = get_widget_checked("proj2proj_main_window");
+
+  save_widget = gtk_file_chooser_dialog_new(
+      "Save File", GTK_WINDOW(parent),
+      GTK_FILE_CHOOSER_ACTION_SAVE,
+      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  //Cancel button
+      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,    //Save button
+      NULL);
+
+  // we need to extract the buttons, so we can connect them to our
+  // button handlers, above
+  GtkHButtonBox *box = 
+    (GtkHButtonBox*)(((GtkDialog*)save_widget)->action_area);
+  GList *buttons = box->button_box.box.children;
+
+  GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+  GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+  g_signal_connect((gpointer)cancel_btn, "clicked",
+                    G_CALLBACK(save_cancel_clicked), NULL);
+  g_signal_connect((gpointer)ok_btn, "clicked",
+                    G_CALLBACK(save_ok_clicked), NULL);
+  g_signal_connect(save_widget, "destroy",
+                   G_CALLBACK(save_widget_destroy), NULL);
+  g_signal_connect(save_widget, "destroy_event",
+                   G_CALLBACK(save_widget_destroy), NULL);
+  g_signal_connect(save_widget, "delete_event",
+                   G_CALLBACK(save_widget_destroy), NULL);
+
+  // add the filters
+  GtkFileFilter *txt_filt = gtk_file_filter_new();
+  gtk_file_filter_set_name(txt_filt, "Text Files (*.txt)");
+  gtk_file_filter_add_pattern(txt_filt, "*.cfg");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_widget), txt_filt);
+
+  GtkFileFilter *all_filt = gtk_file_filter_new();
+  gtk_file_filter_set_name(all_filt, "All Files (*.*)");
+  gtk_file_filter_add_pattern(all_filt, "*");
+  gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(save_widget), all_filt);
+
+  // we need to make these modal -- if the user opens multiple "save"
+  // dialogs, we'll get confused on the callbacks
+  gtk_window_set_modal(GTK_WINDOW(save_widget), TRUE);
+  gtk_window_set_destroy_with_parent(GTK_WINDOW(save_widget), TRUE);
+  gtk_dialog_set_default_response(GTK_DIALOG(save_widget), GTK_RESPONSE_OK);
 }
 
 // sets up the file chooser dialog
@@ -112,6 +213,70 @@ static void create_file_chooser_dialog()
 
 void save_tv(const char *tv_name)
 {
+#ifdef win32
+  OPENFILENAME of;
+  int retval;
+  char fname[1024];
+
+  fname[0] = '\0';
+
+  memset(&of, 0, sizeof(of));
+
+#ifdef OPENFILENAME_SIZE_VERSION_400
+  of.lStructSize = OPENFILENAME_SIZE_VERSION_400;
+#else
+  of.lStructSize = sizeof(of);
+#endif
+
+  of.hwndOwner = NULL;
+  of.lpstrFilter = "Text Files (*.txt)\0*.txt\0"
+      "All Files\0*\0";
+  of.lpstrCustomFilter = NULL;
+  of.nFilterIndex = 1;
+  of.lpstrFile = fname;
+  of.nMaxFile = sizeof(fname);
+  of.lpstrFileTitle = NULL;
+  of.lpstrInitialDir = ".";
+  of.lpstrTitle = "Save File";
+  of.lpstrDefExt = NULL;
+  of.Flags = OFN_HIDEREADONLY | OFN_EXPLORER;
+
+  retval = GetSaveFileName(&of);
+
+  if (!retval) {
+    if (CommDlgExtendedError()) {
+      message_box("File dialog box error");
+    }
+  }
+
+  char msg[2304];
+  if (strlen(fname) > 0) {
+    save(fname, last_tv_name);
+    char msg[2304];
+    char *filename = get_filename((char*)files->data);
+    sprintf(msg," Saved: %s", filename);
+    char name[255];
+    strncpy_safe(name, widget_name, 7);
+    strcat(name, "_message_label");
+    put_string_to_label(name, msg);
+    free(filename);
+  }
+  else {
+    sprintf(msg, " Zero length filename found!");
+    message_box(msg);
+  }
+
+#else // #ifdef win32
+
+  /* Linux version -- use GtkFileChooser if possible */
+
+  if (!save_widget)
+    create_save_file_chooser_dialog();
+
+  last_tv_name = tv_name;
+  gtk_widget_show(save_widget);
+
+#endif // #ifdef win32
 }
 
 void load_into_tv(const char *tv_name)

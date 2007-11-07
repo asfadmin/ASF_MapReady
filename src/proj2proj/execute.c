@@ -216,9 +216,9 @@ static void execute(const char *from, const char *to)
     get_projection_info(&target_pp, &target_proj, &target_datum, to);
 
     char *s = proj_info_as_string(source_proj, &source_pp, &source_datum);
-    printf("Source==>\n%s\n\n", s);
+    //printf("Source==>\n%s\n\n", s);
     s = proj_info_as_string(target_proj, &target_pp, &target_datum);
-    printf("Target==>\n%s\n\n", s);
+    //printf("Target==>\n%s\n\n", s);
 
     project_t *source_proj_fn, *target_proj_fn;
     unproject_t *source_unproj_fn, *target_unproj_fn;
@@ -292,7 +292,7 @@ static void execute(const char *from, const char *to)
                         target_proj==UNIVERSAL_TRANSVERSE_MERCATOR && 
                         target_pp.utm.zone==0)
                     {
-                        target_pp.utm.zone = utm_zone(lon);
+                        fill_in_utm(lat, lon, &target_pp);
                         put_int_to_entry("target_utm_zone_entry",
                                          target_pp.utm.zone);
                     }
