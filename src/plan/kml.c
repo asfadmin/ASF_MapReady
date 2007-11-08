@@ -121,8 +121,9 @@ void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *pi)
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");
   fprintf(kml_file, "<strong>Time</strong>: %s<br>\n", date_str(t));
-  fprintf(kml_file, "Contains %d frames<br><br>\n", pi->num);
-  
+  fprintf(kml_file, "Contains %d frame%s<br><br>\n", pi->num,
+          pi->num==1?"":"s");
+
   for (i=0; i<pi->num; ++i) {
     fprintf(kml_file, "  <strong>Frame %d</strong><br>\n", i+1);
     OverlapInfo *oi = pi->overlaps[i];

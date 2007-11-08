@@ -167,11 +167,13 @@ main (int argc, char *argv[])
   latLon2UTM_zone(lat_max, lon_min, 0, zone, &x[3], &y[3]);
   Polygon *box = polygon_new_closed(4, x, y);
 
-  plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
-       clat, clon, box, tleFile, outFile);
+  int num_found = plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
+                       clat, clon, 0, box, tleFile, outFile);
 
   polygon_free(box);
 
+  asfPrintStatus("Found %d acquisition%s.\n", num_found, num_found==1?"":"s");
   asfPrintStatus("Done.\n");
+
   return EXIT_SUCCESS;
 }

@@ -3,20 +3,7 @@
 
 #include "plan.h"
 #include "date_util.h"
-
-typedef struct {
-    double pct;
-    Polygon *viewable_region;
-    int utm_zone;
-    stateVector state_vector;
-    double t, clat, clon;
-} OverlapInfo;
-
-typedef struct {
-    int num;
-    double start_time;
-    OverlapInfo **overlaps;
-} PassInfo;
+#include "pass.h"
 
 /* kml.c */
 void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi);

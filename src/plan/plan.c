@@ -12,39 +12,6 @@
 
 #include <stdlib.h>
 
-static PassInfo *pass_info_new()
-{
-  PassInfo *ret = MALLOC(sizeof(PassInfo));
-
-  ret->num = 0;
-  ret->overlaps = NULL;
-  ret->start_time = -1;
-
-  return ret;
-}
-
-static void pass_info_add(PassInfo *pi, OverlapInfo *oi)
-{
-  pi->num += 1;
-  
-  OverlapInfo **overlaps = MALLOC(sizeof(OverlapInfo*)*(pi->num));
-  
-  int i;
-  for (i=0; i<pi->num-1; ++i)
-    overlaps[i] = pi->overlaps[i];
-  overlaps[pi->num-1] = oi;
-  pi->overlaps = overlaps;
-}
-
-static void pass_info_free(PassInfo *pi)
-{
-  int i;
-  for (i=0; i<pi->num-1; ++i)
-    free(pi->overlaps[i]);
-  free(pi->overlaps);
-  free(pi);
-}
-
 static int iabs(int a)
 {
   return a > 0 ? a : -a;
@@ -187,9 +154,9 @@ static int print_polys(Polygon *p1, Polygon *p2)
   return 1;
 }
 
-static int
+static OverlapInfo *
 overlap(double t, stateVector *st, BeamModeInfo *bmi,
-        double clat, double clon, Polygon *aoi, OverlapInfo **overlap_info)
+        double clat, double clon, Polygon *aoi)
 {
   Polygon *viewable_region = get_viewable_region(st, bmi, clat, clon);
 
@@ -217,26 +184,15 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
       }
     }
 
-    OverlapInfo *oi = MALLOC(sizeof(OverlapInfo));
-    oi->pct = ((double)pct)/((double)n);
-    oi->viewable_region = viewable_region;
-    oi->utm_zone = utm_zone(clon);
-    oi->state_vector = *st;
-    oi->clat = clat;
-    oi->clon = clon;
-    oi->t = t;
-    *overlap_info = oi;
-
-    //print_polys(viewable_region, aoi);
-    return TRUE;
+    return overlap_new(pct, n, viewable_region, clat, clon, st, t);
   }
   else {
     // no overlap
-    return FALSE;
+    return NULL;
   }
 }
 
-static void
+static int
 check_crossing(FILE *ofp, double start_time, double end_time,
                double state_vector_time, stateVector *st,
                BeamModeInfo *bmi, double clat, double clon, Polygon *aoi)
@@ -244,8 +200,6 @@ check_crossing(FILE *ofp, double start_time, double end_time,
     double t1 = start_time;
     PassInfo *pi = pass_info_new();
     double delta = bmi->image_time;
-
-    OverlapInfo *overlap_info;
     int is_overlap;
 
     do {
@@ -263,22 +217,28 @@ check_crossing(FILE *ofp, double start_time, double end_time,
       //         llat, llon);
       //}
 
-      is_overlap = overlap(t, st, bmi, clat, clon, aoi, &overlap_info);
-      if (is_overlap) {
+      OverlapInfo *oi = overlap(t, st, bmi, clat, clon, aoi);
+      if (oi) {
         if (pi->start_time == -1)
           pi->start_time = t;
-        pass_info_add(pi, overlap_info);
+
+        pass_info_add(t, pi, oi);
       }
 
       *st = propagate(*st, t, t+delta);
       t1 += delta;
+      
+      // we'll continue as long as we're finding overlap
+      is_overlap = oi != NULL;
     }
     while (t1 < end_time || is_overlap);
     
-    if (pi->num > 0)
+    int found = pi->num > 0;
+    if (found)
       write_pass_to_kml(ofp, clat, clon, pi);
 
     pass_info_free(pi);
+    return found;
 }
 
 static void
@@ -287,7 +247,7 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
                double min_lat, double max_lat,
                double *time1_in, double *time1_out,
                double *time2_in, double *time2_out,
-               double *full_cycle_time)
+               double *full_cycle_time, int *first_is_ascending)
 {
   *time1_in = *time1_out = -1;
   *time2_in = *time2_out = -1;
@@ -362,6 +322,7 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
 
         if (in_target_lat_range) {
           if (ncrossings_target == 0) {
+            *first_is_ascending = lat > lat_prev;
             *time1_in = curr-start_secs;
           } else if (ncrossings_target == 1) {
             *time2_in = curr-start_secs;
@@ -391,10 +352,10 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
   }
 }
 
-void plan(const char *satellite, const char *beam_mode,
-          long startdate, long enddate, double min_lat, double max_lat,
-          double clat, double clon, Polygon *aoi,
-          const char *tle_filename, const char *outFile)
+int plan(const char *satellite, const char *beam_mode,
+         long startdate, long enddate, double min_lat, double max_lat,
+         double clat, double clon, int pass_type,  Polygon *aoi,
+         const char *tle_filename, const char *outFile)
 {
   BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
   if (!bmi)
@@ -431,12 +392,16 @@ void plan(const char *satellite, const char *beam_mode,
   printf("Starting latitude: %f\n", start_lat);
 
   double time1_in, time1_out, time2_in, time2_out, full_cycle_time;
+  int first_is_ascending=-1;
 
   // Look for the times when we cross the latitude range of the area of
   // interest.  Also, figure out the time required for a full revolution.
   find_crossings(bmi, start_secs, &start_stVec, start_lat, min_lat, max_lat,
                  &time1_in, &time1_out, &time2_in, &time2_out,
-                 &full_cycle_time);
+                 &full_cycle_time, &first_is_ascending);
+  if (first_is_ascending == -1)
+    asfPrintError("Internal Error: failed to detect which pass is "
+                  "ascending, and\nwhich is descending!\n");
 
   // move the start times back a little, as a safety margin
   time1_in -= 4;
@@ -451,20 +416,44 @@ void plan(const char *satellite, const char *beam_mode,
   double curr = start_secs;
   stateVector st = start_stVec;
 
+  int check_first_crossing, check_second_crossing;
+  if (pass_type == ASCENDING_OR_DESCENDING) {
+    check_first_crossing = check_second_crossing = TRUE;
+  } else if (pass_type == ASCENDING_ONLY) {
+    check_first_crossing = first_is_ascending;
+    check_second_crossing = !first_is_ascending;
+  } else if (pass_type == DESCENDING_ONLY) {
+    check_first_crossing = !first_is_ascending;
+    check_second_crossing = first_is_ascending;
+  } else {
+    asfPrintError("Invalid pass_type: %d\n", pass_type);
+  }
+
   // Iteration #2: Looking for overlaps.
 
   // Use time info gathered above to propagate straight to the areas of
   // interest.  There are two crossings to check, since we cross the latitude
   // range twice on each circuit.
+  int num_found = 0;
   while (curr < end_secs) {
 
-    double t = curr + time1_in;
-    stateVector st1 = propagate(st, curr, t);
-    check_crossing(ofp, time1_in, time1_out, t, &st1, bmi, clat, clon, aoi);
+    if (check_first_crossing) {
+      double t = curr + time1_in;
+      stateVector st1 = propagate(st, curr, t);
 
-    t = curr + time2_in;
-    stateVector st2 = propagate(st, curr, t);
-    check_crossing(ofp, time2_in, time2_out, t, &st2, bmi, clat, clon, aoi);
+      num_found +=
+        check_crossing(ofp, time1_in, time1_out, t, &st1, bmi,
+                       clat, clon, aoi);
+    }
+
+    if (check_second_crossing) {
+      double t = curr + time2_in;
+      stateVector st2 = propagate(st, curr, t);
+
+      num_found +=
+        check_crossing(ofp, time2_in, time2_out, t, &st2, bmi,
+                       clat, clon, aoi);
+    }
 
     st = propagate(st, curr, curr + full_cycle_time);
     curr += full_cycle_time;
@@ -472,4 +461,6 @@ void plan(const char *satellite, const char *beam_mode,
 
   kml_footer(ofp);
   fclose(ofp);
+
+  return num_found;
 }
