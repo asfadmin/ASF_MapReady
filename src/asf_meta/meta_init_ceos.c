@@ -806,10 +806,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 {
   struct dataset_sum_rec *dssr=NULL;
   struct VMPDREC *mpdr=NULL;
-  ymd_date date;
-  hms_time time;
   char buf[50];
-  double firstTime, centerTime;
   char **dataName=NULL, **metaName=NULL;
   int nBands, trailer;
 
@@ -1026,25 +1023,54 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     }
   }
   else {
+    double min_lat;
+    double max_lat;
+    double min_lon;
+    double max_lon;
     meta_get_corner_coords(meta);
     // If the scene center lat/long is not valid (usually because of
     // 0's in the dssr) then calculate it from the center line/sample
-    double min_lat;
-    double max_lat;
-    double min_long;
-    double max_long;
+    min_lat = meta->location->lat_start_near_range;
+    if (min_lat > meta->location->lat_start_far_range)
+      min_lat = meta->location->lat_start_far_range;
+    if (min_lat > meta->location->lat_end_near_range)
+      min_lat = meta->location->lat_end_near_range;
+    if (min_lat > meta->location->lat_end_far_range)
+      min_lat = meta->location->lat_end_far_range;
+    max_lat = meta->location->lat_start_near_range;
+    if (max_lat < meta->location->lat_start_far_range)
+      max_lat = meta->location->lat_start_far_range;
+    if (max_lat < meta->location->lat_end_near_range)
+      max_lat = meta->location->lat_end_near_range;
+    if (max_lat < meta->location->lat_end_far_range)
+      max_lat = meta->location->lat_end_far_range;
+    min_lon = meta->location->lon_start_near_range;
+    if (min_lon > meta->location->lon_start_far_range)
+      min_lon = meta->location->lon_start_far_range;
+    if (min_lon > meta->location->lon_end_near_range)
+      min_lon = meta->location->lon_end_near_range;
+    if (min_lon > meta->location->lon_end_far_range)
+      min_lon = meta->location->lon_end_far_range;
+    max_lon = meta->location->lon_start_near_range;
+    if (max_lon < meta->location->lon_start_far_range)
+      max_lon = meta->location->lon_start_far_range;
+    if (max_lon < meta->location->lon_end_near_range)
+      max_lon = meta->location->lon_end_near_range;
+    if (max_lon < meta->location->lon_end_far_range)
+      max_lon = meta->location->lon_end_far_range;
     if (meta->general->center_latitude < min_lat   ||
         meta->general->center_latitude > max_lat   ||
-        meta->general->center_longitude < min_long ||
-        meta->general->center_longitude > max_long)
+        meta->general->center_longitude < min_lon ||
+        meta->general->center_longitude > max_lon)
     {
       asfPrintStatus("\nApproximate scene center latitude and longitude\n"
           "(%0.2f, %0.2f) appear outside the bounds of the image\n"
           "...Recalculating from center line and sample instead.\n\n",
           meta->general->center_latitude, meta->general->center_longitude);
-      meta_get_latLon(meta,
-                      meta->general->line_count/2, meta->general->sample_count/2, 0,
-                      &(meta->general->center_latitude), &(meta->general->center_longitude));
+      meta_get_latLon(meta, meta->general->line_count/2,
+                      meta->general->sample_count/2, 0,
+                      &(meta->general->center_latitude),
+                      &(meta->general->center_longitude));
     }
   }
 
@@ -1052,6 +1078,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   FREE(mpdr);
   free_ceos_names(dataName, metaName);
 }
+
 
 // Only deals with Radarsat data
 void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
@@ -2069,8 +2096,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
     else if (0==strncmp(satStr,"S",1))
       ceos->satellite = SIR_C;
     else {
-      asfReport(level,"get_ceos_description Warning! "
-    "Unknown satellite '%s'!\n", satStr);
+      asfReport(level,"get_ceos_description Warning! Unknown satellite '%s'!\n",
+                satStr);
       ceos->satellite = unknownSatellite;
     }
 
@@ -2630,31 +2657,29 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
 // => Use this when missing startX, startY and a transform block.
 //
 // FIXME: No height correction
-       //
-       int meta_sar_to_startXY (meta_parameters *meta,
-                                double *startX, double *startY)
+int meta_sar_to_startXY (meta_parameters *meta, double *startX, double *startY)
 {
   int ret;
   double hgt = 0.0;
   double time, slant, doppler;
   double lat, lon;
   double x, y, z;
-  projection_type_t old_projection_type;
+  projection_type_t old_projection_type = UNKNOWN_PROJECTION;
 
   // Zooper datacheck to make sure we have all we need to proceed
   if (!meta->general) asfPrintError("Missing General block in metadata.\n");
   if (!meta->sar) asfPrintError("Missing SAR block in metadata.\n");
   if (!meta->state_vectors) asfPrintError("Missing State Vectors block in metadata.\n");
   if (!meta_is_valid_int(meta->general->start_line)                     ||
-       !meta_is_valid_int(meta->general->start_sample)                   ||
-       !meta_is_valid_double(meta->sar->slant_range_first_pixel)         ||
-       !meta_is_valid_double(meta->sar->slant_shift)                     ||
-       !meta_is_valid_double(meta->sar->azimuth_time_per_pixel)          ||
-       !meta_is_valid_double(meta->sar->time_shift)                      ||
-       !meta_is_valid_double(meta->sar->deskewed)                        ||
-       !meta_is_valid_double(meta->sar->range_doppler_coefficients[0])   ||
-       !meta_is_valid_double(meta->sar->azimuth_doppler_coefficients[0]) ||
-       (meta->sar->look_direction != 'R' && meta->sar->look_direction != 'L'))
+      !meta_is_valid_int(meta->general->start_sample)                   ||
+      !meta_is_valid_double(meta->sar->slant_range_first_pixel)         ||
+      !meta_is_valid_double(meta->sar->slant_shift)                     ||
+      !meta_is_valid_double(meta->sar->azimuth_time_per_pixel)          ||
+      !meta_is_valid_double(meta->sar->time_shift)                      ||
+      !meta_is_valid_double(meta->sar->deskewed)                        ||
+      !meta_is_valid_double(meta->sar->range_doppler_coefficients[0])   ||
+      !meta_is_valid_double(meta->sar->azimuth_doppler_coefficients[0]) ||
+      (meta->sar->look_direction != 'R' && meta->sar->look_direction != 'L'))
   {
     asfPrintError("One or more necessary metadata values are missing.  Need:\n"
         "SAR block, State Vectors block, start_line, start_sample, slant_range_first_pixel\n"
@@ -2916,12 +2941,10 @@ datum_type_t spheroid_datum (spheroid_type_t spheroid)
     case GRS1980_SPHEROID:
       datum = NAD83_DATUM;
       break;
-    case WGS84_DATUM:
-      datum = WGS84_SPHEROID;
+    case HUGHES_SPHEROID:
+      datum = HUGHES_DATUM;
       break;
-    case HUGHES_DATUM:
-      datum = HUGHES_SPHEROID;
-      break;
+    case WGS84_SPHEROID:
     case BESSEL_SPHEROID:
     case CLARKE1880_SPHEROID:
     case GEM6_SPHEROID:
