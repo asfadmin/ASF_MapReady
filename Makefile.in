@@ -35,6 +35,7 @@ MODULES = \
 	src/asf_convert \
 	src/refine_geolocation \
 	src/shift_geolocation \
+	src/trim \
 	src/sr2gr \
 	src/gr2sr \
 	src/to_sr \
