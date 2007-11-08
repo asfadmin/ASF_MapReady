@@ -274,7 +274,7 @@ static void execute(const char *from, const char *to)
                     append_text(target_tv, buf);
                 }
                 else {
-                    if (*p3==',') ++p3;
+                    if (*p3==',' || *p3==';') ++p3;
                     if (*p3!='\0')
                         z = strtod(p3, &p4);
 
@@ -301,7 +301,11 @@ static void execute(const char *from, const char *to)
                                    target_datum);
                     
                     //printf("Projected: x=%f, y=%f, z=%f\n", x, y, z);
-                    snprintf(buf, 256, "%f %f %f\n", x, y, z);
+                    // use different accuracies for lat/lon vs. projected
+                    if (target_proj==LAT_LONG_PSEUDO_PROJECTION)
+                      snprintf(buf, 256, "%.4f %.4f %.2f\n", x, y, z);
+                    else
+                      snprintf(buf, 256, "%.2f %.2f %.2f\n", x, y, z);
                     append_text(target_tv, buf);
                 }
             }
