@@ -593,7 +593,7 @@ struct VFDRECV {
 /* ESA Facility Related Data Record. */
 /*************************************/
 struct ESA_FACDR {
-   char seq_num[65]; /* name of facility data record */
+   char rec_name[65]; /* name of facility data record */
    char qc_release[7]; /* date of last release of QC software */
    char spare1[3];   /* spare */
    char cal_update[7]; /* date of last calibration update */
@@ -602,6 +602,7 @@ struct ESA_FACDR {
    short samp_flag; /* sampling window start time change flag (0 = SWST constant) */
    short cal_flag; /* cal. system & receiver gain change flag (0 = Cal/Rx gain constant) */
    short chirp_flag; /* chirp replica quality flag (0 = Replica XCF in limits) */
+   short data_flag; /* Input data statistics flag (0 = Raw data mean & sd in limits) */
    short dop_conf_flag; /*Doppler centroid confidence measure flag (0 = in limits) */
    short dop_val; /* Doppler centroid value (0 = Dopp-centroid less than PRF_2 */
    short dop_amb_conf_flag; /* Doppler ambiguity confidence measure flag (0 = in limits) */
@@ -714,8 +715,11 @@ struct ESA_FACDR {
    double look_bw; /* 3-dB look bandwidth [Hz] */
    double dop_bw; /* 3-dB processed Doppler bandwidth [Hz] */
    short range_spread; /* range spreading loss compensation flag (0 = no compensation) */
-   char more_flags[17]; /* some more flags */
-   short max_look; /* maximum value of look scalar gain flag (1 = automatically calculated) */
+   short datation_flag; /* datation flag (1 = azimuth timing improved based on timing info of range line specified in fmt_num field) */
+   int max_error_rng_time; /* Maximum error of range line timing */
+   int fmt_num; /* Format number of range line userd to synchronize the azimuth timing */
+   short look_gain_flag; /* Automatic look scalar gain flag */
+   short max_look; /* maximum value of look scalar gain (1 = automatically calculated) */
    short rep_norm_flag; /* replica normalization method flag */
    double gr2sr_poly[4]; /* 4 coefficients of the ground range to slant range conversion polynominal */
    double ant_elev_poly[5]; /* 5 coefficients of the antenna elevation pattern polynomial */

@@ -139,6 +139,17 @@ char *get_record_as_string(char *fileName, int reqrec)
       dssr = NULL;
   }
 
+  if ( reqrec == 200 ) {
+    char facility[16];
+    struct dataset_sum_rec dssr;
+    get_dssr (fileName, &dssr);
+    strcpy (facility, trim_spaces(dssr.fac_id));
+    if (0==strncmp(facility, "ASF", 3))
+      reqrec = 210;
+    if (0==strncmp(facility, "ES", 2)) /*ESA*/
+      reqrec = 220;
+  }
+
   switch (reqrec) 
     {
     case (10):
@@ -313,6 +324,8 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(vfdr);
       break;
     case (200):
+      asfPrintWarning("Unrecogized facility data record...\n"
+                      "Assuming ASF format.\n");
     case (210): 
       facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
       if (leaderNameExists) {

@@ -118,9 +118,9 @@ void long2asc(int *in,unsigned char *outBuf,int len,codingDir dir)
       strncpy(tmp,(char *)outBuf,len);
       tmp[len]=0;/* add terminating null.*/
       if (0==strncmp(tmp,cmp,len))
-  *in=0;
+        *in=0;
       else
-  sscanf(tmp,"%d",in);
+        sscanf(tmp,"%d",in);
   }
 }
 
@@ -889,13 +889,13 @@ void Code_ASF_FACDR(unsigned char *bf,struct VFDRECV *q,int era,codingDir dir)
     fltV(estnoifl,off,17); fltV(radiores,off,17); intV(nsatpnts,off,9);
     strV(inspecf,off,4);
     if (era) {
-  fltV(repl_agc,off,17); fltV(temp_rx_lna,off,17);
-  fltV(temp_rx_sub,off,17); fltV(temp_rx_prot,off,17);
-  fltV(temp_cal_sys,off,17); fltV(rx_agc,off,17);
-  fltV(pre_cal1_pow,off,17); fltV(pre_cal2_pow,off,17);
-  fltV(post_cal1_pow,off,17); fltV(post_cal2_pow,off,17);
-  fltV(repl_pow,off,17); fltV(ssar_roll_ang,off,17);
-  strV(comment,off,100);
+      fltV(repl_agc,off,17); fltV(temp_rx_lna,off,17);
+      fltV(temp_rx_sub,off,17); fltV(temp_rx_prot,off,17);
+      fltV(temp_cal_sys,off,17); fltV(rx_agc,off,17);
+      fltV(pre_cal1_pow,off,17); fltV(pre_cal2_pow,off,17);
+      fltV(post_cal1_pow,off,17); fltV(post_cal2_pow,off,17);
+      fltV(repl_pow,off,17); fltV(ssar_roll_ang,off,17);
+      strV(comment,off,100);
     }
     else strV(comment,off,100);
 }
@@ -904,56 +904,57 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
 {
     int off=12, i;
 
-    strV(seq_num,off,64);
+    strV(rec_name,off,64);
     strV(qc_release,off,6); strV(spare1,off,2); strV(cal_update,off,6);
     shrtV(qa_flag,off,4); shrtV(prf_flag,off,4); shrtV(samp_flag,off,4);
-    shrtV(cal_flag,off,4); shrtV(chirp_flag,off,4); shrtV(dop_conf_flag,off,4);
+    shrtV(cal_flag,off,4); shrtV(chirp_flag,off,4); shrtV(data_flag,off,4);
+    shrtV(dop_conf_flag,off,4);
     shrtV(dop_val,off,4); shrtV(dop_amb_conf_flag,off,4); shrtV(out_flag,off,4);
     shrtV(range_flag,off,4);
     shrtV(n_prf_changes,off,4); shrtV(n_samp_changes,off,4); shrtV(n_gain_changes,off,4);
     shrtV(n_miss_lines,off,4); shrtV(n_rec_gain_changes,off,4);
-    fltV(width_ccf,off,17); fltV(lobe_ccf,off,17); fltV(islr,off,17);
-    fltV(dop_cent_conf,off,17); fltV(dop_amb_conf,off,17);
-    fltV(main_i,off,17); fltV(main_q,off,17);
-    fltV(stddev_i,off,17); fltV(stddev_q,off,17);
-    fltV(cal_gain,off,17); fltV(rec_gain,off,17);
-    fltV(dop_amb,off,17); strV(spare2,off,16);
-    fltV(bias_i,off,17); fltV(bias_q,off,17);
-    fltV(gain_i,off,17); fltV(gain_q,off,17);
-    fltV(non_ortho,off,17); strV(spare3,off,16);
-    fltV(noise_pow,off,17); strV(pulse_delay,off,17);
+    fltV(width_ccf,off,16); fltV(lobe_ccf,off,16); fltV(islr,off,16);
+    fltV(dop_cent_conf,off,16); fltV(dop_amb_conf,off,16);
+    fltV(main_i,off,16); fltV(main_q,off,16);
+    fltV(stddev_i,off,16); fltV(stddev_q,off,16);
+    fltV(cal_gain,off,16); fltV(rec_gain,off,16);
+    fltV(dop_amb,off,16); strV(spare2,off,16);
+    fltV(bias_i,off,16); fltV(bias_q,off,16);
+    fltV(gain_i,off,16); fltV(gain_q,off,16);
+    fltV(non_ortho,off,16); strV(spare3,off,16);
+    fltV(noise_pow,off,16); strV(pulse_delay,off,16);
     shrtV(n_cal_pulses,off,4); shrtV(n_noise_pulses,off,4); shrtV(n_rep_pulses,off,4);
-    fltV(f_samp_rep,off,17); fltV(cal_pulse_pow,off,4); fltV(noise_pulse_pow,off,17);
-    fltV(range_comp,off,17); fltV(rep_pulse_pow,off,4);
-    fltV(inc_first_pix,off,17); fltV(inc_center_pix,off,4); fltV(inc_last_pix,off,14);
-    fltV(sl_range_ref,off,17); strV(spare4,off,12);
+    fltV(f_samp_rep,off,16); fltV(cal_pulse_pow,off,16); fltV(noise_pulse_pow,off,16);
+    fltV(range_comp,off,16); fltV(rep_pulse_pow,off,16);
+    fltV(inc_first_pix,off,16); fltV(inc_center_pix,off,16); fltV(inc_last_pix,off,16);
+    fltV(sl_range_ref,off,16); strV(spare4,off,12);
     shrtV(ant_pattern_flag,off,4);
-    fltV(abs_cal_const,off,17); fltV(up_cal_const,off,17); fltV(low_cal_const,off,17);
-    fltV(sigma_0,off,17);
+    fltV(abs_cal_const,off,16); fltV(up_cal_const,off,16); fltV(low_cal_const,off,16);
+    fltV(sigma_0,off,16);
     strV(k_gen,off,6); strV(k_ver,off,4);
     shrtV(dup_lines,off,4);
-    fltV(ber,off,17);
+    fltV(ber,off,16);
     strV(spare5,off,12);
-    fltV(img_mean,off,17); fltV(img_std_dev,off,17); fltV(img_max,off,17);
+    fltV(img_mean,off,16); fltV(img_std_dev,off,16); fltV(img_max,off,16);
     strV(t_first_line,off,24); strV(t_asc_node,off,24);
-    fltV(x_asc_pos,off,23); fltV(y_asc_pos,off,23); fltV(z_asc_pos,off,23);
-    fltV(x_asc_vel,off,23); fltV(y_asc_vel,off,23); fltV(z_asc_vel,off,23);
+    fltV(x_asc_pos,off,22); fltV(y_asc_pos,off,22); fltV(z_asc_pos,off,22);
+    fltV(x_asc_vel,off,22); fltV(y_asc_vel,off,22); fltV(z_asc_vel,off,22);
     shrtV(out_bits,off,4);
-    fltV(gain1,off,17); fltV(gain2,off,17); fltV(gain3,off,17);
+    fltV(gain1,off,16); fltV(gain2,off,16); fltV(gain3,off,16);
     shrtV(peak_loc_first,off,4);
-    fltV(width_ccf2,off,17); fltV(f_lobe,off,17); fltV(islr_ccf,off,17);
+    fltV(width_ccf2,off,16); fltV(f_lobe,off,16); fltV(islr_ccf,off,16);
     shrtV(peak_loc_last,off,4);
     shrtV(roll_flag,off,4); shrtV(raw_data_flag,off,4); shrtV(look_flag,off,4);
     shrtV(dop_amb_flag,off,4); shrtV(az_base_flag,off,4);
     shrtV(samp_per_line,off,4); shrtV(lines_skip,off,4);
     strV(t_in_stvec,off,24);
-    fltV(x_in_pos,off,23); fltV(y_in_pos,off,23); fltV(z_in_pos,off,23);
-    fltV(x_in_vel,off,23); fltV(y_in_vel,off,23); fltV(z_in_vel,off,23);
+    fltV(x_in_pos,off,22); fltV(y_in_pos,off,22); fltV(z_in_pos,off,22);
+    fltV(x_in_vel,off,22); fltV(y_in_vel,off,22); fltV(z_in_vel,off,22);
     shrtV(in_stvec_flag,off,4);
-    fltV(range_filt,off,17); fltV(az_filt,off,17); shrtV(update_filt,off,4);
-    for (i=0; i<8; i++) fltV(look_gains[i],off,17);
+    fltV(range_filt,off,16); fltV(az_filt,off,16); shrtV(update_filt,off,4);
+    for (i=0; i<8; i++) fltV(look_gains[i],off,16);
     shrtV(samp_win_bias,off,4);
-    fltV(dop_cube_coef,off,23);
+    fltV(dop_cube_coef,off,22);
     shrtV(prf_first_line,off,4); shrtV(prf_last_line,off,4);
     shrtV(win_first_line,off,4); shrtV(win_last_line,off,4);
     shrtV(cal_gain_last_line,off,4); shrtV(rec_gain_last_line,off,4);
@@ -961,20 +962,25 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     shrtV(fft_ratio,off,4);
     shrtV(n_az_blocks,off,4); intV(n_in_lines,off,8);
     shrtV(ini_dop_amb,off,4);
-    for (i=0; i<3; i++) fltV(chirp_quality[i],off,17);
-    for (i=0; i<5; i++) fltV(in_data_stats[i],off,17);
-    for (i=0; i<2; i++) fltV(dop_amb_thres[i],off,17);
-    for (i=0; i<2; i++) fltV(out_data_stats[i],off,17);
-    strV(t_sat_first_line,off,17);
+    for (i=0; i<3; i++) fltV(chirp_quality[i],off,16);
+    for (i=0; i<4; i++) fltV(in_data_stats[i],off,16);
+    for (i=0; i<2; i++) fltV(dop_amb_thres[i],off,16);
+    for (i=0; i<2; i++) fltV(out_data_stats[i],off,16);
+    strV(t_sat_first_line,off,16);
     shrtV(n_val_pix,off,4); shrtV(n_range_samp,off,4);
-    fltV(gain_low,off,17); fltV(gain_up,off,17);
-    fltV(quad_low,off,17); fltV(quad_up,off,17);
-    fltV(look_bw,off,17); fltV(dop_bw,off,17);
-    shrtV(range_spread,off,4); strV(more_flags,off,17);
-    shrtV(max_look,off,14); shrtV(rep_norm_flag,off,4);
-    for (i=0; i<4; i++) fltV(gr2sr_poly[i],off,21);
-    for (i=0; i<5; i++) fltV(ant_elev_poly[i],off,21);
-    fltV(range_time_poly,off,17);
+    fltV(gain_low,off,16); fltV(gain_up,off,16);
+    fltV(quad_low,off,16); fltV(quad_up,off,16);
+    fltV(look_bw,off,16); fltV(dop_bw,off,16);
+    shrtV(range_spread,off,4);
+    shrtV(datation_flag,off,1);
+    intV(max_error_rng_time,off,7);
+    intV(fmt_num,off,7);
+    shrtV(look_gain_flag,off,1);
+    shrtV(max_look,off,14);
+    shrtV(rep_norm_flag,off,4);
+    for (i=0; i<4; i++) fltV(gr2sr_poly[i],off,20);
+    for (i=0; i<5; i++) fltV(ant_elev_poly[i],off,20);
+    fltV(range_time_poly,off,16);
     strV(spare6,off,10238);
 }
 
