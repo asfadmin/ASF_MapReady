@@ -5,6 +5,56 @@
 #include "asf_nan.h"
 #include "asf_meta.h"
 
+static int quiet=FALSE;
+
+static void clear_messages()
+{
+    GtkWidget *tv = get_widget_checked("messages_textview");
+    GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
+
+    if (gtk_text_buffer_get_char_count(tb) > 0)
+    {
+        GtkTextIter b, e;
+        gtk_text_buffer_get_start_iter(tb, &b);
+        gtk_text_buffer_get_end_iter(tb, &e);
+        gtk_text_buffer_delete(tb, &b, &e);
+    }
+}
+
+static int messages_len()
+{
+    GtkWidget *tv = get_widget_checked("messages_textview");
+    GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
+    GtkTextIter start, end;
+    gtk_text_buffer_get_start_iter(tb, &start);
+    gtk_text_buffer_get_end_iter(tb, &end);
+    return strlen(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+}
+
+static void show_messages_tab()
+{
+    GtkWidget *n = get_widget_checked("req_notebook");
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(n), 1);
+}
+
+static void msg(const char *format, ...)
+{
+    if (!quiet) {
+        char buf[1024];
+        va_list ap;
+        va_start(ap, format);
+        vsprintf(buf, format, ap);
+        va_end(ap);
+
+        GtkWidget *tv = get_widget_checked("messages_textview");
+        GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
+
+        GtkTextIter end;
+        gtk_text_buffer_get_end_iter(tb, &end);
+        gtk_text_buffer_insert(tb, &end, buf, -1);
+    }
+}
+
 static void
 get_combo_box_entry_item(const char *widget_name, char *dest)
 {
@@ -27,14 +77,14 @@ static int is_all_asterisks(char *s)
 static char *my_parse_string(char *p, char *s, int max_len)
 {
     if (*p == '\0') {
-        printf("  --> Unexpected end of string\n");
+        msg("  --> Unexpected end of string\n");
         return NULL;
     }
 
     // scan ahead to the comma (even last one should end with comma)
     char *q = strchr(p, ',');
     if (!q) {
-        printf("  --> Couldn't find the end of the string: %s\n", p);
+        msg("  --> Couldn't find the end of the string: %s\n", p);
         return NULL;
     }
 
@@ -135,7 +185,7 @@ static int parse_line(// input
     else if (strcmp(sensor, "PSR") == 0)
         is_palsar = 1;
     else {
-        printf("  --> Invalid sensor string: %s\n", sensor);
+        msg("  --> Invalid sensor string: %s\n", sensor);
         return FALSE;
     }
     assert(is_avnir + is_prism + is_palsar == 1);
@@ -147,7 +197,7 @@ static int parse_line(// input
     const char *t = request_type == OBSERVATION_REQUEST ? 
         "Observation" : "Acquisition";
     if (strcmp_case(tmp, t) != 0) {
-        printf("Skipping non-%s Request_Type: %s\n", t, tmp);
+        msg("Skipping non-%s Request_Type: %s\n", t, tmp);
         return FALSE;
     }
 
@@ -156,7 +206,7 @@ static int parse_line(// input
         p = my_parse_string(p, drf, 16);
         if (!p) return FALSE;
         if (strlen(drf)>4) {
-            printf("Truncating DRF to 4 characters: %s\n", drf);
+            msg("Truncating DRF to 4 characters: %s\n", drf);
             drf[4] = '\0';
         } else if (strlen(drf)<4) {
             while (strlen(drf)<4) {
@@ -172,9 +222,13 @@ static int parse_line(// input
     // date
     p = my_parse_long(p, date);
     if (!p) return FALSE;
+    if (!is_valid_date(*date)) {
+        msg("  --> Invalid date: %ld\n", *date);
+        return FALSE;
+    }
     sprintf(tmp, "%ld", *date);
     if (strlen(tmp) != 8 || tmp[0] != '2') { // need to update this in 2999
-        printf("  --> Invalid date: %ld\n", *date);
+        msg("  --> Invalid date: %ld\n", *date);
         return FALSE;
     }
 
@@ -182,7 +236,7 @@ static int parse_line(// input
     p = my_parse_int(p, path);
     if (!p) return FALSE;
     if (*path > 671 || *path < 0) {
-        printf("  --> Invalid path number: %d\n", *path);
+        msg("  --> Invalid path number: %d\n", *path);
         return FALSE;
     }
 
@@ -194,7 +248,7 @@ static int parse_line(// input
     p = my_parse_int(p, direction);
     if (!p) return FALSE;
     if (*direction != 1 && *direction != 0) {
-        printf("  --> Invalid direction: %d\n", *direction);
+        msg("  --> Invalid direction: %d\n", *direction);
         return FALSE;
     }
 
@@ -206,7 +260,7 @@ static int parse_line(// input
     p = my_parse_string(p, observation_mode, 256);
     if (!p) return FALSE;
     if (strlen(observation_mode) != 3) {
-        printf("  -> Invalid observation mode: %s\n", observation_mode);
+        msg("  -> Invalid observation mode: %s\n", observation_mode);
         return FALSE;
     }
  
@@ -214,7 +268,7 @@ static int parse_line(// input
     p = my_parse_int(p, observation_purpose);
     if (!p) return FALSE;
     if (*observation_purpose < 1 || *observation_purpose > 6) {
-        printf("  --> Invalid observation purpose: %d\n",
+        msg("  --> Invalid observation purpose: %d\n",
             *observation_purpose);
         return FALSE;
     }
@@ -223,11 +277,11 @@ static int parse_line(// input
     p = my_parse_double(p, prism_nadir_angle);
     if (!p) return FALSE;
     if (meta_is_valid_double(*prism_nadir_angle) && !is_prism) {
-        printf("  --> prism nadir angle set for non-prism data\n");
+        msg("  --> prism nadir angle set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && !valid_angle(*prism_nadir_angle, -1.5, 1.5)) {
-        printf("  --> prism nadir angle appears invalid: %g\n", *prism_nadir_angle);
+        msg("  --> prism nadir angle appears invalid: %g\n", *prism_nadir_angle);
         return FALSE;
     }
 
@@ -235,11 +289,11 @@ static int parse_line(// input
     p = my_parse_double(p, prism_forward_angle);
     if (!p) return FALSE;
     if (meta_is_valid_double(*prism_forward_angle) && !is_prism) {
-        printf("  --> prism forward angle set for non-prism data\n");
+        msg("  --> prism forward angle set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && !valid_angle(*prism_forward_angle, -1.5, 1.5)) {
-        printf("  --> prism forward angle appears invalid: %g\n", *prism_forward_angle);
+        msg("  --> prism forward angle appears invalid: %g\n", *prism_forward_angle);
         return FALSE;
     }
 
@@ -247,11 +301,11 @@ static int parse_line(// input
     p = my_parse_double(p, prism_backward_angle);
     if (!p) return FALSE;
     if (meta_is_valid_double(*prism_backward_angle) && !is_prism) {
-        printf("  --> prism backward angle set for non-prism data\n");
+        msg("  --> prism backward angle set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && !valid_angle(*prism_backward_angle, -1.5, 1.5)) {
-        printf("  --> prism backward angle appears invalid: %g\n", *prism_backward_angle);
+        msg("  --> prism backward angle appears invalid: %g\n", *prism_backward_angle);
         return FALSE;
     }
 
@@ -259,12 +313,12 @@ static int parse_line(// input
     p = my_parse_int(p, prism_nadir_gain);
     if (!p) return FALSE;
     if (*prism_nadir_gain != MAGIC_UNSET_INT && !is_prism) {
-        printf("  --> prism nadir gain set for non-prism data\n");
+        msg("  --> prism nadir gain set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && *prism_nadir_gain != MAGIC_UNSET_INT &&
             (*prism_nadir_gain < 1 || *prism_nadir_gain > 4)) {
-        printf("  --> prism nadir invalid: %d\n", *prism_nadir_gain);
+        msg("  --> prism nadir invalid: %d\n", *prism_nadir_gain);
         return FALSE;
     }
 
@@ -272,12 +326,12 @@ static int parse_line(// input
     p = my_parse_int(p, prism_forward_gain);
     if (!p) return FALSE;
     if (*prism_forward_gain != MAGIC_UNSET_INT && !is_prism) {
-        printf("  --> prism forward gain set for non-prism data\n");
+        msg("  --> prism forward gain set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && *prism_forward_gain != MAGIC_UNSET_INT &&
             (*prism_forward_gain < 1 || *prism_forward_gain > 4)) {
-        printf("  --> prism forward invalid: %d\n", *prism_forward_gain);
+        msg("  --> prism forward invalid: %d\n", *prism_forward_gain);
         return FALSE;
     }
 
@@ -285,12 +339,12 @@ static int parse_line(// input
     p = my_parse_int(p, prism_backward_gain);
     if (!p) return FALSE;
     if (*prism_backward_gain != MAGIC_UNSET_INT && !is_prism) {
-        printf("  --> prism backward gain set for non-prism data\n");
+        msg("  --> prism backward gain set for non-prism data\n");
         return FALSE;
     }
     if (is_prism && *prism_backward_gain != MAGIC_UNSET_INT &&
             (*prism_backward_gain < 1 || *prism_backward_gain > 4)) {
-        printf("  --> prism backward invalid: %d\n", *prism_backward_gain);
+        msg("  --> prism backward invalid: %d\n", *prism_backward_gain);
         return FALSE;
     }
 
@@ -298,16 +352,16 @@ static int parse_line(// input
     p = my_parse_double(p, avnir_pointing_angle);
     if (!p) return FALSE;
     if (meta_is_valid_double(*avnir_pointing_angle) && !is_avnir) {
-        printf("  --> avnir pointing angle set for non-avnir data\n");
+        msg("  --> avnir pointing angle set for non-avnir data\n");
         return FALSE;
     }
     if (!valid_angle(*avnir_pointing_angle, -44, 44)) {
-        printf("  --> avnir pointing angle appears invalid: %g\n", *avnir_pointing_angle);
+        msg("  --> avnir pointing angle appears invalid: %g\n", *avnir_pointing_angle);
         return FALSE;
     }
     if (!valid_avnir_pointing_angle(*avnir_pointing_angle)) {
-        printf("  --> avnir pointing angle appears invalid: %g\n", *avnir_pointing_angle);
-        printf("       (+/- 0.02 steps is absolutely specified)\n");
+        msg("  --> avnir pointing angle appears invalid: %g\n", *avnir_pointing_angle);
+        msg("       (+/- 0.02 steps is absolutely specified)\n");
         return FALSE;
     }
 
@@ -315,12 +369,12 @@ static int parse_line(// input
     p = my_parse_int(p, avnir_gain);
     if (!p) return FALSE;
     if (*avnir_gain != MAGIC_UNSET_INT && !is_avnir) {
-        printf("  --> avnir gain set for non-avnir data\n");
+        msg("  --> avnir gain set for non-avnir data\n");
         return FALSE;
     }
     if (is_avnir && *avnir_gain != MAGIC_UNSET_INT &&
             (*avnir_gain < 1 || *avnir_gain > 4)) {
-        printf("  --> avnir gain invalid: %d\n", *avnir_gain);
+        msg("  --> avnir gain invalid: %d\n", *avnir_gain);
         return FALSE;
     }
 
@@ -328,7 +382,7 @@ static int parse_line(// input
     p = my_parse_int(p, avnir_exposure);
     if (!p) return FALSE;
     if (*avnir_exposure != MAGIC_UNSET_INT && !is_avnir) {
-        printf("  --> avnir exposure set for non-avnir data\n");
+        msg("  --> avnir exposure set for non-avnir data\n");
         return FALSE;
     }
 
@@ -336,19 +390,19 @@ static int parse_line(// input
     p = my_parse_int(p, palsar_table_number);
     if (!p) return FALSE;
     if (*palsar_table_number != MAGIC_UNSET_INT && !is_palsar) {
-        printf("  --> palsar table number set (%d) for non-palsar data\n",
+        msg("  --> palsar table number set (%d) for non-palsar data\n",
             *palsar_table_number);
         return FALSE;
     }
     if (is_palsar && *palsar_table_number != MAGIC_UNSET_INT &&
             (*palsar_table_number > 999 || *palsar_table_number < 1)) {
-        printf("  --> palsar table number is invalid: %d\n", *palsar_table_number);
+        msg("  --> palsar table number is invalid: %d\n", *palsar_table_number);
         return FALSE;
     }
 
     // end if the line!
     if (*p != '\0') // non-fatal error
-        printf("  --> Line has extra characters\n");
+        msg("  --> Line has extra characters\n");
 
     return TRUE;
 }
@@ -794,7 +848,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
             else
                 assert(0); // was supposed to check for this above
         } else {
-            printf("Invalid line %d in CSV file.\n", line_no);
+            msg("Invalid line %d in CSV file.\n", line_no);
         }
 
         if (n_requests == 1) {
@@ -809,7 +863,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
         } else if (n_requests > 1) {
             // ensure all DRF values in the file are the same
             if (strcmp(drf, drf2) != 0) {
-                printf("DRF value on line %d doesn't match the first: %s\n",
+                msg("DRF value on line %d doesn't match the first: %s\n",
                     line_no, drf2);
             }
         } else {
@@ -835,7 +889,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     strftime(date_stamp, 10, "%Y%m%d", ts);
 
     if (n_requests == 0) {
-        printf("No requests found!\n");
+        msg("No requests found!\n");
         strcpy(drf, "");
         first_date = last_date =
             date_to_long(ts->tm_year+1900, ts->tm_mon+1, ts->tm_mday);
@@ -1023,6 +1077,10 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     *req_id += n_avnir;
     int first_avnir=TRUE, first_palsar=TRUE;
 
+    // now run in "quiet" mode -- don't report errors, because we will
+    // have already issued the messages on the first pass
+    quiet=TRUE;
+
     int i, written_prism=0, written_avnir=0, written_palsar=0;
     for (i=0; i<3; ++i) {
         // open up input file again, read header line again
@@ -1089,16 +1147,17 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
     }
 
     fclose(fout);
+    quiet=FALSE;
 
     // bunch of sanity checks
     if (written_prism != n_prism)
-        printf(" *** Incorrect prism count: %d <-> %d\n", n_prism, written_prism);
+        msg(" *** Incorrect prism count: %d <-> %d\n", n_prism, written_prism);
     if (written_avnir != n_avnir)
-        printf(" *** Incorrect avnir count: %d <-> %d\n", n_avnir, written_avnir);
+        msg(" *** Incorrect avnir count: %d <-> %d\n", n_avnir, written_avnir);
     if (written_palsar != n_palsar)
-        printf(" *** Incorrect palsar count: %d <-> %d\n", n_palsar, written_palsar);
+        msg(" *** Incorrect palsar count: %d <-> %d\n", n_palsar, written_palsar);
     if (written_prism + written_avnir + written_palsar != n_requests)
-        printf(" *** Incorrect total record count: %d+%d+%d != %d\n",
+        msg(" *** Incorrect total record count: %d+%d+%d != %d\n",
             written_prism, written_avnir, written_palsar, n_requests);
 
     int check_size = 1;
@@ -1118,7 +1177,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                     n_palsar*102; // no slot rec
         else {
             // impossible!!
-            printf("Bad request type: %d\n", request_type);
+            msg("Bad request type: %d\n", request_type);
             assert(0);
         }
 
@@ -1134,7 +1193,7 @@ void acq_obs_process(FILE *fin, const char *csv_file, const char *req_file,
                     expected_size, bytes);
             put_string_to_label("generate_label", buf);
         } else {
-            printf("File too large to verify size.\n");
+            msg("File too large to verify size.\n");
         }
     }
 
@@ -1174,7 +1233,7 @@ int odl0_parse_line(char *line, char *downlink_segment_number,
     p = my_parse_string(p, downlink_segment_number, 256);
     if (!p) return FALSE;
     if (strlen(downlink_segment_number)!=14) {
-        printf(
+        msg(
             "  --> Invalid length of Downlink Segment No. (should be 14)\n"
             "      Downlink Segment No.: %s (length=%d)\n",
             downlink_segment_number, strlen(downlink_segment_number));
@@ -1185,7 +1244,7 @@ int odl0_parse_line(char *line, char *downlink_segment_number,
     p = my_parse_string(p, l0_data_code, 256);
     if (!p) return FALSE;
     if (strlen(l0_data_code)!=4) {
-        printf(
+        msg(
             "  --> Invalid length of Level 0 Data Code (should be 4)\n"
             "      Level 0 Data Code: %s (length=%d)\n",
             l0_data_code, strlen(l0_data_code));
@@ -1194,7 +1253,7 @@ int odl0_parse_line(char *line, char *downlink_segment_number,
 
     // end if the line!
     if (*p != '\0') // non-fatal error
-        printf("  --> Line has extra characters\n");
+        msg("  --> Line has extra characters\n");
 
     return TRUE;
 }
@@ -1243,7 +1302,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
         if (valid)
             ++n_requests;
         else
-            printf("Invalid line %d in CSV file.\n", line_no);
+            msg("Invalid line %d in CSV file.\n", line_no);
 
         ++line_no;
     }
@@ -1388,7 +1447,7 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
                     expected_size, bytes);
             put_string_to_label("generate_label", buf);
         } else {
-            printf("File too large to verify size.\n");
+            msg("File too large to verify size.\n");
         }
     }
 }
@@ -1398,6 +1457,7 @@ void gui_process(int for_real)
     if (block_processing)
         return;
 
+    clear_messages();
     char csv_file[1024], buf[1024];
     get_combo_box_entry_item("csv_dir_combobox", csv_file);    
     if (strlen(csv_file) > 0) {
@@ -1438,6 +1498,9 @@ void gui_process(int for_real)
             put_string_in_textview("output_textview", buf);
         }
     }
+
+    if (messages_len() > 0)
+        show_messages_tab();
 }
 
 SIGNAL_CALLBACK void on_generate_button_clicked(GtkWidget *w)
@@ -1526,7 +1589,7 @@ char *process(const char *csv_file, int is_emergency,
     }
     else {
         // couldn't figure out what this file is, from the header!
-        printf("Failed.\n");
+        msg("Failed.\n");
         settings_set_request_type(0);
 
         *request_type = UNSELECTED_REQUEST_TYPE;
