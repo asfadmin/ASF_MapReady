@@ -178,7 +178,7 @@ void apply_lut_to_data(ThumbnailData *td)
             int index = jj+ii*td->size_x;
             int n = 3*index;
             unsigned char uval = data[n];
-            double val = (((double)uval - .5) * (g_stats.map_max-g_stats.map_min)) / 255. + g_stats.map_min; 
+            double val = (((double)uval - .5) * (curr->stats.map_max-curr->stats.map_min)) / 255. + curr->stats.map_min; 
             apply_lut((int)(val+.5), &data[n], &data[n+1], &data[n+2]);
         }
     }

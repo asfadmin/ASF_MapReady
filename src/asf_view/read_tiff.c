@@ -200,7 +200,7 @@ meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
 // info you want needs to be placed into the ReadTiffClientInfo struct.
 int read_tiff_client(int row_start, int n_rows_to_get,
                      void *dest_void, void *read_client_info,
-                     meta_parameters *meta)
+                     meta_parameters *meta, int dest_data_type)
 {
   data_type_t data_type;
   tiff_data_config_t data_config;
@@ -270,10 +270,10 @@ int read_tiff_client(int row_start, int n_rows_to_get,
   }
 
   // Convenience flags and values
-  int is_rgb       = (data_ci->data_type == RGB_BYTE  ||
-                      data_ci->data_type == RGB_FLOAT ||
+  int is_rgb       = (dest_data_type == RGB_BYTE  ||
+                      dest_data_type == RGB_FLOAT ||
                       info->is_rgb)       ? 1 : 0;
-  int dest_is_byte = (data_ci->data_type == GREYSCALE_BYTE || data_ci->data_type == RGB_BYTE) ? 1 : 0;
+  int dest_is_byte = (dest_data_type == GREYSCALE_BYTE || dest_data_type == RGB_BYTE) ? 1 : 0;
   int band_r  = info->band_r;
   int band_g  = info->band_g;
   int band_b  = info->band_b;

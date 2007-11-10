@@ -147,6 +147,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
     // clear out the cache -- we may not fill up the tile, if
     // we are near the end of the file, and we don't want old data
     // to appear
+    int ns = self->ns;
     memset(self->cache[spot], 0, ds*ns*self->rows_per_tile);
 
     // update where this cache entry starts
@@ -164,8 +165,8 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
 
     // ensure we don't read past the end of the file
     int rows_to_get = self->rows_per_tile;
-    if (rs + self->rows_per_tile > nl)
-        rows_to_get = nl - rs;
+    if (rs + self->rows_per_tile > self->nl)
+        rows_to_get = self->nl - rs;
 
     if (!quiet) {
         asfPrintStatus("Cache: loading into spot #%d: rows %d-%d\n",
@@ -174,7 +175,7 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
     }
 
     self->client->read_fn(rs, rows_to_get, (void*)(self->cache[spot]),
-        self->client->read_client_info, self->meta);
+        self->client->read_client_info, self->meta, self->client->data_type);
 
     assert((line-rs)*self->ns + samp <= self->ns*self->rows_per_tile);
     return &self->cache[spot][((line-rs)*self->ns + samp)*ds];
@@ -194,8 +195,8 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
         unsigned char *dest = (unsigned char*)dest_void;
 
         // this will fill the cache with the image data
-        int sf = meta->general->line_count / thumb_size_y;
-        assert(sf == meta->general->sample_count / thumb_size_x);
+        int sf = self->meta->general->line_count / thumb_size_y;
+        //assert(sf == self->meta->general->sample_count / thumb_size_x);
 
         // supress the "populating cache" msgs when loading the whole thing
         quiet=TRUE;
@@ -213,7 +214,8 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
         quiet=FALSE;
     } else {
         self->client->thumb_fn(thumb_size_x, thumb_size_y,
-            self->meta, self->client->read_client_info, dest_void);
+            self->meta, self->client->read_client_info, dest_void,
+            self->client->data_type);
     }
 }
 
@@ -254,7 +256,7 @@ CachedImage * cached_image_new_from_file(
 
     int n_tiles_required = (int)ceil((double)self->nl / self->rows_per_tile);
     self->entire_image_fits = n_tiles_required <= MAX_TILES;
-    // self->entire_image_fits = FALSE; // uncomment for testing thumb_fn
+    // self->entire_image_fits = FALSE; // uncomment to test thumb_fn
 
     // at the beginning, we have no tiles
     self->n_tiles = 0;

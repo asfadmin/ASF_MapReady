@@ -36,6 +36,45 @@ typedef struct {
 #  endif
 #endif
 
+typedef struct {
+    double map_min, map_max; // max/min for 2-sigma mapping
+    double avg, stddev;
+    double act_min, act_max; // absolute min/max of all values
+    int hist[256];           // histogram
+} ImageStats;
+
+#define MAX_POLY_LEN 128
+typedef struct {
+    int n;                    // How many points in the polygon
+    int c;                    // Currently "active" point (-1 for none)
+    double line[MAX_POLY_LEN];// vertices of the polygon
+    double samp[MAX_POLY_LEN];
+    int show_extent;          // draw bounding box of polygon?
+    int extent_x_min, extent_x_max; // bounding box values
+    int extent_y_min, extent_y_max; // when show_extent==TRUE, these must
+                                    // be made valid
+} UserPolygon;
+
+// This is defined/managed in bands.c, it is a singleton
+typedef struct {
+    int is_rgb;
+    int band_gs;
+    int band_r;
+    int band_g;
+    int band_b;
+} BandConfig;
+
+typedef struct {
+    int nl, ns;
+    meta_parameters *meta;
+    CachedImage *data_ci;
+    BandConfig band_cfg;
+    ImageStats stats;
+    char *filename;
+    char *data_name;
+    char *meta_name;
+} ImageInfo;
+
 /********************************** Prototypes ******************************/
 
 /* font.c */
@@ -66,8 +105,9 @@ void put_string_to_label(const char *widget_name, const char *txt);
 void show_widget(const char *widget_name, int show);
 void enable_widget(const char *widget_name, int enable);
 
-/* ssv.c */
+/* asf_view.c */
 char *find_in_share(const char * filename);
+void image_info_free(ImageInfo *ii);
 
 /* read.c */
 int read_file(const char *filename, const char *band, int multilook,
@@ -89,8 +129,9 @@ int try_ceos(const char *filename);
 int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_ceos_meta(const char *meta_name);
-int open_ceos_data(const char *dataname, const char *metaname, const char *band,
-                   meta_parameters *meta, ClientInterface *client);
+int open_ceos_data(const char *dataname, const char *metaname,
+                   const char *band, meta_parameters *meta,
+                   ClientInterface *client);
 void free_ceos_client_info(void *read_client_info);
 
 /* read_alos.c */
@@ -108,8 +149,10 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 int try_tiff(const char *filename);
 int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
                       char **err);
-meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client);
-int open_tiff_data(const char *data_name, const char *band, ClientInterface *client);
+meta_parameters *read_tiff_meta(const char *meta_name,
+                                ClientInterface *client);
+int open_tiff_data(const char *data_name, const char *band,
+                   ClientInterface *client);
 
 /* read_png.c */
 int try_png(const char *filename);
@@ -194,54 +237,31 @@ extern const char DIR_SEPARATOR;
 
 extern const char PATH_SEPATATOR;
 
-// This is defined/managed in stats.c, it is a singleton
-typedef struct {
-    double map_min, map_max; // max/min for 2-sigma mapping
-    double avg, stddev;
-    double act_min, act_max; // absolute min/max of all values
-    int hist[256];           // histogram
-} ImageStats;
-
-// This is defined/managed in big_image.c, it is a singleton
-#define MAX_POLY_LEN 128
-typedef struct {
-    int n;                    // How many points in the polygon
-    int c;                    // Currently "active" point (-1 for none)
-    double line[MAX_POLY_LEN];// vertices of the polygon
-    double samp[MAX_POLY_LEN];
-    int show_extent;          // draw bounding box of polygon?
-    int extent_x_min, extent_x_max; // bounding box values
-    int extent_y_min, extent_y_max; // when show_extent==TRUE, these must
-                                    // be made valid
-} UserPolygon;
-
-// This is defined/managed in bands.c, it is a singleton
-typedef struct {
-    int is_rgb;
-    int band_gs;
-    int band_r;
-    int band_g;
-    int band_b;
-} BandConfig;
-
 /*************** these are our global variables ... ***********************/
 
 extern GladeXML *glade_xml;
-extern meta_parameters *meta;
-extern CachedImage *data_ci;
 
-extern int nl, ns;
-extern ImageStats g_stats;
+// Can hold two images at once... later.
+extern ImageInfo image_info[2];
+// "curr" always points to the currently being displayed image info
+// which, currently, is always image_info[0].
+extern ImageInfo *curr;
+
+//extern meta_parameters *meta;
+//extern CachedImage *data_ci;
+
+//extern int nl, ns;
+//extern ImageStats g_stats;
 extern UserPolygon g_poly;
-extern BandConfig g_band_cfg;
+//extern BandConfig g_band_cfg;
 
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
 
-extern char *g_filename;
-extern char *g_data_name;
-extern char *g_meta_name;
+//extern char *g_filename;
+//extern char *g_data_name;
+//extern char *g_meta_name;
 
 extern int g_saved_line_count;
 

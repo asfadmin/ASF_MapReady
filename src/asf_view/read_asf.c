@@ -162,7 +162,7 @@ static void get_asf_lines(ReadAsfClientInfo *info, meta_parameters *meta,
 
 int read_asf_client(int row_start, int n_rows_to_get,
                     void *dest_void, void *read_client_info,
-                    meta_parameters *meta)
+                    meta_parameters *meta, int data_type)
 {
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
     int nl = meta->general->line_count;
@@ -170,7 +170,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
 
     if (meta->general->data_type == BYTE) {
         unsigned char *dest = (unsigned char*)dest_void;
-        if (data_ci->data_type==GREYSCALE_BYTE) {
+        if (data_type==GREYSCALE_BYTE) {
             // reading byte data directly into the byte cache
             FSEEK64(info->fp, ns*(row_start + nl*info->band_gs), SEEK_SET);
             FREAD(dest, sizeof(unsigned char), n_rows_to_get*ns, info->fp);
@@ -232,14 +232,14 @@ int read_asf_client(int row_start, int n_rows_to_get,
         }
     } else {
         float *dest = (float*)dest_void;
-        if (data_ci->data_type==GREYSCALE_FLOAT) {
+        if (data_type==GREYSCALE_FLOAT) {
             // this is the normal case, just reading in a strip of lines
             // from the file directly into the floating point cache
             get_asf_lines(info, meta, row_start + nl*info->band_gs,
                           n_rows_to_get, dest);
         } else {
             // grabbing 3 channels floating point data 
-            assert(data_ci->data_type==RGB_FLOAT);
+            assert(data_type==RGB_FLOAT);
 
             // first set the cache's memory to all zeros, this way any
             // rgb channels we don't populate will end up black
@@ -280,7 +280,7 @@ int read_asf_client(int row_start, int n_rows_to_get,
 
 int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                            meta_parameters *meta, void *read_client_info,
-                           void *dest_void)
+                           void *dest_void, int data_type)
 {
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
 
@@ -297,7 +297,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
     if (meta->general->data_type == BYTE) {
         // BYTE case -- data file contains bytes.
         unsigned char *dest = (unsigned char*)dest_void;
-        if (data_ci->data_type == GREYSCALE_BYTE) {
+        if (data_type == GREYSCALE_BYTE) {
             // data file contains byte data, and we are just pulling out
             // one band to display.
             int off = nl*info->band_gs;
@@ -311,7 +311,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
         else {
             // rgb case -- we have to read up to 3 bands from the file,
             // and put them together
-            assert(data_ci->data_type == RGB_BYTE);
+            assert(data_type == RGB_BYTE);
             int off, k;
 
             // first set dest buffer to all zeros.  This way, any bands that
@@ -374,7 +374,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
         // we just read with get_float_line and populate directly into
         // a floating point array
         float *dest = (float*)dest_void;
-        if (data_ci->data_type == GREYSCALE_FLOAT) {
+        if (data_type == GREYSCALE_FLOAT) {
             int off = nl*info->band_gs;
             for (i=0; i<thumb_size_y; ++i) {
                 get_asf_line(info, meta, i*sf + off, buf);
@@ -382,7 +382,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
                     dest[i*thumb_size_x+j] = buf[j*sf];
                 asfPercentMeter((float)i/(thumb_size_y-1));
             }
-        } else if (data_ci->data_type == RGB_FLOAT) {
+        } else if (data_type == RGB_FLOAT) {
             int off, k;
 
             // first set dest buffer to all zeros.  This way, any bands that

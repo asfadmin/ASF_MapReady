@@ -99,12 +99,14 @@ meta_parameters *read_ceos_meta(const char *meta_name)
 
 int read_ceos_client(int row_start, int n_rows_to_get,
                      void *dest_void, void *read_client_info,
-                     meta_parameters *meta)
+                     meta_parameters *meta, int data_type)
 {
     float *dest = (float*)dest_void;
 
     ReadCeosClientInfo *info = (ReadCeosClientInfo*)read_client_info;
-    int ii, jj, ns = meta->general->sample_count;
+
+    int ii, jj;
+    int ns = meta->general->sample_count;
 
     if (meta->general->data_type == INTEGER16)
     {
@@ -148,15 +150,18 @@ int read_ceos_client(int row_start, int n_rows_to_get,
 
 int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
                             meta_parameters *meta, void *read_client_info,
-                            void *dest_void)
+                            void *dest_void, int data_type)
 {
     float *dest = (float*)dest_void;
 
     ReadCeosClientInfo *info = (ReadCeosClientInfo*)read_client_info;
-    int ii, jj, ns = meta->general->sample_count;
 
-    int sf = meta->general->line_count / thumb_size_y;
-    assert(sf==meta->general->sample_count / thumb_size_x);
+    int ii, jj;
+    int ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
+
+    int sf = nl / thumb_size_y;
+    //assert(sf==ns / thumb_size_x);
 
     if (meta->general->data_type == INTEGER16)
     {

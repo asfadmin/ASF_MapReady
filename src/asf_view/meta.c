@@ -56,6 +56,7 @@ void fill_meta_info()
     char s[1024];
     strcpy(s, "");
 
+    meta_parameters *meta = curr->meta;
     if (meta) {
       if (meta->general) {
           sprintf(&s[strlen(s)],
@@ -196,18 +197,18 @@ void open_mdv()
 {
     char *f=NULL;
 
-    char *ceos_filename = appendExt(g_filename, ".L");
+    char *ceos_filename = appendExt(curr->filename, ".L");
     if (fileExists(ceos_filename)) {
         f = ceos_filename;
     } else {
         free(ceos_filename);
-        if (strncmp_case(g_filename, "LED-", 4) == 0) {
-            if (fileExists(g_filename)) {
-                f = STRDUP(g_filename);
+        if (strncmp_case(curr->filename, "LED-", 4) == 0) {
+            if (fileExists(curr->filename)) {
+                f = STRDUP(curr->filename);
             }
-        } else if (strncmp_case(g_filename, "IMG-", 4) == 0) {
-            char *led = MALLOC(sizeof(char)*(strlen(g_filename)+10));
-            char *p = strchr(g_filename, '-');
+        } else if (strncmp_case(curr->filename, "IMG-", 4) == 0) {
+            char *led = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
+            char *p = strchr(curr->filename, '-');
             if (p) {
                 p = strchr(p+1, '-');
                 if (p) {
@@ -219,8 +220,8 @@ void open_mdv()
             }
             free(led);
         } else {
-            char *led = MALLOC(sizeof(char)*(strlen(g_filename)+10));
-            sprintf(led, "LED-%s", g_filename);
+            char *led = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
+            sprintf(led, "LED-%s", curr->filename);
             if (fileExists(led)) {
                 f = STRDUP(led);
             } else {

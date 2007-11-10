@@ -170,14 +170,14 @@ static void show_save_subset_window()
 static void set_defaults()
 {
     // default filename
-    char *basename = get_basename(g_filename);
+    char *basename = get_basename(curr->filename);
     char *def = appendStr(basename, "_aoi");
     free(basename);
     put_string_to_entry("filename_entry", def);
     free(def);
 
     // default directory
-    char *dir = get_dirname(g_filename);
+    char *dir = get_dirname(curr->filename);
     if (dir && strlen(dir) > 0)
         put_string_to_entry("dir_entry", dir);
     else
@@ -235,7 +235,7 @@ static void compute_extent(meta_parameters *meta,
 void update_poly_extents()
 {
     int size_x, size_y;
-    compute_extent(meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
+    compute_extent(curr->meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
         &g_poly.extent_x_min, &g_poly.extent_x_max, &size_y, &size_x);
 
     char subset_info[128];
@@ -254,10 +254,10 @@ void save_subset()
         if (crosshair_line > 0 && crosshair_samp > 0) {
 
             // clamp crosshair to image extent, if needed
-            if (crosshair_line >= meta->general->line_count)
-                crosshair_line = meta->general->line_count - 1;
-            if (crosshair_samp >= meta->general->sample_count)
-                crosshair_samp = meta->general->sample_count - 1;
+            if (crosshair_line >= curr->meta->general->line_count)
+                crosshair_line = curr->meta->general->line_count - 1;
+            if (crosshair_samp >= curr->meta->general->sample_count)
+                crosshair_samp = curr->meta->general->sample_count - 1;
 
             show_save_subset_window();
             set_defaults();
@@ -290,6 +290,9 @@ static int pnpoly(int npol, double *xp, double *yp, double x, double y)
 static float get_data(int what_to_save, int line, int samp)
 {
     double t, s, d;
+    meta_parameters *meta = curr->meta;
+    CachedImage *data_ci = curr->data_ci;
+
     switch (what_to_save) {
         case PIXEL_VALUE:
             return cached_image_get_pixel(data_ci, line, samp);
@@ -385,8 +388,8 @@ static void define_clipping_region(int *n, double *xp, double *yp)
     }
 
     // clamp polygon points to the image extents
-    int nl = meta->general->line_count;
-    int ns = meta->general->sample_count;
+    int nl = curr->meta->general->line_count;
+    int ns = curr->meta->general->sample_count;
 
     for (i=0; i<=g_poly.n; ++i) {
         if (yp[i]<0) yp[i]=0;
@@ -425,7 +428,7 @@ static int save_as_asf(const char *out_file, int what_to_save,
 
     // figure out where to chop
     int line_min, line_max, samp_min, samp_max, nl, ns;
-    compute_extent(meta, &line_min, &line_max, &samp_min, &samp_max,
+    compute_extent(curr->meta, &line_min, &line_max, &samp_min, &samp_max,
         &nl, &ns);
 
     // generate metadata
@@ -433,7 +436,7 @@ static int save_as_asf(const char *out_file, int what_to_save,
     printf("Generating %s...\n", out_metaname);
 
     meta_parameters *out_meta =
-        build_metadata(meta, out_file, nl, ns, line_min, samp_min);
+        build_metadata(curr->meta, out_file, nl, ns, line_min, samp_min);
 
     // define clipping region, if necessary
     double xp[MAX_POLY_LEN+2], yp[MAX_POLY_LEN+2];
@@ -503,7 +506,7 @@ static int save_as_csv(const char *out_file, int what_to_save,
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
     int line_min, line_max, samp_min, samp_max, nl, ns;
-    compute_extent(meta, &line_min, &line_max, &samp_min, &samp_max,
+    compute_extent(curr->meta, &line_min, &line_max, &samp_min, &samp_max,
         &nl, &ns);
 
     // define clipping region, if necessary

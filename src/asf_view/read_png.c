@@ -75,7 +75,7 @@ int handle_png_file(const char *filename, char *meta_name, char *data_name,
 
 int read_png_client(int row_start, int n_rows_to_get,
                     void *dest_void, void *read_client_info,
-                    meta_parameters *meta)
+                    meta_parameters *meta, int data_type)
 {
     // since we set "require_full_load", we should be reading in the
     // entire image

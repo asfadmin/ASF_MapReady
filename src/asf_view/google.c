@@ -178,10 +178,10 @@ extern GdkPixbuf *pixbuf_small;
 
 int open_google_earth()
 {
-    char *kml_filename = appendExt(g_filename, ".kml");
+    char *kml_filename = appendExt(curr->filename, ".kml");
 
-    char *basename = get_basename(g_filename);
-    char *dirname = get_dirname(g_filename);
+    char *basename = get_basename(curr->filename);
+    char *dirname = get_dirname(curr->filename);
 
     char *arg;
     if (strlen(dirname)==0) {
@@ -209,6 +209,7 @@ int open_google_earth()
 
     kml_header(kml_file);
 
+    meta_parameters *meta = curr->meta;
     if (meta && meta->general &&
         meta_is_valid_double(meta->general->center_latitude) &&
         meta_is_valid_double(meta->general->center_longitude))

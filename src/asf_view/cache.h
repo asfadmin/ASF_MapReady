@@ -48,10 +48,9 @@ typedef enum {
 //      -read_template.c for an example of how to add another client
 typedef int ReadClientFn(int row_start, int n_rows_to_get,
                          void *dest, void *read_client_info,
-                         meta_parameters *meta);
-typedef int ThumbFn(int thumb_size_x,
-                    int thumb_size_y, meta_parameters *meta,
-                    void *read_client_info, void *dest);
+                         meta_parameters *meta, int data_type);
+typedef int ThumbFn(int thumb_size_x, int thumb_size_y, meta_parameters *meta,
+                    void *read_client_info, void *dest, int data_type);
 typedef void FreeFn(void *read_client_info);
 
 typedef struct {

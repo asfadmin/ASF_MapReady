@@ -89,9 +89,10 @@ static void show_or_hide_save_subset_button()
 }
 
 // draws a crosshair at x,y (image coords)
-static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp, int green)
+static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp,
+                           int green)
 {
-    if (samp < 0 || line < 0 || samp >= ns || line >= nl)
+    if (samp < 0 || line < 0 || samp >= curr->ns || line >= curr->nl)
         return;
 
     int i, lo, hi;
@@ -165,8 +166,8 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
                      double line1, double samp1, int color)
 {
     if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
-        samp0 >= ns || samp1 >= ns || line0 >= nl || line1 >= nl)
-        return;
+        samp0 >= curr->ns || samp1 >= curr->ns ||
+        line0 >= curr->nl || line1 >= curr->nl) return;
 
     int i, j, width, height, rowstride, n_channels;
     guchar *pixels, *p;
@@ -231,13 +232,25 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
 
 static GdkPixbuf * make_big_image()
 {
-    assert(data_ci && meta);
+    assert(curr->data_ci);
+    assert(curr->meta);
 
     int ii, jj;
     int nchan = 3; // RGB for now, don't support RGBA yet
     int biw = get_big_image_width();
     int bih = get_big_image_height();
     unsigned char *bdata = MALLOC(sizeof(unsigned char)*biw*bih*nchan);
+    int background_red=0, background_blue=0, background_green=0;
+
+    // kludge! When showing the startup image, change the background
+    // to match the background of that image.  If we ever change the
+    // startup image, this is going to look pretty ugly...
+    int is_startup = strstr(curr->filename, "startup.jpg") != NULL;
+    if (is_startup) {
+      background_red = 43;
+      background_green = 77;
+      background_blue = 138;
+    }
 
     int mm = 0;
     for ( ii = 0 ; ii < bih; ii++ ) {
@@ -247,10 +260,12 @@ static GdkPixbuf * make_big_image()
 
             unsigned char r, g, b;
 
-            if (l<0 || l>=nl || s<0 || s>=ns) {
-                r = g = b = 0;
+            if (l<0 || l>=curr->nl || s<0 || s>=curr->ns) {
+                r = background_red;
+                g = background_green;
+                b = background_blue;
             } else {
-                cached_image_get_rgb(data_ci, (int)floor(l),
+                cached_image_get_rgb(curr->data_ci, (int)floor(l),
                     (int)floor(s), &r, &g, &b);
             }
 
@@ -329,8 +344,8 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     int w = gdk_pixbuf_get_width(pb);
     int h = gdk_pixbuf_get_height(pb);
 
-    center_samp = ((int)event->x * ns) / (double)w;
-    center_line = ((int)event->y * nl) / (double)h;
+    center_samp = ((int)event->x * curr->ns) / (double)w;
+    center_line = ((int)event->y * curr->nl) / (double)h;
 
     fill_small();
     fill_big();
@@ -473,13 +488,13 @@ static int handle_keypress(GdkEventKey *event)
         // choose the larger of the horiz/vert zoom -- round up!
         //int z1 = (int)((double)nl/(double)h + .95);
         //int z2 = (int)((double)ns/(double)w + .95);
-        double z1 = (double)nl/(double)h;
-        double z2 = (double)ns/(double)w;
+        double z1 = (double)(curr->nl)/(double)h;
+        double z2 = (double)(curr->ns)/(double)w;
         zoom = z1 > z2 ? z1 : z2;
 
         // recenter the image as well
-        center_line = nl/2;
-        center_samp = ns/2;
+        center_line = (curr->nl)/2.;
+        center_samp = (curr->ns)/2.;
 
         update_zoom();
         fill_small();
@@ -535,51 +550,12 @@ static int handle_keypress(GdkEventKey *event)
             } else {
                 // I am not sure it is possible to get in here
                 // we should always have a green crosshair
-                center_line = crosshair_line = nl/2;
-                center_samp = crosshair_samp = ns/2;
+                center_line = crosshair_line = (curr->nl)/2.;
+                center_samp = crosshair_samp = (curr->ns)/2.;
                 last_was_crosshair = TRUE;
             }
         }
         fill_small();
-    } else if (event->keyval == GDK_a) {
-        // a: print out pixel values in a neighborhood of the
-        //    crosshair.  ctrl-a uses the other crosshair
-        int line=crosshair_line, samp=crosshair_samp;
-        if (event->state & GDK_CONTROL_MASK) {
-            if (g_poly.c < g_poly.n) {
-                line = g_poly.line[g_poly.c];
-                samp = g_poly.samp[g_poly.c];
-            } else {
-                line = samp = -1;
-            }
-        }
-        if (line > 0 && samp > 0) {
-            int i,j;
-            printf("     |");
-            for (j=samp-4; j<=samp+4; ++j)
-                printf("%5d  ",j);
-            printf("\n-----+");
-            for (j=samp-4; j<=samp+4; ++j)
-                printf("-------");
-            printf("-\n");
-            for (i=line-4; i<=line+4; ++i) {
-                printf("%5d|",i);
-                for (j=samp-4; j<=samp+4; ++j) {
-                    if (i>=0 && j>=0 && i<nl && j<ns)
-                        if (i==line && j==samp)
-                            printf("%6.1f*",
-                                cached_image_get_pixel(data_ci,i,j));
-                        else
-                            printf("%6.1f ",
-                                cached_image_get_pixel(data_ci,i,j));
-                    else
-                        printf("     * ");
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-        return TRUE;
     } else if (event->keyval == GDK_g) {
         // g: open google earth
         open_google_earth();
@@ -611,8 +587,8 @@ static int handle_keypress(GdkEventKey *event)
             radius*=10;
         for (i=line-radius; i<=line+radius; ++i) {
             for (j=samp-radius; j<=samp+radius; ++j) {
-                if (i>=0 && i>=0 && i<nl && j<ns) {
-                    float val = cached_image_get_pixel(data_ci,i,j);
+                if (i>=0 && i>=0 && i<curr->nl && j<curr->ns) {
+                    float val = cached_image_get_pixel(curr->data_ci,i,j);
                     if (val>max_val) {
                         max_val = val;
                         line_max = i;

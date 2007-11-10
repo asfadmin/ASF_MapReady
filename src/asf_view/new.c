@@ -212,7 +212,8 @@ void set_title(int band_specified, const char *band_in)
     else
         strcpy(band, "");
 
-    char *basename = get_basename(g_filename);
+    meta_parameters *meta = curr->meta;
+    char *basename = get_basename(curr->filename);
     snprintf(title, 239, "asf_view ver %s: %s", VERSION, basename);
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
@@ -247,33 +248,29 @@ void reset_globals(int reset_location)
         g_poly.n = g_poly.c = 0;
     }
 
-    data_ci = NULL;
-    meta = NULL;
+    curr->data_ci = NULL;
+    curr->meta = NULL;
 }
 
 static void load_file_banded_imp(const char *file, const char *band,
                                  int reset_location, int multilook)
 {
     // unload the current file, clear current globals
-    if (data_ci) cached_image_free(data_ci);
-    if (meta) meta_free(meta);
-    if (g_filename) free(g_filename);
-    if (g_meta_name) free(g_data_name);
-    if (g_data_name) free(g_meta_name);
+    image_info_free(curr);
 
     reset_globals(reset_location);
     asfPrintStatus("\nLoading: %s\n", file);
 
     // start loading of the new file
-    g_filename = STRDUP(file);
+    curr->filename = STRDUP(file);
 
     // strip off a trailing "."
-    if (g_filename[strlen(g_filename)-1] == '.')
-        g_filename[strlen(g_filename)-1] = '\0';
+    if (curr->filename[strlen(curr->filename)-1] == '.')
+        curr->filename[strlen(curr->filename)-1] = '\0';
 
-    read_file(g_filename, band, multilook, FALSE);
-    if (reset_location && meta && meta->general)
-        set_lut_based_on_image_type(meta->general->image_data_type);
+    read_file(curr->filename, band, multilook, FALSE);
+    if (reset_location && curr->meta && curr->meta->general)
+        set_lut_based_on_image_type(curr->meta->general->image_data_type);
     set_title(band != NULL, band);
     check_lut();
 
@@ -284,7 +281,7 @@ static void load_file_banded_imp(const char *file, const char *band,
     update_zoom();
     fill_meta_info();
     fill_stats();
-    setup_bands_tab(meta);
+    setup_bands_tab(curr->meta);
 }
 
 void reload_file_banded(const char *file, const char *band, int multilook)

@@ -40,10 +40,10 @@ int try_prepension(const char *filename, const char *prepension)
 int read_file(const char *filename, const char *band, int multilook,
               int on_fail_abort)
 {
-    if (meta)
-        meta_free(meta);
-    if (data_ci)
-        cached_image_free(data_ci);
+    if (curr->meta)
+        meta_free(curr->meta);
+    if (curr->data_ci)
+        cached_image_free(curr->data_ci);
 
     void (*err_func) (const char *format, ...);
     err_func = on_fail_abort ? asfPrintError : message_box;
@@ -57,6 +57,7 @@ int read_file(const char *filename, const char *band, int multilook,
     char *meta_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *err = NULL;
+    meta_parameters *meta;
 
     // If you are considering adding support for another data type,
     // see the comments in read_template.c
@@ -132,11 +133,16 @@ int read_file(const char *filename, const char *band, int multilook,
         meta->general->y_pixel_size *= meta->sar->look_count;
     }
 
-    data_ci = cached_image_new_from_file(data_name, meta, client);
-    assert(data_ci);
+    // set up the ImageInfo for this image
+    curr->meta = meta;
+    curr->data_ci = cached_image_new_from_file(data_name, meta, client);
+    assert(curr->data_ci);
 
-    nl = meta->general->line_count;
-    ns = meta->general->sample_count;
+    int nl = meta->general->line_count;
+    curr->nl = nl;
+
+    int ns = meta->general->sample_count;
+    curr->ns = ns;
 
     if (center_samp < 0 || center_samp >= ns ||
         center_line < 0 || center_line >= nl)
@@ -151,10 +157,10 @@ int read_file(const char *filename, const char *band, int multilook,
         crosshair_line = (double)nl/2.;
     }
 
-    g_meta_name = STRDUP(meta_name);
+    curr->meta_name = STRDUP(meta_name);
     free(meta_name);
 
-    g_data_name = STRDUP(data_name);
+    curr->data_name = STRDUP(data_name);
     free(data_name);
 
     return TRUE;

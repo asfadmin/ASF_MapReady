@@ -7,25 +7,16 @@
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
-// loaded metadata
-meta_parameters *meta;
-
-// loaded image data
-CachedImage *data_ci;
+ImageInfo image_info[2];
+ImageInfo *curr=NULL;
 
 // various values
-int nl, ns;
 double zoom;
 double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
 
-// loaded filename
-char *g_filename;
-
-// data & meta filenames
-char *g_data_name;
-char *g_meta_name;
+void image_info_free(ImageInfo *ii);
 
 char *find_in_share(const char * filename)
 {
@@ -72,12 +63,16 @@ main(int argc, char **argv)
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
 
+    // set up image array
+    curr = &image_info[0];
+    curr->data_name = curr->meta_name = NULL;
+
     if (argc < 2) {
-        g_filename = STRDUP(find_in_share("startup.jpg"));
+        curr->filename = STRDUP(find_in_share("startup.jpg"));
     } else {
         if (argc > 2)
           asfPrintWarning("Extraneous command-line arguments ignored.\n");
-        g_filename = STRDUP(argv[1]);
+        curr->filename = STRDUP(argv[1]);
     }
 
     // we could call load_file() here, but don't because this way we can
@@ -88,16 +83,14 @@ main(int argc, char **argv)
     // initialize globals
     reset_globals(TRUE);
 
-    g_data_name = g_meta_name = NULL;
-
     // strip off a trailing "."
-    if (g_filename[strlen(g_filename)-1] == '.')
-        g_filename[strlen(g_filename)-1] = '\0';
+    if (curr->filename[strlen(curr->filename)-1] == '.')
+        curr->filename[strlen(curr->filename)-1] = '\0';
 
-    read_file(g_filename, band_specified ? band : NULL, FALSE, TRUE);
+    read_file(curr->filename, band_specified ? band : NULL, FALSE, TRUE);
 
-    assert(g_data_name);
-    assert(g_meta_name);
+    assert(curr->data_name);
+    assert(curr->meta_name);
 
     // we load the thumbnail data before bringing up the window, looks
     // much nicer.  When loading an image within the GUI, we don't need
@@ -124,8 +117,9 @@ main(int argc, char **argv)
     // (In new.c, this kludge isn't required - we load/apply in the
     // same pass -- here it is required because we pre-load the thumbnail)
     populate_lut_combo();
-    if (meta && meta->general)  {
-        if (set_lut_based_on_image_type(meta->general->image_data_type)) {
+    if (curr->meta && curr->meta->general)  {
+        if (set_lut_based_on_image_type(curr->meta->general->image_data_type))
+        {
             check_lut();
             // data we loaded needs to be lutted
             apply_lut_to_data(thumbnail_data);
@@ -140,17 +134,21 @@ main(int argc, char **argv)
     set_font();
     fill_meta_info();
     fill_stats();
-    setup_bands_tab(meta);
+    setup_bands_tab(curr->meta);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 
-    if (data_ci) cached_image_free(data_ci);
-    if (meta) meta_free(meta);
-    if (g_filename) free(g_filename);
-    if (g_data_name) free(g_meta_name);
-    if (g_meta_name) free(g_data_name);
-
+    image_info_free(curr);
     exit (EXIT_SUCCESS);
+}
+
+void image_info_free(ImageInfo *ii)
+{
+    if (ii->data_ci) cached_image_free(ii->data_ci);
+    if (ii->meta) meta_free(ii->meta);
+    if (ii->filename) free(ii->filename);
+    if (ii->data_name) free(ii->meta_name);
+    if (ii->meta_name) free(ii->data_name);
 }
 

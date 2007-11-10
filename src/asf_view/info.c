@@ -3,19 +3,21 @@
 
 static void line_samp_to_proj(double line, double samp, double *x, double *y)
 {
-    if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform) {
-        double lat, lon, projZ;
-        meta_get_latLon(meta, line, samp, 0, &lat, &lon);
-        if (meta->projection) {
-            latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
-                x, y, &projZ);
-        } else {
-            latLon2UTM(lat, lon, 0, x, y);
-        }
+  meta_parameters *meta = curr->meta;
+  if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform)
+  {
+    double lat, lon, projZ;
+    meta_get_latLon(meta, line, samp, 0, &lat, &lon);
+    if (meta->projection) {
+      latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
+                     x, y, &projZ);
     } else {
-        *x = samp;
-        *y = line;
+      latLon2UTM(lat, lon, 0, x, y);
     }
+  } else {
+    *x = samp;
+    *y = line;
+  }
 }
 
 void update_pixel_info()
@@ -28,6 +30,10 @@ void update_pixel_info()
 
     double x = crosshair_samp;
     double y = crosshair_line;
+    int nl = curr->meta->general->line_count;
+    int ns = curr->meta->general->sample_count;
+    CachedImage *data_ci = curr->data_ci;
+    meta_parameters *meta = curr->meta;
 
     sprintf(buf, "Line: %.1f, Sample: %.1f\n", y, x);
 
@@ -118,7 +124,8 @@ void update_pixel_info()
         double d=0, A=0; // d=distance, A=area
         for (i=0; i<g_poly.n; ++i) {
             double proj_x, proj_y;       
-            line_samp_to_proj(g_poly.line[i], g_poly.samp[i], &proj_x, &proj_y);
+            line_samp_to_proj(g_poly.line[i], g_poly.samp[i],
+                              &proj_x, &proj_y);
 
             d += hypot(proj_x-prev_x, proj_y-prev_y);
             A += prev_x * proj_y - proj_x * prev_y;

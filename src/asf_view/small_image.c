@@ -14,6 +14,8 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
     guchar *pixels, *p;
     const int bb_width = get_big_image_width();
     const int bb_height = get_big_image_height();
+    int ns = curr->ns;
+    int nl = curr->nl;
 
     n_channels = gdk_pixbuf_get_n_channels (pixbuf);
     
@@ -67,24 +69,24 @@ GdkPixbuf *pixbuf_small = NULL;
 
 ThumbnailData *get_thumbnail_data()
 {
-    assert(data_ci && meta);
+    assert(curr && curr->data_ci && curr->meta);
 
     int larger_dim = THUMB_SIZE*4;
-    if (larger_dim > meta->general->line_count)
-        larger_dim = meta->general->line_count;
+    if (larger_dim > curr->meta->general->line_count)
+        larger_dim = curr->meta->general->line_count;
 
     //printf("Larger size: %d\n", larger_dim);
 
     // Vertical and horizontal scale factors required to meet the
     // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (nl / larger_dim);
-    int hsf = ceil (ns / larger_dim);
+    int vsf = ceil (curr->nl / larger_dim);
+    int hsf = ceil (curr->ns / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : vsf);
 
     // Image sizes.
-    int tsx = meta->general->sample_count / sf;
-    int tsy = meta->general->line_count / sf;
+    int tsx = curr->meta->general->sample_count / sf;
+    int tsy = curr->meta->general->line_count / sf;
     //printf("Sizes: %d, %d\n", tsx, tsy);
 
     // this will also calculate the image statistics (estimates)
