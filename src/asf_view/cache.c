@@ -220,7 +220,8 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
 }
 
 CachedImage * cached_image_new_from_file(
-    const char *file, meta_parameters *meta, ClientInterface *client)
+    const char *file, meta_parameters *meta, ClientInterface *client,
+    ImageStats *stats)
 {
     CachedImage *self = MALLOC(sizeof(CachedImage));
 
@@ -231,6 +232,7 @@ CachedImage * cached_image_new_from_file(
 
     self->client = client; // take ownership of this
     self->meta = meta;     // do NOT take ownership of this
+    self->stats = stats;   // do NOT take ownership of this
 
     // line line_count may have been fudges, if we are multilooking
     self->nl = meta->general->line_count; 
@@ -311,7 +313,8 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
             // do not scale in the case of a lut
             apply_lut((int)f, r, g, b);
         } else {
-            *r = *g = *b = (unsigned char)calc_scaled_pixel_value(f);
+            *r = *g = *b =
+              (unsigned char)calc_scaled_pixel_value(self->stats, f);
         }
     }
     else if (self->data_type == GREYSCALE_BYTE) {
@@ -330,9 +333,9 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
     else if (self->data_type == RGB_FLOAT) {
         float *f = (float*)get_pixel(self, line, samp);
 
-        *r = (unsigned char)calc_scaled_pixel_value(f[0]);
-        *g = (unsigned char)calc_scaled_pixel_value(f[1]);
-        *b = (unsigned char)calc_scaled_pixel_value(f[2]);
+        *r = (unsigned char)calc_scaled_pixel_value(self->stats,f[0]);
+        *g = (unsigned char)calc_scaled_pixel_value(self->stats,f[1]);
+        *b = (unsigned char)calc_scaled_pixel_value(self->stats,f[2]);
     }
     else {
         // impossible!
@@ -346,7 +349,7 @@ void cached_image_get_rgb_float(CachedImage *self, int line, int samp,
 {
     if (self->data_type == GREYSCALE_FLOAT) {
         float f = cached_image_get_pixel(self, line, samp);
-        *r = *g = *b = calc_scaled_pixel_value(f);
+        *r = *g = *b = calc_scaled_pixel_value(self->stats, f);
     }
     else if (self->data_type == GREYSCALE_BYTE) {
         *r = *g = *b = (float)(*(get_pixel(self, line, samp)));

@@ -1,5 +1,5 @@
-#ifndef __SV_H
-#define __SV_H
+#ifndef __ASF_VIEW_H
+#define __ASF_VIEW_H
 
 #define VERSION "1.1"
 
@@ -37,26 +37,6 @@ typedef struct {
 #endif
 
 typedef struct {
-    double map_min, map_max; // max/min for 2-sigma mapping
-    double avg, stddev;
-    double act_min, act_max; // absolute min/max of all values
-    int hist[256];           // histogram
-} ImageStats;
-
-#define MAX_POLY_LEN 128
-typedef struct {
-    int n;                    // How many points in the polygon
-    int c;                    // Currently "active" point (-1 for none)
-    double line[MAX_POLY_LEN];// vertices of the polygon
-    double samp[MAX_POLY_LEN];
-    int show_extent;          // draw bounding box of polygon?
-    int extent_x_min, extent_x_max; // bounding box values
-    int extent_y_min, extent_y_max; // when show_extent==TRUE, these must
-                                    // be made valid
-} UserPolygon;
-
-// This is defined/managed in bands.c, it is a singleton
-typedef struct {
     int is_rgb;
     int band_gs;
     int band_r;
@@ -84,7 +64,7 @@ void set_font(void);
 void clear_combobox(const char *widget_name);
 void add_to_combobox(const char *widget_name, const char *txt);
 void set_combo_box_item_checked(const char *widget_name, gint index);
-char *get_band_combo_text(const char *widget_name);
+char *get_band_combo_text(meta_parameters *meta, const char *widget_name);
 void rb_select(const char *widget_name, gboolean is_on);
 double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
@@ -167,20 +147,18 @@ int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
 meta_parameters* open_pgm(const char *data_name, ClientInterface *client);
 
 /* big_image.c */
-void fill_big(void);
-void update_pixel_info(void);
+void fill_big(ImageInfo *ii);
 void update_zoom(void);
 int get_big_image_width(void);
 int get_big_image_width2(void);
 int get_big_image_height(void);
 int get_big_image_height2(void);
-int calc_scaled_pixel_value(float val);
 
 /* small_image.c */
-ThumbnailData *get_thumbnail_data(void);
-void fill_small(void);
-void fill_small_force_reload(void);
-void fill_small_have_data(ThumbnailData *thumbnail_data);
+ThumbnailData *get_thumbnail_data(ImageInfo *ii);
+void fill_small(ImageInfo *ii);
+void fill_small_force_reload(ImageInfo *ii);
+void fill_small_have_data(ThumbnailData *thumbnail_data, ImageInfo *ii);
 
 /* meta.c */
 char * escapify(const char * s);
@@ -189,11 +167,11 @@ void open_mdv(void);
 char *br(const char *s);
 
 /* stats.c */
-unsigned char *generate_thumbnail_data(int tsx, int tsy);
-int fill_stats(void);
+unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy);
+int fill_stats(ImageInfo *ii);
 void calc_stats_thread(gpointer user_data);
-int calc_scaled_pixel_value(float val);
-void clear_stats(void);
+int calc_scaled_pixel_value(ImageStats *stats, float val);
+void clear_stats(ImageInfo *ii);
 
 /* google.c */
 char *find_in_path(char * file);
@@ -208,8 +186,8 @@ void reset_globals(int reset_position);
 void set_title(int band_specified, const char *band);
 
 /* subset.c */
-void save_subset(void);
-void update_poly_extents(void);
+void save_subset(ImageInfo *ii);
+void update_poly_extents(meta_parameters *meta);
 
 /* bands.c */
 void setup_bands_tab(meta_parameters *meta);
@@ -217,7 +195,7 @@ void set_bands_rgb(int r, int g, int b);
 void set_bands_greyscale(int b);
 
 /* info.c */
-void update_pixel_info(void);
+void update_pixel_info(ImageInfo *);
 
 /* lut.c */
 void populate_lut_combo(void);
@@ -237,6 +215,18 @@ extern const char DIR_SEPARATOR;
 
 extern const char PATH_SEPATATOR;
 
+#define MAX_POLY_LEN 128
+typedef struct {
+    int n;                    // How many points in the polygon
+    int c;                    // Currently "active" point (-1 for none)
+    double line[MAX_POLY_LEN];// vertices of the polygon
+    double samp[MAX_POLY_LEN];
+    int show_extent;          // draw bounding box of polygon?
+    int extent_x_min, extent_x_max; // bounding box values
+    int extent_y_min, extent_y_max; // when show_extent==TRUE, these must
+                                    //   be made valid
+} UserPolygon;
+
 /*************** these are our global variables ... ***********************/
 
 extern GladeXML *glade_xml;
@@ -247,21 +237,11 @@ extern ImageInfo image_info[2];
 // which, currently, is always image_info[0].
 extern ImageInfo *curr;
 
-//extern meta_parameters *meta;
-//extern CachedImage *data_ci;
-
-//extern int nl, ns;
-//extern ImageStats g_stats;
+// these globals all relate to the current viewing settings
 extern UserPolygon g_poly;
-//extern BandConfig g_band_cfg;
-
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;
-
-//extern char *g_filename;
-//extern char *g_data_name;
-//extern char *g_meta_name;
 
 extern int g_saved_line_count;
 

@@ -116,6 +116,7 @@ meta_parameters *read_X_meta(const char *meta_name)
 // [in] read_client_info: A pointer to the ReadXClientInfo struct you
 //                        created in open_X_data().
 // [in] meta: The metdata from read_X_meta().
+// [in] data_type: e.g., RGB_BYTE, GREYSCALE_FLOAT, etc.
 
 // return TRUE on success, FALSE on failure.
 
@@ -123,7 +124,7 @@ meta_parameters *read_X_meta(const char *meta_name)
 // info you want needs to be placed into the ReadXClientInfo struct.
 int read_X_client(int row_start, int n_rows_to_get,
                   void *dest_void, void *read_client_info,
-                  meta_parameters *meta)
+                  meta_parameters *meta, int data_type)
 {
     // pick one of these!  And populate it.
     //float *dest = (float*)dest_void;
@@ -155,6 +156,7 @@ int read_X_client(int row_start, int n_rows_to_get,
 // [in] meta: The metdata from read_X_meta().
 // [in] read_client_info: A pointer to the ReadXClientInfo struct you
 //                        created in open_X_data().
+// [in] data_type: e.g., RGB_BYTE, GREYSCALE_FLOAT, etc.
 // [out] dest: where the data should be put.  Allocated by the caller.
 
 // You should use an asfPercentMeter while reading in the data.
@@ -166,9 +168,9 @@ int read_X_client(int row_start, int n_rows_to_get,
 // thumbnail function pointer to NULL.  In that case, the read_X code
 // will be called to generate the thumbnail.
 
-int get_X_thumbnail_data(FILE *fp, int thumb_size_x,
-                         int thumb_size_y, meta_parameters *meta,
-                         void *read_client_info, void *dest_void)
+int get_X_thumbnail_data(FILE *fp, int thumb_size_x, int thumb_size_y,
+                         meta_parameters *meta, void *read_client_info,
+                         void *dest_void, int data_type)
 {
     // pick one of these!  And populate it.
     //float *dest = (float*)dest_void;
@@ -232,7 +234,9 @@ int open_X_data(const char *data_name, const char *meta_name,
 
     // You must set this to something!
     // Be sure what you return for "dest" in the read client
-    // functions is of this type
+    // functions is of this type.  This is passed in as the
+    // "data_type" parameter to the read client, and the thumbnail
+    // loader.
     client->data_type = UNDEFINED;
 
     return FALSE;

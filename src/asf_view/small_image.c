@@ -8,14 +8,14 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
-static void put_bounding_box(GdkPixbuf *pixbuf)
+static void put_bounding_box(GdkPixbuf *pixbuf, ImageInfo *ii)
 {
     int i, width, height, rowstride, n_channels;
     guchar *pixels, *p;
     const int bb_width = get_big_image_width();
     const int bb_height = get_big_image_height();
-    int ns = curr->ns;
-    int nl = curr->nl;
+    int ns = ii->ns;
+    int nl = ii->nl;
 
     n_channels = gdk_pixbuf_get_n_channels (pixbuf);
     
@@ -67,30 +67,30 @@ static void put_bounding_box(GdkPixbuf *pixbuf)
 
 GdkPixbuf *pixbuf_small = NULL;
 
-ThumbnailData *get_thumbnail_data()
+ThumbnailData *get_thumbnail_data(ImageInfo *ii)
 {
-    assert(curr && curr->data_ci && curr->meta);
+    assert(ii && ii->data_ci && ii->meta);
 
     int larger_dim = THUMB_SIZE*4;
-    if (larger_dim > curr->meta->general->line_count)
-        larger_dim = curr->meta->general->line_count;
+    if (larger_dim > ii->meta->general->line_count)
+        larger_dim = ii->meta->general->line_count;
 
     //printf("Larger size: %d\n", larger_dim);
 
     // Vertical and horizontal scale factors required to meet the
     // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (curr->nl / larger_dim);
-    int hsf = ceil (curr->ns / larger_dim);
+    int vsf = ceil (ii->nl / larger_dim);
+    int hsf = ceil (ii->ns / larger_dim);
     // Overall scale factor to use is the greater of vsf and hsf.
     int sf = (hsf > vsf ? hsf : vsf);
 
     // Image sizes.
-    int tsx = curr->meta->general->sample_count / sf;
-    int tsy = curr->meta->general->line_count / sf;
+    int tsx = ii->meta->general->sample_count / sf;
+    int tsy = ii->meta->general->line_count / sf;
     //printf("Sizes: %d, %d\n", tsx, tsy);
 
     // this will also calculate the image statistics (estimates)
-    unsigned char *data = generate_thumbnail_data(tsx, tsy);
+    unsigned char *data = generate_thumbnail_data(ii, tsx, tsy);
 
     ThumbnailData *ret = MALLOC(sizeof(ThumbnailData));
     ret->size_x = tsx;
@@ -100,7 +100,8 @@ ThumbnailData *get_thumbnail_data()
     return ret;
 }
 
-static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata)
+static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
+                                    ImageInfo *ii)
 {
     if (!pixbuf_small || force) {
         if (pixbuf_small) {
@@ -109,7 +110,7 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata)
         }
 
         if (!tdata)
-            tdata = get_thumbnail_data();
+            tdata = get_thumbnail_data(ii);
 
         int tsx = tdata->size_x;
         int tsy = tdata->size_y;
@@ -145,27 +146,28 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata)
     }
 
     GdkPixbuf *pb2 = gdk_pixbuf_copy(pixbuf_small);
-    put_bounding_box(pb2);
+    put_bounding_box(pb2, ii);
     return pb2;
 }
 
-void fill_small_force_reload()
+void fill_small_force_reload(ImageInfo *ii)
 {
-    GdkPixbuf *pb = make_small_image(TRUE, NULL);
+    GdkPixbuf *pb = make_small_image(TRUE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }
 
-void fill_small()
+void fill_small(ImageInfo *ii)
 {
-    GdkPixbuf *pb = make_small_image(FALSE, NULL);
+    GdkPixbuf *pb = make_small_image(FALSE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }
 
-void fill_small_have_data(ThumbnailData *thumbnail_data)
+void fill_small_have_data(ThumbnailData *thumbnail_data,
+                          ImageInfo *ii)
 {
-    GdkPixbuf *pb = make_small_image(TRUE, thumbnail_data);
+    GdkPixbuf *pb = make_small_image(TRUE, thumbnail_data, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 }

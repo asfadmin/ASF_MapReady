@@ -16,8 +16,6 @@ double center_samp, center_line;
 double crosshair_line, crosshair_samp;
 int g_saved_line_count;
 
-void image_info_free(ImageInfo *ii);
-
 char *find_in_share(const char * filename)
 {
     char * ret = MALLOC(sizeof(char) *
@@ -95,12 +93,12 @@ main(int argc, char **argv)
     // we load the thumbnail data before bringing up the window, looks
     // much nicer.  When loading an image within the GUI, we don't need
     // to do get_thumbnail_data() as a separate step.
-    ThumbnailData *thumbnail_data = get_thumbnail_data();
+    ThumbnailData *thumbnail_data = get_thumbnail_data(curr);
     gtk_init(&argc, &argv);
 
     //GtkWidget *eb = get_widget_checked("big_image_eventbox");
     //int e = gtk_widget_get_events(eb);
-    //gtk_widget_set_events(eb, e | GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK);
+    //gtk_widget_set_events(eb, e|GDK_KEY_PRESS_MASK|GDK_POINTER_MOTION_MASK);
 
     gchar *glade_xml_file = (gchar *) find_in_share("asf_view.glade");
     printf("Found asf_view.glade: %s\n", glade_xml_file);
@@ -127,13 +125,13 @@ main(int argc, char **argv)
     }
 
     // load the metadata & image data, other setup
-    fill_small_have_data(thumbnail_data);
-    fill_big();
-    update_pixel_info();
+    fill_small_have_data(thumbnail_data, curr);
+    fill_big(curr);
+    update_pixel_info(curr);
     update_zoom();
     set_font();
     fill_meta_info();
-    fill_stats();
+    fill_stats(curr);
     setup_bands_tab(curr->meta);
 
     glade_xml_signal_autoconnect(glade_xml);

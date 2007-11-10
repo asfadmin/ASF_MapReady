@@ -49,16 +49,16 @@ SIGNAL_CALLBACK void on_big_image_resize(GtkWidget *w,
         big_img_width2 = big_img_width/2;
         big_img_height2 = big_img_height/2;
 
-        fill_small();
-        fill_big();
+        fill_small(curr);
+        fill_big(curr);
     }
 }
 
 // I am not sure this is even necessary
 SIGNAL_CALLBACK void on_big_image_repaint(GtkWidget *w)
 {
-    fill_small();
-    fill_big();
+    fill_small(curr);
+    fill_big(curr);
 }
 
 static void ls2img(double line, double samp, int *x, int *y)
@@ -90,9 +90,9 @@ static void show_or_hide_save_subset_button()
 
 // draws a crosshair at x,y (image coords)
 static void put_crosshair (GdkPixbuf *pixbuf, double line, double samp,
-                           int green)
+                           int green, ImageInfo *ii)
 {
-    if (samp < 0 || line < 0 || samp >= curr->ns || line >= curr->nl)
+    if (samp < 0 || line < 0 || samp >= ii->ns || line >= ii->nl)
         return;
 
     int i, lo, hi;
@@ -163,11 +163,12 @@ static int iabs(int i)
 #define PURPLE 2
 
 static void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
-                     double line1, double samp1, int color)
+                     double line1, double samp1, int color,
+                     ImageInfo *ii)
 {
     if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
-        samp0 >= curr->ns || samp1 >= curr->ns ||
-        line0 >= curr->nl || line1 >= curr->nl) return;
+        samp0 >= ii->ns || samp1 >= ii->ns ||
+        line0 >= ii->nl || line1 >= ii->nl) return;
 
     int i, j, width, height, rowstride, n_channels;
     guchar *pixels, *p;
@@ -230,12 +231,12 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     }
 }
 
-static GdkPixbuf * make_big_image()
+static GdkPixbuf * make_big_image(ImageInfo *ii)
 {
-    assert(curr->data_ci);
-    assert(curr->meta);
+    assert(ii->data_ci);
+    assert(ii->meta);
 
-    int ii, jj;
+    int i, j;
     int nchan = 3; // RGB for now, don't support RGBA yet
     int biw = get_big_image_width();
     int bih = get_big_image_height();
@@ -253,19 +254,19 @@ static GdkPixbuf * make_big_image()
     }
 
     int mm = 0;
-    for ( ii = 0 ; ii < bih; ii++ ) {
-        for ( jj = 0 ; jj < biw; jj++ ) {
+    for (i=0; i<bih; ++i) {
+        for (j=0; j<biw; ++j) {
             double l, s;
-            img2ls(jj,ii,&l,&s);
+            img2ls(j,i,&l,&s);
 
             unsigned char r, g, b;
 
-            if (l<0 || l>=curr->nl || s<0 || s>=curr->ns) {
+            if (l<0 || l>=ii->nl || s<0 || s>=ii->ns) {
                 r = background_red;
                 g = background_green;
                 b = background_blue;
             } else {
-                cached_image_get_rgb(curr->data_ci, (int)floor(l),
+                cached_image_get_rgb(ii->data_ci, (int)floor(l),
                     (int)floor(s), &r, &g, &b);
             }
 
@@ -288,15 +289,15 @@ static GdkPixbuf * make_big_image()
     // put the red crosshair at the "active" point along the polygon
     if (g_poly.c < g_poly.n)
         put_crosshair(pb, g_poly.line[g_poly.c], g_poly.samp[g_poly.c],
-            FALSE);
+            FALSE, ii);
 
     // draw the polygon
     if (g_poly.n > 0) {
         put_line(pb, crosshair_line, crosshair_samp,
-            g_poly.line[0], g_poly.samp[0], RED);
-        for (ii=0; ii<g_poly.n-1; ++ii) {
-            put_line(pb, g_poly.line[ii], g_poly.samp[ii],
-                g_poly.line[ii+1], g_poly.samp[ii+1], RED);
+            g_poly.line[0], g_poly.samp[0], RED, ii);
+        for (i=0; i<g_poly.n-1; ++i) {
+            put_line(pb, g_poly.line[i], g_poly.samp[i],
+                g_poly.line[i+1], g_poly.samp[i+1], RED, ii);
         }
     } else if (g_poly.show_extent) {
         // no polygon -- close "save subset" window, if open
@@ -306,27 +307,27 @@ static GdkPixbuf * make_big_image()
 
     // green crosshair goes second, so if the two overlap, we will see
     // the green one (the main one)
-    put_crosshair(pb, crosshair_line, crosshair_samp, TRUE);
+    put_crosshair(pb, crosshair_line, crosshair_samp, TRUE, ii);
 
     // draw bounding box if requested
     if (g_poly.show_extent) {
-        update_poly_extents();
+        update_poly_extents(ii->meta);
         put_line(pb, g_poly.extent_y_min, g_poly.extent_x_min,
-                     g_poly.extent_y_max, g_poly.extent_x_min, PURPLE);
+                     g_poly.extent_y_max, g_poly.extent_x_min, PURPLE, ii);
         put_line(pb, g_poly.extent_y_max, g_poly.extent_x_min,
-                     g_poly.extent_y_max, g_poly.extent_x_max, PURPLE);
+                     g_poly.extent_y_max, g_poly.extent_x_max, PURPLE, ii);
         put_line(pb, g_poly.extent_y_max, g_poly.extent_x_max,
-                     g_poly.extent_y_min, g_poly.extent_x_max, PURPLE);
+                     g_poly.extent_y_min, g_poly.extent_x_max, PURPLE, ii);
         put_line(pb, g_poly.extent_y_min, g_poly.extent_x_max,
-                     g_poly.extent_y_min, g_poly.extent_x_min, PURPLE);
+                     g_poly.extent_y_min, g_poly.extent_x_min, PURPLE, ii);
     }
 
     return pb;
 }
 
-void fill_big()
+void fill_big(ImageInfo *ii)
 {
-    GdkPixbuf *pb = make_big_image();
+    GdkPixbuf *pb = make_big_image(ii);
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
 
@@ -347,8 +348,8 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     center_samp = ((int)event->x * curr->ns) / (double)w;
     center_line = ((int)event->y * curr->nl) / (double)h;
 
-    fill_small();
-    fill_big();
+    fill_small(curr);
+    fill_big(curr);
 
     return TRUE;
 }
@@ -385,13 +386,13 @@ on_big_image_eventbox_button_press_event(
             img2ls((int)event->x, (int)event->y, &crosshair_line, &crosshair_samp);
             last_was_crosshair = TRUE;
         }
-        update_pixel_info();
-        fill_big();
+        update_pixel_info(curr);
+        fill_big(curr);
     } else if (event->button == 3) {
         // right-click: re-center
         img2ls((int)event->x, (int)event->y, &center_line, &center_samp);
-        fill_small();
-        fill_big();
+        fill_small(curr);
+        fill_big(curr);
     }
 
     return TRUE;
@@ -415,7 +416,7 @@ void update_zoom()
    put_string_to_label("zoom_label", buf);
 }
 
-static void zoom_in()
+static void zoom_in(ImageInfo *ii)
 {
     // zooming in when larger than 1:1 decreases by 1 each time
     // until 1:1, then we halve the zoom factor
@@ -425,10 +426,10 @@ static void zoom_in()
         zoom /= 2;
 
     update_zoom();
-    fill_small();
+    fill_small(ii);
 }
 
-static void zoom_out()
+static void zoom_out(ImageInfo *ii)
 {
     // zooming out when larger than 1:1 increases by 1 each time
     // when less than 1:1, then we double the zoom factor
@@ -438,14 +439,14 @@ static void zoom_out()
         zoom = (int)zoom + 1;
 
     update_zoom();
-    fill_small();
+    fill_small(ii);
 }
 
-static void zoom_default()
+static void zoom_default(ImageInfo *ii)
 {
     zoom = 1;
     update_zoom();
-    fill_small();
+    fill_small(ii);
 }
 
 SIGNAL_CALLBACK int
@@ -453,16 +454,16 @@ on_big_image_scroll_event(
     GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
     if (event->direction == GDK_SCROLL_UP) {
-        zoom_in();
+        zoom_in(curr);
     } else if (event->direction == GDK_SCROLL_DOWN) {
-        zoom_out();
+        zoom_out(curr);
     }
 
-    fill_big();
+    fill_big(curr);
     return TRUE;
 }
 
-static int handle_keypress(GdkEventKey *event)
+static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
 {
     // handle the non-cursor-moving events first
     if (event->keyval == GDK_Page_Up || 
@@ -470,16 +471,16 @@ static int handle_keypress(GdkEventKey *event)
         event->keyval == GDK_plus)
     {
         // Page Up or Plus: Zoom IN
-        zoom_in();
+        zoom_in(ii);
     } else if (event->keyval == GDK_Page_Down || 
         event->keyval == GDK_Next || 
         event->keyval == GDK_minus)
     {
         // Page Down or Minus: Zoom OUT
-        zoom_out();
+        zoom_out(ii);
     } else if (event->keyval == GDK_Home) {
         // Home: Revert to the normal zoom level
-        zoom_default();
+        zoom_default(ii);
     } else if (event->keyval == GDK_End) {
         // End: Fit image to window
         int h = get_big_image_height();
@@ -488,16 +489,16 @@ static int handle_keypress(GdkEventKey *event)
         // choose the larger of the horiz/vert zoom -- round up!
         //int z1 = (int)((double)nl/(double)h + .95);
         //int z2 = (int)((double)ns/(double)w + .95);
-        double z1 = (double)(curr->nl)/(double)h;
-        double z2 = (double)(curr->ns)/(double)w;
+        double z1 = (double)(ii->nl)/(double)h;
+        double z2 = (double)(ii->ns)/(double)w;
         zoom = z1 > z2 ? z1 : z2;
 
         // recenter the image as well
-        center_line = (curr->nl)/2.;
-        center_samp = (curr->ns)/2.;
+        center_line = (ii->nl)/2.;
+        center_samp = (ii->ns)/2.;
 
         update_zoom();
-        fill_small();
+        fill_small(ii);
     } else if (event->keyval == GDK_Tab) {
         // Tab key: Cycle between the crosshairs (which one is affected by
         // subsequent arrow movements) Shift- or ctrl-tab: other direction
@@ -532,12 +533,12 @@ static int handle_keypress(GdkEventKey *event)
             --g_poly.n;
             if (g_poly.c >= g_poly.n)
                 g_poly.c = g_poly.n-1;
-            update_pixel_info();
+            update_pixel_info(ii);
         }
     } else if (event->keyval == GDK_Escape) {
         // Escape: clear the ctrl-clicked path
         g_poly.n = g_poly.c = 0;
-        update_pixel_info();
+        update_pixel_info(ii);
     } else if (event->keyval == GDK_c) {
         // c: Center image view on crosshair
         if (event->state & GDK_CONTROL_MASK && g_poly.n > 0 && g_poly.c >= 0) {
@@ -550,12 +551,12 @@ static int handle_keypress(GdkEventKey *event)
             } else {
                 // I am not sure it is possible to get in here
                 // we should always have a green crosshair
-                center_line = crosshair_line = (curr->nl)/2.;
-                center_samp = crosshair_samp = (curr->ns)/2.;
+                center_line = crosshair_line = (ii->nl)/2.;
+                center_samp = crosshair_samp = (ii->ns)/2.;
                 last_was_crosshair = TRUE;
             }
         }
-        fill_small();
+        fill_small(ii);
     } else if (event->keyval == GDK_g) {
         // g: open google earth
         open_google_earth();
@@ -567,7 +568,7 @@ static int handle_keypress(GdkEventKey *event)
     } else if (event->keyval == GDK_s && event->state & GDK_CONTROL_MASK) {
         // ctrl-s: save subset
         if (g_poly.n > 0)
-            save_subset();
+            save_subset(ii);
         return TRUE;
     } else if (event->keyval == GDK_l) {
         // l: move to a local maxima (30x30 pixel search area)
@@ -587,8 +588,8 @@ static int handle_keypress(GdkEventKey *event)
             radius*=10;
         for (i=line-radius; i<=line+radius; ++i) {
             for (j=samp-radius; j<=samp+radius; ++j) {
-                if (i>=0 && i>=0 && i<curr->nl && j<curr->ns) {
-                    float val = cached_image_get_pixel(curr->data_ci,i,j);
+                if (i>=0 && i>=0 && i<ii->nl && j<ii->ns) {
+                    float val = cached_image_get_pixel(ii->data_ci,i,j);
                     if (val>max_val) {
                         max_val = val;
                         line_max = i;
@@ -604,7 +605,7 @@ static int handle_keypress(GdkEventKey *event)
             crosshair_line=line_max;
             crosshair_samp=samp_max;
         }
-        update_pixel_info();
+        update_pixel_info(ii);
     } else if (event->keyval == GDK_n) {
         // n: open a new file
         new_file();
@@ -638,7 +639,7 @@ static int handle_keypress(GdkEventKey *event)
                 case GDK_Right: center_samp += incr; break;
                 default: return TRUE;
             }
-            fill_small();
+            fill_small(ii);
         } else {
             // Move one of the crosshairs
             if (last_was_crosshair) {
@@ -668,11 +669,11 @@ static int handle_keypress(GdkEventKey *event)
                     default: return TRUE;
                 }
             }
-            update_pixel_info();
+            update_pixel_info(ii);
         }
     }
 
-    fill_big();
+    fill_big(ii);
     return TRUE;
 }
 
@@ -682,14 +683,14 @@ on_big_image_eventbox_key_press_event(
 {
     // this event never seems to fire -- all kepresses are grabbed
     // by the "main_window" keypress handler below
-    return handle_keypress(event);
+    return handle_keypress(event, curr);
 }
 
 SIGNAL_CALLBACK int
 on_ssv_main_window_key_press_event(
     GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 {
-    return handle_keypress(event);
+    return handle_keypress(event, curr);
 }
 
 //  Haven't gotten the motion events firing yet... not sure what

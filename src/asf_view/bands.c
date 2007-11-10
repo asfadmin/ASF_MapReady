@@ -156,9 +156,9 @@ on_bands_apply_button_clicked(GtkWidget *w)
     }
     else if (get_checked("combine_bands_into_rgb_radiobutton")) {
         // multiband rgb
-        char *r = get_band_combo_text("red_combobox");
-        char *g = get_band_combo_text("green_combobox");
-        char *b = get_band_combo_text("blue_combobox");
+        char *r = get_band_combo_text(curr->meta, "red_combobox");
+        char *g = get_band_combo_text(curr->meta, "green_combobox");
+        char *b = get_band_combo_text(curr->meta, "blue_combobox");
         char *s = MALLOC(sizeof(char)*(strlen(r)+strlen(g)+strlen(b)+10));
         sprintf(s,"%s,%s,%s",r?r:"-",g?g:"-",b?b:"-");
         //printf("Load banded: %s, %s\n", g_filename, s);
@@ -169,7 +169,8 @@ on_bands_apply_button_clicked(GtkWidget *w)
         free(f);
     } else {
         // greyscale
-        char *gs = get_band_combo_text("single_band_as_greyscale_combobox");
+        char *gs = get_band_combo_text(curr->meta,
+                                     "single_band_as_greyscale_combobox");
         if (gs) {
             char *f = STRDUP(curr->filename);
             reload_file_banded(f, gs, ml);

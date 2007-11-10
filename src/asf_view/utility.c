@@ -39,12 +39,12 @@ set_combo_box_item_checked(const char *widget_name, gint index)
     gtk_combo_box_set_active(GTK_COMBO_BOX(ddl), index);
 }
 
-char *get_band_combo_text(const char *widget_name)
+char *get_band_combo_text(meta_parameters *meta, const char *widget_name)
 {
     // specific to combobox populated with meta->general->bands
     GtkWidget *w = get_widget_checked(widget_name);
     int i = gtk_combo_box_get_active(GTK_COMBO_BOX(w));
-    char *b = STRDUP(curr->meta->general->bands);
+    char *b = STRDUP(meta->general->bands);
     char *p = b;
     while (i-- > 0) {
         char *p1 = strchr(p,',');

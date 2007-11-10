@@ -240,7 +240,7 @@ void set_title(int band_specified, const char *band_in)
 
 void reset_globals(int reset_location)
 {
-    clear_stats();
+    clear_stats(curr);
 
     if (reset_location) {
         center_line = center_samp = crosshair_samp = crosshair_line = -1;
@@ -275,12 +275,12 @@ static void load_file_banded_imp(const char *file, const char *band,
     check_lut();
 
     // load the metadata & image data, other setup
-    fill_small_force_reload();
-    fill_big();
-    update_pixel_info();
+    fill_small_force_reload(curr);
+    fill_big(curr);
+    update_pixel_info(curr);
     update_zoom();
     fill_meta_info();
-    fill_stats();
+    fill_stats(curr);
     setup_bands_tab(curr->meta);
 }
 

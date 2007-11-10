@@ -34,6 +34,15 @@ typedef enum {
     RGB_FLOAT = 4
 } ssv_data_type_t;
 
+typedef struct {
+    double map_min, map_max; // max/min for 2-sigma mapping
+    double avg, stddev;
+    double act_min, act_max; // absolute min/max of all values
+    int hist[256];           // histogram
+    double no_data_value;    // value indicating "no data"
+    int have_no_data;        // TRUE if "no_data_value" is present
+} ImageStats;
+
 // NOTE: At the moment, the Pixbuf that contains the displayed data
 // is plain RGB, not RGB-A, so adding support for transparency would
 // also involve changing big_image.c/make_big_image(), and you'd have
@@ -79,10 +88,12 @@ typedef struct {
   int n_access;             // used to find oldest tile
   ssv_data_type_t data_type;// type of data we have
   meta_parameters *meta;    // metadata -- don't own this pointer
+  ImageStats *stats;        // not owned by us, not populated by us
 } CachedImage;
 
 CachedImage * cached_image_new_from_file(
-    const char *file, meta_parameters *meta, ClientInterface *client);
+    const char *file, meta_parameters *meta, ClientInterface *client,
+    ImageStats *stats);
 
 float cached_image_get_pixel (CachedImage *self, int line, int samp);
 void cached_image_get_rgb(CachedImage *self, int line, int samp,

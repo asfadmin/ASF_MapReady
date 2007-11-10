@@ -131,10 +131,10 @@ static void update_save_subset_info()
     enable_widget("strict_boundary_checkbutton", g_poly.n > 1);
 }
 
-static void close_subset_window()
+static void close_subset_window(ImageInfo *ii)
 {
     g_poly.show_extent = FALSE;
-    fill_big();
+    fill_big(ii);
 
     show_widget("save_subset_window", FALSE);
 }
@@ -152,12 +152,12 @@ SIGNAL_CALLBACK void on_format_csv_radiobutton_toggled(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_save_subset_window_delete_event(GtkWidget *w)
 {
-    close_subset_window();
+    close_subset_window(curr);
 }
 
 SIGNAL_CALLBACK void on_cancel_button_clicked(GtkWidget *w)
 {
-    close_subset_window();
+    close_subset_window(curr);
 }
 
 static void show_save_subset_window()
@@ -167,17 +167,17 @@ static void show_save_subset_window()
     gtk_window_present(GTK_WINDOW(w));
 }
 
-static void set_defaults()
+static void set_defaults(ImageInfo *ii)
 {
     // default filename
-    char *basename = get_basename(curr->filename);
+    char *basename = get_basename(ii->filename);
     char *def = appendStr(basename, "_aoi");
     free(basename);
     put_string_to_entry("filename_entry", def);
     free(def);
 
     // default directory
-    char *dir = get_dirname(curr->filename);
+    char *dir = get_dirname(ii->filename);
     if (dir && strlen(dir) > 0)
         put_string_to_entry("dir_entry", dir);
     else
@@ -232,10 +232,10 @@ static void compute_extent(meta_parameters *meta,
     *nl = *line_max - *line_min + 1;
 }
 
-void update_poly_extents()
+void update_poly_extents(meta_parameters *meta)
 {
     int size_x, size_y;
-    compute_extent(curr->meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
+    compute_extent(meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
         &g_poly.extent_x_min, &g_poly.extent_x_max, &size_y, &size_x);
 
     char subset_info[128];
@@ -248,22 +248,22 @@ void update_poly_extents()
     put_string_to_label("subset_info_label", subset_info);
 }
 
-void save_subset()
+void save_subset(ImageInfo *ii)
 {
     if (g_poly.n > 0) {
         if (crosshair_line > 0 && crosshair_samp > 0) {
 
             // clamp crosshair to image extent, if needed
-            if (crosshair_line >= curr->meta->general->line_count)
-                crosshair_line = curr->meta->general->line_count - 1;
-            if (crosshair_samp >= curr->meta->general->sample_count)
-                crosshair_samp = curr->meta->general->sample_count - 1;
+            if (crosshair_line >= ii->meta->general->line_count)
+                crosshair_line = ii->meta->general->line_count - 1;
+            if (crosshair_samp >= ii->meta->general->sample_count)
+                crosshair_samp = ii->meta->general->sample_count - 1;
 
             show_save_subset_window();
-            set_defaults();
+            set_defaults(ii);
             
             g_poly.show_extent = TRUE;
-            fill_big();
+            fill_big(ii);
 
             update_save_subset_info();
         } else {
@@ -287,11 +287,11 @@ static int pnpoly(int npol, double *xp, double *yp, double x, double y)
   return c;
 }
 
-static float get_data(int what_to_save, int line, int samp)
+static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
 {
     double t, s, d;
-    meta_parameters *meta = curr->meta;
-    CachedImage *data_ci = curr->data_ci;
+    meta_parameters *meta = ii->meta;
+    CachedImage *data_ci = ii->data_ci;
 
     switch (what_to_save) {
         case PIXEL_VALUE:
@@ -317,7 +317,7 @@ static float get_data(int what_to_save, int line, int samp)
                 return 0;
 
         case SCALED_PIXEL_VALUE:
-            return calc_scaled_pixel_value(
+            return calc_scaled_pixel_value(&(ii->stats),
                 cached_image_get_pixel(data_ci, line, samp));
 
         case TIME:
@@ -374,7 +374,8 @@ static meta_parameters *build_metadata(meta_parameters *meta,
     return out_meta;
 }
 
-static void define_clipping_region(int *n, double *xp, double *yp)
+static void define_clipping_region(meta_parameters *meta,
+                                   int *n, double *xp, double *yp)
 {
     // starts at the crosshair
     xp[0] = crosshair_samp;
@@ -388,8 +389,8 @@ static void define_clipping_region(int *n, double *xp, double *yp)
     }
 
     // clamp polygon points to the image extents
-    int nl = curr->meta->general->line_count;
-    int ns = curr->meta->general->sample_count;
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
 
     for (i=0; i<=g_poly.n; ++i) {
         if (yp[i]<0) yp[i]=0;
@@ -404,10 +405,10 @@ static void define_clipping_region(int *n, double *xp, double *yp)
     yp[g_poly.n+1] = yp[0];
 
     *n = g_poly.n + 2;
-
 }
 
-static int save_as_asf(const char *out_file, int what_to_save,
+static int save_as_asf(ImageInfo *ii,
+                       const char *out_file, int what_to_save,
                        int strict_boundary, int load)
 {
     // See if we can open the output file up front
@@ -426,9 +427,11 @@ static int save_as_asf(const char *out_file, int what_to_save,
     assert (g_poly.n > 0);
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
+    meta_parameters *meta = ii->meta;
+
     // figure out where to chop
     int line_min, line_max, samp_min, samp_max, nl, ns;
-    compute_extent(curr->meta, &line_min, &line_max, &samp_min, &samp_max,
+    compute_extent(meta, &line_min, &line_max, &samp_min, &samp_max,
         &nl, &ns);
 
     // generate metadata
@@ -436,14 +439,14 @@ static int save_as_asf(const char *out_file, int what_to_save,
     printf("Generating %s...\n", out_metaname);
 
     meta_parameters *out_meta =
-        build_metadata(curr->meta, out_file, nl, ns, line_min, samp_min);
+        build_metadata(meta, out_file, nl, ns, line_min, samp_min);
 
     // define clipping region, if necessary
     double xp[MAX_POLY_LEN+2], yp[MAX_POLY_LEN+2];
     int i,j,n=0;
 
     if (strict_boundary)
-        define_clipping_region(&n, xp, yp);
+        define_clipping_region(meta, &n, xp, yp);
 
     float ndv = 0;
     if (meta_is_valid_double(out_meta->general->no_data))
@@ -463,7 +466,7 @@ static int save_as_asf(const char *out_file, int what_to_save,
             int s = samp_min+j;
             float val;
             if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
-                val = get_data(what_to_save, l, s);
+                val = get_data(ii, what_to_save, l, s);
             } else {
                 val = ndv;
             }
@@ -484,7 +487,8 @@ static int save_as_asf(const char *out_file, int what_to_save,
     return TRUE;
 }
 
-static int save_as_csv(const char *out_file, int what_to_save,
+static int save_as_csv(ImageInfo *ii, 
+                       const char *out_file, int what_to_save,
                        int strict_boundary, int load)
 {
     int i,j;
@@ -505,8 +509,10 @@ static int save_as_csv(const char *out_file, int what_to_save,
     assert (g_poly.n > 0);
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
+    meta_parameters *meta = ii->meta;
+
     int line_min, line_max, samp_min, samp_max, nl, ns;
-    compute_extent(curr->meta, &line_min, &line_max, &samp_min, &samp_max,
+    compute_extent(meta, &line_min, &line_max, &samp_min, &samp_max,
         &nl, &ns);
 
     // define clipping region, if necessary
@@ -514,7 +520,7 @@ static int save_as_csv(const char *out_file, int what_to_save,
     int n=0;
 
     if (strict_boundary)
-        define_clipping_region(&n, xp, yp);
+        define_clipping_region(meta, &n, xp, yp);
 
     // generate csv
     fprintf(outFp, ",");
@@ -528,7 +534,7 @@ static int save_as_csv(const char *out_file, int what_to_save,
             int s = samp_min+j;
             float val;
             if (!strict_boundary || pnpoly(n, xp, yp, s, l)) {
-                val = get_data(what_to_save, l, s);
+                val = get_data(ii, what_to_save, l, s);
             } else {
                 val = 0;
             }
@@ -677,16 +683,18 @@ SIGNAL_CALLBACK void on_save_button_clicked(GtkWidget *w)
     int ok;
 
     if (get_format()==FORMAT_CSV) {
-        ok = save_as_csv(save_file, get_what_to_save(), strict_boundary, load);
+        ok = save_as_csv(curr, save_file, get_what_to_save(),
+                         strict_boundary, load);
     } else {
         assert(get_format()==FORMAT_ASF_INTERNAL);
-        ok = save_as_asf(save_file, get_what_to_save(), strict_boundary, load);
+        ok = save_as_asf(curr, save_file, get_what_to_save(),
+                         strict_boundary, load);
     }
 
     free(save_file);
 
     if (ok)
-        close_subset_window();
+        close_subset_window(curr);
 }
 
 SIGNAL_CALLBACK void on_save_subset_button_clicked(GtkWidget *w)
@@ -696,5 +704,5 @@ SIGNAL_CALLBACK void on_save_subset_button_clicked(GtkWidget *w)
     // the button that brings up the "save" window.  The function
     // "on_save_button_clicked" above is when they've clicked "save" in
     // that window, and where we actually will save the data
-    save_subset();
+    save_subset(curr);
 }

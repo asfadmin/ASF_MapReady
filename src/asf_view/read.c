@@ -135,7 +135,8 @@ int read_file(const char *filename, const char *band, int multilook,
 
     // set up the ImageInfo for this image
     curr->meta = meta;
-    curr->data_ci = cached_image_new_from_file(data_name, meta, client);
+    curr->data_ci = cached_image_new_from_file(data_name, meta, client,
+                                               &(curr->stats));
     assert(curr->data_ci);
 
     int nl = meta->general->line_count;

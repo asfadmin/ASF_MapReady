@@ -1,9 +1,10 @@
 #include "asf_view.h"
 #include "libasf_proj.h"
 
-static void line_samp_to_proj(double line, double samp, double *x, double *y)
+static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
+                              double *x, double *y)
 {
-  meta_parameters *meta = curr->meta;
+  meta_parameters *meta = ii->meta;
   if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform)
   {
     double lat, lon, projZ;
@@ -20,7 +21,7 @@ static void line_samp_to_proj(double line, double samp, double *x, double *y)
   }
 }
 
-void update_pixel_info()
+void update_pixel_info(ImageInfo *ii)
 {
     // update the left-hand "clicked pixel" information
     char buf[512];
@@ -30,10 +31,10 @@ void update_pixel_info()
 
     double x = crosshair_samp;
     double y = crosshair_line;
-    int nl = curr->meta->general->line_count;
-    int ns = curr->meta->general->sample_count;
-    CachedImage *data_ci = curr->data_ci;
-    meta_parameters *meta = curr->meta;
+    int nl = ii->meta->general->line_count;
+    int ns = ii->meta->general->sample_count;
+    CachedImage *data_ci = ii->data_ci;
+    meta_parameters *meta = ii->meta;
 
     sprintf(buf, "Line: %.1f, Sample: %.1f\n", y, x);
 
@@ -50,8 +51,7 @@ void update_pixel_info()
         if (data_ci->data_type == GREYSCALE_FLOAT) {
             float fval = cached_image_get_pixel(data_ci,
                 crosshair_line, crosshair_samp);
-
-            int uval = calc_scaled_pixel_value(fval);
+            int uval = calc_scaled_pixel_value(&(ii->stats), fval);
 
             sprintf(&buf[strlen(buf)], "Pixel Value: %f --> %d\n",
                 fval, uval);
@@ -116,7 +116,7 @@ void update_pixel_info()
     if (g_poly.n > 0) {
         // start distance measure at crosshair coords
         double cross_x, cross_y, prev_x, prev_y;
-        line_samp_to_proj(y, x, &cross_x, &cross_y);
+        line_samp_to_proj(ii, y, x, &cross_x, &cross_y);
         prev_x = cross_x; prev_y = cross_y;
 
         // iterate through ctrl-clicked coords
@@ -124,7 +124,7 @@ void update_pixel_info()
         double d=0, A=0; // d=distance, A=area
         for (i=0; i<g_poly.n; ++i) {
             double proj_x, proj_y;       
-            line_samp_to_proj(g_poly.line[i], g_poly.samp[i],
+            line_samp_to_proj(ii, g_poly.line[i], g_poly.samp[i],
                               &proj_x, &proj_y);
 
             d += hypot(proj_x-prev_x, proj_y-prev_y);
