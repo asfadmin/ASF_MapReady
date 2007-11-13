@@ -87,9 +87,8 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
   double center_lat, center_lon, center_x, center_y;
   get_target_latlon(st, bmi->look_angle, &center_lat, &center_lon);
 
-  int zone = utm_zone(center_lon);
-
   // return NULL if we are "far away"
+  int zone = utm_zone(center_lon);
   if (iabs(zone - target_zone) > 1)
     return NULL;
   if (fabs(center_lat - target_lat) > 20)
@@ -137,6 +136,9 @@ static double random_in_interval(double lo, double hi)
   return lo + (hi-lo)*((double)rand() / ((double)(RAND_MAX)));
 }
 
+/*
+// Useful debug routine -- exports the polygons in a useful format
+// for cutting&pasting into octave/matlab.
 static int print_polys(Polygon *p1, Polygon *p2)
 {
   printf("p1 = [ %f %f; %f %f; %f %f; %f %f; %f %f ]; "
@@ -153,6 +155,7 @@ static int print_polys(Polygon *p1, Polygon *p2)
          p2->x[4], p2->y[4]);
   return 1;
 }
+*/
 
 static OverlapInfo *
 overlap(double t, stateVector *st, BeamModeInfo *bmi,
@@ -217,18 +220,18 @@ check_crossing(FILE *ofp, double start_time, double end_time,
       //         llat, llon);
       //}
 
+      // Look for overlap when the satellite is in this position
       OverlapInfo *oi = overlap(t, st, bmi, clat, clon, aoi);
-      if (oi) {
-        if (pi->start_time == -1)
-          pi->start_time = t;
+      if (oi)
+        pass_info_add(pi, t, oi);
 
-        pass_info_add(t, pi, oi);
-      }
-
+      // moving ahead to the next check point
       *st = propagate(*st, t, t+delta);
       t1 += delta;
-      
-      // we'll continue as long as we're finding overlap
+
+      // we'll continue as long as we're finding overlap, even if
+      // we pass the official "end time" (where we cross out of the
+      // latitude range)
       is_overlap = oi != NULL;
     }
     while (t1 < end_time || is_overlap);
@@ -345,8 +348,8 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
     lat_prev = lat;
 
     // The first of these is much slower, theoretically more accurate
-    // but from my experimentation not much more accurate...
-    //st = propagate(start_stVec, start_secs, curr+delta);
+    // but from my experimentation not *that* much more accurate...
+    //st = propagate(*start_stVec, start_secs, curr+delta);
     st = propagate(st, curr, curr+delta);
     curr += delta;
   }
@@ -399,6 +402,8 @@ int plan(const char *satellite, const char *beam_mode,
   find_crossings(bmi, start_secs, &start_stVec, start_lat, min_lat, max_lat,
                  &time1_in, &time1_out, &time2_in, &time2_out,
                  &full_cycle_time, &first_is_ascending);
+
+  // find_crossings() is supposed to set "first_is_ascending"
   if (first_is_ascending == -1)
     asfPrintError("Internal Error: failed to detect which pass is "
                   "ascending, and\nwhich is descending!\n");
@@ -416,17 +421,23 @@ int plan(const char *satellite, const char *beam_mode,
   double curr = start_secs;
   stateVector st = start_stVec;
 
+  // Set up the ascending/descending filters.  Don't necessarily know
+  // if the first or second crossing the is ascending one.
   int check_first_crossing, check_second_crossing;
-  if (pass_type == ASCENDING_OR_DESCENDING) {
+  if (pass_type==ASCENDING_OR_DESCENDING) {
     check_first_crossing = check_second_crossing = TRUE;
-  } else if (pass_type == ASCENDING_ONLY) {
+  }
+  else if (pass_type==ASCENDING_ONLY) {
     check_first_crossing = first_is_ascending;
     check_second_crossing = !first_is_ascending;
-  } else if (pass_type == DESCENDING_ONLY) {
+  }
+  else if (pass_type==DESCENDING_ONLY) {
     check_first_crossing = !first_is_ascending;
     check_second_crossing = first_is_ascending;
-  } else {
-    asfPrintError("Invalid pass_type: %d\n", pass_type);
+  }
+  else {
+    // this should never happen
+    asfPrintError("Internal error: invalid pass_type: %d\n", pass_type);
   }
 
   // Iteration #2: Looking for overlaps.

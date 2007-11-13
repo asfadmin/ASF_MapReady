@@ -60,6 +60,8 @@ main(int argc, char **argv)
     char band[512];
     int band_specified = extract_string_options(&argc, &argv, band,
         "-band", "--band", "-b", NULL);
+    int planner_mode = extract_flag_options(&argc, &argv,
+        "-plan", "--plan", NULL);
 
     // set up image array
     curr = &image_info[0];
@@ -104,6 +106,9 @@ main(int argc, char **argv)
     printf("Found asf_view.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     free(glade_xml_file);
+
+    // set up the acquisition planner, if we are in that mode
+    if (planner_mode) setup_planner();
 
     // set up window title, etc
     set_title(band_specified, band);

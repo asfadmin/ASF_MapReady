@@ -31,4 +31,6 @@ int plan(const char *satellite, const char *beam_mode,
          double clat, double clon, int pass_type, Polygon *aoi,
          const char *tle_filename, const char *outFile);
 
+char **get_all_beam_modes(int *num_beam_modes);
+
 #endif

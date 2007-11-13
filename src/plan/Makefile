@@ -1,6 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = plan
+LIBNAME = libasf_$(TARGET).a
 
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
@@ -27,16 +28,20 @@ OBJS  = $(TARGET).o \
 	kml.o \
 	pass.o \
 	overlap.o \
-	tle.o \
-	main.o
+	tle.o
 
-all: prog
-	-rm *.o
+all: lib exe clean
 
-prog: $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LIBS) $(LDFLAGS)
-	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
+lib: $(OBJS)
+	ar r $(LIBNAME) $(OBJS)
+	$(RANLIB) $(LIBNAME)
+	mv $(LIBNAME) $(LIBDIR)
 	cp beam_modes.txt $(SHAREDIR)
+	cp polygon.h plan.h $(ASF_INCLUDE_DIR)
+
+exe: $(TARGET)_main.o
+	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET)_main.c $(LIBDIR)/$(LIBNAME) $(LIBS) $(LDFLAGS)
+	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	rm -f core $(OBJS) *.o

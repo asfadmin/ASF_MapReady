@@ -1,6 +1,43 @@
 #include "beam_mode_table.h"
 #include "asf.h"
 
+char **get_all_beam_modes(int *num)
+{
+  FILE *fp = fopen_share_file("beam_modes.txt", "r");
+  if (!fp)
+    asfPrintError("Couldn't open beam_modes.txt: %s\n", strerror(errno));
+
+  int n=0;
+  while (1) {
+    char line[1024];
+    char *p=fgets(line, 1024, fp);
+    if (!p) break; else ++n;
+  }
+  fclose(fp);
+
+  char **ret = MALLOC(sizeof(char*)*(n+1));
+  fp = fopen_share_file("beam_modes.txt", "r");
+
+  int i=0;
+  while (1) {
+    char line[1024];
+    char *p=fgets(line, 1024, fp);
+    if (!p)
+      break; //eof
+    else {
+      char sat[1024], bm[1024];
+      sscanf(line, "%s %s", sat, bm);
+      char *combo = MALLOC(sizeof(char)*(strlen(sat)+strlen(bm)+10));
+      sprintf(combo, "%s / %s", sat, bm);
+      ret[i++] = combo;
+    }
+  }
+  fclose(fp);
+
+  *num=n;
+  return ret;
+}
+
 BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
 {
   FILE *fp = fopen_share_file("beam_modes.txt", "r");
