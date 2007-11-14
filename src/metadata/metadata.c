@@ -81,13 +81,15 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
   struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
   struct PPREC *ppr;                    // Processing Parameter record
-  struct alos_rad_data_rec *ardr;       // Radiometric Data record
+  struct alos_rad_data_rec *ardr;       // Radiometric Data record (ALOS)
+  struct RSI_VRADDR *rsi_raddr;         // Radiometric Data record (RSI/CDPF)
 
   ceos_data_ext_t data_ext;
   ceos_metadata_ext_t metadata_ext;
   char **dataNames=NULL, **metaName=NULL, *baseName;
   int nBands, trailer, dataNameExists=1, leaderNameExists=1;
   char *ret=NULL;
+  char facility[25];
 
   baseName = (char *) MALLOC(sizeof(char)*256);
 
@@ -138,16 +140,18 @@ char *get_record_as_string(char *fileName, int reqrec)
       free(dssr);
       dssr = NULL;
   }
-
-  if ( reqrec == 200 ) {
-    char facility[16];
-    struct dataset_sum_rec dssr;
-    get_dssr (fileName, &dssr);
-    strcpy (facility, trim_spaces(dssr.fac_id));
+  
+  if ( reqrec == 200 || reqrec == 50) {
+    struct dataset_sum_rec *dssr2;
+    dssr2 = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+    get_dssr (fileName, dssr2);
+    strcpy (facility, trim_spaces(dssr2->fac_id));
     if (0==strncmp(facility, "ASF", 3))
       reqrec = 210;
     if (0==strncmp(facility, "ES", 2)) /*ESA*/
       reqrec = 220;
+    free(dssr2);
+    dssr2 = NULL;
   }
 
   switch (reqrec) 
@@ -229,7 +233,21 @@ char *get_record_as_string(char *fileName, int reqrec)
                 }
             }
             FREE(ardr);
-        } else {
+        } 
+	else if (strncmp(facility, "CDPF", 4) == 0 ||
+		 strncmp(facility, "RSI", 3) == 0) {
+	  rsi_raddr = (struct RSI_VRADDR  *) MALLOC(sizeof(struct RSI_VRADDR));
+	  if (leaderNameExists) {
+	    if (get_rsi_raddr(metaName[0],rsi_raddr) >= 0)
+	      ret = sprn_rsi_raddr(rsi_raddr);
+	    else if (trailer) {
+	      if (get_rsi_raddr(metaName[1],rsi_raddr) >= 0)
+		ret = sprn_rsi_raddr(rsi_raddr);
+	    }
+	  }
+	  FREE(rsi_raddr);  
+	}
+	else {
             raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
             if (leaderNameExists) {
                 if (get_raddr(metaName[0],raddr) >= 0)

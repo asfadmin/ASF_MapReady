@@ -268,19 +268,19 @@ struct RSI_VRADDR {
   short seq_num;          /* Record sequence number */
   short n_data;           /* Number of data sets */
   int field_size;         /* Data set size in bytes */
-  char chan_ind[4];       /* SAR channel indicator */
-  char spare1[4];         /* Unused */
-  char table_desig[24];   /* Table designator */
+  char chan_ind[5];       /* SAR channel indicator */
+  char spare1[5];         /* Unused */
+  char table_desig[25];   /* Table designator */
   int n_samp;             /* Number of lookup table samples, generally 512 */
-  char samp_type[16];     /* Sample type designator */
+  char samp_type[17];     /* Sample type designator */
   short samp_inc;         /* Increment between table entries, range samples (pixels)*/
   double lookup_tab[512]; /* Output scaling gain table */
-  char spare2[4];         /* Unused */
+  char spare2[5];         /* Unused */
   double noise_scale;     /* Thermal noise reference level (dB) */
   double spare3;          /* Unused */
   double offset;          /* Scaling offset A3 (linear, set to 0 for SLC products*/
   double calib_const;     /* Calibration constant */
-  char spare4[1512];      /* Unused */
+  char spare4[1513];      /* Unused */
 };
 
 

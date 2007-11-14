@@ -707,7 +707,7 @@ void Code_RSI_RADDR(unsigned char *bf, struct RSI_VRADDR* q,codingDir dir)
     longV(n_samp,off,8);
     strV(samp_type,off,16);
     shrtV(samp_inc,off,4);
-    for (ii=0; ii<512; ii++) {
+    for (ii=0; ii<q->n_samp; ii++) {
       fltV(lookup_tab[ii],off,16);
     }
     strV(spare2,off,4);

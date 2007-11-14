@@ -59,3 +59,6 @@ void prn_ampr(FILE *fp, struct alos_map_proj_rec *mp);
 
 char *sprn_ardr(struct alos_rad_data_rec *dr);
 void prn_ardr(FILE *fp, struct alos_rad_data_rec *dr);
+
+char *sprn_rsi_raddr(struct RSI_VRADDR *dr);
+void prn_rsi_raddr(FILE *fp, struct RSI_VRADDR *dr);
