@@ -234,6 +234,9 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
   int smooth_dem_holes = FALSE;
   int update_original_metadata_with_offsets = FALSE;
   float mask_height_cutoff = -999; // not used
+  int no_matching = 0;
+  double range_offset = 0.0;
+  double azimuth_offset = 0.0;
 
   return asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
       clean_files, do_resample, do_corner_matching,
@@ -241,7 +244,8 @@ int asf_terrcorr(char *sarFile, char *demFile, char *userMaskFile,
       dem_grid_size, do_terrain_correction, fill_value,
       generate_water_mask, save_clipped_dem,
       update_original_metadata_with_offsets, mask_height_cutoff,
-      doRadiometric, smooth_dem_holes, NULL);
+      doRadiometric, smooth_dem_holes, NULL,
+      no_matching, range_offset, azimuth_offset);
 }
 
 int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
@@ -261,6 +265,9 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   int smooth_dem_holes = FALSE;
   int fill_value = 0;
   int update_orig_metadata_with_offsets = FALSE;
+  int no_matching = 0;
+  double range_offset = 0.0;
+  double azimuth_offset = 0.0;
 
   int ret =
       asf_terrcorr_ext(sarFile, demFile, userMaskFile, outFile, pixel_size,
@@ -269,7 +276,8 @@ int refine_geolocation(char *sarFile, char *demFile, char *userMaskFile,
                        do_terrain_correction, fill_value, auto_water_mask,
                        save_clipped_dem, update_orig_metadata_with_offsets,
                        mask_height_cutoff, doRadiometric, smooth_dem_holes,
-                       other_files_to_update_with_offsets);
+                       other_files_to_update_with_offsets,
+		       no_matching, range_offset, azimuth_offset);
 
   if (ret==0)
   {
@@ -509,6 +517,9 @@ int match_dem(meta_parameters *metaSAR,
 	      int apply_dem_padding,
               int mask_dem_same_size_and_projection,
               int clean_files,
+	      int no_matching,
+	      double range_offset,
+	      double azimuth_offset,
               double *t_offset,
 	      double *x_offset)
 {
@@ -530,8 +541,9 @@ int match_dem(meta_parameters *metaSAR,
   do // matches: while (redo_clipping);
   {
     ++num_attempts;
-    asfPrintStatus("\nUsing DEM '%s' for refining geolocation ... "
-                   "(iteration #%d)\n", demFile, num_attempts);
+    if (!no_matching)
+      asfPrintStatus("\nUsing DEM '%s' for refining geolocation ... "
+		     "(iteration #%d)\n", demFile, num_attempts);
 
     demClipped = outputName(output_dir, demFile, "_clip");
 
@@ -572,7 +584,8 @@ int match_dem(meta_parameters *metaSAR,
     trim(demSimAmp, demTrimSimAmp, 0, 0, metaSAR->general->sample_count,
 	 demHeight);
 
-    asfPrintStatus("Determining image offsets...\n");
+    if (!no_matching)
+      asfPrintStatus("Determining image offsets...\n");
     if (userMaskFile) {
       /* OK now if we have a mask we need to find square patches that
 	 can be fftMatched without running into the mask.
@@ -695,123 +708,135 @@ int match_dem(meta_parameters *metaSAR,
 
       meta_free(maskmeta);
     }
-    else {
+    else if (!no_matching) {
       // Match the real and simulated SAR image to determine the offset.
       fftMatchQ(srFile, demTrimSimAmp, &dx, &dy, &cert);
     }
+    else {
+      asfPrintStatus("No matching of DEM and SAR image!\n");
+      asfPrintStatus("Applying range offset: %lf\n", range_offset);
+      asfPrintStatus("Applying azimuth offset: %lf\n", azimuth_offset);
+      t_off = azimuth_offset;
+      x_off = range_offset;
+    }
 
-    asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
-		   100*cert, dx, dy);
+    if (!no_matching)
+      asfPrintStatus("Correlation (cert=%5.2f%%): dx=%f, dy=%f.\n",
+		     100*cert, dx, dy);
 
     idx = - (int)floor(dx+.5);
     idy = - (int)floor(dy+.5);
 
     redo_clipping = FALSE;
 
-    if (fabs(dy) > required_match || fabs(dx) > required_match ||
-        do_refine_geolocation)
-    {
-        // The fftMatch resulted in a large offset
-
-        // This means we very likely did not clip the right portion of
-        // the DEM.  So, shift the slant range image and re-clip.
-
-        if (num_attempts >= max_attempts)
-        {
-            // After max_attempts tries, we must not be getting good results
-            // from fftMatch, since the offsets are clearly bogus.
-            asfPrintWarning("Could not resolve offset!\n"
-                "Continuing ... however your result may "
-                "be incomplete and/or incorrect.\n");
-
-            if (cert<cert_cutoff && userMaskFile == NULL) {
+    if (!no_matching) {
+      if (fabs(dy) > required_match || fabs(dx) > required_match ||
+	  do_refine_geolocation)
+	{
+	  // The fftMatch resulted in a large offset
+	  
+	  // This means we very likely did not clip the right portion of
+	  // the DEM.  So, shift the slant range image and re-clip.
+	  
+	  if (num_attempts >= max_attempts)
+	    {
+	      // After max_attempts tries, we must not be getting good results
+	      // from fftMatch, since the offsets are clearly bogus.
+	      asfPrintWarning("Could not resolve offset!\n"
+			      "Continuing ... however your result may "
+			      "be incomplete and/or incorrect.\n");
+	      
+	      if (cert<cert_cutoff && userMaskFile == NULL) {
                 asfPrintStatus("You may get better results by supplying "
-                    "a mask file, to mask out regions\n"
-                    "which provide poor matching, such as "
-                    "water or glaciers.\n");
-            }
-
-            break;
-        }
-        else
-        {
-            // Correct the metadata of the SAR image for the offsets
-            // that we found
-            asfPrintStatus("Adjusting metadata to account for offsets...\n");
-            refine_offset(dx, dy, metaSAR, &t_off, &x_off);
-            asfPrintStatus("  Time Shift: %f -> %f\n"
-                "  Slant Shift: %f -> %f\n",
-                metaSAR->sar->time_shift,
-                metaSAR->sar->time_shift + t_off,
-                metaSAR->sar->slant_shift,
-                metaSAR->sar->slant_shift + x_off);
-            metaSAR->sar->time_shift += t_off;
-            metaSAR->sar->slant_shift += x_off;
-            meta_write(metaSAR, srFile);
-
-            if (!do_refine_geolocation) {
+			       "a mask file, to mask out regions\n"
+			       "which provide poor matching, such as "
+			       "water or glaciers.\n");
+	      }
+	      
+	      break;
+	    }
+	  else
+	    {
+	      // Correct the metadata of the SAR image for the offsets
+	      // that we found
+	      asfPrintStatus("Adjusting metadata to account for offsets...\n");
+	      refine_offset(dx, dy, metaSAR, &t_off, &x_off);
+	      asfPrintStatus("  Time Shift: %f -> %f\n"
+			     "  Slant Shift: %f -> %f\n",
+			     metaSAR->sar->time_shift,
+			     metaSAR->sar->time_shift + t_off,
+			     metaSAR->sar->slant_shift,
+			     metaSAR->sar->slant_shift + x_off);
+	      metaSAR->sar->time_shift += t_off;
+	      metaSAR->sar->slant_shift += x_off;
+	      meta_write(metaSAR, srFile);
+	      
+	      if (!do_refine_geolocation) {
                 asfPrintStatus("Found a large offset (%dx%d LxS pixels).\n"
-                    "Adjusting SAR image and re-clipping DEM.\n",
-                    idy, idx);
-
+			       "Adjusting SAR image and re-clipping DEM.\n",
+			       idy, idx);
+		
                 redo_clipping = TRUE;
-            }
-        }
-    }
-    else if (dx*dx+dy*dy < .5)
-    {
-        // Skip the verification step-- we've got an excellent match already
-        do_fftMatch_verification = FALSE;
+	      }
+	    }
+	}
+      else if (dx*dx+dy*dy < .5)
+	{
+	  // Skip the verification step-- we've got an excellent match already
+	  do_fftMatch_verification = FALSE;
+	}
     }
 
   } while (redo_clipping);
 
-  // Corner test
-  if (do_corner_matching) {
-    int chipsz = 256;
-    asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
-		   chipsz, chipsz);
-    fftMatch_atCorners(output_dir, srFile, demTrimSimAmp, chipsz);
-  }
-
-  // Apply the offset to the simulated amplitude image.
-  asfPrintStatus("Applying offsets to simulated sar image...\n");
-  trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
-       demHeight);
-
-  // Verify that the applied offset in fact does the trick.
-  if (do_fftMatch_verification) {
+  if (!no_matching) {
+    // Corner test
+    if (do_corner_matching) {
+      int chipsz = 256;
+      asfPrintStatus("Doing corner fftMatching... (using %dx%d chips)\n",
+		     chipsz, chipsz);
+      fftMatch_atCorners(output_dir, srFile, demTrimSimAmp, chipsz);
+    }
+    
+    // Apply the offset to the simulated amplitude image.
+    asfPrintStatus("Applying offsets to simulated sar image...\n");
+    trim(demSimAmp, demTrimSimAmp, idx, idy, metaSAR->general->sample_count,
+	 demHeight);
+    
+    // Verify that the applied offset in fact does the trick.
+    if (do_fftMatch_verification) {
       float dx2, dy2;
-
+      
       asfPrintStatus("Verifying offsets are now close to zero...\n");
       fftMatchQ(srFile, demTrimSimAmp, &dx2, &dy2, &cert);
-
+      
       asfPrintStatus("Correlation after shift (cert=%5.2f%%): "
                      "dx=%f, dy=%f.\n",
                      100*cert, dx2, dy2);
-
+      
       if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
-          asfPrintError("Correlated images failed to match!\n"
-                        " Original fftMatch offset: "
-                        "(dx,dy) = %14.9f,%14.9f\n"
-                        "   After shift, offset is: "
-                        "(dx,dy) = %14.9f,%14.9f\n",
-                        dx, dy, dx2, dy2);
+	asfPrintError("Correlated images failed to match!\n"
+		      " Original fftMatch offset: "
+		      "(dx,dy) = %14.9f,%14.9f\n"
+		      "   After shift, offset is: "
+		      "(dx,dy) = %14.9f,%14.9f\n",
+		      dx, dy, dx2, dy2);
       }
-  }
+    }
+  }    
 
   if (do_trim_slant_range_dem)
-  {
+    {
       // Apply the offset to the slant range DEM.
       asfPrintStatus("Applying offsets to slant range DEM...\n");
-
+      
       int width = metaSAR->general->sample_count;
       if (apply_dem_padding)
-          width += PAD;
-
+	width += PAD;
+      
       trim(demSlant, demTrimSlant, idx, idy, width, demHeight);
-  }
-
+    }
+  
   if (clean_files) {
       clean(demClipped);
       clean(demSimAmp);
@@ -842,6 +867,9 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
   double t_offset, x_offset;
   char output_dir[255];
   char *userMaskClipped = NULL;
+  int no_matching = FALSE;
+  double range_offset = 0.0;
+  double azimuth_offset = 0.0;
   meta_parameters *metaSAR;
   strcpy(output_dir, "");
 
@@ -853,7 +881,8 @@ int asf_check_geolocation(char *sarFile, char *demFile, char *userMaskFile,
 	    simAmpFile, demSlant, userMaskClipped, dem_grid_size,
             do_corner_matching, do_fftMatch_verification,
             do_refine_geolocation, do_trim_slant_range_dem, apply_dem_padding,
-            madssap, clean_files, &t_offset, &x_offset);
+            madssap, clean_files, no_matching, range_offset, azimuth_offset,
+	    &t_offset, &x_offset);
 
   if (clean_files)
       clean(userMaskClipped);
@@ -870,7 +899,9 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
                      int update_original_metadata_with_offsets,
                      float mask_height_cutoff, int doRadiometric,
                      int smooth_dem_holes,
-                     char **other_files_to_update_with_offset)
+                     char **other_files_to_update_with_offset,
+		     int no_matching, double range_offset, 
+		     double azimuth_offset)
 {
   char *resampleFile = NULL, *srFile = NULL, *resampleFile_2 = NULL;
   char *demTrimSimAmp = NULL, *demTrimSlant = NULL;
@@ -1171,11 +1202,13 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
   // Assign a couple of file names and match the DEM
   demTrimSimAmp = outputName(output_dir, demChunk, "_sim_amp_trim");
   demTrimSlant = outputName(output_dir, demChunk, "_slant_trim");
-  match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
-            demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
-            do_corner_matching, do_fftMatch_verification, FALSE,
-            TRUE, TRUE, madssap, clean_files, &t_offset, &x_offset);
 
+  match_dem(metaSAR, sarFile, demChunk, srFile, output_dir, userMaskFile,
+	    demTrimSimAmp, demTrimSlant, userMaskClipped, dem_grid_size,
+	    do_corner_matching, do_fftMatch_verification, FALSE,
+	    TRUE, TRUE, madssap, clean_files, no_matching, range_offset,
+	    azimuth_offset, &t_offset, &x_offset);
+  
   if (update_original_metadata_with_offsets)
   {
       // update input data file with the calculated offsets

@@ -407,6 +407,9 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->terrain_correct->mask, "");
   cfg->terrain_correct->refine_geolocation_only = 0;
   cfg->terrain_correct->interp = 1;
+  cfg->terrain_correct->no_matching = 0;
+  cfg->terrain_correct->range_offset = 0;
+  cfg->terrain_correct->azimuth_offset = 0;
 
   cfg->geocoding->projection = (char *)MALLOC(sizeof(char)*255);
   sprintf(cfg->geocoding->projection, "%s/projections/utm/utm.proj",
@@ -568,6 +571,12 @@ convert_config *init_fill_convert_config(char *configFile)
           read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
         cfg->terrain_correct->interp = read_int(line, "interpolate");
+      if (strncmp(test, "no matching", 11)==0)
+        cfg->terrain_correct->no_matching = read_int(line, "no matching");
+      if (strncmp(test, "range offset", 12)==0)
+        cfg->terrain_correct->range_offset = read_int(line, "range offset");
+      if (strncmp(test, "azimuth offset", 14)==0)
+        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");
 
       // Geocoding
       if (strncmp(test, "projection", 10)==0)
@@ -855,7 +864,12 @@ convert_config *read_convert_config(char *configFile)
             read_int(line, "refine_geolocation_only");
       if (strncmp(test, "interpolate", 11)==0)
         cfg->terrain_correct->interp = read_int(line, "interpolate");
-      FREE(test);
+      if (strncmp(test, "no matching", 11)==0)
+        cfg->terrain_correct->no_matching = read_int(line, "no matching");
+      if (strncmp(test, "range offset", 12)==0)
+        cfg->terrain_correct->range_offset = read_int(line, "range offset");
+      if (strncmp(test, "azimuth offset", 14)==0)
+        cfg->terrain_correct->azimuth_offset = read_int(line, "azimuth offset");      FREE(test);
     }
 
     if (strncmp(line, "[Geocoding]", 11)==0) strcpy(params, "Geocoding");
@@ -1254,7 +1268,23 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# This option determines if a file marking the regions of layover and \n"
                 "# shadow should be created along with the output image.  It is geocoded using the\n"
                 "# the same parameters as your SAR image, and exported as byte data.\n\n");
-      fprintf(fConfig, "save terrcorr layover mask = %d\n\n", cfg->terrain_correct->save_terrcorr_layover_mask);
+      fprintf(fConfig, "save terrcorr layover mask = %d\n", cfg->terrain_correct->save_terrcorr_layover_mask);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# This option determines if the simulated image derived from the DEM is\n"
+		"# used for matching with the SAR image in slant range. If you want to trust the quality\n"
+		"# of the orbital information or want to determine your own offset, you want to switch\n"
+		"# this flag to 1.\n\n");
+      fprintf(fConfig, "no matching = %d\n", cfg->terrain_correct->no_matching);    
+      if (!shortFlag)
+        fprintf(fConfig, "\n# This parameter sets the offset in range direction in case the simulated\n"
+		"# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
+                "# image.\n\n");
+      fprintf(fConfig, "range offset = %lf\n", cfg->terrain_correct->range_offset);    
+      if (!shortFlag)
+        fprintf(fConfig, "\n# This parameter sets the offset in azimuth direction in case the simulated\n"
+		"# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
+                "# image.\n\n");
+      fprintf(fConfig, "azimuth offset = %lf\n", cfg->terrain_correct->azimuth_offset);    
     }
 
     // Geocoding

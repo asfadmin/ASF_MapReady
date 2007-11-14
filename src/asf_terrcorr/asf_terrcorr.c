@@ -7,6 +7,7 @@
 "          [-mask-height-cutoff <height in meters>]\n"\
 "          [-fill <fill value> | -no-fill] [-update-original-meta (-u)]\n"\
 "          [-other-file <basename>] [-do-radiometric] [-smooth-dem-holes]\n"\
+"          [-no_matching] [-offsets <range> <azimuth>]\n"\
 "          <in_base_name> <dem_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -153,6 +154,10 @@
 "          if you specified -u, the input SAR image).\n\n"\
 "          This option may be specified more than once.\n"\
 "\n"\
+"     -no_matching\n"\
+"          Don't use the DEM for matching\n"\
+"     -offsets <range offset> <azimuth offset>\n"\
+"          Use these offsets instead of matching the DEM to the SAR image.\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -264,6 +269,9 @@ main (int argc, char *argv[])
   float mask_height_cutoff = 1.0;
   int mask_height_cutoff_specified = FALSE;
   int smooth_dem_holes = FALSE;
+  int no_matching = FALSE;
+  double range_offset = 0.0;
+  double azimuth_offset = 0.0;
   char *other_files[MAX_OTHER];
   int i,n_other = 0;
 
@@ -299,6 +307,9 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-no-interp","--no-interp",NULL)) {
         do_interp = FALSE;
     }
+    else if (strmatches(key,"-no-match","--no-match",NULL)) {
+      no_matching = TRUE;
+    }
     else if (strmatches(key,"-pixel-size","--pixel-size","-ps",NULL)) {
         CHECK_ARG(1);
         pixel_size = atof(GET_ARG(1));
@@ -327,6 +338,12 @@ main (int argc, char *argv[])
     else if (strmatches(key,"-fill","--fill",NULL)) {
         CHECK_ARG(1);
         fill_value = atoi(GET_ARG(1)); // user requested a specific fill value
+    }
+    else if (strmatches(key,"-offsets","--offsets",NULL)) {
+      CHECK_ARG(2);
+      range_offset = atof(GET_ARG(2));
+      azimuth_offset = atof(GET_ARG(1));
+      no_matching = TRUE;
     }
     else if (strmatches(key,"-no-fill","--no-fill",NULL)) {
         // leave masked regions alone - fill with sar data
@@ -403,7 +420,8 @@ main (int argc, char *argv[])
                               generate_water_mask, save_clipped_dem,
                               update_original_metadata_with_offsets,
                               mask_height_cutoff, doRadiometric,
-                              smooth_dem_holes, other_files);
+                              smooth_dem_holes, other_files,
+			      no_matching, range_offset, azimuth_offset);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])

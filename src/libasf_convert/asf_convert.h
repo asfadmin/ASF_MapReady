@@ -109,6 +109,10 @@ typedef struct
                           // addition to geometric terrain correction
   int smooth_dem_holes;   // If TRUE, try to smooth over holes in the DEM
   int no_resampling;      // If TRUE, SAR image is not downsampled to match DEM
+  int no_matching;        // If TRUE, SAR image and simulated SAR image are
+                          // not matched
+  double range_offset;    // Overwrite the range offset determined by matching
+  double azimuth_offset;  // Overwrite the azimuth offset determined by matching;
 } s_terrain_correct;
 
 typedef struct

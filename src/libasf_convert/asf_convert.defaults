@@ -21,3 +21,6 @@ force = 0
 output format = GEOTIFF
 byte conversion = SIGMA
 smooth dem holes = 1
+matching = 1
+range offset = 0
+azimuth offset = 0

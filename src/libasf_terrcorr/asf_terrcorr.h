@@ -46,7 +46,15 @@ int asf_terrcorr_ext(char *sarFile, char *demFile, char *inMaskFile,
                      int update_original_metadata_with_offsets,
                      float mask_height_cutoff, int doRadiometric,
                      int smooth_dem_holes,
-                     char **other_files_to_update_with_offsets);
+                     char **other_files_to_update_with_offsets,
+		     int no_matching, double range_offset,
+		     double azimuth_offset);
+
+void
+clip_dem(meta_parameters *metaSAR, char *srFile, char *demFile,
+         char *demClipped, char *what, char *otherFile, char *otherClipped,
+         char *otherWhat, char *output_dir, int dem_grid_size,
+         int clean_files, int *p_demHeight);
 
 /**
    Functions private to terrain correction, not meant for general use.
