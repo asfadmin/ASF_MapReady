@@ -17,6 +17,7 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
    -rasr        Range Spectra record
    -ppr         Processing Parameter record
    -dqsr        Data Quality Summary record
+   -facdr       ASF or ESA Facility Related Data record
    -asf_facdr   ASF Facility Related Data record
    -esa_facdr   ESA Facility Related Data record
    -ifdr        Image File Descriptor record
@@ -149,8 +150,7 @@ void usage(char *name)
    fprintf(stderr,"  -rasr        Range Spectra record\n");
    fprintf(stderr,"  -ppr         Processing Parameter record\n");
    fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
-   fprintf(stderr,"  -asf_facdr   ASF Facility Related Data record\n");
-   fprintf(stderr,"  -esa_facdr   ESA Facility Related Data record\n");
+   fprintf(stderr,"  -facdr       ASF or ESA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
    fprintf(stderr,"\n");
@@ -158,7 +158,7 @@ void usage(char *name)
    fprintf(stderr,"\n");
    fprintf(stderr,"DESCRIPTION:\n");
    fprintf(stderr,"  Metadata retrieves ceos structures from CEOS metadata\n\n");
-   fprintf(stderr,"Version %.2f,  ASF SAR TOOLS\n\n",VERSION);
+   fprintf(stderr,"Version %.2f,  ASF SAR Tools\n\n",VERSION);
    exit (1);
 }
 
