@@ -50,6 +50,7 @@ MODULES = \
 	src/convert2vector \
 	src/diffmeta \
 	src/diffimage \
+	src/plan \
 	@ASF_GUI@
 # src_x/sarview
 
