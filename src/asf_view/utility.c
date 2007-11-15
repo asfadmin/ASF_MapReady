@@ -32,8 +32,7 @@ void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
     gtk_entry_set_max_length(e, maxlen);
 }
 
-void
-set_combo_box_item_checked(const char *widget_name, gint index)
+void set_combo_box_item_checked(const char *widget_name, gint index)
 {
     GtkWidget *ddl = get_widget_checked(widget_name);
     gtk_combo_box_set_active(GTK_COMBO_BOX(ddl), index);
@@ -59,8 +58,7 @@ char *get_band_combo_text(meta_parameters *meta, const char *widget_name)
     return ret;
 }
 
-void
-rb_select(const char *widget_name, gboolean is_on)
+void rb_select(const char *widget_name, gboolean is_on)
 {
     GtkWidget *rb = get_widget_checked(widget_name);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(rb), is_on);

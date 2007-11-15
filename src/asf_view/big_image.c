@@ -449,8 +449,7 @@ static void zoom_default(ImageInfo *ii)
     fill_small(ii);
 }
 
-SIGNAL_CALLBACK int
-on_big_image_scroll_event(
+SIGNAL_CALLBACK int on_big_image_scroll_event(
     GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
 {
     if (event->direction == GDK_SCROLL_UP) {
@@ -463,10 +462,35 @@ on_big_image_scroll_event(
     return TRUE;
 }
 
+static int has_focus(const char *widget_name)
+{
+  GtkWidget *w = get_widget_checked(widget_name);
+  return GTK_WIDGET_HAS_FOCUS(w);
+}
+
 static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
 {
-    // handle the non-cursor-moving events first
-    if (event->keyval == GDK_Page_Up || 
+    // This here is a kludge.  The main window's image "big_image" and
+    // its event box "big_image_eventbox" don't seem to be properly
+    // receiving keyboard event notifications... something I am doing wrong,
+    // probably, but I can't figure it out.  So, we have this kludge --
+    // this event fires when the main window receives a keyboard event
+    // (these events work fine), and processes the event at that level.
+    // (In fact, this is almost better - user doesn't have to click in
+    // the big image to start using keyboard commands...)
+    // However, any other widget that wants to receive keyboard events
+    // needs to be listed here, so that the main window can pass along
+    // the keypresses when the user is trying to use those widgets.
+    // Currently just have the date widgets of the acquisition planner.
+    if (has_focus("start_date_entry") ||
+        has_focus("end_date_entry"))
+    {
+      return FALSE;
+    }
+
+    // Now the rest of the code deals with the normal keyboard events,
+    // that pertain to the main image.
+    else if (event->keyval == GDK_Page_Up || 
         event->keyval == GDK_Prior || 
         event->keyval == GDK_plus)
     {
@@ -486,9 +510,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         int h = get_big_image_height();
         int w = get_big_image_width();
 
-        // choose the larger of the horiz/vert zoom -- round up!
-        //int z1 = (int)((double)nl/(double)h + .95);
-        //int z2 = (int)((double)ns/(double)w + .95);
+        // choose the larger of the horiz/vert zoom
         double z1 = (double)(ii->nl)/(double)h;
         double z2 = (double)(ii->ns)/(double)w;
         zoom = z1 > z2 ? z1 : z2;
@@ -527,8 +549,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
             }
         } else
             last_was_crosshair = TRUE;
-    } else if (event->keyval == GDK_BackSpace) {
-        // Backspace: clear most recently added point
+    } else if (event->keyval == GDK_slash) {
+        // /: clear most recently added point
         if (g_poly.n > 0) {
             --g_poly.n;
             if (g_poly.c >= g_poly.n)

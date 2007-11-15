@@ -196,7 +196,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
 }
 
 static int
-check_crossing(FILE *ofp, double start_time, double end_time,
+check_crossing(PassCollection *pc, double start_time, double end_time,
                double state_vector_time, stateVector *st,
                BeamModeInfo *bmi, double clat, double clon, Polygon *aoi)
 {
@@ -238,9 +238,8 @@ check_crossing(FILE *ofp, double start_time, double end_time,
     
     int found = pi->num > 0;
     if (found)
-      write_pass_to_kml(ofp, clat, clon, pi);
+      pass_collection_add(pc, pi);
 
-    pass_info_free(pi);
     return found;
 }
 
@@ -307,10 +306,19 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
     }
 
     if (lat_prev != -999) {
-      if (((lat_prev < min_lat && lat > min_lat) ||
-           (lat_prev > min_lat && lat < min_lat)) ||
-          ((lat_prev < max_lat && lat > max_lat) ||
-           (lat_prev > max_lat && lat < max_lat)))
+
+      int crossed_min = (lat_prev < min_lat && lat > min_lat) ||
+                        (lat_prev > min_lat && lat < min_lat);
+
+      int crossed_max = (lat_prev < max_lat && lat > max_lat) ||
+                        (lat_prev > max_lat && lat < max_lat);
+
+      //if (delta == normal_delta)
+      //  printf("min %f %f %f - %d, max %f %f %f - %d\n",
+      //         lat_prev, min_lat, lat, crossed_min,
+      //         lat_prev, max_lat, lat, crossed_max);
+
+      if (crossed_min || crossed_max)
       {
         // either crossed into or out of the target latitude range
         in_target_lat_range = !in_target_lat_range;
@@ -333,7 +341,14 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
             printf("No way dude!\n");
           }
           ++ncrossings_target;
-        } else {
+        }
+
+        // if we crossed BOTH min_lat AND max_lat, mark that we have
+        // also left the target rangex
+        if (crossed_min && crossed_max)
+          in_target_lat_range = !in_target_lat_range;
+
+        if (!in_target_lat_range) {
           if (ncrossings_target == 1) {
             *time1_out = curr-start_secs;
           } else if (ncrossings_target == 2) {
@@ -358,11 +373,14 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,  Polygon *aoi,
-         const char *tle_filename, const char *outFile)
+         const char *tle_filename, PassCollection **pc_out,
+         char **errorstring)
 {
   BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
-  if (!bmi)
-    asfPrintError("Invalid satellite/beam mode.\n");
+  if (!bmi) {
+    *errorstring = STRDUP("Unknown satellite/beam mode combination.\n");
+    return -1;
+  }
 
   double start_secs = seconds_from_l(startdate);
   double end_secs = seconds_from_l(enddate);
@@ -386,10 +404,6 @@ int plan(const char *satellite, const char *beam_mode,
          aoi->x[2], aoi->y[2],
          aoi->x[3], aoi->y[3]);
 
-  FILE *ofp = FOPEN(outFile, "w");
-  kml_header(ofp);
-  kml_aoi(ofp, clat, clon, aoi);
-
   double start_lat, start_lon;
   get_target_latlon(&start_stVec, 0, &start_lat, &start_lon);
   printf("Starting latitude: %f\n", start_lat);
@@ -404,9 +418,13 @@ int plan(const char *satellite, const char *beam_mode,
                  &full_cycle_time, &first_is_ascending);
 
   // find_crossings() is supposed to set "first_is_ascending"
-  if (first_is_ascending == -1)
-    asfPrintError("Internal Error: failed to detect which pass is "
-                  "ascending, and\nwhich is descending!\n");
+  if (first_is_ascending == -1) {
+    *errorstring =
+      STRDUP("Failed to detect which pass is ascending, and\n"
+             "which is descending!  Does this satellite have a\n"
+             "fully polar orbit?");
+    return -1;
+  }
 
   // move the start times back a little, as a safety margin
   time1_in -= 4;
@@ -417,9 +435,6 @@ int plan(const char *satellite, const char *beam_mode,
   printf("Time to second target crossing: %f\n", time2_in);
   printf("Time to end of second target crossing: %f\n", time2_out);
   printf("Time for complete cycle: %f\n", full_cycle_time);
-
-  double curr = start_secs;
-  stateVector st = start_stVec;
 
   // Set up the ascending/descending filters.  Don't necessarily know
   // if the first or second crossing the is ascending one.
@@ -442,6 +457,11 @@ int plan(const char *satellite, const char *beam_mode,
 
   // Iteration #2: Looking for overlaps.
 
+  double curr = start_secs;
+  stateVector st = start_stVec;
+
+  PassCollection *pc = pass_collection_new(clat, clon, aoi);
+
   // Use time info gathered above to propagate straight to the areas of
   // interest.  There are two crossings to check, since we cross the latitude
   // range twice on each circuit.
@@ -453,7 +473,7 @@ int plan(const char *satellite, const char *beam_mode,
       stateVector st1 = propagate(st, curr, t);
 
       num_found +=
-        check_crossing(ofp, time1_in, time1_out, t, &st1, bmi,
+        check_crossing(pc, time1_in, time1_out, t, &st1, bmi,
                        clat, clon, aoi);
     }
 
@@ -462,16 +482,17 @@ int plan(const char *satellite, const char *beam_mode,
       stateVector st2 = propagate(st, curr, t);
 
       num_found +=
-        check_crossing(ofp, time2_in, time2_out, t, &st2, bmi,
+        check_crossing(pc, time2_in, time2_out, t, &st2, bmi,
                        clat, clon, aoi);
     }
 
     st = propagate(st, curr, curr + full_cycle_time);
     curr += full_cycle_time;
+
+    asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }
+  asfPercentMeter(1.0);
 
-  kml_footer(ofp);
-  fclose(ofp);
-
+  *pc_out = pc;
   return num_found;
 }

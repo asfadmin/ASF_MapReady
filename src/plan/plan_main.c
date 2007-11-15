@@ -153,7 +153,7 @@ main (int argc, char *argv[])
   double lon_min = atof(argv[currArg+6]);
   double lon_max = atof(argv[currArg+7]);
   char *tleFile = argv[currArg+8];
-  char *outFile = argv[currArg+9];
+  //char *outFile = argv[currArg+9];
 
   double clat = (lat_max+lat_min)/2.;
   double clon = (lon_max+lon_min)/2.;
@@ -167,13 +167,29 @@ main (int argc, char *argv[])
   latLon2UTM_zone(lat_max, lon_min, 0, zone, &x[3], &y[3]);
   Polygon *box = polygon_new_closed(4, x, y);
 
+  char *err;
+  PassCollection *pc;
   int num_found = plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
-                       clat, clon, 0, box, tleFile, outFile);
+                       clat, clon, 0, box, tleFile, &pc, &err);
 
   polygon_free(box);
 
-  asfPrintStatus("Found %d acquisition%s.\n", num_found, num_found==1?"":"s");
-  asfPrintStatus("Done.\n");
+  if (num_found < 0) {
+    asfPrintError("Plan error: %s\n", err);
+  } else {
+    asfPrintStatus("Found %d acquisition%s.\n",
+                   num_found, num_found==1?"":"s");
+    asfPrintStatus("Done.\n\n");
+
+    int i;
+    for (i=0; i<pc->num; ++i) {
+      asfPrintStatus("#%d: %s (%d%%)\n", i, 
+                     pc->passes[i]->start_time_as_string,
+                     pc->passes[i]->total_pct);
+    }
+
+    pass_collection_free(pc);
+  }
 
   return EXIT_SUCCESS;
 }

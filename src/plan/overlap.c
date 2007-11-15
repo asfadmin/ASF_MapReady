@@ -1,4 +1,5 @@
-#include "overlap.h"
+#include "plan.h"
+#include "plan_internal.h"
 
 OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
                          double clat, double clon, stateVector *st,
