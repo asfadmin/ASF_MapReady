@@ -1227,6 +1227,15 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   if (meta->sar->image_type=='P' && mpdr)
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
 
+  // Check to see if we need special startX / startY initialization
+  if (!mpdr && !meta->transform && meta->projection) {
+    if (!meta_is_valid_double(meta->projection->startX) ||
+        !meta_is_valid_double(meta->projection->startY))
+    {
+      meta_sar_to_startXY(meta, &meta->projection->startX, 
+			  &meta->projection->startY);
+    }
+  }
   // Location block
   if (ceos->product != RAW)
     ceos_init_location_block(meta);
@@ -2311,6 +2320,8 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         ceos->processor = FOCUS;
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
         ceos->product = SCN;
+      if (0==strncmp(prodStr, "SAR GEOREF FINE", 15))
+	ceos->product = SGF;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown CSTARS product type '%s'!\n", prodStr);
