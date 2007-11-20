@@ -430,7 +430,7 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
   complexFloat cpx, *cpxFloat_buf=NULL;
   float *amp_buf=NULL, *phase_buf=NULL, fValue;
   int nl, ns, lc, nLooks, tempFlag=FALSE, leftFill, rightFill, headerBytes;
-  int out=0;
+  int out=0, flip=FALSE;
   long long ii, kk, ll, offset;
   struct IOF_VFDR image_fdr;
   meta_parameters *meta;
@@ -549,6 +549,13 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
     meta->sar->multilook = 0;
   }
 
+  // Check whether image needs to be flipped
+  if (meta->general->orbit_direction == 'D' &&
+      (strncmp(meta->general->processor, "RSI", 3) == 0 ||
+       strncmp(meta->general->processor, "CDPF", 4) == 0))
+    flip = TRUE;
+  printf("orbit direction: %c, processor: %s, flip: %d\n", meta->general->orbit_direction, meta->general->processor, flip);
+
   for (ii=0; ii<nl; ii+=nLooks) {
     lc = meta->sar->look_count;
     if (ii + lc > nl)
@@ -559,10 +566,18 @@ void import_ceos_complex_int(char *inDataName, char *inMetaName,
         FSEEK64(fpIn, offset, SEEK_SET);
         FREAD(cpx_buf, sizeof(short), 2*ns, fpIn);
         for (kk=0; kk<ns; kk++) {
-            big16(cpx_buf[kk*2]);
-            big16(cpx_buf[kk*2+1]);
-            cpx.real = (float)(cpx_buf[kk*2]);
-            cpx.imag = (float)(cpx_buf[kk*2+1]);
+	  big16(cpx_buf[kk*2]);
+	  big16(cpx_buf[kk*2+1]);
+	}
+        for (kk=0; kk<ns; kk++) {
+	    if (flip) {
+	      cpx.real = (float)(cpx_buf[(ns-kk-1)*2]);
+	      cpx.imag = (float)(cpx_buf[(ns-kk-1)*2+1]);
+	    }
+	    else {
+	      cpx.real = (float)(cpx_buf[kk*2]);
+	      cpx.imag = (float)(cpx_buf[kk*2+1]);
+	    }
             if (complex_flag) {
                 cpxFloat_buf[ll*ns + kk] = cpx;
             } else if (cpx.real != 0.0 || cpx.imag != 0.0) {
@@ -2042,16 +2057,25 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
        radiometry_t radiometry)
 {
   FILE *fpIn=NULL, *fpOut=NULL;
-  unsigned short *short_buf=NULL;
+  unsigned short *short_buf=NULL, *tmp_buf=NULL;
   float *out_buf=NULL;
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
-  int leftFill, rightFill, headerBytes;
+  int leftFill, rightFill, headerBytes, flip=FALSE;
   long long ii, kk, offset;
   struct IOF_VFDR image_fdr;
 
+  // Check whether image needs to be flipped
+  if (meta->general->orbit_direction == 'D' &&
+      (strncmp(meta->general->processor, "RSI", 3) == 0 ||
+       strncmp(meta->general->processor, "CDPF", 4) == 0))
+    flip = TRUE;
+  printf("orbit direction: %c, processor: %s, flip: %d\n", meta->general->orbit_direction, meta->general->processor, flip);
+
   // Allocate memory
   short_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
+  if (flip)
+    tmp_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
   out_buf = (float *) MALLOC(ns * sizeof(float));
 
   // Open image files
@@ -2078,10 +2102,18 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
     offset = (long long)headerBytes + ii*(long long)image_fdr.reclen;
     FSEEK64(fpIn, offset, SEEK_SET);
     FREAD(short_buf, sizeof(unsigned short), ns, fpIn);
+    // Need to check for endianess for the entire line first, in case we
+    // need to flip
     for (kk=0; kk<ns; kk++) {
       /* Put the data in proper endian order before we do anything */
       big16(short_buf[kk]);
-      /* Now do our stuff */
+      if (flip)
+	tmp_buf[kk] = short_buf[kk];
+    }
+    // Now do our stuff
+    for (kk=0; kk<ns; kk++) {
+      if (flip)
+	short_buf[kk] = tmp_buf[ns-kk-1];
       if (radiometry == r_POWER)
   out_buf[kk] = (float)(short_buf[kk]*short_buf[kk]);
       else
@@ -2094,6 +2126,8 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
   // Clean up
   FREE(out_buf);
   FREE(short_buf);
+  if (tmp_buf)
+    FREE(tmp_buf);
   strcpy(meta->general->basename, inDataName);
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
   if (nBands == 1 && meta->sar && strlen(meta->general->bands) == 0)
