@@ -15,12 +15,26 @@
 
 #include "proj2proj.h"
 
+static const char *last_tv_name = NULL;
+
+static void save(const char *filename, const char *widget_name)
+{
+    GtkTextIter start, end;
+    GtkWidget *tv = get_widget_checked(widget_name);
+    GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
+    gtk_text_buffer_get_start_iter(tb, &start);
+    gtk_text_buffer_get_end_iter(tb, &end);
+    char *txt = gtk_text_buffer_get_text(tb, &start, &end, FALSE);
+
+    FILE *fout = FOPEN(filename, "w");
+    fprintf(fout, "%s", txt);
+    fclose(fout);
+}
+
 #ifndef win32
 
 static GtkWidget *save_widget = NULL;
 static GtkWidget *browse_widget = NULL;
-
-static const char *last_tv_name = NULL;
 
 // called when "cancel" clicked on the "Load" GtkFileChooser
 SIGNAL_CALLBACK void new_cancel_clicked()
@@ -67,20 +81,6 @@ SIGNAL_CALLBACK void save_widget_destroy()
 static SIGNAL_CALLBACK void save_cancel_clicked()
 {
   gtk_widget_hide(save_widget);
-}
-
-static void save(const char *filename, const char *widget_name)
-{
-    GtkTextIter start, end;
-    GtkWidget *tv = get_widget_checked(widget_name);
-    GtkTextBuffer *tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(tv));
-    gtk_text_buffer_get_start_iter(tb, &start);
-    gtk_text_buffer_get_end_iter(tb, &end);
-    char *txt = gtk_text_buffer_get_text(tb, &start, &end, FALSE);
-
-    FILE *fout = FOPEN(filename, "w");
-    fprintf(fout, "%s", txt);
-    fclose(fout);
 }
 
 // called when "ok" clicked on the "Save" GtkFileChooser
@@ -253,10 +253,10 @@ void save_tv(const char *tv_name)
   if (strlen(fname) > 0) {
     save(fname, last_tv_name);
     char msg[2304];
-    char *filename = get_filename((char*)files->data);
+    char *filename = get_filename(fname);
     sprintf(msg," Saved: %s", filename);
     char name[255];
-    strncpy_safe(name, widget_name, 7);
+    strncpy_safe(name, tv_name, 7);
     strcat(name, "_message_label");
     put_string_to_label(name, msg);
     free(filename);

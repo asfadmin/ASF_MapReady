@@ -136,7 +136,7 @@ static char * fudge_the_name(int projection, const char * name)
 
 static GtkWidget * populate_predefined_projections(int projection)
 {
-    gchar * proj_dir;
+    gchar * proj_dir=NULL;
     GDir * dir;
     GtkWidget * m;
     GtkWidget * item;
