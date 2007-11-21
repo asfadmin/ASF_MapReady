@@ -19,3 +19,5 @@ trim: trim.c
 	mv trim$(BIN_POSTFIX) $(BINDIR)
 	cp *.1 ../../man/cat1
 
+clean:
+	rm -f *.o core* *~
