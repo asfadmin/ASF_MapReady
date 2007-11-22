@@ -2433,18 +2433,21 @@ double get_firstTime (const char *fName)
    struct HEADER hdr;
    struct RHEADER linehdr;
    int length;
-   char buff[25600];
+   char *buff;
 
    fp = FOPEN(fName, "r");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
    length = bigInt32(hdr.recsiz) - (sizeof(struct RHEADER)
             + sizeof(struct HEADER));
+   buff = (char *) MALLOC(sizeof(char)*(length+5));
+   //buff = (char *) MALLOC(sizeof(char)*30000);
    FREAD (buff, length, 1, fp);
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    FREAD (&linehdr, sizeof(struct RHEADER), 1, fp);
    FCLOSE(fp);
 
+   FREE(buff);
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
 
@@ -2464,7 +2467,7 @@ char *get_polarization (const char *fName)
    struct HEADER hdr;
    struct SHEADER linehdr;
    int length;
-   char buff[25600];
+   char *buff;
    char *polarization;
 
    polarization = (char *) MALLOC(sizeof(char)*3);
@@ -2472,6 +2475,7 @@ char *get_polarization (const char *fName)
    fp = FOPEN(fName, "r");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
+   buff = (char *) MALLOC(sizeof(char)*(length+5));
    FREAD (buff, length, 1, fp);
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
@@ -2487,6 +2491,7 @@ char *get_polarization (const char *fName)
      polarization[1] = 'V';
    polarization[2] = 0;
 
+   FREE(buff);
    return polarization;
 }
 
@@ -2497,16 +2502,18 @@ int get_alos_band_number(const char *fName)
   struct HEADER hdr;
   struct SHEADER linehdr;
   int length;
-  char buff[25600];
+  char *buff;
 
   fp = FOPEN(fName, "r");
   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
   length = bigInt32(hdr.recsiz)-12;
+  buff = (char *) MALLOC(sizeof(char)*(length+5));
   FREAD (buff, length, 1, fp);
   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
   FCLOSE(fp);
 
+  FREE(buff);
   return bigInt32(linehdr.rec_num);
 }
 
@@ -2517,16 +2524,18 @@ double get_chirp_rate (const char *fName)
    struct HEADER hdr;
    struct SHEADER linehdr;
    int length;
-   char buff[25600];
+   char *buff;
 
    fp = FOPEN(fName, "r");
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    length = bigInt32(hdr.recsiz)-12;
+   buff = (char *) MALLOC(sizeof(char)*(length+5));
    FREAD (buff, length, 1, fp);
    FREAD (&hdr, sizeof(struct HEADER), 1, fp);
    FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
    FCLOSE(fp);
 
+   FREE(buff);
    return (double)bigInt16(linehdr.chirp_linear);
 }
 
