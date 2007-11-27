@@ -209,7 +209,11 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     strcat(outMetaName, TOOLS_META_EXT);
 
     // Determine the band extension (band ID)
-    if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
+    if (ceos->satellite == RSAT)
+      strcpy(bandExt, "HH");
+    else if (ceos->satellite == ERS || ceos->satellite == JERS)
+      strcpy(bandExt, "VV");
+    else if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
       char *polarization;
       polarization = get_polarization(inBandName[ii]);
       strcpy(bandExt, polarization);
