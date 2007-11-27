@@ -215,9 +215,9 @@ static void execute(const char *from, const char *to)
     get_projection_info(&source_pp, &source_proj, &source_datum, from);
     get_projection_info(&target_pp, &target_proj, &target_datum, to);
 
-    char *s = proj_info_as_string(source_proj, &source_pp, &source_datum);
+    //char *s = proj_info_as_string(source_proj, &source_pp);
     //printf("Source==>\n%s\n\n", s);
-    s = proj_info_as_string(target_proj, &target_pp, &target_datum);
+    //s = proj_info_as_string(target_proj, &target_pp);
     //printf("Target==>\n%s\n\n", s);
 
     project_t *source_proj_fn, *target_proj_fn;
@@ -242,6 +242,7 @@ static void execute(const char *from, const char *to)
 
     // go through the text line by line
     int line_num = 1;
+    int valid_line_num = 1;
     char *iter = txt;
     char *endl = find_next_endl(iter);
     while (endl) {
@@ -267,7 +268,7 @@ static void execute(const char *from, const char *to)
                 append_text(target_tv, buf);
             } 
             else {
-                if (*p2==',') ++p2;
+                if (*p2==',' || *p2==';') ++p2;
                 y = strtod(p2, &p3);
                 if (errno==EINVAL || p2==p3) {
                     snprintf(buf, 255, "Invalid line %d ignored.\n", line_num);
@@ -288,7 +289,7 @@ static void execute(const char *from, const char *to)
 
                     //printf("Lat/Lon: %f %f\n", lat, lon);
 
-                    if (line_num==1 &&
+                    if (valid_line_num==1 &&
                         target_proj==UNIVERSAL_TRANSVERSE_MERCATOR && 
                         target_pp.utm.zone==0)
                     {
@@ -307,6 +308,8 @@ static void execute(const char *from, const char *to)
                     else
                       snprintf(buf, 256, "%.2f %.2f %.2f\n", x, y, z);
                     append_text(target_tv, buf);
+
+                    ++valid_line_num;
                 }
             }
         }
