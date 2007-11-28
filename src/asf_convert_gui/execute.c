@@ -607,20 +607,20 @@ static void
 process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
              int is_first)
 {
-    gchar *in_data, *out_full, *status;
+    gchar *in_file, *out_full, *status;
     int pid;
 
     pid = getpid();
 
     gtk_tree_model_get(GTK_TREE_MODEL(list_store), iter,
-        COL_DATA_FILE, &in_data,
+        COL_INPUT_FILE, &in_file,
         COL_OUTPUT_FILE, &out_full,
         COL_STATUS, &status,
         -1);
 
     if (strcmp(status, "Done") != 0 || !skip_done)
     {
-        //char *in_basename = stripExt(in_data);
+        //char *in_basename = stripExt(in_file);
         char *out_basename = stripExt(out_full);
         char *out_nameonly = get_basename(out_full);
         char *output_dir = getPath(out_full);
@@ -658,7 +658,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
         settings_update_mask(user_settings, output_dir, is_first);
 
         config_file =
-            settings_to_config_file(user_settings, in_data, out_full,
+            settings_to_config_file(user_settings, in_file, out_full,
                 output_dir, tmp_dir);
         if (!config_file) {
             err_string = "Error creating configuration file.";
@@ -700,7 +700,7 @@ process_item(GtkTreeIter *iter, Settings *user_settings, gboolean skip_done,
 
     g_free(status);
     g_free(out_full);
-    g_free(in_data);
+    g_free(in_file);
 }
 
 void

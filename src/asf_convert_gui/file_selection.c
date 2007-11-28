@@ -282,7 +282,7 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
     while (*current)
     {
         /* second clause here allows silent fail for .L files, PR 92 */
-        if (add_to_files_list(*current) || is_L_file(*current))
+        if (add_to_files_list(*current) || is_meta_file(*current))
             ++i;
 
         ++current;

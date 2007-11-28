@@ -6,14 +6,14 @@
 #include "asf.h"
 #include "get_ceos_names.h"
 
-int COL_DATA_FILE;
+int COL_INPUT_FILE;
 int COL_INPUT_THUMBNAIL;
 int COL_BAND_LIST;
 int COL_OUTPUT_FILE;
 int COL_STATUS;
 int COL_LOG;
 
-int COMP_COL_DATA_FILE;
+int COMP_COL_INPUT_FILE;
 int COMP_COL_OUTPUT_FILE;
 int COMP_COL_OUTPUT_THUMBNAIL;
 int COMP_COL_OUTPUT_THUMBNAIL_BIG;
@@ -38,61 +38,72 @@ determine_default_output_file_name(const gchar * data_file_name)
                                                       current_naming_scheme);
 }
 
-gboolean is_L_file(const gchar * data_file)
+gboolean is_meta_file(const gchar * data_file)
 {
-    char *p = findExt(data_file);
+  char *ext = findExt(data_file);
+  if (ext && strcmp_case(ext, ".meta")==0)
+    return TRUE;
 
-    if (!p)
-        return FALSE;
-    else
-        return strcmp_case(p, "L") == 0;
+  char *basename = MALLOC(sizeof(char)*(strlen(data_file)+10));
+  char **dataName = NULL, **metaName = NULL;
+  int i, nBands, trailer, ret=FALSE;
+
+  ceos_file_pairs_t s = get_ceos_names(data_file, basename,
+                            &dataName, &metaName, &nBands, &trailer);
+
+  if (s != NO_CEOS_FILE_PAIR)
+    for (i=0; i<nBands; ++i)
+      if (strcmp(data_file, metaName[i])==0)
+        ret = TRUE;
+
+  FREE(basename);
+  free_ceos_names(dataName, metaName);
+
+  return ret;
 }
 
-static gboolean file_is_valid(const gchar * data_file)
+static char *file_is_valid(const gchar * file)
 {
-    /* not sure how much error checking we want to do */
+  // first, check if the file is ASF Internal
+  char *ext = findExt(file);
+  if (ext && strcmp_case(ext, ".meta")==0) {
+    return STRDUP(file);
+  }
+  else if (ext && strcmp_case(ext, ".img")==0) {
+    return appendExt(file, ".meta");
+  }
 
-    /* for now, just ensure that the extension is ok */
-    /* don't even look at the actual file itself... */
+  // now, the ceos check
+  char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
+  char **dataName = NULL, **metaName = NULL;
+  int nBands, trailer;
 
-    /* prepension check first */
-    int has_alos_prepension = has_prepension(data_file);
+  ceos_file_pairs_t ret = get_ceos_names(file, basename,
+                              &dataName, &metaName, &nBands, &trailer);
 
-    if (has_alos_prepension) {
-        /* this is a file that uses prepending */
-        return TRUE;
+  FREE(basename);
+
+  if (ret != NO_CEOS_FILE_PAIR) {
+    // found -- return metadata file
+    char *meta_file=NULL;
+    int i;
+    for (i=0; i<nBands; ++i) {
+      if (strcmp(file, metaName[i])==0) {
+        meta_file = STRDUP(metaName[i]);
+        break;
+      }
     }
 
-    gchar * p;
+    if (!meta_file)
+      meta_file = STRDUP(metaName[0]);
 
-    p = findExt(data_file);
+    free_ceos_names(dataName, metaName);
 
-    if (!p)
-    {
-        /* needs to have an extension */
-        return FALSE;
-    }
-    else
-    {
-        ++p;
-        if (strcmp_case(p, "D") == 0 ||
-            /*strcmp_case(p, "img") == 0 ||*/
-            /*strcmp_case(p, "L") == 0 ||*/
-            /*strcmp_case(p, "meta") == 0 ||*/
-            strcmp_case(p, "raw") == 0 ||
-            strcmp_case(p, "000") == 0 ||
-            strcmp_case(p, "img") == 0 ||
-            strcmp_case(p, "airsar") == 0 ||
-            strcmp_case(p, "tif") == 0 ||
-            strcmp_case(p, "tiff") == 0)
-        {
-            return TRUE;
-        }
-        else
-        {
-            return FALSE;
-        }
-    }
+    return meta_file;
+  } else {
+    // not found
+    return NULL;
+  }
 }
 
 #ifdef THUMBNAILS
@@ -112,7 +123,11 @@ static void
 do_thumbnail (const gchar *file)
 {
     gchar *metadata_file = meta_file_name (file);
-    if (metadata_file && strlen(metadata_file) > 0) {
+    gchar *data_file = data_file_name (file);
+
+    if (metadata_file && strlen(metadata_file) > 0 &&
+        data_file && strlen(data_file) > 0)
+    {
 
         /* Find the element of the list store having the file name we are
            trying to add a thumbnail of.  */
@@ -123,15 +138,17 @@ do_thumbnail (const gchar *file)
                                                &iter);
         while ( valid ) {
             /* Walk through the list, reading each row */
-            gchar *data_file;
-
+            gchar *file;
             gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
-                                COL_DATA_FILE, &data_file, -1);
+                                COL_INPUT_FILE, &file, -1);
 
-            if ( strcmp (data_file, file) == 0 ) {
+            if ( strcmp (metadata_file, file) == 0 ||
+                 strcmp (data_file, file) == 0)
+            {
                 /* We found it, so load the thumbnail.  */
                 set_input_image_thumbnail (&iter, metadata_file, data_file);
                 g_free (metadata_file);
+                g_free (data_file);
                 return;
             }
 
@@ -143,6 +160,7 @@ do_thumbnail (const gchar *file)
     got a chance to draw it's thumbnail.  Oh well.  */
 
         g_free (metadata_file);
+        g_free (data_file);
     }
 }
 
@@ -229,15 +247,15 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 {
     // iter: points into "files_list"
     // completed_iter: (returned) points into "completed_files_list"
-    gchar *output_file, *data_file;
+    gchar *output_file, *file;
 
     GtkTreeModel *model = GTK_TREE_MODEL(list_store);
-    gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file,
+    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &file,
                        COL_OUTPUT_FILE, &output_file, -1);
 
     gtk_list_store_append(completed_list_store, completed_iter);
     gtk_list_store_set(completed_list_store, completed_iter,
-                       COMP_COL_DATA_FILE, data_file,
+                       COMP_COL_INPUT_FILE, file,
                        COMP_COL_OUTPUT_FILE, output_file,
                        COMP_COL_STATUS, "Done",
                        COMP_COL_LOG, log_txt,
@@ -245,20 +263,20 @@ move_to_completed_files_list(GtkTreeIter *iter, GtkTreeIter *completed_iter,
 
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
 
-    g_free(data_file);
+    g_free(file);
     g_free(output_file);
 }
 
 void
 move_from_completed_files_list(GtkTreeIter *iter)
 {
-    gchar *data_file;
+    gchar *input_file;
     GtkTreeModel *model = GTK_TREE_MODEL(completed_list_store);
-    gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file, -1);
+    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &input_file, -1);
 
-    add_to_files_list(data_file);
+    add_to_files_list(input_file);
     gtk_list_store_remove(GTK_LIST_STORE(model), iter);
-    g_free(data_file);
+    g_free(input_file);
 }
 
 // The thumbnailing works like this: When a user adds a file, or a bunch of
@@ -318,42 +336,68 @@ show_queued_thumbnails()
 }
 
 gboolean
-add_to_files_list_iter(const gchar * data_file, GtkTreeIter *iter_p)
+add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
 {
-    gboolean valid = file_is_valid(data_file);
+    char *input_file = file_is_valid(input_file_in);
+    int valid = input_file != NULL;
+
     if (valid)
     {
-        GtkWidget *files_list;
-        gchar * out_name_full;
-
-        files_list = get_widget_checked("files_list");
-        char *bands = build_band_list(data_file);
-
-        gtk_list_store_append(list_store, iter_p);
-        gtk_list_store_set(list_store, iter_p,
-                           COL_DATA_FILE, data_file,
-                           COL_BAND_LIST, bands,
-                           COL_STATUS, "-",
-                           COL_LOG, "Has not been processed yet.",
-                           -1);
-
-        out_name_full = determine_default_output_file_name(data_file);
-        set_output_name(iter_p, out_name_full);
-        g_free(out_name_full);
-        FREE(bands);
-
-        queue_thumbnail(data_file);
-
-        /* Select the file automatically if this is the first
-           file that was added (this makes the toolbar buttons
-           immediately useful)                                 */
-        if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store),
-                                                NULL))
-        {
-            GtkTreeSelection *selection =
-                gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-            gtk_tree_selection_select_all(selection);
+        /* If this file is already in the list, ignore it */
+        GtkTreeIter iter;
+        int found = FALSE;
+        gboolean more_items =
+          gtk_tree_model_get_iter_first(GTK_TREE_MODEL(list_store), &iter);
+        while (more_items) {
+          gchar *input_file_in_list;
+          gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
+                             COL_INPUT_FILE, &input_file_in_list, -1);
+          if (strcmp(input_file, input_file_in_list) == 0) {
+            found = TRUE;
+            break;
+          }
+          more_items = gtk_tree_model_iter_next (GTK_TREE_MODEL (list_store),
+                                                 &iter);
         }
+
+        if (found) {
+          asfPrintStatus("File '%s' is already in the list, skipping.\n",
+                         input_file_in);
+        }
+        else {
+          /* not already in list -- add it */
+          char *bands = build_band_list(input_file);
+          
+          gtk_list_store_append(list_store, iter_p);
+          gtk_list_store_set(list_store, iter_p,
+                             COL_INPUT_FILE, input_file,
+                             COL_BAND_LIST, bands,
+                             COL_STATUS, "-",
+                             COL_LOG, "Has not been processed yet.",
+                             -1);
+
+          gchar * out_name_full;
+          out_name_full = determine_default_output_file_name(input_file);
+          set_output_name(iter_p, out_name_full);
+          g_free(out_name_full);
+          FREE(bands);
+          
+          queue_thumbnail(input_file);
+          
+          /* Select the file automatically if this is the first
+             file that was added (this makes the toolbar buttons
+             immediately useful)                                 */
+          if (1 == gtk_tree_model_iter_n_children(GTK_TREE_MODEL(list_store),
+                                                  NULL))
+          {
+            GtkWidget *files_list = get_widget_checked("files_list");
+            GtkTreeSelection *selection =
+              gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+            gtk_tree_selection_select_all(selection);
+          }
+        }
+
+        free(input_file);
     }
 
     return valid;
@@ -542,7 +586,7 @@ setup_files_list()
                                     G_TYPE_STRING,
                                     G_TYPE_STRING);
 
-    COL_DATA_FILE = 0;
+    COL_INPUT_FILE = 0;
     COL_INPUT_THUMBNAIL = 1;
     COL_BAND_LIST = 2;
     COL_OUTPUT_FILE = 3;
@@ -557,7 +601,7 @@ setup_files_list()
                                               G_TYPE_STRING,
                                               G_TYPE_STRING);
 
-    COMP_COL_DATA_FILE = 0;
+    COMP_COL_INPUT_FILE = 0;
     COMP_COL_OUTPUT_FILE = 1;
     COMP_COL_OUTPUT_THUMBNAIL = 2;
     COMP_COL_OUTPUT_THUMBNAIL_BIG = 3;
@@ -569,17 +613,17 @@ setup_files_list()
 
     /* First Column: Input File Name */
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Data File");
+    gtk_tree_view_column_set_title(col, "Input File");
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(files_list), col);
     renderer = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     g_object_set(renderer, "text", "?", NULL);
-    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_DATA_FILE);
+    gtk_tree_view_column_add_attribute(col, renderer, "text", COL_INPUT_FILE);
 
     /* Next Column: thumbnail of input image.  */
     col = gtk_tree_view_column_new ();
-    gtk_tree_view_column_set_title (col, "Input Thumbnail");
+    gtk_tree_view_column_set_title (col, "Thumbnail");
     gtk_tree_view_column_set_resizable (col, FALSE);
     gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
     renderer = gtk_cell_renderer_pixbuf_new ();
@@ -670,7 +714,7 @@ setup_files_list()
     gtk_tree_view_column_pack_start(col, renderer, TRUE);
     g_object_set(renderer, "text", "?", NULL);
     gtk_tree_view_column_add_attribute(col, renderer, "text",
-                                       COMP_COL_DATA_FILE);
+                                       COMP_COL_INPUT_FILE);
 
     /* Next Column: Output File Name */
     col = gtk_tree_view_column_new();
@@ -684,7 +728,7 @@ setup_files_list()
 
     /* Next Column: Pixbuf of output image */
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Output Thumbnail");
+    gtk_tree_view_column_set_title(col, "Thumbnail");
     gtk_tree_view_column_set_resizable(col, FALSE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
     renderer = gtk_cell_renderer_pixbuf_new();

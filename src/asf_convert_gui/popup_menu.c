@@ -256,7 +256,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
 
                 gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
                     COL_STATUS, &status,
-		    COL_DATA_FILE, &in_name,
+                    COL_INPUT_FILE, &in_name,
                     COL_OUTPUT_FILE, &out_name, -1);
 
                 gtk_tree_path_free(path);
@@ -497,7 +497,7 @@ handle_display_ceos_metadata()
         gchar * in_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-            COL_DATA_FILE, &in_name, -1);
+            COL_INPUT_FILE, &in_name, -1);
 
         show_ceos_meta_data(in_name);
     }
@@ -540,18 +540,18 @@ handle_view_log(int completed)
 {
     GtkListStore *ls;
     char *widget;
-    int log_col, data_col;
+    int log_col, file_col;
 
     if (completed) {
         widget = "completed_files_list";
         ls = completed_list_store;
         log_col = COMP_COL_LOG;
-        data_col = COMP_COL_DATA_FILE;
+        file_col = COMP_COL_INPUT_FILE;
     } else {
         widget = "files_list";
         ls = list_store;
         log_col = COL_LOG;
-        data_col = COL_DATA_FILE;
+        file_col = COL_INPUT_FILE;
     }
 
     GtkWidget *list = get_widget_checked(widget);
@@ -559,16 +559,16 @@ handle_view_log(int completed)
 
     if (get_iter_to_first_selected_row(list, &iter))
     {
-        gchar *log_txt, *data_file;
+        gchar *log_txt, *input_file;
 
         gtk_tree_model_get(GTK_TREE_MODEL(ls), &iter,
-                           data_col, &data_file,
+                           file_col, &input_file,
                            log_col, &log_txt, -1);
 
-        show_log(log_txt, data_file);
+        show_log(log_txt, input_file);
 
         g_free(log_txt);
-        g_free(data_file);
+        g_free(input_file);
     }
     else
     {
@@ -756,7 +756,7 @@ handle_view_input()
         gchar * in_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
-            COL_DATA_FILE, &in_name, -1);
+                           COL_INPUT_FILE, &in_name, -1);
         show_image_with_asf_view(in_name);
         g_free(in_name);
     }
@@ -830,15 +830,15 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
         gtk_tree_model_get_iter(model, &iter, path);
 
         if (strstr(widget_name, "completed")) {
-            gtk_tree_model_get(model, &iter, 
-                COMP_COL_DATA_FILE, &input_name, 
+            gtk_tree_model_get(model, &iter,
+                COMP_COL_INPUT_FILE, &input_name,
                 COMP_COL_OUTPUT_FILE, &out_name,
                 COMP_COL_OUTPUT_THUMBNAIL_BIG, &pb,
                 -1);
             metadata_name = build_asf_metadata_filename(out_name);
         } else {
-            gtk_tree_model_get(model, &iter, 
-                COL_DATA_FILE, &input_name, 
+            gtk_tree_model_get(model, &iter,
+                COL_INPUT_FILE, &input_name,
                 COL_OUTPUT_FILE, &out_name,
                 -1);
             metadata_name = meta_file_name(input_name);

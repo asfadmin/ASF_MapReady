@@ -211,11 +211,12 @@ draw_popup_image (GtkWidget *widget, GtkTreePath *path,
     GtkTreeIter iter;
     gtk_tree_model_get_iter (GTK_TREE_MODEL (list_store), &iter, path);
 
-    char *data_file;
-    gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter, COL_DATA_FILE, 
-        &data_file, -1);
+    char *file;
+    gtk_tree_model_get (GTK_TREE_MODEL (list_store), &iter,
+                        COL_INPUT_FILE, &file, -1);
 
-    char *metadata_file = meta_file_name (data_file);
+    char *metadata_file = meta_file_name (file);
+    char *data_file = data_file_name (file);
 
     GdkPixbuf *popup_image_pixbuf 
         = make_input_image_thumbnail_pixbuf (metadata_file, data_file,

@@ -158,45 +158,79 @@ message_box(const gchar * message)
 }
 
 gchar *
-meta_file_name(const gchar * data_file_name)
+meta_file_name(const gchar * file_name)
 {
-    // data file is really the meta file, for ALOS
-    if (has_prepension(data_file_name))
-        return g_strdup(data_file_name);
+  // first, handle ASF Internal
+  char *ext = findExt(file_name);
+  if (ext && strcmp_case(ext, ".meta")==0) {
+    return g_strdup(file_name);
+  }
+  else if (ext && strcmp_case(ext, ".img")==0) {
+    char *tmp = appendExt(file_name, ".meta");
+    gchar *ret = g_strdup(tmp);
+    FREE(tmp);
+    return ret;
+  }
 
-    char *p = findExt(data_file_name);
+  // second, try CEOS
+  char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
+  char **dataName = NULL, **metaName = NULL;
+  int nBands, trailer;
 
-    if (!p)
-    {
-        gchar * ret =
-            (gchar *) g_malloc (sizeof(gchar) * (strlen(data_file_name) + 3));
+  ceos_file_pairs_t s = get_ceos_names(file_name, basename,
+                            &dataName, &metaName, &nBands, &trailer);
 
-        strcpy(ret, data_file_name);
-        strcat(ret, ".L");
-        return ret;
-    }
+  gchar *ret;
+  if (s != NO_CEOS_FILE_PAIR && nBands > 0) {
+    ret = g_strdup(metaName[0]);
+  }
+  else {
+    // not found
+    ret = g_strdup("");
+  }
 
-    // data file is really the meta file, for AirSAR
-    if (strcmp_case(p, ".airsar") == 0)
-        return g_strdup(data_file_name);
+  FREE(basename);
+  free_ceos_names(dataName, metaName);
 
-    if (strcmp(p, ".D") == 0) {
-        gchar * ret = g_strdup(data_file_name);
-        ret[strlen(data_file_name) - 1] = 'L';
-        return ret;
-    }
+  return ret;
+}
 
-    if (strcmp(p, ".img") == 0) {
-        gchar * ret =
-            (gchar *) g_malloc(sizeof(gchar) * (strlen(data_file_name) + 5));
-        strcpy(ret, data_file_name);
-        p = findExt(ret);
-        *p = '\0';
-        strcat(ret, ".meta");    
-        return ret;
-    }
+gchar *
+data_file_name(const gchar * file_name)
+{
+  // first, handle ASF Internal
+  char *ext = findExt(file_name);
+  if (ext && strcmp_case(ext, ".img")==0) {
+    return g_strdup(file_name);
+  }
+  else if (ext && strcmp_case(ext, ".meta")==0) {
+    char *tmp = appendExt(file_name, ".img");
+    gchar *ret = g_strdup(tmp);
+    FREE(tmp);
+    return ret;
+  }
 
-    return g_strdup("");
+  // second, try CEOS
+  char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
+  char **dataName = NULL, **metaName = NULL;
+  int nBands, trailer;
+
+  ceos_file_pairs_t s = get_ceos_names(file_name, basename,
+                            &dataName, &metaName, &nBands, &trailer);
+
+  gchar *ret;
+  if (s != NO_CEOS_FILE_PAIR && nBands > 0) {
+    ret = g_strdup(dataName[0]);
+  }
+  else {
+    // not found
+    ret = g_strdup("");
+  }
+
+  FREE(basename);
+  free_ceos_names(dataName, metaName);
+
+  return ret;
 }
 
 GtkWidget *get_widget_checked(const char *widget_name)

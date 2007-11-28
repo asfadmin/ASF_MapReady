@@ -272,7 +272,7 @@ static void apply_naming_scheme(const NamingScheme * new,
         gchar * old_output_name;
 
         gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
-            COL_DATA_FILE, &input_file_name,
+            COL_INPUT_FILE, &input_file_name,
             COL_OUTPUT_FILE, &current_output_name, -1);
 
         old_output_name =

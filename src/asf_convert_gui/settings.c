@@ -1351,7 +1351,7 @@ settings_to_config_file(const Settings *s,
 
     output_basename = get_basename(output_file);
 
-    char *base = get_filename(input_file);
+    char *base = get_basename(input_file);
     char *path = g_path_get_dirname(input_file);
     input_basename = MALLOC(sizeof(char)*(strlen(base)+strlen(path)+2));
 

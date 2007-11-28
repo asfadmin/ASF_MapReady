@@ -184,14 +184,14 @@ typedef struct
     gchar * scheme;
 } NamingScheme;
 
-extern int COL_DATA_FILE;
+extern int COL_INPUT_FILE;
 extern int COL_INPUT_THUMBNAIL;
 extern int COL_BAND_LIST;
 extern int COL_OUTPUT_FILE;
 extern int COL_STATUS;
 extern int COL_LOG;
 
-extern int COMP_COL_DATA_FILE;
+extern int COMP_COL_INPUT_FILE;
 extern int COMP_COL_OUTPUT_FILE;
 extern int COMP_COL_OUTPUT_THUMBNAIL;
 extern int COMP_COL_OUTPUT_THUMBNAIL_BIG;
@@ -253,6 +253,7 @@ void set_combo_box_item(GtkWidget *, gint);
 gint get_combo_box_item(GtkWidget *);
 void message_box(const gchar *);
 gchar * meta_file_name(const gchar *);
+gchar * data_file_name(const gchar *);
 char *getPath(const char *);
 GtkWidget *get_widget_checked(const char *widget_name);
 void set_combo_box_item_checked(const char *, gint);
@@ -281,7 +282,7 @@ gboolean add_to_files_list(const gchar *);
 gboolean add_to_files_list_iter(const gchar *, GtkTreeIter *);
 void update_all_extensions();
 void set_output_name(GtkTreeIter *, const gchar *);
-gboolean is_L_file(const gchar *);
+gboolean is_meta_file(const gchar *);
 void show_queued_thumbnails();
 int has_prepension(const gchar *);
 void move_to_completed_files_list(GtkTreeIter *, GtkTreeIter *, const gchar *);

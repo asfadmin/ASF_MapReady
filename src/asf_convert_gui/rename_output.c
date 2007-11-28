@@ -18,20 +18,20 @@ do_rename(GtkTreeModel *model, GtkTreeIter *iter, const gchar *new_name)
 {
     const gchar * ext;
     gchar *user_ext, *basename, *name_without_path, *p, *fixed_name,
-        *data_file_name, *path;
+        *file_name, *path;
     Settings * user_settings;
 
     user_settings = settings_get_from_gui();
     ext = settings_get_output_format_extension(user_settings);
 
-    gtk_tree_model_get(model, iter, COL_DATA_FILE, &data_file_name, -1);
+    gtk_tree_model_get(model, iter, COL_INPUT_FILE, &file_name, -1);
     if (output_directory)
     {
         path = g_strdup(output_directory);
     }
     else
     {
-        path = g_path_get_dirname(data_file_name);
+        path = g_path_get_dirname(file_name);
         if (strcmp(path, ".") == 0)
         {
             *path = '\0';
