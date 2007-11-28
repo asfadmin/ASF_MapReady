@@ -65,7 +65,7 @@ void help()
 "Limitations:\n"
 "     Theoretically, any size output image will work.  The output image will\n"
 "     be cached on disk if it is too large to fit in memory, however in this\n"
-"     situation the process will be quite slow.\n\n"
+"     situation the processing can be quite slow.\n\n"
 "See also:\n"
 "     asf_geocode\n\n"
 "Contact:\n"
@@ -80,9 +80,12 @@ ASF_NAME_STRING, ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
 
 void usage()
 {
-    printf("Usage:\n"
-           "    %s <outfile> <infile1> <infile2> ... \n\n"
-           "At least 2 input files are required.\n", ASF_NAME_STRING);
+    printf(
+"Usage:\n"
+"    %s <<projection parameters>> <outfile> <infile1> <infile2> ... \n\n"
+"For the projection parameters, read the help for full details.  However\n"
+"you may simply use '-p utm' to output in a UTM projection.\n\n"
+"At least 2 input files are required.\n", ASF_NAME_STRING);
     exit(1);
 }
 
