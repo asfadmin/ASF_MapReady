@@ -652,7 +652,19 @@ handle_process()
 static int
 handle_rename()
 {
-  return rename_selected_output_filename();
+    GtkWidget *files_list = get_widget_checked("files_list");
+    GtkTreeSelection *selection = 
+        gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+
+    int num_selected = gtk_tree_selection_count_selected_rows(selection);
+
+    if (num_selected > 1) {
+      message_box("Please select only one file at a time to rename.");
+      return TRUE;
+    }
+    else {
+      return rename_selected_output_filename();
+    }
 }
 
 static int try_suffix(const gchar *in_name, const char *suffix,
