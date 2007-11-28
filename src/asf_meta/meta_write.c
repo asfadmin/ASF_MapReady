@@ -538,7 +538,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "j(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->l[ii],
-      "line transformation parameter");
+                      "line transformation parameter");
+    }
+    for (ii=0; ii<6; ++ii) {
+      sprintf(coeff, "incid_a(%d):", ii);
+      meta_put_double(fp, coeff, meta->transform->incid_a[ii],
+                      "incidence angle transformation parameter");
     }
     meta_put_string(fp,"}","","End transform");
   }

@@ -204,7 +204,12 @@ void alos_to_latlon(meta_parameters *meta,
     if (z != 0.0) {
         // height correction applies directly to y (range direction)
         double incid = meta_incid(meta, yLine, xSample);
-        xSample += z*tan(PI/2-incid)/meta->general->x_pixel_size;
+
+        // shift RIGHT in ascending images, LEFT in descending
+        if (meta->general->orbit_direction=='A')
+          xSample += z*tan(PI/2-incid)/meta->general->x_pixel_size;
+        else
+          xSample -= z*tan(PI/2-incid)/meta->general->x_pixel_size;
     }
 
     double i = xSample + 1;
@@ -236,18 +241,18 @@ void scan_to_latlon(meta_parameters *meta,
   meta_projection *proj = meta->projection;
 
   if (z != 0.0) {
-      // height correction applies directly to y (range direction)
-      double line, samp;
-      line = (y-proj->startY)/proj->perY - meta->general->start_line;
-      samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
-      double sr = meta_get_slant(meta,line,samp);
-      double er = proj->param.atct.rlocal;
-      double ht = meta_get_sat_height(meta,line,samp);
-      double cos_ang = (sr*sr + er*er - ht*ht)/(2.0*sr*er);
-      if (cos_ang > 1) cos_ang = 1;
-      if (cos_ang < -1) cos_ang = -1;
-      double incid = PI-acos(cos_ang);
-      x += z*tan(PI/2-incid);
+    // height correction applies directly to y (range direction)
+    double line, samp;
+    line = (y-proj->startY)/proj->perY - meta->general->start_line;
+    samp = (x-proj->startX)/proj->perX - meta->general->start_sample;
+    double sr = meta_get_slant(meta,line,samp);
+    double er = proj->param.atct.rlocal;
+    double ht = meta_get_sat_height(meta,line,samp);
+    double cos_ang = (sr*sr + er*er - ht*ht)/(2.0*sr*er);
+    if (cos_ang > 1) cos_ang = 1;
+    if (cos_ang < -1) cos_ang = -1;
+    double incid = PI-acos(cos_ang);
+    x += z*tan(PI/2-incid);
   }
 
   if (meta->sar->look_direction=='R')

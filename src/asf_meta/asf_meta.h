@@ -229,6 +229,7 @@ typedef struct {
   double y[10];            // Transformation coefficients for y
   double l[10];            // Transformation coefficients for lines
   double s[10];            // Transformation coefficients for samples
+  double incid_a[6];       // Transformation coefficients for incid angle
 } meta_transform;
 
 // meta_airsar: parameters for AirSAR geocoding

@@ -991,6 +991,12 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->transform->s[1] = mpdr->b22;
     meta->transform->s[2] = mpdr->b23;
     meta->transform->s[3] = mpdr->b24;
+    meta->transform->incid_a[0] = dssr->incid_a[0];
+    meta->transform->incid_a[1] = dssr->incid_a[1];
+    meta->transform->incid_a[2] = dssr->incid_a[2];
+    meta->transform->incid_a[3] = dssr->incid_a[3];
+    meta->transform->incid_a[4] = dssr->incid_a[4];
+    meta->transform->incid_a[5] = dssr->incid_a[5];
   }
 
   // Initialize map projection for projected images

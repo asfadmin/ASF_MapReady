@@ -138,15 +138,16 @@ func (double t, const double y[], double f[], void *params)
 
   /* Current range to satellife from center of earth.  */
   r = vector_magnitude (p);
+  double r3 = r*r*r;
 
   /* The so-called first zonal harmonic is used to account for the
      effects of earth oblatedness (see below for references).  */
   j2 = 1082.63e-6;	/* First zonal harmonic coefficient.  */
-  a_j2_x = (gm * p->x / pow (r, 3)) * j2 * (3.0 / 2) * pow ((ae / r), 2)
-    * (5.0 * (pow (p->z, 2) / pow (r, 2)) - 1.0);
+  a_j2_x = (gm * p->x / r3) * j2 * (3.0 / 2) * (ae*ae / (r*r))
+    * (5.0 * (p->z * p->z) / (r*r) - 1.0);
   a_j2_y = (p->y / p->x) * a_j2_x;
-  a_j2_z = (-gm * p->z / pow (r, 3)) * j2 * (3.0 / 2) 
-    * pow ((ae / r), 2) * (3.0 - 5.0 * (pow (p->z, 2) / pow (r, 2)));
+  a_j2_z = (-gm * p->z / r3) * j2 * (3.0 / 2) 
+    * (ae*ae / (r*r)) * (3.0 - 5.0 * (p->z * p->z) / (r*r));
 
   /* Total perturbations.  */
   ksx = a_j2_x;
@@ -156,9 +157,9 @@ func (double t, const double y[], double f[], void *params)
   f[0] = v->x;
   f[1] = v->y;
   f[2] = v->z;
-  f[3] = ksx - gm * (p->x / pow (r, 3));
-  f[4] = ksy - gm * (p->y / pow (r, 3));
-  f[5] = ksz - gm * (p->z / pow (r, 3));
+  f[3] = ksx - gm * (p->x / r3);
+  f[4] = ksy - gm * (p->y / r3);
+  f[5] = ksz - gm * (p->z / r3);
 
   return GSL_SUCCESS;
 }
