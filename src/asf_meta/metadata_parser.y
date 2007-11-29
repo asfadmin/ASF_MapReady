@@ -812,7 +812,10 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields that go in the (proj->param).ps block.  */
   if ( !strcmp(stack_top->block_name, "ps") ) {
     if ( !strcmp(field_name, "slat") )
-      { (*MPARAM).ps.slat = VALP_AS_DOUBLE; return; }
+      { (*MPARAM).ps.slat = VALP_AS_DOUBLE; 
+        (*MPARAM).ps.is_north_pole = (*MPARAM).ps.slat > 0;
+        return;
+      }
     if ( !strcmp(field_name, "slon") )
       { (*MPARAM).ps.slon = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "false_easting") )

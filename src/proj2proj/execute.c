@@ -113,7 +113,7 @@ static void get_projection_info(project_parameters_t *pp,
       case PROJ_PS:
           *projection_type = POLAR_STEREOGRAPHIC;
           pp->ps.slat =
-              get_double_from_entry2(str, "latitude_of_origin_entry");
+              get_double_from_entry2(str, "first_standard_parallel_entry");
           pp->ps.slon =
               get_double_from_entry2(str, "central_meridian_entry");
           pp->ps.is_north_pole = pp->ps.slat > 0;
