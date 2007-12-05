@@ -51,8 +51,8 @@ void prn_esa_facdr(FILE *fp, struct ESA_FACDR *f);
 char *sprn_rcdr(struct radio_comp_data_rec *rc);
 void prn_rcdr(FILE *fp, struct radio_comp_data_rec *rc);
 
-char *sprn_ppr(struct PPREC *p);
-void prn_ppr(FILE *fp, struct PPREC *p);
+char *sprn_ppr(struct proc_parm_rec *p);
+void prn_ppr(FILE *fp, struct proc_parm_rec *p);
 
 char *sprn_ampr(struct alos_map_proj_rec *mp);
 void prn_ampr(FILE *fp, struct alos_map_proj_rec *mp);

@@ -984,11 +984,134 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     strV(spare6,off,10238);
 }
 
-void Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir)
+void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
 {
-    int off=12;
+    int off=12, i, j;
 
-    strV(beam_type,931,3);
+    shrtV(seq_num,12,4);
+    strV(inp_media,20,3);
+    shrtV(n_tape_id,23,4);
+    for (i=0; i<10; i++)
+      strV(tape_id[i],27+i*8,8);
+    strV(exp_ing_start,107,21);
+    strV(exp_ing_stop,128,21);
+    strV(act_ing_start,149,21);
+    strV(act_ing_stop,170,21);
+    strV(proc_start,191,21);
+    strV(proc_stop,212,21);
+    for (i=0; i<10; i++)
+      fltV(mn_sig_lev[i],233+i*16,16);
+    shrtV(src_data_ind,393,4);
+    intV(miss_ln,397,8);
+    intV(rej_ln,405,8);
+    intV(large_gap,413,8);
+    fltV(bit_error_rate,421,16);
+    fltV(fm_crc_err,437,16);
+    intV(date_incons,453,8);
+    intV(prf_changes,461,8);
+    intV(delay_changes,469,8);
+    intV(skipd_frams,477,8);
+    intV(rej_bf_start,485,8);
+    intV(rej_few_fram,493,8);
+    intV(rej_many_fram,501,8);
+    intV(rej_mchn_err,509,8);
+    intV(rej_vchn_err,517,8);
+    intV(rej_rec_type,525,8);
+    strV(sens_config,533,10);
+    strV(sens_orient,543,9);
+    strV(sych_marker,552,8);
+    strV(rng_ref_src,560,12);
+    for (i=0; i<4; i++) {
+      fltV(rng_amp_coef[i],572+i*16,16);
+      fltV(rng_phas_coef[i],636+i*16,16);
+      fltV(err_amp_coef[i],700+i*16,16);
+      fltV(err_phas_coef[i],764+i*16,16);
+    }
+    intV(pulse_bandw,828,4);
+    strV(adc_samp_rate,832,5);
+    fltV(rep_agc_attn,837,16);
+    fltV(gn_corctn_fctr,853,16);
+    fltV(rep_energy_gn,869,16);
+    strV(orb_data_src,885,11);
+    intV(pulse_cnt_1,896,4);
+    intV(pulse_cnt_2,900,4);
+    strV(beam_edge_rqd,904,3);
+    fltV(beam_edge_conf,907,16);
+    intV(pix_overlap,923,4);
+    intV(n_beams,927,4);
+    for (i=0; i<q->n_beams; i++) {
+      strV(beam_info[i].beam_type,931+i*44,3);
+      strV(beam_info[i].beam_look_src,934+i*44,9);
+      fltV(beam_info[i].beam_look_ang,943+i*44,16);
+      fltV(beam_info[i].prf,959+i*44,16);
+    }
+    intV(n_pix_updates,1107,4);
+    for (i=0; i<q->n_pix_updates; i++) {
+      strV(pix_count[i].pix_update,1111+i*29,21);
+      for (j=0; j<4; j++)
+	intV(pix_count[i].n_pix[j],1132+i*29+j*8,8);
+    }
+    fltV(pwin_start,2171,16);
+    fltV(pwin_end,2187,16);
+    strV(recd_type,2203,9);
+    fltV(temp_set_inc,2212,16);
+    intV(n_temp_set,2228,4);
+    for (i=0; i<q->n_temp_set; i++)
+      for (j=0; j<4; j++)
+	shrtV(temp[i].temp_set[j],2232+i*16+j*4,4);
+    intV(n_image_pix,2552,8);
+    fltV(prc_zero_pix,2560,16);
+    fltV(prc_satur_pix,2576,16);
+    fltV(img_hist_mean,2592,16);
+    for (i=0; i<3; i++)
+      fltV(img_cumu_dist[i],2608+i*16,16);
+    fltV(pre_img_gn,2656,16);
+    fltV(post_img_gn,2672,16);
+    fltV(dopcen_inc,2688,16);
+    intV(n_dopcen,2704,4);
+    for (i=0; i<q->n_dopcen; i++) {
+      fltV(dopcen_est[i].dopcen_conf,2708+i*48,16);
+      fltV(dopcen_est[i].dopcen_ref_tim,2724+i*48,16);
+      for (j=0; j<4; j++)
+	fltV(dopcen_est[i].dopcen_coef[j],2740+i*48+j*16,16);
+    }
+    intV(dopamb_err,4628,4);
+    fltV(dopamb_conf,4632,16);
+    for (i=0; i<7; i++)
+      fltV(eph_orb_data[i],4648+i*16,16);
+    strV(appl_type,4760,12);
+    for (i=0; i<5; i++)
+      fltV(slow_time_coef[i],4772+i*22,22);
+    intV(n_srgr,4882,4);
+    for (i=0; i<q->n_srgr; i++) {
+      strV(srgr_coefset[i].srgr_update,4886+i*37,21);
+      for (j=0; j<6; j++)
+	fltV(srgr_coefset[i].srgr_coef[j],4907+i*37+j*16,16);
+    }
+    fltV(pixel_spacing,7226,16);
+    strV(pics_reqd,7242,3);
+    strV(wo_number,7245,8);
+    strV(wo_date,7253,20);
+    strV(satellite_id,7273,10);
+    strV(user_id,7283,20);
+    strV(complete_msg,7303,3);
+    strV(scene_id,7306,15);
+    strV(density_in,7321,4);
+    strV(media_id,7325,8);
+    fltV(angle_first,7333,16);
+    fltV(angle_last,7349,16);
+    strV(prod_type,7365,3);
+    strV(map_system,7368,16);
+    fltV(centre_lat,7384,22);
+    fltV(centre_long,7406,22);
+    fltV(span_x,7428,22);
+    fltV(span_y,7450,22);
+    strV(apply_dtm,7472,3);
+    strV(density_out,7475,4);
+    strV(state_time,7479,21);
+    shrtV(num_state_vectors,7500,4);
+    fltV(state_time_inc,7504,16);
+    strV(coord_sys,7520,12);
 }
 
 void Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir)
@@ -1277,4 +1400,8 @@ void Code_ARDR(unsigned char *bf, struct alos_rad_data_rec* q,codingDir dir)
     fltV(delta_receive_real[ii],off,16);
     fltV(delta_receive_imag[ii],off,16);
   }
+}
+
+void Code_LHDR(unsigned char *bf, struct RHEADER *q,codingDir dir)
+{
 }

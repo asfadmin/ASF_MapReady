@@ -80,7 +80,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct scene_header_rec *shr;         // Scene Header record
   struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
   struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
-  struct PPREC *ppr;                    // Processing Parameter record
+  struct proc_parm_rec *ppr;                    // Processing Parameter record
   struct alos_rad_data_rec *ardr;       // Radiometric Data record (ALOS)
   struct RSI_VRADDR *rsi_raddr;         // Radiometric Data record (RSI/CDPF)
 
@@ -322,7 +322,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(rsr);
       break;
     case (120):
-      ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
+      ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
       if (leaderNameExists) {
 	if (get_ppr(metaName[0],ppr) >= 0)
 	  ret = sprn_ppr(ppr);
@@ -409,7 +409,7 @@ int check_record(char *fileName, int reqrec)
   struct scene_header_rec *shr;         // Scene Header record
   struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
   struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
-  struct PPREC *ppr;                    // Processing Parameter record
+  struct proc_parm_rec *ppr;                    // Processing Parameter record
 
   char **dataName, **metaName;
   int nBands, trailer;
@@ -564,7 +564,7 @@ int check_record(char *fileName, int reqrec)
       FREE(rsr);
       break;
     case (120):
-      ppr = (struct PPREC *) MALLOC(sizeof(struct PPREC));
+      ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
       if (get_ppr(metaName[0],ppr) >= 0)
 	return 1;
       else if (trailer) {

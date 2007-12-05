@@ -1263,35 +1263,30 @@ struct dig_elev_rec {
 ***************************************************/
 
 typedef struct beam_info_rec {
-    char beam_type[4];          /* Beam type                            (a3) */
-    char beam_look_src[10];     /* Elevation beam look angle source     (a9) */
-    float beam_look_ang;        /* Applied elev beam look angle, deg (f16.7) */
-    float prf;                  /* Actual PRF (Hz)                   (f16.7) */
-    struct beam_info_rec *next; /* pointer to next beam info rec             */
+  char beam_type[4];          /* Beam type                            (a3) */
+  char beam_look_src[10];     /* Elevation beam look angle source     (a9) */
+  double beam_look_ang;        /* Applied elev beam look angle, deg (f16.7) */
+  double prf;                  /* Actual PRF (Hz)                   (f16.7) */
 } Beam_Info;
 
 typedef struct pix_count_rec {
-    char pix_update[22];        /* pixel count update time             (a21) */
-    int n_pix[4];               /* count of image pixels in beams      (4i8) */
-    struct pix_count_rec *next; /* pointer to next pix count rec             */
+  char pix_update[22];        /* pixel count update time             (a21) */
+  int n_pix[4];               /* count of image pixels in beams      (4i8) */
 } Pix_Count;
 
 typedef struct temp_rec {
-    int temp_set[4];            /* temperature settings                (4i4) */
-    struct temp_rec *next;      /* pointer to next temp rec                  */
+  short temp_set[4];            /* temperature settings                (4i4) */
 } Temp_Rec;
 
 typedef struct dopcen_est_rec {
-    float dopcen_conf;           /* Doppler Centroid conf measure     (f16.7) */
-    float dopcen_ref_tim;        /* Doppler Centroid ref time         (f16.7) */
-    float dopcen_coef[4];        /* Doppler Centroid coefficients    (4f16.7) */
-    struct dopcen_est_rec *next; /* pointer to next dopcen rec                */
+  double dopcen_conf;           /* Doppler Centroid conf measure     (f16.7) */
+  double dopcen_ref_tim;        /* Doppler Centroid ref time         (f16.7) */
+  double dopcen_coef[4];        /* Doppler Centroid coefficients    (4f16.7) */
 } Dopcen_Est;
 
 typedef struct srgr_coefset_rec {
-    char srgr_update[22];       /* SRGR update date/time               (a21) */
-    float srgr_coef[6];         /* SRGR coefficients                (6f16.7) */
-    struct srgr_coefset_rec *next; /* pointer to next SRGR rec               */
+  char srgr_update[22];       /* SRGR update date/time               (a21) */
+  double srgr_coef[6];         /* SRGR coefficients                (6f16.7) */
 } SRGR_Coefset;
 
 struct proc_parm_rec {
@@ -1306,13 +1301,13 @@ struct proc_parm_rec {
     char act_ing_stop[22];      /* Actual ingest stop time             (a21) */
     char proc_start[22];        /* Processing start time               (a21) */
     char proc_stop[22];         /* Processing stop time                (a21) */
-    float mn_sig_lev[10];       /* Mean signal levels across range (10f16.7) */
+    double mn_sig_lev[10];       /* Mean signal levels across range (10f16.7) */
     short src_data_ind;         /* Source data quality indicator        (i4) */
     int miss_ln;                /* Number of missing lines              (i8) */
     int rej_ln;                 /* Number of rejected lines             (i8) */
     int large_gap;              /* Number of time inconsistencies       (i8) */
-    float bit_error_rate;       /* Measured bit error rate           (f16.7) */
-    float fm_crc_err;           /* Percent of frames with CRC errors (f16.7) */
+    double bit_error_rate;       /* Measured bit error rate           (f16.7) */
+    double fm_crc_err;           /* Percent of frames with CRC errors (f16.7) */
     int date_incons;            /* Number of date inconsistencies       (i8) */
     int prf_changes;            /* Number of unexpected PRF changes     (i8) */
     int delay_changes;          /* Number of delay changes              (i8) */
@@ -1323,57 +1318,53 @@ struct proc_parm_rec {
     int rej_mchn_err;           /* Frames reject: master ch err         (i8) */
     int rej_vchn_err;           /* Frames reject: virtual ch err        (i8) */
     int rej_rec_type;           /* Frames reject: rec type err          (i8) */
-    int prd_qual_ind;           /* Product quality index                (i4) */
-    char qc_rating[7];          /* Quality control rating               (a6) */
-    char qc_comment[81];        /* Quality control comment             (a80) */
     char sens_config[11];       /* Sensor configuration                (a10) */
     char sens_orient[10];       /* Sensor orientation                   (a9) */
     char sych_marker[9];        /* Frame synch marker                   (a8) */
     char rng_ref_src[13];       /* Range ref function source           (a12) */
-    float rng_amp_coef[4];      /* Range ref ampl coeff             (4f16.7) */
-    float rng_phas_coef[4];     /* Range ref phase coeff            (4f16.7) */
-    float err_amp_coef[4];      /* Error function ampl coeff        (4f16.7) */
-    float err_phas_coef[4];     /* Error function phase coeff       (4f16.7) */
+    double rng_amp_coef[4];      /* Range ref ampl coeff             (4f16.7) */
+    double rng_phas_coef[4];     /* Range ref phase coeff            (4f16.7) */
+    double err_amp_coef[4];      /* Error function ampl coeff        (4f16.7) */
+    double err_phas_coef[4];     /* Error function phase coeff       (4f16.7) */
     int pulse_bandw;            /* Pulse bandwidth code                 (i4) */
     char adc_samp_rate[6];      /* ADC sampling rate                    (a5) */
-    float rep_agc_attn;         /* Replica AGC attenuation           (f16.7) */
-    float gn_corctn_fctr;       /* Gain correction factor (dB)       (f16.7) */
-    float rep_energy_gn;        /* Replica energy gain correction    (f16.7) */
+    double rep_agc_attn;         /* Replica AGC attenuation           (f16.7) */
+    double gn_corctn_fctr;       /* Gain correction factor (dB)       (f16.7) */
+    double rep_energy_gn;        /* Replica energy gain correction    (f16.7) */
     char orb_data_src[12];      /* Orbit data source                   (a11) */
     int pulse_cnt_1;            /* Pulse count 1                        (i4) */
     int pulse_cnt_2;            /* Pulse count 2                        (i4) */
     char beam_edge_rqd[4];      /* Beam edge detection requested        (a3) */
-    float beam_edge_conf;       /* Beam edge confidence measure      (f16.7) */
+    double beam_edge_conf;       /* Beam edge confidence measure      (f16.7) */
     int pix_overlap;            /* Number of pixels in beam overlap     (i4) */
     int n_beams;                /* Number of beams                      (i4) */
-    Beam_Info* beam_info;       /* Beam info               (repeats 4 times) */
+    Beam_Info beam_info[4];       /* Beam info               (repeats 4 times) */
     int n_pix_updates;          /* Number of pixel count updates        (i4) */
-    Pix_Count* pix_count;       /* Beam pixel count       (repeats 20 times) */
-    float pwin_start;           /* Processing window start time, sec (f16.7) */
-    float pwin_end;             /* Processing window end time, sec   (f16.7) */
+    Pix_Count pix_count[20];       /* Beam pixel count       (repeats 20 times) */
+    double pwin_start;           /* Processing window start time, sec (f16.7) */
+    double pwin_end;             /* Processing window end time, sec   (f16.7) */
     char recd_type[9];          /* Recording type                       (a9) */
-    float temp_set_inc;         /* Time increment btwn temp set, sec (f16.7) */
+    double temp_set_inc;         /* Time increment btwn temp set, sec (f16.7) */
     int n_temp_set;             /* Number of temp settings              (i4) */
-    Temp_Rec* temp;             /* Temperature settings   (repeats 20 times) */
+    Temp_Rec temp[20];             /* Temperature settings   (repeats 20 times) */
     int n_image_pix;            /* Number of image pixels               (i8) */
-    float prc_zero_pix;         /* Percent zero pixels               (f16.7) */
-    float prc_satur_pix;        /* Percent saturated pixels          (f16.7) */
-    float img_hist_mean;        /* Image histogram mean intensity    (f16.7) */
-    float img_cumu_dist[3];     /* Image cumulative distribution    (3f16.7) */
-    float pre_img_gn;           /* Pre-image calibration gain factor (f16.7) */
-    float post_img_gn;          /* Post-image calibration gain factor(f16.7) */
-    float dopcen_inc;           /* Time inc btwn Doppler Cen est, sec(f16.7) */
+    double prc_zero_pix;         /* Percent zero pixels               (f16.7) */
+    double prc_satur_pix;        /* Percent saturated pixels          (f16.7) */
+    double img_hist_mean;        /* Image histogram mean intensity    (f16.7) */
+    double img_cumu_dist[3];     /* Image cumulative distribution    (3f16.7) */
+    double pre_img_gn;           /* Pre-image calibration gain factor (f16.7) */
+    double post_img_gn;          /* Post-image calibration gain factor(f16.7) */
+    double dopcen_inc;           /* Time inc btwn Doppler Cen est, sec(f16.7) */
     int n_dopcen;               /* Number of Doppler Centroid est       (i4) */
-    Dopcen_Est* dopcen_est;     /* Doppler Centroid rec   (repeats 20 times) */
+    Dopcen_Est dopcen_est[20];     /* Doppler Centroid rec   (repeats 20 times) */
     int dopamb_err;             /* Doppler ambiguity error              (i4) */
-    float dopamb_conf;          /* Doppler ambiguity confidence meas.(f16.7) */
-    float eph_orb_data[7];      /* Ephemeris orbit data             (7f16.7) */
+    double dopamb_conf;          /* Doppler ambiguity confidence meas.(f16.7) */
+    double eph_orb_data[7];      /* Ephemeris orbit data             (7f16.7) */
     char appl_type[13];         /* Application type                    (a12) */
-    double first_lntim;         /* Slow time of first image line    (d22.15) */
-    double lntim_inc;           /* time inc btwn image lines        (d22.15) */
+    double slow_time_coef[5];         /* Slow time coefficients    (5d22.15) */
     int n_srgr;                 /* Number of SRGR coeff sets            (i4) */
-    SRGR_Coefset* srgr_coefset; /* SRGR coeff set         (repeats 20 times) */
-    float pixel_spacing;        /* SGF product pixel spacing         (f16.7) */
+    SRGR_Coefset srgr_coefset[20]; /* SRGR coeff set         (repeats 20 times) */
+    double pixel_spacing;        /* SGF product pixel spacing         (f16.7) */
     char pics_reqd[4];          /* GICS product required                (a3) */
     char wo_number[9];          /* Work order identifier                (a8) */
     char wo_date[21];           /* Work order entry date               (a20) */
@@ -1383,8 +1374,8 @@ struct proc_parm_rec {
     char scene_id[16];          /* SGF product scene identifier        (a15) */
     char density_in[5];         /* Density of SGF product media         (a4) */
     char media_id[9];           /* SGF product identifer                (a8) */
-    float angle_first;          /* Incidence angle of first pixel    (f16.7) */
-    float angle_last;           /* Incidence angle of last pixel     (f16.7) */
+    double angle_first;          /* Incidence angle of first pixel    (f16.7) */
+    double angle_last;           /* Incidence angle of last pixel     (f16.7) */
     char prod_type[4];          /* GICS output product type             (a3) */
     char map_system[17];        /* Map system identifier               (a16) */
     double centre_lat;          /* GICS output, centre latitude     (d22.15) */
@@ -1393,12 +1384,11 @@ struct proc_parm_rec {
     double span_y;              /* GICS output, size northings, km  (d22.15) */
     char apply_dtm[4];          /* DTM correction to be applied flag    (a3) */
     char density_out[5];        /* GICS output product density          (a4) */
+    char state_time[22];        // Time of the first state vector
+    short num_state_vectors;    // Number of state vectors
+    double state_time_inc;      // Time increment between state vectors
+    char coord_sys[13];         // Scene output coordinate system
     char spare_dpp_2[248];      /* unused                             (a247) */
-    struct proc_parm_rec *next; /* pointer to next detail proc parm record   */
-};
-
-struct PPREC {
-    char beam_type[3];
 };
 
 
@@ -1640,7 +1630,7 @@ void   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir);
 void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
 void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
 void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
-void   Code_PPR(unsigned char *bf, struct PPREC *q, codingDir dir);
+void   Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir);
 void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
 void   Code_AMPR(unsigned char *bf, struct alos_map_proj_rec *q, codingDir dir);
@@ -1672,7 +1662,7 @@ int get_rsr(const char *filename,struct rng_spec_rec *rec);
 int get_ifiledr(const char *filename,struct IOF_VFDR *vfdr);
 int get_ALOS_optical_ifiledr(const char *filename,struct IOF_VFDR *vfdr);
 int get_fdr(const char *filename,struct FDR *rec);
-int get_ppr(const char *filename,struct PPREC *rec);
+int get_ppr(const char *filename,struct proc_parm_rec *rec);
 int get_rcdr(const char *filename,struct radio_comp_data_rec *rcdr);
 int get_shr(const char *filename, struct scene_header_rec *shr);
 int get_ampr(const char *filename, struct alos_map_proj_rec *ampr);
