@@ -9,18 +9,6 @@ Orion Sky Lawlor, olawlor@acm.org, 2005/08/31.
 #include <string.h> /* Because asf::type::string_t is "char *" */
 #include <stdarg.h> /* for plugin::log */
 
-ASF_COREDLL void debug_here(void) {
-	/* Set debugger breakpoint here */
-}
-
-/** Abort routine used by pup */
-extern "C" void CmiAbort(const char *why) { asf::current_abort_fn(why); }
-
-/** Call abort function. */
-ASF_COREDLL void asf::die(const std::string &why) {
-	asf::current_abort_fn(why.c_str());
-}
-
 static int log_level=0;
 
 /** Top-level logging.  Plugins should use plugin::log, not this routine. */
@@ -36,17 +24,6 @@ ASF_COREDLL void asf::set_log_level(int level)
 {
 	log_level=level;
 }
-
-/** Default abort function.  Useful for command-line apps. */
-void asf_default_abort(const char *why) {
-	debug_here();
-	fprintf(stderr,"FATAL ERROR: %s\n",why);
-	fflush(stdout);
-	fflush(stderr);
-	exit(1);
-}
-
-asf::abort_fn asf::current_abort_fn=asf_default_abort;
 
 /******************************** type ************************/
 

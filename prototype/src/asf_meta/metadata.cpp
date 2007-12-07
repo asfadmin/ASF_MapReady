@@ -34,8 +34,10 @@ void asf::metadata_field_describe(int v) {
 
 /** Counts number of nested metadata_source calls, to track infinite loops. 
  FIXME: not threadsafe.  Probably a bad idea in general.
+ You can get debugging printouts from meta accesses by setting metasource_printcount
+ to a big negative value.  Turn it off by setting metasource_printcount=0.
 */
-static int metasource_nest=0, metasource_printcount=-100;
+static int metasource_nest=0, metasource_printcount=0;
 asf::metasource_watcher::metasource_watcher(int v,const char *fromWhere,const metadata_source &fromClass)
 {
 	metasource_nest++;

@@ -57,26 +57,13 @@ One could argue for using std::ostream here eventually.
 #include <map>
 #include <string>
 
-
 #include "asf/util.h"
-
-
-/** Give user an opportunity to enter debugger */
-extern "C" ASF_COREDLL void debug_here(void);
 
 /** Everything's in the "asf" namespace.
 This lets us not worry about clashes from common names 
 like "plugin", "output", etc.
 */
 namespace asf {
-
-/** Abort function: must either exit (default) or throw an exception. */
-typedef void (*abort_fn)(const char *why);
-extern abort_fn current_abort_fn;
-
-/** Call abort function. */
-ASF_COREDLL void die(const std::string &why);
-
 /** Top-level logging.  Plugins should use plugin::log, not this routine. */
 ASF_COREDLL void log(int level,const std::string &why);
 

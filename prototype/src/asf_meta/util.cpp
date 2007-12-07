@@ -3,7 +3,7 @@ Metadata utility routines.
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/06/20
 */
-#include "asf/plugin.h"
+#include "asf/util.h"
 #include "asf_meta/util.h"
 #include "asf/units.h"
 using namespace asf;

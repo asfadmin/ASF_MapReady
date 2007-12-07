@@ -8,6 +8,8 @@ The formatting of this file is specially designed so that:
 	- Doxygen can parse the comments.  This is why the comments start with two asterixes.
 	- The "enum_parse.pl" script can turn these enum names and values 
 	  into a string table.  This requires every enum definition to occupy just one line.
+This is all designed so that C++ code can reconstruct a human-readable
+string name from an enum value.
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/07/13 (ASF)
 */

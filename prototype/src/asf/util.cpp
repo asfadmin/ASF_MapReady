@@ -6,8 +6,34 @@
   by Orion Sky Lawlor, olawlor@acm.org, 2006/05/11 (ASF)
 */
 #include <stdio.h>
-#include "asf/plugin.h"
+#include "asf/util.h"
 
+ASF_COREDLL void debug_here(void) {
+	/* Set debugger breakpoint here */
+}
+
+/************** Abort Handling ***********/
+/** Default abort function.  Useful for command-line apps. */
+void asf_default_abort(const char *why) {
+	debug_here();
+	fprintf(stderr,"FATAL ERROR: %s\n",why);
+	fflush(stdout);
+	fflush(stderr);
+	exit(1);
+}
+
+asf::abort_fn asf::current_abort_fn=asf_default_abort;
+
+/** Abort routine used by pup */
+extern "C" void CmiAbort(const char *why) { asf::current_abort_fn(why); }
+
+/** Call abort function. */
+ASF_COREDLL void asf::die(const std::string &why) {
+	asf::current_abort_fn(why.c_str());
+}
+
+
+/************** Filename handling **************/
 ASF_COREDLL std::string appendExt(const char *name,const char *newExt)
 {
 	std::string ret;
@@ -115,4 +141,17 @@ ASF_COREDLL FILE *fopenImage(const char *fName,const char *access)
 				"file.  I even searched for common image extensions.\n");
 	exit(102);
 	return NULL;
+}
+
+ASF_COREDLL FILE *fopen_or_die(const char *n,const char *p) {
+	FILE *f=fopen(n,p); if (f) return f;
+	asf::die("Error opening file '"+std::string(n)+"' for "+(p[0]=='w'?"writing":"reading"));
+	return 0;
+}
+ASF_COREDLL void *malloc_or_die(unsigned long size) {
+	void *r=malloc(size); if (r) return r;
+	char err[100];
+	sprintf(err,"Error allocating %lu bytes of memory",size);
+	asf::die(err);
+	return 0;
 }

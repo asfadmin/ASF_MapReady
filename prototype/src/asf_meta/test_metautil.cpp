@@ -113,10 +113,10 @@ void test_statevecs(void) {
 	a.vel=meta3D_t(-6520.2572727,-2099.3559969,-3160.1381836);
 	double gha=123.0;
 	bn=a; fixed2gei(&bn,gha);
-	bo=a; fixed2gei(&bo,gha);
+	bo=a; old_fixed2gei(&bo,gha);
 	diff("fixed2gei state vector",bo,bn,1.0e-3);
 	cn=bn; gei2fixed(&cn,gha);
-	co=bo; gei2fixed(&co,gha);
+	co=bo; old_gei2fixed(&co,gha);
 	diff("gei2fixed state vector",co,cn,1.0e-3);
 	diff("new gei2fixed(fixed2gei) state vector",a,cn,1.0e-6);
 	diff("old gei2fixed(fixed2gei) state vector",a,co,1.0e-6);

@@ -7,7 +7,8 @@
 */
 #ifndef __ASF_UTIL_H
 #define __ASF_UTIL_H
-
+#include <string>
+#include "asf/dll_support.h"
 
 /*****************************************
 FileUtil:
@@ -53,5 +54,26 @@ ASF_COREDLL const char *findExt(const char *name);
 /** Open an image file for reading or writing. */
 ASF_COREDLL FILE *fopenImage(const char *name,const char *accessType);
 
+/** Give user an opportunity to enter debugger */
+extern "C" ASF_COREDLL void debug_here(void);
+
+namespace asf {
+/** Abort function: must either exit (default) or throw an exception. */
+typedef void (*abort_fn)(const char *why);
+extern abort_fn current_abort_fn;
+
+/** Call abort function. */
+ASF_COREDLL void die(const std::string &why);
+};
+
+/** Dummy implementations of actual, smart caplib routines. */
+#ifndef MALLOC
+#define MALLOC(x) malloc_or_die(x)
+#endif
+
+#define FREE(x) free(x)
+#define FOPEN(n,p) fopen_or_die(n,p)
+ASF_COREDLL FILE *fopen_or_die(const char *n,const char *p);
+ASF_COREDLL void *malloc_or_die(unsigned long size);
 
 #endif

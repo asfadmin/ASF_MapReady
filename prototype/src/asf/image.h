@@ -210,7 +210,7 @@ inline asf::image_location rect_frac(const asf::pixel_rectangle &rect,double dx,
 	for (int x=rect_##x##y##__LINE__.lo_x;(x)<rect_##x##y##__LINE__.hi_x;(x)++) 
 
 
-class metadata_source; /* In asf/meta.h */
+class metadata_source; /* In asf_meta/metadata.h */
 
 /**
   Describes all geometric and radiometric properties of an image.

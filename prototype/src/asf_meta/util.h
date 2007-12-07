@@ -1,5 +1,8 @@
 /*
-Metadata utility routines.
+Metadata utility routines:
+	- Vectors in 1D, 2D, 3D
+	- State vectors
+	- Date utility functions (dates, GHA, UT1)
 
 Orion Sky Lawlor, olawlor@acm.org, 2006/07/13 (ASF)
 */

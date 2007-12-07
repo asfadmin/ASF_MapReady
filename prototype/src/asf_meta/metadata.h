@@ -1,10 +1,10 @@
 /*
-Metadata handling for ASF plugins.  The central abstraction here 
+Metadata handling classes.  The central abstraction here 
 is a metadata "field", which is just an int that identifies a value,
 like SLANT_RANGE.  You look up the value by passing the int and an
-image location to a metadata_source.
+image location to a metadata_source object.
 
-The nice part is the metadata_source is then free to do any of:
+The nice part is the metadata_source object is then free to do any of:
 	- Return a value from one of its internal records.
 	- Compute the value based on other metadata.
 	- Adjust coordinates and call another metadata_source.
@@ -20,10 +20,13 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/06/12
 #ifndef __ASF_META_METADATA_H
 #define __ASF_META_METADATA_H
 
-#include "asf/plugin.h"
+#include <vector>
 #include "asf_meta/util.h"
 
 namespace asf {
+
+/** Call abort function (this is the only asf/plugin.cpp function used) */
+ASF_COREDLL void die(const std::string &why);
 
 /********************** Metadata sources ****************/
 
@@ -147,6 +150,8 @@ public:
 	
 	  meta.transform(SLANT_TIME_DOPPLER,lle,LATITUDE_LONGITUDE_ELEVATION_DEGREES,elev)
 	  returns slant range, time, and doppler for a given lat-lon and elev.
+	  
+	  See the big table of metadata_3D coordinate systems in asf_meta/enum.h.
 	  
 	  Internally, this routine calls get_transformer().transform.
 	*/

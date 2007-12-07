@@ -278,7 +278,7 @@ void getLookYaw(GEOLOCATE_REC *g,double range,double dop,  /*  Inputs.*/
 		deltaDop=dop-dopGuess;
 		relativeVelocity=vecMagnitude(vRel);
 		deltaAz=deltaDop*(g->lambda/(2*relativeVelocity)); 
-		if (fabs(deltaAz*range)<0.1)/*Require decimeter
+		if (fabs(deltaAz*range)<0.001)/*Require millimeter
 convergence*/
 			break;
 		yaw+=deltaAz;

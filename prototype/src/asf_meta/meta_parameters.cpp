@@ -6,7 +6,6 @@ Orion Sky Lawlor, olawlor@acm.org, 2006/07/13 (ASF)
 */
 #include "asf_meta/meta_parameters.h"
 #include "asf_meta/metadata.h"
-#include "asf/caplib.h"
 #include "asf/util.h"
 #include "coniFetch.h" /* for .meta file I/O */
 #include "asf/units.h"
