@@ -403,7 +403,7 @@ static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
     free(cutDemFile);
 }
 
-static void
+/*static*/ void
 clip_dem(meta_parameters *metaSAR,
          char *srFile,
          char *demFile,   // we call this the DEM, but it could be a mask
