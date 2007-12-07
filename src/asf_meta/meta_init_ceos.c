@@ -486,7 +486,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   struct IOF_VFDR *iof=NULL;
   struct dataset_sum_rec *dssr=NULL;
   struct radio_comp_data_rec *rcdr=NULL;
-  struct PPREC *ppr=NULL;
+  struct proc_parm_rec *ppr=NULL;
   struct VMPDREC *mpdr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
   char beamname[32], buf[50], **dataName;
@@ -498,7 +498,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   dssr = &ceos->dssr;
   iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
   get_ifiledr(in_fName, iof);
-  ppr = (struct PPREC*) MALLOC(sizeof(struct PPREC));
+  ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   get_ppr(in_fName, ppr);
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   if (get_esa_facdr(in_fName, esa_facdr) < 0) {
@@ -553,32 +553,33 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
       ceos_init_scansar(in_fName, meta, dssr, mpdr, NULL);
     }
     else if (ppr) {
-      if (strncmp(ppr->beam_type, "F5", 2) == 0)
+      const char *beam_type=ppr->beam_info[0].beam_type;
+      if (strncmp(beam_type, "F5", 2) == 0)
         strcpy(beamname, "FN5");
-      else if (strncmp(ppr->beam_type, "F4", 2) == 0)
+      else if (strncmp(beam_type, "F4", 2) == 0)
         strcpy(beamname, "FN4");
-      else if (strncmp(ppr->beam_type, "F3", 2) == 0)
+      else if (strncmp(beam_type, "F3", 2) == 0)
         strcpy(beamname, "FN3");
-      else if (strncmp(ppr->beam_type, "F2", 2) == 0)
+      else if (strncmp(beam_type, "F2", 2) == 0)
         strcpy(beamname, "FN2");
-      else if (strncmp(ppr->beam_type, "F1", 2) == 0)
+      else if (strncmp(beam_type, "F1", 2) == 0)
         strcpy(beamname, "FN1");
-      else if (strncmp(ppr->beam_type, "S7", 2) == 0)
+      else if (strncmp(beam_type, "S7", 2) == 0)
         strcpy(beamname, "ST7");
-      else if (strncmp(ppr->beam_type, "S6", 2) == 0)
+      else if (strncmp(beam_type, "S6", 2) == 0)
         strcpy(beamname, "ST6");
-      else if (strncmp(ppr->beam_type, "S5", 2) == 0)
+      else if (strncmp(beam_type, "S5", 2) == 0)
         strcpy(beamname, "ST5");
-      else if (strncmp(ppr->beam_type, "S4", 2) == 0)
+      else if (strncmp(beam_type, "S4", 2) == 0)
         strcpy(beamname, "ST4");
-      else if (strncmp(ppr->beam_type, "S3", 2) == 0)
+      else if (strncmp(beam_type, "S3", 2) == 0)
         strcpy(beamname, "ST3");
-      else if (strncmp(ppr->beam_type, "S2", 2) == 0)
+      else if (strncmp(beam_type, "S2", 2) == 0)
         strcpy(beamname, "ST2");
-      else if (strncmp(ppr->beam_type, "S1", 2) == 0)
+      else if (strncmp(beam_type, "S1", 2) == 0)
         strcpy(beamname, "ST1");
       else
-        strcpy(beamname, ppr->beam_type);
+        strcpy(beamname, beam_type);
     }
     strcpy(meta->general->mode, beamname);
     sprintf(meta->sar->polarization, "HH");
@@ -1093,7 +1094,7 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   struct dataset_sum_rec *dssr=NULL;
   struct VMPDREC *mpdr=NULL;
   struct radio_comp_data_rec *rcdr=NULL;
-  struct PPREC *ppr=NULL;
+  struct proc_parm_rec *ppr=NULL;
   char beamname[32], beamtype[32], buf[50];
   char **dataName=NULL, **metaName=NULL;
   ymd_date date;
@@ -1102,7 +1103,7 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   int nBands, trailer;
 
   dssr = &ceos->dssr;
-  ppr = (struct PPREC*) MALLOC(sizeof(struct PPREC));
+  ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   get_ppr(in_fName, ppr);
   require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
@@ -1140,32 +1141,33 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
     strcpy(meta->general->mode, beamname);
   }
   else if (ppr) {
-    if (strncmp(ppr->beam_type, "F5", 2) == 0)
+    const char *beam_type=ppr->beam_info[0].beam_type;
+    if (strncmp(beam_type, "F5", 2) == 0)
       strcpy(beamname, "FN5");
-    else if (strncmp(ppr->beam_type, "F4", 2) == 0)
+    else if (strncmp(beam_type, "F4", 2) == 0)
       strcpy(beamname, "FN4");
-    else if (strncmp(ppr->beam_type, "F3", 2) == 0)
+    else if (strncmp(beam_type, "F3", 2) == 0)
       strcpy(beamname, "FN3");
-    else if (strncmp(ppr->beam_type, "F2", 2) == 0)
+    else if (strncmp(beam_type, "F2", 2) == 0)
       strcpy(beamname, "FN2");
-    else if (strncmp(ppr->beam_type, "F1", 2) == 0)
+    else if (strncmp(beam_type, "F1", 2) == 0)
       strcpy(beamname, "FN1");
-    else if (strncmp(ppr->beam_type, "S7", 2) == 0)
+    else if (strncmp(beam_type, "S7", 2) == 0)
       strcpy(beamname, "ST7");
-    else if (strncmp(ppr->beam_type, "S6", 2) == 0)
+    else if (strncmp(beam_type, "S6", 2) == 0)
       strcpy(beamname, "ST6");
-    else if (strncmp(ppr->beam_type, "S5", 2) == 0)
+    else if (strncmp(beam_type, "S5", 2) == 0)
       strcpy(beamname, "ST5");
-    else if (strncmp(ppr->beam_type, "S4", 2) == 0)
+    else if (strncmp(beam_type, "S4", 2) == 0)
       strcpy(beamname, "ST4");
-    else if (strncmp(ppr->beam_type, "S3", 2) == 0)
+    else if (strncmp(beam_type, "S3", 2) == 0)
       strcpy(beamname, "ST3");
-    else if (strncmp(ppr->beam_type, "S2", 2) == 0)
+    else if (strncmp(beam_type, "S2", 2) == 0)
       strcpy(beamname, "ST2");
-    else if (strncmp(ppr->beam_type, "S1", 2) == 0)
+    else if (strncmp(beam_type, "S1", 2) == 0)
       strcpy(beamname, "ST1");
     else
-      strcpy(beamname, ppr->beam_type);
+      strcpy(beamname, beam_type);
   }
   strcpy(meta->general->mode, beamname);
   sprintf(meta->sar->polarization, "HH");
