@@ -259,7 +259,7 @@ int get_fdr(const char *filename,struct FDR *fdr)
   return(era);
 }
 
-int get_ppr(const char *filename,struct PPREC *ppr)
+int get_ppr(const char *filename,struct proc_parm_rec *ppr)
 {
   unsigned char *buff;
   int era;
