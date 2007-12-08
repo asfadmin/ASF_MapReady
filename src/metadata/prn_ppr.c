@@ -10,7 +10,7 @@ char *sprn_ppr(struct proc_parm_rec *p)
 
   add(&ret, "\n*********** begin of record *******************\n");
   add(&ret, "\n Record sequence number\t%d", p->seq_num);
-  add(&ret, "\n Input media\t%s", p->inp_media[4]);
+  add(&ret, "\n Input media\t%s", p->inp_media);
   add(&ret, "\n Number of input tape id\t%d", p->n_tape_id);
   for (i=0; i<p->n_tape_id; i++)
     add(&ret, "\n Tape identifier [%2d]\t%s", i+1, p->tape_id[i]);
