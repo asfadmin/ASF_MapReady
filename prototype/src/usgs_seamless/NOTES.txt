@@ -14,12 +14,17 @@ How to reverse engineer their network protocol:
 ---------------- Alaska 2 arc-second NED -------
 siz=1&key=NAK&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-146.51880587552827&rgt=-146.46989204760837&top=63.33330737109731&bot=63.25993662921746&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=ned.ak_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=5.55555555556E-4&csy=5.55555555556E-4&bnd=&bndnm=
 
+
+
 ----------------- SRTM 1 arc-second ------
 siz=17&key=SM3&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=&lft=-122.6119070954484&rgt=-121.98077640418373&top=37.88035613196588&bot=37.36397647547669&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=SRTM1FIN&mdf=HTML&arc=ZIP&sde=SRTM.C_US_1_ELEVATION&msd=SRTM.c_national_1_elevation_meta&zun=&prj=0&csx=2.777777778000001E-4&csy=2.777777778000001E-4&bnd=&bndnm=
 
 
 ----------------- NED 1 arc-second ------
 siz=16&key=NED&ras=1&rsp=1&pfm=GeoTIFF&imsurl=-1&ms=-1&att=-1&lay=-1&fid=-1&dlpre=NED_&lft=-122.59866659143584&rgt=-122.0028439108713&top=37.88035613196588&bot=37.38163048082675&wmd=1&mur=http%3A%2F%2Fextract.cr.usgs.gov%2Fdistmeta%2Fservlet%2Fgov.usgs.edc.MetaBuilder&mcd=NED&mdf=HTML&arc=ZIP&sde=NED.conus_ned&msd=NED.CONUS_NED_METADATA&zun=METERS&prj=0&csx=2.777777777999431E-4&csy=2.777777777999431E-4&bnd=&bndnm=
+
+
+
 
 
 
@@ -178,3 +183,17 @@ g++ akdem_grab.cpp -I. && ./a.out 63.0 64.0 -146.0 -145.0
 2.0 degree sections:
 g++ -Wall akdem_grab.cpp -I. && ./a.out 64.0 66.0 -148.0 -146.0
 	-> works.  37MB of data.
+
+
+------------------ Teleconference ----------------
+They're fine with us writing a script.
+
+They want a 250MB limit on download size.  I can check this at request time.
+
+They're scared of users bombarding the system with lots of requests, so make sure it's not easy to script/batchify requests.  If this ends up being a problem, we could put in a lock file or some such to prevent simultanious requests.
+
+SRTM data is currently shifted by a half pixel; but they're going to release a new version at some point.
+
+They don't even want to see the code--they've "got a good idea of what you're doing...".
+
+

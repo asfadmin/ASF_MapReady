@@ -1,6 +1,8 @@
 This is a tool to download a zipped DEM from the USGS "Seamless" site.
 
 You run it with a latitude and longitude range like this:
+	akdem_grab 63.1 63.5 -145.3 -145.0
+
 	akdem_grab 63.1 64.5 -146.3 -143.5
 
 By default it grabs the Alaska 2-arcsecond NED, but for the lower 48
