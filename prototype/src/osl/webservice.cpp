@@ -9,7 +9,7 @@
 /** Parse URL into its component parts */
 osl::url_parser::url_parser(std::string URL) {
 	while (isspace(URL[0])) URL=URL.substr(1,std::string::npos);
-	int ds=URL.find_first_of("//"); /* double-slash */
+	unsigned int ds=URL.find_first_of("//"); /* double-slash */
 	if (ds!=std::string::npos) {
 		protocol=URL.substr(0,ds-1);
 		ds+=2; /* skip over double-slash, so ds points at start of host */
