@@ -65,24 +65,24 @@ void print_record(FILE *fp, char *fileName, int reqrec)
 
 char *get_record_as_string(char *fileName, int reqrec)
 {
-  struct VFDRECV *facdr;                // Facility Related Data record
-  struct VRADDR *raddr;                 // Radiometric Data record
-  struct IOF_VFDR *vfdr;                // Image File Descriptor record
-  struct VMPDREC *mpdrec;               // Map Projection Data record
-  struct FDR *fdr;                      // File Descriptor record
-  struct dataset_sum_rec *dssr;         // Data Set Summary record
-  struct pos_data_rec *ppdr;            // Platform Position Data record
-  struct att_data_rec *atdr;            // Attitude Data record
-  struct data_hist_rec *dhr;            // Data Histogram record
-  struct rng_spec_rec *rsr;             // Range Spectra record
-  struct qual_sum_rec *dqsr;            // Data Quality Summary record
-  struct radio_comp_data_rec *rcdr;     // Radiometric Compensation Data record
-  struct scene_header_rec *shr;         // Scene Header record
-  struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
-  struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
-  struct proc_parm_rec *ppr;                    // Processing Parameter record
-  struct alos_rad_data_rec *ardr;       // Radiometric Data record (ALOS)
-  struct RSI_VRADDR *rsi_raddr;         // Radiometric Data record (RSI/CDPF)
+  struct VFDRECV *facdr=NULL;            // Facility Related Data record
+  struct VRADDR *raddr=NULL;             // Radiometric Data record
+  struct IOF_VFDR *vfdr=NULL;            // Image File Descriptor record
+  struct VMPDREC *mpdrec=NULL;           // Map Projection Data record
+  struct FDR *fdr=NULL;                  // File Descriptor record
+  struct dataset_sum_rec *dssr=NULL;     // Data Set Summary record
+  struct pos_data_rec *ppdr=NULL;        // Platform Position Data record
+  struct att_data_rec *atdr=NULL;        // Attitude Data record
+  struct data_hist_rec *dhr=NULL;        // Data Histogram record
+  struct rng_spec_rec *rsr=NULL;         // Range Spectra record
+  struct qual_sum_rec *dqsr=NULL;        // Data Quality Summary record
+  struct radio_comp_data_rec *rcdr=NULL; // Radiometric Compensation Data record
+  struct scene_header_rec *shr=NULL;     // Scene Header record
+  struct alos_map_proj_rec *ampr=NULL;   // Map Projection Data record - ALOS
+  struct ESA_FACDR *esa_facdr=NULL;      // Facility Related Data (ESA) record
+  struct proc_parm_rec *ppr=NULL;        // Processing Parameter record
+  struct alos_rad_data_rec *ardr=NULL;   // Radiometric Data record (ALOS)
+  struct RSI_VRADDR *rsi_raddr=NULL;     // Radiometric Data record (RSI/CDPF)
 
   ceos_data_ext_t data_ext;
   ceos_metadata_ext_t metadata_ext;
@@ -90,6 +90,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   int nBands, trailer, dataNameExists=1, leaderNameExists=1;
   char *ret=NULL;
   char facility[25];
+  char sensor[16];
 
   baseName = (char *) MALLOC(sizeof(char)*256);
 
@@ -121,37 +122,40 @@ char *get_record_as_string(char *fileName, int reqrec)
     leaderNameExists = 0;
   }
   if (!dataNameExists && !leaderNameExists)
-      return STRDUP("Unable to open data (.D) or leader (.L) file.\n");
+      return STRDUP("Unable to open data or leader file.\n");
 
-  // need to figure out if this is ALOS or not, how some records are
-  // read depends on this.
-  char sensor[16];
-  dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+
+  // Determine a couple things from the dssr before we get going since
+  // the way some records are read depend on which facility the data was
+  // processed at, which satellite captured the data, etc, etc
   if (leaderNameExists) {
-    if (get_dssr(metaName[0],dssr) >= 0)
-        strcpy(sensor, dssr->mission_id);
-    else if (trailer && get_dssr(metaName[1],dssr) >= 0)
-        strcpy(sensor, dssr->mission_id);
-    else
+    dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
+    if (get_dssr(metaName[0],dssr) >= 0) {
+        strcpy(sensor, trim_spaces(dssr->mission_id));
+        strcpy(facility, trim_spaces(dssr->fac_id));
+    }
+    else if (trailer && get_dssr(metaName[1],dssr) >= 0) {
+        strcpy(sensor, trim_spaces(dssr->mission_id));
+        strcpy(facility, trim_spaces(dssr->fac_id));
+    }
+    else {
         strcpy(sensor, MAGIC_UNSET_STRING);
-  } else 
-     strcpy(sensor, MAGIC_UNSET_STRING);
-  if (strcmp(sensor, MAGIC_UNSET_STRING) == 0) {
-      free(dssr);
-      dssr = NULL;
+        strcpy(facility, MAGIC_UNSET_STRING);
+        FREE(dssr);
+        dssr = NULL;
+    }
   }
-  
-  if ( reqrec == 200 || reqrec == 50) {
-    struct dataset_sum_rec *dssr2;
-    dssr2 = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-    get_dssr (fileName, dssr2);
-    strcpy (facility, trim_spaces(dssr2->fac_id));
+  else {
+     strcpy(sensor, MAGIC_UNSET_STRING);
+     strcpy(facility, MAGIC_UNSET_STRING);
+  }
+
+  // Set specific facility data record to retrieve  
+  if ( reqrec == 200 ) {
     if (0==strncmp(facility, "ASF", 3))
       reqrec = 210;
     if (0==strncmp(facility, "ES", 2)) /*ESA*/
       reqrec = 220;
-    free(dssr2);
-    dssr2 = NULL;
   }
 
   switch (reqrec) 
