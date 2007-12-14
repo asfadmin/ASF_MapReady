@@ -117,14 +117,17 @@ BUGS:
 #include <string.h>
 #include <math.h>
 #include <errno.h>
-#include "ceos.h"
-#include "asf.h"
-#include "asf_meta.h"
-#include "get_ceos_names.h"
-#include "metadisplay.h"
-#include "cla.h"
 
-#define VERSION 3.0
+#include <ceos.h>
+#include <asf.h>
+#include <asf_meta.h>
+#include <get_ceos_names.h>
+#include <cla.h>
+#include <asf_version.h>
+
+#include "metadisplay.h"
+
+
 
 void usage(char *name)
 {
@@ -157,9 +160,11 @@ void usage(char *name)
    fprintf(stderr,"  infile    The base name of the CEOS image\n\n");
    fprintf(stderr,"\n");
    fprintf(stderr,"DESCRIPTION:\n");
-   fprintf(stderr,"  Metadata retrieves ceos structures from CEOS metadata\n\n");
-   fprintf(stderr,"Version %.2f,  ASF SAR Tools\n\n",VERSION);
-   exit (1);
+   fprintf(stderr,"  The metadata program retrieves CEOS structures from CEOS"
+                  " metadata\n\n");
+   fprintf(stderr,"Version %s,  ASF SAR Tools\n\n",
+           CONVERT_PACKAGE_VERSION_STRING);
+   exit (EXIT_FAILURE);
 }
 
 int main(int argc, char **argv)
@@ -183,13 +188,20 @@ int main(int argc, char **argv)
   int ppr_flag = extract_flag_options(&argc, &argv, "-ppr", "--ppr", NULL);
   int ifdr_flag = extract_flag_options(&argc, &argv, "-ifdr", "--ifdr", NULL);
   int facdr_flag = extract_flag_options(&argc, &argv, "-facdr", "--facdr", NULL);
+  int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
+  int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
+  int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
+
+  // depricated options
   int asf_facdr_flag = 
     extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
   int esa_facdr_flag = 
     extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
-  int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
-  int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
-  int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
+
+  // account for depricated options
+  if (asf_facdr_flag || esa_facdr_flag) {
+    facdr_flag = TRUE;
+  }
 
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag || 
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
@@ -200,7 +212,7 @@ int main(int argc, char **argv)
   if (argc == 1 || !found)
     usage(argv[0]);
 
-  fileName = (char *) MALLOC(sizeof(char)*255);
+  fileName = (char *) MALLOC(sizeof(char)*(strlen(argv[1]+1)));
   strcpy(fileName, argv[1]);
 
   if (dssr_flag || all_flag)
@@ -235,13 +247,16 @@ int main(int argc, char **argv)
     output_record(fileName, ".ifdr", 192, save);
   if (facdr_flag || all_flag)
     output_record(fileName, ".facdr", 200, save);
-  if (asf_facdr_flag || all_flag)
+/* Left here to preserve the number associated with these specific records
+ * the -facdr flag should take care of all facility records regardless of
+ * the facility it was processed at (see metadata.c)
+  if (asf_facdr_flag)
     output_record(fileName, ".asf_facdr", 210, save);
-  if (esa_facdr_flag || all_flag)
+  if (esa_facdr_flag)
     output_record(fileName, ".esa_facdr", 220, save);
+ */
   if (lfdr_flag || all_flag)
     output_record(fileName, ".lfdr", 300, save);
 
-  exit (0);
+  exit (EXIT_SUCCESS);
 }
-
