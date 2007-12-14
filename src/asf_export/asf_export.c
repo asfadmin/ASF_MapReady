@@ -103,7 +103,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Cannot be used together with any of the following: -rgb, -band,\n"\
 "        or -truecolor.\n"\
 "   -pauli\n"\
-"        For 4-band (quad-pole) polarimetric data.  Exports the data using\n"\
+"        For 4-band (quad-pol) polarimetric data.  Exports the data using\n"\
 "        the Pauli decomposition, where the red channel is HH-VV, green is\n"\
 "        HV, and blue is HH+VV.  This cannot be used with the -rgb option.\n"\
 "   -sinclair\n"\
