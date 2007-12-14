@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
   meta_parameters *metaIn, *metaOut;
   char fnm[256], master[255], igram_amp[255], igram_phase[255];
   FILE *inFile1, *inFile2, *outFileAmp, *outFilePhase;
-  int ii, x, len, lines;
+  int ii, x, len, lines, samples;
   float percent=5.0;
 
   complexFloat *in1,*in2;
@@ -161,14 +161,15 @@ int main(int argc, char *argv[])
   metaOut->general->image_data_type = PHASE_IMAGE;
   meta_write(metaOut, igram_phase);
   lines = metaIn->general->line_count;
+  samples = metaIn->general->sample_count;
 
   /*
    * establish buffers
    */
-  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
-  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*lines);
-  outAmp=(float *)MALLOC(sizeof(float)*BSZ*lines);
-  outPhase=(float *)MALLOC(sizeof(float)*BSZ*lines);
+  in1=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*samples);
+  in2=(complexFloat *)MALLOC(sizeof(complexFloat)*BSZ*samples);
+  outAmp=(float *)MALLOC(sizeof(float)*BSZ*samples);
+  outPhase=(float *)MALLOC(sizeof(float)*BSZ*samples);
 
   /*
    * Loop through each chunk of data
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
     get_complexFloat_lines(inFile2, metaIn, ii, len, in2);
 
     /* if any data were obtained... */
-    for (x=0;x<len*lines;x++)
+    for (x=0;x<len*samples;x++)
     {
     /*Take complex product of img1 and the conjugate of img2.*/
     	double igram_real,igram_imag;
