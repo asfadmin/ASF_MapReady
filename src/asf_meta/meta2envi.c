@@ -68,10 +68,21 @@ envi_header* meta2envi(meta_parameters *meta)
   envi->bands = meta->general->band_count;
   if (strcmp(meta->general->sensor, "RSAT-1")==0)
     sprintf(envi->sensor_type, "RADARSAT");
-  else if (strncmp(meta->general->sensor, "ERS", 3)==0)
-    sprintf(envi->sensor_type, "%s", meta->general->sensor);
-  else if (strcmp(meta->general->sensor, "JERS-1")==0)
-    sprintf(envi->sensor_type, "%s", meta->general->sensor);
+  else if (strncmp(meta->general->sensor, "ERS1", 4)==0 ||
+	   strncmp(meta->general->sensor, "ERS-1", 5)==0)
+    sprintf(envi->sensor_type, "ERS-1");
+  else if (strncmp(meta->general->sensor, "ERS2", 4)==0 ||
+	   strncmp(meta->general->sensor, "ERS-2", 5)==0)
+    sprintf(envi->sensor_type, "ERS-2");
+  else if (strncmp(meta->general->sensor, "JERS1", 5)==0 ||
+	   strncmp(meta->general->sensor, "JERS-1", 6)==0)
+    sprintf(envi->sensor_type, "JERS-1");
+  else if(strncmp(meta->general->sensor, "SIR-C", 5)==0)
+    sprintf(envi->sensor_type, "SIR-C");
+  else if (strncmp(meta->general->sensor, "AIRSAR", 6)==0)
+    sprintf(envi->sensor_type, "AIRSAR");
+  else if (strncmp(meta->general->sensor, "ALOS", 4)==0)
+    sprintf(envi->sensor_type, "ALOS");
   // All the data we generate now is big_endian by default
   envi->byte_order = 1;
   if (meta->projection && meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
