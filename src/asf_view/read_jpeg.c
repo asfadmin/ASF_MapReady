@@ -6,15 +6,17 @@ typedef struct {
     FILE *fp;
 } ReadJpegClientInfo;
 
-int try_jpeg(const char *filename)
+int try_jpeg(const char *filename, int try_extensions)
 {
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
         return strcmp_case(ext, ".jpg") == 0 ||
                strcmp_case(ext, ".jpeg") == 0;
-    } else {
+    } else if (try_extensions) {
         return try_ext(filename, ".jpg") || try_ext(filename, ".jpeg");
+    } else {
+        return FALSE;
     }
 }
 

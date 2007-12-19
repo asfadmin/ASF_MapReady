@@ -209,7 +209,7 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
                 memcpy(dest+(i*thumb_size_x+j)*ds, p, ds);
             }
             asfPercentMeter((float)i/(thumb_size_y-1));
-        }        
+        }
 
         quiet=FALSE;
     } else {
@@ -235,7 +235,7 @@ CachedImage * cached_image_new_from_file(
     self->stats = stats;   // do NOT take ownership of this
 
     // line line_count may have been fudges, if we are multilooking
-    self->nl = meta->general->line_count; 
+    self->nl = meta->general->line_count;
     self->ns = meta->general->sample_count;
     asfPrintStatus("Image is %dx%d LxS\n", self->nl, self->ns);
 

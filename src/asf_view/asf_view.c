@@ -9,6 +9,7 @@ GladeXML *glade_xml;
 
 ImageInfo image_info[2];
 ImageInfo *curr=NULL;
+int n_images_loaded=1;
 
 // various values
 double zoom;
@@ -48,10 +49,10 @@ static const char * imgloc(char * file)
 void set_toolbar_images()
 {
     GtkWidget * w = get_widget_checked("google_earth_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
 
     w = get_widget_checked("mdv_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("mdv.ico"));
 }
 
 int
@@ -63,13 +64,16 @@ main(int argc, char **argv)
     int planner_mode = extract_flag_options(&argc, &argv,
         "-plan", "--plan", NULL);
 
+    handle_common_asf_args(&argc, &argv, "ASF View");
+
     // set up image array
     curr = &image_info[0];
     curr->data_name = curr->meta_name = NULL;
 
     if (argc < 2) {
         curr->filename = STRDUP(find_in_share("startup.jpg"));
-    } else {
+    }
+    else {
         if (argc > 2)
           asfPrintWarning("Extraneous command-line arguments ignored.\n");
         curr->filename = STRDUP(argv[1]);
@@ -102,7 +106,7 @@ main(int argc, char **argv)
     //int e = gtk_widget_get_events(eb);
     //gtk_widget_set_events(eb, e|GDK_KEY_PRESS_MASK|GDK_POINTER_MOTION_MASK);
 
-    gchar *glade_xml_file = (gchar *) find_in_share("asf_view.glade");
+    gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
     printf("Found asf_view.glade: %s\n", glade_xml_file);
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     free(glade_xml_file);

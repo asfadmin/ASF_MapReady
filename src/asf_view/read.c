@@ -59,10 +59,17 @@ int read_file(const char *filename, const char *band, int multilook,
     char *err = NULL;
     meta_parameters *meta;
 
+    // if the filename exists, we shouldn't try adding on extensions
+    // or prepensions... just look for the file as it is.  If the
+    // given filename doesn't exist, then we are free to modify it
+    // to try to get a match.
+    int try_extensions = !fileExists(filename);
+
     // If you are considering adding support for another data type,
     // see the comments in read_template.c
-    if (try_asf(filename)) {
+    if (try_asf(filename, try_extensions)) {
         if (handle_asf_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
             meta = read_asf_meta(meta_name);
             open_asf_data(data_name, band, multilook, meta, client);
         } else {
@@ -70,16 +77,7 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_ceos(filename)) {
-        if (handle_ceos_file(filename, meta_name, data_name, &err)) {
-            meta = read_ceos_meta(meta_name);
-            open_ceos_data(data_name, meta_name, band, meta, client);
-        } else {
-            err_func(err);
-            free(err);
-            return FALSE;
-        }
-    } else if (try_jpeg(filename)) {
+    } else if (try_jpeg(filename, try_extensions)) {
         if (handle_jpeg_file(filename, meta_name, data_name, &err)) {
             meta = open_jpeg(data_name, client);
         } else {
@@ -87,26 +85,44 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_tiff(filename)) {
+    } else if (try_tiff(filename, try_extensions)) {
         if (handle_tiff_file(filename, meta_name, data_name, &err)) {
-          open_tiff_data(data_name, band, client); // Must be called before read_tiff_meta()
-          meta = read_tiff_meta(meta_name, client);
+            // Must be called before read_tiff_meta()
+            open_tiff_data(data_name, band, client); 
+            if (meta) meta_free(meta);
+            meta = read_tiff_meta(meta_name, client);
         } else {
             err_func(err);
             free(err);
             return FALSE;
         }
-    } else if (try_png(filename)) {
+    } else if (try_png(filename, try_extensions)) {
         if (handle_png_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
             meta = open_png(data_name, client);
         } else {
             err_func(err);
             free(err);
             return FALSE;
         }
-    } else if (try_pgm(filename)) {
+    } else if (try_pgm(filename, try_extensions)) {
         if (handle_pgm_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
             meta = open_pgm(data_name, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    // NOTE: try_ceos() needs to be called LAST because get_ceos_names()
+    // will add extensions, causing it to match if there are CEOS files
+    // in the same directory as (eg) as GeoTIFF that the user wants to
+    // view, and will block the user trying to view that GeoTIFF
+    } else if (try_ceos(filename)) {
+        if (handle_ceos_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = read_ceos_meta(meta_name);
+            open_ceos_data(data_name, meta_name, band, meta, client);
         } else {
             err_func(err);
             free(err);

@@ -96,7 +96,7 @@ int try_ext(const char *filename, const char *ext);
 int try_prepension(const char *filename, const char *prepension);
 
 /* read_asf.c */
-int try_asf(const char *filename);
+int try_asf(const char *filename, int try_extensions);
 int handle_asf_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_asf_meta(const char *meta_name);
@@ -114,34 +114,27 @@ int open_ceos_data(const char *dataname, const char *metaname,
                    ClientInterface *client);
 void free_ceos_client_info(void *read_client_info);
 
-/* read_alos.c */
-int try_alos(const char *filename);
-int handle_alos_file(const char *filename, const char *band, char *meta_name,
-                     char *data_name, char **err);
-
 /* read_jpeg.c */
-int try_jpeg(const char *filename);
+int try_jpeg(const char *filename, int try_extensions);
 int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_jpeg(const char *data_name, ClientInterface *client);
 
 /* read_tiff.c */
-int try_tiff(const char *filename);
+int try_tiff(const char *filename, int try_extensions);
 int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
-                      char **err);
-meta_parameters *read_tiff_meta(const char *meta_name,
-                                ClientInterface *client);
-int open_tiff_data(const char *data_name, const char *band,
-                   ClientInterface *client);
+                     char **err);
+meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client);
+int open_tiff_data(const char *data_name, const char *band, ClientInterface *client);
 
 /* read_png.c */
-int try_png(const char *filename);
+int try_png(const char *filename, int try_extensions);
 int handle_png_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_png(const char *data_name, ClientInterface *client);
 
 /* read_pgm.c */
-int try_pgm(const char *filename);
+int try_pgm(const char *filename, int try_extensions);
 int handle_pgm_file(const char *filename, char *meta_name, char *data_name,
                      char **err);
 meta_parameters* open_pgm(const char *data_name, ClientInterface *client);

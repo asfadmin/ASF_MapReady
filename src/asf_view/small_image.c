@@ -18,12 +18,12 @@ static void put_bounding_box(GdkPixbuf *pixbuf, ImageInfo *ii)
     int nl = ii->nl;
 
     n_channels = gdk_pixbuf_get_n_channels (pixbuf);
-    
+
     g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
     g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
     g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
     g_assert (n_channels == 3);
-    
+
     width = gdk_pixbuf_get_width (pixbuf);
     height = gdk_pixbuf_get_height (pixbuf);
 
@@ -117,9 +117,9 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
 
         // Create the pixbuf
         GdkPixbuf *pb =
-            gdk_pixbuf_new_from_data(tdata->data, GDK_COLORSPACE_RGB, FALSE, 
+            gdk_pixbuf_new_from_data(tdata->data, GDK_COLORSPACE_RGB, FALSE,
                                      8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-        
+
         if (!pb)
             asfPrintError("Failed to create the small pixbuf.\n");
 
@@ -138,7 +138,7 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
         pixbuf_small =
             gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
         gdk_pixbuf_unref(pb);
-    
+
         if (!pixbuf_small)
             asfPrintError("Failed to allocate scaled thumbnail pixbuf\n");
 

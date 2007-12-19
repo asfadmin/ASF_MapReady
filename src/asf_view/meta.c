@@ -232,7 +232,8 @@ void open_mdv()
     }
 
     if (!f) {
-        asfPrintWarning("Couldn't find CEOS metadata file.\n");
+        message_box("Couldn't find CEOS metadata file.\n");
+        //asfPrintWarning("Couldn't find CEOS metadata file.\n");
     } else {
         asfPrintStatus("Opening in MDV: %s\n", f);
         static GThreadPool *ttp = NULL;

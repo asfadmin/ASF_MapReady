@@ -6,16 +6,17 @@ typedef struct {
     int rgb_flag;
 } ReadPgmClientInfo;
 
-int try_pgm(const char *filename)
+int try_pgm(const char *filename, int try_extensions)
 {
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
       return strcmp_case(ext, ".pgm") == 0 ||
              strcmp_case(ext, ".ppm") == 0;
-    } else {
+    } else if (try_extensions) {
       return try_ext(filename, ".pgm") || try_ext(filename, ".ppm");
     }
+    return FALSE;
 }
 
 int handle_pgm_file(const char *filename, char *meta_name, char *data_name,

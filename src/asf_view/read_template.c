@@ -22,26 +22,30 @@ typedef struct {
 // 1. This function should return TRUE if the given filename appears to
 //    be of this type.
 
-// 2. The given filename may be just a basename, if this is the case,
-//    you should add on the typical extension/prepensions, and see if
-//    the files exist.  There is a function try_ext() in read.c that
-//    might help.
+// 2. If "try_extensions" is TRUE, the given filename may be just 
+//    a basename --- if this is the case, you should add on the typical
+//    extension/prepensions, and see if the files exist.  There is a
+//    function try_ext() in read.c that might help.
 
-// 3. If the given filename does have an extension/prepension that
+//    If "try_extensions" is FALSE, only check if the given filename
+//    obeys the naming convention, and return TRUE if it does,
+//    FALSE if it does not.
+
+//    If the given filename does have an extension/prepension that
 //    suggests it is of this type, then you should return TRUE without
 //    checking if the file exists.  When the handle_X_file() code
 //    is called, that is the time to issue the "file not found"
 //    error message.
 
-// 4. The filename will have path information.  If you are looking for
+// 3. The filename will have path information.  If you are looking for
 //    prepensions, you must remember to strip off the path info, add
 //    the prepension, put back on the path info, and then see if the
 //    file exists.  There should be a function try_prepension() in
 //    read.c that will do this.
 
-// 5. Do not generate any output - just return TRUE or FALSE. 
+// 4. Do not generate any output - just return TRUE or FALSE. 
 
-int try_X(const char *filename)
+int try_X(const char *filename, int try_extensions)
 {
     return FALSE;
 }

@@ -215,6 +215,7 @@ void set_title(int band_specified, const char *band_in)
     meta_parameters *meta = curr->meta;
     char *basename = get_basename(curr->filename);
     snprintf(title, 239, "asf_view ver %s: %s", VERSION, basename);
+
     if (band_specified) {
         sprintf(&title[strlen(title)], " (%s)", band);
     } else if (meta && meta->general && meta->general->band_count > 1) {
@@ -240,7 +241,7 @@ void set_title(int band_specified, const char *band_in)
 
 void reset_globals(int reset_location)
 {
-    clear_stats(curr);
+  //clear_stats();
 
     if (reset_location) {
         center_line = center_samp = crosshair_samp = crosshair_line = -1;
@@ -248,15 +249,18 @@ void reset_globals(int reset_location)
         g_poly.n = g_poly.c = 0;
     }
 
-    curr->data_ci = NULL;
-    curr->meta = NULL;
+    //data_ci = NULL;
+    //meta = NULL;
 }
 
 static void load_file_banded_imp(const char *file, const char *band,
                                  int reset_location, int multilook)
 {
-    // unload the current file, clear current globals
-    image_info_free(curr);
+    char *old_file = NULL;
+    if (curr->filename) {
+      old_file = STRDUP(curr->filename);
+      free(curr->filename);
+    }
 
     reset_globals(reset_location);
     asfPrintStatus("\nLoading: %s\n", file);
@@ -268,20 +272,34 @@ static void load_file_banded_imp(const char *file, const char *band,
     if (curr->filename[strlen(curr->filename)-1] == '.')
         curr->filename[strlen(curr->filename)-1] = '\0';
 
-    read_file(curr->filename, band, multilook, FALSE);
-    if (reset_location && curr->meta && curr->meta->general)
+    if (read_file(curr->filename, band, multilook, FALSE)) {
+      if (reset_location && curr->meta && curr->meta->general)
         set_lut_based_on_image_type(curr->meta->general->image_data_type);
-    set_title(band != NULL, band);
-    check_lut();
+      set_title(band != NULL, band);
+      check_lut();
 
-    // load the metadata & image data, other setup
-    fill_small_force_reload(curr);
-    fill_big(curr);
-    update_pixel_info(curr);
-    update_zoom();
-    fill_meta_info();
-    fill_stats(curr);
-    setup_bands_tab(curr->meta);
+      // load the metadata & image data, other setup
+      fill_small_force_reload(curr);
+      fill_big(curr);
+      update_pixel_info(curr);
+      update_zoom();
+      fill_meta_info();
+      fill_stats(curr);
+      setup_bands_tab(curr->meta);
+
+      FREE(old_file);
+    }
+    else {
+      FREE(curr->filename);
+      curr->filename = old_file;
+
+      if (reset_location) {
+        center_samp = (double)(curr->ns)/2.;
+        center_line = (double)(curr->nl)/2.;
+        crosshair_samp = (double)(curr->ns)/2.;
+        crosshair_line = (double)(curr->nl)/2.;
+      }
+    }
 }
 
 void reload_file_banded(const char *file, const char *band, int multilook)

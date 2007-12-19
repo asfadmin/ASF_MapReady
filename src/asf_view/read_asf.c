@@ -10,15 +10,17 @@ typedef struct {
     int ml;      // should data be multilooked for display?
 } ReadAsfClientInfo;
 
-int try_asf(const char *filename)
+int try_asf(const char *filename, int try_extensions)
 {
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
         return strcmp_case(ext, ".img") == 0 ||
                strcmp_case(ext, ".meta") == 0;
-    } else {
+    } else if (try_extensions) {
         return try_ext(filename, ".img");
+    } else {
+        return FALSE;
     }
 }
 

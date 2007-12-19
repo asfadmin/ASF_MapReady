@@ -22,7 +22,8 @@ SRCS = asf_view.c \
 	bands.c \
 	info.c \
 	lut.c \
-	plan.c
+	plan.c \
+	pan.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
@@ -107,6 +108,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
+	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
 
@@ -158,6 +160,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
+	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
 #	cp $(TARGET).ico $(SHAREDIR)
 

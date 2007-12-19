@@ -85,7 +85,9 @@ static void show_or_hide_save_subset_button()
 {
     // we show it when there is a user polygon defined
     // that's when saving a subset would make sense
-    show_widget("save_subset_button", g_poly.n > 0);
+    //show_widget("save_subset_button", g_poly.n > 0);
+    GtkWidget * w = get_widget_checked("save_subset_button");
+    gtk_widget_set_sensitive(w, g_poly.n);
 }
 
 // draws a crosshair at x,y (image coords)
@@ -714,19 +716,3 @@ on_ssv_main_window_key_press_event(
 {
     return handle_keypress(event, curr);
 }
-
-//  Haven't gotten the motion events firing yet... not sure what
-//  to do if we do get them working, either
-//SIGNAL_CALLBACK int
-//on_big_image_eventbox_motion_notify_event(
-//    GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
-//{
-//    printf("motion...\n");
-//
-//    double line, samp;
-//    img2ls((int)event->x, (int)event->y, &line, &samp);
-//
-//    // now do something cool!!
-//
-//    return TRUE;
-//}

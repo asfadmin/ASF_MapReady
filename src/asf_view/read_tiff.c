@@ -49,14 +49,14 @@ typedef struct {
     int   ignore[MAX_BANDS];  // Array of which bands to ignore (blank in the TIFF file)
 } ReadTiffClientInfo;
 
-int try_tiff(const char *filename)
+int try_tiff(const char *filename, int try_extensions)
 {
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
         return strcmp_case(ext, ".tif") == 0 ||
                strcmp_case(ext, ".tiff") == 0;
-    } else {
+    } else if (try_extensions) {
         return try_ext(filename, ".tif") || try_ext(filename, ".tiff");
     }
     return FALSE;
@@ -1113,7 +1113,3 @@ void add_empties(const char *tiff_file, char *band_str, int *num_bands,
   }
   if (tiff) TIFFClose(tiff);
 }
-
-
-
-

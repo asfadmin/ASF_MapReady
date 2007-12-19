@@ -13,15 +13,16 @@ typedef struct {
     FILE *fp;
 } ReadPngClientInfo;
 
-int try_png(const char *filename)
+int try_png(const char *filename, int try_extensions)
 {
     char *ext = findExt(filename);
 
     if (ext && strlen(ext) > 0) {
       return strcmp_case(ext, ".png") == 0;
-    } else {
+    } else if (try_extensions) {
       return try_ext(filename, ".png");
     }
+    return FALSE;
 }
 
 int handle_png_file(const char *filename, char *meta_name, char *data_name,

@@ -45,7 +45,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
     if (ii->data_ci->data_type == GREYSCALE_FLOAT) {
         // store data used to build the small image pixmap
         // we will calculate the stats on this subset
-        float *fdata = MALLOC(sizeof(float)*tsx*tsy);
+        float *fdata = CALLOC(sizeof(float), tsx*tsy);
 
         load_thumbnail_data(ii->data_ci, tsx, tsy, fdata);
 
@@ -57,7 +57,9 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v) && v!=ii->stats.no_data_value)
+                    if (meta_is_valid_double(v) && 
+                        v!=ii->stats.no_data_value &&
+                        fabs(v)<999999999)
                     {
                         ii->stats.avg += v;
 
@@ -79,9 +81,13 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v) && v!=ii->stats.no_data_value)
+                    if (meta_is_valid_double(v) &&
+                        v!=ii->stats.no_data_value &&
+                        fabs(v)<999999999)
+                    {
                         ii->stats.stddev +=
-                          (v - ii->stats.avg) * (v - ii->stats.avg);
+                          (v - ii->stats.avg)*(v - ii->stats.avg);
+                    }
                 }
             }
             ii->stats.stddev = sqrt(ii->stats.stddev / (double)n);
@@ -91,7 +97,9 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v)) {
+                    // added in the fabs<999... thing... sometimes values
+                    // are just ridiculous and we must ignore them
+                    if (meta_is_valid_double(v) && fabs(v)<999999999) {
                         ii->stats.avg += v;
                         if (v > ii->stats.act_max) ii->stats.act_max = v;
                         if (v < ii->stats.act_min) ii->stats.act_min = v;
@@ -102,7 +110,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
             for (i=0; i<tsy; ++i) {
                 for (j=0; j<tsx; ++j) {
                     float v = fdata[j+i*tsx];
-                    if (meta_is_valid_double(v))
+                    if (meta_is_valid_double(v) && fabs(v)<999999999)
                         ii->stats.stddev +=
                           (v - ii->stats.avg) * (v - ii->stats.avg);
                 }
