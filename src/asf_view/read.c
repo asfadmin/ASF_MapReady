@@ -57,7 +57,7 @@ int read_file(const char *filename, const char *band, int multilook,
     char *meta_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *data_name = MALLOC(sizeof(char)*(strlen(filename)+10));
     char *err = NULL;
-    meta_parameters *meta;
+    meta_parameters *meta=NULL;
 
     // if the filename exists, we shouldn't try adding on extensions
     // or prepensions... just look for the file as it is.  If the

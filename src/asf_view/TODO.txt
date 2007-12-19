@@ -15,11 +15,7 @@
    the vertical spacing needs to be uniform, so we can't just shrink out
    the zero sections.
 
-4. Support for geotiffs.
-
-5. Support for other images types like png, pgm, etc.
-
-6. ASF Internal format data that is byte is stored with bytes -- do this
+4. ASF Internal format data that is byte is stored with bytes -- do this
    also with raw CEOS.
    
-7. When viewing ALOS CEOS data, allow switching/combining bands, too.
+5. When viewing ALOS CEOS data, allow switching/combining bands, too.
