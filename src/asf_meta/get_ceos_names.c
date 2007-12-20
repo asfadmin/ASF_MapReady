@@ -24,8 +24,8 @@ const char ceos_data_extensions[][12] =
  * If so populate metaName with the appropriate name and return the appropriate
  * ENUM ceos_metadata_ext_t value.  */
 ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
-             char ***pMetaName,
-             int *trailer)
+                                           char ***pMetaName,
+                                           int *trailer)
 {
   char dirName[256], fileName[256], leaderTemp[1024], trailerTemp[1024];
   char baseName[256], ext[256], *leaderExt, *trailerExt, **metaName;
@@ -63,16 +63,16 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
     if (leaderExt[0] == EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, fileName, leaderExt);
-  sprintf(trailerTemp, "%s%s%s", dirName, fileName, trailerExt);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, fileName, leaderExt);
+        sprintf(trailerTemp, "%s%s%s", dirName, fileName, trailerExt);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
         sprintf(leaderTemp, "%s%s%s", dirName, fileName, leaderExt);
@@ -86,44 +86,44 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
        * nix it and try again */
       split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, baseName, leaderExt);
-  sprintf(trailerTemp, "%s%s%s", dirName, baseName, trailerExt);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!= NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, baseName, leaderExt);
+        sprintf(trailerTemp, "%s%s%s", dirName, baseName, trailerExt);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!= NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
         sprintf(leaderTemp, "%s%s%s", dirName, baseName, leaderExt);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
     }
     /* Second look for prefix style extensions '.' */
     else if (leaderExt[strEnd] == EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
           return ii;
@@ -133,123 +133,123 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '.', baseName, ext);
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
     }
     /* Third look for prefix style extensions '-' */
     else if (leaderExt[strEnd] == ALOS_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '-', baseName, ext);
       if (baseName[2] == '-') {
-  char tmp[256];
-  strcpy(tmp, baseName);
-  split_base_and_ext(tmp, PREPENDED_EXTENSION, '-', baseName, ext);
+        char tmp[256];
+        strcpy(tmp, baseName);
+        split_base_and_ext(tmp, PREPENDED_EXTENSION, '-', baseName, ext);
       }
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[0], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[0], trailerTemp);
+          return ii;
+        }
       }
       else {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
     }
     /* Fourth look for prefix style extensions '_' */
     else if (leaderExt[strEnd] == CAN_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '_', baseName, ext);
       if (trailerExt) {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
-      (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    fclose(trailerFP);
-    strcpy(metaName[1], trailerTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
+            (trailerFP = fopen(trailerTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          fclose(trailerFP);
+          strcpy(metaName[1], trailerTemp);
+          return ii;
+        }
       }
       else {
-  sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
-  if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
-    fclose(leaderFP);
-    strcpy(metaName[0], leaderTemp);
-    return ii;
-  }
+        sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
+        if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
+          fclose(leaderFP);
+          strcpy(metaName[0], leaderTemp);
+          return ii;
+        }
       }
     }
   }
