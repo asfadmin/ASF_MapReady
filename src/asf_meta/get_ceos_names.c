@@ -11,11 +11,43 @@
 #include "meta_init.h"
 
 const char ceos_metadata_extensions[][12] =
-  {"","LEA_ TRA_",".sarl .sart",".L",".LDR",".ldr","LEA.","lea.","lea_",
-   "LED-","LEA_"};
+{
+	"",
+	"LEA_ TRA_",
+	".sarl .sart",
+	".L",
+	".LDR",
+	".ldr",
+	"LEA.",
+	"lea.",
+	"lea_",
+	"LED-",
+	"LEA_"
+};
 const char ceos_data_extensions[][12] =
-  {"","DAT_",".sard",".D",".RAW",".raw","DAT.","dat.","dat_","IMG-"};
+{
+	"",
+	"DAT_",
+	".sard",
+	".D",
+	".RAW",
+	".raw",
+	"DAT.",
+	"dat.",
+	"dat_",
+	"IMG-"
+};
 
+
+
+static ceos_metadata_ext_t free_and_return(char *leaderExt,
+                                           char *trailerExt,
+                                           int ret)
+{
+  FREE (leaderExt);
+  FREE (trailerExt);
+  return ret;
+}
 
 /******************************************************************************
  * get_ceos_metadata_name:
@@ -71,7 +103,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -79,7 +111,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
@@ -94,7 +126,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -102,7 +134,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
     }
@@ -118,7 +150,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -126,7 +158,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
@@ -141,7 +173,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -149,7 +181,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
     }
@@ -165,7 +197,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -173,7 +205,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
@@ -193,7 +225,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[0], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -201,7 +233,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
     }
@@ -217,7 +249,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -225,7 +257,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       /* Hmmm, didn't work, maybe it's got an extension on there already,
@@ -240,7 +272,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
           strcpy(metaName[0], leaderTemp);
           fclose(trailerFP);
           strcpy(metaName[1], trailerTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
       else {
@@ -248,13 +280,13 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL) {
           fclose(leaderFP);
           strcpy(metaName[0], leaderTemp);
-          return ii;
+          return free_and_return (leaderExt, trailerExt, ii);
         }
       }
     }
   }
   /* If we haven't returned yet there ain't no metadata file */
-  return NO_CEOS_METADATA;
+  return free_and_return (leaderExt, trailerExt, NO_CEOS_METADATA);
 }
 
 /******************************************************************************
