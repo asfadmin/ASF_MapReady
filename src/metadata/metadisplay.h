@@ -1,7 +1,6 @@
 /*Header file for metadata
 display (print) routines.*/
 
-int check_record(char *fileName, int reqrec);
 void print_record(FILE *fp, char *fileName, int reqrec);
 void output_record(char *fileName, char *extension, int rec, int save);
 char *get_record_as_string(char *fileName, int reqrec);

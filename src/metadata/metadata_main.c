@@ -152,8 +152,9 @@ void usage(char *name)
    fprintf(stderr,"  -sdhr        Signal Data Histograms record\n");
    fprintf(stderr,"  -rasr        Range Spectra record\n");
    fprintf(stderr,"  -ppr         Processing Parameter record\n");
-   fprintf(stderr,"  -dqsr        Data Quality Summary record\n");
    fprintf(stderr,"  -facdr       ASF or ESA Facility Related Data record\n");
+   fprintf(stderr,"  -asf_facdr   Force ASF Facility Related Data record\n");
+   fprintf(stderr,"  -esa_facdr   Force ESA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
    fprintf(stderr,"\n");
@@ -187,21 +188,15 @@ int main(int argc, char **argv)
   int rasr_flag = extract_flag_options(&argc, &argv, "-rasr", "--rasr", NULL);
   int ppr_flag = extract_flag_options(&argc, &argv, "-ppr", "--ppr", NULL);
   int ifdr_flag = extract_flag_options(&argc, &argv, "-ifdr", "--ifdr", NULL);
-  int facdr_flag = extract_flag_options(&argc, &argv, "-facdr", "--facdr", NULL);
+  int facdr_flag = 
+          extract_flag_options(&argc, &argv, "-facdr", "--facdr", NULL);
+  int asf_facdr_flag = 
+          extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
+  int esa_facdr_flag = 
+          extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
   int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
-
-  // depricated options
-  int asf_facdr_flag = 
-    extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
-  int esa_facdr_flag = 
-    extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
-
-  // account for depricated options
-  if (asf_facdr_flag || esa_facdr_flag) {
-    facdr_flag = TRUE;
-  }
 
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag || 
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
@@ -212,7 +207,7 @@ int main(int argc, char **argv)
   if (argc == 1 || !found)
     usage(argv[0]);
 
-  fileName = (char *) MALLOC(sizeof(char)*(strlen(argv[1]+1)));
+  fileName = (char *) MALLOC(sizeof(char)*(strlen(argv[1])+1));
   strcpy(fileName, argv[1]);
 
   if (dssr_flag || all_flag)
@@ -245,16 +240,17 @@ int main(int argc, char **argv)
     output_record(fileName, ".ppr", 120, save);
   if (ifdr_flag || all_flag)
     output_record(fileName, ".ifdr", 192, save);
+// Automatically choose which facility data record to look for
   if (facdr_flag || all_flag)
     output_record(fileName, ".facdr", 200, save);
-/* Left here to preserve the number associated with these specific records
- * the -facdr flag should take care of all facility records regardless of
- * the facility it was processed at (see metadata.c)
+// This option is left for users to force the program to look for this specific
+// facility data record (not used with 'all' flag)
   if (asf_facdr_flag)
     output_record(fileName, ".asf_facdr", 210, save);
+// This option is left for users to force the program to look for this specific
+// facility data record (not used with 'all' flag)
   if (esa_facdr_flag)
     output_record(fileName, ".esa_facdr", 220, save);
- */
   if (lfdr_flag || all_flag)
     output_record(fileName, ".lfdr", 300, save);
 

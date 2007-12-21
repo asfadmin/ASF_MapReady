@@ -86,13 +86,17 @@ char *get_record_as_string(char *fileName, int reqrec)
 
   ceos_data_ext_t data_ext;
   ceos_metadata_ext_t metadata_ext;
-  char **dataNames=NULL, **metaName=NULL, *baseName;
+  char **dataNames=NULL, **metaName=NULL;
+  char baseName[1024];
   int nBands, trailer, dataNameExists=1, leaderNameExists=1;
+  char rectype_str[64];
+  char ret_str[128];
   char *ret=NULL;
   char facility[25];
   char sensor[16];
 
-  baseName = (char *) MALLOC(sizeof(char)*256);
+  strcpy(rectype_str, "Unknown");
+  strcpy(ret_str, "");
 
   metadata_ext = get_ceos_metadata_name(fileName, &metaName, &trailer);
   data_ext = get_ceos_data_name(fileName, baseName, &dataNames, &nBands);
@@ -106,24 +110,27 @@ char *get_record_as_string(char *fileName, int reqrec)
   }
   free(path);
 
-  if (data_ext == NO_CEOS_DATA && reqrec == 192) {
-    if (nBands > 0)
-      asfPrintWarning("Data file (%s) missing.\n"
-                      "Unable to extract Image File Descriptor Record.\n",
-                      dataNames[0]);
-    else
-      asfPrintWarning("Data file missing.\n"
-                      "Unable to extract Image File Descriptor Record.\n");
+  if (data_ext == NO_CEOS_DATA) {
+    if (192 == reqrec) {
+      if (nBands > 0)
+        asfPrintWarning("Data file (%s) missing.\n"
+                        "Unable to extract Image File Descriptor Record.\n",
+                        dataNames[0]);
+      else
+        asfPrintWarning("Data file missing.\n"
+                        "Unable to extract Image File Descriptor Record.\n");
+    }
     dataNameExists = 0;
   }
-  if (metadata_ext == NO_CEOS_METADATA && reqrec != 192) {
-    asfPrintWarning("Leader (meta data) file missing.\n"
-		    "ONLY able to extract Image File Descriptor Record.\n");
+  if (metadata_ext == NO_CEOS_METADATA) {
+    if (192 != reqrec) {
+      asfPrintWarning("Leader (metadata) file missing.\n"
+	              "ONLY able to extract Image File Descriptor Record.\n");
+    }
     leaderNameExists = 0;
   }
   if (!dataNameExists && !leaderNameExists)
-      return STRDUP("Unable to open data or leader file.\n");
-
+      return STRDUP("Not able to open either data or leader file.\n");
 
   // Determine a couple things from the dssr before we get going since
   // the way some records are read depend on which facility the data was
@@ -161,10 +168,12 @@ char *get_record_as_string(char *fileName, int reqrec)
   switch (reqrec) 
     {
     case (10):
+      strcpy(rectype_str, "Data set summary");
       if (dssr)
         ret = sprn_dssr(dssr,1);
       break;
     case (18):
+      strcpy(rectype_str, "Scene header");
       shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
       if (leaderNameExists) {
 	if (get_shr(metaName[0],shr) >= 0 )
@@ -177,6 +186,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(shr);
       break;
     case (20):	
+      strcpy(rectype_str, "Map projection data");
       mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
       if (leaderNameExists) {
 	if (get_mpdr(metaName[0],mpdrec) >= 0 ) 
@@ -189,6 +199,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(mpdrec);
       break;
     case (30):	
+      strcpy(rectype_str, "Platform position data");
       ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
       if (leaderNameExists) {
 	if (get_ppdr(metaName[0],ppdr) >= 0)
@@ -201,6 +212,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(ppdr);
       break;
     case (40):	
+      strcpy(rectype_str, "Attitude data");
       atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
       if (leaderNameExists) {
 	if (get_atdr(metaName[0],atdr) >= 0)
@@ -213,6 +225,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(atdr);
       break;
     case (44):
+      strcpy(rectype_str, "ALOS map projection data");
       ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
       if (leaderNameExists) {
 	if (get_ampr(metaName[0],ampr) >= 0)
@@ -226,8 +239,9 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (50):
         if (strncmp(sensor, "ALOS", 4) == 0) {
-            ardr = (struct alos_rad_data_rec *) 
-                MALLOC(sizeof(struct alos_rad_data_rec));
+            strcpy(rectype_str, "ALOS radiometric data");
+            ardr = (struct alos_rad_data_rec *)
+                   MALLOC (sizeof(struct alos_rad_data_rec));
             if (leaderNameExists) {
                 if (get_ardr(metaName[0],ardr) >= 0)
                     ret = sprn_ardr(ardr);
@@ -240,6 +254,7 @@ char *get_record_as_string(char *fileName, int reqrec)
         } 
 	else if (strncmp(facility, "CDPF", 4) == 0 ||
 		 strncmp(facility, "RSI", 3) == 0) {
+          strcpy(rectype_str, "RSI radiometric data");
 	  rsi_raddr = (struct RSI_VRADDR  *) MALLOC(sizeof(struct RSI_VRADDR));
 	  if (leaderNameExists) {
 	    if (get_rsi_raddr(metaName[0],rsi_raddr) >= 0)
@@ -252,6 +267,7 @@ char *get_record_as_string(char *fileName, int reqrec)
 	  FREE(rsi_raddr);  
 	}
 	else {
+            strcpy(rectype_str, "Radiometric data");
             raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
             if (leaderNameExists) {
                 if (get_raddr(metaName[0],raddr) >= 0)
@@ -265,6 +281,7 @@ char *get_record_as_string(char *fileName, int reqrec)
         }
       break;
     case (51):
+      strcpy(rectype_str, "Radiometric compensation data");
       rcdr = (struct radio_comp_data_rec *) 
 	MALLOC(sizeof(struct radio_comp_data_rec));
       if (leaderNameExists) {
@@ -278,6 +295,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(rcdr);
       break;
     case (60):	
+      strcpy(rectype_str, "Data quality summary");
       dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
       if (leaderNameExists) {
 	if (get_dqsr(metaName[0],dqsr) >= 0) 
@@ -290,6 +308,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(dqsr);
       break;
     case (70):	
+      strcpy(rectype_str, "Processed data histograms");
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
       if (leaderNameExists) {
 	if (get_dhr(metaName[0],dhr) >= 0) 
@@ -302,6 +321,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(dhr);
       break;
     case (71): 
+      strcpy(rectype_str, "Signal data histograms");
       dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
       if (leaderNameExists) {
 	if (get_sdhr(metaName[0],dhr) >= 0) 
@@ -314,6 +334,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(dhr);
       break;
     case (80):	
+      strcpy(rectype_str, "Range spectra");
       rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
       if (leaderNameExists) {
 	if (get_rsr(metaName[0],rsr) >= 0) 
@@ -326,6 +347,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(rsr);
       break;
     case (120):
+      strcpy(rectype_str, "Processing parameter");
       ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
       if (leaderNameExists) {
 	if (get_ppr(metaName[0],ppr) >= 0)
@@ -338,6 +360,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(ppr);
       break;
     case (192): 
+      strcpy(rectype_str, "Image file descriptor");
       vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
       if (dataNameExists) {
 	if (get_ifiledr(baseName,vfdr) >= 0)
@@ -349,6 +372,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       asfPrintWarning("Unrecogized facility data record...\n"
                       "Assuming ASF format.\n");
     case (210): 
+      strcpy(rectype_str, "ASF facility related data");
       facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
       if (leaderNameExists) {
 	if (get_asf_facdr(metaName[0],facdr) >= 0) 
@@ -361,6 +385,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(facdr);
       break;
     case (220):
+      strcpy(rectype_str, "ESA facility related data");
       esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
       if (leaderNameExists) {
 	if (get_esa_facdr(metaName[0],esa_facdr) >= 0)
@@ -373,6 +398,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(esa_facdr);
       break;
     case (300): 
+      strcpy(rectype_str, "Leader file descriptor");
       fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
       if (leaderNameExists) {
 	if (get_fdr(metaName[0],fdr) >= 0) 
@@ -385,250 +411,13 @@ char *get_record_as_string(char *fileName, int reqrec)
       FREE(fdr);
       break;
     default:    
-      printf("Not Valid Record Type\n");
+      asfPrintStatus("Not a valid record type\n");
       break;
     }
   FREE(dssr);
-  FREE(baseName);
   free_ceos_names(dataNames, metaName);
+  sprintf(ret_str,"%s record not found.\n\n", rectype_str);
   if (!ret)
-      return STRDUP("Record not found.\n");
+      return STRDUP(ret_str);
   return ret;
-}
-
-int check_record(char *fileName, int reqrec) 
-{
-  struct VFDRECV *facdr;                // Facility Related Data record
-  struct VRADDR *raddr;                 // Radiometric Data record
-  struct IOF_VFDR *vfdr;                // Image File Descriptor record
-  struct VMPDREC *mpdrec;               // Map Projection Data record
-  struct FDR *fdr;                      // File Descriptor record
-  struct dataset_sum_rec *dssr;         // Data Set Summary record
-  struct pos_data_rec *ppdr;            // Platform Position Data record
-  struct att_data_rec *atdr;            // Attitude Data record
-  struct data_hist_rec *dhr;            // Data Histogram record
-  struct rng_spec_rec *rsr;             // Range Spectra record
-  struct qual_sum_rec *dqsr;            // Data Quality Summary record
-  struct radio_comp_data_rec *rcdr;     // Radiometric Compensation Data record
-  struct scene_header_rec *shr;         // Scene Header record
-  struct alos_map_proj_rec *ampr;       // Map Projection Data record - ALOS
-  struct ESA_FACDR *esa_facdr;          // Facility Related Data (ESA) record
-  struct proc_parm_rec *ppr;                    // Processing Parameter record
-
-  char **dataName, **metaName;
-  int nBands, trailer;
-  
-  require_ceos_pair(fileName, &dataName, &metaName, &nBands, &trailer);
-
-  switch (reqrec) 
-    {
-    case (10): 
-      dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
-      if (get_dssr(metaName[0],dssr) >= 0 )
-	return 1;
-      else if (trailer) {
-	if (get_dssr(metaName[1],dssr) >= 0 )
-	  return 1;
-      }
-      else
-	printf("\nNo Data Set Summary Record Found\n\n");
-      FREE(dssr);
-      break;
-    case (18):
-      shr = (struct scene_header_rec *) MALLOC(sizeof(struct scene_header_rec));
-      if (get_shr(metaName[0],shr) >= 0 )
-	return 1;
-      else if (trailer) {
-	if (get_shr(metaName[1],shr) >= 0 )
-	  return 1;
-      }
-      else
-	printf("\nNo Scene Header Record Found\n\n");
-      FREE(shr);
-      break;
-    case (20):	
-      mpdrec = (struct VMPDREC *) MALLOC(sizeof(struct VMPDREC));
-      if (get_mpdr(metaName[0],mpdrec) >= 0 ) 
-        return 1;
-      else if (trailer) {
-	if (get_mpdr(metaName[1],mpdrec) >= 0 ) 
-        return 1;
-      }
-      else 
-	printf("\nNo Map Projection Data Record Found\n\n");
-      FREE(mpdrec);
-      break;
-    case (30):	
-      ppdr = (struct pos_data_rec *) MALLOC(sizeof(struct pos_data_rec));
-      if (get_ppdr(metaName[0],ppdr) >= 0)
-        return 1;
-      else if (trailer) {
-	if (get_ppdr(metaName[1],ppdr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Platform Position Data Record Found\n\n");
-      FREE(ppdr);
-      break;
-    case (40):	
-      atdr = (struct att_data_rec *) MALLOC(sizeof(struct att_data_rec));
-      if (get_atdr(metaName[0],atdr) >= 0)
-	return 1;
-      else if (trailer) {
-	if (get_atdr(metaName[1],atdr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Attitude Data Record Found\n\n");
-      FREE(atdr);
-      break;
-    case (44):
-      ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
-      if (get_ampr(metaName[0],ampr) >= 0)
-        return 1;
-      else if (trailer) {
-	if (get_ampr(metaName[1],ampr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Map Projection Record (ALOS) Found\n\n");
-      FREE(ampr);
-      break;
-    case (50):	
-      raddr = (struct VRADDR  *) MALLOC(sizeof(struct VRADDR));
-      if (get_raddr(metaName[0],raddr) >= 0)
-	return 1;
-      else if (trailer) {
-	if (get_raddr(metaName[1],raddr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Radiometric Data Record\n\n");
-      FREE(raddr);
-      break;
-    case (51):
-      rcdr = (struct radio_comp_data_rec *) 
-	MALLOC(sizeof(struct radio_comp_data_rec));
-      if (get_rcdr(metaName[0],rcdr) >= 0)
-	return 1;
-      else if (trailer) {
-	if (get_rcdr(metaName[1],rcdr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Radiometric Compensation Data Record\n\n");
-      FREE(rcdr);
-      break;
-    case (60):	
-      dqsr = (struct qual_sum_rec *) MALLOC(sizeof(struct qual_sum_rec));
-      if (get_dqsr(metaName[0],dqsr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_dqsr(metaName[1],dqsr) >= 0) 
-	  return 1;
-      }
-      else 
-	printf("\nNo Data Quality Summary Record Found\n\n");
-      FREE(dqsr);
-      break;
-    case (70):	
-      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_dhr(metaName[0],dhr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_dhr(metaName[1],dhr) >= 0) 
-	  return 1;
-      }
-      else 
-	printf("\nNo Processed Data Histograms Record Found\n\n");
-      FREE(dhr);
-      break;
-    case (71): 
-      dhr = (struct data_hist_rec *) MALLOC(sizeof(struct data_hist_rec));
-      if (get_sdhr(metaName[0],dhr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_sdhr(metaName[1],dhr) >= 0) 
-	  return 1;
-      }
-      else 
-	printf("\nNo Signal Data Histograms Record Found\n\n");
-      FREE(dhr);
-      break;
-    case (80):	
-      rsr = (struct rng_spec_rec *) MALLOC(sizeof(struct rng_spec_rec));
-      if (get_rsr(metaName[0],rsr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_rsr(metaName[1],rsr) >= 0) 
-	  return 1;
-      }
-      else 
-	printf("\nNo Range Spectra Record Found\n\n");
-      FREE(rsr);
-      break;
-    case (120):
-      ppr = (struct proc_parm_rec *) MALLOC(sizeof(struct proc_parm_rec));
-      if (get_ppr(metaName[0],ppr) >= 0)
-	return 1;
-      else if (trailer) {
-	if (get_ppr(metaName[1],ppr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Processing Parameter Record Found\n\n");
-      FREE(ppr);
-      break;
-    case (192): 
-      vfdr = (struct IOF_VFDR *) MALLOC(sizeof(struct IOF_VFDR));
-      if (get_ifiledr(dataName[0],vfdr) >= 0)
-	return 1;
-      else
-	printf("\nNo Image File Descriptor Record Found\n\n");
-      FREE(vfdr);
-      break;
-    case (200):
-    case (210): 
-      facdr = (struct VFDRECV *) MALLOC(sizeof(struct VFDRECV));
-      if (get_asf_facdr(metaName[0],facdr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_asf_facdr(metaName[1],facdr) >= 0) 
-	  return 1;
-      }
-      else 
-	printf("\nNo Facility Related Data Record Found\n\n");
-      break;
-      FREE(facdr);
-    case (220):
-      esa_facdr = (struct ESA_FACDR *) MALLOC(sizeof(struct ESA_FACDR));
-      if (get_esa_facdr(metaName[0],esa_facdr) >= 0)
-	return 1;
-      else if (trailer) {
-	if (get_esa_facdr(metaName[1],esa_facdr) >= 0)
-	  return 1;
-      }
-      else
-	printf("\nNo Facility Related Data Record (ESA) Found\n\n");
-      FREE(esa_facdr);
-      break;
-    case (300): 
-      fdr = (struct FDR *) MALLOC(sizeof(struct FDR));
-      if (get_fdr(metaName[0],fdr) >= 0) 
-	return 1;
-      else if (trailer) {
-	if (get_fdr(metaName[1],fdr) >= 0) 
-	  return 1;
-      }
-      else
-	printf("\nNo File Descriptor Record Found\n\n");
-      break;
-      FREE(fdr);
-    default:    
-      printf("Not Valid Record Type\n");
-      break;
-    }
-  free_ceos_names(dataName, metaName);
-
-  return 0;
 }
