@@ -333,7 +333,7 @@ static void update_extents(int lineSAR, int sampSAR,
                         metaDEM->projection->perX);
     line = (int) (.5 + (y - metaDEM->projection->startY) /
                         metaDEM->projection->perY);
-    
+
     // account for possible trimming of the DEM
     samp -= metaDEM->general->start_sample;
     line -= metaDEM->general->start_line;

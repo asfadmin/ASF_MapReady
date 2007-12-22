@@ -493,15 +493,15 @@ static int is_dir(const char *what)
     return (stbuf.st_mode & S_IFMT) == S_IFDIR;
 }
 
-static void update_extents(double lat, double lon,
-                           double *lat_lo, double *lat_hi,
-                           double *lon_lo, double *lon_hi)
+static void update_extents(double x, double y,
+                           double *x_lo, double *x_hi,
+                           double *y_lo, double *y_hi)
 {
-    if (lat < *lat_lo) *lat_lo = lat;
-    if (lon < *lon_lo) *lon_lo = lon;
+    if (x < *x_lo) *x_lo = x;
+    if (y < *y_lo) *y_lo = y;
 
-    if (lat > *lat_hi) *lat_hi = lat;
-    if (lon > *lon_hi) *lon_hi = lon;
+    if (x > *x_hi) *x_hi = x;
+    if (y > *y_hi) *y_hi = y;
 }
 
 static void get_bounding_box_latlon(meta_parameters *meta,
