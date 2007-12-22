@@ -38,9 +38,6 @@ void	yaxb(float[], float[], int, float*, float*)
 void	yax2bxc(float[], float[], int, float*, float*, float*)
         --Finds quadratic fit of input data using least squares regression.
 
-void 	save_meta(meta, fname, nl, ns, sl, ss, pdx, pdy, li)
-	--Creates a valid meta file with windowing information
-
 SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 ****************************************************************************/
@@ -219,46 +216,4 @@ void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
  *c = t3;
 
  return;
-}
-
-/***************************************************************************
-FUNCTION NAME:  save_meta -- make a metadata file
-
-PARAMETERS: 	meta_parameters meta  Metadata structure pointer
-		fname	 char *	  Name of file to create a .meta for
-		nl, ns	 int	  Number of lines and samples in file
-		sl, ss   int	  Master file start line and sample (windowing)
-		pdx, pdy float	  Projection distance in x and y 
-		li	 int	  Line Increment
-DESCRIPTION:
-    The purpose here is to retain the image metadata.
-
-SPECIAL CONSIDERATIONS:
-    Sets data type to REAL32 (float) which is not actually correct for cpx files.
-
-PROGRAM HISTORY:
-  VERSION   DATE   AUTHOR       PURPOSE
-  -------   ----   ------       -------
-   1.0      4/95   T. Logan     Retain image metadata after resampling
-   1.1      6/95   T. Logan     Validate DDR fields that are valid
-   1.2     10/95   M. Shindle   Now accepts data type as a parameter
-   2.0      4/97   T. Logan     Copied from create_ddr
-   2.5      1/03   P. Denny     Changed to .meta format in effort to NUKE
-                                  the DDR
-***************************************************************************/
-void save_meta(meta_parameters *meta, const char *fname,
-               int nl,int ns,int sl,int ss,
-               double pdx,double pdy, int li)
-{
-  meta->general->line_count = nl;
-  meta->general->sample_count = ns;
-  meta->general->start_line = sl;
-  meta->general->start_sample = ss;
-  meta->general->x_pixel_size = pdx;
-  meta->general->y_pixel_size = pdy;
-  meta->sar->line_increment = (double) li;
-  meta->sar->sample_increment = 1.0;
-  meta_write(meta, fname);
-
-  return;
 }

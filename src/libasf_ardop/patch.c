@@ -212,7 +212,8 @@ void processPatch(patch *p,const getRec *signalGetRec,const rangeRef *r,
   writePatch:
   Outputs one full patch of data to the given file.
 */
-void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
+void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
+	const file *f,int patchNo)
 {
   int outLine;		 /* Counter for line base output */
   FILE *fp_amp,*fp_cpx;  /* File pointers for the amplitude and  complex outputs*/
@@ -226,7 +227,6 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   int mlCount=0;	 /* Counter for setting up the multilook buffer */
   int writeNoiseTable=0; /* Flag to determine whether to write the noise table and 
 			    antenna pattern */
-  meta_parameters *metaCpx, *metaAmp, *metaIn;
   int off_slc = f->n_az_valid * (patchNo-1);
   int off_ml = f->n_az_valid * (patchNo-1) / (f->nlooks);
 
@@ -247,24 +247,13 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   outputBuf = (complexFloat *)MALLOC(p->n_range*sizeof(complexFloat));
   mlBuf = (complexFloat *)MALLOC(p->n_range*f->nlooks*sizeof(complexFloat));
   
-  /* transpose and write out the complex image data and amplitude image*/
-  fp_cpx=fopenImage(f->out_cpx,openMode);  
-  fp_amp=fopenImage(f->out_amp,openMode);
-  
-  /* Now, if there were other command-line optional files to write, open the files */
-    if (s->imageType.power) 
-    fp_pwr=fopenImage(f->out_pwr,openMode);
-  if (s->imageType.sigma) 
-    fp_sig=fopenImage(f->out_sig,openMode);
-  if (s->imageType.gamma) 
-    fp_gam=fopenImage(f->out_gam,openMode);
-  if (s->imageType.beta) 
-    fp_bet=fopenImage(f->out_bet,openMode);
-
   /* Fill in metadata */  
-  metaIn = meta_read(f->in);
+  meta_get_latLon(meta, meta->general->line_count/2, 
+		  meta->general->sample_count/2, 0.0,
+		  &(meta->general->center_latitude),
+		  &(meta->general->center_longitude));
 
-  metaCpx = meta_read(f->in);
+  meta_parameters *metaCpx=meta_copy(meta);  
   metaCpx->general->data_type = COMPLEX_REAL32;
   metaCpx->general->image_data_type = COMPLEX_IMAGE;
   metaCpx->general->line_count = f->n_az_valid * patchNo;
@@ -277,44 +266,42 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   metaCpx->general->start_sample = f->skipFile + 1;
   metaCpx->general->x_pixel_size = f->rngpix;
   metaCpx->general->y_pixel_size = f->azpix;
-  metaCpx->sar->line_increment = 1.0;
-  metaCpx->sar->sample_increment = 1.0;
   meta_write(metaCpx, f->out_cpx);
+  fp_cpx=fopenImage(f->out_cpx,openMode);  
 
-  metaAmp = meta_read(f->in);
+  meta_parameters *metaAmp=meta_copy(metaCpx);
   metaAmp->general->data_type = REAL32;
   metaAmp->general->image_data_type = AMPLITUDE_IMAGE;
   metaAmp->general->line_count = f->n_az_valid / f->nlooks * patchNo;
-  metaAmp->general->sample_count = p->n_range;
-  meta_get_latLon(metaAmp, metaAmp->general->line_count/2, 
-		  metaAmp->general->sample_count/2, 0.0,
-		  &(metaAmp->general->center_latitude),
-		  &(metaAmp->general->center_longitude));
-  metaAmp->general->start_line = f->firstLineToProcess + s->dop_precomp + 1;
-  metaAmp->general->start_sample = f->skipFile + 1;
-  metaAmp->general->x_pixel_size = f->rngpix;
-  metaAmp->general->y_pixel_size = f->azpix;
-  metaAmp->sar->line_increment = 1.0;
-  metaAmp->sar->sample_increment = 1.0;
+  metaAmp->general->y_pixel_size *= f->nlooks;
   metaAmp->sar->azimuth_time_per_pixel *= f->nlooks;
   meta_write(metaAmp, f->out_amp);
+  fp_amp=fopenImage(f->out_amp,openMode);
 
+  meta_parameters *metaPower=0, *metaSigma=0, *metaGamma=0, *metaBeta=0;
   if (s->imageType.power) {
-    metaAmp->general->image_data_type = POWER_IMAGE;
-    meta_write(metaAmp, f->out_pwr);
+    metaPower=meta_copy(metaAmp);
+    metaPower->general->image_data_type = POWER_IMAGE;
+    meta_write(metaPower, f->out_pwr);
+    fp_pwr=fopenImage(f->out_pwr,openMode);
   }
   if (s->imageType.sigma) {
-    metaAmp->general->image_data_type = SIGMA_IMAGE;
-    meta_write(metaAmp, f->out_sig);
+    metaSigma=meta_copy(metaAmp);
+    metaSigma->general->image_data_type = SIGMA_IMAGE;
+    meta_write(metaSigma, f->out_sig);
+    fp_sig=fopenImage(f->out_sig,openMode);
   }
-  
   if (s->imageType.gamma) {
-    metaAmp->general->image_data_type = GAMMA_IMAGE;
-    meta_write(metaAmp, f->out_gam);
+    metaGamma=meta_copy(metaAmp);
+    metaGamma->general->image_data_type = GAMMA_IMAGE;
+    meta_write(metaGamma, f->out_gam);
+    fp_gam=fopenImage(f->out_gam,openMode);
   }
   if (s->imageType.beta) {
-    metaAmp->general->image_data_type = BETA_IMAGE;
-    meta_write(metaAmp, f->out_bet);
+    metaBeta=meta_copy(metaAmp);
+    metaBeta->general->image_data_type = BETA_IMAGE;
+    meta_write(metaBeta, f->out_bet);
+    fp_bet=fopenImage(f->out_bet,openMode);
   }
 
   /* This gets messy */
@@ -356,11 +343,11 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
 	  /* On the first time through, write out the noise table */
 	  if(writeNoiseTable==1)
 	    {
-	      writeTable(metaIn,s,p->n_range);
+	      writeTable(meta,s,p->n_range);
 	      writeNoiseTable=0;
 	    }
 	  
-	  antptn_correct(metaIn,outputBuf,base,p->n_range,s);
+	  antptn_correct(meta,outputBuf,base,p->n_range,s);
 	  if(!quietflag && (j==0)) printf("   Correcting Line %d\n",outLine);
 	  
 	  /* Otherwise, write the multi-look buffer now */
@@ -386,34 +373,28 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
 	  multilook(mlBuf,p->n_range,f->nlooks,pwrs);
 	  intensity(p->n_range,pwrs,amps);
 	  
-          meta_free(metaAmp);
-	  metaAmp = meta_read(f->out_amp);
 	  put_float_line(fp_amp, metaAmp, outLine/f->nlooks+off_ml, amps);
 	  
 	  if (s->imageType.power) {
-	    metaAmp = meta_read(f->out_pwr);
-	    put_float_line(fp_pwr, metaAmp, outLine/f->nlooks+off_ml, pwrs);
+	    put_float_line(fp_pwr, metaPower, outLine/f->nlooks+off_ml, pwrs);
 	  }
 	  if (s->imageType.sigma)
 	    {
-	      metaAmp = meta_read(f->out_sig);
-	      calculateRCS(SIGMA_0, metaIn, pwrs, amps,
+	      calculateRCS(SIGMA_0, meta, pwrs, amps,
 			   base-mlCount/2, p->n_range,s);
-	      put_float_line(fp_sig, metaAmp, outLine/f->nlooks+off_ml, amps);
+	      put_float_line(fp_sig, metaSigma, outLine/f->nlooks+off_ml, amps);
 	    }
       	  if (s->imageType.gamma)
 	    {
-	      metaAmp = meta_read(f->out_gam);
-	      calculateRCS(GAMMA_0, metaIn, pwrs, amps,
+	      calculateRCS(GAMMA_0, meta, pwrs, amps,
 			   base-mlCount/2, p->n_range,s);
-	      put_float_line(fp_gam, metaIn, outLine/f->nlooks+off_ml, amps);
+	      put_float_line(fp_gam, metaGamma, outLine/f->nlooks+off_ml, amps);
 	    }	  
 	  if (s->imageType.beta)
 	    {
-	      metaAmp = meta_read(f->out_bet);
-	      calculateRCS(BETA_0, metaIn, pwrs, amps,
+	      calculateRCS(BETA_0, meta, pwrs, amps,
 			   base-mlCount/2, p->n_range,s);
-	      put_float_line(fp_bet, metaAmp, outLine/f->nlooks+off_ml, amps);
+	      put_float_line(fp_bet, metaBeta, outLine/f->nlooks+off_ml, amps);
 	    }
 	  
 	  mlCount=0;
@@ -442,9 +423,12 @@ void writePatch(const patch *p,const satellite *s,const file *f,int patchNo)
   FREE((void *)pwrs);
   FREE((void *)outputBuf);
   FREE((void *)mlBuf);
-  meta_free(metaIn);
   meta_free(metaAmp);
   meta_free(metaCpx);
+  if (metaPower) meta_free(metaPower);
+  if (metaSigma) meta_free(metaSigma);
+  if (metaGamma) meta_free(metaGamma);
+  if (metaBeta)  meta_free(metaBeta);
   if (!quietflag) elapse(1);
 }
 
