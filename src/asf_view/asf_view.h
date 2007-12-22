@@ -234,7 +234,11 @@ extern ImageInfo image_info[2];
 extern ImageInfo *curr;
 
 // these globals all relate to the current viewing settings
-extern UserPolygon g_poly;
+#define MAX_POLYS 25
+extern UserPolygon g_polys[MAX_POLYS];
+extern UserPolygon *g_poly;
+extern int which_poly;
+
 extern double zoom;
 extern double center_line, center_samp;
 extern double crosshair_line, crosshair_samp;

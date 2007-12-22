@@ -125,15 +125,15 @@ static void update_save_subset_info()
 
     // "strict boundary" option is disabled (and set unchecked) when
     // polygon only has 2 points in it (line)
-    enabled = g_poly.n > 1;
+    enabled = g_poly->n > 1;
     if (!enabled)
         set_checked("strict_boundary_checkbutton", FALSE);
-    enable_widget("strict_boundary_checkbutton", g_poly.n > 1);
+    enable_widget("strict_boundary_checkbutton", g_poly->n > 1);
 }
 
 static void close_subset_window(ImageInfo *ii)
 {
-    g_poly.show_extent = FALSE;
+    g_poly->show_extent = FALSE;
     fill_big(ii);
 
     show_widget("save_subset_window", FALSE);
@@ -201,9 +201,9 @@ static void compute_extent(meta_parameters *meta,
     *samp_max = crosshair_samp;
 
     int i;
-    for (i=0; i<g_poly.n; ++i) {
-        int l = g_poly.line[i];
-        int s = g_poly.samp[i];
+    for (i=0; i<g_poly->n; ++i) {
+        int l = g_poly->line[i];
+        int s = g_poly->samp[i];
 
         if (l < *line_min) *line_min = l;
         if (l > *line_max) *line_max = l;
@@ -235,14 +235,14 @@ static void compute_extent(meta_parameters *meta,
 void update_poly_extents(meta_parameters *meta)
 {
     int size_x, size_y;
-    compute_extent(meta, &g_poly.extent_y_min, &g_poly.extent_y_max,
-        &g_poly.extent_x_min, &g_poly.extent_x_max, &size_y, &size_x);
+    compute_extent(meta, &g_poly->extent_y_min, &g_poly->extent_y_max,
+        &g_poly->extent_x_min, &g_poly->extent_x_max, &size_y, &size_x);
 
     char subset_info[128];
     snprintf(subset_info, 128,
         "Extent: Line %d-%d, Sample %d-%d\nOutput will be %dx%d LxS",
-        g_poly.extent_y_min, g_poly.extent_y_max,
-        g_poly.extent_x_min, g_poly.extent_x_max,
+        g_poly->extent_y_min, g_poly->extent_y_max,
+        g_poly->extent_x_min, g_poly->extent_x_max,
         size_y, size_x);
 
     put_string_to_label("subset_info_label", subset_info);
@@ -250,7 +250,7 @@ void update_poly_extents(meta_parameters *meta)
 
 void save_subset(ImageInfo *ii)
 {
-    if (g_poly.n > 0) {
+    if (g_poly->n > 0) {
         if (crosshair_line > 0 && crosshair_samp > 0) {
 
             // clamp crosshair to image extent, if needed
@@ -262,7 +262,7 @@ void save_subset(ImageInfo *ii)
             show_save_subset_window();
             set_defaults(ii);
             
-            g_poly.show_extent = TRUE;
+            g_poly->show_extent = TRUE;
             fill_big(ii);
 
             update_save_subset_info();
@@ -383,16 +383,16 @@ static void define_clipping_region(meta_parameters *meta,
 
     // goes through the control-clicked points
     int i;
-    for (i=0; i<g_poly.n; ++i) {
-        xp[i+1] = g_poly.samp[i];
-        yp[i+1] = g_poly.line[i];
+    for (i=0; i<g_poly->n; ++i) {
+        xp[i+1] = g_poly->samp[i];
+        yp[i+1] = g_poly->line[i];
     }
 
     // clamp polygon points to the image extents
     int nl = meta->general->line_count;
     int ns = meta->general->sample_count;
 
-    for (i=0; i<=g_poly.n; ++i) {
+    for (i=0; i<=g_poly->n; ++i) {
         if (yp[i]<0) yp[i]=0;
         if (yp[i]>=nl) yp[i]=nl-1;
 
@@ -401,10 +401,10 @@ static void define_clipping_region(meta_parameters *meta,
     }
 
     // close the polygon
-    xp[g_poly.n+1] = xp[0];
-    yp[g_poly.n+1] = yp[0];
+    xp[g_poly->n+1] = xp[0];
+    yp[g_poly->n+1] = yp[0];
 
-    *n = g_poly.n + 2;
+    *n = g_poly->n + 2;
 }
 
 static int save_as_asf(ImageInfo *ii,
@@ -424,7 +424,7 @@ static int save_as_asf(ImageInfo *ii,
         return FALSE; // failure
     }
 
-    assert (g_poly.n > 0);
+    assert (g_poly->n > 0);
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
     meta_parameters *meta = ii->meta;
@@ -506,7 +506,7 @@ static int save_as_csv(ImageInfo *ii,
         return FALSE; // failure
     }
 
-    assert (g_poly.n > 0);
+    assert (g_poly->n > 0);
     assert (crosshair_line > 0 && crosshair_samp > 0);
 
     meta_parameters *meta = ii->meta;

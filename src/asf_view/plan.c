@@ -4,7 +4,7 @@
 
 // Need to remember the modes, so we can refer to them later
 char **modes=NULL;
-int n_beam_modes=-1;
+int num_beam_modes=-1;
 
 void setup_planner()
 {
@@ -13,35 +13,36 @@ void setup_planner()
 
     // populate the "Satellite/Beam" dropdown from the
     // "beam_modes.txt" file
-    modes = get_all_beam_modes(&n_beam_modes);
+    modes = get_all_beam_modes(&num_beam_modes);
 
     int i;
     clear_combobox("satellite_combobox");
-    for (i=0; i<n_beam_modes; ++i)
+    for (i=0; i<num_beam_modes; ++i)
         add_to_combobox("satellite_combobox", modes[i]);
 
     set_combo_box_item_checked("satellite_combobox", 0);
     set_combo_box_item_checked("orbit_direction_combobox", 0);
 
-    //for (i=0; i<n_beam_modes; ++i)
+    //for (i=0; i<num_beam_modes; ++i)
     //    FREE(modes[i]);
     //FREE(modes);
 }
 
 static char *trim_whitespace(const char *s)
 {
+  // make a copy we can alter
   char *tmp = STRDUP(s);
 
-  // trim trailing whitespace
-  while(isspace(tmp[strlen(tmp)-1]))
+  // first trim trailing whitespace
+  while (isspace(tmp[strlen(tmp)-1]))
     tmp[strlen(tmp)-1] = '\0';
 
-  // get a pointer to first non-whitespace char
+  // to trim leading whitespace: get a pointer to first non-whitespace char...
   char *p = tmp;
   while (isspace(*p))
     ++p;
 
-  // strdup from that pointer
+  // ... then strdup from that pointer
   char *ret = STRDUP(p);
   free(tmp);
   return ret;
@@ -49,6 +50,9 @@ static char *trim_whitespace(const char *s)
 
 static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
 {
+  // splits a string into two pieces, stuff before the separater character
+  // and the stuff after it.  The separater character is not included in
+  // either string
   char *str = STRDUP(str_in);
   char *s1 = MALLOC(sizeof(char)*(strlen(str)+1));
   char *s2 = MALLOC(sizeof(char)*(strlen(str)+1));
@@ -112,14 +116,15 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     else {
       double x[MAX_POLY_LEN], y[MAX_POLY_LEN];
       
-      if (g_poly.n == 0) {
+      if (g_poly->n == 0) {
         strcat(errstr, "No area of interest selected.\n");
       }
-      else if (g_poly.n == 1) {
+      else if (g_poly->n == 1) {
         // special handling if we have only two points (create a box)
         double lat1, lat2, lon1, lon2;
         meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat1, &lon1);
-        meta_get_latLon(meta, g_poly.line[0], g_poly.samp[0], 0, &lat2, &lon2);
+        meta_get_latLon(meta, g_poly->line[0], g_poly->samp[0], 0,
+                        &lat2, &lon2);
         
         int zone = utm_zone(lon1);
         latLon2UTM_zone(lat1, lon1, 0, zone, &x[0], &y[0]);
@@ -148,8 +153,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         int zone = utm_zone(clon);
         latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
 
-        for (i=0; i<g_poly.n; ++i) {
-          meta_get_latLon(meta, g_poly.line[i], g_poly.samp[i], 0, &lat, &lon);
+        for (i=0; i<g_poly->n; ++i) {
+          meta_get_latLon(meta, g_poly->line[i], g_poly->samp[i], 0,
+                          &lat, &lon);
           latLon2UTM_zone(lat, lon, 0, zone, &x[i+1], &y[i+1]);
 
           clat += lat;
@@ -159,11 +165,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           if (lat < min_lat) min_lat = lat;
         }
 
-        clat /= (double)(g_poly.n+1);
-        clon /= (double)(g_poly.n+1);
+        clat /= (double)(g_poly->n+1);
+        clon /= (double)(g_poly->n+1);
 
         printf("Center lat/lon: %f, %f\n", clat, clon);
-        aoi = polygon_new_closed(g_poly.n+1, x, y);
+        aoi = polygon_new_closed(g_poly->n+1, x, y);
       }
     }
 
@@ -198,8 +204,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       PassCollection *pc;
 
       int n = plan(satellite, beam_mode, startdate, enddate, max_lat, min_lat,
-                   clat, clon, pass_type, aoi, tle_filename, &pc,
-                   &err);
+                   clat, clon, pass_type, aoi, tle_filename, &pc, &err);
 
       if (n < 0) {
         put_string_to_label("plan_error_label", err);
@@ -210,14 +215,42 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         GtkWidget *nb = get_widget_checked("planner_notebook");
         gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
 
-        asfPrintStatus("Found %d matches. (%d)\n", n, pc->num);
+        asfPrintStatus("Found %d matches.\n", n);
         for (i=0; i<pc->num; ++i) {
           asfPrintStatus("#%d: %s (%.1f%%)\n", i+1, 
                          pc->passes[i]->start_time_as_string,
                          100. * pc->passes[i]->total_pct);
         }
 
+        // this is for debugging, can be removed
         pass_collection_to_kml(pc, "test_kml.kml");
+
+        // now create polygons from each pass
+        // metadata for each polygon is also stored... somewhere!
+        for (i=0; i<pc->num; ++i) {
+          PassInfo *pi = pc->passes[i];
+
+          int k,m=0;
+          for (k=0; k<pi->num; ++k) {
+            OverlapInfo *oi = pi->overlaps[k];
+            Polygon *poly = oi->viewable_region;
+
+            int j;
+            for (j=0; j<poly->n; ++j) {
+              double samp, line, lat, lon;
+              UTM2latLon();
+              meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
+              g_polys[i].line[m] = line;
+              g_polys[i].samp[m] = samp;
+              ++m;
+            }
+          }
+
+          g_polys[i].n = m;
+          g_polys[i].c = m-1;
+
+          g_polys[i].show_extent = FALSE;
+        }
       }
 
       enable_widget("plan_button", TRUE);

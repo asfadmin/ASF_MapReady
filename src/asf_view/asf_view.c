@@ -66,6 +66,9 @@ main(int argc, char **argv)
 
     handle_common_asf_args(&argc, &argv, "ASF View");
 
+    // point to "polygon 0" as the one we initially work on
+    g_poly = &g_polys[0];
+
     // set up image array
     curr = &image_info[0];
     curr->data_name = curr->meta_name = NULL;

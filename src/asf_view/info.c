@@ -113,7 +113,7 @@ void update_pixel_info(ImageInfo *ii)
             R2D*meta_incid(meta,y,x), R2D*meta_look(meta,y,x), s, t);
     }
 
-    if (g_poly.n > 0) {
+    if (g_poly->n > 0) {
         // start distance measure at crosshair coords
         double cross_x, cross_y, prev_x, prev_y;
         line_samp_to_proj(ii, y, x, &cross_x, &cross_y);
@@ -122,9 +122,9 @@ void update_pixel_info(ImageInfo *ii)
         // iterate through ctrl-clicked coords
         int i;
         double d=0, A=0; // d=distance, A=area
-        for (i=0; i<g_poly.n; ++i) {
+        for (i=0; i<g_poly->n; ++i) {
             double proj_x, proj_y;       
-            line_samp_to_proj(ii, g_poly.line[i], g_poly.samp[i],
+            line_samp_to_proj(ii, g_poly->line[i], g_poly->samp[i],
                               &proj_x, &proj_y);
 
             d += hypot(proj_x-prev_x, proj_y-prev_y);
@@ -133,7 +133,7 @@ void update_pixel_info(ImageInfo *ii)
             prev_x = proj_x; prev_y = proj_y;
 
             // for the area calc, we close the polygon automatically
-            if (i==g_poly.n-1)
+            if (i==g_poly->n-1)
                 A += prev_x * cross_y - cross_x * prev_y;
         }
         A /= 2.;
@@ -142,14 +142,14 @@ void update_pixel_info(ImageInfo *ii)
         if (!meta->sar && !meta->transform && !meta->projection)
             units = "pixels";
 
-        if (g_poly.n == 1)
+        if (g_poly->n == 1)
             sprintf(&buf[strlen(buf)], "Distance to %.1f,%.1f: %.1f %s",
-                g_poly.line[0], g_poly.samp[0], d, units);
+                g_poly->line[0], g_poly->samp[0], d, units);
         else
             sprintf(&buf[strlen(buf)],
                 "Total distance: %.1f %s (%d points)\n"
                 "Area (of closure): %.1f %s^2",
-                d, units, g_poly.n+1, fabs(A), units);
+                d, units, g_poly->n+1, fabs(A), units);
     } else {
         sprintf(&buf[strlen(buf)], "Distance: (ctrl-click to measure)");
     }

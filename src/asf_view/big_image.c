@@ -2,7 +2,11 @@
 #include <gdk/gdkkeysyms.h>
 #include "libasf_proj.h"
 
-UserPolygon g_poly;
+UserPolygon g_polys[MAX_POLYS];
+
+// pointer to the currently active one
+UserPolygon *g_poly;
+int which_poly=0;
 
 // current sizes of the large image.
 // keep half the size around, we need that during the redraw, which
@@ -85,9 +89,9 @@ static void show_or_hide_save_subset_button()
 {
     // we show it when there is a user polygon defined
     // that's when saving a subset would make sense
-    //show_widget("save_subset_button", g_poly.n > 0);
+    //show_widget("save_subset_button", g_poly->n > 0);
     GtkWidget * w = get_widget_checked("save_subset_button");
-    gtk_widget_set_sensitive(w, g_poly.n);
+    gtk_widget_set_sensitive(w, g_poly->n);
 }
 
 // draws a crosshair at x,y (image coords)
@@ -163,6 +167,129 @@ static int iabs(int i)
 // colors supported by put_line
 #define RED 1
 #define PURPLE 2
+#define BLUE 3
+
+static void get_color(int color, unsigned char *r, unsigned char *g,
+                      unsigned char *b)
+{
+    switch (color) {
+      case RED: // RED
+        *r = 255;
+        *g = *b = 0;
+        break;
+
+      case PURPLE: // PURPLE
+        *r = *b = 255;
+        *g = 0;
+        break;
+
+      case BLUE: // BLUE
+        *b = 255;
+        *r = *g = 0;
+        break;
+
+      case 10: // BLUE
+        *b = 255;
+        *r = *g = 0;
+        break;
+
+      case 11: // TURQUOISE
+        *r = 0;
+        *g = 245;
+        *b = 255;
+        break;
+         
+      case 12: // ORANGE
+        *r = 255;
+        *g = 165;
+        *b = 0;
+        break;
+
+      case 13: // PINK
+        *r = 255;
+        *g = 192;
+        *b = 203;
+        break;
+        
+      case 14: // GOLD
+        *r = 255;
+        *g = 215;
+        *b = 0;
+        break;
+        
+      case 15: // GREEN
+        *r = 0;
+        *g = 205;
+        *b = 0;
+        break;
+        
+      case 16: // INDIAN RED
+        *r = 255;
+        *g = 106;
+        *b = 106;
+        break;
+        
+      case 17: // MEDIUM ORCHID
+        *r = 180;
+        *g = 82;
+        *b = 205;
+        break;
+                
+      case 18: // CHARTREUSE
+        *r = 127;
+        *g = 255;
+        *b = 0;
+        break;
+
+      case 19: // KHAKI
+        *r = 240;
+        *g = 230;
+        *b = 140;
+        break;
+        
+      case 20: // SANDY BROWN
+        *r = 244;
+        *g = 164;
+        *b = 96;
+        break;
+        
+      case 21: // TOMATO
+        *r = 255;
+        *g = 99;
+        *b = 71;
+        break;
+        
+      case 22: // AZURE
+        *r = 193;
+        *g = 205;
+        *b = 205;
+        break;
+        
+      case 23: // SKY BLUE
+        *r = 30;
+        *g = 144;
+        *b = 255;
+        break;
+        
+      case 24: // SPRING GREEN
+        *r = 0;
+        *g = 255;
+        *b = 127;
+        break;
+                
+      case 25: // DARK SLATE GREY
+        *r = 47;
+        *g = 79;
+        *b = 79;
+        break;
+
+      default:
+        // this shouldn't happen
+        assert(0);
+        *r = *g = *b = 0;
+        break;
+    }
+}
 
 static void put_line(GdkPixbuf *pixbuf, double line0, double samp0, 
                      double line1, double samp1, int color,
@@ -174,9 +301,9 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
 
     int i, j, width, height, rowstride, n_channels;
     guchar *pixels, *p;
-    
+
     n_channels = gdk_pixbuf_get_n_channels (pixbuf);
-    
+
     g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
     g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
     g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
@@ -184,7 +311,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
 
     width = gdk_pixbuf_get_width (pixbuf);
     height = gdk_pixbuf_get_height (pixbuf);
-    
+
     // convert from image coords to screen coords
     int ix0, iy0, ix1, iy1;
     ls2img(line0, samp0, &ix0, &iy0);
@@ -195,16 +322,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
 
     // color of the drawn line
     unsigned char r, g, b;
-    if (color==RED) {
-        r = 255;
-        g = b = 0;
-    } else if (color==PURPLE) {
-        r = b = 255;
-        g = 0;
-    } else {
-        assert(0);
-        r=g=b=0;//not reached
-    }
+    get_color(color, &r, &g, &b);
 
     // What a mess!  But the concept is trivial:
     //   (1) Loop goes on the x or y
@@ -238,7 +356,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
     assert(ii->data_ci);
     assert(ii->meta);
 
-    int i, j;
+    int i, j, k;
     int nchan = 3; // RGB for now, don't support RGBA yet
     int biw = get_big_image_width();
     int bih = get_big_image_height();
@@ -284,27 +402,37 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
     GdkPixbuf *pb =
         gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE, 
                                  8, biw, bih, biw*3, destroy_pb_data, NULL);
-    
+
     if (!pb)
         asfPrintError("Failed to create the larger pixbuf.\n");
 
     // put the red crosshair at the "active" point along the polygon
-    if (g_poly.c < g_poly.n)
-        put_crosshair(pb, g_poly.line[g_poly.c], g_poly.samp[g_poly.c],
+    if (g_poly->c < g_poly->n)
+        put_crosshair(pb, g_poly->line[g_poly->c], g_poly->samp[g_poly->c],
             FALSE, ii);
 
-    // draw the polygon
-    if (g_poly.n > 0) {
-        put_line(pb, crosshair_line, crosshair_samp,
-            g_poly.line[0], g_poly.samp[0], RED, ii);
-        for (i=0; i<g_poly.n-1; ++i) {
-            put_line(pb, g_poly.line[i], g_poly.samp[i],
-                g_poly.line[i+1], g_poly.samp[i+1], RED, ii);
+    // draw old polygons
+    for (k=0; k<MAX_POLYS; ++k) {
+      if (g_polys[k].n > 0) {
+        for (i=0; i<g_polys[k].n-1; ++i) {
+            put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
+                g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);
         }
-    } else if (g_poly.show_extent) {
+      }
+    }
+
+    // draw the polygon
+    if (g_poly->n > 0) {
+        put_line(pb, crosshair_line, crosshair_samp,
+            g_poly->line[0], g_poly->samp[0], RED, ii);
+        for (i=0; i<g_poly->n-1; ++i) {
+            put_line(pb, g_poly->line[i], g_poly->samp[i],
+                g_poly->line[i+1], g_poly->samp[i+1], RED, ii);
+        }
+    } else if (g_poly->show_extent) {
         // no polygon -- close "save subset" window, if open
         show_widget("save_subset_window", FALSE);
-        g_poly.show_extent = FALSE;
+        g_poly->show_extent = FALSE;
     }
 
     // green crosshair goes second, so if the two overlap, we will see
@@ -312,16 +440,16 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
     put_crosshair(pb, crosshair_line, crosshair_samp, TRUE, ii);
 
     // draw bounding box if requested
-    if (g_poly.show_extent) {
+    if (g_poly->show_extent) {
         update_poly_extents(ii->meta);
-        put_line(pb, g_poly.extent_y_min, g_poly.extent_x_min,
-                     g_poly.extent_y_max, g_poly.extent_x_min, PURPLE, ii);
-        put_line(pb, g_poly.extent_y_max, g_poly.extent_x_min,
-                     g_poly.extent_y_max, g_poly.extent_x_max, PURPLE, ii);
-        put_line(pb, g_poly.extent_y_max, g_poly.extent_x_max,
-                     g_poly.extent_y_min, g_poly.extent_x_max, PURPLE, ii);
-        put_line(pb, g_poly.extent_y_min, g_poly.extent_x_max,
-                     g_poly.extent_y_min, g_poly.extent_x_min, PURPLE, ii);
+        put_line(pb, g_poly->extent_y_min, g_poly->extent_x_min,
+                     g_poly->extent_y_max, g_poly->extent_x_min, PURPLE, ii);
+        put_line(pb, g_poly->extent_y_max, g_poly->extent_x_min,
+                     g_poly->extent_y_max, g_poly->extent_x_max, PURPLE, ii);
+        put_line(pb, g_poly->extent_y_max, g_poly->extent_x_max,
+                     g_poly->extent_y_min, g_poly->extent_x_max, PURPLE, ii);
+        put_line(pb, g_poly->extent_y_min, g_poly->extent_x_max,
+                     g_poly->extent_y_min, g_poly->extent_x_min, PURPLE, ii);
     }
 
     return pb;
@@ -367,16 +495,16 @@ on_big_image_eventbox_button_press_event(
     if (event->button == 1) {
         // ctrl-left-click: measure distance
         if (((int)event->state & GDK_CONTROL_MASK) == GDK_CONTROL_MASK) {
-            if (g_poly.n < MAX_POLY_LEN) {
+            if (g_poly->n < MAX_POLY_LEN) {
                 double l, s;
                 img2ls((int)event->x, (int)event->y, &l, &s);
-                g_poly.line[g_poly.n] = l;
-                g_poly.samp[g_poly.n] = s;
-                ++g_poly.n;
-                if (g_poly.n == 1)
-                    g_poly.c = 0;
+                g_poly->line[g_poly->n] = l;
+                g_poly->samp[g_poly->n] = s;
+                ++g_poly->n;
+                if (g_poly->n == 1)
+                    g_poly->c = 0;
                 else
-                    g_poly.c = g_poly.n-1;
+                    g_poly->c = g_poly->n-1;
             } else {
                 asfPrintWarning("Exceeded maximum polygon length.\n"
                                 "No more points can be added.\n");
@@ -498,16 +626,19 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
     {
         // Page Up or Plus: Zoom IN
         zoom_in(ii);
-    } else if (event->keyval == GDK_Page_Down || 
+    }
+    else if (event->keyval == GDK_Page_Down || 
         event->keyval == GDK_Next || 
         event->keyval == GDK_minus)
     {
         // Page Down or Minus: Zoom OUT
         zoom_out(ii);
-    } else if (event->keyval == GDK_Home) {
+    }
+    else if (event->keyval == GDK_Home) {
         // Home: Revert to the normal zoom level
         zoom_default(ii);
-    } else if (event->keyval == GDK_End) {
+    }
+    else if (event->keyval == GDK_End) {
         // End: Fit image to window
         int h = get_big_image_height();
         int w = get_big_image_width();
@@ -523,52 +654,59 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
 
         update_zoom();
         fill_small(ii);
-    } else if (event->keyval == GDK_Tab) {
+    }
+    else if (event->keyval == GDK_Tab) {
         // Tab key: Cycle between the crosshairs (which one is affected by
         // subsequent arrow movements) Shift- or ctrl-tab: other direction
-        if (g_poly.n > 0) {
+        if (g_poly->n > 0) {
             if (event->state & GDK_SHIFT_MASK ||
                 event->state & GDK_CONTROL_MASK)
             {
-                if (g_poly.c == 0) {
+                if (g_poly->c == 0) {
                     last_was_crosshair = TRUE;
-                    g_poly.c = -1;
-                } else if (g_poly.c == -1) {
+                    g_poly->c = -1;
+                } else if (g_poly->c == -1) {
                     last_was_crosshair = FALSE;
-                    g_poly.c = g_poly.n - 1;
+                    g_poly->c = g_poly->n - 1;
                 } else {
                     last_was_crosshair = FALSE;
-                    --g_poly.c;
+                    --g_poly->c;
                 }
             } else {
-                if (g_poly.c == g_poly.n-1) {
+                if (g_poly->c == g_poly->n-1) {
                     last_was_crosshair = TRUE;
-                    g_poly.c = -1;
+                    g_poly->c = -1;
                 } else {
                     last_was_crosshair = FALSE;
-                    ++g_poly.c;
+                    ++g_poly->c;
                 }
             }
         } else
             last_was_crosshair = TRUE;
-    } else if (event->keyval == GDK_slash) {
+    }
+    else if (event->keyval == GDK_slash) {
         // /: clear most recently added point
-        if (g_poly.n > 0) {
-            --g_poly.n;
-            if (g_poly.c >= g_poly.n)
-                g_poly.c = g_poly.n-1;
+        if (g_poly->n > 0) {
+            --g_poly->n;
+            if (g_poly->c >= g_poly->n)
+                g_poly->c = g_poly->n-1;
             update_pixel_info(ii);
         }
-    } else if (event->keyval == GDK_Escape) {
+    }
+    else if (event->keyval == GDK_Escape) {
         // Escape: clear the ctrl-clicked path
-        g_poly.n = g_poly.c = 0;
+        g_poly->n = g_poly->c = 0;
         update_pixel_info(ii);
-    } else if (event->keyval == GDK_c) {
+    }
+    else if (event->keyval == GDK_c) {
         // c: Center image view on crosshair
-        if (event->state & GDK_CONTROL_MASK && g_poly.n > 0 && g_poly.c >= 0) {
-            center_line = g_poly.line[g_poly.c];
-            center_samp = g_poly.samp[g_poly.c];
-        } else {
+        if (event->state & GDK_CONTROL_MASK &&
+            g_poly->n > 0 && g_poly->c >= 0)
+        {
+            center_line = g_poly->line[g_poly->c];
+            center_samp = g_poly->samp[g_poly->c];
+        }
+        else {
             if (crosshair_line > 0 && crosshair_samp > 0) {
                 center_line = crosshair_line;
                 center_samp = crosshair_samp;
@@ -581,29 +719,35 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
             }
         }
         fill_small(ii);
-    } else if (event->keyval == GDK_g) {
+    }
+    else if (event->keyval == GDK_g) {
         // g: open google earth
         open_google_earth();
         return TRUE;
-    } else if (event->keyval == GDK_m) {
-        // m: open a new file
+    }
+    else if (event->keyval == GDK_m) {
+        // m: open metadata viewer
         open_mdv();
         return TRUE;
-    } else if (event->keyval == GDK_s && event->state & GDK_CONTROL_MASK) {
+    }
+    else if (event->keyval == GDK_s && event->state & GDK_CONTROL_MASK) {
         // ctrl-s: save subset
-        if (g_poly.n > 0)
+        if (g_poly->n > 0)
             save_subset(ii);
         return TRUE;
-    } else if (event->keyval == GDK_l) {
+    }
+    else if (event->keyval == GDK_l) {
         // l: move to a local maxima (30x30 pixel search area)
         //    if ctrl-l is clicked, search 300x300 area
         // affects the same crosshair that would be moved with
         // the arrow keys
         int line, samp;
-        if (!last_was_crosshair && g_poly.c < g_poly.n) {
-            line = g_poly.line[g_poly.c]; samp=g_poly.samp[g_poly.c];
+        if (!last_was_crosshair && g_poly->c < g_poly->n) {
+            line=g_poly->line[g_poly->c];
+            samp=g_poly->samp[g_poly->c];
         } else {
-            line = crosshair_line; samp=crosshair_samp;
+            line=crosshair_line;
+            samp=crosshair_samp;
         }
         int line_max=line, samp_max=samp;
         float max_val=-99999;
@@ -622,19 +766,82 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
                 }
             }
         }
-        if (!last_was_crosshair && g_poly.c < g_poly.n) {
-            g_poly.line[g_poly.c]=line_max;
-            g_poly.samp[g_poly.c]=samp_max;
+        if (!last_was_crosshair && g_poly->c < g_poly->n) {
+            g_poly->line[g_poly->c]=line_max;
+            g_poly->samp[g_poly->c]=samp_max;
         } else {
             crosshair_line=line_max;
             crosshair_samp=samp_max;
         }
         update_pixel_info(ii);
-    } else if (event->keyval == GDK_n) {
-        // n: open a new file
-        new_file();
-        return TRUE;
-    } else {
+    }
+    else if (event->keyval == GDK_n) {
+        // n: next polygon
+        if (which_poly < MAX_POLYS-1) {
+          int i;
+          for (i=g_poly->n-1; i>=0; --i) {
+            g_poly->line[i+1] = g_poly->line[i];
+            g_poly->samp[i+1] = g_poly->samp[i];
+          }
+          g_poly->line[0] = crosshair_line;
+          g_poly->samp[0] = crosshair_samp;
+          ++g_poly->n;
+          g_poly->c=0;
+          
+          ++which_poly;
+          g_poly = &g_polys[which_poly];
+
+          if (g_poly->n > 0) {
+            crosshair_line = g_poly->line[0];
+            crosshair_samp = g_poly->samp[0];
+            for (i=0; i<g_poly->n-1; ++i) {
+              g_poly->line[i] = g_poly->line[i+1];
+              g_poly->samp[i] = g_poly->samp[i+1];
+            }
+
+            --g_poly->n;
+            g_poly->c = g_poly->n-1;
+            last_was_crosshair = TRUE;
+          }
+        } else {
+          printf("No more polygons.\n");
+        }
+        update_pixel_info(ii);
+    }
+    else if (event->keyval == GDK_p) {
+        // p: previous polygon
+        if (which_poly > 0) {
+          int i;
+          for (i=g_poly->n-1; i>=0; --i) {
+            g_poly->line[i+1] = g_poly->line[i];
+            g_poly->samp[i+1] = g_poly->samp[i];
+          }
+          g_poly->line[0] = crosshair_line;
+          g_poly->samp[0] = crosshair_samp;
+          ++g_poly->n;
+          g_poly->c=0;
+          
+          --which_poly;
+          g_poly = &g_polys[which_poly];
+
+          if (g_poly->n > 0) {
+            crosshair_line = g_poly->line[0];
+            crosshair_samp = g_poly->samp[0];
+            for (i=0; i<g_poly->n-1; ++i) {
+              g_poly->line[i] = g_poly->line[i+1];
+              g_poly->samp[i] = g_poly->samp[i+1];
+            }
+
+            --g_poly->n;
+            g_poly->c = g_poly->n-1;
+            last_was_crosshair = TRUE;
+          }
+        } else {
+          printf("No more polygons.\n");
+        }
+        update_pixel_info(ii);
+    }
+    else {
         // arrow key event (or a key we don't handle)
         // moves the crosshair (or ctrl-click crosshair) the specified
         // direction.  ctrl-arrow and shift-arrow will move the
@@ -664,7 +871,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
                 default: return TRUE;
             }
             fill_small(ii);
-        } else {
+        }
+        else {
             // Move one of the crosshairs
             if (last_was_crosshair) {
                 switch (event->keyval) {
@@ -674,20 +882,21 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
                     case GDK_Right: crosshair_samp += incr; break;
                     default: return TRUE;
                 }
-            } else {
+            }
+            else {
                 switch (event->keyval) {
-                    if (g_poly.c < g_poly.n) {
+                    if (g_poly->c < g_poly->n) {
                         case GDK_Up:
-                            g_poly.line[g_poly.c] -= incr;
+                            g_poly->line[g_poly->c] -= incr;
                             break;
                         case GDK_Down:
-                            g_poly.line[g_poly.c] += incr; 
+                            g_poly->line[g_poly->c] += incr; 
                             break;
                         case GDK_Left:
-                            g_poly.samp[g_poly.c] -= incr; 
+                            g_poly->samp[g_poly->c] -= incr; 
                             break;
                         case GDK_Right:
-                            g_poly.samp[g_poly.c] += incr; 
+                            g_poly->samp[g_poly->c] += incr; 
                             break;
                     }
                     default: return TRUE;

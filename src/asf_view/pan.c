@@ -52,6 +52,8 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 #endif
 
     fill_big(curr);
+
+    win = img = NULL;
     return TRUE;
   }
 
@@ -84,6 +86,8 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     update_zoom();
     fill_small(curr);
     fill_big(curr);
+
+    win = img = NULL;
     return TRUE;
   }
 
@@ -197,7 +201,7 @@ on_motion_notify_event(
       
       // copy pixels over
       // handle left&right completely off first
-    // vertically off will be ok, loop will have 0 iterations
+      // vertically off will be ok, loop will have 0 iterations
       if (off_x > biw || off_x < -biw) {
         // image is all black! no action needed
         ;

@@ -246,7 +246,11 @@ void reset_globals(int reset_location)
     if (reset_location) {
         center_line = center_samp = crosshair_samp = crosshair_line = -1;
         zoom = 1;
-        g_poly.n = g_poly.c = 0;
+
+        int i;
+        for (i=0; i<MAX_POLYS; ++i)
+          g_polys[i].n = g_polys[i].c = 0;
+        g_poly = &g_polys[0];
     }
 
     //data_ci = NULL;
