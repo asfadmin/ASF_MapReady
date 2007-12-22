@@ -17,7 +17,7 @@ void asf::metadata_missing(int field_enum,const asf::metadata_source &fromClass)
 
 /** Describes a metadata value, based on its enum value "v" (e.g., SLANT_RANGE) */
 void asf::metadata_field_describe(int v) {
-	const char *kind;
+	const char *kind="unknown";
 	const enum_value_description_t *d=0;
 	if (NULL!=(d=lookup_enum_value_NULL(v,metadata_1D_enum_table))) kind="1D";
 	else if (NULL!=(d=lookup_enum_value_NULL(v,metadata_2D_enum_table))) kind="2D";
