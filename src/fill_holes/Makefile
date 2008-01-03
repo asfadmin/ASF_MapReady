@@ -4,7 +4,7 @@ TARGET = fill_holes
 
 include ../../make_support/system_rules
 
-OBJS  = $(TARGET).o
+OBJS  = $(TARGET).o help.o
 
 REQUIRED_LIBS = \
 	$(LIBDIR)/libasf_sar.a \

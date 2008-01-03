@@ -9,27 +9,7 @@
 
 #include "float_image.h"
 
-#define ASF_NAME_STRING "fill_holes"
-
-#define VERSION 0.2
-
-static void usage()
-{
-    asfPrintStatus("\n");
-    asfPrintStatus("Usage: %s [-log <logfile>] [-quiet] [-cutoff <height>]\n",
-                   ASF_NAME_STRING);
-    asfPrintStatus("       <infile> <outfile>\n\n");
-    asfPrintStatus("   cutoff   Height below which is considered a hole\n");
-    asfPrintStatus("   infile   Input file base name\n");
-    asfPrintStatus("   outfile  Output file base name\n");
-    asfPrintStatus("\n");
-    exit(EXIT_FAILURE);
-}
-
-static void print_help(void)
-{
-    usage();
-}
+#include "fill_holes_help.h"
 
 int strmatches(const char *key, ...)
 {
@@ -42,8 +22,8 @@ int strmatches(const char *key, ...)
     arg = va_arg(ap, char *);
     if (arg) {
       if (strcmp(key, arg) == 0) {
-	found = TRUE;
-	break;
+        found = TRUE;
+        break;
       }
     }
   } while (arg);
@@ -53,16 +33,19 @@ int strmatches(const char *key, ...)
 
 int main(int argc,char *argv[])
 {
-  handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
+    if (argc > 1) {
+        check_for_help(argc, argv);
+        handle_license_and_version_args(argc, argv, TOOL_NAME);
+    }
+    if (argc < 3) {
+        asfPrintStatus("**Not enough arguments\n");
+        usage();
+        return 1;
+    }
 
   char  infile[256];     /* Input file name               */
   char  outfile[256];    /* Output file name              */
   float cutoff = -900;   /* Height below which is a hole  */
-
-  if (argc <= 2)
-    usage();
-  else if (strmatches(argv[1],"-help","--help",NULL))
-    print_help();
 
   do {
     char *key = argv[currArg++];
@@ -85,6 +68,7 @@ int main(int argc,char *argv[])
     else if (key[0] == '-') {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage();
+      return 1;
     }
     else {
         // this was a file/dir to process -- back up
@@ -96,6 +80,7 @@ int main(int argc,char *argv[])
   if (currArg > argc-2) {
       printf("\n**Not enough arguments.\n");
       usage();
+      return 1;
   }
 
   if (!quietflag)
