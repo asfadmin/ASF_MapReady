@@ -204,7 +204,38 @@ int get_tiff_data_config(TIFF *tif,
   if (read_count) *bits_per_sample = bitsPerSample;
 
   read_count += TIFFGetField(tif, TIFFTAG_SAMPLEFORMAT, &sampleFormat);
-  if (read_count) {
+  if (read_count < 2          &&
+      (bitsPerSample == 8   ||
+       bitsPerSample == 16  ||
+       bitsPerSample == 32))
+  {
+      asfPrintWarning("Found missing or invalid sample format.  Should be unsigned integer,\n"
+              "integer, or IEEE floating point.\n");
+      switch (bitsPerSample) {
+          case 8:
+              asfPrintWarning("Data is 8-bit data ...guessing unsigned integer sample\n"
+                      "format and attempting to continue.\n");
+              sampleFormat = SAMPLEFORMAT_UINT;
+              read_count++;
+              break;
+          case 16:
+              asfPrintWarning("Data is 16-bit data ...guessing signed integer sample\n"
+                      "format and attempting to continue.\n");
+              sampleFormat = SAMPLEFORMAT_INT;
+              read_count++;
+              break;
+          case 32:
+              asfPrintWarning("Data is 32-bit data ...guessing IEEE floating point sample\n"
+                      "format and attempting to continue.\n");
+              sampleFormat = SAMPLEFORMAT_IEEEFP;
+              read_count++;
+              break;
+          default:
+              ret = -1;
+              break;
+      }
+  }
+  if (read_count == 2) {
     *sample_format = sampleFormat;
     switch (sampleFormat) {
       case SAMPLEFORMAT_UINT:
@@ -271,7 +302,9 @@ int get_tiff_data_config(TIFF *tif,
   }
 
   read_count = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
-  if (read_count) *num_bands = samplesPerPixel;
+  if (read_count != 1) {
+      samplesPerPixel = 0;
+  }
 
   read_count = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfiguration);
   if (read_count) *planar_config = planarConfiguration;
@@ -286,6 +319,9 @@ int get_tiff_data_config(TIFF *tif,
   {
     // Only support byte, integer16, integer32, and 32-bit floats
     ret = -1;
+  }
+  else {
+      *num_bands = samplesPerPixel;
   }
 
   if (sampleFormat != SAMPLEFORMAT_UINT &&

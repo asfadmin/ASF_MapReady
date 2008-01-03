@@ -58,12 +58,10 @@ OBJS  = ardop_write.o \
 	find_arcgis_geotiff_aux_name.o \
 	find_geotiff_name.o \
 	frame.o \
-	geotiff_flavors.o \
 	geotiff_support.o \
 	arcgis_geotiff_support.o \
 	import_generic_geotiff.o \
 	import_ceos.o \
-	import_usgs_seamless.o \
 	import_stf.o \
 	import_bil.o \
 	import_gridfloat.o \

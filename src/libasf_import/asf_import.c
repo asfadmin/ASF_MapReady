@@ -1,6 +1,5 @@
 #include <asf_contact.h>
 #include <asf_license.h>
-#include "geotiff_flavors.h"
 #include "asf_import.h"
 #include "asf_meta.h"
 #include "asf_nan.h"
@@ -27,6 +26,26 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   strcpy(outDataName, outBaseName);
   strcpy(outMetaName, outBaseName);
   strcat(outMetaName, TOOLS_META_EXT);
+
+  if ((radiometry == r_SIGMA ||
+       radiometry == r_BETA  ||
+       radiometry == r_GAMMA ||
+       radiometry == r_POWER)   &&
+       !(strncmp(uc(format_type), "CEOS", 4) == 0 ||
+         strncmp(uc(format_type), "STF", 3)  == 0))
+  {
+    // A power flag is on, but the input file is not CEOS or STF format
+    // so it will be ignored
+    asfPrintWarning("Power flags %s%s for non-CEOS/non-STF datasets\n"
+                    "will be ignored since other data formats do not indicate what\n"
+                    "type of data is in the file.  Assuming the input data is an AMPLITUDE\n"
+                    "image...\n",
+                    radiometry == r_SIGMA ? "SIGMA" :
+                    radiometry == r_BETA  ? "BETA"  :
+                    radiometry == r_GAMMA ? "GAMMA" :
+                    radiometry == r_POWER ? "POWER" : "UNKNOWN",
+                    db_flag               ? " scaled to DECIBELS" : "");
+  }
 
   // Ingest all sorts of flavors of CEOS data/
   if (strncmp(format_type, "CEOS", 4) == 0) {
@@ -66,19 +85,13 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          "corresponding to specified inBaseName:\n"
          "%s\n", inBaseName);
     }
-    geotiff_importer importer = detect_geotiff_flavor (inGeotiffName->str);
-    if ( importer != NULL ) {
-      if (importer == import_generic_geotiff    &&
-          strlen(image_data_type)               &&
-          strncmp(image_data_type, "???", 3) != 0
-         )
-      {
-        importer (inGeotiffName->str, outBaseName, image_data_type);
-      }
-      else
-      {
-        importer (inGeotiffName->str, outBaseName, NULL);
-      }
+    if (strlen(image_data_type)               &&
+        strncmp(image_data_type, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) != 0)
+    {
+      import_generic_geotiff (inGeotiffName->str, outBaseName, image_data_type);
+    }
+    else {
+      import_generic_geotiff (inGeotiffName->str, outBaseName, NULL);
     }
   }
   else if (strncmp(format_type, "BIL", 3) == 0) {

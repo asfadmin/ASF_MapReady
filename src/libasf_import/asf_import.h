@@ -67,12 +67,6 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
     double upperLat, char *prcPath);
 
 void
-import_usgs_seamless (const char *inFileName, const char *outBaseName, ...);
-void
-import_asf_utm_geotiff (const char *inFileName, const char *outBaseName, ...);
-void
-import_arcgis_geotiff (const char *inFileName, const char *outBaseName, ...);
-void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);
 
 void import_bil(char *inBaseName, char *outBaseName);

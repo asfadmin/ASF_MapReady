@@ -37,7 +37,7 @@ int get_tiff_data_config(TIFF *tif,
                          int *is_scanline_format);
 int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation, int num_expected);
 int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
-                                meta_stats *stats,
+                                meta_stats *stats, int is_dem,
                                 int num_bands, int band_no,
                                 short bits_per_sample, short sample_format,
                                 short planar_config,
