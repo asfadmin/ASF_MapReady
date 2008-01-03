@@ -41,31 +41,10 @@
 #include "asf_nan.h"
 #include "envi.h"
 #include "asf_meta.h"
+#include "asf_license.h"
+#include "meta2envi_help.h"
 #include "time.h"
 #include <string.h>
-
-#define VERSION 1.0
-
-
-void usage(char *name)
-{
-  printf("\n"
-	 "USAGE:\n"
-	 "   %s [ -log <logFile> ] <meta_name> <envi_name>\n",name);
-  printf("\n"
-	 "REQUIRED ARGUMENTS:\n"
-	 "   meta_name   Base name of the new style meta data.\n"
-	 "   envi_name   Base name of the ENVI style header file.");
-  printf("\n"
-	 "DESCRIPTION:\n"
-	 "   %s converts new ASF style metadata to an ENVI header file.\n",
-	 name);
-  printf("\n"
-	 "Version %.2f, ASF SAR Tools\n"
-	 "\n",VERSION);
-  exit(EXIT_FAILURE);
-}
-
 
 int main(int argc, char **argv)
 {
@@ -76,22 +55,33 @@ int main(int argc, char **argv)
   extern int currArg; /* from cla.h in asf.h... initialized to 1 */
   logflag = 0;
 
+  if (argc > 1) {
+      check_for_help(argc, argv);
+      handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
+  if (argc < 3) {
+      asfPrintStatus("\nNot enough arguments.\n");
+      usage();
+      return 1;
+  }
+
+
   /* Parse command line args */
   while (currArg < (argc-2))
     {
       char *key=argv[currArg++];
       if (strmatch(key,"-log")) {
-	sprintf(logFile, "%s", argv[currArg]);
-	logflag = 1;
+    sprintf(logFile, "%s", argv[currArg]);
+    logflag = 1;
       }
       else {
-	printf("\n   ***Invalid option:  %s\n\n",
-	       argv[currArg-1]);
-	usage(argv[0]);
+    printf("\n   ***Invalid option:  %s\n\n",
+           argv[currArg-1]);
+    usage(argv[0]);
       }
     }
   if ((argc-currArg) < 2) {
-    printf("Insufficient arguments.\n"); 
+    printf("Insufficient arguments.\n");
     usage(argv[0]);
   }
 
@@ -99,7 +89,7 @@ int main(int argc, char **argv)
   create_name(envi_name, argv[currArg+1], ".hdr");
 
   asfSplashScreen(argc, argv);
-  
+
   meta = meta_read(meta_name);
   envi = meta2envi(meta);
   write_envi_header(envi_name, meta, envi);
@@ -107,8 +97,8 @@ int main(int argc, char **argv)
   /* Clean and report */
   meta_free(meta);
   asfPrintStatus("   Converted metadata file (%s) to ENVI header (%s)\n\n",
-		 meta_name, envi_name);
-  
+         meta_name, envi_name);
+
   return 0;
 }
 

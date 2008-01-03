@@ -13,8 +13,8 @@ LIBS  = \
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS)
 
-OBJS_M2E = meta2envi.o
-OBJS_E2M = envi2meta.o
+OBJS_M2E = meta2envi.o meta2envi_help.o
+OBJS_E2M = envi2meta.o envi2meta_help.o
 
 all: meta2envi envi2meta clean
 
