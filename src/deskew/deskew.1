@@ -1,42 +1,54 @@
 
-    NAME:	deskew - removes squint induced skew from groundrange images
+Tool name:
+   deskew
 
-    SYNOPSIS:	deskew infile meta_in outfile meta_out
+Usage:
+   deskew <input file> <input metadata file> <output file> <output metadata file>
+             [-license] [-version] [-help]
 
-       infile   input file name (.img,.ddr)
-       meta_in  input metadata file
-       outfile  output file name (.img,.ddr)
-       meta_out output metadata file (.meta)
+Description:
+   Deskew removes squint-induced skew from ground range images.
+   The squint angle of an image along with the look angle is used
+   to determine the amount of parallelogram shift skew that has
+   been introduced in an image due to the doppler centroid selection
+   during image processing.  It then remaps the image, using a bi-
+   linear interpolation, to remove this skew.
 
-    DESCRIPTION:
+Input:
+   <input file>  An ASF Internal format file (.img, .ddr) that has
+        not been deskewed (check the 'deskewed:' flag in the metadata
+        file sar block)
+   <input metadata file>  The metadata file that is associated
+        with the input file.
 
-	Deskew uses the squint angle of an image along with the
-	look angle to determine the amount of parallelogram shift
-	skew that has been introduced in an image due to the doppler
-	centroid choosen during image processing.  It then remaps
-	the image (using bi-linear interpolation) to remove this
-	skew.
+Output:
+   <output file>  An ASF Internal format file (.img, .ddr) that
+        has been deskewed.
+   <output metadata file>  The metadata file associated with the
+        output file.
 
-    OPTIONS:
+Options:
+   -license
+        Print copyright and license for this software then exit.
+   -version
+        Print version and copyright then exit.
+   -help
+        Print this help information and then exit.
 
+See Also:
+   sr2gr (slant range to ground range converter), and
+   gr2sr (ground range to slant range converter)
 
-    ERROR MESSAGES:
-    MESSAGE GIVEN:				REASON:
-    ----------------------------------------------------------------------
+Contact:
+   Alaska Satellite Facility
+   Geophysical Institute
+   University of Alaska Fairbanks
+   P.O. Box 757320
+   Fairbanks, AK 99775-7320
+   http://www.asf.alaska.edu
+   uso@asf.alaska.edu
+deskew, version 6602 (part of MapReady 1.0.2-dev)
 
-    EXAMPLES:
-
-    SEE ALSO:	sr2gr 
-
-    HARDWARE/SOFTWARE LIMITATIONS:
-
-    BUGS:
-
-    AUTHOR:	Tom Logan, ASF
-
-    CONTACT:	apd@asf.alaska.edu
-		http://www.asf.alaska.edu/apd
-
-
-
+Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.
+All rights reserved.
 

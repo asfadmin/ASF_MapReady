@@ -15,7 +15,7 @@ LIBS  = \
 	-lm
 
 CFLAGS += $(GLIB_CFLAGS)
-OBJS  = deskew.o 
+OBJS  = deskew.o help.o
 
 all: deskew clean
 
