@@ -111,8 +111,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-  exit(EXIT_SUCCESS);
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+  exit(EXIT_FAILURE);
 }
 
 /* Check to see if an option was supplied or not. If it was found, return its

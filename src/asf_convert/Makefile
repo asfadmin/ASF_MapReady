@@ -1,5 +1,7 @@
-# Makefile for asf_convert - now just a wrapper to call library
+# Makefile for asf_mapready - now just a wrapper to call library
 # function in libasf_convert
+
+DEST_TARGET = asf_mapready
 
 include ../../make_support/system_rules
 
@@ -33,7 +35,7 @@ all:    asf_convert clean
 
 asf_convert: $(OBJS)
 	$(CC) $(CFLAGS) -o asf_convert $(OBJS) $(LIBS) $(LDFLAGS)
-	mv asf_convert$(BIN_POSTFIX) $(BINDIR)
+	mv asf_convert$(BIN_POSTFIX) $(BINDIR)/$(DEST_TARGET)$(BIN_POSTFIX)
 
 clean:
 	rm -f core $(OBJS) *.o *~
