@@ -146,9 +146,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
         geocode_projection_options_help());
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 
 // Main routine.
@@ -184,11 +184,11 @@ main (int argc, char **argv)
 
   // Detect & Process logging arguments
   if ((logflag = detect_string_options(argc, argv, logFile,
-				      "-log", "--log", NULL))) {
+                      "-log", "--log", NULL))) {
       fLog = fopen (logFile, "a");
       if ( fLog == NULL ) {
-	// Couldn't open the log file, so just don't do logging.
-	logflag = FALSE;
+    // Couldn't open the log file, so just don't do logging.
+    logflag = FALSE;
       }
   }
   quietflag = detect_flag_options(argc, argv, "-quiet", "--quiet", NULL);
@@ -199,8 +199,8 @@ main (int argc, char **argv)
 
   project_parameters_t *pp
     = get_geocode_options (&argc, &argv, &projection_type, &average_height,
-			   &pixel_size, &datum, &resample_method,
-			   &force_flag, band_id);
+               &pixel_size, &datum, &resample_method,
+               &force_flag, band_id);
 
   if (!pp) {
       print_usage();
@@ -225,8 +225,8 @@ main (int argc, char **argv)
 
     for (ii = 0; ii < argc; ++ii) {
       if (argv[ii][0] == '-') {
-	bad_arg = TRUE;
-	asfPrintStatus("Unrecognized argument: %s\n", argv[ii]);
+    bad_arg = TRUE;
+    asfPrintStatus("Unrecognized argument: %s\n", argv[ii]);
       }
     }
 
@@ -255,7 +255,7 @@ main (int argc, char **argv)
 
   // Call library function that does the actual work
   asf_geocode(pp, projection_type, force_flag, resample_method, average_height,
-	      datum, pixel_size, band_id, in_base_name, out_base_name,
+          datum, pixel_size, band_id, in_base_name, out_base_name,
               (float)background_val);
 
   // Close Log, if needed
