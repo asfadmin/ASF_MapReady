@@ -131,7 +131,7 @@ static int test_overlap(meta_parameters *meta1, meta_parameters *meta2)
 
     // corners of meta1.
     double xp_1[5], yp_1[5];
-    
+
     if (meta1->location) {
         // use the location block if available
         latLon2UTM_zone(meta1->location->lat_start_near_range,
@@ -485,7 +485,8 @@ static int try_ext(const char *filename, const char *ext)
     return ret;
 }
 
-static int is_dir(const char *what)
+// can get rid of this, I think -- use the one in asf.a
+static int is_dir_s(const char *what)
 {
     struct stat stbuf;
     if (stat(what, &stbuf) == -1)
@@ -517,18 +518,18 @@ static void get_bounding_box_latlon(meta_parameters *meta,
 
     if (meta->location) {
         meta_location *ml = meta->location;
-        update_extents(ml->lat_start_near_range, ml->lon_start_near_range, 
+        update_extents(ml->lat_start_near_range, ml->lon_start_near_range,
             lat_lo, lat_hi, lon_lo, lon_hi);
-        update_extents(ml->lat_start_far_range, ml->lon_start_far_range, 
+        update_extents(ml->lat_start_far_range, ml->lon_start_far_range,
             lat_lo, lat_hi, lon_lo, lon_hi);
-        update_extents(ml->lat_end_near_range, ml->lon_end_near_range, 
+        update_extents(ml->lat_end_near_range, ml->lon_end_near_range,
             lat_lo, lat_hi, lon_lo, lon_hi);
-        update_extents(ml->lat_end_far_range, ml->lon_end_far_range, 
+        update_extents(ml->lat_end_far_range, ml->lon_end_far_range,
             lat_lo, lat_hi, lon_lo, lon_hi);
 
         size_lat = fabs(ml->lat_start_far_range - ml->lat_start_near_range);
         size_lon = fabs(ml->lon_start_far_range - ml->lon_start_near_range);
-    } 
+    }
     else {
         double lat, lon;
 
@@ -555,7 +556,7 @@ static void get_bounding_box_latlon(meta_parameters *meta,
 
     // Add a little bit of fudge to each -- we want there to be some room
     // for adjustment via the co-registration.
-    
+
     // Try to add about 100 pixels worth to each top/left/bottom/right.
     // To get that much, we estimate how many pixels per lat & long degree
     // from the "size_lat/lon" variables we calculated above.
@@ -609,7 +610,7 @@ static void get_bounding_box_linesamp(meta_parameters *metaSAR,
 
     // Add a little bit of fudge to each -- we want there to be some room
     // for adjustment via the co-registration.
-    
+
     // Add about some pixels worth to each top/left/bottom/right.
     nl = metaDEM->general->line_count;
     ns = metaDEM->general->sample_count;
@@ -651,7 +652,7 @@ static int asf_mosaic_utm(char **files, char *outfile, int zone,
     datum_type_t datum = WGS84_DATUM;
     double ps = -1;
 
-    return asf_mosaic(&pp, projection_type, force, resample, height, 
+    return asf_mosaic(&pp, projection_type, force, resample, height,
         datum, ps, TRUE, 0, files, outfile, background_val,
         lat_lo, lat_hi, lon_lo, lon_hi);
 }
@@ -696,7 +697,7 @@ char *build_dem(meta_parameters *meta, const char *dem_cla_arg,
 
     char **list_of_dems = NULL;
     // Eliminated case (1) -- try case (2)
-    if (is_dir(dem_cla_arg)) {
+    if (is_dir_s(dem_cla_arg)) {
         asfPrintStatus("%s: directory containing DEMs.\n", dem_cla_arg);
         int n;
         list_of_dems =
