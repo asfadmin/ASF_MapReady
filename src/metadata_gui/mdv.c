@@ -191,7 +191,7 @@ find_in_path(gchar * file)
     pathlen = strlen(path);
 
     /* work area */
-    buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) ); 
+    buf = (gchar *) g_malloc( sizeof(gchar) * (pathlen + len + 2) );
 
     /* put separator + filename at the end of the buffer */
     name = buf + pathlen + 1;
@@ -206,7 +206,7 @@ find_in_path(gchar * file)
         gchar * q = strchr(p + 1, PATH_SEPARATOR);
 
         /* if separator not found, point to the end */
-        if ( !q ) 
+        if ( !q )
             q = path + pathlen;
 
         start = name - (q - p);
@@ -218,14 +218,14 @@ find_in_path(gchar * file)
         {
             gchar * ret = g_strdup(start);
             g_free(buf);
-            return ret; 
+            return ret;
         }
 
         p = q;
-    } 
+    }
     while (*p++ != '\0');
 
-    /* not found! */ 
+    /* not found! */
     g_free(buf);
     return NULL;
 }
@@ -325,7 +325,7 @@ append_output(const gchar * txt, GtkWidget * textview_output)
     GtkTextTagTable *tt_table;
 
     text_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textview_output));
-    tt_table = gtk_text_buffer_get_tag_table(text_buffer);    
+    tt_table = gtk_text_buffer_get_tag_table(text_buffer);
     tt = gtk_text_tag_table_lookup(tt_table, "mono");
 
     if (!tt)
@@ -334,12 +334,12 @@ append_output(const gchar * txt, GtkWidget * textview_output)
 #ifdef win32
         const char *fnt = "Courier";
 #else
-	const char *fnt = "Mono";
+    const char *fnt = "Mono";
 #endif
 
 
-	tt = gtk_text_buffer_create_tag(text_buffer, "mono", 
-					"font", fnt, NULL);
+    tt = gtk_text_buffer_create_tag(text_buffer, "mono",
+                    "font", fnt, NULL);
     }
 
     if (gtk_text_buffer_get_char_count(text_buffer) > 0)
@@ -464,7 +464,7 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
     current = selections;
 
     while (*current)
-    {	
+    {
         add_file(*current);
         ++current;
     }
@@ -483,8 +483,8 @@ set_app_title()
     GtkWidget *widget;
 
     sprintf (title,
-	     "Alaska Satellite Facility Metadata Viewer: Version %s",
-	     CONVERT_PACKAGE_VERSION_STRING);
+         "Alaska Satellite Facility Metadata Viewer: Version %s",
+         MAPREADY_VERSION_STRING);
 
     widget = glade_xml_get_widget (glade_xml, "metadata_viewer");
     gtk_window_set_title(GTK_WINDOW(widget), title);
@@ -493,6 +493,8 @@ set_app_title()
 int
 main(int argc, char **argv)
 {
+    handle_common_asf_args(&argc, &argv, "ASF CEOS Metadata Viewer");
+
     gchar *glade_xml_file;
 
     gtk_init(&argc, &argv);

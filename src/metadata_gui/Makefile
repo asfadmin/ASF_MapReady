@@ -32,6 +32,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 #	cp $(TARGET).ico $(BINDIR)
+	cp mdv.ico $(SHAREDIR)
 
 clean:
 	rm -rf $(GTK_DIR) $(TARGET).exe core.*
@@ -71,6 +72,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 #	cp $(TARGET).ico $(SHAREDIR)
+	cp mdv.ico $(SHAREDIR)
 
 %.c: %.h
 
