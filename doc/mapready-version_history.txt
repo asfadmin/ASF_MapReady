@@ -1,6 +1,6 @@
 MapReady Version History
 
-v1.0.x (released TBD)
+v1.0.2 (released 2008 January 2)
 New Functionality (GUI and command-line tools)
 - Convert GUI name changed to MapReady and redesigned and reorganized
   the user interface for more intuitive use, advanced tool tips,
