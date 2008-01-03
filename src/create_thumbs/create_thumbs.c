@@ -13,7 +13,7 @@
 "     CEOS file, with '_thumb.jpg' added.\n"
 
 #define ASF_INPUT_STRING \
-"     At least one input file or directory is required.\n"  
+"     At least one input file or directory is required.\n"
 
 #define ASF_OUTPUT_STRING \
 "     The program will produce one thumbnail for each input file found.\n"
@@ -120,9 +120,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
       default_thumbnail_size);
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 
 int strmatches(const char *key, ...)
@@ -136,8 +136,8 @@ int strmatches(const char *key, ...)
     arg = va_arg(ap, char *);
     if (arg) {
       if (strcmp(key, arg) == 0) {
-	found = TRUE;
-	break;
+    found = TRUE;
+    break;
       }
     }
   } while (arg);
@@ -248,7 +248,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     {
         int nBands;
         char **dataName, *baseName, filename[255], dirname[255];
-	baseName = (char *) MALLOC(sizeof(char)*256);
+    baseName = (char *) MALLOC(sizeof(char)*256);
         split_dir_and_file(input_metadata, dirname, filename);
         met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
         sprintf(met, "%s%s", dirname, filename + pre);
@@ -268,7 +268,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     }
 
     if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16) 
+        imd->general->data_type != INTEGER16)
 // Turning off support for these guys for now.
 //        imd->general->data_type != INTEGER32 &&
 //        imd->general->data_type != REAL32 &&
@@ -357,7 +357,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
 
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.
-            double csv;		
+            double csv;
 
             if (sf == 1) {
                 csv = line[jj];
@@ -454,8 +454,10 @@ int main(int argc, char *argv[])
   int recursive = FALSE;
   int size = default_thumbnail_size;
 
-  if (argc<=1)
+  if (argc<=1) {
       usage(ASF_NAME_STRING);
+      return 1;
+  }
   else if (strmatches(argv[1],"-help","--help",NULL))
       print_help();
 
@@ -494,6 +496,7 @@ int main(int argc, char *argv[])
     else if (key[0] == '-') {
       printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
       usage(ASF_NAME_STRING);
+      return 1;
     }
     else {
         // this was a file/dir to process -- back up
