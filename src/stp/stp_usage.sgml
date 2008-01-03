@@ -16,7 +16,7 @@
       SAR processing that occurs is the same.</para>
     <para>To use the tool, the level 0 data needs to be imported
       into ASF's internal format first.  The asf_import tool, or
-      the asf_convert tool, will do this for you if your data isn't
+      the asf_mapready tool, will do this for you if your data isn't
       already in the proper format.</para>
     <para>To process the data, choose the "Browse" button and select
       the raw data file, and then select the "Execute" button.  The
