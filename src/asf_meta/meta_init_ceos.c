@@ -30,6 +30,7 @@ PROGRAM HISTORY:
 #include "get_ceos_names.h"
 #include "libasf_proj.h"
 #include "spheroids.h"
+#include "meta_project.h"
 
 #ifndef MIN
 #  define MIN(a,b)  (((a) < (b)) ? (a) : (b))
@@ -112,7 +113,6 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
                      meta_parameters *meta);
 
 /* Prototypes from jpl_proj.c */
-void atct_init(meta_projection *proj,stateVector st);
 int UTM_zone(double lon);
 
 /* Prototype from frame_calc.c */
@@ -120,37 +120,37 @@ int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
 
 /* Utility function: convert CEOS-style beam type to ASF meta-style beam name. */
 static void beam_type_to_asf_beamname(
-	const char *beam_type,int btlen, 
-	char *beamname,int bnlen)
+    const char *beam_type,int btlen,
+    char *beamname,int bnlen)
 {
-	if (strncmp(beam_type, "F5", 2) == 0)
-	  strcpy(beamname, "FN5");
-	else if (strncmp(beam_type, "F4", 2) == 0)
-	  strcpy(beamname, "FN4");
-	else if (strncmp(beam_type, "F3", 2) == 0)
-	  strcpy(beamname, "FN3");
-	else if (strncmp(beam_type, "F2", 2) == 0)
-	  strcpy(beamname, "FN2");
-	else if (strncmp(beam_type, "F1", 2) == 0)
-	  strcpy(beamname, "FN1");
-	else if (strncmp(beam_type, "S7", 2) == 0)
-	  strcpy(beamname, "ST7");
-	else if (strncmp(beam_type, "S6", 2) == 0)
-	  strcpy(beamname, "ST6");
-	else if (strncmp(beam_type, "S5", 2) == 0)
-	  strcpy(beamname, "ST5");
-	else if (strncmp(beam_type, "S4", 2) == 0)
-	  strcpy(beamname, "ST4");
-	else if (strncmp(beam_type, "S3", 2) == 0)
-	  strcpy(beamname, "ST3");
-	else if (strncmp(beam_type, "S2", 2) == 0)
-	  strcpy(beamname, "ST2");
-	else if (strncmp(beam_type, "S1", 2) == 0)
-	  strcpy(beamname, "ST1");
-	else {
-	  strncpy(beamname, beam_type, btlen);
-	  beamname[btlen]=0; /* NUL terminate, because CEOS fields aren't */
-	}
+    if (strncmp(beam_type, "F5", 2) == 0)
+      strcpy(beamname, "FN5");
+    else if (strncmp(beam_type, "F4", 2) == 0)
+      strcpy(beamname, "FN4");
+    else if (strncmp(beam_type, "F3", 2) == 0)
+      strcpy(beamname, "FN3");
+    else if (strncmp(beam_type, "F2", 2) == 0)
+      strcpy(beamname, "FN2");
+    else if (strncmp(beam_type, "F1", 2) == 0)
+      strcpy(beamname, "FN1");
+    else if (strncmp(beam_type, "S7", 2) == 0)
+      strcpy(beamname, "ST7");
+    else if (strncmp(beam_type, "S6", 2) == 0)
+      strcpy(beamname, "ST6");
+    else if (strncmp(beam_type, "S5", 2) == 0)
+      strcpy(beamname, "ST5");
+    else if (strncmp(beam_type, "S4", 2) == 0)
+      strcpy(beamname, "ST4");
+    else if (strncmp(beam_type, "S3", 2) == 0)
+      strcpy(beamname, "ST3");
+    else if (strncmp(beam_type, "S2", 2) == 0)
+      strcpy(beamname, "ST2");
+    else if (strncmp(beam_type, "S1", 2) == 0)
+      strcpy(beamname, "ST1");
+    else {
+      strncpy(beamname, beam_type, btlen);
+      beamname[btlen]=0; /* NUL terminate, because CEOS fields aren't */
+    }
 }
 
 /*******************************************************************************
@@ -590,9 +590,9 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     }
     else if (ppr) {
       beam_type_to_asf_beamname(ppr->beam_info[0].beam_type,
-      	sizeof(ppr->beam_info[0].beam_type),
-	beamname,
-	sizeof(beamname));
+        sizeof(ppr->beam_info[0].beam_type),
+    beamname,
+    sizeof(beamname));
     }
     strcpy(meta->general->mode, beamname);
     sprintf(meta->sar->polarization, "HH");
@@ -1156,9 +1156,9 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   }
   else if (ppr) {
     beam_type_to_asf_beamname(ppr->beam_info[0].beam_type,
-      	sizeof(ppr->beam_info[0].beam_type),
-	beamname,
-	sizeof(beamname));
+        sizeof(ppr->beam_info[0].beam_type),
+    beamname,
+    sizeof(beamname));
   }
   strcpy(meta->general->mode, beamname);
   sprintf(meta->sar->polarization, "HH");
@@ -1231,8 +1231,8 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
     if (!meta_is_valid_double(meta->projection->startX) ||
         !meta_is_valid_double(meta->projection->startY))
     {
-      meta_sar_to_startXY(meta, &meta->projection->startX, 
-			  &meta->projection->startY);
+      meta_sar_to_startXY(meta, &meta->projection->startX,
+              &meta->projection->startY);
     }
   }
   // Location block
@@ -1724,7 +1724,6 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
            struct dataset_sum_rec *dssr,
            struct VMPDREC *mpdr, struct VFDRECV *asf_facdr)
 {
-  stateVector st_start;
   meta_projection *projection;
 
   if (asf_facdr) {
@@ -1736,9 +1735,7 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
   projection->type = SCANSAR_PROJECTION;
   projection->param.atct.rlocal =
       meta_get_earth_radius(meta, meta->general->line_count/2, 0);
-  st_start = meta_get_stVec(meta,0.0);
-  fixed2gei(&st_start,0.0);/* Remove earth's spin JPL's AT/CT projection requires this */
-  atct_init(projection,st_start);
+  atct_init_from_leader(leaderName, projection);
 
   if (mpdr) { // all ASF ScanSAR have a map projection record
     projection->startY = mpdr->tlceast;
@@ -2320,7 +2317,7 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
         ceos->product = SCN;
       if (0==strncmp(prodStr, "SAR GEOREF FINE", 15))
-	ceos->product = SGF;
+    ceos->product = SGF;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown CSTARS product type '%s'!\n", prodStr);

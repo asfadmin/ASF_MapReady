@@ -1,9 +1,11 @@
 #include "asf_meta.h"
 #include "jpl_proj.h"
 #include "asf_nan.h"
+#include "meta_init_stVec.h"
 #include "matrix.h"
 #include <assert.h>
 
+#define SQR(A) ((A)*(A))
 #define ecc2(minor,major) (1.0 - ((minor*minor)/(major*major)))
 
 /*Convert projection units (meters) to geodetic latitude and longitude (degrees).*/
@@ -632,4 +634,26 @@ void atct_init(meta_projection *proj,stateVector st)
   proj->param.atct.alpha1=alpha1;
   proj->param.atct.alpha2=alpha2;
   proj->param.atct.alpha3=alpha3;
+}
+
+/**************************************************************************
+ * atct_init_from_leader:
+ * calculates alpha1, alpha2, and alpha3, which are some sort of coordinate
+ * rotation amounts, in degrees.  This creates a latitude/longitude-style
+ * coordinate system centered under the satellite at the start of imaging.
+ * Rather than using a passed-in state vector, the initial state vector is
+ * read from the leader file.
+ */
+void atct_init_from_leader(const char *leaderName, meta_projection *proj)
+{
+    meta_parameters *meta = raw_init();
+    stateVector st_start;
+    ceos_description *ceos = get_ceos_description(leaderName, NOREPORT);
+
+    ceos_read_stVecs(leaderName, ceos, meta);
+    st_start = meta_get_stVec(meta, 0.0);
+    fixed2gei(&st_start,0.0);/* Remove earth's spin JPL's AT/CT projection requires this */
+
+    atct_init(proj, st_start);
+    meta_free(meta);
 }
