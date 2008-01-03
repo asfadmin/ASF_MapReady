@@ -148,8 +148,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-  exit(EXIT_SUCCESS);
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+  exit(EXIT_FAILURE);
 }
 
 int strmatches(const char *key, ...)
@@ -249,12 +249,12 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   demFile = argv[currArg+1];
   if (update_flag) {
-      outFile = appendToBasename(inFile, "_tmp");      
+      outFile = appendToBasename(inFile, "_tmp");
   } else {
       outFile = argv[currArg+2];
   }
 
-  int ret = refine_geolocation(inFile, demFile, maskFile, outFile, 
+  int ret = refine_geolocation(inFile, demFile, maskFile, outFile,
                                update_flag, auto_water_mask,
                                mask_height_cutoff, TRUE, other_files);
 
