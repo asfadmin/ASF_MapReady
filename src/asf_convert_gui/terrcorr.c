@@ -30,6 +30,8 @@ void terrcorr_options_changed()
   GtkWidget *dem_checkbutton;
   GtkWidget *hbox_terrcorr_items;
   GtkWidget *interp_dem_holes_checkbutton;
+  GtkWidget *top_vbox_terrcorr; // TOP TOP level vbox for terrain correction tab
+  GtkWidget *terrcorr_tab_label;
 
   hbox_terrcorr_items = get_widget_checked("hbox_terrcorr_items");
 
@@ -37,6 +39,8 @@ void terrcorr_options_changed()
 
   terrcorr_vbox = get_widget_checked("terrcorr_vbox");
   dem_checkbutton = get_widget_checked("dem_checkbutton");
+  top_vbox_terrcorr = get_widget_checked("top_vbox_terrcorr");
+  terrcorr_tab_label = get_widget_checked("terrcorr_tab_label");
   interp_dem_holes_checkbutton =
       get_widget_checked("interp_dem_holes_checkbutton");
 
@@ -45,6 +49,8 @@ void terrcorr_options_changed()
 
   gtk_widget_set_sensitive(terrcorr_vbox, dem_is_checked);
   gtk_widget_set_sensitive(interp_dem_holes_checkbutton, dem_is_checked);
+  gtk_widget_set_sensitive(top_vbox_terrcorr, dem_is_checked);
+  gtk_widget_set_sensitive(terrcorr_tab_label, dem_is_checked);
 
   if (dem_is_checked) {
       GtkWidget *rb_terrcorr;
@@ -197,7 +203,7 @@ static SIGNAL_CALLBACK void mask_ok_clicked()
         set_mask_file(file);
 }
 
-static void create_file_chooser_dialogs() 
+static void create_file_chooser_dialogs()
 {
     GtkWidget *parent = get_widget_checked("asf_convert");
 
@@ -208,21 +214,21 @@ static void create_file_chooser_dialogs()
             GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
             GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
             NULL);
-        
+
         // we need to extract the buttons, so we can connect them to our
         // button handlers, above
-        GtkHButtonBox *box = 
+        GtkHButtonBox *box =
             (GtkHButtonBox*)(((GtkDialog*)dem_browse_widget)->action_area);
         GList *buttons = box->button_box.box.children;
-        
+
         GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
         GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
-        
+
         g_signal_connect((gpointer)cancel_btn, "clicked",
                          G_CALLBACK(dem_cancel_clicked), NULL);
         g_signal_connect((gpointer)ok_btn, "clicked",
                          G_CALLBACK(dem_ok_clicked), NULL);
-        
+
         // add the filters
         GtkFileFilter *img_filt = gtk_file_filter_new();
         gtk_file_filter_set_name(img_filt, "DEM Image Files (*.img)");
@@ -258,21 +264,21 @@ static void create_file_chooser_dialogs()
             GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, //Cancel button
             GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,   //Open button
             NULL);
-        
+
         // we need to extract the buttons, so we can connect them to our
         // button handlers, above
-        GtkHButtonBox *box = 
+        GtkHButtonBox *box =
             (GtkHButtonBox*)(((GtkDialog*)mask_browse_widget)->action_area);
         GList *buttons = box->button_box.box.children;
-        
+
         GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
         GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
-        
+
         g_signal_connect((gpointer)cancel_btn, "clicked",
                          G_CALLBACK(mask_cancel_clicked), NULL);
         g_signal_connect((gpointer)ok_btn, "clicked",
                          G_CALLBACK(mask_ok_clicked), NULL);
-        
+
         // add the filters
         GtkFileFilter *img_filt = gtk_file_filter_new();
         gtk_file_filter_set_name(img_filt, "DEM Image Files (*.img)");
@@ -345,11 +351,11 @@ on_dem_browse_button_clicked(GtkWidget *widget)
     }
 
     /* the returned "fname" has the following form:            */
-    /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+    /*   <directory>\0<first file>\0<second file>\0<third ...  */
     char * dir = strdup(fname);
     char * p = fname + strlen(dir) + 1;
 
-    if (*p) { 
+    if (*p) {
         while (*p) {
             char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
             sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);
@@ -558,11 +564,11 @@ on_mask_browse_button_clicked(GtkWidget *widget)
     }
 
     /* the returned "fname" has the following form:            */
-    /*   <directory>\0<first file>\0<second file>\0<third ...  */ 
+    /*   <directory>\0<first file>\0<second file>\0<third ...  */
     char * dir = strdup(fname);
     char * p = fname + strlen(dir) + 1;
 
-    if (*p) { 
+    if (*p) {
         while (*p) {
             char * dir_and_file = malloc(sizeof(char)*(strlen(dir)+strlen(p)+5));
             sprintf(dir_and_file, "%s%c%s", dir, DIR_SEPARATOR, p);

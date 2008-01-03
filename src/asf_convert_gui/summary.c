@@ -24,25 +24,25 @@ void update_summary()
         case INPUT_TYPE_SIGMA:
             type = "Sigma";
             break;
-            
+
         case INPUT_TYPE_BETA:
             type = "Beta";
             break;
-            
+
         case INPUT_TYPE_GAMMA:
             type = "Gamma";
             break;
-            
+
         default:
         case INPUT_TYPE_AMP:
             type = "Amplitude";
             break;
-            
+
         case INPUT_TYPE_POWER:
             type = "Power";
             break;
     }
-    
+
     switch (s->input_data_format) {
       case INPUT_FORMAT_CEOS_LEVEL0:
       {
@@ -60,10 +60,9 @@ void update_summary()
             sprintf(text, "%s\n   Process to Level 1\nData Type: %s",
                     text, type);
         }
-      }    
+      }
       break;
 
-      default:
       case INPUT_FORMAT_CEOS_LEVEL1:
         strcat(text, "CEOS Level One");
         sprintf(text, "%s\nData type: %s", text, type);
@@ -85,6 +84,10 @@ void update_summary()
 
       case INPUT_FORMAT_GEOTIFF:
         strcat(text, "Geocoded GeoTIFF");
+        break;
+
+      case INPUT_FORMAT_ASF_INTERNAL:
+        strcat(text, "ASF Internal");
         break;
 
       case INPUT_FORMAT_AIRSAR:
@@ -114,14 +117,20 @@ void update_summary()
           text[strlen(text)-2]='\0';
         } else {
           strcat(text, "none");
-        } 
+        }
+        break;
+
+      default:
+        strcat(text, "CEOS Level One");
+        sprintf(text, "%s\nData type: %s", text, type);
+        break;
     }
 
 
     if (s->terrcorr_is_checked || s->refine_geolocation_is_checked)
     {
         GtkWidget *dem_entry;
-	char *dem;
+        char *dem;
 
         if (s->terrcorr_is_checked)
             strcat(text, "\nTerrain Correction: Yes");
@@ -133,20 +142,20 @@ void update_summary()
         else
             strcat(text, "\n   Geometric correction only");
 
-	dem_entry = get_widget_checked("dem_entry");
-	dem = STRDUP(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
+        dem_entry = get_widget_checked("dem_entry");
+        dem = STRDUP(gtk_entry_get_text(GTK_ENTRY(dem_entry)));
 
-	if (!dem || strlen(dem) == 0)
-	{
-	    strcat(text, "\n   DEM: <none>");
-	}
-	else
-	{
-	    char *p = strrchr(dem, DIR_SEPARATOR);
-	    sprintf(text, "%s\n   DEM: %s", text, p ? p+1 : dem);
-	}
+        if (!dem || strlen(dem) == 0)
+        {
+            strcat(text, "\n   DEM: <none>");
+        }
+        else
+        {
+            char *p = strrchr(dem, DIR_SEPARATOR);
+            sprintf(text, "%s\n   DEM: %s", text, p ? p+1 : dem);
+        }
 
-	free(dem);
+        free(dem);
 
         if (s->interp_dem_holes)
             strcat(text, "\n   Fill DEM Holes: Yes");
@@ -217,15 +226,15 @@ void update_summary()
         switch (s->projection)
         {
         case PROJ_UTM:
-	    if (s->zone != 0)
-	    {
+            if (s->zone != 0)
+            {
                 sprintf(text, "%sUTM\n   Zone: %d\n",
-                    text, s->zone);
-	    }
-	    else
-	    {
+                        text, s->zone);
+            }
+            else
+            {
                 sprintf(text, "%sUTM\n   Zone: <from metadata>\n", text);
-	    }
+            }
             break;
 
         case PROJ_PS:
@@ -263,7 +272,8 @@ void update_summary()
         if (s->specified_pixel_size)
             sprintf(text, "%s   Pixel Size: %.2f m\n", text, s->pixel_size);
 
-        sprintf(text, "%s   Datum: %s\n", text, datum_string(s->datum));
+        sprintf(text, "%s   Datum: %s%s\n", text, datum_string(s->datum),
+                s->datum == DATUM_HUGHES ? " Reference Spheroid" : "");
 
         sprintf(text, "%s   Resampling Method: %s\n", text,
             resample_method_string(s->resample_method));
@@ -309,15 +319,15 @@ void update_summary()
                 case SCALING_METHOD_SIGMA:
                     strcat(text, "Sigma");
                     break;
-                    
+
                 case SCALING_METHOD_MINMAX:
                     strcat(text, "MinMax");
                     break;
-                    
+
                 case SCALING_METHOD_TRUNCATE:
                     strcat(text, "Truncate");
                     break;
-                    
+
                 case SCALING_METHOD_HISTOGRAM_EQUALIZE:
                     strcat(text, "Histogram Equalize");
                     break;

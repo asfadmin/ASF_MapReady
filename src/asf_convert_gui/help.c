@@ -34,7 +34,7 @@ char * escapify(const char * s)
 
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
-{ 
+{
 #ifdef win32
     if (fork() == 0)
     {
@@ -50,7 +50,7 @@ on_help_button_clicked(GtkWidget *widget)
 
             char * escaped_share_dir = escapify(get_asf_share_dir());
             strcat(hh, escaped_share_dir);
-            strcat(hh, "/asf_convert_gui.chm");
+            strcat(hh, "/mapready.chm");
             FREE(escaped_share_dir);
             ret = asfSystem(hh);
             if (ret != -1) exit(0);
@@ -68,7 +68,7 @@ on_help_button_clicked(GtkWidget *widget)
                 ++j;
             }
             hh[j] = '\0';
-            strcat(hh, "/hh.exe asf_convert_gui.chm");
+            strcat(hh, "/hh.exe mapready.chm");
             ret = system(hh);
             if (ret != -1) exit(0);
         }
@@ -94,7 +94,7 @@ on_help_button_clicked(GtkWidget *widget)
 
     gtk_text_buffer_set_text(text_buffer, "", -1);
 
-    help_filename = "asf_convert_gui.txt";
+    help_filename = "mapready.txt";
     //help_file = fopen(help_filename, "rt");
     help_file = fopen_share_file(help_filename, "rt");
     if (help_file)
@@ -112,7 +112,7 @@ on_help_button_clicked(GtkWidget *widget)
                 {
                     gchar * r = g_strdup(q + 8); /* 8 = length of '$VERSION' */
 
-                    strcpy(q, CONVERT_PACKAGE_VERSION_STRING);
+                    strcpy(q, MAPREADY_VERSION_STRING);
                     strcat(buffer, r);
                     g_free(r);
                 }
@@ -168,7 +168,7 @@ on_help_dialog_destroy(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK gboolean
-on_help_dialog_key_press_event(GtkWidget * widget, 
+on_help_dialog_key_press_event(GtkWidget * widget,
                                GdkEventKey * event,
                                GtkWidget * win)
 {

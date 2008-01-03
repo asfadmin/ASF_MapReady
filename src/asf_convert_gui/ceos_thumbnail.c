@@ -104,7 +104,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     guchar *data = g_new(guchar, 3*tsx*tsy);
     float *fdata = g_new(float, 3*tsx*tsy);
 
-    // Form the thumbnail image by grabbing individual pixels. 
+    // Form the thumbnail image by grabbing individual pixels.
     size_t ii, jj;
     float *line = g_new (float, meta->general->sample_count);
 
@@ -130,11 +130,11 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     for (ii = 0; ii < tsx*tsy; ++ii)
         stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
     stddev = sqrt(stddev / (tsx*tsy));
-    
+
     // Set the limits of the scaling - 2-sigma on either side of the mean
     double lmin = avg - 2*stddev;
     double lmax = avg + 2*stddev;
-    
+
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
@@ -146,20 +146,20 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
             uval = 255;
         else
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
-        
+
         int n = 3*ii;
         data[n] = uval;
         data[n+1] = uval;
         data[n+2] = uval;
     }
-    
+
     g_free(fdata);
-    
+
     // Create the pixbuf
     GdkPixbuf *pb =
-        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
+        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-    
+
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
         meta_free(meta);
@@ -180,7 +180,7 @@ make_airsar_thumb(const char *input_metadata, const char *input_data,
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
     gdk_pixbuf_unref(pb);
-    
+
     if (!pb_s)
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
 
@@ -216,7 +216,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     guchar *data = g_new(guchar, 3*tsx*tsy);
     float *fdata = g_new(float, 3*tsx*tsy);
 
-    // Form the thumbnail image by grabbing individual pixels. 
+    // Form the thumbnail image by grabbing individual pixels.
     size_t ii, jj;
     float *line = g_new (float, meta->general->sample_count);
 
@@ -242,11 +242,11 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     for (ii = 0; ii < tsx*tsy; ++ii)
         stddev += ((double)fdata[ii] - avg) * ((double)fdata[ii] - avg);
     stddev = sqrt(stddev / (tsx*tsy));
-    
+
     // Set the limits of the scaling - 2-sigma on either side of the mean
     double lmin = avg - 2*stddev;
     double lmax = avg + 2*stddev;
-    
+
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
@@ -258,20 +258,20 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
             uval = 255;
         else
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
-        
+
         int n = 3*ii;
         data[n] = uval;
         data[n+1] = uval;
         data[n+2] = uval;
     }
-    
+
     g_free(fdata);
-    
+
     // Create the pixbuf
     GdkPixbuf *pb =
-        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
+        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-    
+
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", input_data);
         meta_free(meta);
@@ -292,7 +292,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
     gdk_pixbuf_unref(pb);
-    
+
     if (!pb_s)
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", input_data);
 
@@ -301,7 +301,7 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
 }
 
 GdkPixbuf *
-make_input_image_thumbnail_pixbuf (const char *input_metadata, 
+make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    const char *input_data,
                                    size_t max_thumbnail_dimension)
 {
@@ -312,6 +312,10 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
 
     char *ext = findExt(input_data);
+    if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0)) {
+        // don't have support for thumbnails of geotiffs yet
+        return NULL;
+    }
     if (ext && strcmp_case(ext, ".img") == 0)
         return make_asf_internal_thumb(input_metadata, input_data,
             max_thumbnail_dimension);
@@ -351,7 +355,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     }
 
     if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16) 
+        imd->general->data_type != INTEGER16)
 // Turning off support for these guys for now.
 //        imd->general->data_type != INTEGER32 &&
 //        imd->general->data_type != REAL32 &&
@@ -435,7 +439,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
         for ( jj = 0 ; jj < tsx ; jj++ ) {
             // Current sampled value.
-            double csv;		
+            double csv;
 
             // We will average a couple pixels together.
             if ( jj * sf < imd->general->line_count - 1 ) {
@@ -459,11 +463,11 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     for (ii = 0; ii < tsx*tsy; ++ii)
         stddev += ((double)idata[ii] - avg) * ((double)idata[ii] - avg);
     stddev = sqrt(stddev / (tsx*tsy));
-    
+
     // Set the limits of the scaling - 2-sigma on either side of the mean
     double lmin = avg - 2*stddev;
     double lmax = avg + 2*stddev;
-    
+
     // Now actually scale the data, and convert to bytes.
     // Note that we need 3 values, one for each of the RGB channels.
     for (ii = 0; ii < tsx*tsy; ++ii) {
@@ -475,20 +479,20 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
             uval = 255;
         else
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
-        
+
         int n = 3*ii;
         data[n] = uval;
         data[n+1] = uval;
         data[n+2] = uval;
     }
-    
+
     g_free(idata);
-    
+
     // Create the pixbuf
     GdkPixbuf *pb =
-        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE, 
+        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
                                  8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
-    
+
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", data_name);
         meta_free(imd);
@@ -509,7 +513,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     GdkPixbuf *pb_s =
         gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
     gdk_pixbuf_unref(pb);
-    
+
     if (!pb_s) {
         printf("Failed to allocate scaled thumbnail pixbuf: %s\n", data_name);
         meta_free(imd);

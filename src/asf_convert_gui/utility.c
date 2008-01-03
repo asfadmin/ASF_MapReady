@@ -10,7 +10,7 @@ static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
 static void set_combobox_items_radar(const char *widget_name)
 {
     GtkComboBox *w = GTK_COMBO_BOX(get_widget_checked(widget_name));
-    
+
     gtk_combo_box_remove_text(w, 0);
     gtk_combo_box_append_text(w, "-");
     gtk_combo_box_append_text(w, "HH");
@@ -83,7 +83,7 @@ double get_double_from_entry(const char *widget_name)
 void put_double_to_entry(const char *widget_name, double val)
 {
     GtkWidget *e = get_widget_checked(widget_name);
-    
+
     char tmp[64];
     sprintf(tmp, "%f", val);
 
@@ -99,7 +99,7 @@ int get_int_from_entry(const char *widget_name)
 void put_int_to_entry(const char *widget_name, int val)
 {
     GtkWidget *e = get_widget_checked(widget_name);
-    
+
     char tmp[64];
     sprintf(tmp, "%d", val);
 
@@ -141,10 +141,18 @@ message_box(const gchar * message)
         GTK_RESPONSE_NONE,
         NULL);
 
-    label = gtk_label_new(message);
+    gchar *msg = g_new(gchar, strlen(message) + 16);
+    if (msg) {
+        sprintf(msg, "\n  %s   \n", message);
+        label = gtk_label_new(msg);
+        g_free(msg);
+    }
+    else {
+        label = gtk_label_new(message);
+    }
 
-    g_signal_connect_swapped(dialog, 
-        "response", 
+    g_signal_connect_swapped(dialog,
+        "response",
         G_CALLBACK(gtk_widget_destroy),
         dialog);
 

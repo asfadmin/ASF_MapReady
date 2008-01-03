@@ -79,8 +79,14 @@ static void create_file_chooser_dialog()
         G_CALLBACK(ok_clicked), NULL);
 
     // add the filters
+    GtkFileFilter *ceos_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(ceos_filt, "All CEOS Level 1 Files");
+    gtk_file_filter_add_pattern(ceos_filt, "*.D");
+    gtk_file_filter_add_pattern(ceos_filt, "LED-*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), ceos_filt);
+
     GtkFileFilter *D_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(D_filt, "CEOS Data Files (*.D)");
+    gtk_file_filter_set_name(D_filt, "RSAT/ERS CEOS L1 (*.D)");
     gtk_file_filter_add_pattern(D_filt, "*.D");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), D_filt);
 
@@ -109,15 +115,15 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(alos_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), alos_filt);
 
-    GtkFileFilter *airsar_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(airsar_filt, "AirSAR Leader Files (*.airsar)");
-    gtk_file_filter_add_pattern(airsar_filt, "*.airsar");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
-
     GtkFileFilter *img_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(img_filt, "ASF Internal Files (*.img)");
     gtk_file_filter_add_pattern(img_filt, "*.img");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), img_filt);
+
+    GtkFileFilter *airsar_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(airsar_filt, "AirSAR Leader Files (*.airsar)");
+    gtk_file_filter_add_pattern(airsar_filt, "*.airsar");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), airsar_filt);
 
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
@@ -156,15 +162,17 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
 #endif
 
     of.hwndOwner = NULL;
-    of.lpstrFilter = "CEOS Level 1 Data Files (*.D)\0*.D\0"
-        "CEOS Level 0 Data Files (*.raw)\0*.raw\0"
-        "STF Files (*.000)\0*.000\0"
-        "GeoTIFF Files (*.tif)\0*.tif\0"
-        "Complex Files (*.cpx)\0*.cpx\0"
-        "ALOS Files (LED-*)\0LED-*\0"
-        "AirSAR Files (*.airsar)\0*.airsar\0"
-        "ASF Internal Files (*.img)\0*.img\0"
-        "All Files\0*\0";
+    of.lpstrFilter =
+            "CEOS Level 1 Files\0*.D;LED-*\0"
+            "RSAT/ERS CEOS L1 (*.D)\0*.D\0"
+            "CEOS Level 0 (*.raw)\0*.raw\0"
+            "STF Files (*.000)\0*.000\0"
+            "GeoTIFF Files (*.tif)\0*.tif\0"
+            "Complex Files (*.cpx)\0*.cpx\0"
+            "ALOS Files (LED-*)\0LED-*\0"
+            "AirSAR Files (*.airsar)\0*.airsar\0"
+            "ASF Internal Files (*.img)\0*.img\0"
+            "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
     of.lpstrFile = fname;

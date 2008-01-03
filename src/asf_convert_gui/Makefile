@@ -1,6 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_convert_gui
+DEST_TARGET = mapready
 SRCS = asf_convert_gui.c find_in_path.c execute.c callbacks.c utility.c dnd.c popup_menu.c settings.c file_list.c help.c rename_output.c file_selection.c state.c change_output_dir.c naming_scheme.c metadata.c geocode.c summary.c ceos_thumbnail.c win_font.c projfile.c view_output.c share.c terrcorr.c log.c blow_up_in.c blow_up_out.c png_util.c
 
 # Unfortunately compilation is completely different on windows
@@ -77,7 +78,7 @@ LIB = \
 
 CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c
+$(TARGET).exe: $(TARGET).c htmlhelp.chm
 	if [ ! -f $(GTK_DIR)/README.txt ]; then\
 	  rm -rf $(GTK_ZIP); \
 	  mkdir $(GTK_ZIP); \
@@ -86,17 +87,16 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
-	mv $(TARGET).exe $(BINDIR)
-	cp $(TARGET).glade $(SHAREDIR)
-	cp $(TARGET).ico $(SHAREDIR)
-	cp earth2.gif $(SHAREDIR)
-	cp information_icon.gif $(SHAREDIR)
-	-cp htmlhelp.chm $(SHAREDIR)/asf_convert_gui.chm
+	mv $(TARGET).exe $(BINDIR)/$(DEST_TARGET).exe
+	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
+	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
+	cp htmlhelp.chm $(SHAREDIR)/$(DEST_TARGET).chm
 
-doc:
+htmlhelp.chm doc:
+# doc:
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \
 	  asf_convert_gui.sgml
-	/cygdrive/c/Program\ Files\HTML\ Help\ Workshop\hhc.exe htmlhelp.hhp
+	-/cygdrive/c/Program\ Files/HTML\ Help\ Workshop/hhc.exe htmlhelp.hhp
 
 
 clean:
@@ -148,12 +148,10 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: clean doc $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
-	mv $(TARGET) $(BINDIR)
-	cp $(TARGET).glade $(SHAREDIR)
-	cp $(TARGET).ico $(SHAREDIR)
-	cp earth2.gif $(SHAREDIR)
-	cp information_icon.gif $(SHAREDIR)
-	cp $(TARGET).txt $(SHAREDIR)
+	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
+	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
+	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
+	cp $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
 
 %.c: %.h
 
@@ -166,7 +164,7 @@ asf_convert_gui.txt:
 	  echo "No documentation built - docbook2* tools not found."; \
 	else \
 	  docbook2txt asf_convert_gui.sgml; \
-	  cp $(TARGET).txt $(SHAREDIR); \
+	  cp $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt; \
 	fi
 
 DB2H = $(shell which docbook2html 2>/dev/null)
@@ -181,7 +179,8 @@ how_to_install.html:
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)* \
-	    $(SHAREDIR)/$(TARGET)* $(DOCDIR)/$(TARGET)*
+	    $(SHAREDIR)/$(DEST_TARGET)* $(DOCDIR)/$(DEST_TARGET)*
+	rm -f asf_convert_gui.txt
 
 ### End Unix Section
 

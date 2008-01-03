@@ -367,7 +367,7 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
         GdkPixbuf *pb, *pb_big;
 
         if (g_file_test(thumbnail_name, G_FILE_TEST_EXISTS))
-	    {
+        {
             if (scaling_required) {
                 pb = gdk_pixbuf_new_from_file_at_size(thumbnail_name,
                                               THUMB_SIZE, THUMB_SIZE,
@@ -480,8 +480,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         logflag = TRUE;
         fLog = fopen(logFile, "a");
 
-        asfPrintStatus("Running convert with configuration file: %s\n",
-		       cfg_file);
+        asfPrintStatus("Running MapReady with configuration file: %s\n",
+                       cfg_file);
 
         asf_convert_ext(FALSE, cfg_file, save_dem);
 
@@ -765,6 +765,13 @@ on_execute_button_clicked (GtkWidget *button)
         rows = NULL;
         valid = gtk_tree_model_get_iter_first(
             GTK_TREE_MODEL(list_store), &iter);
+
+        if (valid) {
+            hide_sections_for_execute();
+        }
+        else {
+            message_box(" No files to process (click Browse...) ");
+        }
 
         while (valid && keep_going)
         {

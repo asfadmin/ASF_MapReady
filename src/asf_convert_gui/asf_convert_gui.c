@@ -1,9 +1,15 @@
-/* This program is a simple GUI wrapper around the asf_convert
+/* This program is a simple GUI wrapper around the asf_mapready
    tool.  */
 
 #include "asf_convert_gui.h"
 #include "asf_version.h"
 #include "asf_geocode.h"
+
+// FIXME: This is from license.c ...need to either move it into a header or write
+// a function that just returns the string (without a trailing \n)
+#define ASF_COPYRIGHT_STRING \
+ "Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+ "All rights reserved."
 
 GladeXML *glade_xml;
 GtkListStore *list_store = NULL;
@@ -24,9 +30,9 @@ main(int argc, char **argv)
     set_font();
     get_asf_share_dir_with_argv0(argv[0]);
 
-    glade_xml_file = (gchar *)find_in_share("asf_convert_gui.glade");
+    glade_xml_file = (gchar *)find_in_share("mapready.glade");
 
-    asfPrintStatus("\n\nASF Convert:\n");
+    asfPrintStatus("\n\nASF MapReady:\n");
     asfPrintStatus("Using share files directory: %s\n\n", get_asf_share_dir());
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
 
@@ -63,17 +69,20 @@ main(int argc, char **argv)
     caplib_behavior_on_error = BEHAVIOR_ON_ERROR_CONTINUE;
 
     /* add version number to window title */
-    char title [256];
-    sprintf (title,
-        "Alaska Satellite Facility Data Conversion Tool: Version %s",
-        CONVERT_PACKAGE_VERSION_STRING);
+    char gtitle [256];
+    sprintf (gtitle,
+             "ASF MapReady: Version %s",
+             MAPREADY_VERSION_STRING);
 
     widget = get_widget_checked("asf_convert");
-    gtk_window_set_title(GTK_WINDOW(widget), title);
+    gtk_window_set_title(GTK_WINDOW(widget), gtitle);
 
-    /* select defaults for dropdowns */
+    /* select defaults for dropdowns & buttons & labeling */
     widget = get_widget_checked("scaling_method_combobox");
     set_combo_box_item(widget, SCALING_METHOD_SIGMA);
+
+    widget = get_widget_checked("import_checkbutton");
+    gtk_widget_set_sensitive(widget, FALSE);
 
     widget = get_widget_checked("input_data_format_combobox");
     set_combo_box_item(widget, INPUT_FORMAT_CEOS_LEVEL1);
@@ -87,10 +96,50 @@ main(int argc, char **argv)
     widget = get_widget_checked("output_format_combobox");
     set_combo_box_item(widget, OUTPUT_FORMAT_JPEG);
 
+    widget = get_widget_checked("geocode_checkbutton");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), TRUE);
+    geocode_options_changed();
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(widget), FALSE);
+
+    widget = get_widget_checked("about_dialog_copyright_label");
+    gtk_label_set_text(GTK_LABEL(widget), ASF_COPYRIGHT_STRING);
+
+    // Muck with the fonts in the About dialog
+    widget = get_widget_checked("about_dialog_mapready_label");
+    gchar *str = gtitle;
+    gchar *text;
+    PangoAttrList *attrs;
+    sprintf(gtitle,
+                "\n<b>ASF MapReady</b>\n"
+                "<i>Remote Sensing Toolkit</i>\n"
+                "ver. %s",
+                MAPREADY_VERSION_STRING);
+    if (strlen(SVN_REV)>0)
+        sprintf(gtitle, "%s (build %s)", gtitle, SVN_REV);
+    else
+        strcat(gtitle, " (custom build)");
+
+    pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
+    gtk_label_set_attributes(GTK_LABEL(widget), attrs);
+    gtk_label_set_text(GTK_LABEL(widget), text);
+    PangoFontDescription *font_desc = pango_font_description_from_string("sans-serif 12");
+    gtk_widget_modify_font(widget, font_desc);
+
+    // Muck with the "Select Processing Steps" label
+    widget = get_widget_checked("select_processing_steps_label");
+    str = gtitle;
+    sprintf(gtitle, "<b><i>  Select Processing Steps:</i></b>");
+    pango_parse_markup(str, -1, 0, &attrs, &text, NULL, NULL);
+    gtk_label_set_attributes(GTK_LABEL(widget), attrs);
+    gtk_label_set_text(GTK_LABEL(widget), text);
+    font_desc = pango_font_description_from_string("sans-serif 12");
+    gtk_widget_modify_font(widget, font_desc);
+
     /* fire handlers for hiding/showing stuff */
     output_format_combobox_changed();
     input_data_format_combobox_changed();
     input_data_type_changed();
+    geocode_options_changed();
     set_toolbar_images();
     show_execute_button(TRUE);
 

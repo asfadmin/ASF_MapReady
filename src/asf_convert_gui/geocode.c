@@ -215,6 +215,9 @@ void geocode_options_changed()
     GtkWidget * resample_hbox;
     GtkWidget * force_checkbutton;
 
+    GtkWidget * vbox_geocode;
+    GtkWidget * geocode_tab_label;
+
     gboolean geocode_projection_is_checked;
     gboolean predefined_projection_is_selected;
     gboolean average_height_is_checked;
@@ -302,6 +305,11 @@ void geocode_options_changed()
 
     if (geocode_projection_is_checked)
     {
+        vbox_geocode = get_widget_checked("vbox_geocode");
+        geocode_tab_label = get_widget_checked("geocode_tab_label");
+        gtk_widget_set_sensitive(vbox_geocode, TRUE);
+        gtk_widget_set_sensitive(geocode_tab_label, TRUE);
+
         datum_type_t datum = WGS84_DATUM;
         int datum_selection = DATUM_WGS84;
         predefined_projection_is_selected =
@@ -422,7 +430,6 @@ void geocode_options_changed()
                 g_free(pps);
             }
         }
-
         if (!predefined_projection_is_selected)
         {
           switch (projection)
@@ -517,6 +524,14 @@ void geocode_options_changed()
             enable_pixel_size_entry = TRUE;
 
         set_predefined_projections(projection);
+    }
+    else {
+        vbox_geocode = get_widget_checked("vbox_geocode");
+        geocode_tab_label = get_widget_checked("geocode_tab_label");
+        gtk_widget_set_sensitive(vbox_geocode, FALSE);
+        gtk_widget_set_sensitive(geocode_tab_label, FALSE);
+        update_summary();
+        return;
     }
 
     if (enable_table_utm_projection_options)

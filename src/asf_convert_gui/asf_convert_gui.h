@@ -246,6 +246,8 @@ void show_execute_button(gboolean);
 void latitude_checkbutton_toggle();
 void input_data_type_changed();
 void rgb_settings_changed();
+void import_settings_changed();
+void hide_sections_for_execute();
 
 /* utility.c */
 void setup_band_comboboxes();

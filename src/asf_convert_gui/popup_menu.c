@@ -39,17 +39,65 @@ static const char * imgloc(char * file)
 
 void set_toolbar_images()
 {
-    GtkWidget * w = get_widget_checked("google_earth_toolbar_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+  // Input files toolbar images
+    GtkWidget * w = get_widget_checked("input_files_remove_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("trash_can.png"));
 
-    w = get_widget_checked("completed_files_google_earth_toolbar_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("earth2.gif"));
+    w = get_widget_checked("input_files_process_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("process_files.png"));
+
+    w = get_widget_checked("input_files_rename_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("rename_icon.png"));
+
+    w = get_widget_checked("input_files_view_log_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("view_log.png"));
 
     w = get_widget_checked("ceos_metadata_toolbar_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("ceos_metadata.png"));
+
+    w = get_widget_checked("input_files_view_input_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("asf_view_button.png"));
+
+    w = get_widget_checked("google_earth_toolbar_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
+
+  // Completed files toolbar images
+    w = get_widget_checked("completed_files_remove_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("trash_can.png"));
+
+    w = get_widget_checked("completed_files_reprocess_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("up_arrow.png"));
+
+    w = get_widget_checked("completed_files_view_log_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("view_log.png"));
 
     w = get_widget_checked("asf_metadata_toolbar_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("information_icon.gif"));
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("asf_metadata.png"));
+
+    w = get_widget_checked("completed_files_view_output_button_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("asf_view_button.png"));
+
+    w = get_widget_checked("completed_files_google_earth_toolbar_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
+
+  // Other button images
+    w = get_widget_checked("settings_button_expanded_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("minus.gif"));
+
+    w = get_widget_checked("settings_button_collapsed_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("plus.gif"));
+
+    w = get_widget_checked("files_button_expanded_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("minus.gif"));
+
+    w = get_widget_checked("files_button_collapsed_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("plus.gif"));
+
+    w = get_widget_checked("completed_files_button_expanded_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("minus.gif"));
+
+    w = get_widget_checked("completed_files_button_collapsed_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("plus.gif"));
 }
 
 void
@@ -78,7 +126,7 @@ enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
             (!enable_display_ceos_metadata || !use_thumbnails))
         {
             enable = FALSE;
-        }      
+        }
 
         gtk_widget_set_sensitive(item, enable);
 
@@ -91,8 +139,8 @@ enable_menu_items(GtkMenu * menu, gboolean enable_display_ceos_metadata)
 
 /* static */ void
 enable_toolbar_buttons(gboolean enable_view_output,
-		       gboolean enable_display_ceos_metadata,
-		       gboolean enable_display_asf_metadata)
+               gboolean enable_display_ceos_metadata,
+               gboolean enable_display_asf_metadata)
 {
     GtkWidget *rename_button;
     GtkWidget *view_log_button;
@@ -254,7 +302,7 @@ files_popup_handler(GtkWidget *widget, GdkEvent *event)
                 gtk_tree_model_get_iter(GTK_TREE_MODEL(list_store),
                     &iter, path);
 
-                gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+                gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                     COL_STATUS, &status,
                     COL_INPUT_FILE, &in_name,
                     COL_OUTPUT_FILE, &out_name, -1);
@@ -496,7 +544,7 @@ handle_display_ceos_metadata()
     {
         gchar * in_name;
 
-        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
             COL_INPUT_FILE, &in_name, -1);
 
         show_ceos_meta_data(in_name);
@@ -521,7 +569,7 @@ handle_display_asf_metadata()
     {
         gchar * out_name;
 
-        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter, 
+        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
             COMP_COL_OUTPUT_FILE, &out_name, -1);
 
         show_asf_meta_data(out_name);
@@ -603,7 +651,7 @@ handle_process()
     if (!selected_rows)
     {
         show_please_select_message();
-		return FALSE;
+        return FALSE;
     }
 
     refs = NULL;
@@ -619,8 +667,8 @@ handle_process()
             gchar *status;
 
             gtk_tree_model_get_iter(model, &iter, path);
-            gtk_tree_model_get (model, &iter, 
-                COL_OUTPUT_FILE, &output_file, 
+            gtk_tree_model_get (model, &iter,
+                COL_OUTPUT_FILE, &output_file,
                 COL_STATUS, &status,
                 -1);
 
@@ -653,7 +701,7 @@ static int
 handle_rename()
 {
     GtkWidget *files_list = get_widget_checked("files_list");
-    GtkTreeSelection *selection = 
+    GtkTreeSelection *selection =
         gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
 
     int num_selected = gtk_tree_selection_count_selected_rows(selection);
@@ -692,15 +740,15 @@ handle_view_output()
     if (get_iter_to_first_selected_row(completed_files_list, &iter))
     {
         gchar *out_name;
-        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter, 
+        gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
             COMP_COL_OUTPUT_FILE, &out_name, -1);
 
-	if (g_file_test(out_name, G_FILE_TEST_EXISTS))
-	{
-	    show_image_with_asf_view(out_name);
-	}
-	else
-	{
+    if (g_file_test(out_name, G_FILE_TEST_EXISTS))
+    {
+        show_image_with_asf_view(out_name);
+    }
+    else
+    {
             // could be that band names were appended
             char *tmp_out=NULL;
 
@@ -738,12 +786,12 @@ handle_view_output()
                 char msg[2048];
                 sprintf(msg, "Processing on selected file not complete OR\n"
                              "output image file was not found:\n"
-		             "   %s\n", out_name);
+                     "   %s\n", out_name);
                 message_box(msg);
             }
 
             FREE(tmp_out);
-	}
+    }
 
         g_free(out_name);
     }
@@ -767,7 +815,7 @@ handle_view_input()
     {
         gchar * in_name;
 
-        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter, 
+        gtk_tree_model_get(GTK_TREE_MODEL(list_store), &iter,
                            COL_INPUT_FILE, &in_name, -1);
         show_image_with_asf_view(in_name);
         g_free(in_name);
@@ -872,10 +920,10 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
 
                 g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
                 g_list_free(selected_rows);
-                
+
                 g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
                 g_list_free(refs);
-                
+
                 return FALSE;
             }
 
@@ -904,7 +952,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
                     base_output_name);
                 printf("Generating png: %s\n", png_filename);
                 pixbuf2png(pb, png_filename);
-                kml_entry_with_overlay(kml_file, meta, base_output_name, 
+                kml_entry_with_overlay(kml_file, meta, base_output_name,
                     png_filename, output_dir);
                 FREE(png_filename);
                 // FIXME: remember png files, so we can delete later?
@@ -958,7 +1006,7 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
             exit(EXIT_SUCCESS);
         }
     }
-    
+
     g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
     g_list_free(selected_rows);
 
@@ -978,11 +1026,11 @@ handle_google_earth()
 static int
 handle_completed_files_google_earth()
 {
-    return handle_google_earth_imp("completed_files_list", 
+    return handle_google_earth_imp("completed_files_list",
                                    completed_list_store);
 }
 
-static int 
+static int
 handle_reprocess()
 {
     GtkWidget *completed_files_list;
@@ -1006,6 +1054,17 @@ handle_reprocess()
         show_please_select_message();
         return FALSE;
     }
+//    else {
+      // When a file is moved back to the input files list, automatically expand
+      // the Settings part of the GUI
+//      GtkWidget *w;
+
+//      w = get_widget_checked("settings_hbox_collapsed");
+//      gtk_widget_hide(w);
+
+//      w = get_widget_checked("settings_hbox_expanded");
+//      gtk_widget_show(w);
+//    }
 
     while (i)
     {
@@ -1213,38 +1272,38 @@ setup_completed_files_popup_menu()
 
     menu = gtk_menu_new();
 
-    item = gtk_menu_item_new_with_label("Remove");  
+    item = gtk_menu_item_new_with_label("Remove");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_remove_completed), NULL);
     gtk_widget_show(item);
 
-    item = gtk_menu_item_new_with_label("Queue for Reprocessing");  
+    item = gtk_menu_item_new_with_label("Queue for Reprocessing");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_reprocess), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("View Log");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_log2), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("Display ASF Metadata");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_asf_metadata), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("View Output");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_output), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("View With Google Earth");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_completed_files_google_earth), NULL);
     gtk_widget_show(item);
@@ -1267,38 +1326,38 @@ setup_files_popup_menu()
 
     menu = gtk_menu_new();
 
-    item = gtk_menu_item_new_with_label("Remove");  
+    item = gtk_menu_item_new_with_label("Remove");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_remove), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("Process");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_process), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("Rename Output");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_rename), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("View Log");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_view_log), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("Display CEOS Metadata");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_ceos_metadata), NULL);
     gtk_widget_show(item);
 
     item = gtk_menu_item_new_with_label("View With Google Earth");
-    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );  
+    gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_google_earth), NULL);
     gtk_widget_show(item);

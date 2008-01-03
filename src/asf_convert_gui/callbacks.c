@@ -286,7 +286,9 @@ export_checkbutton_toggle()
         *scaling_method_label,
         *rb_all,
         *rb_rgb,
-        *rgb_vbox;
+        *rgb_vbox,
+        *vbox_export,
+        *export_tab_label;
 
     gint output_format;
 
@@ -303,9 +305,13 @@ export_checkbutton_toggle()
     rb_rgb = get_widget_checked("rb_rgb");
     rb_all = get_widget_checked("rb_all");
     rgb_vbox = get_widget_checked("rgb_vbox");
+    vbox_export = get_widget_checked("vbox_export");
+    export_tab_label = get_widget_checked("export_tab_label");
 
     if (export_checked)
     {
+        gtk_widget_set_sensitive(vbox_export, TRUE);
+        gtk_widget_set_sensitive(export_tab_label, TRUE);
         gtk_widget_set_sensitive(output_format_combobox, TRUE);
 
         output_format = get_combo_box_item(output_format_combobox);
@@ -356,6 +362,8 @@ export_checkbutton_toggle()
     }
     else
     {
+        gtk_widget_set_sensitive(vbox_export, FALSE);
+        gtk_widget_set_sensitive(export_tab_label, FALSE);
         gtk_widget_set_sensitive(output_format_combobox, FALSE);
         gtk_widget_set_sensitive(output_bytes_checkbutton, FALSE);
         gtk_widget_set_sensitive(scaling_method_combobox, FALSE);
@@ -800,4 +808,74 @@ on_completed_files_button_collapsed_clicked(GtkWidget *widget)
     show_widget("completed_files_hbox_expanded", TRUE);
     show_widget("hbox_spacer",
                 !completed_files_is_shown && !files_is_shown);
+}
+
+void hide_sections_for_execute()
+{
+    on_settings_button_expanded_clicked(NULL);
+    on_completed_files_button_collapsed_clicked(NULL);
+}
+
+SIGNAL_CALLBACK void
+on_about_button_clicked(GtkWidget *widget)
+{
+    GtkWidget *about_dialog;
+    GtkStyle *defStyle, *copyStyle;
+    GdkColor whiteColor = {0, 0xFFFF, 0xFFFF, 0xFFFF};
+
+    about_dialog = get_widget_checked("about_dialog");
+
+    // Change background of window to white ...hackish, but this is
+    // what works with GTK+
+    defStyle = gtk_widget_get_default_style();
+    copyStyle = gtk_style_copy(defStyle);
+    copyStyle->bg[GTK_STATE_NORMAL] = whiteColor;
+    defStyle = gtk_style_copy(copyStyle);
+    gtk_widget_set_style(about_dialog, copyStyle);
+
+    gtk_widget_show(about_dialog);
+}
+
+void close_about_dialog()
+{
+  GtkWidget *about_dialog;
+
+  about_dialog = get_widget_checked("about_dialog");
+  gtk_widget_hide(about_dialog);
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_close(GtkWidget *widget)
+{
+  close_about_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_delete_event(GtkWidget *widget)
+{
+  close_about_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_destroy_event(GtkWidget *widget)
+{
+  close_about_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_destroy(GtkWidget *widget)
+{
+  close_about_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_ok_button_clicked(GtkWidget *widget)
+{
+  close_about_dialog();
+}
+
+SIGNAL_CALLBACK void
+on_about_dialog_key_press_event(GtkWidget *widget)
+{
+  close_about_dialog();
 }
