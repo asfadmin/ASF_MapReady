@@ -17,7 +17,7 @@ static int strindex(char s[], char t[])
 }
 
 static void apply_default_dirs(convert_config *cfg)
-{ 
+{
   // apply default dir to input name if there isn't a dir there already
   char file_dir[4096], file[4096];
   split_dir_and_file(cfg->general->in_name, file_dir, file);
@@ -117,7 +117,7 @@ int init_convert_config(char *configFile)
   }
   fConfig = FOPEN(configFile, "w");
 
-  fprintf(fConfig, "asf_convert configuration file\n\n");
+  fprintf(fConfig, "asf_mapready configuration file\n\n");
 
   fprintf(fConfig, "[General]\n\n");
   // input file
@@ -126,7 +126,7 @@ int init_convert_config(char *configFile)
   // default input directory
   fprintf(fConfig, "# Directory where to look for the input file(s). If there is a\n"
                    "# directory already specified in the input file parameter, this\n"
-		   "# value will be ignored.\n\n");
+           "# value will be ignored.\n\n");
   fprintf(fConfig, "default input dir = \n\n");
   // output file
   fprintf(fConfig, "# This parameter looks for the basename of the output file\n\n");
@@ -134,14 +134,14 @@ int init_convert_config(char *configFile)
   // default output directory
   fprintf(fConfig, "# Directory where to put the output file(s). If there is a\n"
                    "# directory already specified in the output file parameter, this\n"
-		   "# value will be ignored.\n\n");
+           "# value will be ignored.\n\n");
   fprintf(fConfig, "default output dir = \n\n");
   // import flag
   fprintf(fConfig, "# The import flag indicates whether the data needs to be run through\n"
           "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
           "# For example, setting the import switch to zero assumes that all the data \n"
           "# is already in the ASF internal format.\n");
-  fprintf(fConfig, "# Running asf_convert with the -create option and the import flag\n"
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
           "# switched on will generate an [Import] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "import = 1\n\n");
@@ -149,13 +149,13 @@ int init_convert_config(char *configFile)
   // SAR processing flag -- removed for 3.0!
 //  fprintf(fConfig, "# The SAR processing flag indicates whether the data needs to be run\n"
 //        "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
-//  fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+//  fprintf(fConfig, "# Running asf_mapready with the -create option and the SAR processing \n"
 //        "# flag switched on will generate a [SAR processing] section where you can define\n"
 //        "# further parameters.\n\n");
 //  fprintf(fConfig, "sar processing = 0\n\n");
 
   // c2p flag -- removed for 3.x!
-  //fprintf(fConfig, "# For SLC (single-look complex) data, asf_convert can convert the data\n"
+  //fprintf(fConfig, "# For SLC (single-look complex) data, asf_mapready can convert the data\n"
   //        "# to polar (amplitude and phase), before further processing.  In fact,\n"
   //        "# if you wish to do any further processing, this step is required.\n\n");
   //fprintf(fConfig, "c2p = 0\n\n");
@@ -164,21 +164,21 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
           "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
           "# correction step).\n");
-  fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the terrain correction\n"
           "# flag switched on will generate an [Terrain correction] section where you\n"
           "# can define further parameters.\n\n");
   fprintf(fConfig, "terrain correction = 0\n\n");
   // geocoding flag
   fprintf(fConfig, "# The geocoding flag indicates whether the data needs to be run through\n"
           "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
-  fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the geocoding flag\n"
           "# switched on will generate a [Geocoding] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "geocoding = 1\n\n");
   // export flag
   fprintf(fConfig, "# The export flag indicates whether the data needs to be run through\n"
           "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
-  fprintf(fConfig, "# Running asf_convert with the -create option and the export flag\n"
+  fprintf(fConfig, "# Running asf_mapready with the -create option and the export flag\n"
           "# switched on will generate an [Export] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "export = 1\n\n");
@@ -188,7 +188,7 @@ int init_convert_config(char *configFile)
           "# geographically well defined. You want the data for the entire project in the same\n"
           "# projection, with the same pixel spacing and the same output format.\n");
   fprintf(fConfig, "# A sample of a default values file can be located in\n");
-  fprintf(fConfig, "# %s/asf_convert.\n\n", get_asf_share_dir());
+  fprintf(fConfig, "# %s/asf_mapready.\n\n", get_asf_share_dir());
   fprintf(fConfig, "default values = \n\n");
   // intermediates flag
   fprintf(fConfig, "# The intermediates flag indicates whether the intermediate processing\n"
@@ -212,7 +212,7 @@ int init_convert_config(char *configFile)
   fprintf(fConfig, "dump envi header = 1\n\n");
   // batch file
   fprintf(fConfig, "# This parameter looks for the location of the batch file\n");
-  fprintf(fConfig, "# asf_convert can be used in a batch mode to run a large number of data\n"
+  fprintf(fConfig, "# asf_mapready can be used in a batch mode to run a large number of data\n"
           "# sets through the processing flow with the same processing parameters.\n\n");
   fprintf(fConfig, "batch file = \n\n");
   // prefix
@@ -321,7 +321,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->export = newStruct(s_export);
 
   // Initialize structure
-  strcpy(cfg->comment, "asf_convert configuration file");
+  strcpy(cfg->comment, "asf_mapready configuration file");
 
   cfg->general->in_name = (char *)MALLOC(sizeof(char)*1200);
   strcpy(cfg->general->in_name, "");
@@ -679,7 +679,7 @@ convert_config *init_fill_convert_config(char *configFile)
   }
 
   apply_default_dirs(cfg);
-    
+
   return cfg;
 }
 
@@ -916,7 +916,7 @@ convert_config *read_convert_config(char *configFile)
   }
 
   apply_default_dirs(cfg);
-    
+
   FCLOSE(fConfig);
 
   return cfg;
@@ -958,7 +958,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# 'asf_import' (1 for running it, 0 for leaving out the import step).\n"
               "# For example, setting the import switch to zero assumes that all the data \n"
               "# is already in the ASF internal format.\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the import flag\n"
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the import flag\n"
               "# switched on will generate an [Import] section where you can define further\n"
               "# parameters.\n\n");
     }
@@ -970,7 +970,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
         if (!shortFlag) {
             fprintf(fConfig, "\n# The SAR processing flag indicates whether the data needs to be run\n"
                     "# through 'ardop' (1 for running it, 0 for leaving out the SAR processing step).\n");
-            fprintf(fConfig, "# Running asf_convert with the -create option and the SAR processing \n"
+            fprintf(fConfig, "# Running asf_mapready with the -create option and the SAR processing \n"
                     "# flag switched on will generate a [SAR processing] section where you can define\n"
                     "# further parameters.\n\n");
         }
@@ -980,10 +980,10 @@ int write_convert_config(char *configFile, convert_config *cfg)
     // For 3.2, only write this out if the flag is actually set.
     if (cfg->general->c2p) {
         if (!shortFlag) {
-            fprintf(fConfig, "\n# For SLC (single-look complex) data, asf_convert can convert the data\n"
+            fprintf(fConfig, "\n# For SLC (single-look complex) data, asf_mapready can convert the data\n"
                     "# to polar (amplitude and phase), before further processing.  In fact,\n"
                     "# if you wish to do any further processing, this step is required.\n\n");
-            fprintf(fConfig, "# Running asf_convert with the -create option and the c2p\n"
+            fprintf(fConfig, "# Running asf_mapready with the -create option and the c2p\n"
                     "# flag switched on will generate a [C2P] section where you can define\n"
                     "# further parameters.\n\n");
         }
@@ -1010,7 +1010,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n# The terrain correction flag indicates whether the data needs be run\n"
               "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
               "# correction step).\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the terrain correction\n"
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the terrain correction\n"
               "# flag switched on will generate an [Terrain correction] section where you\n"
               "# can define further parameters.\n\n");
     }
@@ -1019,7 +1019,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (!shortFlag) {
       fprintf(fConfig, "\n# The geocoding flag indicates whether the data needs to be run through\n"
               "# 'asf_geocode' (1 for running it, 0 for leaving out the geocoding step).\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the geocoding flag\n"
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the geocoding flag\n"
               "# switched on will generate an [Geocoding] section where you can define further\n"
               "# parameters.\n\n");
     }
@@ -1028,7 +1028,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
     if (!shortFlag) {
       fprintf(fConfig, "\n# The export flag indicates whether the data needs to be run through\n"
               "# 'asf_export' (1 for running it, 0 for leaving out the export step).\n");
-      fprintf(fConfig, "# Running asf_convert with the -create option and the export flag\n"
+      fprintf(fConfig, "# Running asf_mapready with the -create option and the export flag\n"
               "# switched on will generate an [Export] section where you can define further\n"
               "# parameters.\n\n");
     }
@@ -1040,7 +1040,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# geographically well defined. You want the data for the entire project in the same\n"
               "# projection, with the same pixel spacing and the same output format.\n\n");
       fprintf(fConfig, "# A sample of a default values file can be located in\n");
-      fprintf(fConfig, "# %s/asf_convert.\n\n", get_asf_share_dir());
+      fprintf(fConfig, "# %s/asf_mapready.\n\n", get_asf_share_dir());
     }
     fprintf(fConfig, "default values = %s\n", cfg->general->defaults);
     // General - Intermediates
@@ -1110,13 +1110,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
     }
     if (!shortFlag)
       fprintf(fConfig, "\n# When the complex SLC flag in non-zero, single "
-	      "look complex data is stored in I/Q values. Otherwise SLC data\n"
-	      "# will be stored as amplitude/phase.\n\n");
+          "look complex data is stored in I/Q values. Otherwise SLC data\n"
+          "# will be stored as amplitude/phase.\n\n");
     fprintf(fConfig, "complex SLC = %d\n", cfg->import->complex_slc);
     if (!shortFlag)
       fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
-	      "look complex data that is stored as amplitude/phase is being\n"
-	      "# multilooked.\n\n");
+          "look complex data that is stored as amplitude/phase is being\n"
+          "# multilooked.\n\n");
     fprintf(fConfig, "multilook SLC = %d\n\n", cfg->import->multilook_slc);
 
     // AirSAR -- only write out if the import format is AirSAR
@@ -1271,20 +1271,20 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "save terrcorr layover mask = %d\n", cfg->terrain_correct->save_terrcorr_layover_mask);
       if (!shortFlag)
         fprintf(fConfig, "\n# This option determines if the simulated image derived from the DEM is\n"
-		"# used for matching with the SAR image in slant range. If you want to trust the quality\n"
-		"# of the orbital information or want to determine your own offset, you want to switch\n"
-		"# this flag to 1.\n\n");
-      fprintf(fConfig, "no matching = %d\n", cfg->terrain_correct->no_matching);    
+        "# used for matching with the SAR image in slant range. If you want to trust the quality\n"
+        "# of the orbital information or want to determine your own offset, you want to switch\n"
+        "# this flag to 1.\n\n");
+      fprintf(fConfig, "no matching = %d\n", cfg->terrain_correct->no_matching);
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter sets the offset in range direction in case the simulated\n"
-		"# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
+        "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
                 "# image.\n\n");
-      fprintf(fConfig, "range offset = %lf\n", cfg->terrain_correct->range_offset);    
+      fprintf(fConfig, "range offset = %lf\n", cfg->terrain_correct->range_offset);
       if (!shortFlag)
         fprintf(fConfig, "\n# This parameter sets the offset in azimuth direction in case the simulated\n"
-		"# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
+        "# amplitude derived from the DEM is NOT used for matching with the slant range SAR\n"
                 "# image.\n\n");
-      fprintf(fConfig, "azimuth offset = %lf\n", cfg->terrain_correct->azimuth_offset);    
+      fprintf(fConfig, "azimuth offset = %lf\n", cfg->terrain_correct->azimuth_offset);
     }
 
     // Geocoding
@@ -1297,7 +1297,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# For all these map projections a large number of projection parameter files\n"
                 "# have been predefined for various parts of the world.\n");
         fprintf(fConfig, "# The projection parameter files are located in:\n");
-	fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
+    fprintf(fConfig, "#    %s/projections\n\n", get_asf_share_dir());
       }
       fprintf(fConfig, "projection = %s\n", cfg->geocoding->projection);
       if (!shortFlag)
@@ -1402,7 +1402,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# parameter settings.\n\n");
     fprintf(fConfig, "default values = %s\n\n", cfg->general->defaults);
     if (!shortFlag)
-      fprintf(fConfig, "# asf_convert has a batch mode to run a large number of data sets\n"
+      fprintf(fConfig, "# asf_mapready has a batch mode to run a large number of data sets\n"
               "# through the processing flow with the same processing parameters\n\n");
     fprintf(fConfig, "batch file = %s\n\n", cfg->general->batchFile);
     if (!shortFlag)

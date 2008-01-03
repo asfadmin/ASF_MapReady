@@ -554,7 +554,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
 
       FILE *fConfig = FOPEN(tmpCfgName, "w");
-      fprintf(fConfig, "asf_convert temporary configuration file\n\n");
+      fprintf(fConfig, "asf_mapready temporary configuration file\n\n");
       fprintf(fConfig, "[General]\n");
       fprintf(fConfig, "default values = %s\n", defaults);
       fprintf(fConfig, "input file = %s\n", batchItem);
@@ -575,7 +575,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                    "Could not update configuration file");
       free_convert_config(tmp_cfg);
 
-      // Run asf_convert for temporary configuration file
+      // Run asf_mapready for temporary configuration file
 
       // This is really quite a kludge-- we used to call the library
       // function here, now we shell out and run the tool directly, sort
@@ -586,11 +586,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       asfPrintStatus("\nProcessing %s ...\n", batchItem);
       char cmd[1024];
       if (logflag) {
-        sprintf(cmd, "%sasf_convert%s -log %s %s",
+          sprintf(cmd, "%sasf_mapready%s -log %s %s",
                 get_argv0(), bin_postfix(), logFile, tmpCfgName);
       }
       else {
-        sprintf(cmd, "%sasf_convert%s %s",
+          sprintf(cmd, "%sasf_mapready%s %s",
                 get_argv0(), bin_postfix(), tmpCfgName);
       }
       int ret = asfSystem(cmd);
@@ -1242,8 +1242,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                              cfg->terrain_correct->do_radiometric,
                              cfg->terrain_correct->smooth_dem_holes,
                              NULL, cfg->terrain_correct->no_matching,
-			     cfg->terrain_correct->range_offset,
-			     cfg->terrain_correct->azimuth_offset),
+                 cfg->terrain_correct->range_offset,
+                 cfg->terrain_correct->azimuth_offset),
             "terrain correcting data file (asf_terrcorr)\n");
       }
 

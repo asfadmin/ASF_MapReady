@@ -11,9 +11,9 @@ CFLAGS += $(GLIB_CFLAGS) $(GSL_CFLAGS) $(PROJ_CFLAGS)
 all: build_only
 	mv libasf_convert.a $(LIBDIR)
 	cp asf_convert.h $(ASF_INCLUDE_DIR)
-	mkdir -p $(SHAREDIR)/asf_convert
-	cp batch.config $(SHAREDIR)/asf_convert
-	cp asf_convert.defaults $(SHAREDIR)/asf_convert
+	mkdir -p $(SHAREDIR)/asf_mapready
+	cp batch.config $(SHAREDIR)/asf_mapready
+	cp asf_mapready.defaults $(SHAREDIR)/asf_mapready
 
 build_only: $(OBJS)
 	rm -f libasf_convert.a

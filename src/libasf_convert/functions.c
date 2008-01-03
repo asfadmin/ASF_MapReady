@@ -3,8 +3,8 @@
 
 #include "asf.h"
 
-int image_stats(char *inFile, char *outFile, char *values, int bins, 
-		     double interval)
+int image_stats(char *inFile, char *outFile, char *values, int bins,
+             double interval)
 {
   char options[255]="", command[1024];
   int ret;
@@ -39,7 +39,7 @@ int call_asf_convert(char *configFile)
   char command[256];
   int ret;
 
-  sprintf(command, "asf_convert %s\n", configFile);
+  sprintf(command, "asf_mapready %s\n", configFile);
   ret = asfSystem(command);
 
   return ret;

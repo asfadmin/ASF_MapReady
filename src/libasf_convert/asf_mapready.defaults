@@ -1,5 +1,3 @@
-default input dir = 
-default output dir = 
 import = 1
 sar processing = 0
 geocoding = 1
@@ -21,6 +19,3 @@ force = 0
 output format = GEOTIFF
 byte conversion = SIGMA
 smooth dem holes = 1
-matching = 1
-range offset = 0
-azimuth offset = 0

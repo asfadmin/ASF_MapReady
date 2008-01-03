@@ -36,15 +36,15 @@ typedef struct
 typedef struct
 {
   char *format;           // input format: CEOS, STF, ASF
-  char *radiometry;       // data type: AMPLITUDE_IMAGE, 
-                          // POWER_IMAGE, 
-                          // SIGMA_IMAGE, 
+  char *radiometry;       // data type: AMPLITUDE_IMAGE,
+                          // POWER_IMAGE,
+                          // SIGMA_IMAGE,
                           // GAMMA_IMAGE,
                           // BETA_IMAGE
   char *lut;              // look up table file name (CIS only)
   double lat_begin;       // latitude constraint begin
   double lat_end;         // latitude constraint end
-  char *prc;              // precision state vector location (to be 
+  char *prc;              // precision state vector location (to be
                           //        implemented)
   int output_db;          // TRUE if the output is db.  Only applies to
                           //        SIGMA, GAMMA, BETA radiometries.
@@ -105,7 +105,7 @@ typedef struct
   int fill_value;         // a fill value if >=0. LEAVE_MASK means use sar data
   int save_terrcorr_dem;  // if TRUE, save the clipped DEM for the user
   int save_terrcorr_layover_mask; // if TRUE, save the layover/shadow mask
-  int do_radiometric;     // If TRUE, apply radiometric terrain correction in 
+  int do_radiometric;     // If TRUE, apply radiometric terrain correction in
                           // addition to geometric terrain correction
   int smooth_dem_holes;   // If TRUE, try to smooth over holes in the DEM
   int no_resampling;      // If TRUE, SAR image is not downsampled to match DEM
@@ -129,7 +129,7 @@ typedef struct
 typedef struct
 {
   char *format;           // output format: ASF, GEOTIFF, JPEG, PGM
-  char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE, 
+  char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE,
                           // HISTOGRAM_EQUALIZE
   char *rgb;              // RGB banding setting
   int truecolor;          // True color flag (bands 3-2-1 w/2-sigma contrast expansion)
@@ -171,7 +171,7 @@ char *str2upper(char *string);
 //int asf_import(char *inFile, char *outFile, char *format, char *radiometry,
 //               char *prcOrbits, double lat_begin, double lat_end);
 //int ardop(char *options, char *inFile, char *outFile);
-int image_stats(char *inFile, char *outFile, char *values, int bins, 
+int image_stats(char *inFile, char *outFile, char *values, int bins,
                 double interval);
 int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text);
 //int asf_terrcorr(char *options, char *inFile, char *demFile, char *outFile);
@@ -179,6 +179,6 @@ int detect_cr(char *inFile, char *crFile, char *outFile, int chips, int text);
 //int asf_export(char *options, char *inFile, char *outFile);
 int asf_convert(int createflag, char *configFileName);
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM);
-int call_asf_convert(char *configFile);
+int call_asf_convert(char *configFile); // FIXME: Change the name ... Now calls asf_mapready
 
 #endif
