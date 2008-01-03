@@ -144,7 +144,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        automatically fetch the first set in the aforementioned list.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_convert, asf_export\n"
+"   asf_mapready, asf_export\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -293,9 +293,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
       DEFAULT_RANGE_SCALE);
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
     flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix-meta-ypix", argc, argv);
     if (flags[f_FIX_META_YPIX] == FLAG_NOT_SET)
         flags[f_FIX_META_YPIX] = checkForOptionWithArg("-fix_meta_ypix", argc, argv);
- 
+
     do_resample = flags[f_RANGE_SCALE] != FLAG_NOT_SET ||
         flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET;
 
@@ -375,10 +375,10 @@ int main(int argc, char *argv[])
     if (do_resample)
     {
         range_scale = flags[f_RANGE_SCALE] == FLAG_NOT_SET ? 1.0 :
-	  getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]], -1);
+      getDoubleOptionArgWithDefault(argv[flags[f_RANGE_SCALE]], -1);
 
         azimuth_scale = flags[f_AZIMUTH_SCALE] == FLAG_NOT_SET ? 1.0 :
-	  getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]], -1);
+      getDoubleOptionArgWithDefault(argv[flags[f_AZIMUTH_SCALE]], -1);
     }
 
     do_metadata_fix = flags[f_FIX_META_YPIX] != FLAG_NOT_SET;
@@ -386,7 +386,7 @@ int main(int argc, char *argv[])
     if (do_metadata_fix)
     {
         correct_y_pixel_size =
-	  getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]], -1);
+      getDoubleOptionArgWithDefault(argv[flags[f_FIX_META_YPIX]], -1);
     }
 
     { /*Check for mutually exclusive options: we can only have one of these*/
@@ -637,8 +637,8 @@ int main(int argc, char *argv[])
 
     { // scoping block
         int db_flag = flags[f_DB] != FLAG_NOT_SET;
-	int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
-	int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
+        int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
+        int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -659,10 +659,10 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
-        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type, 
-		   band_id, image_data_type, lutName, prcPath, lowerLat, upperLat, 
-		   p_range_scale, p_azimuth_scale,p_correct_y_pixel_size, 
-		   inMetaNameOption, inBaseName, outBaseName);
+        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type,
+           band_id, image_data_type, lutName, prcPath, lowerLat, upperLat,
+           p_range_scale, p_azimuth_scale,p_correct_y_pixel_size,
+           inMetaNameOption, inBaseName, outBaseName);
     }
 
     if (lutName)
