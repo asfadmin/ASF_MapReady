@@ -1,24 +1,10 @@
 #include "asf_sar.h"
 #include "asf.h"
+#include "asf_license.h"
+#include "to_sr_help.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#define VERSION 0.2
-
-static void usage(char *progname)
-{
-    asfPrintStatus("\n");
-    asfPrintStatus("Usage: %s [-p <pixsize>] <infile> <outfile>\n",progname);
-    asfPrintStatus("   pixsize  Pixel size for output slant range image\n");
-    asfPrintStatus("   infile   Input file base name.\n");
-    asfPrintStatus("   outfile  Output slant range filebase name\n");
-    asfPrintStatus("\n");
-    asfPrintStatus(" If the pixel size is not specified, it is calculated\n");
-    asfPrintStatus(" as follows: (speed of light)/(sample rate * 2*10^6)\n");
-    asfPrintStatus("\n");
-    exit(EXIT_FAILURE);
-}
 
 int main(int argc,char *argv[])
 {
@@ -27,8 +13,14 @@ int main(int argc,char *argv[])
   char  infile[256];     /* Input file name               */
   char  outfile[256];    /* Output file name              */
 
+  if (argc > 1) {
+    check_for_help(argc, argv);
+    handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
   if ((argc != 5 && argc != 3) || (argc == 5 && strcmp(argv[1], "-p") != 0)) {
-    usage(argv[0]);
+    asfPrintStatus("**Note enough arguments\n");
+    usage();
+    return 1;
   }
 
   if (strcmp(argv[1],"-p") == 0) {

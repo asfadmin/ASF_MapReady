@@ -2,7 +2,7 @@
 
 include ../../make_support/system_rules
 
-OBJS  = to_sr.o
+OBJS  = to_sr.o help.o
 
 REQUIRED_LIBS = \
 	$(LIBDIR)/libasf_sar.a \
