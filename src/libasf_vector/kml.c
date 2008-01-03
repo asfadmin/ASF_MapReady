@@ -9,7 +9,7 @@
 #include <math.h>
 #include <ctype.h>
 
-/* 
+/*
    When invoking google earth from the command line, you can put a kml
    file as a command line argument, but in that case it wants the kml
    files' location to be fully specified, e.g.:
@@ -71,7 +71,7 @@ static double min4(double a, double b, double c, double d)
     return min2(min2(a,b), min2(c,d));
 }
 
-static void kml_entry_impl(FILE *kml_file, meta_parameters *meta, 
+static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *png_filename, char *dir)
 {
     int nl = meta->general->line_count;
@@ -89,21 +89,21 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "<Placemark>\n");
     fprintf(kml_file, "  <description><![CDATA[\n");
     fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
-    fprintf(kml_file, "<strong>Sensor name</strong>: %s<br>\n", 
-	    meta->general->sensor_name);
+    fprintf(kml_file, "<strong>Sensor name</strong>: %s<br>\n",
+        meta->general->sensor_name);
     fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
     fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
     fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
-    fprintf(kml_file, "<strong>Acquisition date</strong>: %s<br>\n", 
-	    meta->general->acquisition_date);
+    fprintf(kml_file, "<strong>Acquisition date</strong>: %s<br>\n",
+        meta->general->acquisition_date);
     if (meta->general->orbit_direction == 'D')
       fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
     else if (meta->general->orbit_direction == 'A')
       fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
-    fprintf(kml_file, "<strong>Center - Lat</strong>: %9.4lf, ", 
-	    meta->general->center_latitude);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", 
-	    meta->general->center_longitude);
+    fprintf(kml_file, "<strong>Center - Lat</strong>: %9.4lf, ",
+        meta->general->center_latitude);
+    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n",
+        meta->general->center_longitude);
     fprintf(kml_file, "<strong>Corner 1 - Lat</strong>: %9.4lf, ", lat_UL);
     fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_UL);
     fprintf(kml_file, "<strong>Corner 2 - Lat</strong>: %9.4lf, ", lat_UR);
@@ -130,9 +130,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     fprintf(kml_file, "  <Polygon>\n");
     // different behavior if we have an overlay - no extrude, and draw on
     // the ground instead of at an absolute height above the terrain
-	fprintf(kml_file, "    <extrude>%d</extrude>\n",
+    fprintf(kml_file, "    <extrude>%d</extrude>\n",
         png_filename ? 0 : 1);
-	fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
+    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
         png_filename ? "relativeToGround" : "absolute");
     fprintf(kml_file, "    <outerBoundaryIs>\n");
     fprintf(kml_file, "      <LinearRing>\n");
@@ -155,7 +155,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     double lat_LL_rot, lon_LL_rot;
 
     int zone = utm_zone(clon);
-    
+
     latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
     latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
     latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
@@ -181,9 +181,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "</Placemark>\n");
 
         if (!png_filename || !meta->projection)
-            printf("No overlay: unprojected data.\n");
+            printf("Google Earth overlay missing: Data must not be in a UTM map projection.\n");
         else
-            printf("No overlay: rotation angle too large: %lf\n", ang*R2D);
+            printf("Google Earth overlay missing: Rotation angle too large to overlay: %lf\n", ang*R2D);
     }
     else
     {
@@ -230,7 +230,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
             double box_south_lat = lat_LR_rot;
             double box_east_lon = lon_UL_rot;
             double box_west_lon = lon_LR_rot;
-            
+
             if (box_south_lat > box_north_lat)
                 swap(&box_south_lat, &box_north_lat);
             if (box_east_lon < box_west_lon)
@@ -301,23 +301,23 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   double lat_LR, lon_LR;
   double max_lat = -90, max_lon = -180, min_lat = 90, min_lon = 180;
   char *mon[13]={"", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-		 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
   double ul_x, ul_y, ur_x, ur_y, ang;
-  
+
   meta = meta_read(name);
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
-  
+
   jdate.year = meta->state_vectors->year;
   jdate.jd = meta->state_vectors->julDay;
   date_jd2ymd(&jdate, &ymd);
-  
+
   // Get corner coordinates from metadata
   meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
   meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
   meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
   meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
-  
+
   // Figure out rotation and box coordinates
   latLon2UTM(lat_UL, lon_UL, 0.0, &ul_x, &ul_y);
   latLon2UTM(lat_UR, lon_UR, 0.0, &ur_x, &ur_y);
@@ -334,7 +334,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   create_name(input_image, name, ".img");
   create_name(output_image, name, ".png");
   //img2png(meta, input_image, 512, output_image);
-  
+
   // Write everything into kml file
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");
@@ -342,23 +342,23 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
   fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
   fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
-  fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n", 
-	  ymd.day, mon[ymd.month], ymd.year);
+  fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n",
+      ymd.day, mon[ymd.month], ymd.year);
   if (meta->general->orbit_direction == 'D')
     fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
   else if (meta->general->orbit_direction == 'A')
     fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
-  fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n", 
-	  meta->general->center_latitude);
-  fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n", 
-	  meta->general->center_longitude);
+  fprintf(kml_file, "<strong>Center latitude</strong>: %9.4lf<br>\n",
+      meta->general->center_latitude);
+  fprintf(kml_file, "<strong>Center longitude</strong>: %9.4lf<br>\n",
+      meta->general->center_longitude);
   fprintf(kml_file, "  ]]></description>\n");
   fprintf(kml_file, "  <name>%s</name>\n", name);
   fprintf(kml_file, "  <LookAt>\n");
   fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-	  meta->general->center_longitude);
+      meta->general->center_longitude);
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-	  meta->general->center_latitude);
+      meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
   fprintf(kml_file, "    <tilt>45</tilt>\n");
   fprintf(kml_file, "    <heading>50</heading>\n");
@@ -371,24 +371,24 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "    <tessellate>1</tessellate>\n");
   fprintf(kml_file, "    <altitudeMode>absolute</altitudeMode>\n");
   fprintf(kml_file, "    <coordinates>\n");
-  
+
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LL, lat_LL);
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_LR, lat_LR);
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UR, lat_UR);
   fprintf(kml_file, "      %.12f,%.12f,4000\n", lon_UL, lat_UL);
-  
+
   fprintf(kml_file, "    </coordinates>\n");
   fprintf(kml_file, "  </LineString>\n");
   fprintf(kml_file, "</Placemark>\n");
-  
+
   fprintf(kml_file, "<GroundOverlay>\n");
   fprintf(kml_file, "  <name>%s</name>\n", name);
   fprintf(kml_file, "  <LookAt>\n");
-  fprintf(kml_file, "    <longitude>%.10f</longitude>\n", 
-	  meta->general->center_longitude);
-  fprintf(kml_file, "    <latitude>%.10f</latitude>\n", 
-	  meta->general->center_latitude);
+  fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
+      meta->general->center_longitude);
+  fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
+      meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
   fprintf(kml_file, "    <tilt>45</tilt>\n");
   fprintf(kml_file, "    <heading>50</heading>\n");
@@ -405,7 +405,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
   fprintf(kml_file, "  </LatLonBox>\n");
   fprintf(kml_file, "</GroundOverlay>\n");
-  
+
 }
 
 void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, char *name,
@@ -429,13 +429,13 @@ void write_kml_overlay(char *filename)
 {
   char *kml_filename = appendExt(filename, ".kml");
   char *basename = get_basename(filename);
-  
+
   FILE *kml_file = FOPEN(kml_filename, "w");
-  
+
   kml_header(kml_file);
   kml_entry_overlay(kml_file, basename);
   kml_footer(kml_file);
-  
+
   FCLOSE(kml_file);
   FREE(basename);
   FREE(kml_filename);
@@ -497,7 +497,7 @@ void write_kml(char *inFile, char *basename, format_type_t format, int list)
   }
   else
     convert2kml(inFile, fpOut, basename, format);
-  
+
   // Close business
   kml_footer(fpOut);
   FCLOSE(fpOut);
