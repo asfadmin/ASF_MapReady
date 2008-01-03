@@ -1,35 +1,35 @@
 /******************************************************************************
 NAME: trim
 
-SYNOPSIS: 
+SYNOPSIS:
 
     trim [-log <file>] [-h <trim height>] [-w <trim width>]
-	 <in> <out> <new top line> <new left sample> 
+     <in> <out> <new top line> <new left sample>
 
 DESCRIPTION:
-	Trim will let you change the size of any LAS 6.0 single-band image.
+    Trim will let you change the size of any LAS 6.0 single-band image.
 It should work (but hasn't yet been tested!) on int data.
 It does work on byte, short, float, and complex data.
 
-	You specify the input and output filenames (WITH extension), and 
+    You specify the input and output filenames (WITH extension), and
 a top left coordinate.  Trim will create a new image in outfile which
-starts at these coordinates.  Optionally, you can also specify the new height 
+starts at these coordinates.  Optionally, you can also specify the new height
 and width of the output image (if not specified, trim will use the old size
 minus the top left coordinates-- i.e. minus the part that is trimmed off).
 
-	Trim relies on DDR information to do the trimming, and maintains DDR
+    Trim relies on DDR information to do the trimming, and maintains DDR
 information through to the output.
 
-	Trim can be used anytime you want to work with a smaller image, but
+    Trim can be used anytime you want to work with a smaller image, but
 it also can be used to remove the CEOS header from an image (albeit the process
 for doing so is a bit convoluted): since the RADARSAT-era CEOS header is one line
 on top of the image, plus 192 bytes per line, we can just trim it off.  E.g.
 if we have a byte CEOS image "bob.D" we wish to turn into a LAS image "bill.img", type
 
-	trim bob.D bill.img 1 192
+    trim bob.D bill.img 1 192
 
-	Trim will generate bill.img and bill.ddr.  Note that for this to work, you
-need a file called "bob.ddr" to describe bob.D's dimensions and data type-- but 
+    Trim will generate bill.img and bill.ddr.  Note that for this to work, you
+need a file called "bob.ddr" to describe bob.D's dimensions and data type-- but
 CEOS files don't ship with such a file.  This is the purpose of the makeddr program,
 which should also be available from ASF.
 
@@ -44,27 +44,27 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	    6/97   Orion Lawlor Needed to trim various image files
-    				 for faster interferometry.
-    1.1	    5/98   Orion Lawlor Caplib/bug fix.
-    1.11    7/01   Rudi Gens	Added logfile switch
+    1.0     6/97   Orion Lawlor Needed to trim various image files
+                     for faster interferometry.
+    1.1     5/98   Orion Lawlor Caplib/bug fix.
+    1.11    7/01   Rudi Gens    Added logfile switch
     1.3     3/02   Pat Denny    Updated Command line parsing
     1.5     3/04   Rudi Gens    Removed DDR dependency
     2.0     10/05  Rudi Gens    Moved trim into libasf_raster.
-				Tool now using function call.
+                Tool now using function call.
 
 HARDWARE/SOFTWARE LIMITATIONS: none
 
 SEE ALSO:
-	makeddr(1), trim_sic(1)
+    makeddr(1), trim_sic(1)
 
 BUGS: none known
 
 ******************************************************************************/
 /****************************************************************************
-*								            *
+*                                           *
 *   Trim: lets you trim/add any # of samples to any LAS 6.0 image file      *
-*         (even complex .cpx) while maintaining the DDR.		    *
+*         (even complex .cpx) while maintaining the DDR.            *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -105,10 +105,8 @@ BUGS: none known
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
-
-#define VERSION 1.3
-
-void usage(char *name);
+#include "asf_license.h"
+#include "trim_help.h"
 
 int main(int argc, char *argv[])
 {
@@ -118,20 +116,30 @@ int main(int argc, char *argv[])
   logflag=0;
   currArg=1;      /* from cla.h in asf.h, points to current argv string */
   system("date");
-  printf("Program: trim\n\n");  
+  printf("Program: trim\n\n");
 
 /* Parse command line args */
+  if (argc > 1) {
+    check_for_help(argc, argv);
+    handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
+  if (argc < 4) {
+    asfPrintStatus("**Not enough arguments\n");
+    usage();
+    return 0;
+  }
+
   while (currArg < (argc-4))
   {
     char *key=argv[currArg++];
-    if (strmatch(key,"-w")) {
+    if (strmatch(key,"-width")) {
       CHECK_ARG(1) /*one integer argument: width */
       sizeX=atoi(GET_ARG(1));
-    } 
-    else if (strmatch(key,"-h")) {
+    }
+    else if (strmatch(key,"-height")) {
       CHECK_ARG(1) /*one integer argument: height */
       sizeY=atoi(GET_ARG(1));
-    } 
+    }
     else if (strmatch(key,"-log")) {
       CHECK_ARG(1) /*one string argument: logfile name */
       strcpy(logFile,GET_ARG(1));
@@ -160,32 +168,4 @@ int main(int argc, char *argv[])
   trim(infile, outfile, startX, startY, sizeX, sizeY);
 
   return(0);
-}
-
-
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>] [-h <trim_height>] [-w <trim_width>]\n"
-	"        <in_file> <out_file> <new_top_line> <new_left_sample>\n",name);
- printf("\n"
-      	"REQUIRED ARGUMENTS:\n"
-      	"   <in_file>         Input file\n"
-      	"   <out_file>        File to be output\n"
-      	"   <new_top_line>    Line in input that will be top of output\n"
-      	"   <new_left_sample> Sample in input that will be left side of output\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -log <file>      Option to have output written to a log <file>.\n"
-      	"   -h <trim_height> Height of output file.\n"
-      	"   -w <trim_width>  Width of output file.\n");
- printf("\n"
-      	"DESCRIPTION:\n"
-      	"   Allows you to trim/add any number of samples to any\n"
-	"   ASF internal image file (even complex .cpx) while maintaining the metadata.\n");
- printf("\n"
-      	"Version %.2f, ASF SAR TOOLS\n"
-      	"\n",VERSION);
- exit(1);
 }

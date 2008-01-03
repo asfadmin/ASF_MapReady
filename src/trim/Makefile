@@ -15,9 +15,10 @@ CFLAGS += $(PROJ_CFLAGS) $(GSL_CFLAGS) $(GLIB_CFLAGS)
 all: trim
 
 trim: trim.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o trim trim.c $(LIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(LFLAGS) -o trim trim.c help.c $(LIBS) $(LDFLAGS)
 	mv trim$(BIN_POSTFIX) $(BINDIR)
 	cp *.1 ../../man/cat1
 
 clean:
 	rm -f *.o core* *~
+
