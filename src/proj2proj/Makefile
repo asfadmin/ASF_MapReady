@@ -84,7 +84,7 @@ $(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
-#	cp $(TARGET).ico $(BINDIR)
+	cp $(TARGET)_icon.ico $(SHAREDIR)
 
 clean:
 	rm -rf $(GTK_DIR) $(TARGET).exe core.*
@@ -132,7 +132,7 @@ default: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
-#	cp $(TARGET).ico $(SHAREDIR)
+	cp $(TARGET)_icon.ico $(SHAREDIR)
 
 %.c: %.h
 
