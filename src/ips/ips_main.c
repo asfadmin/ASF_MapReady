@@ -66,27 +66,27 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 /********************************************************************************
 NAME:
-	ips.c
+    ips.c
 
 SYNOPSIS:
 
 DESCRIPTION:
-	This program performs InSAR and DInSAR processing
+    This program performs InSAR and DInSAR processing
 
 FILE REFERENCES:
-	NAME:		USAGE:
-	---------------------------------------------------------------------
-	.config		configuration file for all input files
+    NAME:       USAGE:
+    ---------------------------------------------------------------------
+    .config     configuration file for all input files
 
 PROGRAM HISTORY:
-	VERS:   DATE:   AUTHOR:
-	----------------------------------------------------------------------
-	1.0	8/01	R. Gens, original development
-	1.1	2/02	R. Gens, added ability to read CEOS raw and SLC data
-	1.2	2/03	R. Gens, adapted processing flow for updated Doppler 
+    VERS:   DATE:   AUTHOR:
+    ----------------------------------------------------------------------
+    1.0 8/01    R. Gens, original development
+    1.1 2/02    R. Gens, added ability to read CEOS raw and SLC data
+    1.2 2/03    R. Gens, adapted processing flow for updated Doppler
                                  processing
-	1.3	3/03	R. Gens, included differential processing mode
-	2.0	3/04	R. Gens, complete overhaul because of the new metadata
+    1.3 3/03    R. Gens, included differential processing mode
+    2.0 3/04    R. Gens, complete overhaul because of the new metadata
         2.1     6/05    R. Gens, getting stable version for summer course
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -96,7 +96,7 @@ ALGORITHM DESCRIPTION:
 ALGORITHM REFERENCES:
 
 BUGS:
-	There are no known bugs.
+    There are no known bugs.
 
 *********************************************************************************/
 
@@ -132,8 +132,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-  exit(EXIT_SUCCESS);
+      "Version:\n   " MAPREADY_VERSION_STRING "\n\n");
+  exit(EXIT_FAILURE);
 }
 
 /* Check to see if an option was supplied or not. If it was found, return its
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 
   // Report the command line
   asfSplashScreen(argc, argv);
-  
+
   // If requested, create a config file and exit (if the file does not exist),
   // otherwise read it
   if ( createFlag==TRUE && !fileExists(configFile) ) {
@@ -210,15 +210,15 @@ int main(int argc, char *argv[])
     sprintf(cfg->geocode->amp, "%s_amp", cfg->general->base);
     sprintf(cfg->geocode->error, "%s_error", cfg->general->base);
     sprintf(cfg->geocode->coh, "%s_coh", cfg->general->base);
-    asfRequire( 0==write_config(configFile, cfg), 
-		 "Could not update configuration file");
+    asfRequire( 0==write_config(configFile, cfg),
+         "Could not update configuration file");
     asfPrintStatus("   Initialized complete configuration file\n\n");
     exit(EXIT_SUCCESS);
   }
   else {
     cfg = read_config(configFile, createFlag);
   }
-  
+
   /* Setup log file */
   sprintf(logFile, "%s.log", cfg->general->base);
   if (strncmp(cfg->general->status, "new", 3)==0) fLog = FOPEN(logFile, "w");
