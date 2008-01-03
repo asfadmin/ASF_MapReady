@@ -137,13 +137,13 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   Currently supports ingest of ASF format floating point and byte data.\n"\
+"   Currently supports ingest of ASF format floating point and byte data (only.).\n"\
 "\n"\
 "   Floating-point image formats (i.e., geotiff) are not supported in many\n"\
 "   image viewing programs.\n"
 
 #define ASF_SEE_ALSO_STRING \
-"   asf_convert, asf_import\n"
+"   asf_mapready, asf_import\n"
 
 /*===================END ASF AUTO-GENERATED DOCUMENTATION===================*/
 
@@ -200,8 +200,8 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-  exit(EXIT_SUCCESS);
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+  exit(EXIT_FAILURE);
 }
 
 int
@@ -273,7 +273,7 @@ main (int argc, char *argv[])
       || (checkForOption("-help", argc, argv) != FLAG_NOT_SET) ) {
       print_help();
   }
-  get_asf_share_dir_with_argv0(argv[0]);  
+  get_asf_share_dir_with_argv0(argv[0]);
   handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
 
   formatFlag = checkForOption ("-format", argc, argv);
@@ -381,28 +381,28 @@ main (int argc, char *argv[])
          falsecolorFlag != FLAG_NOT_SET  ||
          pauliFlag != FLAG_NOT_SET       ||
          sinclairFlag != FLAG_NOT_SET))
-     ||  
+     ||
        (truecolorFlag != FLAG_NOT_SET    &&
         (bandFlag != FLAG_NOT_SET        ||
          rgbFlag != FLAG_NOT_SET         ||
          pauliFlag != FLAG_NOT_SET       ||
          sinclairFlag != FLAG_NOT_SET    ||
          falsecolorFlag != FLAG_NOT_SET))
-     ||  
+     ||
        (falsecolorFlag != FLAG_NOT_SET   &&
         (bandFlag != FLAG_NOT_SET        ||
          truecolorFlag != FLAG_NOT_SET   ||
          pauliFlag != FLAG_NOT_SET       ||
          sinclairFlag != FLAG_NOT_SET    ||
          rgbFlag != FLAG_NOT_SET))
-     ||  
+     ||
        (pauliFlag != FLAG_NOT_SET   &&
         (bandFlag != FLAG_NOT_SET        ||
          truecolorFlag != FLAG_NOT_SET   ||
          falsecolorFlag != FLAG_NOT_SET  ||
          sinclairFlag != FLAG_NOT_SET    ||
          rgbFlag != FLAG_NOT_SET))
-     ||  
+     ||
        (sinclairFlag != FLAG_NOT_SET   &&
         (bandFlag != FLAG_NOT_SET        ||
          truecolorFlag != FLAG_NOT_SET   ||
@@ -425,7 +425,7 @@ main (int argc, char *argv[])
         lutFlag != FLAG_NOT_SET
      )
     asfPrintError("Look up table option can only be used on single-band "
-		  "images.\n");
+          "images.\n");
 
   if( logFlag != FLAG_NOT_SET ) {
     strcpy(logFile, argv[logFlag+1]);
@@ -664,7 +664,7 @@ main (int argc, char *argv[])
   if ( bandFlag != FLAG_NOT_SET) {
     strcpy (command_line.band, argv[bandFlag + 1]);
     band_names = find_single_band(in_base_name, command_line.band,
-				  &num_bands_found);
+                  &num_bands_found);
   }
   else if (rgbFlag == FLAG_NOT_SET &&
           truecolorFlag == FLAG_NOT_SET &&
@@ -703,7 +703,7 @@ main (int argc, char *argv[])
   if ( lutFlag != FLAG_NOT_SET &&
        command_line.sample_mapping == NONE)
     asfPrintError("Look up tables can only be applied to byte output"
-		  " images\n");
+          " images\n");
 
   // Report what is going to happen
   if (rgbFlag != FLAG_NOT_SET ||
@@ -727,11 +727,11 @@ main (int argc, char *argv[])
     }
     else if (num_bands_found == 1) {
       if (lutFlag != FLAG_NOT_SET)
-	asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
-		       command_line.band);
+    asfPrintStatus("Exporting band '%s' applying look up table ...\n\n",
+               command_line.band);
       else
-	asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
-		       command_line.band);
+    asfPrintStatus("Exporting band '%s' as greyscale ...\n\n",
+               command_line.band);
     }
     else
       asfPrintError("Band could not be found in the image.\n");
