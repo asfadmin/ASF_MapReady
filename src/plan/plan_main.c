@@ -78,8 +78,8 @@ static void print_help(void)
       "Options:\n" ASF_OPTIONS_STRING "\n"
       "Examples:\n" ASF_EXAMPLES_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
-  exit(EXIT_SUCCESS);
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
+  exit(EXIT_FAILURE);
 }
 
 int strmatches(const char *key, ...)
