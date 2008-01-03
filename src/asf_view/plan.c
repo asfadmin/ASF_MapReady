@@ -225,6 +225,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         // this is for debugging, can be removed
         pass_collection_to_kml(pc, "test_kml.kml");
 
+        // polygon #0 is left alone (it is the area of interest)
+        // The passes start at polygon #1 (clobber any existing polygons)
+
         // now create polygons from each pass
         // metadata for each polygon is also stored... somewhere!
         for (i=0; i<pc->num; ++i) {
@@ -238,21 +241,31 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             int j;
             for (j=0; j<poly->n; ++j) {
               double samp, line, lat, lon;
-              UTM2latLon();
+
+              UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
-              g_polys[i].line[m] = line;
-              g_polys[i].samp[m] = samp;
+
+              //printf("%d,%d -- %f,%f\n",i,m,line,samp);
+              g_polys[i+1].line[m]=line;
+              g_polys[i+1].samp[m]=samp;
               ++m;
             }
           }
 
-          g_polys[i].n = m;
-          g_polys[i].c = m-1;
+          g_polys[i+1].n=m;
+          g_polys[i+1].c=m-1;
 
-          g_polys[i].show_extent = FALSE;
+          g_polys[i+1].show_extent=FALSE;
+
+          if (i>=MAX_POLYS-1) {
+            printf("Too many polygons: %d\n", pc->num);
+            break;
+          }
         }
       }
 
+      which_poly=0;
       enable_widget("plan_button", TRUE);
+      fill_big(curr);
     }
 }

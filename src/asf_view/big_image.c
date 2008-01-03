@@ -295,9 +295,9 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
                      double line1, double samp1, int color,
                      ImageInfo *ii)
 {
-    if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
-        samp0 >= ii->ns || samp1 >= ii->ns ||
-        line0 >= ii->nl || line1 >= ii->nl) return;
+  //if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
+  //      samp0 >= ii->ns || samp1 >= ii->ns ||
+  //      line0 >= ii->nl || line1 >= ii->nl) return;
 
     int i, j, width, height, rowstride, n_channels;
     guchar *pixels, *p;
