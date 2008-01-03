@@ -10,7 +10,7 @@ LIBS = $(LIBDIR)/libasf_raster.a \
 
 CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
 
-OBJS = resample.o
+OBJS = resample.o help.o
 
 all: resample
 	-rm *.o
