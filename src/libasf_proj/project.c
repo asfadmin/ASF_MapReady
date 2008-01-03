@@ -96,7 +96,7 @@ int test_nad27(double lat, double lon)
     {
         ret = FALSE;
     }
-    else if (pj_errno > 0) // some other error
+    else if (pj_errno != 0) // some other error (pj errors are negative, system errors are positive)
     {
         asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
     }
@@ -607,16 +607,16 @@ static char * lamaz_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   if (datum != HUGHES_DATUM) {
     sprintf(lamaz_projection_description,
-	    "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
-	    pps->lamaz.center_lat,
-	    pps->lamaz.center_lon,
-	    datum_str(datum));
+        "+proj=laea +lat_0=%f +lon_0=%f +datum=%s",
+        pps->lamaz.center_lat,
+        pps->lamaz.center_lon,
+        datum_str(datum));
   }
   else {
     sprintf(lamaz_projection_description,
-	    "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-	    pps->lamaz.center_lat,
-	    pps->lamaz.center_lon,
+        "+proj=laea +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+        pps->lamaz.center_lat,
+        pps->lamaz.center_lon,
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
@@ -672,20 +672,20 @@ static char * lamcc_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   if (datum != HUGHES_DATUM) {
     sprintf(lamcc_projection_description,
-	    "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-	    pps->lamcc.plat1,
-	    pps->lamcc.plat2,
-	    pps->lamcc.lat0,
-	    pps->lamcc.lon0,
-	    datum_str(datum));
+        "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+        pps->lamcc.plat1,
+        pps->lamcc.plat2,
+        pps->lamcc.lat0,
+        pps->lamcc.lon0,
+        datum_str(datum));
   }
   else {
     sprintf(lamcc_projection_description,
-	    "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-	    pps->lamcc.plat1,
-	    pps->lamcc.plat2,
-	    pps->lamcc.lat0,
-	    pps->lamcc.lon0,
+        "+proj=lcc +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+        pps->lamcc.plat1,
+        pps->lamcc.plat2,
+        pps->lamcc.lat0,
+        pps->lamcc.lon0,
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
@@ -741,20 +741,20 @@ static char * albers_projection_desc(project_parameters_t * pps,
   /* Establish description of output projection. */
   if (datum != HUGHES_DATUM) {
     sprintf(albers_projection_description,
-	    "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
-	    pps->albers.std_parallel1,
-	    pps->albers.std_parallel2,
-	    pps->albers.orig_latitude,
-	    pps->albers.center_meridian,
-	    datum_str(datum));
+        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +datum=%s",
+        pps->albers.std_parallel1,
+        pps->albers.std_parallel2,
+        pps->albers.orig_latitude,
+        pps->albers.center_meridian,
+        datum_str(datum));
   }
   else {
     sprintf(albers_projection_description,
-	    "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
-	    pps->albers.std_parallel1,
-	    pps->albers.std_parallel2,
-	    pps->albers.orig_latitude,
-	    pps->albers.center_meridian,
+        "+proj=aea +lat_1=%f +lat_2=%f +lat_0=%f +lon_0=%f +a=%f +rf=%f",
+        pps->albers.std_parallel1,
+        pps->albers.std_parallel2,
+        pps->albers.orig_latitude,
+        pps->albers.center_meridian,
             (float)HUGHES_SEMIMAJOR,
             (float)HUGHES_INV_FLATTENING);
   }
