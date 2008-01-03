@@ -2,42 +2,21 @@
 #include "asf_meta.h"
 #include "asf_vector.h"
 #include "asf_endian.h"
+#include "asf_license.h"
+#include "convert2vector_help.h"
 #include <stdio.h>
 #include <ctype.h>
-
-#define VERSION 1.0
-
-static
-void usage(char *name)
-{
- printf("\n"
-	"USAGE:\n"
-	"   %s [-list] <input format> <output format> <input file> <output file>\n",
-	name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"    input format:  Input format: point, polygon, meta, leader, shape\n"
-	"    output format: Output format: shape, kml, text\n"
-	"    input file:    Name of the input file\n"
-	"    output file:   Basename of the output file.\n");
- printf("\n"
-	"OPTIONAL ARGUMENTS:\n"
-	"   -list:          Input file name contains a list of filenames to be "
-	"converted.\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Converts metadata information into external vector formats\n");
- printf("\n"
-	"Version: %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}
 
 int main(int argc, char **argv)
 {
   char informat[25], outformat[25], infile[255], outfile[255];
   extern int currArg; /* pre-initialized to 1; like optind */
   int listflag=0;
+
+  if (argc > 1) {
+      check_for_help(argc, argv);
+      handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
   
   /* parse command line */
   while (currArg < (argc-4)) {
@@ -46,13 +25,15 @@ int main(int argc, char **argv)
       listflag=1;
     }
     else {
-      printf( "\n**Invalid option:  %s\n",argv[currArg-1]); 
-      usage(argv[0]);
+      asfPrintStatus("\n*** Unrecognized option.\n");
+      usage();
+      return(1);
     }
   }
   if ((argc-currArg) < 4) {
-    printf("Insufficient arguments.\n"); 
-    usage(argv[0]);
+    asfPrintStatus("\n*** Insufficient arguments.\n");
+    usage();
+    return(1);
   }
   
   sprintf(informat, "%s", argv[currArg]);
@@ -93,7 +74,7 @@ int main(int argc, char **argv)
       read_shape(infile, outfile, TEXT, 1);
     }
     else
-      asfPrintStatus("   Unsupported conversion\n\n");
+      asfPrintStatus("\n***   Unsupported conversion\n\n");
   }
   else {
     if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {

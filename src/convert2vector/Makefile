@@ -15,7 +15,7 @@ LIBS  = \
 	$(GLIB_LIBS) \
 	$(JPEG_LIBS) \
 	-lm
-OBJS  = convert2vector.o
+OBJS  = convert2vector.o help.o
 
 all: convert2vector clean
 
