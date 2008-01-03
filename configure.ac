@@ -5,8 +5,8 @@ AC_INIT
 #AM_INIT_AUTOMAKE
 AC_LANG(C)
 
-PACKAGE=convert
-VERSION=`grep CONVERT_PACKAGE_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"/\1/'`
+PACKAGE=mapready
+VERSION=`grep MAPREADY_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"/\1/'`
 
 AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
 AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
@@ -242,11 +242,11 @@ fi
 
 #### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view src/proj2proj"
 fi
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view src/proj2proj"
 fi
 AC_SUBST(ASF_GUI)
 

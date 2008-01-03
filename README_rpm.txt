@@ -16,16 +16,16 @@ without requiring root privileges.
 
 To install the package:  (Do this as root)
 
-  rpm -i asf_convert-X.X.X-X.i386.rpm
+  rpm -i asf_mapready-X.X.X-X.i386.rpm
 
 (Of course you need to replace the X's with whatever version you
-downloaded, for example: "rpm -i asf_convert-2.1.5-1.i386.rpm")
+downloaded, for example: "rpm -i asf_mapready-2.1.5-1.i386.rpm")
 
 After the package is installed, you can find out where it was
 put by using this rpm command, which does not require root
 access:
 
-  rpm -ql asf_convert | grep asf_import
+  rpm -ql asf_mapready | grep asf_import
 
 You should see something like the following:
 

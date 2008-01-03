@@ -12,9 +12,10 @@
 #    release/autotar/binary.*
 #
 #   To add a new program or tool, just put an entry for it
-# in the PROGRAMS or TOOLS sections of this file.  Then
-# run makemake.  It will parse this file and generate
-# new copies of the files above, replacing the old copies.
+# in the PROGRAMS or TOOLS sections of this file.  The new entry
+# should be the name of the folder in the src folder that contains
+# the tool's Makefile.  Then run makemake.  It will parse this file
+# and generate new copies of the files above, replacing old copies.
 #
 # makemake ignores any line beginning with a #,
 # but will completely misunderstand a line with a # in the middle.
@@ -100,6 +101,7 @@ PROGRAMS
 	asf_geocode { }
 	asf_import { }
 	asf_terrcorr { }
+	asf_view { }
 	atdp { }
 	auto_refine_base { }
 #	auto_sar_mosaic { } -- see bottom of this list
@@ -174,6 +176,7 @@ PROGRAMS
 	offset_test { }
 	p2c { }
 	phase_filter { }
+	proj2proj { }
 	profile_dump { }
 	projfit { }
 	prop2ll { }
@@ -186,7 +189,6 @@ PROGRAMS
 	remap { }
 	resample { }
 	reskew_dem { }
-	sarview { BINS sarview_bin support }
 	shaded_relief { }
 	sr2gr { }
 	srf2shape { }
@@ -222,6 +224,7 @@ CATEGORIES
 		asf_import
 		asf_geocode
 	        asf_terrcorr
+		asf_view
 		gr2sr
 		metadata_gui
 		metadata

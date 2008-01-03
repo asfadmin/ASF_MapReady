@@ -27,7 +27,7 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
  NOTE: NOT ALL OF THESE OPTIONS ARE INCLUDED IN THIS RELEASE. SEE USAGE.
 
 DESCRIPTION:
-	Reads infile.ext, where ext is one of L, D, ldr, trl, tlr, or dat
+    Reads infile.ext, where ext is one of L, D, ldr, trl, tlr, or dat
         to find the record type specified.  Once found, converts the data
         to a structure of values and prints the values out, either to the
         screen or to file as specified by the -f switch.
@@ -49,16 +49,16 @@ VERSION         DATE   AUTHOR
 -------         ----   ------
   1.0           3/96   T. Logan (ASF)
   1.01          7/96   M. Shindle (ASF) - Corrected minor bug
-  2.00	        8/96   T. Logan (ASF)   - Expanded to access RADARSAT data
-  2.01	       12/96   T. Logan (ASF)   - Added check_cal() call
+  2.00          8/96   T. Logan (ASF)   - Expanded to access RADARSAT data
+  2.01         12/96   T. Logan (ASF)   - Added check_cal() call
   2.02          7/97   D. Corbett       - Don't print mpdr if get_mpdr erred
   2.03          3/98   O. Lawlor (ASF)  - Moved prn_ceos types over to metadata,
                                           which is the only program that ever
-					  uses them.
-  2.04		6/99   M. Ayers (ASF)   - Added prn_fdr to print file descriptor
-					  records.
-  2.05		9/01   S. Watts  	- Added case statements to display
-					  Signal Data Histogram Records.
+                      uses them.
+  2.04      6/99   M. Ayers (ASF)   - Added prn_fdr to print file descriptor
+                      records.
+  2.05      9/01   S. Watts     - Added case statements to display
+                      Signal Data Histogram Records.
   2.3           3/02   P. Denny         - Update command line arguments
   2.31         12/06   B. Dixon         - Do not require .D and .L files (both)
   3.0           1/07   R. Gens, et al   - CLA cleanup
@@ -73,8 +73,8 @@ BUGS:
 
 *********************************************************************/
 /****************************************************************************
-*								            *
-*   Metadata retrieves ceos structures from SAR metadata		    *
+*                                           *
+*   Metadata retrieves ceos structures from SAR metadata            *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -123,11 +123,11 @@ BUGS:
 #include <asf_meta.h>
 #include <get_ceos_names.h>
 #include <cla.h>
+#include "asf_license.h"
 #include <asf_version.h>
-
 #include "metadisplay.h"
 
-
+#define TOOL_NAME "metadata"
 
 void usage(char *name)
 {
@@ -157,14 +157,18 @@ void usage(char *name)
    fprintf(stderr,"  -esa_facdr   Force ESA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
+   fprintf(stderr,"  -license     Print the ASF licensing statement and quit\n");
+   fprintf(stderr,"  -version     Print the version number information and quit\n");
    fprintf(stderr,"\n");
    fprintf(stderr,"  infile    The base name of the CEOS image\n\n");
    fprintf(stderr,"\n");
    fprintf(stderr,"DESCRIPTION:\n");
    fprintf(stderr,"  The metadata program retrieves CEOS structures from CEOS"
                   " metadata\n\n");
-   fprintf(stderr,"Version %s,  ASF SAR Tools\n\n",
-           CONVERT_PACKAGE_VERSION_STRING);
+//   fprintf(stderr,"Version %s,  ASF SAR Tools\n\n",
+//           CONVERT_PACKAGE_VERSION_STRING);
+   fprintf(stderr,"\n");
+   print_version(TOOL_NAME);
    exit (EXIT_FAILURE);
 }
 
@@ -172,7 +176,10 @@ int main(int argc, char **argv)
 {
   char *fileName;
   int found = 0;
-  
+
+  if (argc<2) usage(TOOL_NAME);
+  handle_license_and_version_args(argc, argv, TOOL_NAME);
+
   int dssr_flag = extract_flag_options(&argc, &argv, "-dssr", "--dssr", NULL);
   int shr_flag = extract_flag_options(&argc, &argv, "-shr", "--shr", NULL);
   int mpdr_flag = extract_flag_options(&argc, &argv, "-mpdr", "--mpdr", NULL);
@@ -198,7 +205,7 @@ int main(int argc, char **argv)
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
 
-  if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag || 
+  if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag ||
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
       asf_facdr_flag || esa_facdr_flag || lfdr_flag || ardr_flag || all_flag)

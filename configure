@@ -1293,8 +1293,8 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-PACKAGE=convert
-VERSION=`grep CONVERT_PACKAGE_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"/\1/'`
+PACKAGE=mapready
+VERSION=`grep MAPREADY_VERSION_STRING include/asf_version.h | grep -i $PACKAGE | sed -e 's/^.*"\(.*\)"/\1/'`
 
 cat >>confdefs.h <<_ACEOF
 #define PACKAGE "$PACKAGE"
@@ -4433,11 +4433,11 @@ fi
 
 #### whether or not to build the ASF Convert GUI ####
 if test "$have_libglade" = "yes" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view src/proj2proj"
 fi
 # we always build the GUI on windows, as we provide our own gtk libraries.
 if test "$sys" = "win32" ; then
-    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view"
+    ASF_GUI="src/asf_convert_gui src/metadata_gui src/asf_view src/proj2proj"
 fi
 
 
