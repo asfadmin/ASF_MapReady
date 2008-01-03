@@ -71,9 +71,10 @@ void help()
 "Contact:\n"
 "%s\n\n"
 "Version:\n"
-"   %s\n",
+"   %s (part of %s %s)\n",
 ASF_NAME_STRING, ASF_NAME_STRING, geocode_projection_options_help(),
-ASF_NAME_STRING, ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
+ASF_NAME_STRING, ASF_CONTACT_STRING, SVN_REV, TOOL_SUITE_NAME,
+MAPREADY_VERSION_STRING
 );
     exit(1);
 }
@@ -81,11 +82,21 @@ ASF_NAME_STRING, ASF_CONTACT_STRING, CONVERT_PACKAGE_VERSION_STRING
 void usage()
 {
     printf(
-"Usage:\n"
-"    %s <<projection parameters>> <outfile> <infile1> <infile2> ... \n\n"
-"For the projection parameters, read the help for full details.  However\n"
-"you may simply use '-p utm' to output in a UTM projection.\n\n"
-"At least 2 input files are required.\n", ASF_NAME_STRING);
+            "\nTool name:\n"
+            "    %s\n\n"
+            "Usage:\n"
+            "     %s -p <projection name> <<projection parameters>>\n"\
+            "            [-force] [-resample-method <method>] [-height <height>]\n"\
+            "            [-datum <datum>] [-pixel-size <pixel size>] [-band <band_id | all>]\n"\
+            "            [-log <file>] [-write-proj-file <file>] [-read-proj-file <file>]\n"\
+            "            [-background <val>] [-quiet] [-license] [-version] [-help]\n"\
+            "            <outfile> <infile1> <infile2> ... \n\n" \
+            "   Full details on projection parameter are available by using the\n" \
+            "   -help flag.  '-p utm' needs no other parameters however, so it is\n"\
+            "   a quick way to specify a standard projection for a list of files\n"\
+            "   to be mosaicked.  NOTE: At least 2 input files are required\n\n",
+            ASF_NAME_STRING, ASF_NAME_STRING);
+    print_version(ASF_NAME_STRING);
     exit(1);
 }
 
