@@ -585,8 +585,9 @@ int asf_geocode(project_parameters_t *pp, projection_type_t projection_type,
         "asf_geocode cannot geocode more than %d bands\n",
     band_count, MAX_BANDS);
   }
-  asfRequire(band_count > 0,
-             "Invalid band_count in metadata\n");
+  if (band_count <= 0) {
+      asfPrintError("Invalid band_count in metadata (%d bands)\n", band_count);
+  }
 
 
   // If the band_id is NULL, is empty, or is equal to 'all'
@@ -981,8 +982,12 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // Project all the edge pixels.
         ret = project_arr (pp, lats, lons, NULL, &x, &y, NULL,
             edge_point_count, datum);
-        g_assert (ret == TRUE);
-
+        if (!ret) {
+            asfPrintError("Non-forceable projection library error occurred.  Using\n"
+                         "the -force or \"Ignore projection errors\" checkbox or \n"
+                         "\"force = 1\" in a MapReady configuration file will\n"
+                         "not work with the current settings and geographical area.\n");
+        }
         // Find the extents of the image in projection coordinates.
         for ( ii = 0 ; ii < edge_point_count ; ii++ ) {
             if ( x[ii] < min_x ) { min_x = x[ii]; }
