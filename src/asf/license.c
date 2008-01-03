@@ -9,10 +9,10 @@
 "Copyright (c) %d, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
 "All rights reserved.\n"
 
-static void print_copyright()
+void print_copyright()
 {
     time_t t;
-    struct tm *ts; 
+    struct tm *ts;
     t = time(NULL);
     ts = localtime(&t);
     int year = ts->tm_year+1900;
@@ -20,7 +20,7 @@ static void print_copyright()
 }
 
 // Print our copyright and license notice & exit
-static void print_license(int license_id)
+void print_license(int license_id)
 {
   print_copyright();
   switch (license_id) {
@@ -34,10 +34,16 @@ static void print_license(int license_id)
   exit(EXIT_SUCCESS);
 }
 
-static void print_version(const char *program_name)
+void print_version(const char *program_name)
 {
-    printf("%s, version %s\n", program_name, 
-                   CONVERT_PACKAGE_VERSION_STRING);
+    if (strlen(SVN_REV)>0) {
+      printf("%s, version %s (part of %s %s)\n",
+             program_name, SVN_REV, TOOL_SUITE_NAME, MAPREADY_VERSION_STRING);
+    } else {
+      printf("%s, part of %s %s (unknown build)\n", program_name,
+             TOOL_SUITE_NAME, MAPREADY_VERSION_STRING);
+    }
+
     print_copyright();
     exit (EXIT_SUCCESS);
 }

@@ -180,7 +180,7 @@ int extExists(const char *name,const char *newExt);
    returned.  The return value must be freed by the caller. */
 char * appendToBasename(const char *filename, const char *suffix);
 
-void append_ext_if_needed(char *file_name, const char *newExt, 
+void append_ext_if_needed(char *file_name, const char *newExt,
                           const char *alsoAllowedExt);
 
 void append_band_ext(char *inFile, char *outFile, char *bandExt);
@@ -208,7 +208,7 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName);
    FALSE and fills 'extension' with an empty string. The extension separator
    is a '.' It assumes 'fileName' is only the file name (no path included) */
 int split_base_and_ext(char *fileName, int side, char separator,
-		       char *baseName, char *extension);
+               char *baseName, char *extension);
 
 /* first tries to open the given image name, then appends ".img" and tries again
    It returns a pointer to the opened file.*/
@@ -218,6 +218,7 @@ FILE *fopenImage(const char *name,const char *accessType);
 void fileCopy(const char *src, const char *dst);
 
 /* Create & remove directories, these return 0 on success */
+int is_dir(const char *dir);
 int create_dir(const char *dir);
 int create_clean_dir(const char *dir);
 int remove_dir(const char *dir);

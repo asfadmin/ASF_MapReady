@@ -21,8 +21,8 @@ static char * s_argv0 = 0;
 static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\Req\\";
 static const char * s_version_string = REQ_PACKAGE_VERSION_STRING;
 #else
-static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\Convert\\";
-static const char * s_version_string = CONVERT_PACKAGE_VERSION_STRING;
+static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\MapReady\\";
+static const char * s_version_string = MAPREADY_VERSION_STRING;
 #endif
 
 static const char * s_asf_share_dir_key = "Install_Dir";
@@ -183,7 +183,7 @@ print_all_reg_vals()
 
 static int check_for_version_file_in_share_dir(const char *dir)
 {
-  const char *version_file = "convert_version.txt";
+  const char *version_file = "mapready_version.txt";
 
   int len = strlen(dir) + strlen(version_file) + 3;
   if (len < 256) len = 256;
@@ -192,7 +192,7 @@ static int check_for_version_file_in_share_dir(const char *dir)
   sprintf(file, "%s/%s", dir, version_file);
 
   int found = 0;
-  char *ver = CONVERT_PACKAGE_VERSION_STRING;
+  char *ver = MAPREADY_VERSION_STRING;
 
   FILE *f = fopen(file, "r");
   if (f) {
@@ -325,7 +325,7 @@ get_asf_bin_dir()
 	while (*p++ != '\0');
 
 	if (!found)
-	    printf("Falling back to default bin dir: %s\n", s_bin_dir);
+	    printf("Using default bin dir: %s\n", s_bin_dir);
 
 	FREE(buf);
     }
@@ -385,7 +385,7 @@ get_asf_share_dir()
         if (!share) {
 	    /* this is bad... */
 	    printf("Bad configure? 'share' not found in default share dir.\n");
-	    printf("Falling back to default share dir: %s\n", s_share_dir);
+	    printf("Using default share dir: %s\n", s_share_dir);
 	    return s_share_dir;
 	}
         --share;
@@ -429,7 +429,7 @@ get_asf_share_dir()
 	while (*p++ != '\0');
 
 	if (!found)
-	    printf("Falling back to default share dir: %s\n", s_share_dir);
+	    printf("Using default share dir: %s\n", s_share_dir);
 
 	FREE(buf);
     }

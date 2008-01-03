@@ -23,7 +23,7 @@ int fileSize(const char *name)
   struct stat statbuf;
   DIR *dir;
   char file_name[255];
-  long file_size;
+  long file_size = 0;
 
   dir = opendir(".");
   while ((dp = readdir(dir)) != NULL) {
@@ -54,7 +54,7 @@ char *findExt(const char *name)
 {
   char *ext;
   int ii;
-  ii = strlen(name) - 1;		/* Start at end of name.  */
+  ii = strlen(name) - 1;        /* Start at end of name.  */
   while ( (ii>0) && (name[ii] != '.') && !IS_DIR_SEPARATOR(name[ii]) ) {
     /* Work backwards until we hit a directory separator or extension
        separator.*/
@@ -64,26 +64,26 @@ char *findExt(const char *name)
     /* We found an extension! (maybe) */
     ext = (char *) &name[ii];
     if (strcmp_case(ext, ".META") == 0 ||
-	strcmp_case(ext, ".DDR") == 0 ||
-	strcmp_case(ext, ".IMG") == 0 ||
-	strcmp_case(ext, ".DEM") == 0 ||
-	strcmp_case(ext, ".TIF") == 0 ||
-	strcmp_case(ext, ".TIFF") == 0 ||
-	strcmp_case(ext, ".JPG") == 0 ||
-	strcmp_case(ext, ".JPEG") == 0 ||
-	strcmp_case(ext, ".PNG") == 0 ||
-	strcmp_case(ext, ".PGM") == 0 ||
-	strcmp_case(ext, ".PPM") == 0 ||
-	strcmp_case(ext, ".CFG") == 0 ||
-	strcmp_case(ext, ".CSV") == 0 ||
-	strcmp_case(ext, ".CPX") == 0 ||
-	strcmp_case(ext, ".KML") == 0 ||
-	strcmp_case(ext, ".LUT") == 0 ||
-	strcmp_case(ext, ".RAW") == 0 ||
-	strcmp_case(ext, ".AIRSAR") == 0 ||
-	strcmp_case(ext, ".D") == 0 ||
-	strcmp_case(ext, ".L") == 0 ||
-	strcmp_case(ext, ".BIL") == 0)
+    strcmp_case(ext, ".DDR") == 0 ||
+    strcmp_case(ext, ".IMG") == 0 ||
+    strcmp_case(ext, ".DEM") == 0 ||
+    strcmp_case(ext, ".TIF") == 0 ||
+    strcmp_case(ext, ".TIFF") == 0 ||
+    strcmp_case(ext, ".JPG") == 0 ||
+    strcmp_case(ext, ".JPEG") == 0 ||
+    strcmp_case(ext, ".PNG") == 0 ||
+    strcmp_case(ext, ".PGM") == 0 ||
+    strcmp_case(ext, ".PPM") == 0 ||
+    strcmp_case(ext, ".CFG") == 0 ||
+    strcmp_case(ext, ".CSV") == 0 ||
+    strcmp_case(ext, ".CPX") == 0 ||
+    strcmp_case(ext, ".KML") == 0 ||
+    strcmp_case(ext, ".LUT") == 0 ||
+    strcmp_case(ext, ".RAW") == 0 ||
+    strcmp_case(ext, ".AIRSAR") == 0 ||
+    strcmp_case(ext, ".D") == 0 ||
+    strcmp_case(ext, ".L") == 0 ||
+    strcmp_case(ext, ".BIL") == 0)
       return (char *) &name[ii];
     else
       return NULL;
@@ -232,7 +232,7 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
 
   ext = findExt(inFile);
 
-  if (ext && 
+  if (ext &&
       (strcmp_case(ext, ".IMG") == 0 ||
        strcmp_case(ext, ".TIF") == 0 ||
        strcmp_case(ext, ".TIFF") == 0 ||
@@ -291,7 +291,7 @@ void split_dir_and_file(const char *inString, char *dirName, char *fileName)
  * FALSE and fills 'extension' with an empty string. The extension separator
  * is a '.' It assumes 'fileName' is only the file name (no path included) */
 int split_base_and_ext(char *fileName, int side, char separator,
-		       char *baseName, char *extension)
+               char *baseName, char *extension)
 {
    int ii;
 
@@ -336,80 +336,80 @@ int split_base_and_ext(char *fileName, int side, char separator,
  * It returns a pointer to the opened file.*/
 FILE *fopenImage(const char *fName,const char *access)
 {
-	int forWriting=0;
-	FILE *fRet=NULL;
-	char *openName=NULL;
+    int forWriting=0;
+    FILE *fRet=NULL;
+    char *openName=NULL;
         /* Check to make sure that the (bone-headed) user didn't ask
            us to open a .ddr image or .meta file.  findExt may return
            a pointer into its argument string, so fName isn't const
            anymore.  */
-	char *ext=findExt( (char *) fName);
-	if (NULL!=ext)
-	{
-	  if ( (0==strcmp(ext,".ddr")) || (0==strcmp(ext,".meta")))
-	    ext[0]=0;/*Clip off stupid extention-- will append .img later*/
-	  else if ( ((0==strcmp(ext,".D"))||(0==strcmp(ext,".L"))) && 
+    char *ext=findExt( (char *) fName);
+    if (NULL!=ext)
+    {
+      if ( (0==strcmp(ext,".ddr")) || (0==strcmp(ext,".meta")))
+        ext[0]=0;/*Clip off stupid extention-- will append .img later*/
+      else if ( ((0==strcmp(ext,".D"))||(0==strcmp(ext,".L"))) &&
           (access[0]=='w' || access[0]=='a'))
-	    ext[0]=0;/*Clip off stupid extention-- will append .img later*/
-	}
+        ext[0]=0;/*Clip off stupid extention-- will append .img later*/
+    }
 
 /*Find the file's actual name, with the correct extension.*/
-	if (access[0]=='w' || access[0]=='a')
-	{/*We're opening for writing-- we have to be conservative.*/
-		forWriting=1;
-		if (NULL==findExt((char *)fName))/*If there is no extension,*/
-			openName=appendExt(fName,".img");/*Append .img*/
-		else /*There was an extension, so */
-			openName=appendExt(fName,NULL);/*Do nothing to the name.*/
-	}
-	else
-	{/*We're opening for reading-- search many extensions for the image.*/
-		char *extTable[]={".img",".dem",".ht",".coh",NULL};
-		int extNo=-1;
-		do
-		{
-			char *ext=(extNo==-1)?NULL:extTable[extNo];
-			if (extExists(fName,ext))
-			{/*We found a file with the given basename and extension!*/
-				openName=appendExt(fName,ext);
-				break;/*Once we find one, we're done.*/
-			}
-			extNo++;
-		}
-		while (extTable[extNo]!=NULL);
-	}
+    if (access[0]=='w' || access[0]=='a')
+    {/*We're opening for writing-- we have to be conservative.*/
+        forWriting=1;
+        if (NULL==findExt((char *)fName))/*If there is no extension,*/
+            openName=appendExt(fName,".img");/*Append .img*/
+        else /*There was an extension, so */
+            openName=appendExt(fName,NULL);/*Do nothing to the name.*/
+    }
+    else
+    {/*We're opening for reading-- search many extensions for the image.*/
+        char *extTable[]={".img",".dem",".ht",".coh",NULL};
+        int extNo=-1;
+        do
+        {
+            char *ext=(extNo==-1)?NULL:extTable[extNo];
+            if (extExists(fName,ext))
+            {/*We found a file with the given basename and extension!*/
+                openName=appendExt(fName,ext);
+                break;/*Once we find one, we're done.*/
+            }
+            extNo++;
+        }
+        while (extTable[extNo]!=NULL);
+    }
 /*Try to open this name.*/
-	if (NULL!=openName)
-	{
-		fRet=fopen(openName,access);
-		if (fRet!=NULL)
-		{/*We've sucessfully opened the file.*/
-			free(openName);/*Free the name.*/
-			return fRet;/*Return the file pointer.*/
-		}
-	}
+    if (NULL!=openName)
+    {
+        fRet=fopen(openName,access);
+        if (fRet!=NULL)
+        {/*We've sucessfully opened the file.*/
+            free(openName);/*Free the name.*/
+            return fRet;/*Return the file pointer.*/
+        }
+    }
 /*An error occured-- tell the user and quit.*/
         if (errno) asfPrintStatus("Error %d: %s\n", strerror(errno));
         asfPrintStatus("Tried to open: %s\n", openName);
 
 
-	fprintf(stderr,
-			"********************** Error! ***********************\n"
-			"An error occured trying to open for %s the\n"
-			"file named '%s'.\n\n",forWriting?"write or create":"reading",
-			fName);
-	if (forWriting)
-		fprintf(stderr,
-			"This could be because you don't have write permissions\n"
-			"in this directory, because your disk quota is full, or \n"
-			"because your disk is full.\n");
-	else /*for reading*/
-		fprintf(stderr,
-				"This could be because the file doesn't exist in this\n"
-				"directory, or you don't have read permissions for the\n"
-				"file.  I even searched for common image extensions.\n");
-	exit(102);
-	return NULL;
+    fprintf(stderr,
+            "********************** Error! ***********************\n"
+            "An error occured trying to open for %s the\n"
+            "file named '%s'.\n\n",forWriting?"write or create":"reading",
+            fName);
+    if (forWriting)
+        fprintf(stderr,
+            "This could be because you don't have write permissions\n"
+            "in this directory, because your disk quota is full, or \n"
+            "because your disk is full.\n");
+    else /*for reading*/
+        fprintf(stderr,
+                "This could be because the file doesn't exist in this\n"
+                "directory, or you don't have read permissions for the\n"
+                "file.  I even searched for common image extensions.\n");
+    exit(102);
+    return NULL;
 }
 
 
@@ -504,6 +504,15 @@ get_filename(const char *in)
    return file;
 }
 
+// check to see if a string is an existing directory
+int
+is_dir(const char *dir)
+{
+  DIR *tmp = opendir(dir);
+  int ret = (tmp) ? TRUE : FALSE;
+  closedir(tmp);
+  return ret;
+}
 
 // create a directory. acts like 'mkdir -p'. return 0 on success, -1 on fail.
 int

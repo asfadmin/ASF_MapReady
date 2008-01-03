@@ -34,6 +34,7 @@ all: build_only
 	mv asf.a $(LIBDIR)
 	cp asf.h asf_glib.h asf_complex.h caplib.h vector.h matrix.h \
 		$(ASF_INCLUDE_DIR)
+	cp pixmaps/* $(SHAREDIR)
 	rm *.o
 
 build_only: $(OBJS)
