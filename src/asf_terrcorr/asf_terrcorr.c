@@ -224,9 +224,9 @@ static void print_help(void)
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n",
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
       (int)MASK_NORMAL,(int)MASK_USER_MASK,(int)MASK_SHADOW,(int)MASK_LAYOVER,(int)MASK_INVALID_DATA);
-  exit(EXIT_SUCCESS);
+  exit(EXIT_FAILURE);
 }
 
 int strmatches(const char *key, ...)
@@ -240,8 +240,8 @@ int strmatches(const char *key, ...)
     arg = va_arg(ap, char *);
     if (arg) {
       if (strcmp(key, arg) == 0) {
-	found = TRUE;
-	break;
+    found = TRUE;
+    break;
       }
     }
   } while (arg);
@@ -279,7 +279,7 @@ main (int argc, char *argv[])
       other_files[i]=NULL;
 
   // -1 -> no masking, other values mean fill it with that value
-  int fill_value = 0; 
+  int fill_value = 0;
 
   handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
@@ -347,7 +347,7 @@ main (int argc, char *argv[])
     }
     else if (strmatches(key,"-no-fill","--no-fill",NULL)) {
         // leave masked regions alone - fill with sar data
-        fill_value = LEAVE_MASK; 
+        fill_value = LEAVE_MASK;
     }
     else if (strmatches(key,"-do-radiometric","--do-radiometric",NULL)) {
         // for the 3.1 release, we will always do formula #5
@@ -416,12 +416,12 @@ main (int argc, char *argv[])
   int ret =  asf_terrcorr_ext(inFile, demFile,inMaskFile,outFile, pixel_size,
                               clean_files, do_resample, do_corner_matching,
                               do_interp, do_fftMatch_verification,
-                              dem_grid_size, TRUE, fill_value, 
+                              dem_grid_size, TRUE, fill_value,
                               generate_water_mask, save_clipped_dem,
                               update_original_metadata_with_offsets,
                               mask_height_cutoff, doRadiometric,
                               smooth_dem_holes, other_files,
-			      no_matching, range_offset, azimuth_offset);
+                  no_matching, range_offset, azimuth_offset);
 
   for (i=0; i<MAX_OTHER; ++i)
       if (other_files[i])
