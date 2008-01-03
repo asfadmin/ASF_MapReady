@@ -14,7 +14,7 @@ LIBS  = $(LIBDIR)/libasf_sar.a \
 	$(PROJ_LIBS) \
 	-lm
 
-OBJS  = sr2gr.o
+OBJS  = sr2gr.o help.o
 
 all: sr2gr clean
 

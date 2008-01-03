@@ -1,5 +1,5 @@
 /******************************************************************************
-*								              *
+*                                             *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -29,12 +29,12 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*   Alaska Satellite Facility                                         *
+*   Geophysical Institute           www.asf.alaska.edu            *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
+*   P.O. Box 757320                               *
+*   Fairbanks, AK 99775-7320                          *
+*                                         *
 ******************************************************************************/
 /******************************************************************************
 NAME:  sr2gr - converts slant range images to ground range images
@@ -44,14 +44,14 @@ SYNOPSIS:   sr2gr infile outmeta pixsiz
        infile     base name (.img,.meta)
        outfile    base name (.img,.meta)
        pixsiz     output pixel spacing (meters)
- 
+
 DESCRIPTION:
-	This program converts slant range imagery into ground range imagery. 
-	The algorithm calculates the ground range to the first pixel in the
-	image and from the spacecraft ephemeris, earth ellipsoid, and slant
-	range to first pixel given in the image's metadata.  It then uses the
-	slant range spacing interval to determine appropriate ground range
-	positions.  The remapping is performed using bi-linear interpolation.
+    This program converts slant range imagery into ground range imagery.
+    The algorithm calculates the ground range to the first pixel in the
+    image and from the spacecraft ephemeris, earth ellipsoid, and slant
+    range to first pixel given in the image's metadata.  It then uses the
+    slant range spacing interval to determine appropriate ground range
+    positions.  The remapping is performed using bi-linear interpolation.
 
 EXTERNAL ASSOCIATES:
     NAME:               USAGE:
@@ -64,9 +64,9 @@ FILE REFERENCES:
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	    6/97   T. Logan	Original Implementation (Based on
-				JPL provided routine sr2gr_vec)
-    2.0	    3/98   T. Logan     Modify to work with AISP outputs
+    1.0     6/97   T. Logan Original Implementation (Based on
+                JPL provided routine sr2gr_vec)
+    2.0     3/98   T. Logan     Modify to work with AISP outputs
     3.0     4/98   T. Logan     Modified to work with RAMMS data
     3.1     8/98   O. Lawlor    Corrected azimuth pixel spacing equation.
     4.0    12/98   O. Lawlor    Modified for new metadata routines.
@@ -86,8 +86,8 @@ BUGS:
 ******************************************************************************/
 
 /****************************************************************************
-*								            *
-*   sr2gr - converts slant range images to ground range images		    *
+*                                           *
+*   sr2gr - converts slant range images to ground range images          *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -127,6 +127,8 @@ BUGS:
 
 #include "asf_sar.h"
 #include "asf.h"
+#include "asf_license.h"
+#include "sr2gr_help.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,29 +136,19 @@ BUGS:
 #define VERSION 4.5
 #define REQ_ARGS 3
 
-void usage (char * name)
-{
- printf("\n"
-	"USAGE:\n"
-	"%s <infile> <outfile> <pixsiz> \n",name);
- printf("\n"
-	"REQUIRED ARGUMENTS:\n"
-	"   infile   Input image base name (.img & .meta)\n"
-	"   outfile  Output image base name (.img & .meta)\n"
-	"   pixsiz   Output pixel spacing, in meters\n");
- printf("\n"
-	"DESCRIPTION:\n"
-	"   Converts the given image from slant range to ground range.\n");
- printf("\n"
-	"Version %.2f, ASF SAR Tools\n"
-	"\n",VERSION);
- exit(EXIT_FAILURE);
-}
-
 int main(int argc,char *argv[])
 {
+    if (argc > 1) {
+        check_for_help(argc, argv);
+        handle_license_and_version_args(argc, argv, TOOL_NAME);
+    }
+    if (argc != 4) {
+      usage();
+      return 1;
+    }
+
     float grPixSize= -1;   /* output pixel size             */
-    
+
     /* Make sure we've got the right amount of arguments */
     if (argc != 4) {usage(argv[0]);}
 

@@ -1,33 +1,45 @@
 
-    NAME: sr2gr - converts slant range images to ground range images
+Tool name:
+   sr2gr
 
-    SYNOPSIS:	sr2gr <infile> <outfile> <pixsiz>
+Usage:
+   sr2gr <infile> <outfile> <pixel size> [-license] [-version] [-help]
 
-       infile     base name (.img,.meta)
-       outfile    base name (.img,.meta)
-       pixsiz     output pixel spacing (meters)
+Description:
+   Converts an image from slant range to ground range.
 
+Input:
+   <infile>  The basename of the input data file.  Must be in ASF Internal
+        format (.img).
 
-    DESCRIPTION:
+Output:
+   <outfile>  The basename of the output file.  The output file will be stored
+        in ASF Internal format (.img and .meta)
 
-	This program converts slant range imagery into ground range
-	imagery.  The algorithm calculates the ground range to the
-        first pixel in the image and from the spacecraft ephemeris,
-	earth ellipsoid, and slant range to first pixel given in the
-	image's metadata.  It then uses the slant range spacing interval
-	to determine appropriate ground range positions.  The remapping
-	is performed using bi-linear interpolation.
+Options:
+   <pixel size>
+        Specifies the desired ground range pixel size.
+   -license
+        Print copyright and license for this software then exit.
+   -version
+        Print version and copyright then exit.
+   -help
+        Print this help information and then exit.
 
-    SEE ALSO:  deskew(1)
+See Also:
+   to_sr
 
-    HARDWARE/SOFTWARE LIMITATIONS: None known.
+Contact:
+   Alaska Satellite Facility
+   Geophysical Institute
+   University of Alaska Fairbanks
+   P.O. Box 757320
+   Fairbanks, AK 99775-7320
+   http://www.asf.alaska.edu
+   uso@asf.alaska.edu
 
-    BUGS: None known.
+sr2gr, version 6602 (part of MapReady 1.0.2-dev)
 
-    AUTHOR: Tom Logan, ASF
-
-    CONTACT:	uso@asf.alaska.edu
-		http://www.asf.alaska.edu
-
-
+Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.
+All rights reserved.
 
