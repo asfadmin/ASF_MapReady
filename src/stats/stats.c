@@ -84,6 +84,7 @@ BUGS: None known
 #include "asf_meta.h"
 #include "asf_raster.h"
 #include "stats.h"
+#include "asf_license.h"
 
 #define VERSION 1.3
 
@@ -171,6 +172,7 @@ int main(int argc, char **argv)
   long window_width = -1;       /* Window width in samples.              */
 
 /* parse command line */
+  handle_license_and_version_args(argc, argv, "stats");
   logflag=quietflag=FALSE;
   while (currArg < (argc-1)) {
     char *key = argv[currArg++];
