@@ -179,7 +179,7 @@ how_to_install.html:
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)* \
-	    $(SHAREDIR)/$(DEST_TARGET)* $(DOCDIR)/$(DEST_TARGET)*
+	    $(SHAREDIR)/$(DEST_TARGET).* $(DOCDIR)/$(DEST_TARGET)*
 	rm -f asf_convert_gui.txt
 
 ### End Unix Section
