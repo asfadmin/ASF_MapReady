@@ -68,9 +68,15 @@ int meta_get_latLon(meta_parameters *meta,
       a lot more info than the other projections */
     if (meta->projection->type == SCANSAR_PROJECTION) {
         scan_to_latlon(meta, px, py, elev, lat, lon, &hgt);
-    } else {
+    //}
+    //else if (meta->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
+    //    *lat = py;
+    //    *lon = px;
+    }
+    else {
         proj_to_latlon(meta->projection, px, py, pz, lat, lon, &hgt);
-        *lat *= R2D; *lon *= R2D;
+        *lat *= R2D;
+        *lon *= R2D;
     }
     return 0;
   }
@@ -280,12 +286,6 @@ int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
 {
-    // It should be totally easy to make this work (since pixels
-    // correspond to lat/long values) No effort has been made to make
-    // this routine work with pseudoprojected images yet though.
-    assert (meta->projection == NULL ||
-            meta->projection->type != LAT_LONG_PSEUDO_PROJECTION);
-
     double x0, y0;
     int err;
     double tol = 0.2;
