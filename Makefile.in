@@ -62,6 +62,7 @@ all: external_libs
 	cp doc/*.pdf doc/mapready-version_history.txt $(S_SHAREDIR)/doc
 	cp LICENSE.txt $(S_SHAREDIR)
 	echo "@VERSION@" > $(S_SHAREDIR)/mapready_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX All ASF Tools Compiled Successfully! XXXXXXXXXXX"
