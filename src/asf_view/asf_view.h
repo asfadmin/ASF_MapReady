@@ -146,6 +146,8 @@ int get_big_image_width(void);
 int get_big_image_width2(void);
 int get_big_image_height(void);
 int get_big_image_height2(void);
+void get_color(int color, unsigned char *r, unsigned char *g,
+               unsigned char *b);
 
 /* small_image.c */
 ThumbnailData *get_thumbnail_data(ImageInfo *ii);

@@ -169,8 +169,8 @@ static int iabs(int i)
 #define PURPLE 2
 #define BLUE 3
 
-static void get_color(int color, unsigned char *r, unsigned char *g,
-                      unsigned char *b)
+void get_color(int color, unsigned char *r, unsigned char *g,
+               unsigned char *b)
 {
     switch (color) {
       case RED: // RED

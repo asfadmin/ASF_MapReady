@@ -174,5 +174,21 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
     meta->general->band_count = 1;
     strcpy(meta->general->bands, "");
 
+    if (strstr(data_name, "land_shallow_topo") != NULL) {
+      // kludge up some lat/lon pseudoprojection action here!!
+      meta->projection = meta_projection_init();
+
+      meta->projection->type = LAT_LONG_PSEUDO_PROJECTION;
+      meta->projection->startX = -180;
+      meta->projection->startY = 90;
+      meta->projection->perX = 180./(double)(meta->general->line_count);
+      meta->projection->perY = -360./(double)(meta->general->sample_count);
+      strcpy(meta->projection->units, "degrees");
+      meta->projection->datum = WGS84_DATUM;
+      meta->projection->spheroid = WGS84_SPHEROID;
+      meta->general->start_line = 0;
+      meta->general->start_sample = 0;
+    }
+
     return meta;
 }

@@ -110,7 +110,7 @@ static void kml_overlap(FILE *kml_file, OverlapInfo *oi)
   fprintf(kml_file, "      </outerBoundaryIs>\n");
   fprintf(kml_file, "    </Polygon>\n");
 
-  free(oi->viewable_region);
+  //free(oi->viewable_region);
 }
 
 void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *pi)

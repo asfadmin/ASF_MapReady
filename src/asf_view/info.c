@@ -9,10 +9,13 @@ static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
   {
     double lat, lon, projZ;
     meta_get_latLon(meta, line, samp, 0, &lat, &lon);
-    if (meta->projection) {
+    if (meta->projection &&
+        meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+    {
       latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, 0,
                      x, y, &projZ);
-    } else {
+    }
+    else {
       latLon2UTM(lat, lon, 0, x, y);
     }
   } else {
