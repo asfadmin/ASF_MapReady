@@ -590,41 +590,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 {
-    // grab selected acquisitions
-    GtkWidget *files_list = get_widget_checked("treeview_planner");
-    GtkTreeSelection *selection =
-      gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-    GList *selected_rows = gtk_tree_selection_get_selected_rows(
-      selection, &liststore);
-
-    if (!selected_rows) {
-      static const char *msg = "No acquisitions selected.";
-      message_box(msg);
-    }
-    else {
-      GList *refs = NULL;
-      GList *i = selected_rows;
-      while (i)
-      {
-        GtkTreePath * path;
-        GtkTreeRowReference * ref;
-
-        path = (GtkTreePath *) i->data;
-        ref = gtk_tree_row_reference_new(liststore, path);
-        refs = g_list_append(refs, ref);
-
-        i = g_list_next(i);
-      }
-
-      i = refs;
-      while (i)
-      {
-        GtkTreeIter iter;        
-        GtkTreeRowReference *ref = (GtkTreeRowReference *) i->data;
-        GtkTreePath *path = gtk_tree_row_reference_get_path(ref);
-        gtk_tree_model_get_iter(liststore, &iter, path);
-
-        // do something with iter!
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
+    while (valid)
+    {
         char *date_str, *dbl_date_str, *coverage_str, *orbit_frame_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
@@ -644,13 +613,10 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         printf("Selected: %s -- %s(%f) %.1f%% %d/%d\n",
                enabled?"YES":"NO ", date_str, date, cov, orbit, frame);
 
-        i = g_list_next(i);
-      }
-      
-      g_list_foreach(selected_rows, (GFunc)gtk_tree_path_free, NULL);
-      g_list_free(selected_rows);
-      
-      g_list_foreach(refs, (GFunc)gtk_tree_row_reference_free, NULL);
-      g_list_free(refs);
+        if (enabled) {
+          // here we will save it, or something
+        }
+
+        valid = gtk_tree_model_iter_next(liststore, &iter);
     }
 }
