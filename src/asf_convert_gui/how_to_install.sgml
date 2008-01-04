@@ -3,16 +3,14 @@
    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
   <bookinfo>
-    <date>2006-11</date>
-    <title>The ASF Convert Installation Guide</title>
+    <date>2008-01</date>
+    <title>The ASF MapReady Installation Guide</title>
   </bookinfo>
   <toc></toc>
   <chapter id="obtaining">
     <title>Obtaining and Installing the Tool</title>
-    <para>The latest version can be downloaded from
-       the ASF web site, at http://www.asf.alaska.edu.  On that page,
-       select the option to "Get SAR Tools".  You can then choose this
-       tool from the list of tools currently distributed by ASF.
+    <para>The latest version can be downloaded from the ASF web
+       site at http://www.asf.alaska.edu.
     </para>
     <para>How you install the tool depends on which operating system
        you are using. Windows packages come with an installer, Linux
@@ -29,44 +27,44 @@
       <para>After installation, you will have a start-menu shortcut
         that you can use to run the tool.</para>
     </sect1>
-    
+
 
     <sect1 id="Linux">
       <title>Linux Installation</title>
       <para>To install the RPM, you must have root access. If you
-        do not, you will need your system administrator to
-        install the package for you.  If that isn't feasible or you
-        don't want to, you can instead download the Source package,
-        and compile the tools yourself, where you can install them
+        do not, you will need your system administrator to install
+        the package for you. If this is not feasible, the Source
+        package can instead downloaded, compiled, and installed
         in your own home directory which does not require root
         privileges.</para>
       <para>To install the package:</para>
       <para>First extract the rpm from the archive:</para>
       <simplelist>
-        <member>gunzip convert-X.X.X-linux.tar.gz</member>
-        <member>tar xvf convert-X.X.X-linux.tar</member>
+        <member>gunzip mapready-X.X.X-linux.tar.gz</member>
+        <member>tar xvf mapready-X.X.X-linux.tar</member>
       </simplelist>
       <para>Then, as root, install the rpm:</para>
       <simplelist>
-        <member>rpm -i convert-X.X.X.rpm</member>
+        <member>rpm -i asf_mapready-X.X.X-1.i386.rpm</member>
       </simplelist>
       <para>(Of course you need to replace the X's with whatever
-        version you downloaded, for example: "rpm -i convert-2.1.9.rpm")
+        version you downloaded, for example:
+        "rpm -i asf_mapready-1.0.2-1.i386.rpm")
       </para>
-      <para>After the package is installed, you can find out where it
-        was put by using this rpm command, which does not require root
-        access:</para>
-      <simplelist><member>rpm -ql stp | grep asf_convert</member></simplelist>
+      <para>After the package is installed, you can find out where
+        individual compenents were put by using this rpm command,
+        which does not require root access:</para>
+      <simplelist><member>rpm -ql asf_mapready | grep asf_import</member></simplelist>
       <para>You should see something like the following:</para>
-      <simplelist><member>/usr/local/bin/asf_convert</member></simplelist>
+      <simplelist><member>/usr/local/bin/asf_import</member></simplelist>
       <para>which tells you that the package has been installed in
         /usr/local, which is the default.</para>
       <para>This directory needs to be added to your path, in order to
-        run the tools.  Exactly how you do this depends on which UNIX
+        run the tools. Exactly how you do this depends on which UNIX
         shell you are using.</para>
-      <para>For example, suppose you've installed the software in
-        /opt/asf_tools.  For sh, ksh, bash, or the like, add these lines to your
-        ~/.profile or ~/.bashrc file:</para>
+      <para>For example, suppose the software was installed in
+        /opt/asf_tools.  For sh, ksh, bash, or the like, add these lines
+	to your ~/.profile or ~/.bashrc file:</para>
       <simplelist>
         <member>PATH=/opt/asf_tools/bin:$PATH</member>
         <member>export PATH</member>
@@ -82,13 +80,14 @@
 
     <sect1 id="Source">
       <title>Source Installation</title>
-      <para>After you've downloaded and extracted the archive, you
-      need to compile the tools before they can be installed. To do
-      this, make sure you're in the asf_tools directory, then:</para>
+      <para>After you've downloaded the archive, you need to extract
+      the package and compile the tools before they can be installed.
+      To do this, make sure you're in the directory where the archive
+      was downloaded to and:</para>
       <para>First extract the directory tree from the archive:</para>
       <simplelist>
-        <member>gunzip convert-X.X.X-src.tar.gz</member>
-        <member>tar xvf convert-X.X.X-src.tar</member>
+        <member>gunzip mapready-X.X.X-src.tar.gz</member>
+        <member>tar xvf mapready-X.X.X-src.tar</member>
       </simplelist>
       <para>Then build the tools. Please note that you will need
       permissions to put files into [[installation location]]! The
@@ -110,7 +109,7 @@
         <member>PATH=[[installation location]]/bin:$PATH</member>
         <member>export PATH</member>
       </simplelist>
-      <para>For csh or tcsh, add this line to your ~/.cshrc file:</para>
+      <para>For csh or tcsh, add this line to the ~/.cshrc file:</para>
       <simplelist>
         <member>setenv PATH [[installation location]]/bin:$PATH</member>
       </simplelist>
@@ -132,15 +131,18 @@
     <para>If you have any questions or comments about this software,
       we would love to hear from you!</para>
     <address>
-      http://www.asf.alaska.edu
-      <email>uso@asf.alaska.edu</email>
-    </address>
-    <address>
-      Alaska Satellite Facility
-      Geophysical Institute
-      University of Alaska Fairbanks
-      P.O. Box 757320
-      Fairbanks, AK 99775-7320
+      Mailing address:
+        <othername>Alaska Satellite Facility</othername>
+        <othername>Geophysical Institute</othername>
+        <othername>University of Alaska Fairbanks</othername>
+        <pob>P.O. Box 757320</pob>
+        <city>Fairbanks</city>, <state>AK</state> <postcode>99775-7320</postcode>
+
+      E-Mail: <ulink url="mailto:uso@asf.alaska.edu">uso@asf.alaska.edu</ulink>
+      Phone: <phone>907 474-6166</phone>
+      Fax: <fax>907 474-2665</fax>
+
+      Web page: <ulink url="http://www.asf.alaska.edu/">http://www.asf.alaska.edu</ulink>
     </address>
 
   </chapter>

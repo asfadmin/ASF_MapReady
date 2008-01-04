@@ -92,12 +92,10 @@ $(TARGET).exe: $(TARGET).c htmlhelp.chm
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
 	cp htmlhelp.chm $(SHAREDIR)/$(DEST_TARGET).chm
 
-htmlhelp.chm doc:
-# doc:
+htmlhelp.chm: asf_convert_gui.sgml
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \
 	  asf_convert_gui.sgml
 	-/cygdrive/c/Program\ Files/HTML\ Help\ Workshop/hhc.exe htmlhelp.hhp
-
 
 clean:
 	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm $(GTK_ZIP)
@@ -146,41 +144,44 @@ LDFLAGS = -Wl,--export-dynamic
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
+DB2H = $(shell which docbook2html 2>/dev/null)
+DB2T = $(shell which docbook2txt 2>/dev/null)
+
 default: clean doc $(OBJS)
 	$(CC) $(OBJS) $(LDLIBS) $(LDFLAGS) -o $(TARGET)
 	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
-	cp $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	mv $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	mv how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
 
 %.c: %.h
 
 doc: asf_convert_gui.txt how_to_install.html
 
-DB2T = $(shell which docbook2txt 2>/dev/null)
-
-asf_convert_gui.txt:
-	if test "X$(DB2T)" = "X"; then \
+asf_convert_gui.txt: asf_convert_gui.sgml
+	@if test "X$(DB2T)" = "X"; then \
 	  echo "No documentation built - docbook2* tools not found."; \
 	else \
+	  echo "Building the help documentation."; \
 	  docbook2txt asf_convert_gui.sgml; \
-	  cp $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt; \
 	fi
 
-DB2H = $(shell which docbook2html 2>/dev/null)
-how_to_install.html:
+how_to_install.html: how_to_install.sgml
 	@if test "X$(DB2H)" = "X"; then \
 	  echo "No documentation built - docbook2* tools not found."; \
 	else \
-          echo "Building the html document on how to install the tool..."; \
-	  docbook2html --nochunks --output . how_to_install.sgml; \
-	  cp how_to_install.html $(SHAREDIR); \
+	  echo "Building the installation documentation."; \
+	  docbook2html --error no-valid --nochunks --output . \
+	    how_to_install.sgml; \
 	fi
 
 clean:
-	rm -f *.o $(BINDIR)/$(TARGET)* \
-	    $(SHAREDIR)/$(DEST_TARGET).* $(DOCDIR)/$(DEST_TARGET)*
-	rm -f asf_convert_gui.txt
+	rm -f *.o \
+	  $(BINDIR)/$(DEST_TARGET) \
+	  $(SHAREDIR)/how_to_install_$(DEST_TARGET).html  \
+	  $(SHAREDIR)/$(DEST_TARGET).* \
+	  $(DOCDIR)/$(DEST_TARGET)* 
 
 ### End Unix Section
 
