@@ -155,12 +155,29 @@
 #define DM_MIN_ECR_VEL            -10000.0
 #define DM_MAX_ECR_VEL            10000.0
 
+// AirSAR Block
+#define DM_MIN_AIRSAR_SCALE_FACTOR      0.0
+#define DM_MAX_AIRSAR_SCALE_FACTOR      10.0
+#define DM_MIN_GPS_ALTITUDE             -2000.0
+#define DM_MAX_GPS_ALTITUDE             25000.0
+#define DM_MIN_LAT_PEG_POINT            -90.0
+#define DM_MAX_LAT_PEG_POINT            90.0
+#define DM_MIN_LON_PEG_POINT            -180.0
+#define DM_MAX_LON_PEG_POINT            360.0
+#define DM_MIN_HEADING_PEG_POINT        0.0
+#define DM_MAX_HEADING_PEG_POINT        360.0
+#define DM_MIN_ALONG_TRACK_OFFSET       -500000.0
+#define DM_MAX_ALONG_TRACK_OFFSET       500000.0
+#define DM_MIN_CROSS_TRACK_OFFSET       -500000.0
+#define DM_MAX_CROSS_TRACK_OFFSET       500000.0
+
 ///////////////////////////////////////////////////////////
 // BASELINE COMPARISON
 ///////////////////////////////////////////////////////////
 
 // General Block
 #define DM_PIXEL_SIZE_M_TOL             0.0025
+
 // SAR Block
 #define DM_RANGE_TIME_PER_PIXEL_TOL     2.5e-09
 #define DM_SLANT_SHIFT_TOL              1.0
@@ -180,9 +197,11 @@
 #define DM_CLOUD_PERCENTAGE_TOL         15.0
 #define DM_SUN_AZIMUTH_ANGLE_TOL        0.05
 #define DM_SUN_ELEVATION_ANGLE_TOL      0.05
+
 // Thermal Block
 #define DM_BAND_GAIN_TOL                10.0
 #define DM_BAND_GAIN_CHANGE_TOL         DM_BAND_GAIN_TOL
+
 // Transform Block
 #define DM_PHI0_TOL                     0.0001
 #define DM_PHI1_TOL                     0.00000001
@@ -228,6 +247,7 @@
 #define DM_J8_TOL                       0.0001
 #define DM_J9_TOL                       0.0001
 #define DM_J10_TOL                      0.0001
+
 // Projection Block
 #define DM_STARTX_TOL                   10.0
 #define DM_STARTY_TOL                   10.0
@@ -238,15 +258,25 @@
 #define DM_LONGITUDE_TOL                0.0005
 #define DM_SCALE_FACTOR_TOL             0.0001
 #define DM_ALPHA_ROTATION_TOL           0.0005
+
 // Stats Block
 #define DM_STATS_MIN_TOL                0.2
 #define DM_STATS_MAX_TOL                0.2
 #define DM_STATS_MEAN_TOL               0.2
 #define DM_STATS_STD_DEVIATION_TOL      0.2
+
 // State Vector Block
 #define DM_SECONDS_TOL                  0.001
 #define DM_XYZ_TOL                      0.005
 #define DM_XYZ_VEL_TOL                  0.005
+
+// AirSAR Block
+#define DM_GPS_ALTITUDE_TOL             10.0
+#define DM_LAT_PEG_POINT_TOL            0.0005
+#define DM_LON_PEG_POINT_TOL            0.0005
+#define DM_HEAD_PEG_POINT_TOL           0.0005
+#define DM_ALONG_TRACK_OFFSET_TOL       10.0
+#define DM_CROSS_TRACK_OFFSET_TOL       10.0
 
 #endif // _DIFFMETA_TOLERANCES_H_
 

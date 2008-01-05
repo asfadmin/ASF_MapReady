@@ -138,8 +138,8 @@ int main(int argc, char **argv)
           outputflag=1;
         }
         else {
-          FREE(outputFile);
-          usage(argv[0]);
+          strcpy(outputFile, "");
+          outputflag=0;
         }
         break;
       default:
@@ -176,11 +176,10 @@ int main(int argc, char **argv)
     fError = fLog;
   }
   if (!outputflag) {
-    sprintf(msg, "Missing output file name ...no place to store file differences!\n");
-    fprintf(stderr, "** Error: ********\n%s** End of error **\n", msg);
-    usage(argv[0]);
+    sprintf(msg, "Missing output file name ...file differences will be directed to stderr (only)\n");
+    printf("** Warning: ********\n%s** End of warning **\n\n", msg);
   }
-  if (strcmp(logFile, outputFile) == 0) {
+  if (outputflag && strcmp(logFile, outputFile) == 0) {
     sprintf(msg, "Log file cannot be the same as the output file:\n     Log file: %s\n  Output file: %s\n",
             logFile, outputFile);
     if (outputFile) FREE(outputFile);
@@ -218,13 +217,15 @@ int main(int argc, char **argv)
     asfPrintError(msg);
   }
 
-  // Create blank output file
-  FILE *outFP=(FILE*)FOPEN(outputFile, "w");
-  if(outFP == NULL) {
-    asfPrintError("Cannot open output file for write:\n%s\n", outputFile);
-  }
-  else {
-    FCLOSE(outFP);
+  // Create blank output file if necessary
+  if (outputflag) {
+    FILE *outFP=(FILE*)FOPEN(outputFile, "w");
+    if(outFP == NULL) {
+        asfPrintError("Cannot open output file for write:\n%s\n", outputFile);
+    }
+    else {
+        FCLOSE(outFP);
+    }
   }
 
   if (formatflag && strncmp(uc(format), "GEOTIFF", 7) == 0) {
@@ -249,7 +250,7 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-         "   %s <-output <diff_output_file>> [-format <type>] [-log <file>] <metafile1> <metafile2>\n"
+         "   %s [-output <diff_output_file>] [-format <type>] [-log <file>] <metafile1> <metafile2>\n"
          "\nOPTIONS:\n"
       "   -output <diff_output_file>:  output to write metadata differencing\n"
       "                 results to (required.)\n"
@@ -417,50 +418,92 @@ void projection_type_2_str(projection_type_t proj, char *proj_str)
 void report_validation_errors(char *outputFile, char *file,
                               char *err_msg, char *block_id)
 {
+  int out_file_exists = 0;
   char msg[1024];
-  FILE *outFP = (FILE*)FOPEN(outputFile, "a");
-  fprintf(outFP, "\n-----------------------------------------------\n");
-  asfPrintStatus("\n-----------------------------------------------\n");
+  FILE *outFP=NULL;
+
+  if (outputFile && strlen(outputFile)) {
+      outFP = (FILE*)FOPEN(outputFile, "a");
+      if (!outFP) {
+          outFP = stderr;
+      }
+      else {
+          out_file_exists = 1;
+      }
+  }
+  else {
+      outFP = stderr;
+  }
+  if (out_file_exists) {
+      fprintf(outFP, "\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
+      fprintf(outFP, msg);
+      sprintf(msg, "%s Block Errors:\n\n", block_id);
+      fprintf(outFP, msg);
+
+      fprintf(outFP, err_msg);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+  }
+  fprintf(stderr,"\n-----------------------------------------------\n");
 
   sprintf(msg, "FAIL: Validation Checking of \n  %s\n\n", file);
-  fprintf(outFP, msg);
-  asfPrintStatus(msg);
+  fprintf(stderr,msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(outFP, msg);
-  asfPrintStatus(msg);
+  fprintf(stderr,msg);
 
-  fprintf(outFP, err_msg);
-  asfPrintStatus(err_msg);
+  fprintf(stderr,err_msg);
 
-  fprintf(outFP, "-----------------------------------------------\n\n");
-  asfPrintStatus("-----------------------------------------------\n\n");
-  FCLOSE(outFP);
+  fprintf(stderr,"-----------------------------------------------\n\n");
+  if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
 }
 
 void report_difference_errors(char *outputFile,
                               char *file1, char *file2,
                               char *err_msg, char *block_id)
 {
-  char msg[1024];
-  FILE *outFP = (FILE*)FOPEN(outputFile, "a");
+    int out_file_exists = 0;
+    char msg[1024];
+  FILE *outFP=NULL;
 
-  fprintf(outFP, "\n-----------------------------------------------\n");
-  asfPrintStatus("\n-----------------------------------------------\n");
+  if (outputFile && strlen(outputFile)) {
+      outFP = (FILE*)FOPEN(outputFile, "a");
+      if (!outFP) {
+          outFP = stderr;
+      }
+      else {
+          out_file_exists = 1;
+      }
+  }
+  else {
+      outFP = stderr;
+  }
+  if (out_file_exists) {
+      fprintf(outFP, "\n-----------------------------------------------\n");
+
+      sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
+              file1, file2);
+      fprintf(outFP, msg);
+      sprintf(msg, "%s Block Errors:\n\n", block_id);
+      fprintf(outFP, msg);
+
+      fprintf(outFP, err_msg);
+
+      fprintf(outFP, "-----------------------------------------------\n\n");
+  }
+  fprintf(stderr,"\n-----------------------------------------------\n");
 
   sprintf(msg, "FAIL: Differences found when comparing:\n  %s\nto\n  %s\n\n",
           file1, file2);
-  fprintf(outFP, msg);
-  asfPrintStatus(msg);
+  fprintf(stderr,msg);
   sprintf(msg, "%s Block Errors:\n\n", block_id);
-  fprintf(outFP, msg);
-  asfPrintStatus(msg);
+  fprintf(stderr,msg);
 
-  fprintf(outFP, err_msg);
-  asfPrintStatus(err_msg);
+  fprintf(stderr,err_msg);
 
-  fprintf(outFP, "-----------------------------------------------\n\n");
-  asfPrintStatus("-----------------------------------------------\n\n");
-  FCLOSE(outFP);
+  fprintf(stderr,"-----------------------------------------------\n\n");
+  if(outputFile && strlen(outputFile) && outFP) FCLOSE(outFP);
 }
 
 void validate_string(char *err_msgs, char *str,
@@ -755,6 +798,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   meta_statistics *mstats1, *mstats2;
   meta_state_vectors *mstatev1, *mstatev2;
   meta_location *mloc1, *mloc2;
+  meta_airsar *mair1, *mair2;
 
   // Element level convenience pointers
   proj_albers *albers1, *albers2; // Albers conical equal area
@@ -786,6 +830,9 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   mstatev2 = meta2->state_vectors;
   mloc1 = meta1->location;
   mloc2 = meta1->location;
+  mair1 = meta1->airsar;              // Can be NULL
+  mair2 = meta2->airsar;
+
   albers1 = &mp1->param.albers;
   albers2 = &mp2->param.albers;
   atct1 = &mp1->param.atct;
@@ -944,9 +991,10 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
              0, &failed);
 
   // FIXME: Write a verify_char_with_mask() so we can ignore single
-  // values, e.g. MAGIC_UNSET_CHAR.  NOTE: AirSAR will ignore the unset char
+  // values, e.g. MAGIC_UNSET_CHAR.  NOTE: AirSAR ignores the unset char
+  // for orbit direction
 # define NUM_ORBIT_DIRECTION_CHARS 2
-  if (is_not_a_geotiff) {
+  if (is_not_a_geotiff && !mair1 && !mair2) {
     char orbit_direction_chars[NUM_ORBIT_DIRECTION_CHARS] =
       {'A', 'D'};
     verify_char(precheck_err_msgs, mg2->orbit_direction,
@@ -1329,7 +1377,58 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   // End of Transform Block Validity Check
   ////////////////////////////////////////////////////////////
 
-  // FIXME: Add AirSAR block (7 doubles, all required)
+  ////////////////////////////////////////////////////////////
+  // Check AirSAR Block
+  //
+  if (mair2) {
+      failed = 0;
+      strcpy(precheck_err_msgs, "");
+
+      verify_double(precheck_err_msgs, mair2->scale_factor,
+                    DM_MIN_AIRSAR_SCALE_FACTOR, DM_MAX_AIRSAR_SCALE_FACTOR,
+                    "AirSAR", "scale_factor",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->gps_altitude,
+                    DM_MIN_GPS_ALTITUDE, DM_MAX_GPS_ALTITUDE,
+                    "AirSAR", "gps_altitude",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->lat_peg_point,
+                    DM_MIN_LAT_PEG_POINT, DM_MAX_LAT_PEG_POINT,
+                    "AirSAR", "lat_peg_point",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->lon_peg_point,
+                    DM_MIN_LON_PEG_POINT, DM_MAX_LON_PEG_POINT,
+                    "AirSAR", "lon_peg_point",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->head_peg_point,
+                    DM_MIN_HEADING_PEG_POINT, DM_MAX_HEADING_PEG_POINT,
+                    "AirSAR", "head_peg_point",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->along_track_offset,
+                    DM_MIN_ALONG_TRACK_OFFSET, DM_MAX_ALONG_TRACK_OFFSET,
+                    "AirSAR", "along_track_offset",
+                    1, &failed);
+
+      verify_double(precheck_err_msgs, mair2->cross_track_offset,
+                    DM_MIN_CROSS_TRACK_OFFSET, DM_MAX_CROSS_TRACK_OFFSET,
+                    "AirSAR", "cross_track_offset",
+                    1, &failed);
+
+    // AIRSAR BLOCK REPORTING
+    // If any failures occurred, produce a report in the output file
+      if (failed) {
+          report_validation_errors(outputFile, metafile2,
+                                   precheck_err_msgs, "AIRSAR");
+      }
+  }
+  //
+  // End of AirSAR Block Validity Check
+  ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////
   // Check Projection Block
@@ -2217,6 +2316,49 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                              compare_err_msgs, "TRANSFORM");
   }
   // End Compare Transform Blocks
+  ////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////
+  // Compare AirSAR Blocks
+  failed = 0;
+  strcpy(compare_err_msgs, "");
+  if (mair1 && mair2) {
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "scale_factor",
+                                         mair1->scale_factor, mair2->scale_factor,
+                                         DM_SCALE_FACTOR_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "gps_altitude",
+                                         mair1->gps_altitude, mair2->gps_altitude,
+                                         DM_GPS_ALTITUDE_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "lat_peg_point",
+                                         mair1->lat_peg_point, mair2->lat_peg_point,
+                                         DM_LAT_PEG_POINT_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "lon_peg_point",
+                                         mair1->lon_peg_point, mair2->lon_peg_point,
+                                         DM_LON_PEG_POINT_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "head_peg_point",
+                                         mair1->head_peg_point, mair2->head_peg_point,
+                                         DM_HEAD_PEG_POINT_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "along_track_offset",
+                                         mair1->along_track_offset, mair2->along_track_offset,
+                                         DM_ALONG_TRACK_OFFSET_TOL, &failed);
+
+      compare_meta_double_with_tolerance(compare_err_msgs, "AirSAR", "cross_track_offset",
+                                         mair1->cross_track_offset, mair2->cross_track_offset,
+                                         DM_CROSS_TRACK_OFFSET_TOL, &failed);
+  }
+  ////////////////////////////////////////////////////////////
+  // AirSAR Block Reporting
+  if (failed) {
+      report_difference_errors(outputFile,
+                               metafile1, metafile2,
+                               compare_err_msgs, "AIRSAR");
+  }
+  // End Compare AirSAR Blocks
   ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////
