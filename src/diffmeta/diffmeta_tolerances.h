@@ -171,6 +171,14 @@
 #define DM_MIN_CROSS_TRACK_OFFSET       -500000.0
 #define DM_MAX_CROSS_TRACK_OFFSET       500000.0
 
+// Calibration Block
+#define DM_MIN_COEFFICIENT_A1           -10.0
+#define DM_MAX_COEFFICIENT_A1           10.0
+#define DM_MIN_COEFFICIENT_A2           -10.0
+#define DM_MAX_COEFFICIENT_A2           10.0
+#define DM_MIN_COEFFICIENT_A3           -10.0
+#define DM_MAX_COEFFICIENT_A3           10.0
+
 ///////////////////////////////////////////////////////////
 // BASELINE COMPARISON
 ///////////////////////////////////////////////////////////
@@ -277,6 +285,11 @@
 #define DM_HEAD_PEG_POINT_TOL           0.0005
 #define DM_ALONG_TRACK_OFFSET_TOL       10.0
 #define DM_CROSS_TRACK_OFFSET_TOL       10.0
+
+// Calibration Block
+#define DM_COEFFICIENT_A1_TOL           0.001
+#define DM_COEFFICIENT_A2_TOL           0.001
+#define DM_COEFFICIENT_A3_TOL           0.001
 
 #endif // _DIFFMETA_TOLERANCES_H_
 
