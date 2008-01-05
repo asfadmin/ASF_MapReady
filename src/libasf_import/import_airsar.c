@@ -8,8 +8,8 @@
 #include <gsl/gsl_multiroots.h>
 
 void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
-		       const char *outBaseName, meta_parameters *metaOut,
-		       char band)
+               const char *outBaseName, meta_parameters *metaOut,
+               char band)
 {
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
@@ -38,7 +38,7 @@ void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
   FCLOSE(fpOut);
   metaOut->general->image_data_type = DEM;
   meta_write(metaOut, outFile);
-  
+
   // Ingest amplitude image
   asfPrintStatus("   Ingesting amplitude image ...\n");
   sprintf(inFile, "%s_%c.vvi2", inBaseName, band);
@@ -54,7 +54,7 @@ void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
   FCLOSE(fpOut);
   metaOut->general->image_data_type = AMPLITUDE_IMAGE;
   meta_write(metaOut, outFile);
-  
+
   // Ingest coherence image
   asfPrintStatus("   Ingesting coherence image ...\n");
   metaIn->general->data_type = BYTE;
@@ -72,14 +72,14 @@ void ingest_insar_data(const char *inBaseName, meta_parameters *metaIn,
   metaOut->general->image_data_type = COHERENCE_IMAGE;
   meta_write(metaOut, outFile);
 
-  // Clean up  
+  // Clean up
   FREE(floatBuf);
   FREE(inFile);
   FREE(outFile);
 }
 
-void ingest_polsar_data(const char *inBaseName, const char *outBaseName, 
-			meta_parameters *meta, char band, long offset)
+void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
+            meta_parameters *meta, char band, long offset)
 {
   FILE *fpIn, *fpOut;
   char *inFile, *outFile;
@@ -122,8 +122,8 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
   for (ii=0; ii<meta->general->line_count; ii++) {
     for (kk=0; kk<meta->general->sample_count; kk++) {
       FREAD(byteBuf, sizeof(char), 10, fpIn);
-      total_power = 
-	scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
+      total_power =
+    scale * ((float)byteBuf[1]/254.0 + 1.5) * pow(2, byteBuf[0]);
       ysca = 2.0 * sqrt(total_power);
       power[kk] = total_power;
       cpx.real = (float)byteBuf[2] * ysca / 127.0;
@@ -152,13 +152,13 @@ void ingest_polsar_data(const char *inBaseName, const char *outBaseName,
     put_band_float_line(fpOut, meta, 6, ii, svh_phase);
     put_band_float_line(fpOut, meta, 7, ii, svv_amp);
     put_band_float_line(fpOut, meta, 8, ii, svv_phase);
-    asfLineMeter(ii, meta->general->line_count);    
+    asfLineMeter(ii, meta->general->line_count);
   }
   FCLOSE(fpIn);
   FCLOSE(fpOut);
   meta_write(meta, outFile);
 
-  // Clean up  
+  // Clean up
   FREE(power);
   FREE(shh_amp);
   FREE(shh_phase);
@@ -190,147 +190,147 @@ static airsar_parameters *read_airsar_params(const char *inBaseName)
     else
       sprintf(metaFile, "hd%s.log", basename+2);
     FILE *fpIn = FOPEN(metaFile, "r");
-    
+
     while (NULL != fgets(line, 255, fpIn)) {
-      
+
       if (strncmp(line, "NUMBER OF SAMPLES PER RECORD =", 30) == 0)
-	sscanf(line, "NUMBER OF SAMPLES PER RECORD = %d", 
-	       &params->sample_count);
+    sscanf(line, "NUMBER OF SAMPLES PER RECORD = %d",
+           &params->sample_count);
       else if (strncmp(line, "NUMBER OF LINES IN IMAGE =", 26) == 0)
-	sscanf(line, "NUMBER OF LINES IN IMAGE = %d", &params->line_count);
+    sscanf(line, "NUMBER OF LINES IN IMAGE = %d", &params->line_count);
       else if (strncmp(line, "JPL AIRCRAFT SAR PROCESSOR VERSION", 34) == 0) {
-	sscanf(line, "JPL AIRCRAFT SAR PROCESSOR VERSION %s", str);
-	value = trim_spaces(str);
-	sprintf(params->processor, "%s", value);
+    sscanf(line, "JPL AIRCRAFT SAR PROCESSOR VERSION %s", str);
+    value = trim_spaces(str);
+    sprintf(params->processor, "%s", value);
       }
       else if (strncmp(line, "DATA TYPE =", 11) == 0) {
-	sscanf(line, "DATA TYPE = %s", str);
-	value = trim_spaces(str);
-	if (strcmp(value, "INTEGER*2") == 0)
-	  params->data_type = INTEGER16;
+    sscanf(line, "DATA TYPE = %s", str);
+    value = trim_spaces(str);
+    if (strcmp(value, "INTEGER*2") == 0)
+      params->data_type = INTEGER16;
       }
       else if (strncmp(line, "RANGE PROJECTION =", 18) == 0) {
-	sscanf(line, "RANGE PROJECTION = %s", str);
-	value = trim_spaces(str);
-	sprintf(params->range_projection, "%s", value);
+    sscanf(line, "RANGE PROJECTION = %s", str);
+    value = trim_spaces(str);
+    sprintf(params->range_projection, "%s", value);
       }
       else if (strncmp(line, "RANGE PIXEL SPACING (METERS) =", 30) == 0)
-	sscanf(line, "RANGE PIXEL SPACING (METERS) = %lf", 
-	       &params->x_pixel_size);
+    sscanf(line, "RANGE PIXEL SPACING (METERS) = %lf",
+           &params->x_pixel_size);
       else if (strncmp(line, "AZIMUTH PIXEL SPACING (METERS) =", 32) == 0)
-	sscanf(line, "AZIMUTH PIXEL SPACING (METERS) = %lf",
-	       &params->y_pixel_size);
+    sscanf(line, "AZIMUTH PIXEL SPACING (METERS) = %lf",
+           &params->y_pixel_size);
       else if (strncmp(line, "BYTE OFFSET OF FIRST DATA RECORD =", 34) == 0)
-	sscanf(line, "BYTE OFFSET OF FIRST DATA RECORD = %ld",
-	       &params->first_data_offset);
+    sscanf(line, "BYTE OFFSET OF FIRST DATA RECORD = %ld",
+           &params->first_data_offset);
       else if (strncmp(line, "BYTE OFFSET OF CALIBRATION HEADER =", 35) == 0)
-	sscanf(line, "BYTE OFFSET OF CALIBRATION HEADER = %ld",
-	       &params->calibration_header_offset);
+    sscanf(line, "BYTE OFFSET OF CALIBRATION HEADER = %ld",
+           &params->calibration_header_offset);
       else if (strncmp(line, "BYTE OFFSET OF DEM HEADER =", 27) == 0)
-	sscanf(line, "BYTE OFFSET OF DEM HEADER = %ld",
-	       &params->dem_header_offset);
+    sscanf(line, "BYTE OFFSET OF DEM HEADER = %ld",
+           &params->dem_header_offset);
       else if (strncmp(line, "SITE NAME", 9) == 0) {
-	sscanf(line, "SITE NAME %s", str);
-	value = trim_spaces(str);
-	sprintf(params->site_name, "%s", value);
+    sscanf(line, "SITE NAME %s", str);
+    value = trim_spaces(str);
+    sprintf(params->site_name, "%s", value);
       }
       else if (strncmp(line, "CCT TYPE", 8) == 0) {
-	sscanf(line, "CCT TYPE %s", str);
-	value = trim_spaces(str);
-	sprintf(params->cct_type, "%s", value);
+    sscanf(line, "CCT TYPE %s", str);
+    value = trim_spaces(str);
+    sprintf(params->cct_type, "%s", value);
       }
       else if (strncmp(line, "CCT ID", 6) == 0)
-	sscanf(line, "CCT ID %d", &params->cct_id);
+    sscanf(line, "CCT ID %d", &params->cct_id);
       else if (strncmp(line, "LATITUDE AT START OF SCENE (DEGREES)", 36) == 0)
-	sscanf(line, "LATITUDE AT START OF SCENE (DEGREES) %lf", 
-	       &params->start_lat);
+    sscanf(line, "LATITUDE AT START OF SCENE (DEGREES) %lf",
+           &params->start_lat);
       else if (strncmp(line, "LONGITUDE AT START OF SCENE (DEGREES)", 37) == 0)
-	sscanf(line, "LONGITUDE AT START OF SCENE (DEGREES) %lf",
-	       &params->start_lon);
+    sscanf(line, "LONGITUDE AT START OF SCENE (DEGREES) %lf",
+           &params->start_lon);
       else if (strncmp(line, "LATITUDE AT END OF SCENE (DEGREES)", 34) == 0)
-	sscanf(line, "LATITUDE AT END OF SCENE (DEGREES) %lf", 
-	       &params->end_lat);
+    sscanf(line, "LATITUDE AT END OF SCENE (DEGREES) %lf",
+           &params->end_lat);
       else if (strncmp(line, "LONGITUDE AT END OF SCENE (DEGREES)", 35) == 0)
-	sscanf(line, "LONGITUDE AT END OF SCENE (DEGREES) %lf", 
-	       &params->end_lon);
+    sscanf(line, "LONGITUDE AT END OF SCENE (DEGREES) %lf",
+           &params->end_lon);
       else if (strncmp(line, "DATE OF ACQUISITION (GMT)", 25) == 0) {
-	sscanf(line, "DATE OF ACQUISITION (GMT) %s", str);
-	value = trim_spaces(str);
-	sprintf(params->acquisition_date, "%s", value);  
+    sscanf(line, "DATE OF ACQUISITION (GMT) %s", str);
+    value = trim_spaces(str);
+    sprintf(params->acquisition_date, "%s", value);
       }
       else if (strncmp(line, "TIME OF ACQUISITION: SECONDS IN DAY", 35) == 0)
-	sscanf(line, "TIME OF ACQUISITION: SECONDS IN DAY %lf", 
-	       &params->acquisition_seconds);
+    sscanf(line, "TIME OF ACQUISITION: SECONDS IN DAY %lf",
+           &params->acquisition_seconds);
       else if (strncmp(line, "FREQUENCIES COLLECTED", 21) == 0) {
-	sscanf(line, "FREQUENCIES COLLECTED %s", str);
-	value = trim_spaces(str);
-	sprintf(params->frequencies, "%s", value);
+    sscanf(line, "FREQUENCIES COLLECTED %s", str);
+    value = trim_spaces(str);
+    sprintf(params->frequencies, "%s", value);
       }
       else if (strncmp(line, "PRF AT START OF TRANSFER (HZ)", 29) == 0)
-	sscanf(line, "PRF AT START OF TRANSFER (HZ) %lf", &params->prf);
+    sscanf(line, "PRF AT START OF TRANSFER (HZ) %lf", &params->prf);
       else if (strncmp(line, "SAMPLING RATE (MHZ)", 19) == 0)
-	sscanf(line, "SAMPLING RATE (MHZ) %lf", &params->range_sampling_rate);
+    sscanf(line, "SAMPLING RATE (MHZ) %lf", &params->range_sampling_rate);
       else if (strncmp(line, "CHIRP BANDWIDTH (MHZ)", 21) == 0)
-	sscanf(line, "CHIRP BANDWIDTH (MHZ) %lf", &params->chirp_bandwidth);
+    sscanf(line, "CHIRP BANDWIDTH (MHZ) %lf", &params->chirp_bandwidth);
       else if (strncmp(line, "PULSE LENGTH (MICROSECONDS)", 27) == 0)
-	sscanf(line, "PULSE LENGTH (MICROSECONDS) %lf", &params->pulse_length);
+    sscanf(line, "PULSE LENGTH (MICROSECONDS) %lf", &params->pulse_length);
       else if (strncmp(line, "PROCESSOR WAVELENGTH (METERS)", 29) == 0)
-	sscanf(line, "PROCESSOR WAVELENGTH (METERS) %lf", &params->wavelength);
+    sscanf(line, "PROCESSOR WAVELENGTH (METERS) %lf", &params->wavelength);
       else if (strncmp(line, "NEAR SLANT RANGE (METERS)", 25) == 0)
-	sscanf(line, "NEAR SLANT RANGE (METERS) %lf", 
-	       &params->near_slant_range);
+    sscanf(line, "NEAR SLANT RANGE (METERS) %lf",
+           &params->near_slant_range);
       else if (strncmp(line, "FAR SLANT RANGE (METERS)", 24) == 0)
-	sscanf(line, "FAR SLANT RANGE (METERS) %lf", &params->far_slant_range);
+    sscanf(line, "FAR SLANT RANGE (METERS) %lf", &params->far_slant_range);
       else if (strncmp(line, "NEAR LOOK ANGLE (DEGREES)", 25) == 0)
-	sscanf(line, "NEAR LOOK ANGLE (DEGREES) %lf", 
-	       &params->near_look_angle);
+    sscanf(line, "NEAR LOOK ANGLE (DEGREES) %lf",
+           &params->near_look_angle);
       else if (strncmp(line, "FAR LOOK ANGLE (DEGEES)", 23) == 0)
-	sscanf(line, "FAR LOOK ANGLE (DEGEES) %lf", &params->far_look_angle);
+    sscanf(line, "FAR LOOK ANGLE (DEGEES) %lf", &params->far_look_angle);
       else if (strncmp(line, "NUMBER OF LOOKS PROCESSED IN AZIMUTH", 36) == 0)
-	sscanf(line, "NUMBER OF LOOKS PROCESSED IN AZIMUTH %d", 
-	       &params->azimuth_look_count);
+    sscanf(line, "NUMBER OF LOOKS PROCESSED IN AZIMUTH %d",
+           &params->azimuth_look_count);
       else if (strncmp(line, "NUMBER OF LOOKS PROCESSED IN RANGE", 34) == 0)
-	sscanf(line, "NUMBER OF LOOKS PROCESSED IN RANGE %d",
-	       &params->range_look_count);
+    sscanf(line, "NUMBER OF LOOKS PROCESSED IN RANGE %d",
+           &params->range_look_count);
       else if (strncmp
-	       (line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED)", 40) == 0)
-	sscanf(line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED) %d",
-	       &params->deskewed);
+           (line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED)", 40) == 0)
+    sscanf(line, "DESKEW FLAG (1=DESKEWED, 2=NOT DESKEWED) %d",
+           &params->deskewed);
       else if (strncmp(line, "SLANT RANGE SAMPLE SPACING (METERS)", 35) == 0)
-	sscanf(line, "SLANT RANGE SAMPLE SPACING (METERS) %lf",
-	       &params->sr_sample_spacing);
+    sscanf(line, "SLANT RANGE SAMPLE SPACING (METERS) %lf",
+           &params->sr_sample_spacing);
       else if (strncmp
-	       (line, "NOMINAL SLANT RANGE RESOLUTION (METERS)", 39) == 0)
-	sscanf(line, "NOMINAL SLANT RANGE RESOLUTION (METERS) %lf",
-	       &params->slant_range_resolution);
+           (line, "NOMINAL SLANT RANGE RESOLUTION (METERS)", 39) == 0)
+    sscanf(line, "NOMINAL SLANT RANGE RESOLUTION (METERS) %lf",
+           &params->slant_range_resolution);
       else if (strncmp(line, "AZIMUTH SAMPLE SPACING (METERS)", 31) == 0)
-	sscanf(line, "AZIMUTH SAMPLE SPACING (METERS) %lf", 
-	       &params->azimuth_sample_spacing);
+    sscanf(line, "AZIMUTH SAMPLE SPACING (METERS) %lf",
+           &params->azimuth_sample_spacing);
       else if (strncmp(line, "NOMINAL AZIMUTH RESOLUTION (METERS)", 35) == 0)
-	sscanf(line, "NOMINAL AZIMUTH RESOLUTION (METERS) %lf",
-	       &params->azimuth_resolution);
+    sscanf(line, "NOMINAL AZIMUTH RESOLUTION (METERS) %lf",
+           &params->azimuth_resolution);
       else if (strncmp(line, "IMAGE CENTER LATITUDE (DEGREES)", 31) == 0)
-	sscanf(line, "IMAGE CENTER LATITUDE (DEGREES) %lf",
-	       &params->center_lat);
+    sscanf(line, "IMAGE CENTER LATITUDE (DEGREES) %lf",
+           &params->center_lat);
       else if (strncmp(line, "IMAGE CENTER LONGITUDE (DEGREES)", 32) == 0)
-	sscanf(line, "IMAGE CENTER LONGITUDE (DEGREES) %lf",
-	       &params->center_lon);
+    sscanf(line, "IMAGE CENTER LONGITUDE (DEGREES) %lf",
+           &params->center_lon);
       else if (strncmp(line, "GENERAL SCALE FACTOR", 20) == 0)
-	sscanf(line, "GENERAL SCALE FACTOR %lf", &params->scale_factor);
+    sscanf(line, "GENERAL SCALE FACTOR %lf", &params->scale_factor);
       else if (strncmp(line, "GPS ALTITUDE, M", 15) == 0)
-	sscanf(line, "GPS ALTITUDE, M %lf", &params->gps_altitude);
+    sscanf(line, "GPS ALTITUDE, M %lf", &params->gps_altitude);
       else if (strncmp(line, "LATITUDE OF PEG POINT", 21) == 0)
-	sscanf(line, "LATITUDE OF PEG POINT %lf", &params->lat_peg_point);
+    sscanf(line, "LATITUDE OF PEG POINT %lf", &params->lat_peg_point);
       else if (strncmp(line, "LONGITUDE OF PEG POINT", 22) == 0)
-	sscanf(line, "LONGITUDE OF PEG POINT %lf", &params->lon_peg_point);
+    sscanf(line, "LONGITUDE OF PEG POINT %lf", &params->lon_peg_point);
       else if (strncmp(line, "HEADING AT PEG POINT", 20) == 0)
-	sscanf(line, "HEADING AT PEG POINT %lf", &params->head_peg_point);
+    sscanf(line, "HEADING AT PEG POINT %lf", &params->head_peg_point);
       else if (strncmp(line, "ALONG-TRACK OFFSET S0  (M)", 26) == 0)
-	sscanf(line, "ALONG-TRACK OFFSET S0  (M) %lf", 
-	       &params->along_track_offset);
+    sscanf(line, "ALONG-TRACK OFFSET S0  (M) %lf",
+           &params->along_track_offset);
       else if (strncmp(line, "CROSS-TRACK OFFSET C0  (M)", 26) == 0)
-	sscanf(line, "CROSS-TRACK OFFSET C0  (M) %lf", 
-	       &params->cross_track_offset);
+    sscanf(line, "CROSS-TRACK OFFSET C0  (M) %lf",
+           &params->cross_track_offset);
     }
     FCLOSE(fpIn);
   }
@@ -360,109 +360,104 @@ static airsar_general *read_airsar_general(const char *inBaseName)
     if (p) {
       value = p+1;
       if (strncmp(line, "SCENE ID", 8) == 0)
-	sprintf(general->scene_id, "%s", value);
+        sprintf(general->scene_id, "%s", value);
       else if (strncmp(line, "Name of Flight-line", 19) == 0)
-	sprintf(general->flight_line, "%s", value);
+        sprintf(general->flight_line, "%s", value);
       else if (strncmp(line, "Date of Acquistion", 18) == 0)
-	sprintf(general->date_acquisition, "%s", value);
+        sprintf(general->date_acquisition, "%s", value);
       else if (strncmp(line, "Date of Processing", 18) == 0)
-	sprintf(general->date_processing, "%s", value);
+        sprintf(general->date_processing, "%s", value);
       else if (strncmp(line, "Radar Projection (for highest freq product)",
-		       43) == 0)
-	sprintf(general->radar_projection, "%s", value);
+               43) == 0)
+        sprintf(general->radar_projection, "%s", value);
       else if (strncmp(line, "Width in Km(for highest freq product)", 37) == 0)
-	general->width = atof(value);
-      else if (strncmp
-	       (line, "Length in Km(for highest freq product)", 38) == 0)
-	general->length = atof(value);
+        general->width = atof(value);
+      else if (strncmp(line, "Length in Km(for highest freq product)", 38) == 0)
+        general->length = atof(value);
       else if (strncmp(line, "Range pixel spacing", 19) == 0)
-	general->range_pixel_spacing = atof(value);
+        general->range_pixel_spacing = atof(value);
       else if (strncmp(line, "Azimuth pixel spacing", 21) == 0)
-	general->azimuth_pixel_spacing = atof(value);
+        general->azimuth_pixel_spacing = atof(value);
       else if (strncmp(line, "Corner 1 latitude in degrees", 28) == 0)
-	general->corner1_lat = atof(value);
+        general->corner1_lat = atof(value);
       else if (strncmp(line, "Corner 1 longitude in degrees", 29) == 0)
-	general->corner1_lon = atof(value);
+        general->corner1_lon = atof(value);
       else if (strncmp(line, "Corner 2 latitude in degrees", 28) == 0)
-	general->corner2_lat = atof(value);
+        general->corner2_lat = atof(value);
       else if (strncmp(line, "Corner 2 longitude in degrees", 29) == 0)
-	general->corner2_lon = atof(value);
+        general->corner2_lon = atof(value);
       else if (strncmp(line, "Corner 3 latitude in degrees", 28) == 0)
-	general->corner3_lat = atof(value);
+        general->corner3_lat = atof(value);
       else if (strncmp(line, "Corner 3 longitude in degrees", 29) == 0)
-	general->corner3_lon = atof(value);
+        general->corner3_lon = atof(value);
       else if (strncmp(line, "Corner 4 latitude in degrees", 28) == 0)
-	general->corner4_lat = atof(value);
+        general->corner4_lat = atof(value);
       else if (strncmp(line, "Corner 4 longitude in degrees", 29) == 0)
-	general->corner4_lon = atof(value);
+        general->corner4_lon = atof(value);
       else if (strncmp(line, "C-band Radar Bandwidth in MHZ", 29) == 0)
-	general->c_bandwidth = atof(value);
+        general->c_bandwidth = atof(value);
       else if (strncmp(line, "L-band Radar Bandwidth in MHZ", 29) == 0)
-	general->l_bandwidth = atof(value);
+        general->l_bandwidth = atof(value);
       else if (strncmp(line, "P-band Radar Bandwidth in MHZ", 29) == 0)
-	general->p_bandwidth = atof(value);
+        general->p_bandwidth = atof(value);
       else if (strncmp(line, "AIRSAR Mode", 11) == 0)
-	sprintf(general->mode, "%s", value);
+        sprintf(general->mode, "%s", value);
       else if (strncmp(line, "C-band Polarimetric data", 24) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->c_pol_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->c_pol_data = FALSE;
+        if (strncmp(value, "Yes", 3) == 0)
+            general->c_pol_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->c_pol_data = FALSE;
       }
       else if (strncmp(line, "L-band Polarimetric data", 24) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->l_pol_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->l_pol_data = FALSE;
+        if (strncmp(value, "Yes", 3) == 0)
+            general->l_pol_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->l_pol_data = FALSE;
       }
       else if (strncmp(line, "P-band Polarimetric data", 24) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->p_pol_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->p_pol_data = FALSE;
+        if (strncmp(value, "Yes", 3) == 0)
+            general->p_pol_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->p_pol_data = FALSE;
       }
-      else if (strncmp
-	       (line, "C-band Cross Track Interferometric data", 39) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->c_cross_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->c_cross_data = FALSE;
+      else if (strncmp(line, "C-band Cross Track Interferometric data", 39) == 0) {
+        if (strncmp(value, "Yes", 3) == 0)
+            general->c_cross_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->c_cross_data = FALSE;
       }
-      else if (strncmp
-	       (line, "L-band Cross Track Interferometric data", 39) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->l_cross_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->l_cross_data = FALSE;  
+      else if (strncmp(line, "L-band Cross Track Interferometric data", 39) == 0) {
+        if (strncmp(value, "Yes", 3) == 0)
+            general->l_cross_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->l_cross_data = FALSE;
       }
-      else if (strncmp
-	       (line, "C-band Along Track Interferometric data", 39) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->c_along_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->c_along_data = FALSE;
+      else if (strncmp(line, "C-band Along Track Interferometric data", 39) == 0) {
+        if (strncmp(value, "Yes", 3) == 0)
+            general->c_along_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+        general->c_along_data = FALSE;
       }
-      else if (strncmp
-	       (line, "L-band Along Track Interferometric data", 39) == 0) {
-	if (strncmp(value, "Yes", 3) == 0)
-	  general->l_along_data = TRUE;
-	else if (strncmp(value, "None", 4) == 0)
-	  general->l_along_data = FALSE;
+      else if (strncmp(line, "L-band Along Track Interferometric data", 39) == 0) {
+        if (strncmp(value, "Yes", 3) == 0)
+            general->l_along_data = TRUE;
+        else if (strncmp(value, "None", 4) == 0)
+            general->l_along_data = FALSE;
       }
       else if (strncmp(line, "Interferometry Baseline Length", 30) == 0)
-	sprintf(general->baseline, "%s", value);
+        sprintf(general->baseline, "%s", value);
       else if (strncmp(line, "Single Frequency/Channel band 1", 31) == 0)
-	sprintf(general->frequency_band1, "%s", value);
+        sprintf(general->frequency_band1, "%s", value);
       else if (strncmp(line, "Single Frequency/Channel band 2", 31) == 0)
-	sprintf(general->frequency_band2, "%s", value);
+        sprintf(general->frequency_band2, "%s", value);
       else if (strncmp(line, "Single Frequency/Channel band 3", 31) == 0)
-	sprintf(general->frequency_band3, "%s", value);
+        sprintf(general->frequency_band3, "%s", value);
       else if (strncmp(line, "Data Format for band 1", 22) == 0)
-	sprintf(general->format_band1, "%s", value);
+        sprintf(general->format_band1, "%s", value);
       else if (strncmp(line, "Data Format for band 2", 22) == 0)
-	sprintf(general->format_band2, "%s", value);
+        sprintf(general->format_band2, "%s", value);
       else if (strncmp(line, "Data Format for band 3", 22) == 0)
-	sprintf(general->format_band3, "%s", value);
+        sprintf(general->format_band3, "%s", value);
     }
   }
   FCLOSE(fpIn);
@@ -501,12 +496,12 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   // Check for interferometric data
   if (general->c_cross_data) {
     asfPrintStatus("\n   Ingesting C-band cross track interferometric data ..."
-		   "\n\n");
+           "\n\n");
     ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'c');
   }
   if (general->l_cross_data) {
     asfPrintStatus("\n   Ingesting L-band cross track interferometric data ..."
-		   "\n\n");
+           "\n\n");
     ingest_insar_data(inBaseName, metaIn, outBaseName, metaOut, 'l');
   }
   // Kept out the along-track interferometric data for the moment.
@@ -517,22 +512,22 @@ void import_airsar(const char *inBaseName, const char *outBaseName)
   if (general->c_pol_data) {
     asfPrintStatus("\n   Ingesting C-band polarimetric data ...\n\n");
     ingest_polsar_data(inBaseName, outBaseName, metaOut, 'c',
-		       params->calibration_header_offset*10);
+               params->calibration_header_offset*10);
   }
   if (general->l_pol_data) {
     asfPrintStatus("\n   Ingesting L-band polarimetric data ...\n\n");
     ingest_polsar_data(inBaseName, outBaseName, metaOut, 'l',
-		       params->calibration_header_offset*10);
+               params->calibration_header_offset*10);
   }
   if (general->p_pol_data) {
     asfPrintStatus("\n   Ingesting P-band polarimetric data ...\n\n");
     ingest_polsar_data(inBaseName, outBaseName, metaOut, 'p',
-		       params->calibration_header_offset*10);
+               params->calibration_header_offset*10);
   }
 
   free(general);
   free(params);
-  
+
   meta_free(metaIn);
   meta_free(metaOut);
 }
@@ -574,7 +569,7 @@ getObjective(const gsl_vector *x, void *params, gsl_vector *f)
   double old_s0 = meta->airsar->along_track_offset;
   meta->airsar->cross_track_offset = c0;
   meta->airsar->along_track_offset = s0;
-  
+
   double line, samp, err = 0.;
 
   meta_get_lineSamp(meta, meta->location->lat_start_near_range,
@@ -644,7 +639,7 @@ static void coarse_search(double c0_extent_min, double c0_extent_max,
             getObjective(v,(void*)(&params), u);
             double n = gsl_vector_get(u,0);
             //printf("%9.3f ", n);
-            if (n<the_min) { 
+            if (n<the_min) {
                 the_min=n;
                 min_c0=gsl_vector_get(v,0);
                 min_s0=gsl_vector_get(v,1);

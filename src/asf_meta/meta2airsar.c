@@ -3,8 +3,8 @@
 #include "airsar.h"
 #include "asf_nan.h"
 
-meta_parameters* airsar2meta(airsar_general *general, 
-			     airsar_parameters *params)
+meta_parameters* airsar2meta(airsar_general *general,
+                 airsar_parameters *params)
 {
   meta_parameters *meta;
   hms_time hms;
@@ -15,6 +15,7 @@ meta_parameters* airsar2meta(airsar_general *general,
   // General block
   sprintf(meta->general->basename, "%s", general->scene_id);
   sprintf(meta->general->sensor, "AIRSAR");
+  strcpy(meta->general->sensor_name, "SAR");
   strcpy(meta->general->mode, general->mode);
   // no sensor mode
   if (strlen(params->processor)>0) {
@@ -27,19 +28,19 @@ meta_parameters* airsar2meta(airsar_general *general,
   sprintf(meta->general->system, "big_ieee");
   date_sec2hms(params->acquisition_seconds, &hms);
   sprintf(meta->general->acquisition_date, "%s %d:%d:%.3lf",
-	  params->acquisition_date, hms.hour, hms.min, hms.sec);
+      params->acquisition_date, hms.hour, hms.min, hms.sec);
   // no orbit and orbit direction
   // no frame number
   // FIXME: decide how to separate interferometric/polarimetric data
   meta->general->band_count = 1;
   strcpy(meta->general->bands, "tbd");
   if (params) {
-    meta->general->line_count = 
+    meta->general->line_count =
       params->line_count - params->first_data_offset / params->sample_count;
     meta->general->sample_count = params->sample_count;
   }
   else {
-    meta->general->line_count = 
+    meta->general->line_count =
       general->length * 1000 / general->azimuth_pixel_spacing;
     meta->general->sample_count =
       general->width * 1000 / general->range_pixel_spacing;
@@ -88,7 +89,7 @@ meta_parameters* airsar2meta(airsar_general *general,
     meta->sar->range_sampling_rate = params->range_sampling_rate;
     // FIXME: check polarizations for interferometric/polarimetric data
     // FIXME: multilook flag depends on data type
-    
+
     // AirSAR block
     meta->airsar = meta_airsar_init();
     meta->airsar->scale_factor = params->scale_factor;
