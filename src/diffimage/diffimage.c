@@ -44,8 +44,6 @@ ISSUES:
 #include "diffimage_tolerances.h"
 #include "geotiff_support.h"
 
-#define VERSION 1.0
-
 #ifndef png_jmpbuf
 #  define png_jmpbuf (png_ptr)    ((png_ptr)->jmpbuf)
 #endif
@@ -1290,7 +1288,7 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-         "   %s <-output <diff_output_file>> [-log <file>] [-band <band number>] [-strict] <img1.ext> <img2.ext>\n"
+     "   %s <-output <diff_output_file>> [-log <file>] [-band <band number>] [-strict] <img1.ext> <img2.ext>\n"
          "\nOPTIONS:\n"
       "   -output <diff_output_file>:  output to write image differencing\n"
       "                 results to (required.)\n"
@@ -1327,7 +1325,8 @@ void usage(char *name)
       "   4. If there are no differences, the output file will exist but will be\n"
       "   of zero length.  Otherwise, a summary of the differences will be placed\n"
       "   in both the output file and the log file (if specified.)\n"
-      "\nVersion %.2f, Alaska Satellite Facility Tools\n\n",name,VERSION);
+          "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " "MAPREADY_VERSION_STRING ")\n\n",
+      name);
   exit(1);
 }
 
