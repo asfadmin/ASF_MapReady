@@ -32,8 +32,6 @@ CAVEATS:
 #include "diffmeta.h"
 #include "diffmeta_tolerances.h"
 
-#define VERSION 1.0
-
 /**** MACRO DEFINITIONS ****/
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 
@@ -279,7 +277,8 @@ void usage(char *name)
       "      d. If the 3 steps above complete with no failures => PASS\n"
       "      e. If no failures of any kind occurred, the output file will be created but\n"
       "         will have zero length (empty file.)\n"
-      "\nVersion %.2f, Alaska Satellite Facility Tools\n\n",name,VERSION);
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " "MAPREADY_VERSION_STRING ")\n\n",
+      name);
   exit(1);
 }
 
