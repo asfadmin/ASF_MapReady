@@ -110,6 +110,20 @@ int sort_compare_func(GtkTreeModel *model,
   return ret;
 }
 
+static void clear_found()
+{
+    gtk_list_store_clear(GTK_LIST_STORE(liststore));
+
+    int i;
+
+    // leave the first one -- area of interest
+    for (i=1; i<MAX_POLYS; ++i)
+      g_polys[i].n = 0;
+
+    which_poly = 0;
+    g_poly = &g_polys[which_poly];
+}
+
 SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
                                  char *path_str, gpointer data)
 {
@@ -259,12 +273,14 @@ void setup_planner()
 
     // Kludge during testing...
     g_polys[0].n = 1;
-    g_polys[0].line[0] = curr->nl-10;
-    g_polys[0].samp[0] = curr->ns-10;
+    g_polys[0].line[0] = 1850;
+    g_polys[0].samp[0] = 3650;
     g_polys[0].c = 0;
-    crosshair_line = 10;
-    crosshair_samp = 10;
-    zoom = 20;
+    crosshair_line = 1650;
+    crosshair_samp = 3450;
+    zoom = 1;
+    center_line = (crosshair_line + g_polys[0].line[0])/2;
+    center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
     set_combo_box_item_checked("satellite_combobox", 1);
     // ... all this should be deleted
 
@@ -409,20 +425,22 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       }
       else if (g_poly->n == 1) {
         // special handling if we have only two points (create a box)
-        double lat, lon;
         double lat1, lat2, lon1, lon2;
 
-        meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
-        lat1 = lat; lon1 = lon;
-        zone = utm_zone(lon);
-        latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
+        // first the corner points -- then use the center point to find
+        // zone all calculations are done with, this will mean greater
+        // distortion towards the edges of large areas of interest
+        meta_get_latLon(meta,crosshair_line,crosshair_samp,0,&lat1,&lon1);
+        meta_get_latLon(meta,g_poly->line[0],g_poly->samp[0],0,&lat2,&lon2);
+        zone = utm_zone((lon1+lon2)/2.);
 
+        // now get all corner points into UTM
+        latLon2UTM_zone(lat1, lon1, 0, zone, &x[0], &y[0]);
+        latLon2UTM_zone(lat2, lon2, 0, zone, &x[2], &y[2]);
+
+        double lat, lon;
         meta_get_latLon(meta, g_poly->line[0], crosshair_samp, 0, &lat, &lon);
         latLon2UTM_zone(lat, lon, 0, zone, &x[1], &y[1]);
-
-        meta_get_latLon(meta, g_poly->line[0], g_poly->samp[0], 0, &lat, &lon);
-        lat2 = lat; lon2 = lon;
-        latLon2UTM_zone(lat, lon, 0, zone, &x[2], &y[2]);
 
         meta_get_latLon(meta, crosshair_line, g_poly->samp[0], 0, &lat, &lon);
         latLon2UTM_zone(lat, lon, 0, zone, &x[3], &y[3]);
@@ -453,18 +471,18 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         g_polys[0].samp[3] = crosshair_samp;        
       }
       else {
+
+        // we make a first pass through, just to get the center point
+        // (in lat/lon).  all polygon points are passed to the planner in
+        // UTM, need to be in the same zone, so we try to pick the best one
         double lat, lon;
         meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
         max_lat = min_lat = clat = lat;
-
         clon = lon;
-        zone = utm_zone(clon);
-        latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
 
         for (i=0; i<g_poly->n; ++i) {
           meta_get_latLon(meta, g_poly->line[i], g_poly->samp[i], 0,
                           &lat, &lon);
-          latLon2UTM_zone(lat, lon, 0, zone, &x[i+1], &y[i+1]);
 
           clat += lat;
           clon += lon;
@@ -476,7 +494,23 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         clat /= (double)(g_poly->n+1);
         clon /= (double)(g_poly->n+1);
 
-        printf("Center lat/lon: %f, %f\n", clat, clon);
+        // center point determines which zone to use
+        zone = utm_zone(clon);
+
+        printf("Center lat/lon: %f, %f (Zone %d)\n", clat, clon, zone);
+
+        // now the second pass -- determining the actual coordinates
+        // of the polygon in the right UTM zone
+        meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
+        latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
+
+        for (i=0; i<g_poly->n; ++i) {
+          meta_get_latLon(meta, g_poly->line[i], g_poly->samp[i], 0,
+                          &lat, &lon);
+          latLon2UTM_zone(lat, lon, 0, zone, &x[i+1], &y[i+1]);
+        }
+
+        // now we can finally create the polygon
         aoi = polygon_new_closed(g_poly->n+1, x, y);
       }
     }
@@ -537,13 +571,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         // this is for debugging, can be removed
         pass_collection_to_kml(pc, "test_kml.kml");
 
+        clear_found();
+
         // polygon #0 is left alone (it is the area of interest)
         // The passes start at polygon #1 (clobber any existing polygons)
 
-        GtkWidget *tv = get_widget_checked("treeview_planner");
-        GtkTreeModel *tm = gtk_tree_view_get_model(GTK_TREE_VIEW(tv));
-        GtkListStore *ls = GTK_LIST_STORE(tm);
-        gtk_list_store_clear(ls);
 
         // find the maximum coverage
         double max_coverage = 0;
@@ -571,9 +603,16 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);
-              g_polys[i+1].line[m]=line;
-              g_polys[i+1].samp[m]=samp;
-              ++m;
+              if (m >= MAX_POLY_LEN) {
+                printf("Reached maximum polygon length!\n");
+                printf("--> Pass number %d\n", i);
+                printf("    Number of polygons: %d\n", pi->num);
+                break;
+              } else {
+                g_polys[i+1].line[m]=line;
+                g_polys[i+1].samp[m]=samp;
+                ++m;
+              }
             }
           }
 
@@ -625,8 +664,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           // now, can add the list entry (add to the end, later the sort
           // will rearrange them all anyway)
           GtkTreeIter iter;
-          gtk_list_store_append(ls, &iter);
-          gtk_list_store_set(ls, &iter,
+          gtk_list_store_append(GTK_LIST_STORE(liststore), &iter);
+          gtk_list_store_set(GTK_LIST_STORE(liststore), &iter,
                              COL_COLOR, pb,
                              COL_SELECTED, selected,
                              COL_DATE, date_info,
@@ -678,4 +717,13 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 
         valid = gtk_tree_model_iter_next(liststore, &iter);
     }
+}
+
+SIGNAL_CALLBACK void on_clear_button_clicked(GtkWidget *w)
+{
+    // clear found list
+    clear_found();
+
+    // repaint
+    fill_big(curr);
 }

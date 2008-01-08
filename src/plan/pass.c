@@ -25,7 +25,7 @@ void pass_info_add(PassInfo *pi, double t, OverlapInfo *oi)
     int i;
     pi->num += 1;
 
-    // create a new overlaps array 
+    // create a new overlaps array
     OverlapInfo **overlaps = MALLOC(sizeof(OverlapInfo*)*(pi->num));
 
     // copy over old array, add new overlap info

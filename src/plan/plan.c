@@ -87,10 +87,10 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
 
   // return NULL if we are "far away"
   int zone = utm_zone(center_lon);
-  if (iabs(zone - target_zone) > 2)
-    return NULL;
-  if (fabs(center_lat - target_lat) > 20)
-    return NULL;
+  //if (iabs(zone - target_zone) > 2)
+  // return NULL;
+  //if (fabs(center_lat - target_lat) > 20)
+  //  return NULL;
 
   latLon2UTM_zone(center_lat, center_lon, 0, target_zone,
                   &center_x, &center_y);
@@ -162,7 +162,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
   Polygon *viewable_region = get_viewable_region(st, bmi, zone, clat, clon);
 
   if (!viewable_region)
-    return FALSE; // no overlap
+    return NULL; // no overlap
 
   if (polygon_overlap(aoi, viewable_region)) {
     // need a good method to test for overlap amount!
@@ -189,6 +189,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
   }
   else {
     // no overlap
+    free(viewable_region);
     return NULL;
   }
 }
@@ -203,6 +204,8 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
     PassInfo *pi = pass_info_new();
     double delta = bmi->image_time;
     int is_overlap;
+    int first = TRUE;
+    int n_backups = 0;
 
     do {
       double t = t1 + state_vector_time;
@@ -220,9 +223,26 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
       //}
 
       // Look for overlap when the satellite is in this position
+      // If we find it at the starting time, we will back up until
+      // we find that there is no overlap
       OverlapInfo *oi = overlap(t, st, bmi, zone, clat, clon, aoi);
-      if (oi)
-        pass_info_add(pi, t, oi);
+      if (oi) {
+        if (first) {
+          // we might have jumped in in the middle, so start backing up
+          // (actually, this shouldn't happen much since we padded up above)
+          *st = propagate(*st, t1, t1-delta);
+          ++n_backups;
+          t1 -= delta;
+          free(oi);
+          if (n_backups > 100)
+            printf("Getting a little out of hand!\n");
+          else
+            continue;
+        } else {
+          // normal case, just add this as the first entry
+          pass_info_add(pi, t, oi);
+        }
+      }
 
       // moving ahead to the next check point
       *st = propagate(*st, t, t+delta);
@@ -232,9 +252,13 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
       // we pass the official "end time" (where we cross out of the
       // latitude range)
       is_overlap = oi != NULL;
+      first = FALSE;
     }
     while (t1 < end_time || is_overlap);
     
+    if (n_backups > 0)
+      printf("Had to back up %d times.\n", n_backups);
+
     int found = pi->num > 0;
     if (found)
       pass_collection_add(pc, pi);
