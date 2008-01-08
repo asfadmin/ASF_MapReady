@@ -281,6 +281,7 @@ void export_png_to_asf_img(char *inFile, char *outfile,
                            char *fft_file, char *fft_meta_file,
                            uint32 height, uint32 width, data_type_t data_type,
                            int band);
+char *pcs2description(int pcs);
 
 int main(int argc, char **argv)
 {
@@ -335,8 +336,8 @@ int main(int argc, char **argv)
           outputflag=1;
         }
         else {
-          FREE(outputFile);
-          usage(argv[0]);
+          strcpy(outputFile, "");
+          outputflag=0;
         }
         break;
       case 'b':/* -band flag */
@@ -383,6 +384,9 @@ int main(int argc, char **argv)
     inFile1=argv[optind];
     inFile2=argv[optind+1];
   }
+  if (strcmp(inFile1, inFile2) == 0) {
+      asfPrintError("inFile1 and inFile2 must be different files\n");
+  }
   // Set up output redirection for error and log messages
   if (logflag == 0) {
     fLog = NULL;
@@ -392,10 +396,10 @@ int main(int argc, char **argv)
     fError = fLog;
   }
   if (!outputflag) {
-    sprintf(msg, "Missing output file name ...no place to store file differences!\n");
-    asfPrintError(msg);
+      sprintf(msg, "Missing output file name ...file differences will be directed to stderr (only)\n");
+      printf("** Warning: ********\n%s** End of warning **\n\n", msg);
   }
-  if (strcmp(logFile, outputFile) == 0) {
+  if (outputflag && strcmp(logFile, outputFile) == 0) {
     sprintf(msg, "Log file cannot be the same as the output file:\n     Log file: %s\n  Output file: %s\n",
             logFile, outputFile);
     if (outputFile) FREE(outputFile);
@@ -403,7 +407,8 @@ int main(int argc, char **argv)
   }
 
   // Empty the output file
-  FILE *fp=(FILE*)FOPEN(outputFile, "w");
+  FILE *fp = NULL;
+  if (outputFile && strlen(outputFile) > 0) fp = (FILE*)FOPEN(outputFile, "w");
   if(fp) FCLOSE(fp);
 
   // Determine input file graphical format types and check to see if they are
@@ -1288,7 +1293,7 @@ int main(int argc, char **argv)
 void usage(char *name)
 {
   printf("\nUSAGE:\n"
-     "   %s <-output <diff_output_file>> [-log <file>] [-band <band number>] [-strict] <img1.ext> <img2.ext>\n"
+      "   %s [-output <diff_output_file>] [-log <file>] [-band <band number>] [-strict] <img1.ext> <img2.ext>\n"
          "\nOPTIONS:\n"
       "   -output <diff_output_file>:  output to write image differencing\n"
       "                 results to (required.)\n"
@@ -1822,7 +1827,21 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
 
   int num_extracted_bands1=0, num_extracted_bands2=0;
   FILE *outputFP = NULL;
-  outputFP = (FILE*)FOPEN(outputFile, "a");
+  int output_file_exists = 0;
+  if (outputFile && strlen(outputFile) > 0) {
+      outputFP = (FILE*)FOPEN(outputFile, "a");
+      if (outputFP) {
+          output_file_exists = 1;
+      }
+      else {
+          outputFP = stderr;
+          output_file_exists = 0;
+      }
+  }
+  else {
+      outputFP = stderr;
+      output_file_exists = 0;
+  }
 
   // Get or produce band names for intelligent output...
   char **band_names1 = NULL;
@@ -1875,7 +1894,6 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
     {
       // Strict comparison utilizes all values
       fprintf(outputFP, "\n-----------------------------------------------\n");
-      asfPrintStatus("\n-----------------------------------------------\n");
 
       if (num_bands > 1) {
         sprintf(band_str1, "Band %s in ", band_names1[band]);
@@ -1888,31 +1906,26 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s\n\n",
               band_str1, inFile1, band_str2, inFile2);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [min]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               min_diff > min_tol ? "FAIL" : "PASS",
               stats1[band].min, stats2[band].min, min_tol, MIN_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [max]   File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               max_diff > max_tol ? "FAIL" : "PASS",
               stats1[band].max, stats2[band].max, max_tol, MAX_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               mean_diff > mean_tol ? "FAIL" : "PASS",
               stats1[band].mean, stats2[band].mean, mean_tol, MEAN_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               sdev_diff > sdev_tol ? "FAIL" : "PASS",
               stats1[band].sdev, stats2[band].sdev, sdev_tol/6.0, SDEV_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       if (psnr[band].psnr_good) {
         sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
@@ -1924,10 +1937,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
                 psnr_tol);
       }
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       fprintf(outputFP, "-----------------------------------------------\n\n");
-      asfPrintStatus("-----------------------------------------------\n\n");
     }
     else if (!strict &&
              (stats1[band].stats_good && stats2[band].stats_good) &&
@@ -1936,7 +1947,6 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
               psnr[band].psnr < psnr_tol)) {
       // If not doing strict checking, skip comparing min and max values
       fprintf(outputFP, "\n-----------------------------------------------\n");
-      asfPrintStatus("\n-----------------------------------------------\n");
 
       char msg[1024];
       if (num_bands > 1) {
@@ -1950,19 +1960,16 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       sprintf(msg, "FAIL: Comparing\n  %s%s\nto\n  %s%s\n\n",
               band_str1, inFile1, band_str2, inFile2);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [mean]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               mean_diff > mean_tol ? "FAIL" : "PASS",
               stats1[band].mean, stats2[band].mean, mean_tol, MEAN_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       sprintf(msg, "[%s] [sdev]  File1: %12f,  File2: %12f, Tolerance: %11f (%3f Percent)\n",
               sdev_diff > sdev_tol ? "FAIL" : "PASS",
               stats1[band].sdev, stats2[band].sdev, sdev_tol/6.0, SDEV_DIFF_TOL);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       if (psnr[band].psnr_good) {
         sprintf(msg, "[%s] [PSNR]   PSNR: %12f,                    PSNR Minimum: %11f (higher == better)\n",
@@ -1974,10 +1981,8 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
                 psnr_tol);
       }
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
 
       fprintf(outputFP, "-----------------------------------------------\n\n");
-      asfPrintStatus("-----------------------------------------------\n\n");
     }
     else if (stats1[band].stats_good && stats2[band].stats_good) {
       if (num_bands > 1) {
@@ -1988,7 +1993,7 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
         strcpy(band_str1, "");
         strcpy(band_str2, "");
       }
-      asfPrintStatus("\nNo differences found comparing\n  %s%s to\n  %s%s\n\n",
+      asfPrintStatus("\nNo differences found in Image Statistics when comparing\n  %s%s to\n  %s%s\n\n",
                     band_str1, inFile1, band_str2, inFile2);
       print_stats_results(inFile1, inFile2,
                           band_str1, band_str2,
@@ -2000,7 +2005,6 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       char msg[1024];
 
       fprintf(outputFP, "\n-----------------------------------------------\n");
-      asfPrintStatus("\n-----------------------------------------------\n");
 
       if (num_bands > 1) {
         sprintf(band_str1, "Band %s in ", band_names1[band]);
@@ -2013,20 +2017,17 @@ void diff_check_stats(char *outputFile, char *inFile1, char *inFile2,
       if (!stats1[band].stats_good) {
         sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str1, inFile1);
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
       }
       if (!stats2[band].stats_good) {
         sprintf(msg, "FAIL: %s%s image statistics missing.\n", band_str2, inFile2);
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
       }
 
       fprintf(outputFP, "-----------------------------------------------\n\n");
-      asfPrintStatus("-----------------------------------------------\n\n");
     }
   } // For each band
 
-  if (outputFP) FCLOSE(outputFP);
+  if (output_file_exists && outputFP) FCLOSE(outputFP);
   free_band_names(&band_names1, num_extracted_bands1);
   free_band_names(&band_names2, num_extracted_bands2);
 }
@@ -2421,27 +2422,35 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
   ///////////////// Report failures /////////////////
   ////
   // Report results if the comparisons failed
-  outputFP = fopen(outfile, "a");
-  if (outputFP == NULL) {
-    // Failed to open output file
-    asfPrintError("Cannot open output file for reporting geotiff file differences\n");
+  int out_file_exists = 0;
+  if (outfile && strlen(outfile) > 0) {
+    outputFP = fopen(outfile, "a");
+    if (outputFP == NULL) {
+        // Failed to open output file
+        asfPrintWarning("Cannot open output file for reporting geotiff file differences.  Output\n"
+                "will be directed to stderr (only)\n");
+    }
+    else {
+        out_file_exists = 1;
+    }
   }
-  if (failed && outputFP != NULL) {
+  else {
+      outputFP = stderr;
+      out_file_exists = 0;
+  }
+  if (failed) {
     char msg[1024];
 
     fprintf(outputFP, "\n-----------------------------------------------\n");
-    asfPrintStatus("\n-----------------------------------------------\n");
 
     // Report results based on projection type
     if (!g1->gtif_data_exists) {
       sprintf(msg, "ERROR: GeoTIFF data not found in File1\n");
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     if (!g2->gtif_data_exists) {
       sprintf(msg, "ERROR: GeoTIFF data not found in File2\n");
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     if (projection_type1 != projection_type2) {
       char type_str1[256], type_str2[256];
@@ -2450,7 +2459,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
       sprintf(msg, "Projection type found in File1\n  %s\nnot equal to projection type in File2\n  %s\n",
              type_str1, type_str2);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     if (g1->tie_point_elements != g2->tie_point_elements ||
         g1->tie_point_elements % 6 != 0 ||
@@ -2460,7 +2468,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
           "  File2: %d tie point elements\n",
           g1->tie_point_elements, g2->tie_point_elements);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     if (g1->num_tie_points != g2->num_tie_points) {
       sprintf(msg,"Input files have differing numbers of tie points:\n"
@@ -2468,7 +2475,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
               "  File2: %d tie points\n",
           g1->num_tie_points, g2->num_tie_points);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     for (i=0; i<num_tie_points; i++) {
       if (g1->tie_point[i] - g2->tie_point[i] > PROJ_LOC_DIFF_TOL_m) {
@@ -2482,7 +2488,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                 g1->tie_point[i] != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                 g2->tie_point[i] != MISSING_GTIF_DATA ? tmp2 : "MISSING");
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
       }
     }
     if (g1->pixel_scale_elements != g2->pixel_scale_elements ||
@@ -2493,7 +2498,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
           "  File2: %d pixel scale elements\n",
           g1->pixel_scale_elements, g2->pixel_scale_elements);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     if (g1->num_pixel_scales != g2->num_pixel_scales) {
       sprintf(msg,"Input files have differing numbers of pixel scales:\n"
@@ -2501,7 +2505,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
           "  File2: %d pixel scales\n",
           g1->num_pixel_scales, g2->num_pixel_scales);
       fprintf(outputFP, msg);
-      asfPrintStatus(msg);
     }
     for (i=0; i<num_pixel_scales; i++) {
       if (g1->pixel_scale[i] - g2->pixel_scale[i] > PROJ_LOC_DIFF_TOL_m) {
@@ -2515,7 +2518,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
             g1->pixel_scale[i] != MISSING_GTIF_DATA ? tmp1 : "MISSING",
             g2->pixel_scale[i] != MISSING_GTIF_DATA ? tmp2 : "MISSING");
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
       }
     }
 
@@ -2529,19 +2531,21 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
               g1->scale_factor != g2->scale_factor) {
             sprintf(msg, "UTM Projections with differences found: \n\n");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
           }
           if (g1->pcs != g2->pcs) {
-            char tmp1[16], tmp2[16];
+            char tmp1[16], tmp2[16], *tmp3, *tmp4;
             sprintf(tmp1,"%d", g1->pcs);
             sprintf(tmp2,"%d", g2->pcs);
+            tmp3 = pcs2description(g1->pcs);
+            tmp4 = pcs2description(g2->pcs);
             sprintf(msg, "  PCS value from ProjectedCSTypeGeoKey or ProjectionGeoKey differ:\n"
-                "    File1: %s\n"
-                "    File2: %s\n",
-                g1->pcs != MISSING_GTIF_DATA ? tmp1 : "MISSING",
-                g2->pcs != MISSING_GTIF_DATA ? tmp2 : "MISSING");
+                "    File1: %s (%s)\n"
+                "    File2: %s (%s)\n",
+                g1->pcs != MISSING_GTIF_DATA ? tmp1 : "MISSING", tmp3,
+                g2->pcs != MISSING_GTIF_DATA ? tmp2 : "MISSING", tmp4);
+            FREE(tmp3);
+            FREE(tmp4);
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
           }
           if (g1->scale_factor != g2->scale_factor) {
             char tmp1[16], tmp2[16];
@@ -2553,7 +2557,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                 g1->scale_factor != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                 g2->scale_factor != MISSING_GTIF_DATA ? tmp2 : "MISSING");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
           }
           break;
         case ALBERS_EQUAL_AREA:
@@ -2567,7 +2570,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
               g1->natLatOrigin != g2->natLatOrigin) {
             sprintf(msg, "Albers Equal Area Projections with differences found: \n\n");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
             if (g1->proj_coords_trans != g2->proj_coords_trans) {
               char tmp1[16], tmp2[16];
               sprintf(tmp1,"%d", g1->proj_coords_trans);
@@ -2578,7 +2580,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->stdParallel1 != g2->stdParallel1) {
               char tmp1[16], tmp2[16];
@@ -2590,7 +2591,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->stdParallel1 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->stdParallel1 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->stdParallel2 != g2->stdParallel2) {
               char tmp1[16], tmp2[16];
@@ -2602,7 +2602,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->stdParallel2 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->stdParallel2 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_easting != g2->false_easting) {
               char tmp1[16], tmp2[16];
@@ -2614,7 +2613,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_northing != g2->false_northing) {
               char tmp1[16], tmp2[16];
@@ -2626,7 +2624,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->natLonOrigin != g2->natLonOrigin) {
               char tmp1[16], tmp2[16];
@@ -2638,7 +2635,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->natLonOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->natLonOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->lonCenter != g2->lonCenter) {
               char tmp1[16], tmp2[16];
@@ -2650,7 +2646,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->lonCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->lonCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->natLatOrigin != g2->natLatOrigin) {
               char tmp1[16], tmp2[16];
@@ -2662,7 +2657,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
           }
           break;
@@ -2679,7 +2673,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
               g1->scale_factor != g2->scale_factor) {
             sprintf(msg, "Lambert Conformal Conic Projections with differences found: \n\n");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
             if (g1->proj_coords_trans != g2->proj_coords_trans) {
               char tmp1[16], tmp2[16];
               sprintf(tmp1,"%d", g1->proj_coords_trans);
@@ -2690,7 +2683,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->stdParallel1 != g2->stdParallel1) {
               char tmp1[16], tmp2[16];
@@ -2702,7 +2694,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->stdParallel1 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->stdParallel1 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->stdParallel2 != g2->stdParallel2) {
               char tmp1[16], tmp2[16];
@@ -2714,7 +2705,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->stdParallel2 != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->stdParallel2 != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_easting != g2->false_easting) {
               char tmp1[16], tmp2[16];
@@ -2726,7 +2716,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_northing != g2->false_northing) {
               char tmp1[16], tmp2[16];
@@ -2738,7 +2727,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->natLonOrigin != g2->natLonOrigin) {
               char tmp1[16], tmp2[16];
@@ -2750,7 +2738,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->natLonOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->natLonOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->natLatOrigin != g2->natLatOrigin) {
               char tmp1[16], tmp2[16];
@@ -2762,7 +2749,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->falseOriginLon != g2->falseOriginLon) {
               char tmp1[16], tmp2[16];
@@ -2774,7 +2760,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->falseOriginLon != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->falseOriginLon != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->falseOriginLat != g2->falseOriginLat) {
               char tmp1[16], tmp2[16];
@@ -2786,7 +2771,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->falseOriginLat != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->falseOriginLat != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
           }
           break;
@@ -2798,7 +2782,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
               g1->false_northing != g2->false_northing) {
             sprintf(msg, "Polar Stereographic Projections with differences found: \n\n");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
             if (g1->proj_coords_trans != g2->proj_coords_trans) {
               char tmp1[16], tmp2[16];
               sprintf(tmp1,"%d", g1->proj_coords_trans);
@@ -2809,7 +2792,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->natLatOrigin != g2->natLatOrigin) {
               char tmp1[16], tmp2[16];
@@ -2821,7 +2803,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->natLatOrigin != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->natLatOrigin != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->lonPole != g2->lonPole) {
               char tmp1[16], tmp2[16];
@@ -2833,7 +2814,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->lonPole != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->lonPole != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_easting != g2->false_easting) {
               char tmp1[16], tmp2[16];
@@ -2845,7 +2825,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_northing != g2->false_northing) {
               char tmp1[16], tmp2[16];
@@ -2857,7 +2836,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
           }
           break;
@@ -2870,7 +2848,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
             failed=1;
             sprintf(msg, "Lambert Azimuthal Equal Area Projections with differences found: \n\n");
             fprintf(outputFP, msg);
-            asfPrintStatus(msg);
             if (g1->proj_coords_trans != g2->proj_coords_trans) {
               char tmp1[16], tmp2[16];
               sprintf(tmp1,"%d", g1->proj_coords_trans);
@@ -2881,7 +2858,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->proj_coords_trans != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->proj_coords_trans != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_easting != g2->false_easting) {
               char tmp1[16], tmp2[16];
@@ -2893,7 +2869,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_easting != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_easting != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->false_northing != g2->false_northing) {
               char tmp1[16], tmp2[16];
@@ -2905,7 +2880,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->false_northing != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->false_northing != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->lonCenter != g2->lonCenter) {
               char tmp1[16], tmp2[16];
@@ -2917,7 +2891,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->lonCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->lonCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
             if (g1->latCenter != g2->latCenter) {
               char tmp1[16], tmp2[16];
@@ -2929,7 +2902,6 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
                   g1->latCenter != MISSING_GTIF_DATA ? tmp1 : "MISSING",
                   g2->latCenter != MISSING_GTIF_DATA ? tmp2 : "MISSING");
               fprintf(outputFP, msg);
-              asfPrintStatus(msg);
             }
           }
           break;
@@ -2937,17 +2909,15 @@ void diff_check_geotiff(char *outfile, geotiff_data_t *g1, geotiff_data_t *g2)
           // Should never reach this code
           sprintf(msg, "Found unsupported or missing projection type\n\n");
           fprintf(outputFP, msg);
-          asfPrintStatus(msg);
           break;
       }
     }
 
     fprintf(outputFP, "-----------------------------------------------\n\n");
-    asfPrintStatus("-----------------------------------------------\n\n");
   }
 
-  if (failed && outputFP != NULL) {
-    if (outputFP) FCLOSE(outputFP);
+  if (failed && out_file_exists && outputFP != NULL) {
+    FCLOSE(outputFP);
   }
 }
 
@@ -3458,8 +3428,22 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
   FILE *pngFP, *outputFP;
 
   // Init stuff
+  int output_file_exists = 0;
   pngFP = (FILE*)FOPEN(inFile,"rb");
-  outputFP = (FILE*)FOPEN(outfile, "a");
+  if (outfile && strlen(outfile) > 0) {
+      outputFP = (FILE*)FOPEN(outfile, "a");
+      if (outputFP) {
+          output_file_exists = 1;
+      }
+      else {
+          outputFP = stderr;
+          output_file_exists = 0;
+      }
+  }
+  else {
+      outputFP = stderr;
+      output_file_exists = 0;
+  }
   ihdr->width = 0;
   ihdr->height = 0;
   ihdr->bit_depth = MISSING_PNG_DATA;
@@ -3478,7 +3462,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
             (float)png_access_version_number()/10000.0);
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   fread(sig, 1, 8, pngFP); // Important: Leaves file pointer offset into file by 8 bytes for png lib
@@ -3487,7 +3471,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Invalid PNG file (%s)\n", "file type header bytes invalid");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   png_ptr = png_create_read_struct(
@@ -3496,7 +3480,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Cannot allocate PNG read struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   info_ptr = png_create_info_struct(png_ptr);
@@ -3505,7 +3489,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Cannot allocate PNG info struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (setjmp(png_jmpbuf(png_ptr))) {
@@ -3513,7 +3497,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "PNG library error occurred (invalid PNG file?)\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   png_init_io(png_ptr, pngFP);
@@ -3537,7 +3521,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
         "Must be 1, 2, 4, 8, or 16.\n", bit_depth);
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (color_type != PNG_COLOR_TYPE_GRAY &&
@@ -3553,7 +3537,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Invalid PNG file color type found.\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (filter_type != PNG_FILTER_TYPE_BASE &&
@@ -3563,7 +3547,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Invalid PNG file filter type found.\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (compression_type != PNG_COMPRESSION_TYPE_BASE) {
@@ -3571,7 +3555,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Invalid PNG file compression type found.\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (interlace_type != PNG_INTERLACE_NONE &&
@@ -3581,7 +3565,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
     sprintf(msg, "Invalid PNG file interlace type found.\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
 
@@ -3624,7 +3608,7 @@ void get_png_info_hdr_from_file(char *inFile, png_info_t *ihdr, char *outfile)
   // Clean up and return
   png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
   if (pngFP) FCLOSE(pngFP);
-  if (outputFP) FCLOSE(outputFP);
+  if (output_file_exists && outputFP) FCLOSE(outputFP);
 }
 
 void calc_png_stats_2files(char *inFile1, char *inFile2, char *outfile,
@@ -3691,15 +3675,29 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
   }
 
   // Initialize PNG file for read
+  int output_file_exists = 0;
   pngFP = (FILE*)FOPEN(inFile,"rb");
-  outputFP = (FILE*)FOPEN(outfile, "a");
+  if (outfile && strlen(outfile) > 0) {
+      outputFP = (FILE*)FOPEN(outfile, "a");
+      if (outputFP) {
+          output_file_exists = 1;
+      }
+      else {
+          outputFP = stderr;
+          output_file_exists = 0;
+      }
+  }
+  else {
+      outputFP = stderr;
+      output_file_exists = 0;
+  }
   fread(sig, 1, 8, pngFP); // Important: Leaves file pointer offset into file by 8 bytes for png lib
   if (!png_check_sig(sig, 8)) {
     // Bad PNG magic number (signature)
     sprintf(msg, "Invalid PNG file (%s)\n", "file type header bytes invalid");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   png_ptr = png_create_read_struct(
@@ -3708,7 +3706,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
     sprintf(msg, "Cannot allocate PNG read struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   info_ptr = png_create_info_struct(png_ptr);
@@ -3717,7 +3715,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
     sprintf(msg, "Cannot allocate PNG info struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   if (setjmp(png_jmpbuf(png_ptr))) {
@@ -3725,7 +3723,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
     sprintf(msg, "PNG library error occurred (invalid PNG file?)\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   png_init_io(png_ptr, pngFP);
@@ -3803,7 +3801,7 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
     sprintf(msg, "PNG library error occurred (invalid PNG file?)\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     *stats_exist = 0;
     return 1;
   }
@@ -3822,14 +3820,14 @@ int png_image_band_statistics_from_file(char *inFile, char *outfile,
     sprintf(msg, "PNG library error occurred (invalid PNG file?)\n");
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP) FCLOSE(pngFP);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     *stats_exist = 0;
     return 1;
   }
 
   png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
   if (buf) free(buf);
-  if (outputFP) FCLOSE(outputFP);
+  if (output_file_exists && outputFP) FCLOSE(outputFP);
   if (pngFP) FCLOSE(pngFP);
   return 0;
 }
@@ -3849,7 +3847,21 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   FILE *pngFP1, *pngFP2, *outputFP;
   png_info_t ihdr1, ihdr2;
 
-  outputFP = (FILE*)FOPEN(outfile, "a");
+  int output_file_exists = 0;
+  if (outfile && strlen(outfile) > 0) {
+      outputFP = (FILE*)FOPEN(outfile, "a");
+      if (outputFP) {
+          output_file_exists = 1;
+      }
+      else {
+          outputFP = stderr;
+          output_file_exists = 0;
+      }
+  }
+  else {
+      outputFP = stderr;
+      output_file_exists = 0;
+  }
 
   get_png_info_hdr_from_file(inFile1, &ihdr1, outfile);
   if (ihdr1.bit_depth == MISSING_PNG_DATA ||
@@ -3865,7 +3877,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   {
     sprintf(msg, "Cannot read PNG file header in file1\n  %s\n", inFile1);
     if (outputFP) fprintf(outputFP, msg);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -3884,7 +3896,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   {
     sprintf(msg, "Cannot read PNG file header in file2\n  %s\n", inFile2);
     if (outputFP) fprintf(outputFP, msg);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -3898,7 +3910,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Invalid PNG file (%s)\n  %s\n", "file type header bytes invalid", inFile1);
     fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   pngFP2 = (FILE*)FOPEN(inFile2,"rb");
@@ -3908,7 +3920,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Invalid PNG file (%s)\n  %s\n", "file type header bytes invalid", inFile2);
     fprintf(outputFP, msg);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
 
@@ -3918,7 +3930,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot allocate PNG read struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   info_ptr1 = png_create_info_struct(png_ptr1);
@@ -3927,7 +3939,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot allocate PNG info struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   png_ptr2 = png_create_read_struct(
@@ -3936,7 +3948,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot allocate PNG read struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
   info_ptr2 = png_create_info_struct(png_ptr2);
@@ -3945,7 +3957,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     sprintf(msg, "Cannot allocate PNG info struct (out of memory?)\n");
     fprintf(outputFP, msg);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
 
@@ -3956,7 +3968,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     asfPrintError(msg);
   }
 
@@ -3991,7 +4003,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -4015,7 +4027,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -4039,7 +4051,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (pngFP1) FCLOSE(pngFP1);
     if (pngFP2) FCLOSE(pngFP2);
-    if (outputFP) FCLOSE(outputFP);
+    if (output_file_exists && outputFP) FCLOSE(outputFP);
     return;
   }
 
@@ -4073,7 +4085,7 @@ void png_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outfile,
   if (png_ptr2) png_destroy_read_struct(&png_ptr2, &info_ptr2, NULL);
   if (pngFP1) FCLOSE(pngFP1);
   if (pngFP2) FCLOSE(pngFP2);
-  if (outputFP) FCLOSE(outputFP);
+  if (output_file_exists && outputFP) FCLOSE(outputFP);
   if (buf1) FREE(buf1);
   if (buf2) FREE(buf2);
 }
@@ -4140,10 +4152,11 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   else {
     // Shouldn't be possible to be here, but what the hey...
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP=NULL;
+    if (outfile && strlen(outfile) > 0) outFP=(FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header.\n");
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4158,10 +4171,11 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   else {
     // Shouldn't be able to reach this code
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP=NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): Found invalid or unsupported (ASCII data?) PPM/PGM file header...\n");
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4183,11 +4197,12 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   tmp[i]='\0';
   if (i == max_chars || ch == EOF) {
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP = NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
             "width");
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4207,11 +4222,12 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   tmp[i]='\0';
   if (i == max_chars || ch == EOF) {
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP = NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
             "height");
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4231,11 +4247,12 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   tmp[i]='\0';
   if (i == max_chars || ch == EOF) {
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP = NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "get_ppm_pgm_info_hdr_from_file(): '%s' field in file header too long.\n",
             "max. pixel value");
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4249,11 +4266,12 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
   }
   pgm->img_offset--;
   if (ch == EOF) {
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP = NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "No image data found in PNG file\n  %s\n",
             inFile);
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4274,12 +4292,13 @@ void get_ppm_pgm_info_hdr_from_file(char *inFile, ppm_pgm_info_t *pgm, char *out
     pgm->data_type = INTEGER32;
   }
   else {
-    FILE *outFP=(FILE*)FOPEN(outfile,"a");
+    FILE *outFP = NULL;
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a");
     char msg[1024];
     sprintf(msg, "Invalid max. pixel value found in PNG file (%d)\n  %s\n",
             pgm->max_val,
             inFile);
-    fprintf(outFP, msg);
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     if (fp) FCLOSE(fp);
     asfPrintError(msg);
@@ -4566,9 +4585,14 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
   ppm_pgm_info_t pgm1, pgm2; // Header info
   double cs1, cs2;
   char msg[1024];
-  FILE *fp1, *fp2, *outputFP;
+  FILE *fp1, *fp2, *outputFP = NULL;
 
-  outputFP = (FILE*)FOPEN(outfile, "a");
+  if (outfile && strlen(outfile) > 0) {
+      outputFP = (FILE*)FOPEN(outfile, "a");
+  }
+  else {
+      outputFP = NULL;
+  }
 
   // Get header info and fseek() to beginning of image data
   get_ppm_pgm_info_hdr_from_file(inFile1, &pgm1, outfile);
@@ -4582,7 +4606,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
       pgm1.num_bands <= 0)
   {
     sprintf(msg, "Cannot read PPM/PNG file header in file1\n  %s\n", inFile1);
-    if (outputFP) fprintf(outputFP, msg);
+    if (outputFP) fprintf(outputFP, msg); else fprintf(stderr, msg);
     if (outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
@@ -4599,7 +4623,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
       pgm2.num_bands <= 0)
   {
     sprintf(msg, "Cannot read PPM/PNG file header in file2\n  %s\n", inFile2);
-    if (outputFP) fprintf(outputFP, msg);
+    if (outputFP) fprintf(outputFP, msg); else fprintf(stderr, msg);
     if (outputFP) FCLOSE(outputFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
@@ -4622,7 +4646,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
-    if (outputFP) FCLOSE(outputFP);
+    if (outputFP) FCLOSE(outputFP); else fprintf(stderr, msg);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -4644,7 +4668,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     if (outputFP != NULL) fprintf(outputFP, msg);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
-    if (outputFP) FCLOSE(outputFP);
+    if (outputFP) FCLOSE(outputFP); else fprintf(stderr, msg);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -4664,7 +4688,7 @@ void ppm_pgm_image_band_psnr_from_files(char *inFile1, char *inFile2, char *outf
     psnr->psnr_good = 0;
     if (buf1) FREE(buf1);
     if (buf2) FREE(buf2);
-    if (outputFP != NULL) fprintf(outputFP, msg);
+    if (outputFP) fprintf(outputFP, msg); else fprintf(stderr, msg);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     if (outputFP) FCLOSE(outputFP);
@@ -4741,7 +4765,7 @@ GLOBAL(void) get_jpeg_info_hdr_from_file(char *inFile, jpeg_info_t *jpg, char *o
   char msg[1024];
   struct jpeg_decompress_struct cinfo;
   jpeg_error_hdlr_t jerr;
-  FILE *fp, *outFP;
+  FILE *fp, *outFP = NULL;
 
   // Init
   jpg->width = 0;
@@ -4753,8 +4777,8 @@ GLOBAL(void) get_jpeg_info_hdr_from_file(char *inFile, jpeg_info_t *jpg, char *o
   fp = (FILE*)FOPEN(inFile, "rb");
   if (fp == NULL) {
     sprintf(msg,"Cannot open JPEG file:\n  %s\n", inFile);
-    outFP = (FILE*)FOPEN(outputFile,"a");
-    if (outFP) fprintf(outFP, msg);
+    if (outputFile && strlen(outputFile) > 0) outFP = (FILE*)FOPEN(outputFile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
@@ -4767,8 +4791,8 @@ GLOBAL(void) get_jpeg_info_hdr_from_file(char *inFile, jpeg_info_t *jpg, char *o
     jpeg_destroy_decompress (&cinfo);
     if (fp) FCLOSE(fp);
     sprintf(msg,"JPEG library critical error ...Aborting\n");
-    outFP = (FILE*)FOPEN(outputFile,"a");
-    if (outFP) fprintf(outFP, msg);
+    if (outputFile && strlen(outputFile) > 0) outFP = (FILE*)FOPEN(outputFile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
@@ -4801,7 +4825,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
   jpeg_info_t jpg;
   char msg[1024];
   struct jpeg_decompress_struct cinfo;
-  FILE *outFP;
+  FILE *outFP = NULL;
   jpeg_error_hdlr_t jerr;
   JSAMPARRAY jpg_buf;
 
@@ -4840,8 +4864,8 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
     jpeg_destroy_decompress (&cinfo);
     if (fp) FCLOSE(fp);
     sprintf(msg,"JPEG library critical error ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
@@ -4949,6 +4973,7 @@ GLOBAL(void) jpeg_image_band_statistics_from_file(char *inFile, char *outfile,
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
   if (fp) FCLOSE(fp);
+  if (outFP) FCLOSE(outFP);
   return;
 }
 
@@ -4966,15 +4991,22 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
   fp1 = (FILE*)FOPEN(inFile1, "rb");
   fp2 = (FILE*)FOPEN(inFile2, "rb");
   if (fp1 == NULL) {
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) fprintf(outFP, "Cannot open file: %s\n", inFile1);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP)
+        fprintf(outFP, "Cannot open file: %s\n", inFile1);
+    else
+        fprintf(stderr, "Cannot open file: %s\n", inFile1);
     if (outFP) FCLOSE(outFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
   }
   if (fp2 == NULL) {
-    if (outFP) fprintf(outFP, "Cannot open file: %s\n", inFile2);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP)
+        fprintf(outFP, "Cannot open file: %s\n", inFile2);
+    else
+        fprintf(stderr, "Cannot open file: %s\n", inFile2);
     if (outFP) FCLOSE(outFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
@@ -5012,8 +5044,8 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     sprintf(msg,"JPEG library critical error ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
@@ -5026,8 +5058,8 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
     sprintf(msg,"JPEG library critical error ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
     if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
@@ -5063,10 +5095,11 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     sprintf(msg,"Invalid band number for file1 (%d v. %d) or file2 (%d v. %d)\n",
             band1, jpg1.num_bands, band2, jpg2.num_bands);
     asfPrintWarning(msg);
-    if (outFP != NULL) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
-    if (outFP) FCLOSE(outFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -5085,10 +5118,11 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
   if (jpg1.data_type != jpg2.data_type) {
     sprintf(msg,"Input JPEG files have differing data types.\n");
     asfPrintWarning(msg);
-    if (outFP != NULL) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
-    if (outFP) FCLOSE(outFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -5097,10 +5131,11 @@ GLOBAL(void) jpeg_image_band_psnr_from_files(char *inFile1, char *inFile2, char 
     sprintf(msg,"Input JPEG files have a different number of bands (%d v. %d)\n",
            jpg1.num_bands, jpg2.num_bands);
     asfPrintWarning(msg);
-    if (outFP != NULL) fprintf(outFP, msg);
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     if (fp1) FCLOSE(fp1);
     if (fp2) FCLOSE(fp2);
-    if (outFP) FCLOSE(outFP);
     psnr->psnr = MISSING_PSNR;
     psnr->psnr_good = 0;
     return;
@@ -5192,10 +5227,19 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
   float radial_shift_diff = 0.0;
   int num_extracted_bands1=0, num_extracted_bands2=0;
   FILE *outputFP = NULL;
-  outputFP = fopen(outputFile, "a");
   shift_data_t *s = shift;
   stats_t *s1 = stats1;
   stats_t *s2 = stats2;
+
+  int have_out_file = 0;
+  if (outputFile && strlen(outputFile) > 0) {
+      outputFP = fopen(outputFile, "a");
+      have_out_file = (outputFP) ? 1 : 0;
+  }
+  else {
+      outputFP = stderr;
+      have_out_file = 0;
+  }
 
   // Get or produce band names for intelligent output...
   char **band_names1 = NULL;
@@ -5219,7 +5263,6 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
       if (low_certainty)
       {
         fprintf(outputFP, "\n-----------------------------------------------\n");
-        asfPrintStatus("\n-----------------------------------------------\n");
 
         if (num_bands > 1) {
           sprintf(band_str1, "Band %s in ", band_names1[band]);
@@ -5234,10 +5277,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
             "images.  Comparing\n  %s%s  and\n  %s%s\n\n",
                 band_str1, inFile1, band_str2, inFile2);
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
 
         fprintf(outputFP, "-----------------------------------------------\n\n");
-        asfPrintStatus("-----------------------------------------------\n\n");
       }
       else if (fabs(s[band].dx)  > shift_tol ||
                fabs(s[band].dy)  > shift_tol ||
@@ -5245,7 +5286,6 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
       {
         // The certainty value was OK but the shifts were out of tolerance
         fprintf(outputFP, "\n-----------------------------------------------\n");
-        asfPrintStatus("\n-----------------------------------------------\n");
 
         if (num_bands > 1) {
           sprintf(band_str1, "Band %s in ", band_names1[band]);
@@ -5258,32 +5298,27 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
         sprintf(msg, "FAIL: Comparing geolocations of\n  %s%s  and\n  %s%s\n\n",
                 band_str1, inFile1, band_str2, inFile2);
         fprintf(outputFP, msg);
-        asfPrintStatus(msg);
 
         if (s[band].dx > shift_tol) {
           sprintf(msg, "[%s] [x-loc]  File1: %12f,  File2: %12f, Tolerance: %11f (Certainty: %f%%)\n",
                   s[band].dx > shift_tol ? "FAIL" : "PASS",
                   0.0, s[band].dx, shift_tol, 100.0 * s[band].cert);
           fprintf(outputFP, msg);
-          asfPrintStatus(msg);
         }
         if (s[band].dy > shift_tol) {
           sprintf(msg, "[%s] [y-loc]  File1: %12f,  File2: %12f, Tolerance: %11f (Certainty: %f%%)\n",
                   s[band].dy > shift_tol ? "FAIL" : "PASS",
                   0.0, s[band].dy, shift_tol, 100.0 * s[band].cert);
           fprintf(outputFP, msg);
-          asfPrintStatus(msg);
         }
         if (radial_shift_diff > shift_tol) {
           sprintf(msg, "[%s] [radial dist]  File1: %12f,  File2: %12f, Tolerance: %11f\n",
                   radial_shift_diff > shift_tol ? "FAIL" : "PASS",
                   0.0, radial_shift_diff, shift_tol);
           fprintf(outputFP, msg);
-          asfPrintStatus(msg);
         }
 
         fprintf(outputFP, "-----------------------------------------------\n\n");
-        asfPrintStatus("-----------------------------------------------\n\n");
       }
       else
       {
@@ -5302,7 +5337,7 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
     }
   } // For each band
 
-  if (outputFP) FCLOSE(outputFP);
+  if (have_out_file && outputFP) FCLOSE(outputFP);
   free_band_names(&band_names1, num_extracted_bands1);
   free_band_names(&band_names2, num_extracted_bands2);
 }
@@ -5336,11 +5371,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
       jpg.num_bands <= 0)
   {
     sprintf(msg,"Invalid JPEG found...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5351,11 +5384,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   buf = (float*)MALLOC(jpg.width * sizeof(float));
   if (buf == NULL) {
     sprintf(msg,"Cannot allocate float buffer...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5363,11 +5394,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   FILE *fp = FOPEN(inFile, "rb");
   if (fp == NULL) {
     sprintf(msg,"Cannot open JPEG file for read...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg); else fprintf(stderr, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5379,11 +5408,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
     jpeg_destroy_decompress (&cinfo);
     if (fp) FCLOSE(fp);
     sprintf(msg,"JPEG library critical error ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5403,11 +5430,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   imgFP = (FILE*)FOPEN(fft_file, "wb");
   if (imgFP == NULL) {
     sprintf(msg,"Cannot open IMG file for write...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   int row=0;
@@ -5425,11 +5450,9 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
       else {
         // Shouldn't get here...
         sprintf(msg,"Invalid number of bands in JPEG file ...Aborting\n");
-        outFP = (FILE*)FOPEN(outfile,"a");
-        if (outFP) {
-          fprintf(outFP, msg);
-          FCLOSE(outFP);
-        }
+        if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+        if (outFP) fprintf(outFP, msg);
+        if (outFP) FCLOSE(outFP);
         asfPrintError(msg);
       }
     }
@@ -5442,6 +5465,7 @@ void export_jpeg_to_asf_img(char *inFile, char *outfile,
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
   if (fp) FCLOSE(fp);
+  if (outFP) FCLOSE(outFP);
   if (imgFP) FCLOSE(imgFP);
   if (buf) FREE(buf);
   meta_free(md);
@@ -5474,43 +5498,35 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
       pgm.num_bands <= 0)
   {
     sprintf(msg,"Invalid PPM/PGM file found...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
   FILE *fp = FOPEN(inFile, "rb");
   if (fp == NULL) {
     sprintf(msg,"Cannot open PPM/PGM file for read ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   imgFP = FOPEN(fft_file, "wb");
   if (imgFP == NULL) {
     sprintf(msg,"Cannot open IMG file for write ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
   buf = (float*)MALLOC(pgm.width * sizeof(float));
   if (buf == NULL) {
     sprintf(msg,"Cannot allocate memory ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5526,6 +5542,7 @@ void export_ppm_pgm_to_asf_img(char *inFile, char *outfile,
 
   if (buf) free(buf);
   if (fp) FCLOSE(fp);
+  if (outFP) FCLOSE(outFP);
   if (imgFP) FCLOSE(imgFP);
   meta_free(md);
 }
@@ -5555,11 +5572,9 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
       t.width == 0)
   {
     sprintf(msg,"Invalid TIFF file found ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5567,22 +5582,18 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   TIFF *tif = XTIFFOpen(inFile, "rb");
   if (tif == NULL) {
     sprintf(msg,"Cannot open TIFF file for read ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   imgFP = (FILE*)FOPEN(fft_file, "wb");
   if (tif == NULL) {
     if (tif) XTIFFClose(tif);
     sprintf(msg,"Cannot open IMG file for write ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5590,11 +5601,9 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   if (scanlineSize <= 0) {
     if (tif) XTIFFClose(tif);
     sprintf(msg,"Invalid scan line size in TIFF file ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   if (t.num_bands > 1 &&
@@ -5603,11 +5612,9 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   {
     if (tif) XTIFFClose(tif);
     sprintf(msg,"Invalid planar configuration found in TIFF file ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   float *buf = (float*)MALLOC(t.width * sizeof(float));
@@ -5624,6 +5631,7 @@ void export_tiff_to_asf_img(char *inFile, char *outfile,
   if (buf) free(buf);
   if (tif) XTIFFClose(tif);
   if (imgFP) FCLOSE(imgFP);
+  if (outFP) FCLOSE(outFP);
   meta_free(md);
 }
 
@@ -5660,22 +5668,18 @@ void export_png_to_asf_img(char *inFile, char *outfile,
       ihdr.width == 0)
   {
     sprintf(msg,"Invalid PNG file found ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
   imgFP = (FILE*)FOPEN(fft_file,"wb");
   if (imgFP == NULL) {
     sprintf(msg,"Cannot open IMG file ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
 
@@ -5683,11 +5687,9 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   pngFP = (FILE*)FOPEN(inFile,"rb");
   if (pngFP == NULL) {
     sprintf(msg,"Cannot open PNG file ...Aborting\n");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   fread(sig, 1, 8, pngFP); // Important: Leaves file pointer offset into file by 8 bytes for png lib
@@ -5695,11 +5697,9 @@ void export_png_to_asf_img(char *inFile, char *outfile,
     // Bad PNG magic number (signature)
     if (pngFP) FCLOSE(pngFP);
     sprintf(msg, "Invalid PNG file (%s)\n", "file type header bytes invalid");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   png_ptr = png_create_read_struct(
@@ -5707,11 +5707,9 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   if (!png_ptr) {
     if (pngFP) FCLOSE(pngFP);
     sprintf(msg, "Cannot allocate PNG read struct ...Aborting");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   info_ptr = png_create_info_struct(png_ptr);
@@ -5719,22 +5717,18 @@ void export_png_to_asf_img(char *inFile, char *outfile,
     png_destroy_read_struct(&png_ptr, NULL, NULL);
     if (pngFP) FCLOSE(pngFP);
     sprintf(msg, "Cannot allocate PNG info struct ...Aborting");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   if (setjmp(png_jmpbuf(png_ptr))) {
     if (pngFP) FCLOSE(pngFP);
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
     sprintf(msg, "PNG library error occurred ...Aborting");
-    outFP = (FILE*)FOPEN(outfile,"a");
-    if (outFP) {
-      fprintf(outFP, msg);
-      FCLOSE(outFP);
-    }
+    if (outfile && strlen(outfile) > 0) outFP = (FILE*)FOPEN(outfile,"a"); else outFP = NULL;
+    if (outFP) fprintf(outFP, msg);
+    if (outFP) FCLOSE(outFP);
     asfPrintError(msg);
   }
   png_init_io(png_ptr, pngFP);
@@ -5764,4 +5758,41 @@ void export_png_to_asf_img(char *inFile, char *outfile,
   meta_free(md);
 }
 
+// Calling code must free the returned string
+char *pcs2description(int pcs)
+{
+    char *pcs_description = (char*)MALLOC(512*sizeof(char));
+
+    int pcs_datum = pcs/100;
+    int pcs_zone  = pcs - (pcs_datum * 100);
+    char pcs_hem  =
+            (pcs_datum == 323) ? 'S' :
+            (pcs_datum == 327) ? 'S' :
+            (pcs_datum == 269) ? 'N' :
+            (pcs_datum == 267) ? 'N' :
+            (pcs_datum == 322) ? 'N' :
+            (pcs_datum == 326) ? 'N' : '?';
+    sprintf(pcs_description, "UTM Zone %02d, %c hemisphere", pcs_zone, pcs_hem);
+    switch(pcs_datum) {
+        case 269:
+            strcat(pcs_description, ", NAD_83 datum");
+            break;
+        case 267:
+            strcat(pcs_description, ", NAD_27 datum");
+            break;
+        case 322:
+        case 323:
+            strcat(pcs_description, ", WGS_72 datum");
+            break;
+        case 326:
+        case 327:
+            strcat(pcs_description, ", WGS_84 datum");
+            break;
+        default:
+            strcat(pcs_description, ", UNKNOWN or UNRECOGNIZED datum");
+            break;
+    }
+
+    return pcs_description;
+}
 
