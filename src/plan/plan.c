@@ -80,16 +80,14 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
 
 static Polygon *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi,
-                    double target_lat, double target_lon)
+                    int target_zone, double target_lat, double target_lon)
 {
-  int target_zone = utm_zone(target_lon);
-
   double center_lat, center_lon, center_x, center_y;
   get_target_latlon(st, bmi->look_angle, &center_lat, &center_lon);
 
   // return NULL if we are "far away"
   int zone = utm_zone(center_lon);
-  if (iabs(zone - target_zone) > 1)
+  if (iabs(zone - target_zone) > 2)
     return NULL;
   if (fabs(center_lat - target_lat) > 20)
     return NULL;
@@ -105,7 +103,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
 
   // now we know the orientation of the rectangle on the ground
   // ==> can find the 4 corners
-  double tilt = atan2(ahead_y - center_y, ahead_x - center_x);
+  double tilt = atan2(ahead_y-center_y, ahead_x-center_x);
   double xl = bmi->length_m;
   double yl = bmi->width_m;
 
@@ -159,9 +157,9 @@ static int print_polys(Polygon *p1, Polygon *p2)
 
 static OverlapInfo *
 overlap(double t, stateVector *st, BeamModeInfo *bmi,
-        double clat, double clon, Polygon *aoi)
+        int zone, double clat, double clon, Polygon *aoi)
 {
-  Polygon *viewable_region = get_viewable_region(st, bmi, clat, clon);
+  Polygon *viewable_region = get_viewable_region(st, bmi, zone, clat, clon);
 
   if (!viewable_region)
     return FALSE; // no overlap
@@ -187,7 +185,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
       }
     }
 
-    return overlap_new(pct, n, viewable_region, clat, clon, st, t);
+    return overlap_new(pct, n, viewable_region, zone, clat, clon, st, t);
   }
   else {
     // no overlap
@@ -198,7 +196,8 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
 static int
 check_crossing(PassCollection *pc, double start_time, double end_time,
                double state_vector_time, stateVector *st,
-               BeamModeInfo *bmi, double clat, double clon, Polygon *aoi)
+               BeamModeInfo *bmi, int zone, double clat, double clon,
+               Polygon *aoi)
 {
     double t1 = start_time;
     PassInfo *pi = pass_info_new();
@@ -221,7 +220,7 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
       //}
 
       // Look for overlap when the satellite is in this position
-      OverlapInfo *oi = overlap(t, st, bmi, clat, clon, aoi);
+      OverlapInfo *oi = overlap(t, st, bmi, zone, clat, clon, aoi);
       if (oi)
         pass_info_add(pi, t, oi);
 
@@ -372,7 +371,7 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
 
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
-         double clat, double clon, int pass_type,  Polygon *aoi,
+         double clat, double clon, int pass_type, int zone, Polygon *aoi,
          const char *tle_filename, PassCollection **pc_out,
          char **errorstring)
 {
@@ -398,7 +397,7 @@ int plan(const char *satellite, const char *beam_mode,
          "        %f %f\n"
          "        %f %f\n"
          "        %f %f\n",
-         utm_zone(clon),
+         zone,
          aoi->x[0], aoi->y[0],
          aoi->x[1], aoi->y[1],
          aoi->x[2], aoi->y[2],
@@ -474,7 +473,7 @@ int plan(const char *satellite, const char *beam_mode,
 
       num_found +=
         check_crossing(pc, time1_in, time1_out, t, &st1, bmi,
-                       clat, clon, aoi);
+                       zone, clat, clon, aoi);
     }
 
     if (check_second_crossing) {
@@ -483,7 +482,7 @@ int plan(const char *satellite, const char *beam_mode,
 
       num_found +=
         check_crossing(pc, time2_in, time2_out, t, &st2, bmi,
-                       clat, clon, aoi);
+                       zone, clat, clon, aoi);
     }
 
     st = propagate(st, curr, curr + full_cycle_time);

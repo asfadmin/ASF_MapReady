@@ -369,7 +369,7 @@ static void time_to_orbit_frame(double t, int *orbit, int *frame)
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
-    int i,pass_type;
+    int i,pass_type,zone;
     char errstr[1024];
     char *satellite, *beam_mode;
     long startdate, enddate;
@@ -414,7 +414,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
         meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
         lat1 = lat; lon1 = lon;
-        int zone = utm_zone(lon);
+        zone = utm_zone(lon);
         latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
 
         meta_get_latLon(meta, g_poly->line[0], crosshair_samp, 0, &lat, &lon);
@@ -458,7 +458,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         max_lat = min_lat = clat = lat;
 
         clon = lon;
-        int zone = utm_zone(clon);
+        zone = utm_zone(clon);
         latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
 
         for (i=0; i<g_poly->n; ++i) {
@@ -512,7 +512,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       PassCollection *pc;
 
       int n = plan(satellite, beam_mode, startdate, enddate, max_lat, min_lat,
-                   clat, clon, pass_type, aoi, tle_filename, &pc, &err);
+                   clat, clon, pass_type, zone, aoi, tle_filename, &pc, &err);
 
       if (n < 0) {
         put_string_to_label("plan_error_label", err);
@@ -529,7 +529,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         put_string_to_label("plan_error_label", msg);
 
         for (i=0; i<pc->num; ++i) {
-          asfPrintStatus("#%02d: %s (%.1f%%)\n", i+1, 
+          asfPrintStatus("#%02d: %s (%.1f%%)\n", i+1,
                          pc->passes[i]->start_time_as_string,
                          100. * pc->passes[i]->total_pct);
         }
@@ -544,6 +544,15 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         GtkTreeModel *tm = gtk_tree_view_get_model(GTK_TREE_VIEW(tv));
         GtkListStore *ls = GTK_LIST_STORE(tm);
         gtk_list_store_clear(ls);
+
+        // find the maximum coverage
+        double max_coverage = 0;
+        for (i=0; i<pc->num; ++i) {
+          PassInfo *pi = pc->passes[i];
+          if (pi->total_pct > max_coverage)
+            max_coverage = pi->total_pct;
+        }
+        double coverage_cutoff = .6 * max_coverage;
 
         // now create polygons from each pass
         for (i=0; i<pc->num; ++i) {
@@ -592,8 +601,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char index_info[256];
           sprintf(index_info, "%d", i+1);
 
-          // select ones with >25% coverage
-          int selected = pi->total_pct > .25;
+          // select ones with >60% of the max coverage
+          int selected = pi->total_pct > coverage_cutoff;
 
           // create a little block of coloring which will indicate which
           // region on the map corresponds to this line in the list
@@ -627,7 +636,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_INDEX, index_info,
                              -1);
               
-          if (i>=MAX_POLYS-1) {
+          if (i>=MAX_POLYS-2) {
             printf("Too many polygons: %d\n", pc->num);
             break;
           }

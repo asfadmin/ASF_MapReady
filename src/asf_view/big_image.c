@@ -286,6 +286,60 @@ void get_color(int color, unsigned char *r, unsigned char *g,
         *b = 79;
         break;
 
+      case 28: // BISQUE
+        *r = 255;
+        *g = 228;
+        *b = 196;
+        break;
+
+      case 29: // MEDIUM VIOLET RED
+        *r = 199;
+        *g = 21;
+        *b = 133;
+        break;
+
+      case 30: // DARK OLIVE GREEN
+        *r = 202;
+        *g = 255;
+        *b = 112;
+        break;
+
+      case 31: // HONEYDEW
+        *r = 240;
+        *g = 255;
+        *b = 240;
+        break;
+
+      case 32: // LAVENDER
+        *r = 230;
+        *g = 230;
+        *b = 250;
+        break;
+
+      case 33: // NAVY BLUE
+        *r = 0;
+        *g = 0;
+        *b = 128;
+        break;
+
+      case 34: // DARK ORCHID
+        *r = 153;
+        *g = 50;
+        *b = 204;
+        break;
+
+      case 35: // DEEP SKY BLUE
+        *r = 0;
+        *g = 191;
+        *b = 255;
+        break;
+
+      case 36: // ROSY BROWN
+        *r = 255;
+        *g = 193;
+        *b = 193;
+        break;
+
       default:
         // this shouldn't happen
         assert(0);

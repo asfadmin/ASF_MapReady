@@ -56,7 +56,7 @@ typedef struct {
 
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
-         double clat, double clon, int pass_type,  Polygon *aoi,
+         double clat, double clon, int pass_type, int zone, Polygon *aoi,
          const char *tle_filename, PassCollection **pc,
          char **errorstring);
 

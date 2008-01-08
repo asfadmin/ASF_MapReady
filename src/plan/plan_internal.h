@@ -14,7 +14,7 @@ void read_tle(const char *tle_filename, const char *satellite,
 
 /* overlap.c */
 OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
-                         double clat, double clon, stateVector *st,
+                         int zone, double clat, double clon, stateVector *st,
                          double t);
 void overlap_free(OverlapInfo *oi);
 

@@ -2,13 +2,13 @@
 #include "plan_internal.h"
 
 OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
-                         double clat, double clon, stateVector *st,
+                         int zone, double clat, double clon, stateVector *st,
                          double t)
 {
     OverlapInfo *oi = MALLOC(sizeof(OverlapInfo));
     oi->pct = ((double)pct)/((double)n);
     oi->viewable_region = viewable_region;
-    oi->utm_zone = utm_zone(clon);
+    oi->utm_zone = zone;
     oi->state_vector = *st;
     oi->clat = clat;
     oi->clon = clon;
