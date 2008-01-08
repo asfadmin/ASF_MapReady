@@ -173,111 +173,114 @@ void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b)
 {
     switch (color) {
-      case RED: // RED
+      case RED:
         *r = 255;
         *g = *b = 0;
         break;
 
-      case PURPLE: // PURPLE
+      case PURPLE: 
+      case 10: // PURPLE
         *r = *b = 255;
         *g = 0;
         break;
 
-      case BLUE: // BLUE
+      case 11: // OLIVE GREEN
+        *r = 202;
+        *g = 255;
+        *b = 112;
+        break;
+
+      case BLUE:
+      case 12: // BLUE
         *b = 255;
         *r = *g = 0;
         break;
 
-      case 10: // BLUE
-        *b = 255;
-        *r = *g = 0;
-        break;
-
-      case 11: // TURQUOISE
+      case 13: // TURQUOISE
         *r = 0;
         *g = 245;
         *b = 255;
         break;
          
-      case 12: // ORANGE
+      case 14: // ORANGE
         *r = 255;
         *g = 165;
         *b = 0;
         break;
 
-      case 13: // PINK
+      case 15: // PINK
         *r = 255;
         *g = 192;
         *b = 203;
         break;
         
-      case 14: // GOLD
+      case 16: // GOLD
         *r = 255;
         *g = 215;
         *b = 0;
         break;
         
-      case 15: // GREEN
+      case 17: // GREEN
         *r = 0;
         *g = 205;
         *b = 0;
         break;
         
-      case 16: // INDIAN RED
+      case 18: // INDIAN RED
         *r = 255;
         *g = 106;
         *b = 106;
         break;
         
-      case 17: // MEDIUM ORCHID
+      case 19: // MEDIUM ORCHID
         *r = 180;
         *g = 82;
         *b = 205;
         break;
                 
-      case 18: // CHARTREUSE
+      case 20: // CHARTREUSE
         *r = 127;
         *g = 255;
         *b = 0;
         break;
 
-      case 19: // KHAKI
+      case 21: // KHAKI
         *r = 240;
         *g = 230;
         *b = 140;
         break;
         
-      case 20: // SANDY BROWN
+      case 22: // SANDY BROWN
         *r = 244;
         *g = 164;
         *b = 96;
         break;
         
-      case 21: // TOMATO
+      case 23: // TOMATO
         *r = 255;
         *g = 99;
         *b = 71;
         break;
         
-      case 22: // AZURE
+      case 24: // AZURE
         *r = 193;
         *g = 205;
         *b = 205;
         break;
         
-      case 23: // SKY BLUE
+      case 25: // SKY BLUE
         *r = 30;
         *g = 144;
         *b = 255;
         break;
         
-      case 24: // SPRING GREEN
+      case 26: // SPRING GREEN
         *r = 0;
         *g = 255;
         *b = 127;
         break;
                 
-      case 25: // DARK SLATE GREY
+      case 27: // DARK SLATE GREY
         *r = 47;
         *g = 79;
         *b = 79;
@@ -413,7 +416,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
 
     // draw old polygons
     for (k=0; k<MAX_POLYS; ++k) {
-      if (g_polys[k].n > 0) {
+      if (g_polys[k].n > 0 && row_is_checked(k)) {
         for (i=0; i<g_polys[k].n-1; ++i) {
             put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
                 g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);

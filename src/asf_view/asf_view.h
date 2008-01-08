@@ -202,7 +202,9 @@ int set_lut_based_on_image_type(image_data_type_t image_data_type);
 void apply_lut_to_data(ThumbnailData *thumbnail_data);
 
 /* plan.c */
+int planner_is_active(void);
 void setup_planner(void);
+int row_is_checked(int);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

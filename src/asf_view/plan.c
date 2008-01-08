@@ -2,6 +2,15 @@
 #include "plan.h"
 #include <ctype.h>
 
+// flag indicating whether or not asf_view is running with the acquisition
+// planning stuff turned on.  access from elsewhere with "planner_is_active()"
+
+static int in_planning_mode = FALSE;
+int planner_is_active()
+{
+  return in_planning_mode;
+}
+
 // Need to remember the modes, so we can refer to them later
 char **modes=NULL;
 int num_beam_modes=-1;
@@ -14,7 +23,7 @@ enum
   COL_DATE_HIDDEN,
   COL_ORBIT_FRAME,
   COL_COVERAGE,
-  COL_HIDDEN
+  COL_INDEX
 };
 
 enum
@@ -116,10 +125,13 @@ SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
                      COL_SELECTED, enabled, -1);
 
   gtk_tree_path_free(path);
+
+  fill_big(curr);
 }
 
 void setup_planner()
 {
+    in_planning_mode = TRUE;
     show_widget("planner_notebook", TRUE);
     show_widget("viewer_notebook", FALSE);
 
@@ -223,7 +235,7 @@ void setup_planner()
     gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
-    gtk_tree_view_column_add_attribute(col, rend, "text", COL_HIDDEN);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_INDEX);
 
     // No more columns, finish setup
     gtk_tree_view_set_model(GTK_TREE_VIEW(tv), GTK_TREE_MODEL(liststore));
@@ -256,6 +268,42 @@ void setup_planner()
     set_combo_box_item_checked("satellite_combobox", 1);
     // ... all this should be deleted
 
+}
+
+int row_is_checked(int row)
+{
+  // returns true if that row # in the found acquisitions is checked
+  
+  // return false if we aren't running the planner, or the row # is
+  // not checked
+
+  int ret = FALSE;
+  if (in_planning_mode) {
+
+    if (row <= gtk_tree_model_iter_n_children(liststore, NULL)) {
+
+      GtkTreeIter iter;
+      gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
+      while (valid)
+      {
+        gboolean selected;
+        char *index_str;
+
+        gtk_tree_model_get(liststore, &iter, COL_INDEX, &index_str,
+                           COL_SELECTED, &selected, -1);
+      
+        int index = atoi(index_str);
+        if (index == row) {
+          ret = selected;
+          break;
+        }
+
+        valid = gtk_tree_model_iter_next(liststore, &iter);
+      }
+    }
+  }
+
+  return ret;
 }
 
 static char *trim_whitespace(const char *s)
@@ -540,8 +588,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char pct_info[256];
           sprintf(pct_info, "%.1f", 100.*pi->total_pct);
 
-          char hidden_info[256];
-          sprintf(hidden_info, "-");
+          // the index in the "g_polys" array which corresponds to this row
+          char index_info[256];
+          sprintf(index_info, "%d", i+1);
+
+          // select ones with >25% coverage
+          int selected = pi->total_pct > .25;
 
           // create a little block of coloring which will indicate which
           // region on the map corresponds to this line in the list
@@ -567,12 +619,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           gtk_list_store_append(ls, &iter);
           gtk_list_store_set(ls, &iter,
                              COL_COLOR, pb,
-                             COL_SELECTED, TRUE,
+                             COL_SELECTED, selected,
                              COL_DATE, date_info,
                              COL_DATE_HIDDEN, date_hidden_info,
                              COL_ORBIT_FRAME, orbit_frame_info,
                              COL_COVERAGE, pct_info,
-                             COL_HIDDEN, hidden_info,
+                             COL_INDEX, index_info,
                              -1);
               
           if (i>=MAX_POLYS-1) {
@@ -604,17 +656,15 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                            COL_ORBIT_FRAME, &orbit_frame_str,
                            -1);
 
-        double date = atof(dbl_date_str);
+        //double date = atof(dbl_date_str);
         double cov = atof(coverage_str);
         int orbit, frame;
         sscanf(orbit_frame_str, "%d/%d", &orbit, &frame);
 
         // now do something with all this great info
-        printf("Selected: %s -- %s(%f) %.1f%% %d/%d\n",
-               enabled?"YES":"NO ", date_str, date, cov, orbit, frame);
-
         if (enabled) {
           // here we will save it, or something
+          printf("Saving: %s %.1f%% %d/%d\n", date_str, cov, orbit, frame);
         }
 
         valid = gtk_tree_model_iter_next(liststore, &iter);
