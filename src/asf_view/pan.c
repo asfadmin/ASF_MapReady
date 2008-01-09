@@ -55,6 +55,7 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     gdk_window_set_cursor(GDK_WINDOW(win->window), NULL);
 #endif
 
+    fill_small(curr);
     fill_big(curr);
 
     win = img = NULL;
@@ -119,6 +120,18 @@ static void put_box(GdkPixbuf *pixbuf, int x1, int x2, int y1, int y2)
     rowstride = gdk_pixbuf_get_rowstride (pixbuf);
     pixels = gdk_pixbuf_get_pixels (pixbuf);
 
+    if (x1 < 0) x1 = 0;
+    if (x1 >= width) x1 = width;
+
+    if (x2 < 0) x2 = 0;
+    if (x2 >= width) x2 = width;
+
+    if (y1 < 0) y1 = 0;
+    if (y1 >= height) y1 = height;
+
+    if (y2 < 0) y2 = 0;
+    if (y2 >= height) y2 = height;
+
     for (i=x1; i<=x2; ++i) {
         p = pixels + y1 * rowstride + i * n_channels;
         p[0] = 255;
@@ -160,7 +173,7 @@ on_motion_notify_event(
     x = (int) event->x;
     y = (int) event->y;
 
-    if (event->x_root > 256 || (panning && !dragging)) {
+    if (!dragging && (event->x_root > 256 || panning)) {
       // This is motion in the MAIN window
       // i.e. -- a panning operation
 
