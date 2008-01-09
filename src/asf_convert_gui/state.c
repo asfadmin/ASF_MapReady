@@ -515,6 +515,7 @@ void save_config(char *config_file, char* projfile)
       case PROJ_UTM:
         fprintf(pf, "[Universal Transverse Mercator]\n");
         fprintf(pf, "Zone=%d\n", s->zone != 0 ? s->zone : 0);
+        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
         break;
 
       case PROJ_PS:
@@ -525,7 +526,12 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "[Polar Stereographic]\n");
         fprintf(pf, "First Standard Parallel=%.10f\n", s->plat1);
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
-        fprintf(pf, "Northern Projection=%d\n", (s->lat0 > 0 ? 1 : 0) || (s->plat1 > 0 ? 1 : 0));
+        fprintf(pf, "Area=%s\n", (s->lat0 > 0.0 || s->plat1 > 0.0) ? "North" : "South");
+        if (s->datum == HUGHES_DATUM)
+            fprintf(pf, "Spheroid=Hughes\n");
+        else
+            fprintf(pf, "Datum=%s\n", datum_string(s->datum));
+
         break;
 
       case PROJ_ALBERS:
@@ -534,12 +540,14 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
         break;
 
       case PROJ_LAMAZ:
         fprintf(pf, "[Lambert Azimuthal Equal Area]\n");
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
         break;
 
       case PROJ_LAMCC:
@@ -548,6 +556,7 @@ void save_config(char *config_file, char* projfile)
         fprintf(pf, "Second standard parallel=%.10f\n", s->plat2);
         fprintf(pf, "Central Meridian=%.10f\n", s->lon0);
         fprintf(pf, "Latitude of Origin=%.10f\n", s->lat0);
+        fprintf(pf, "Datum=%s\n", datum_string(s->datum));
         break;
 
       default:
