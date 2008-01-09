@@ -100,6 +100,10 @@ ThumbnailData *get_thumbnail_data(ImageInfo *ii)
     return ret;
 }
 
+// had to make these global for the dragging in the small window
+int small_image_x_dim;
+int small_image_y_dim;
+
 static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
                                     ImageInfo *ii)
 {
@@ -117,8 +121,8 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
 
         // Create the pixbuf
         GdkPixbuf *pb =
-            gdk_pixbuf_new_from_data(tdata->data, GDK_COLORSPACE_RGB, FALSE,
-                                     8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+          gdk_pixbuf_new_from_data(tdata->data, GDK_COLORSPACE_RGB, FALSE,
+                                   8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
 
         if (!pb)
             asfPrintError("Failed to create the small pixbuf.\n");
@@ -130,13 +134,14 @@ static GdkPixbuf * make_small_image(int force, ThumbnailData *tdata,
         double scale_y = (double)tsy / THUMB_SIZE;
         double scale_x = (double)tsx / THUMB_SIZE;
         double scale = scale_y > scale_x ? scale_y : scale_x;
-        int x_dim = tsx / scale;
-        int y_dim = tsy / scale;
+        small_image_x_dim = tsx / scale;
+        small_image_y_dim = tsy / scale;
 
-        printf("Scaling to %dx%d\n", x_dim, y_dim);
+        printf("Scaling to %dx%d\n", small_image_x_dim, small_image_y_dim);
 
         pixbuf_small =
-            gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+            gdk_pixbuf_scale_simple(pb, small_image_x_dim, small_image_y_dim,
+                                    GDK_INTERP_BILINEAR);
         gdk_pixbuf_unref(pb);
 
         if (!pixbuf_small)

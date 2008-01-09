@@ -377,10 +377,10 @@ static void time_to_orbit_frame(double t, int *orbit, int *frame)
 {
     // FIXME fake calculation for now
     double t1 = t/(24.*60.*60.);
-    t1 -= 365*10;
+    t1 -= 365*13;
 
     *orbit = (int) t1;
-    *frame = (int) ((t1 - (double)(*orbit)) * 1000);
+    *frame = (int) ((t1 - (double)(*orbit)) * 671);
 }
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)

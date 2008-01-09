@@ -148,6 +148,8 @@ int get_big_image_height(void);
 int get_big_image_height2(void);
 void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b);
+void big_clicked(GdkEventButton *event);
+void small_clicked(GdkEventButton *event);
 
 /* small_image.c */
 ThumbnailData *get_thumbnail_data(ImageInfo *ii);

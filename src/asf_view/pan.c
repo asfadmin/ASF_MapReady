@@ -21,6 +21,8 @@ static GdkPixbuf *pb2=NULL;
 static GtkWidget *img=NULL;
 static GtkWidget *win=NULL;
 extern GdkPixbuf *pixbuf_small;
+extern int small_image_x_dim;
+extern int small_image_y_dim;
 
 #ifndef win32
 static GdkCursor *pan_cursor=NULL;
@@ -37,10 +39,12 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
 SIGNAL_CALLBACK int
 on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 {
+  int x = (int) event->x;
+  int y = (int) event->y;
+
   if (panning) {
     panning = FALSE;
-    int x = (int) event->x;
-    int y = (int) event->y;
+
     center_line -= zoom*(y-start_y);
     center_samp -= zoom*(x-start_x);
     gdk_pixbuf_unref(pb);
@@ -59,8 +63,6 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 
   if (dragging) {
     dragging = FALSE;
-    int x = (int) event->x;
-    int y = (int) event->y;
 
     int minx = MIN(start_x, x);
     int maxx = MAX(start_x, x);
@@ -70,18 +72,18 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     //int width = gdk_pixbuf_get_width(pb);
     //int height = gdk_pixbuf_get_height(pb);
 
-    double w = (double)(maxx-minx)/256. * curr->ns;
+    double w = (double)(maxx-minx)/(double)small_image_x_dim * curr->ns;
     double z1 = w/(double)get_big_image_width();
 
-    double h = (double)(maxy-miny)/256. * curr->nl;
+    double h = (double)(maxy-miny)/(double)small_image_y_dim * curr->nl;
     double z2 = h/(double)get_big_image_height();
 
     //double z1 = (double)(curr->nl)/h;
     //double z2 = (double)(curr->ns)/w;
     zoom = z1 > z2 ? z1 : z2;
 
-    center_line = ((double)(maxy+miny))/512. * curr->nl;
-    center_samp = ((double)(maxx+minx))/512. * curr->ns;
+    center_line = ((double)(maxy+miny))/(double)small_image_y_dim*curr->nl/2.;
+    center_samp = ((double)(maxx+minx))/(double)small_image_x_dim*curr->ns/2.;
 
     update_zoom();
     fill_small(curr);
@@ -90,6 +92,11 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     win = img = NULL;
     return TRUE;
   }
+
+  if (event->x_root > 256)
+    big_clicked(event);
+  else if (event->y_root < 256)
+    small_clicked(event);
 
   return FALSE;
 }

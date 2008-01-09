@@ -525,6 +525,13 @@ void fill_big(ImageInfo *ii)
 SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+    // moved the "clicked" code to a new function small_clicked(),
+    // which is called from the "button release event" code.
+    return TRUE;
+}
+
+void small_clicked(GdkEventButton *event)
+{
     // clicking in the small image moves the big image
     GtkWidget *img = get_widget_checked("small_image");
     GdkPixbuf *pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
@@ -537,8 +544,6 @@ SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
 
     fill_small(curr);
     fill_big(curr);
-
-    return TRUE;
 }
 
 // Keeps track of which crosshair should be affected when the user
@@ -548,6 +553,13 @@ static int last_was_crosshair = TRUE;
 SIGNAL_CALLBACK int
 on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+    // moved the "clicked" code to a new function big_clicked(),
+    // which is called from the "button release event" code.
+    return TRUE;
+}
+
+void big_clicked(GdkEventButton *event)
 {
     if (event->button == 1) {
         // ctrl-left-click: measure distance
@@ -581,8 +593,6 @@ on_big_image_eventbox_button_press_event(
         fill_small(curr);
         fill_big(curr);
     }
-
-    return TRUE;
 }
 
 void update_zoom()
