@@ -570,7 +570,6 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
         // this is for debugging, can be removed
         pass_collection_to_kml(pc, "test_kml.kml");
-
         clear_found();
 
         // polygon #0 is left alone (it is the area of interest)
@@ -600,6 +599,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
               double samp, line, lat, lon;
 
               UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
+              printf("1> %f %f\n", lat, lon);
+              if (clat<0) {
+                poly->y[j] -= 10000000;
+                UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
+                printf("2>               %f %f\n", lat, lon);
+              }
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);

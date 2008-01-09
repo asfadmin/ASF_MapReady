@@ -87,10 +87,10 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
 
   // return NULL if we are "far away"
   int zone = utm_zone(center_lon);
-  //if (iabs(zone - target_zone) > 2)
-  // return NULL;
-  //if (fabs(center_lat - target_lat) > 20)
-  //  return NULL;
+  if (iabs(zone - target_zone) > 2)
+    return NULL;
+  if (fabs(center_lat - target_lat) > 20)
+    return NULL;
 
   latLon2UTM_zone(center_lat, center_lon, 0, target_zone,
                   &center_x, &center_y);
@@ -168,7 +168,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
     // need a good method to test for overlap amount!
     // for now we have this sort of kludgey method... which is
     // probably a bit slow:
-    //   generate 100 points in the aoi -- pct is how many are also
+    //   generate 1000 points in the aoi -- pct is how many are also
     //   in the viewable region
     srand(42);
     int i=0,pct=0,n=1000;
