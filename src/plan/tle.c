@@ -179,13 +179,10 @@ void read_tle(const char *tle_filename, const char *satellite,
 
   // Read TLE file
   read_tle_file(tle_filename, satellite, tle);
-
-  printf("tle: year= %d\n", tle->year);
-  printf("tle: jday= %d\n", tle->day);
-  printf("tle: time= %f\n", tle->time);
+  printf("TLE: year=%d, jday=%d, time=%f\n", tle->year, tle->day, tle->time);
 
   // Keplerian elements
-  double period = 86400 / tle->mean_motion;
+  double period = 86400. / tle->mean_motion;
   double velocity = pow(2*M_PI*GM/period, 1.0/3.0);
   ko->a = GM/velocity/velocity;
   ko->e = tle->eccentricity;

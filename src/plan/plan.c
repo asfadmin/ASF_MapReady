@@ -256,8 +256,8 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
     }
     while (t1 < end_time || is_overlap);
     
-    if (n_backups > 0)
-      printf("Had to back up %d times.\n", n_backups);
+    //if (n_backups > 0)
+    //  printf("Had to back up %d times.\n", n_backups);
 
     int found = pi->num > 0;
     if (found)

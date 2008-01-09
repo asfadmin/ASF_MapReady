@@ -598,13 +598,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             for (j=0; j<poly->n; ++j) {
               double samp, line, lat, lon;
 
-              UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
-              printf("1> %f %f\n", lat, lon);
-              if (clat<0) {
+              // account for the false northing in the southern hemisphere
+              if (clat<0)
                 poly->y[j] -= 10000000;
-                UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
-                printf("2>               %f %f\n", lat, lon);
-              }
+              UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);
