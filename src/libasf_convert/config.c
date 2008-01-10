@@ -1308,11 +1308,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# An average height can be defined for the image that is taken into\n"
                 "#  account and adjusted for during the geocoding process.\n\n");
       fprintf(fConfig, "height = %.1f\n", cfg->geocoding->height);
-      if (!shortFlag)
-        fprintf(fConfig, "\n# A vertical datum can be defined for geocoded image. WGS84 is the\n"
-                "# only currently supported datum. However, NAD27 and NAD83 are planned to be\n"
-                "# appropriate alternatives.\n\n");
-      fprintf(fConfig, "datum = %s\n", cfg->geocoding->datum);
+//      if (!shortFlag)
+//        fprintf(fConfig, "\n# A vertical datum can be defined for geocoded image. WGS84, NAD27,\n"
+//                "# NAD83 datums and the Hughes reference spheroid are the only currently\n"
+//                "# supported datums.\n\n");
+//      fprintf(fConfig, "datum = %s\n", cfg->geocoding->datum);
       if (!shortFlag)
         fprintf(fConfig, "\n# Three different resampling methods have been implemented as part\n"
                 "# of the geocoding: NEAREST NEIGHBOR, BILINEAR and BICUBIC. The bilinear\n"

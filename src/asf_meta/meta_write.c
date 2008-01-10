@@ -411,12 +411,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
           meta->projection->param.albers.orig_latitude,
           "Latitude of the projection origin [degrees]");
       if (META_VERSION >= 1.3) {
-  meta_put_double(fp,"false_easting:",
-      meta->projection->param.albers.false_easting,
-      "False easting [m]");
-  meta_put_double(fp,"false_northing:",
-      meta->projection->param.albers.false_northing,
-      "False northing [m]");
+        meta_put_double(fp,"false_easting:",
+            meta->projection->param.albers.false_easting,
+            "False easting [m]");
+        meta_put_double(fp,"false_northing:",
+            meta->projection->param.albers.false_northing,
+            "False northing [m]");
       }
       meta_put_string(fp,"}","","End albers");
       break;
@@ -427,12 +427,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"center_lat:",meta->projection->param.lamaz.center_lat,
           "Latitude at center of projection");
       if (META_VERSION >= 1.3) {
-  meta_put_double(fp,"false_easting:",
-      meta->projection->param.lamaz.false_easting,
-      "False easting [m]");
-  meta_put_double(fp,"false_northing:",
-      meta->projection->param.lamaz.false_northing,
-      "False northing [m]");
+        meta_put_double(fp,"false_easting:",
+            meta->projection->param.lamaz.false_easting,
+            "False easting [m]");
+        meta_put_double(fp,"false_northing:",
+            meta->projection->param.lamaz.false_northing,
+            "False northing [m]");
       }
       meta_put_string(fp,"}","","End lamaz");
       break;
@@ -447,15 +447,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"lon0:",meta->projection->param.lamcc.lon0,
           "Original longitude");
       if (META_VERSION >= 1.3) {
-  meta_put_double(fp,"false_easting:",
-      meta->projection->param.lamcc.false_easting,
-      "False easting [m]");
-  meta_put_double(fp,"false_northing:",
-      meta->projection->param.lamcc.false_northing,
-      "False northing [m]");
-  meta_put_double(fp,"scale_factor:",
-      meta->projection->param.lamcc.scale_factor,
-      "Scaling factor");
+        meta_put_double(fp,"false_easting:",
+                        meta->projection->param.lamcc.false_easting,
+                        "False easting [m]");
+        meta_put_double(fp,"false_northing:",
+                        meta->projection->param.lamcc.false_northing,
+                        "False northing [m]");
+        meta_put_double(fp,"scale_factor:",
+                        meta->projection->param.lamcc.scale_factor,
+                        "Scaling factor");
       }
       meta_put_string(fp,"}","","End lamcc");
       break;
@@ -464,11 +464,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp,"slat:",meta->projection->param.ps.slat,"Reference Latitude");
       meta_put_double(fp,"slon:",meta->projection->param.ps.slon,"Reference Longitude");
       if (META_VERSION >= 1.3) {
-  meta_put_double(fp,"false_easting:",
-      meta->projection->param.ps.false_easting, "False easting [m]");
-  meta_put_double(fp,"false_northing:",
-      meta->projection->param.ps.false_northing,
-      "False northing [m]");
+        meta_put_double(fp,"false_easting:",
+            meta->projection->param.ps.false_easting, "False easting [m]");
+        meta_put_double(fp,"false_northing:",
+            meta->projection->param.ps.false_northing,
+            "False northing [m]");
       }
       meta_put_string(fp,"}","","End ps");
       break;
@@ -476,18 +476,18 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_string(fp,"utm {","","Begin Universal Transverse Mercator Projection");
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       if (META_VERSION >= 1.3) {
-  meta_put_double(fp,"false_easting:",
-      meta->projection->param.utm.false_easting,
-      "False easting [m]");
-  meta_put_double(fp,"false_northing:",
-      meta->projection->param.utm.false_northing,
-      "False northing [m]");
-  meta_put_double(fp,"latitude:",meta->projection->param.utm.lat0,
-      "Latitude [degrees]");
-  meta_put_double(fp,"longitude:",meta->projection->param.utm.lon0,
-      "Longitude [degrees]");
-  meta_put_double(fp,"scale_factor:", meta->projection->param.utm.scale_factor,
-      "Scaling factor");
+        meta_put_double(fp,"false_easting:",
+            meta->projection->param.utm.false_easting,
+            "False easting [m]");
+        meta_put_double(fp,"false_northing:",
+            meta->projection->param.utm.false_northing,
+            "False northing [m]");
+        meta_put_double(fp,"latitude:",meta->projection->param.utm.lat0,
+            "Latitude [degrees]");
+        meta_put_double(fp,"longitude:",meta->projection->param.utm.lon0,
+            "Longitude [degrees]");
+        meta_put_double(fp,"scale_factor:", meta->projection->param.utm.scale_factor,
+            "Scaling factor");
       }
       meta_put_string(fp,"}","","End utm");
       break;
@@ -551,36 +551,36 @@ void meta_write(meta_parameters *meta, const char *file_name)
   // Write out airsar geocoding parameters
   if (meta->airsar) {
     meta_put_string(fp, "airsar {", "",
-		    "Block containing AirSAR parameters for geocoding");
+            "Block containing AirSAR parameters for geocoding");
     meta_put_double(fp, "scale_factor:", meta->airsar->scale_factor,
-		    "General scale factor");
+            "General scale factor");
     meta_put_double(fp, "gps_altitude:", meta->airsar->gps_altitude,
-		    "GPS altitude [m]");
+            "GPS altitude [m]");
     meta_put_double(fp, "lat_peg_point:", meta->airsar->lat_peg_point,
-		    "Latitude of peg point [degrees]");
+            "Latitude of peg point [degrees]");
     meta_put_double(fp, "lon_peg_point:", meta->airsar->lon_peg_point,
-		    "Longitude of peg point [degrees]");
+            "Longitude of peg point [degrees]");
     meta_put_double(fp, "head_peg_point:", meta->airsar->head_peg_point,
-		    "Heading at peg point [degrees]");
-    meta_put_double(fp, "along_track_offset:", 
-		    meta->airsar->along_track_offset,
-		    "Along-track offset S0 [m]");
-    meta_put_double(fp, "cross_track_offset:", 
-		    meta->airsar->cross_track_offset,
-		    "Cross-track offset C0 [m]");
+            "Heading at peg point [degrees]");
+    meta_put_double(fp, "along_track_offset:",
+            meta->airsar->along_track_offset,
+            "Along-track offset S0 [m]");
+    meta_put_double(fp, "cross_track_offset:",
+            meta->airsar->cross_track_offset,
+            "Cross-track offset C0 [m]");
     meta_put_string(fp, "}", "", "End airsar");
   }
 
   // Write out calibration parameters
   if (meta->calibrate) {
     meta_put_string(fp, "calibrate {", "",
-		    "Block containing calibration parameters");
+            "Block containing calibration parameters");
     meta_put_double(fp, "coefficient_a1:", meta->calibrate->coefficient_a1,
-		    "Calibration coefficient a1");
+            "Calibration coefficient a1");
     meta_put_double(fp, "coefficient_a2:", meta->calibrate->coefficient_a2,
-		    "Calibration coefficient a2");
+            "Calibration coefficient a2");
     meta_put_double(fp, "coefficient_a3:", meta->calibrate->coefficient_a3,
-		    "Calibration coefficient a3");
+            "Calibration coefficient a3");
     meta_put_string(fp, "}", "", "End calibrate");
   }
 

@@ -34,7 +34,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.4
+#define META_VERSION 2.5
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.

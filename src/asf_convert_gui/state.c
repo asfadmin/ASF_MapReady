@@ -665,7 +665,9 @@ void save_config(char *config_file, char* projfile)
       fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
     if (s->specified_height)
       fprintf(cf, "height = %.2f\n", s->height);
-    fprintf(cf, "datum = %s\n", datum_string(s->datum));
+    // As of v1.1.x of MapReady, no longer write datum to
+    // config file (only to proj file above)
+    //fprintf(cf, "datum = %s\n", datum_string(s->datum));
     fprintf(cf, "resampling = %s\n",
             resample_method_string(s->resample_method));
     fprintf(cf, "force = %d\n", s->geocode_force);
