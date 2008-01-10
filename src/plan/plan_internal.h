@@ -20,9 +20,9 @@ void overlap_free(OverlapInfo *oi);
 
 /* pass.c */
 PassInfo *pass_info_new(void);
-void pass_info_add(PassInfo *pi, double t, OverlapInfo *oi);
+void pass_info_add(PassInfo *pi, double t, char dir, OverlapInfo *oi);
 void pass_info_free(PassInfo *pi);
-PassCollection *pass_collection_new();
+PassCollection *pass_collection_new(double clat, double clon, Polygon *aoi);
 void pass_collection_add(PassCollection *pc, PassInfo *pi);
 
 #endif

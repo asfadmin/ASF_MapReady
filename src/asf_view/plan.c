@@ -23,6 +23,7 @@ enum
   COL_DATE_HIDDEN,
   COL_ORBIT_FRAME,
   COL_COVERAGE,
+  COL_ORBITDIR,
   COL_INDEX
 };
 
@@ -30,7 +31,8 @@ enum
 {
   SORTID_DATE = 0,
   SORTID_ORBIT_FRAME,
-  SORTID_COVERAGE
+  SORTID_COVERAGE,
+  SORTID_ORBITDIR
 };
 
 static GtkTreeModel *liststore = NULL;
@@ -98,6 +100,17 @@ int sort_compare_func(GtkTreeModel *model,
           ret = 0;
         }
       }
+    }
+    break;
+
+    case SORTID_ORBITDIR:
+    {
+      char *str1, *str2;
+
+      gtk_tree_model_get(model, a, COL_ORBITDIR, &str1, -1);
+      gtk_tree_model_get(model, b, COL_ORBITDIR, &str2, -1);
+
+      ret = strcmp(str1, str2);
     }
     break;
 
@@ -172,9 +185,10 @@ void setup_planner()
     GtkTreeViewColumn *col;
     GtkCellRenderer *rend;
 
-    GtkListStore *ls = gtk_list_store_new(7,
+    GtkListStore *ls = gtk_list_store_new(8,
                                           GDK_TYPE_PIXBUF,
                                           G_TYPE_BOOLEAN,
+                                          G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
@@ -241,6 +255,16 @@ void setup_planner()
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_COVERAGE);
+
+    // Column: Ascending/Descending
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_column_set_sort_column_id(col, SORTID_ORBITDIR);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_ORBITDIR);
 
     // Column: Additional Info (hidden)
     col = gtk_tree_view_column_new();
@@ -642,6 +666,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char index_info[256];
           sprintf(index_info, "%d", i+1);
 
+          // ascending or descending
+          char orbit_dir[5];
+          sprintf(orbit_dir, "%c", pi->dir);
+
           // select ones with >60% of the max coverage
           int selected = pi->total_pct > coverage_cutoff;
 
@@ -674,6 +702,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_DATE_HIDDEN, date_hidden_info,
                              COL_ORBIT_FRAME, orbit_frame_info,
                              COL_COVERAGE, pct_info,
+                             COL_ORBITDIR, orbit_dir,
                              COL_INDEX, index_info,
                              -1);
               

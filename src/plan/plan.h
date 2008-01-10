@@ -22,6 +22,7 @@ typedef struct {
     char *start_time_as_string;
     OverlapInfo **overlaps;
     double total_pct;
+    char dir;
 } PassInfo;
 
 // A "PassCollection" is a set of passes

@@ -198,7 +198,7 @@ static int
 check_crossing(PassCollection *pc, double start_time, double end_time,
                double state_vector_time, stateVector *st,
                BeamModeInfo *bmi, int zone, double clat, double clon,
-               Polygon *aoi)
+               Polygon *aoi, char dir)
 {
     double t1 = start_time;
     PassInfo *pi = pass_info_new();
@@ -240,7 +240,7 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
             continue;
         } else {
           // normal case, just add this as the first entry
-          pass_info_add(pi, t, oi);
+          pass_info_add(pi, t, dir, oi);
         }
       }
 
@@ -478,6 +478,15 @@ int plan(const char *satellite, const char *beam_mode,
     asfPrintError("Internal error: invalid pass_type: %d\n", pass_type);
   }
 
+  char dir1, dir2;
+  if (first_is_ascending) {
+    dir1 = 'A';
+    dir2 = 'D';
+  } else {
+    dir1 = 'D';
+    dir2 = 'A';
+  }
+
   // Iteration #2: Looking for overlaps.
 
   double curr = start_secs;
@@ -497,7 +506,7 @@ int plan(const char *satellite, const char *beam_mode,
 
       num_found +=
         check_crossing(pc, time1_in, time1_out, t, &st1, bmi,
-                       zone, clat, clon, aoi);
+                       zone, clat, clon, aoi, dir1);
     }
 
     if (check_second_crossing) {
@@ -506,7 +515,7 @@ int plan(const char *satellite, const char *beam_mode,
 
       num_found +=
         check_crossing(pc, time2_in, time2_out, t, &st2, bmi,
-                       zone, clat, clon, aoi);
+                       zone, clat, clon, aoi, dir2);
     }
 
     st = propagate(st, curr, curr + full_cycle_time);
