@@ -1359,3 +1359,75 @@ datum_type_t get_datum(FILE *fp)
 
   return datum;
 }
+
+spheroid_type_t get_spheroid(FILE *fp)
+{
+    spheroid_type_t spheroid = UNKNOWN_SPHEROID; // Unknown until found
+    char *eq, *s;
+    char buf[512];
+    if (!fp) asfPrintError("Projection parameter file not open.\n");
+    FSEEK(fp, 0, SEEK_SET);
+    readline(fp, buf, sizeof(buf));
+
+    while (!feof(fp)) {
+        if (strlen(buf)) {
+            s = buf;
+            while(isspace((int)*s))s++;
+            if (strncmp(uc(s), "SPHEROID", 5) == 0) {
+                eq = strchr(buf, '=');
+                if (eq) {
+                    s = eq;
+                    s++;
+                    while (isspace((int)*s))s++;
+                    if (strncmp(uc(s), "BESSEL", 5) == 0) {
+                        spheroid = BESSEL_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "CLARKE1866", 4)   == 0) {
+                        spheroid = CLARKE1866_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "CLARKE1880", 6) == 0) {
+                        spheroid = CLARKE1880_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "GEM6", 6) == 0) {
+                        spheroid = GEM6_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "GEM10C", 6) == 0) {
+                        spheroid = GEM10C_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "GRS1980", 5)  == 0) {
+                        spheroid = GRS1980_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "INTERNATIONAL1924", 5)  == 0) {
+                        spheroid = INTERNATIONAL1924_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "INTERNATIONAL1967", 5)  == 0) {
+                        spheroid = INTERNATIONAL1967_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "WGS72", 5)  == 0) {
+                        spheroid = WGS72_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "WGS84", 6) == 0) {
+                        spheroid = WGS84_SPHEROID;
+                        break;
+                    }
+                    else if (strncmp(uc(s), "HUGHES", 6) == 0) {
+                        spheroid = HUGHES_SPHEROID;
+                        break;
+                    }
+                }
+            }
+        }
+        readline(fp, buf, sizeof(buf));
+    }
+
+    return spheroid;
+}
