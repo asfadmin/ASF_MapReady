@@ -323,8 +323,6 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
   }
   else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
   {
-    spheroid_type_t spheroid;
-    //char area[10];
     double is_north_pole;
     *proj_type = POLAR_STEREOGRAPHIC;
     get_fields(fp,
@@ -337,28 +335,7 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
       "Hemisphere", &is_north_pole,
       NULL);
     pps->ps.is_north_pole = pps->ps.slat > 0;
-    spheroid = get_spheroid(fp);
-    switch(spheroid) {
-      case WGS84_SPHEROID:
-        *datum = WGS84_DATUM;
-        break;
-      case HUGHES_SPHEROID:
-        *datum = HUGHES_DATUM;
-        break;
-      case BESSEL_SPHEROID:
-      case CLARKE1866_SPHEROID:
-      case CLARKE1880_SPHEROID:
-      case GEM6_SPHEROID:
-      case GEM10C_SPHEROID:
-      case GRS1980_SPHEROID:
-      case INTERNATIONAL1924_SPHEROID:
-      case INTERNATIONAL1967_SPHEROID:
-      case WGS72_SPHEROID:
-      default:
-        asfPrintWarning("Unknown, unrecognized, or unsupported reference ellipsoid found for.\n"
-                       "a polar stereographic projection.\n");
-        *datum = UNKNOWN_DATUM;
-    }
+    *datum = get_datum(fp);
   }
   else if (strcmp(buf, bracketed_projection_name(
     UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
@@ -373,11 +350,15 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
       "False Northing", &pps->utm.false_northing,
       "Zone", &zone,
       NULL);
-    *datum = WGS84_DATUM;
-
+    *datum = get_datum(fp);
+    if (*datum == UNKNOWN_DATUM) {
+        asfPrintStatus("\nNo datum specified in UTM type projection description file.\n"
+                "Defaulting to WGS84...\n\n");
+        *datum = WGS84_DATUM;
+    }
     pps->utm.zone = (int) zone;
 
-    if (pps->utm.zone == 0 || ISNAN(zone))
+    if (pps->utm.zone == 0 || !meta_is_valid_double(zone))
       pps->utm.zone = MAGIC_UNSET_INT;
   }
   else
@@ -1211,9 +1192,41 @@ project_parameters_t * parse_projection_options(int *argc, char **argv[],
 datum_type_t get_datum(FILE *fp)
 {
   datum_type_t datum = UNKNOWN_DATUM; // Unknown until found
+  spheroid_type_t spheroid = UNKNOWN_SPHEROID; // Unknown until found
+  projection_type_t proj_type;
   char *eq, *s;
   char buf[512];
+  int datum_found=0;
+  int spheroid_found=0;
+
   if (!fp) asfPrintError("Projection parameter file not open.\n");
+
+  // Find projection type
+  FSEEK(fp, 0, SEEK_SET);
+  readline(fp, buf, sizeof(buf));
+  if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+      strcmp(buf, "[Albers Equal Area Conic]") == 0)
+  {
+      proj_type = ALBERS_EQUAL_AREA;
+  }
+  else if (strcmp(buf, bracketed_projection_name(LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
+  {
+      proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
+  }
+  else if (strcmp(buf, bracketed_projection_name(LAMBERT_CONFORMAL_CONIC)) == 0)
+  {
+      proj_type = LAMBERT_CONFORMAL_CONIC;
+  }
+  else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
+  {
+      proj_type = POLAR_STEREOGRAPHIC;
+  }
+  else if (strcmp(buf, bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
+  {
+      proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+
+  // Parse for datum or spheroid keyword
   FSEEK(fp, 0, SEEK_SET);
   readline(fp, buf, sizeof(buf));
   while (!feof(fp)) {
@@ -1221,161 +1234,128 @@ datum_type_t get_datum(FILE *fp)
       s = buf;
       while(isspace((int)*s))s++;
       if (strncmp(uc(s), "DATUM", 5) == 0) {
-        eq = strchr(buf, '=');
-        if (eq) {
+          datum_found=1;
+          break;
+      }
+      else if (strncmp(uc(s), "SPHEROID", 8) == 0) {
+          spheroid_found=1;
+          break;
+      }
+    }
+    readline(fp, buf, sizeof(buf));
+  }
+
+  // Parse out datum (if "datum =" was in the proj file)
+  if (datum_found) {
+      eq = strchr(buf, '=');
+      if (eq) {
           s = eq;
           s++;
           while (isspace((int)*s))s++;
           if (strncmp(uc(s), "EGM96", 5) == 0) {
-            datum = EGM96_DATUM;
-            break;
+              datum = EGM96_DATUM;
           }
           else if (strncmp(uc(s), "ED50", 4)   == 0) {
-            datum = ED50_DATUM;
-            break;
+              datum = ED50_DATUM;
           }
           else if (strncmp(uc(s), "ETRF89", 6) == 0) {
-            datum = ETRF89_DATUM;
-            break;
+              datum = ETRF89_DATUM;
           }
           else if (strncmp(uc(s), "ETRS89", 6) == 0) {
-            datum = ETRS89_DATUM;
-            break;
+              datum = ETRS89_DATUM;
           }
           else if (strncmp(uc(s), "ITRF97", 6) == 0) {
-            datum = ITRF97_DATUM;
-            break;
+              datum = ITRF97_DATUM;
           }
           else if (strncmp(uc(s), "NAD27", 5)  == 0) {
-            datum = NAD27_DATUM;
-            break;
+              datum = NAD27_DATUM;
           }
           else if (strncmp(uc(s), "NAD83", 5)  == 0) {
-            datum = NAD83_DATUM;
-            break;
+              datum = NAD83_DATUM;
           }
           else if (strncmp(uc(s), "WGS72", 5)  == 0) {
-            datum = WGS72_DATUM;
-            break;
+              datum = WGS72_DATUM;
           }
           else if (strncmp(uc(s), "WGS84", 5)  == 0) {
-            datum = WGS84_DATUM;
-            break;
+              datum = WGS84_DATUM;
           }
           else if (strncmp(uc(s), "HUGHES", 6) == 0) {
-            datum = HUGHES_DATUM;
-            break;
+              datum = HUGHES_DATUM;
           }
-        }
       }
-    }
-    readline(fp, buf, sizeof(buf));
+      else {
+          asfPrintWarning("Projection Description file has missing or invalid datum (or spheroid) value\n");
+          datum = UNKNOWN_DATUM;
+      }
   }
-
-  return datum;
-}
-
-spheroid_type_t get_spheroid(FILE *fp)
-{
-  spheroid_type_t spheroid = UNKNOWN_SPHEROID; // Unknown until found
-  char *eq, *s;
-  char buf[512];
-  if (!fp) asfPrintError("Projection parameter file not open.\n");
-  FSEEK(fp, 0, SEEK_SET);
-  readline(fp, buf, sizeof(buf));
-
-  while (!feof(fp)) {
-    if (strlen(buf)) {
-      s = buf;
-      while(isspace((int)*s))s++;
-      if (strncmp(uc(s), "SPHEROID", 5) == 0) {
-        eq = strchr(buf, '=');
-        if (eq) {
+  else if (spheroid_found) {
+      eq = strchr(buf, '=');
+      if (eq) {
           s = eq;
           s++;
           while (isspace((int)*s))s++;
           if (strncmp(uc(s), "BESSEL", 5) == 0) {
-            spheroid = BESSEL_SPHEROID;
-            break;
+              spheroid = BESSEL_SPHEROID;
           }
           else if (strncmp(uc(s), "CLARKE1866", 4)   == 0) {
-            spheroid = CLARKE1866_SPHEROID;
-            break;
+              spheroid = CLARKE1866_SPHEROID;
           }
           else if (strncmp(uc(s), "CLARKE1880", 6) == 0) {
-            spheroid = CLARKE1880_SPHEROID;
-            break;
+              spheroid = CLARKE1880_SPHEROID;
           }
           else if (strncmp(uc(s), "GEM6", 6) == 0) {
-            spheroid = GEM6_SPHEROID;
-            break;
+              spheroid = GEM6_SPHEROID;
           }
           else if (strncmp(uc(s), "GEM10C", 6) == 0) {
-            spheroid = GEM10C_SPHEROID;
-            break;
+              spheroid = GEM10C_SPHEROID;
           }
           else if (strncmp(uc(s), "GRS1980", 5)  == 0) {
-            spheroid = GRS1980_SPHEROID;
-            break;
+              spheroid = GRS1980_SPHEROID;
           }
           else if (strncmp(uc(s), "INTERNATIONAL1924", 5)  == 0) {
-            spheroid = INTERNATIONAL1924_SPHEROID;
-            break;
+              spheroid = INTERNATIONAL1924_SPHEROID;
           }
           else if (strncmp(uc(s), "INTERNATIONAL1967", 5)  == 0) {
-            spheroid = INTERNATIONAL1967_SPHEROID;
-            break;
+              spheroid = INTERNATIONAL1967_SPHEROID;
           }
           else if (strncmp(uc(s), "WGS72", 5)  == 0) {
-            spheroid = WGS72_SPHEROID;
-            break;
+              spheroid = WGS72_SPHEROID;
           }
           else if (strncmp(uc(s), "WGS84", 6) == 0) {
-            spheroid = WGS84_SPHEROID;
-            break;
+              spheroid = WGS84_SPHEROID;
           }
           else if (strncmp(uc(s), "HUGHES", 6) == 0) {
-            spheroid = HUGHES_SPHEROID;
-            break;
+              spheroid = HUGHES_SPHEROID;
           }
-        }
       }
-    }
-    readline(fp, buf, sizeof(buf));
+      switch(spheroid) {
+          case WGS84_SPHEROID:
+              datum = WGS84_DATUM;
+              break;
+          case HUGHES_SPHEROID:
+              datum = HUGHES_DATUM;
+              break;
+          case BESSEL_SPHEROID:
+          case CLARKE1866_SPHEROID:
+          case CLARKE1880_SPHEROID:
+          case GEM6_SPHEROID:
+          case GEM10C_SPHEROID:
+          case GRS1980_SPHEROID:
+          case INTERNATIONAL1924_SPHEROID:
+          case INTERNATIONAL1967_SPHEROID:
+          case WGS72_SPHEROID:
+          default:
+              asfPrintWarning("Unknown, unrecognized, or unsupported reference ellipsoid found in\n"
+                      "the projection description file.\n");
+              datum = UNKNOWN_DATUM;
+      }
+  }
+  else {
+      if (proj_type != UNIVERSAL_TRANSVERSE_MERCATOR) {
+        asfPrintWarning("Projection Description file has missing or invalid datum (or spheroid) value\n");
+      }
+      datum = UNKNOWN_DATUM;
   }
 
-  return spheroid;
+  return datum;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
