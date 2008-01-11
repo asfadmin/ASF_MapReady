@@ -76,6 +76,7 @@ void message_box(const char *format, ...);
 GtkWidget *get_widget_checked(const char *widget_name);
 void set_combobox_entry_maxlen(const char *widget_name, int maxlen);
 char* get_string_from_entry(const char *widget_name);
+int entry_has_text(const char *widget_name);
 void put_string_to_entry(const char *widget_name, char *txt);
 char *get_string_from_comboboxentry(const char *widget_name);
 void put_string_to_comboboxentry(const char *widget_name, char *txt);
@@ -150,6 +151,7 @@ void get_color(int color, unsigned char *r, unsigned char *g,
                unsigned char *b);
 void big_clicked(GdkEventButton *event);
 void small_clicked(GdkEventButton *event);
+void img2ls(int x, int y, double *line, double *samp);
 
 /* small_image.c */
 ThumbnailData *get_thumbnail_data(ImageInfo *ii);

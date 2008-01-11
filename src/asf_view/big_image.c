@@ -73,7 +73,7 @@ static void ls2img(double line, double samp, int *x, int *y)
     *y = (line - (double)center_line)/zoom + get_big_image_height2();
 }
 
-static void img2ls(int x, int y, double *line, double *samp)
+void img2ls(int x, int y, double *line, double *samp)
 {
     // convert from screen coordinates to line/sample coordinates
     *line = ((double)y - get_big_image_height2())*zoom + (double)center_line;
@@ -679,15 +679,49 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
     // needs to be listed here, so that the main window can pass along
     // the keypresses when the user is trying to use those widgets.
     // Currently just have the date widgets of the acquisition planner.
-    if (has_focus("start_date_entry") ||
-        has_focus("end_date_entry"))
+    if ((has_focus("start_date_entry") ||
+         has_focus("end_date_entry") ||
+         has_focus("lat_min_entry") ||
+         has_focus("lat_max_entry") ||
+         has_focus("lon_min_entry") ||
+         has_focus("lon_max_entry"))
+        &&
+        (event->keyval == GDK_1 ||
+         event->keyval == GDK_2 ||
+         event->keyval == GDK_3 ||
+         event->keyval == GDK_4 ||
+         event->keyval == GDK_5 ||
+         event->keyval == GDK_6 ||
+         event->keyval == GDK_7 ||
+         event->keyval == GDK_8 ||
+         event->keyval == GDK_9 ||
+         event->keyval == GDK_0 ||
+         event->keyval == GDK_KP_1 ||
+         event->keyval == GDK_KP_2 ||
+         event->keyval == GDK_KP_3 ||
+         event->keyval == GDK_KP_4 ||
+         event->keyval == GDK_KP_5 ||
+         event->keyval == GDK_KP_6 ||
+         event->keyval == GDK_KP_7 ||
+         event->keyval == GDK_KP_8 ||
+         event->keyval == GDK_KP_9 ||
+         event->keyval == GDK_KP_0 ||
+         event->keyval == GDK_period ||
+         event->keyval == GDK_minus ||
+         event->keyval == GDK_plus ||
+         event->keyval == GDK_Tab ||
+         event->keyval == GDK_Left ||
+         event->keyval == GDK_Right ||
+         event->keyval == GDK_BackSpace ||
+         event->keyval == GDK_Delete ||
+         event->keyval == GDK_KP_Delete))
     {
       return FALSE;
     }
 
     // Now the rest of the code deals with the normal keyboard events,
     // that pertain to the main image.
-    else if (event->keyval == GDK_Page_Up || 
+    if (event->keyval == GDK_Page_Up || 
         event->keyval == GDK_Prior || 
         event->keyval == GDK_plus)
     {

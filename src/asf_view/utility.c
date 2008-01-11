@@ -86,6 +86,11 @@ char* get_string_from_entry(const char *widget_name)
     return (char*)gtk_entry_get_text(GTK_ENTRY(e));
 }
 
+int entry_has_text(const char *widget_name)
+{
+    return strlen(get_string_from_entry(widget_name)) > 0;
+}
+
 void put_string_to_entry(const char *widget_name, char *txt)
 {
     GtkWidget *e = get_widget_checked(widget_name);

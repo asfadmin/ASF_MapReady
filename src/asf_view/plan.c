@@ -110,7 +110,24 @@ int sort_compare_func(GtkTreeModel *model,
       gtk_tree_model_get(model, a, COL_ORBITDIR, &str1, -1);
       gtk_tree_model_get(model, b, COL_ORBITDIR, &str2, -1);
 
-      ret = strcmp(str1, str2);
+      if (strcmp(str1, str2) == 0) {
+        // both ascending, or both descending -- sort by date
+        char *date1_str, *date2_str;
+        
+        gtk_tree_model_get(model, a, COL_DATE_HIDDEN, &date1_str, -1);
+        gtk_tree_model_get(model, b, COL_DATE_HIDDEN, &date2_str, -1);
+        
+        double date1 = atof(date1_str);
+        double date2 = atof(date2_str);
+        
+        if (date1 != date2)
+          ret = date1 > date2 ? 1 : -1;
+        else
+          ret = 0; // equal
+      }
+      else {
+        ret = strcmp(str1, str2) > 0 ? 1 : -1;
+      }
     }
     break;
 
@@ -289,6 +306,9 @@ void setup_planner()
     gtk_tree_sortable_set_sort_func(sortable, SORTID_COVERAGE,
                                     sort_compare_func,
                                     GINT_TO_POINTER(SORTID_COVERAGE), NULL);
+    gtk_tree_sortable_set_sort_func(sortable, SORTID_ORBITDIR,
+                                    sort_compare_func,
+                                    GINT_TO_POINTER(SORTID_ORBITDIR), NULL);
 
     // intial sort: highest coverage on top
     gtk_tree_sortable_set_sort_column_id(sortable, SORTID_COVERAGE,
@@ -296,16 +316,22 @@ void setup_planner()
     g_object_unref(liststore);
 
     // Kludge during testing...
-    g_polys[0].n = 1;
-    g_polys[0].line[0] = 1850;
-    g_polys[0].samp[0] = 3650;
-    g_polys[0].c = 0;
+    //g_polys[0].n = 1;
+    //g_polys[0].line[0] = 1850;
+    //g_polys[0].samp[0] = 3650;
+    //g_polys[0].c = 0;
     crosshair_line = 1650;
     crosshair_samp = 3450;
     zoom = 1;
-    center_line = (crosshair_line + g_polys[0].line[0])/2;
-    center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
+    //center_line = (crosshair_line + g_polys[0].line[0])/2;
+    //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
+    center_line = crosshair_line;
+    center_samp = crosshair_samp;
     set_combo_box_item_checked("satellite_combobox", 1);
+    put_string_to_entry("lat_min_entry", "62");
+    put_string_to_entry("lat_max_entry", "64");
+    put_string_to_entry("lon_min_entry", "-125");
+    put_string_to_entry("lon_max_entry", "-120");
     // ... all this should be deleted
 
 }
@@ -444,6 +470,41 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     else {
       double x[MAX_POLY_LEN], y[MAX_POLY_LEN];
       
+      if (g_poly->n == 0 &&
+          entry_has_text("lat_min_entry") &&
+          entry_has_text("lat_max_entry") &&
+          entry_has_text("lon_min_entry") &&
+          entry_has_text("lon_max_entry"))
+      {
+          // try to get area of interest from the lat/lon entries
+          double lat_min = get_double_from_entry("lat_min_entry");
+          double lat_max = get_double_from_entry("lat_max_entry");
+          double lon_min = get_double_from_entry("lon_min_entry");
+          double lon_max = get_double_from_entry("lon_max_entry");
+
+          meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                            &crosshair_line, &crosshair_samp);
+          meta_get_lineSamp(meta, lat_min, lon_max, 0,
+                            &g_polys[0].line[0], &g_polys[0].samp[0]);
+          meta_get_lineSamp(meta, lat_max, lon_max, 0,
+                            &g_polys[0].line[1], &g_polys[0].samp[1]);
+          meta_get_lineSamp(meta, lat_max, lon_min, 0,
+                            &g_polys[0].line[2], &g_polys[0].samp[2]);
+          meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                            &g_polys[0].line[3], &g_polys[0].samp[3]);
+
+          center_line = 0.25 * (crosshair_line + g_polys[0].line[0] +
+                                g_polys[0].line[1] + g_polys[0].line[2]);
+          center_samp = 0.25 * (crosshair_samp + g_polys[0].samp[0] +
+                                g_polys[0].samp[1] + g_polys[0].samp[2]);
+
+          g_polys[0].n = 4;
+          g_polys[0].c = 3;
+
+          fill_small(curr);
+          fill_big(curr);
+      }
+
       if (g_poly->n == 0) {
         strcat(errstr, "No area of interest selected.\n");
       }
@@ -756,5 +817,36 @@ SIGNAL_CALLBACK void on_clear_button_clicked(GtkWidget *w)
     clear_found();
 
     // repaint
+    fill_big(curr);
+}
+
+SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
+{
+    double lat_min = get_double_from_entry("lat_min_entry");
+    double lat_max = get_double_from_entry("lat_max_entry");
+    double lon_min = get_double_from_entry("lon_min_entry");
+    double lon_max = get_double_from_entry("lon_max_entry");
+
+    meta_parameters *meta = curr->meta;
+    meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                      &crosshair_line, &crosshair_samp);
+    meta_get_lineSamp(meta, lat_min, lon_max, 0,
+                      &g_polys[0].line[0], &g_polys[0].samp[0]);
+    meta_get_lineSamp(meta, lat_max, lon_max, 0,
+                      &g_polys[0].line[1], &g_polys[0].samp[1]);
+    meta_get_lineSamp(meta, lat_max, lon_min, 0,
+                      &g_polys[0].line[2], &g_polys[0].samp[2]);
+    meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                      &g_polys[0].line[3], &g_polys[0].samp[3]);
+
+    g_polys[0].n = 4;
+    g_polys[0].c = 3;
+
+    center_line = 0.25 * (crosshair_line + g_polys[0].line[0] +
+                          g_polys[0].line[1] + g_polys[0].line[2]);
+    center_samp = 0.25 * (crosshair_samp + g_polys[0].samp[0] +
+                          g_polys[0].samp[1] + g_polys[0].samp[2]);
+
+    fill_small(curr);
     fill_big(curr);
 }

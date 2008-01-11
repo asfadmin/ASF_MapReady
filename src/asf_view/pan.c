@@ -14,6 +14,7 @@
 // have to use static vars... actually, we probably should be using
 // the "user_data" stuff that is always being passed around
 static int panning = FALSE;
+static int planner_panning = FALSE;
 static int dragging = FALSE;
 static int start_x=0, start_y=0;
 static GdkPixbuf *pb=NULL;
@@ -45,16 +46,45 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
   if (panning) {
     panning = FALSE;
 
-    center_line -= zoom*(y-start_y);
-    center_samp -= zoom*(x-start_x);
-    gdk_pixbuf_unref(pb);
+    if (planner_panning) {
+      planner_panning = FALSE;
+
+      double l1, l2, s1, s2;
+      img2ls(start_x,start_y,&l1,&s1);
+      img2ls(x,y,&l2,&s2);
+
+      crosshair_line = l1;
+      crosshair_samp = s1;
+
+      g_polys[0].line[0] = l1;
+      g_polys[0].samp[0] = s2;
+
+      g_polys[0].line[1] = l2;
+      g_polys[0].samp[1] = s2;
+
+      g_polys[0].line[2] = l2;
+      g_polys[0].samp[2] = s1;
+
+      g_polys[0].line[3] = l1;
+      g_polys[0].samp[3] = s1;
+
+      g_polys[0].n = 4;
+      g_polys[0].c = 3;
+
+      update_pixel_info(curr);
+    }
+    else {
+      center_line -= zoom*(y-start_y);
+      center_samp -= zoom*(x-start_x);
 
 #ifdef win32
-    //SetCursor(LoadCursor(NULL,IDC_HAND));
+      //SetCursor(LoadCursor(NULL,IDC_HAND));
 #else
-    gdk_window_set_cursor(GDK_WINDOW(win->window), NULL);
+      gdk_window_set_cursor(GDK_WINDOW(win->window), NULL);
 #endif
+    }
 
+    gdk_pixbuf_unref(pb);
     fill_small(curr);
     fill_big(curr);
 
@@ -133,21 +163,21 @@ static void put_box(GdkPixbuf *pixbuf, int x1, int x2, int y1, int y2)
     if (y2 >= height) y2 = height;
 
     for (i=x1; i<=x2; ++i) {
-        p = pixels + y1 * rowstride + i * n_channels;
-        p[0] = 255;
-        p[1] = p[2] = 0;
-        p = pixels + y2 * rowstride + i * n_channels;
-        p[0] = 255;
-        p[1] = p[2] = 0;
+        p = pixels + y1*rowstride + i*n_channels;
+        p[0]=255;
+        p[1]=p[2]=0;
+        p = pixels + y2*rowstride + i*n_channels;
+        p[0]=255;
+        p[1]=p[2]=0;
     }
 
     for (i=y1+1; i<y2; ++i) {
-        p = pixels + i * rowstride + x1 * n_channels;
-        p[0] = 255;
-        p[1] = p[2] = 0;
-        p = pixels + i * rowstride + x2 * n_channels;
-        p[0] = 255;
-        p[1] = p[2] = 0;
+        p = pixels + i*rowstride + x1*n_channels;
+        p[0]=255;
+        p[1]=p[2]=0;
+        p = pixels + i*rowstride + x2*n_channels;
+        p[0]=255;
+        p[1]=p[2]=0;
     }
 }
 
@@ -173,9 +203,11 @@ on_motion_notify_event(
     x = (int) event->x;
     y = (int) event->y;
 
+    // in planning mode, we replace panning with dragging, to create
+    // a rectangle in the main window.  User pans with ctrl-click&drag
     if (!dragging && (event->x_root > 256 || panning)) {
-      // This is motion in the MAIN window
-      // i.e. -- a panning operation
+        // This is motion in the MAIN window
+        // i.e. -- a panning operation
 
       if (!panning) {
         // user just started panning
@@ -183,6 +215,9 @@ on_motion_notify_event(
         start_y = y;
         panning = TRUE;
         
+        if (planner_is_active() && !(state & GDK_CONTROL_MASK))
+          planner_panning = TRUE;
+
         if (!win)
           win = get_widget_checked("ssv_main_window");
         
@@ -191,74 +226,91 @@ on_motion_notify_event(
         
         pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
         
+        if (!planner_panning) {
 #ifdef win32
-        SetCursor(LoadCursor(NULL,IDC_HAND));
+          SetCursor(LoadCursor(NULL,IDC_HAND));
 #else
-        if (!pan_cursor)
-          pan_cursor = gdk_cursor_new(GDK_FLEUR);
+          if (!pan_cursor)
+            pan_cursor = gdk_cursor_new(GDK_FLEUR);
         
-        gdk_window_set_cursor(GDK_WINDOW(win->window), pan_cursor);
+          gdk_window_set_cursor(GDK_WINDOW(win->window), pan_cursor);
 #endif
+        }
       }
       
       assert(pb);
       int ii;
       int off_x = x-start_x;
       int off_y = y-start_y;
-      
-      //printf ("Button 1 motion  (%d, %d)\n", off_x, off_y);
-      
-      // put the panned image in a new pixbuf
+
+      // put the modified image in a new pixbuf
       int nchan = 3;
       int biw = get_big_image_width();
       int bih = get_big_image_height();
       unsigned char *bdata = CALLOC(sizeof(unsigned char), biw*bih*nchan);
-      
+
       // we refer to "pb" here -- the pixbuf that was being shown before
       // panning -- instead of panning event-to-event (i.e., using "pb2")
       int rowstride = gdk_pixbuf_get_rowstride(pb);
       unsigned char *pixels = gdk_pixbuf_get_pixels(pb);
-      
-      // copy pixels over
-      // handle left&right completely off first
-      // vertically off will be ok, loop will have 0 iterations
-      if (off_x > biw || off_x < -biw) {
-        // image is all black! no action needed
-        ;
-      }
-      // switched to using these loops with memcpy()s, is much faster
-      else if (off_x >= 0 && off_y >= 0) {
-        for (ii=off_y; ii<bih; ++ii)
-          memcpy(bdata + ii*rowstride + off_x*3,
-                 pixels + (ii-off_y)*rowstride,
-                 (biw-off_x)*3);
-      } else if (off_x < 0 && off_y >= 0) {
-        for (ii=off_y; ii<bih; ++ii)
-          memcpy(bdata + ii*rowstride,
-                 pixels + (ii-off_y)*rowstride - off_x*3,
-                 (biw+off_x)*3);
-      } else if (off_x >= 0 && off_y < 0) {
-        for (ii=0; ii<bih+off_y; ++ii)
-          memcpy(bdata + ii*rowstride + off_x*3,
-                 pixels + (ii-off_y)*rowstride,
-                 (biw-off_x)*3);
-      } else if (off_x < 0 && off_y < 0) {
-        for (ii=0; ii<bih+off_y; ++ii)
-          memcpy(bdata + ii*rowstride,
-                 pixels + (ii-off_y)*rowstride - off_x*3,
-                 (biw+off_x)*3);
-      } else {
-        // The above cases should handle everything ...
-        assert(0);
-      }
 
       if (pb2)
         gdk_pixbuf_unref(pb2);
-      
-      pb2 = 
-        gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE,
-                                 8, biw, bih, biw*3, destroy_pb_data, NULL);
-      
+
+      if (planner_panning) {
+        memcpy(bdata, pixels, biw*bih*3);
+        pb2 = 
+          gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE,
+                                   8, biw, bih, biw*3, destroy_pb_data, NULL);
+
+        int minx = MIN(start_x, x);
+        int maxx = MAX(start_x, x);
+        int miny = MIN(start_y, y);
+        int maxy = MAX(start_y, y);
+
+        put_box(pb2, minx, maxx, miny, maxy);
+      }
+      else {
+        //printf ("Button 1 motion  (%d, %d)\n", off_x, off_y);
+                
+        // copy pixels over
+        // handle left&right completely off first
+        // vertically off will be ok, loop will have 0 iterations
+        if (off_x > biw || off_x < -biw) {
+          // image is all black! no action needed
+          ;
+        }
+        // switched to using these loops with memcpy()s, is much faster
+        else if (off_x >= 0 && off_y >= 0) {
+          for (ii=off_y; ii<bih; ++ii)
+            memcpy(bdata + ii*rowstride + off_x*3,
+                   pixels + (ii-off_y)*rowstride,
+                   (biw-off_x)*3);
+        } else if (off_x < 0 && off_y >= 0) {
+          for (ii=off_y; ii<bih; ++ii)
+            memcpy(bdata + ii*rowstride,
+                   pixels + (ii-off_y)*rowstride - off_x*3,
+                   (biw+off_x)*3);
+        } else if (off_x >= 0 && off_y < 0) {
+          for (ii=0; ii<bih+off_y; ++ii)
+            memcpy(bdata + ii*rowstride + off_x*3,
+                   pixels + (ii-off_y)*rowstride,
+                   (biw-off_x)*3);
+        } else if (off_x < 0 && off_y < 0) {
+          for (ii=0; ii<bih+off_y; ++ii)
+            memcpy(bdata + ii*rowstride,
+                   pixels + (ii-off_y)*rowstride - off_x*3,
+                   (biw+off_x)*3);
+        } else {
+          // The above cases should handle everything ...
+          assert(0);
+        }
+
+        pb2 = 
+          gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE,
+                                   8, biw, bih, biw*3, destroy_pb_data, NULL);
+      }
+                
       gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb2);
       return FALSE;
     }
