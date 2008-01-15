@@ -466,6 +466,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           meta->transform || meta->airsar))
     {
       strcat(errstr, "Image has no geolocation information.\n");
+      zone = max_lat = min_lat = 0;
+      aoi = NULL;
     }
     else {
       double x[MAX_POLY_LEN], y[MAX_POLY_LEN];
@@ -507,6 +509,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
       if (g_poly->n == 0) {
         strcat(errstr, "No area of interest selected.\n");
+        zone = max_lat = min_lat = 0;
+        aoi = NULL;
       }
       else if (g_poly->n == 1) {
         // special handling if we have only two points (create a box)
