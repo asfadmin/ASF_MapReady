@@ -152,8 +152,8 @@ default: clean doc $(OBJS)
 	mv $(TARGET) $(BINDIR)/$(DEST_TARGET)
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
-	mv $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
-	mv how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
+	-mv $(TARGET).txt $(SHAREDIR)/$(DEST_TARGET).txt
+	-mv how_to_install.html $(SHAREDIR)/how_to_install_$(DEST_TARGET).html
 
 %.c: %.h
 
