@@ -41,7 +41,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
-#	cp $(TARGET).ico $(BINDIR)
+	cp $(TARGET)_icon.ico $(BINDIR)
 
 clean:
 	rm $(TARGET).exe core.*
@@ -66,7 +66,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
-#	cp $(TARGET).ico $(BINDIR)
+	cp $(TARGET)_icon.ico $(BINDIR)
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)*

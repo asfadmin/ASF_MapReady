@@ -85,6 +85,7 @@ BUGS: None known
 #include "asf_raster.h"
 #include "stats.h"
 #include "asf_license.h"
+#include "asf_nan.h"
 
 #define VERSION 1.3
 
