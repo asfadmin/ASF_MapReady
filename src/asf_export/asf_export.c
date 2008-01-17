@@ -137,7 +137,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "\n"
 
 #define ASF_LIMITATIONS_STRING \
-"   Currently supports ingest of ASF format floating point and byte data (only.).\n"\
+"   Currently supports ingest of ASF format floating point and byte data (only).\n"\
 "\n"\
 "   Floating-point image formats (i.e., geotiff) are not supported in many\n"\
 "   image viewing programs.\n"
