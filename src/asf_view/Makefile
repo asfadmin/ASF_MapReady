@@ -1,6 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = asf_view
+PLANNER_TARGET = asf_planner
 SRCS = asf_view.c \
 	utility.c \
 	font.c \
@@ -105,7 +106,9 @@ $(TARGET).exe: $(TARGET).c
 	  chmod +x $(GTK_DIR)/bin/*.dll; \
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
+	cp $(TARGET).exe $(PLANNER_TARGET).exe
 	mv $(TARGET).exe $(BINDIR)
+	mv $(PLANNER_TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
 	cp asf_view_icon.ico $(SHAREDIR)
@@ -157,7 +160,9 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
+	cp $(TARGET) $(PLANNER_TARGET)
 	mv $(TARGET) $(BINDIR)
+	mv $(PLANNER_TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
 	cp asf_view_icon.ico $(SHAREDIR)
