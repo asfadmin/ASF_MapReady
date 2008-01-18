@@ -14,6 +14,7 @@ const char ceos_metadata_extensions[][12] =
 {
 	"",
 	"LEA_ TRA_",
+	"lea_ tra_",
 	".sarl .sart",
 	".L",
 	".LDR",
@@ -28,6 +29,7 @@ const char ceos_data_extensions[][12] =
 {
 	"",
 	"DAT_",
+	"dat_",
 	".sard",
 	".D",
 	".RAW",
@@ -57,7 +59,7 @@ static ceos_metadata_ext_t free_and_return(char *leaderExt,
  * ENUM ceos_metadata_ext_t value.  */
 ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
                                            char ***pMetaName,
-                                           int *trailer)
+                                           int *trailerFlag)
 {
   char dirName[256], fileName[256], leaderTemp[1024], trailerTemp[1024];
   char baseName[256], ext[256], *leaderExt, *trailerExt, **metaName;
@@ -77,24 +79,29 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
   split_dir_and_file(ceosName, dirName, fileName);
 
   for (ii=begin; ii<end; ii++) {
-    *trailer = 0;
-    trailerExt = strchr(ceos_metadata_extensions[ii], ' ');
-    if (trailerExt) {
-      index = trailerExt - ceos_metadata_extensions[ii];
+
+    char *trailerPtr = strchr(ceos_metadata_extensions[ii], ' ');
+
+    if (trailerPtr) {
+      index = trailerPtr - ceos_metadata_extensions[ii];
       strncpy(leaderExt, ceos_metadata_extensions[ii], index);
-      leaderExt[index] = 0;
-      trailerExt++;
-      *trailer = 1;
+      leaderExt[index] = '\0';
+      trailerPtr++;
+      strcpy(trailerExt, trailerPtr);
+      *trailerFlag = 1;
     }
-    else
+    else {
       strcpy(leaderExt, ceos_metadata_extensions[ii]);
+      strcpy(trailerExt, "");
+      *trailerFlag = 0;
+    }
 
     int strEnd = strlen(leaderExt) - 1;
 
-    /* First check for suffix style extensions */
+    /* First, check for suffix style extensions */
     if (leaderExt[0] == EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, fileName, leaderExt);
         sprintf(trailerTemp, "%s%s%s", dirName, fileName, trailerExt);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -117,7 +124,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
       split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, baseName, leaderExt);
         sprintf(trailerTemp, "%s%s%s", dirName, baseName, trailerExt);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -138,10 +145,11 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    /* Second look for prefix style extensions '.' */
+    
+    /* Second, look for prefix style extensions '.' */
     else if (leaderExt[strEnd] == EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -164,7 +172,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '.', baseName, ext);
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -185,10 +193,11 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    /* Third look for prefix style extensions '-' */
+    
+    /* Third, look for ALOS prefix style extensions '-' */
     else if (leaderExt[strEnd] == ALOS_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -216,7 +225,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         strcpy(tmp, baseName);
         split_base_and_ext(tmp, PREPENDED_EXTENSION, '-', baseName, ext);
       }
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -237,10 +246,11 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    /* Fourth look for prefix style extensions '_' */
+    
+    /* Fourth, look for Canadian prefix style extensions '_' */
     else if (leaderExt[strEnd] == CAN_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
-      if (trailerExt) {
+      if (trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, fileName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, fileName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -263,7 +273,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
       /* Hmmm, didn't work, maybe it's got an extension on there already,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '_', baseName, ext);
-      if (trailerExt) {
+      if (*trailerFlag) {
         sprintf(leaderTemp, "%s%s%s", dirName, leaderExt, baseName);
         sprintf(trailerTemp, "%s%s%s", dirName, trailerExt, baseName);
         if ((leaderFP = fopen(leaderTemp, "r"))!=NULL &&
@@ -294,10 +304,10 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
  * If get_ceos_metadata_name fails to find a file, then exit the program.
  * Otherwise act like get_ceos_metadata_name  */
 ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char ***metaName,
-            int *trailer)
+            int *trailerFlag)
 {
   ceos_metadata_ext_t ret =
-    get_ceos_metadata_name(ceosName, metaName, trailer);
+    get_ceos_metadata_name(ceosName, metaName, trailerFlag);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_CEOS_METADATA) {
@@ -601,12 +611,12 @@ ceos_data_ext_t require_ceos_data(const char *ceosName,char ***dataName,
  * and return the appropriate ENUM ceos_file_pairs_t value.*/
 ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
          char ***dataName, char ***metaName,
-         int *nBands, int *trailer)
+         int *nBands, int *trailerFlag)
 {
   ceos_metadata_ext_t metadata_ext;
   ceos_data_ext_t     data_ext;
 
-  metadata_ext = get_ceos_metadata_name(ceosName, metaName, trailer);
+  metadata_ext = get_ceos_metadata_name(ceosName, metaName, trailerFlag);
   data_ext = get_ceos_data_name(ceosName, baseName, dataName, nBands);
 
   if ((data_ext == CEOS_DAT || data_ext == CEOS_DAT_) && metadata_ext == CEOS_LEA_TRA)
@@ -647,7 +657,7 @@ ceos_file_pairs_t get_ceos_names(const char *ceosName, char *baseName,
  * Do as get_ceos_names would unless there is no pair in which case exit the
  * program with a failure.  */
 ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName,
-            char ***metaName, int *nBands, int *trailer)
+            char ***metaName, int *nBands, int *trailerFlag)
 {
   char extensionList[128], baseName[512];
   int andFlag=TRUE;
@@ -655,7 +665,7 @@ ceos_file_pairs_t require_ceos_pair(const char *ceosName, char ***dataName,
   int ii;
   ceos_file_pairs_t pair;
 
-  pair = get_ceos_names(ceosName, baseName, dataName, metaName, nBands, trailer);
+  pair = get_ceos_names(ceosName, baseName, dataName, metaName, nBands, trailerFlag);
 
   if (pair != NO_CEOS_FILE_PAIR)
     return pair;
