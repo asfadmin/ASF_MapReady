@@ -113,11 +113,12 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       make
       ./makemake
 
- 15. ** KLUDGE #3 **
-     Remove tcl/Tk gzips from the archive:
-
-      cd ~/asf/svn-r6472/asf_tools/external/work_dir/tcl_tk
-      rm *.gz
+ // tcl_tk has been deprecated...
+ //15. ** KLUDGE #3 **
+ //    Remove tcl/Tk gzips from the archive:
+ //
+ //     cd ~/asf/svn-r6472/asf_tools/external/work_dir/tcl_tk
+ //     rm *.gz
 
  16. ** KLUDGE #4 **
     Add missing tools to the source.convert file:

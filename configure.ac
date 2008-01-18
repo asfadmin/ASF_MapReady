@@ -24,7 +24,6 @@ have_proj="no"
 have_jpeg="no"
 have_tiff="no"
 have_geotiff="no"
-have_tcl_tk="no"
 have_shp="no"
 try_gtk="yes"
 have_gtk="no"
@@ -214,17 +213,6 @@ else
 fi
 AC_SUBST(ASF_LIB_FFTW)
 
-#### TCL/TK check ####
-AC_CHECK_LIB(tcl8.1,main)
-AC_CHECK_LIB(tk8.1,main,have_tcl_tk="yes",have_tcl_tk="no")
-if test "$have_tcl_tk" = "no" ; then
-   ASF_LIB_TCL_TK="${ext_lib_src_dir}/tcl_tk"
-   TCL_TK_LIBS="\$(LIBDIR)/libtcl8.1.a \$(LIBDIR)/libtk8.1.a"
-else
-   TCL_TK_LIBS="-ltcl8.1 -ltk8.1"
-fi
-AC_SUBST(ASF_LIB_TCL_TK)
-
 #### gtk 2.4 check ####
 if test "$try_gtk" = "yes" ; then
     PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.4.0,
@@ -348,9 +336,6 @@ GEOTIFF_CFLAGS = $GEOTIFF_CFLAGS
 
 SHAPELIB_LIBS = $SHAPELIB_LIBS
 SHAPELIB_CFLAGS = $SHAPELIB_CFLAGS
-
-TCL_TK_LIBS = $TCL_TK_LIBS
-TCL_TK_CFLAGS = $TCL_TK_CFLAGS
 
 EOF
 
