@@ -342,11 +342,12 @@ SAR Training Processor (STP) Release Build Instructions:
  11. Create the source.stp file:
       cd asf_tools/make_support; make; ./makemake; cd -
 
- 12. ** KLUDGE #2 **
-
-    Remove tcl/Tk gzips from the archive
-
-      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+// tcl/tk is deprecated
+// 12. ** KLUDGE #2 **
+//
+//    Remove tcl/Tk gzips from the archive
+//
+//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
 
  13. ** KLUDGE #3 **
 
@@ -453,9 +454,10 @@ Old instructions follow:
  8. Create the source.convert file:
       cd asf_tools/make_support; make; ./makemake; cd -
 
-8A. ** KLUDGE #2 **
-    Remove tcl/Tk gzips from the archive
-      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+// tcl/tk is deprecated
+//  8A. ** KLUDGE #2 **
+//    Remove tcl/Tk gzips from the archive
+//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
 
  9. ** KLUDGE #3 **
       cd release/autotar
@@ -677,9 +679,10 @@ MODULES = \
  8. Create the source.stp file:
       cd asf_tools/make_support; make; ./makemake; cd -
 
-8A. ** KLUDGE #2 **
-    Remove tcl/Tk gzips from the archive
-      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+// tcl/tk has been deprecated
+// 8A. ** KLUDGE #2 **
+//    Remove tcl/Tk gzips from the archive
+//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
 
  9. ** KLUDGE #3 **
       cd release/autotar
