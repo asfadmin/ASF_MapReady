@@ -75,6 +75,8 @@ typedef struct {
     SSG,
     SPG,
     SCN,
+    SCW,
+    GEC,
     LEVEL_1A,
     LEVEL_1B1,
     LEVEL_1B2R,
@@ -92,6 +94,7 @@ typedef struct {
 typedef enum {
   NO_CEOS_METADATA=0,
   CEOS_LEA_TRA,
+  CEOS_lea_tra,
   CEOS_sarl_sart,
   CEOS_L,
   CEOS_LDR,
@@ -117,6 +120,7 @@ typedef enum {
   CEOS_dat,
   CEOS_dat_,
   CEOS_IMG,
+  CEOS_IMG_,
   NUM_CEOS_DATA_EXTS
 } ceos_data_ext_t;
 extern const char ceos_data_extensions[][12];
@@ -125,6 +129,7 @@ extern const char ceos_data_extensions[][12];
 typedef enum {
    NO_CEOS_FILE_PAIR=0, /* Maybe an individual match, but not a pair */
    CEOS_DAT_LEA_TRA_TRIPLE,
+   CEOS_dat_lea_tra_TRIPLE,
    CEOS_sard_sarl_sart_TRIPLE,
    CEOS_D_L_PAIR,
    CEOS_RAW_LDR_PAIR,
