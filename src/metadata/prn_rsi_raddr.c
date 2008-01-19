@@ -18,7 +18,7 @@ char *sprn_rsi_raddr(struct RSI_VRADDR *dr)
  char *ret = MALLOC(sizeof(char)*1);
  strcpy(ret, "");
 
- add(&ret, "\n********** begin of Radiometric Data record (RSI/CDPF) *****************\n\n");
+ add(&ret, "\n********** begin of Radiometric Data record (RSI/CDPF/CSTARS) **********\n\n");
  add(&ret, "Radiometric Data Record Sequence Number : %i\n", dr->seq_num);
  add(&ret, "Number of radiometric data sets         : %i\n", dr->n_data);
  add(&ret, "Radiometric data set size in bytes      : %i\n", dr->field_size);

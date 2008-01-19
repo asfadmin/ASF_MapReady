@@ -253,7 +253,8 @@ char *get_record_as_string(char *fileName, int reqrec)
             FREE(ardr);
         } 
 	else if (strncmp(facility, "CDPF", 4) == 0 ||
-		 strncmp(facility, "RSI", 3) == 0) {
+		 strncmp(facility, "RSI", 3) == 0 ||
+		 strncmp(facility, "CSTARS", 6) == 0) {
           strcpy(rectype_str, "RSI radiometric data");
 	  rsi_raddr = (struct RSI_VRADDR  *) MALLOC(sizeof(struct RSI_VRADDR));
 	  if (leaderNameExists) {
