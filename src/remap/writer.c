@@ -7,6 +7,7 @@ output image.
 #include "Matrix2D.h"
 #include "las.h"
 #include "remap.h"
+#include "asf_endian.h"
 
 
 /*Write a line of pixels*/
@@ -28,12 +29,18 @@ void writePixelLine(FILE *out, struct DDR *outDDR,int y,int bandNo, float *thisL
 		switch(outDDR->dtype)
 		{
 		case DTYPE_COMPLEXREAL: /*Real-Complex*/
-			for (x=0;x<maxOutX;x++)
-				*(float *)(outBuf+(x*8))=thisLine[x];
+			for (x=0;x<maxOutX;x++) {
+				float f=thisLine[x];
+				ieee_big32(f); /* new all-big-endian files... */
+				*(float *)(outBuf+(x*8))=f;
+			}
 			break;
 		case DTYPE_COMPLEXIMAG: /*Imag-Complex*/
-			for (x=0;x<maxOutX;x++)
-				*(float *)(outBuf+(x*8)+4)=thisLine[x];
+			for (x=0;x<maxOutX;x++) {
+				float f=thisLine[x];
+				ieee_big32(f);
+				*(float *)(outBuf+(x*8)+4)=f;
+			}
 			break;
 		}
 		FSEEK64(out,(long long) maxOutX*outPixelSize*y,0);

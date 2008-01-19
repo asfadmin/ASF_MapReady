@@ -288,6 +288,9 @@ int main(int argc, char *argv[])
   /*Now we read in the input DDR.*/
 	meta = meta_read(infile);
 	meta2ddr(meta,&inDDR); /* keep the current DDR implementation happy - should be gone in a while */
+	if (inDDR.dtype==DTYPE_COMPLEX) {
+		inputIsComplex=1;
+	}
   
   /*We now calculate the correct values for the output DDR.*/
   	if (asDDR!=NULL)

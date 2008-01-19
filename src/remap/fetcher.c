@@ -33,6 +33,7 @@ or just under 7 minutes, a 100x speed increase.
 */
 
 #include "asf.h"
+#include "asf_endian.h"
 #include "Matrix2D.h"
 #include "las.h"
 #include "remap.h"
@@ -110,11 +111,17 @@ void read_line(fetchRec *g,int y,float *destBuf,int destLen)
 		FREAD(inputBuffer,1,bytesPerLine,g->inFile);
 		
 		if (g->getRealCpx) /*Fetch Real fields from complex data.*/
-			for (x=0;x<maxInX;x++)
-				destBuf[x]=inputBuffer[x*2];
+			for (x=0;x<maxInX;x++) {
+				float f=inputBuffer[x*2];
+				ieee_big32(f);
+				destBuf[x]=f;
+			}
 		else /*Fetch Imaginary Fields from complex data.*/
-			for (x=0;x<maxInX;x++)
-				destBuf[x]=inputBuffer[x*2+1];
+			for (x=0;x<maxInX;x++) {
+				float f=inputBuffer[x*2+1];
+				ieee_big32(f);
+				destBuf[x]=f;
+			}
 		FREE(inputBuffer);
 	}
 	else /*Non-complex data is much easier to handle*/
