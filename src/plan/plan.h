@@ -66,4 +66,8 @@ int is_valid_date(long date);
 void pass_collection_free(PassCollection *pc);
 void pass_collection_to_kml(PassCollection *pc, const char *kml_file);
 
+int prop(const char *satellite, const char *beam_mode,
+         const char *tle_filename, long startdate, long enddate,
+         double **out_lat, double **out_lon, int *num);
+
 #endif

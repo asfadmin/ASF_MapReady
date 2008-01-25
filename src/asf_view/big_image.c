@@ -352,6 +352,7 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
                      double line1, double samp1, int color,
                      ImageInfo *ii)
 {
+  if (fabs(samp0-samp1)>20000) return;
   //if (samp0 < 0 || line0 < 0 || samp1 < 0 || line1 < 0 ||
   //      samp0 >= ii->ns || samp1 >= ii->ns ||
   //      line0 >= ii->nl || line1 >= ii->nl) return;
@@ -470,7 +471,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
 
     // draw old polygons
     for (k=0; k<MAX_POLYS; ++k) {
-      if (g_polys[k].n > 0 && row_is_checked(k)) {
+      if (g_polys[k].n > 0/* && row_is_checked(k)*/) {
         for (i=0; i<g_polys[k].n-1; ++i) {
             put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
                 g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);

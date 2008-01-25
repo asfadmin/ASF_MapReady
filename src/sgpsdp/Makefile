@@ -5,7 +5,7 @@ include ../../make_support/system_rules
 CFLAGS := -Wall $(CFLAGS)
 TARGET = sgpsdp
 LIBNAME = libasf_$(TARGET).a
-OBJS = math.o $(TARGET).o
+OBJS = math.o obs.o in.o time.o solar.o $(TARGET).o
 LIBS  = $(LIBDIR)/asf.a -lm
 CFLAGS += -D_XOPEN_SOURCE=600
 

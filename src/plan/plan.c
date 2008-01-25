@@ -9,8 +9,10 @@
 #include "beam_mode_table.h"
 
 #include "asf_vector.h"
+#include "sgpsdp.h"
 
 #include <stdlib.h>
+#include <assert.h>
 
 static int iabs(int a)
 {
@@ -56,8 +58,10 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
   double D = er*er - ht*ht*sin(look)*sin(look);
   if (D < 0) 
     return 0; // can't see the Earth from here
-  double sr1 = -ht*cos(look) + sqrt(D);
-  double sr2 = -ht*cos(look) - sqrt(D);
+  //double sr1 = -ht*cos(look) + sqrt(D);
+  //double sr2 = -ht*cos(look) - sqrt(D);
+  double sr1 = ht*cos(look) + sqrt(D);
+  double sr2 = ht*cos(look) - sqrt(D);
   double sr = sr1>sr2 ? sr2 : sr1;
 
   // target position, first in inertial coords, then convert to lat/lon
@@ -201,7 +205,7 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
                Polygon *aoi, char dir)
 {
     double t1 = start_time;
-    PassInfo *pi = pass_info_new();
+    PassInfo *pass_info = pass_info_new();
     double delta = bmi->image_time;
     int is_overlap;
     int first = TRUE;
@@ -240,7 +244,7 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
             continue;
         } else {
           // normal case, just add this as the first entry
-          pass_info_add(pi, t, dir, oi);
+          pass_info_add(pass_info, t, dir, oi);
         }
       }
 
@@ -259,16 +263,16 @@ check_crossing(PassCollection *pc, double start_time, double end_time,
     //if (n_backups > 0)
     //  printf("Had to back up %d times.\n", n_backups);
 
-    int found = pi->num > 0;
+    int found = pass_info->num > 0;
     if (found)
-      pass_collection_add(pc, pi);
+      pass_collection_add(pc, pass_info);
 
     return found;
 }
 
 static void
-find_crossings(BeamModeInfo *bmi, double start_secs,
-               stateVector *start_stVec, double start_lat,
+find_crossings(BeamModeInfo *bmi, sat_t *sat, 
+               double start_secs, double start_lat,
                double min_lat, double max_lat,
                double *time1_in, double *time1_out,
                double *time2_in, double *time2_out,
@@ -286,7 +290,7 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
   double delta = normal_delta;
 
   double curr = start_secs;
-  stateVector st = *start_stVec;
+  stateVector st = tle_propagate(sat, start_secs);
 
   double lat_prev = -999;
   int iter=0;
@@ -297,6 +301,8 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
     double lat, lon, llat, llon;
     get_target_latlon(&st, 0, &lat, &lon);
     get_target_latlon(&st, bmi->look_angle, &llat, &llon);
+    if (delta==normal_delta)
+      printf("lat: %f %f, lon: %f %f\n", lat, sat->ssplat, lon, sat->ssplon);
 
     // looking for two crossings:
     //  1) crossing the target latitude (moving into from top or bottom)
@@ -322,7 +328,7 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
             delta = end_delta;
             lat=lat_prev;
             lat_prev=-999;
-            st = propagate(*start_stVec, start_secs, curr);
+            st = tle_propagate(sat, curr);
           }
         }
       }
@@ -384,14 +390,34 @@ find_crossings(BeamModeInfo *bmi, double start_secs,
     }
 
     lat_prev = lat;
-
-    // The first of these is much slower, theoretically more accurate
-    // but from my experimentation not *that* much more accurate...
-    //st = propagate(*start_stVec, start_secs, curr+delta);
-    st = propagate(st, curr, curr+delta);
     curr += delta;
+
+    st = tle_propagate(sat, curr);
   }
 }
+
+static double seconds_from_stVec(meta_parameters *meta, int vecnum)
+{
+  julian_date jd;
+  jd.year = meta->state_vectors->year;
+  jd.jd = meta->state_vectors->julDay;
+
+  hms_time hms;
+  date_sec2hms(meta->state_vectors->second, &hms);
+  return date2sec(&jd, &hms) + meta->state_vectors->vecs[vecnum].time;
+}
+
+//static void
+//read_stVec_from_meta(const char *filename, stateVector *st, double *t)
+//{
+//  meta_parameters *meta = meta_read(filename);
+//
+//  *st = meta->state_vectors->vecs[0].vec;
+//  *t = seconds_from_stVec(meta, 0);
+//
+//  meta_free(meta);
+//}
+
 
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
@@ -408,12 +434,14 @@ int plan(const char *satellite, const char *beam_mode,
   double start_secs = seconds_from_l(startdate);
   double end_secs = seconds_from_l(enddate);
 
-  stateVector tle_stVec;
-  double tle_secs;
+  sat_t sat;
+  read_tle(tle_filename, satellite, &sat);
+  select_ephemeris(&sat);
 
-  read_tle(tle_filename, satellite, &tle_stVec, &tle_secs);
+  // no deep space orbits can be planned
+  assert(sat.flags & DEEP_SPACE_EPHEM_FLAG);
 
-  stateVector start_stVec = propagate(tle_stVec, tle_secs, start_secs);
+  stateVector start_stVec = tle_propagate(&sat, start_secs);
 
   printf("Target:\n"
          "  UTM:  zone=%d\n"
@@ -436,7 +464,7 @@ int plan(const char *satellite, const char *beam_mode,
 
   // Look for the times when we cross the latitude range of the area of
   // interest.  Also, figure out the time required for a full revolution.
-  find_crossings(bmi, start_secs, &start_stVec, start_lat, min_lat, max_lat,
+  find_crossings(bmi, &sat, start_secs, start_lat, min_lat, max_lat,
                  &time1_in, &time1_out, &time2_in, &time2_out,
                  &full_cycle_time, &first_is_ascending);
 
@@ -502,7 +530,7 @@ int plan(const char *satellite, const char *beam_mode,
 
     if (check_first_crossing) {
       double t = curr + time1_in;
-      stateVector st1 = propagate(st, curr, t);
+      stateVector st1 = tle_propagate(&sat, t);
 
       num_found +=
         check_crossing(pc, time1_in, time1_out, t, &st1, bmi,
@@ -511,14 +539,14 @@ int plan(const char *satellite, const char *beam_mode,
 
     if (check_second_crossing) {
       double t = curr + time2_in;
-      stateVector st2 = propagate(st, curr, t);
+      stateVector st2 = tle_propagate(&sat, t);
 
       num_found +=
         check_crossing(pc, time2_in, time2_out, t, &st2, bmi,
                        zone, clat, clon, aoi, dir2);
     }
 
-    st = propagate(st, curr, curr + full_cycle_time);
+    st = tle_propagate(&sat, curr + full_cycle_time);
     curr += full_cycle_time;
 
     asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
@@ -527,4 +555,206 @@ int plan(const char *satellite, const char *beam_mode,
 
   *pc_out = pc;
   return num_found;
+}
+
+/*
+static void test(double xpos, double ypos, double zpos,
+                 double xvel, double yvel, double zvel)
+{
+  stateVector st;
+  double lat, lon;
+
+  st.pos.x = xpos;
+  st.pos.y = ypos;
+  st.pos.z = zpos;
+
+  st.vel.x = xvel;
+  st.vel.y = yvel;
+  st.vel.z = zvel;
+
+  get_target_latlon(&st, 0, &lat, &lon);
+  printf("%12.2f %12.2f %12.2f %8.2f %8.2f\n",
+         st.pos.x, st.pos.y, st.pos.z, lat, lon);
+}
+
+static void test_stuff()
+{
+  printf("         X            Y            Z       LAT      LON\n");
+
+  double h = 6664139.068;
+
+  // these don't matter
+  double xv = 100;
+  double yv = 100;
+  double zv = 100;
+
+  // circle in x/y plane with z=0
+  double h2 = sqrt(h*h/2.);
+  test(h, 0, 0, xv, yv, zv);
+  test(h2, h2, 0, xv, yv, zv);
+  test(0, h, 0, xv, yv, zv);
+  test(-h2, h2, 0, xv, yv, zv);
+  test(-h, 0, 0, xv, yv, zv);
+  test(-h2, -h2, 0, xv, yv, zv);
+  test(0, -h, 0, xv, yv, zv);
+  test(h2, -h2, 0, xv, yv, zv);
+  test(h, 0, 0, xv, yv, zv);
+  printf("\n");
+
+  // circle in z/y plane with x=0
+  test(0, h, 0, xv, yv, zv);
+  test(0, h2, h2, xv, yv, zv);
+  test(0, 0, h, xv, yv, zv);
+  test(0, -h2, h2, xv, yv, zv);
+  test(0, -h, 0, xv, yv, zv);
+  test(0, -h2, -h2, xv, yv, zv);
+  test(0, 0, -h, xv, yv, zv);
+  test(0, h2, -h2, xv, yv, zv);
+  test(0, h, 0, xv, yv, zv);
+  printf("\n");
+
+  // circle at z=5000
+  double z = 5000; 
+  double h1 = sqrt(h*h-z*z);      // z^2 + h1^2 = h^2
+  h2 = sqrt((h*h-z*z)/2.); // z^2 + h2^2 + h2^2 = h^2
+  test(h1, 0, z, xv, yv, zv);
+  test(h2, h2, z, xv, yv, zv);
+  test(0, h1, z, xv, yv, zv);
+  test(-h2, h2, z, xv, yv, zv);
+  test(-h1, 0, z, xv, yv, zv);
+  test(-h2, -h2, z, xv, yv, zv);
+  test(0, -h1, z, xv, yv, zv);
+  test(h2, -h2, z, xv, yv, zv);
+  test(h1, 0, z, xv, yv, zv);
+  printf("\n");
+
+  // circle at z=h-5000
+  z = h-5000; 
+  h1 = sqrt(h*h-z*z);      // z^2 + h1^2 = h^2
+  h2 = sqrt((h*h-z*z)/2.); // z^2 + h2^2 + h2^2 = h^2
+  test(h1, 0, z, xv, yv, zv);
+  test(h2, h2, z, xv, yv, zv);
+  test(0, h1, z, xv, yv, zv);
+  test(-h2, h2, z, xv, yv, zv);
+  test(-h1, 0, z, xv, yv, zv);
+  test(-h2, -h2, z, xv, yv, zv);
+  test(0, -h1, z, xv, yv, zv);
+  test(h2, -h2, z, xv, yv, zv);
+  test(h1, 0, z, xv, yv, zv);
+}
+*/
+
+/*
+static void test_stuff2(const char *tle_filename, const char *satellite)
+{
+  meta_parameters *m1 = meta_read("o.meta");
+  meta_parameters *m2 = meta_read("o2.meta");
+
+  double st1_time = seconds_from_stVec(m1, 0);
+
+  sat_t sat;
+  read_tle(tle_filename, satellite, &sat);
+  //select_ephemeris(&sat);
+
+  stateVector st1 = m1->state_vectors->vecs[0].vec;
+  stateVector st2 = m1->state_vectors->vecs[2].vec;
+
+  stateVector st1_prop = tle_propagate(&sat, st1_time+15.403594971);
+
+  printf("\n         Propagated       Actual\n");
+  printf("pos.x  %12.2f %12.2f\n", st1_prop.pos.x, st2.pos.x);
+  printf("pos.y  %12.2f %12.2f\n", st1_prop.pos.y, st2.pos.y);
+  printf("pos.z  %12.2f %12.2f\n", st1_prop.pos.z, st2.pos.z);
+  printf("vel.x  %12.2f %12.2f\n", st1_prop.vel.x, st2.vel.x);
+  printf("vel.y  %12.2f %12.2f\n", st1_prop.vel.y, st2.vel.y);
+  printf("vel.z  %12.2f %12.2f\n", st1_prop.vel.z, st2.vel.z);
+
+  st2 = m2->state_vectors->vecs[0].vec;
+  double st2_time = seconds_from_stVec(m2, 0);
+
+  st1_prop = tle_propagate(&sat, st2_time);
+
+  printf("\n         Propagated       Actual\n");
+  printf("pos.x  %12.2f %12.2f\n", st1_prop.pos.x, st2.pos.x);
+  printf("pos.y  %12.2f %12.2f\n", st1_prop.pos.y, st2.pos.y);
+  printf("pos.z  %12.2f %12.2f\n", st1_prop.pos.z, st2.pos.z);
+  printf("vel.x  %12.2f %12.2f\n", st1_prop.vel.x, st2.vel.x);
+  printf("vel.y  %12.2f %12.2f\n", st1_prop.vel.y, st2.vel.y);
+  printf("vel.z  %12.2f %12.2f\n", st1_prop.vel.z, st2.vel.z);
+}
+*/
+
+int prop(const char *satellite, const char *beam_mode,
+         const char *tle_filename, long startdate, long enddate,
+         double **out_lat, double **out_lon, int *num)
+{
+  //test_stuff();
+  //test_stuff2(tle_filename, satellite);
+  //exit(1);
+
+  double lat[32768], lon[32768];
+
+  BeamModeInfo *bmi = get_beam_mode_info(satellite, beam_mode);
+  if (bmi) {
+    double start_secs = seconds_from_l(startdate);
+    double end_secs = seconds_from_l(enddate);
+
+    sat_t sat;
+    read_tle(tle_filename, satellite, &sat);
+    //select_ephemeris(&sat);
+
+    // no deep space orbits can be planned
+    assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
+
+    // propagate to the starting time
+    stateVector start_stVec = tle_propagate(&sat, start_secs);
+
+    double curr = start_secs;
+    stateVector st = start_stVec;
+    int iter = 0;
+    double delta = 6;
+
+    while (curr < end_secs) {
+      // use 0 for nadir
+      //get_target_latlon(&st, 0, &lat[iter], &lon[iter]);
+      lat[iter] = sat.ssplat;
+      lon[iter] = sat.ssplon;
+
+      if (iter%10==0) {
+        julian_date jd;
+        hms_time t;
+        ymd_date d;
+        sec2date(curr, &jd, &t);
+        date_jd2ymd(&jd, &d);
+        //printf("%5d %5.1f %12.2f %12.2f %12.2f %12.2f %8.2f %8.2f\n",
+        printf("%5d %5.1f %12.2f %02d/%02d/%04d %0d:%02d:%04.1f %8.2f %8.2f\n",
+               iter, curr-start_secs, secs_to_jul(curr),
+               d.month, d.day, d.year, t.hour, t.min, t.sec,
+               /*st.pos.x, st.pos.y, st.pos.z,*/ lat[iter], lon[iter]);
+      }
+
+      if (iter++ >= 32767) {
+        printf("32767 points reached!  Stopping propagation.\n");
+        break;
+      }
+
+      st = tle_propagate(&sat, curr+delta);
+      curr += delta;
+    }
+
+    *num = iter;
+    *out_lat = (double*) MALLOC(sizeof(double)*(iter+1));
+    *out_lon = (double*) MALLOC(sizeof(double)*(iter+1));
+
+    int i;
+    for (i=0; i<iter; ++i) {
+      (*out_lat)[i] = lat[i];
+      (*out_lon)[i] = lon[i];
+    }
+
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
 }

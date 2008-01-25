@@ -219,7 +219,7 @@ extern const char DIR_SEPARATOR;
 
 extern const char PATH_SEPATATOR;
 
-#define MAX_POLY_LEN 2048
+#define MAX_POLY_LEN 1450
 typedef struct {
     int n;                    // How many points in the polygon
     int c;                    // Currently "active" point (-1 for none)

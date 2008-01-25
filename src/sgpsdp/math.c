@@ -1,401 +1,286 @@
-#include "math.h"
-#include "sgpsdp.h" 
-#include "vector.h"
-
-////////////////  Math - PASCAL routines converted ... ////////////////////
-
-double sqr (double arg)
-{
-	return arg*arg;
-}
-
-double RadToDeg (double arg)
-{
-	return (double)(arg/(2.0*PI)*360.0);
-}
-
-double DegToRad (double arg)
-{
-	return (double)(arg/360.0*(2.0*PI));
-}
-
-double Fmod2p (double arg)
-{
-	double modu, ret;
-	double twopi = 2.0*PI;
-	modu = arg - (int)(arg/twopi) * twopi;
-	if (modu >= 0.0)
-		ret = modu;
-	else
-		ret = modu + twopi;
-	return ret;
-}
-
-double Modulus(double arg1, double arg2)
-{
-	double modu;
-	modu = arg1 - (long)(arg1/arg2) * arg2;
-	if (modu >= 0.0)	return modu;
-	else			return modu + arg2;
-}
-
-double AcTan(double sinx, double cosx)
-{
-	// The AcTan - bug. Here some e-mail excerpts ...
-
-// The "AcTan bug" was introduced in Dr. Kelso's translation of the
-// original FORTRAN code to his Pascal version. The code has a
-// two-argument arctangent function, which returns a value from 0( to
-// 360( in the FORTRAN version, but goes from -90( to 270( in the
-// Pascal version. It may have been that this change was made so that
-// AcTan could be used when determining latitude, and because some
-// test cases may have shown absolutely no effect from the change.
-// Indeed, sgp4 results appear to not be affected at all by this
-// change. And some sdp4 cases are also not affected (probably because
-// the calls to AcTan were not in the fourth quadrant, which is the
-// only place that there is a difference). However, sdp4 results can
-// be affected ...
-
-// But this ACTAN function is completely unnecessary. I never coded it. As you 
-// pointed out, every decent programming language has a 2-argument arctangent 
-// function that is quadrant-preserving. For my FORTRAN, it's ATAN2(Y,X), where 
-// Y is the sine of the angle, and X is the cosine. It returns values from -pi 
-// to +pi. A simple change will return values from 0 to 2*pi: 
-// Angle = Pi - ATAN2(-Y,-X) 
-
-// atan2 definnition in C++ :
-// atan2 returns a value in the range -pi to +pi radians, 
-// using the signs of both parameters to determine the quadrant 
-// of the return value. 
-	double ret;
-
-	if ( (sinx == 0.0) && (cosx == 0.0) )
-		ret = 270.0;
-	else	{
-		ret = atan2(sinx, cosx);
-		if (ret <= -PI/2.000000001)	// This will adapt this version with the 'ugly' 
-			ret += 2.0*PI;			// one below. Both functions return exactly the same values
-	}
-// the old version self made ...
 /*
-	if (cosx == 0.0)	{
-		if (sinx > 0.0)
-			ret = PI/2.0;
-		else
-			ret = 3.0*PI/2.0;
-	}
-	else if (cosx > 0.0) {
-	// --------- correction to match FORTRAN version ----------}
-//		if (sinx > 0)						// Add
-			ret = atan(sinx/cosx);
-//		else								// Add
-//			ret = 2*PI + atan(sinx/cosx);	// Add
-	// --------------------------------------------------------}
- 	}
-	else
-		ret = PI + atan(sinx/cosx);
-	}
-*/
-	return ret;
-
-}
-
-long Round (double arg)
-{
-	double fFrac, fInt;
-	fFrac = modf(arg, &fInt);
-	if (fFrac >= 0.5) fInt ++;
-	return (long) fInt;
-}
-
-void Magnitude (VECTOR *pVector)
-{
-	pVector->w = sqrt(sqr(pVector->x) + sqr(pVector->y) + sqr(pVector->z));
-}
-
-double Dot (VECTOR v1, VECTOR v2)
-{
-	double fRet;
-	fRet = v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
-	return fRet;
-}
-//////////////// End of conversion of Math - PASCAL routines ////////////////////
-double VecDot( double *X, double *Y, int N)
-{
- /* Purpose 
-	calculate the dot (inner) product of X and Y
-    Inputs
-	X, Y are the input vectors of length N
+ * Unit SGP_Math
+ *       Author:  Dr TS Kelso
+ * Original Version:  1991 Oct 30
+ * Current Revision:  1998 Mar 17
+ *          Version:  3.00
+ *        Copyright:  1991-1998, All Rights Reserved
+ *
+ *   ported to C by:  Neoklis Kyriazis  April 9 2001
  */
-  int i;
-  double M;
-  M = 0.0;;
-  for ( i=0; i<N; i++ ) M += X[i] * Y[i];
-  return M;
-}
-/*-----------------------------------------------------------------------*/
-void VecCross( double *X, double *Y, double *Z, int N)
-{
-  /*
-    Purpose
-	    calculate the vector cross product z of x and y.
-    Inputs
-	    X and Y of length N
-    Output
-	    Z of length N
-  */
-  int j,k,m;
-  for( m = 0; m < N ; m++ ) {
-    j = (m+1)%N; k = (m+2)%N;
-    Z[m] = X[j] * Y[k] - X[k] * Y[j];
-  }
-}
-/*-----------------------------------------------------------------------*/
-double VecMag( double *X, int N)
-{
-/*  
-   Purpose
-	   calculate the magnitude of the vector X of length N
-   Input 
-	   X
-   returns the magnitude of X
-*/
-   return sqrt( VecDot( X, X, N ));
-}
-/*------------------------------------------------------------------------*/
-void UnitVec( double *X, double *Y, int N )
-{
-  /*
-     Purpose
-	     calculate a unit vector in the direction of the input
-	     vector
-     Input 
-	     X, a vector
-	     N  the length of X and Y
-     Output
-	     Y, a unit vector in the direction of X
-  */
-  int i;
-  double M;
 
-  M = VecMag( X, N );
-  if (M == 0.0) for (i=0;i<N;i++) Y[i] = 0.0;
-  else          for (i=0;i<N;i++) Y[i] = X[i]/M;
-}
-/*-----------------------------------------------------------------------*/
-void VecDiff( double *X, double *Y, double *Z, int N)
-{
-/*  
-   Purpose
-	    Calculate the vector difference of the input vectors
-   Input
-	    X, Y are vectors of length N
-   Output  
-	    Z = X - Y
-*/
-  int i;
-  for (i=0;i<N;i++) Z[i] = X[i] - Y[i];
-}
-/*-----------------------------------------------------------------------*/
-void VecSum( double *X, double *Y, double *Z, int N)
-{
-  /* purpose sum of two vectors */
-  /* input X and Y are vectors of length N
-     output Z another vector of length N
-  */
-  int i;
-  for (i=0;i<N;i++) Z[i] = X[i] + Y[i];
-}
-/*-----------------------------------------------------------------------*/
-void VecScale( double u, double *X, double *Y, int N)
-{
-/*
-  Purpose
-	  scale a vector
-  Input
-	  u: a scalar
-	  X: the vector to be scaled 
-	  N: the length of X
-  Output
-	  Y: the scaled vector
-*/
-  int i;
-  for(i=0;i<N;i++)Y[i] = X[i] * u;
-}
+#include "sgpsdp.h"
 
-//////////////////////////////////////////////////////////////////////////////
-///////////////////Construction area for a CVector class /////////////////////
-//////////////////////////////////////////////////////////////////////////////
-/*
-CVector::CVector() 
+/* Returns sign of a double */
+int
+Sign(double arg)
 {
-	m_iDepth = 3;
-	m_vector.x = m_vector.y = m_vector.z = m_vector.w = 0.0;
-	return;
-}
+  if( arg > 0 )
+    return( 1 );
+  else if( arg < 0 )
+    return( -1 );
+  else
+    return( 0 );
+} /* Function Sign*/
 
-CVector::CVector(VECTOR vIn) 
+/*------------------------------------------------------------------*/
+
+/* Returns square of a double */
+double
+Sqr(double arg)
 {
-	m_iDepth = 3;
-	SetVector(vIn);
-	return;
-}
+  return( arg*arg );
+} /* Function Sqr */
 
-CVector::~CVector () 
+/*------------------------------------------------------------------*/
+
+/* Returns cube of a double */
+double
+Cube(double arg)
 {
-	return;
-}
+  return( arg*arg*arg );
+} /*Function Cube*/
 
-VECTOR CVector::GetVector()
+/*------------------------------------------------------------------*/
+
+/* Returns angle in radians from arg id degrees */
+double
+Radians(double arg)
 {
-	return m_vector;
-}
+  return( arg*de2ra );
+} /*Function Radians*/
 
-void CVector::SetVector(VECTOR vIn)
+/*------------------------------------------------------------------*/
+
+/* Returns angle in degrees from arg in rads */
+double
+Degrees(double arg)
 {
-	m_vector.x = vIn.x;
-	m_vector.y = vIn.y;
-	m_vector.z = vIn.z;
-	m_vector.w = vIn.w;
-}
+  return( arg/de2ra );
+} /*Function Degrees*/
 
-int CVector::GetDepth()
+/*------------------------------------------------------------------*/
+
+/* Returns the arcsine of the argument */
+double
+ArcSin(double arg)
 {
-	return m_iDepth;
-}
+  if( fabs(arg) >= 1 )
+    return( Sign(arg)*pio2 );
+  else
+    return( atan(arg/sqrt(1-arg*arg)) );
+} /*Function ArcSin*/
 
-void CVector::SetDepth(int iDepth)
+/*------------------------------------------------------------------*/
+
+/* Returns orccosine of rgument */
+double
+ArcCos(double arg)
 {
-	m_iDepth = iDepth;
-}
+  return( pio2 - ArcSin(arg) );
+} /*Function ArcCos*/
 
-double CVector::Dot( VECTOR vIn )
+/*------------------------------------------------------------------*/
+
+/* Calculates scalar magnitude of a vector_t argument */
+void
+Magnitude(vector_t *v)
 {
-// Purpose 
-//	calculate the dot (inner) product of X and Y
-// Inputs
-//	X, Y are the input vectors of length m_iDepth
+  v->w = sqrt(Sqr(v->x) + Sqr(v->y) + Sqr(v->z));
+} /*Procedure Magnitude*/
 
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vIn;
+/*------------------------------------------------------------------*/
 
-	int i;
-	double M;
-  
-	M = 0.0;;
-	for ( i=0; i<m_iDepth; i++ ) M += X[i] * Y[i];
-	return M;
-}
-
-VECTOR CVector::Cross( VECTOR vIn )
+/* Adds vectors v1 and v2 together to produce v3 */
+void
+Vec_Add(vector_t *v1, vector_t *v2, vector_t *v3)
 {
-//    Purpose
-//	    calculate the vector cross product z of x and y.
-//    Inputs
-//	    m_vector and vIn of length m_iDepth
-//    Output
-//	    Z of length m_iDepth
+  v3->x = v1->x + v2->x;
+  v3->y = v1->y + v2->y;
+  v3->z = v1->z + v2->z;
 
-	static VECTOR vector;
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vIn;
-	double *Z = (double *)&vector;
-	
-	int j,k,m;
-	for( m = 0; m < m_iDepth ; m++ ) {
-		j = (m+1)%m_iDepth; k = (m+2)%m_iDepth;
-		Z[m] = X[j] * Y[k] - X[k] * Y[j];
+  Magnitude(v3);
+} /*Procedure Vec_Add*/
+
+/*------------------------------------------------------------------*/
+
+/* Subtracts vector v2 from v1 to produce v3 */
+void
+Vec_Sub(vector_t *v1, vector_t *v2, vector_t *v3)
+{
+  v3->x = v1->x - v2->x;
+  v3->y = v1->y - v2->y;
+  v3->z = v1->z - v2->z;
+
+  Magnitude(v3);
+} /*Procedure Vec_Sub*/
+
+/*------------------------------------------------------------------*/
+
+/* Multiplies the vector v1 by the scalar k to produce the vector v2 */
+void
+Scalar_Multiply(double k, vector_t *v1, vector_t *v2)
+{
+  v2->x = k * v1->x;
+  v2->y = k * v1->y;
+  v2->z = k * v1->z;
+  v2->w = fabs(k) * v1->w;
+} /*Procedure Scalar_Multiply*/
+
+/*------------------------------------------------------------------*/
+
+/* Multiplies the vector v1 by the scalar k */
+void
+Scale_Vector(double k, vector_t *v)
+{ 
+  v->x *= k;
+  v->y *= k;
+  v->z *= k;
+  Magnitude(v);
+} /* Procedure Scale_Vector */
+
+/*------------------------------------------------------------------*/
+
+/* Returns the dot product of two vectors */
+double
+Dot(vector_t *v1, vector_t *v2)
+{
+  return( v1->x*v2->x + v1->y*v2->y + v1->z*v2->z );
+}  /*Function Dot*/
+
+/*------------------------------------------------------------------*/
+
+/* Calculates the angle between vectors v1 and v2 */
+double
+Angle(vector_t *v1, vector_t *v2)
+{
+  Magnitude(v1);
+  Magnitude(v2);
+  return( ArcCos(Dot(v1,v2)/(v1->w*v2->w)) );
+} /*Function Angle*/
+
+/*------------------------------------------------------------------*/
+
+/* Produces cross product of v1 and v2, and returns in v3 */
+void
+Cross(vector_t *v1, vector_t *v2 ,vector_t *v3)
+{
+  v3->x = v1->y*v2->z - v1->z*v2->y;
+  v3->y = v1->z*v2->x - v1->x*v2->z;
+  v3->z = v1->x*v2->y - v1->y*v2->x;
+  Magnitude(v3);
+} /*Procedure Cross*/
+
+/*------------------------------------------------------------------*/
+
+/* Normalizes a vector */
+void
+Normalize( vector_t *v )
+{
+  v->x /= v->w;
+  v->y /= v->w;
+  v->z /= v->w;
+} /*Procedure Normalize*/
+
+/*------------------------------------------------------------------*/
+
+/* Four-quadrant arctan function */
+double
+AcTan(double sinx, double cosx)
+{
+  if(cosx == 0)
+    {
+      if(sinx > 0)
+	return (pio2);
+      else
+	return (x3pio2);
+    }
+  else
+    {
+      if(cosx > 0)
+	{
+	  if(sinx > 0)
+	    return ( atan(sinx/cosx) );
+	  else
+	    return ( twopi + atan(sinx/cosx) );
 	}
-	return vector;
-}
+      else
+	return ( pi + atan(sinx/cosx) );
+    }
 
-double CVector::Mag()
-{  
-//   Purpose
-//	   calculate the magnitude of the vector X of length m_iDepth
-//   Input 
-//	   X
-//   returns the magnitude of X
+} /* Function AcTan */
 
-	return sqrt( Dot( m_vector ));
-}
+/*------------------------------------------------------------------*/
 
-VECTOR CVector::Unit( VECTOR vIn )
+/* Returns mod 2pi of argument */
+double
+FMod2p(double x)
 {
-//     Purpose
-//	     calculate a unit vector in the direction of the input
-//	     vector
-//     Input 
-//	     X, a vector
-//	     m_iDepth  the length of X and Y
-//    Output
-//	     Y, a unit vector in the direction of X
+  int i;
+  double ret_val;
 
-	static VECTOR vector;
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vector;
-	
-	int i;
-	double M;
+  ret_val = x;
+  i = ret_val/twopi;
+  ret_val -= i*twopi;
+  if (ret_val < 0) ret_val += twopi;
 
-	M = Mag( );
-	if (M == 0.0) for (i=0;i<m_iDepth;i++) Y[i] = 0.0;
-	else          for (i=0;i<m_iDepth;i++) Y[i] = X[i]/M;
-	return vector;
-}
+  return (ret_val);
+} /* fmod2p */
 
-VECTOR CVector::Diff( VECTOR vIn )
-{  
-//   Purpose
-//	    Calculate the vector difference of the input vectors
-//  Input
-//	    X, Y are vectors of length m_iDepth
-//   Output  
-//	    Z = X - Y
+/*------------------------------------------------------------------*/
 
-	static VECTOR vector;
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vIn;
-	double *Z = (double *)&vector;
-	
-	int i;
-	for (i=0;i<m_iDepth;i++) Z[i] = X[i] - Y[i];
-	return vector;
-}
-
-VECTOR CVector::Sum( VECTOR vIn )
+/* Returns arg1 mod arg2 */
+double
+Modulus(double arg1, double arg2)
 {
-// purpose sum of two vectors
-// input X and Y are vectors of length m_iDepth
-//     output Z another vector of length m_iDepth
+  int i;
+  double ret_val;
 
-	static VECTOR vector;
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vIn;
-	double *Z = (double *)&vector;
-	
-	int i;
-	for (i=0;i<m_iDepth;i++) Z[i] = X[i] + Y[i];
-	return vector;
-}
+  ret_val = arg1;
+  i = ret_val/arg2;
+  ret_val -= i*arg2;
+  if (ret_val < 0) ret_val += arg2;
 
-VECTOR CVector::Scale( double u )
+  return (ret_val);
+} /* modulus */
+
+/*------------------------------------------------------------------*/
+
+/* Returns fractional part of double argument */
+double
+Frac( double arg )
 {
-//  Purpose
-//	  scale a vector
-//  Input
-//	  u: a scalar
-//	  X: the vector to be scaled 
-//	  m_iDepth: the length of X
-//  Output
-//	  Y: the scaled vector
+  return( arg - floor(arg) );
+} /* Frac */
 
-	static VECTOR vector;
-	double *X = (double *)&m_vector;
-	double *Y = (double *)&vector;
-	
-	int i;
-	for(i=0;i<m_iDepth;i++)Y[i] = X[i] * u;
-	return vector;
-}
-*/
+/*------------------------------------------------------------------*/
+
+/* Returns argument rounded up to nearest integer */
+int
+Round( double arg )
+{
+  return( (int) floor(arg + 0.5) );
+} /* Round */
+
+/*------------------------------------------------------------------*/
+
+/* Returns the floor integer of a double arguement, as double */
+double
+Int( double arg )
+{
+  return( floor(arg) );
+} /* Int */
+
+/*------------------------------------------------------------------*/
+
+/* Converts the satellite's position and velocity  */
+/* vectors from normalised values to km and km/sec */ 
+void
+Convert_Sat_State( vector_t *pos, vector_t *vel )
+{
+      Scale_Vector( xkmper, pos );
+      Scale_Vector( xkmper*xmnpda/secday, vel );
+
+} /* Procedure Convert_Sat_State */
+
+/*------------------------------------------------------------------*/

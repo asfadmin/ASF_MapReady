@@ -332,6 +332,8 @@ void setup_planner()
     put_string_to_entry("lat_max_entry", "64");
     put_string_to_entry("lon_min_entry", "-125");
     put_string_to_entry("lon_max_entry", "-120");
+    put_string_to_entry("start_date_entry", "20080125");
+    put_string_to_entry("end_date_entry", "20080126");
     // ... all this should be deleted
 
 }
@@ -715,7 +717,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           // get ready to add this one to the list, create each column's value
           char date_info[256];
           sprintf(date_info, "%s", pi->start_time_as_string);
-          
+
           char date_hidden_info[256];
           sprintf(date_hidden_info, "%f", pi->start_time);
 
@@ -853,4 +855,86 @@ SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
 
     fill_small(curr);
     fill_big(curr);
+}
+
+
+SIGNAL_CALLBACK void on_prop_button_clicked(GtkWidget *w)
+{
+    char errstr[1024];
+    strcpy(errstr, "");
+    
+    meta_parameters *meta = curr->meta;
+
+    // satellite & beam mode
+    GtkWidget *cb = get_widget_checked("satellite_combobox");
+    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+    char *satellite, *beam_mode;
+    split2(modes[i], '/', &satellite, &beam_mode);
+
+    // get the start/end dates
+    long startdate = (long)get_int_from_entry("start_date_entry");
+    if (!is_valid_date(startdate))
+      strcat(errstr, "Invalid start date.\n");
+
+    long enddate = (long)get_int_from_entry("end_date_entry");
+    if (!is_valid_date(enddate))
+      strcat(errstr, "Invalid end date.\n");
+
+    // tle file
+    char *tle_filename = find_in_share("tle");
+    if (!tle_filename)
+      strcat(errstr, "Unable to find two-line element file!\n");
+    if (!fileExists(tle_filename))
+      sprintf(errstr, "%sNo two-line element file found:\n %s\n",
+              errstr, tle_filename);
+
+    if (strlen(errstr) > 0) {
+      put_string_to_label("plan_error_label", errstr);
+    }
+    else {
+      put_string_to_label("plan_error_label", "Propagating...");
+      enable_widget("plan_button", FALSE);
+      while (gtk_events_pending())
+        gtk_main_iteration();
+
+      double *lat, *lon;
+      int num;
+
+      if (prop(satellite, beam_mode, tle_filename, startdate, enddate,
+               &lat, &lon, &num))
+      {
+        int k=0,n=0;
+        for (i=0; i<num; ++i) {
+          double line, samp;
+          meta_get_lineSamp(meta, lat[i], lon[i], 0, &line, &samp);
+          //printf("%d %d %f %f %f %f\n", n, k, lat[i], lon[i], line, samp);
+          g_polys[n].line[k] = line;
+          g_polys[n].samp[k] = samp;
+          g_polys[n].n = k;
+          g_polys[n].c = k-1;
+          if (++k >= 1440) {
+            k=0;
+            if (++n==MAX_POLYS-1) {
+              printf("Stopping!  Reached maximum polygons.\n");
+              break;
+            }
+          }
+        }
+        free(lat);
+        free(lon);
+
+        crosshair_line = g_polys[0].line[0];
+        crosshair_samp = g_polys[0].samp[0];
+        which_poly=0;
+      }
+
+      char msg[256];
+      sprintf(msg, "Propagated %d points.\n", num);
+      asfPrintStatus(msg);
+
+      put_string_to_label("plan_error_label", msg);
+
+      enable_widget("plan_button", TRUE);
+      fill_big(curr);
+    }
 }

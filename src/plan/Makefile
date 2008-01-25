@@ -7,6 +7,7 @@ LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_sgpsdp.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
@@ -38,6 +39,7 @@ lib: $(OBJS)
 	mv $(LIBNAME) $(LIBDIR)
 	cp beam_modes.txt $(SHAREDIR)
 	cp polygon.h plan.h $(ASF_INCLUDE_DIR)
+	cp plan_internal.h $(ASF_INCLUDE_DIR)
 #	cp tle $(SHAREDIR)
 
 exe: $(TARGET)_main.o

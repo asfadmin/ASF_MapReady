@@ -113,20 +113,20 @@ static void kml_overlap(FILE *kml_file, OverlapInfo *oi)
   //free(oi->viewable_region);
 }
 
-void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *pi)
+void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *info)
 {
   int i;
-  double t = pi->start_time;
+  double t = info->start_time;
 
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");
   fprintf(kml_file, "<strong>Time</strong>: %s<br>\n", date_str(t));
-  fprintf(kml_file, "Contains %d frame%s<br><br>\n", pi->num,
-          pi->num==1?"":"s");
+  fprintf(kml_file, "Contains %d frame%s<br><br>\n", info->num,
+          info->num==1?"":"s");
 
-  for (i=0; i<pi->num; ++i) {
+  for (i=0; i<info->num; ++i) {
     fprintf(kml_file, "  <strong>Frame %d</strong><br>\n", i+1);
-    OverlapInfo *oi = pi->overlaps[i];
+    OverlapInfo *oi = info->overlaps[i];
     fprintf(kml_file, "    Time: %s<br>    Overlap: %5.1f%%<br>\n",
             date_str(oi->t), oi->pct*100);
   }
@@ -152,8 +152,8 @@ void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *pi)
   fprintf(kml_file, "  </Style>\n");
   fprintf(kml_file, "  <MultiGeometry>\n");
 
-  for (i=0; i<pi->num; ++i) {
-    kml_overlap(kml_file, pi->overlaps[i]);
+  for (i=0; i<info->num; ++i) {
+    kml_overlap(kml_file, info->overlaps[i]);
   }
 
   fprintf(kml_file, "  </MultiGeometry>\n");
