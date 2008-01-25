@@ -216,6 +216,7 @@ FILE *fopenImage(const char *name,const char *accessType);
 
 /* Copy the file specified by "src" to the file specified by "dst". */
 void fileCopy(const char *src, const char *dst);
+void copyImgAndMeta(const char *src, const char *dst);
 
 /* Create & remove directories, these return 0 on success */
 int is_dir(const char *dir);

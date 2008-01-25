@@ -10,24 +10,6 @@
 #include <gsl/gsl_statistics_double.h>
 #include <assert.h>
 
-static void copyImgAndMeta(const char *src, const char *dst)
-{
-    char * src_meta_file = appendExt(src, ".meta");
-    char * src_img_file = appendExt(src, ".img");
-
-    char * dst_meta_file = appendExt(dst, ".meta");
-    char * dst_img_file = appendExt(dst, ".img");
-
-    fileCopy(src_meta_file, dst_meta_file);
-    fileCopy(src_img_file, dst_img_file);
-
-    free(src_meta_file);
-    free(src_img_file);
-
-    free(dst_meta_file);
-    free(dst_img_file);
-}
-
 static double min2(double a, double b)
 {
     return a<b ? a : b;
