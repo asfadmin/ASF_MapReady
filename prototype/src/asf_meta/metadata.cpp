@@ -137,6 +137,59 @@ bool z_is_elevation(asf::metadata_3D_enum coords) {
 	}
 }
 
+typedef std::vector<asf::meta_coordinate_transformer::fn_t> function_set;
+
+/** Run these functions to transform src to dest coordinates */
+asf::meta3D_t apply_functions(const function_set &fns,
+	const asf::metadata_source &meta,
+	const asf::meta3D_t &src,double elev)
+{
+	if (fns.size()==1u) return fns[0](meta,src,elev); /* Optimization: skip coordinate copying for common case */
+	asf::meta_coord_t cur=src;
+	for (unsigned int i=0;i<fns.size();i++) {
+		cur=fns[i](meta,cur,elev); 
+	}
+	return cur;
+}
+
+/** Return dest given only src and a set of functions returning src given dest.
+*/
+asf::meta3D_t transform_inverse(const function_set &srcFmDest,
+	const asf::metadata_source &meta,
+	const asf::meta3D_t &src,double elev)
+{
+	int nAxes=2;
+	asf::meta3D_t dest(0.0);
+	double zero=0.0;
+	double best=1.0/zero; /* initial distance is infinity */
+	/* Do a descending-scale iterative search for the best image-image offset */
+	for (double del=1024.0;del>=1.0/1024;del*=0.5)
+	{
+		bool updated;
+		do {
+		  updated=false;
+		  for (int sign=+1;sign>=-1;sign-=2) /* positive or negative del */
+		  {
+		    for (int axis=0;axis<nAxes;axis++) { /* search axis */
+			asf::meta3D_t o=dest;
+			o[axis]+=sign*del;
+			asf::meta3D_t src_o=apply_functions(srcFmDest,meta,o,elev);
+			double n=(src-src_o).mag();
+			if (n<best) { /* this is a new best offset! */
+				updated=true;
+				del*=1.2; /* <- exponential growth in step size */
+				dest=o;
+				best=n;
+			}
+		    }
+		  }
+		} while (updated); /* if we're making progress, keep trying! */
+	}
+	
+	return dest;
+	
+}
+
 /**
   Transform the point src, which is in coordinate system src_coords,
   into the coordinate system dest_coords, assuming an elevation of elev meters.
@@ -157,20 +210,29 @@ asf::meta3D_t asf::meta_coordinate_transformer::transform(const asf::metadata_so
 		elev=src.z;
 	}
 	
-	const std::vector<fn_t> &fns=transforms[s][d].fns;
-	int i,len=fns.size();
-	if (len==0) { /* No functions listed-- weird. */
+	const function_set &fns=transforms[s][d].fns;
+	if (fns.size()==0u) { /* No functions listed-- weird. */
 		if (s==d) return src; /* identity transform */
-		else metadata_missing(dest_coords,meta); /* don't know how to do transform (FIXME: synthesize inverse transform here) */
+		else { /* No transform available-- synthesize inverse */
+			//metadata_missing(dest_coords,meta); /* don't know how to do transform (FIXME: synthesize inverse transform here) */
+			const function_set &fns_inv=transforms[d][s].fns;
+			if (fns_inv.size()>0u) 
+			{ /* We've got inverse functions--invert */
+				meta3D_t dest=transform_inverse(fns_inv,meta,src,elev);
+				if (dest.z==0 && elev!=0 && z_is_elevation(dest_coords))
+				{
+					dest.z=elev;
+				}
+				return dest;
+			} 
+			else 
+			{ /* no inverse function either! */
+				metadata_missing(dest_coords,meta); /* don't know how to do transform */
+			}
+		}
 	}
 
-/* Apply each coordinate transformation in turn */
-	if (len==1) return fns[0](meta,src,elev); /* Optimization: skip coordinate copying for common case */
-	asf::meta_coord_t cur=src;
-	for (i=0;i<len;i++) {
-		cur=fns[i](meta,cur,elev); 
-	}
-	return cur;
+	return apply_functions(fns,meta,src,elev);
 }
 
 /*********** metadata_source **********/

@@ -309,8 +309,10 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
 		  "Ascending 'A', or descending 'D'");
   coniIO_int   (coni,"frame", meta->general->frame,
 		  "Frame for this image [-1 if n/a]");
-  coniIO_int   (coni,"band_number", meta->general->band_number,
-		  "Band number; first band is 0");
+  if (meta->meta_version >= 1.2 && meta->meta_version < 2.0) {
+	  coniIO_int   (coni,"band_number", meta->general->band_number,
+			  "Band number; first band is 0");
+  }
   coniIO_int   (coni,"line_count", meta->general->line_count,
 		  "Number of lines in image");
   coniIO_int   (coni,"sample_count", meta->general->sample_count,
@@ -421,8 +423,13 @@ void coniIO_meta (coniStruct *coni,meta_parameters *meta)
     if (!meta->state_vectors) 
     	meta->state_vectors=meta_state_vectors_init(count);
     coniIO_int   (coni,"year",meta->state_vectors->year,"Year of image start");
-    coniIO_int   (coni,"julDay",meta->state_vectors->julDay,
+    if (meta->meta_version >= 1.0) {
+       coniIO_int   (coni,"julDay",meta->state_vectors->julDay,
 		    "Julian day of the year for image start");
+    } else { /* in 0.9 meta files, same field has different name */
+       coniIO_int   (coni,"day",meta->state_vectors->julDay,
+		    "Julian day of the year for image start");
+    }
     coniIO_double(coni,"second",meta->state_vectors->second,
 		    "Second of the day for image start");
     {
@@ -735,6 +742,20 @@ static asf::meta_coord_t std_from_img_sr(const metadata_from_parameters &meta,co
 	);
 	return std;
 }
+/* Image pixels from slant range, time, and doppler for slant range image */
+static asf::meta_coord_t image_from_std_sr(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
+{
+	const meta_sar *ms=meta.m->sar;
+	asf::meta3D_t std(
+		/* Slant range: from X */
+		(loc.x-ms->slant_range_first_pixel-ms->slant_shift)
+			/(ms->range_time_per_pixel*(SPEED_OF_LIGHT*0.5)),
+		/* Time: from Y */
+		(loc.y-ms->time_shift)/ms->azimuth_time_per_pixel,
+		elev /* doppler isn't needed */
+	);
+	return std;
+}
 /* Slant range, time, and doppler from ground-range image pixels */
 static asf::meta_coord_t std_from_img_gr(const metadata_from_parameters &meta,const asf::meta_coord_t &loc,double elev)
 {
@@ -822,6 +843,8 @@ const meta_coordinate_transformer &metadata_from_parameters::get_transformer(voi
 				meta_coordinate_transformer *t=new meta_coordinate_transformer(super::get_transformer());
 				t->add(SLANT_TIME_DOPPLER,(meta_coordinate_transformer::fn_t)
 					std_from_img_sr,IMAGE_PIXELS,10.0);
+				t->add(IMAGE_PIXELS,(meta_coordinate_transformer::fn_t)
+					image_from_std_sr,SLANT_TIME_DOPPLER,30.0);
 				trans=t;
 			}
 			return *trans;

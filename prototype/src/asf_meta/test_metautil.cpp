@@ -166,7 +166,7 @@ double meter_to_latlon=1.0e-5; /* lat/lon degrees per meter */
 
 /** Perform a geolocation test on this .meta file, where (x,y) corresponds
 to this lat/lon. */
-void image_match(std::string metaName, int x,int y, double lat,double lon,double elev,double ll_tol=100.0*meter_to_latlon)
+void image_match(std::string metaName, int x,int y, double lat,double lon,double elev,double ll_tol=100.0*meter_to_latlon,bool with_map=true)
 {
 	asf::metadata_source *m=asf::meta_read_source(metaName.c_str());
 	asf::meta3D_t img(x,y,elev);
@@ -178,10 +178,12 @@ void image_match(std::string metaName, int x,int y, double lat,double lon,double
 	// Check the output lat/lon
 	diff(metaName + " lat/lon (degrees)",lle_good,lle,ll_tol);
 	
-	// Translate lat/lon and image pixels back to map coords
-	asf::meta3D_t map_img=m->transform(asf::MAP_COORDINATES,img,asf::IMAGE_PIXELS);
-	asf::meta3D_t map_lle=m->transform(asf::MAP_COORDINATES,lle,asf::LONGITUDE_LATITUDE_DEGREES);
-	diff(metaName + " projection roundtrip (map meters)",map_img,map_lle,0.2);
+	if (with_map) {
+		// Translate lat/lon and image pixels back to map coords
+		asf::meta3D_t map_img=m->transform(asf::MAP_COORDINATES,img,asf::IMAGE_PIXELS);
+		asf::meta3D_t map_lle=m->transform(asf::MAP_COORDINATES,lle,asf::LONGITUDE_LATITUDE_DEGREES);
+		diff(metaName + " projection roundtrip (map meters)",map_img,map_lle,0.2);
+	}
 	
 	// Translate lat/lon back to pixels
 	asf::meta3D_t img_back=m->transform(asf::IMAGE_PIXELS,lle,asf::LONGITUDE_LATITUDE_DEGREES);
@@ -211,7 +213,9 @@ void test_geolocations(void) {
 	diff("delta_1 DJ1 elevation (meters)",lle_good.z,lle.z,0.1);
 	lle.z=lle_good.z; /* 1mm elevation roundoff screws up relative error */
 	diff("delta_1 DJ1 position (degrees lat/lon)",lle_good,lle,10*meter_to_latlon);
-
+	
+	image_match("../test_data/delta_1.meta", img.x,img.y, lle.y,lle.x,elev, 1000.0*meter_to_latlon,false);
+	
 /* Test map-projected image geolocations */
 	/* Geographic coordinates */
 	if (1) {
