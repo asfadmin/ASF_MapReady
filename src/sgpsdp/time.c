@@ -96,7 +96,8 @@ DOY(int yr, int mo, int dy)
 double
 Fraction_of_Day(int hr,int mi,int se)
 {
-  return( (hr + (mi + se/60.0)/60.0)/24.0 );
+  double ret = (hr + (mi + se/60.0)/60.0)/24.0;
+  return( ret );
 } /*Function Fraction_of_Day*/
 
 /*------------------------------------------------------------------*/

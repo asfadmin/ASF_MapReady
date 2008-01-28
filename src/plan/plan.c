@@ -304,6 +304,10 @@ find_crossings(BeamModeInfo *bmi, sat_t *sat,
     if (delta==normal_delta)
       printf("lat: %f %f, lon: %f %f\n", lat, sat->ssplat, lon, sat->ssplon);
 
+    if (iter==4) {
+      printf("Iter 4\n");
+    }
+
     // looking for two crossings:
     //  1) crossing the target latitude (moving into from top or bottom)
     //  2) crossing the starting latitude

@@ -14,7 +14,7 @@ double secs_to_jul(double t)
   sec2date(t, &jd, &hms);
   date_jd2ymd(&jd, &ymd);
 
-  the_time.tm_sec = hms.sec;
+  the_time.tm_sec = (int)(hms.sec+.5);
   the_time.tm_min = hms.min;
   the_time.tm_hour = hms.hour;
   the_time.tm_mday = ymd.day/*-1*/;
@@ -78,7 +78,7 @@ stateVector tle_propagate(sat_t *sat, double t)
   st.vel.x = sat->vel.x * 1000;
   st.vel.y = sat->vel.y * 1000;
   st.vel.z = sat->vel.z * 1000;
-  gei2fixed(&st,sec2gha(t));
+  //gei2fixed(&st,sec2gha(t));
 
   return st;
 }
