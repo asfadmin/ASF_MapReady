@@ -1846,8 +1846,8 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      }
      else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic*/
-       projection->param.ps.slat=70.0;
-       projection->param.ps.slon=-45.0;
+       projection->param.ps.slat=mpdr->upslat; //70.0;
+       projection->param.ps.slon=mpdr->upslong; //-45.0;
        projection->param.ps.is_north_pole=1;
        projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
        projection->param.ps.false_northing=MAGIC_UNSET_DOUBLE;     }
@@ -1887,14 +1887,27 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      }
 
      if(strcmp(meta->general->sensor, "ALOS") == 0){
-       // might need to have a check for ALOS coordinates - look like km, not m
-       projection->startY = mpdr->tlcnorth*1000;
-       projection->startX = mpdr->tlceast*1000;
-       //projection->perY   = (mpdr->blcnorth - mpdr->tlcnorth) * 1000 / mpdr->nlines;
-       //projection->perX   = (mpdr->trceast - mpdr->tlceast) * 1000 / mpdr->npixels;
-       projection->perY = -mpdr->nomild;
-       projection->perX = mpdr->nomipd;
-       projection->datum = ITRF97_DATUM;
+         double x,y,z,lat,lon;
+         char look_direction;
+         lat = mpdr->tlclat;
+         lon = mpdr->tlclong;
+         if (meta->sar) {
+             look_direction = meta->sar->look_direction == 'L' ? 'L' : 'R';
+         }
+         else if (meta->optical && strncmp(meta->optical->pointing_direction,"Off-nadir",9) == 0) {
+             look_direction = meta->optical->off_nadir_angle >= 0.0 ? 'R' : 'L';
+         }
+         else {
+             asfPrintWarning("Cannot determine look direction from metadata ...guessing right-looking\n"
+                     "Geolocations may turn out wrong.\n");
+             look_direction = 'R';
+         }
+         latlon_to_proj(projection, look_direction, lat*D2R, lon*D2R, 0.0, &x, &y, &z);
+         projection->startY = y;
+         projection->startX = x;
+         projection->perY = -mpdr->nomild;
+         projection->perX = mpdr->nomipd;
+         projection->datum = ITRF97_DATUM;
      }
      else if (projection->type != SCANSAR_PROJECTION){
        projection->startY = mpdr->tlcnorth;
