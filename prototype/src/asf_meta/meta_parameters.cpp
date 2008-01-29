@@ -919,6 +919,9 @@ int metadata_from_parameters::meta_int(asf::metadata_int_enum v) const
 	case TIME_YEAR: CHECK_AND_RETURN(m->state_vectors,year);
 	case ORBIT: CHECK_AND_RETURN(m->general,orbit);
 	case FRAME: CHECK_AND_RETURN(m->general,frame);
+	case LINE_COUNT: CHECK_AND_RETURN(m->general,line_count);
+	case SAMPLE_COUNT: CHECK_AND_RETURN(m->general,sample_count);
+
 	case IS_RIGHT_LOOKING: {
 		if (m->sar && m->sar->look_direction=='L') return 0;
 		else return 1;

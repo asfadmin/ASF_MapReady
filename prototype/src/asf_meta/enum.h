@@ -261,6 +261,8 @@ typedef enum {
 	
 	ORBIT, /**<  Satellite orbit number.  This is used to identify ground tracks. */
 	FRAME, /**<  Frame number within orbit.  For swaths, this is the center frame number. */
+	LINE_COUNT, /**<  Number of lines in image */
+	SAMPLE_COUNT, /**< Number of samples in image */
 	IS_DESCENDING, /**<  If 1, satellite is descending (moving south); if 0, ascending (moving north). */
 	IS_RIGHT_LOOKING, /**<  If 1, satellite is right-looking (like most SARs); if 0, left-looking. */
 	IS_DESKEWED, /**<  If 1, image is moved to a doppler of 0Hz; if 0, image is positioned at natural doppler. */
