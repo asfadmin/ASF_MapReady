@@ -429,7 +429,7 @@ static void determine_projection_fns(int projection_type, project_t **project,
       if (project) *project = project_ps;
       if (project_arr) *project_arr = project_ps_arr;
       if (unproject) *unproject = project_ps_inv;
-      *unproject_arr = project_ps_arr_inv;
+      if (unproject_arr) *unproject_arr = project_ps_arr_inv;
       break;
     case ALBERS_EQUAL_AREA:
       if (project) *project = project_albers;
