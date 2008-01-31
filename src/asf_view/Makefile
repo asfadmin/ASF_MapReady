@@ -108,6 +108,7 @@ $(TARGET).exe: $(TARGET).c
 	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	cp $(TARGET).exe $(PLANNER_TARGET).exe
+	cp planner_icon.ico $(SHAREDIR)
 	mv $(TARGET).exe $(BINDIR)
 	mv $(PLANNER_TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
@@ -163,6 +164,7 @@ OBJS = $(patsubst %.c, %.o, $(SRCS))
 default: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
 	cp $(TARGET) $(PLANNER_TARGET)
+	cp planner_icon.ico $(SHAREDIR)
 	mv $(TARGET) $(BINDIR)
 	mv $(PLANNER_TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
