@@ -1,7 +1,7 @@
 #ifndef _DIFFIMAGE_TOLERANCES_
 #define _DIFFIMAGE_TOLERANCES_
 
-#define PROJ_LOC_DIFF_TOL_m 0.1 // Max allowed difference in geolocation in map-projected meters
+#define PROJ_LOC_DIFF_TOL_m 1.0 // Max allowed difference in geolocation in map-projected meters
 #define MIN_DIFF_TOL 0.5 // Max allowed difference, expressed as percent of 6-sigma range of baseline data
 #define MAX_DIFF_TOL 0.5
 #define MEAN_DIFF_TOL 0.5
