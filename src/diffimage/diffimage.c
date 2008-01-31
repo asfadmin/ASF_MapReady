@@ -642,8 +642,17 @@ int main(int argc, char **argv)
             if (!empty_band1 && !empty_band2 &&
                  inFile1_stats[band_no].stats_good &&
                  inFile2_stats[band_no].stats_good) {
-              fftShiftCheck(inFile1, inFile2,
-                            CORR_FILE, &shifts[band_no]);
+              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+              // only check the first band for now.
+              if (band_no == 0) {
+                fftShiftCheck(inFile1, inFile2,
+                              CORR_FILE, &shifts[band_no]);
+              }
+              else {
+                  shifts[band_no].dx = 0.0;
+                  shifts[band_no].dy = 0.0;
+                  shifts[band_no].cert = 1.0;
+              }
             }
             else {
               shifts[band_no].dx = 0.0;
@@ -656,8 +665,10 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                            inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                            md1->general->data_type, band_count1);
-          diff_check_geolocation(outputFile, inFile1, inFile2, band_count1, shifts,
-                                inFile1_stats, inFile2_stats);
+//          diff_check_geolocation(outputFile, inFile1, inFile2, band_count1, shifts,
+//                                inFile1_stats, inFile2_stats);
+          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
+                                 inFile1_stats, inFile2_stats);
         }
         else {
           // Process selected band
@@ -673,8 +684,17 @@ int main(int argc, char **argv)
           if (!empty_band1 && !empty_band2 &&
               inFile1_stats[band].stats_good &&
               inFile2_stats[band].stats_good) {
-            fftShiftCheck(inFile1, inFile2,
-                          CORR_FILE, &shifts[band]);
+            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+            // only check the first band for now.
+            if (band == 0) {
+              fftShiftCheck(inFile1, inFile2,
+                            CORR_FILE, &shifts[band]);
+            }
+            else {
+              shifts[band].dx = 0.0;
+              shifts[band].dy = 0.0;
+              shifts[band].cert = 1.0;
+            }
           }
           else {
             shifts[band].dx = 0.0;
@@ -782,8 +802,17 @@ int main(int argc, char **argv)
               export_jpeg_to_asf_img(inFile2, outputFile,
                                      FILE2_FFTFILE, FILE2_FFTFILE_META,
                                      jpg2.height, jpg2.width, REAL32, band_no);
-              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                            CORR_FILE, &shifts[band_no]);
+              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+              // only check the first band for now.
+              if (band_no == 0) {
+                fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                              CORR_FILE, &shifts[band_no]);
+              }
+              else {
+                shifts[band_no].dx = 0.0;
+                shifts[band_no].dy = 0.0;
+                shifts[band_no].cert = 1.0;
+              }
             }
             else {
               shifts[band_no].dx = 0.0;
@@ -794,7 +823,9 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                            inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                            jpg1.data_type, jpg1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, jpg1.num_bands, shifts,
+//          diff_check_geolocation(outputFile, inFile1, inFile2, jpg1.num_bands, shifts,
+//                                 inFile1_stats, inFile2_stats);
+          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
                                  inFile1_stats, inFile2_stats);
         }
         else {
@@ -819,8 +850,17 @@ int main(int argc, char **argv)
             export_jpeg_to_asf_img(inFile2, outputFile,
                                    FILE2_FFTFILE, FILE2_FFTFILE_META,
                                    jpg2.height, jpg2.width, REAL32, band);
-            fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                          CORR_FILE, &shifts[band]);
+            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+            // only check the first band for now.
+            if (band == 0) {
+              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                            CORR_FILE, &shifts[band]);
+            }
+            else {
+              shifts[band].dx = 0.0;
+              shifts[band].dy = 0.0;
+              shifts[band].cert = 1.0;
+            }
           }
           else {
             shifts[band].dx = 0.0;
@@ -923,8 +963,17 @@ int main(int argc, char **argv)
               export_png_to_asf_img(inFile2, outputFile,
                                     FILE2_FFTFILE, FILE2_FFTFILE_META,
                                     ihdr2.height, ihdr2.width, REAL32, band_no);
-              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                            CORR_FILE, &shifts[band_no]);
+              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+              // only check the first band for now.
+              if (band_no == 0) {
+                fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                              CORR_FILE, &shifts[band_no]);
+              }
+              else {
+                shifts[band_no].dx = 0.0;
+                shifts[band_no].dy = 0.0;
+                shifts[band_no].cert = 1.0;
+              }
             }
             else {
               shifts[band_no].dx = 0.0;
@@ -935,8 +984,10 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           ihdr1.data_type, ihdr1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, ihdr1.num_bands, shifts,
-                                inFile1_stats, inFile2_stats);
+//          diff_check_geolocation(outputFile, inFile1, inFile2, ihdr1.num_bands, shifts,
+//                                inFile1_stats, inFile2_stats);
+          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
+                                 inFile1_stats, inFile2_stats);
         }
         else {
           // Process selected band
@@ -960,8 +1011,17 @@ int main(int argc, char **argv)
             export_png_to_asf_img(inFile2, outputFile,
                                   FILE2_FFTFILE, FILE2_FFTFILE_META,
                                   ihdr2.height, ihdr2.width, REAL32, band);
-            fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                          CORR_FILE, &shifts[band]);
+            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+            // only check the first band for now.
+            if (band == 0) {
+              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                            CORR_FILE, &shifts[band]);
+            }
+            else {
+              shifts[band].dx = 0.0;
+              shifts[band].dy = 0.0;
+              shifts[band].cert = 1.0;
+            }
           }
           else {
             shifts[band].dx = 0.0;
@@ -1064,8 +1124,17 @@ int main(int argc, char **argv)
               export_ppm_pgm_to_asf_img(inFile2, outputFile,
                                         FILE2_FFTFILE, FILE2_FFTFILE_META,
                                         pgm2.height, pgm2.width, REAL32, band_no);
-              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                            CORR_FILE, &shifts[band_no]);
+              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+              // only check the first band for now.
+              if (band_no == 0) {
+                fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                              CORR_FILE, &shifts[band_no]);
+              }
+              else {
+                shifts[band_no].dx = 0.0;
+                shifts[band_no].dy = 0.0;
+                shifts[band_no].cert = 1.0;
+              }
             }
             else {
               shifts[band_no].dx = 0.0;
@@ -1076,8 +1145,10 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           pgm1.data_type, pgm1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, pgm1.num_bands, shifts,
-                                inFile1_stats, inFile2_stats);
+//          diff_check_geolocation(outputFile, inFile1, inFile2, pgm1.num_bands, shifts,
+//                                inFile1_stats, inFile2_stats);
+          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
+                                 inFile1_stats, inFile2_stats);
         }
         else {
           // Process selected band
@@ -1101,8 +1172,17 @@ int main(int argc, char **argv)
             export_ppm_pgm_to_asf_img(inFile2, outputFile,
                                       FILE2_FFTFILE, FILE2_FFTFILE_META,
                                       pgm2.height, pgm2.width, REAL32, band);
-            fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                          CORR_FILE, &shifts[band]);
+            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+            // only check the first band for now.
+            if (band == 0) {
+              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                            CORR_FILE, &shifts[band]);
+            }
+            else {
+              shifts[band].dx = 0.0;
+              shifts[band].dy = 0.0;
+              shifts[band].cert = 1.0;
+            }
           }
           else {
             shifts[band].dx = 0.0;
@@ -1208,8 +1288,17 @@ int main(int argc, char **argv)
               export_tiff_to_asf_img(inFile2, outputFile,
                                      FILE2_FFTFILE, FILE2_FFTFILE_META,
                                      t2.height, t2.width, REAL32, band_no);
-              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                            CORR_FILE, &shifts[band_no]);
+              // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+              // only check the first band for now.
+              if (band_no == 0) {
+                fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                              CORR_FILE, &shifts[band_no]);
+              }
+              else {
+                shifts[band_no].dx = 0.0;
+                shifts[band_no].dy = 0.0;
+                shifts[band_no].cert = 1.0;
+              }
             }
             else {
               shifts[band_no].dx = 0.0;
@@ -1226,8 +1315,10 @@ int main(int argc, char **argv)
           diff_check_stats(outputFile,
                           inFile1, inFile2, inFile1_stats, inFile2_stats, psnr, strictflag,
                           t1.data_type, t1.num_bands);
-          diff_check_geolocation(outputFile, inFile1, inFile2, t1.num_bands, shifts,
-                                inFile1_stats, inFile2_stats);
+//          diff_check_geolocation(outputFile, inFile1, inFile2, t1.num_bands, shifts,
+//                                inFile1_stats, inFile2_stats);
+          diff_check_geolocation(outputFile, inFile1, inFile2, 1, shifts,
+                                 inFile1_stats, inFile2_stats);
         }
         else {
           // Process selected band
@@ -1251,8 +1342,17 @@ int main(int argc, char **argv)
             export_tiff_to_asf_img(inFile2, outputFile,
                                    FILE2_FFTFILE, FILE2_FFTFILE_META,
                                    t2.height, t2.width, REAL32, band);
-            fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
-                          CORR_FILE, &shifts[band]);
+            // FIXME: Consider shift checking each band ...shouldn't be necessary tho', so we
+            // only check the first band for now.
+            if (band == 0) {
+              fftShiftCheck(FILE1_FFTFILE, FILE2_FFTFILE,
+                            CORR_FILE, &shifts[band]);
+            }
+            else {
+              shifts[band].dx = 0.0;
+              shifts[band].dy = 0.0;
+              shifts[band].cert = 1.0;
+            }
           }
           else {
             shifts[band].dx = 0.0;
@@ -5345,9 +5445,9 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
 void fftShiftCheck(char *file1, char *file2, char *corr_file,
                    shift_data_t *shifts)
 {
-  //fftMatch(file1, file2, NULL/*corr_file*/, &shifts->dx, &shifts->dy, &shifts->cert);
-  shifts->dx = shifts->dy = 0.0;
-  shifts->cert = 1.0;
+  fftMatch(file1, file2, NULL/*corr_file*/, &shifts->dx, &shifts->dy, &shifts->cert);
+//  shifts->dx = shifts->dy = 0.0;
+//  shifts->cert = 1.0;
 }
 
 void export_jpeg_to_asf_img(char *inFile, char *outfile,
