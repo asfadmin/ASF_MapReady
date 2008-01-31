@@ -34,6 +34,7 @@ ifeq ($(SYS),win32)
 GCC = gcc
 GTK_DIR = ../asf_convert_gui/gtkwin32
 GTK_ZIP = ../asf_convert_gui/gtkwin32zip
+PLANNER_IMAGERY = ../../../support/planner_imagery
 
 GTK_INC = $(GTK_DIR)/include
 GTK_LIB = $(GTK_DIR)/lib
@@ -112,6 +113,7 @@ $(TARGET).exe: $(TARGET).c
 	mv $(TARGET).exe $(BINDIR)
 	mv $(PLANNER_TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
+	-cp $(PLANNER_IMAGERY)/* $(SHAREDIR)
 	cp startup.jpg $(SHAREDIR)
 	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
