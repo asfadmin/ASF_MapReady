@@ -75,7 +75,7 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
   }
   else {
     BeamModeInfo *ret = MALLOC(sizeof(BeamModeInfo));
-    ret->look_angle = look;
+    ret->look_angle = look*D2R;
     ret->width_m = width*1000.;
     ret->length_m = length*1000.;
     ret->image_time = image_time;

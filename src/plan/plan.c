@@ -32,8 +32,8 @@ get_target_position(stateVector *st, double look, double yaw,
   vecNormalize(&look_matrix[2]);
   vector v = st->vel;
   vecNormalize(&v);
-  vecCross(st->pos,v,&look_matrix[1]);
-  vecCross(look_matrix[1],st->pos,&look_matrix[0]);
+  vecCross(look_matrix[2],v,&look_matrix[1]);
+  vecCross(look_matrix[1],look_matrix[2],&look_matrix[0]);
   vecMul(look_matrix,relPos,&relPos);
 
   // scale relPos so it reaches from s/c to targPos 
@@ -66,7 +66,7 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
 
   // target position, first in inertial coords, then convert to lat/lon
   vector target;
-  get_target_position(st, look, sr, 0, &target);
+  get_target_position(st, look, 0, sr, &target);
 
   double glat; // geocentric
   cart2sph(target,&er,&glat,tlon);
@@ -200,7 +200,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
 
 static int
 check_crossing(PassCollection *pc, double start_time, double end_time,
-               double state_vector_time, stateVector *st,
+               double state_vector_time, stateVector *st, sat_t *sat,
                BeamModeInfo *bmi, int zone, double clat, double clon,
                Polygon *aoi, char dir)
 {
@@ -301,11 +301,15 @@ find_crossings(BeamModeInfo *bmi, sat_t *sat,
     double lat, lon, llat, llon;
     get_target_latlon(&st, 0, &lat, &lon);
     get_target_latlon(&st, bmi->look_angle, &llat, &llon);
-    if (delta==normal_delta)
-      printf("lat: %f %f, lon: %f %f\n", lat, sat->ssplat, lon, sat->ssplon);
-
-    if (iter==4) {
-      printf("Iter 4\n");
+    if (delta==normal_delta && iter%10==0) {
+      double lon1 = lon;
+      double lon2 = sat->ssplon;
+      if (lon1 < 0) lon1 += 360;
+      if (lon2 < 0) lon2 += 360;
+      double lon_diff = fabs(lon1-lon2);
+      if (lon_diff>180) lon_diff=360-lon_diff;
+      printf("lat: %8.2f %8.2f, lon: %8.2f %8.2f %.8f\n",
+             lat, sat->ssplat, lon, sat->ssplon, lon_diff);
     }
 
     // looking for two crossings:
@@ -440,10 +444,10 @@ int plan(const char *satellite, const char *beam_mode,
 
   sat_t sat;
   read_tle(tle_filename, satellite, &sat);
-  select_ephemeris(&sat);
+  //select_ephemeris(&sat);
 
   // no deep space orbits can be planned
-  assert(sat.flags & DEEP_SPACE_EPHEM_FLAG);
+  assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
 
   stateVector start_stVec = tle_propagate(&sat, start_secs);
 
@@ -537,7 +541,7 @@ int plan(const char *satellite, const char *beam_mode,
       stateVector st1 = tle_propagate(&sat, t);
 
       num_found +=
-        check_crossing(pc, time1_in, time1_out, t, &st1, bmi,
+        check_crossing(pc, time1_in, time1_out, t, &st1, &sat, bmi,
                        zone, clat, clon, aoi, dir1);
     }
 
@@ -546,7 +550,7 @@ int plan(const char *satellite, const char *beam_mode,
       stateVector st2 = tle_propagate(&sat, t);
 
       num_found +=
-        check_crossing(pc, time2_in, time2_out, t, &st2, bmi,
+        check_crossing(pc, time2_in, time2_out, t, &st2, &sat, bmi,
                        zone, clat, clon, aoi, dir2);
     }
 
@@ -647,50 +651,44 @@ static void test_stuff()
   test(h1, 0, z, xv, yv, zv);
 }
 */
-
 /*
 static void test_stuff2(const char *tle_filename, const char *satellite)
 {
   meta_parameters *m1 = meta_read("o.meta");
-  meta_parameters *m2 = meta_read("o2.meta");
-
-  double st1_time = seconds_from_stVec(m1, 0);
 
   sat_t sat;
   read_tle(tle_filename, satellite, &sat);
-  //select_ephemeris(&sat);
+  printf("TLE: %d %d\n", sat.tle.epoch_year, sat.tle.epoch_day);
+  printf("StV: %d %d\n", m1->state_vectors->year, m1->state_vectors->julDay);
 
-  stateVector st1 = m1->state_vectors->vecs[0].vec;
-  stateVector st2 = m1->state_vectors->vecs[2].vec;
-
-  stateVector st1_prop = tle_propagate(&sat, st1_time+15.403594971);
-
-  printf("\n         Propagated       Actual\n");
-  printf("pos.x  %12.2f %12.2f\n", st1_prop.pos.x, st2.pos.x);
-  printf("pos.y  %12.2f %12.2f\n", st1_prop.pos.y, st2.pos.y);
-  printf("pos.z  %12.2f %12.2f\n", st1_prop.pos.z, st2.pos.z);
-  printf("vel.x  %12.2f %12.2f\n", st1_prop.vel.x, st2.vel.x);
-  printf("vel.y  %12.2f %12.2f\n", st1_prop.vel.y, st2.vel.y);
-  printf("vel.z  %12.2f %12.2f\n", st1_prop.vel.z, st2.vel.z);
-
-  st2 = m2->state_vectors->vecs[0].vec;
-  double st2_time = seconds_from_stVec(m2, 0);
-
-  st1_prop = tle_propagate(&sat, st2_time);
-
-  printf("\n         Propagated       Actual\n");
-  printf("pos.x  %12.2f %12.2f\n", st1_prop.pos.x, st2.pos.x);
-  printf("pos.y  %12.2f %12.2f\n", st1_prop.pos.y, st2.pos.y);
-  printf("pos.z  %12.2f %12.2f\n", st1_prop.pos.z, st2.pos.z);
-  printf("vel.x  %12.2f %12.2f\n", st1_prop.vel.x, st2.vel.x);
-  printf("vel.y  %12.2f %12.2f\n", st1_prop.vel.y, st2.vel.y);
-  printf("vel.z  %12.2f %12.2f\n", st1_prop.vel.z, st2.vel.z);
+  int i;
+  for (i=0; i<m1->state_vectors->num; ++i) {
+    stateVector st1 = m1->state_vectors->vecs[i].vec;
+    double st1_time = seconds_from_stVec(m1, i);
+    
+    stateVector st1_prop = tle_propagate(&sat, st1_time);
+    
+    printf("\n#%02d      Propagated       Actual     Error\n", i);
+    printf("pos.x  %12.2f %12.2f %12.6f%%\n", st1_prop.pos.x, st1.pos.x,
+           100.*fabs(st1_prop.pos.x-st1.pos.x)/st1.pos.x);
+    printf("pos.y  %12.2f %12.2f %12.6f%%\n", st1_prop.pos.y, st1.pos.y,
+           100.*fabs(st1_prop.pos.y-st1.pos.y)/st1.pos.y);
+    printf("pos.z  %12.2f %12.2f %12.6f%%\n", st1_prop.pos.z, st1.pos.z,
+           100.*fabs(st1_prop.pos.z-st1.pos.z)/st1.pos.z);
+    printf("vel.x  %12.2f %12.2f %12.6f%%\n", st1_prop.vel.x, st1.vel.x,
+           100.*fabs(st1_prop.vel.x-st1.vel.x)/st1.vel.x);
+    printf("vel.y  %12.2f %12.2f %12.6f%%\n", st1_prop.vel.y, st1.vel.y,
+           100.*fabs(st1_prop.vel.y-st1.vel.y)/st1.vel.y);
+    printf("vel.z  %12.2f %12.2f %12.6f%%\n", st1_prop.vel.z, st1.vel.z,
+           100.*fabs(st1_prop.vel.z-st1.vel.z)/st1.vel.z);
+  }
 }
 */
-
 int prop(const char *satellite, const char *beam_mode,
          const char *tle_filename, long startdate, long enddate,
-         double **out_lat, double **out_lon, int *num)
+         double **out_lat, double **out_lon,
+         double **out_llat, double **out_llon,
+         int *num)
 {
   //test_stuff();
   //test_stuff2(tle_filename, satellite);
@@ -705,7 +703,6 @@ int prop(const char *satellite, const char *beam_mode,
 
     sat_t sat;
     read_tle(tle_filename, satellite, &sat);
-    //select_ephemeris(&sat);
 
     // no deep space orbits can be planned
     assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
@@ -717,12 +714,24 @@ int prop(const char *satellite, const char *beam_mode,
     stateVector st = start_stVec;
     int iter = 0;
     double delta = 6;
+    double lat[1024], lon[1024];
+    double llat[1024], llon[1024];
+
+    //float ang=0;
+    //while (ang < bmi->look_angle) {
+    //  double lat, lon;
+    //  get_target_latlon(&st, ang, &lat, &lon);
+    //  printf("%6.2f %6.2f %6.2f\n", ang*R2D, lat, lon);
+    //  ang += .1*D2R;
+    //}
+    //exit(1);
 
     while (curr < end_secs) {
+
       // use 0 for nadir
-      //get_target_latlon(&st, 0, &lat[iter], &lon[iter]);
-      lat[iter] = sat.ssplat;
-      lon[iter] = sat.ssplon;
+      double lat0, lon0, llat0, llon0;
+      get_target_latlon(&st, 0, &lat0, &lon0);
+      get_target_latlon(&st, bmi->look_angle, &llat0, &llon0);
 
       if (iter%10==0) {
         julian_date jd;
@@ -731,29 +740,43 @@ int prop(const char *satellite, const char *beam_mode,
         sec2date(curr, &jd, &t);
         date_jd2ymd(&jd, &d);
         //printf("%5d %5.1f %12.2f %12.2f %12.2f %12.2f %8.2f %8.2f\n",
-        printf("%5d %5.1f %12.2f %02d/%02d/%04d %0d:%02d:%04.1f %8.2f %8.2f\n",
-               iter, curr-start_secs, secs_to_jul(curr),
-               d.month, d.day, d.year, t.hour, t.min, t.sec,
-               /*st.pos.x, st.pos.y, st.pos.z,*/ lat[iter], lon[iter]);
+        printf("%5d %02d/%02d/%04d %2d:%02d:%02.0f "
+               "%11.2f %11.2f %11.2f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %f\n",
+               iter, d.month, d.day, d.year, t.hour, t.min, t.sec,
+               st.pos.x, st.pos.y, st.pos.z,
+               sat.ssplat, sat.ssplon,
+               lat0, lon0, llat0, llon0,
+               hypot(lat0-llat0,lon0-llon0));
       }
 
-      if (iter++ >= 32767) {
-        printf("32767 points reached!  Stopping propagation.\n");
-        break;
+      if (iter%20==0) {
+        lat[iter/20]=lat0;
+        lon[iter/20]=lon0;
+        llat[iter/20]=llat0;
+        llon[iter/20]=llon0;
+        if (iter/20>1022) {
+          printf("Stopping... too many points.\n");
+          break;
+        }
       }
 
+      ++iter;
       st = tle_propagate(&sat, curr+delta);
       curr += delta;
     }
 
-    *num = iter;
+    *num = iter/20;
     *out_lat = (double*) MALLOC(sizeof(double)*(iter+1));
     *out_lon = (double*) MALLOC(sizeof(double)*(iter+1));
+    *out_llat = (double*) MALLOC(sizeof(double)*(iter+1));
+    *out_llon = (double*) MALLOC(sizeof(double)*(iter+1));
 
     int i;
     for (i=0; i<iter; ++i) {
       (*out_lat)[i] = lat[i];
       (*out_lon)[i] = lon[i];
+      (*out_llat)[i] = llat[i];
+      (*out_llon)[i] = llon[i];
     }
 
     return TRUE;

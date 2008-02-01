@@ -327,13 +327,13 @@ void setup_planner()
     //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
     center_line = crosshair_line;
     center_samp = crosshair_samp;
-    set_combo_box_item_checked("satellite_combobox", 1);
+    set_combo_box_item_checked("satellite_combobox", 2);
     put_string_to_entry("lat_min_entry", "62");
     put_string_to_entry("lat_max_entry", "64");
     put_string_to_entry("lon_min_entry", "-125");
     put_string_to_entry("lon_max_entry", "-120");
-    put_string_to_entry("start_date_entry", "20080125");
-    put_string_to_entry("end_date_entry", "20080126");
+    put_string_to_entry("start_date_entry", "20080108");
+    put_string_to_entry("end_date_entry", "20080109");
     // ... all this should be deleted
 
 }
@@ -897,31 +897,35 @@ SIGNAL_CALLBACK void on_prop_button_clicked(GtkWidget *w)
       while (gtk_events_pending())
         gtk_main_iteration();
 
-      double *lat, *lon;
+      double *lat, *lon, *llat, *llon;
       int num;
 
       if (prop(satellite, beam_mode, tle_filename, startdate, enddate,
-               &lat, &lon, &num))
+               &lat, &lon, &llat, &llon, &num))
       {
-        int k=0,n=0;
+        int k=0;
         for (i=0; i<num; ++i) {
           double line, samp;
           meta_get_lineSamp(meta, lat[i], lon[i], 0, &line, &samp);
-          //printf("%d %d %f %f %f %f\n", n, k, lat[i], lon[i], line, samp);
-          g_polys[n].line[k] = line;
-          g_polys[n].samp[k] = samp;
-          g_polys[n].n = k;
-          g_polys[n].c = k-1;
+          g_polys[0].line[k] = line;
+          g_polys[0].samp[k] = samp;
+          g_polys[0].n = k;
+          g_polys[0].c = k-1;
+
+          meta_get_lineSamp(meta, llat[i], llon[i], 0, &line, &samp);
+          g_polys[1].line[k] = line;
+          g_polys[1].samp[k] = samp;
+          g_polys[1].n = k;
+          g_polys[1].c = k-1;
           if (++k >= 1440) {
-            k=0;
-            if (++n==MAX_POLYS-1) {
-              printf("Stopping!  Reached maximum polygons.\n");
-              break;
-            }
+            assert(0);
+            break;
           }
         }
         free(lat);
         free(lon);
+        free(llat);
+        free(llon);
 
         crosshair_line = g_polys[0].line[0];
         crosshair_samp = g_polys[0].samp[0];

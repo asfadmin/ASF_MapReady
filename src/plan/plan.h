@@ -68,6 +68,8 @@ void pass_collection_to_kml(PassCollection *pc, const char *kml_file);
 
 int prop(const char *satellite, const char *beam_mode,
          const char *tle_filename, long startdate, long enddate,
-         double **out_lat, double **out_lon, int *num);
+         double **out_lat, double **out_lon,
+         double **out_llat, double **out_llon,
+         int *num);
 
 #endif

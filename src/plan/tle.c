@@ -1,12 +1,11 @@
 #include <stdio.h>
 #include <dateUtil.h>
+#include <assert.h>
 #include "asf_meta.h"
 #include "sgpsdp.h"
 
 double secs_to_jul(double t)
 {
-  struct tm the_time;
-  
   julian_date jd;
   hms_time hms;
   ymd_date ymd;
@@ -14,14 +13,19 @@ double secs_to_jul(double t)
   sec2date(t, &jd, &hms);
   date_jd2ymd(&jd, &ymd);
 
-  the_time.tm_sec = (int)(hms.sec+.5);
-  the_time.tm_min = hms.min;
-  the_time.tm_hour = hms.hour;
-  the_time.tm_mday = ymd.day/*-1*/;
-  the_time.tm_mon = ymd.month-1;
-  the_time.tm_year = ymd.year/*-1900*/;
+  assert(ymd.year>1900);
+  assert(ymd.day>=1 && ymd.day<=31);
+  assert(ymd.month>=1&&ymd.month<=12);
 
-  double ret = Julian_Date(&the_time);
+  double jdoy = Julian_Date_of_Year(ymd.year);
+  double doy = DOY(ymd.year,ymd.month-1,ymd.day);
+  double fod = hms.sec/(60.*60.*24.) + hms.min/(60.*24.) + hms.hour/24.0;
+  //double fod = (hms.hour + (hms.min + hms.sec/60.0)/60.0)/24.0;
+  //double fod = Fraction_of_Day(hms.hour,hms.min,(int)(hms.sec+.5));
+
+  double ret = jdoy + doy + fod;
+
+  //double ret = Julian_Date(&the_time);
   //printf("%f -> %02d/%02d/%04d %02d:%02d:%02d -> %f\n", t,
   //       ymd.month, ymd.day, ymd.year, hms.hour, hms.min, (int)hms.sec, ret);
 
@@ -78,13 +82,19 @@ stateVector tle_propagate(sat_t *sat, double t)
   st.vel.x = sat->vel.x * 1000;
   st.vel.y = sat->vel.y * 1000;
   st.vel.z = sat->vel.z * 1000;
-  //gei2fixed(&st,sec2gha(t));
+
+  julian_date jd;
+  hms_time hms;
+  sec2date(t,&jd,&hms);
+  double gha = utc2gha(jd.year,jd.jd,hms.hour,hms.min,hms.sec);
+  //printf("t= %f --> gha= %f\n", t, gha);
+  //gha-=30.555437; if (gha<0) gha+=360;
+  gei2fixed(&st,gha);
 
   return st;
 }
 
-void read_tle(const char *tle_filename, const char *satellite,
-              sat_t *sat)
+void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
 {
   FILE *fp = fopen(tle_filename, "r");
   char tle_str[3][80];
