@@ -1,5 +1,5 @@
 #ifndef BEAM_MODE_TABLE_H
-#define BEAM_MKDE_TABLE_H
+#define BEAM_MODE_TABLE_H
 
 typedef struct
 {

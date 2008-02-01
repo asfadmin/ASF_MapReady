@@ -471,7 +471,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
 
     // draw old polygons
     for (k=0; k<MAX_POLYS; ++k) {
-      if (g_polys[k].n > 0/* && row_is_checked(k)*/) {
+      if (g_polys[k].n > 0 && row_is_checked(k)) {
         for (i=0; i<g_polys[k].n-1; ++i) {
             put_line(pb, g_polys[k].line[i], g_polys[k].samp[i],
                 g_polys[k].line[i+1], g_polys[k].samp[i+1], 10+k, ii);
