@@ -5374,8 +5374,8 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
         }
         sprintf(msg, "FAIL: Correlation match between images failed\n"
             "when trying to find shift in geolocation between non-blank\n"
-            "images.  Comparing\n  %s%s  and\n  %s%s\n\n",
-                band_str1, inFile1, band_str2, inFile2);
+            "images.  Comparing\n  %s%s  and\n  %s%s\nCertainty = %0.6f\n\n",
+                band_str1, inFile1, band_str2, inFile2, s[band].cert);
         fprintf(outputFP, msg);
 
         fprintf(outputFP, "-----------------------------------------------\n\n");
@@ -5395,8 +5395,10 @@ void diff_check_geolocation(char *outputFile, char *inFile1, char *inFile2,
           strcpy(band_str1, "");
           strcpy(band_str2, "");
         }
-        sprintf(msg, "FAIL: Comparing geolocations of\n  %s%s  and\n  %s%s\n\n",
-                band_str1, inFile1, band_str2, inFile2);
+        sprintf(msg, "FAIL: Comparing geolocations of\n  %s%s  and\n  %s%s\n"
+                "Shifts: dx = %0.3f pixels, dy = %0.3f pixels\n\n",
+                band_str1, inFile1, band_str2, inFile2,
+               s[band].dx, s[band].dy);
         fprintf(outputFP, msg);
 
         if (s[band].dx > shift_tol) {
