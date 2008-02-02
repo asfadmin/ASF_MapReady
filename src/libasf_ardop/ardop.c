@@ -98,6 +98,7 @@ BUGS:
 
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 
 int ardop(struct INPUT_ARDOP_PARAMS * params_in)

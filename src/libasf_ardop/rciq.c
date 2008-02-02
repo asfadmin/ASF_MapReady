@@ -43,6 +43,7 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:  Converted from H Zebker's rciq.c - T. Logan 8/96
 ****************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "read_signal.h"
 

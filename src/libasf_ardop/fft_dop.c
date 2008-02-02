@@ -7,6 +7,7 @@ number (the central doppler freqency), instead of a
 function (quadratic in sample), for the doppler.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 
 /*Return the maximum value of given array*/

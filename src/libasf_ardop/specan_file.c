@@ -9,6 +9,7 @@ create an entire output amplitude file.
 Orion Lawlor, ASF 11/98.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "specan.h"
 

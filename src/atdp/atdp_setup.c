@@ -32,8 +32,8 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "ardop_defs.h"
 #include "asf_meta.h"
+#include "ardop_defs.h"
 #include "odl.h"
 #include <math.h>
 

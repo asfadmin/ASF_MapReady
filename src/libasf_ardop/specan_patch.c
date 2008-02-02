@@ -11,6 +11,7 @@ patchlets using specan_ml.c.
 Orion Lawlor, ASF 12/98.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "specan.h"
 #include "specan_ml.h"

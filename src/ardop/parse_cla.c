@@ -33,8 +33,8 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "geolocate.h"
 
 /* this define is a hack to avoid calling usage() as done in cla.h */
 #define CHK_ARG_ASP(num_args) if (currArg+num_args>argc) \

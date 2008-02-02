@@ -50,6 +50,7 @@ PROGRAM HISTORY:  converted from H. Zebker's RMpatch.f - T. Logan 8/96
 		Changed variable names - O. Lawlor 8/97
 ************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 void create_sinc(int nfilter, float *xintp);
 

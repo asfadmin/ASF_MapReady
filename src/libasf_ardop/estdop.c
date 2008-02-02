@@ -26,8 +26,8 @@ PROGRAM HISTORY:
 
 ****************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 #include "estdop.h"
 
 void estdop(char file[],int nDopLines, float *a, float *b,float *c)

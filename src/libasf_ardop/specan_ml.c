@@ -7,6 +7,7 @@ algorithm.
 Orion Lawlor, ASF 1/99.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "specan.h"
 #include "specan_ml.h"

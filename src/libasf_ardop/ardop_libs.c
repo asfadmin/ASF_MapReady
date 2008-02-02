@@ -42,6 +42,7 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:  Ver 1.0  T. Logan - Most routines are new
 ****************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include <sys/time.h>
 #include "ardop_defs.h"
 #include "las.h"

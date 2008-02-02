@@ -22,6 +22,7 @@ BUGS:
 *****************************************************************************/
 #include "asf.h"
 #include <unistd.h>
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "../../include/asf_endian.h"
 

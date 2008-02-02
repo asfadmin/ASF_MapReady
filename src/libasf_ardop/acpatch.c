@@ -46,6 +46,7 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:   Converted from FORTRAN subroutine for ROI.f 	T. Logan 8/96
 ***************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 
 int ac_direction=0;/*Used only by dop_prf*/

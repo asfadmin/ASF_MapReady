@@ -8,6 +8,7 @@ compressing in range or azimuth-- in fact,
 this routine only does one at a time.
 */
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h" /* for complexFloat, cfft1d */
 #include "specan.h"
 

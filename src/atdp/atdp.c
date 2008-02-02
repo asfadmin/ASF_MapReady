@@ -28,8 +28,6 @@ SYNOPSIS:     atdp ifile ofile
 #include "asf.h"
 #include "asf_meta.h"
 #include "ardop_defs.h"
-#include "asf_complex.h"
-#include "read_signal.h"
 
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define FLOAT_MICRON 0.000000001

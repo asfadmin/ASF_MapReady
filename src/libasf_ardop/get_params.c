@@ -24,6 +24,7 @@ ALGORITHM DESCRIPTION: Fills each of the ASP globals with appropriate values.
   Parameters are read from CEOS, hardcoded, calculated, or estimated.
 ******************************************************************************/
 #include "odl.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 
 void get_params(char *file,struct ARDOP_PARAMS *g,meta_parameters **meta_out)

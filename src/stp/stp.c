@@ -21,15 +21,18 @@
 
 #define STP_VERSION "1.0.13"
 
-/* for win32, set the font to the standard windows one */
+#ifndef win32
+# include "asf_meta.h"
+#endif
 #if defined(win32)
-#include <pango/pango.h>
+#  include <pango/pango.h>
 
-#define BYTE __byte
-#include "asf.h"
-#undef BYTE
-#include <Windows.h>
-#undef DIR_SEPARATOR
+#  define BYTE __byte
+#    include "asf.h"
+#    include "asf_meta.h"
+#  undef BYTE
+#  include <Windows.h>
+#  undef DIR_SEPARATOR
 
 static char appfontname[128] = "tahoma 8"; /* fallback value */
 

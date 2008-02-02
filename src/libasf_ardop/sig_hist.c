@@ -13,7 +13,6 @@ Sig_hist:
 #include "asf.h"
 #include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 
 #define SIGNAL_LENGTH 1000 /*Program reads a SIGNAL_LENGTH x SIGNAL_LENGTH block of data*/
 #define OUTPUT_SIZE 200

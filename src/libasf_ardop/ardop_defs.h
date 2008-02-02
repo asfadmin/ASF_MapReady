@@ -28,7 +28,6 @@
 #include "asf_complex.h"
 #include "read_signal.h"
 #include "geolocate.h"
-#include "asf_meta.h"
 
 /*-----------------------------*/
 /* Simple function definitions */

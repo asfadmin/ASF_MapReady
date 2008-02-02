@@ -69,8 +69,8 @@ BUGS:
 
 #include <math.h>
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 
 #undef VERSION
 #define VERSION 1.3

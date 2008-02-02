@@ -21,6 +21,7 @@
 /*Usage:*/
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 
 /* defined in parse_cla.c */

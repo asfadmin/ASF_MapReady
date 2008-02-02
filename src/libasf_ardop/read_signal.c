@@ -15,8 +15,8 @@ void getSignalLine(getRec *r,long long lineNo,complexFloat *destArr,int readStar
 */
 #include "asf.h"
 #include <unistd.h>
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 #include "ceos.h"
 
 /****************************************

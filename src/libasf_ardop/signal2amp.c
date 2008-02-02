@@ -1,7 +1,7 @@
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 #include "asf_endian.h"
 
 #define mlX 8

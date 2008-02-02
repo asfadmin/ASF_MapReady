@@ -9,8 +9,8 @@ This is only useful for debugging chirp files.
 */
 
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
-#include "read_signal.h"
 
 void read_reference(char *fName,complexFloat *ref,int *len)
 {

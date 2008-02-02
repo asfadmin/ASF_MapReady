@@ -103,6 +103,7 @@ BUGS:
 *									    *
 ****************************************************************************/
 #include "asf.h"
+#include "asf_meta.h"
 #include "ardop_defs.h"
 #include "specan.h"
 #include "ddr.h"
