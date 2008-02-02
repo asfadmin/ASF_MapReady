@@ -328,12 +328,12 @@ void setup_planner()
     center_line = crosshair_line;
     center_samp = crosshair_samp;
     set_combo_box_item_checked("satellite_combobox", 2);
-    put_string_to_entry("lat_min_entry", "62");
-    put_string_to_entry("lat_max_entry", "64");
-    put_string_to_entry("lon_min_entry", "-125");
-    put_string_to_entry("lon_max_entry", "-120");
+    put_string_to_entry("lat_min_entry", "68");
+    put_string_to_entry("lat_max_entry", "72");
+    put_string_to_entry("lon_min_entry", "-135");
+    put_string_to_entry("lon_max_entry", "-125");
     put_string_to_entry("start_date_entry", "20080108");
-    put_string_to_entry("end_date_entry", "20080109");
+    put_string_to_entry("end_date_entry", "20080110");
     // ... all this should be deleted
 
 }
@@ -834,25 +834,31 @@ SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
     double lon_max = get_double_from_entry("lon_max_entry");
 
     meta_parameters *meta = curr->meta;
-    meta_get_lineSamp(meta, lat_min, lon_min, 0,
-                      &crosshair_line, &crosshair_samp);
-    meta_get_lineSamp(meta, lat_min, lon_max, 0,
-                      &g_polys[0].line[0], &g_polys[0].samp[0]);
-    meta_get_lineSamp(meta, lat_max, lon_max, 0,
-                      &g_polys[0].line[1], &g_polys[0].samp[1]);
-    meta_get_lineSamp(meta, lat_max, lon_min, 0,
-                      &g_polys[0].line[2], &g_polys[0].samp[2]);
-    meta_get_lineSamp(meta, lat_min, lon_min, 0,
-                      &g_polys[0].line[3], &g_polys[0].samp[3]);
-
-    g_polys[0].n = 4;
-    g_polys[0].c = 3;
-
-    center_line = 0.25 * (crosshair_line + g_polys[0].line[0] +
-                          g_polys[0].line[1] + g_polys[0].line[2]);
-    center_samp = 0.25 * (crosshair_samp + g_polys[0].samp[0] +
-                          g_polys[0].samp[1] + g_polys[0].samp[2]);
-
+    if (lat_max==0 && lon_max==0) {
+      meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                        &crosshair_line, &crosshair_samp);
+    }
+    else {
+      meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                        &crosshair_line, &crosshair_samp);
+      meta_get_lineSamp(meta, lat_min, lon_max, 0,
+                        &g_polys[0].line[0], &g_polys[0].samp[0]);
+      meta_get_lineSamp(meta, lat_max, lon_max, 0,
+                        &g_polys[0].line[1], &g_polys[0].samp[1]);
+      meta_get_lineSamp(meta, lat_max, lon_min, 0,
+                        &g_polys[0].line[2], &g_polys[0].samp[2]);
+      meta_get_lineSamp(meta, lat_min, lon_min, 0,
+                        &g_polys[0].line[3], &g_polys[0].samp[3]);
+      
+      g_polys[0].n = 4;
+      g_polys[0].c = 3;
+      
+      center_line = 0.25 * (crosshair_line + g_polys[0].line[0] +
+                            g_polys[0].line[1] + g_polys[0].line[2]);
+      center_samp = 0.25 * (crosshair_samp + g_polys[0].samp[0] +
+                            g_polys[0].samp[1] + g_polys[0].samp[2]);
+    }
+      
     fill_small(curr);
     fill_big(curr);
 }

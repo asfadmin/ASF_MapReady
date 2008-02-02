@@ -96,6 +96,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
   if (fabs(center_lat - target_lat) > 20)
     return NULL;
 
+  //printf("center: %f %f\n", center_lat, center_lon);
   latLon2UTM_zone(center_lat, center_lon, 0, target_zone,
                   &center_x, &center_y);
 
@@ -104,6 +105,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
   get_target_latlon(&ahead_st, bmi->look_angle, &ahead_lat, &ahead_lon);
   latLon2UTM_zone(ahead_lat, ahead_lon, 0, target_zone, &ahead_x, &ahead_y);
+  //printf("ahead: %f %f\n", ahead_lat, ahead_lon);
 
   // now we know the orientation of the rectangle on the ground
   // ==> can find the 4 corners
@@ -118,8 +120,8 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
 
   double x[4], y[4];
 
-  x[0] = center_x + x_side1/2. + x_side2/2.;
-  y[0] = center_y + y_side1/2. + y_side2/2.;
+  x[0] = center_x + x_side1/2. - x_side2/2.;
+  y[0] = center_y + y_side1/2. - y_side2/2.;
 
   x[1] = x[0] - x_side1;
   y[1] = y[0] - y_side1;
@@ -129,6 +131,14 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
 
   x[3] = x[2] + x_side1;
   y[3] = y[2] + y_side1;
+
+  //int i;
+  //printf("corners:\n");
+  //for (i=0; i<4; ++i) {
+  //  double lat, lon;
+  //  UTM2latLon(x[i],y[i],0,zone,&lat,&lon);
+  //  printf("%f %f\n", lat, lon);
+  //}
 
   return polygon_new_closed(4, x, y);
 }
@@ -199,7 +209,6 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
 //  meta_free(meta);
 //}
 
-
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type, int zone, Polygon *aoi,
@@ -217,7 +226,6 @@ int plan(const char *satellite, const char *beam_mode,
 
   sat_t sat;
   read_tle(tle_filename, satellite, &sat);
-  //select_ephemeris(&sat);
 
   // no deep space orbits can be planned
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
@@ -253,13 +261,18 @@ int plan(const char *satellite, const char *beam_mode,
       if (oi) {
         int n=0;
         PassInfo *pass_info = pass_info_new();
+
+        //double lat0,lon0;
+        //get_target_latlon(&st, bmi->look_angle, &lat0, &lon0);
+        //printf("%s %f %f\n", date_str(curr), lat0, lon0);
         while (curr < end_secs && oi) {
           pass_info_add(pass_info, curr, dir, oi);
           ++n;
 
-          oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
           curr += incr;
           st = tle_propagate(&sat, curr);
+
+          oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
         }
 
         if (n>0) {
