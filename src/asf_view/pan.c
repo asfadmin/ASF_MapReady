@@ -124,9 +124,9 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     return TRUE;
   }
 
-  if (event->x_root > 256)
+  if (event->x > 256)
     big_clicked(event);
-  else if (event->y_root < 256)
+  else if (event->y < 256)
     small_clicked(event);
 
   return FALSE;
