@@ -1846,7 +1846,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
      }
      else if (strncmp(mpdr->mpdesig, "UPS", 3) == 0) {
        projection->type=POLAR_STEREOGRAPHIC;/*Polar Stereographic*/
-       projection->param.ps.slat=mpdr->upslat; //70.0;
+       projection->param.ps.slat=(mpdr->upslat >= 0.0) ? 90.0 : -90.0; //70.0;
        projection->param.ps.slon=mpdr->upslong; //-45.0;
        projection->param.ps.is_north_pole=1;
        projection->param.ps.false_easting=MAGIC_UNSET_DOUBLE;
