@@ -23,7 +23,8 @@ void overlap_free(OverlapInfo *oi);
 
 /* pass.c */
 PassInfo *pass_info_new(void);
-void pass_info_add(PassInfo *info, double t, char dir, OverlapInfo *oi);
+void pass_info_add(PassInfo *info, double t, char dir, int orbit,
+                   int frame, OverlapInfo *oi);
 void pass_info_free(PassInfo *info);
 PassCollection *pass_collection_new(double clat, double clon, Polygon *aoi);
 void pass_collection_add(PassCollection *pc, PassInfo *info);

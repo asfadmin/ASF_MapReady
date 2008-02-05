@@ -266,7 +266,7 @@ int plan(const char *satellite, const char *beam_mode,
         //get_target_latlon(&st, bmi->look_angle, &lat0, &lon0);
         //printf("%s %f %f\n", date_str(curr), lat0, lon0);
         while (curr < end_secs && oi) {
-          pass_info_add(pass_info, curr, dir, oi);
+          pass_info_add(pass_info, curr, dir, sat.orbit, sat.orbit_part*671, oi);
           ++n;
 
           curr += incr;

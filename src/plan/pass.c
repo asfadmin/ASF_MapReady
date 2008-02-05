@@ -13,7 +13,9 @@ PassInfo *pass_info_new()
     return ret;
 }
 
-void pass_info_add(PassInfo *pass_info, double t, char dir, OverlapInfo *oi)
+void pass_info_add(PassInfo *pass_info, double t, char dir,
+                   int orbit, int frame,
+                   OverlapInfo *oi)
 {
     if (pass_info->start_time == -1) {
         assert(pass_info->num == 0);
@@ -25,6 +27,8 @@ void pass_info_add(PassInfo *pass_info, double t, char dir, OverlapInfo *oi)
     int i;
     pass_info->num += 1;
     pass_info->dir = dir;
+    pass_info->orbit = orbit;
+    pass_info->frame = frame;
 
     // create a new overlaps array
     OverlapInfo **overlaps = MALLOC(sizeof(OverlapInfo*)*(pass_info->num));

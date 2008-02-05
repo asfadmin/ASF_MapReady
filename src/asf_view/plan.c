@@ -336,6 +336,8 @@ void setup_planner()
     put_string_to_entry("end_date_entry", "20080110");
     // ... all this should be deleted
 
+    GtkWidget *widget = get_widget_checked("ssv_main_window");
+    gtk_window_set_title(GTK_WINDOW(widget), "Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
 }
 
 int row_is_checked(int row)
@@ -721,10 +723,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char date_hidden_info[256];
           sprintf(date_hidden_info, "%f", pi->start_time);
 
-          int orbit, frame;
+          //int orbit, frame;
           char orbit_frame_info[256];
-          time_to_orbit_frame(pi->start_time, &orbit, &frame);
-          sprintf(orbit_frame_info, "%d/%d", orbit, frame);
+          sprintf(orbit_frame_info, "%d/%d", pi->orbit, pi->frame);
 
           char pct_info[256];
           sprintf(pct_info, "%.1f", 100.*pi->total_pct);
@@ -751,10 +752,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
               unsigned char *p = pixels + k*rowstride + m*n_channels;
 
               // edges are black on these 
-              if (k==0 || k==15 || m==0 || m==23)
+              if (k==0 || k==15 || m==0 || m==23) {
                 p[0] = p[1] = p[2] = 0;
-              else
+              } else {
                 get_color(i+11, &p[0], &p[1], &p[2]);
+              }
             }
           }
 

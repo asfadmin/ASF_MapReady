@@ -114,12 +114,12 @@ main(int argc, char **argv)
     glade_xml = glade_xml_new(glade_xml_file, NULL, NULL);
     free(glade_xml_file);
 
-    // set up the acquisition planner, if we are in that mode
-    if (planner_mode) setup_planner();
-
     // set up window title, etc
     set_title(band_specified, band);
     set_toolbar_images();
+
+    // set up the acquisition planner, if we are in that mode
+    if (planner_mode) setup_planner();
 
     // populate the look up table list, and apply the default
     // look-up-table, if there is one.  In this case, we will need to
