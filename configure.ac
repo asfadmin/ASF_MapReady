@@ -225,6 +225,35 @@ fi
 if test "$have_gtk" = "yes" ; then
    PKG_CHECK_MODULES(LIBGLADE, libglade-2.0 > 2.0.0,
        have_libglade="yes", have_libglade="no")
+else
+   echo
+   echo
+   echo " ********************************************************************************"
+   echo "**********************************************************************************"
+   echo "****                                                                          ****"
+   echo "****  WARNING: GTK v2.4.0 or higher does not appear to exist.                 ****"
+   echo "****    Applications with graphical user interfaces that require GTK          ****"
+   echo "****    will not be built:                                                    ****"
+   echo "****                                                                          ****"
+   echo "****      mapready      (The main MapReady application)                       ****"
+   echo "****      mdv           (Metadata viewer)                                     ****"
+   echo "****      asf_view      (Data and graphics file viewer)                       ****"
+   echo "****      proj2proj     (Lat/Long and projection coordinates conversion tool) ****"
+   echo "****                                                                          ****"
+   echo "****    Command line tools will be created.  The following command line       ****"
+   echo "****    versions of the tools listed above ARE available:                     ****"
+   echo "****                                                                          ****"
+   echo "****      asf_mapready                                                        ****"
+   echo "****      metadata                                                            ****"
+   echo "****      (no command line replacement for asf_view)                          ****"
+   echo "****      (no command line replacement for proj2proj)                         ****"
+   echo "****                                                                          ****"
+   echo "**********************************************************************************"
+   echo " ********************************************************************************"
+   echo
+   echo
+   echo
+   echo
 fi
 
 #### whether or not to build the ASF Convert GUI ####
