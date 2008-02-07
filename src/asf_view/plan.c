@@ -427,14 +427,55 @@ static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
   FREE(str);
 }
 
+static int revolution2path(int revolution)
+{
+    return ((46*revolution+85)%671);
+}
+
+// calculate a satellite's nadir latitude for a particular frame
+static double sat_lat(int ALOS_frame)
+{
+    double inclination = 90 - 98.16;
+    double angle_thing = cos(D2R*inclination);
+    double orbit = ALOS_frame/7200*360.;
+    double ret = R2D*asin(sin(D2R*orbit)*angle_thing);
+    return ret;
+}
+
+static double fake_lat(double real_lat, double inclination)
+{
+    return R2D*asin(sin(D2R*real_lat)/cos(D2R*inclination));
+}
+
+static double esa_node(double esa_lat, int direction)
+{
+    if (direction==0) {
+        if (esa_lat < 0) esa_lat += 360;
+    } else {
+        esa_lat = 180-esa_lat;
+    }
+    return esa_lat*20;
+}
+
+// how long the satellite needs to stay on
+static double alos_time(double start_lat, int start_direction,
+                        double stop_lat, int stop_direction)
+{
+    double inclination=8.2352631198113;
+    double secs_node=.822652757;
+    double fake_1 = fake_lat(start_lat, inclination);
+    double fake_2 = fake_lat(stop_lat, inclination);
+    double node_1 = esa_node(fake_1, start_direction);
+    double node_2 = esa_node(fake_2, stop_direction);
+    if (node_2 <= node_1)
+        node_2 = 7200 + node_2;
+    double ret = secs_node*(node_2-node_1);
+    return ret; 
+}
+
 static void time_to_orbit_frame(double t, int *orbit, int *frame)
 {
-    // FIXME fake calculation for now
-    double t1 = t/(24.*60.*60.);
-    t1 -= 365*13;
-
-    *orbit = (int) t1;
-    *frame = (int) ((t1 - (double)(*orbit)) * 671);
+   *orbit=*frame=0; 
 }
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
@@ -670,11 +711,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
 
         // find the maximum coverage
-        double max_coverage = 0;
+        double max_coverage = 0.;
         for (i=0; i<pc->num; ++i) {
-          PassInfo *pi = pc->passes[i];
-          if (pi->total_pct > max_coverage)
-            max_coverage = pi->total_pct;
+          if (pc->passes[i]->total_pct > max_coverage)
+            max_coverage = pc->passes[i]->total_pct;
         }
         double coverage_cutoff = .6 * max_coverage;
 
