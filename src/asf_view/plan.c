@@ -774,10 +774,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           sprintf(date_hidden_info, "%f", pi->start_time);
 
           //int orbit, frame;
-          int orbit, frame;
           char orbit_frame_info[256];
-          calc_frame(pc->clat, &frame);
-          orbit = pi->orbit;
+          //calc_frame(pc->clat, &frame);
+          int orbit = pi->orbit;
+          int frame = pi->frame;
           sprintf(orbit_frame_info, "%d/%d", orbit, frame);
 
           char pct_info[256];
@@ -918,88 +918,3 @@ SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
     fill_big(curr);
 }
 
-
-SIGNAL_CALLBACK void on_prop_button_clicked(GtkWidget *w)
-{
-    char errstr[1024];
-    strcpy(errstr, "");
-    
-    meta_parameters *meta = curr->meta;
-
-    // satellite & beam mode
-    GtkWidget *cb = get_widget_checked("satellite_combobox");
-    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
-    char *satellite, *beam_mode;
-    split2(modes[i], '/', &satellite, &beam_mode);
-
-    // get the start/end dates
-    long startdate = (long)get_int_from_entry("start_date_entry");
-    if (!is_valid_date(startdate))
-      strcat(errstr, "Invalid start date.\n");
-
-    long enddate = (long)get_int_from_entry("end_date_entry");
-    if (!is_valid_date(enddate))
-      strcat(errstr, "Invalid end date.\n");
-
-    // tle file
-    char *tle_filename = find_in_share("tle");
-    if (!tle_filename)
-      strcat(errstr, "Unable to find two-line element file!\n");
-    if (!fileExists(tle_filename))
-      sprintf(errstr, "%sNo two-line element file found:\n %s\n",
-              errstr, tle_filename);
-
-    if (strlen(errstr) > 0) {
-      put_string_to_label("plan_error_label", errstr);
-    }
-    else {
-      put_string_to_label("plan_error_label", "Propagating...");
-      enable_widget("plan_button", FALSE);
-      while (gtk_events_pending())
-        gtk_main_iteration();
-
-      double *lat, *lon, *llat, *llon;
-      int num;
-
-      if (prop(satellite, beam_mode, tle_filename, startdate, enddate,
-               &lat, &lon, &llat, &llon, &num))
-      {
-        int k=0;
-        for (i=0; i<num; ++i) {
-          double line, samp;
-          meta_get_lineSamp(meta, lat[i], lon[i], 0, &line, &samp);
-          g_polys[0].line[k] = line;
-          g_polys[0].samp[k] = samp;
-          g_polys[0].n = k;
-          g_polys[0].c = k-1;
-
-          meta_get_lineSamp(meta, llat[i], llon[i], 0, &line, &samp);
-          g_polys[1].line[k] = line;
-          g_polys[1].samp[k] = samp;
-          g_polys[1].n = k;
-          g_polys[1].c = k-1;
-          if (++k >= 1440) {
-            assert(0);
-            break;
-          }
-        }
-        free(lat);
-        free(lon);
-        free(llat);
-        free(llon);
-
-        crosshair_line = g_polys[0].line[0];
-        crosshair_samp = g_polys[0].samp[0];
-        which_poly=0;
-      }
-
-      char msg[256];
-      sprintf(msg, "Propagated %d points.\n", num);
-      asfPrintStatus(msg);
-
-      put_string_to_label("plan_error_label", msg);
-
-      enable_widget("plan_button", TRUE);
-      fill_big(curr);
-    }
-}

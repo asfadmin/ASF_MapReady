@@ -73,8 +73,8 @@ stateVector tle_propagate(sat_t *sat, double t)
 
   double orbit = (sat->tle.xno * xmnpda/twopi +
                   age * sat->tle.bstar * ae) * age + sat->tle.xmo/twopi;
-  sat->orbit = (long) floor(orbit) + sat->tle.revnum - 1;
-  sat->orbit_part = orbit + sat->tle.revnum - 1 - (double)sat->orbit;
+  sat->orbit = (long) floor(orbit) + sat->tle.revnum/* - 1*/;
+  sat->orbit_part = orbit + sat->tle.revnum/* - 1*/ - (double)sat->orbit;
 
   stateVector st;
 
