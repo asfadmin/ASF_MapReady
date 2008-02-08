@@ -38,7 +38,13 @@
                         for processing.  Import processing includes the option
                         of processing to a particular radiometry selection
                         (Amplitude, Power, Sigma, Beta, or Gamma).  Import
-                        options may be set on the Import tab.
+                        options may be set on the Import tab.  ASF Internal
+                        format consists of 2 files, a) a metadata file that
+                        contains information about the data itself, and b)
+                        a binary file which contains the pixels of data
+                        themselves.  All processing by ASF tools other than
+                        import require the data to be in  ASF Internal Format
+                        file format.
                     </para>
                 </listitem>
                 <listitem>
@@ -70,7 +76,9 @@
                         data) into graphics file formats such as JPEG, TIFF,
                         and GeoTIFF for greater compatibility with other GIS
                         and data-viewing programs.  Export options may be set
-                        on the Export tab.
+                        on the Export tab.  If no export is to be performed
+                        then the result of the selected processing will be
+                        in ASF Internal Format (see Data Import above.)
                     </para>
                 </listitem>
             </orderedlist>
