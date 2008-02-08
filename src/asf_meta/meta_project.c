@@ -646,9 +646,14 @@ void atct_init(meta_projection *proj,stateVector st)
  */
 void atct_init_from_leader(const char *leaderName, meta_projection *proj)
 {
+    struct dataset_sum_rec *dssr = NULL;
     meta_parameters *meta = raw_init();
     stateVector st_start;
     ceos_description *ceos = get_ceos_description(leaderName, NOREPORT);
+
+    // Azimuth time per pixel need to be known for state vector propagation
+    dssr = &ceos->dssr;
+    ceos_init_sar_general(ceos, leaderName, meta);
 
     ceos_read_stVecs(leaderName, ceos, meta);
     st_start = meta_get_stVec(meta, 0.0);
