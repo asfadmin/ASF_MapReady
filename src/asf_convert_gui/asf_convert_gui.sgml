@@ -78,7 +78,14 @@
                         and data-viewing programs.  Export options may be set
                         on the Export tab.  If no export is to be performed
                         then the result of the selected processing will be
-                        in ASF Internal Format (see Data Import above.)
+                        in ASF Internal Format (see Data Import above.)  Note
+                        that after exporting, a metadata (.meta) file will
+                        remain.  The information in the metadata file
+                        represents the data prior to export, i.e. before
+                        remapping values to bytes etcetera ...which means
+                        information such as data statistics may not be
+                        valid for the exported file (but is valid for the
+                        data prior to export.)
                     </para>
                 </listitem>
             </orderedlist>
