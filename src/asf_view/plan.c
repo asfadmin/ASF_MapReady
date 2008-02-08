@@ -473,9 +473,13 @@ static double alos_time(double start_lat, int start_direction,
     return ret; 
 }
 
-static void time_to_orbit_frame(double t, int *orbit, int *frame)
+static void calc_frame(double lat, int *frame)
 {
-   *orbit=*frame=0; 
+  double sat_lat = lat*D2R;
+  double inclination = D2R * (90-98.16);
+  double angle_thing = cos(inclination);
+  double rev = asin(sin(sat_lat)/angle_thing);
+  *frame = (int)(rev*7200 + .5);
 }
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
@@ -484,7 +488,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     char errstr[1024];
     char *satellite, *beam_mode;
     long startdate, enddate;
-    double max_lat, min_lat, clat, clon;
+    double max_lat, min_lat, clat, clon, lead_time;
     Polygon *aoi;
 
     // gather up error mesages in "errstr"
@@ -504,6 +508,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     enddate = (long)get_int_from_entry("end_date_entry");
     if (!is_valid_date(enddate))
       strcat(errstr, "Invalid end date.\n");
+
+    // lead time
+    lead_time = (double)get_double_from_entry("lead_time_entry");
+    if (lead_time < 0 || lead_time > 60)
+      strcat(errstr, "Invalid lead time: 0-60 seconds.\n");
 
     // collect together the polygon, calculate min_lat, etc
     meta_parameters *meta = curr->meta;
@@ -680,7 +689,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       PassCollection *pc;
 
       int n = plan(satellite, beam_mode, startdate, enddate, max_lat, min_lat,
-                   clat, clon, pass_type, zone, aoi, tle_filename, &pc, &err);
+                   clat, clon, pass_type, lead_time, zone, aoi, tle_filename,
+                   &pc, &err);
 
       if (n < 0) {
         put_string_to_label("plan_error_label", err);
@@ -764,8 +774,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           sprintf(date_hidden_info, "%f", pi->start_time);
 
           //int orbit, frame;
+          int orbit, frame;
           char orbit_frame_info[256];
-          sprintf(orbit_frame_info, "%d/%d", pi->orbit, pi->frame);
+          calc_frame(pc->clat, &frame);
+          orbit = pi->orbit;
+          sprintf(orbit_frame_info, "%d/%d", orbit, frame);
 
           char pct_info[256];
           sprintf(pct_info, "%.1f", 100.*pi->total_pct);

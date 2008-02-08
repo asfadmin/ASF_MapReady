@@ -58,9 +58,9 @@ typedef struct {
 
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
-         double clat, double clon, int pass_type, int zone, Polygon *aoi,
-         const char *tle_filename, PassCollection **pc,
-         char **errorstring);
+         double clat, double clon, int pass_type, double lead_time,
+         int zone, Polygon *aoi, const char *tle_filename,
+         PassCollection **pc, char **errorstring);
 
 char **get_all_beam_modes(int *num_beam_modes);
 int is_valid_date(long date);

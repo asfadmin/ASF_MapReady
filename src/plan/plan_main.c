@@ -170,7 +170,7 @@ main (int argc, char *argv[])
   char *err;
   PassCollection *pc;
   int num_found = plan(satellite, beam_mode, startdt, enddt, lat_min, lat_max, 
-                       zone, clat, clon, 0, box, tleFile, &pc, &err);
+                       zone, clat, clon, 0, 0, box, tleFile, &pc, &err);
 
   polygon_free(box);
 
