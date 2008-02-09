@@ -689,7 +689,7 @@ double metadata_from_parameters::meta1D(asf::metadata_1D_enum v,const asf::meta_
 #define CHECK_AND_RETURN(struct,value) \
 		if (struct!=NULL) { \
 			if (struct->value!=MAGIC_UNSET_DOUBLE) \
-				return v; \
+				return struct->value; \
 			else /* unset value */ \
 				return super::meta1D(v,loc); \
 		} else /* NULL struct */ \
