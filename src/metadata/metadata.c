@@ -135,8 +135,8 @@ char *get_record_as_string(char *fileName, int reqrec)
   // Determine a couple things from the dssr before we get going since
   // the way some records are read depend on which facility the data was
   // processed at, which satellite captured the data, etc, etc
+  dssr = (struct dataset_sum_rec *) CALLOC(1, sizeof(struct dataset_sum_rec));
   if (leaderNameExists) {
-    dssr = (struct dataset_sum_rec *) MALLOC(sizeof(struct dataset_sum_rec));
     if (get_dssr(metaName[0],dssr) >= 0) {
         strcpy(sensor, trim_spaces(dssr->mission_id));
         strcpy(facility, trim_spaces(dssr->fac_id));
