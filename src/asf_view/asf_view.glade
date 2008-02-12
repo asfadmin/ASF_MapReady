@@ -1411,6 +1411,7 @@
 		      <property name="tab_pos">GTK_POS_TOP</property>
 		      <property name="scrollable">False</property>
 		      <property name="enable_popup">False</property>
+		      <signal name="switch_page" handler="on_planner_notebook_switch_page" last_modification_time="Mon, 11 Feb 2008 20:26:54 GMT"/>
 
 		      <child>
 			<widget class="GtkHBox" id="hbox36">

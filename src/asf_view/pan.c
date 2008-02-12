@@ -26,6 +26,7 @@ extern int small_image_x_dim;
 extern int small_image_y_dim;
 
 int ran_cb_callback=FALSE;
+static int ran_nb_callback=FALSE;
 
 #ifndef win32
 static GdkCursor *pan_cursor=NULL;
@@ -34,6 +35,15 @@ static GdkCursor *pan_cursor=NULL;
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
     free(pixels);
+}
+
+SIGNAL_CALLBACK int on_planner_notebook_switch_page(GtkNotebook *nb,
+                                                    GtkNotebookPage *pg,
+                                                    gint num,
+                                                    gpointer user_data)
+{
+  ran_nb_callback=TRUE;
+  return TRUE;
 }
 
 // called when the user releases button -- must ensure user was panning
@@ -45,11 +55,14 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
   int x = (int) event->x;
   int y = (int) event->y;
 
-  // kludge to prevent clicking on the checkboxes triggering this stuff
-  if (ran_cb_callback) {
-    ran_cb_callback=FALSE;
+  // kludge to prevent clicking on the checkboxes, or switching notebook
+  // tabs, triggering the re-centering/etc code
+  if (ran_cb_callback || ran_nb_callback) {
+    ran_cb_callback=ran_nb_callback=FALSE;
     return FALSE;
   }
+
+  //printf("  --> %d %d\n", x, y);
 
   if (panning) {
     panning = FALSE;
