@@ -686,7 +686,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          has_focus("lat_min_entry") ||
          has_focus("lat_max_entry") ||
          has_focus("lon_min_entry") ||
-         has_focus("lon_max_entry"))
+         has_focus("lon_max_entry") ||
+         has_focus("show_box_button"))
         &&
         (event->keyval == GDK_1 ||
          event->keyval == GDK_2 ||

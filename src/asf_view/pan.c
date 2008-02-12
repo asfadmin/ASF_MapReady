@@ -25,6 +25,8 @@ extern GdkPixbuf *pixbuf_small;
 extern int small_image_x_dim;
 extern int small_image_y_dim;
 
+int ran_cb_callback=FALSE;
+
 #ifndef win32
 static GdkCursor *pan_cursor=NULL;
 #endif
@@ -42,6 +44,12 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 {
   int x = (int) event->x;
   int y = (int) event->y;
+
+  // kludge to prevent clicking on the checkboxes triggering this stuff
+  if (ran_cb_callback) {
+    ran_cb_callback=FALSE;
+    return FALSE;
+  }
 
   if (panning) {
     panning = FALSE;

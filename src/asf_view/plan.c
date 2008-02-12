@@ -154,6 +154,7 @@ static void clear_found()
     g_poly = &g_polys[which_poly];
 }
 
+extern int ran_cb_callback;
 SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
                                  char *path_str, gpointer data)
 {
@@ -164,12 +165,12 @@ SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
   gtk_tree_model_get_iter(liststore, &iter, path);
   gtk_tree_model_get(liststore, &iter, COL_SELECTED, &enabled, -1);
   enabled ^= 1;
-  //printf("Enabled> %s %s\n", path_str, enabled ? "yes" : "no");
   gtk_list_store_set(GTK_LIST_STORE(liststore), &iter,
                      COL_SELECTED, enabled, -1);
 
   gtk_tree_path_free(path);
 
+  ran_cb_callback = TRUE;
   fill_big(curr);
 }
 
