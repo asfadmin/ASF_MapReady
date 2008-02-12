@@ -44,16 +44,6 @@ SIGNAL_CALLBACK int
 on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-  printf("small_image_clicked\n");
-  small_image_clicked=TRUE;
-  return TRUE;
-}
-
-SIGNAL_CALLBACK int on_small_image_button_press_event(GtkWidget *event_box,
-                                                      GdkEventButton *event,
-                                                      gpointer data)
-{
-  printf("small_image_clicked\n");
   small_image_clicked=TRUE;
   return TRUE;
 }
@@ -62,20 +52,9 @@ SIGNAL_CALLBACK int
 on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-  printf("big_image_clicked\n");
   big_image_clicked=TRUE;
   return TRUE;
 }
-
-SIGNAL_CALLBACK int on_big_image_button_press_event(GtkWidget *event_box,
-                                                    GdkEventButton *event,
-                                                    gpointer data)
-{
-  printf("big_image_clicked\n");
-  big_image_clicked=TRUE;
-  return TRUE;
-}
-
 
 SIGNAL_CALLBACK int on_planner_notebook_switch_page(GtkNotebook *nb,
                                                     GtkNotebookPage *pg,
