@@ -523,14 +523,6 @@ void fill_big(ImageInfo *ii)
     show_or_hide_save_subset_button();
 }
 
-SIGNAL_CALLBACK int on_small_image_eventbox_button_press_event(
-    GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-    // moved the "clicked" code to a new function small_clicked(),
-    // which is called from the "button release event" code.
-    return TRUE;
-}
-
 void small_clicked(GdkEventButton *event)
 {
     // clicking in the small image moves the big image
@@ -550,15 +542,6 @@ void small_clicked(GdkEventButton *event)
 // Keeps track of which crosshair should be affected when the user
 // presses an arrow key.
 static int last_was_crosshair = TRUE;
-
-SIGNAL_CALLBACK int
-on_big_image_eventbox_button_press_event(
-    GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-    // moved the "clicked" code to a new function big_clicked(),
-    // which is called from the "button release event" code.
-    return TRUE;
-}
 
 void big_clicked(GdkEventButton *event)
 {

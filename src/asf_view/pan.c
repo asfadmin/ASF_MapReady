@@ -37,6 +37,46 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
+static int small_image_clicked=FALSE;
+static int big_image_clicked=FALSE;
+
+SIGNAL_CALLBACK int
+on_small_image_eventbox_button_press_event(
+    GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  printf("small_image_clicked\n");
+  small_image_clicked=TRUE;
+  return TRUE;
+}
+
+SIGNAL_CALLBACK int on_small_image_button_press_event(GtkWidget *event_box,
+                                                      GdkEventButton *event,
+                                                      gpointer data)
+{
+  printf("small_image_clicked\n");
+  small_image_clicked=TRUE;
+  return TRUE;
+}
+
+SIGNAL_CALLBACK int
+on_big_image_eventbox_button_press_event(
+    GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  printf("big_image_clicked\n");
+  big_image_clicked=TRUE;
+  return TRUE;
+}
+
+SIGNAL_CALLBACK int on_big_image_button_press_event(GtkWidget *event_box,
+                                                    GdkEventButton *event,
+                                                    gpointer data)
+{
+  printf("big_image_clicked\n");
+  big_image_clicked=TRUE;
+  return TRUE;
+}
+
+
 SIGNAL_CALLBACK int on_planner_notebook_switch_page(GtkNotebook *nb,
                                                     GtkNotebookPage *pg,
                                                     gint num,
@@ -145,10 +185,14 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     return TRUE;
   }
 
-  if (event->x > 256)
+  if (big_image_clicked) { //event->x > 256)
+    big_image_clicked=FALSE;
     big_clicked(event);
-  else if (event->y < 256)
+  }
+  else if (small_image_clicked) { //event->y < 256)
+    small_image_clicked=FALSE;
     small_clicked(event);
+  }
 
   return FALSE;
 }
