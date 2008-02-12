@@ -170,7 +170,7 @@ SYNTAX:
   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir)
   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir)
   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
-  Code_PPR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
+  Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir)
 
   Code_VDR(unsigned char *bf, struct VDR *q, codingDir dir)

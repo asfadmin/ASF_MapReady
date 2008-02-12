@@ -1156,9 +1156,8 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   }
   else if (ppr) {
     beam_type_to_asf_beamname(ppr->beam_info[0].beam_type,
-        sizeof(ppr->beam_info[0].beam_type),
-    beamname,
-    sizeof(beamname));
+                              sizeof(ppr->beam_info[0].beam_type),
+                              beamname, sizeof(beamname));
   }
   strcpy(meta->general->mode, beamname);
   sprintf(meta->sar->polarization, "HH");
@@ -1228,13 +1227,13 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
 
   // Check to see if we need special startX / startY initialization
   if (!mpdr && !meta->transform && meta->projection) {
-    if (!meta_is_valid_double(meta->projection->startX) ||
-        !meta_is_valid_double(meta->projection->startY))
-    {
-      meta_sar_to_startXY(meta, &meta->projection->startX,
-              &meta->projection->startY);
-    }
+      if (!meta_is_valid_double(meta->projection->startX) ||
+          !meta_is_valid_double(meta->projection->startY))
+      {
+          meta_sar_to_startXY(meta, &meta->projection->startX, &meta->projection->startY);
+      }
   }
+
   // Location block
   if (ceos->product != RAW)
     ceos_init_location_block(meta);
