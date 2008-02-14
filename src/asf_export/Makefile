@@ -1,7 +1,5 @@
 PROGRAM := asf_export
 
-DEBUG_BUILD = 1
-
 include ../../make_support/system_rules
 
 
