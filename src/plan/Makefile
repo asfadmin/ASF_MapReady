@@ -40,7 +40,7 @@ lib: $(OBJS)
 	cp beam_modes.txt $(SHAREDIR)
 	cp polygon.h plan.h $(ASF_INCLUDE_DIR)
 	cp plan_internal.h $(ASF_INCLUDE_DIR)
-#	cp tle $(SHAREDIR)
+	cp tle $(SHAREDIR)
 
 exe: $(TARGET)_main.o
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET)_main.c $(LIBDIR)/$(LIBNAME) $(LIBS) $(LDFLAGS)
