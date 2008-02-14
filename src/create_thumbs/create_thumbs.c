@@ -1,79 +1,8 @@
-#define ASF_NAME_STRING "create_thumbs"
-
-#define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-verbose] [-size <size>]\n"\
-"                 [-recursive] [-out-dir <dir>] <files>\n"
-
-#define ASF_DESCRIPTION_STRING \
-"     This program takes any number of CEOS files and generates\n"\
-"     thumbnails.  If a directory is specified, all files in that\n"\
-"     directory are processed.  If -R is specified, any subdirectories\n"\
-"     are also processed, recursively.\n\n"\
-"     The generated thumbnails have the same basename as the input\n"\
-"     CEOS file, with '_thumb.jpg' added.\n"
-
-#define ASF_INPUT_STRING \
-"     At least one input file or directory is required.\n"
-
-#define ASF_OUTPUT_STRING \
-"     The program will produce one thumbnail for each input file found.\n"
-
-#define ASF_OPTIONS_STRING \
-"     -size <size>\n"\
-"          Generate thumbnails of the given size.  The default is %d.\n"\
-"          If the input image isn't square, the longer side will be\n"\
-"          scaled to the given size, the other dimension will be\n"\
-"          determined so as to keep the same aspect ratio.\n"\
-"\n"\
-"     -recursive (-R, -r)\n"\
-"          Recurse into subdirectories, looking for additional CEOS files\n"\
-"          to generate thumbnails for.\n"\
-"\n"\
-"     -out-dir (-output-dir, -o)\n"\
-"          Specify a directory where all thumbnails are placed.  Without\n"\
-"          this option, all thumbnails are placed in the same directory as\n"\
-"          the CEOS file.\n"\
-"\n"\
-"     -log <log file>\n"\
-"          Output will be written to a specified log file.\n"\
-"\n"\
-"     -quiet (-q)\n"\
-"          Supresses all non-essential output.\n"\
-"\n"\
-"     -verbose (-v)\n"\
-"          Prints out files that were ignored (i.e., not CEOS files).\n"\
-"\n"\
-"     -license\n"\
-"          Print copyright and license for this software then exit.\n"\
-"\n"\
-"     -version (-v)\n"\
-"          Print version and copyright then exit.\n"\
-"\n"\
-"     -help\n"\
-"          Print a help page and exit.\n"
-
-#define ASF_EXAMPLES_STRING \
-"     Generate thumbnails for all files in the current directory:\n"\
-"     > "ASF_NAME_STRING" .\n\n"\
-"     Generate thumbnails for files in the directory n60s:\n"\
-"     > "ASF_NAME_STRING" n60s\n\n"\
-"     Generate thumbnails for all files in the current direcotry,\n"\
-"     and all subdirectories.\n"\
-"     > "ASF_NAME_STRING" -r .\n\n"\
-"     Generate a large thumbnail for the single file file1.D:\n"\
-"     > "ASF_NAME_STRING" -size 1024 file.D\n\n"
-
-#define ASF_LIMITATIONS_STRING \
-"     The output file naming convention is not user-customizable.\n"
-
-#define ASF_SEE_ALSO_STRING \
-"     asf_convert_gui\n"
-
-#include <ceos.h>
-#include <asf_meta.h>
-#include <asf_raster.h>
-#include <asf_license.h>
-#include <asf_contact.h>
+#include "ceos.h"
+#include "asf_meta.h"
+#include "asf_raster.h"
+#include "asf_license.h"
+#include "create_thumbs_help.h"
 
 #ifdef linux
 #include <unistd.h>
@@ -91,58 +20,166 @@
 #include "float_image.h"
 #include "asf_nan.h"
 
-int verbose = 0;
-const int default_thumbnail_size = 256;
-char *out_dir = NULL;
+#define MIN_ARGS (1)
+#define MAX_ARGS (30)
 
-// Print minimalistic usage info & exit
-static void usage(const char *name)
+typedef enum {
+    not_L0=0,
+    stf,
+    ceos
+} level_0_flag;
+
+typedef enum output_format_types {
+    unsupported_format=0,
+    jpeg,
+    tiff
+} output_format_types;
+
+int checkForOption(char* key, int argc, char* argv[]); // in help.c
+char *spaces(int n);
+int strmatches(const char *key, ...);
+int has_prepension(const char * data_file_name);
+void process(const char *what, int top, int recursive, int size, int verbose,
+             level_0_flag L0Flag, float scale_factor, int browseFlag,
+             char *out_dir);
+void process_dir(const char *dir, int top, int recursive, int size, int verbose,
+                 level_0_flag L0Flag, float scale_factor, int browseFlag,
+                 char *out_dir);
+void process_file(const char *file, int level, int size, int verbose, char *out_dir);
+char *meta_file_name(const char * data_file_name);
+meta_parameters * silent_meta_create(const char *filename);
+int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir);
+
+int main(int argc, char *argv[])
 {
-  asfPrintStatus("\n"
-      "Usage:\n"
-      ASF_USAGE_STRING
-      "\n");
-  exit(EXIT_FAILURE);
-}
+  output_format_types output_format=jpeg;
+  level_0_flag L0Flag=not_L0;
+  int verbose = 0;
+  const int default_thumbnail_size = 256;
+  char *out_dir = NULL;
+  int scaleFlag=0;
+  float scale_factor=-1.0;
+  int browseFlag=0;
 
-// Print the help info & exit
-static void print_help(void)
-{
-  asfPrintStatus(
-      "\n"
-      "Tool name:\n   " ASF_NAME_STRING "\n\n"
-      "Usage:\n" ASF_USAGE_STRING "\n"
-      "Description:\n" ASF_DESCRIPTION_STRING "\n"
-      "Input:\n" ASF_INPUT_STRING "\n"
-      "Output:\n"ASF_OUTPUT_STRING "\n"
-      "Options:\n" ASF_OPTIONS_STRING "\n"
-      "Examples:\n" ASF_EXAMPLES_STRING "\n"
-      "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
-      "See also:\n" ASF_SEE_ALSO_STRING "\n"
-      "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n",
-      default_thumbnail_size);
-  exit(EXIT_FAILURE);
-}
+  quietflag = (checkForOption("-quiet", argc, argv)  ||
+               checkForOption("--quiet", argc, argv) ||
+               checkForOption("-q", argc, argv));
+  if (argc > 1 && !quietflag) {
+      check_for_help(argc, argv);
+      handle_license_and_version_args(argc, argv, TOOL_NAME);
+  }
+  if (argc <= MIN_ARGS || argc > MAX_ARGS) {
+      if (!quietflag) usage();
+      exit(1);
+  }
 
-int strmatches(const char *key, ...)
-{
-  va_list ap;
-  char *arg = NULL;
-  int found = FALSE;
+  int recursive = FALSE;
+  int size = default_thumbnail_size;
 
-  va_start(ap, key);
   do {
-    arg = va_arg(ap, char *);
-    if (arg) {
-      if (strcmp(key, arg) == 0) {
-    found = TRUE;
-    break;
-      }
+    char *key = argv[currArg++];
+    if (strmatches(key,"-log","--log",NULL)) {
+        CHECK_ARG(1);
+        strcpy(logFile,GET_ARG(1));
+        fLog = FOPEN(logFile, "a");
+        logflag = TRUE;
     }
-  } while (arg);
+    else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
+        quietflag = TRUE;
+    }
+    else if (strmatches(key,"-verbose","--verbose","-v",NULL)) {
+        verbose = TRUE;
+    }
+    else if (strmatches(key,"-recursive","--recursive","-r","-R",NULL)) {
+        recursive = TRUE;
+    }
+    else if (strmatches(key,"-out-dir","--out-dir","--output-dir",
+                            "-output-dir","-o",NULL)) {
+        CHECK_ARG(1);
+        char tmp[1024];
+        strcpy(tmp,GET_ARG(1));
+        out_dir = MALLOC(sizeof(char)*(strlen(tmp)+1));
+        strcpy(out_dir, tmp);
+    }
+    else if (strmatches(key,"--size","-size","-s",NULL)) {
+        CHECK_ARG(1);
+        size = atoi(GET_ARG(1));
+    }
+    else if (strmatches(key,"-L0","-LO","-Lo","-l0","-lO","-lo",NULL)) {
+        CHECK_ARG(1);
+        char tmp[1024];
+        strcpy(tmp,GET_ARG(1));
+        if (strncmp(uc(tmp),"STF",3) == 0) {
+            L0Flag=stf;
+        }
+        else if (strncmp(uc(tmp),"CEOS",4) == 0) {
+            L0Flag=ceos;
+        }
+        else {
+            L0Flag=not_L0;
+        }
+    }
+    else if (strmatches(key,"-output-format","--output-format",
+             "-out-format", "--out-format", NULL)) {
+        CHECK_ARG(1);
+        char tmp[1024];
+        strcpy(tmp,GET_ARG(1));
+        output_format=jpeg; // Default
+        if (strncmp(uc(tmp),"TIF",3) == 0) {
+            output_format=tiff;
+        }
+        else if (strncmp(uc(tmp),"JPG",3) == 0 ||
+                 strncmp(uc(tmp),"JPEG",4) == 0) {
+            output_format=jpeg;
+        }
+        else {
+            fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
+        }
+    }
+    else if (strmatches(key,"--scale","-scale",NULL)) {
+        CHECK_ARG(1);
+        scaleFlag=TRUE;
+        scale_factor = atof(GET_ARG(1));
+        if (scale_factor < 1.0) {
+            fprintf(stderr,"\n**Invalid scale factor for -scale option."
+                    "  Scale factor must be 1.0 or greater.\n");
+        }
+    }
+    else if (strmatches(key,"--browse","-browse","-b",NULL)) {
+        browseFlag=TRUE;
+    }
+    else if (strmatches(key,"--",NULL)) {
+        break;
+    }
+    else if (key[0] == '-') {
+      fprintf(stderr,"\n**Invalid option:  %s\n",argv[currArg-1]);
+      if (!quietflag) usage();
+      exit(1);
+    }
+    else {
+        // this was a file/dir to process -- back up
+        --currArg;
+        break;
+    }
+  } while (currArg < argc);
 
-  return found;
+  if (!quietflag) {
+      asfSplashScreen(argc, argv);
+  }
+
+  if (out_dir && !quietflag) asfPrintStatus("Output directory is: %s\n", out_dir);
+
+  int i;
+  for (i=currArg; i<argc; ++i) {
+      process(argv[i], 0, recursive, size, verbose,
+              L0Flag, scale_factor, browseFlag,
+              out_dir);
+  }
+
+  if (fLog) fclose(fLog);
+  if (out_dir) free(out_dir);
+
+  exit(EXIT_SUCCESS);
 }
 
 char *spaces(int n)
@@ -152,6 +189,26 @@ char *spaces(int n)
     for (i=0; i<256; ++i)
         buf[i] = i<n*3 ? ' ' : '\0';
     return buf;
+}
+
+int strmatches(const char *key, ...)
+{
+    va_list ap;
+    char *arg = NULL;
+    int found = FALSE;
+
+    va_start(ap, key);
+    do {
+        arg = va_arg(ap, char *);
+        if (arg) {
+            if (strcmp(key, arg) == 0) {
+                found = TRUE;
+                break;
+            }
+        }
+    } while (arg);
+
+    return found;
 }
 
 int has_prepension(const char * data_file_name)
@@ -187,33 +244,35 @@ char *meta_file_name(const char * data_file_name)
     }
 }
 
-void process(const char *what, int top, int recursive, int size);
-
-void process_dir(const char *dir, int top, int recursive, int size)
+void process_dir(const char *dir, int top, int recursive, int size, int verbose,
+                 level_0_flag L0Flag, float scale_factor, int browseFlag,
+                 char *out_dir)
 {
-  char name[1024];
-  struct dirent *dp;
-  DIR *dfd;
+    char name[1024];
+    struct dirent *dp;
+    DIR *dfd;
 
-  if ((dfd = opendir(dir)) == NULL) {
-    asfPrintStatus("cannot open %s\n",dir);
-    return; // error
-  }
-  while ((dp = readdir(dfd)) != NULL) {
-    if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
-      continue;
+    if ((dfd = opendir(dir)) == NULL) {
+        asfPrintStatus("cannot open %s\n",dir);
+        return; // error
     }
-    if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
-      asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
-                      dir, dp->d_name);
-      return; // error
+    while ((dp = readdir(dfd)) != NULL) {
+        if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
+            continue;
+        }
+        if (strlen(dir)+strlen(dp->d_name)+2 > sizeof(name)) {
+            asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
+                            dir, dp->d_name);
+            return; // error
+        }
+        else {
+            sprintf(name, "%s%c%s", dir, DIR_SEPARATOR, dp->d_name);
+            process(name, top, recursive, size, verbose,
+                    L0Flag, scale_factor, browseFlag,
+                    out_dir);
+        }
     }
-    else {
-      sprintf(name, "%s%c%s", dir, DIR_SEPARATOR, dp->d_name);
-      process(name, top, recursive, size);
-    }
-  }
-  closedir(dfd);
+    closedir(dfd);
 }
 
 meta_parameters * silent_meta_create(const char *filename)
@@ -227,13 +286,13 @@ meta_parameters * silent_meta_create(const char *filename)
     return ret;
 }
 
-int generate_ceos_thumbnail(const char *input_data, int size)
+int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir)
 {
     char *input_metadata = meta_file_name(input_data);
 
     /* This can happen if we don't get around to drawing the thumbnail
-       until the file has already been processes & cleaned up, don't want
-       to crash in that case. */
+    until the file has already been processes & cleaned up, don't want
+    to crash in that case. */
     if (!fileExists(input_metadata)) {
         asfPrintStatus("Metadata file not found: %s\n", input_metadata);
         return FALSE;
@@ -248,7 +307,7 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     {
         int nBands;
         char **dataName, *baseName, filename[255], dirname[255];
-    baseName = (char *) MALLOC(sizeof(char)*256);
+        baseName = (char *) MALLOC(sizeof(char)*256);
         split_dir_and_file(input_metadata, dirname, filename);
         met = MALLOC(sizeof(char)*(strlen(input_metadata)+1));
         sprintf(met, "%s%s", dirname, filename + pre);
@@ -293,8 +352,8 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     int leftFill = image_fdr.lbrdrpxl;
     int rightFill = image_fdr.rbrdrpxl;
     int headerBytes = firstRecordLen(data_name) +
-        (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
-         * image_fdr.bytgroup);
+            (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
+            * image_fdr.bytgroup);
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
@@ -323,36 +382,32 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
     size_t ii, jj;
-    unsigned short *line =
-        MALLOC (sizeof(unsigned short) * imd->general->sample_count);
-    unsigned char *bytes =
-        MALLOC (sizeof(unsigned char) * imd->general->sample_count);
+    unsigned short *line = MALLOC (sizeof(unsigned short) * imd->general->sample_count);
+    unsigned char *bytes = MALLOC (sizeof(unsigned char) * imd->general->sample_count);
 
     // Here's where we're putting all this data
     FloatImage *img = float_image_new(tsx, tsy);
 
     // Read in data line-by-line
     for ( ii = 0 ; ii < tsy ; ii++ ) {
-
-        long long offset =
-            (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
+        long long offset = (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
 
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-            FREAD(line, sizeof(unsigned short), imd->general->sample_count,
-                  fpIn);
+            FREAD(line, sizeof(unsigned short), imd->general->sample_count, fpIn);
 
-            for (jj = 0; jj < imd->general->sample_count; ++jj)
+            for (jj = 0; jj < imd->general->sample_count; ++jj) {
                 big16(line[jj]);
+            }
         }
         else if (imd->general->data_type == BYTE)
         {
-            FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
-                  fpIn);
+            FREAD(bytes, sizeof(unsigned char), imd->general->sample_count, fpIn);
 
-            for (jj = 0; jj < imd->general->sample_count; ++jj)
+            for (jj = 0; jj < imd->general->sample_count; ++jj) {
                 line[jj] = (unsigned short)bytes[jj];
+            }
         }
 
         for ( jj = 0 ; jj < tsx ; jj++ ) {
@@ -402,120 +457,54 @@ int generate_ceos_thumbnail(const char *input_data, int size)
     return TRUE;
 }
 
-void process_file(const char *file, int level, int size)
+void process_file(const char *file, int level, int size, int verbose, char *out_dir)
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
     if ((ext && strcmp_case(ext, ".D") == 0) ||
-        (strncmp(base, "IMG-", 4) == 0))
+         (strncmp(base, "IMG-", 4) == 0))
     {
         asfPrintStatus("%s%s\n", spaces(level), base);
-        generate_ceos_thumbnail(file, size);
+        generate_ceos_thumbnail(file, size, out_dir);
     }
     else {
-        if (verbose)
+        if (verbose) {
             asfPrintStatus("%s%s (ignored)\n", spaces(level), base);
+        }
     }
     FREE(base);
 }
 
-void process(const char *what, int level, int recursive, int size)
+void process(const char *what, int level, int recursive, int size, int verbose,
+             level_0_flag L0Flag, float scale_factor, int browseFlag,
+             char *out_dir)
 {
-  struct stat stbuf;
+    struct stat stbuf;
 
-  if (stat(what, &stbuf) == -1) {
-    asfPrintStatus("Cannot access: %s\n", what);
-    return;
-  }
-
-  char *base = get_filename(what);
-
-  if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
-      if (level==0 || recursive) {
-          asfPrintStatus("%s%s/\n", spaces(level), base);
-          process_dir(what, level+1, recursive, size);
-      }
-      else {
-          if (verbose)
-              asfPrintStatus("%s%s (skipped)\n", spaces(level), base);
-      }
-  }
-  else {
-      process_file(what, level, size);
-  }
-
-  FREE(base);
-}
-
-int main(int argc, char *argv[])
-{
-  handle_license_and_version_args(argc, argv, ASF_NAME_STRING);
-
-  int recursive = FALSE;
-  int size = default_thumbnail_size;
-
-  if (argc<=1) {
-      usage(ASF_NAME_STRING);
-      return 1;
-  }
-  else if (strmatches(argv[1],"-help","--help",NULL))
-      print_help();
-
-  do {
-    char *key = argv[currArg++];
-    if (strmatches(key,"-log","--log",NULL)) {
-        CHECK_ARG(1);
-        strcpy(logFile,GET_ARG(1));
-        fLog = FOPEN(logFile, "a");
-        logflag = TRUE;
+    if (stat(what, &stbuf) == -1) {
+        asfPrintStatus("Cannot access: %s\n", what);
+        return;
     }
-    else if (strmatches(key,"-quiet","--quiet","-q",NULL)) {
-        quietflag = TRUE;
-    }
-    else if (strmatches(key,"-verbose","--verbose","-v",NULL)) {
-        verbose = TRUE;
-    }
-    else if (strmatches(key,"-recursive","--recursive","-r","-R",NULL)) {
-        recursive = TRUE;
-    }
-    else if (strmatches(key,"-out-dir","--out-dir","--output-dir",
-                            "-output-dir","-o",NULL)) {
-        CHECK_ARG(1);
-        char tmp[1024];
-        strcpy(tmp,GET_ARG(1));
-        out_dir = MALLOC(sizeof(char)*(strlen(tmp)+1));
-        strcpy(out_dir, tmp);
-    }
-    else if (strmatches(key,"--size","-size","-s",NULL)) {
-        CHECK_ARG(1);
-        size = atoi(GET_ARG(1));
-    }
-    else if (strmatches(key,"--",NULL)) {
-        break;
-    }
-    else if (key[0] == '-') {
-      printf( "\n**Invalid option:  %s\n", argv[currArg-1]);
-      usage(ASF_NAME_STRING);
-      return 1;
+
+    char *base = get_filename(what);
+
+    if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
+        if (level==0 || recursive) {
+            asfPrintStatus("%s%s/\n", spaces(level), base);
+            process_dir(what, level+1, recursive, size, verbose,
+                        L0Flag, scale_factor, browseFlag,
+                        out_dir);
+        }
+        else {
+            if (verbose) {
+                asfPrintStatus("%s%s (skipped)\n", spaces(level), base);
+            }
+        }
     }
     else {
-        // this was a file/dir to process -- back up
-        --currArg;
-        break;
+        process_file(what, level, size, verbose, out_dir);
     }
-  } while (currArg < argc);
 
-  if (!quietflag)
-      asfSplashScreen(argc, argv);
-
-  if (out_dir) asfPrintStatus("Output directory is: %s\n", out_dir);
-
-  int i;
-  for (i=currArg; i<argc; ++i)
-      process(argv[i], 0, recursive, size);
-
-  if (fLog) fclose(fLog);
-  if (out_dir) free(out_dir);
-
-  exit(EXIT_SUCCESS);
+    FREE(base);
 }
+

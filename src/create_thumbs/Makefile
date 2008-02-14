@@ -2,6 +2,13 @@ include ../../make_support/system_rules
 
 TARGET = create_thumbs
 
+SRCS = \
+	$(TARGET).c \
+	help.c
+
+INCLUDES = \
+	$(TARGET)_help.h
+
 LIBS = \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
@@ -22,10 +29,13 @@ CFLAGS += \
 	$(GTK_LIBS) \
 	-D_XOPEN_SOURCE=600
 
-$(TARGET):  $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c $(OBJS) $(LIBS) $(LDFLAGS)
+OBJS = $(patsubst %.c, %.o, $(SRCS))
+
+$(TARGET): $(SRCS) $(INCLUDES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LIBS) $(LDFLAGS)
 	rm -f *.o
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
 clean:
-	rm -f core* $(TARGET).o $(TARGET)
+	rm -f core* *.o $(TARGET)
+
