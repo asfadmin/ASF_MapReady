@@ -151,7 +151,7 @@
 			      <signal name="clicked" handler="on_save_subset_button_clicked" last_modification_time="Fri, 13 Jul 2007 00:38:41 GMT"/>
 
 			      <child>
-				<widget class="GtkImage" id="image7">
+				<widget class="GtkImage" id="save_subset_image">
 				  <property name="visible">True</property>
 				  <property name="pixbuf">save_as.png</property>
 				  <property name="xalign">0.5</property>

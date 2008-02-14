@@ -52,7 +52,10 @@ void set_toolbar_images()
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
 
     w = get_widget_checked("mdv_image");
-    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("mdv.ico"));
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("ceos_metadata.png"));
+
+    w = get_widget_checked("save_subset_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("save_as.png"));
 }
 
 int
