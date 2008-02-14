@@ -80,6 +80,17 @@ void put_double_to_entry(const char *widget_name, double val)
     gtk_entry_set_text(GTK_ENTRY(e), tmp);
 }
 
+void put_double_to_entry_fmt(const char *widget_name, double val,
+                             const char *format)
+{
+    GtkWidget *e = get_widget_checked(widget_name);
+    
+    char tmp[64];
+    sprintf(tmp, format, val);
+
+    gtk_entry_set_text(GTK_ENTRY(e), tmp);
+}
+
 char* get_string_from_entry(const char *widget_name)
 {
     GtkWidget *e = get_widget_checked(widget_name);

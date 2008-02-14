@@ -47,6 +47,7 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
   char *p;
   int found=FALSE;
   float look=0, width=0, length=0, image_time=0;
+  int num_buffer_frames=0;
 
   while (1) {
     char line[1024];
@@ -60,8 +61,8 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
     }
 
     char sat[1024], bm[1024];
-    sscanf(line, "%s %s %f %f %f %f", 
-        sat, bm, &look, &width, &length, &image_time);
+    sscanf(line, "%s %s %f %f %f %f %d", 
+        sat, bm, &look, &width, &length, &image_time, &num_buffer_frames);
 
     if (strcmp_case(bm, beam_mode)==0 && strcmp_case(satellite, sat)==0) {
       found = TRUE;
@@ -79,6 +80,7 @@ BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode)
     ret->width_m = width*1000.;
     ret->length_m = length*1000.;
     ret->image_time = image_time;
+    ret->num_buffer_frames = num_buffer_frames;
     return ret;
   }
 }

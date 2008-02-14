@@ -32,6 +32,26 @@ static int ran_nb_callback=FALSE;
 static GdkCursor *pan_cursor=NULL;
 #endif
 
+static double max2(double a, double b)
+{
+  return a>b ? a : b;
+}
+
+static double min2(double a, double b)
+{
+  return a<b ? a : b;
+}
+
+static double max4(double a, double b, double c, double d)
+{
+  return max2(max2(a,b),max2(c,d));
+}
+
+static double min4(double a, double b, double c, double d)
+{
+  return min2(min2(a,b),min2(c,d));
+}
+
 static void destroy_pb_data(guchar *pixels, gpointer data)
 {
     free(pixels);
@@ -110,6 +130,24 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 
       g_polys[0].n = 4;
       g_polys[0].c = 3;
+
+      double lat1, lat2, lat3, lat4, lon1, lon2, lon3, lon4;
+      meta_get_latLon(curr->meta, l1, s1, 0, &lat1, &lon1);
+      meta_get_latLon(curr->meta, l1, s2, 0, &lat2, &lon2);
+      meta_get_latLon(curr->meta, l2, s2, 0, &lat3, &lon3);
+      meta_get_latLon(curr->meta, l2, s1, 0, &lat4, &lon4);
+
+      double lat_min = min4(lat1,lat2,lat3,lat4);
+      double lat_max = max4(lat1,lat2,lat3,lat4);
+
+      double lon_min = min4(lon1,lon2,lon3,lon4);
+      double lon_max = max4(lon1,lon2,lon3,lon4);
+
+      put_double_to_entry_fmt("lat_min_entry", lat_min, "%.4f");
+      put_double_to_entry_fmt("lat_max_entry", lat_max, "%.4f");
+
+      put_double_to_entry_fmt("lon_min_entry", lon_min, "%.4f");
+      put_double_to_entry_fmt("lon_max_entry", lon_max, "%.4f");
 
       update_pixel_info(curr);
     }

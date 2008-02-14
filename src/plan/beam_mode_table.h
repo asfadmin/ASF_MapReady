@@ -7,6 +7,7 @@ typedef struct
     double width_m;
     double length_m;
     double image_time;
+    int num_buffer_frames;
 } BeamModeInfo;
 
 BeamModeInfo *get_beam_mode_info(const char *satellite, const char *beam_mode);

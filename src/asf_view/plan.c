@@ -510,11 +510,6 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     if (!is_valid_date(enddate))
       strcat(errstr, "Invalid end date.\n");
 
-    // lead time
-    lead_time = (double)get_double_from_entry("lead_time_entry");
-    if (lead_time < 0 || lead_time > 60)
-      strcat(errstr, "Invalid lead time: 0-60 seconds.\n");
-
     // collect together the polygon, calculate min_lat, etc
     meta_parameters *meta = curr->meta;
     if (!(meta->projection || (meta->sar&&meta->state_vectors) ||
@@ -690,8 +685,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       PassCollection *pc;
 
       int n = plan(satellite, beam_mode, startdate, enddate, max_lat, min_lat,
-                   clat, clon, pass_type, lead_time, zone, aoi, tle_filename,
-                   &pc, &err);
+                   clat, clon, pass_type, zone, aoi, tle_filename, &pc, &err);
 
       if (n < 0) {
         put_string_to_label("plan_error_label", err);

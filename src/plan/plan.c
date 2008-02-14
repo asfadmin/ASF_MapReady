@@ -189,7 +189,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
 
 int plan(const char *satellite, const char *beam_mode,
          long startdate, long enddate, double min_lat, double max_lat,
-         double clat, double clon, int pass_type, double lead_time,
+         double clat, double clon, int pass_type,
          int zone, Polygon *aoi, const char *tle_filename,
          PassCollection **pc_out, char **errorstring)
 {
@@ -224,18 +224,11 @@ int plan(const char *satellite, const char *beam_mode,
   double incr = bmi->image_time;
   stateVector st = tle_propagate(&sat, start_secs-incr);
   double lat_prev = sat.ssplat;
-  int num_found = 0;
+  int i,num_found = 0;
 
   // Calculate the number of frames to include before we hit the
   // area of interest.  Add 1 (i.e., round up), but if user puts in
   // zero seconds, then we want 0 lead-up frames.
-  int num_leadup_frames;
-  if (lead_time > 0)
-    num_leadup_frames = lead_time/incr + 1;
-  else
-    num_leadup_frames = 0;
-  printf("Number of lead frames: %d\n", num_leadup_frames);
-
   PassCollection *pc = pass_collection_new(clat, clon, aoi);
 
   while (curr < end_secs) {
@@ -250,8 +243,7 @@ int plan(const char *satellite, const char *beam_mode,
         int n=0;
         PassInfo *pass_info = pass_info_new();
 
-        int i;
-        for (i=num_leadup_frames; i>0; --i) {
+        for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
           Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
@@ -268,6 +260,15 @@ int plan(const char *satellite, const char *beam_mode,
           st = tle_propagate(&sat, curr);
 
           oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
+        }
+
+        for (i=0; i<bmi->num_buffer_frames; ++i) {
+          double t = curr + i*incr;
+          stateVector st1 = tle_propagate(&sat, t);
+          Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
+          OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
+                                         &st1, t);
+          pass_info_add(pass_info, t, dir, sat.orbit, sat.orbit_part*2778, oi1);
         }
 
         if (n>0) {

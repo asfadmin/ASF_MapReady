@@ -68,6 +68,8 @@ char *get_band_combo_text(meta_parameters *meta, const char *widget_name);
 void rb_select(const char *widget_name, gboolean is_on);
 double get_double_from_entry(const char *widget_name);
 void put_double_to_entry(const char *widget_name, double val);
+void put_double_to_entry_fmt(const char *widget_name, double val,
+                             const char *format);
 int get_int_from_entry(const char *widget_name);
 void put_int_to_entry(const char *widget_name, int val);
 int get_checked(const char *widget_name);

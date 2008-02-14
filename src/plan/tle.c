@@ -167,9 +167,12 @@ void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
           sat->ma *= 256.0/360.0;
           sat->footprint = 2.0 * xkmper * acos (xkmper/sat->pos.w);
           double age = 0.0;
-          sat->orbit = (long) floor((sat->tle.xno * xmnpda/twopi +
-                                     age * sat->tle.bstar * ae) * age +
-                                    sat->tle.xmo/twopi) + sat->tle.revnum - 1;
+
+          double orbit = (sat->tle.xno * xmnpda/twopi +
+                          age * sat->tle.bstar * ae) * age + 
+                          sat->tle.xmo/twopi;
+          sat->orbit = (long) floor(orbit) + sat->tle.revnum/*-1*/;
+          sat->orbit_part = orbit + sat->tle.revnum/*-1*/ - (double)sat->orbit;
 
           // orbit type
           sat->otype = ORBIT_TYPE_UNKNOWN;
