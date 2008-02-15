@@ -665,7 +665,6 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
     // Currently just have the date widgets of the acquisition planner.
     if ((has_focus("start_date_entry") ||
          has_focus("end_date_entry") ||
-         has_focus("lead_time_entry") ||
          has_focus("lat_min_entry") ||
          has_focus("lat_max_entry") ||
          has_focus("lon_min_entry") ||

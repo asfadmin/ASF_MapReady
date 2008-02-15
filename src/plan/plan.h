@@ -23,7 +23,9 @@ typedef struct {
     OverlapInfo **overlaps;
     double total_pct;
     char dir;
-    int orbit, frame;
+    int orbit;
+    double start_lat;
+    double duration;
 } PassInfo;
 
 // A "PassCollection" is a set of passes

@@ -241,7 +241,8 @@ int plan(const char *satellite, const char *beam_mode,
       OverlapInfo *oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
       if (oi) {
         int n=0;
-        PassInfo *pass_info = pass_info_new();
+        PassInfo *pass_info = pass_info_new(sat.orbit, dir, sat.ssplat);
+        double start_time = curr;
 
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
@@ -249,11 +250,11 @@ int plan(const char *satellite, const char *beam_mode,
           Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
-          pass_info_add(pass_info, t, dir, sat.orbit, sat.orbit_part*2778, oi1);
+          pass_info_add(pass_info, t, oi1);
         }
 
         while (curr < end_secs && oi) {
-          pass_info_add(pass_info, curr, dir, sat.orbit, sat.orbit_part*2778, oi);
+          pass_info_add(pass_info, curr, oi);
           ++n;
 
           curr += incr;
@@ -262,13 +263,15 @@ int plan(const char *satellite, const char *beam_mode,
           oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
         }
 
+        pass_info_set_duration(pass_info, curr-start_time);
+
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
           stateVector st1 = tle_propagate(&sat, t);
           Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
-          pass_info_add(pass_info, t, dir, sat.orbit, sat.orbit_part*2778, oi1);
+          pass_info_add(pass_info, t, oi1);
         }
 
         if (n>0) {

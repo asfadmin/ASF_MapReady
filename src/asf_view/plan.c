@@ -21,18 +21,22 @@ enum
   COL_SELECTED,
   COL_DATE,
   COL_DATE_HIDDEN,
-  COL_ORBIT_FRAME,
+  COL_ORBIT_PATH,
   COL_COVERAGE,
   COL_ORBITDIR,
+  COL_START_LAT,
+  COL_DURATION,
   COL_INDEX
 };
 
 enum
 {
   SORTID_DATE = 0,
-  SORTID_ORBIT_FRAME,
+  SORTID_ORBIT_PATH,
   SORTID_COVERAGE,
-  SORTID_ORBITDIR
+  SORTID_ORBITDIR,
+  SORTID_START_LAT,
+  SORTID_DURATION
 };
 
 static GtkTreeModel *liststore = NULL;
@@ -80,12 +84,12 @@ int sort_compare_func(GtkTreeModel *model,
     }
     break;
 
-    case SORTID_ORBIT_FRAME:
+    case SORTID_ORBIT_PATH:
     {
       char *str1, *str2;
 
-      gtk_tree_model_get(model, a, COL_ORBIT_FRAME, &str1, -1);
-      gtk_tree_model_get(model, b, COL_ORBIT_FRAME, &str2, -1);
+      gtk_tree_model_get(model, a, COL_ORBIT_PATH, &str1, -1);
+      gtk_tree_model_get(model, b, COL_ORBIT_PATH, &str2, -1);
 
       int orbit1, orbit2, frame1, frame2;
       sscanf(str1, "%d/%d", &orbit1, &frame1);
@@ -113,13 +117,13 @@ int sort_compare_func(GtkTreeModel *model,
       if (strcmp(str1, str2) == 0) {
         // both ascending, or both descending -- sort by date
         char *date1_str, *date2_str;
-        
+
         gtk_tree_model_get(model, a, COL_DATE_HIDDEN, &date1_str, -1);
         gtk_tree_model_get(model, b, COL_DATE_HIDDEN, &date2_str, -1);
-        
+
         double date1 = atof(date1_str);
         double date2 = atof(date2_str);
-        
+
         if (date1 != date2)
           ret = date1 > date2 ? 1 : -1;
         else
@@ -128,6 +132,40 @@ int sort_compare_func(GtkTreeModel *model,
       else {
         ret = strcmp(str1, str2) > 0 ? 1 : -1;
       }
+    }
+    break;
+
+    case SORTID_START_LAT:
+    {
+      char *start_lat1_str, *start_lat2_str;
+
+      gtk_tree_model_get(model, a, COL_START_LAT, &start_lat1_str, -1);
+      gtk_tree_model_get(model, b, COL_START_LAT, &start_lat2_str, -1);
+
+      double lat1 = atof(start_lat1_str);
+      double lat2 = atof(start_lat2_str);
+
+      if (lat1 != lat2)
+        ret = lat1 > lat2 ? 1 : -1;
+      else
+        ret = 0; // equal
+    }
+    break;
+
+    case SORTID_DURATION:
+    {
+      char *duration1_str, *duration2_str;
+
+      gtk_tree_model_get(model, a, COL_DURATION, &duration1_str, -1);
+      gtk_tree_model_get(model, b, COL_DURATION, &duration2_str, -1);
+
+      double dur1 = atof(duration1_str);
+      double dur2 = atof(duration2_str);
+
+      if (dur1 != dur2)
+        ret = dur1 > dur2 ? 1 : -1;
+      else
+        ret = 0; // equal
     }
     break;
 
@@ -189,10 +227,6 @@ void setup_planner()
     for (i=0; i<num_beam_modes; ++i)
         add_to_combobox("satellite_combobox", modes[i]);
 
-    //for (i=0; i<num_beam_modes; ++i)
-    //    FREE(modes[i]);
-    //FREE(modes);
-
     // by default select ALOS -- FIXME select alos!
     set_combo_box_item_checked("satellite_combobox", 0);
 
@@ -203,7 +237,7 @@ void setup_planner()
     GtkTreeViewColumn *col;
     GtkCellRenderer *rend;
 
-    GtkListStore *ls = gtk_list_store_new(8,
+    GtkListStore *ls = gtk_list_store_new(10,
                                           GDK_TYPE_PIXBUF,
                                           G_TYPE_BOOLEAN,
                                           G_TYPE_STRING,
@@ -211,9 +245,10 @@ void setup_planner()
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
+                                          G_TYPE_STRING,
+                                          G_TYPE_STRING,
                                           G_TYPE_STRING);
     liststore = GTK_TREE_MODEL(ls);
-
     GtkWidget *tv = get_widget_checked("treeview_planner");
 
     // Column: The color pixbuf
@@ -256,13 +291,13 @@ void setup_planner()
 
     // Column: Orbit/Frame
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Orbit/Frame");
+    gtk_tree_view_column_set_title(col, "Orbit/Path");
     gtk_tree_view_column_set_resizable(col, TRUE);
-    gtk_tree_view_column_set_sort_column_id(col, SORTID_ORBIT_FRAME);
+    gtk_tree_view_column_set_sort_column_id(col, SORTID_ORBIT_PATH);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
-    gtk_tree_view_column_add_attribute(col, rend, "text", COL_ORBIT_FRAME);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_ORBIT_PATH);
 
     // Column: Coverage Pct
     col = gtk_tree_view_column_new();
@@ -273,6 +308,26 @@ void setup_planner()
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_COVERAGE);
+
+    // Column: Start Latitude
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Lat");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_column_set_sort_column_id(col, SORTID_START_LAT);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_START_LAT);
+
+    // Column: Duration
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Duration");
+    gtk_tree_view_column_set_resizable(col, TRUE);
+    gtk_tree_view_column_set_sort_column_id(col, SORTID_DURATION);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_DURATION);
 
     // Column: Ascending/Descending
     col = gtk_tree_view_column_new();
@@ -301,12 +356,18 @@ void setup_planner()
     GtkTreeSortable *sortable = GTK_TREE_SORTABLE(liststore);
     gtk_tree_sortable_set_sort_func(sortable, SORTID_DATE, sort_compare_func,
                                     GINT_TO_POINTER(SORTID_DATE), NULL);
-    gtk_tree_sortable_set_sort_func(sortable, SORTID_ORBIT_FRAME,
+    gtk_tree_sortable_set_sort_func(sortable, SORTID_ORBIT_PATH,
                                     sort_compare_func,
-                                    GINT_TO_POINTER(SORTID_ORBIT_FRAME), NULL);
+                                    GINT_TO_POINTER(SORTID_ORBIT_PATH), NULL);
     gtk_tree_sortable_set_sort_func(sortable, SORTID_COVERAGE,
                                     sort_compare_func,
                                     GINT_TO_POINTER(SORTID_COVERAGE), NULL);
+    gtk_tree_sortable_set_sort_func(sortable, SORTID_START_LAT,
+                                    sort_compare_func,
+                                    GINT_TO_POINTER(SORTID_START_LAT), NULL);
+    gtk_tree_sortable_set_sort_func(sortable, SORTID_DURATION,
+                                    sort_compare_func,
+                                    GINT_TO_POINTER(SORTID_DURATION), NULL);
     gtk_tree_sortable_set_sort_func(sortable, SORTID_ORBITDIR,
                                     sort_compare_func,
                                     GINT_TO_POINTER(SORTID_ORBITDIR), NULL);
@@ -489,7 +550,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     char errstr[1024];
     char *satellite, *beam_mode;
     long startdate, enddate;
-    double max_lat, min_lat, clat, clon, lead_time;
+    double max_lat, min_lat, clat, clon;
     Polygon *aoi;
 
     // gather up error mesages in "errstr"
@@ -663,7 +724,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       case 1: pass_type = ASCENDING_ONLY;          break;
       case 2: pass_type = DESCENDING_ONLY;         break;
     }
-    
+
     // tle file
     char *tle_filename = find_in_share("tle");
     if (!tle_filename)
@@ -711,9 +772,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         pass_collection_to_kml(pc, "test_kml.kml");
         clear_found();
 
-        // polygon #0 is left alone (it is the area of interest)
-        // The passes start at polygon #1 (clobber any existing polygons)
-
+        // Polygon #0 is left alone (it is the area of interest), so
+        // the passes start at polygon #1 (clobber any existing polygons)
 
         // find the maximum coverage
         double max_coverage = 0.;
@@ -768,12 +828,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char date_hidden_info[256];
           sprintf(date_hidden_info, "%f", pi->start_time);
 
-          //int orbit, frame;
-          char orbit_frame_info[256];
+          char orbit_info[256];
           //calc_frame(pc->clat, &frame);
           int orbit = pi->orbit;
-          int frame = pi->frame;
-          sprintf(orbit_frame_info, "%d/%d", orbit, frame);
+          //int frame = pi->frame;
+          int path = revolution2path(orbit);
+          sprintf(orbit_info, "%d/%d", orbit, path);
 
           char pct_info[256];
           sprintf(pct_info, "%.1f", 100.*pi->total_pct);
@@ -781,6 +841,14 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           // the index in the "g_polys" array which corresponds to this row
           char index_info[256];
           sprintf(index_info, "%d", i+1);
+
+          // start latitude
+          char lat_info[256];
+          sprintf(lat_info, "%.2f", pi->start_lat);
+
+          // duration
+          char duration_info[256];
+          sprintf(duration_info, "%.1f", pi->duration);
 
           // ascending or descending
           char orbit_dir[5];
@@ -817,8 +885,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_SELECTED, selected,
                              COL_DATE, date_info,
                              COL_DATE_HIDDEN, date_hidden_info,
-                             COL_ORBIT_FRAME, orbit_frame_info,
+                             COL_ORBIT_PATH, orbit_info,
                              COL_COVERAGE, pct_info,
+                             COL_START_LAT, lat_info,
+                             COL_DURATION, duration_info,
                              COL_ORBITDIR, orbit_dir,
                              COL_INDEX, index_info,
                              -1);
@@ -842,17 +912,22 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)
     {
-        char *date_str, *dbl_date_str, *coverage_str, *orbit_frame_str;
+        char *date_str, *dbl_date_str, *coverage_str, *orbit_frame_str,
+          *start_lat_str, *duration_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
                            COL_SELECTED, &enabled,
                            COL_DATE, &date_str,
                            COL_DATE_HIDDEN, &dbl_date_str,
                            COL_COVERAGE, &coverage_str,
-                           COL_ORBIT_FRAME, &orbit_frame_str,
+                           COL_START_LAT, &start_lat_str,
+                           COL_DURATION, &duration_str,
+                           COL_ORBIT_PATH, &orbit_frame_str,
                            -1);
 
         //double date = atof(dbl_date_str);
+        double lat = atof(start_lat_str);
+        double dur = atof(duration_str);
         double cov = atof(coverage_str);
         int orbit, frame;
         sscanf(orbit_frame_str, "%d/%d", &orbit, &frame);
@@ -860,7 +935,8 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         // now do something with all this great info
         if (enabled) {
           // here we will save it, or something
-          printf("Saving: %s %.1f%% %d/%d\n", date_str, cov, orbit, frame);
+          printf("Saving: %s %.1f%% %.2f %.1f %d/%d\n",
+                 date_str, cov, lat, dur, orbit, frame);
         }
 
         valid = gtk_tree_model_iter_next(liststore, &iter);

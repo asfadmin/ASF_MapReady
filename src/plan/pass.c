@@ -2,7 +2,7 @@
 #include "asf_vector.h"
 #include <assert.h>
 
-PassInfo *pass_info_new()
+PassInfo *pass_info_new(int orbit, char dir, double start_lat)
 {
     PassInfo *ret = MALLOC(sizeof(PassInfo));
 
@@ -10,12 +10,14 @@ PassInfo *pass_info_new()
     ret->overlaps = NULL;
     ret->start_time = -1;
     ret->start_time_as_string = NULL;
+    ret->dir = dir;
+    ret->orbit = orbit;
+    ret->start_lat = start_lat;
+    ret->duration = -1;
     return ret;
 }
 
-void pass_info_add(PassInfo *pass_info, double t, char dir,
-                   int orbit, int frame,
-                   OverlapInfo *oi)
+void pass_info_add(PassInfo *pass_info, double t, OverlapInfo *oi)
 {
     if (pass_info->start_time == -1) {
         assert(pass_info->num == 0);
@@ -25,10 +27,8 @@ void pass_info_add(PassInfo *pass_info, double t, char dir,
     }
 
     int i;
+
     pass_info->num += 1;
-    pass_info->dir = dir;
-    pass_info->orbit = orbit;
-    pass_info->frame = frame;
 
     // create a new overlaps array
     OverlapInfo **overlaps = MALLOC(sizeof(OverlapInfo*)*(pass_info->num));
@@ -46,6 +46,11 @@ void pass_info_add(PassInfo *pass_info, double t, char dir,
 
     // update coverage
     pass_info->total_pct += oi->pct;
+}
+
+void pass_info_set_duration(PassInfo *pass_info, double duration)
+{
+    pass_info->duration = duration;
 }
 
 void pass_info_free(PassInfo *pass_info)

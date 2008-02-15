@@ -143,11 +143,11 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
       double lon_min = min4(lon1,lon2,lon3,lon4);
       double lon_max = max4(lon1,lon2,lon3,lon4);
 
-      put_double_to_entry_fmt("lat_min_entry", lat_min, "%.4f");
-      put_double_to_entry_fmt("lat_max_entry", lat_max, "%.4f");
+      put_double_to_entry_fmt("lat_min_entry", lat_min, "%.2f");
+      put_double_to_entry_fmt("lat_max_entry", lat_max, "%.2f");
 
-      put_double_to_entry_fmt("lon_min_entry", lon_min, "%.4f");
-      put_double_to_entry_fmt("lon_max_entry", lon_max, "%.4f");
+      put_double_to_entry_fmt("lon_min_entry", lon_min, "%.2f");
+      put_double_to_entry_fmt("lon_max_entry", lon_max, "%.2f");
 
       update_pixel_info(curr);
     }
@@ -178,17 +178,12 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     int miny = MIN(start_y, y);
     int maxy = MAX(start_y, y);
 
-    //int width = gdk_pixbuf_get_width(pb);
-    //int height = gdk_pixbuf_get_height(pb);
-
     double w = (double)(maxx-minx)/(double)small_image_x_dim * curr->ns;
     double z1 = w/(double)get_big_image_width();
 
     double h = (double)(maxy-miny)/(double)small_image_y_dim * curr->nl;
     double z2 = h/(double)get_big_image_height();
 
-    //double z1 = (double)(curr->nl)/h;
-    //double z2 = (double)(curr->ns)/w;
     zoom = z1 > z2 ? z1 : z2;
 
     center_line = ((double)(maxy+miny))/(double)small_image_y_dim*curr->nl/2.;
@@ -202,11 +197,11 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     return TRUE;
   }
 
-  if (big_image_clicked) { //event->x > 256)
+  if (big_image_clicked) {
     big_image_clicked=FALSE;
     big_clicked(event);
   }
-  else if (small_image_clicked) { //event->y < 256)
+  else if (small_image_clicked) {
     small_image_clicked=FALSE;
     small_clicked(event);
   }
@@ -296,18 +291,18 @@ on_motion_notify_event(
         start_x = x;
         start_y = y;
         panning = TRUE;
-        
+
         if (planner_is_active() && !(state & GDK_CONTROL_MASK))
           planner_panning = TRUE;
 
         if (!win)
           win = get_widget_checked("ssv_main_window");
-        
+
         if (!img)
           img = get_widget_checked("big_image");
-        
+
         pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
-        
+
         if (!planner_panning) {
 #ifdef win32
           SetCursor(LoadCursor(NULL,IDC_HAND));
@@ -319,7 +314,7 @@ on_motion_notify_event(
 #endif
         }
       }
-      
+
       assert(pb);
       int ii;
       int off_x = x-start_x;
@@ -432,5 +427,6 @@ on_motion_notify_event(
              gtk_widget_get_name(widget), x, y, event->x_root, event->y_root);
     }
   }
+
   return TRUE;
 }
