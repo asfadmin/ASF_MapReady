@@ -15,9 +15,12 @@ REQUIRED_LIBS = \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS)
 
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS)
 
 CEDAR_LIBS = $(LIBDIR)/asf_las.a
 LIBS = \

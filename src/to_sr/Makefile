@@ -10,6 +10,7 @@ REQUIRED_LIBS = \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
         $(LIBDIR)/asf.a \
+	$(TIFF_LIBS) \
 	$(GLIB_LIBS) \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
@@ -25,7 +26,9 @@ LIBS = \
 	fi \
 	)
 
-CFLAGS += $(GLIB_CFLAGS)
+CFLAGS += \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS)
 
 all: to_sr clean
 

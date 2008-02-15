@@ -37,20 +37,20 @@
 // used or understood by client code, except for the size_x and size_y
 // fields.
 typedef struct {
-  size_t size_x, size_y;	// Image dimensions.
-  size_t cache_space;		// Memory cache space in bytes.
-  size_t cache_area;		// Memory cache area in pixels.
-  size_t tile_size;		// Tile size in pixels on a side.
-  size_t cache_size_in_tiles;	// Number of tiles in cache.
-  size_t tile_count_x;		// Number of tiles in image in x direction.
-  size_t tile_count_y;		// Number of tiles in image in y direction.
-  size_t tile_count;		// Total number of tiles in image.
+  size_t size_x, size_y;    // Image dimensions.
+  size_t cache_space;       // Memory cache space in bytes.
+  size_t cache_area;        // Memory cache area in pixels.
+  size_t tile_size;     // Tile size in pixels on a side.
+  size_t cache_size_in_tiles;   // Number of tiles in cache.
+  size_t tile_count_x;      // Number of tiles in image in x direction.
+  size_t tile_count_y;      // Number of tiles in image in y direction.
+  size_t tile_count;        // Total number of tiles in image.
   size_t tile_area;             // Area of a tile, in pixels.
   float *cache;                 // Memory cache.
-  float **tile_addresses;	// Addresss of individual tiles in the cache.
-  GQueue *tile_queue;		// Queue of tile offsets kept in load order.
+  float **tile_addresses;   // Addresss of individual tiles in the cache.
+  GQueue *tile_queue;       // Queue of tile offsets kept in load order.
   FILE *tile_file;              // File with tiles stored contiguously.
-  int reference_count;		// For optional reference counting.
+  int reference_count;      // For optional reference counting.
 } FloatImage;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,7 +107,7 @@ float_image_new_from_model_scaled (FloatImage *model, ssize_t scale_factor);
 // size_y.
 FloatImage *
 float_image_new_subimage (FloatImage *model, ssize_t x, ssize_t y,
-			  ssize_t size_x, ssize_t size_y);
+              ssize_t size_x, ssize_t size_y);
 
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
@@ -122,15 +122,15 @@ typedef enum {
 // pixels in the file should be byte_order.
 FloatImage *
 float_image_new_from_file (ssize_t size_x, ssize_t size_y, const char *file,
-			   off_t offset, float_image_byte_order_t byte_order);
+               off_t offset, float_image_byte_order_t byte_order);
 
 // The method is like new_from_file, but takes a file pointer instead
 // of a file name, and the offset argument is with respect to the
 // current position in the file_pointer stream.
 FloatImage *
 float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
-				   FILE *file_pointer, off_t offset,
-				   float_image_byte_order_t byte_order);
+                   FILE *file_pointer, off_t offset,
+                   float_image_byte_order_t byte_order);
 
 // Form a low quality reduced resolution version of the
 // original_size_x by original_size_y image in file.  The new image
@@ -141,10 +141,10 @@ float_image_new_from_file_pointer (ssize_t size_x, ssize_t size_y,
 // factor of say 1.5 or less), but not much else.
 FloatImage *
 float_image_new_from_file_scaled (ssize_t size_x, ssize_t size_y,
-				  ssize_t original_size_x,
-				  ssize_t original_size_y,
-				  const char *file, off_t offset,
-				  float_image_byte_order_t byte_order);
+                  ssize_t original_size_x,
+                  ssize_t original_size_y,
+                  const char *file, off_t offset,
+                  float_image_byte_order_t byte_order);
 
 // The function that does it all, generating an instance of FloatImage
 // from a file and the metadata
@@ -154,7 +154,7 @@ float_image_new_from_metadata(meta_parameters *meta, const char *file);
 // For multi-band imagery the previous function needs to be more specific.
 FloatImage *
 float_image_band_new_from_metadata(meta_parameters *meta,
-				   int band, const char *file);
+                   int band, const char *file);
 
 // Sample type of an image that is to be used to create a float_image
 // instance.  For example, floating point image can be created from
@@ -212,12 +212,12 @@ float_image_set_pixel (FloatImage *self, ssize_t x, ssize_t y, float value);
 // always involve disk access and always be slow.
 void
 float_image_get_region (FloatImage *self, ssize_t x, ssize_t y,
-			ssize_t size_x, ssize_t size_y, float *buffer);
+            ssize_t size_x, ssize_t size_y, float *buffer);
 
 // This method is analogous to float_image_get_region.
 void
 float_image_set_region (FloatImage *self, size_t x, size_t y, size_t size_x,
-			size_t size_y, float *buffer);
+            size_t size_y, float *buffer);
 
 // Get a full row of pixels, copying the data into already allocated
 // buffer.  This method will be fast on the average for calls with
@@ -260,10 +260,10 @@ float_image_band_statistics(FloatImage *self, meta_stats *stats,
 // for the purposes of determining any of the outputs.
 void
 float_image_statistics_with_mask_interval (FloatImage *self, float *min,
-					   float *max, float *mean,
-					   float *standard_deviation,
-					   double interval_start,
-					   double interval_end);
+                       float *max, float *mean,
+                       float *standard_deviation,
+                       double interval_start,
+                       double interval_end);
 
 // Compute an efficient estimate of the mean and standard deviation of
 // the pixels in the image, by sampling every stride th pixel in each
@@ -304,7 +304,7 @@ float_image_gsl_histogram (FloatImage *self, float min, float max,
 // is used.
 float
 float_image_apply_kernel (FloatImage *self, ssize_t x, ssize_t y,
-			  gsl_matrix_float *kernel);
+              gsl_matrix_float *kernel);
 
 // Type used to specify whether disk files should be in big or little
 // endian byte order.
@@ -323,7 +323,7 @@ typedef enum {
 
 float
 float_image_sample (FloatImage *self, float x, float y,
-		    float_image_sample_method_t sample_method);
+            float_image_sample_method_t sample_method);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -369,14 +369,14 @@ float_image_freeze (FloatImage *self, FILE *file_pointer);
 // byte_order.  Returns 0 on success, nonzero on error.
 int
 float_image_store (FloatImage *self, const char *file,
-		   float_image_byte_order_t byte_order);
+           float_image_byte_order_t byte_order);
 int
 float_image_store_ext(FloatImage *self, const char *file,
                       float_image_byte_order_t byte_order, int append_flag);
 
 int
 float_image_band_store(FloatImage *self, const char *file,
-		       meta_parameters *meta, int append_flag);
+               meta_parameters *meta, int append_flag);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -385,7 +385,7 @@ float_image_band_store(FloatImage *self, const char *file,
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-// Export image to fila as a gray scaled jpeg image, with largest
+// Export image to file as a gray scaled jpeg image, with largest
 // dimension no larger than max_dimension.  The max_dimension argument
 // must be less than or equal to the largest dimension of the image.
 // The image may be scaled st its largest dimension is considerably
@@ -405,7 +405,7 @@ float_image_band_store(FloatImage *self, const char *file,
 // on success, nonzero on error.
 int
 float_image_export_as_jpeg (FloatImage *self, const char *file,
-			    size_t max_dimension, double mask);
+                size_t max_dimension, double mask);
 
 // This method works like the export_as_jpeg method, but all values in
 // the interval [interval_start, interval_end] are considered to be
@@ -420,10 +420,32 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
 // image.
 int
 float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
-					       const char *file,
-					       ssize_t max_dimension,
-					       double interval_start,
-					       double interval_end);
+                           const char *file,
+                           ssize_t max_dimension,
+                           double interval_start,
+                           double interval_end);
+
+// Export image to file as a gray scaled tiff image, with largest
+// dimension no larger than max_dimension.  The max_dimension argument
+// must be less than or equal to the largest dimension of the image.
+// The image may be scaled st its largest dimension is considerably
+// less than max_dimension.  Scaling is performed by averaging blocks
+// of pixels together, using odd pixel reflection around the image
+// edges (see the description of the apply_kernel method).  The TIFF
+// format (here) uses byte-valued gray scale samples, so the dynamic range
+// of gray scale output pixels is limited to [0, 255].  Image pixel
+// values inside two standard deviations of the mean pixel value are
+// mapped linearly into this range; image pixel values outside two
+// standard are clamped at the appropriate limit.  In determining the
+// image statistics (mean and standard deviation), values equal to mask
+// are not considered, unless mask is NAN, in which case mask has no
+// effect.  If all image pixels have the same value, the output is
+// made black if the pixels have value 0.0, and white otherwise.  This
+// routine slurps the whole image into memory, so beware.  Returns 0
+// on success, nonzero on error.
+int
+float_image_export_as_tiff (FloatImage *self, const char *file,
+                            size_t max_dimension, double mask);
 
 // This method exports the float image data as an ascii CSV file.
 // Don't use this method on large sections of data - it will give

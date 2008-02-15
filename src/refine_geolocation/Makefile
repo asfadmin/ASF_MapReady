@@ -2,7 +2,9 @@ include ../../make_support/system_rules
 
 TARGET = refine_geolocation
 
-CFLAGS += $(GLIBS_CFLAGS)
+CFLAGS += \
+	$(GLIBS_CFLAGS) \
+	$(TIFF_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
@@ -13,6 +15,7 @@ LIBS  = \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(TIFF_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \

@@ -2,7 +2,12 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(JPEG_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
+CFLAGS := \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(CFLAGS)
 
 OBJS = \
 	interpolate.o \
@@ -25,6 +30,8 @@ LIBS :=	\
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf.a \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
 	$(GSL_LIBS) \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
@@ -80,3 +87,4 @@ clean:
 
 test: interpolate.t.c all
 	$(CC) $(CFLAGS) interpolate.t.c $(LIBS) -o interpolate.t
+

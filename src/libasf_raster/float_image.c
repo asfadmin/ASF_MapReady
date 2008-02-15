@@ -22,6 +22,9 @@
 #include <gsl/gsl_math.h>
 
 #include <jpeglib.h>
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
 #include "float_image.h"
 #include "asf.h"
 
@@ -2128,7 +2131,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
   }
 
   /* We set up the normal JPEG error routines, then override error_exit. */
-  cinfo.err = jpeg_std_error(&jerr.pub.error_exit);
+  cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = my_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
@@ -2136,7 +2139,7 @@ float_image_export_as_jpeg (FloatImage *self, const char *file,
      * We need to clean up the JPEG object, close the input file, and return.
      */
     jpeg_destroy_compress(&cinfo);
-  g_free(pixels);
+    g_free(pixels);
     fclose(fp);
     return 1;
   }
@@ -2430,6 +2433,166 @@ float_image_export_as_jpeg_with_mask_interval (FloatImage *self,
   int return_code = fclose (fp);
   g_assert (return_code == 0);
   jpeg_destroy_compress (&cinfo);
+
+  g_free (pixels);
+
+  return 0;                     // Return success indicator.
+}
+
+int
+float_image_export_as_tiff (FloatImage *self, const char *file,
+                            size_t max_dimension, double mask)
+{
+    g_assert (self->reference_count > 0); // Harden against missed ref=1 in new
+
+    size_t scale_factor;          // Scale factor to use for output image.
+    if ( self->size_x > self->size_y ) {
+        scale_factor = ceil ((double) self->size_x / max_dimension);
+    }
+    else {
+        scale_factor = ceil ((double) self->size_y / max_dimension);
+    }
+
+    // We want the scale factor to be odd, so that we can easily use a
+    // standard kernel to average things.
+    if ( scale_factor % 2 == 0 ) {
+        scale_factor++;
+    }
+
+    // Output JPEG x and y dimensions.
+    size_t osx = self->size_x / scale_factor;
+    size_t osy = self->size_y / scale_factor;
+
+    // Number of pixels in output image.
+    size_t pixel_count = osx * osy;
+
+    // Pixels of the output image.
+    unsigned char *pixels = g_new (unsigned char, pixel_count);
+
+    // Stuff needed by libtiff
+    TIFF *otif = NULL;
+
+    // Open output file.
+    otif = TIFFOpen(file, "w");
+    if (otif == NULL ) {
+        asfPrintError("Error opening TIFF file %s: %s\n", file, strerror(errno));
+        return FALSE;
+    }
+
+    // Initialize the TIFF file
+    TIFFSetField(otif, TIFFTAG_SUBFILETYPE, 0);
+    TIFFSetField(otif, TIFFTAG_IMAGEWIDTH, osx);
+    TIFFSetField(otif, TIFFTAG_IMAGELENGTH, osy);
+    TIFFSetField(otif, TIFFTAG_BITSPERSAMPLE, 8); // byte greyscale
+    TIFFSetField(otif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+    TIFFSetField(otif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+    TIFFSetField(otif, TIFFTAG_SAMPLESPERPIXEL, 1);
+    TIFFSetField(otif, TIFFTAG_ROWSPERSTRIP, 1);
+    TIFFSetField(otif, TIFFTAG_XRESOLUTION, 1.0);
+    TIFFSetField(otif, TIFFTAG_YRESOLUTION, 1.0);
+    TIFFSetField(otif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
+    TIFFSetField(otif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(otif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+
+  // Gather image statistics so we know how to map image values into
+  // the output.
+    float min, max, mean, standard_deviation;
+    float_image_statistics (self, &min, &max, &mean, &standard_deviation, mask);
+
+  // If the statistics don't work, something is beastly wrong and we
+  // don't want to deal with it.
+#ifndef solaris
+#ifndef win32
+  // Solaris doesn't have isfinite().
+  g_assert (isfinite (min) && isfinite (max) && isfinite (mean)
+            && isfinite (standard_deviation));
+#endif
+#endif
+
+  // If min == max, the pixel values are all the same.  There is no
+  // reason to average or scale anything, so we don't.  There is a
+  // good chance that the user would like zero to correspond to black,
+  // so we do that.  Anything else will be pure white.
+  if ( min == max ) {
+    // FIXME: this path is broken.  The trouble is that much of the
+    // stuff after this if branch shouldn't happen if we do this, but
+    // some of it should.  So for now its disabled.
+               g_assert_not_reached ();
+       unsigned char oval;         // Output value to use.
+       if ( min == 0.0 ) {
+           oval = 0;
+       }
+       else {
+           oval = UCHAR_MAX;
+       }
+       size_t ii, jj;
+       for ( ii = 0 ; ii < osy ; ii++ ) {
+           for ( jj = 0 ; jj < osx ; jj++ ) {
+               pixels[ii * osx + jj] = oval;
+           }
+       }
+  }
+
+  // Range of input pixel values which are to be linearly scaled into
+  // the output (values outside this range will be clamped).
+  double lin_min = mean - 2 * standard_deviation;
+  double lin_max = mean + 2 * standard_deviation;
+
+  // As advertised, we will average pixels together.
+  g_assert (scale_factor % 2 != 0);
+  size_t kernel_size = scale_factor;
+  gsl_matrix_float *averaging_kernel
+          = gsl_matrix_float_alloc (kernel_size, kernel_size);
+  float kernel_value = 1.0 / pow (kernel_size, 2.0);
+  size_t ii, jj;                // Index values.
+  for ( ii = 0 ; ii < averaging_kernel->size1 ; ii++ ) {
+      for ( jj = 0 ; jj < averaging_kernel->size2 ; jj++ ) {
+          gsl_matrix_float_set (averaging_kernel, ii, jj, kernel_value);
+      }
+  }
+
+  // Sample input image, putting scaled results into output image.
+  size_t sample_stride = scale_factor;
+  for ( ii = 0 ; ii < osy ; ii++ ) {
+      for ( jj = 0 ; jj < osx ; jj++ ) {
+      // Input image average pixel value.
+          float ival = float_image_apply_kernel (self, jj * sample_stride,
+                  ii * sample_stride,
+                  averaging_kernel);
+          unsigned char oval;       // Output value.
+
+          if (!meta_is_valid_double(ival)) {
+              oval = 0;
+          }
+          else if ( ival < lin_min ) {
+              oval = 0;
+          }
+          else if ( ival > lin_max) {
+              oval = UCHAR_MAX;
+          }
+          else {
+              int oval_int
+                      = round (((ival - lin_min) / (lin_max - lin_min)) * UCHAR_MAX);
+              // Make sure we haven't screwed up the scaling.
+              g_assert (oval_int >= 0 && oval_int <= UCHAR_MAX);
+              oval = oval_int;
+          }
+          pixels[ii * osx + jj] = oval;
+      }
+  }
+
+  gsl_matrix_float_free(averaging_kernel);
+  // Write the tiff, one row at a time.
+  unsigned char *byte_line=NULL;
+  for (ii=0; ii<osy; ii++) {
+      byte_line = (unsigned char*)(&pixels[ii*osx]);
+      TIFFWriteScanline(otif, byte_line, ii, 0);
+  }
+
+  // Finalize the TIFF
+  if (otif != NULL) {
+      TIFFClose (otif);
+  }
 
   g_free (pixels);
 

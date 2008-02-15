@@ -19,14 +19,16 @@ LIBS = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
-	$(GTK_CFLAGS) \
+	$(GTK_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS)
 
 CFLAGS += \
 	$(GSL_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(GTK_LIBS) \
+	$(GTK_CFLAGS) \
+	$(TIFF_CFLAGS) \
 	-D_XOPEN_SOURCE=600
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))

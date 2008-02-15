@@ -2,7 +2,9 @@ include ../../make_support/system_rules
 
 TARGET = mosaic
 
-CFLAGS += $(GLIBS_CFLAGS)
+CFLAGS += \
+	$(GLIBS_CFLAGS) \
+	$(TIFF_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
@@ -13,6 +15,7 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	-lm
 

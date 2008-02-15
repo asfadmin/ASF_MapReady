@@ -41,14 +41,16 @@ int strmatches(const char *key, ...);
 int has_prepension(const char * data_file_name);
 void process(const char *what, int top, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
-             char *out_dir);
+             output_format_types output_format, char *out_dir);
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
-                 char *out_dir);
-void process_file(const char *file, int level, int size, int verbose, char *out_dir);
+                 output_format_types output_format, char *out_dir);
+void process_file(const char *file, int level, int size, int verbose,
+                  output_format_types output_format, char *out_dir);
 char *meta_file_name(const char * data_file_name);
 meta_parameters * silent_meta_create(const char *filename);
-int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir);
+int generate_ceos_thumbnail(const char *input_data, int size,
+                            output_format_types output_format, char *out_dir);
 
 int main(int argc, char *argv[])
 {
@@ -57,6 +59,7 @@ int main(int argc, char *argv[])
   int verbose = 0;
   const int default_thumbnail_size = 256;
   char *out_dir = NULL;
+  int sizeFlag=0;
   int scaleFlag=0;
   float scale_factor=-1.0;
   int browseFlag=0;
@@ -103,6 +106,7 @@ int main(int argc, char *argv[])
     }
     else if (strmatches(key,"--size","-size","-s",NULL)) {
         CHECK_ARG(1);
+        sizeFlag=TRUE;
         size = atoi(GET_ARG(1));
     }
     else if (strmatches(key,"-L0","-LO","-Lo","-l0","-lO","-lo",NULL)) {
@@ -134,6 +138,8 @@ int main(int argc, char *argv[])
         }
         else {
             fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
+            if (!quietflag) usage();
+            exit(1);
         }
     }
     else if (strmatches(key,"--scale","-scale",NULL)) {
@@ -143,6 +149,8 @@ int main(int argc, char *argv[])
         if (scale_factor < 1.0) {
             fprintf(stderr,"\n**Invalid scale factor for -scale option."
                     "  Scale factor must be 1.0 or greater.\n");
+            if (!quietflag) usage();
+            exit(1);
         }
     }
     else if (strmatches(key,"--browse","-browse","-b",NULL)) {
@@ -163,6 +171,16 @@ int main(int argc, char *argv[])
     }
   } while (currArg < argc);
 
+  // Check for conflicting options
+  if (sizeFlag && scaleFlag) {
+      fprintf(stderr, "**Invalid combination of options.  You cannot use the -size and -scale options\n"
+              "at the same time.\n");
+      if (!quietflag) usage();
+      exit(1);
+  }
+  if (scaleFlag) size = 0;
+  if (sizeFlag)  scale_factor = -1.0;
+
   if (!quietflag) {
       asfSplashScreen(argc, argv);
   }
@@ -173,7 +191,7 @@ int main(int argc, char *argv[])
   for (i=currArg; i<argc; ++i) {
       process(argv[i], 0, recursive, size, verbose,
               L0Flag, scale_factor, browseFlag,
-              out_dir);
+              output_format, out_dir);
   }
 
   if (fLog) fclose(fLog);
@@ -246,7 +264,7 @@ char *meta_file_name(const char * data_file_name)
 
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
-                 char *out_dir)
+                 output_format_types output_format, char *out_dir)
 {
     char name[1024];
     struct dirent *dp;
@@ -269,7 +287,7 @@ void process_dir(const char *dir, int top, int recursive, int size, int verbose,
             sprintf(name, "%s%c%s", dir, DIR_SEPARATOR, dp->d_name);
             process(name, top, recursive, size, verbose,
                     L0Flag, scale_factor, browseFlag,
-                    out_dir);
+                    output_format, out_dir);
         }
     }
     closedir(dfd);
@@ -286,7 +304,8 @@ meta_parameters * silent_meta_create(const char *filename)
     return ret;
 }
 
-int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir)
+int generate_ceos_thumbnail(const char *input_data, int size,
+                            output_format_types output_format, char *out_dir)
 {
     char *input_metadata = meta_file_name(input_data);
 
@@ -436,16 +455,31 @@ int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir)
     char *out_file;
     char *thumb_file = appendToBasename(input_data, "_thumb");
 
-    if (out_dir && strlen(out_dir) > 0) {
-        char *basename = get_basename(thumb_file);
-        out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
-        sprintf(out_file, "%s/%s.jpg", out_dir, basename);
-    } else {
-        out_file = appendExt(thumb_file, ".jpg");
-    }
 
-    // Create the jpeg
-    float_image_export_as_jpeg(img, out_file, size, NAN);
+    // Create the output file
+    switch(output_format) {
+        case tiff:
+            if (out_dir && strlen(out_dir) > 0) {
+                char *basename = get_basename(thumb_file);
+                out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
+                sprintf(out_file, "%s/%s.tif", out_dir, basename);
+            } else {
+                out_file = appendExt(thumb_file, ".tif");
+            }
+            float_image_export_as_tiff(img, out_file, size, NAN);
+            break;
+        case jpeg:
+        default:
+            if (out_dir && strlen(out_dir) > 0) {
+                char *basename = get_basename(thumb_file);
+                out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
+                sprintf(out_file, "%s/%s.jpg", out_dir, basename);
+            } else {
+                out_file = appendExt(thumb_file, ".jpg");
+            }
+            float_image_export_as_jpeg(img, out_file, size, NAN);
+            break;
+    }
 
     meta_free(imd);
     FREE(data_name);
@@ -457,7 +491,8 @@ int generate_ceos_thumbnail(const char *input_data, int size, char *out_dir)
     return TRUE;
 }
 
-void process_file(const char *file, int level, int size, int verbose, char *out_dir)
+void process_file(const char *file, int level, int size, int verbose,
+                  output_format_types output_format, char *out_dir)
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
@@ -465,7 +500,7 @@ void process_file(const char *file, int level, int size, int verbose, char *out_
          (strncmp(base, "IMG-", 4) == 0))
     {
         asfPrintStatus("%s%s\n", spaces(level), base);
-        generate_ceos_thumbnail(file, size, out_dir);
+        generate_ceos_thumbnail(file, size, output_format, out_dir);
     }
     else {
         if (verbose) {
@@ -477,7 +512,7 @@ void process_file(const char *file, int level, int size, int verbose, char *out_
 
 void process(const char *what, int level, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
-             char *out_dir)
+             output_format_types output_format, char *out_dir)
 {
     struct stat stbuf;
 
@@ -493,7 +528,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
             asfPrintStatus("%s%s/\n", spaces(level), base);
             process_dir(what, level+1, recursive, size, verbose,
                         L0Flag, scale_factor, browseFlag,
-                        out_dir);
+                        output_format, out_dir);
         }
         else {
             if (verbose) {
@@ -502,7 +537,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
         }
     }
     else {
-        process_file(what, level, size, verbose, out_dir);
+        process_file(what, level, size, verbose, output_format, out_dir);
     }
 
     FREE(base);
