@@ -46,6 +46,7 @@ void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
                  output_format_types output_format, char *out_dir);
 void process_file(const char *file, int level, int size, int verbose,
+                  level_0_flag L0Flag, float scale_factor, int browseFlag,
                   output_format_types output_format, char *out_dir);
 char *meta_file_name(const char * data_file_name);
 meta_parameters * silent_meta_create(const char *filename);
@@ -180,6 +181,12 @@ int main(int argc, char *argv[])
   }
   if (scaleFlag) size = 0;
   if (sizeFlag)  scale_factor = -1.0;
+
+  // FIXME: Remove this if-statement after CEOS format is supported
+  if (L0Flag == ceos) {
+      fprintf(stderr,"** Level 0 files in CEOS format are not currently supported (only STF).\n");
+      exit(1);
+  }
 
   if (!quietflag) {
       asfSplashScreen(argc, argv);
@@ -492,11 +499,22 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 }
 
 void process_file(const char *file, int level, int size, int verbose,
+                  level_0_flag L0Flag, float scale_factor, int browseFlag,
                   output_format_types output_format, char *out_dir)
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
-    if ((ext && strcmp_case(ext, ".D") == 0) ||
+    if (L0Flag == stf || L0Flag == ceos) { //Note that ceos is currently unsupported for L0
+        fprintf(stderr, "\n\n** Level 0 browse image generation ...is in development.  Y'all come back!\n\n");
+        //asf_import();
+        //ardop();
+        //sr2gr();
+        //resample();
+        //flip(); // Maybe ...maybe not
+        //asf_export();
+        exit (1);
+    }
+    else if ((ext && strcmp_case(ext, ".D") == 0) ||
          (strncmp(base, "IMG-", 4) == 0))
     {
         asfPrintStatus("%s%s\n", spaces(level), base);
@@ -537,7 +555,9 @@ void process(const char *what, int level, int recursive, int size, int verbose,
         }
     }
     else {
-        process_file(what, level, size, verbose, output_format, out_dir);
+        process_file(what, level, size, verbose,
+                     L0Flag, scale_factor, browseFlag,
+                     output_format, out_dir);
     }
 
     FREE(base);
