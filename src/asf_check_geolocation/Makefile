@@ -4,7 +4,12 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) -Wall
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	-Wall
 
 OBJS  = asf_check_geolocation.o
 
@@ -19,6 +24,7 @@ LIBS = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(LIBDIR)/asf_fft.a \
 

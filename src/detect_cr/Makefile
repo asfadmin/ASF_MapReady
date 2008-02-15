@@ -4,7 +4,12 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(JPEG_CFLAGS)
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_geocode.a \
@@ -17,6 +22,7 @@ LIBS  = \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS)
 
 OBJS  = detect_cr.o \
