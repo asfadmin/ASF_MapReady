@@ -205,6 +205,49 @@ int plan(const char *satellite, const char *beam_mode,
   sat_t sat;
   read_tle(tle_filename, satellite, &sat);
 
+  // if the planned acquisition period is further away than this amount,
+  // we subtract multiples of the repeat cyle time until we are within
+  // this threshold time of this tle
+  double tle_time =
+    time_to_secs(sat.tle.epoch_year, sat.tle.epoch_day, sat.tle.epoch_fod);
+
+  // FIXME this is alos specific FIXME!!
+  // should really read this out of a config file... or calculate it
+  // from the TLE info?
+  const double repeat_days = 46;
+  const double orbits_per_cycle = 671;
+
+  // repeat time, in seconds, all time references are in seconds
+  double repeat_cycle_time = repeat_days * 24.*60.*60.;
+
+  // how many days to pad the repeat cycle time, before modding the
+  // start/end time
+  const double days_of_padding = 1;
+
+  // this is the cutoff, 
+  double threshold = repeat_cycle_time + 24*60*60 * days_of_padding;
+
+  int cycles_adjustment=0;
+  if (start_secs-tle_time > threshold) {
+    while (start_secs-tle_time > threshold) {
+      start_secs -= repeat_cycle_time;
+      end_secs -= repeat_cycle_time;
+      ++cycles_adjustment;
+    }
+  }
+  else if (tle_time-start_secs > threshold) { // planning backwards...
+    while (tle_time-start_secs > threshold) {
+      start_secs += repeat_cycle_time;
+      end_secs += repeat_cycle_time;
+      --cycles_adjustment;
+    }
+  }
+
+  double time_adjustment = cycles_adjustment*repeat_cycle_time;
+  printf("Adjusted start/end times %s by %d repeat cycles.\n",
+         cycles_adjustment > 0 ? "forward" : "backward",
+         cycles_adjustment > 0 ? cycles_adjustment : -cycles_adjustment);
+
   // no deep space orbits can be planned
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
 
@@ -226,6 +269,7 @@ int plan(const char *satellite, const char *beam_mode,
   double lat_prev = sat.ssplat;
   int i,num_found = 0;
 
+  // 
   // Calculate the number of frames to include before we hit the
   // area of interest.  Add 1 (i.e., round up), but if user puts in
   // zero seconds, then we want 0 lead-up frames.
@@ -241,8 +285,13 @@ int plan(const char *satellite, const char *beam_mode,
       OverlapInfo *oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
       if (oi) {
         int n=0;
-        PassInfo *pass_info = pass_info_new(sat.orbit, dir, sat.ssplat);
-        double start_time = curr;
+
+        // calculate the orbit number -- we have to fudge this if we
+        // modded the start time
+        int orbit_num = sat.orbit + orbits_per_cycle*cycles_adjustment;
+
+        PassInfo *pass_info = pass_info_new(orbit_num, dir, sat.ssplat);
+        double start_time = curr - bmi->num_buffer_frames*incr;
 
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
@@ -250,11 +299,11 @@ int plan(const char *satellite, const char *beam_mode,
           Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
-          pass_info_add(pass_info, t, oi1);
+          pass_info_add(pass_info, t+time_adjustment, oi1);
         }
 
         while (curr < end_secs && oi) {
-          pass_info_add(pass_info, curr, oi);
+          pass_info_add(pass_info, curr+time_adjustment, oi);
           ++n;
 
           curr += incr;
@@ -263,7 +312,8 @@ int plan(const char *satellite, const char *beam_mode,
           oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
         }
 
-        pass_info_set_duration(pass_info, curr-start_time);
+        double end_time = curr + bmi->num_buffer_frames*incr;
+        pass_info_set_duration(pass_info, end_time-start_time);
 
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
@@ -271,7 +321,7 @@ int plan(const char *satellite, const char *beam_mode,
           Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
-          pass_info_add(pass_info, t, oi1);
+          pass_info_add(pass_info, t+time_adjustment, oi1);
         }
 
         if (n>0) {
@@ -284,7 +334,7 @@ int plan(const char *satellite, const char *beam_mode,
     curr += incr;
     lat_prev = sat.ssplat;
 
-    asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
+    //asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }
   asfPercentMeter(1.0);
 

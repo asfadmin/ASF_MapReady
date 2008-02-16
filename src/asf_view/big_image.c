@@ -699,6 +699,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          event->keyval == GDK_Tab ||
          event->keyval == GDK_Left ||
          event->keyval == GDK_Right ||
+         event->keyval == GDK_End ||
+         event->keyval == GDK_Home ||
          event->keyval == GDK_BackSpace ||
          event->keyval == GDK_Delete ||
          event->keyval == GDK_KP_Delete))

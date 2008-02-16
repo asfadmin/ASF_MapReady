@@ -390,16 +390,16 @@ void setup_planner()
     center_line = crosshair_line;
     center_samp = crosshair_samp;
     set_combo_box_item_checked("satellite_combobox", 2);
-    put_string_to_entry("lat_min_entry", "68");
-    put_string_to_entry("lat_max_entry", "72");
-    put_string_to_entry("lon_min_entry", "-135");
-    put_string_to_entry("lon_max_entry", "-125");
-    put_string_to_entry("start_date_entry", "20080108");
-    put_string_to_entry("end_date_entry", "20080110");
+    put_string_to_entry("lat_min_entry", "44.6");
+    put_string_to_entry("lat_max_entry", "45.2");
+    put_string_to_entry("lon_min_entry", "-110.3");
+    put_string_to_entry("lon_max_entry", "-109.4");
+    put_string_to_entry("start_date_entry", "20070914");
+    put_string_to_entry("end_date_entry", "20070916");
     // ... all this should be deleted
 
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget), "Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
+    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
 }
 
 int row_is_checked(int row)
@@ -411,7 +411,6 @@ int row_is_checked(int row)
 
   int ret = FALSE;
   if (in_planning_mode) {
-
     if (row <= gtk_tree_model_iter_n_children(liststore, NULL)) {
 
       GtkTreeIter iter;

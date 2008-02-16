@@ -14,6 +14,8 @@ void write_pass_to_kml(FILE *kml_file, double lat, double lon, PassInfo *info);
 void read_tle(const char *tle_filename, const char *satellite, sat_t *sat);
 stateVector tle_propagate(sat_t *sat, double t);
 double secs_to_jul(double t);
+double jul_to_secs(double jul);
+double time_to_secs(int year, int doy, double fod);
 
 /* overlap.c */
 OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,

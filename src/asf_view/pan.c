@@ -26,7 +26,6 @@ extern int small_image_x_dim;
 extern int small_image_y_dim;
 
 int ran_cb_callback=FALSE;
-static int ran_nb_callback=FALSE;
 
 #ifndef win32
 static GdkCursor *pan_cursor=NULL;
@@ -59,6 +58,7 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
 
 static int small_image_clicked=FALSE;
 static int big_image_clicked=FALSE;
+static int ran_nb_callback=FALSE;
 
 SIGNAL_CALLBACK int
 on_small_image_eventbox_button_press_event(
@@ -76,10 +76,9 @@ on_big_image_eventbox_button_press_event(
   return TRUE;
 }
 
-SIGNAL_CALLBACK int on_planner_notebook_switch_page(GtkNotebook *nb,
-                                                    GtkNotebookPage *pg,
-                                                    gint num,
-                                                    gpointer user_data)
+SIGNAL_CALLBACK int
+on_planner_notebook_switch_page(GtkNotebook *nb, GtkNotebookPage *pg,
+                                gint num, gpointer user_data)
 {
   ran_nb_callback=TRUE;
   return TRUE;
@@ -184,12 +183,12 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     double h = (double)(maxy-miny)/(double)small_image_y_dim * curr->nl;
     double z2 = h/(double)get_big_image_height();
 
-    zoom = z1 > z2 ? z1 : z2;
-
     center_line = ((double)(maxy+miny))/(double)small_image_y_dim*curr->nl/2.;
     center_samp = ((double)(maxx+minx))/(double)small_image_x_dim*curr->ns/2.;
 
+    zoom = z1 > z2 ? z1 : z2;
     update_zoom();
+
     fill_small(curr);
     fill_big(curr);
 

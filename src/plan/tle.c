@@ -13,23 +13,56 @@ double secs_to_jul(double t)
   sec2date(t, &jd, &hms);
   date_jd2ymd(&jd, &ymd);
 
-  assert(ymd.year>1900);
+  assert(ymd.year>=1900);
   assert(ymd.day>=1 && ymd.day<=31);
   assert(ymd.month>=1&&ymd.month<=12);
 
   double jdoy = Julian_Date_of_Year(ymd.year);
-  double doy = DOY(ymd.year,ymd.month-1,ymd.day);
+  double doy = DOY(ymd.year,ymd.month,ymd.day);
   double fod = hms.sec/(60.*60.*24.) + hms.min/(60.*24.) + hms.hour/24.0;
-  //double fod = (hms.hour + (hms.min + hms.sec/60.0)/60.0)/24.0;
-  //double fod = Fraction_of_Day(hms.hour,hms.min,(int)(hms.sec+.5));
 
   double ret = jdoy + doy + fod;
-
-  //double ret = Julian_Date(&the_time);
-  //printf("%f -> %02d/%02d/%04d %02d:%02d:%02d -> %f\n", t,
-  //       ymd.month, ymd.day, ymd.year, hms.hour, hms.min, (int)hms.sec, ret);
-
   return ret;
+}
+
+double jul_to_secs(double jul)
+{
+  julian_date jd;
+  hms_time hms;
+  ymd_date ymd;
+
+  time_t jtime = (jul-2440587.5)*86400.;
+  struct tm *stm = gmtime(&jtime);
+
+  hms.hour = stm->tm_hour;
+  hms.min = stm->tm_min;
+  hms.sec = stm->tm_sec;
+
+  ymd.year = stm->tm_year+1900;
+  ymd.day = stm->tm_mday;
+  ymd.month = stm->tm_mon;
+
+  assert(ymd.year>=1900);
+  assert(ymd.day>=1 && ymd.day<=31);
+  assert(ymd.month>=1 && ymd.month<=12);
+
+  date_ymd2jd(&ymd,&jd);
+  return date2sec(&jd,&hms);
+}
+
+double time_to_secs(int year, int doy, double fod)
+{
+  julian_date jd;
+  hms_time hms;
+
+  jd.year=year;
+  jd.jd=doy;
+
+  hms.hour=hms.min=0;
+  hms.sec=0.0;
+
+  double t=date2sec(&jd,&hms);
+  return t+fod*60*60*24;
 }
 
 stateVector tle_propagate(sat_t *sat, double t)
@@ -89,8 +122,6 @@ stateVector tle_propagate(sat_t *sat, double t)
   hms_time hms;
   sec2date(t,&jd,&hms);
   double gha = utc2gha(jd.year,jd.jd,hms.hour,hms.min,hms.sec);
-  //printf("t= %f --> gha= %f\n", t, gha);
-  //gha-=30.555437; if (gha<0) gha+=360;
   gei2fixed(&st,gha);
 
   return st;
