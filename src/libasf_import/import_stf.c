@@ -18,9 +18,9 @@ void estimateDoppler(char *inN, float *fd, float *fdd, float *fddd);
 
 /******************************************************************************
  * Import Sky Telemetry Format data to ASF Tools format */
-void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry, 
-		char *inMetaNameOption, int lat_constrained, double lowerLat, 
-		double upperLat, char *prcPath)
+void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
+        char *inMetaNameOption, int lat_constrained, double lowerLat,
+        double upperLat, char *prcPath)
 {
   char outDataName[256]="", outMetaName[256]="", imgTimeStr[20]="";
   char *inDataName, *inMetaName;
@@ -96,9 +96,9 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
     /* Find the index of the closest state vector to the start time */
     nVec=1;
     while (!done) {
-      sprintf(buf, 
-	      "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:", 
-	      nVec);
+      sprintf(buf,
+          "prep_block.sensor.ephemeris.sv_block.state_vector[%d].Date:",
+          nVec);
       tmp_timeStr = lzStr(parName, buf, NULL);
       parse_ymdTime(tmp_timeStr,&tmp_date,&tmp_time);
       vec_sec = date_hms2sec(&tmp_time);
@@ -143,8 +143,8 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
             s->nLines++;
         }
       }
-      /* Write status information to screen. 
-      asfLineMeter(outLine,nTotal);*/
+      // Write status information to screen.
+      asfLineMeter(outLine,nTotal);
   }
 
   if (lat_constrained) {
@@ -165,7 +165,7 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
   /* Determine center latitude and longitude */
   meta = meta_read(outMetaName);
   meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
-		  0.0, &lat, &lon);
+          0.0, &lat, &lon);
   meta->general->center_latitude = lat;
   meta->general->center_longitude = lon;
   meta_write(meta, outMetaName);
