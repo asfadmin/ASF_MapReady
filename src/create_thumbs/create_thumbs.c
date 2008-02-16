@@ -1,6 +1,11 @@
+#include "asf_sar.h"
+#include "asf.h"
 #include "ceos.h"
 #include "asf_meta.h"
 #include "asf_raster.h"
+#include "asf_import.h"
+#include "ardop_defs.h"
+#include "asf_export.h"
 #include "asf_license.h"
 #include "create_thumbs_help.h"
 
@@ -22,6 +27,7 @@
 
 #define MIN_ARGS (1)
 #define MAX_ARGS (30)
+//#define MAX(a,b) ((a)<(b) ? (b) : (a))
 
 typedef enum {
     not_L0=0,
@@ -29,33 +35,30 @@ typedef enum {
     ceos
 } level_0_flag;
 
-typedef enum output_format_types {
-    unsupported_format=0,
-    jpeg,
-    tiff
-} output_format_types;
-
 int checkForOption(char* key, int argc, char* argv[]); // in help.c
 char *spaces(int n);
 int strmatches(const char *key, ...);
 int has_prepension(const char * data_file_name);
 void process(const char *what, int top, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
-             output_format_types output_format, char *out_dir);
+             output_format_t output_format, char *out_dir);
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
-                 output_format_types output_format, char *out_dir);
+                 output_format_t output_format, char *out_dir);
 void process_file(const char *file, int level, int size, int verbose,
                   level_0_flag L0Flag, float scale_factor, int browseFlag,
-                  output_format_types output_format, char *out_dir);
+                  output_format_t output_format, char *out_dir);
 char *meta_file_name(const char * data_file_name);
 meta_parameters * silent_meta_create(const char *filename);
 int generate_ceos_thumbnail(const char *input_data, int size,
-                            output_format_types output_format, char *out_dir);
+                            output_format_t output_format, char *out_dir);
+void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
+                               float scale_factor, int browseFlag,
+                               output_format_t output_format, char *out_dir);
 
 int main(int argc, char *argv[])
 {
-  output_format_types output_format=jpeg;
+  output_format_t output_format=JPEG;
   level_0_flag L0Flag=not_L0;
   int verbose = 0;
   const int default_thumbnail_size = 256;
@@ -129,13 +132,13 @@ int main(int argc, char *argv[])
         CHECK_ARG(1);
         char tmp[1024];
         strcpy(tmp,GET_ARG(1));
-        output_format=jpeg; // Default
+        output_format=JPEG; // Default
         if (strncmp(uc(tmp),"TIF",3) == 0) {
-            output_format=tiff;
+            output_format=TIF;
         }
         else if (strncmp(uc(tmp),"JPG",3) == 0 ||
                  strncmp(uc(tmp),"JPEG",4) == 0) {
-            output_format=jpeg;
+            output_format=JPEG;
         }
         else {
             fprintf(stderr,"\n**Invalid output format type \"%s\".  Expected tiff or jpeg.\n", tmp);
@@ -271,7 +274,7 @@ char *meta_file_name(const char * data_file_name)
 
 void process_dir(const char *dir, int top, int recursive, int size, int verbose,
                  level_0_flag L0Flag, float scale_factor, int browseFlag,
-                 output_format_types output_format, char *out_dir)
+                 output_format_t output_format, char *out_dir)
 {
     char name[1024];
     struct dirent *dp;
@@ -312,7 +315,7 @@ meta_parameters * silent_meta_create(const char *filename)
 }
 
 int generate_ceos_thumbnail(const char *input_data, int size,
-                            output_format_types output_format, char *out_dir)
+                            output_format_t output_format, char *out_dir)
 {
     char *input_metadata = meta_file_name(input_data);
 
@@ -465,7 +468,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
     // Create the output file
     switch(output_format) {
-        case tiff:
+        case TIF:
             if (out_dir && strlen(out_dir) > 0) {
                 char *basename = get_basename(thumb_file);
                 out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
@@ -475,7 +478,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
             }
             float_image_export_as_tiff(img, out_file, size, NAN);
             break;
-        case jpeg:
+        case JPEG:
         default:
             if (out_dir && strlen(out_dir) > 0) {
                 char *basename = get_basename(thumb_file);
@@ -500,19 +503,13 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
 void process_file(const char *file, int level, int size, int verbose,
                   level_0_flag L0Flag, float scale_factor, int browseFlag,
-                  output_format_types output_format, char *out_dir)
+                  output_format_t output_format, char *out_dir)
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
     if (L0Flag == stf || L0Flag == ceos) { //Note that ceos is currently unsupported for L0
-        fprintf(stderr, "\n\n** Level 0 browse image generation ...is in development.  Y'all come back!\n\n");
-        //asf_import();
-        //ardop();
-        //sr2gr();
-        //resample();
-        //flip(); // Maybe ...maybe not
-        //asf_export();
-        exit (1);
+        generate_level0_thumbnail(file, size, verbose, L0Flag, scale_factor, browseFlag,
+                                  output_format, out_dir);
     }
     else if ((ext && strcmp_case(ext, ".D") == 0) ||
          (strncmp(base, "IMG-", 4) == 0))
@@ -530,7 +527,7 @@ void process_file(const char *file, int level, int size, int verbose,
 
 void process(const char *what, int level, int recursive, int size, int verbose,
              level_0_flag L0Flag, float scale_factor, int browseFlag,
-             output_format_types output_format, char *out_dir)
+             output_format_t output_format, char *out_dir)
 {
     struct stat stbuf;
 
@@ -563,3 +560,123 @@ void process(const char *what, int level, int recursive, int size, int verbose,
     FREE(base);
 }
 
+void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
+                               float scale_factor, int browseFlag,
+                               output_format_t output_format, char *out_dir)
+{
+    char in_file[1024], out_file[1024], del_files[1024];
+    char export_path[2048], tmp_basename[(L_tmpnam)+256];
+    struct INPUT_ARDOP_PARAMS *params_in;
+
+    if (!tmpnam(tmp_basename)) {
+        fprintf(stderr, "** Cannot create temporary files.\n");
+        exit(1);
+    }
+    else {
+        // Close the tmpnam() security hole by putting something
+        // in the name that nobody else would use :)
+        sprintf(tmp_basename, "UTD_ROCKS_%s", tmp_basename);
+    }
+    if (L0Flag == stf) {
+        // Import to a temporary file
+        sprintf(out_file, "%s%s_import", tmp_basename, file);
+        asf_import(r_AMP,
+                   0 /*db_flag*/,
+                   0 /*complex_flag*/,
+                   0 /*multilook_flag*/,
+                   "STF",
+                   NULL /*band_id*/,
+                   MAGIC_UNSET_STRING /*image_data_type*/,
+                   NULL /*lut*/,
+                   NULL /*prcPath*/,
+                   -99 /*lowerLat*/,
+                   -99 /*upperLat*/,
+                   NULL /*p_range_scale*/,
+                   NULL /*p_azimuth_scale*/,
+                   NULL /*p_correct_y_pixel_size*/,
+                   NULL /*inMetaNameOption*/,
+                   (char*)file, out_file);
+    }
+    else if (L0Flag == ceos) {
+        // FIXME: Remove the error message and exit() when CEOS support is tested and works
+        fprintf(stderr, "** CEOS format Level 0 products not yet supported...\n");
+        exit(1);
+        sprintf(out_file, "%s%s_import", tmp_basename, file);
+        asf_import(r_AMP,
+                   0 /*db_flag*/,
+                   0 /*complex_flag*/,
+                   0 /*multilook_flag*/,
+                   "CEOS", NULL /*band_id*/,
+                   MAGIC_UNSET_STRING /*image_data_type*/,
+                   NULL /*lut*/,
+                   NULL /*prcPath*/,
+                   -99 /*lowerLat*/,
+                   -99 /*upperLat*/,
+                   NULL /*p_range_scale*/,
+                   NULL /*p_azimuth_scale*/,
+                   NULL /*p_correct_y_pixel_size*/,
+                   NULL /*inMetaNameOption*/,
+                   (char*)file,
+                   out_file);
+    }
+
+        // Run range-doppler algorithm on the raw data
+    strcpy(in_file, out_file);
+    sprintf(out_file, "%s%s_ardop", tmp_basename, file);
+    params_in = get_input_ardop_params_struct(in_file, out_file);
+    // YO BRIAN START HERE
+    //ardop(params_in);
+    free(params_in);
+    sprintf(del_files, "%s_import*", file);
+    //unlink(del_files);
+    printf("\n\nDELETING %s\n\n", del_files);
+
+    // Convert to ground range
+    sprintf(in_file, "%s_amp", out_file);
+    sprintf(out_file, "%s_gr", file);
+    //sr2gr(in_file, out_file);
+    sprintf(del_files, "%s_ardop*", file);
+    //unlink(del_files);
+    printf("\n\nDELETING %s\n\n", del_files);
+
+    // Resample image and export
+    strcpy(in_file, out_file);
+    if (browseFlag) {
+        strcpy(out_file, file);
+    }
+    else {
+        sprintf(out_file, "%s_thumb", file);
+    }
+    meta_parameters *meta = meta_read(in_file);
+    double xsf, ysf;
+    if (scale_factor > 0.0) {
+        xsf = 1.0/scale_factor;
+        ysf = 1.0/scale_factor;
+    }
+    else if (size > 0) {
+        xsf = ysf = (double) size / (double)(MAX(meta->general->line_count, meta->general->sample_count));
+    }
+    else {
+        fprintf(stderr, "** Invalid scale factor (%f) and invalid pixel size (%d).\n"
+                "Only one of -scale and -size may be specified together,\n"
+                "and values must be positive.\n", scale_factor, size);
+    }
+    char *band_name[1] = {MAGIC_UNSET_STRING};
+    resample(in_file, out_file, xsf, ysf);
+    //flip(); // FIXME: Ask Jeremy ...maybe flip ...maybe not
+    sprintf(del_files, "%s_gr*", file);
+    //unlink(del_files);
+    printf("\n\nDELETING %s\n\n", del_files);
+    strcpy(in_file, out_file);
+    sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, out_file);
+    asf_export_bands(output_format, SIGMA, 0 /*rgb*/,
+                     0 /*true_color*/, 0 /*false_color*/, 0 /*pauli*/, 0 /*sinclair*/,
+                     "" /*look_up_table_name*/, in_file, export_path,
+                     (char**)band_name);
+    sprintf(del_files, "%s.img", file);
+    //unlink(del_files);
+    printf("\n\nDELETING %s\n\n", del_files);
+    sprintf(del_files, "%s.meta", file);
+    //unlink(del_files);
+    printf("\n\nDELETING %s\n\n", del_files);
+}

@@ -10,25 +10,34 @@ INCLUDES = \
 	$(TARGET)_help.h
 
 LIBS = \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_ardop.a \
 	$(LIBDIR)/asf_fft.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
-	$(LIBDIR)/libasf_vector.a \
+	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(GTK_LIBS) \
 	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS)
 
 CFLAGS += \
 	$(GSL_CFLAGS) \
+	$(PNG_CFLAGS) \
 	$(PROJ_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GTK_CFLAGS) \
 	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
 	-D_XOPEN_SOURCE=600
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
