@@ -15,8 +15,6 @@
 
 #include "proj2proj.h"
 
-static const char *last_tv_name = NULL;
-
 static void save(const char *filename, const char *widget_name)
 {
     GtkTextIter start, end;
@@ -35,6 +33,7 @@ static void save(const char *filename, const char *widget_name)
 
 static GtkWidget *save_widget = NULL;
 static GtkWidget *browse_widget = NULL;
+static const char *last_tv_name = NULL;
 
 // called when "cancel" clicked on the "Load" GtkFileChooser
 SIGNAL_CALLBACK void new_cancel_clicked()
@@ -251,7 +250,7 @@ void save_tv(const char *tv_name)
 
   char msg[2304];
   if (strlen(fname) > 0) {
-    save(fname, last_tv_name);
+    save(fname, tv_name);
     char msg[2304];
     char *filename = get_filename(fname);
     sprintf(msg," Saved: %s", filename);

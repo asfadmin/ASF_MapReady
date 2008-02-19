@@ -224,8 +224,10 @@ void put_file_in_textview(const char *file, const char *widget_name)
         int len = fread(buf, sizeof(char), MAX, f);
         buf[len] = '\0';
 
-        // remove EOF character
+        // remove EOF character (not needed on Windows)
+#ifndef win32
         buf[strlen(buf)-1]='\0';
+#endif
 
         // hack: ensure valid ascii
         int i;

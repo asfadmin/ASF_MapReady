@@ -1,5 +1,8 @@
 #include "proj2proj.h"
 
+void img_loc(gchar *loc, gchar* file);
+void set_toolbar_images();
+
 /************************************************************************
  * Global variables...
  */
@@ -47,9 +50,50 @@ main(int argc, char **argv)
         forward();
     }
 
+    set_toolbar_images();
+
     gtk_main ();
 
     exit (EXIT_SUCCESS);
 }
 
+void img_loc(gchar *loc, gchar* file)
+{
+  gchar * tmp = find_in_share(file);
+  if (tmp) {
+    strcpy(loc, tmp);
+    g_free(tmp);
+  } else {
+    strcpy(loc, file);
+  }
+}
+void set_toolbar_images()
+{
+  GtkWidget *w;
+  gchar loc[1024];
+
+  w = get_widget_checked("source_load_button");
+  //gtk_button_set_label(GTK_BUTTON(w), " Browse...");
+  w = get_widget_checked("source_load_button_image");
+  img_loc(loc, "folder_s.png");
+  gtk_image_set_from_file(GTK_IMAGE(w), loc);
+
+  w = get_widget_checked("source_save_button");
+  //gtk_button_set_label(GTK_BUTTON(w), " Save...");
+  w = get_widget_checked("source_save_button_image");
+  img_loc(loc, "save_as.png");
+  gtk_image_set_from_file(GTK_IMAGE(w), loc);
+
+  w = get_widget_checked("target_load_button");
+  //gtk_button_set_label(GTK_BUTTON(w), " Browse...");
+  w = get_widget_checked("target_load_button_image");
+  img_loc(loc, "folder_s.png");
+  gtk_image_set_from_file(GTK_IMAGE(w), loc);
+
+  w = get_widget_checked("target_save_button");
+  //gtk_button_set_label(GTK_BUTTON(w), " Save...");
+  w = get_widget_checked("target_save_button_image");
+  img_loc(loc, "save_as.png");
+  gtk_image_set_from_file(GTK_IMAGE(w), loc);
+}
 
