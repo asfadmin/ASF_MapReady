@@ -77,6 +77,8 @@ void deskew(const char *infile, const char *outfile)
 
   // calculate the amount of shift necessary
   double fac = calc_shift(meta, 0, 0);
+  // Not sure if we need this or not...
+  //fac *= meta->general->x_pixel_size / meta->general->y_pixel_size;
 
   // the "lower" array stores the required shifts, indexed by column
   // (the amount of shift is row-independent)
@@ -106,13 +108,13 @@ void deskew(const char *infile, const char *outfile)
     // apply deskewing to this band
     for (line=0; line<nl; ++line) {
       get_float_line(fpi, meta, line + nl*band, ibuf);
-      
+
       for (samp=0; samp<np; ++samp) {
         int out_line = deskewed ? line : line + lower[samp];
         if (out_line >= 0 && out_line < nl)
           obuf[out_line*np+samp] = ibuf[samp];
       }
-      
+
       asfLineMeter(line,nl);
     }
 
@@ -131,7 +133,7 @@ void deskew(const char *infile, const char *outfile)
   if (do_rename) {
     char *tmp_outfile_img = appendExt(tmp_outfile, ".img");
     char *outfile_img = appendExt(outfile, ".img");
-    printf("Renaming: %s -> %s\n", tmp_outfile_img, outfile_img);
+    //printf("Renaming: %s -> %s\n", tmp_outfile_img, outfile_img);
     rename(tmp_outfile_img, outfile_img);
     FREE(tmp_outfile_img);
     FREE(outfile_img);
