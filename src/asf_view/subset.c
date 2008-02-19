@@ -36,7 +36,7 @@ static int get_format()
 }
 
 // try to find a program we can use to view the generated csv files
-static const char * detect_csv_assoc()
+const char * detect_csv_assoc()
 {
     static char *csv_app = NULL;
     if (!csv_app) {

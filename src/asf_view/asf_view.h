@@ -189,6 +189,7 @@ void set_title(int band_specified, const char *band);
 /* subset.c */
 void save_subset(ImageInfo *ii);
 void update_poly_extents(meta_parameters *meta);
+const char * detect_csv_assoc();
 
 /* bands.c */
 void setup_bands_tab(meta_parameters *meta);

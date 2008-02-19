@@ -1,5 +1,6 @@
 #include "asf_view.h"
 #include "plan.h"
+#include "dateUtil.h"
 #include <ctype.h>
 #include <errno.h>
 
@@ -977,15 +978,20 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     int num = 0;
     GtkTreeIter iter;
 
+    fprintf(ofp, 
+            "Year,Month,Day,Hour,Minute,Second,Duration,Start Latitude,"
+            "Orbit,Path,Coverage\n");
+
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)
     {
-        char *date_str, *dbl_date_str, *coverage_str, *orbit_path_str,
-          *start_lat_str, *duration_str;
+        //char *date_str;
+        char *dbl_date_str, *coverage_str, *orbit_path_str, *start_lat_str,
+             *duration_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
                            COL_SELECTED, &enabled,
-                           COL_DATE, &date_str,
+                           //COL_DATE, &date_str,
                            COL_DATE_HIDDEN, &dbl_date_str,
                            COL_COVERAGE, &coverage_str,
                            COL_START_LAT, &start_lat_str,
@@ -993,19 +999,40 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                            COL_ORBIT_PATH, &orbit_path_str,
                            -1);
 
-        //double date = atof(dbl_date_str);
+        ymd_date ymd;
+        julian_date jd;
+        hms_time hms;
+        double date = atof(dbl_date_str);
+        sec2date(date, &jd, &hms);
+        date_jd2ymd(&jd, &ymd);
+
         double lat = atof(start_lat_str);
         double dur = atof(duration_str);
         double cov = atof(coverage_str);
         int orbit, path;
         sscanf(orbit_path_str, "%d/%d", &orbit, &path);
 
-        // now do something with all this great info
-        if (enabled) {
+        if (enabled)
+        {
           //printf("Saving: %s %.1f%% %.2f %.1f %d/%d\n",
           //       date_str, cov, lat, dur, orbit, path);
-          fprintf(ofp, "%s %.1f%% %.2f %.1f %d %d\n",
-                  date_str, cov, lat, dur, orbit, path);
+
+          fprintf(ofp,
+                  "%d"     // year
+                  ",%d"    // month
+                  ",%d"    // day
+                  ",%d"    // hour
+                  ",%d"    // minute
+                  ",%.1f"  // second
+                  ",%.1f"  // duration
+                  ",%.2f"  // start latitude
+                  ",%d"    // orbit
+                  ",%d"    // path
+                  ",%.1f"  // coverage pct
+                  "\n",
+                  ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
+                  hms.sec,dur,lat,orbit,path,cov);
+
           ++num;
         }
 
@@ -1017,7 +1044,23 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     if (num==0)
         printf("Empty output file.\n");
     else
-        printf("Saved %d acquisitions.\n", num);
+        printf("Saved %d acquisition%s.\n", num, num==1?"":"s");
+
+    // on windows, open up the csv file with Excel
+#ifdef win32
+    const char *csv = detect_csv_assoc();
+    if (csv && strlen(csv) > 0) {
+        const char *csv_app = detect_csv_assoc(out_name);
+        printf("Opening '%s' with external application  '%s'\n",
+               out_name, csv_app);
+
+        int pid = fork();
+        if (pid == 0) {
+            asfSystem("\"%s\" \"%s\"", csv_app, out_name);
+            exit(EXIT_SUCCESS);
+        }
+    }
+#endif
 
     free(out_name);
     free(output_dir);
