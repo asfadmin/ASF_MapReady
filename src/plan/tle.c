@@ -221,3 +221,19 @@ void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
     printf("Couldn't read: %s\n", tle_filename);
   }
 }
+
+const char *get_tle_info(const char *tle_filename, const char *satellite)
+{
+    sat_t sat;
+    read_tle(tle_filename, satellite, &sat);
+
+    static char tle_info[256];
+    sprintf(tle_info,
+            "Satellite: %s\n"
+            "Date: %s",
+            satellite, date_str_long(time_to_secs(sat.tle.epoch_year,
+                                                  sat.tle.epoch_day,
+                                                  sat.tle.epoch_fod)));
+
+    return tle_info;
+}

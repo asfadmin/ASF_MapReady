@@ -46,7 +46,7 @@ static const char * imgloc(char * file)
     return loc;
 }
 
-void set_toolbar_images()
+static void set_button_images()
 {
     GtkWidget * w = get_widget_checked("google_earth_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("google_earth_button.gif"));
@@ -55,6 +55,9 @@ void set_toolbar_images()
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("ceos_metadata.png"));
 
     w = get_widget_checked("save_subset_image");
+    gtk_image_set_from_file(GTK_IMAGE(w), imgloc("save_as.png"));
+
+    w = get_widget_checked("save_setup_image");
     gtk_image_set_from_file(GTK_IMAGE(w), imgloc("save_as.png"));
 }
 
@@ -119,7 +122,7 @@ main(int argc, char **argv)
 
     // set up window title, etc
     set_title(band_specified, band);
-    set_toolbar_images();
+    set_button_images();
 
     // set up the acquisition planner, if we are in that mode
     if (planner_mode) setup_planner();

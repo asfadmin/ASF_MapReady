@@ -705,8 +705,15 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          event->keyval == GDK_Delete ||
          event->keyval == GDK_KP_Delete))
     {
-      return FALSE;
+        return FALSE;
     }
+
+    if (has_focus("output_dir_entry") || 
+        has_focus("output_file_entry"))
+    {
+        return FALSE;
+    }
+    // end of kludge
 
     // Now the rest of the code deals with the normal keyboard events,
     // that pertain to the main image.

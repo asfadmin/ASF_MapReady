@@ -41,9 +41,24 @@ const char *date_str(double s)
   sec2date(s, &jd, &t);
   date_jd2ymd(&jd, &d);
 
-  //sprintf(buf, "%02d-%s-%4d, %02d:%02d:%02d", d.day, mon[d.month], d.year,
-  //        t.hour, t.min, (int)(t.sec+.5));
   sprintf(buf, "%02d/%02d %02d:%02d", d.month, d.day, t.hour, t.min);
+  return buf;
+}
+
+const char *date_str_long(double s)
+{
+  char mon[][5]= 
+    {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  julian_date jd;
+  hms_time t;
+  ymd_date d;
+  static char buf[64];
+
+  sec2date(s, &jd, &t);
+  date_jd2ymd(&jd, &d);
+
+  sprintf(buf, "%02d-%s-%4d, %02d:%02d:%02d", d.day, mon[d.month], d.year,
+          t.hour, t.min, (int)(t.sec+.5));
   return buf;
 }
 

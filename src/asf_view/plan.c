@@ -1,6 +1,7 @@
 #include "asf_view.h"
 #include "plan.h"
 #include <ctype.h>
+#include <errno.h>
 
 // flag indicating whether or not asf_view is running with the acquisition
 // planning stuff turned on.  access from elsewhere with "planner_is_active()"
@@ -40,6 +41,57 @@ enum
 };
 
 static GtkTreeModel *liststore = NULL;
+
+static char *trim_whitespace(const char *s)
+{
+  // make a copy we can alter
+  char *tmp = STRDUP(s);
+
+  // first trim trailing whitespace
+  while (isspace(tmp[strlen(tmp)-1]))
+    tmp[strlen(tmp)-1] = '\0';
+
+  // to trim leading whitespace: get a pointer to first non-whitespace char...
+  char *p = tmp;
+  while (isspace(*p))
+    ++p;
+
+  // ... then strdup from that pointer
+  char *ret = STRDUP(p);
+  free(tmp);
+  return ret;
+}
+
+static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
+{
+  // splits a string into two pieces, stuff before the separater character
+  // and the stuff after it.  The separater character is not included in
+  // either string
+  char *str = STRDUP(str_in);
+  char *s1 = MALLOC(sizeof(char)*(strlen(str)+1));
+  char *s2 = MALLOC(sizeof(char)*(strlen(str)+1));
+
+  char *p = strchr(str, sep);
+
+  if (p) {
+    *p = '\0';
+    strcpy(s1, str);
+    *p = sep;
+    strcpy(s2, p+1);
+  } else {
+    // no sep -- s2 is empty, s1 is a copy of str
+    strcpy(s1, str);
+    strcpy(s2, "");
+  }
+
+  // trim whitespace
+  *s1_out = trim_whitespace(s1);
+  *s2_out = trim_whitespace(s2);
+
+  FREE(s1);
+  FREE(s2);
+  FREE(str);
+}
 
 int sort_compare_func(GtkTreeModel *model,
                       GtkTreeIter *a, GtkTreeIter *b,
@@ -210,6 +262,55 @@ SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
 
   ran_cb_callback = TRUE;
   fill_big(curr);
+}
+
+static void populate_tle_info()
+{
+    char *satellite, *beam_mode;
+    GtkWidget *cb = get_widget_checked("satellite_combobox");
+    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+    split2(modes[i], '/', &satellite, &beam_mode);
+
+    char *tle_filename = find_in_share("tle");
+    const char *tle_info = get_tle_info(tle_filename, satellite);
+    put_string_to_label("tle_info_label", tle_info);
+}
+
+static void populate_config_info()
+{
+    char *config_filename = find_in_share("planner_config.txt");
+    FILE *fp = NULL;
+
+    if (config_filename)
+        fp = fopen(config_filename, "r");
+
+    char *output_dir, *output_file;
+
+    if (!fp) {
+        // no config file -- default to the share dir
+        output_dir = STRDUP(get_asf_share_dir());
+        output_file = STRDUP("output.csv");
+    }
+    else {
+        char s[256], *junk;
+        if (!fgets(s, 255, fp))
+            strcpy(s,"output directory = ");
+        split2(s, '=', &junk, &output_dir);
+        free(junk);
+
+        if (!fgets(s, 255, fp))
+            strcpy(s,"output file = ");
+        split2(s, '=', &junk, &output_file);
+        free(junk);
+
+        fclose(fp);
+    }
+
+    put_string_to_entry("output_dir_entry", output_dir);
+    free(output_dir);
+
+    put_string_to_entry("output_file_entry", output_file);
+    free(output_file);
 }
 
 void setup_planner()
@@ -398,6 +499,11 @@ void setup_planner()
     put_string_to_entry("end_date_entry", "20070916");
     // ... all this should be deleted
 
+    // populate the "setup" tab's values
+    populate_tle_info();
+    populate_config_info();
+
+    // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
 }
@@ -435,57 +541,6 @@ int row_is_checked(int row)
   }
 
   return ret;
-}
-
-static char *trim_whitespace(const char *s)
-{
-  // make a copy we can alter
-  char *tmp = STRDUP(s);
-
-  // first trim trailing whitespace
-  while (isspace(tmp[strlen(tmp)-1]))
-    tmp[strlen(tmp)-1] = '\0';
-
-  // to trim leading whitespace: get a pointer to first non-whitespace char...
-  char *p = tmp;
-  while (isspace(*p))
-    ++p;
-
-  // ... then strdup from that pointer
-  char *ret = STRDUP(p);
-  free(tmp);
-  return ret;
-}
-
-static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
-{
-  // splits a string into two pieces, stuff before the separater character
-  // and the stuff after it.  The separater character is not included in
-  // either string
-  char *str = STRDUP(str_in);
-  char *s1 = MALLOC(sizeof(char)*(strlen(str)+1));
-  char *s2 = MALLOC(sizeof(char)*(strlen(str)+1));
-
-  char *p = strchr(str, sep);
-
-  if (p) {
-    *p = '\0';
-    strcpy(s1, str);
-    *p = sep;
-    strcpy(s2, p+1);
-  } else {
-    // no sep -- s2 is empty, s1 is a copy of str
-    strcpy(s1, str);
-    strcpy(s2, "");
-  }
-
-  // trim whitespace
-  *s1_out = trim_whitespace(s1);
-  *s2_out = trim_whitespace(s2);
-
-  FREE(s1);
-  FREE(s2);
-  FREE(str);
 }
 
 static int revolution2path(int revolution)
@@ -907,11 +962,25 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 {
+    char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
+    char *output_file = STRDUP(get_string_from_entry("output_file_entry"));
+    char *out_name = MALLOC(sizeof(char) *
+                            (strlen(output_dir) + strlen(output_file) + 5));
+    sprintf(out_name, "%s/%s", output_dir, output_file);
+    FILE *ofp = fopen(out_name, "w");
+    if (!ofp) {
+      message_box("Could not open output file!\n  %s\n  %s\n",
+                  out_name, strerror(errno));
+      return;
+    }
+
+    int num = 0;
     GtkTreeIter iter;
+
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)
     {
-        char *date_str, *dbl_date_str, *coverage_str, *orbit_frame_str,
+        char *date_str, *dbl_date_str, *coverage_str, *orbit_path_str,
           *start_lat_str, *duration_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
@@ -921,25 +990,38 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                            COL_COVERAGE, &coverage_str,
                            COL_START_LAT, &start_lat_str,
                            COL_DURATION, &duration_str,
-                           COL_ORBIT_PATH, &orbit_frame_str,
+                           COL_ORBIT_PATH, &orbit_path_str,
                            -1);
 
         //double date = atof(dbl_date_str);
         double lat = atof(start_lat_str);
         double dur = atof(duration_str);
         double cov = atof(coverage_str);
-        int orbit, frame;
-        sscanf(orbit_frame_str, "%d/%d", &orbit, &frame);
+        int orbit, path;
+        sscanf(orbit_path_str, "%d/%d", &orbit, &path);
 
         // now do something with all this great info
         if (enabled) {
-          // here we will save it, or something
-          printf("Saving: %s %.1f%% %.2f %.1f %d/%d\n",
-                 date_str, cov, lat, dur, orbit, frame);
+          //printf("Saving: %s %.1f%% %.2f %.1f %d/%d\n",
+          //       date_str, cov, lat, dur, orbit, path);
+          fprintf(ofp, "%s %.1f%% %.2f %.1f %d %d\n",
+                  date_str, cov, lat, dur, orbit, path);
+          ++num;
         }
 
         valid = gtk_tree_model_iter_next(liststore, &iter);
     }
+
+    fclose(ofp);
+
+    if (num==0)
+        printf("Empty output file.\n");
+    else
+        printf("Saved %d acquisitions.\n", num);
+
+    free(out_name);
+    free(output_dir);
+    free(output_file);
 }
 
 SIGNAL_CALLBACK void on_clear_button_clicked(GtkWidget *w)
@@ -988,3 +1070,12 @@ SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
     fill_big(curr);
 }
 
+SIGNAL_CALLBACK void on_save_setup_button_clicked(GtkWidget *w)
+{
+    FILE *ofp = fopen_share_file("planner_config.txt", "w");
+    fprintf(ofp, "output directory = %s\n",
+            get_string_from_entry("output_dir_entry"));
+    fprintf(ofp, "output file = %s\n",
+            get_string_from_entry("output_file_entry"));
+    fclose(ofp);
+}
