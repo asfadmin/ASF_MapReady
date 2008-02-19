@@ -6,6 +6,11 @@
 #include "asf_raster.h"
 #include "asf_import.h"
 #include "ardop_defs.h"
+#include "asf_endian.h"
+#include "float_image.h"
+#include "asf_nan.h"
+#include "get_ceos_names.h"
+#include "get_stf_names.h"
 #include "asf_license.h"
 #include "create_thumbs_help.h"
 
@@ -18,16 +23,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-#include "asf.h"
-#include "get_ceos_names.h"
-#include "asf_endian.h"
-#include "asf_import.h"
-#include "float_image.h"
-#include "asf_nan.h"
-
 #define MIN_ARGS (1)
 #define MAX_ARGS (30)
-//#define MAX(a,b) ((a)<(b) ? (b) : (a))
 
 typedef enum {
     not_L0=0,
@@ -198,6 +195,11 @@ int main(int argc, char *argv[])
   if (out_dir && !quietflag) asfPrintStatus("Output directory is: %s\n", out_dir);
 
   int i;
+  if (currArg >= argc) {
+      fprintf(stderr,"\n**Wrong number of options.\n");
+      if (!quietflag) usage();
+      exit(1);
+  }
   for (i=currArg; i<argc; ++i) {
       process(argv[i], 0, recursive, size, verbose,
               L0Flag, scale_factor, browseFlag,
@@ -565,43 +567,67 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                                output_format_t output_format, char *out_dir)
 {
     char in_file[1024], out_file[1024], del_files[1024];
-    char export_path[2048], tmp_basename[(L_tmpnam)+256];
+    char export_path[2048], *tmp_basename, tmp_folder[256];
     struct INPUT_ARDOP_PARAMS *params_in;
 
-    if (!tmpnam(tmp_basename)) {
+    if (!tmpnam(NULL)) {
         fprintf(stderr, "** Cannot create temporary files.\n");
         exit(1);
     }
     else {
         // Close the tmpnam() security hole by putting something
         // in the name that nobody else would use :)
-        sprintf(tmp_basename, "UTD_ROCKS_%s", tmp_basename);
+        char tmp[(L_tmpnam)+256];
+        sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s", get_basename(file));
+        if (!fileExists(tmp_folder)) {
+            mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+        }
+        sprintf(tmp, "%s_UTD_ROCKS_", tmpnam(NULL));
+        tmp_basename = get_basename(tmp);
     }
     if (L0Flag == stf) {
+        char *inDataName = NULL, *inMetaName = NULL;
         // Import to a temporary file
-        sprintf(out_file, "%s%s_import", tmp_basename, file);
-        asf_import(r_AMP,
-                   0 /*db_flag*/,
-                   0 /*complex_flag*/,
-                   0 /*multilook_flag*/,
-                   "STF",
-                   NULL /*band_id*/,
-                   MAGIC_UNSET_STRING /*image_data_type*/,
-                   NULL /*lut*/,
-                   NULL /*prcPath*/,
-                   -99 /*lowerLat*/,
-                   -99 /*upperLat*/,
-                   NULL /*p_range_scale*/,
-                   NULL /*p_azimuth_scale*/,
-                   NULL /*p_correct_y_pixel_size*/,
-                   NULL /*inMetaNameOption*/,
-                   (char*)file, out_file);
+        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+        stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
+        if (pair != NO_STF_FILE_PAIR &&
+            strncmp(file, inDataName, strlen(file)) == 0) {
+            asf_import(r_AMP,
+                    0 /*db_flag*/,
+                    0 /*complex_flag*/,
+                    0 /*multilook_flag*/,
+                    "STF",
+                    NULL /*band_id*/,
+                    MAGIC_UNSET_STRING /*image_data_type*/,
+                    NULL /*lut*/,
+                    NULL /*prcPath*/,
+                    -99 /*lowerLat*/,
+                    -99 /*upperLat*/,
+                    NULL /*p_range_scale*/,
+                    NULL /*p_azimuth_scale*/,
+                    NULL /*p_correct_y_pixel_size*/,
+                    NULL /*inMetaNameOption*/,
+                    (char*)file,
+                    out_file);
+        }
+        else {
+            remove_dir(tmp_folder);
+            FREE(inDataName);
+            FREE(inMetaName);
+            return;
+        }
+        FREE(inDataName);
+        FREE(inMetaName);
     }
     else if (L0Flag == ceos) {
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FIXME: Remove the error message and exit() when CEOS support is tested and works
+        // FIXME: Need to insert code to check for Level 0 CEOS pair before calling asf_import(), see above for STF
         fprintf(stderr, "** CEOS format Level 0 products not yet supported...\n");
         exit(1);
-        sprintf(out_file, "%s%s_import", tmp_basename, file);
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
         asf_import(r_AMP,
                    0 /*db_flag*/,
                    0 /*complex_flag*/,
@@ -622,24 +648,20 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
         // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%s_ardop", tmp_basename, file);
+    sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
     params_in = get_input_ardop_params_struct(in_file, out_file);
-    // YO BRIAN START HERE
-    //ardop(params_in);
-    free(params_in);
-    sprintf(del_files, "%s_import*", file);
-    //unlink(del_files);
-    printf("\n\nDELETING %s\n\n", del_files);
+//    params_in->npatches = (int*)MALLOC(sizeof(int));
+//    *params_in->npatches = 1;
+    ardop(params_in);
+//    FREE(params_in->npatches);
+    FREE(params_in);
 
     // Convert to ground range
     sprintf(in_file, "%s_amp", out_file);
-    sprintf(out_file, "%s_gr", file);
-    //sr2gr(in_file, out_file);
-    sprintf(del_files, "%s_ardop*", file);
-    //unlink(del_files);
-    printf("\n\nDELETING %s\n\n", del_files);
+    sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+    sr2gr(in_file, out_file);
 
-    // Resample image and export
+    // Resample image, flip if necessary, and export
     strcpy(in_file, out_file);
     if (browseFlag) {
         strcpy(out_file, file);
@@ -664,19 +686,30 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     char *band_name[1] = {MAGIC_UNSET_STRING};
     resample(in_file, out_file, xsf, ysf);
     //flip(); // FIXME: Ask Jeremy ...maybe flip ...maybe not
-    sprintf(del_files, "%s_gr*", file);
-    //unlink(del_files);
-    printf("\n\nDELETING %s\n\n", del_files);
     strcpy(in_file, out_file);
-    sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, out_file);
-    asf_export_bands(output_format, SIGMA, 0 /*rgb*/,
-                     0 /*true_color*/, 0 /*false_color*/, 0 /*pauli*/, 0 /*sinclair*/,
-                     "" /*look_up_table_name*/, in_file, export_path,
+    if (out_dir && strlen(out_dir)) {
+        sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, get_basename(out_file));
+    }
+    else {
+        strcpy(export_path, out_file);
+    }
+    asf_export_bands(output_format,
+                     SIGMA,
+                     0 /*rgb*/,
+                     0 /*true_color*/,
+                     0 /*false_color*/,
+                     0 /*pauli*/,
+                     0 /*sinclair*/,
+                     "" /*look_up_table_name*/,
+                     in_file,
+                     export_path,
                      (char**)band_name);
+
+    // Clean up...
+    remove_dir(tmp_folder);
     sprintf(del_files, "%s.img", file);
-    //unlink(del_files);
-    printf("\n\nDELETING %s\n\n", del_files);
+    remove(del_files);
     sprintf(del_files, "%s.meta", file);
-    //unlink(del_files);
-    printf("\n\nDELETING %s\n\n", del_files);
+    remove(del_files);
+    FREE(tmp_basename);
 }
