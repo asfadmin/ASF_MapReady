@@ -28,7 +28,8 @@ LIBS = \
 	$(GTK_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
-	$(JPEG_LIBS)
+	$(JPEG_LIBS) \
+	-lz
 
 CFLAGS += \
 	$(GSL_CFLAGS) \

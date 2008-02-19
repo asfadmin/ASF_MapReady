@@ -1,3 +1,4 @@
+#include "asf_export.h"
 #include "asf_sar.h"
 #include "asf.h"
 #include "ceos.h"
@@ -5,7 +6,6 @@
 #include "asf_raster.h"
 #include "asf_import.h"
 #include "ardop_defs.h"
-#include "asf_export.h"
 #include "asf_license.h"
 #include "create_thumbs_help.h"
 
