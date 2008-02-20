@@ -65,38 +65,38 @@ Time[6](cont)
 // RADARSAT auxiliary data is 50 bytes long, and starts 10 bytes into frame.
 // REV F S. 17
 typedef struct {
-	Uchar AuxSyncMarker[4]; //Code:	0x352EF853
-	Uchar ImageReferenceIdentifier[4];
-	struct SAT_USHORT PayloadStatus;
-	Uchar ReplicaAGC:6;
-	Uchar Spare1:2;
-	Uchar CALNAttenuatorSetting;
-	Uchar PulseWaveformNo:4;
-	Uchar Spare2:4;
-	Uchar Spare3:8;
-	struct SAT_ULONG	Temperature;
-	struct SAT_USHORT BeamSequence;
-	struct SAT_USHORT Ephemeris;
-	Uchar NoOfBeams:2;
-	Uchar ADCSamplingRate:2;
-	Uchar Spare4:4;
-	Uchar PulseCount1;
-	Uchar PulseCount2;
-	Uchar PRFBeam1;
-	Uchar PRFBeam2:5;
-	Uchar BeamSelect:2;
-	Uchar Spare5:1;
-	Uchar RxWindowStartTime1;
-	Uchar RxWindowStartTime2:4;
-	Uchar Spare6:4;
-	Uchar RxWindowDuration1;
-	Uchar RxWindowDuration2:4;
-	Uchar Spare7:4;
-	Uchar Attitude[12];
-	Uchar Time[6];
-	Uchar SCTO2Defaults:1;
-	Uchar ReplicaPresent:1;
-	Uchar RxAGCSetting:6;
+    Uchar AuxSyncMarker[4]; //Code: 0x352EF853
+    Uchar ImageReferenceIdentifier[4];
+    struct SAT_USHORT PayloadStatus;
+    Uchar ReplicaAGC:6;
+    Uchar Spare1:2;
+    Uchar CALNAttenuatorSetting;
+    Uchar PulseWaveformNo:4;
+    Uchar Spare2:4;
+    Uchar Spare3:8;
+    struct SAT_ULONG    Temperature;
+    struct SAT_USHORT BeamSequence;
+    struct SAT_USHORT Ephemeris;
+    Uchar NoOfBeams:2;
+    Uchar ADCSamplingRate:2;
+    Uchar Spare4:4;
+    Uchar PulseCount1;
+    Uchar PulseCount2;
+    Uchar PRFBeam1;
+    Uchar PRFBeam2:5;
+    Uchar BeamSelect:2;
+    Uchar Spare5:1;
+    Uchar RxWindowStartTime1;
+    Uchar RxWindowStartTime2:4;
+    Uchar Spare6:4;
+    Uchar RxWindowDuration1;
+    Uchar RxWindowDuration2:4;
+    Uchar Spare7:4;
+    Uchar Attitude[12];
+    Uchar Time[6];
+    Uchar SCTO2Defaults:1;
+    Uchar ReplicaPresent:1;
+    Uchar RxAGCSetting:6;
 } RSAT_raw_aux;
 
 ******************************************************************************/
@@ -221,16 +221,16 @@ void RSAT_decodeAux(unsigned char *in, RSAT_aux *out)
 void RSAT_auxPrint(RSAT_aux *aux,FILE *f)
 {
 
-	fprintf(f,"\nReplica_AGC: %f\tRx_AGC: %f\tprf %f\n\trxStart %e\trxDur %e\n",
-		aux->replicaAGC,aux->rxAGC,aux->prf,aux->dwp,aux->windowDuration);
+    fprintf(f,"\nReplica_AGC: %f\tRx_AGC: %f\tprf %f\n\trxStart %e\trxDur %e\n",
+        aux->replicaAGC,aux->rxAGC,aux->prf,aux->dwp,aux->windowDuration);
 
-	fprintf(f,"fs=%e;timeBase=%e;rxLen=%d\n",1.0/aux->timeBase,aux->timeBase,aux->rxLen);
+    fprintf(f,"fs=%e;timeBase=%e;rxLen=%d\n",1.0/aux->timeBase,aux->timeBase,aux->rxLen);
 
-	fprintf(f,"HasReplica %d; replicaLen %d; imaging=%d; nBeams %d; beam %d\n",
-		aux->hasReplica,aux->replicaLen,RSAT_auxIsImaging(aux),
-			aux->nBeams,aux->beam);
-	fprintf(f,"Beams=%s/%s/%s/%s\n",aux->beamNames[0],aux->beamNames[1],aux->beamNames[2],aux->beamNames[3]);
-	fprintf(f,"Day %d; Second %f of day\n",aux->days,aux->seconds);
+    fprintf(f,"HasReplica %d; replicaLen %d; imaging=%d; nBeams %d; beam %d\n",
+        aux->hasReplica,aux->replicaLen,RSAT_auxIsImaging(aux),
+            aux->nBeams,aux->beam);
+    fprintf(f,"Beams=%s/%s/%s/%s\n",aux->beamNames[0],aux->beamNames[1],aux->beamNames[2],aux->beamNames[3]);
+    fprintf(f,"Day %d; Second %f of day\n",aux->days,aux->seconds);
 }
 
 /********************************************************************
@@ -239,51 +239,50 @@ void RSAT_auxPrint(RSAT_aux *aux,FILE *f)
  * data record.  */
 void RSAT_auxUpdate(RSAT_aux *aux,bin_state *s)
 {
-	int beamNo=0;
-	int nPulseInAirBeam[21]=CONF_RSAT_pulsesInAirList;/*Number of pulses in air, indexed by beam number.*/
+    int beamNo=0;
+    int nPulseInAirBeam[21]=CONF_RSAT_pulsesInAirList;/*Number of pulses in air, indexed by beam number.*/
 
-	s->nBeams=aux->nBeams;
-	s->nPulseInAir=nPulseInAirBeam[aux->beams[beamNo]];
-	s->nSamp=aux->rxLen;
-	s->nValid=aux->rxLen-aux->replicaLen;
-	s->fs=1.0/aux->timeBase;
+    s->nBeams=aux->nBeams;
+    s->nPulseInAir=nPulseInAirBeam[aux->beams[beamNo]];
+    s->nSamp=aux->rxLen;
+    s->nValid=aux->rxLen-aux->replicaLen;
+    s->fs=1.0/aux->timeBase;
 
-	if (s->fs>30e6)
-	{/*Very fast sampling freqency-- fine beam at 32.317 MHz, 30.30 MHz used*/
-		s->azres=9.0;/*Very small azimuth resolution*/
-		s->nLooks=1;/*Fine beam data takes no looks.*/
-		s->slope=CONF_RSAT_slopeFast;/*Fine beam uses almost all of the available bandwidth*/
-	}
-	else if (s->fs>15e6)
-	{/*Slowish sampling freqency-- 18.4669 MHz, 17.48 MHz used*/
-		s->azres=12.0;/*Larger azimuth resolution*/
-		s->nLooks=3;
-		s->slope=CONF_RSAT_slopeMed;
-	}else
-	{/*Slowest sampling freqency-- 12.9268 MHz, 11.78 MHz used*/
-		s->azres=12.0;/*Larger azimuth resolution*/
-		s->nLooks=3;
-		s->slope=CONF_RSAT_slopeSlow;
-	}
+    if (s->fs>30e6)
+    {/*Very fast sampling freqency-- fine beam at 32.317 MHz, 30.30 MHz used*/
+        s->azres=9.0;/*Very small azimuth resolution*/
+        s->nLooks=1;/*Fine beam data takes no looks.*/
+        s->slope=CONF_RSAT_slopeFast;/*Fine beam uses almost all of the available bandwidth*/
+    }
+    else if (s->fs>15e6)
+    {/*Slowish sampling freqency-- 18.4669 MHz, 17.48 MHz used*/
+        s->azres=12.0;/*Larger azimuth resolution*/
+        s->nLooks=3;
+        s->slope=CONF_RSAT_slopeMed;
+    }else
+    {/*Slowest sampling freqency-- 12.9268 MHz, 11.78 MHz used*/
+        s->azres=12.0;/*Larger azimuth resolution*/
+        s->nLooks=3;
+        s->slope=CONF_RSAT_slopeSlow;
+    }
 
 /*Compute slant range to first pixel:*/
-	s->prf=aux->prf;
-	s->prf_code=aux->prf_code;
+    s->prf=aux->prf;
+    s->prf_code=aux->prf_code;
 /* DWP=SWST+#in air/PRF-characteristic transmission delay. I checked the
  * satellite transmission delay (fudge factor) using the ST6 scene over Delta
  * Junction from orbit 8848.*/
-	s->dwp_code=aux->dwp_code;
-	s->dwp=aux->dwp;
-	s->range_gate=s->dwp+s->nPulseInAir/aux->prf-CONF_RSAT_rangePulseDelay;
+    s->dwp_code=aux->dwp_code;
+    s->dwp=aux->dwp;
+    s->range_gate=s->dwp+s->nPulseInAir/aux->prf-CONF_RSAT_rangePulseDelay;
 
-	s->time_code=aux->seconds;
+    s->time_code=aux->seconds;
 
-	asfPrintStatus("%d pulses in air; beam %d\n",s->nPulseInAir,aux->beams[0]);
+    asfPrintStatus("%d pulses in air; beam %d\n",s->nPulseInAir,aux->beams[0]);
 
-	strcpy(s->beamMode,aux->beamNames[aux->beam]);
+    strcpy(s->beamMode,aux->beamNames[aux->beam]);
 
-	RSAT_auxPrint(aux,stdout);
-
+    if (!quietflag) RSAT_auxPrint(aux,stdout);
 }
 
 /********************************************************************
@@ -291,17 +290,17 @@ void RSAT_auxUpdate(RSAT_aux *aux,bin_state *s)
  * These extract a single parameter from the RADARSAT auxiliary data.  */
 int RSAT_auxHasReplica(RSAT_aux *aux)
 {
-	return aux->hasReplica;
+    return aux->hasReplica;
 }
 int RSAT_auxGetBeam(RSAT_aux *aux)
 {
-	return aux->beam;
+    return aux->beam;
 }
 int RSAT_auxIsImaging(RSAT_aux *aux)
 {
-	if (aux->isImaging==0)
-		asfPrintWarning("Not imaging!!\n");
-	return aux->isImaging;
+    if (aux->isImaging==0)
+        asfPrintWarning("Not imaging!!\n");
+    return aux->isImaging;
 }
 
 /**************************************

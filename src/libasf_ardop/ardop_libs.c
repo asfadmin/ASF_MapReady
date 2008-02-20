@@ -1,5 +1,5 @@
 /****************************************************************************
-*								            *
+*                                           *
 *   ardop_libs.c              Miscellaneous routines used by others          *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
@@ -10,32 +10,32 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*   Alaska Satellite Facility                                         *
+*   Geophysical Institute           www.asf.alaska.edu            *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
+*   P.O. Box 757320                               *
+*   Fairbanks, AK 99775-7320                          *
+*                                         *
 ******************************************************************************/
 /****************************************************************************
-FUNCTION NAME:	General Routines that are used by the ASP software
+FUNCTION NAME:  General Routines that are used by the ASP software
 
 SYNTAX, DESCRIPTION, and RETURN VALUES:
 
-float	Cabs(complexFloat a)			Returns Scalar Magnitude of a
-complexFloat	Cconj(complexFloat a)			Returns Complex Conjugate of a
-complexFloat	Czero()				Returns Complex Zero
-complexFloat	Cadd(complexFloat a, complexFloat b)	Returns Complex Sum of a + b
-complexFloat	Cmplx(float a, float b)		Returns Complex a + bi
-complexFloat	Csmul(float s, complexFloat a)	Returns Complex s times a
-complexFloat	Cmul(complexFloat a, complexFloat b)	Returns Complex a times b
+float   Cabs(complexFloat a)            Returns Scalar Magnitude of a
+complexFloat    Cconj(complexFloat a)           Returns Complex Conjugate of a
+complexFloat    Czero()             Returns Complex Zero
+complexFloat    Cadd(complexFloat a, complexFloat b)    Returns Complex Sum of a + b
+complexFloat    Cmplx(float a, float b)     Returns Complex a + bi
+complexFloat    Csmul(float s, complexFloat a)  Returns Complex s times a
+complexFloat    Cmul(complexFloat a, complexFloat b)    Returns Complex a times b
 
-void 	elapse(int fnc)			Elapsed wall clock timer
+void    elapse(int fnc)         Elapsed wall clock timer
 
-void	yaxb(float[], float[], int, float*, float*)
-   	--Computes a linear regression based on least squares fit
+void    yaxb(float[], float[], int, float*, float*)
+    --Computes a linear regression based on least squares fit
 
-void	yax2bxc(float[], float[], int, float*, float*, float*)
+void    yax2bxc(float[], float[], int, float*, float*, float*)
         --Finds quadratic fit of input data using least squares regression.
 
 SPECIAL CONSIDERATIONS:
@@ -103,7 +103,7 @@ complexFloat Cmul (complexFloat a, complexFloat b)
 
 /****************************************************************
 FUNCTION NAME: elapse - an elapsed time wall clock timer
-PARAMETER:   fnc  int	start (0) / stop (!0) switch
+PARAMETER:   fnc  int   start (0) / stop (!0) switch
 DESCRIPTION:
     The input parameter is the start/stop button.  If mode = 0, the timer
     is started.  If mode != 0, the timer is stopped and the elapsed time
@@ -117,28 +117,27 @@ void elapse(int fnc)
 
     if (fnc == 0)
       gettimeofday(&tp1,NULL);
-    else
-      { 
-	gettimeofday(&tp2,NULL);
-        printf("   elapsed time = %i seconds.\n\n",(int)(tp2.tv_sec-tp1.tv_sec));
-      }
+    else {
+      gettimeofday(&tp2,NULL);
+      if (!quietflag) printf("   elapsed time = %i seconds.\n\n",(int)(tp2.tv_sec-tp1.tv_sec));
+    }
   }
 
 /******************************************************************************
-NAME: 		yaxb.c
-DESCRIPTION:	Computes a and b for y = ax + b using linear regression
-		given float vectors y and x of length n.
-PARAMETERS:	x_vec	float[]		Input vector of X values
-		y_vec	float[]		Input vector of Y values
-		n	int		Length of input vectors
-		a	float*		Return slope factor
-		b	float*		Return offset factor
-HISTORY: 	Ver 1.0   2/97   T. Logan    Initial Creation 
+NAME:       yaxb.c
+DESCRIPTION:    Computes a and b for y = ax + b using linear regression
+        given float vectors y and x of length n.
+PARAMETERS: x_vec   float[]     Input vector of X values
+        y_vec   float[]     Input vector of Y values
+        n   int     Length of input vectors
+        a   float*      Return slope factor
+        b   float*      Return offset factor
+HISTORY:    Ver 1.0   2/97   T. Logan    Initial Creation
                 Ver 1.1   5/98   O. Lawlor   Changed to doubles
                                  floats become unstable for thousands
                                  of elements.
 ALGORITHM REF:  Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
-		2nd Editn. pp 360-362. Brooks/Cole Pub. Co., Pacific Grove, Ca.
+        2nd Editn. pp 360-362. Brooks/Cole Pub. Co., Pacific Grove, Ca.
 ******************************************************************************/
 void yaxb(float x_vec[], float y_vec[], int n, float *a, float *b)
   {
@@ -164,29 +163,29 @@ void yaxb(float x_vec[], float y_vec[], int n, float *a, float *b)
   }
 
 /******************************************************************************
-NAME: 		yax2bxc.c
-DESCRIPTION:	Computes a, b, and c for y = ax^2 + bx + c using quadratic
-		regression (least squares fit) given float vectors y and x
-		of length n.
-PARAMETERS:	x_vec	float[]		Input vector of X values
-		y_vec	float[]		Input vector of Y values
-		n	int		Length of input vectors
-		a	float*		Return x^2 coefficient 
-		b	float*		Return x coefficient
-		c	float*		Return offset factor
-HISTORY:      	Ver 1.0   2/97   T. Logan    Initial Creation
+NAME:       yax2bxc.c
+DESCRIPTION:    Computes a, b, and c for y = ax^2 + bx + c using quadratic
+        regression (least squares fit) given float vectors y and x
+        of length n.
+PARAMETERS: x_vec   float[]     Input vector of X values
+        y_vec   float[]     Input vector of Y values
+        n   int     Length of input vectors
+        a   float*      Return x^2 coefficient
+        b   float*      Return x coefficient
+        c   float*      Return offset factor
+HISTORY:        Ver 1.0   2/97   T. Logan    Initial Creation
                 Ver 1.1   5/98   O. Lawlor   Changed to doubles
                                  floats become unstable for thousands
                                  of elements.
-ALGORITHM REF: 	Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
-	       	2nd Editn. pp 360-362. Brooks/Cole Pub. Co., Pacific Grove, Ca.
+ALGORITHM REF:  Cheney, Ward & D. Kincaid, Numerical Mathematics and Computing,
+            2nd Editn. pp 360-362. Brooks/Cole Pub. Co., Pacific Grove, Ca.
 ******************************************************************************/
 void yax2bxc(float x_vec[],float y_vec[],int n,float *a,float *b,float *c)
 {
- double x1, x2, x3, x4,		/* Sum of x, x^2, x^3, x^4 */
-       y1, yx, yx2;		/* Sum of y, y*x, y*x^2    */
+ double x1, x2, x3, x4,     /* Sum of x, x^2, x^3, x^4 */
+       y1, yx, yx2;     /* Sum of y, y*x, y*x^2    */
  double d1, d2, d3, d4, d5;      /* Intermediate Values     */
- double t1, t2, t3;		/* Equation Solutions      */
+ double t1, t2, t3;     /* Equation Solutions      */
  int   i;
 
  /* Calculate all of the first order sums */
