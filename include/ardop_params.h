@@ -101,7 +101,6 @@ struct INPUT_ARDOP_PARAMS {
   float *fdd;
   float *fddd;
   int *iflag;
-  int quietFlag;
 };
 
 struct INPUT_ARDOP_PARAMS *get_input_ardop_params_struct(char *in1, char *out);
