@@ -2,7 +2,7 @@
 #include "asf_vector.h"
 #include <assert.h>
 
-PassInfo *pass_info_new(int orbit, char dir, double start_lat)
+PassInfo *pass_info_new(int orbit, char dir)
 {
     PassInfo *ret = MALLOC(sizeof(PassInfo));
 
@@ -12,7 +12,8 @@ PassInfo *pass_info_new(int orbit, char dir, double start_lat)
     ret->start_time_as_string = NULL;
     ret->dir = dir;
     ret->orbit = orbit;
-    ret->start_lat = start_lat;
+    ret->start_lat = -1;
+    ret->stop_lat = -1;
     ret->duration = -1;
     return ret;
 }
@@ -51,6 +52,16 @@ void pass_info_add(PassInfo *pass_info, double t, OverlapInfo *oi)
 void pass_info_set_duration(PassInfo *pass_info, double duration)
 {
     pass_info->duration = duration;
+}
+
+void pass_info_set_start_latitude(PassInfo *pass_info, double start_latitude)
+{
+    pass_info->start_lat = start_latitude;
+}
+
+void pass_info_set_stop_latitude(PassInfo *pass_info, double stop_latitude)
+{
+    pass_info->stop_lat = stop_latitude;
 }
 
 void pass_info_free(PassInfo *pass_info)

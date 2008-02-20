@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "asf_meta.h"
 #include "sgpsdp.h"
+#include "date_util.h"
 
 double secs_to_jul(double t)
 {

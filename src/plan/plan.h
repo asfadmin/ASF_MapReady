@@ -24,7 +24,7 @@ typedef struct {
     double total_pct;
     char dir;
     int orbit;
-    double start_lat;
+    double start_lat, stop_lat;
     double duration;
 } PassInfo;
 

@@ -27,6 +27,7 @@ enum
   COL_COVERAGE,
   COL_ORBITDIR,
   COL_START_LAT,
+  COL_STOP_LAT,
   COL_DURATION,
   COL_INDEX
 };
@@ -297,11 +298,21 @@ static void populate_config_info()
         if (!fgets(s, 255, fp))
             strcpy(s,"output directory = ");
         split2(s, '=', &junk, &output_dir);
+        if (strcmp_case(junk, "output directory")!=0) {
+          printf("Invalid config file line 1, "
+                 "does not specify output directory.\n");
+          output_dir = STRDUP("");
+        }
         free(junk);
 
         if (!fgets(s, 255, fp))
-            strcpy(s,"output file = ");
+            strcpy(s,"output file = output.csv");
         split2(s, '=', &junk, &output_file);
+        if (strcmp_case(junk, "output file")!=0) {
+          printf("Invalid config file line 2, "
+                 "does not specify output filename.\n");
+          output_file = STRDUP("output.csv");
+        }
         free(junk);
 
         fclose(fp);
@@ -339,9 +350,10 @@ void setup_planner()
     GtkTreeViewColumn *col;
     GtkCellRenderer *rend;
 
-    GtkListStore *ls = gtk_list_store_new(10,
+    GtkListStore *ls = gtk_list_store_new(11,
                                           GDK_TYPE_PIXBUF,
                                           G_TYPE_BOOLEAN,
+                                          G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
                                           G_TYPE_STRING,
@@ -420,6 +432,15 @@ void setup_planner()
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_START_LAT);
+
+    // Column: Stop Latitude (currently not shown)
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "Lat");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_STOP_LAT);
 
     // Column: Duration
     col = gtk_tree_view_column_new();
@@ -590,14 +611,14 @@ static double alos_time(double start_lat, int start_direction,
     return ret; 
 }
 
-static void calc_frame(double lat, int *frame)
-{
-  double sat_lat = lat*D2R;
-  double inclination = D2R * (90-98.16);
-  double angle_thing = cos(inclination);
-  double rev = asin(sin(sat_lat)/angle_thing);
-  *frame = (int)(rev*7200 + .5);
-}
+//static void calc_frame(double lat, int *frame)
+//{
+//  double sat_lat = lat*D2R;
+//  double inclination = D2R * (90-98.16);
+//  double angle_thing = cos(inclination);
+//  double rev = asin(sin(sat_lat)/angle_thing);
+//  *frame = (int)(rev*7200 + .5);
+//}
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
@@ -813,7 +834,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
 
         char msg[256];
-        sprintf(msg, "Found %d matches.\n", n);
+        sprintf(msg, "Found %d match%s.\n", n, n==1?"":"es");
         asfPrintStatus(msg);
         put_string_to_label("plan_error_label", msg);
 
@@ -876,6 +897,18 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
           g_polys[i+1].show_extent=FALSE;
 
+          {
+            // debug: compare our duration with what alos_time returns
+            // this won't work for passes over the pole, but since it is
+            // just for debugging we don't really care...
+            int debug_time=TRUE;
+            if (debug_time) {
+              int odir = pi->dir=='D' ? 1 : 0;
+              printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,
+                                                        pi->stop_lat, odir));
+            }
+          }
+
           // get ready to add this one to the list, create each column's value
           char date_info[256];
           sprintf(date_info, "%s", pi->start_time_as_string);
@@ -898,8 +931,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           sprintf(index_info, "%d", i+1);
 
           // start latitude
-          char lat_info[256];
-          sprintf(lat_info, "%.2f", pi->start_lat);
+          char start_lat_info[256];
+          sprintf(start_lat_info, "%.2f", pi->start_lat);
+
+          // stop latitude
+          char stop_lat_info[256];
+          sprintf(stop_lat_info, "%.2f", pi->stop_lat);
 
           // duration
           char duration_info[256];
@@ -942,7 +979,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_DATE_HIDDEN, date_hidden_info,
                              COL_ORBIT_PATH, orbit_info,
                              COL_COVERAGE, pct_info,
-                             COL_START_LAT, lat_info,
+                             COL_START_LAT, start_lat_info,
+                             COL_STOP_LAT, stop_lat_info,
                              COL_DURATION, duration_info,
                              COL_ORBITDIR, orbit_dir,
                              COL_INDEX, index_info,
@@ -965,9 +1003,19 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 {
     char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
     char *output_file = STRDUP(get_string_from_entry("output_file_entry"));
+    if (strlen(output_file)==0)
+      output_file = STRDUP("output.csv");
+
+    // The 25 characters of padding is in the case where both are left
+    // blank, we still need to have room for the default output filename
     char *out_name = MALLOC(sizeof(char) *
-                            (strlen(output_dir) + strlen(output_file) + 5));
-    sprintf(out_name, "%s/%s", output_dir, output_file);
+                            (strlen(output_dir) + strlen(output_file) + 25));
+
+    if (strlen(output_dir) > 0)
+      sprintf(out_name, "%s/%s", output_dir, output_file);
+    else
+      strcpy(out_name, output_file);
+
     FILE *ofp = fopen(out_name, "w");
     if (!ofp) {
       message_box("Could not open output file!\n  %s\n  %s\n",
@@ -980,14 +1028,14 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 
     fprintf(ofp, 
             "Year,Month,Day,Hour,Minute,Second,Duration,Start Latitude,"
-            "Orbit,Path,Coverage\n");
+            "Stop Latitude,Orbit,Path,Coverage\n");
 
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)
     {
         //char *date_str;
-        char *dbl_date_str, *coverage_str, *orbit_path_str, *start_lat_str,
-             *duration_str;
+        char *dbl_date_str, *coverage_str, *orbit_path_str,
+             *start_lat_str, *stop_lat_str, *duration_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
                            COL_SELECTED, &enabled,
@@ -995,6 +1043,7 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                            COL_DATE_HIDDEN, &dbl_date_str,
                            COL_COVERAGE, &coverage_str,
                            COL_START_LAT, &start_lat_str,
+                           COL_STOP_LAT, &stop_lat_str,
                            COL_DURATION, &duration_str,
                            COL_ORBIT_PATH, &orbit_path_str,
                            -1);
@@ -1006,7 +1055,8 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         sec2date(date, &jd, &hms);
         date_jd2ymd(&jd, &ymd);
 
-        double lat = atof(start_lat_str);
+        double start_lat = atof(start_lat_str);
+        double stop_lat = atof(stop_lat_str);
         double dur = atof(duration_str);
         double cov = atof(coverage_str);
         int orbit, path;
@@ -1026,12 +1076,13 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                   ",%.1f"  // second
                   ",%.1f"  // duration
                   ",%.2f"  // start latitude
+                  ",%.2f"  // stop latitude
                   ",%d"    // orbit
                   ",%d"    // path
                   ",%.1f"  // coverage pct
                   "\n",
                   ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
-                  hms.sec,dur,lat,orbit,path,cov);
+                  hms.sec,dur,start_lat,stop_lat,orbit,path,cov);
 
           ++num;
         }
@@ -1042,17 +1093,17 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     fclose(ofp);
 
     if (num==0)
-        printf("Empty output file.\n");
+        asfPrintStatus("Empty output file.\n");
     else
-        printf("Saved %d acquisition%s.\n", num, num==1?"":"s");
+        asfPrintStatus("Saved %d acquisition%s.\n", num, num==1?"":"s");
 
     // on windows, open up the csv file with Excel
 #ifdef win32
     const char *csv = detect_csv_assoc();
     if (csv && strlen(csv) > 0) {
         const char *csv_app = detect_csv_assoc(out_name);
-        printf("Opening '%s' with external application  '%s'\n",
-               out_name, csv_app);
+        asfPrintStatus("Opening '%s' with external application  '%s'\n",
+                       out_name, csv_app);
 
         int pid = fork();
         if (pid == 0) {

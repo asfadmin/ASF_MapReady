@@ -31,8 +31,6 @@ void parse_date(const char *inStr,ymd_date *date,hms_time *time)
 
 const char *date_str(double s)
 {
-  char mon[][5]= 
-    {"","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
   julian_date jd;
   hms_time t;
   ymd_date d;

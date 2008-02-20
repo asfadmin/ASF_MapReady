@@ -290,9 +290,10 @@ int plan(const char *satellite, const char *beam_mode,
         // modded the start time
         int orbit_num = sat.orbit + orbits_per_cycle*cycles_adjustment;
 
-        PassInfo *pass_info = pass_info_new(orbit_num, dir, sat.ssplat);
+        PassInfo *pass_info = pass_info_new(orbit_num, dir);
         double start_time = curr - bmi->num_buffer_frames*incr;
 
+        // add on the buffer frames before the area of interest
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
@@ -300,8 +301,14 @@ int plan(const char *satellite, const char *beam_mode,
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
           pass_info_add(pass_info, t+time_adjustment, oi1);
+
+          if (i==bmi->num_buffer_frames) {
+            // at the start of the buffer frames -- compute starting latitude
+            pass_info_set_start_latitude(pass_info, sat.ssplat);
+          }
         }
 
+        // add the frames that actually image the area of interest
         while (curr < end_secs && oi) {
           pass_info_add(pass_info, curr+time_adjustment, oi);
           ++n;
@@ -315,6 +322,7 @@ int plan(const char *satellite, const char *beam_mode,
         double end_time = curr + bmi->num_buffer_frames*incr;
         pass_info_set_duration(pass_info, end_time-start_time);
 
+        // add on the buffer frames after the area of interest
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
           stateVector st1 = tle_propagate(&sat, t);
@@ -322,11 +330,31 @@ int plan(const char *satellite, const char *beam_mode,
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
           pass_info_add(pass_info, t+time_adjustment, oi1);
+
+          if (i==bmi->num_buffer_frames-1) {
+            // at the end of the buffer frames -- compute end latitude
+            // go one more frame ahead, in order to compute the latitude
+            // at the END of the current frame (i.e., assume start lat for
+            // next frame corresponds to end lat for this frame)
+            t += incr;
+            st1 = tle_propagate(&sat, t);
+            pass_info_set_stop_latitude(pass_info, sat.ssplat);
+          }
         }
 
         if (n>0) {
+          // make sure we set all these guys
+          assert(pass_info->start_lat != -1);
+          assert(pass_info->stop_lat != -1);
+          assert(pass_info->duration != -1);
+
+          // finally: add the pass!
           pass_collection_add(pc, pass_info);
           ++num_found;
+        }
+        else {
+          // I can't think why n would ever be 0...
+          assert(0);
         }
       }
     }

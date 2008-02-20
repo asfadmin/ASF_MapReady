@@ -24,9 +24,11 @@ OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
 void overlap_free(OverlapInfo *oi);
 
 /* pass.c */
-PassInfo *pass_info_new(int orbit, char dir, double start_lat);
+PassInfo *pass_info_new(int orbit, char dir);
 void pass_info_add(PassInfo *pass_info, double t, OverlapInfo *oi);
 void pass_info_set_duration(PassInfo *pass_info, double duration);
+void pass_info_set_stop_latitude(PassInfo *pass_info, double stop_latitude);
+void pass_info_set_start_latitude(PassInfo *pass_info, double start_latitude);
 void pass_info_free(PassInfo *info);
 PassCollection *pass_collection_new(double clat, double clon, Polygon *aoi);
 void pass_collection_add(PassCollection *pc, PassInfo *info);
