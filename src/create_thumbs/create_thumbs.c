@@ -654,7 +654,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     params_in = get_input_ardop_params_struct(in_file, out_file);
     // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
     // while debugging level 0 products)
-// #define DEBUG_L0
+//#define DEBUG_L0
 #ifdef DEBUG_L0
     params_in->npatches = (int*)MALLOC(sizeof(int));
     *params_in->npatches = 1;
@@ -719,9 +719,19 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Clean up...
     remove_dir(tmp_folder);
-    sprintf(del_files, "%s.img", file);
+    if (browseFlag) {
+        sprintf(del_files, "%s.img", file);
+    }
+    else {
+        sprintf(del_files, "%s_thumb.img", file);
+    }
     remove(del_files);
-    sprintf(del_files, "%s.meta", file);
+    if (browseFlag) {
+        sprintf(del_files, "%s.meta", file);
+    }
+    else {
+        sprintf(del_files, "%s_thumb.meta", file);
+    }
     remove(del_files);
     FREE(tmp_basename);
 }
