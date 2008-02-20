@@ -147,6 +147,7 @@ src/create_thumbs
 src/shift_geolocation
 src/trim
 src/proj2proj
+src/sgpsdp
 doc
 
  17. Run the autotar script:
