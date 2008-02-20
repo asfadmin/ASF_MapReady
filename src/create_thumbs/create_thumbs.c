@@ -11,6 +11,7 @@
 #include "asf_nan.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
+#include "lzFetch.h"
 #include "asf_license.h"
 #include "create_thumbs_help.h"
 
@@ -52,6 +53,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
                                float scale_factor, int browseFlag,
                                output_format_t output_format, char *out_dir);
+int is_stf(const char *file);
 
 int main(int argc, char *argv[])
 {
@@ -509,7 +511,7 @@ void process_file(const char *file, int level, int size, int verbose,
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
-    if (L0Flag == stf || L0Flag == ceos) { //Note that ceos is currently unsupported for L0
+    if ((L0Flag == stf || L0Flag == ceos) && is_stf(file)) { //Note that ceos is currently unsupported for L0
         generate_level0_thumbnail(file, size, verbose, L0Flag, scale_factor, browseFlag,
                                   output_format, out_dir);
     }
@@ -579,7 +581,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         // in the name that nobody else would use :)
         char tmp[(L_tmpnam)+256];
         sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s", get_basename(file));
-        if (!fileExists(tmp_folder)) {
+        if (!is_dir(tmp_folder)) {
             mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
         }
         sprintf(tmp, "%s_UTD_ROCKS_", tmpnam(NULL));
@@ -626,34 +628,41 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         fprintf(stderr, "** CEOS format Level 0 products not yet supported...\n");
         exit(1);
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
-        asf_import(r_AMP,
-                   0 /*db_flag*/,
-                   0 /*complex_flag*/,
-                   0 /*multilook_flag*/,
-                   "CEOS", NULL /*band_id*/,
-                   MAGIC_UNSET_STRING /*image_data_type*/,
-                   NULL /*lut*/,
-                   NULL /*prcPath*/,
-                   -99 /*lowerLat*/,
-                   -99 /*upperLat*/,
-                   NULL /*p_range_scale*/,
-                   NULL /*p_azimuth_scale*/,
-                   NULL /*p_correct_y_pixel_size*/,
-                   NULL /*inMetaNameOption*/,
-                   (char*)file,
-                   out_file);
+        //sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+        //asf_import(r_AMP,
+        //           0 /*db_flag*/,
+        //           0 /*complex_flag*/,
+        //           0 /*multilook_flag*/,
+        //           "CEOS",
+        //           NULL /*band_id*/,
+        //           MAGIC_UNSET_STRING /*image_data_type*/,
+        //           NULL /*lut*/,
+        //           NULL /*prcPath*/,
+        //           -99 /*lowerLat*/,
+        //           -99 /*upperLat*/,
+        //           NULL /*p_range_scale*/,
+        //           NULL /*p_azimuth_scale*/,
+        //           NULL /*p_correct_y_pixel_size*/,
+        //           NULL /*inMetaNameOption*/,
+        //           (char*)file,
+        //           out_file);
     }
 
-        // Run range-doppler algorithm on the raw data
+    // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
     sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
     params_in = get_input_ardop_params_struct(in_file, out_file);
-//    params_in->npatches = (int*)MALLOC(sizeof(int));
-//    *params_in->npatches = 1;
+    // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
+    // while debugging level 0 products)
+// #define DEBUG_L0
+#ifdef DEBUG_L0
+    params_in->npatches = (int*)MALLOC(sizeof(int));
+    *params_in->npatches = 1;
+#endif
     ardop(params_in);
-//    FREE(params_in->npatches);
+#ifdef DEBUG_L0
+    FREE(params_in->npatches);
+#endif
     FREE(params_in);
 
     // Convert to ground range
@@ -689,6 +698,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     strcpy(in_file, out_file);
     if (out_dir && strlen(out_dir)) {
         sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, get_basename(out_file));
+        if (!is_dir(out_dir)) {
+            mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+        }
     }
     else {
         strcpy(export_path, out_file);
@@ -712,4 +724,19 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(del_files, "%s.meta", file);
     remove(del_files);
     FREE(tmp_basename);
+}
+
+int is_stf(const char *file)
+{
+    char *inDataName = NULL, *inMetaName = NULL, *processor = NULL;
+    stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
+    if (pair != NO_STF_FILE_PAIR && inMetaName && strlen(inMetaName)) {
+        processor = lzStr(inMetaName, "prep_block.processor_name:", NULL);
+        if (strncmp(processor, "SKY", 3) == 0) {
+            FREE(processor);
+            return 1;
+        }
+    }
+    FREE(processor);
+    return 0;
 }
