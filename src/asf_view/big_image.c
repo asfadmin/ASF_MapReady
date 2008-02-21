@@ -669,8 +669,9 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          has_focus("lat_max_entry") ||
          has_focus("lon_min_entry") ||
          has_focus("lon_max_entry") ||
+         has_focus("look_angle_entry") ||
          has_focus("show_box_button") ||
-         has_focus("satellite_combobox") ||
+         has_focus("mode_combobox") ||
          has_focus("orbit_direction_combobox"))
         &&
         (event->keyval == GDK_1 ||

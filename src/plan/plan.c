@@ -83,11 +83,14 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
 }
 
 static Polygon *
-get_viewable_region(stateVector *st, BeamModeInfo *bmi,
+get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
                     int target_zone, double target_lat, double target_lon)
 {
+  assert(look_angle >= D2R*(bmi->min_look_angle-.0001));
+  assert(look_angle <= D2R*(bmi->max_look_angle+.0001));
+
   double center_lat, center_lon, center_x, center_y;
-  get_target_latlon(st, bmi->look_angle, &center_lat, &center_lon);
+  get_target_latlon(st, look_angle, &center_lat, &center_lon);
 
   // return NULL if we are "far away"
   int zone = utm_zone(center_lon);
@@ -103,7 +106,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi,
   // location of a point just a bit ahead of us
   stateVector ahead_st = propagate(*st, 0, 1);
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
-  get_target_latlon(&ahead_st, bmi->look_angle, &ahead_lat, &ahead_lon);
+  get_target_latlon(&ahead_st, look_angle, &ahead_lat, &ahead_lon);
   latLon2UTM_zone(ahead_lat, ahead_lon, 0, target_zone, &ahead_x, &ahead_y);
   //printf("ahead: %f %f\n", ahead_lat, ahead_lon);
 
@@ -149,10 +152,11 @@ static double random_in_interval(double lo, double hi)
 }
 
 static OverlapInfo *
-overlap(double t, stateVector *st, BeamModeInfo *bmi,
+overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
         int zone, double clat, double clon, Polygon *aoi)
 {
-  Polygon *viewable_region = get_viewable_region(st, bmi, zone, clat, clon);
+  Polygon *viewable_region =
+    get_viewable_region(st, bmi, look_angle, zone, clat, clon);
 
   if (!viewable_region)
     return NULL; // no overlap
@@ -187,7 +191,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi,
   }
 }
 
-int plan(const char *satellite, const char *beam_mode,
+int plan(const char *satellite, const char *beam_mode, double look_angle,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,
          int zone, Polygon *aoi, const char *tle_filename,
@@ -282,7 +286,9 @@ int plan(const char *satellite, const char *beam_mode,
     if ((dir=='A' && pass_type!=DESCENDING_ONLY) ||
         (dir=='D' && pass_type!=ASCENDING_ONLY))
     {
-      OverlapInfo *oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
+      OverlapInfo *oi =
+        overlap(curr, &st, bmi, look_angle, zone, clat, clon, aoi);
+
       if (oi) {
         int n=0;
 
@@ -297,7 +303,8 @@ int plan(const char *satellite, const char *beam_mode,
         for (i=bmi->num_buffer_frames; i>0; --i) {
           double t = curr - i*incr;
           stateVector st1 = tle_propagate(&sat, t);
-          Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
+          Polygon *region = get_viewable_region(&st1, bmi, look_angle,
+                                                zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
           pass_info_add(pass_info, t+time_adjustment, oi1);
@@ -316,7 +323,7 @@ int plan(const char *satellite, const char *beam_mode,
           curr += incr;
           st = tle_propagate(&sat, curr);
 
-          oi = overlap(curr, &st, bmi, zone, clat, clon, aoi);
+          oi = overlap(curr, &st, bmi, look_angle, zone, clat, clon, aoi);
         }
 
         double end_time = curr + bmi->num_buffer_frames*incr;
@@ -326,7 +333,8 @@ int plan(const char *satellite, const char *beam_mode,
         for (i=0; i<bmi->num_buffer_frames; ++i) {
           double t = curr + i*incr;
           stateVector st1 = tle_propagate(&sat, t);
-          Polygon *region = get_viewable_region(&st1, bmi, zone, clat, clon);
+          Polygon *region = get_viewable_region(&st1, bmi, look_angle,
+                                                zone, clat, clon);
           OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
                                          &st1, t);
           pass_info_add(pass_info, t+time_adjustment, oi1);

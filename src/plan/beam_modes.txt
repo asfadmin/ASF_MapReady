@@ -1,6 +1,19 @@
-ALOS FBS2 28 380 320 55 1
-ALOS FBS3 28 370 360 54 1
-ALOS FBS4 28 370 390 60 1
-ALOS FBS5 28.3 380 370 56 1
-ALOS FBS8 34 75 60 8.7 1
-ALOS FBS11 41 75 65 10.5 1
+# Sequence is:
+#  Satellite,Beam Mode,Min Look Angle,Max Look Angle,Increment,
+#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames
+#
+# Got a lot of this info from 
+#   http://earth.esa.int/object/index.cfm?fobjectid=5194
+#
+ALOS FBS 9.9 50.8 0.1 55 55 10 1
+ALOS FBD 9.9 50.8 0.1 55 55 10 1
+ALOS DSN 9.9 50.8 0.1 55 55 10 1
+ALOS PLR 9.7 26.2 0.1 38 38 7 2
+ALOS WB1 20.1 36.5 0.1 300 300 50 1
+ALOS WB2 20.1 36.5 0.1 300 300 50 1
+#ALOS FBS2 28 380 320 55 1
+#ALOS FBS3 28 370 360 54 1
+#ALOS FBS4 28 370 390 60 1
+#ALOS FBS5 28.3 380 370 56 1
+#ALOS FBS8 34 75 60 8.7 1
+#ALOS FBS11 41 75 65 10.5 1

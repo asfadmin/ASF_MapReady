@@ -3,6 +3,18 @@
 #include "dateUtil.h"
 #include <ctype.h>
 #include <errno.h>
+#include <assert.h>
+
+// For now this is a global constant -- the name of the satellite we are
+// planning for.  The beam mode table code supports multiple satellites,
+// so the GUI could be modified to allow selection of a satellite, and
+// whatever the user selects there would be used in place of where this
+// string is passed in.  Since for now the GUI only supports ALOS, there
+// isn't really any reason to do this right now, but it should be an
+// easy change.  Also, if we want to plan other for a different
+// satellite, but still just one satellite, you can just change this
+// string.
+const char *planner_satellite = "ALOS";
 
 // flag indicating whether or not asf_view is running with the acquisition
 // planning stuff turned on.  access from elsewhere with "planner_is_active()"
@@ -14,8 +26,15 @@ int planner_is_active()
 }
 
 // Need to remember the modes, so we can refer to them later
-char **modes=NULL;
-int num_beam_modes=-1;
+typedef struct mode_info_struct
+{
+    char *mode;
+    double look_min;
+    double look_max;
+    double look_incr;
+} ModeInfo;
+ModeInfo *modes=NULL;
+int num_modes=-1;
 
 enum
 {
@@ -246,6 +265,16 @@ static void clear_found()
     g_poly = &g_polys[which_poly];
 }
 
+static void update_look()
+{
+    GtkWidget *cb = get_widget_checked("mode_combobox");
+    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+
+    char buf[64];
+    sprintf(buf, "(%.1f - %.1f)", modes[i].look_min, modes[i].look_max);
+    put_string_to_label("look_angle_info_label", buf);
+}
+
 extern int ran_cb_callback;
 SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
                                  char *path_str, gpointer data)
@@ -268,13 +297,8 @@ SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
 
 static void populate_tle_info()
 {
-    char *satellite, *beam_mode;
-    GtkWidget *cb = get_widget_checked("satellite_combobox");
-    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
-    split2(modes[i], '/', &satellite, &beam_mode);
-
     char *tle_filename = find_in_share("tle");
-    const char *tle_info = get_tle_info(tle_filename, satellite);
+    const char *tle_info = get_tle_info(tle_filename, planner_satellite);
     put_string_to_label("tle_info_label", tle_info);
 }
 
@@ -331,17 +355,32 @@ void setup_planner()
     show_widget("planner_notebook", TRUE);
     show_widget("viewer_notebook", FALSE);
 
-    // populate the "Satellite/Beam" dropdown from the
-    // "beam_modes.txt" file
-    modes = get_all_beam_modes(&num_beam_modes);
+    // populate the "Mode" dropdown from the "beam_modes.txt" file
+    char **names;
+    double *min_looks, *max_looks, *look_incrs;
+    get_all_beam_modes(planner_satellite, &num_modes,
+                       &names, &min_looks, &max_looks, &look_incrs);
 
+    assert(num_modes>0);
+
+    modes = MALLOC(sizeof(ModeInfo)*num_modes);
     int i;
-    clear_combobox("satellite_combobox");
-    for (i=0; i<num_beam_modes; ++i)
-        add_to_combobox("satellite_combobox", modes[i]);
+    clear_combobox("mode_combobox");
+    for (i=0; i<num_modes; ++i) {
+        modes[i].mode = names[i];
+        modes[i].look_min = min_looks[i];
+        modes[i].look_max = max_looks[i];
+        modes[i].look_incr = look_incrs[i];
+        add_to_combobox("mode_combobox", names[i]);
+    }
 
-    // by default select ALOS -- FIXME select alos!
-    set_combo_box_item_checked("satellite_combobox", 0);
+    FREE(names); // don't free the pointed-to strings in this array
+    FREE(min_looks);
+    FREE(max_looks);
+    FREE(look_incrs);
+
+    // by default select ... something
+    set_combo_box_item_checked("mode_combobox", 0);
 
     // by default search for both ascending and descending
     set_combo_box_item_checked("orbit_direction_combobox", 0);
@@ -362,7 +401,7 @@ void setup_planner()
                            G_TYPE_STRING,   // stop lat -- hidden
                            G_TYPE_STRING,   // duration
                            G_TYPE_STRING,   // orbit direction
-                           G_TYPE_STRING);  // id -- hidden
+                           G_TYPE_STRING);  // index (in g_polys) -- hidden
 
     liststore = GTK_TREE_MODEL(ls);
     GtkWidget *tv = get_widget_checked("treeview_planner");
@@ -514,7 +553,7 @@ void setup_planner()
     //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
     center_line = crosshair_line;
     center_samp = crosshair_samp;
-    set_combo_box_item_checked("satellite_combobox", 2);
+    set_combo_box_item_checked("mode_combobox", 1);
     put_string_to_entry("lat_min_entry", "44.6");
     put_string_to_entry("lat_max_entry", "45.2");
     put_string_to_entry("lon_min_entry", "-110.3");
@@ -530,6 +569,9 @@ void setup_planner()
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
+
+    // update look angle info label
+    update_look();
 }
 
 int row_is_checked(int row)
@@ -624,10 +666,8 @@ static double alos_time(double start_lat, int start_direction,
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
-    int i,pass_type,zone;
+    int i,j,pass_type,zone;
     char errstr[1024];
-    char *satellite, *beam_mode;
-    long startdate, enddate;
     double max_lat, min_lat, clat, clon;
     Polygon *aoi;
 
@@ -635,17 +675,41 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     // at the end, if errstr is non-empty, we can't do the planning
     strcpy(errstr, "");
 
-    // satellite & beam mode
-    GtkWidget *cb = get_widget_checked("satellite_combobox");
+    // beam mode
+    GtkWidget *cb = get_widget_checked("mode_combobox");
     i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
-    split2(modes[i], '/', &satellite, &beam_mode);
+    char *beam_mode = modes[i].mode;
+
+    // look angle
+    double look_angle = get_double_from_entry("look_angle_entry");
+    if (look_angle < modes[i].look_min)
+      strcat(errstr, "Look angle smaller than minimum.\n");
+    else if (look_angle > modes[i].look_max)
+      strcat(errstr, "Look angle larger than maximum.\n");
+
+    // clamp to nearest allowed look angle (per increment)
+    j=0;
+    double a = modes[i].look_min, min_diff=999, closest=-1;
+    while (a < modes[i].look_max + .0001) {
+      a = modes[i].look_min + (double)j*modes[i].look_incr;
+      double diff = fabs(look_angle - a);
+      if (diff<min_diff) {
+        min_diff = diff;
+        closest = a;
+      } 
+      ++j;
+    }
+    assert(closest > 0);
+    //printf("Look angle: %.8f -> %.8f\n", look_angle, closest);
+    put_double_to_entry_fmt("look_angle_entry", closest, "%.1f");
+    look_angle = closest*D2R;
 
     // get the start/end dates
-    startdate = (long)get_int_from_entry("start_date_entry");
+    long startdate = (long)get_int_from_entry("start_date_entry");
     if (!is_valid_date(startdate))
       strcat(errstr, "Invalid start date.\n");
 
-    enddate = (long)get_int_from_entry("end_date_entry");
+    long enddate = (long)get_int_from_entry("end_date_entry");
     if (!is_valid_date(enddate))
       strcat(errstr, "Invalid end date.\n");
 
@@ -823,8 +887,9 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       char *err;
       PassCollection *pc;
 
-      int n = plan(satellite, beam_mode, startdate, enddate, max_lat, min_lat,
-                   clat, clon, pass_type, zone, aoi, tle_filename, &pc, &err);
+      int n = plan(planner_satellite, beam_mode, look_angle,
+                   startdate, enddate, max_lat, min_lat, clat, clon,
+                   pass_type, zone, aoi, tle_filename, &pc, &err);
 
       if (n < 0) {
         put_string_to_label("plan_error_label", err);
@@ -903,7 +968,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             // debug: compare our duration with what alos_time returns
             // this won't work for passes over the pole, but since it is
             // just for debugging we don't really care...
-            int debug_time=FALSE;
+            int debug_time=TRUE;
             if (debug_time) {
               int odir = pi->dir=='D' ? 1 : 0;
               printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,
@@ -1180,4 +1245,9 @@ SIGNAL_CALLBACK void on_save_setup_button_clicked(GtkWidget *w)
                 get_string_from_entry("output_file_entry"));
         fclose(ofp);
     }
+}
+
+SIGNAL_CALLBACK void on_beam_mode_combobox_changed(GtkWidget *w)
+{
+    update_look();
 }

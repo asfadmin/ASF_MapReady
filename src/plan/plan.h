@@ -58,17 +58,20 @@ typedef struct {
 //   pc:           pass collection struct, as above
 // Returns the number of acquisitions found
 
-int plan(const char *satellite, const char *beam_mode,
+int plan(const char *satellite, const char *beam_mode, double look_angle,
          long startdate, long enddate, double min_lat, double max_lat,
          double clat, double clon, int pass_type,
          int zone, Polygon *aoi, const char *tle_filename,
          PassCollection **pc, char **errorstring);
 
-char **get_all_beam_modes(int *num_beam_modes);
 int is_valid_date(long date);
 void pass_collection_free(PassCollection *pc);
 void pass_collection_to_kml(PassCollection *pc, const char *kml_file);
 
 const char *get_tle_info(const char *tle_filename, const char *satellite);
+
+void get_all_beam_modes(const char *satellite, int *num_out,
+                        char ***names_out, double **min_looks_out,
+                        double **max_looks_out, double **look_incrs_out);
 
 #endif
