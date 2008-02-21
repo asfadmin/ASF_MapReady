@@ -350,18 +350,20 @@ void setup_planner()
     GtkTreeViewColumn *col;
     GtkCellRenderer *rend;
 
-    GtkListStore *ls = gtk_list_store_new(11,
-                                          GDK_TYPE_PIXBUF,
-                                          G_TYPE_BOOLEAN,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING,
-                                          G_TYPE_STRING);
+    GtkListStore *ls = gtk_list_store_new(
+                           11,              // (# of columns)
+                           GDK_TYPE_PIXBUF, // color pixbuf
+                           G_TYPE_BOOLEAN,  // checkbox col
+                           G_TYPE_STRING,   // date (string)
+                           G_TYPE_STRING,   // date (# secs) -- hidden
+                           G_TYPE_STRING,   // orbit/path
+                           G_TYPE_STRING,   // coverage
+                           G_TYPE_STRING,   // start lat
+                           G_TYPE_STRING,   // stop lat -- hidden
+                           G_TYPE_STRING,   // duration
+                           G_TYPE_STRING,   // orbit direction
+                           G_TYPE_STRING);  // id -- hidden
+
     liststore = GTK_TREE_MODEL(ls);
     GtkWidget *tv = get_widget_checked("treeview_planner");
 
@@ -403,7 +405,7 @@ void setup_planner()
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_DATE_HIDDEN);
 
-    // Column: Orbit/Frame
+    // Column: Orbit/Path
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "Orbit/Path");
     gtk_tree_view_column_set_resizable(col, TRUE);
@@ -462,7 +464,7 @@ void setup_planner()
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_ORBITDIR);
 
-    // Column: Additional Info (hidden)
+    // Column: Index (hidden)
     col = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(col, "-");
     gtk_tree_view_column_set_visible(col, FALSE);
@@ -517,8 +519,8 @@ void setup_planner()
     put_string_to_entry("lat_max_entry", "45.2");
     put_string_to_entry("lon_min_entry", "-110.3");
     put_string_to_entry("lon_max_entry", "-109.4");
-    put_string_to_entry("start_date_entry", "20070914");
-    put_string_to_entry("end_date_entry", "20070916");
+    put_string_to_entry("start_date_entry", "20070814");
+    put_string_to_entry("end_date_entry", "20070914");
     // ... all this should be deleted
 
     // populate the "setup" tab's values
@@ -571,14 +573,14 @@ static int revolution2path(int revolution)
 }
 
 // calculate a satellite's nadir latitude for a particular frame
-static double sat_lat(int ALOS_frame)
-{
-    double inclination = 90 - 98.16;
-    double angle_thing = cos(D2R*inclination);
-    double orbit = ALOS_frame/7200*360.;
-    double ret = R2D*asin(sin(D2R*orbit)*angle_thing);
-    return ret;
-}
+//static double sat_lat(int ALOS_frame)
+//{
+//    double inclination = 90 - 98.16;
+//    double angle_thing = cos(D2R*inclination);
+//    double orbit = ALOS_frame/7200*360.;
+//    double ret = R2D*asin(sin(D2R*orbit)*angle_thing);
+//    return ret;
+//}
 
 static double fake_lat(double real_lat, double inclination)
 {
@@ -901,7 +903,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             // debug: compare our duration with what alos_time returns
             // this won't work for passes over the pole, but since it is
             // just for debugging we don't really care...
-            int debug_time=TRUE;
+            int debug_time=FALSE;
             if (debug_time) {
               int odir = pi->dir=='D' ? 1 : 0;
               printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,
@@ -917,9 +919,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           sprintf(date_hidden_info, "%f", pi->start_time);
 
           char orbit_info[256];
-          //calc_frame(pc->clat, &frame);
           int orbit = pi->orbit;
-          //int frame = pi->frame;
           int path = revolution2path(orbit);
           sprintf(orbit_info, "%d/%d", orbit, path);
 
@@ -1018,8 +1018,9 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 
     FILE *ofp = fopen(out_name, "w");
     if (!ofp) {
-      message_box("Could not open output file!\n  %s\n  %s\n",
-                  out_name, strerror(errno));
+      message_box("Could not open output CSV file!\n"
+                  "  %s\n"
+                  "  %s\n", out_name, strerror(errno));
       return;
     }
 
@@ -1033,13 +1034,11 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)
     {
-        //char *date_str;
         char *dbl_date_str, *coverage_str, *orbit_path_str,
              *start_lat_str, *stop_lat_str, *duration_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
                            COL_SELECTED, &enabled,
-                           //COL_DATE, &date_str,
                            COL_DATE_HIDDEN, &dbl_date_str,
                            COL_COVERAGE, &coverage_str,
                            COL_START_LAT, &start_lat_str,
@@ -1059,13 +1058,14 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         double stop_lat = atof(stop_lat_str);
         double dur = atof(duration_str);
         double cov = atof(coverage_str);
+
         int orbit, path;
         sscanf(orbit_path_str, "%d/%d", &orbit, &path);
 
         if (enabled)
         {
           //printf("Saving: %s %.1f%% %.2f %.1f %d/%d\n",
-          //       date_str, cov, lat, dur, orbit, path);
+          //       date_str_long(date), cov, lat, dur, orbit, path);
 
           fprintf(ofp,
                   "%d"     // year
@@ -1081,8 +1081,8 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                   ",%d"    // path
                   ",%.1f"  // coverage pct
                   "\n",
-                  ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
-                  hms.sec,dur,start_lat,stop_lat,orbit,path,cov);
+                ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
+                hms.sec,dur,start_lat,stop_lat,orbit,path,cov);
 
           ++num;
         }
@@ -1166,10 +1166,18 @@ SIGNAL_CALLBACK void on_show_box_button_clicked(GtkWidget *w)
 
 SIGNAL_CALLBACK void on_save_setup_button_clicked(GtkWidget *w)
 {
-    FILE *ofp = fopen_share_file("planner_config.txt", "w");
-    fprintf(ofp, "output directory = %s\n",
-            get_string_from_entry("output_dir_entry"));
-    fprintf(ofp, "output file = %s\n",
-            get_string_from_entry("output_file_entry"));
-    fclose(ofp);
+    const char *cfg_filename = "planner.cfg";
+    FILE *ofp = fopen_share_file(cfg_filename, "w");
+    if (!ofp) {
+      message_box("Could not open configuration file!\n"
+                  "  %s\n"
+                  "  %s\n", cfg_filename, strerror(errno));
+    }
+    else {
+        fprintf(ofp, "output directory = %s\n",
+                get_string_from_entry("output_dir_entry"));
+        fprintf(ofp, "output file = %s\n",
+                get_string_from_entry("output_file_entry"));
+        fclose(ofp);
+    }
 }

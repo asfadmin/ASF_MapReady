@@ -362,7 +362,7 @@ int plan(const char *satellite, const char *beam_mode,
     curr += incr;
     lat_prev = sat.ssplat;
 
-    //asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
+    asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }
   asfPercentMeter(1.0);
 
