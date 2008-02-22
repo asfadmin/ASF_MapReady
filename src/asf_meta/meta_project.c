@@ -467,7 +467,7 @@ void UTM2latLon(double projX, double projY, double elev, int zone,
   pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
   pps.utm.lat0 = 0.0;
   pps.utm.false_easting = 500000.0;
-  pps.utm.false_northing = lat>0 ? 0.0 : 10000000.0;
+  pps.utm.false_northing = 0.0;
 
   // Initialize meta_projection block
   meta_proj = meta_projection_init();
