@@ -258,6 +258,7 @@ static void clear_found()
     int i;
 
     // leave the first one -- area of interest
+    // i.e., don't start at 0, start at 1
     for (i=1; i<MAX_POLYS; ++i)
       g_polys[i].n = 0;
 
@@ -554,12 +555,13 @@ void setup_planner()
     center_line = crosshair_line;
     center_samp = crosshair_samp;
     set_combo_box_item_checked("mode_combobox", 1);
-    put_string_to_entry("lat_min_entry", "44.6");
-    put_string_to_entry("lat_max_entry", "45.2");
-    put_string_to_entry("lon_min_entry", "-110.3");
-    put_string_to_entry("lon_max_entry", "-109.4");
+    put_string_to_entry("lat_min_entry", "-3.16");
+    put_string_to_entry("lat_max_entry", "0.8");
+    put_string_to_entry("lon_min_entry", "31.11");
+    put_string_to_entry("lon_max_entry", "34.91");
     put_string_to_entry("start_date_entry", "20070814");
-    put_string_to_entry("end_date_entry", "20070914");
+    put_string_to_entry("end_date_entry", "20070820");
+    put_string_to_entry("look_angle_entry", "28");
     // ... all this should be deleted
 
     // populate the "setup" tab's values
@@ -686,23 +688,25 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
       strcat(errstr, "Look angle smaller than minimum.\n");
     else if (look_angle > modes[i].look_max)
       strcat(errstr, "Look angle larger than maximum.\n");
-
-    // clamp to nearest allowed look angle (per increment)
-    j=0;
-    double a = modes[i].look_min, min_diff=999, closest=-1;
-    while (a < modes[i].look_max + .0001) {
-      a = modes[i].look_min + (double)j*modes[i].look_incr;
-      double diff = fabs(look_angle - a);
-      if (diff<min_diff) {
-        min_diff = diff;
-        closest = a;
-      } 
-      ++j;
+    else
+    {
+      // clamp to nearest allowed look angle (per increment)
+      j=0;
+      double a = modes[i].look_min, min_diff=999, closest=-1;
+      while (a < modes[i].look_max + .0001) {
+        a = modes[i].look_min + (double)j*modes[i].look_incr;
+        double diff = fabs(look_angle - a);
+        if (diff<min_diff) {
+          min_diff = diff;
+          closest = a;
+        } 
+        ++j;
+      }
+      assert(closest > 0);
+      //printf("Look angle: %.8f -> %.8f\n", look_angle, closest);
+      put_double_to_entry_fmt("look_angle_entry", closest, "%.1f");
+      look_angle = closest*D2R;
     }
-    assert(closest > 0);
-    //printf("Look angle: %.8f -> %.8f\n", look_angle, closest);
-    put_double_to_entry_fmt("look_angle_entry", closest, "%.1f");
-    look_angle = closest*D2R;
 
     // get the start/end dates
     long startdate = (long)get_int_from_entry("start_date_entry");
@@ -777,15 +781,17 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         zone = utm_zone((lon1+lon2)/2.);
 
         // now get all corner points into UTM
-        latLon2UTM_zone(lat1, lon1, 0, zone, &x[0], &y[0]);
-        latLon2UTM_zone(lat2, lon2, 0, zone, &x[2], &y[2]);
+        ll2utm(lat1, lon1, zone, &x[0], &y[0]);
+        ll2utm(lat2, lon2, zone, &x[2], &y[2]);
 
         double lat, lon;
-        meta_get_latLon(meta, g_poly->line[0], crosshair_samp, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone, &x[1], &y[1]);
+        meta_get_latLon(meta, g_poly->line[0], crosshair_samp, 0,
+                        &lat, &lon);
+        ll2utm(lat, lon, zone, &x[1], &y[1]);
 
-        meta_get_latLon(meta, crosshair_line, g_poly->samp[0], 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone, &x[3], &y[3]);
+        meta_get_latLon(meta, crosshair_line, g_poly->samp[0], 0,
+                        &lat, &lon);
+        ll2utm(lat, lon, zone, &x[3], &y[3]);
 
         clat = .5*(lat1+lat2);
         clon = .5*(lon1+lon2);
@@ -844,12 +850,12 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         // now the second pass -- determining the actual coordinates
         // of the polygon in the right UTM zone
         meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
-        latLon2UTM_zone(lat, lon, 0, zone, &x[0], &y[0]);
+        ll2utm(lat, lon, zone, &x[0], &y[0]);
 
         for (i=0; i<g_poly->n; ++i) {
           meta_get_latLon(meta, g_poly->line[i], g_poly->samp[i], 0,
                           &lat, &lon);
-          latLon2UTM_zone(lat, lon, 0, zone, &x[i+1], &y[i+1]);
+          ll2utm(lat, lon, zone, &x[i+1], &y[i+1]);
         }
 
         // now we can finally create the polygon
@@ -939,10 +945,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             for (j=0; j<poly->n; ++j) {
               double samp, line, lat, lon;
 
-              // account for the false northing in the southern hemisphere
-              if (clat<0)
-                poly->y[j] -= 10000000;
-              UTM2latLon(poly->x[j], poly->y[j], 0, oi->utm_zone, &lat, &lon);
+              utm2ll(poly->x[j], poly->y[j], oi->utm_zone, &lat, &lon);
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);
@@ -968,7 +971,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             // debug: compare our duration with what alos_time returns
             // this won't work for passes over the pole, but since it is
             // just for debugging we don't really care...
-            int debug_time=TRUE;
+            int debug_time=FALSE;
             if (debug_time) {
               int odir = pi->dir=='D' ? 1 : 0;
               printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,

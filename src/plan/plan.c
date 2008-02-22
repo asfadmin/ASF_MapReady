@@ -1,5 +1,6 @@
 #include "plan.h"
 #include "plan_internal.h"
+#include "meta_project.h"
 
 #include "asf.h"
 #include "asf_meta.h"
@@ -99,16 +100,17 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   if (fabs(center_lat - target_lat) > 20)
     return NULL;
 
-  //printf("center: %f %f\n", center_lat, center_lon);
-  latLon2UTM_zone(center_lat, center_lon, 0, target_zone,
-                  &center_x, &center_y);
+  ll2utm(center_lat, center_lon, target_zone, &center_x, &center_y);
+  //printf("center: x,y: %f %f lat,lon: %f %f\n",
+  //       center_x, center_y, center_lat, center_lon);
 
   // location of a point just a bit ahead of us
   stateVector ahead_st = propagate(*st, 0, 1);
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
   get_target_latlon(&ahead_st, look_angle, &ahead_lat, &ahead_lon);
-  latLon2UTM_zone(ahead_lat, ahead_lon, 0, target_zone, &ahead_x, &ahead_y);
-  //printf("ahead: %f %f\n", ahead_lat, ahead_lon);
+  ll2utm(ahead_lat, ahead_lon, target_zone, &ahead_x, &ahead_y);
+  //printf("ahead: x,y: %f %f lat,lon: %f %f\n",
+  //       ahead_x, ahead_y, ahead_lat, ahead_lon);
 
   // now we know the orientation of the rectangle on the ground
   // ==> can find the 4 corners
@@ -139,8 +141,8 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   //printf("corners:\n");
   //for (i=0; i<4; ++i) {
   //  double lat, lon;
-  //  UTM2latLon(x[i],y[i],0,zone,&lat,&lon);
-  //  printf("%f %f\n", lat, lon);
+  //  utm2ll(x[i],y[i],target_zone,&lat,&lon);
+  //  printf("x,y: %f %f lat,lon: %f %f\n", x[i], y[i], lat, lon);
   //}
 
   return polygon_new_closed(4, x, y);
@@ -305,9 +307,11 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
           stateVector st1 = tle_propagate(&sat, t);
           Polygon *region = get_viewable_region(&st1, bmi, look_angle,
                                                 zone, clat, clon);
-          OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
-                                         &st1, t);
-          pass_info_add(pass_info, t+time_adjustment, oi1);
+          if (region) {
+            OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
+                                           &st1, t);
+            pass_info_add(pass_info, t+time_adjustment, oi1);
+          }
 
           if (i==bmi->num_buffer_frames) {
             // at the start of the buffer frames -- compute starting latitude
@@ -335,9 +339,11 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
           stateVector st1 = tle_propagate(&sat, t);
           Polygon *region = get_viewable_region(&st1, bmi, look_angle,
                                                 zone, clat, clon);
-          OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
-                                         &st1, t);
-          pass_info_add(pass_info, t+time_adjustment, oi1);
+          if (region) {
+            OverlapInfo *oi1 = overlap_new(0, 1000, region, zone, clat, clon,
+                                           &st1, t);
+            pass_info_add(pass_info, t+time_adjustment, oi1);
+          }
 
           if (i==bmi->num_buffer_frames-1) {
             // at the end of the buffer frames -- compute end latitude
@@ -376,5 +382,50 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
   *pc_out = pc;
   return num_found;
+}
+
+// Projection functions that replace UTM2latLon() and latLon2UTM()
+// These, unlike those, always set the false northing value to 0,
+// so they are guaranteed invertible
+void ll2utm(double lat, double lon, int zone, double *projX, double *projY)
+{
+  project_parameters_t pps;
+  pps.utm.zone = zone;
+  pps.utm.scale_factor = 0.9996;
+  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+  pps.utm.lat0 = 0.0;
+  pps.utm.false_easting = 500000.0;
+  pps.utm.false_northing = 0.0;
+
+  meta_projection *meta_proj = meta_projection_init();
+  meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  meta_proj->datum = WGS84_DATUM;
+  meta_proj->param = pps;
+
+  double projZ;
+  latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, 0, projX, projY, &projZ);
+}
+
+void utm2ll(double projX, double projY, int zone, double *lat, double *lon)
+{
+  project_parameters_t pps;
+  pps.utm.zone = zone;
+  pps.utm.scale_factor = 0.9996;
+  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+  pps.utm.lat0 = 0.0;
+  pps.utm.false_easting = 500000.0;
+  pps.utm.false_northing = 0.0;
+
+  // Initialize meta_projection block
+  meta_projection *meta_proj = meta_projection_init();
+  meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  meta_proj->datum = WGS84_DATUM;
+  meta_proj->param = pps;
+
+  double h;
+  proj_to_latlon(meta_proj, projX, projY, 0, lat, lon, &h);
+
+  *lat *= R2D;
+  *lon *= R2D;
 }
 

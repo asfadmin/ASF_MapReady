@@ -74,4 +74,10 @@ void get_all_beam_modes(const char *satellite, int *num_out,
                         char ***names_out, double **min_looks_out,
                         double **max_looks_out, double **look_incrs_out);
 
+// Projection functions that replace UTM2latLon() and latLon2UTM()
+// These, unlike those, always set the false northing value to 0,
+// so they are guaranteed invertible
+void ll2utm(double lat, double lon, int zone, double *projX, double *projY);
+void utm2ll(double projX, double projY, int zone, double *lat, double *lon);
+
 #endif
