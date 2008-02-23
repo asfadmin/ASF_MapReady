@@ -64,46 +64,52 @@ gboolean is_meta_file(const gchar * data_file)
 
 static char *file_is_valid(const gchar * file)
 {
-  // first, check if the file is ASF Internal
-  char *ext = findExt(file);
-  if (ext && strcmp_case(ext, ".meta")==0) {
-    return STRDUP(file);
-  }
-  else if (ext && strcmp_case(ext, ".img")==0) {
-    return appendExt(file, ".meta");
-  }
+    // is the file name a valid string?
+    if (!file || (file && strlen(file) < 1)) return NULL;
 
-  // now, the ceos check
-  char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
-  char **dataName = NULL, **metaName = NULL;
-  int nBands, trailer;
-
-  ceos_file_pairs_t ret = get_ceos_names(file, basename,
-                              &dataName, &metaName, &nBands, &trailer);
-
-  FREE(basename);
-
-  if (ret != NO_CEOS_FILE_PAIR) {
-    // found -- return metadata file
-    char *meta_file=NULL;
-    int i;
-    for (i=0; i<nBands; ++i) {
-      if (strcmp(file, metaName[i])==0) {
-        meta_file = STRDUP(metaName[i]);
-        break;
-      }
+    // first, check if the file is ASF Internal
+    char *ext = findExt(file);
+    if (ext && strcmp_case(ext, ".meta")==0) {
+        return STRDUP(file);
+    }
+    else if (ext && strcmp_case(ext, ".img")==0) {
+        return appendExt(file, ".meta");
     }
 
-    if (!meta_file)
-      meta_file = STRDUP(metaName[0]);
+    // now, the ceos check
+    char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
+    char **dataName = NULL, **metaName = NULL;
+    int nBands, trailer;
 
-    free_ceos_names(dataName, metaName);
+    ceos_file_pairs_t ret = get_ceos_names(file, basename,
+                                &dataName, &metaName, &nBands, &trailer);
 
-    return meta_file;
-  } else {
-    // not found
-    return NULL;
-  }
+    FREE(basename);
+
+    if (ret != NO_CEOS_FILE_PAIR) {
+        // found -- return metadata file
+        char *meta_file=NULL;
+        int i;
+        if (ret != CEOS_IMG_LED_PAIR) {
+            for (i=0; i<nBands; ++i) {
+                if (strcmp(file, metaName[i])==0) {
+                    meta_file = STRDUP(metaName[i]);
+                    break;
+                }
+            }
+        }
+
+        if (!meta_file) {
+            meta_file = STRDUP(metaName[0]);
+        }
+
+        free_ceos_names(dataName, metaName);
+
+        return meta_file;
+    } else {
+        // not found
+        return NULL;
+    }
 }
 
 #ifdef THUMBNAILS
@@ -367,7 +373,7 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
         else {
           /* not already in list -- add it */
           char *bands = build_band_list(input_file);
-          
+
           gtk_list_store_append(list_store, iter_p);
           gtk_list_store_set(list_store, iter_p,
                              COL_INPUT_FILE, input_file,
@@ -381,9 +387,9 @@ add_to_files_list_iter(const gchar *input_file_in, GtkTreeIter *iter_p)
           set_output_name(iter_p, out_name_full);
           g_free(out_name_full);
           FREE(bands);
-          
+
           queue_thumbnail(input_file);
-          
+
           /* Select the file automatically if this is the first
              file that was added (this makes the toolbar buttons
              immediately useful)                                 */
