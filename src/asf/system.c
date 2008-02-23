@@ -63,7 +63,15 @@ asfSystem(const char *format, ...)
         (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
 
         sprintf(shell_path, "%s/sh", get_asf_bin_dir());
-        execve(shell_path, (char * const *) new_argv, __environ);
+        int r = execve(shell_path, (char * const *) new_argv, __environ);
+
+        // we shouldn't get here, unless something went wrong
+        // and in that case, r should be -1.
+        if (r == -1) {
+            printf("Error running command: %s\n", strerror(errno));
+        } else {
+            printf("Impossible: execve returned %d!\n", r);
+        }
 
         exit(127);
     }
