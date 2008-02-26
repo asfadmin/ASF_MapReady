@@ -35,60 +35,6 @@ static int get_format()
     return -1;
 }
 
-// try to find a program we can use to view the generated csv files
-const char * detect_csv_assoc()
-{
-    static char *csv_app = NULL;
-    if (!csv_app) {
-        char *csv_file = find_in_share("asf_view_cfg.csv");
-
-#ifdef win32
-        // On Windows, use the file association table to find out what we
-        // can do with csv files.
-        char path[1024];
-        int ret = (int)FindExecutable((LPCTSTR)csv_file,
-            (LPCTSTR)get_asf_share_dir(), (LPTSTR)path);
-        if (ret > 32 && strlen(path) > 0) {
-            csv_app = escapify(path);
-            printf("Path to CSV Application: %s\n", csv_app);
-        } else {
-            if (ret==SE_ERR_FNF)
-                printf("File not found: %s\n", csv_file);
-            else if (ret==SE_ERR_NOASSOC)
-                printf("No association for: %s\n", csv_file);
-            else if (ret==SE_ERR_OOM)
-                printf("Out of resources.\n");
-            else
-                printf("Unknown error! (return value: %d)\n", ret);
-
-            csv_app = STRDUP("notepad.exe");
-            printf("CSV Application not found -- using notepad.\n");
-        }
-        FREE(csv_file);
-#else
-        // On Linux, get the app from the configuration file
-        FILE *cfg = fopen(csv_file, "r");
-        if (cfg) {
-            char tmp[1024];
-            while (fgets(tmp, 1024, cfg) != NULL) {
-                if (strncmp_case(tmp, "CSV,", 4) == 0) {
-                    csv_app = STRDUP(tmp+4);
-                    printf("CSV Application from config file: %s\n", csv_app);
-                }
-            }
-            if (!csv_app)
-                csv_app = STRDUP("");
-            fclose(cfg);
-        } else {
-            printf("Failed to open %s: %s\n", csv_file, strerror(errno));
-            csv_app = STRDUP("");
-            printf("CSV Application not found.\n");
-        }
-#endif
-    }
-    return csv_app;
-}
-
 // mapping between combobox entry indexes and the #defines
 static int get_what_to_save()
 {
@@ -546,28 +492,8 @@ static int save_as_csv(ImageInfo *ii,
     fclose(outFp);
 
     // if requested, open up the csv with an external viewer
-    if (load) {
-#ifdef win32
-        open_excel(out_file);
-#else
-        const char *csv = detect_csv_assoc();
-        int have_csv_viewer = csv && strlen(csv) > 0;
-        if (have_csv_viewer) {
-            const char *csv_app = detect_csv_assoc(out_file);
-            int pid = fork();
-            if (pid == 0) {
-                asfSystem("\"%s\" \"%s\"", csv_app, out_file);
-                exit(EXIT_SUCCESS);
-            }
-        } else {
-            char errbuf[1024];
-            snprintf(errbuf, 1024, "Don't know how to load: %s", out_file);
-            message_box(errbuf);
-            strcat(errbuf, "\n");
-            printf(errbuf);
-        }
-#endif
-    }
+    if (load)
+        open_csv(out_file);
 
     return TRUE;
 }

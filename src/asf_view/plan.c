@@ -63,26 +63,6 @@ enum
 
 static GtkTreeModel *liststore = NULL;
 
-static char *trim_whitespace(const char *s)
-{
-  // make a copy we can alter
-  char *tmp = STRDUP(s);
-
-  // first trim trailing whitespace
-  while (isspace(tmp[strlen(tmp)-1]))
-    tmp[strlen(tmp)-1] = '\0';
-
-  // to trim leading whitespace: get a pointer to first non-whitespace char...
-  char *p = tmp;
-  while (isspace(*p))
-    ++p;
-
-  // ... then strdup from that pointer
-  char *ret = STRDUP(p);
-  free(tmp);
-  return ret;
-}
-
 static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
 {
   // splits a string into two pieces, stuff before the separater character
@@ -1197,10 +1177,7 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     else
         asfPrintStatus("Saved %d acquisition%s.\n", num, num==1?"":"s");
 
-#ifdef win32
-    // on windows, open up the csv file with Excel
-    open_excel(out_name);
-#endif
+    open_csv(out_name);
 
     free(out_name);
     free(output_dir);

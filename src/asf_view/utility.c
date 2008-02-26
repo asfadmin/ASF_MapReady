@@ -8,6 +8,7 @@ const char DIR_SEPARATOR;
 #endif
 
 #include "asf_view.h"
+#include <ctype.h>
 
 void clear_combobox(const char *widget_name)
 {
@@ -281,4 +282,24 @@ void enable_widget(const char *widget_name, int enable)
 {
     GtkWidget *w = get_widget_checked(widget_name);
     gtk_widget_set_sensitive(w, enable);
+}
+
+char *trim_whitespace(const char *s)
+{
+  // make a copy we can alter
+  char *tmp = STRDUP(s);
+
+  // first trim trailing whitespace
+  while (isspace(tmp[strlen(tmp)-1]))
+    tmp[strlen(tmp)-1] = '\0';
+
+  // to trim leading whitespace: get a pointer to first non-whitespace char...
+  char *p = tmp;
+  while (isspace(*p))
+    ++p;
+
+  // ... then strdup from that pointer
+  char *ret = STRDUP(p);
+  free(tmp);
+  return ret;
 }

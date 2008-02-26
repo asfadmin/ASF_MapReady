@@ -87,6 +87,7 @@ void put_text_in_textview(const char *txt, const char *widget_name);
 void put_string_to_label(const char *widget_name, const char *txt);
 void show_widget(const char *widget_name, int show);
 void enable_widget(const char *widget_name, int enable);
+char *trim_whitespace(const char *s);
 
 /* asf_view.c */
 char *find_in_share(const char * filename);
@@ -189,7 +190,6 @@ void set_title(int band_specified, const char *band);
 /* subset.c */
 void save_subset(ImageInfo *ii);
 void update_poly_extents(meta_parameters *meta);
-const char * detect_csv_assoc();
 
 /* bands.c */
 void setup_bands_tab(meta_parameters *meta);
@@ -213,10 +213,9 @@ int planner_is_active(void);
 void setup_planner(void);
 int row_is_checked(int);
 
-/* excel.c */
-#ifdef win32
-void open_excel(const char *csv_file);
-#endif
+/* csv.c */
+const char * detect_csv_assoc();
+void open_csv(const char *csv_file);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR

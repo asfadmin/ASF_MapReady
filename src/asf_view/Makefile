@@ -25,6 +25,7 @@ SRCS = asf_view.c \
 	lut.c \
 	plan.c \
 	pan.c \
+	csv.c \
 	excel.c
 
 # Unfortunately compilation is completely different on windows

@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-extern const char * detect_csv_assoc();
-
 void open_excel(const char *csv_file)
 {
     const char *csv = detect_csv_assoc();
