@@ -64,7 +64,7 @@ static void update_save_subset_info()
     enabled = g_poly->n > 1;
     if (!enabled)
         set_checked("strict_boundary_checkbutton", FALSE);
-    enable_widget("strict_boundary_checkbutton", g_poly->n > 1);
+    enable_widget("strict_boundary_checkbutton", enabled);
 }
 
 static void close_subset_window(ImageInfo *ii)

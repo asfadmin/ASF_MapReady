@@ -545,8 +545,8 @@ void setup_planner()
     //g_polys[0].line[0] = 1850;
     //g_polys[0].samp[0] = 3650;
     //g_polys[0].c = 0;
-    crosshair_line = 1650;
-    crosshair_samp = 3450;
+    crosshair_line = 5465;
+    crosshair_samp = 12774;
     zoom = 1;
     //center_line = (crosshair_line + g_polys[0].line[0])/2;
     //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
@@ -568,7 +568,7 @@ void setup_planner()
 
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU)");
+    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (alpha build - Feb 26 2008)");
 
     // update look angle info label
     update_look();
@@ -577,7 +577,6 @@ void setup_planner()
 int row_is_checked(int row)
 {
   // returns true if that row # in the found acquisitions is checked
-  
   // return false if we aren't running the planner, or the row # is
   // not checked
 
@@ -599,6 +598,7 @@ int row_is_checked(int row)
         g_free(index_str);
 
         if (index == row) {
+          // found the row we are looking for
           ret = selected;
           break;
         }
