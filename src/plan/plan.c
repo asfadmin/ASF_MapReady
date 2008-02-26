@@ -404,6 +404,7 @@ void ll2utm(double lat, double lon, int zone, double *projX, double *projY)
 
   double projZ;
   latlon_to_proj(meta_proj, 'R', lat*D2R, lon*D2R, 0, projX, projY, &projZ);
+  FREE(meta_proj);
 }
 
 void utm2ll(double projX, double projY, int zone, double *lat, double *lon)
@@ -424,6 +425,7 @@ void utm2ll(double projX, double projY, int zone, double *lat, double *lon)
 
   double h;
   proj_to_latlon(meta_proj, projX, projY, 0, lat, lon, &h);
+  FREE(meta_proj);
 
   *lat *= R2D;
   *lon *= R2D;

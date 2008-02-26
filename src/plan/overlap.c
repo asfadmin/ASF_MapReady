@@ -20,5 +20,6 @@ OverlapInfo *overlap_new(int pct, int n, Polygon *viewable_region,
 void overlap_free(OverlapInfo *oi)
 {
     // don't free the "viewable_region" member, we do not own that
+    FREE(oi->viewable_region);
     FREE(oi);
 }

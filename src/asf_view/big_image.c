@@ -518,6 +518,7 @@ void fill_big(ImageInfo *ii)
     GdkPixbuf *pb = make_big_image(ii);
     GtkWidget *img = get_widget_checked("big_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+    g_object_unref(pb);
 
     // might as well do this here
     show_or_hide_save_subset_button();

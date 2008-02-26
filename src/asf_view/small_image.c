@@ -160,6 +160,7 @@ void fill_small_force_reload(ImageInfo *ii)
     GdkPixbuf *pb = make_small_image(TRUE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+    g_object_unref(pb);
 }
 
 void fill_small(ImageInfo *ii)
@@ -167,6 +168,7 @@ void fill_small(ImageInfo *ii)
     GdkPixbuf *pb = make_small_image(FALSE, NULL, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+    g_object_unref(pb);
 }
 
 void fill_small_have_data(ThumbnailData *thumbnail_data,
@@ -175,4 +177,5 @@ void fill_small_have_data(ThumbnailData *thumbnail_data,
     GdkPixbuf *pb = make_small_image(TRUE, thumbnail_data, ii);
     GtkWidget *img = get_widget_checked("small_image");
     gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
+    g_object_unref(pb);
 }

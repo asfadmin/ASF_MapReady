@@ -1059,6 +1059,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             break;
           }
         }
+
+        pass_collection_free(pc);
       }
 
       which_poly=0;
