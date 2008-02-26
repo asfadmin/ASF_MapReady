@@ -11,16 +11,6 @@
 #define TIME 5
 #define DOPPLER 6
 
-#ifdef win32
-#define BYTE __byte
-#include "asf.h"
-#include "asf_meta.h"
-#undef BYTE
-#include <windows.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#endif
-
 #include "asf_view.h"
 
 static int get_format()

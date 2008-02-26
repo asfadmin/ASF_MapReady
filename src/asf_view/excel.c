@@ -3,11 +3,12 @@
 #include <assert.h>
 #include <stdio.h>
 
+extern const char *detect_csv_assoc(void);
+
 void open_excel(const char *csv_file)
 {
-    const char *csv = detect_csv_assoc();
-    if (csv && strlen(csv) > 0) {
-        const char *csv_app = detect_csv_assoc(csv_file);
+    const char *csv_app = detect_csv_assoc();
+    if (csv_app && strlen(csv_app) > 0) {
         printf("Opening '%s' with external application  '%s'\n",
                        csv_file, csv_app);
 
@@ -23,15 +24,15 @@ void open_excel(const char *csv_file)
         si.cb = sizeof(si);
 
         if( !CreateProcess( NULL,   // No module name (use command line)
-                cmd,            // Command line
-                NULL,           // Process handle not inheritable
-                NULL,           // Thread handle not inheritable
-                FALSE,          // Set handle inheritance to FALSE
-                0,              // No creation flags
-                NULL,           // Use parent's environment block
-                NULL,           // Use parent's starting directory 
-                &si,            // Pointer to STARTUPINFO structure
-                &pi )           // Pointer to PROCESS_INFORMATION structure
+                cmd,                // Command line
+                NULL,               // Process handle not inheritable
+                NULL,               // Thread handle not inheritable
+                FALSE,              // Set handle inheritance to FALSE
+                0,                  // No creation flags
+                NULL,               // Use parent's environment block
+                NULL,               // Use parent's starting directory 
+                &si,                // Pointer to STARTUPINFO structure
+                &pi )               // Pointer to PROCESS_INFORMATION structure
             ) 
         {
                 printf( "CreateProcess failed (%ld)\n", GetLastError() );

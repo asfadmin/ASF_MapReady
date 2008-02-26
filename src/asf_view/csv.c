@@ -1,7 +1,17 @@
+#ifdef win32
+#define BYTE __byte
+#include "asf.h"
+#include "asf_meta.h"
+#undef BYTE
+#include <windows.h>
+#include <shellapi.h>
+#include <shlobj.h>
+#endif
+
 #include "asf_view.h"
 
 #ifdef win32
-/* in excel.c */
+// in excel.c
 void open_excel(const char *csv_file);
 #endif
 
@@ -64,10 +74,9 @@ void open_csv(const char *csv_file)
 #ifdef win32
         open_excel(csv_file);
 #else
-        const char *csv = detect_csv_assoc();
-        int have_csv_viewer = csv && strlen(csv) > 0;
+        const char *csv_app = detect_csv_assoc();
+        int have_csv_viewer = csv_app && strlen(csv_app) > 0;
         if (have_csv_viewer) {
-            const char *csv_app = detect_csv_assoc(csv_file);
             int pid = fork();
             if (pid == 0) {
                 asfSystem("\"%s\" \"%s\"", csv_app, csv_file);
