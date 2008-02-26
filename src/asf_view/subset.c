@@ -547,6 +547,9 @@ static int save_as_csv(ImageInfo *ii,
 
     // if requested, open up the csv with an external viewer
     if (load) {
+#ifdef win32
+        open_excel(out_file);
+#else
         const char *csv = detect_csv_assoc();
         int have_csv_viewer = csv && strlen(csv) > 0;
         if (have_csv_viewer) {
@@ -563,6 +566,7 @@ static int save_as_csv(ImageInfo *ii,
             strcat(errbuf, "\n");
             printf(errbuf);
         }
+#endif
     }
 
     return TRUE;

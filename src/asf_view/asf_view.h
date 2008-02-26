@@ -213,6 +213,11 @@ int planner_is_active(void);
 void setup_planner(void);
 int row_is_checked(int);
 
+/* excel.c */
+#ifdef win32
+void open_excel(const char *csv_file);
+#endif
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR

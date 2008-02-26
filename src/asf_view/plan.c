@@ -137,6 +137,9 @@ int sort_compare_func(GtkTreeModel *model,
         ret = date1 > date2 ? 1 : -1;
       else
         ret = 0; // equal
+
+      g_free(date1_str);
+      g_free(date2_str);
     }
     break;
 
@@ -154,6 +157,9 @@ int sort_compare_func(GtkTreeModel *model,
         ret = cov1 > cov2 ? 1 : -1;
       else
         ret = 0; // equal coverage
+
+      g_free(coverage1_str);
+      g_free(coverage2_str);
     }
     break;
 
@@ -177,6 +183,9 @@ int sort_compare_func(GtkTreeModel *model,
           ret = 0;
         }
       }
+
+      g_free(str1);
+      g_free(str2);
     }
     break;
 
@@ -205,6 +214,9 @@ int sort_compare_func(GtkTreeModel *model,
       else {
         ret = strcmp(str1, str2) > 0 ? 1 : -1;
       }
+
+      g_free(str1);
+      g_free(str2);
     }
     break;
 
@@ -222,6 +234,9 @@ int sort_compare_func(GtkTreeModel *model,
         ret = lat1 > lat2 ? 1 : -1;
       else
         ret = 0; // equal
+
+      g_free(start_lat1_str);
+      g_free(start_lat2_str);
     }
     break;
 
@@ -239,6 +254,9 @@ int sort_compare_func(GtkTreeModel *model,
         ret = dur1 > dur2 ? 1 : -1;
       else
         ret = 0; // equal
+
+      g_free(duration1_str);
+      g_free(duration2_str);
     }
     break;
 
@@ -598,6 +616,8 @@ int row_is_checked(int row)
                            COL_SELECTED, &selected, -1);
       
         int index = atoi(index_str);
+        g_free(index_str);
+
         if (index == row) {
           ret = selected;
           break;
@@ -1076,6 +1096,9 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     if (strlen(output_file)==0)
       output_file = STRDUP("output.csv");
 
+    //static char out_name[1024];
+    //assert(strlen(output_dir)+strlen(output_file) < 1000);
+
     // The 25 characters of padding is in the case where both are left
     // blank, we still need to have room for the default output filename
     char *out_name = MALLOC(sizeof(char) *
@@ -1157,6 +1180,13 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
           ++num;
         }
 
+        g_free(dbl_date_str);
+        g_free(coverage_str);
+        g_free(start_lat_str);
+        g_free(stop_lat_str);
+        g_free(duration_str);
+        g_free(orbit_path_str);
+
         valid = gtk_tree_model_iter_next(liststore, &iter);
     }
 
@@ -1167,20 +1197,9 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     else
         asfPrintStatus("Saved %d acquisition%s.\n", num, num==1?"":"s");
 
-    // on windows, open up the csv file with Excel
 #ifdef win32
-    const char *csv = detect_csv_assoc();
-    if (csv && strlen(csv) > 0) {
-        const char *csv_app = detect_csv_assoc(out_name);
-        asfPrintStatus("Opening '%s' with external application  '%s'\n",
-                       out_name, csv_app);
-
-        int pid = fork();
-        if (pid == 0) {
-            asfSystem("\"%s\" \"%s\"", csv_app, out_name);
-            exit(EXIT_SUCCESS);
-        }
-    }
+    // on windows, open up the csv file with Excel
+    open_excel(out_name);
 #endif
 
     free(out_name);

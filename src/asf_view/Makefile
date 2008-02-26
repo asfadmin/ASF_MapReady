@@ -24,7 +24,8 @@ SRCS = asf_view.c \
 	info.c \
 	lut.c \
 	plan.c \
-	pan.c
+	pan.c \
+	excel.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
