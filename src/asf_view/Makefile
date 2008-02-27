@@ -23,7 +23,7 @@ SRCS = asf_view.c \
 	bands.c \
 	info.c \
 	lut.c \
-	plan.c \
+	planner.c \
 	pan.c \
 	csv.c \
 	excel.c

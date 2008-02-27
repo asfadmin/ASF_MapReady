@@ -105,10 +105,13 @@ stateVector tle_propagate(sat_t *sat, double t)
   sat->footprint = 12756.33 * acos (xkmper / (xkmper+sat->alt));
   double age = sat->jul_utc - sat->jul_epoch;
 
+  // I really don't know if we need the -1 in here or not!!
+  int revnum = sat->tle.revnum; // - 1;
+
   double orbit = (sat->tle.xno * xmnpda/twopi +
                   age * sat->tle.bstar * ae) * age + sat->tle.xmo/twopi;
-  sat->orbit = (long) floor(orbit) + sat->tle.revnum/* - 1*/;
-  sat->orbit_part = orbit + sat->tle.revnum/* - 1*/ - (double)sat->orbit;
+  sat->orbit = (long) floor(orbit) + revnum;
+  sat->orbit_part = orbit + revnum - (double)sat->orbit;
 
   stateVector st;
 

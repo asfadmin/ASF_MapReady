@@ -13,9 +13,9 @@
 
 // have to use static vars... actually, we probably should be using
 // the "user_data" stuff that is always being passed around
-static int panning = FALSE;
-static int planner_panning = FALSE;
-static int dragging = FALSE;
+static int big_image_drag = FALSE;
+static int planner_big_image_drag = FALSE;
+static int small_image_drag = FALSE;
 static int start_x=0, start_y=0;
 static GdkPixbuf *pb=NULL;
 static GdkPixbuf *pb2=NULL;
@@ -56,6 +56,7 @@ static void destroy_pb_data(guchar *pixels, gpointer data)
     free(pixels);
 }
 
+// kludges to allow handling button clicks in the release event
 static int small_image_clicked=FALSE;
 static int big_image_clicked=FALSE;
 static int ran_nb_callback=FALSE;
@@ -65,6 +66,7 @@ on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   small_image_clicked=TRUE;
+  big_image_clicked=FALSE;
   return TRUE;
 }
 
@@ -73,6 +75,7 @@ on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   big_image_clicked=TRUE;
+  small_image_clicked=FALSE;
   return TRUE;
 }
 
@@ -86,7 +89,8 @@ on_planner_notebook_switch_page(GtkNotebook *nb, GtkNotebookPage *pg,
 
 // called when the user releases button -- must ensure user was panning
 // before doing anything.  If not, event has to be passed on as a normal
-// button click
+// button click, & we have kludgey static vars to help figure out which
+// widget the click applies to
 SIGNAL_CALLBACK int
 on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 {
@@ -102,11 +106,11 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 
   //printf("  --> %d %d\n", x, y);
 
-  if (panning) {
-    panning = FALSE;
+  if (big_image_drag) {
+    big_image_drag = FALSE;
 
-    if (planner_panning) {
-      planner_panning = FALSE;
+    if (planner_big_image_drag) {
+      planner_big_image_drag = FALSE;
 
       double l1, l2, s1, s2;
       img2ls(start_x,start_y,&l1,&s1);
@@ -169,8 +173,8 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     return TRUE;
   }
 
-  if (dragging) {
-    dragging = FALSE;
+  if (small_image_drag) {
+    small_image_drag = FALSE;
 
     int minx = MIN(start_x, x);
     int maxx = MAX(start_x, x);
@@ -257,7 +261,7 @@ static void put_box(GdkPixbuf *pixbuf, int x1, int x2, int y1, int y2)
     }
 }
 
-// called when user is panning
+// called when user is panning (big_image_drag)
 SIGNAL_CALLBACK int
 on_motion_notify_event(
     GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
@@ -281,18 +285,18 @@ on_motion_notify_event(
 
     // in planning mode, we replace panning with dragging, to create
     // a rectangle in the main window.  User pans with ctrl-click&drag
-    if (!dragging && (event->x_root > 256 || panning)) {
+    if (!small_image_drag && (big_image_clicked || big_image_drag)) {
         // This is motion in the MAIN window
         // i.e. -- a panning operation
 
-      if (!panning) {
+      if (!big_image_drag) {
         // user just started panning
         start_x = x;
         start_y = y;
-        panning = TRUE;
+        big_image_drag = TRUE;
 
         if (planner_is_active() && !(state & GDK_CONTROL_MASK))
-          planner_panning = TRUE;
+          planner_big_image_drag = TRUE;
 
         if (!win)
           win = get_widget_checked("ssv_main_window");
@@ -302,7 +306,7 @@ on_motion_notify_event(
 
         pb = gtk_image_get_pixbuf(GTK_IMAGE(img));
 
-        if (!planner_panning) {
+        if (!planner_big_image_drag) {
 #ifdef win32
           SetCursor(LoadCursor(NULL,IDC_HAND));
 #else
@@ -333,7 +337,9 @@ on_motion_notify_event(
       if (pb2)
         gdk_pixbuf_unref(pb2);
 
-      if (planner_panning) {
+      if (planner_big_image_drag) {
+        // planner mode: just copy the pixels over, so pb2 is the same
+        // as pb.  Then we will add the user-dragged red box
         memcpy(bdata, pixels, biw*bih*3);
         pb2 = 
           gdk_pixbuf_new_from_data(bdata, GDK_COLORSPACE_RGB, FALSE,
@@ -352,11 +358,13 @@ on_motion_notify_event(
         // copy pixels over
         // handle left&right completely off first
         // vertically off will be ok, loop will have 0 iterations
+        // (horizontally off would blow up the memcpys)
         if (off_x > biw || off_x < -biw) {
           // image is all black! no action needed
           ;
         }
-        // switched to using these loops with memcpy()s, is much faster
+        // switched to using these loops with memcpy()s, much faster
+        // 4 cases: user has panned up&left, up&right, down&left, down&right
         else if (off_x >= 0 && off_y >= 0) {
           for (ii=off_y; ii<bih; ++ii)
             memcpy(bdata + ii*rowstride + off_x*3,
@@ -390,17 +398,16 @@ on_motion_notify_event(
       gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb2);
       return FALSE;
     }
-    else if ((event->x_root <= 256 && event->y_root <= 256) || 
-             (!panning && dragging))
+    else if (small_image_clicked || (!big_image_drag && small_image_drag))
     {
       // This is motion in the THUMBNAIL window
-      // i.e. -- a drag operation, to create a new zoom level
+      // i.e. -- a drag operation to create a new zoom level
 
-      if (!dragging) {
+      if (!small_image_drag) {
         // user just started dragging
         start_x = x;
         start_y = y;
-        dragging = TRUE;
+        small_image_drag = TRUE;
 
         if (!win)
           win = get_widget_checked("ssv_main_window");
