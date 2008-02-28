@@ -75,6 +75,9 @@ char *find_in_share(const char * filename);
 /* alos2kml.c */
 int alos_csv_to_kml(const char *in_file, const char *out_file);
 
+/* google.c */
+void open_in_google_earth(const char *kml_file);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR

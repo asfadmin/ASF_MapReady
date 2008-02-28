@@ -1,7 +1,7 @@
 include ../../make_support/system_rules
 
 TARGET = c2v
-SRCS = c2v.c utility.c font.c browse.c process.c alos2kml.c
+SRCS = c2v.c utility.c font.c browse.c process.c alos2kml.c google.c
 
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)

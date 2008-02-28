@@ -44,6 +44,8 @@ SIGNAL_CALLBACK void on_convert_button_clicked(GtkWidget *w)
       "Unsupported combination of Input and Output formats selected.");
   }
 
+  int open_output = get_checked("open_output_checkbutton");
+
   char msg[255];
   if (ret == nfiles) {
     if (nfiles == 1) {
@@ -58,6 +60,19 @@ SIGNAL_CALLBACK void on_convert_button_clicked(GtkWidget *w)
       sprintf(msg, "Processed %d of %d file%s successfully, %d file%s failed.",
               ret, nfiles, nfiles==1?"":"s", nfiles-ret, nfiles-ret==1?"":"s");
     }
+    // don't open, if not completely successful
+    open_output = FALSE;
   }
   put_string_to_label("result_label", msg);
+
+  if (open_output) {
+    switch (output_format) {
+      case OUTPUT_FORMAT_KML:
+        open_in_google_earth(out_file);
+        break;
+      default:
+        // should never get here
+        assert(FALSE);
+    }
+  }
 }
