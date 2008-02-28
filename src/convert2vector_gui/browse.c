@@ -11,14 +11,10 @@
 #undef BYTE
 #include <windows.h>
 #undef DIR_SEPARATOR
+#include <shlobj.h>
 #endif
 
 #include "c2v.h"
-
-#ifndef win32
-
-static GtkWidget *input_browse_widget = NULL;
-static GtkWidget *output_browse_widget = NULL;
 
 static void add_input_file(char *file)
 {
@@ -51,6 +47,11 @@ static void add_input_file(char *file)
       free(s);
     }
 }
+
+#ifndef win32
+
+static GtkWidget *input_browse_widget = NULL;
+static GtkWidget *output_browse_widget = NULL;
 
 // called when "cancel" clicked on the GtkFileChooser
 SIGNAL_CALLBACK void input_browse_cancel_clicked()
