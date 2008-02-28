@@ -12,7 +12,7 @@
 // string is passed in.  Since for now the GUI only supports ALOS, there
 // isn't really any reason to do this right now, but it should be an
 // easy change.  Also, if we want to plan other for a different
-// satellite, but still just one satellite, you can just change this
+// satellite, but still just one satellite, we can just change this
 // string.
 const char *planner_satellite = "ALOS";
 
@@ -33,9 +33,11 @@ typedef struct mode_info_struct
     double look_max;
     double look_incr;
 } ModeInfo;
-ModeInfo *modes=NULL;
-int num_modes=-1;
 
+static ModeInfo *modes=NULL;
+static int num_modes=-1;
+
+// these two enums are for the treeview list of found acquisitions
 enum
 {
   COL_COLOR = 0,
@@ -61,13 +63,14 @@ enum
   SORTID_DURATION
 };
 
+// Here is the treeview's storage structure
 static GtkTreeModel *liststore = NULL;
 
+// splits a string into two pieces, stuff before the separater character
+// and the stuff after it.  The separater character is not included in
+// either string
 static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
 {
-  // splits a string into two pieces, stuff before the separater character
-  // and the stuff after it.  The separater character is not included in
-  // either string
   char *str = STRDUP(str_in);
   char *s1 = MALLOC(sizeof(char)*(strlen(str)+1));
   char *s2 = MALLOC(sizeof(char)*(strlen(str)+1));
@@ -94,6 +97,9 @@ static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
   FREE(str);
 }
 
+// callback for the found acquisition grid, when a user clicks on a column
+// heading to change the sort.  This is called by the GTK treeview code,
+// with pointers to two rows -- we have to return which should go first
 int sort_compare_func(GtkTreeModel *model,
                       GtkTreeIter *a, GtkTreeIter *b,
                       gpointer userdata)
@@ -274,6 +280,9 @@ static void update_look()
     put_string_to_label("look_angle_info_label", buf);
 }
 
+// checkbutton callback -- updates the boolean entry in the row
+// structure, which will then update the treeview (thus checking or
+// unchecking the box)
 extern int ran_cb_callback;
 SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
                                  char *path_str, gpointer data)
@@ -291,9 +300,12 @@ SIGNAL_CALLBACK void cb_callback(GtkCellRendererToggle *cell,
   gtk_tree_path_free(path);
 
   ran_cb_callback = TRUE;
+
+  // refresh the main window, to show/hide the newly selected pass
   fill_big(curr);
 }
 
+// TLE info label is in the "setup" tab
 static void populate_tle_info()
 {
     char *tle_filename = find_in_share("tle");
@@ -373,7 +385,9 @@ void setup_planner()
         add_to_combobox("mode_combobox", names[i]);
     }
 
-    FREE(names); // don't free the pointed-to strings in this array
+    // we don't free the pointed-to strings in this array, they are now
+    // owned by the static "modes" array
+    FREE(names); 
     FREE(min_looks);
     FREE(max_looks);
     FREE(look_incrs);
@@ -400,7 +414,7 @@ void setup_planner()
                            G_TYPE_STRING,   // stop lat -- hidden
                            G_TYPE_STRING,   // duration
                            G_TYPE_STRING,   // orbit direction
-                           G_TYPE_STRING);  // index (in g_polys) -- hidden
+                           G_TYPE_STRING);  // index (into g_polys) -- hidden
 
     liststore = GTK_TREE_MODEL(ls);
     GtkWidget *tv = get_widget_checked("treeview_planner");
@@ -516,6 +530,8 @@ void setup_planner()
     gtk_tree_selection_set_mode(gtk_tree_view_get_selection(GTK_TREE_VIEW(tv)),
                                 GTK_SELECTION_MULTIPLE);
 
+    // Hook up sort function to all the sortable rows, passing as "user_data"
+    // the SORTID_ enum, indicating which column is the sort col
     GtkTreeSortable *sortable = GTK_TREE_SORTABLE(liststore);
     gtk_tree_sortable_set_sort_func(sortable, SORTID_DATE, sort_compare_func,
                                     GINT_TO_POINTER(SORTID_DATE), NULL);
@@ -568,18 +584,17 @@ void setup_planner()
 
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Feb 26 2008)");
+    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (alpha build - Feb 28 2008)");
 
     // update look angle info label
     update_look();
 }
 
+// returns true if that row # in the found acquisitions is checked
+// return false if we aren't running the planner, or the row # is
+// not checked
 int row_is_checked(int row)
 {
-  // returns true if that row # in the found acquisitions is checked
-  // return false if we aren't running the planner, or the row # is
-  // not checked
-
   int ret = FALSE;
   if (in_planning_mode) {
     if (row <= gtk_tree_model_iter_n_children(liststore, NULL)) {
