@@ -1,9 +1,9 @@
 
-New MapReady v1.x Release Procedure Instructions:
-===================================================
+The User Tool Development Group's Release Procedure Instructions:
+=================================================================
 
-The RPM Build Procedure:
--------------------------
+MapReady v1.x RPM Build Procedure:
+----------------------------------
 Note: The following example assumes version 3.2.10, subversion
   revision 6472, and a work folder at ~/asf.
 
@@ -198,7 +198,7 @@ doc
      commit the change to the repository.
 
 
-The MapReady Windows Release Build Procedure:
+MapReady v1.x Windows Release Build Procedure:
 ----------------------------------------------
     Notes:
       - The installer package is now called "mapreadyPackageInstall<VV>.nsi"
@@ -275,450 +275,210 @@ The MapReady Windows Release Build Procedure:
     its there and waiting for him!
 
 
-SAR Training Processor (STP) Release Build Instructions:
----------------------------------------------------------
 
- Note: The following assumes that you perform a Subversion
-   export as described in the RPM build instructions
-   above and that you are familiar with the RPM build
-   procedure ...this procedure is more brief as a result.
+SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
+-------------------------------------------------------------
 
- 1. You may still need to edit
-    ~/asf/svn-r6472/asf_tools/make_support/master_program_list as
-    described in the RPM build instructions above.  It could be that
-    doing this correctly could avoid KLUDGE #2 ?!?!
+* Check out the branched or trunk code to be released to a directory
+  (e.g.~/asf/asf_tools). NOTE: You will perform an 'svn export' to obtain
+  a copy of the tools for building the release later in this procedure.
+    Trunk:
+    > svn co svn+ssh://svn/svn/asf_tools/trunk asf_tools
+    Or Branch:
+    > svn co svn+ssh://svn/svn/asf_tools/branches/stp_v?-?-x asf_tools
 
- 2. Make sure DEBUG_BUILD is not set to any particular debug level:
+* Update STP_VERSION in src/stp/stp.c
 
-      unset DEBUG_BUILD
+* Tag the repository:
+    Trunk:
+    > svn copy svn+ssh://svn/svn/asf_tools/trunk \
+               svn+ssh://svn/svn/asf_tools/tags/stp_v?-?-?
+    Or Branch:
+    > svn copy svn+ssh://svn/svn/asf_tools/branches/stp_v?-?-x \
+               svn+ssh://svn/svn/asf_tools/tags/stp_v?-?-?
 
- 3. Update STP_VERSION in src/stp/ardop_gui.c
+* Create a clean directory where you will produce the build (etc),
+  for example:
 
- 4. Tag the repository:
-      svn copy https://svn/svn/repos/asf_tools/trunk
-               https://svn/svn/repos/asf_tools/tags/stp_vX-X-X
+    > mkdir ~/asf/svn-r<REVISION#>
 
- 5. Create a clean directory, for example:
-      mkdir ~/asf/svn-rXXXX
-      cd ~/asf/svn-rXXXX
+* Export a copy of the release in the work directory:
 
- 6. Update this line in ~/.rpmmacros
-      %_topdir        %(echo $HOME)/asf/svn-rXXXX/release
+    > cd ~/asf/svn-r<REVISION#>
+    > svn export svn+ssh://svn/svn/asf_tools/tags/stp_v?-?-? asf_tools
 
- 7. Export the tagged repository:
-      svn export
-      https://svn/svn/repos/asf_tools/tags/stp_vX-X-X asf_tools
+* Check out autotar and rpmbuild into the work directory.
 
- 8. ** KLUDGE #1 **
-    Edit asf_tools/Makefile.in, the MODULES section should be changed to:
+    > cd ~/asf/svn-r<REVISION#>
+    > svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
+    > svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
-    MODULES = \
-      src/asf \
-      src/libasf_proj \
-      src/asf_meta \
-      src/asf_odl \
-      src/asf_fft \
-      src/libifm \
-      src/libasf_ardop \
-      src/ardop \
-      src/stp \
-      src/multilook \
-      src/c2p \
-      src/convert2jpeg \
-      src/stats
+* Make working directories for autotar:
 
-    Get rid of the 'projections' stuff in the install target.
+    > cd ~/asf/svn-r<REVISION#>
+    > mkdir -p release/tar_filelist
+    > mkdir -p release/tar
 
- 9. Check out the important parts of the release directory:
-      svn co https://svn/svn/repos/release/trunk/autotar release/autotar
-      svn co https://svn/svn/repos/release/trunk/rpmbuild release/rpmbuild
-      mkdir -p release/tar_filelist release/tar/stp
+* Create the source.stp_package file:
 
- 10. You may need to manually add
+    > cd ~/asf/svn-r<REVISION#>/asf_tools/make_support
+    > make
+    > ./makemake
 
-      stp { BINS ardop }
+* Run the autotar script:
 
-    to the master_program_list at the end of the PROGRAMS section.
+    > cd ~/asf/svn-r<REVISION#>/release/autotar
+    > ./tarfile src ~/asf/svn-r<REVISION#> stp_package
 
- 11. Create the source.stp file:
-      cd asf_tools/make_support; make; ./makemake; cd -
+* Run the rpmprep script:
 
-// tcl/tk is deprecated
-// 12. ** KLUDGE #2 **
-//
-//    Remove tcl/Tk gzips from the archive
-//
-//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
+    > cd ~/asf/svn-r<REVISION#>/release/autotar
+    > ./rpmprep stp_package stp
 
- 13. ** KLUDGE #3 **
+* Copy an older .spec file to the new one:
 
-      cd release/autotar
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
+    > cp <old .spec file> stp-?.?.?-1.spec
 
-    Edit release/autotar/source.stp, adding these items:
+* Edit the new .spec file (stp-?.?.?-1.spec) to use the correct version.
+  The version number to be edited should be on line 2:
 
-      external
-      src/ardop
-      src/libasf_ardop
-      src/libifm
-      src/multilook
-      src/c2p
-      src/convert2jpeg
-      src/convert_meta
-      src/stats
+    Text chunk:
+      Summary: ASF SAR Training Processor
+      Name: stp
+      Version: ?.?.?
+      Release: 1
+      License: BSD
 
- 14. Run the autotar script:
+* If you have never copied the .rpmmacros and .rpmrc files to your
+  home directory, then do so now:
 
-      ./tarfile src ~/asf/svn-rXXXX stp
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
+    > cp dot.rpmmacros ~/.rpmmacros
+    > cp dot.rpmrc ~/.rpmrc
 
- 15. Edit the .spec file in ../rpmbuild to use the correct version,
-     then rename the file to match.
+* Edit ~/.rpmmacros to update the top directory to the 'release' folder.
+  Find the %_topdir line and  edit as follows:
 
-      cd ../rpmbuild
-      vi stp-1.0.0-1.spec
-      mv stp-1.0.0-1.spec stp-X.X.X-1.spec
-
- 16. Build the rpm:
-      rpmbuild -ba stp-X.X.X-1.spec
-
-Windows STP Build Release Procedure:
--------------------------------------
-
- Notes:
-
-  - When checking out the windows version, you might have to manually
-    edit make_support/system_rules (after running configure) to make
-    sure it has:
-
-           JPEG_LIBS = $(LIBDIR)/libjpeg.a
-
-     and NOT
-
-           JPEG_LIBS = -ljpeg
-
-     in it.
-
- 1. The release procedure is the same as described above for the ASF MapReady
-    release.
-
-
-
-===================================================================================
-===================================================================================
-Old instructions follow:
------------------------------------------------------------------------------
- 0. You still have to do step (1) of the old procedure, I think.
-    Could be that doing it correctly would avoid KLUDGE #2 ?!?!
-
- 1. Update include/asf_version.h
-
- 2. Tag the repository:
-      svn copy svn+ssh://svn/svn/asf_tools/trunk
-               svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-X
-
-    [[ tagging a branched revision --
-      svn copy svn+ssh://svn/svn/asf_tools/branches/convert_vX-X-X
-               svn+ssh://svn/svn/asf_tools/tags/convert_vX-X-X
-    ]]
-
- 3. Create a clean directory, for example:
-      mkdir ~/asf/svn-rXXXX
-      cd ~/asf/svn-rXXXX
-
- 3.5. *** Important thing you only need to do once ***
-        In the release/rpmbuild directory (checked out in step 7) there are
-        two files that you need to put into your home directory:
-           cp dot.rpmmacros ~/.rpmmacros
-           cp dot.rpmrc ~/.rpmrc
-        You may need to skip step 4 for now, then do this step (3.5) after
-        you finish step 7, then do step 4.  Once done, won't need to be done
-        again.
-      ***
-
- 4. Update this line in ~/.rpmmacros
-      %_topdir        %(echo $HOME)/asf/svn-rXXXX/release
-
- 5. Export the tagged repository:
-      svn export
-      svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-X asf_tools
-
- 6. ** KLUDGE #1 **
-    Edit asf_tools/Makefile.in, eliminate the following from MODULES:
-      src/ardop
-      src/llh2ls
-      src/diffimage
-
- 7. Check out the important parts of the release directory:
-      svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
-      svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
-      mkdir -p release/tar_filelist release/tar/convert
-
- 8. Create the source.convert file:
-      cd asf_tools/make_support; make; ./makemake; cd -
-
-// tcl/tk is deprecated
-//  8A. ** KLUDGE #2 **
-//    Remove tcl/Tk gzips from the archive
-//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
-
- 9. ** KLUDGE #3 **
-      cd release/autotar
-    Edit release/autotar/source.convert, adding these items:
-src/libasf_insar
-external
-src/asf_convert_gui
-src/metadata_gui
-src/gr2sr
-src/sr2gr
-src/mosaic
-src/refine_geolocation
-src/asf_terrcorr
-src/meta2envi
-src/resample
-src/fill_holes
-src/asf_view
-src/to_sr
-src/convert2vector
-src/deskew
-src/diffimage
-src/create_thumbs
-src/shift_geolocation
-doc
-
-10. Run the autotar script:
-      ./tarfile src ~/asf/svn-rXXXX mapready
-
-11. Run the rpmprep script:
-      ./rpmprep mapready asf_mapready
-
-12. Edit the .spec file in ../rpmbuild to use the correct version,
-    then rename the file to match.
-      cd ../rpmbuild
-      vi asf_mapready-3.2.0-1.spec
-      mv asf_mapready-3.2.0-1.spec asf_mapready-3.2.X-1.spec
-
-13. Build the rpm:
-      rpmbuild -ba asf_mapready-3.2.X-1.spec
-
-14. Create tarballs of the rpms.  The binary rpm will also contain the
-    README_rpm.txt file from ../../asf_tools.
-      ./tarrpms asf_mapready mapready
-
-15. Put the built files on dq:
-
-      mkdir ~/builds/v3.2.X
-      cp RPMS/mapready-3.2.X-rpm.* Source/mapready-3.2.X-src.* ~/builds/v.3.2.X
-      chmod 755 ~/builds/v3.2.X ; chmod 644 ~/builds/v3.2.X/*
-
-16. Bump the version in include/asf_version.h, add "-dev" to the end.
-
-17. The windows procedure is the same as described below.  (Step 10)
-    Notes:
-      - I build akdem_grab manually.  From asf_tools directory:
-            cd prototype/src/usgs_seamless
-            make
-            cp akdem_grab.exe ../../../bin
-        If "make" fails because of an error in osl/socket.cpp (it did for me)
-        then you probably need to do this:
-            vi ../osl/socket.cpp
-            --> comment out line 35: typedef int socklen_t;
-
-      - The installer package is now called "convertPackageInstall<VV>.nsi"
-        where <VV> is the version number: e.g., "convertPackageInstall32.nsi"
-
-Older instructions follow:
------------------------------------------------------------------------------
-Creating a tool package
-
-Note that for any of this to work on windows, you must have cygwin
-installed.
+    %_topdir      %(echo $HOME)/asf/svn-r<REVISION#>/release
 
- 1. If you want to meddle with what the package will include you'll need to
-    edit asf_tools/make_support/master_program_list. That is where all the
-    tools to be compiled are listed with other tools that they depend on.
-    There's also a CATEGORIES category. You can make special groupings of tools
-    in CATEGORIES section (eg convert which includes asf_convert,
-    asf_convert_gui, asf_export, and asf_import).
+* Make sure DEBUG_BUILD is not set to any particular debug level:
 
- 2. Update include/asf_version.h to reflect correct package version numbers.
-
- 3. Commit all necessary changes to the CVS repository.  Especially
-    important is committing the version number change!
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
+    > unset DEBUG_BUILD
 
- 4. Apply cvs tags if so desired. Say you're packaging your brand spanking new
-    version 2.5 of the convert package. Make sure you've removed that pesky
-    asf_tools/unsupported directory, then do:
-    /dir/that/asf_tools/resides/in> cvs rtag convert_v2-5 asf_tools
+* Build the rpm:
 
- 5. Now, on every platform that you want to create a package for, grab the
-    tools from CVS. You'll need to do this in a directory where the the
-    'release' directory resides. If you tagged stuff do:
-    /base/dir> cvs export -r convert_v2-5 asf_tools
-    if you didn't tag stuff (which you should have done!):
-    /base/dir> cvs export -D now asf_tools
+    > rpmbuild -ba stp-?.?.?-1.spec
 
- 6. Remember, you want to have the tools in the same directory that the release
-    tree is in (so you've got /base/dir/asf_tools and /base/dir/release). With
-    that in mind cd into asf_tools and run the config script.
-    /base/dir> cd asf_tools
-    /base/dir/asf_tools> ./config
-
- 7. Since we're making a release here, you want and optimized version, not a
-    debugging version.
-    /base/dir/asf_tools> unset DEBUG_BUILD
-
- 8. Okay we're ready to build:
-    /base/dir/asf_tools> make
-
- 9.  Now that the tools are built, cd to the release/autotar directory
-    /base/dir/asf_tools> cd ../release/autotar
-
-10. For Unix:
-
-    This directory has been populated with several binary.* and source.* files.
-    They were written by the config script which uses the program makemake (in
-    asf_tools/make_support). There are also a couple of scripts; tarfile and
-    tarallsource. Tarallsource does exactly as its name implies. The tarfile
-    script uses the binary.* and source.* files to figure out what each package
-    needs to be complete. It creates the <package>.<platform>.<bin|src>.tar.gz
-    file for web distribution. For example, to make the binary distribution of
-    the convert package on linux you'd create the file mapready.linux.bin.tar.gz
-    in /base/dir/release/tar/convert by doing:
-    /base/dir/release/autotar> ./tarfile bin /base/dir mapready
-
-    For windows:
-
-    You must have the Nullsoft installer system installed on the
-    build machine for this build step.
-
-    Edit
-
-      /base/dir/release/windows_installer/convert_package/ConvertPackageInstall
-
-    and update the locations of the tool binaries and the cygwin
-    binaries directories.
-
-    In a widows file manager thingy window, right click on the script
-    we just edited and select 'compile NSIS script'.
-
-    Create a tarball of the generated binary
-
-    Currently we are using the naming scheme:
-       tar czvf mapready.<version_number>.bin.win32.tar.gz
-           ASF_Convert_Setup.exe
-
-    However in the future we hope to start using this one:
-       tar czvf mapready.<version_number>.bin.win32.tar.gz
-           ASF_Convert_Setup.exe
-
-11. The current procedure for delivery onto the web (this procedure
-    could easily change while leaving the rest of this document mostly
-    correct) is to upload to the machine 'seth'.  Login with username
-    'asfsw' and password '[web_g00nz]'.  Then do:
-
-       cd Incoming/
-       mkdir v<version_number>
-
-    Now log back out and do:
-
-       scp <tarball> asfsw@seth.asf.alaska.edu:/Incoming/v<version_number>/
-
-    Now be sure to tell the web monkey (currently Charley Slater) that
-    its there and waiting for him!
-
--------------------------------------------------------------------------------
-STP Instructions!
-
- 0. You still have to do step (1) of the old procedure, I think.
-    Could be that doing it correctly would avoid KLUDGE #2 ?!?!
-
- 1. Update STP_VERSION in src/stp/ardop_gui.c
-
- 2. Tag the repository:
-      svn copy https://svn/svn/repos/asf_tools/trunk
-               https://svn/svn/repos/asf_tools/tags/stp_vX-X-X
-
- 3. Create a clean directory, for example:
-      mkdir ~/asf/svn-rXXXX
-      cd ~/asf/svn-rXXXX
-
- 4. Update this line in ~/.rpmmacros
-      %_topdir        %(echo $HOME)/asf/svn-rXXXX/release
-
- 5. Export the tagged repository:
-      svn export
-      https://svn/svn/repos/asf_tools/tags/stp_vX-X-X asf_tools
-
- 6. ** KLUDGE #1 **
-    Edit asf_tools/Makefile.in, the MODULES section should be changed to:
-
-MODULES = \
-  src/asf \
-  src/libasf_proj \
-  src/asf_meta \
-  src/asf_odl \
-  src/asf_fft \
-        src/libifm \
-  src/libasf_ardop \
-  src/ardop \
-  src/stp \
-        src/multilook \
-        src/c2p \
-        src/convert2jpeg \
-        src/stats
-
-    Get rid of the 'projections' stuff in the install target.
-
- 7. Check out the important parts of the release directory:
-      svn co https://svn/svn/repos/release/trunk/autotar release/autotar
-      svn co https://svn/svn/repos/release/trunk/rpmbuild release/rpmbuild
-      mkdir -p release/tar_filelist release/tar/stp
-
-7A. You may need to manually add
-      stp { BINS ardop }
-    to the master_program_list at the end of the PROGRAMS section.
-
- 8. Create the source.stp file:
-      cd asf_tools/make_support; make; ./makemake; cd -
-
-// tcl/tk has been deprecated
-// 8A. ** KLUDGE #2 **
-//    Remove tcl/Tk gzips from the archive
-//      cd asf_tools/external/work_dir/tcl_tk; rm *.gz; cd -
-
- 9. ** KLUDGE #3 **
-      cd release/autotar
-    Edit release/autotar/source.stp, adding these items:
-external
-src/ardop
-src/libasf_ardop
-src/libifm
-src/multilook
-src/c2p
-src/convert2jpeg
-src/convert_meta
-src/stats
-
-10. Run the autotar script:
-      ./tarfile src ~/asf/svn-rXXXX stp
-
-11. **SKIP**
-
-12. Edit the .spec file in ../rpmbuild to use the correct version,
-    then rename the file to match.
-      cd ../rpmbuild
-      vi stp-1.0.0-1.spec
-      mv stp-1.0.0-1.spec stp-X.X.X-1.spec
-
-13. Build the rpm:
-      rpmbuild -ba stp-X.X.X-1.spec
-
-
-17. The windows procedure is the same as described below.  Notes:
-
-  A. When checking out the windows version, you might have to manually
-     edit make_support/system_rules (after running configure) to make
-     sure it has:
-           JPEG_LIBS = $(LIBDIR)/libjpeg.a
-     and NOT
-           JPEG_LIBS = -ljpeg
+* Collect rpm & source tarball for Linux & Win32 distribution using the
+  tarrpms script. This should put all the *.tar.gz & *.zip files you need
+  in ~/asf/svn-r<REVISION#>/release/rpmbuild/Source and
+  ~/asf/svn-r<REVISION#>/release/rpmbuild/RPMS:
+
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
+    > ./tarrpms stp stp
+
+* Copy all the packages to our favorite archive location. The files you're
+  sending should look something like this:
+       stp-?.?.?-rpm.tar.gz
+       stp-?.?.?-rpm.zip
+       stp-?.?.?-src.tar.gz
+       stp-?.?.?-src.zip
+
+    > cd ~/asf/svn-r<REVISION#>/release/rpmbuild
+    > scp ./dist/* dq:/stor/dq/release_builds/stp/?.?.?
+
+* Let Data Quality know where stuff is for validation.
+    DQ Lead:       Wade Albright (walbrigh@asf.alaska.edu, x1985)
+    Master tester: Charley Slater (cslater@asf.alaska.edu, x5633)
+
+* If it's been validated let the web person know to deliver it to the web
+    Jeannine Haney <jhaney@asf.alaska.edu, x5793)
+
+* Rejoice! For this task is done!
+
+
+
+SAR TRAINING PROCESSOR (STP) WINDOWS RELEASE PROCEDURE
+------------------------------------------------------
+
+NOTE: it is assumed that you have already tagged the repository in preparation
+      for this release you are about to do. The tagging procedure takes place
+      in the first few steps source & rpm release procedure in case you'd like
+      a reference.
+
+* Make sure you've got these programs installed:
+     * Cygwin
+     * Nullsoft installer system
+     * Tortoise SVN (or the svn that comes with cygwin,
+       but only use one of these svns for your checkins, checkouts, etc,
+       because they don't play very well together)
+
+* Open a Cygwin terminal
+
+* Check out the tagged version of the stp for release.
+
+   > svn export svn+ssh://svn/svn/asf_tools/tags/stp_v?-?-? asf_tools
+
+* If you've got another code tree that has already been built, and you're sure
+  that the external libraries you have built already are the same as the
+  tagged version you're about to check out, you can copy that into your
+  tagged tree.
+
+   > cp -r prebuilt/asf_tools/external tagged/asf_tools/.
+
+* Make sure DEBUG_BUILD is not set to any particular debug level:
+
+    > unset DEBUG_BUILD
+
+* Build the ASF tools:
+
+      cd <path>/asf_tools
+      make clean
+      make
+
+* Edit
+  <path>/release/trunk/windows_installer/stp_package/stpPackageInstall<??>.nsi
+  where <??> is the version number (e.g. stpPackageInstall10.nsi) and update
+  the locations of the tool binaries and the cygwin binaries directories. Look
+  for the ASF_BINS_LOC and CYGWIN_BINS_LOC definitions respectively.
+
+* Build the Windows self-installing executable:
+
+    a) In a Windows file manager window, right click on the script
+       that you edited in the previous step and select 'Compile NSIS script'
+
+    b) The installer is going to grab the cygwin1.dll file from
+       ../support/cygwin (along with a bunch of other dlls).  You
+       must test the self-installer on a Windows machine that does
+       NOT have Cygwin installed on to verify that the cygwin1.dll
+       file from this folder works with our code.  If not, then you
+       should replace this cygwin1.dll file with the one from your
+       Cygwin installation (c:/cygwin/bin/cygwin1.dll) and try
+       again.  Ideally, you would also test the installer on a
+       machine WITH Cygwin installed as well.
+
+* Create a tarball and zip of the generated binary. In Unix-land you can use
+  tar czf for the tar.gz and the zip command for the .zip. On windows Winzip
+  can take care of the .zip or 7zip can do both.
+  The file to package should be at
+  <path>\release\windows_installer\stp_package\STP_Setup.exe
+  The tarballed and zipped file names should be formatted as follows where
+  the ?s are version numbers:
+
+    stp-?.?.?-win32.tar.gz
+    stp-?.?.?-win32.zip
+
+* Copy the packages (winSCP or FileZilla) to our archive location, currently:
+    dq:/stor/dq/release_builds/stp/?.?.?
+
+* Let Data Quality know where stuff is for validation.
+    DQ Lead:       Wade Albright (walbrigh@asf.alaska.edu, x1985)
+    Master tester: Charley Slater (cslater@asf.alaska.edu, x5633)
+
+* If it's been validated let the web person know to deliver it to the web.
+    Jeannine Haney <jhaney@asf.alaska.edu, x5793)
+
+* Rejoice! For this task is done!
 
