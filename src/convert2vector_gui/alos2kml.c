@@ -300,11 +300,11 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info)
   fprintf(fp, "    <outerBoundaryIs>\n");
   fprintf(fp, "     <LinearRing>\n");
   fprintf(fp, "      <coordinates>\n");
-  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_lulat, info->scn_lulon);
-  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_rulat, info->scn_rulon);
-  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_rdlat, info->scn_rdlon);
-  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_ldlat, info->scn_ldlon);
-  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_lulat, info->scn_lulon);
+  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_lulon, info->scn_lulat);
+  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_rulon, info->scn_rulat);
+  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_rdlon, info->scn_rdlat);
+  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_ldlon, info->scn_ldlat);
+  fprintf(fp, "       %.12f,%.12f,7000\n", info->scn_lulon, info->scn_lulat);
   fprintf(fp, "      </coordinates>\n");
   fprintf(fp, "     </LinearRing>\n");
   fprintf(fp, "    </outerBoundaryIs>\n");
