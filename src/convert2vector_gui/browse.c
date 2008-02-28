@@ -23,6 +23,33 @@ static GtkWidget *output_browse_widget = NULL;
 static void add_input_file(char *file)
 {
     put_string_to_entry("input_file_entry", file);
+
+    // set the output directory, if it is currently blank, to the
+    // same as the input directory
+    if (strlen(get_string_from_entry("output_directory_entry"))==0) {
+      char *dir = get_dirname(file);
+      put_string_to_entry("output_directory_entry", dir);
+      free(dir);
+    }
+
+    // change output filename, regardless
+    char *ext=NULL;
+    int output_format = get_combo_box_item("output_format_combobox");
+    switch (output_format) {
+      case OUTPUT_FORMAT_KML:
+        ext=".kml";
+        break;
+      default:
+        break;
+    }
+
+    if (ext) {
+      char *s = get_filename(file);
+      char *out_file = appendExt(s, ext);
+      put_string_to_entry("output_file_entry", out_file);
+      free(out_file);
+      free(s);
+    }
 }
 
 // called when "cancel" clicked on the GtkFileChooser
