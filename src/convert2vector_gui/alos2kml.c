@@ -129,10 +129,10 @@ static int parse_alos_csv_line(char *line, AlosCsvInfo *info)
     // pathno
     p = my_parse_int(p, &info->pathno);
     if (!p) return FALSE;
-    if (info->pathno > 671 || info->pathno < 0) {
-      msg("  Invalid path number: %d\n", info->pathno);
-      return FALSE;
-    }
+    //if (info->pathno > 671 || info->pathno < 0) {
+    //  msg("  Invalid path number: %d\n", info->pathno);
+    //  return FALSE;
+    //}
 
     // cenflmn
     p = my_parse_int(p, &info->cenflmn);
@@ -147,7 +147,9 @@ static int parse_alos_csv_line(char *line, AlosCsvInfo *info)
     if (!p) return FALSE;
     if (info->orbitdir!='A' && info->orbitdir!='D') {
       msg("  Invalid orbit direction: %c\n", info->orbitdir);
-      return FALSE;
+      //  Make this non-fatal for now ...
+      //return FALSE;
+      info->orbitdir='?';
     }
 
     // scn_cdate
@@ -279,8 +281,12 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info)
   fprintf(fp, "<strong>Path</strong>: %d<br>\n", info->pathno);
   fprintf(fp, "<strong>Date/Time</strong>: %s %s<br>\n",
           info->scn_cdate, info->scn_ctime);
-  fprintf(fp, "<strong>Orbit Dir</strong>: %s<br>\n",
-          info->orbitdir=='A'?"Ascending":"Descending");
+  if (info->orbitdir=='A')
+    fprintf(fp, "<strong>Orbit Dir</strong>: Ascending<br>\n");
+  else if (info->orbitdir=='D')
+    fprintf(fp, "<strong>Orbit Dir</strong>: Descending<br>\n");
+  else
+    fprintf(fp, "<strong>Orbit Dir</strong>: Unknown<br>\n");
   fprintf(fp, "  ]]></description>\n");
   fprintf(fp, "  <name>%s</name>\n", info->scnid);
   fprintf(fp, "  <LookAt>\n");
