@@ -87,8 +87,10 @@ static Polygon *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
                     int target_zone, double target_lat, double target_lon)
 {
-  assert(look_angle >= D2R*(bmi->min_look_angle-.0001));
-  assert(look_angle <= D2R*(bmi->max_look_angle+.0001));
+  if (bmi->min_look_angle>0) {
+    assert(look_angle >= D2R*(bmi->min_look_angle-.0001));
+    assert(look_angle <= D2R*(bmi->max_look_angle+.0001));
+  }
 
   double center_lat, center_lon, center_x, center_y;
   get_target_latlon(st, look_angle, &center_lat, &center_lon);

@@ -28,8 +28,7 @@ static int get_format()
 // mapping between combobox entry indexes and the #defines
 static int get_what_to_save()
 {
-    GtkWidget *dcb = get_widget_checked("data_combobox");
-    int what = gtk_combo_box_get_active(GTK_COMBO_BOX(dcb));
+    int what = get_combo_box_item("data_combobox");
 
     // I know that at the moment the value of "what" corresponds with
     // these defined values...
@@ -121,7 +120,7 @@ static void set_defaults(ImageInfo *ii)
     FREE(dir);
 
     // default data to save (Pixel Values)
-    set_combo_box_item_checked("data_combobox", 0);
+    set_combo_box_item("data_combobox", 0);
 }
 
 static void compute_extent(meta_parameters *meta,

@@ -63,7 +63,8 @@ void set_font(void);
 /* utility.c */
 void clear_combobox(const char *widget_name);
 void add_to_combobox(const char *widget_name, const char *txt);
-void set_combo_box_item_checked(const char *widget_name, gint index);
+void set_combo_box_item(const char *widget_name, gint index);
+int get_combo_box_item(const char *widget_name);
 char *get_band_combo_text(meta_parameters *meta, const char *widget_name);
 void rb_select(const char *widget_name, gboolean is_on);
 double get_double_from_entry(const char *widget_name);

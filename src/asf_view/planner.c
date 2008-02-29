@@ -32,6 +32,7 @@ typedef struct mode_info_struct
     double look_min;
     double look_max;
     double look_incr;
+    char allowed_look_angles[64];
 } ModeInfo;
 
 static ModeInfo *modes=NULL;
@@ -272,12 +273,41 @@ static void clear_found()
 
 static void update_look()
 {
-    GtkWidget *cb = get_widget_checked("mode_combobox");
-    int i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+    int i = get_combo_box_item("mode_combobox");
 
-    char buf[64];
-    sprintf(buf, "(%.1f - %.1f)", modes[i].look_min, modes[i].look_max);
-    put_string_to_label("look_angle_info_label", buf);
+    if (strlen(modes[i].allowed_look_angles) > 0) {
+      assert(modes[i].look_max < 0 &&
+             modes[i].look_min < 0 &&
+             modes[i].look_incr < 0);
+
+      show_widget("look_angle_entry_hbox", FALSE);
+      show_widget("look_angle_combobox_hbox", TRUE);
+
+      set_combo_box_item("look_angle_combobox", 0);
+      clear_combobox("look_angle_combobox");
+
+      char *p = modes[i].allowed_look_angles;
+      while (p) {
+        char *q = strchr(p+1, ',');
+        if (q) *q = '\0';
+        add_to_combobox("look_angle_combobox", p);
+        if (q) *q = ',';
+        p = q;
+        if (p) ++p;
+      }
+
+      set_combo_box_item("look_angle_combobox", 0);
+    }
+    else {
+      assert(strlen(modes[i].allowed_look_angles) == 0);
+      
+      show_widget("look_angle_entry_hbox", TRUE);
+      show_widget("look_angle_combobox_hbox", FALSE);
+
+      char buf[64];
+      sprintf(buf, "(%.1f - %.1f)", modes[i].look_min, modes[i].look_max);
+      put_string_to_label("look_angle_info_label", buf);
+    }
 }
 
 // checkbutton callback -- updates the boolean entry in the row
@@ -367,10 +397,11 @@ void setup_planner()
     show_widget("viewer_notebook", FALSE);
 
     // populate the "Mode" dropdown from the "beam_modes.txt" file
-    char **names;
+    char **names, **allowed_look_angles;
     double *min_looks, *max_looks, *look_incrs;
     get_all_beam_modes(planner_satellite, &num_modes,
-                       &names, &min_looks, &max_looks, &look_incrs);
+                       &names, &min_looks, &max_looks, &look_incrs,
+                       &allowed_look_angles);
 
     assert(num_modes>0);
 
@@ -382,21 +413,29 @@ void setup_planner()
         modes[i].look_min = min_looks[i];
         modes[i].look_max = max_looks[i];
         modes[i].look_incr = look_incrs[i];
+        if (allowed_look_angles[i])
+          strcpy(modes[i].allowed_look_angles, allowed_look_angles[i]);
+        else
+          strcpy(modes[i].allowed_look_angles, "");
         add_to_combobox("mode_combobox", names[i]);
     }
 
-    // we don't free the pointed-to strings in this array, they are now
-    // owned by the static "modes" array
+    // we don't free the pointed-to strings in the "names" array, they are now
+    // owned by the static "modes" array.  This isn't true of the allowed
+    // look angles array -- that one is a char buffer in the mode table
     FREE(names); 
     FREE(min_looks);
     FREE(max_looks);
     FREE(look_incrs);
+    for (i=0; i<num_modes; ++i)
+      FREE(allowed_look_angles[i]);
+    FREE(allowed_look_angles);
 
     // by default select ... something
-    set_combo_box_item_checked("mode_combobox", 0);
+    set_combo_box_item("mode_combobox", 0);
 
     // by default search for both ascending and descending
-    set_combo_box_item_checked("orbit_direction_combobox", 0);
+    set_combo_box_item("orbit_direction_combobox", 0);
 
     // Now, setting up the "Found Acquisitions" table
     GtkTreeViewColumn *col;
@@ -568,7 +607,7 @@ void setup_planner()
     //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
     center_line = crosshair_line;
     center_samp = crosshair_samp;
-    set_combo_box_item_checked("mode_combobox", 1);
+    set_combo_box_item("mode_combobox", 1);
     put_string_to_entry("lat_min_entry", "-3.16");
     put_string_to_entry("lat_max_entry", "0.8");
     put_string_to_entry("lon_min_entry", "31.11");
@@ -693,35 +732,65 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     strcpy(errstr, "");
 
     // beam mode
-    GtkWidget *cb = get_widget_checked("mode_combobox");
-    i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+    i = get_combo_box_item("mode_combobox");
     char *beam_mode = modes[i].mode;
 
     // look angle
-    double look_angle = get_double_from_entry("look_angle_entry");
-    if (look_angle < modes[i].look_min)
-      strcat(errstr, "Look angle smaller than minimum.\n");
-    else if (look_angle > modes[i].look_max)
-      strcat(errstr, "Look angle larger than maximum.\n");
-    else
-    {
-      // clamp to nearest allowed look angle (per increment)
-      j=0;
-      double a = modes[i].look_min, min_diff=999, closest=-1;
-      while (a < modes[i].look_max + .0001) {
-        a = modes[i].look_min + (double)j*modes[i].look_incr;
-        double diff = fabs(look_angle - a);
-        if (diff<min_diff) {
-          min_diff = diff;
-          closest = a;
-        } 
-        ++j;
+    // have to figure out which widget to check -- entry, or combo?
+    // to do that, check if the allowed look angles string is empty
+    double look_angle=-1;
+    if (strlen(modes[i].allowed_look_angles) > 0) {
+      int look_index = get_combo_box_item("look_angle_combobox");
+      int current_index = 0;
+      // scan through the allowed look angle string to find the one with
+      // the index that matches the drop-down
+      char *p = modes[i].allowed_look_angles;
+      while (p) {
+        char *q = strchr(p+1, ',');
+        if (q) *q = '\0';
+        if (current_index == look_index) {
+          look_angle = atof(p);
+          if (q) *q = ',';
+          break;
+        }
+        if (q) *q = ',';
+        p = q;
+        if (p) ++p;
+        ++current_index;
       }
-      assert(closest > 0);
-      //printf("Look angle: %.8f -> %.8f\n", look_angle, closest);
-      put_double_to_entry_fmt("look_angle_entry", closest, "%.1f");
-      look_angle = closest*D2R;
+      // Make sure all that string stuff worked
+      if (look_angle <= 0)
+        strcat(errstr, "Internal error: Couldn't find selected look angle.\n");
+      else
+        look_angle *= D2R;
     }
+    else {
+      look_angle = get_double_from_entry("look_angle_entry");
+      if (look_angle < modes[i].look_min)
+        strcat(errstr, "Look angle smaller than minimum.\n");
+      else if (look_angle > modes[i].look_max)
+        strcat(errstr, "Look angle larger than maximum.\n");
+      else
+      {
+        // clamp to nearest allowed look angle (per increment)
+        j=0;
+        double a = modes[i].look_min, min_diff=999, closest=-999;
+        while (a < modes[i].look_max + .0001) {
+          a = modes[i].look_min + (double)j*modes[i].look_incr;
+          double diff = fabs(look_angle - a);
+          if (diff<min_diff) {
+            min_diff = diff;
+            closest = a;
+          } 
+          ++j;
+        }
+        assert(closest != -999);
+        //printf("Look angle: %.8f -> %.8f\n", look_angle, closest);
+        put_double_to_entry_fmt("look_angle_entry", closest, "%.1f");
+        look_angle = closest*D2R;
+      }
+    }
+    printf("Look angle: %f\n", look_angle*R2D);
 
     // get the start/end dates
     long startdate = (long)get_int_from_entry("start_date_entry");
@@ -879,8 +948,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     }
 
     // pass type
-    cb = get_widget_checked("orbit_direction_combobox");
-    i = gtk_combo_box_get_active(GTK_COMBO_BOX(cb));
+    i = get_combo_box_item("orbit_direction_combobox");
     switch (i) {
       default:
       case 0: pass_type = ASCENDING_OR_DESCENDING; break;

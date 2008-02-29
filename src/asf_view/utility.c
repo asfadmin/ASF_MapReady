@@ -33,10 +33,16 @@ void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
     gtk_entry_set_max_length(e, maxlen);
 }
 
-void set_combo_box_item_checked(const char *widget_name, gint index)
+void set_combo_box_item(const char *widget_name, gint index)
 {
     GtkWidget *ddl = get_widget_checked(widget_name);
     gtk_combo_box_set_active(GTK_COMBO_BOX(ddl), index);
+}
+
+int get_combo_box_item(const char *widget_name)
+{
+    GtkWidget *ddl = get_widget_checked(widget_name);
+    return (int)gtk_combo_box_get_active(GTK_COMBO_BOX(ddl));
 }
 
 char *get_band_combo_text(meta_parameters *meta, const char *widget_name)

@@ -79,7 +79,7 @@ static void populate_combo_csv(const char *widget_name, char *csv, int i)
 
     // select the correct item
     if (i<0) i=0;
-    set_combo_box_item_checked(widget_name, i);
+    set_combo_box_item(widget_name, i);
 }
 
 void setup_bands_tab(meta_parameters *meta)

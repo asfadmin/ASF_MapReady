@@ -1,19 +1,34 @@
-# Sequence is:
-#  Satellite,Beam Mode,Min Look Angle,Max Look Angle,Increment,
-#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames
 #
-# Got a lot of this info from 
+# The sequence is:  (fields must be separated by spaces)
+#
+#  Satellite,1,Beam Mode,
+#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames
+#  Min Look Angle,Max Look Angle,Increment
+#
+# -*OR*-
+#
+#  Satellite,2,Beam Mode,
+#  Swath Width (km),Swath Length (km),Swath Length (sec),# Buffer Frames,
+#  Allowable Beam Modes (1 or more, separated by commas)
+#
+# In case 1, the look angle is given as a text box, and checked
+# against the specified min/max, rounded to the nearest value allowed
+# by the increment.
+#
+# In case 2, the look angle is given as a selection list.
+#
+# Got some of this info from 
 #   http://earth.esa.int/object/index.cfm?fobjectid=5194
 #
-ALOS FBS 9.9 50.8 0.1 55 55 8.7 2
-ALOS FBD 9.9 50.8 0.1 55 55 8.7 2
-ALOS DSN 9.9 50.8 0.1 55 55 8.7 2
-ALOS PLR 9.7 26.2 0.1 38 38 6 3
-ALOS WB1 20.1 36.5 0.1 300 300 45 1
-ALOS WB2 20.1 36.5 0.1 300 300 45 1
-#ALOS FBS2 28 380 320 55 1
-#ALOS FBS3 28 370 360 54 1
-#ALOS FBS4 28 370 390 60 1
-#ALOS FBS5 28.3 380 370 56 1
-#ALOS FBS8 34 75 60 8.7 1
-#ALOS FBS11 41 75 65 10.5 1
+ALOS 2 FBS 55 55 8.7 2 21.5,34.3,41.5
+#ALOS 1 FBS 55 55 8.7 2 9.9 50.8 0.1
+ALOS 2 FBD 55 55 8.7 2 41.5
+#ALOS 1 FBD 9.9 50.8 0.1 55 55 8.7 2
+ALOS 1 DSN 55 55 8.7 2 9.9 50.8 0.1
+ALOS 2 PLR 55 55 8.7 2 21.5
+#ALOS 1 PLR 38 38 6 3 9.7 26.2 0.1
+ALOS 1 WB1 300 300 45 1 20.1 36.5 0.1
+ALOS 1 WB2 300 300 45 1 20.1 36.5 0.1
+#ALOS 2 Prism 40 40 6.3 5 -1.5,1.5
+ALOS 1 Prism 40 40 6.3 5 -1.5 1.5 0.1
+ALOS 1 Avnir 70 70 11 1 -44 44 0.1

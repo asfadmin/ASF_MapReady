@@ -1891,6 +1891,7 @@
 
 				  <child>
 				    <widget class="GtkLabel" id="label52">
+				      <property name="height_request">30</property>
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Mode: </property>
 				      <property name="use_underline">False</property>
@@ -1931,6 +1932,7 @@
 
 				  <child>
 				    <widget class="GtkLabel" id="label53">
+				      <property name="height_request">30</property>
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Start Date: </property>
 				      <property name="use_underline">False</property>
@@ -1955,6 +1957,7 @@
 
 				  <child>
 				    <widget class="GtkLabel" id="label54">
+				      <property name="height_request">30</property>
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">End Date: </property>
 				      <property name="use_underline">False</property>
@@ -1979,6 +1982,7 @@
 
 				  <child>
 				    <widget class="GtkLabel" id="label55">
+				      <property name="height_request">30</property>
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Orbit Direction: </property>
 				      <property name="use_underline">False</property>
@@ -2137,6 +2141,7 @@ Descending Only
 
 				  <child>
 				    <widget class="GtkLabel" id="label90">
+				      <property name="height_request">30</property>
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Look Angle:</property>
 				      <property name="use_underline">False</property>
@@ -2160,23 +2165,59 @@ Descending Only
 				  </child>
 
 				  <child>
-				    <widget class="GtkHBox" id="hbox59">
+				    <widget class="GtkVBox" id="vbox17">
 				      <property name="visible">True</property>
 				      <property name="homogeneous">False</property>
 				      <property name="spacing">0</property>
 
 				      <child>
-					<widget class="GtkEntry" id="look_angle_entry">
-					  <property name="width_request">88</property>
+					<widget class="GtkHBox" id="look_angle_entry_hbox">
+					  <property name="height_request">30</property>
 					  <property name="visible">True</property>
-					  <property name="can_focus">True</property>
-					  <property name="editable">True</property>
-					  <property name="visibility">True</property>
-					  <property name="max_length">4</property>
-					  <property name="text" translatable="yes"></property>
-					  <property name="has_frame">True</property>
-					  <property name="invisible_char" translatable="yes">*</property>
-					  <property name="activates_default">False</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkEntry" id="look_angle_entry">
+					      <property name="width_request">88</property>
+					      <property name="visible">True</property>
+					      <property name="can_focus">True</property>
+					      <property name="editable">True</property>
+					      <property name="visibility">True</property>
+					      <property name="max_length">4</property>
+					      <property name="text" translatable="yes"></property>
+					      <property name="has_frame">True</property>
+					      <property name="invisible_char" translatable="yes">*</property>
+					      <property name="activates_default">False</property>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkLabel" id="look_angle_info_label">
+					      <property name="width_request">76</property>
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes"></property>
+					      <property name="use_underline">False</property>
+					      <property name="use_markup">False</property>
+					      <property name="justify">GTK_JUSTIFY_LEFT</property>
+					      <property name="wrap">False</property>
+					      <property name="selectable">False</property>
+					      <property name="xalign">0.5</property>
+					      <property name="yalign">0.5</property>
+					      <property name="xpad">0</property>
+					      <property name="ypad">0</property>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">False</property>
+					      <property name="fill">False</property>
+					    </packing>
+					  </child>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
@@ -2186,24 +2227,28 @@ Descending Only
 				      </child>
 
 				      <child>
-					<widget class="GtkLabel" id="look_angle_info_label">
-					  <property name="width_request">76</property>
+					<widget class="GtkHBox" id="look_angle_combobox_hbox">
+					  <property name="height_request">30</property>
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes"></property>
-					  <property name="use_underline">False</property>
-					  <property name="use_markup">False</property>
-					  <property name="justify">GTK_JUSTIFY_LEFT</property>
-					  <property name="wrap">False</property>
-					  <property name="selectable">False</property>
-					  <property name="xalign">0.5</property>
-					  <property name="yalign">0.5</property>
-					  <property name="xpad">0</property>
-					  <property name="ypad">0</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkComboBox" id="look_angle_combobox">
+					      <property name="visible">True</property>
+					      <property name="items" translatable="yes">-</property>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
 					</widget>
 					<packing>
 					  <property name="padding">0</property>
-					  <property name="expand">False</property>
-					  <property name="fill">False</property>
+					  <property name="expand">True</property>
+					  <property name="fill">True</property>
 					</packing>
 				      </child>
 				    </widget>
