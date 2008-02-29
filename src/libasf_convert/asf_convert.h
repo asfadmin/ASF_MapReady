@@ -19,6 +19,7 @@ typedef struct
   int terrain_correct;    // terrain correction flag
   int geocoding;          // geocoding flag
   int export;             // export flag
+  int mosaic;             // mosaic flag
   int intermediates;      // flag to keep intermediates
   int quiet;              // quiet flag
   int short_config;       // short configuration file flag;
@@ -44,7 +45,11 @@ typedef struct
   char *lut;              // look up table file name (CIS only)
   double lat_begin;       // latitude constraint begin
   double lat_end;         // latitude constraint end
-  char *prc;              // precision state vector location (to be
+  int line;               // start line for subset
+  int sample;             // start sample for subset
+  int width;              // width of subset
+  int height;             // height of subset
+  char *prc;              // precision state vector location (to be 
                           //        implemented)
   int output_db;          // TRUE if the output is db.  Only applies to
                           //        SIGMA, GAMMA, BETA radiometries.
@@ -141,6 +146,11 @@ typedef struct
 
 typedef struct
 {
+  char *overlap;          // overlap option: MIN, MAX, OVERLAY, NEAR_RANGE
+} s_mosaic;
+
+typedef struct
+{
   char comment[255];                   // first line for comments
   s_general *general;                  // general processing details
   s_import *import;                    // importing parameters
@@ -152,6 +162,7 @@ typedef struct
   s_terrain_correct *terrain_correct;  // terrain correction parameters
   s_geocoding *geocoding;              // geocoding parameters
   s_export *export;                    // exporting parameters
+  s_mosaic *mosaic;                    // mosaicking parameters
 } convert_config;
 
 // checking return values in the main program

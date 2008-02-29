@@ -155,10 +155,13 @@ int main(int argc, char *argv[])
 
     int multiband = 1;
     int band_num = 0;
+    // FIXME: Overlap should be an option. Hardwired for now.
+    char overlap[25]="OVERLAY";
 
     asf_mosaic(pp, projection_type, force_flag, resample_method,
               average_height, datum, pixel_size, multiband,  band_num, files,
-              outfile, background_val, lat_min, lat_max, lon_min, lon_max);
+              outfile, background_val, lat_min, lat_max, lon_min, lon_max,
+	       overlap);
 
     free(outfile_full);
     for (i=0; i<n_inputs; ++i)

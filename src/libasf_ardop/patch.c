@@ -257,6 +257,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   meta_parameters *metaCpx=meta_copy(meta);
   metaCpx->general->data_type = COMPLEX_REAL32;
   metaCpx->general->image_data_type = COMPLEX_IMAGE;
+  metaCpx->general->radiometry = r_AMP;
   metaCpx->general->line_count = f->n_az_valid * patchNo;
   metaCpx->general->sample_count = p->n_range;
   meta_get_latLon(metaCpx, metaCpx->general->line_count/2,
@@ -273,6 +274,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   meta_parameters *metaAmp=meta_copy(metaCpx);
   metaAmp->general->data_type = REAL32;
   metaAmp->general->image_data_type = AMPLITUDE_IMAGE;
+  metaAmp->general->radiometry = r_AMP;
   metaAmp->general->line_count = f->n_az_valid / f->nlooks * patchNo;
   metaAmp->general->y_pixel_size *= f->nlooks;
   metaAmp->sar->azimuth_time_per_pixel *= f->nlooks;
@@ -282,25 +284,29 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
   meta_parameters *metaPower=0, *metaSigma=0, *metaGamma=0, *metaBeta=0;
   if (s->imageType.power) {
     metaPower=meta_copy(metaAmp);
-    metaPower->general->image_data_type = POWER_IMAGE;
+    metaPower->general->image_data_type = AMPLITUDE_IMAGE;
+    metaPower->general->radiometry = r_POWER;
     meta_write(metaPower, f->out_pwr);
     fp_pwr=fopenImage(f->out_pwr,openMode);
   }
   if (s->imageType.sigma) {
     metaSigma=meta_copy(metaAmp);
-    metaSigma->general->image_data_type = SIGMA_IMAGE;
+    metaSigma->general->image_data_type = AMPLITUDE_IMAGE;
+    metaSigma->general->radiometry = r_SIGMA;
     meta_write(metaSigma, f->out_sig);
     fp_sig=fopenImage(f->out_sig,openMode);
   }
   if (s->imageType.gamma) {
     metaGamma=meta_copy(metaAmp);
-    metaGamma->general->image_data_type = GAMMA_IMAGE;
+    metaGamma->general->image_data_type = AMPLITUDE_IMAGE;
+    metaGamma->general->image_data_type = r_GAMMA;
     meta_write(metaGamma, f->out_gam);
     fp_gam=fopenImage(f->out_gam,openMode);
   }
   if (s->imageType.beta) {
     metaBeta=meta_copy(metaAmp);
-    metaBeta->general->image_data_type = BETA_IMAGE;
+    metaBeta->general->image_data_type = AMPLITUDE_IMAGE;
+    metaBeta->general->radiometry = r_BETA;
     meta_write(metaBeta, f->out_bet);
     fp_bet=fopenImage(f->out_bet,openMode);
   }

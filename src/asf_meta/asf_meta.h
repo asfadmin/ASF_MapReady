@@ -34,7 +34,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.5
+#define META_VERSION 2.6
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -74,13 +74,7 @@ typedef enum {
   COMPLEX_IMAGE,
   AMPLITUDE_IMAGE,
   PHASE_IMAGE,
-  POWER_IMAGE,
-  SIGMA_IMAGE,
-  GAMMA_IMAGE,
-  BETA_IMAGE,
   COHERENCE_IMAGE,
-  GEOREFERENCED_IMAGE,
-  GEOCODED_IMAGE,
   POLARIMETRIC_IMAGE,
   LUT_IMAGE,
   ELEVATION,
@@ -88,6 +82,17 @@ typedef enum {
   IMAGE,
   MASK
 } image_data_type_t;
+
+typedef enum {
+  r_AMP=1,
+  r_SIGMA,
+  r_BETA,
+  r_GAMMA,
+  r_SIGMA_DB,
+  r_BETA_DB,
+  r_GAMMA_DB,
+  r_POWER
+} radiometry_t;
 
 /********************************************************************
  * meta_general: General Radio Detection And Ranging parameters
@@ -119,14 +124,21 @@ typedef struct {
  *    COMPLEX             Level 1 complex data                             *
  *    AMPLITUDE           Amplitude image                                  *
  *    PHASE               Phase image (e.g. interferogram)                 *
- *    POWER               Power (magnitude) image                          *
- *    SIGMA               Sigma image (calibrated amplitude) [dB]          *
- *    GAMMA               Gamma image (calibrated amplitude) [dB]          *
- *    BETA                Beta image (calibrated amplitude) [dB]           *
  *    COHERENCE           Coherence image                                  *
- *    GEOCODED_IMAGE      Geocoded image                                   *
  *    DEM                 Digital elevation model                          *
- *    IMAGE               Generic image                                    */
+ *    IMAGE               Generic image                                    *
+ *    MASK                Mask (water, user defined)                       */
+  radiometry_t radiometry; // version 2.6
+  /* Possible values for radiometry
+   *  AMPLITUDE
+   *  SIGMA
+   *  GAMMA
+   *  BETA
+   *  SIGMA_DB
+   *  GAMMA_DB
+   *  BETA_DB
+   *  POWER
+   */
   char system[FIELD_STRING_MAX];    /* System of samples (e.g. "ieee-std") */
 /*  Possible string values for system:                                     *
  *    OUR NAME      DDR EQUIVALENT      WHAT IT IS                         *
@@ -242,13 +254,6 @@ typedef struct {
   double along_track_offset;  // Along-track offset S0 [m]
   double cross_track_offset;  // Cross-track offset C0 [m]
 } meta_airsar;
-
-// meta_calibrate: parameters for calibration efforts
-typedef struct {
-  double coefficient_a1;
-  double coefficient_a2;
-  double coefficient_a3;
-} meta_calibrate;
 
 /********************************************************************
  * meta_projection / proj_parameters: These describe a map projection.
@@ -390,7 +395,6 @@ typedef struct {
   meta_projection    *projection;      /* Can be NULL (check!).  */
   meta_transform     *transform;       // Can be NULL (check!)
   meta_airsar        *airsar;          // Can be NULL (check!)
-  meta_calibrate     *calibrate;       // Can be NULL (check!)
   meta_statistics    *stats;           // Can be NULL
   meta_state_vectors *state_vectors;   /* Can be NULL (check!).  */
   meta_location      *location;        // Can be NULL
@@ -443,7 +447,6 @@ meta_optical *meta_optical_init(void);
 meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);
-meta_calibrate *meta_calibrate_init(void);
 meta_state_vectors *meta_state_vectors_init(int vector_count);
 meta_statistics *meta_statistics_init(int band_count);
 //meta_stats *meta_stats_init(void);

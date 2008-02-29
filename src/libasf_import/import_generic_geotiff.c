@@ -1066,8 +1066,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   pTmpChar = (char *)va_arg(ap, char *);
   if (pTmpChar != NULL &&
       strlen(pTmpChar) >= 3 &&
-      (strncmp(uc(pTmpChar), "GEOCODED_IMAGE", 14) == 0 ||
-       strncmp(uc(pTmpChar), "DEM", 3) == 0 ||
+      (strncmp(uc(pTmpChar), "DEM", 3) == 0 ||
        strncmp(uc(pTmpChar), "MASK", 4) == 0))
   {
     strcpy(image_data_type, uc(pTmpChar));
@@ -1077,30 +1076,20 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       strcpy(image_data_type, "DEM");
     }
     else if (geotiff_data_exists) {
-      strcpy(image_data_type, "GEOCODED_IMAGE");
-    }
-    else if ((tie_point[0] || tie_point[1]) &&
-              pixel_scale[0] && pixel_scale[1]) {
-      strcpy(image_data_type, "GEOREFERENCED_IMAGE");
+      strcpy(image_data_type, "AMPLITUDE_IMAGE");
     }
     else {
       strcpy(image_data_type, "IMAGE");
     }
   }
   va_end(ap);
-  if (strncmp(image_data_type, "GEOCODED_IMAGE", 14) == 0) {
-    mg->image_data_type = GEOCODED_IMAGE;
-  }
-  else if (strncmp(image_data_type, "GEOREFERENCED_IMAGE", 19) == 0) {
-    mg->image_data_type = GEOREFERENCED_IMAGE;
-  }
-  else if (strncmp(image_data_type, "DEM", 3) == 0) {
+  if (strncmp(image_data_type, "DEM", 3) == 0) {
     mg->image_data_type = DEM;
   }
   else if (strncmp(image_data_type, "MASK", 4) == 0) {
     mg->image_data_type = MASK;
   }
-  if (strncmp(image_data_type, "IMAGE", 5) == 0) {
+  else if (strncmp(image_data_type, "IMAGE", 5) == 0) {
     mg->image_data_type = IMAGE;
   }
 

@@ -27,7 +27,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
 "              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex]\n"\
-"              [-help]\n"\
+"              [-line <start line subset>] [-sample <start sample subset>]\n"\
+"              [-width <subset width>] [-height <subset height>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
 
 #define ASF_DESCRIPTION_STRING \
@@ -191,6 +192,10 @@ typedef enum {
     f_FIX_META_YPIX,
     f_IMAGE_DATA_TYPE,
     f_BAND,
+    f_LINE,
+    f_SAMPLE,
+    f_WIDTH,
+    f_HEIGHT,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -314,6 +319,7 @@ int main(int argc, char *argv[])
     int ii;
     int flags[NUM_IMPORT_FLAGS];
     double lowerLat=-99.0, upperLat=-99.0;
+    int line=0, sample=0, height=-99, width=-99;
     double range_scale=NAN, azimuth_scale=NAN, correct_y_pixel_size=NAN;
     int do_resample;
     int do_metadata_fix;
@@ -353,6 +359,10 @@ int main(int argc, char *argv[])
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
+    flags[f_LINE] = checkForOption("-line", argc, argv);
+    flags[f_SAMPLE] = checkForOption("-sample", argc, argv);
+    flags[f_WIDTH] = checkForOption("-width", argc, argv);
+    flags[f_HEIGHT] = checkForOption("-height", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
@@ -435,6 +445,10 @@ int main(int argc, char *argv[])
         if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
+	if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
+	if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+	if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
+	if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
@@ -453,6 +467,22 @@ int main(int argc, char *argv[])
         No check for '-' in the two following fields because negative numbers
         are legit (eg -lat -67.5 -70.25)*/
         if(flags[f_LAT_CONSTRAINT] >= argc - (REQUIRED_ARGS+1))
+            print_usage();
+    if(flags[f_LINE] != FLAG_NOT_SET)
+        if(   argv[flags[f_LINE]+1][0] == '-'
+            || flags[f_LINE] >= argc-REQUIRED_ARGS)
+            print_usage();
+    if(flags[f_SAMPLE] != FLAG_NOT_SET)
+        if(   argv[flags[f_SAMPLE]+1][0] == '-'
+            || flags[f_SAMPLE] >= argc-REQUIRED_ARGS)
+            print_usage();
+    if(flags[f_HEIGHT] != FLAG_NOT_SET)
+        if(   argv[flags[f_HEIGHT]+1][0] == '-'
+            || flags[f_HEIGHT] >= argc-REQUIRED_ARGS)
+            print_usage();
+    if(flags[f_WIDTH] != FLAG_NOT_SET)
+        if(   argv[flags[f_WIDTH]+1][0] == '-'
+            || flags[f_WIDTH] >= argc-REQUIRED_ARGS)
             print_usage();
     if(flags[f_PRC] != FLAG_NOT_SET)
         /*Make sure the field following -prc isn't another option
@@ -527,6 +557,15 @@ int main(int argc, char *argv[])
             asfPrintError("Invalid latitude constraint (must be -90 to 90)");
         }
     }
+
+    if(flags[f_LINE] != FLAG_NOT_SET)
+      line = atoi(argv[flags[f_LINE]+1]);
+    if(flags[f_SAMPLE] != FLAG_NOT_SET)
+      sample = atoi(argv[flags[f_SAMPLE]+1]);
+    if(flags[f_WIDTH] != FLAG_NOT_SET)
+      width = atoi(argv[flags[f_WIDTH]+1]);
+    if(flags[f_HEIGHT] != FLAG_NOT_SET)
+      height = atoi(argv[flags[f_HEIGHT]+1]);
 
     if(flags[f_LUT] != FLAG_NOT_SET) {
         lutName = (char *) MALLOC(sizeof(char)*256);
@@ -659,10 +698,12 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
-        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type,
-           band_id, image_data_type, lutName, prcPath, lowerLat, upperLat,
-           p_range_scale, p_azimuth_scale,p_correct_y_pixel_size,
-           inMetaNameOption, inBaseName, outBaseName);
+        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type, 
+		   band_id, image_data_type, lutName, prcPath, 
+		   lowerLat, upperLat, line, sample, width, height,
+		   p_range_scale, p_azimuth_scale,p_correct_y_pixel_size, 
+		   inMetaNameOption, inBaseName, outBaseName);
+
     }
 
     if (lutName)

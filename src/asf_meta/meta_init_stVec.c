@@ -174,6 +174,8 @@ void ceos_read_stVecs(const char *fName, ceos_description *ceos, meta_parameters
         areInertial = 0;
     //areInertialVelocity = 1;
     }
+    else if (0 == strncmp(ppdr.ref_coord, "EARTH FIXED REFERENCE SYSTEM",28))
+      areInertial = 0;
     if (ppdr.hr_angle<=-99.0)
         areInertial=0;/*Bogus GHA-- must be fixed-earth*/
 

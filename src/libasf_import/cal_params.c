@@ -12,194 +12,340 @@ calibrate.*/
  --------------------------------------------
    Currently contains:
 
-        double sspswb010_noise_vec[256];
-        double sspswb011_noise_vec[256];
-        double sspswb013_noise_vec[256];
-        double sspswb014_noise_vec[256];
-        double sspswb015_noise_vec[256];
-	double sspswb016_noise_vec[256]; (identical to 15)
+   double sspswb010_noise_vec[256];
+   double sspswb011_noise_vec[256];
+   double sspswb013_noise_vec[256];
+   double sspswb014_noise_vec[256];
+   double sspswb015_noise_vec[256];
+   double sspswb016_noise_vec[256]; (identical to 15)
 
 *********************************************/
 #include "noise_vectors.h"
-#define LOVAL 0.0
+#include "matrix.h"
 
-/**************************************************************************
-get_noise
+#ifndef PI
+# define PI 3.14159265358979323846
+#endif
+#define GRID 16
+#define TABLE 512
 
-Returns the radiometric noise value at
-the given image location.
+#define SQR(X) ((X)*(X))
 
-**************************************************************************/
-
-double get_noise(cal_params *p,int x,int y)
+// Routine internal to find_quadratic:
+// Return the value of the given term of the quadratic equation.
+double get_term(int termNo, double x, double y)
 {
-	float noise_index=0,frac;
-	int index;
-
-/*Switch on the indexing scheme of the noise table.*/
-	if (p->noise_type==by_pixel)
-		noise_index=(float)x*p->noise_len/p->ns;
-	else if (p->noise_type==by_slant)
-		noise_index=(meta_get_slant(p->meta,(float)y,(float)x)
-			-p->minSlant)/p->slantPer;
-	else if (p->noise_type==by_look)
-		noise_index=(meta_look(p->meta,
-			(float)y,(float)x)*180.0/PI-16.3)*10.0;
-	else if (p->noise_type==by_geo)
-	  {
-	    double time,slant,dop;
-	    int    pixel;
-
-	    meta_get_timeSlantDop(p->meta,(float)y,(float)x,
-			    &time,&slant,&dop);
-	    pixel = slantRange2groundPixel(p->meta,slant);
-	    noise_index = (float) pixel*p->noise_len/p->ns;
-	  }
-
-/*Clamp noise_index to within the noise table.*/
-	if (noise_index<=0)
-		return p->noise[0];
-	if (noise_index>=p->noise_len-1)
-		return p->noise[p->noise_len-1];
-
-/*Use linear interpolation on noise array.*/
-	index=(int)noise_index;
-	frac=noise_index-index;
-	return p->noise[index]+frac*(p->noise[index+1]-p->noise[index]);
+  switch(termNo)
+    {
+    case 0:/*A*/return 1;
+    case 1:/*B*/return x;
+    case 2:/*C*/return y;
+    case 3:/*D*/return x*x;
+    case 4:/*E*/return x*y;
+    case 5:/*F*/return y*y;
+    case 6:/*G*/return x*x*y;
+    case 7:/*H*/return x*y*y;
+    case 8:/*I*/return x*x*y*y;
+    case 9:/*J*/return x*x*x;
+    case 10:/*K*/return y*y*y;
+    default:/*??*/
+      asfPrintError("Unknown term number %d passed to get_term!\n", termNo);
+      return 0.0;
+    }
 }
 
-double get_invCosIncAngle(cal_params *p,int x, int y)
-  { return( 1.0 / cos(meta_incid(p->meta,(float)y,(float)x))); }
+// Fit a quadratic warping function to the given points 
+// in a least-squares fashion
+quadratic_2d find_quadratic(const double *out, const double *x,
+                            const double *y, int numPts)
+{
+  int nTerms=11;
+  matrix *m=matrix_alloc(nTerms,nTerms+1);
+  int row,col;
+  int i;
+  quadratic_2d c;
+  // For each data point, add terms to matrix
+  for (i=0;i<numPts;i++) {
+    for (row=0;row<nTerms;row++) {
+      double partial_Q=get_term(row,x[i],y[i]);
+      for (col=0;col<nTerms;col++)
+	m->coeff[row][col]+=partial_Q*get_term(col,x[i],y[i]);
+      m->coeff[row][nTerms]+=partial_Q*out[i];
+    }
+  }
+  // Now solve matrix to find coefficients
+  // matrix_print(m,"\nLeast-Squares Matrix:\n",stdout);
+  matrix_solve(m);
+  c.A=m->coeff[0][nTerms];c.B=m->coeff[1][nTerms];c.C=m->coeff[2][nTerms];
+  c.D=m->coeff[3][nTerms];c.E=m->coeff[4][nTerms];c.F=m->coeff[5][nTerms];
+  c.G=m->coeff[6][nTerms];c.H=m->coeff[7][nTerms];c.I=m->coeff[8][nTerms];
+  c.J=m->coeff[9][nTerms];c.K=m->coeff[10][nTerms];
+  return c;
+}
 
-double get_invSinIncAngle(cal_params *p,int x, int y)
-  { return( 1.0 / sin(meta_incid(p->meta,(float)y,(float)x))); }
+double get_satellite_height(double time, stateVector stVec)
+{
+  return sqrt(stVec.pos.x*stVec.pos.x +
+	      stVec.pos.y*stVec.pos.y +
+	      stVec.pos.z*stVec.pos.z);
+}
+
+double get_earth_radius(double time, stateVector stVec, double re, double rp)
+{
+  double er = sqrt(stVec.pos.x*stVec.pos.x +
+		   stVec.pos.y*stVec.pos.y +
+		   stVec.pos.z*stVec.pos.z);
+  double lat = asin(stVec.pos.z/er);
+  return (re*rp) / sqrt(rp*rp*cos(lat)*cos(lat) + re*re*sin(lat)*sin(lat));
+}
+
+double get_slant_range(meta_parameters *meta, double er, double ht, int sample)
+{
+  double minPhi = acos((ht*ht + er*er -
+		       SQR(meta->sar->slant_range_first_pixel))/(2.0*ht*er));
+  double phi = minPhi + sample*(meta->general->x_pixel_size/er);
+  double slantRng = sqrt(ht*ht + er*er - 2.0*ht*er*cos(phi));
+  return slantRng + meta->sar->slant_shift;
+}
+
+double get_look_angle(double er, double ht, double sr)
+{
+  return acos((sr*sr+ht*ht-er*er)/(2.0*sr*ht));
+}
+
+double get_incidence_angle(double er, double ht, double sr)
+{
+  return PI-acos((sr*sr+er*er-ht*ht)/(2.0*sr*er));
+}
+
+quadratic_2d get_incid(char *sarName, meta_parameters *meta)
+{
+  int ll, kk;
+  quadratic_2d q;
+  stateVector stVec;
+  int projected = FALSE;
+  double *line, *sample, *incidence_angle;
+  double earth_radius, satellite_height, time, range;
+  double firstIncid, re, rp;
+
+  incidence_angle = (double *) MALLOC(sizeof(double)*GRID*GRID);
+  line = (double *) MALLOC(sizeof(double)*GRID*GRID);
+  sample = (double *) MALLOC(sizeof(double)*GRID*GRID);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  re = meta->general->re_major;
+  rp = meta->general->re_minor;
+  if (meta->projection) // other conditions needed ???
+    projected = TRUE;
+  for (ll=0; ll<GRID; ll++)
+    for (kk=0; kk<GRID; kk++) {
+      line[ll*GRID+kk] = ll * nl / GRID;
+      sample[ll*GRID+kk] = kk * ns / GRID;
+      if (projected) {
+	earth_radius = meta_get_earth_radius(meta, ll, kk);
+	satellite_height = meta_get_sat_height(meta, ll, kk);
+	range = get_slant_range(meta, earth_radius, satellite_height,
+				sample[ll*GRID+kk]);
+      }
+      else {
+	time = meta_get_time(meta, line[ll*GRID+kk], sample[ll*GRID+kk]);
+	stVec = meta_get_stVec(meta, time);
+	earth_radius = get_earth_radius(time, stVec, re, rp);
+	satellite_height = get_satellite_height(time, stVec);
+	range = get_slant_range(meta, earth_radius, satellite_height,
+				sample[ll*GRID+kk]);
+      }
+      incidence_angle[ll*GRID+kk] =
+        get_incidence_angle(earth_radius, satellite_height, range)*R2D;
+
+      if (ll==0 && kk==0)
+        firstIncid = incidence_angle[0];
+    }
+
+  q = find_quadratic(incidence_angle, line, sample, GRID*GRID);
+  q.A = firstIncid;
+
+  // Clean up
+  FREE(line);
+  FREE(sample);
+  FREE(incidence_angle);
+
+  return q;
+}
 
 /**************************************************************************
 create_cal_params
-
 Constructs a cal_params record, by reading the
 given inSAR CEOS file.
-
 **************************************************************************/
 
-#define ERROR_IMAGEID   7000
-
-cal_params *create_cal_params(const char *inSAR)
+cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
 {
-        int i;
-        cal_params *p=(cal_params *)MALLOC(sizeof(cal_params));
-        struct VFDRECV         facdr;   /* Facility-related data record.*/
-        struct VRADDR          rdr;     /* Radiometric data record      */
-        struct dataset_sum_rec dssr;    /* Data set summary record.     */
-        struct VMPDREC         mpdr;    /* Map projection data record.  */
-	struct alos_rad_data_rec ardr;  // ALOS Radiometric Data record
-        double  *noise_vector;          /* Noise vector pointer         */
-        char sarName[512];
+  int ii, kk;
+  struct dataset_sum_rec dssr; // Data set summary record
+  double *noise;
+  char sarName[512], *facilityStr;
+  cal_params *cal = (cal_params *) MALLOC(sizeof(cal_params));
+  cal->asf = NULL;
+  cal->esa = NULL;
+  cal->rsat = NULL;
+  cal->alos = NULL;
+  
+  strcpy (sarName, inSAR);
+  
+  // Check for the varioius processors
+  get_dssr(sarName, &dssr);
+  facilityStr = trim_spaces(dssr.fac_id);
 
-        strcpy (sarName,inSAR);
+  if (strncmp(facilityStr, "ASF", 3)== 0) {
+    // ASF internal processor (PP or SSP)
+    asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
+    cal->asf = asf;
 
-        /* Check for FOCUS data and directly return because we cannot handle
-           them yet */
-        get_dssr(sarName, &dssr);
-        if (strcmp(dssr.product_type, "FOCUS")==0) return NULL;
+    // Get values for calibration coefficients and LUT
+    struct VRADDR rdr; // Radiometric data record
+    get_raddr(sarName, &rdr);
+    
+    // hardcodings for not-yet-calibrated fields
+    if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+      asf->a0 = 1.1E4;
+      asf->a1 = 2.2E-5;
+      asf->a2 = 0.0;
+    } 
+    else {
+      asf->a0 = rdr.a[0];
+      asf->a1 = rdr.a[1];
+      asf->a2 = rdr.a[2];
+    }
 
-        p->meta=meta_init(sarName);
+    // Set the Noise Correction Vector to correct version
+    if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
+      noise = sspswb010_noise_vec;
+    } 
+    else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
+      noise = sspswb011_noise_vec;
+    } 
+    else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
+      noise = sspswb013_noise_vec;
+    } 
+    else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
+      noise = sspswb014_noise_vec;
+    } 
+    else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
+      noise = sspswb015_noise_vec;
+    } 
+    else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
+      asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
+      noise = sspswb015_noise_vec;
+      // 16 and 15 were identical antenna patterns, only metadata fields were 
+      // changed, so the noise vector for 16 is the same and that for 15. JBN
+    } 
+    else 
+      noise = rdr.noise;
 
-        /* Set Default values
-         --------------------*/
-        p->Dmax = 0.0;
-        p->Dmin = -30.0;
-        p->noise_len=256;
-        p->output_type=sigma_naught;
-
-	// Check which satellite the data is from
-	if (strncmp(dssr.mission_id, "ALOS", 4) == 0) {
-	  get_ardr(sarName, &ardr);
-	  p->a0 = 0.0;
-	  p->a2 = 0.0;
-	  if (strncmp(dssr.lev_code, "1.1", 3) == 0) 
-	    p->a1 = pow(10, (ardr.calibration_factor-32)/10.0);
-	  else if (strncmp(dssr.lev_code, "1.5", 3) == 0)
-            p->a1 = pow(10, ardr.calibration_factor/10.0);
-	  p->noise_type=by_pixel;
-
-	  return p;
+    asf->tablePix = ((meta->general->sample_count + (TABLE-1))/TABLE);
+    asf->numLines = meta->general->line_count;
+  
+    float noise_index=0, frac;
+    int index, base;
+    for (ii=0; ii<asf->numLines; ii++) {
+      for (kk=0; kk<TABLE; kk++) {
+	if (meta->projection && meta->projection->type == SCANSAR_PROJECTION)
+	  // index is look angle dependent
+	  noise_index = 
+	    (meta_look(meta, (float)ii,
+		       (float)kk*asf->tablePix)*180.0/PI-16.3)*10.0;
+	else
+	  // all other data work with index by pixel
+	  noise_index = 
+	    (float)kk*asf->tablePix*256/meta->general->sample_count;
+	base = kk + (ii/(asf->numLines/TABLE)*TABLE);
+	// Clamp noise_index to within the noise table
+	if (noise_index <= 0)
+	  asf->noise[base] = noise[0];
+	else if (noise_index >= 255)
+	  asf->noise[base] = noise[255];
+	else {
+	  // Use linear interpolation on noise array
+	  index = (int)noise_index;
+	  frac = noise_index - index;
+	  asf->noise[base] = 
+	    noise[index] + frac*(noise[index+1] - noise[index]);
 	}
-	else { // ASF original style calibration parameters
-	  /* Get values for calibration coefficients and LUT */
-	  get_raddr(sarName, &rdr);
+      }
+    }
+  }
+  else if (strncmp(facilityStr, "CDPF", 4) == 0 ||
+	   strncmp(facilityStr, "RSI", 3) == 0 ||
+	   (strncmp(facilityStr, "CSTARS", 6) == 0 && 
+	    strncmp(dssr.mission_id, "RSAT", 4) == 0)) {
+    // Radarsat style calibration
+    rsat_cal_params *rsat = 
+      (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
+    cal->rsat = rsat;
+    rsat->slc = FALSE;
+    if (strncmp(dssr.product_type, "SLANT RANGE COMPLEX", 19) == 0 ||
+	strncmp(dssr.product_type, 
+		"SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
+      rsat->slc = TRUE;
+    }
 
-	  /* hardcodings for not-yet-calibrated fields */
-	  if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
-	    p->a0 = 1.1E4;
-	    p->a1 = 2.2E-5;
-	    p->a2 = 0.0;
-	  } else {
-	    p->a0 = rdr.a[0];
-	    p->a1 = rdr.a[1];
-	    p->a2 = rdr.a[2];
-	  }
-	}
+    // Read lookup up table from radiometric data record
+    struct RSI_VRADDR radr;
+    get_rsi_raddr(sarName, &radr);
+    rsat->n = radr.n_samp;
+    rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
+    for (ii=0; ii<rsat->n; ii++)
+      rsat->lut[ii] = radr.lookup_tab[ii];
+    rsat->samp_inc = radr.samp_inc;
+    rsat->a3 = radr.offset;
+    
+  }
+  else if (strncmp(facilityStr, "ES", 2) == 0 ||
+	   strncmp(facilityStr, "D-PAF", 5) == 0 ||
+	   strncmp(facilityStr, "I-PAF", 2) == 0 ||
+	   strncmp(facilityStr, "Beijing", 7) == 0 ||
+	   (strncmp(facilityStr, "CSTARS", 6) == 0 &&
+	    (strncmp(dssr.mission_id, "E", 1) == 0 ||
+	     strncmp(dssr.mission_id, "J", 1) == 0)))
+    {
+    // ESA style calibration
+    esa_cal_params *esa = (esa_cal_params *) MALLOC(sizeof(esa_cal_params));
+    cal->esa = esa;
 
-        /* Set the Noise Correction Vector to correct version
-         -------------------------------------0--------------*/
-        if (strncmp(dssr.cal_params_file,"SSPSWB010.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb010\n");
-          noise_vector = sspswb010_noise_vec;
-        } else if (strncmp(dssr.cal_params_file,"SSPSWB011.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb011\n");
-          noise_vector = sspswb011_noise_vec;
-        } else if (strncmp(dssr.cal_params_file,"SSPSWB013.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb013\n");
-          noise_vector = sspswb013_noise_vec;
-        } else if (strncmp(dssr.cal_params_file,"SSPSWB014.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb014\n");
-          noise_vector = sspswb014_noise_vec;
-        } else if (strncmp(dssr.cal_params_file,"SSPSWB015.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb015\n");
-          noise_vector = sspswb015_noise_vec;
-        } else if (strncmp(dssr.cal_params_file,"SSPSWB016.CALPARMS",18)==0) {
-          asfPrintStatus("\n   Substituting hardcoded noise vector sspswb016\n");
-          noise_vector = sspswb015_noise_vec;
-        /* 16 and 15 were identical antenna patterns, only metadata fields were changed, so the noise vector for 16 is the same and that for 15. JBN */
-        } else noise_vector = rdr.noise;
+    // Read calibration coefficient and reference incidence angle
+    struct ESA_FACDR facdr;
+    get_esa_facdr(sarName, &facdr);
+    esa->k = facdr.abs_cal_const;
+    esa->ref_incid = dssr.incident_ang;
+  }
+  else if (strncmp(facilityStr, "EOC", 3) == 0) {
+    // ALOS processor
+    struct alos_rad_data_rec ardr; // ALOS Radiometric Data record
+    alos_cal_params *alos = 
+      (alos_cal_params *) MALLOC(sizeof(alos_cal_params));
+    cal->alos = alos;
 
-        for (i=0;i<p->noise_len;i++) p->noise[i]=noise_vector[i];
+    // Reading calibration coefficient
+    get_ardr(sarName, &ardr);
+    if (strncmp(dssr.lev_code, "1.1", 3) == 0) // SLC
+      alos->cf = ardr.calibration_factor - 69.5;
+    else if (strncmp(dssr.lev_code, "1.5", 3) == 0) // regular detected
+      alos->cf = ardr.calibration_factor;
+  }
+  else
+    // should never get here
+    asfPrintError("Unknown calibration parameter scheme!\n");
+    
+  // Determine polynomial for incidence angle calculation
+  cal->incid = get_incid(sarName, meta);
 
-        /* ASF SCANSAR images are indexed by look angle so Check for SCANSAR */
-        if (strncmp(dssr.product_type,"SCANSAR",7)==0)
-                p->noise_type=by_look;
-
-        /* Next, check for old-style geocoded images */
-        else if (get_mpdr(sarName,&mpdr)>=0)
-          {
-            get_asf_facdr(sarName,&facdr);
-            p->noise_type=by_geo;
-            p->ns = slantRange2groundPixel(p->meta,facdr.sltrnglp*1000.0);
-            asfPrintStatus("   Recognize old geocoded image; Max ns = %i\n",
-                           p->ns);
-          }
-
-        /* Otherwise, use a straight-forward by_pixel approach */
-        else if (1)
-          {
-                p->noise_type=by_pixel;
-                //p->ns=p->meta->ifm->orig_nSamples;
-                p->ns=p->meta->sar->original_sample_count;
-          }
-
-        /* For Future Use:: Most other images are indexed by slant range.*/
-        else
-          {
-                double totalSlant;
-
-                get_asf_facdr(sarName,&facdr);
-                p->noise_type=by_slant;
-                p->minSlant=facdr.sltrngfp;
-                totalSlant=facdr.sltrnglp-facdr.sltrngfp;
-                p->slantPer=totalSlant/p->noise_len;
-          }
-        return p;
+  return cal;
 }
 
 /*----------------------------------------------------------------------
@@ -207,106 +353,95 @@ cal_params *create_cal_params(const char *inSAR)
         Convert amplitude image data number into calibrated image data
         number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
-float get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,int inDn)
+float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
 {
-        double scaledPower;
+  double scaledPower, calValue, incidence_angle, invIncAngle;
+  int x=line, y=sample;
+  quadratic_2d q;
+  
+  // Calculate incidence angle
+  q = cal->incid;
+  incidence_angle = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y + 
+    q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
 
-        /* Convert (amplitude) data number to scaled, noise-removed power */
-        scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+  if ((cal->radiometry == r_SIGMA && !cal->rsat) ||
+      (cal->radiometry == r_BETA && cal->rsat))
+    invIncAngle = 1.0;
+  else if (cal->radiometry == r_GAMMA && !cal->rsat)
+    invIncAngle = 1/cos(incidence_angle);
+  else if (cal->radiometry == r_BETA && !cal->rsat)
+    invIncAngle = 1/sin(incidence_angle);
+  
+  // Calculate according to the calibration data type
+  if (cal->asf) { // ASF style data (PP and SSP)
 
-        /* We don't want to convert the scaled power image into dB values
-          since it messes up the statistics */
-        if (scaledPower > 0.0 && inDn > 0)
-          return scaledPower;
-        else
-          return LOVAL;
-}
+    asf_cal_params *p = cal->asf;
+    double index = 
+      (float) sample + (line/(p->numLines/TABLE)*TABLE)/ p->tablePix;
+    int base = (int) index;
+    double frac = index - base;
+    double *noise = p->noise;
 
-//----------------------------------------------------------------------
-//Get_cal_dn_in_db:
-//      Convert amplitude image data number into calibrated image data
-//      number (in decibles), given the current noise value.
-//--------------------------------------------------------------------
-float get_cal_dn_in_db(cal_params *p,double noiseValue,double invIncAngle,int inDn)
-{
-  double scaledPower,db;
+    // Determine the noise value
+    double noiseValue;
+    noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
 
-  // Convert (amplitude) data number to scaled, noise-removed power
-  scaledPower=(p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-
-  // Convert power to decibles
-  if (scaledPower > 0.0)
-  {
-    db=10.0*log10(scaledPower);
-//    if (db > p->Dmin)
-      return db;
+    // Convert (amplitude) data number to scaled, noise-removed power
+    scaledPower = 
+      (p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
   }
-  // Otherwise, set dB value to a floor
-  return p->Dmin;
-}
+  else if (cal->esa) { // ESA style ERS and JERS data
 
-/*----------------------------------------------------------------------
-  sprocket_get_cal_dn:
-        Convert amplitude image data number into calibrated image data
-        number (NOT in dB), given the current noise value.
-----------------------------------------------------------------------*/
-float sprocket_get_cal_dn(cal_params *p,double noiseValue,double invIncAngle,
-                          int inDn)
-{
-        /*Convert (amplitude) data number to scaled, noise-removed power*/
-        return (p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
-}
+    esa_cal_params *p = cal->esa;
 
-/*----------------------------------------------------------------------
-check_cal
-  Checks calibration status field of the data quality summary record.
-  If the data is not calibrated, a message is displayed and 0 is returned.
-  If the data has inferred calibration, a message is displayed and 1 is
-  returned.  Otherwise 1 is returned.
-----------------------------------------------------------------------*/
-#include "ceos.h"
-int check_cal(char *filename)
-{
-  struct qual_sum_rec    *dqsr;
-  struct dataset_sum_rec dssr;
-
-  // Check for ALOS data first. Ignore reading the comments field
-  // since the ALOS style data quality summary record does not have
-  // such field.
-  get_dssr(filename, &dssr);
-  if (strncmp(dssr.mission_id, "ALOS", 4) == 0)
-    return 1;
-  else{
-    dqsr=(struct qual_sum_rec*)MALLOC(sizeof(struct qual_sum_rec));
-    if (get_dqsr(filename,dqsr) == -1) return(1);
-
-    if (strncmp(dqsr->cal_status,"UNCALIB",7)==0)
-      {
-	asfPrintStatus("   **********  UNCALIBRATED DATA  **********  \n");
-	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-	FREE(dqsr);
-	return(1);
-      }
-    else if (strncmp(dqsr->cal_status,"INFERRE",7)==0)
-      {
-	asfPrintStatus("   INFERRED CALIBRATION DATA\n");
-	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-	FREE(dqsr);
-	return(1);
-      }
-    else if (strncmp(dqsr->cal_status,"CALIBRA",7)==0)
-      {
-	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-	FREE(dqsr);
-	return(1);
-      }
+    scaledPower = 
+      (float)inDn*inDn/(p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R)) *
+      invIncAngle;
+  }
+  else if (cal->rsat) { // CDPF style Radarsat data
+    
+    rsat_cal_params *p = cal->rsat;
+    int a2;
+    if (sample < (p->samp_inc*(p->n-1))) {
+      int i_low = sample/p->samp_inc;
+      int i_up = i_low + 1;
+      a2 = p->lut[i_low] +
+	((p->lut[i_up] - p->lut[i_low])*((sample/p->samp_inc) - i_low));
+    }
+    else 
+      a2 = p->lut[p->n-1] +
+	((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
+    if (p->slc)
+      scaledPower = ((float)inDn*inDn)/(a2*a2)*invIncAngle;
     else
-      {
-	asfPrintStatus("   ****** UNABLE TO DETERMINE CALIBRATION OF DATA ******\n");
-	asfPrintStatus("   Calibration Comments: %s\n",dqsr->cal_comment);
-	FREE(dqsr);
-	return(0);
-      }
+      scaledPower = ((float)inDn*inDn + p->a3)/a2*invIncAngle;
   }
-}
+  else if (cal->alos) { // ALOS data
+    
+    alos_cal_params *p = cal->alos;
 
+    scaledPower = pow(10, p->cf/10.0)*(float)inDn*inDn*invIncAngle;
+  }
+  else
+    // should never get here
+    asfPrintError("Unknown calibration data type!\n");
+  
+  // We don't want to convert the scaled power image into dB values
+  // since it messes up the statistics
+  // We set all values lower than the noise floor (0.001 is the equivalent
+  // to -30 dB) to the mininum value of 0.001, removing outliers.
+  if (scaledPower > 0.001 && inDn > 0) {
+    if (dbFlag)
+      calValue = 10.0 * log10(scaledPower);
+    else
+      calValue = scaledPower;
+  }
+  else {
+    if (dbFlag)
+      calValue = -30.0;
+    else
+      calValue = 0.001;
+  }
+
+  return calValue;
+}

@@ -205,13 +205,6 @@ void select_current_block(char *block_name)
     goto MATCHED;
   }
 
-  if ( !strcmp(block_name, "calibrate") ) {
-    if (MTL->calibrate == NULL)
-      { MTL->calibrate = meta_calibrate_init();}
-    current_block = MTL->calibrate;
-    goto MATCHED;
-  }
-
   if ( !strcmp(block_name, "stats") ) { // Stats block for versions lower than v2.4 (single-band stats)
     if (MTL->stats == NULL)
     { MTL->stats = meta_statistics_init(1); stats_block_count++;}
@@ -353,20 +346,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = COMPLEX_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE_IMAGE") )
         MGENERAL->image_data_type = AMPLITUDE_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER_IMAGE") )
-        MGENERAL->image_data_type = POWER_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "PHASE_IMAGE") )
-        MGENERAL->image_data_type = PHASE_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_IMAGE") )
-        MGENERAL->image_data_type = SIGMA_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_IMAGE") )
-        MGENERAL->image_data_type = GAMMA_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_IMAGE") )
-        MGENERAL->image_data_type = BETA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
         MGENERAL->image_data_type = COHERENCE_IMAGE;
-      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
-        MGENERAL->image_data_type = GEOCODED_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_IMAGE") )
         MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION") )
@@ -377,6 +358,29 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MASK") )
         MGENERAL->image_data_type = MASK;
+      else {
+        warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
+        MGENERAL->image_data_type = MAGIC_UNSET_INT;
+      }
+      return;
+   }
+    if ( !strcmp(field_name, "radiometry") ) {
+      if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE") )
+        MGENERAL->image_data_type = r_AMP;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA") )
+        MGENERAL->image_data_type = r_SIGMA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA") )
+        MGENERAL->image_data_type = r_BETA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA") )
+        MGENERAL->image_data_type = r_GAMMA;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_DB") )
+        MGENERAL->image_data_type = r_SIGMA_DB;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_DB") )
+        MGENERAL->image_data_type = r_BETA_DB;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_DB") )
+        MGENERAL->image_data_type = r_GAMMA_DB;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER") )
+        MGENERAL->image_data_type = r_POWER;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;
@@ -900,16 +904,6 @@ void fill_structure_field(char *field_name, void *valp)
       { MAIRSAR->along_track_offset = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "cross_track_offset") )
       { MAIRSAR->cross_track_offset = VALP_AS_DOUBLE; return; }
-  }
-
-  // Fields which normally go in the calibrate block of the metadata file
-  if ( !strcmp(stack_top->block_name, "calibrate") ) {
-    if ( !strcmp(field_name, "coefficient_a1") )
-      { MCALIBRATE->coefficient_a1 = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "coefficient_a2") )
-      { MCALIBRATE->coefficient_a2 = VALP_AS_DOUBLE; return; }
-    if ( !strcmp(field_name, "coefficient_a3") )
-      { MCALIBRATE->coefficient_a3 = VALP_AS_DOUBLE; return; }
   }
 
   /* Fields which normally go in the statistics block of the metadata file. */

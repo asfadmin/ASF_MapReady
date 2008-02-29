@@ -10,14 +10,6 @@
 #define TOOLS_RAW_EXT     ".img"
 #define TOOLS_COMPLEX_EXT ".img"
 
-typedef enum {
-    r_AMP=1,
-    r_SIGMA,
-    r_BETA,
-    r_GAMMA,
-    r_POWER,
-} radiometry_t;
-
 #define DEFAULT_RANGE_SCALE 1.00343642612
 #define DEFAULT_AZIMUTH_SCALE 1.003333505
 
@@ -38,6 +30,10 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                               // path
                double lowerLat, // -99 means not constrained
                double upperLat, // -99 means not constrained
+	       int line, // start line subset - default set to 0
+	       int sample, // start sample subset - default set to 0
+	       int width, // -99 means no subsetting
+	       int height, // -99 means no subsetting
                double *p_range_scale, // NULL for no scaling
                double *p_azimuth_scale, // NULL for no scaling
                double *p_correct_y_pixel_size, // NULL for no fixing
@@ -60,6 +56,7 @@ void create_sprocket_layers(const char *asfName, const char *importName);
 void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
+		 int line, int sample, int width, int height,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
      int complex_flag, int multilook_flag);
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,

@@ -159,10 +159,14 @@ char *get_record_as_string(char *fileName, int reqrec)
 
   // Set specific facility data record to retrieve  
   if ( reqrec == 200 ) {
-    if (0==strncmp(facility, "ASF", 3))
+    if (0 == strncmp(facility, "ASF", 3))
       reqrec = 210;
-    if (0==strncmp(facility, "ES", 2)) /*ESA*/
-      reqrec = 220;
+    if (0 == strncmp(facility, "ES", 2) || 
+	0 == strncmp(facility, "CSTARS", 6) ||
+	0 == strncmp(facility, "D-PAF", 5) ||
+	0 == strncmp(facility, "I-PAF", 5) ||
+	0 == strncmp(facility, "Beijing", 7)) 
+      reqrec = 220; // ESA style
   }
 
   switch (reqrec) 

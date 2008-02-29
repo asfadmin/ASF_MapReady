@@ -590,27 +590,31 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     if (L0Flag == stf) {
         char *inDataName = NULL, *inMetaName = NULL;
         // Import to a temporary file
-        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, 
+		tmp_basename, get_basename(file));
         stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
         if (pair != NO_STF_FILE_PAIR &&
             strncmp(file, inDataName, strlen(file)) == 0) {
-            asf_import(r_AMP,
-                    0 /*db_flag*/,
-                    0 /*complex_flag*/,
-                    0 /*multilook_flag*/,
-                    "STF",
-                    NULL /*band_id*/,
-                    MAGIC_UNSET_STRING /*image_data_type*/,
-                    NULL /*lut*/,
-                    NULL /*prcPath*/,
-                    -99 /*lowerLat*/,
-                    -99 /*upperLat*/,
-                    NULL /*p_range_scale*/,
-                    NULL /*p_azimuth_scale*/,
-                    NULL /*p_correct_y_pixel_size*/,
-                    NULL /*inMetaNameOption*/,
-                    (char*)file,
-                    out_file);
+	  asf_import(r_AMP,
+		     0 /*db_flag*/,
+		     0 /*complex_flag*/,
+		     0 /*multilook_flag*/,
+		     "STF",
+		     NULL /*band_id*/,
+		     MAGIC_UNSET_STRING /*image_data_type*/,
+		     NULL /*lut*/,
+		     NULL /*prcPath*/,
+		     -99 /*lowerLat*/,
+		     -99 /*upperLat*/,
+		     0, // start line subset
+		     0, // start sample subset
+		     -99, // width of subset
+		     -99, // height of subset
+		     NULL /*p_range_scale*/,
+		     NULL /*p_azimuth_scale*/,
+		     NULL /*p_correct_y_pixel_size*/,
+		     NULL /*inMetaNameOption*/,
+		     (char*)file, out_file);
         }
         else {
             remove_dir(tmp_folder);
@@ -628,29 +632,13 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         fprintf(stderr, "** CEOS format Level 0 products not yet supported...\n");
         exit(1);
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
-        //asf_import(r_AMP,
-        //           0 /*db_flag*/,
-        //           0 /*complex_flag*/,
-        //           0 /*multilook_flag*/,
-        //           "CEOS",
-        //           NULL /*band_id*/,
-        //           MAGIC_UNSET_STRING /*image_data_type*/,
-        //           NULL /*lut*/,
-        //           NULL /*prcPath*/,
-        //           -99 /*lowerLat*/,
-        //           -99 /*upperLat*/,
-        //           NULL /*p_range_scale*/,
-        //           NULL /*p_azimuth_scale*/,
-        //           NULL /*p_correct_y_pixel_size*/,
-        //           NULL /*inMetaNameOption*/,
-        //           (char*)file,
-        //           out_file);
+
     }
 
     // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+    sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR, 
+	    tmp_basename, get_basename(file));
     params_in = get_input_ardop_params_struct(in_file, out_file);
     // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
     // while debugging level 0 products)
@@ -667,7 +655,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Convert to ground range
     sprintf(in_file, "%s_amp", out_file);
-    sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR, tmp_basename, get_basename(file));
+    sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR, 
+	    tmp_basename, get_basename(file));
     sr2gr(in_file, out_file);
 
     // Resample image, flip if necessary, and export
@@ -685,7 +674,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         ysf = 1.0/scale_factor;
     }
     else if (size > 0) {
-        xsf = ysf = (double) size / (double)(MAX(meta->general->line_count, meta->general->sample_count));
+        xsf = ysf = (double) size / (double)(MAX(meta->general->line_count, 
+						 meta->general->sample_count));
     }
     else {
         fprintf(stderr, "** Invalid scale factor (%f) and invalid pixel size (%d).\n"
@@ -697,7 +687,8 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     //flip(); // FIXME: Ask Jeremy ...maybe flip ...maybe not
     strcpy(in_file, out_file);
     if (out_dir && strlen(out_dir)) {
-        sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, get_basename(out_file));
+        sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR, 
+		get_basename(out_file));
         if (!is_dir(out_dir)) {
             mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
         }

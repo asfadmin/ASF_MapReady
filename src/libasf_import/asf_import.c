@@ -15,6 +15,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
          int multilook_flag, char *format_type, char *band_id,
          char *image_data_type, char *lutName, char *prcPath,
          double lowerLat, double upperLat,
+	 int line, int sample, int width, int height,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, char *inMetaNameOption,
          char *inBaseName, char *outBaseName)
@@ -49,11 +50,11 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 
   // Ingest all sorts of flavors of CEOS data/
   if (strncmp(format_type, "CEOS", 4) == 0) {
-    asfPrintStatus("   Data format: %s\n\n", format_type);
+    asfPrintStatus("   Data format: %s\n", format_type);
     import_ceos(inBaseName, outBaseName, format_type, band_id, lutName,
                 p_range_scale, p_azimuth_scale, p_correct_y_pixel_size,
-                inMetaNameOption, radiometry, db_flag, complex_flag,
-                multilook_flag);
+		line, sample, width, height, inMetaNameOption, radiometry, 
+		db_flag, complex_flag, multilook_flag);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (strncmp(format_type, "STF", 3) == 0) {

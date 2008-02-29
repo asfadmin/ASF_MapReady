@@ -124,10 +124,12 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, format, 
 			    NULL, NULL, NULL, cfg->ingest->prc_master,
 			    cfg->general->lat_begin, cfg->general->lat_end,
+			    0, 0, -99, -99,
 			    NULL, NULL, NULL, NULL, "master", "a"),
 		 "ingesting master image (asf_import)");
     check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, format, 
 			    NULL, NULL, NULL, cfg->ingest->prc_slave,
+			    0, 0, -99, -99,
 			    cfg->general->lat_begin, cfg->general->lat_end,
 			    NULL, NULL, NULL, NULL, "slave", "b"),
 		 "ingesting slave image (asf_import)");

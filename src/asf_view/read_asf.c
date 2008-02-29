@@ -287,7 +287,7 @@ int get_asf_thumbnail_data(int thumb_size_x, int thumb_size_y,
     ReadAsfClientInfo *info = (ReadAsfClientInfo*) read_client_info;
 
     int sf = meta->general->line_count / thumb_size_y;
-    assert(sf==meta->general->sample_count / thumb_size_x);
+    //assert(sf==meta->general->sample_count / thumb_size_x);
     int i,j;
 
     int nl = meta->general->line_count;

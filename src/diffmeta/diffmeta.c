@@ -301,26 +301,8 @@ char *image_data_type2str(int image_data_type)
     case PHASE_IMAGE:
       strcpy(retstr, "PHASE_IMAGE");
       break;
-    case POWER_IMAGE:
-      strcpy(retstr, "POWER_IMAGE");
-      break;
-    case SIGMA_IMAGE:
-      strcpy(retstr, "SIGMA_IMAGE");
-      break;
-    case GAMMA_IMAGE:
-      strcpy(retstr, "GAMMA_IMAGE");
-      break;
-    case BETA_IMAGE:
-      strcpy(retstr, "BETA_IMAGE");
-      break;
     case COHERENCE_IMAGE:
       strcpy(retstr, "COHERENCE_IMAGE");
-      break;
-    case GEOREFERENCED_IMAGE:
-      strcpy(retstr, "GEOREFERENCED_IMAGE");
-      break;
-    case GEOCODED_IMAGE:
-      strcpy(retstr, "GEOCODED_IMAGE");
       break;
     case LUT_IMAGE:
       strcpy(retstr, "LUT_IMAGE");
@@ -798,7 +780,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   meta_state_vectors *mstatev1, *mstatev2;
   meta_location *mloc1, *mloc2;
   meta_airsar *mair1, *mair2;
-  meta_calibrate *mcal1, *mcal2;
 
   // Element level convenience pointers
   proj_albers *albers1, *albers2; // Albers conical equal area
@@ -832,8 +813,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   mloc2 = meta1->location;
   mair1 = meta1->airsar;              // Can be NULL
   mair2 = meta2->airsar;
-  mcal1 = meta1->calibrate;           // Can be NULL
-  mcal2 = meta2->calibrate;
 
   albers1 = &mp1->param.albers;
   albers2 = &mp2->param.albers;
@@ -964,13 +943,7 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
       mg2->image_data_type != COMPLEX_IMAGE         &&
       mg2->image_data_type != AMPLITUDE_IMAGE       &&
       mg2->image_data_type != PHASE_IMAGE           &&
-      mg2->image_data_type != POWER_IMAGE           &&
-      mg2->image_data_type != SIGMA_IMAGE           &&
-      mg2->image_data_type != GAMMA_IMAGE           &&
-      mg2->image_data_type != BETA_IMAGE            &&
       mg2->image_data_type != COHERENCE_IMAGE       &&
-      mg2->image_data_type != GEOREFERENCED_IMAGE   &&
-      mg2->image_data_type != GEOCODED_IMAGE        &&
       mg2->image_data_type != LUT_IMAGE             &&
       mg2->image_data_type != ELEVATION             &&
       mg2->image_data_type != DEM                   &&
@@ -1430,39 +1403,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   }
   //
   // End of AirSAR Block Validity Check
-  ////////////////////////////////////////////////////////////
-
-  ////////////////////////////////////////////////////////////
-  // Check Calibration Block
-  //
-  if (mcal2) {
-      failed = 0;
-      strcpy(precheck_err_msgs, "");
-
-      verify_double(precheck_err_msgs, mcal2->coefficient_a1,
-                    DM_MIN_COEFFICIENT_A1, DM_MAX_COEFFICIENT_A1,
-                    "Calibration", "a1",
-                    1, &failed);
-
-      verify_double(precheck_err_msgs, mcal2->coefficient_a2,
-                    DM_MIN_COEFFICIENT_A2, DM_MAX_COEFFICIENT_A2,
-                    "Calibration", "a2",
-                    1, &failed);
-
-      verify_double(precheck_err_msgs, mcal2->coefficient_a3,
-                    DM_MIN_COEFFICIENT_A3, DM_MAX_COEFFICIENT_A3,
-                    "Calibration", "a3",
-                    1, &failed);
-
-    // THERMAL BLOCK REPORTING
-    // If any failures occurred, produce a report in the output file
-      if (failed) {
-          report_validation_errors(outputFile, metafile2,
-                                   precheck_err_msgs, "CALIBRATION");
-      }
-  }
-  //
-  // End of Calibration Block Validity Check
   ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////
@@ -2394,33 +2334,6 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                                compare_err_msgs, "AIRSAR");
   }
   // End Compare AirSAR Blocks
-  ////////////////////////////////////////////////////////////
-
-  ////////////////////////////////////////////////////////////
-  // Compare Calibration Blocks
-  failed = 0;
-  strcpy(compare_err_msgs, "");
-  if (mcal1 && mcal2) {
-      compare_meta_double_with_tolerance(compare_err_msgs, "Calibration", "coefficient_a1",
-                                         mcal1->coefficient_a1, mcal2->coefficient_a1,
-                                         DM_COEFFICIENT_A1_TOL, &failed);
-
-      compare_meta_double_with_tolerance(compare_err_msgs, "Calibration", "coefficient_a2",
-                                         mcal1->coefficient_a2, mcal2->coefficient_a2,
-                                         DM_COEFFICIENT_A2_TOL, &failed);
-
-      compare_meta_double_with_tolerance(compare_err_msgs, "Calibration", "coefficient_a3",
-                                         mcal1->coefficient_a3, mcal2->coefficient_a3,
-                                         DM_COEFFICIENT_A3_TOL, &failed);
-  }
-  ////////////////////////////////////////////////////////////
-  // Calibration Block Reporting
-  if (failed) {
-      report_difference_errors(outputFile,
-                               metafile1, metafile2,
-                               compare_err_msgs, "CALIBRATION");
-  }
-  // End Compare Calibration Blocks
   ////////////////////////////////////////////////////////////
 
   ////////////////////////////////////////////////////////////

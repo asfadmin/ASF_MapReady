@@ -182,6 +182,16 @@ int init_convert_config(char *configFile)
           "# switched on will generate an [Export] section where you can define further\n"
           "# parameters.\n\n");
   fprintf(fConfig, "export = 1\n\n");
+  // mosaic flag
+  fprintf(fConfig, "# The mosaic flag indicates whether the data needs to be ru\
+n through\n"
+          "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step)\
+.\n");
+  fprintf(fConfig, "# Running asf_convert with the -create option and the mosaic flag\n"
+          "# switched on will generate a [Mosaic] section where you can define\
+ further\n"
+          "# parameters.\n\n");
+  fprintf(fConfig, "mosaic = 0\n\n");  
   // default values file
   fprintf(fConfig, "# The default values file is used to define the user's preferred parameter\n"
           "# settings. In most cases, you will work on a study where your area of interest is\n"
@@ -292,6 +302,9 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->export->rgb);
             FREE(cfg->export);
         }
+	if (cfg->mosaic) {
+	  FREE(cfg->mosaic->overlap);
+	}
         FREE(cfg);
     }
 }
@@ -319,6 +332,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->terrain_correct = newStruct(s_terrain_correct);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
+  cfg->mosaic = newStruct(s_mosaic);
 
   // Initialize structure
   strcpy(cfg->comment, "asf_mapready configuration file");
@@ -339,6 +353,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->terrain_correct = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
+  cfg->general->mosaic = 0;
   cfg->general->batchFile = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->general->batchFile, "");
   cfg->general->defaults = (char *)MALLOC(sizeof(char)*255);
@@ -365,6 +380,10 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->import->lut, "");
   cfg->import->lat_begin = -99.0;
   cfg->import->lat_end = -99.0;
+  cfg->import->line = 0;
+  cfg->import->sample = 0;
+  cfg->import->width = -99;
+  cfg->import->height = -99;
   cfg->import->prc = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->import->prc, "");
   cfg->import->output_db = 0;
@@ -436,6 +455,9 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->export->pauli = 0;
   cfg->export->sinclair = 0;
 
+  cfg->mosaic->overlap = (char *)MALLOC(sizeof(char)*25);
+  strcpy(cfg->mosaic->overlap, "OVERLAY");
+
   // Check for a default values file
   fConfig = fopen(configFile, "r");
   if (fConfig) {
@@ -483,6 +505,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->geocoding = read_int(line, "geocoding");
       if (strncmp(test, "export", 6)==0)
         cfg->general->export = read_int(line, "export");
+      if (strncmp(test, "mosaic", 6)==0)
+        cfg->general->mosaic = read_int(line, "mosaic");
       if (strncmp(test, "intermediates", 13)==0)
         cfg->general->intermediates = read_int(line, "intermediates");
       if (strncmp(test, "quiet", 5)==0)
@@ -611,6 +635,10 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->export->pauli = read_int(line, "pauli");
       if (strncmp(test, "sinclair", 8)==0)
         cfg->export->sinclair = read_int(line, "sinclair");
+
+      // Mosaic
+      if (strncmp(test, "overlap", 7)==0)
+        strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
       FREE(test);
     }
   }
@@ -650,6 +678,8 @@ convert_config *init_fill_convert_config(char *configFile)
             cfg->general->geocoding = read_int(line, "geocoding");
         if (strncmp(test, "export", 6)==0)
             cfg->general->export = read_int(line, "export");
+	if (strncmp(test, "mosaic", 6)==0)
+	    cfg->general->mosaic = read_int(line, "mosaic");
         if (strncmp(test, "default values", 14)==0)
             strcpy(cfg->general->defaults, read_str(line, "default values"));
         if (strncmp(test, "intermediates", 13)==0)
@@ -913,6 +943,14 @@ convert_config *read_convert_config(char *configFile)
         cfg->export->sinclair = read_int(line, "sinclair");
       FREE(test);
     }
+
+    if (strncmp(line, "[Mosaic]", 8)==0) strcpy(params, "Mosaic");
+    if (strncmp(params, "Mosaic", 6)==0) {
+      test = read_param(line);
+      if (strncmp(test, "overlap", 7)==0)
+	strcpy(cfg->mosaic->overlap, read_str(line, "overlap"));
+      FREE(test);
+    }
   }
 
   apply_default_dirs(cfg);
@@ -1033,6 +1071,18 @@ int write_convert_config(char *configFile, convert_config *cfg)
               "# parameters.\n\n");
     }
     fprintf(fConfig, "export = %i\n", cfg->general->export);
+    // Genral - Mosaic
+    if (!shortFlag) { 
+      fprintf(fConfig, "\n# The mosaic flag indicates whether the data needs to \
+      be run through\n"
+      "# 'asf_mosaic' (1 for running it, 0 for leaving out the export step).\n");
+      fprintf(fConfig, "# Running asf_convert with the -create option and the \
+      mosaic flag\n"
+      "# switched on will generate a [Mosaic] section where you can define \
+      further\n"
+      "# parameters.\n\n");
+    }
+    fprintf(fConfig, "mosaic = %i\n", cfg->general->mosaic);
     // General - Default values
     if (!shortFlag) {
       fprintf(fConfig, "\n# The default values file is used to define the user's preferred parameter\n"
@@ -1391,6 +1441,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
                 "# visualization.\n\n");
       fprintf(fConfig, "sinclair = %i\n\n", cfg->export->sinclair);
+    }
+    // Mosaic
+    if (cfg->general->mosaic) {
+      fprintf(fConfig, "\n[Mosaic]\n");
+      if (!shortFlag)
+        fprintf(fConfig, "\n# The following overlapt are considered valid format:\
+ MIN, MAX, OVERLAY, NEAR RANGE\n\n");
+      fprintf(fConfig, "overlap = %s\n", cfg->mosaic->overlap);
     }
   }
   else {

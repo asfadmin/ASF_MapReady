@@ -176,8 +176,8 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
         asf_import(r_AMP, FALSE, FALSE, FALSE, "GEOTIFF", NULL, what, NULL,
-                   NULL, 0, 0, NULL, NULL, NULL, NULL, tiff_basename,
-                   imported), status);
+                   NULL, 0, 0, 0, 0, -99, -99, NULL, NULL, NULL, NULL, 
+		   tiff_basename, imported), status);
 
     sprintf(status, "Geocoding %s...", uc_what);
     update_status(status);
@@ -508,8 +508,198 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
   }
 
+  // Mosaicking
+  if (cfg->general->mosaic) {
+    // Requires configuration file with batch processing switched on.
+    // GUI needs to generate temporary defaults values file and data list.
+    // Input is batch configuration file that contains those two parameters.
+    FILE *fList;
+    char *mosaic_dir=NULL, line[255], tmpList[255];
+    int batch = TRUE;
+
+    // Check whether batch processing is required
+    if (strncmp(uc(cfg->import->format), "ASF", 3) == 0)
+      cfg->general->import = 0;
+    if (!cfg->general->import && !cfg->general->terrain_correct)
+      batch = FALSE;
+    else
+      mosaic_dir = MALLOC(sizeof(char)*255);
+
+    if (batch) {
+      // Create a temporary directory to collect intermediate processing 
+      // results
+      char fileName[255], batchPreDir[255];
+      char *p = findExt(configFileName);
+      if (p) *p = '\0';
+      split_dir_and_file(configFileName, batchPreDir, fileName);
+      create_and_set_tmp_dir(fileName, batchPreDir, mosaic_dir);
+
+      // Generate temporary configuration files
+      char tmp_dir[255];;
+      convert_config *tmp_cfg=NULL;
+      char tmpCfgName[255];
+      int n_ok = 0, n_bad = 0;
+      FILE *fBatch = FOPEN(cfg->general->batchFile, "r");
+      sprintf(tmpList, "%s/data.lst", mosaic_dir);
+      fList = FOPEN(tmpList, "w");
+
+      strcpy(tmp_dir, cfg->general->tmp_dir);
+      while (fgets(line, 255, fBatch) != NULL) {
+	char batchItem[255], fileName[255], batchPreDir[255];
+	sscanf(line, "%s", batchItem);
+	
+	// Create temporary directory for processing
+	char *p = findExt(batchItem);
+	if (p) *p = '\0';
+	split_dir_and_file(batchItem, batchPreDir, fileName);
+	create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
+	
+	// Generate temporary defaults values file
+	char tmpDefaults[255];
+	sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
+	FILE *fDef = FOPEN(tmpDefaults, "w");
+	fprintf(fDef, "import = %d\n", cfg->general->import);
+	fprintf(fDef, "terrain correction = %d\n",
+		cfg->general->terrain_correct);
+	fprintf(fDef, "geocoding = 0\n");
+	fprintf(fDef, "export = 0\n");
+	fprintf(fDef, "intermediates = %d\n", cfg->general->intermediates);
+	fprintf(fDef, "quiet = 1\n");
+	fprintf(fDef, "short configuration file = 1\n");
+	if (cfg->general->import) {
+	  fprintf(fDef, "input format = %s\n", cfg->import->format);
+	  fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
+	  fprintf(fDef, "output db = %d\n", cfg->import->output_db);
+	  fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
+	}
+	if (cfg->general->terrain_correct) {
+	  fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
+	  fprintf(fDef, "digital elevation model = %s\n",
+		  cfg->terrain_correct->dem);
+	  fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);
+	  fprintf(fDef, "smooth dem holes =1\n");
+	  fprintf(fDef, "do radiometric = %d\n",
+		  cfg->terrain_correct->do_radiometric);
+	  fprintf(fDef, "interpolate = 1\n");
+	}
+	FCLOSE(fDef);
+	
+	// Create temporary configuration file
+	sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
+	FILE *fConfig = FOPEN(tmpCfgName, "w");
+	fprintf(fConfig, "asf_convert temporary configuration file\n\n");
+	fprintf(fConfig, "[General]\n");
+	fprintf(fConfig, "default values = %s\n", tmpDefaults);
+	fprintf(fConfig, "input file = %s\n", batchItem);
+	fprintf(fConfig, "output file = %s%s/%s\n", batchPreDir, 
+		mosaic_dir, fileName);
+	fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
+	FCLOSE(fConfig);
+	
+	// Extend the temporary configuration file
+	tmp_cfg = read_convert_config(tmpCfgName);
+	check_return(write_convert_config(tmpCfgName, tmp_cfg),
+		     "Could not update configuration file");
+	free_convert_config(tmp_cfg);
+	
+	// This is really quite a kludge-- we used to call the library
+	// function here, now we shell out and run the tool directly, sort
+	// of a step backwards, it seems.  Unfortunately, in order to keep
+	// processing the batch even if an error occurs, we're stuck with
+	// this method.  (Otherwise, we'd have to teach asfPrintError to
+	// get us back here, to continue the loop.)
+	asfPrintStatus("\nProcessing %s ...\n", batchItem);
+	char cmd[1024];
+	if (logflag) {
+	  sprintf(cmd, "%sasf_convert%s -log %s %s",
+		  get_argv0(), bin_postfix(), logFile, tmpCfgName);
+	}
+	else {
+	  sprintf(cmd, "%sasf_convert%s %s",
+		  get_argv0(), bin_postfix(), tmpCfgName);
+	}
+	int ret = asfSystem(cmd);
+	
+	if (ret != 0) {
+          asfPrintStatus("%s: failed\n", batchItem);
+          ++n_bad;
+	} else {
+          asfPrintStatus("%s: ok\n", batchItem);
+	  fprintf(fList, "%s/%s.img\n", mosaic_dir, batchItem);
+          ++n_ok;
+	}
+	
+	strcpy(tmp_dir, cfg->general->tmp_dir);
+      }
+      FCLOSE(fBatch);
+      FCLOSE(fList);
+    }
+
+    // Read file names to pass to mosaicking
+    int ii, nFiles = 0;
+    if (mosaic_dir) 
+      fList = FOPEN(tmpList, "r");
+    else
+      fList = FOPEN(cfg->general->batchFile, "r");
+    while (fgets(line, 255, fList) != NULL)
+      nFiles++;
+    FCLOSE(fList);
+    char *in_base_names[nFiles+1];
+    for (ii=0; ii<nFiles; ii++)
+      in_base_names[ii] = MALLOC(sizeof(char)*255);
+    in_base_names[nFiles] = NULL;
+    ii = 0;
+    if (mosaic_dir)
+      fList = FOPEN(tmpList, "r");
+    else
+      fList = FOPEN(cfg->general->batchFile, "r");
+    while (fgets(line, 255, fList) != NULL) {
+      line[strlen(line)-1] = '\0';
+      sprintf(in_base_names[ii], line);
+      ++ii;
+    }
+    FCLOSE(fList);
+
+    // Mosaic imported (and terrain corrected) images
+    double lat_min = -999, lon_min = -999;
+    double lat_max = 999, lon_max = 999;
+    project_parameters_t pp;
+    projection_type_t proj_type;
+    datum_type_t datum;
+    resample_method_t resample_method;
+    int multiband = 1;
+    int band_num = 0;
+
+    if (strcmp(cfg->geocoding->resampling, "NEAREST NEIGHBOR") == 0)
+      resample_method = RESAMPLE_NEAREST_NEIGHBOR;
+    else if (strcmp(cfg->geocoding->resampling, "BILINEAR") == 0)
+      resample_method = RESAMPLE_BILINEAR;
+    else if(strcmp(cfg->geocoding->resampling, "BICUBIC") == 0)
+      resample_method = RESAMPLE_BICUBIC;
+
+    if (mosaic_dir)
+      sprintf(outFile, "%s/%s", mosaic_dir, cfg->general->out_name);
+    else
+      sprintf(outFile, "%s", cfg->general->out_name);
+    parse_proj_args_file(cfg->geocoding->projection, &pp, &proj_type, &datum);
+    update_status("Mosaicking...");
+    asf_mosaic(&pp, proj_type, cfg->geocoding->force, resample_method, 
+	       cfg->geocoding->height, datum, cfg->geocoding->pixel, 
+	       multiband, band_num, in_base_names, outFile, 
+	       cfg->geocoding->background, 
+	       lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap);
+
+    // Export mosaic
+    if (cfg->general->export) {
+      sprintf(inFile, "%s", outFile);
+      sprintf(outFile, "%s", cfg->general->out_name);
+      update_status("Exporting...");
+      do_export(cfg, inFile, outFile);
+    }
+  }
+
   // Batch mode processing
-  if (strlen(cfg->general->batchFile) > 0) {
+  else if (strlen(cfg->general->batchFile) > 0) {
     convert_config *tmp_cfg=NULL;
     char tmp_dir[255];
     char tmpCfgName[255];
@@ -617,7 +807,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   }
   // Regular processing
   else {
-
 
     char out_dir[255], junk[255];
 
@@ -984,6 +1173,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
                               cfg->import->lat_begin, cfg->import->lat_end,
+			      cfg->import->line, cfg->import->sample,
+			      cfg->import->width, cfg->import->height,
                               NULL, NULL, NULL, NULL,
                               cfg->general->in_name, outFile),
                               "ingesting data file (asf_import)\n");

@@ -15,6 +15,14 @@ typedef enum {
   RESAMPLE_BICUBIC = 2 // Must be two (2) ...asf_convert_gui depends on this
 } resample_method_t;
 
+typedef enum {
+  MIN_OVERLAP = 1,
+  MAX_OVERLAP,
+  OVERLAY_OVERLAP,
+  NEAR_RANGE_OVERLAP,
+  AVG_OVERLAP
+} overlap_method_t;
+
 datum_type_t get_datum(FILE *fp);
 spheroid_type_t get_spheroid(FILE *fp);
 
@@ -138,7 +146,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                double average_height, datum_type_t datum, double pixel_size,
                int multiband, int band_num, char **in_base_names,
                char *out_base_name, float background_val, double lat_min,
-               double lat_max, double lon_min, double lon_max);
+               double lat_max, double lon_min, double lon_max,
+	       char *overlap);
 void sigsegv_handler (int signal_number);
 
 // Prototypes from geoid.c

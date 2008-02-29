@@ -815,9 +815,9 @@ export_band_image (const char *metadata_file_name,
   map_projected = is_map_projected(md);
 
   asfRequire( !(sample_mapping == TRUNCATE &&
-                (md->general->image_data_type == SIGMA_IMAGE ||
-                 md->general->image_data_type == BETA_IMAGE  ||
-                 md->general->image_data_type == GAMMA_IMAGE)
+                (md->general->radiometry == r_SIGMA ||
+                 md->general->radiometry == r_BETA  ||
+                 md->general->radiometry == r_GAMMA)
                ),
               "Downsampling a Sigma, Beta, or Gamma type image (power or dB)\n"
               "from floating point to byte using truncation is not supported.\n"

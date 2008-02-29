@@ -651,10 +651,11 @@ static int asf_mosaic_utm(char **files, char *outfile, int zone,
     double height = 0;
     datum_type_t datum = WGS84_DATUM;
     double ps = -1;
+    char overlap[25]="OVERLAY";
 
     return asf_mosaic(&pp, projection_type, force, resample, height,
         datum, ps, TRUE, 0, files, outfile, background_val,
-        lat_lo, lat_hi, lon_lo, lon_hi);
+        lat_lo, lat_hi, lon_lo, lon_hi, overlap);
 }
 
 // External entry point
