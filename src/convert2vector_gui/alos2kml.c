@@ -295,7 +295,7 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info)
   fprintf(fp, "    <range>400000</range>\n");
   fprintf(fp, "    <tilt>30</tilt>\n");
   fprintf(fp, "  </LookAt>\n");
-  fprintf(fp, "  <visibility>0</visibility>\n");
+  fprintf(fp, "  <visibility>1</visibility>\n");
   fprintf(fp, "  <open>1</open>\n");
 
   write_kml_style_keys(fp);

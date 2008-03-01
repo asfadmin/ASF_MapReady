@@ -55,6 +55,7 @@ main(int argc, char **argv)
     if (argc>1) {
       add_input_file(argv[1]);
       process();
+      exit(EXIT_SUCCESS);
     }
 
     glade_xml_signal_autoconnect(glade_xml);
