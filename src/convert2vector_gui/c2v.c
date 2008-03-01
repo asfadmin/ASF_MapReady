@@ -52,6 +52,11 @@ main(int argc, char **argv)
     set_font();
     select_defaults();
 
+    if (argc>1) {
+      add_input_file(argv[1]);
+      process();
+    }
+
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 

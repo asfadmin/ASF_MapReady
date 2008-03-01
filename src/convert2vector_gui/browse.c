@@ -16,7 +16,7 @@
 
 #include "c2v.h"
 
-static void add_input_file(char *file)
+void add_input_file(char *file)
 {
     put_string_to_entry("input_file_entry", file);
 

@@ -2,6 +2,11 @@
 
 SIGNAL_CALLBACK void on_convert_button_clicked(GtkWidget *w)
 {
+  process();
+}
+
+void process()
+{
   char in_file[1024];
   char out_file[1024];
 

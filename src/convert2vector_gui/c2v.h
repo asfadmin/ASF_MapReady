@@ -69,6 +69,12 @@ void put_string_to_label(const char *widget_name, const char *txt);
 void show_widget(const char *widget_name, int show);
 void enable_widget(const char *widget_name, int enable);
 
+/* browse.c */
+void add_input_file(char *file);
+
+/* process.c */
+void process(void);
+
 /* c2v.c */
 char *find_in_share(const char * filename);
 
