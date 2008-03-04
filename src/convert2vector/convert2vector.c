@@ -108,7 +108,7 @@ int main(int argc, char **argv)
     else if 
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting a point file into a shape file ...\n\n");
-      write_shape(infile, outfile, POLYGON, 1);
+      polygon2shape_new(infile, outfile);
     }
     else if 
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "KML")==0) {

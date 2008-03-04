@@ -90,12 +90,80 @@ void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 }
 
 // Convert polygon to shape
+void polygon2shape_new(char *inFile, char *outFile)
+{
+  FILE *fp;
+  double *lat, *lon;
+  char line[1024], id[255], *p;
+  int vertices=0, ii=0;
+  DBFHandle dbase;
+  SHPHandle shape;
+
+  // Initialize output
+  shape_init(outFile, POLYGON);
+  open_shape(outFile, &dbase, &shape);
+
+  // See how many vertices we have
+  fp = FOPEN(inFile, "r");
+  while (fgets(line, 1024, fp)) {
+    if (line[0] != '#')
+      vertices++;
+  }
+  FCLOSE(fp);
+
+  // Allocate memory
+  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
+  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
+
+  // Read file again: ID and lat/lon
+  fp = FOPEN(inFile, "r");
+  while (fgets(line, 1024, fp)) {
+    p = strchr(line, ',');
+    if (p && line[0] != '#') {
+      sscanf(p+1, "%lf,%lf", &lat[ii], &lon[ii]);
+      *p = '\0';
+      sprintf(id, "%s", line);
+      *p = ',';
+      ii++;
+    }
+  }
+  FCLOSE(fp);
+  lat[vertices] = lat[0];
+  lon[vertices] = lon[0];
+  sprintf(id, "%s", outFile);
+
+  // Write information into database file
+  DBFWriteStringAttribute(dbase, 0, 0, id);
+  DBFWriteIntegerAttribute(dbase, 0, 1, vertices);
+
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject = 
+    SHPCreateSimpleObject(SHPT_POLYGON, vertices+1, lon, lat, NULL);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+
+  // Clean up
+  close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
+  FREE(lat);
+  FREE(lon);
+
+  return;
+}
+
+
+// Convert polygon to shape
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 {
   int ii, vertices;
   double *lat, *lon;
   char id[255];
   char *p, *p_lat, *p_lon;
+
+  // Allocate memory
+  p_lat = (char *) MALLOC(sizeof(char)*255);
+  p_lon = (char *) MALLOC(sizeof(char)*255);
 
   // Read ID and number of vertices;
   p = strchr(line, ',');
@@ -132,6 +200,8 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 
   FREE(lat);
   FREE(lon);
+  FREE(p_lat);
+  FREE(p_lon);
 
   return;
 }

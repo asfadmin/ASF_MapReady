@@ -104,6 +104,7 @@ void write_kml_style_keys(FILE *kml_file);
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
+void polygon2shape_new(char *inFile, char *outFile);
 void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
                 DBFHandle dbase, SHPHandle shape, int n);
 void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, 
