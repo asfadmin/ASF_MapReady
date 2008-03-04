@@ -189,6 +189,34 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
       meta->general->start_line = 0;
       meta->general->start_sample = 0;
     }
+    else if (strstr(data_name, "terramodis.jpg") != NULL) {
+      meta->projection = meta_projection_init();
+
+      meta->projection->type = POLAR_STEREOGRAPHIC;
+      meta->projection->hem = 'N';
+
+      meta->projection->param.ps.slat = 70;
+      meta->projection->param.ps.slon = -113.5;
+      meta->projection->param.ps.is_north_pole = 1;
+      meta->projection->param.ps.false_easting = 0;
+      meta->projection->param.ps.false_northing = 0;
+
+      meta->projection->perX = 2764;
+      meta->projection->perY = -2764;
+      strcpy(meta->projection->units, "meters");
+
+      // assume image center is north pole
+      meta->projection->startX =
+        -meta->projection->perX*(double)meta->general->sample_count/2.;
+      meta->projection->startY =
+        -meta->projection->perY*(double)meta->general->line_count/2.;
+
+      meta->projection->datum = WGS84_DATUM;
+      meta->projection->datum = WGS84_SPHEROID;
+
+      meta->general->start_line = 0;
+      meta->general->start_sample = 0;
+    }
 
     return meta;
 }

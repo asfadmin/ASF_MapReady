@@ -390,6 +390,18 @@ static void populate_config_info()
     free(output_file);
 }
 
+static void select_planner_map()
+{
+    if (strstr(curr->filename, "land_shallow_topo") != NULL)
+      set_combo_box_item("planner_map_combobox", 1);
+    else if (strstr(curr->filename, "terramodis") != NULL)
+      set_combo_box_item("planner_map_combobox", 2);
+    else if (strstr(curr->filename, "moa125_hp1") != NULL)
+      set_combo_box_item("planner_map_combobox", 3);
+    else
+      set_combo_box_item("planner_map_combobox", 0);
+}
+
 void setup_planner()
 {
     in_planning_mode = TRUE;
@@ -595,6 +607,9 @@ void setup_planner()
                                          GTK_SORT_DESCENDING);
     g_object_unref(liststore);
 
+    // Select the appropriate map item!
+    select_planner_map();
+
     // Kludge during testing...
     //g_polys[0].n = 1;
     //g_polys[0].line[0] = 1850;
@@ -738,7 +753,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     // look angle
     // have to figure out which widget to check -- entry, or combo?
     // to do that, check if the allowed look angles string is empty
-    double look_angle=-1;
+    double look_angle=-999;
     if (strlen(modes[i].allowed_look_angles) > 0) {
       int look_index = get_combo_box_item("look_angle_combobox");
       int current_index = 0;
@@ -759,7 +774,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         ++current_index;
       }
       // Make sure all that string stuff worked
-      if (look_angle <= 0)
+      if (look_angle == -999)
         strcat(errstr, "Internal error: Couldn't find selected look angle.\n");
       else
         look_angle *= D2R;
@@ -1335,3 +1350,35 @@ SIGNAL_CALLBACK void on_beam_mode_combobox_changed(GtkWidget *w)
 {
     update_look();
 }
+
+SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
+{
+    int i = get_combo_box_item("planner_map_combobox");
+  
+    switch (i) {
+      default:
+      case 0:
+        // "-" -> just revert back to what's already loaded
+        select_planner_map();
+        break;
+
+      case 1:
+        // "Standard"
+        printf("Loading standard map...\n");
+        load_file("land_shallow_topo_21600.jpg");
+        break;
+
+      case 2:
+        // "North Pole"
+        printf("Loading north pole map...\n");
+        printf("... NOT!\n");
+        break;
+
+      case 3:
+        // "South Pole"
+        printf("Loading south pole map...\n");
+        load_file("moa125_hp1.tif");
+        break;
+    }
+}
+
