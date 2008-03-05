@@ -83,6 +83,15 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
   return 1;
 }
 
+static int is_utm(int zone)
+{
+  int ret = zone != -999 && zone != 999;
+  if (ret) {
+    assert(zone >= -60 && zone <= 60 && zone != 0);
+  }
+  return ret;
+}
+
 static Polygon *
 get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
                     int target_zone, double target_lat, double target_lon)
@@ -95,14 +104,16 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   double center_lat, center_lon, center_x, center_y;
   get_target_latlon(st, look_angle, &center_lat, &center_lon);
 
-  // return NULL if we are "far away"
-  int zone = utm_zone(center_lon);
-  if (iabs(zone - target_zone) > 2)
-    return NULL;
+  // return NULL if we are "far away" (UTM only)
+  if (is_utm(target_zone)) {
+    int zone = utm_zone(center_lon);
+    if (iabs(zone - target_zone) > 2)
+      return NULL;
+  }
   if (fabs(center_lat - target_lat) > 20)
     return NULL;
 
-  ll2utm(center_lat, center_lon, target_zone, &center_x, &center_y);
+  ll2pr(center_lat, center_lon, target_zone, &center_x, &center_y);
   //printf("center: x,y: %f %f lat,lon: %f %f\n",
   //       center_x, center_y, center_lat, center_lon);
 
@@ -110,7 +121,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   stateVector ahead_st = propagate(*st, 0, 1);
   double ahead_lat, ahead_lon, ahead_x, ahead_y;
   get_target_latlon(&ahead_st, look_angle, &ahead_lat, &ahead_lon);
-  ll2utm(ahead_lat, ahead_lon, target_zone, &ahead_x, &ahead_y);
+  ll2pr(ahead_lat, ahead_lon, target_zone, &ahead_x, &ahead_y);
   //printf("ahead: x,y: %f %f lat,lon: %f %f\n",
   //       ahead_x, ahead_y, ahead_lat, ahead_lon);
 
@@ -143,7 +154,7 @@ get_viewable_region(stateVector *st, BeamModeInfo *bmi, double look_angle,
   //printf("corners:\n");
   //for (i=0; i<4; ++i) {
   //  double lat, lon;
-  //  utm2ll(x[i],y[i],target_zone,&lat,&lon);
+  //  pr2ll(x[i],y[i],target_zone,&lat,&lon);
   //  printf("x,y: %f %f lat,lon: %f %f\n", x[i], y[i], lat, lon);
   //}
 
@@ -259,17 +270,32 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   // no deep space orbits can be planned
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);
 
-  printf("Target:\n"
-         "  UTM:  zone=%d\n"
-         "        %f %f\n"
-         "        %f %f\n"
-         "        %f %f\n"
-         "        %f %f\n",
-         zone,
-         aoi->x[0], aoi->y[0],
-         aoi->x[1], aoi->y[1],
-         aoi->x[2], aoi->y[2],
-         aoi->x[3], aoi->y[3]);
+  if (is_utm(zone)) {
+    printf("Target:\n"
+           "  UTM:  zone=%d\n"
+           "        %f %f\n"
+           "        %f %f\n"
+           "        %f %f\n"
+           "        %f %f\n",
+           zone,
+           aoi->x[0], aoi->y[0],
+           aoi->x[1], aoi->y[1],
+           aoi->x[2], aoi->y[2],
+           aoi->x[3], aoi->y[3]);
+  }
+  else {
+    printf("Target:\n"
+           "  Polar Stereo: %s\n"
+           "        %f %f\n"
+           "        %f %f\n"
+           "        %f %f\n"
+           "        %f %f\n",
+           zone>0 ? "North" : "South",
+           aoi->x[0], aoi->y[0],
+           aoi->x[1], aoi->y[1],
+           aoi->x[2], aoi->y[2],
+           aoi->x[3], aoi->y[3]);
+  }
 
   double curr = start_secs;
   double incr = bmi->image_time;
@@ -388,20 +414,35 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
 // Projection functions that replace UTM2latLon() and latLon2UTM()
 // These, unlike those, always set the false northing value to 0,
-// so they are guaranteed invertible
-void ll2utm(double lat, double lon, int zone, double *projX, double *projY)
+// so they are guaranteed invertible.  Also, when zone is +-999, we
+// use polar stereographic instead of utm... yeah, a kludge
+void ll2pr(double lat, double lon, int zone, double *projX, double *projY)
 {
-  project_parameters_t pps;
-  pps.utm.zone = zone;
-  pps.utm.scale_factor = 0.9996;
-  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
-  pps.utm.lat0 = 0.0;
-  pps.utm.false_easting = 500000.0;
-  pps.utm.false_northing = 0.0;
-
   meta_projection *meta_proj = meta_projection_init();
-  meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
   meta_proj->datum = WGS84_DATUM;
+
+  project_parameters_t pps;
+
+  if (zone == 999 || zone == -999) {
+    pps.ps.is_north_pole = zone>0 ? 1 : 0;
+    pps.ps.slat = zone>0 ? 70 : -70;
+    pps.ps.slon = 150;
+    pps.ps.false_easting = 0;
+    pps.ps.false_northing = 0;
+
+    meta_proj->type = POLAR_STEREOGRAPHIC;
+  }
+  else {
+    pps.utm.zone = zone;
+    pps.utm.scale_factor = 0.9996;
+    pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+    pps.utm.lat0 = 0.0;
+    pps.utm.false_easting = 500000.0;
+    pps.utm.false_northing = 0.0;
+
+    meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+
   meta_proj->param = pps;
 
   double projZ;
@@ -409,20 +450,33 @@ void ll2utm(double lat, double lon, int zone, double *projX, double *projY)
   FREE(meta_proj);
 }
 
-void utm2ll(double projX, double projY, int zone, double *lat, double *lon)
+void pr2ll(double projX, double projY, int zone, double *lat, double *lon)
 {
-  project_parameters_t pps;
-  pps.utm.zone = zone;
-  pps.utm.scale_factor = 0.9996;
-  pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
-  pps.utm.lat0 = 0.0;
-  pps.utm.false_easting = 500000.0;
-  pps.utm.false_northing = 0.0;
-
-  // Initialize meta_projection block
   meta_projection *meta_proj = meta_projection_init();
-  meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
   meta_proj->datum = WGS84_DATUM;
+
+  project_parameters_t pps;
+
+  if (zone == 999 || zone == -999) {
+    pps.ps.is_north_pole = zone>0 ? 1 : 0;
+    pps.ps.slat = zone>0 ? 70 : -70;
+    pps.ps.slon = 150;
+    pps.ps.false_easting = 0;
+    pps.ps.false_northing = 0;
+
+    meta_proj->type = POLAR_STEREOGRAPHIC;
+  }
+  else {
+    pps.utm.zone = zone;
+    pps.utm.scale_factor = 0.9996;
+    pps.utm.lon0 = (double) (zone - 1) * 6.0 - 177.0;
+    pps.utm.lat0 = 0.0;
+    pps.utm.false_easting = 500000.0;
+    pps.utm.false_northing = 0.0;
+
+    meta_proj->type = UNIVERSAL_TRANSVERSE_MERCATOR;
+  }
+
   meta_proj->param = pps;
 
   double h;

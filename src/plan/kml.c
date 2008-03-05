@@ -8,11 +8,18 @@ void kml_aoi(FILE *kml_file, double clat, double clon, Polygon *aoi)
   double lat_LL, lon_LL;
   double lat_LR, lon_LR;
 
-  int z = utm_zone(clon);
-  utm2ll(aoi->x[0], aoi->y[0], z, &lat_UL, &lon_UL);
-  utm2ll(aoi->x[1], aoi->y[1], z, &lat_UR, &lon_UR);
-  utm2ll(aoi->x[2], aoi->y[2], z, &lat_LR, &lon_LR);
-  utm2ll(aoi->x[3], aoi->y[3], z, &lat_LL, &lon_LL);
+  int z;
+  if (clat > 80)
+    z = 999;
+  else if (clat < -80)
+    z = -999;
+  else
+    z = utm_zone(clon);
+
+  pr2ll(aoi->x[0], aoi->y[0], z, &lat_UL, &lon_UL);
+  pr2ll(aoi->x[1], aoi->y[1], z, &lat_UR, &lon_UR);
+  pr2ll(aoi->x[2], aoi->y[2], z, &lat_LR, &lon_LR);
+  pr2ll(aoi->x[3], aoi->y[3], z, &lat_LL, &lon_LL);
 
   double lat_min=lat_UL, lat_max=lat_UL;
   double lon_min=lon_UL, lon_max=lon_UL;
@@ -85,14 +92,14 @@ static void kml_overlap(FILE *kml_file, OverlapInfo *oi)
   double lat_LL, lon_LL;
   double lat_LR, lon_LR;
 
-  utm2ll(oi->viewable_region->x[0], oi->viewable_region->y[0],
-             oi->utm_zone, &lat_UL, &lon_UL);
-  utm2ll(oi->viewable_region->x[1], oi->viewable_region->y[1],
-             oi->utm_zone, &lat_UR, &lon_UR);
-  utm2ll(oi->viewable_region->x[2], oi->viewable_region->y[2],
-             oi->utm_zone, &lat_LR, &lon_LR);
-  utm2ll(oi->viewable_region->x[3], oi->viewable_region->y[3],
-             oi->utm_zone, &lat_LL, &lon_LL);
+  pr2ll(oi->viewable_region->x[0], oi->viewable_region->y[0],
+        oi->utm_zone, &lat_UL, &lon_UL);
+  pr2ll(oi->viewable_region->x[1], oi->viewable_region->y[1],
+        oi->utm_zone, &lat_UR, &lon_UR);
+  pr2ll(oi->viewable_region->x[2], oi->viewable_region->y[2],
+        oi->utm_zone, &lat_LR, &lon_LR);
+  pr2ll(oi->viewable_region->x[3], oi->viewable_region->y[3],
+        oi->utm_zone, &lat_LL, &lon_LL);
 
   fprintf(kml_file, "    <Polygon>\n");
   fprintf(kml_file, "      <extrude>1</extrude>\n");

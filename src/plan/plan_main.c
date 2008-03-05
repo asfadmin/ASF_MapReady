@@ -160,11 +160,19 @@ main (int argc, char *argv[])
 
   // create lat/lon polygon in UTM coords
   double x[4], y[4];
-  int zone = utm_zone(clon);
-  ll2utm(lat_min, lon_min, zone, &x[0], &y[0]);
-  ll2utm(lat_min, lon_min, zone, &x[1], &y[1]);
-  ll2utm(lat_min, lon_min, zone, &x[2], &y[2]);
-  ll2utm(lat_min, lon_min, zone, &x[3], &y[3]);
+
+  int zone;
+  if (clat > 80)
+    zone = 999;
+  else if (clat < -80)
+    zone = -999;
+  else
+    zone = utm_zone(clon);
+
+  ll2pr(lat_min, lon_min, zone, &x[0], &y[0]);
+  ll2pr(lat_min, lon_min, zone, &x[1], &y[1]);
+  ll2pr(lat_min, lon_min, zone, &x[2], &y[2]);
+  ll2pr(lat_min, lon_min, zone, &x[3], &y[3]);
   Polygon *box = polygon_new_closed(4, x, y);
 
   char *err;

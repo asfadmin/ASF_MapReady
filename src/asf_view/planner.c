@@ -742,6 +742,22 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     double max_lat, min_lat, clat, clon;
     Polygon *aoi;
 
+    // use the projection appropriate for the map that is selected
+    i = get_combo_box_item("planner_map_combobox");
+    switch (i) {
+      default:
+      case 0: // "-"
+      case 1: // "Standard"
+        zone = 0; // will be determined by the center longitude of aoi
+        break;
+      case 2: // "north pole"
+        zone = 999;
+        break;
+      case 3: // "south pole"
+        zone = -999;
+        break;
+    }
+
     // gather up error mesages in "errstr"
     // at the end, if errstr is non-empty, we can't do the planning
     strcpy(errstr, "");
@@ -822,7 +838,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           meta->transform || meta->airsar))
     {
       strcat(errstr, "Image has no geolocation information.\n");
-      zone = max_lat = min_lat = 0;
+      max_lat = min_lat = 0;
       aoi = NULL;
     }
     else {
@@ -865,7 +881,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
       if (g_poly->n == 0) {
         strcat(errstr, "No area of interest selected.\n");
-        zone = max_lat = min_lat = 0;
+        max_lat = min_lat = 0;
         aoi = NULL;
       }
       else if (g_poly->n == 1) {
@@ -877,20 +893,22 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         // distortion towards the edges of large areas of interest
         meta_get_latLon(meta,crosshair_line,crosshair_samp,0,&lat1,&lon1);
         meta_get_latLon(meta,g_poly->line[0],g_poly->samp[0],0,&lat2,&lon2);
-        zone = utm_zone((lon1+lon2)/2.);
+
+        if (zone == 0)
+          zone = utm_zone((lon1+lon2)/2.);
 
         // now get all corner points into UTM
-        ll2utm(lat1, lon1, zone, &x[0], &y[0]);
-        ll2utm(lat2, lon2, zone, &x[2], &y[2]);
+        ll2pr(lat1, lon1, zone, &x[0], &y[0]);
+        ll2pr(lat2, lon2, zone, &x[2], &y[2]);
 
         double lat, lon;
         meta_get_latLon(meta, g_poly->line[0], crosshair_samp, 0,
                         &lat, &lon);
-        ll2utm(lat, lon, zone, &x[1], &y[1]);
+        ll2pr(lat, lon, zone, &x[1], &y[1]);
 
         meta_get_latLon(meta, crosshair_line, g_poly->samp[0], 0,
                         &lat, &lon);
-        ll2utm(lat, lon, zone, &x[3], &y[3]);
+        ll2pr(lat, lon, zone, &x[3], &y[3]);
 
         clat = .5*(lat1+lat2);
         clon = .5*(lon1+lon2);
@@ -941,20 +959,26 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         clat /= (double)(g_poly->n+1);
         clon /= (double)(g_poly->n+1);
 
-        // center point determines which zone to use
-        zone = utm_zone(clon);
-
-        printf("Center lat/lon: %f, %f (Zone %d)\n", clat, clon, zone);
+        // center point determines which UTM zone to use (if we
+        // are using UTM -- if we're in polar stereo, doesn't matter)
+        if (zone == 0) {
+          zone = utm_zone(clon);
+          printf("Center lat/lon: %f, %f (Zone %d)\n", clat, clon, zone);
+        }
+        else {
+          printf("Center lat/lon: %f, %f (Polar Stereo %s)\n", clat, clon,
+                 zone > 0 ? "North" : "South");
+        }
 
         // now the second pass -- determining the actual coordinates
-        // of the polygon in the right UTM zone
+        // of the polygon in the right UTM zone, or the right n/s projection
         meta_get_latLon(meta, crosshair_line, crosshair_samp, 0, &lat, &lon);
-        ll2utm(lat, lon, zone, &x[0], &y[0]);
+        ll2pr(lat, lon, zone, &x[0], &y[0]);
 
         for (i=0; i<g_poly->n; ++i) {
           meta_get_latLon(meta, g_poly->line[i], g_poly->samp[i], 0,
                           &lat, &lon);
-          ll2utm(lat, lon, zone, &x[i+1], &y[i+1]);
+          ll2pr(lat, lon, zone, &x[i+1], &y[i+1]);
         }
 
         // now we can finally create the polygon
@@ -1043,7 +1067,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
             for (j=0; j<poly->n; ++j) {
               double samp, line, lat, lon;
 
-              utm2ll(poly->x[j], poly->y[j], oi->utm_zone, &lat, &lon);
+              pr2ll(poly->x[j], poly->y[j], zone, &lat, &lon);
               meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);
@@ -1371,7 +1395,7 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
       case 2:
         // "North Pole"
         printf("Loading north pole map...\n");
-        printf("... NOT!\n");
+        load_file("terramodis.jpg");
         break;
 
       case 3:

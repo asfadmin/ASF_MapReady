@@ -27,12 +27,14 @@ void get_all_beam_modes(const char *satellite, int *num_out,
   }
   fclose(fp);
 
+  // now allocate ...
   char **names = MALLOC(sizeof(char*)*(n+1));
   double *min_looks = MALLOC(sizeof(double)*(n+1));
   double *max_looks = MALLOC(sizeof(double)*(n+1));
   double *look_incrs = MALLOC(sizeof(double)*(n+1));
   char **allowed_look_angles = MALLOC(sizeof(char*)*(n+1));
 
+  // ... and reopen the file
   fp = fopen_share_file("beam_modes.txt", "r");
   assert(fp);
 

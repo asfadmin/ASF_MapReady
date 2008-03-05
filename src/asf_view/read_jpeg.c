@@ -201,15 +201,25 @@ meta_parameters* open_jpeg(const char *data_name, ClientInterface *client)
       meta->projection->param.ps.false_easting = 0;
       meta->projection->param.ps.false_northing = 0;
 
-      meta->projection->perX = 2764;
-      meta->projection->perY = -2764;
+      // kludged values... found by a linear regression from manually
+      // associated points:
+      //   sample    line    proj_x      proj_y
+      //   ------    ----    ------      ------
+      //     2254    3355   1794254    -4571231
+      //     3112    1360   4441720     1510018
+      //      206    1888  -4384474      -26248
+      //     2940    2775   3898138    -2809595
+      //      738     783  -2604090     3429022
+      // In Excel:
+      //  perX =   INDEX(LINEST(C1:C5,A1:A5),1)
+      //  perY =   INDEX(LINEST(D1:D5,B1:B5),1)
+      //  startX = INDEX(LINEST(C1:C5,A1:A5),2)
+      //  startY = INDEX(LINEST(D1:D5,B1:B5),2)
+      meta->projection->perX = 3006;
+      meta->projection->startX = -4931853;
+      meta->projection->perY = -3097;
+      meta->projection->startY = 5801627;
       strcpy(meta->projection->units, "meters");
-
-      // assume image center is north pole
-      meta->projection->startX =
-        -meta->projection->perX*(double)meta->general->sample_count/2.;
-      meta->projection->startY =
-        -meta->projection->perY*(double)meta->general->line_count/2.;
 
       meta->projection->datum = WGS84_DATUM;
       meta->projection->datum = WGS84_SPHEROID;
