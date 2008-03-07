@@ -4,7 +4,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
-#include <time.h>
 
 // For now this is a global constant -- the name of the satellite we are
 // planning for.  The beam mode table code supports multiple satellites,
@@ -696,36 +695,36 @@ static int revolution2path(int revolution)
 //    return ret;
 //}
 
-static double fake_lat(double real_lat, double inclination)
-{
-    return R2D*asin(sin(D2R*real_lat)/cos(D2R*inclination));
-}
+//static double fake_lat(double real_lat, double inclination)
+//{
+//    return R2D*asin(sin(D2R*real_lat)/cos(D2R*inclination));
+//}
 
-static double esa_node(double esa_lat, int direction)
-{
-    if (direction==0) {
-        if (esa_lat < 0) esa_lat += 360;
-    } else {
-        esa_lat = 180-esa_lat;
-    }
-    return esa_lat*20;
-}
+//static double esa_node(double esa_lat, int direction)
+//{
+//    if (direction==0) {
+//        if (esa_lat < 0) esa_lat += 360;
+//    } else {
+//        esa_lat = 180-esa_lat;
+//    }
+//    return esa_lat*20;
+//}
 
 // how long the satellite needs to stay on
-static double alos_time(double start_lat, int start_direction,
-                        double stop_lat, int stop_direction)
-{
-    double inclination=8.2352631198113;
-    double secs_node=.822652757;
-    double fake_1 = fake_lat(start_lat, inclination);
-    double fake_2 = fake_lat(stop_lat, inclination);
-    double node_1 = esa_node(fake_1, start_direction);
-    double node_2 = esa_node(fake_2, stop_direction);
-    if (node_2 <= node_1)
-        node_2 = 7200 + node_2;
-    double ret = secs_node*(node_2-node_1);
-    return ret; 
-}
+//static double alos_time(double start_lat, int start_direction,
+//                        double stop_lat, int stop_direction)
+//{
+//    double inclination=8.2352631198113;
+//    double secs_node=.822652757;
+//    double fake_1 = fake_lat(start_lat, inclination);
+//    double fake_2 = fake_lat(stop_lat, inclination);
+//    double node_1 = esa_node(fake_1, start_direction);
+//    double node_2 = esa_node(fake_2, stop_direction);
+//    if (node_2 <= node_1)
+//        node_2 = 7200 + node_2;
+//    double ret = secs_node*(node_2-node_1);
+//    return ret; 
+//}
 
 //static void calc_frame(double lat, int *frame)
 //{
@@ -735,27 +734,6 @@ static double alos_time(double start_lat, int start_direction,
 //  double rev = asin(sin(sat_lat)/angle_thing);
 //  *frame = (int)(rev*7200 + .5);
 //}
-
-static clock_t startTime = -1;
-static void StartTimer(void) 
-{
-  startTime = clock ();
-}
-
-static double StopTimer(void)
-{
-  clock_t stopTime;
-  double elapsed;
-
-  /* The stopwatch must already have been started.  */
-  assert (startTime != -1);
-  stopTime=clock();
-  assert (stopTime != (clock_t) -1);
-  elapsed = stopTime - startTime;
-  elapsed /= CLOCKS_PER_SEC;
-  startTime=-1;
-  return elapsed;
-}
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
@@ -1046,10 +1024,6 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         free(err);
       }
       else {
-        // switch to planning results tab
-        GtkWidget *nb = get_widget_checked("planner_notebook");
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
-
         char msg[256];
         sprintf(msg, "Found %d match%s.\n", n, n==1?"":"es");
         asfPrintStatus(msg);
@@ -1087,56 +1061,34 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
             int j;
             for (j=0; j<poly->n; ++j) {
-              double samp1, line1, samp2, line2, lat, lon;
-
-              //StartTimer();
-              //pr2ll(poly->x[j], poly->y[j], zone, &lat, &lon);
-              //meta_get_lineSamp(meta, lat, lon, 0, &line2, &samp2);
-              //t1+=StopTimer();
-
-              //StartTimer();
-              proj2lineSamp(meta, zone, poly->x[j], poly->y[j], 0,
-                            &line1, &samp1);
-              //t2+=StopTimer();
-
-              //if (hypot(samp1-samp2,line1-line2)>.5) {
-              //  printf("Error: %.2f,%.2f %.1f,%.1f %.1f,%.1f\n",
-              //         poly->x[j],poly->y[j],line1,line2,samp1,samp2);
-              // }
-
-              //printf("%d,%d -- %f,%f\n",i,m,line,samp);
               if (m >= MAX_POLY_LEN) {
                 printf("Reached maximum polygon length!\n");
                 printf("--> Pass number %d\n", i);
                 printf("    Number of polygons: %d\n", pi->num);
                 break;
               } else {
-                g_polys[i+1].line[m]=line1;
-                g_polys[i+1].samp[m]=samp1;
+                double samp, line;
+                proj2lineSamp(meta, zone, poly->x[j], poly->y[j], 0,
+                              &line, &samp);
+                //printf("%d,%d -- %f,%f\n",i,m,line,samp);
+                g_polys[i+1].line[m]=line;
+                g_polys[i+1].samp[m]=samp;
                 ++m;
               }
             }
           }
-
-          //printf("t1=%f, t2=%f\n", t1,t2);
-          //t1=t2=0;
 
           g_polys[i+1].n=m;
           g_polys[i+1].c=m-1;
 
           g_polys[i+1].show_extent=FALSE;
 
-          {
-            // debug: compare our duration with what alos_time returns
-            // this won't work for passes over the pole, but since it is
-            // just for debugging we don't really care...
-            int debug_time=FALSE;
-            if (debug_time) {
-              int odir = pi->dir=='D' ? 1 : 0;
-              printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,
-                                                        pi->stop_lat, odir));
-            }
-          }
+          // debug: compare our duration with what alos_time returns
+          // this won't work for passes over the pole, but since it is
+          // just for debugging we don't really care...
+          //int odir = pi->dir=='D' ? 1 : 0;
+          //printf("%f %f\n", pi->duration, alos_time(pi->start_lat, odir,
+          //                                          pi->stop_lat, odir));
 
           // get ready to add this one to the list, create each column's value
           char date_info[256];
@@ -1220,6 +1172,11 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         }
 
         pass_collection_free(pc);
+
+        // switch to planning results tab
+        GtkWidget *nb = get_widget_checked("planner_notebook");
+        gtk_notebook_set_current_page(GTK_NOTEBOOK(nb), 1);
+        clear_nb_callback();
       }
 
       which_poly=0;

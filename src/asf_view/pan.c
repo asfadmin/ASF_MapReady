@@ -65,6 +65,7 @@ SIGNAL_CALLBACK int
 on_small_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+  //printf("Small image button press\n");
   small_image_clicked=TRUE;
   big_image_clicked=FALSE;
   return TRUE;
@@ -74,6 +75,7 @@ SIGNAL_CALLBACK int
 on_big_image_eventbox_button_press_event(
     GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
+  //printf("Big image button press\n");
   big_image_clicked=TRUE;
   small_image_clicked=FALSE;
   return TRUE;
@@ -87,6 +89,12 @@ on_planner_notebook_switch_page(GtkNotebook *nb, GtkNotebookPage *pg,
   return TRUE;
 }
 
+void clear_nb_callback()
+{
+  ran_nb_callback=FALSE;
+  big_image_clicked=small_image_clicked=FALSE;
+}
+
 // called when the user releases button -- must ensure user was panning
 // before doing anything.  If not, event has to be passed on as a normal
 // button click, & we have kludgey static vars to help figure out which
@@ -96,6 +104,10 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
 {
   int x = (int) event->x;
   int y = (int) event->y;
+
+  //printf("Release event! Small:%s Big:%s\n",
+  //       small_image_clicked ? "TRUE" : "FALSE",
+  //       big_image_clicked ? "TRUE" : "FALSE");
 
   // kludge to prevent clicking on the checkboxes, or switching notebook
   // tabs, triggering the re-centering/etc code

@@ -218,6 +218,9 @@ int row_is_checked(int);
 const char * detect_csv_assoc();
 void open_csv(const char *csv_file);
 
+/* pan.c */
+void clear_nb_callback(void);
+
 #ifdef win32
 #ifdef DIR_SEPARATOR
 #undef DIR_SEPARATOR
