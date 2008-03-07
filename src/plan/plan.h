@@ -80,5 +80,8 @@ void get_all_beam_modes(const char *satellite, int *num_out,
 //          otherwise, utm is used (with the given zone)
 void ll2pr(double lat, double lon, int zone, double *projX, double *projY);
 void pr2ll(double projX, double projY, int zone, double *lat, double *lon);
+int proj2lineSamp(meta_parameters *meta, int zone,
+                  double proj_x, double proj_y,
+                  double elev, double *line, double *samp);
 
 #endif

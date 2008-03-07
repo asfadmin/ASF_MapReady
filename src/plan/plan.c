@@ -487,3 +487,147 @@ void pr2ll(double projX, double projY, int zone, double *lat, double *lon)
   *lon *= R2D;
 }
 
+static int get_error(meta_parameters *meta, int zone,
+                     double proj_x, double proj_y,
+                     double elev, double samp, double line, double *error)
+{
+  double new_x, new_y, lat, lon;
+  int err;
+
+  assert(meta->projection);
+  new_x = meta->projection->startX + ((samp + meta->general->start_sample)
+                                      * meta->projection->perX);
+  new_y = meta->projection->startY + ((line + meta->general->start_line)
+                                      * meta->projection->perY);
+
+  *error = hypot(new_x-proj_x, new_y-proj_y);
+  return 0;
+}
+
+static int 
+proj2lineSamp_imp(meta_parameters *meta, int zone,
+                  double proj_x, double proj_y,
+                  double elev, double line0, double samp0,
+                  double *line, double *samp, double tolerance)
+{
+  /*Number of pixels along which to
+    perform finite difference approximation of the derivative.*/
+  const double DELTA = 0.1;
+
+  double x = samp0;
+  double y = line0;
+  double x_old=1000, y_old=1000;
+  double dx, dy;
+  int iter=0,err=0;
+
+  while (fabs(x-x_old)+fabs(y-y_old)>DELTA*tolerance)
+  {
+    double cur_err, tmp, del_x, del_y, rad;
+
+    err = get_error(meta,zone,proj_x,proj_y,elev,x,y,&cur_err);
+//printf("%lf, err=%d\n", cur_err, err);
+    if (err)
+      return err;
+
+    get_error(meta,zone,proj_x,proj_y,elev,x+DELTA,y,&tmp);
+    del_x = (tmp-cur_err)/DELTA;
+
+    get_error(meta,zone,proj_x,proj_y,elev,x,y+DELTA,&tmp);
+    del_y = (tmp-cur_err)/DELTA;
+
+    rad = fabs(del_x) + fabs(del_y);
+
+    printf("iter %d: x=%6.1f; y=%6.1f, cur_err=%.6f\n",iter,x,y,cur_err);
+
+    x_old = x;
+    y_old = y;
+    dx = (fabs(del_x)/rad)*cur_err/del_x;
+    x -= dx;
+    dy = (fabs(del_y)/rad)*cur_err/del_y;
+    y -= dy;
+
+    iter++;
+    if (iter>1000)
+      return 1;
+  }
+  //printf("  %d iterations\n",iter);
+
+  *line=y-DELTA/2;
+  *samp=x-DELTA/2;
+
+  return 0;
+}
+
+int proj2lineSamp(meta_parameters *meta, int zone,
+                  double proj_x, double proj_y,
+                  double elev, double *line, double *samp)
+{
+  double lat, lon;
+  pr2ll(proj_x, proj_y, zone, &lat, &lon);
+
+  double x, y, z;
+  latlon_to_proj(meta->projection, 'R', lat*D2R, lon*D2R, elev, &x, &y, &z);
+
+  *samp = (x - meta->projection->startX) / meta->projection->perX
+           - meta->general->start_sample;
+  *line = (y - meta->projection->startY) / meta->projection->perY
+           - meta->general->start_line;
+
+  //double lat,lon,new_x,new_y;
+  //meta_get_latLon(meta,*line,*samp,elev,&lat,&lon);
+  //ll2pr(lat, lon, zone, &new_x, &new_y);
+
+  //if (hypot(new_x-proj_x, new_y-proj_y)>1)
+  //  printf("%.1f %.1f -> %.1f %.1f -> %.1f %.1f -> %.1f %.1f\n", proj_x, proj_y, *line, *samp, lat, lon, new_x, new_y);
+  return 0;
+  
+  int err;
+  double tol = 0.2;
+  int num_iter = 0;
+
+  while (++num_iter <= 6) {
+
+    //if (num_iter > 1)
+    //  printf("For %f,%f -- iteration #%d\n", proj_x,proj_y,num_iter);
+
+    double line0 = meta->general->line_count/2.;
+    double samp0 = meta->general->sample_count/2.;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+    
+    line0 = meta->general->line_count/8.;
+    samp0 = meta->general->sample_count/8.;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+    
+    line0 = 7.*meta->general->line_count/8.;
+    samp0 = 7.*meta->general->sample_count/8.;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+    
+    line0 = meta->general->line_count/8.;
+    samp0 = 7.*meta->general->sample_count/8.;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+    
+    line0 = 7.*meta->general->line_count/8.;
+    samp0 = meta->general->sample_count/8.;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+    
+    line0 = samp0 = 0;
+    err = proj2lineSamp_imp(meta,zone,proj_x,proj_y,elev,line0,samp0,
+                            line,samp,tol);
+    if (!err) return 0;
+
+    tol *= 2;
+  }
+  
+  printf("Failed to converage for proj_x,proj_y = %f,%f\n", proj_x,proj_y);
+  return 1;
+}

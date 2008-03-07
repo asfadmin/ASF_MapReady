@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
+#include <time.h>
 
 // For now this is a global constant -- the name of the satellite we are
 // planning for.  The beam mode table code supports multiple satellites,
@@ -735,6 +736,27 @@ static double alos_time(double start_lat, int start_direction,
 //  *frame = (int)(rev*7200 + .5);
 //}
 
+static clock_t startTime = -1;
+static void StartTimer(void) 
+{
+  startTime = clock ();
+}
+
+static double StopTimer(void)
+{
+  clock_t stopTime;
+  double elapsed;
+
+  /* The stopwatch must already have been started.  */
+  assert (startTime != -1);
+  stopTime=clock();
+  assert (stopTime != (clock_t) -1);
+  elapsed = stopTime - startTime;
+  elapsed /= CLOCKS_PER_SEC;
+  startTime=-1;
+  return elapsed;
+}
+
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
     int i,j,pass_type,zone;
@@ -1065,10 +1087,22 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
             int j;
             for (j=0; j<poly->n; ++j) {
-              double samp, line, lat, lon;
+              double samp1, line1, samp2, line2, lat, lon;
 
-              pr2ll(poly->x[j], poly->y[j], zone, &lat, &lon);
-              meta_get_lineSamp(meta, lat, lon, 0, &line, &samp);
+              //StartTimer();
+              //pr2ll(poly->x[j], poly->y[j], zone, &lat, &lon);
+              //meta_get_lineSamp(meta, lat, lon, 0, &line2, &samp2);
+              //t1+=StopTimer();
+
+              //StartTimer();
+              proj2lineSamp(meta, zone, poly->x[j], poly->y[j], 0,
+                            &line1, &samp1);
+              //t2+=StopTimer();
+
+              //if (hypot(samp1-samp2,line1-line2)>.5) {
+              //  printf("Error: %.2f,%.2f %.1f,%.1f %.1f,%.1f\n",
+              //         poly->x[j],poly->y[j],line1,line2,samp1,samp2);
+              // }
 
               //printf("%d,%d -- %f,%f\n",i,m,line,samp);
               if (m >= MAX_POLY_LEN) {
@@ -1077,12 +1111,15 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                 printf("    Number of polygons: %d\n", pi->num);
                 break;
               } else {
-                g_polys[i+1].line[m]=line;
-                g_polys[i+1].samp[m]=samp;
+                g_polys[i+1].line[m]=line1;
+                g_polys[i+1].samp[m]=samp1;
                 ++m;
               }
             }
           }
+
+          //printf("t1=%f, t2=%f\n", t1,t2);
+          //t1=t2=0;
 
           g_polys[i+1].n=m;
           g_polys[i+1].c=m-1;
