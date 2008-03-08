@@ -1,5 +1,10 @@
+#include <stdio.h>
+#include <ctype.h>
+
 #include "asf_vector.h"
 #include "asf.h"
+
+#define LINE_MAX    (1024)
 
 // Convert meta to kml
 void meta2kml(char *line, FILE *fp)
@@ -14,34 +19,47 @@ void meta2kml(char *line, FILE *fp)
 }
 
 // Convert point to kml
-void point2kml(char *line, FILE *fp)
+void point2kml(char *inFile, FILE *outFP)
 {
   float lat, lon;
   char *p;
+  char *line;
+  FILE *inFP;
 
-  // Extract information out of the line
-  p = strchr(line, ',');
-  if (p) {
-    sscanf(p+1, "%f,%f", &lat, &lon);
-    *p = '\0';
+  inFP = FOPEN(inFile, "r");
+  line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+  while (fgets(line, LINE_MAX, inFP)) {
+      line[strlen(line)-1]='\0';
+      p=line;
+      while(isspace((int)(*p))) p++;
+      if (*p != '#') {
+          // Extract information out of the line
+          p = strchr(line, ',');
+          if (p && *p == ',') {
+              sscanf(p+1, "%f,%f", &lon, &lat);
+              *p = '\0';
 
-    // Write information in kml file
-    fprintf(fp, "<Placemark>\n");
-    fprintf(fp, "<description><![CDATA[\n");
-    fprintf(fp, "<strong>Latitude</strong>: %9.4f<br>\n", lat);
-    fprintf(fp, "<strong>Longitude</strong>: %9.4f<br>\n", lon);
-    fprintf(fp, "]]></description>\n");
-    fprintf(fp, "<name>%s</name>\n", line);
-    fprintf(fp, "<LookAt>\n");
-    fprintf(fp, "<longitude>%9.4f</longitude>\n", lon);
-    fprintf(fp, "<latitude>%9.4f</latitude>\n", lat);
-    fprintf(fp, "<range>400000</range>\n");
-    fprintf(fp, "</LookAt>\n");
-    fprintf(fp, "<Point>\n");
-    fprintf(fp, "<coordinates>%f,%f,0</coordinates>\n", lon, lat);
-    fprintf(fp, "</Point>\n");
-    fprintf(fp, "</Placemark>\n");
+              // Write information in kml file
+              fprintf(outFP, "<Placemark>\n");
+              fprintf(outFP, "<description><![CDATA[\n");
+              fprintf(outFP, "<strong>Latitude</strong>: %9.4f<br>\n", lat);
+              fprintf(outFP, "<strong>Longitude</strong>: %9.4f<br>\n", lon);
+              fprintf(outFP, "]]></description>\n");
+              fprintf(outFP, "<name>%s</name>\n", line);
+              fprintf(outFP, "<LookAt>\n");
+              fprintf(outFP, "<longitude>%9.4f</longitude>\n", lon);
+              fprintf(outFP, "<latitude>%9.4f</latitude>\n", lat);
+              fprintf(outFP, "<range>400000</range>\n");
+              fprintf(outFP, "</LookAt>\n");
+              fprintf(outFP, "<Point>\n");
+              fprintf(outFP, "<coordinates>%f,%f,0</coordinates>\n", lon, lat);
+              fprintf(outFP, "</Point>\n");
+              fprintf(outFP, "</Placemark>\n");
+          }
+      }
   }
+  FREE(line);
+  FCLOSE(inFP);
 
   return;
 }
@@ -53,9 +71,9 @@ void polygon2kml(char *line, FILE *fp, char *name)
   double *lat, *lon;
   char id[255];
   char *p, *p_lat, *p_lon;
-
+  printf(line);printf("\n");
   // Read ID and number of vertices;
-  p = strchr(line, ',');
+  p = strchr(line, (int)',');
   if (p) {
     sscanf(p+1, "%d", &vertices);
     *p = '\0';
@@ -98,10 +116,12 @@ void polygon2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LineString>\n");
   fprintf(fp, "<coordinates>\n");
-  
-  for (ii=0; ii<=vertices; ii++)
-    fprintf(fp, "%.12f,%.12f,4000\n", lon[ii], lat[ii]);
-  
+
+  for (ii=0; ii<vertices; ii++) {
+      printf ("DEBUG OUTPUT: vertices = %d, ii = %d\nlongitude %.12f, latitude %.12f\n", vertices, ii, lon[ii], lat[ii]);
+      fprintf(fp, "%.12f,%.12f,4000\n", lon[ii], lat[ii]);
+  }
+
   fprintf(fp, "</coordinates>\n");
   fprintf(fp, "</LineString>\n");
   fprintf(fp, "</outerBoundaryIs>\n");
@@ -109,6 +129,15 @@ void polygon2kml(char *line, FILE *fp, char *name)
   fprintf(fp, "</Placemark>\n");
 
   return;
+}
+
+// Convert GeoTIFF location information to kml
+void geotiff2kml(char *line, FILE *fp)
+{
+    // Create a point if a georeferenced GeoTIFF, else if a map-projected
+    // GeoTIFF, then create a polygon
+
+    return;
 }
 
 // Convert RGPS cell information to kml
@@ -131,11 +160,11 @@ void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
   fprintf(fp, "<strong>Target image</strong>: %s<br>\n", cell.targetImage);
   fprintf(fp, "<strong>Stream</strong>: %s<br>\n", cell.stream);
   fprintf(fp, "<strong>Area</strong>: %.1lf<br>\n", cell.area);
-  fprintf(fp, "<strong>Multi-year ice</strong>: %.3lf<br>\n", 
-	  cell.multi_year_ice);
+  fprintf(fp, "<strong>Multi-year ice</strong>: %.3lf<br>\n",
+      cell.multi_year_ice);
   fprintf(fp, "<strong>Open water</strong>: %.3lf<br>\n", cell.open_water);
-  fprintf(fp, "<strong>Incidence angle</strong>: %.4lf<br>\n", 
-	  cell.incidence_angle);
+  fprintf(fp, "<strong>Incidence angle</strong>: %.4lf<br>\n",
+      cell.incidence_angle);
   fprintf(fp, "<strong>Cell x</strong>: %.3lf<br>\n", cell.cell_x);
   fprintf(fp, "<strong>Cell y</strong>: %.3lf<br>\n", cell.cell_y);
   fprintf(fp, "<strong>dudx</strong>: %.4lf<br>\n", cell.dudx);
@@ -163,10 +192,10 @@ void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp)
   fprintf(fp, "<outerBoundaryIs>\n");
   fprintf(fp, "<LinearRing>\n");
   fprintf(fp, "<coordinates>\n");
-  
+
   for (ii=0; ii<=cell.nVertices; ii++)
     fprintf(fp, "%.12f,%.12f,7000\n", lon[ii], lat[ii]);
-  
+
   fprintf(fp, "</coordinates>\n");
   fprintf(fp, "</LinearRing>\n");
   fprintf(fp, "</outerBoundaryIs>\n");
@@ -210,8 +239,8 @@ void rgps_grid2kml(grid_attr_t grid, FILE *fp)
   fprintf(fp, "</Placemark>\n");
 }
 
-void write_dbase_field_to_kml(DBFHandle dbase, int record, 
-			      int field, FILE *fp)
+void write_dbase_field_to_kml(DBFHandle dbase, int record,
+                  int field, FILE *fp)
 {
   DBFFieldType dbaseType;
   char fieldName[25], str[50];
@@ -219,24 +248,24 @@ void write_dbase_field_to_kml(DBFHandle dbase, int record,
   double fValue;
   const char *sValue;
 
-  dbaseType = DBFGetFieldInfo(dbase, field, fieldName, 
-			      &nWidth, &nDecimals);
+  dbaseType = DBFGetFieldInfo(dbase, field, fieldName,
+                  &nWidth, &nDecimals);
   switch (dbaseType)
     {
     case FTString:
       sValue = DBFReadStringAttribute(dbase, record, field);
-      fprintf(fp, "<strong>%s</strong>: %s<br>\n", 
-	      fieldName, sValue);
+      fprintf(fp, "<strong>%s</strong>: %s<br>\n",
+          fieldName, sValue);
       break;
     case FTInteger:
       nValue = DBFReadIntegerAttribute(dbase, record, field);
-      fprintf(fp, "<strong>%s</strong>: %d<br>\n", 
-	      fieldName, nValue);
+      fprintf(fp, "<strong>%s</strong>: %d<br>\n",
+          fieldName, nValue);
       break;
     case FTDouble:
       fValue = DBFReadDoubleAttribute(dbase, record, field);
-      sprintf(str, "<strong>%%s</strong>: %%%d.%dlf<br>\n", 
-	      nWidth, nDecimals);
+      sprintf(str, "<strong>%%s</strong>: %%%d.%dlf<br>\n",
+          nWidth, nDecimals);
       fprintf(fp, str, fieldName, fValue);
       break;
     case FTLogical:
@@ -276,7 +305,7 @@ void write_name_field_to_kml(DBFHandle dbase, int record, FILE *fp)
 }
 
 // Convert shape to kml
-// In this conversion we only deal with point and polygon shapes 
+// In this conversion we only deal with point and polygon shapes
 // that don't have multiple parts. All other cases error out.
 void shape2kml(char *line, FILE *fp, char *name)
 {
@@ -288,7 +317,7 @@ void shape2kml(char *line, FILE *fp, char *name)
   double *lat, *lon;
 
   // Open shapefile
-  open_shape(line, &dbase, &shape);  
+  open_shape(line, &dbase, &shape);
 
   // Extract the vital information out of the shapefile
   SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
@@ -297,13 +326,13 @@ void shape2kml(char *line, FILE *fp, char *name)
     case SHPT_POLYGON:
     case SHPT_POINT:
       break;
-    case SHPT_ARC: 
+    case SHPT_ARC:
       asfPrintError
-	("Conversion does not support shape type 'Arc'\n");
+    ("Conversion does not support shape type 'Arc'\n");
       break;
     case SHPT_MULTIPOINT:
       asfPrintError
-	("Conversion does not support shape type 'Multipoint'\n");
+    ("Conversion does not support shape type 'Multipoint'\n");
       break;
     }
 
@@ -338,7 +367,7 @@ void shape2kml(char *line, FILE *fp, char *name)
       fprintf(fp, "<Placemark>\n");
       fprintf(fp, "<description><![CDATA[\n");
       for (kk=1; kk<nFields; kk++)
-	write_dbase_field_to_kml(dbase, ii, kk, fp);
+    write_dbase_field_to_kml(dbase, ii, kk, fp);
       fprintf(fp, "]]></description>\n");
       write_name_field_to_kml(dbase, ii, fp);
       fprintf(fp, "<LookAt>\n");
@@ -348,22 +377,22 @@ void shape2kml(char *line, FILE *fp, char *name)
       fprintf(fp, "</LookAt>\n");
       if (pointType == SHPT_POLYGON) {
           write_kml_style_keys(fp);
-	fprintf(fp, "<Polygon>\n");
-	fprintf(fp, "<outerBoundaryIs>\n");
-	fprintf(fp, "<LinearRing>\n");
-	fprintf(fp, "<coordinates>\n");
-	for (kk=part[ll]; kk<part[ll+1]; kk++)
-	  fprintf(fp, "%.12f,%.12f,4000\n", lon[kk], lat[kk]);
-	fprintf(fp, "</coordinates>\n");
-	fprintf(fp, "</LinearRing>\n");
-	fprintf(fp, "</outerBoundaryIs>\n");
-	fprintf(fp, "</Polygon>\n");
+    fprintf(fp, "<Polygon>\n");
+    fprintf(fp, "<outerBoundaryIs>\n");
+    fprintf(fp, "<LinearRing>\n");
+    fprintf(fp, "<coordinates>\n");
+    for (kk=part[ll]; kk<part[ll+1]; kk++)
+      fprintf(fp, "%.12f,%.12f,4000\n", lon[kk], lat[kk]);
+    fprintf(fp, "</coordinates>\n");
+    fprintf(fp, "</LinearRing>\n");
+    fprintf(fp, "</outerBoundaryIs>\n");
+    fprintf(fp, "</Polygon>\n");
       }
       else if (pointType == SHPT_POINT) {
-	fprintf(fp, "<Point>\n");
-	fprintf(fp, "<coordinates>%.12lf,%.12lf,4000</coordinates>",
-		lon[0], lat[0]);
-	fprintf(fp, "</Point>\n");
+    fprintf(fp, "<Point>\n");
+    fprintf(fp, "<coordinates>%.12lf,%.12lf,4000</coordinates>",
+        lon[0], lat[0]);
+    fprintf(fp, "</Point>\n");
       }
       fprintf(fp, "</Placemark>\n");
     }

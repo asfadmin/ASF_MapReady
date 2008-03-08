@@ -12,6 +12,8 @@ DESCRIPTION:
 #include "asf_meta.h"
 #include "shapefil.h"
 
+// NOTE: The META format type applies to both ASF metadata files and all
+// leader data files (.L, .par, LED- etcetera)
 typedef enum {
   META=1,
   KMLFILE,
@@ -23,7 +25,8 @@ typedef enum {
   RGPS_GRID,
   RGPS_WEATHER,
   MULTIMATCH,
-  URSA
+  URSA,
+  GEOTIFF_META
 } format_type_t;
 
 // RGPS grid point definition
@@ -88,13 +91,13 @@ void shape2kml(char *inFile, FILE *fp, char *name);
 
 // Prototypes from kml.c
 void kml_header(FILE *kml_file);
-void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta, 
+void kml_entry_with_overlay(FILE *kml_file, meta_parameters *meta,
                             char *name, char *ceos_fileame,
                             char *jpeg_dir);
 void kml_entry(FILE *kml_file, meta_parameters *meta, char *name);
 void kml_point_entry(FILE *kml_file, char *name, float lat, float lon);
-void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat, 
-		       float *lon, int n);
+void kml_polygon_entry(FILE *kml_file, char *name, char **id, float *lat,
+               float *lon, int n);
 void kml_footer(FILE *kml_file);
 void write_kml(char *inFile, char *outFile, format_type_t format, int list);
 void write_kml_overlay(char *filename);
@@ -102,13 +105,14 @@ void write_kml_style_keys(FILE *kml_file);
 
 // Prototypes from convert_shape.c
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
-void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
+void point2shape(char *line, DBFHandle dbase, SHPHandle shape);
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void polygon2shape_new(char *inFile, char *outFile);
+void geotiff2shape(char *filename, DBFHandle dbase, SHPHandle shape, int n);
 void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
                 DBFHandle dbase, SHPHandle shape, int n);
-void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, 
-		     int n);
+void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
+             int n);
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void shape2text(char *inFile, FILE *fp);
@@ -120,5 +124,20 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list);
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape);
 void close_shape(DBFHandle dbase, SHPHandle shape);
 void write_esri_proj_file(char *inFile);
+
+// Prototypes from convert_text.c
+void meta2text(char *inFile, FILE *outFP);
+void geotiff2text(char *inFile, FILE *outFP);
+int ismetadata(char *inFile);
+int isleader(char *inFile);
+int ispoint(char *inFile);
+int ispolygon(char *inFile);
+int isshape(char *inFile);
+int isgeotiff(char *inFile);
+int isrgps(char *inFile);
+
+// Prototypes from text.c
+int write_text(char *inFile, char *outfile, format_type_t format, int list);
+
 
 #endif

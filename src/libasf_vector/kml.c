@@ -181,9 +181,13 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "</Placemark>\n");
 
         if (!png_filename || !meta->projection)
-            printf("Google Earth overlay missing: Data must not be in a UTM map projection.\n");
+            printf("\nGoogle Earth overlay image not produced (because the data is not in a UTM map projection\n"
+                    "as required) -OR- a Google Earth (.kml) file is being produced from a non-image source such\n"
+                    "as an ASF metadata file etc.)  The data will be displayed as a transparent polygon (only)\n"
+                    "in Google Earth.\n\n");
         else
-            printf("Google Earth overlay missing: Rotation angle too large to overlay: %lf\n", ang*R2D);
+            printf("Google Earth overlay not produced (because the image's rotation angle\n"
+                    "is too large to overlay: %lf)\n\n", ang*R2D);
     }
     else
     {
@@ -455,14 +459,20 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
     case POLYGON:
       polygon2kml(line, fp, name);
       break;
+    case SHAPEFILE:
+      printf("\n\nYO BRIAN: convert2kml() sees a SHAPEFILE\n\n");
+      break;
+    case GEOTIFF_META:
+      geotiff2kml(line, fp);
+      break;
+    case TEXT:
     case RGPS:
     case RGPS_GRID:
     case RGPS_WEATHER:
     case MULTIMATCH:
-    case TEXT:
     case URSA:
     case KMLFILE:
-    case SHAPEFILE:
+    default:
       break;
     }
 

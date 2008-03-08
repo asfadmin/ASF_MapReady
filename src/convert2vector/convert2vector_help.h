@@ -26,8 +26,8 @@
 #endif
 #define TOOL_USAGE \
         TOOL_NAME" [-list] [-input-format <input format>] [-output-format <output format>]\n" \
-        "             <input file> <output file>\n" \
-        "             [-license] [-version] [-help]\n\n" \
+        "                  <input file> <output file>\n" \
+        "                  [-license] [-version] [-help]\n\n" \
         "   Where the input format is one of the following:\n" \
         "        meta      (ASF Internal Format metadata file)\n" \
         "        leader    (CEOS format leader data file, .L, LED-, etc)\n" \
@@ -38,7 +38,8 @@
         "   And the output format is one of the following:\n" \
         "        shape     (ESRI format shapefile output)\n" \
         "        kml       (Google Earth kml file output for viewing in Google Earth - DEFAULT)\n" \
-        "        text      (An ASF-style polygon CSV text file)\n"
+        "        text      (An ASF-style polygon CSV text file (.csv) or a shape file dump (.txt)\n" \
+        "                   depending on the type of input file)\n"
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION
@@ -47,45 +48,45 @@
 #define TOOL_DESCRIPTION \
     "   The convert2vector tool transforms point information into various other\n" \
     "   formats that are compatible with external applications such as Google Earth (KML\n" \
-    "   files), GIS software (shapefiles), and spreadsheets (CSV text files).  It is useful\n" \
-    "   for visualizing the geographical location of data by plotting location\n" \
-    "   coordinates in commonly available tools.  The ASF-style CSV text format (point\n" \
-    "   and polygon), can used to define areas of interest or bounding polygons.  The shapefile\n" \
-    "   to text conversion is a simple text dump for a given shapefile.\n" \
+    "   files), GIS software (shapefiles), text editors, and spreadsheets (CSV text files).  It\n" \
+    "   is useful for visualizing the geographical location of data by plotting location\n" \
+    "   coordinates in commonly available tools, or in the case of shape files, seeing a summary\n" \
+    "   of the shape file contents.  The ASF-style CSV text format (point and polygon)\n" \
+    "   can used to define areas of interest or bounding polygons which can then be visualized\n" \
+    ".  in Google Earth (etc).  The shapefile to text conversion is a simple text dump for a given\n" \
+    "   shapefile (not an ASF-style CSV file containing point locations or polygon corners.)\n" \
     "   \n" \
     "   NOTE: With the exception of using an ASF-style text file containing point data, all shapefile\n" \
-    "   output is into polygon type shapefiles (not point, line, polyline etc).  Shapefiles derived\n" \
-    "   from point text files will be point type shapefiles.  See I/O matrix below.\n" \
+    "   type output is into polygon type shapefiles (not point, line, polyline etc).  Shapefiles\n" \
+    "   derived from point text files will be point type shapefiles.  See I/O matrix below.\n" \
     "   \n" \
     "   NOTE: Choosing 'text' as the output format will produce a polygon type CSV file\n" \
     "   as described in the Examples section below, but if you wish the text file to be of\n" \
     "   point type instead, you may edit the first line in the text file which describes\n" \
-    "   the file type, i.e. change the word 'polygon' to 'point'.\n" \
-    "   \n" \
-    "   NOTE: This tool is still somewhat in beta.  Not all data format combinations\n" \
-    "   are supported.  The following table shows which formats are (and are not)\n" \
-    "   supported:\n" \
+    "   the file type, i.e. change the word 'polygon' to 'point'.  Note that when using\n" \
+    "   convert2vector to convert a shapefile to a text file, that an ASCII text dump is\n" \
+    "   is provided instead (see Examples below.)\n" \
     "   \n" \
     "   Input Type          Output Type            Supported\n" \
     "   ----------       -------------------       ---------\n" \
     "    meta             shape (polygon type)         Y\n" \
     "    meta             kml                          Y\n" \
-    "    meta             text                         N\n" \
+    "    meta             text                         Y\n" \
     "    leader           shape (polygon type)         Y\n" \
     "    leader           kml                          Y\n" \
-    "    leader           text                         N\n" \
-    "    point            shape (point type)           N\n" \
-    "    point            kml                          N\n" \
+    "    leader           text                         Y\n" \
+    "    point            shape (point type)           Y\n" \
+    "    point            kml                          Y\n" \
     "    point            text                   Not applicable\n" \
-    "    polygon          shape (polygon type)         N\n" \
-    "    polygon          kml                          N\n" \
+    "    polygon          shape (polygon type)         Y\n" \
+    "    polygon          kml                          Y\n" \
     "    polygon          text                   Not applicable\n" \
     "    shape            shape                  Not applicable\n" \
-    "    shape            kml                          N\n" \
+    "    shape            kml                          Y\n" \
     "    shape            text                         Y\n" \
-    "    geotiff          shape (polygon type)         N\n" \
-    "    geotiff          kml                          N\n" \
-    "    geotiff          text                         N\n"
+    "    geotiff          shape (polygon type)         Y\n" \
+    "    geotiff          kml                          Y\n" \
+    "    geotiff          text                         Y\n"
 
 // TOOL_INPUT is required but is allowed to be an empty string
 #ifdef  TOOL_INPUT
@@ -117,8 +118,9 @@
         "   <output format>  This indicates the desired output format based on\n" \
         "        how you would like to view or utilize the location coordinate data.\n" \
         "        Valid values include: <shape | kml | text> where 'shape' means 'shapefile',\n" \
-        "        'kml' means 'Google Earth file (.kml)', and 'text' means 'ASF-style CSV text file\n" \
-        "        dump of the points or polygons found in a shapefile'.\n" \
+        "        'kml' means 'Google Earth file (.kml)', and 'text' means either an 'ASF-style\n" \
+        "        CSV text file (.csv)' dump of the points or polygons found in the input file or\n" \
+        "        a shapefile text dump (.txt) if the input file was a shape file.\n" \
         "   <output file>  The full name of the output file."
 
 // TOOL_OPTIONS is required but is allowed to be an empty string
@@ -147,7 +149,7 @@
     "        output format may be one of the following:\n" \
     "             shape     (ESRI format shapefile output)\n" \
     "             kml       (Google Earth kml file output for viewing in Google Earth - DEFAULT)\n" \
-    "             text      (An ASF-style polygon CSV text file)\n" \
+    "             text      (An ASF-style polygon CSV text file or shape file dump)\n" \
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
@@ -174,34 +176,34 @@
     "      closed by convert2vector.\n" \
     "   7. ID numbers will be interpreted as integers (truncated if necessary) and\n" \
     "      data values will be interpreted as floating point.\n" \
-    "   7. Blank lines and white space before/after comma characters will be ignored\n" \
+    "   8. Blank lines and white space before/after comma characters will be ignored\n" \
     "\n" \
     "   Example ASF-style text file containing point data:\n" \
     "\n" \
-    "      # file type,point,\n" \
+    "      # file type,point\n" \
     "      # ID,longitude,latitude\n" \
     "      # Created by Alaska Satellite Facility - Geophysical Institute - University of Alaska Fairbanks\n" \
     "      # 28-February-2008\n" \
-    "      1,-124.263,41.9839\n" \
-    "      2,-120.9325,41.8375\n" \
-    "      3,-122.79667,41.89028\n" \
-    "      4,-112.64056,42.29389\n" \
-    "      5,-110.49084,41.885\n" \
-    "      6,-110.79889,40.98084\n" \
-    "      7,-110.76278,38.80667\n" \
-    "      8,-111.36472,38.07528\n" \
-    "      9,-111.73167,36.97917\n" \
-    "      10,-112.49084,37.00639\n" \
-    "      11,-114.48278,34.88334\n" \
-    "      12,-114.15056,34.22472\n" \
-    "      13,-114.48084,32.77028\n" \
-    "      14,-114.86584,32.53389\n" \
-    "      15,-117.16,32.4125\n" \
-    "      16,-117.36472,33.09667\n" \
-    "      17,-117.84361,33.51278\n" \
-    "      18,-118.43389,33.69\n" \
-    "      19,-118.97195,33.95778\n" \
-    "      20,-119.56583,34.19695\n" \
+    "       1, -124.263  , 41.9839\n" \
+    "       2, -120.9325 , 41.8375\n" \
+    "       3, -122.79667, 41.89028\n" \
+    "       4, -112.64056, 42.29389\n" \
+    "       5, -110.49084, 41.885\n" \
+    "       6, -110.79889, 40.98084\n" \
+    "       7, -110.76278, 38.80667\n" \
+    "       8, -111.36472, 38.07528\n" \
+    "       9, -111.73167, 36.97917\n" \
+    "      10, -112.49084, 37.00639\n" \
+    "      11, -114.48278, 34.88334\n" \
+    "      12, -114.15056, 34.22472\n" \
+    "      13, -114.48084, 32.77028\n" \
+    "      14, -114.86584, 32.53389\n" \
+    "      15, -117.16   , 32.4125\n" \
+    "      16, -117.36472, 33.09667\n" \
+    "      17, -117.84361, 33.51278\n" \
+    "      18, -118.43389, 33.69\n" \
+    "      19, -118.97195, 33.95778\n" \
+    "      20, -119.56583, 34.19695\n" \
     "\n" \
     "   Example ASF-style text file containing polygon data:\n" \
     "\n" \
@@ -224,7 +226,21 @@
     "      14,-114.86584,32.53389\n" \
     "      15,-117.16,32.4125\n" \
     "      16,-117.36472,33.09667\n" \
-    "      17,-117.84361,33.51278\n"
+    "      17,-117.84361,33.51278\n" \
+    "\n" \
+    "   Example of a shapefile text dump:\n" \
+    "\n" \
+    "      NAME OF SHAPEFILE: CITIES\n" \
+    "      Number of structures: 1\n" \
+    "      Shape type: Polygon\n" \
+    "\n" \
+    "      Structure: 1\n" \
+    "\n" \
+    "      Number of fields: 4\n" \
+    "      CITY_FIPS: 82130\n" \
+    "      CITY_NAME: WALDEN\n" \
+    "      SHAPE_Leng:    4848.79682739000\n" \
+    "      SHAPE_Area:  900379.91342500004\n\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS
@@ -242,8 +258,12 @@
 
 // Prototypes
 void check_for_help(int argc, char* argv[]);
-void usage();
+void usage(char *msg);
 void print_help();
+int checkForOption(char* key, int argc, char* argv[]);
+int getDoubleOption(char *key, int argc, char* argv[], double *val, double def);
+int getIntegerOption(char *key, int argc, char* argv[], int *val, int def);
+int getStringOption(char *key, int argc, char *argv[], char *val, char *def);
 
 #endif // _CONVERT2VECTOR_HELP_H_
 

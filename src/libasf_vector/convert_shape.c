@@ -1,7 +1,12 @@
+#include <stdio.h>
+#include <ctype.h>
+
 #include "asf.h"
 #include "dateUtil.h"
 #include "shapefil.h"
 #include "asf_vector.h"
+
+#define LINE_MAX    (1024)
 
 // Convert metadata to shape
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
@@ -14,14 +19,14 @@ void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 
   // Determine corner coordinates
   meta_get_latLon(meta, 0, 0, 0.0, &lat[0], &lon[0]);
-  meta_get_latLon(meta, 0, meta->general->sample_count, 0.0, 
-		  &lat[1], &lon[1]);
+  meta_get_latLon(meta, 0, meta->general->sample_count, 0.0,
+          &lat[1], &lon[1]);
   meta_get_latLon(meta, meta->general->line_count, meta->general->sample_count,
                   0.0, &lat[2], &lon[2]);
-  meta_get_latLon(meta, meta->general->line_count, 0, 0.0, 
-		  &lat[3], &lon[3]);
+  meta_get_latLon(meta, meta->general->line_count, 0, 0.0,
+          &lat[3], &lon[3]);
   lat[4] = lat[0];
-  lon[4] = lon[0];	
+  lon[4] = lon[0];
 
   // Write information into database file
   DBFWriteStringAttribute(dbase, n, 0, meta->general->sensor);
@@ -46,7 +51,7 @@ void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
   DBFWriteDoubleAttribute(dbase, n, 15, lon[2]);
   DBFWriteDoubleAttribute(dbase, n, 16, lat[3]);
   DBFWriteDoubleAttribute(dbase, n, 17, lon[3]);
- 
+
   // Write shape object
   SHPObject *shapeObject=NULL;
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
@@ -58,35 +63,50 @@ void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
   return;
 }
 
-// Convert kml to shape
-
 // Convert point to shape
-void point2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
+void point2shape(char *inFile, DBFHandle dbase, SHPHandle shape)
 {
-  double lat, lon;
-  char id[255], *p;
+    double lat, lon;
+    char id[255], *p;
+    int n;
+    char *line;
+    FILE *fp;
 
-  // Read ID and lat/lon;
-  p = strchr(line, ',');
-  if (p) {
-    sscanf(p+1, "%lf,%lf", &lat, &lon);
-    *p = '\0';
-    sprintf(id, "%s", line);
-    *p = ',';
-  }
+    fp = FOPEN(inFile, "r");
+    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+    n=0;
+    while (fgets(line, LINE_MAX, fp)) {
+        // Read ID and lat/lon;
+        line[strlen(line)-1] = '\0';
+        p = line;
+        while (isspace((int)(*p))) p++;
+        if (*p != '#') {
+            p = strchr(line, ',');
+            if (p && *p == ',') {
+                int iid;
+                sscanf(p+1, "%lf,%lf", &lat, &lon);
+                *p = '\0';
+                iid = strtol(line, (char**)NULL, 10);
+                sprintf(id, "%d", iid);
+                *p = ',';
 
-  // Write information into database file
-  DBFWriteStringAttribute(dbase, n, 0, id);
-  DBFWriteDoubleAttribute(dbase, n, 1, lat);
-  DBFWriteDoubleAttribute(dbase, n, 2, lon);
-  
-  // Write shape object
-  SHPObject *shapeObject=NULL;
-  shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
-  SHPWriteObject(shape, -1, shapeObject);
-  SHPDestroyObject(shapeObject);
+                // Write information into database file
+                DBFWriteStringAttribute(dbase, n, 0, id);
+                DBFWriteDoubleAttribute(dbase, n, 1, lat);
+                DBFWriteDoubleAttribute(dbase, n++, 2, lon);
 
-  return;
+                // Write shape object
+                SHPObject *shapeObject=NULL;
+                shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, &lon, &lat, NULL);
+                SHPWriteObject(shape, -1, shapeObject);
+                SHPDestroyObject(shapeObject);
+            }
+        }
+    }
+    FREE(line);
+    FCLOSE(fp);
+
+    return;
 }
 
 // Convert polygon to shape
@@ -138,7 +158,7 @@ void polygon2shape_new(char *inFile, char *outFile)
 
   // Write shape object
   SHPObject *shapeObject=NULL;
-  shapeObject = 
+  shapeObject =
     SHPCreateSimpleObject(SHPT_POLYGON, vertices+1, lon, lat, NULL);
   SHPWriteObject(shape, -1, shapeObject);
   SHPDestroyObject(shapeObject);
@@ -184,14 +204,14 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
     p_lon = strchr(p_lat+1, ',');
     sscanf(p_lon+1, "%lf", &lon[ii]);
     p_lat = strchr(p_lon+1, ',');
-  } 
+  }
   lat[vertices] = lat[0];
   lon[vertices] = lon[0];
 
   // Write information into database file
   DBFWriteStringAttribute(dbase, n, 0, id);
   DBFWriteIntegerAttribute(dbase, n, 1, vertices);
-  
+
   // Write shape object
   SHPObject *shapeObject=NULL;
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, vertices+1, lon, lat, NULL);
@@ -206,9 +226,14 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
   return;
 }
 
+void geotiff2shape(char *filename, DBFHandle dbase, SHPHandle shape, int n)
+{
+    return;
+}
+
 // Convert RGPS cell to shape
 void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
-		DBFHandle dbase, SHPHandle shape, int n)
+        DBFHandle dbase, SHPHandle shape, int n)
 {
   // Write information into database file
   DBFWriteIntegerAttribute(dbase, n, 0, cell.cell_id);
@@ -231,11 +256,11 @@ void rgps2shape(cell_t cell, double *lat, double *lon, int vertices,
   DBFWriteDoubleAttribute(dbase, n, 17, cell.temperature);
   DBFWriteDoubleAttribute(dbase, n, 18, cell.u_wind);
   DBFWriteDoubleAttribute(dbase, n, 19, cell.v_wind);
-  
+
   // Write shape object
   SHPObject *shapeObject=NULL;
   shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, vertices+1,
-				      lon, lat, NULL);
+                      lon, lat, NULL);
   if (shapeObject == NULL)
     asfPrintError("Could not create shape object (%d)\n", n);
   SHPWriteObject(shape, -1, shapeObject);
@@ -260,8 +285,8 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape, int n)
 
   // Write shape object
   SHPObject *shapeObject=NULL;
-  shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1, 
-				      &grid.lon, &grid.lat, NULL);
+  shapeObject = SHPCreateSimpleObject(SHPT_POINT, 1,
+                      &grid.lon, &grid.lat, NULL);
   if (shapeObject == NULL)
     asfPrintError("Could not create shape object (%d)\n", n);
   SHPWriteObject(shape, -1, shapeObject);
@@ -279,8 +304,8 @@ void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
   // Read weather information;
   p = strchr(line, ',');
   if (p) {
-    sscanf(p+1, "%lf,%lf,%lf,%lf,%lf,%lf", 
-	   &lat, &lon, &direction, &speed, &temperature, &pressure);
+    sscanf(p+1, "%lf,%lf,%lf,%lf,%lf,%lf",
+       &lat, &lon, &direction, &speed, &temperature, &pressure);
     *p = 0;
     sprintf(date, "%s", line);
   }
@@ -311,8 +336,8 @@ void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 
   // Read information from line
   sscanf(line, "%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
-	 &lat, &lon, &ref_x, &ref_y, &ref_z, &search_x, &search_y, &search_z,
-	 &dx, &dy, &dz, &direction, &speed);
+     &lat, &lon, &ref_x, &ref_y, &ref_z, &search_x, &search_y, &search_z,
+     &dx, &dy, &dz, &direction, &speed);
 
   // Write information into database file
   DBFWriteDoubleAttribute(dbase, n, 0, ref_x);
@@ -350,7 +375,7 @@ void shape2text(char *inFile, FILE *fp)
   const char *sValue;
 
   // Open shapefile
-  open_shape(inFile, &dbase, &shape);  
+  open_shape(inFile, &dbase, &shape);
   fprintf(fp, "NAME OF SHAPEFILE: %s\n", inFile);
 
   // Extract the vital information out of the shapefile
@@ -382,15 +407,15 @@ void shape2text(char *inFile, FILE *fp)
       fprintf(fp, "Number of parts: %d\n", nParts);
     for (iPart=0; iPart<nParts; iPart++) {
       nVertices = shapeObject->panPartStart[iPart+1] -
-	shapeObject->panPartStart[iPart];
+    shapeObject->panPartStart[iPart];
       for (kk=0; kk<nVertices; kk++) {
-	if (nParts > 1 && kk == 0) {
-	  fprintf(fp, "\nPart: %d\n", iPart+1);
-	}
-	if (iPart < nParts && shapeObject->panPartStart[iPart] == kk)
-	  fprintf(fp, "Number of vertices: %d\n", nVertices);
-	fprintf(fp, "%d - Lat: %.4lf, Lon: %.4lf\n", 
-		kk, shapeObject->padfY[kk], shapeObject->padfX[kk]);
+    if (nParts > 1 && kk == 0) {
+      fprintf(fp, "\nPart: %d\n", iPart+1);
+    }
+    if (iPart < nParts && shapeObject->panPartStart[iPart] == kk)
+      fprintf(fp, "Number of vertices: %d\n", nVertices);
+    fprintf(fp, "%d - Lat: %.4lf, Lon: %.4lf\n",
+        kk, shapeObject->padfY[kk], shapeObject->padfX[kk]);
       }
     }
     SHPDestroyObject(shapeObject);
@@ -403,24 +428,24 @@ void shape2text(char *inFile, FILE *fp)
     for (kk=0; kk<nFields; kk++) {
       dbaseType = DBFGetFieldInfo(dbase, kk, fieldName, &nWidth, &nDecimals);
       switch (dbaseType)
-	{
-	case FTString:
-	  sValue = DBFReadStringAttribute(dbase, ii, kk);
-	  fprintf(fp, "%s: %s\n", fieldName, sValue);
-	  break;
-	case FTInteger:
-	  nValue = DBFReadIntegerAttribute(dbase, ii, kk);
-	  fprintf(fp, "%s: %d\n", fieldName, nValue);
-	  break;
-	case FTDouble:
-	  fValue = DBFReadDoubleAttribute(dbase, ii, kk);
-	  sprintf(str, "%%s: %%%d.%dlf\n", nWidth, nDecimals);
-	  fprintf(fp, str, fieldName, fValue);
-	  break;
-	case FTLogical:
-	case FTInvalid:
-	  break;
-	}
+    {
+    case FTString:
+      sValue = DBFReadStringAttribute(dbase, ii, kk);
+      fprintf(fp, "%s: %s\n", fieldName, sValue);
+      break;
+    case FTInteger:
+      nValue = DBFReadIntegerAttribute(dbase, ii, kk);
+      fprintf(fp, "%s: %d\n", fieldName, nValue);
+      break;
+    case FTDouble:
+      fValue = DBFReadDoubleAttribute(dbase, ii, kk);
+      sprintf(str, "%%s: %%%d.%dlf\n", nWidth, nDecimals);
+      fprintf(fp, str, fieldName, fValue);
+      break;
+    case FTLogical:
+    case FTInvalid:
+      break;
+    }
     }
     fprintf(fp, "\n");
   }

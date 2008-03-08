@@ -2,13 +2,21 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
+CFLAGS += \
+	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(CFLAGS)
 
 OBJS = \
 	kml.o \
 	convert_kml.o \
 	shape.o \
-	convert_shape.o
+	convert_shape.o \
+	text.o \
+	convert_text.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
@@ -17,6 +25,9 @@ LIBS = \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_import.a \
+	$(TIFF_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PNG_LIBS) \
 	$(PROJ_LIBS) \
