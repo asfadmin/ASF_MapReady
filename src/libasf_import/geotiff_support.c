@@ -15,7 +15,7 @@ int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
   // number):
   //
   // For NAD83 datums, Zones 3N through 23N, NNN == 269
-  // For NAD27 datums, Zones 3N through 22N, NNN == 367
+  // For NAD27 datums, Zones 3N through 22N, NNN == 267
   // For WGS72 datums, Zones 1N through 60N, NNN == 322
   // For WGS72 datums, Zones 1S through 60S, NNN == 323
   // For WGS84 datums, Zones 1N through 60N, NNN == 326
@@ -29,7 +29,7 @@ int PCS_2_UTM(short pcs, char *hem, datum_type_t *datum, unsigned long *zone)
   // NOTE: For NAD27 and NAD83, only the restricted range of zones
   // above is supported by the GeoTIFF standard.
   //
-  const short NNN_NAD27  = 367;
+  const short NNN_NAD27  = 267;
   const short NNN_NAD83  = 269;
   const short NNN_WGS84N = 326;
   const short NNN_WGS84S = 327;
