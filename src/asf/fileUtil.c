@@ -81,30 +81,37 @@ char *findExt(const char *name)
   if ( (ii>0) && (name[ii]=='.') ) {
     /* We found an extension! (maybe) */
     ext = (char *) &name[ii];
-    if (strcmp_case(ext, ".META") == 0 ||
-    strcmp_case(ext, ".DDR") == 0 ||
-    strcmp_case(ext, ".IMG") == 0 ||
-    strcmp_case(ext, ".DEM") == 0 ||
-    strcmp_case(ext, ".TIF") == 0 ||
-    strcmp_case(ext, ".TIFF") == 0 ||
-    strcmp_case(ext, ".JPG") == 0 ||
-    strcmp_case(ext, ".JPEG") == 0 ||
-    strcmp_case(ext, ".PNG") == 0 ||
-    strcmp_case(ext, ".PGM") == 0 ||
-    strcmp_case(ext, ".PPM") == 0 ||
-    strcmp_case(ext, ".CFG") == 0 ||
-    strcmp_case(ext, ".CSV") == 0 ||
-    strcmp_case(ext, ".CPX") == 0 ||
-    strcmp_case(ext, ".KML") == 0 ||
-    strcmp_case(ext, ".LUT") == 0 ||
-    strcmp_case(ext, ".RAW") == 0 ||
-    strcmp_case(ext, ".AIRSAR") == 0 ||
-    strcmp_case(ext, ".D") == 0 ||
-    strcmp_case(ext, ".L") == 0 ||
-    strcmp_case(ext, ".BIL") == 0)
-      return (char *) &name[ii];
+    if (strcmp_case(ext, ".META") == 0      ||
+        strcmp_case(ext, ".DDR") == 0       ||
+        strcmp_case(ext, ".IMG") == 0       ||
+        strcmp_case(ext, ".DEM") == 0       ||
+        strcmp_case(ext, ".TIF") == 0       ||
+        strcmp_case(ext, ".TIFF") == 0      ||
+        strcmp_case(ext, ".JPG") == 0       ||
+        strcmp_case(ext, ".JPEG") == 0      ||
+        strcmp_case(ext, ".PNG") == 0       ||
+        strcmp_case(ext, ".PGM") == 0       ||
+        strcmp_case(ext, ".PPM") == 0       ||
+        strcmp_case(ext, ".CFG") == 0       ||
+        strcmp_case(ext, ".CSV") == 0       ||
+        strcmp_case(ext, ".CPX") == 0       ||
+        strcmp_case(ext, ".KML") == 0       ||
+        strcmp_case(ext, ".LUT") == 0       ||
+        strcmp_case(ext, ".RAW") == 0       ||
+        strcmp_case(ext, ".AIRSAR") == 0    ||
+        strcmp_case(ext, ".D") == 0         ||
+        strcmp_case(ext, ".L") == 0         ||
+        strcmp_case(ext, ".BIL") == 0       ||
+        strcmp_case(ext, ".PAR") == 0       ||
+        strcmp_case(ext, ".SHP") == 0       ||
+        strcmp_case(ext, ".SHX") == 0       ||
+        strcmp_case(ext, ".DBF") == 0       ||
+        strcmp_case(ext, ".PRJ") == 0       ||
+        strcmp_case(ext, ".KML") == 0       ||
+        strcmp_case(ext, ".CSV") == 0)
+        return (char *) &name[ii];
     else
-      return NULL;
+        return NULL;
   }
   else
     /* We couldn't find an extension.  */
