@@ -102,6 +102,7 @@ int get_alos_delta_time (const char *fileName, double *delta);
 double get_alos_firstTime (const char *fName);
 
 double get_chirp_rate (const char *fName);
+double get_sensor_orientation (const char *fName);
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,
           meta_parameters *meta);
@@ -316,13 +317,22 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   // Azimuth time per pixel needs to be known for state vector propagation
   char **dataName;
   double firstTime, centerTime;
-  require_ceos_data(in_fName, &dataName, &nBands);
-  firstTime = get_firstTime(dataName[0]);
-  free_ceos_names(dataName, NULL);
+  if ((ceos->facility == CSTARS || ceos->facility == ESA ||
+       ceos->facility == DPAF || ceos->facility == IPAF) && 
+      ceos->satellite == ERS) {
+    date_dssr2time(dssr->az_time_first, &date, &time);
+    firstTime = date_hms2sec(&time);
+  }
+  else {
+    require_ceos_data(in_fName, &dataName, &nBands);
+    firstTime = get_firstTime(dataName[0]);
+    free_ceos_names(dataName, NULL);
+  }
   date_dssr2date(dssr->inp_sctim, &date, &time);
   centerTime = date_hms2sec(&time);
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  //printf("firstTime: %lf, centerTime: %lf\n", firstTime, centerTime);
 
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
@@ -477,6 +487,11 @@ void ceos_init_sar_asf(ceos_description *ceos, const char *in_fName,
   meta->sar->satellite_height =
     meta->sar->earth_radius + asf_facdr->scalt*1000;
 
+  // Get platform orientation
+  meta->sar->pitch = asf_facdr->scpitch;
+  meta->sar->roll = asf_facdr->scroll;
+  meta->sar->yaw = asf_facdr->scyaw;
+
   // State vector block
   ceos_init_stVec(in_fName, ceos, meta);
 
@@ -536,14 +551,6 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
-
-  // Azimuth time per pixel needs to be known for state vector propagation
-  require_ceos_data(in_fName, &dataName, &nBands);
-  firstTime = get_firstTime(dataName[0]);
-  date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
-  meta->sar->azimuth_time_per_pixel =
-    (centerTime - firstTime) / (meta->sar->original_line_count/2);
 
   // State vector block
   if (ceos->product != SSG)
@@ -752,12 +759,6 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     meta->sar->image_type = 'G';
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
-  date_dssr2time(dssr->az_time_first, &date, &time);
-  firstTime = date_hms2sec(&time);
-  date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
-  meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
-    / (meta->sar->original_line_count/2);
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
         meta->general->line_count/2,
@@ -1364,14 +1365,6 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
-  date_dssr2time(dssr->az_time_first, &date, &time);
-  firstTime = date_hms2sec(&time);
-  date_dssr2time(dssr->az_time_center, &date, &time);
-  centerTime = date_hms2sec(&time);
-  date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
-  meta->sar->azimuth_time_per_pixel =
-    (centerTime - firstTime) / (meta->sar->original_line_count/2);
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
@@ -1441,13 +1434,6 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
   meta->sar->slant_shift = 0;
   date_dssr2time(dssr->az_time_first, &date, &time);
-  firstTime = date_hms2sec(&time);
-  date_dssr2time(dssr->az_time_center, &date, &time);
-  centerTime = date_hms2sec(&time);
-  date_dssr2date(dssr->inp_sctim, &date, &time);
-  centerTime = date_hms2sec(&time);
-  meta->sar->azimuth_time_per_pixel =
-    (centerTime - firstTime) / (meta->sar->original_line_count/2);
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
   else if (meta->general->orbit_direction == 'A')
@@ -2599,6 +2585,32 @@ double get_chirp_rate (const char *fName)
    FREE(buff);
    return (double)bigInt16(linehdr.chirp_linear);
 }
+
+// Function that reads sensor orientation out of the line header
+double get_sensor_orientation (const char *fName)
+{
+   FILE *fp;
+   struct HEADER hdr;
+   struct SHEADER linehdr;
+   int length;
+   char *buff;
+
+   fp = FOPEN(fName, "r");
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   length = bigInt32(hdr.recsiz)-12;
+   buff = (char *) MALLOC(sizeof(char)*(length+5));
+   FREAD (buff, length, 1, fp);
+   FREAD (&hdr, sizeof(struct HEADER), 1, fp);
+   FREAD (&linehdr, sizeof(struct SHEADER), 1, fp);
+   FCLOSE(fp);
+
+   FREE(buff);
+   printf("roll: %lf\n", (double)bigInt16(linehdr.roll));
+   printf("yaw: %lf\n", (double)bigInt16(linehdr.yaw));
+   printf("pitch: %lf\n", (double)bigInt16(linehdr.pitch));
+   return (double)bigInt16(linehdr.yaw);
+}
+
 
 // Get the delta image time for ALOS data out of the summary file
 int get_alos_delta_time (const char *fileName, double *delta)

@@ -103,6 +103,14 @@ meta_sar *meta_sar_init(void)
   sar->azimuth_doppler_coefficients[0] = MAGIC_UNSET_DOUBLE;
   sar->azimuth_doppler_coefficients[1] = MAGIC_UNSET_DOUBLE;
   sar->azimuth_doppler_coefficients[2] = MAGIC_UNSET_DOUBLE;
+  sar->chirp_rate = MAGIC_UNSET_DOUBLE;
+  sar->pulse_duration = MAGIC_UNSET_DOUBLE;
+  sar->range_sampling_rate = MAGIC_UNSET_DOUBLE;
+  strcpy(sar->polarization, MAGIC_UNSET_STRING);
+  sar->multilook = MAGIC_UNSET_INT;
+  sar->pitch = MAGIC_UNSET_DOUBLE;
+  sar->roll = MAGIC_UNSET_DOUBLE;
+  sar->yaw = MAGIC_UNSET_DOUBLE;
 
   return sar;
 }

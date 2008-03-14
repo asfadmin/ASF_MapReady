@@ -276,6 +276,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
         "Azimuth doppler per azimuth pixel [Hz/pixel]");
     meta_put_double(fp,"dopAzQuad:",meta->sar->azimuth_doppler_coefficients[2],
         "Azimuth doppler per azimuth pixel sq. [Hz/(pixel^2)]");
+    if (META_VERSION >= 2.7) {
+      meta_put_double(fp,"pitch:",meta->sar->pitch,"Platform pitch [degrees]");
+      meta_put_double(fp,"roll:",meta->sar->roll,"Platform roll [degrees]");
+      meta_put_double(fp,"yaw:",meta->sar->yaw,"Platform yaw [degrees]");
+    }
     if (META_VERSION >= 1.4) {
       meta_put_double(fp,"azimuth_bandwidth:",meta->sar->azimuth_processing_bandwidth,
           "Azimuth processing bandwidth [Hz]");

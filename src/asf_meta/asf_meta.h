@@ -34,7 +34,7 @@
 /* There are some different versions of the metadata files around.
    This token defines the current version, which this header is
    designed to correspond with.  */
-#define META_VERSION 2.6
+#define META_VERSION 2.7
 
 /******************** Metadata Utilities ***********************/
 /*  These structures are used by the meta_get* routines.
@@ -206,6 +206,9 @@ typedef struct {
   double range_sampling_rate;          /* version 1.4 */
   char polarization[15];               /* version 1.7 */
   int multilook;                       // version 2.2
+  double pitch;                        // version 2.7
+  double roll;                         // version 2.7
+  double yaw;                          // version 2.7
 } meta_sar;
 
 

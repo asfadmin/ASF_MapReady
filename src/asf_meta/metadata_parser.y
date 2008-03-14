@@ -558,6 +558,12 @@ void fill_structure_field(char *field_name, void *valp)
       { MSAR->azimuth_doppler_coefficients[1] = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "dopAzQuad") )
       { MSAR->azimuth_doppler_coefficients[2] = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "pitch") )
+      { MSAR->pitch = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "roll") )
+      { MSAR->roll = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "yaw") )
+      { MSAR->yaw = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "azimuth_bandwidth") )
       { MSAR->azimuth_processing_bandwidth = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "chirp_rate") )
