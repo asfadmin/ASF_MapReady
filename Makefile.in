@@ -19,10 +19,10 @@ MODULES = \
 	src/libasf_ardop \
 	src/asf_fft \
 	src/libasf_raster \
+	src/libasf_import \
 	src/libasf_vector \
 	src/libasf_sar \
 	src/ardop \
-	src/libasf_import \
 	src/libasf_geocode \
 	src/libasf_export \
 	src/libasf_terrcorr \
