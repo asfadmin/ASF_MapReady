@@ -239,14 +239,13 @@ int main(int argc, char **argv)
     }
     else if
     (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "KML")==0) {
-        asfPrintStatus("   Converting a shape file into a kml file ...\n\n");
+        asfPrintStatus("   Converting shape file into a kml file ...\n\n");
         read_shape(infile, outfile, KMLFILE, 0);
     }
     else if
     (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "TEXT")==0) {
-        asfPrintStatus("   Converting a shapefile into a CSV polygon text file ...\n\n");
-        write_text(infile, outfile, TEXT, 0);
-        //read_shape(infile, outfile, TEXT, 0);
+        asfPrintStatus("   Converting a shapefile into a text file ...\n\n");
+        read_shape(infile, outfile, TEXT, 0);
     }
     else if
     (strcmp(uc(informat), "GEOTIFF")==0 && strcmp(uc(outformat), "SHAPE")==0) {
@@ -277,6 +276,7 @@ int main(int argc, char **argv)
       asfPrintError("Unsupported conversion.\n");
     }
   }
+  asfPrintStatus("\nDone.\n\n");
 
   return(0);
 }

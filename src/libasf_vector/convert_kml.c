@@ -22,111 +22,159 @@ void meta2kml(char *line, FILE *fp)
 void point2kml(char *inFile, FILE *outFP)
 {
   float lat, lon;
+  int points=0;
   char *p;
   char *line;
   FILE *inFP;
 
   inFP = FOPEN(inFile, "r");
   line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+  points = 0;
   while (fgets(line, LINE_MAX, inFP)) {
       line[strlen(line)-1]='\0';
       p=line;
       while(isspace((int)(*p))) p++;
-      if (*p != '#') {
+      if (*p != '#' && strlen(p) > 0) {
           // Extract information out of the line
           p = strchr(line, ',');
           if (p && *p == ',') {
-              sscanf(p+1, "%f,%f", &lon, &lat);
+              points++;
+              sscanf(p+1, "%f,%f", &lat, &lon);
               *p = '\0';
 
               // Write information in kml file
               fprintf(outFP, "<Placemark>\n");
-              fprintf(outFP, "<description><![CDATA[\n");
-              fprintf(outFP, "<strong>Latitude</strong>: %9.4f<br>\n", lat);
-              fprintf(outFP, "<strong>Longitude</strong>: %9.4f<br>\n", lon);
-              fprintf(outFP, "]]></description>\n");
-              fprintf(outFP, "<name>%s</name>\n", line);
-              fprintf(outFP, "<LookAt>\n");
-              fprintf(outFP, "<longitude>%9.4f</longitude>\n", lon);
-              fprintf(outFP, "<latitude>%9.4f</latitude>\n", lat);
-              fprintf(outFP, "<range>400000</range>\n");
-              fprintf(outFP, "</LookAt>\n");
-              fprintf(outFP, "<Point>\n");
-              fprintf(outFP, "<coordinates>%f,%f,0</coordinates>\n", lon, lat);
-              fprintf(outFP, "</Point>\n");
+              fprintf(outFP, "  <name>%s</name>\n", line);
+              fprintf(outFP, "  <description>\n");
+              fprintf(outFP, "    <![CDATA[\n");
+              fprintf(outFP, "      <strong>Latitude</strong>: %9.4f<br>\n", lat);
+              fprintf(outFP, "      <strong>Longitude</strong>: %9.4f<br>\n", lon);
+              fprintf(outFP, "    ]]>\n");
+              fprintf(outFP, "  </description>\n");
+              fprintf(outFP, "  <LookAt>\n");
+              fprintf(outFP, "    <longitude>%9.4f</longitude>\n", lon);
+              fprintf(outFP, "    <latitude>%9.4f</latitude>\n", lat);
+              fprintf(outFP, "    <range>400000</range>\n");
+              fprintf(outFP, "  </LookAt>\n");
+              fprintf(outFP, "  <Point>\n");
+              fprintf(outFP, "    <coordinates>%f,%f,0</coordinates>\n", lon, lat);
+              fprintf(outFP, "  </Point>\n");
               fprintf(outFP, "</Placemark>\n");
           }
       }
   }
   FREE(line);
   FCLOSE(inFP);
+  if (points < 1) {
+      asfPrintError("Not enough points (lines) in point CSV file %s.\n", inFile);
+  }
 
   return;
 }
 
 // Convert polygon to kml
-void polygon2kml(char *line, FILE *fp, char *name)
+void polygon2kml(char *inFile, FILE *outFP)
 {
-  int ii, vertices;
-  double *lat, *lon;
+  int ii, vertices=0;
+  float *lat = NULL, *lon = NULL;
   char id[255];
-  char *p, *p_lat, *p_lon;
-  printf(line);printf("\n");
-  // Read ID and number of vertices;
-  p = strchr(line, (int)',');
-  if (p) {
-    sscanf(p+1, "%d", &vertices);
-    *p = '\0';
-    sprintf(id, "%s", line);
-    *p = ',';
+  char *p = NULL, *pp = NULL, *p_lat = NULL, *p_lon = NULL;
+  char *line = NULL;
+  FILE *inFP = NULL;
+
+  inFP = FOPEN(inFile, "r");
+  line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+  strcpy(id, MAGIC_UNSET_STRING);
+  // Count how many vertices are in the file
+  vertices = 0;
+  while (fgets(line, LINE_MAX, inFP)) {
+      p = line;
+      while(isspace((int)(*p))) p++;
+      if (*p != '#' && strlen(p) > 0) {
+          p = strchr(line, (int)',');
+          if (p && *p == ',') vertices++;
+      }
+  }
+  if (vertices < 3) {
+      FREE(line);
+      FCLOSE(inFP);
+      asfPrintError("Not enough polygon vertices (lines) in polygon CSV file %s.\n", inFile);
   }
 
-  // Read coordinates of the vertices
-  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
-  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
-  p_lat = p;
-  for (ii=0; ii<vertices; ii++) {
-    sscanf(p_lat+1, "%lf", &lat[ii]);
-    p_lon = strchr(p_lat+1, ',');
-    sscanf(p_lon+1, "%lf", &lon[ii]);
-    p_lat = strchr(p_lon+1, ',');
+  // Read polygon vertices && ID line if it appears
+  FSEEK(inFP, 0, SEEK_SET);
+  lat = (float *) MALLOC(sizeof(float)*(vertices+1)); // Plus 1 so that the last point can be the closing point
+  lon = (float *) MALLOC(sizeof(float)*(vertices+1)); // of the polygon (see below ...copy element 0 to last pos.)
+  ii = 0;
+  while (fgets(line, LINE_MAX, inFP)) {
+      line[strlen(line)-1]='\0';
+      p=line;
+      while(isspace((int)(*p))) p++;
+      if (*p != '#' && strlen(p) > 0) {
+          // Read coordinates of the vertices
+          pp = strchr(line, ',');
+          if (pp && *pp == ',') {
+              // Probably found a polygon vertice...
+              p_lat = p;
+              p_lon = ++pp;
+              sscanf(p_lat, "%f", &lat[ii]);
+              sscanf(p_lon, "%f", &lon[ii]);
+              ii++;
+          }
+      }
+      else {
+          // Might be the ID line
+          if (strstr("ID", p)) {
+              pp = strchr(p, ',');
+              if (pp && *pp == ',') {
+                  pp++;
+                  while(isspace((int)(*pp))) pp++;
+                  strcpy(id, pp);
+              }
+          }
+      }
   }
-  lat[vertices] = lat[0];
+  lat[vertices] = lat[0]; // Copy first to last to close the polygon
   lon[vertices] = lon[0];
 
   // Write information in kml file
-  fprintf(fp, "<Placemark>\n");
-  fprintf(fp, "<description><![CDATA[\n");
-  fprintf(fp, "<strong>ID</strong>:%s<br>\n", id);
-  fprintf(fp, "<strong>Vertices</strong>: %d<br>\n", vertices);
-  for (ii=0; ii<vertices; ii++) {
-    fprintf(fp, "<strong>%d</strong> - ", ii+1);
-    fprintf(fp, "<strong>Lat</strong>: %9.4f, ", lat[ii]);
-    fprintf(fp, "<strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
+  fprintf(outFP, "<Placemark>\n");
+  fprintf(outFP, "  <name>%s</name>\n", inFile);
+  fprintf(outFP, "  <description>\n");
+  fprintf(outFP, "    <![CDATA[\n");
+  fprintf(outFP, "      <strong>ID</strong>:%s<br>\n", id);
+  fprintf(outFP, "      <strong>Vertices</strong>: %d<br>\n", vertices+1);
+  for (ii=0; ii<=vertices; ii++) {
+      fprintf(outFP, "      <strong>%d</strong> - ", ii+1);
+      fprintf(outFP, "  <strong>Lat</strong>: %9.4f, ", lat[ii]);
+      fprintf(outFP, "  <strong>Lon</strong>: %9.4f<br>\n", lon[ii]);
   }
-  fprintf(fp, "]]></description>\n");
-  fprintf(fp, "<name>%s</name>\n", name);
-  fprintf(fp, "<LookAt>\n");
-  fprintf(fp, "<longitude>%9.4f</longitude>\n", lon[0]);
-  fprintf(fp, "<latitude>%9.4f</latitude>\n", lat[0]);
-  fprintf(fp, "<range>400000</range>\n");
-  fprintf(fp, "</LookAt>\n");
-  write_kml_style_keys(fp);
-  fprintf(fp, "<Polygon>\n");
-  fprintf(fp, "<outerBoundaryIs>\n");
-  fprintf(fp, "<LineString>\n");
-  fprintf(fp, "<coordinates>\n");
-
-  for (ii=0; ii<vertices; ii++) {
-      printf ("DEBUG OUTPUT: vertices = %d, ii = %d\nlongitude %.12f, latitude %.12f\n", vertices, ii, lon[ii], lat[ii]);
-      fprintf(fp, "%.12f,%.12f,4000\n", lon[ii], lat[ii]);
+  fprintf(outFP, "    ]]>\n");
+  fprintf(outFP, "  </description>\n");
+  fprintf(outFP, "  <LookAt>\n");
+  fprintf(outFP, "    <longitude>%9.4f</longitude>\n", lon[0]);
+  fprintf(outFP, "    <latitude>%9.4f</latitude>\n", lat[0]);
+  fprintf(outFP, "    <range>400000</range>\n");
+  fprintf(outFP, "  </LookAt>\n");
+  write_kml_style_keys(outFP);
+  fprintf(outFP, "  <Polygon>\n");
+  fprintf(outFP, "    <altitudeMode>relativeToGround</altitudeMode>\n");
+  fprintf(outFP, "    <outerBoundaryIs>\n");
+  fprintf(outFP, "      <LinearRing>\n");
+  fprintf(outFP, "        <coordinates>\n");
+  for (ii=0; ii<=vertices; ii++) {
+      fprintf(outFP, "         %.12f,%.12f,4000\n", lon[ii], lat[ii]);
   }
+  fprintf(outFP, "        </coordinates>\n");
+  fprintf(outFP, "      </LinearRing>\n");
+  fprintf(outFP, "    </outerBoundaryIs>\n");
+  fprintf(outFP, "  </Polygon>\n");
+  fprintf(outFP, "</Placemark>\n");
 
-  fprintf(fp, "</coordinates>\n");
-  fprintf(fp, "</LineString>\n");
-  fprintf(fp, "</outerBoundaryIs>\n");
-  fprintf(fp, "</Polygon>\n");
-  fprintf(fp, "</Placemark>\n");
+  FREE(lat);
+  FREE(lon);
+  FREE(line);
+  FCLOSE(inFP);
 
   return;
 }

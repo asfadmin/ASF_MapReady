@@ -26,7 +26,7 @@ void kml_header(FILE *kml_file)
 {
     fprintf(kml_file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     fprintf(kml_file,
-            "<kml xmlns=\"http://earth.google.com/kml/2.0\">\n");
+            "<kml xmlns=\"http://earth.google.com/kml/2.2\">\n");
     fprintf(kml_file, "<Document>\n");
 }
 
@@ -457,10 +457,10 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
       point2kml(line, fp);
       break;
     case POLYGON:
-      polygon2kml(line, fp, name);
+      polygon2kml(line, fp);
       break;
     case SHAPEFILE:
-      printf("\n\nYO BRIAN: convert2kml() sees a SHAPEFILE\n\n");
+      printf("\n\nDEBUG OUTPUT - YO BRIAN: convert2kml() sees a SHAPEFILE\n\n");
       break;
     case GEOTIFF_META:
       geotiff2kml(line, fp);

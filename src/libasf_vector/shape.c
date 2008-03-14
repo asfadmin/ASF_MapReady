@@ -207,23 +207,26 @@ void shape_init(char *inFile, format_type_t format)
 
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
 {
-  char *dbaseFile;
+    char *basename;
+    char *dbaseFile;
 
-  // Open database for adding values
-  dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+5));
-  sprintf(dbaseFile, "%s.dbf", inFile);
-  *dbase = DBFOpen(dbaseFile, "r+b");
-  if (*dbase == NULL)
-    asfPrintError("Could not open database file '%s'\n", dbaseFile);
+    // Open database for adding values
+    basename = get_basename(inFile);
+    dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(basename)+5));
+    sprintf(dbaseFile, "%s.dbf", basename);
+    *dbase = DBFOpen(dbaseFile, "r+b");
+    if (*dbase == NULL)
+        asfPrintError("Could not open database file '%s'\n", dbaseFile);
 
-  // Open shapefile for adding values
-  *shape = SHPOpen(inFile, "r+b");
-  if (*shape == NULL)
-    asfPrintError("Could not open shapefile '%s\n", inFile);
+    // Open shapefile for adding values
+    *shape = SHPOpen(inFile, "r+b");
+    if (*shape == NULL)
+        asfPrintError("Could not open shapefile '%s\n", inFile);
 
-  FREE(dbaseFile);
+    FREE(basename);
+    FREE(dbaseFile);
 
-  return;
+    return;
 }
 
 void close_shape(DBFHandle dbase, SHPHandle shape)
@@ -325,7 +328,7 @@ int read_shape(char *inFile, char *outFile, format_type_t format, int list)
   char *line;
 
   if (format == TEXT || format == URSA)
-    append_ext_if_needed(outFile, ".txt", ".txt");
+    append_ext_if_needed(outFile, ".csv", ".csv");
   else if (format == KMLFILE)
     append_ext_if_needed(outFile, ".kml", ".kml");
   fpOut = FOPEN(outFile, "w");

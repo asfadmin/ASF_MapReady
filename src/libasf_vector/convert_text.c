@@ -28,7 +28,6 @@ void meta2text(char *inFile, FILE *outFP)
     double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
     double ulLat=0.0, urLat=0.0, lrLat=0.0, llLat=0.0;
     int no_location_info=1;
-    int id=0;
     meta_parameters *meta = NULL;
 
     if (isgeotiff(inFile)) {
@@ -56,16 +55,18 @@ void meta2text(char *inFile, FILE *outFP)
     meta_free(meta);
 
     if (no_location_info) asfPrintWarning("No location coordinates found in %s\n", inFile);
-    fprintf(outFP, "# File type, polygon\n");
-    fprintf(outFP, "# ID, Latitude, Longitude\n");
+    fprintf(outFP, "# File type        , polygon\n");
+    fprintf(outFP, "# Polygon ID (name), %s\n", inFile); // Use inFile for name ...for lack of a better idea
+    fprintf(outFP, "#\n");
+    fprintf(outFP, "# Latitude, Longitude\n");
     if (no_location_info) {
         fprintf(outFP, "# WARNING: No location information found in source file (%s)\n", inFile);
         fprintf(outFP, "#          Values shown below are invalid\n");
     }
-    fprintf(outFP, "%d, %f, %f\n", id++, ulLat, ulLong);
-    fprintf(outFP, "%d, %f, %f\n", id++, urLat, urLong);
-    fprintf(outFP, "%d, %f, %f\n", id++, lrLat, lrLong);
-    fprintf(outFP, "%d, %f, %f\n", id, llLat, llLong);
+    fprintf(outFP, "%f, %f\n", ulLat, ulLong);
+    fprintf(outFP, "%f, %f\n", urLat, urLong);
+    fprintf(outFP, "%f, %f\n", lrLat, lrLong);
+    fprintf(outFP, "%f, %f\n", llLat, llLong);
     fprintf(outFP, "\n");
     // FCLOSE() is called by the calling function
 
@@ -84,20 +85,34 @@ int ismetadata(char *inFile)
     int isMetadata=0;
     int foundGeneral=0;
     char *line=NULL, *s;
-    FILE *fp;
+    FILE *fp = NULL;
 
-    fp = FOPEN(inFile, "r");
-    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
-    while (fgets(line, LINE_MAX, fp)) {
-        line[strlen(line)-1] = '\0';
-        s=line;
-        while(isspace((int)(*s))) ++s;
-        if (s && strlen(s) && strncmp(uc(s), "GENERAL {", 9) == 0) {
-            foundGeneral = 1;
-        }
-        if (foundGeneral && s && strlen(s) && strncmp(uc(s), "NAME:", 5) == 0) {
-            isMetadata = 1;
-            break;
+    fp = fopen(inFile, "r");
+    if (!fp) {
+        char n[1024];
+        sprintf(n, "%s.meta", inFile);
+        fp = fopen(n, "r");
+    }
+    if (!fp) {
+        char *basename = get_basename(inFile);
+        char n[1024];
+        sprintf(n, "%s.meta", basename);
+        fp = fopen(n, "r");
+        FREE(basename);
+    }
+    if (fp) {
+        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        while (fgets(line, LINE_MAX, fp)) {
+            line[strlen(line)-1] = '\0';
+            s=line;
+            while(isspace((int)(*s))) ++s;
+            if (s && strlen(s) && strncmp(uc(s), "GENERAL {", 9) == 0) {
+                foundGeneral = 1;
+            }
+            if (foundGeneral && s && strlen(s) && strncmp(uc(s), "NAME:", 5) == 0) {
+                isMetadata = 1;
+                break;
+            }
         }
     }
     FREE(line);
@@ -127,21 +142,35 @@ int ispoint(char *inFile)
     char *line=NULL, *s;
     FILE *fp;
 
-    fp = FOPEN(inFile, "r");
-    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
-    while (fgets(line, LINE_MAX, fp)) {
-        line[strlen(line)-1] = '\0';
-        s=line;
-        while(isspace((int)(*s))) ++s;
-        if (*s == '#') {
-            char *tok = strtok(s,",");
-            s = strstr(uc(tok), "FILE");
-            if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                tok = strtok(NULL, ",");
-                s = strstr(uc(tok), "POINT");
-                if (s && strncmp(uc(s), "POINT", 5) == 0) {
-                    isPoint = 1;
-                    break;
+    fp = fopen(inFile, "r");
+    if (!fp) {
+        char n[1024];
+        sprintf(n, "%s.csv", inFile);
+        fp = fopen(n, "r");
+    }
+    if (!fp) {
+        char *basename = get_basename(inFile);
+        char n[1024];
+        sprintf(n, "%s.csv", basename);
+        fp = fopen(n, "r");
+        FREE(basename);
+    }
+    if (fp) {
+        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        while (fgets(line, LINE_MAX, fp)) {
+            line[strlen(line)-1] = '\0';
+            s=line;
+            while(isspace((int)(*s))) ++s;
+            if (*s == '#') {
+                char *tok = strtok(s,",");
+                s = strstr(uc(tok), "FILE");
+                if (s && strncmp(uc(s), "FILE", 4) == 0) {
+                    tok = strtok(NULL, ",");
+                    s = strstr(uc(tok), "POINT");
+                    if (s && strncmp(uc(s), "POINT", 5) == 0) {
+                        isPoint = 1;
+                        break;
+                    }
                 }
             }
         }
@@ -158,21 +187,35 @@ int ispolygon(char *inFile)
     char *line=NULL, *s;
     FILE *fp;
 
-    fp = FOPEN(inFile, "r");
-    line = (char*)MALLOC(sizeof(char)*LINE_MAX);
-    while (fgets(line, LINE_MAX, fp)) {
-        line[strlen(line)-1] = '\0';
-        s=line;
-        while(isspace((int)(*s))) ++s;
-        if (*s == '#') {
-            char *tok = strtok(s,",");
-            s = strstr(uc(tok), "FILE");
-            if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                tok = strtok(NULL, ",");
-                s = strstr(uc(tok), "POLYGON");
-                if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
-                    isPolygon = 1;
-                    break;
+    fp = fopen(inFile, "r");
+    if (!fp) {
+        char n[1024];
+        sprintf(n, "%s.csv", inFile);
+        fp = fopen(n, "r");
+    }
+    if (!fp) {
+        char *basename = get_basename(inFile);
+        char n[1024];
+        sprintf(n, "%s.csv", basename);
+        fp = fopen(n, "r");
+        FREE(basename);
+    }
+    if (fp) {
+        line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        while (fgets(line, LINE_MAX, fp)) {
+            line[strlen(line)-1] = '\0';
+            s=line;
+            while(isspace((int)(*s))) ++s;
+            if (*s == '#') {
+                char *tok = strtok(s,",");
+                s = strstr(uc(tok), "FILE");
+                if (s && strncmp(uc(s), "FILE", 4) == 0) {
+                    tok = strtok(NULL, ",");
+                    s = strstr(uc(tok), "POLYGON");
+                    if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
+                        isPolygon = 1;
+                        break;
+                    }
                 }
             }
         }
@@ -224,38 +267,59 @@ int isgeotiff(char *inFile)
     int isGeotiff = 0;
     char magic[2];
 
-    fp = FOPEN(inFile, "r");
-    magic[0] = fgetc(fp);
-    magic[1] = fgetc(fp);
-    if ((magic[0] == 'I' && magic[1] == 'I') ||
-        (magic[0] == 'M' && magic[1] == 'M')  )
-    {
-        // Looks like a TIFF file, so let's see if it's a GeoTIFF file
-        tiff = XTIFFOpen(inFile, "r");
-        if (!tiff) isGeotiff = 0; // Not a TIFF (or GeoTIFF) file ...rare if the magic bytes were correct.
-        if (tiff) gtif = GTIFNew(tiff);
-        if (tiff && !gtif) isGeotiff = 0; // Usually GTIFNew() succeeds even if not a GeoTIFF ...
+    fp = fopen(inFile, "r");
+    if (!fp) {
+        char n[1024];
+        sprintf(n, "%s.tif", inFile);
+        fp = fopen(n, "r");
+    }
+    if (!fp) {
+        char *basename = get_basename(inFile);
+        char n[1024];
+        sprintf(n, "%s.tif", basename);
+        fp = fopen(n, "r");
+        FREE(basename);
+    }
+    if (!fp) {
+        char *basename = get_basename(inFile);
+        char n[1024];
+        sprintf(n, "%s.tiff", basename);
+        fp = fopen(n, "r");
+        FREE(basename);
+    }
+    if (fp) {
+        magic[0] = fgetc(fp);
+        magic[1] = fgetc(fp);
+        if ((magic[0] == 'I' && magic[1] == 'I') ||
+            (magic[0] == 'M' && magic[1] == 'M')  )
+        {
+            // Looks like a TIFF file, so let's see if it's a GeoTIFF file
+            tiff = XTIFFOpen(inFile, "r");
+            if (!tiff) isGeotiff = 0; // Not a TIFF (or GeoTIFF) file ...rare if the magic bytes were correct.
+            if (tiff) gtif = GTIFNew(tiff);
+            if (tiff && !gtif) isGeotiff = 0; // Usually GTIFNew() succeeds even if not a GeoTIFF ...
 
-        if (tiff && gtif) {
-            double *tie_point=NULL;
-            double *pixel_scale=NULL;
-            int tp_count=0, ps_count=0;
-            (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &tp_count, &tie_point);
-            (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &ps_count, &pixel_scale);
+            if (tiff && gtif) {
+                double *tie_point=NULL;
+                double *pixel_scale=NULL;
+                int tp_count=0, ps_count=0;
+                (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &tp_count, &tie_point);
+                (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &ps_count, &pixel_scale);
 
-            if (tie_point && pixel_scale && tp_count == 6 && ps_count == 3) {
-                // Assume that if tie points and pixel scales exist that the file is a
-                // GeoTIFF ...it's still possible that read_generic_geotiff_metadata() will
-                // fail due to the file only being a georeferenced rather than a geocoded
-                // GeoTIFF, but that's a different problem...
-                isGeotiff = 1;
+                if (tie_point && pixel_scale && tp_count == 6 && ps_count == 3) {
+                    // Assume that if tie points and pixel scales exist that the file is a
+                    // GeoTIFF ...it's still possible that read_generic_geotiff_metadata() will
+                    // fail due to the file only being a georeferenced rather than a geocoded
+                    // GeoTIFF, but that's a different problem...
+                    isGeotiff = 1;
+                }
+                FREE(tie_point);
+                FREE(pixel_scale);
             }
-            FREE(tie_point);
-            FREE(pixel_scale);
-        }
 
-        if (gtif) GTIFFree(gtif);
-        if (tiff) XTIFFClose(tiff);
+            if (gtif) GTIFFree(gtif);
+            if (tiff) XTIFFClose(tiff);
+        }
     }
 
     return isGeotiff;

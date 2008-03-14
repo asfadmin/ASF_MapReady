@@ -168,65 +168,67 @@
     "      they are after the first 2 (required) comment lines.\n" \
     "   2. The first 2 lines are comment lines, those with 'file type' and \"ID\"\n" \
     "      in them, and are REQUIRED\n" \
-    "   3. Values and text strings shall be separated by a comma, ','\n" \
-    "   4. A line terminating in a comma is OK\n" \
-    "   5. Only one point or coordinate may be listed per line\n" \
-    "   6. Polygon text files do NOT need to list a closing point that is\n" \
+    "   3  The required line containing \"# ID, latitude, longitude\" defines the columns.\n" \
+    "      At this time, data must be in latitude, longitude order (not vice versa).\n" \
+    "   4. Values and text strings shall be separated by a comma, ','\n" \
+    "   5. A line terminating in a comma is OK\n" \
+    "   6. Only one point or coordinate may be listed per line\n" \
+    "   7. Polygon text files do NOT need to list a closing point that is\n" \
     "      the same as the first (beginning) point.  Polygons are automatically\n" \
     "      closed by convert2vector.\n" \
-    "   7. ID numbers will be interpreted as integers (truncated if necessary) and\n" \
+    "   8. ID numbers will be interpreted as integers (truncated if necessary) and\n" \
     "      data values will be interpreted as floating point.\n" \
-    "   8. Blank lines and white space before/after comma characters will be ignored\n" \
+    "   9. Blank lines and white space before/after comma characters will be ignored\n" \
     "\n" \
     "   Example ASF-style text file containing point data:\n" \
     "\n" \
     "      # file type,point\n" \
-    "      # ID,longitude,latitude\n" \
+    "      # ID,latitude,longitude\n" \
     "      # Created by Alaska Satellite Facility - Geophysical Institute - University of Alaska Fairbanks\n" \
     "      # 28-February-2008\n" \
-    "       1, -124.263  , 41.9839\n" \
-    "       2, -120.9325 , 41.8375\n" \
-    "       3, -122.79667, 41.89028\n" \
-    "       4, -112.64056, 42.29389\n" \
-    "       5, -110.49084, 41.885\n" \
-    "       6, -110.79889, 40.98084\n" \
-    "       7, -110.76278, 38.80667\n" \
-    "       8, -111.36472, 38.07528\n" \
-    "       9, -111.73167, 36.97917\n" \
-    "      10, -112.49084, 37.00639\n" \
-    "      11, -114.48278, 34.88334\n" \
-    "      12, -114.15056, 34.22472\n" \
-    "      13, -114.48084, 32.77028\n" \
-    "      14, -114.86584, 32.53389\n" \
-    "      15, -117.16   , 32.4125\n" \
-    "      16, -117.36472, 33.09667\n" \
-    "      17, -117.84361, 33.51278\n" \
-    "      18, -118.43389, 33.69\n" \
-    "      19, -118.97195, 33.95778\n" \
-    "      20, -119.56583, 34.19695\n" \
+    "       1, 41.9839,  -124.263  \n" \
+    "       2, 41.8375,  -120.9325 \n" \
+    "       3, 41.89028, -122.79667\n" \
+    "       4, 42.29389, -112.64056\n" \
+    "       5, 41.885,   -110.49084\n" \
+    "       6, 40.98084, -110.79889\n" \
+    "       7, 38.80667, -110.76278\n" \
+    "       8, 38.07528, -111.36472\n" \
+    "       9, 36.97917, -111.73167\n" \
+    "      10, 37.00639, -112.49084\n" \
+    "      11, 34.88334, -114.48278\n" \
+    "      12, 34.22472, -114.15056\n" \
+    "      13, 32.77028, -114.48084\n" \
+    "      14, 32.53389, -114.86584\n" \
+    "      15, 32.4125,  -117.16   \n" \
+    "      16, 33.09667, -117.36472\n" \
+    "      17, 33.51278, -117.84361\n" \
+    "      18, 33.69,    -118.43389\n" \
+    "      19, 33.95778, -118.97195\n" \
+    "      20, 34.19695, -119.56583\n" \
     "\n" \
     "   Example ASF-style text file containing polygon data:\n" \
     "\n" \
     "      # File type,polygon,\n" \
-    "      # ID,longitude,latitude\n" \
-    "      1,-124.263,41.9839\n" \
-    "      2,-120.9325,41.8375\n" \
-    "      3,-122.79667,41.89028\n" \
-    "      4,-112.64056,42.29389\n" \
-    "      5,-110.49084,41.885\n" \
-    "      6,-110.79889,40.98084\n" \
-    "      7,-110.76278,38.80667\n" \
-    "      8,-111.36472,38.07528\n" \
+    "      # ID,latitude,longitude\n" \
+    "      1,41.9839,-124.263\n" \
+    "      2,41.8375,-120.9325\n" \
+    "      3,41.89028,-122.79667\n" \
+    "      4,42.29389,-112.64056\n" \
+    "      5,41.885,-110.49084\n" \
+    "      6,40.98084,-110.79889\n" \
+    "      7,38.80667,-110.76278\n" \
+    "      8,38.07528,-111.36472\n" \
     "      # Note: The following point is only approximate\n" \
-    "      9,-111.73167,36.97917\n" \
-    "      10,-112.49084,37.00639\n" \
-    "      11,-114.48278,34.88334\n" \
-    "      12,-114.15056,34.22472\n" \
-    "      13,-114.48084,32.77028\n" \
-    "      14,-114.86584,32.53389\n" \
-    "      15,-117.16,32.4125\n" \
-    "      16,-117.36472,33.09667\n" \
-    "      17,-117.84361,33.51278\n" \
+    "      9,36.97917,-111.73167\n" \
+    "      10,37.00639,-112.49084\n" \
+    "      11,34.88334,-114.48278\n" \
+    "      12,34.22472,-114.15056\n" \
+    "      13,32.77028,-114.48084\n" \
+    "      14,32.53389,-114.86584\n" \
+    "      15,32.4125,-117.16\n" \
+    "      16,33.09667,-117.36472\n" \
+    "      17,33.51278,-117.84361\n" \
     "\n" \
     "   Example of a shapefile text dump:\n" \
     "\n" \

@@ -360,95 +360,128 @@ void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 
   return;
 }
-
+/*
+    fprintf(outFP, "# File type        , polygon\n");
+    fprintf(outFP, "# Polygon ID (name), %s\n", inFile); // Use inFile for name ...for lack of a better idea
+    fprintf(outFP, "#\n");
+    fprintf(outFP, "# Latitude, Longitude\n");
+    fprintf(outFP, "%f, %f\n", ulLat, ulLong);
+    fprintf(outFP, "%f, %f\n", urLat, urLong);
+    fprintf(outFP, "%f, %f\n", lrLat, lrLong);
+    fprintf(outFP, "%f, %f\n", llLat, llLong);
+    fprintf(outFP, "\n");
+*/
 // Convert shapefile to text file - general dump function
 void shape2text(char *inFile, FILE *fp)
 {
-  DBFHandle dbase;
-  SHPHandle shape;
-  DBFFieldType dbaseType;
-  SHPObject *shapeObject;
-  char fieldName[25], str[50];
-  int ii, kk, nEntities, nVertices, nParts, iPart;
-  int nFields, nWidth, nDecimals, nValue, pointType;
-  double fValue;
-  const char *sValue;
+    DBFHandle dbase;
+    SHPHandle shape;
+    DBFFieldType dbaseType;
+    SHPObject *shapeObject;
+    char fieldName[25], str[50];
+    char textFileType[256];
 
-  // Open shapefile
-  open_shape(inFile, &dbase, &shape);
-  fprintf(fp, "NAME OF SHAPEFILE: %s\n", inFile);
+    int ii, kk, nEntities, nVertices, nParts; //, iPart;
+    int nFields, nWidth, nDecimals, nValue, pointType;
+    double fValue;
+    const char *sValue;
 
-  // Extract the vital information out of the shapefile
-  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
-  fprintf(fp, "Number of structures: %d\n", nEntities);
-  switch (pointType)
-    {
-    case SHPT_POLYGON:
-      fprintf(fp, "Shape type: Polygon\n\n");
-      break;
-    case SHPT_POINT:
-      fprintf(fp, "Shape type: Point\n\n");
-      break;
-    case SHPT_ARC:
-      asfPrintWarning("Shape type 'Arc' currently not supported\n\n");
-      break;
-    case SHPT_MULTIPOINT:
-      asfPrintWarning("Shape type 'Multipoint' currently not supported\n\n");
-      break;
-    }
-  for (ii=0; ii<nEntities; ii++) {
+    // Open shapefile
+    open_shape(inFile, &dbase, &shape);
+    //fprintf(fp, "NAME OF SHAPEFILE: %s\n", inFile);
 
-    // Read object and report basic information
-    shapeObject = SHPReadObject(shape, ii);
-    nParts = shapeObject->nParts;
-    nVertices = shapeObject->nVertices;
-    fprintf(fp, "Structure: %d\n", ii+1);
-    if (nParts > 1)
-      fprintf(fp, "Number of parts: %d\n", nParts);
-    for (iPart=0; iPart<nParts; iPart++) {
-      nVertices = shapeObject->panPartStart[iPart+1] -
-    shapeObject->panPartStart[iPart];
-      for (kk=0; kk<nVertices; kk++) {
-    if (nParts > 1 && kk == 0) {
-      fprintf(fp, "\nPart: %d\n", iPart+1);
+    // Extract the vital information out of the shapefile
+    SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
+    //fprintf(fp, "Number of structures: %d\n", nEntities);
+    switch (pointType) {
+        case SHPT_POLYGON:
+            strcpy(textFileType, "Polygon");
+            //fprintf(fp, "Shape type: Polygon\n\n");
+            break;
+        case SHPT_POINT:
+            strcpy(textFileType, "Point");
+            //fprintf(fp, "Shape type: Point\n\n");
+            break;
+        case SHPT_ARC:
+            asfPrintError("Shape file data type 'Arc' currently not supported\n");
+            break;
+        case SHPT_MULTIPOINT:
+            asfPrintError("Shape file data type 'Multipoint' currently not supported\n");
+            break;
+        default:
+            asfPrintError("Unexpected or unrecognized shape file data format\n");
+            break;
     }
-    if (iPart < nParts && shapeObject->panPartStart[iPart] == kk)
-      fprintf(fp, "Number of vertices: %d\n", nVertices);
-    fprintf(fp, "%d - Lat: %.4lf, Lon: %.4lf\n",
-        kk, shapeObject->padfY[kk], shapeObject->padfX[kk]);
-      }
-    }
-    SHPDestroyObject(shapeObject);
-    fprintf(fp, "\n");
+    // Write the text file:
+    fprintf(fp, "# File type        , %s\n", textFileType);
+    for (ii=0; ii<nEntities; ii++) {
 
-    // Extract the attributes out of the database file
-    nFields = DBFGetFieldCount(dbase);
-    fprintf(fp, "Number of fields: %d\n", nFields);
-    sValue = (char *) MALLOC(sizeof(char)*255);
-    for (kk=0; kk<nFields; kk++) {
-      dbaseType = DBFGetFieldInfo(dbase, kk, fieldName, &nWidth, &nDecimals);
-      switch (dbaseType)
-    {
-    case FTString:
-      sValue = DBFReadStringAttribute(dbase, ii, kk);
-      fprintf(fp, "%s: %s\n", fieldName, sValue);
-      break;
-    case FTInteger:
-      nValue = DBFReadIntegerAttribute(dbase, ii, kk);
-      fprintf(fp, "%s: %d\n", fieldName, nValue);
-      break;
-    case FTDouble:
-      fValue = DBFReadDoubleAttribute(dbase, ii, kk);
-      sprintf(str, "%%s: %%%d.%dlf\n", nWidth, nDecimals);
-      fprintf(fp, str, fieldName, fValue);
-      break;
-    case FTLogical:
-    case FTInvalid:
-      break;
+        // Read object and report basic information
+        shapeObject = SHPReadObject(shape, ii);
+        nParts = shapeObject->nParts;
+        nVertices = shapeObject->nVertices;
+//        fprintf(fp, "Structure: %d\n", ii+1);
+        if (nParts > 1) {
+            //fprintf(fp, "Number of parts: %d\n", nParts);
+            asfPrintError("Shape files with multi-part shapes not supported.\n");
+        }
+        /*
+        for (iPart=0; iPart<nParts; iPart++) {
+            nVertices = shapeObject->panPartStart[iPart+1] -
+                        shapeObject->panPartStart[iPart];
+            for (kk=0; kk<nVertices; kk++) {
+                if (nParts > 1 && kk == 0) {
+                    fprintf(fp, "\nPart: %d\n", iPart+1);
+                }
+                if (iPart < nParts && shapeObject->panPartStart[iPart] == kk) {
+                    fprintf(fp, "Number of vertices: %d\n", nVertices);
+                }
+                fprintf(fp, "%d - Lat: %.4lf, Lon: %.4lf\n",
+                        kk, shapeObject->padfY[kk], shapeObject->padfX[kk]);
+            }
+        }
+        */
+        SHPDestroyObject(shapeObject);
+        //fprintf(fp, "\n");
+
+        // Extract the attributes out of the database file
+        nFields = DBFGetFieldCount(dbase);
+        //fprintf(fp, "Number of fields: %d\n", nFields);
+        sValue = (char *) MALLOC(sizeof(char)*255);
+        char id[256];
+        for (kk=0; kk<nFields; kk++) {
+            dbaseType = DBFGetFieldInfo(dbase, kk, fieldName, &nWidth, &nDecimals);
+            switch (dbaseType) {
+                case FTString:
+                    sValue = DBFReadStringAttribute(dbase, ii, kk);
+                    //fprintf(fp, "%s: %s\n", fieldName, sValue);
+                    break;
+                case FTInteger:
+                    nValue = DBFReadIntegerAttribute(dbase, ii, kk);
+                    //fprintf(fp, "%s: %d\n", fieldName, nValue);
+                    break;
+                case FTDouble:
+                    fValue = DBFReadDoubleAttribute(dbase, ii, kk);
+                    sprintf(str, "%%s: %%%d.%dlf\n", nWidth, nDecimals);
+                    //fprintf(fp, str, fieldName, fValue);
+                    break;
+                case FTLogical:
+                case FTInvalid:
+                default:
+                    break;
+            }
+            if (strncmp(uc(fieldName), "ID", 2) == 0) {
+                strcpy(id, sValue);
+            }
+            else if (strncmp(uc(fieldName), "VERTICES", 8) == 0) {
+                nVertices = nValue;
+            }
+        }
+        fprintf(fp, "# Polygon ID (name), %s\n", id);
+        fprintf(fp, "#\n");
+        fprintf(fp, "# Latitude, Longitude\n");
+        //fprintf(fp, "\n");
     }
-    }
-    fprintf(fp, "\n");
-  }
 
   // Close shapefile
   close_shape(dbase, shape);

@@ -84,10 +84,11 @@ typedef struct {
 // Prototypes from convert_kml.c
 void meta2kml(char *line, FILE *fp);
 void point2kml(char *line, FILE *fp);
-void polygon2kml(char *line, FILE *fp, char *name);
+void polygon2kml(char *line, FILE *fp);
 void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);
 void rgps_grid2kml(grid_attr_t grid, FILE *fp);
 void shape2kml(char *inFile, FILE *fp, char *name);
+void geotiff2kml(char *line, FILE *fp);
 
 // Prototypes from kml.c
 void kml_header(FILE *kml_file);
