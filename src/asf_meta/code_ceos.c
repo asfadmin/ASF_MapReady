@@ -521,8 +521,10 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
     }
   }
   else if (strncmp(q->fac_id, "ES", 2)==0 ||
-     strncmp(q->fac_id, "D-PAF", 5)==0 ||
-     strncmp(q->fac_id, "I-PAF", 5)==0){
+	   strncmp(q->fac_id, "D-PAF", 5)==0 ||
+	   strncmp(q->fac_id, "I-PAF", 5)==0 ||
+	   (strncmp(q->fac_id, "CSTARS", 6) ==0 &&
+	    strncmp(q->mission_id, "ERS", 3) ==0)) {
     int i;
     for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
     strV(az_time_first,1814,24);
