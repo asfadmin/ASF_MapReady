@@ -157,6 +157,7 @@ void usage(char *name)
    fprintf(stderr,"  -esa_facdr   Force ESA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
+   fprintf(stderr,"  -meta        Generate ASF internal metadata file\n");
    fprintf(stderr,"  -license     Print the ASF licensing statement and quit\n");
    fprintf(stderr,"  -version     Print the version number information and quit\n");
    fprintf(stderr,"\n");
@@ -174,8 +175,9 @@ void usage(char *name)
 
 int main(int argc, char **argv)
 {
-  char *fileName;
+  char *fileName, *outName;
   int found = 0;
+  meta_parameters *meta;
 
   if (argc<2) usage(TOOL_NAME);
   handle_license_and_version_args(argc, argv, TOOL_NAME);
@@ -204,11 +206,13 @@ int main(int argc, char **argv)
   int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
+  int meta_flag = extract_flag_options(&argc, &argv, "-meta", "--meta", NULL);
 
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag ||
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
-      asf_facdr_flag || esa_facdr_flag || lfdr_flag || ardr_flag || all_flag)
+      asf_facdr_flag || esa_facdr_flag || lfdr_flag || ardr_flag || all_flag ||
+      meta_flag)
     found = 1;
 
   if (argc == 1 || !found)
@@ -217,6 +221,12 @@ int main(int argc, char **argv)
   fileName = (char *) MALLOC(sizeof(char)*(strlen(argv[1])+1));
   strcpy(fileName, argv[1]);
 
+  if (meta_flag) {
+    meta = meta_read(fileName);
+    outName = appendExt(fileName, ".meta");
+    meta_write(meta, outName);
+    meta_free(meta);
+  }
   if (dssr_flag || all_flag)
     output_record(fileName, ".dssr", 10, save);
   if (shr_flag || all_flag)

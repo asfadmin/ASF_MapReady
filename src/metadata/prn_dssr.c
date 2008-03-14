@@ -132,7 +132,9 @@ char *sprn_dssr(struct dataset_sum_rec *ds, int era)
   add(&ret, "\n RNG COMPRESS DESG\t%s",ds->rngcmp_desg);
   if (strncmp(ds->fac_id, "ES", 2)==0 || 
       strncmp(ds->fac_id, "D-PAF", 5)==0 ||
-      strncmp(ds->fac_id, "I-PAF", 5)==0) {
+      strncmp(ds->fac_id, "I-PAF", 5)==0 ||
+      (strncmp(ds->fac_id, "CSTARS", 6)==0 &&
+       strncmp(ds->mission_id, "ERS", 3)==0)) {
     for (i=0; i<3; i++) 
       add(&ret, "\n Zero-Doppler range time (%d)\t%16.7f", i, ds->rng_time[i]);
     add(&ret, "\n Zero-Doppler azimuth time first pixel\t%s", ds->az_time_first);
