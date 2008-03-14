@@ -271,14 +271,17 @@ void convert2shape(char *filename, format_type_t format,
     return;
 }
 
-void convert_from_shape(char *inFile, format_type_t format, FILE *fp)
+void convert_from_shape(char *inFile, char *outFile, format_type_t format)
 {
+  FILE *fp = NULL;
   if (format == TEXT)
-    shape2text(inFile, fp);
+    shape2text(inFile, outFile);
   else if (format == KMLFILE) {
+    fp = (FILE*)FOPEN(outFile, "w");
     kml_header(fp);
     shape2kml(inFile, fp, inFile);
     kml_footer(fp);
+    FCLOSE(fp);
   }
 
   return;
@@ -322,31 +325,41 @@ int write_shape(char *inFile, char *outFile, format_type_t format, int list)
   return 0;
 }
 
-int read_shape(char *inFile, char *outFile, format_type_t format, int list)
+int read_shape(char *inFile, char *outfile, format_type_t format, int list)
 {
-  FILE *fpIn, *fpOut;
+  FILE *fpIn;
   char *line;
+  char *basename;
+  char outFile[1024];
+  char ext[32];
 
   if (format == TEXT || format == URSA)
-    append_ext_if_needed(outFile, ".csv", ".csv");
+    strcpy(ext, "csv");
   else if (format == KMLFILE)
-    append_ext_if_needed(outFile, ".kml", ".kml");
-  fpOut = FOPEN(outFile, "w");
+    strcpy(ext, "kml");
 
   // Convert from shape
   if (list) {
     line = (char *) MALLOC(sizeof(char)*1024);
     fpIn = FOPEN(inFile, "r");
+    int fileNum = 0;
     while (fgets(line, 1024, fpIn)) {
       line[strlen(line)-1] = '\0';
-      convert_from_shape(line, format, fpOut);
+      basename = get_basename(outfile);
+      sprintf(outFile, "%s_%03d.%s", outfile, fileNum, ext);
+      convert_from_shape(line, outFile, format);
+      fileNum++;
     }
     FCLOSE(fpIn);
+    FREE(line);
   }
-  else
-    convert_from_shape(inFile, format, fpOut);
+  else {
+      basename = get_basename(outfile);
+      sprintf(outFile, "%s.%s", outfile, ext);
+      convert_from_shape(inFile, outFile, format);
+  }
 
-  FCLOSE(fpOut);
+  FREE(basename);
 
   return 0;
 }

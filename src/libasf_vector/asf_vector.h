@@ -116,7 +116,7 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
              int n);
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
-void shape2text(char *inFile, FILE *fp);
+void shape2text(char *inFile, char *outFile);
 
 // Prototypes from shape.c
 void shape_init(char *inFile, format_type_t format);
