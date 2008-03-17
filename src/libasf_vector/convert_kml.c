@@ -1,8 +1,18 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include <geokeys.h>
+#include <geo_tiffp.h>
+#include <geo_keyp.h>
+#include <geotiff.h>
+#include <geotiffio.h>
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
+
 #include "asf_vector.h"
 #include "asf.h"
+#include "geotiff_support.h"
 
 #define LINE_MAX    (1024)
 
@@ -180,12 +190,78 @@ void polygon2kml(char *inFile, FILE *outFP)
 }
 
 // Convert GeoTIFF location information to kml
-void geotiff2kml(char *line, FILE *fp)
+void geotiff2kml(char *inFile, FILE *outFP)
 {
-    // Create a point if a georeferenced GeoTIFF, else if a map-projected
-    // GeoTIFF, then create a polygon
+  double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
+  double ulLat=0.0, urLat=0.0, lrLat=0.0, llLat=0.0;
+  int no_location_info=1;
+  int vertices=4;
+  meta_parameters *meta = NULL; 
+  int ignore[MAX_BANDS];
 
-    return;
+  meta = read_generic_geotiff_metadata(inFile, ignore);
+  if (meta && meta->location) {
+    no_location_info=0;
+    meta_location *ml = meta->location; // Convenience pointer
+    ulLong = ml->lon_start_near_range;
+    ulLat  = ml->lat_start_near_range;
+    urLong = ml->lon_start_far_range;
+    urLat  = ml->lat_start_far_range;
+    lrLong = ml->lon_end_far_range;
+    lrLat  = ml->lat_end_far_range;
+    llLong = ml->lon_end_near_range;
+    llLat  = ml->lat_end_near_range;
+  }
+  meta_free(meta);
+
+  if (no_location_info) {
+    asfPrintError("GeoTIFF %s contains no location information\n", inFile);
+  }
+
+  // Write information in kml file
+  fprintf(outFP, "<Placemark>\n");
+  fprintf(outFP, "  <name>%s</name>\n", inFile);
+  fprintf(outFP, "  <description>\n");
+  fprintf(outFP, "    <![CDATA[\n");
+  fprintf(outFP, "      <strong>ID</strong>:%s<br>\n", inFile);
+  fprintf(outFP, "      <strong>Vertices</strong>: %d<br>\n", vertices);
+  fprintf(outFP, "      <strong>Upper Left Corner</strong> - ");
+  fprintf(outFP, "  <strong>Lat</strong>: %9.4f, ", ulLat);
+  fprintf(outFP, "  <strong>Lon</strong>: %9.4f<br>\n", ulLong);
+  fprintf(outFP, "      <strong>Upper Right Corner</strong> - ");
+  fprintf(outFP, "  <strong>Lat</strong>: %9.4f, ", urLat);
+  fprintf(outFP, "  <strong>Lon</strong>: %9.4f<br>\n", urLong);
+  fprintf(outFP, "      <strong>Lower Right Corner</strong> - ");
+  fprintf(outFP, "  <strong>Lat</strong>: %9.4f, ", lrLat);
+  fprintf(outFP, "  <strong>Lon</strong>: %9.4f<br>\n", lrLong);
+  fprintf(outFP, "      <strong>Lower Left Corner</strong> - ");
+  fprintf(outFP, "  <strong>Lat</strong>: %9.4f, ", llLat);
+  fprintf(outFP, "  <strong>Lon</strong>: %9.4f<br>\n", llLong);
+  fprintf(outFP, "    ]]>\n");
+  fprintf(outFP, "  </description>\n");
+  fprintf(outFP, "  <LookAt>\n");
+  fprintf(outFP, "    <longitude>%9.4f</longitude>\n", ulLong);
+  fprintf(outFP, "    <latitude>%9.4f</latitude>\n", ulLat);
+  fprintf(outFP, "    <range>400000</range>\n");
+  fprintf(outFP, "  </LookAt>\n");
+  write_kml_style_keys(outFP);
+  fprintf(outFP, "  <Polygon>\n");
+  fprintf(outFP, "    <altitudeMode>relativeToGround</altitudeMode>\n");
+  fprintf(outFP, "    <outerBoundaryIs>\n");
+  fprintf(outFP, "      <LinearRing>\n");
+  fprintf(outFP, "        <coordinates>\n");
+  fprintf(outFP, "         %.12f,%.12f,4000\n", ulLong, ulLat);
+  fprintf(outFP, "         %.12f,%.12f,4000\n", urLong, urLat);
+  fprintf(outFP, "         %.12f,%.12f,4000\n", lrLong, lrLat);
+  fprintf(outFP, "         %.12f,%.12f,4000\n", llLong, llLat);
+  fprintf(outFP, "         %.12f,%.12f,4000\n", ulLong, ulLat);
+  fprintf(outFP, "        </coordinates>\n");
+  fprintf(outFP, "      </LinearRing>\n");
+  fprintf(outFP, "    </outerBoundaryIs>\n");
+  fprintf(outFP, "  </Polygon>\n");
+  fprintf(outFP, "</Placemark>\n");
+
+  return;
 }
 
 // Convert RGPS cell information to kml

@@ -105,6 +105,9 @@ int main(int argc, char **argv)
           strcpy(informat, "UNSUPPORTED_TYPE"); // Should never reach here
       }
   }
+  else if (strcmp(uc(informat), "GEOTIFF")==0 && !isgeotiff(infile)) {
+      asfPrintError("Input TIFF file is not a GeoTIFF.\n");
+  }
 
   // Call library functions that get the work done
   if (listFlag) {

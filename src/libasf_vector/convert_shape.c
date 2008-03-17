@@ -1,10 +1,20 @@
 #include <stdio.h>
 #include <ctype.h>
 
+#include <geokeys.h>
+#include <geo_tiffp.h>
+#include <geo_keyp.h>
+#include <geotiff.h>
+#include <geotiffio.h>
+#include <tiff.h>
+#include <tiffio.h>
+#include <xtiffio.h>
+
 #include "asf.h"
 #include "dateUtil.h"
 #include "shapefil.h"
 #include "asf_vector.h"
+#include "geotiff_support.h"
 
 #define LINE_MAX    (1024)
 
@@ -226,9 +236,66 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
   return;
 }
 
-void geotiff2shape(char *filename, DBFHandle dbase, SHPHandle shape, int n)
+void geotiff2shape(char *inFile, DBFHandle dbase, SHPHandle shape, int n)
 {
-    return;
+  double lat[5], lon[5];
+  int no_location_info=1;
+  meta_parameters *meta = NULL; 
+  int ignore[MAX_BANDS];
+
+  meta = read_generic_geotiff_metadata(inFile, ignore);
+  if (meta && meta->location) {
+    meta_location *ml = meta->location; // Convenience pointer
+    no_location_info = 0; // false ...location info was found
+    lon[0] = ml->lon_start_near_range;
+    lat[0] = ml->lat_start_near_range;
+    lon[1] = ml->lon_start_far_range;
+    lat[1] = ml->lat_start_far_range;
+    lon[2] = ml->lon_end_far_range;
+    lat[2] = ml->lat_end_far_range;
+    lon[3] = ml->lon_end_near_range;
+    lat[3] = ml->lat_end_near_range;
+    lon[4] = lon[0];
+    lat[4] = lat[0];
+  }
+  else {
+    meta_free(meta);
+    asfPrintError("GeoTIFF %s contains no location information\n", inFile);
+  }
+
+  // Write information into database file
+  DBFWriteStringAttribute(dbase, n, 0, meta->general->sensor);
+  DBFWriteStringAttribute(dbase, n, 1, meta->general->sensor_name);
+  DBFWriteStringAttribute(dbase, n, 2, meta->general->mode);
+  if (meta->sar)
+    DBFWriteStringAttribute(dbase, n, 3, meta->sar->polarization);
+  DBFWriteIntegerAttribute(dbase, n, 4, meta->general->orbit);
+  DBFWriteIntegerAttribute(dbase, n, 5, meta->general->frame);
+  DBFWriteStringAttribute(dbase, n, 6, meta->general->acquisition_date);
+  if (meta->general->orbit_direction == 'D')
+    DBFWriteStringAttribute(dbase, n, 7, "Descending");
+  else if (meta->general->orbit_direction == 'A')
+    DBFWriteStringAttribute(dbase, n, 7, "Ascending");
+  DBFWriteDoubleAttribute(dbase, n, 8, meta->general->center_latitude);
+  DBFWriteDoubleAttribute(dbase, n, 9, meta->general->center_longitude);
+  DBFWriteDoubleAttribute(dbase, n, 10, lat[0]);
+  DBFWriteDoubleAttribute(dbase, n, 11, lon[0]);
+  DBFWriteDoubleAttribute(dbase, n, 12, lat[1]);
+  DBFWriteDoubleAttribute(dbase, n, 13, lon[1]);
+  DBFWriteDoubleAttribute(dbase, n, 14, lat[2]);
+  DBFWriteDoubleAttribute(dbase, n, 15, lon[2]);
+  DBFWriteDoubleAttribute(dbase, n, 16, lat[3]);
+  DBFWriteDoubleAttribute(dbase, n, 17, lon[3]);
+
+  // Write shape object
+  SHPObject *shapeObject=NULL;
+  shapeObject = SHPCreateSimpleObject(SHPT_POLYGON, 5, lon, lat, NULL);
+  SHPWriteObject(shape, -1, shapeObject);
+  SHPDestroyObject(shapeObject);
+
+  meta_free(meta);
+
+  return;
 }
 
 // Convert RGPS cell to shape
@@ -423,8 +490,8 @@ void shape2text(char *inFile, char *outfile)
         nVertices = shapeObject->nVertices;
         if (nParts > 1) {
             asfPrintWarning("Shape files with multi-part shapes not supported.\n"
-                            "Only the first part of multi-part entities (poly-polygons\n"
-                            "poly-points, etc) will be extracted to text file(s).\n");
+                            "All vertices will be extracted but into a single\n"
+                            "entity of the type specified in the shapefile (polygon or point etc)\n");
         }
 
         // Extract the attributes out of the database file
@@ -451,6 +518,9 @@ void shape2text(char *inFile, char *outfile)
             }
             if (strncmp(uc(fieldName), "ID", 2) == 0) {
                 sprintf(id,"%s (input shape file: %s)", sValue, inFile);
+            }
+            else {
+                sprintf(id,"%03d (input shape file: %s)", ii, inFile);
             }
         }
         // Write shape header information to output file
