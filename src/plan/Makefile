@@ -5,8 +5,9 @@ LIBNAME = libasf_$(TARGET).a
 
 LIBS  = \
 	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sgpsdp.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
@@ -16,10 +17,17 @@ LIBS  = \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	-lm
 
-CFLAGS += $(GSL_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS)
 
 OBJS  = $(TARGET).o \
 	date.o \
