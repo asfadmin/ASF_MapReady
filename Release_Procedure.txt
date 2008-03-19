@@ -113,14 +113,7 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       make
       ./makemake
 
- // tcl_tk has been deprecated...
- //15. ** KLUDGE #3 **
- //    Remove tcl/Tk gzips from the archive:
- //
- //     cd ~/asf/svn-r6472/asf_tools/external/work_dir/tcl_tk
- //     rm *.gz
-
- 16. ** KLUDGE #4 **
+ 15. ** KLUDGE #4 **
     Add missing tools to the source.convert file:
 
       cd ~/asf/svn-r6472/release/autotar
@@ -150,29 +143,63 @@ src/proj2proj
 src/sgpsdp
 doc
 
- 17. Run the autotar script:
+ 16. Run the autotar script:
 
       cd ~/asf/svn-r6472/release/autotar
       ./tarfile src ~/asf/svn-r6472 convert
 
- 18. Run the rpmprep script (from autotar folder):
+ 17. Run the rpmprep script (from autotar folder):
 
       ./rpmprep convert asf_mapready
 
- 19. Copy an older .spec file to the new one, then edit the new .spec
+ 18. Copy an older .spec file to the new one, then edit the new .spec
      file in to use the correct version:
 
       cd ~/asf/svn-r6472/release/rpmbuild
       cp <old .spec file> asf_mapready-1.0.0-1.spec
       vi asf_mapready-1.0.0-1.spec
-      
- 20. Save the new .spec file in the repository:
- 
+
+ 19. Save the new .spec file in the repository:
+
       svn ci asf_mapready-1.0.0-1.spec
 
- 21. Build the rpm (still in ~/asf/svn-r6472/release/rpmbuild):
+ 20. a) If you have not already added the secret and public gpg keys
+     to your ~/.gnupg folder, then do so now or the rpm build will
+     not sign the rpms.  Note that you CAN sign the rpms after they
+     have been created with "rpm --addsign <rpm file name>".  Note that
+     the first step below is unnessary if you already have a .gnupg
+     folder in your home directory:
 
-      rpmbuild -ba asf_mapready-1.0.0-1.spec
+     mkdir ~/.gnupg
+     cp dot.gnupg* ~/.gnupg
+     cd ~/.gnupg
+     gunzip *
+     tar xvf *
+
+     b) If the machine that you are using has not had the public key
+     imported to the rpm public keys database yet, you will not be
+     able to check your rpms to see if they were signed properly.
+     Import the public key into the rpm public keys database as
+     shown below (you must have root access).  Still in the rpmbuild
+     folder ...do the following:
+
+     cd public_key
+     sudo rpm -import asf_tools-pubkey.asc
+
+ 21. Build and check the rpm (still in ~/asf/svn-r6472/release/rpmbuild):
+
+      rpmbuild -ba --sign asf_mapready-1.0.0-1.spec
+      cd RPMS
+      rpm -K  asf_mapready-1.0.0-0.i386.rpm
+
+     After the "rpm -K" command, you should see an 'OK' statement similar
+     to the one below that indicates the rpm was properly signed:
+
+      asf_mapready-1.0.0-0.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+     If you get a response that includes the words "NOT OK", then it usually
+     means the ASCII public key has not been imported with "rpm -import"
+     yet.
 
  22. Create tarballs of the rpms (the binary rpm will also contain the
      README_rpm.txt file from ~/asf/svn-r6472/asf_tools folder) (still in
