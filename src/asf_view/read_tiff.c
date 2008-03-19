@@ -548,6 +548,7 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
         num_found_bands = tmp_num_bands;
       }
     }
+    FREE(tmp_citation);
   }
   else {
     if (data_config.samples_per_pixel == 1) {
@@ -646,6 +647,10 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
   else
     client->data_type = info->is_rgb ? RGB_FLOAT : GREYSCALE_FLOAT;
   FREE (band_selection);
+
+  FREE(citation);
+  FREE(empty);
+  FREE(band_str);
 
   return TRUE;
 }

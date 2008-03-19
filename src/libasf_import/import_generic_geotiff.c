@@ -1492,6 +1492,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     FREE(bands[band_num]);
   }
 
+  FREE(empty);
   return meta_out;
 }
 
@@ -2994,6 +2995,7 @@ void classify_geotiff(GTIF *input_gtif,
             return;
         }
     }
+    FREE(citation);
 
     ////////////////////////////////////////////////////////////////////////////////////////
   // Check for other types of geotiffs...

@@ -2266,6 +2266,7 @@ int isArcgisGeotiff(const char *inFile)
   // Open the structure that contains the geotiff keys.
   input_gtif = GTIFNew (input_tiff);
   if (input_gtif == NULL) {
+    XTIFFClose(input_tiff);
     return 0;
   }
 
@@ -2274,12 +2275,17 @@ int isArcgisGeotiff(const char *inFile)
   if (citation_length < strlen(ARCGIS_CITATION_MAGIC_STRING) ||
       citation_length < 1)
   {
+    XTIFFClose(input_tiff);
+    GTIFFree(input_gtif);
     return 0;
   }
   citation = MALLOC ((citation_length) * typeSize);
   GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
   if (strncmp(citation, ARCGIS_CITATION_MAGIC_STRING, strlen(ARCGIS_CITATION_MAGIC_STRING)) != 0) {
     // The citation is not an ArcGIS / IMAGINE type of citation string
+    XTIFFClose(input_tiff);
+    GTIFFree(input_gtif);
+    FREE(citation);
     return 0;
   }
 
@@ -2288,6 +2294,13 @@ int isArcgisGeotiff(const char *inFile)
   strcpy(inBaseName, inFile);
   *(findExt(inBaseName)) = '\0';
   inGeotiffAuxName = find_arcgis_geotiff_aux_name(inBaseName);
+  
+  // Done with all of this stuff
+  XTIFFClose(input_tiff);
+  GTIFFree(input_gtif);
+  FREE(citation);
+  FREE(inBaseName);
+
   if ( inGeotiffAuxName == NULL) {
     // No aux file means we can't read the parms, eh?
     return 0;
@@ -2312,9 +2325,11 @@ int isArcgisGeotiff(const char *inFile)
           proj_type == PS     ||
           proj_type == LAMAZ)
     {
+      g_string_free(inGeotiffAuxName, TRUE);
       return 1;
     }
     else {
+      g_string_free(inGeotiffAuxName, TRUE);
       return 0;
     }
   }
