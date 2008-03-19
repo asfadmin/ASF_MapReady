@@ -1,9 +1,40 @@
 ASF Software Read Me for rpm installations
 ------------------------------------------
 
-This package contains a .rpm file for installing the ASF Tools
-on Linux systems that use the Red Hat package management
+This package contains a signed .rpm file for installing the
+ASF Tools on Linux systems that use the Red Hat package management
 system.
+
+(0) VALIDATE THE SOFTWARE
+
+While not necessary in order to install this RPM, you may wish
+to validate the signature prior to installation.  Note that when
+you extract the files from the archive that you received, that
+you should find not only the RPM file and the README file(s),
+you should also find the ASCII format exported public key
+from ASF, i.e. asf_tools-pubkey.asc.
+
+Prior to validating the software with the provided public key,
+the key will need to be imported to the rpm public keys database
+(and yes, you need root access for this):
+
+  rpm --import asf_tools-pubkey.asc
+
+Once the public key has been imported, validate the RPM as
+follows:
+
+  rpm -K asf_mapready-X.X.X-X.i386.rpm
+
+If all is well, you should see a response that includes a
+'dsa' (they key) and "OK", i.e. a typical response might
+look like this:
+
+  asf_mapready-X.X.X-X.src.rpm: (sha1) dsa sha1 md5 gpg OK
+
+If the response includes the term "NOT OK", then either the
+public key import (above) didn't work or something has gone
+amuck with the rpm...
+
 
 (1) INSTALL THE SOFTWARE
 
