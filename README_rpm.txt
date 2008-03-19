@@ -25,15 +25,24 @@ follows:
 
   rpm -K asf_mapready-X.X.X-X.i386.rpm
 
+When you validate the software, it positive results assure you
+of the following:
+
+1. The package was generated on a genuine Red Hat system, and
+
+2. The package is unchanged from the original copy on that
+   system.
+
 If all is well, you should see a response that includes a
-'dsa' (they key) and "OK", i.e. a typical response might
+'dsa' (the key) and "OK", i.e. a typical response might
 look like this:
 
   asf_mapready-X.X.X-X.src.rpm: (sha1) dsa sha1 md5 gpg OK
 
-If the response includes the term "NOT OK", then either the
-public key import (above) didn't work or something has gone
-amuck with the rpm...
+If the response includes the term "NOT OK" or "KEYS MISSING" or
+"dsa" (for ASF tools that is) is missing, then it means that
+either the public key import (above) didn't work or something
+is amuck with the RPM itself.
 
 
 (1) INSTALL THE SOFTWARE
