@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <time.h>
 
 #ifndef TRUE
 #define TRUE 1
@@ -54,6 +55,22 @@ int is_valid_date(long l)
 
     // failed
     return FALSE;
+}
+
+long current_date()
+{
+    time_t t = time(NULL);
+    struct tm *ts = localtime(&t);
+    return date_to_long(ts->tm_year+1900, ts->tm_mon+1, ts->tm_mday);
+}
+
+long add_days(long l, int d)
+{
+    // slow implementation for now
+    long ret = l;
+    while (d-->0)
+        ret = add_a_day(ret);
+    return ret;
 }
 
 void long_to_date(long l, int *y, int *m, int *d)
@@ -151,7 +168,7 @@ long subtract_a_day(long l)
     return l2;
 }
 
-int add_a_day(long l)
+long add_a_day(long l)
 {
     int y, m, d;
     long_to_date(l, &y, &m, &d);

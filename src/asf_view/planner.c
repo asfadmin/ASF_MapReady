@@ -1,6 +1,7 @@
 #include "asf_view.h"
 #include "plan.h"
 #include "dateUtil.h"
+#include "date.h"
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
@@ -68,7 +69,7 @@ enum
 static GtkTreeModel *liststore = NULL;
 
 // splits a string into two pieces, stuff before the separater character
-// and the stuff after it.  The separater character is not included in
+// and the stuff after it.  The separator character is not included in
 // either string
 static void split2(const char *str_in, char sep, char **s1_out, char **s2_out)
 {
@@ -615,21 +616,28 @@ void setup_planner()
     //g_polys[0].line[0] = 1850;
     //g_polys[0].samp[0] = 3650;
     //g_polys[0].c = 0;
-    crosshair_line = 5465;
-    crosshair_samp = 12774;
+    //crosshair_line = 5465;
+    //crosshair_samp = 12774;
     zoom = 1;
     //center_line = (crosshair_line + g_polys[0].line[0])/2;
     //center_samp = (crosshair_samp + g_polys[0].samp[0])/2;
-    center_line = crosshair_line;
-    center_samp = crosshair_samp;
-    set_combo_box_item("mode_combobox", 1);
-    put_string_to_entry("lat_min_entry", "-3.16");
-    put_string_to_entry("lat_max_entry", "0.8");
-    put_string_to_entry("lon_min_entry", "31.11");
-    put_string_to_entry("lon_max_entry", "34.91");
-    put_string_to_entry("start_date_entry", "20070814");
-    put_string_to_entry("end_date_entry", "20070820");
-    put_string_to_entry("look_angle_entry", "28");
+    //center_line = crosshair_line;
+    //center_samp = crosshair_samp;
+    //set_combo_box_item("mode_combobox", 1);
+    //put_string_to_entry("lat_min_entry", "-3.16");
+    //put_string_to_entry("lat_max_entry", "0.8");
+    //put_string_to_entry("lon_min_entry", "31.11");
+    //put_string_to_entry("lon_max_entry", "34.91");
+    //put_string_to_entry("start_date_entry", "20070814");
+    //put_string_to_entry("end_date_entry", "20070820");
+    char curr_date_str[32];
+    long default_start = current_date();
+    sprintf(curr_date_str, "%ld", default_start);
+    put_string_to_entry("start_date_entry", curr_date_str);
+    long default_end = add_days(default_start, 5);
+    sprintf(curr_date_str, "%ld", default_end);
+    put_string_to_entry("end_date_entry", curr_date_str);
+    //put_string_to_entry("look_angle_entry", "28");
     // ... all this should be deleted
 
     // populate the "setup" tab's values

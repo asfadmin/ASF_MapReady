@@ -109,6 +109,11 @@ static unsigned char *get_pixel(CachedImage *self, int line, int samp)
         assert(self->cache[self->n_tiles] == NULL);
         unsigned char *data = malloc(ds*self->ns*self->rows_per_tile);
         if (!data) {
+            // if this is the first tile -- abort, we are out of memory
+            if (self->n_tiles == 0)
+                asfPrintError("Failed to allocate cache of %ld bytes.\n"
+                              "Out of memory.\n",
+                              ds*self->ns*self->rows_per_tile);
             // couldn't allocate the next tile -- must dump existing
             if (!quiet)
                 asfPrintStatus("reached max # of tiles: %d\n", self->n_tiles);
