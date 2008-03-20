@@ -110,7 +110,8 @@ void fill_meta_info()
       }
       if (meta->projection) {
           sprintf(&s[strlen(s)], "%s",
-              proj_info_as_string(meta->projection->type, &meta->projection->param, NULL));
+              proj_info_as_string(meta->projection->type,
+                                  &meta->projection->param, NULL));
           // if degrees, supply more precision
           if (strcmp_case(meta->projection->units, "degrees") == 0) {
             sprintf(&s[strlen(s)],

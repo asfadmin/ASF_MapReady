@@ -149,6 +149,8 @@ meta_projection *meta_projection_init(void)
   projection->re_major = MAGIC_UNSET_DOUBLE;
   projection->re_minor = MAGIC_UNSET_DOUBLE;
   projection->height = 0.0;
+  projection->spheroid = UNKNOWN_SPHEROID;
+  projection->datum = UNKNOWN_DATUM;
 /*  projection->ecc = MAGIC_UNSET_DOUBLE;        * DEPRECATED */
 /* Can't really initalize projection->param to a dummy value, so just leave it.*/
   return projection;

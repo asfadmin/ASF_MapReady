@@ -1380,6 +1380,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     }
     mg->band_count = num_bands;
   }
+  FREE(band_str);
   if (mg->band_count <= 0 || strlen(mg->bands) <= 0) {
     asfPrintError("GeoTIFF file must contain at least one non-empty color channel (band)\n");
   }

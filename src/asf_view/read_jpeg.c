@@ -116,6 +116,7 @@ int read_jpeg_client(int row_start, int n_rows_to_get,
     free(cinfo);
     info->cinfo = NULL;
 
+    FREE(rgbBuf);
     return TRUE;
 }
 

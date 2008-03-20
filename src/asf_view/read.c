@@ -42,8 +42,11 @@ int read_file(const char *filename, const char *band, int multilook,
 {
     if (curr->meta)
         meta_free(curr->meta);
+    curr->meta = NULL;
+
     if (curr->data_ci)
         cached_image_free(curr->data_ci);
+    curr->data_ci = NULL;
 
     void (*err_func) (const char *format, ...);
     err_func = on_fail_abort ? asfPrintError : message_box;
@@ -174,9 +177,11 @@ int read_file(const char *filename, const char *band, int multilook,
         crosshair_line = (double)nl/2.;
     }
 
+    FREE(curr->meta_name);
     curr->meta_name = STRDUP(meta_name);
     free(meta_name);
 
+    FREE(curr->data_name);
     curr->data_name = STRDUP(data_name);
     free(data_name);
 
