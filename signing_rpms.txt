@@ -1,3 +1,6 @@
+
+SIGNING RPMS:
+
 1) Add the following lines to the end of your ~/.rpmmacros file:
 
   # RPM Signing stuff
@@ -15,9 +18,10 @@
   %distribution     ASF Tools rpms
   %vendor           ASF User Tool Development <uso@asf.alaska.edu>
 
-3) Generate public/private keys (if not previously accomplished for ASF Tools rpm signing...).
-   You can check to see what keys you've already generated with the "gpg --list-keys" command.
-   Generate your new key pair with the following command:
+3) Assuming you do not have the public and secret keys for signing ASF UTD rpms, you can generate a new
+   set of keys and then proceed.  NOTE: You can check to see what keys you've already generated with the
+   "gpg --list-keys" command.  In the 'release/keys' folder, generate your new key pair with the following
+   command:
 
   gpg --gen-key
 
@@ -77,12 +81,12 @@ We need to generate a lot of random bytes. It is a good idea to perform
 some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
-++++++++++.+++++.++++++++++.+++++++++++++++...+++++.++++++++++++++++++++++++++++++++++++++++++++++++++.+++++++++++++++.++++++++++.+++++++++++++++>+++++.................................................................>+++++.........<+++++..............................................................................+++++
+++++++++++.+++++.++++++++++.+++++++++++++++...+++++.++++++++++++++++++++++++++++++++++++++++++++++++++.
 We need to generate a lot of random bytes. It is a good idea to perform
 some other action (type on the keyboard, move the mouse, utilize the
 disks) during the prime generation; this gives the random number
 generator a better chance to gain enough entropy.
-.++++++++++.++++++++++++++++++++++++++++++++++++++++++++++++++...+++++.+++++..+++++++++++++++..+++++++++++++++++++++++++++++++++++++++++++++>+++++..........................................................+++++^^^^
+.++++++++++.++++++++++++++++++++++++++++++++++++++++++++++++++...+++++.+++++..+++++++++++++++..++++++++
 public and secret key created and signed.
 key marked as ultimately trusted.
 
@@ -145,10 +149,12 @@ sub  1024g/8F5BCB58 2008-03-18
   Command> quit
   Save changes? yes
 
-6) Jumping back to the release procedure, continue with the rpmbuild.  When you run rpmbuild,
-   make sure you use the --sign option and type in the passphrase that you used above.
+6) Jumping back to the release procedure, go ahead and do the rpmbuild now.  When you
+   run rpmbuild, make sure you use the --sign option and type in the passphrase that you
+   used above.
 
-7) Export the public key for whoever will need to install the rpms:
+7) Still in the 'release/keys' folder, export the public key for whoever will need to
+   install the rpms:
 
   gpg --armour --export asf_tools > asf_tools-pubkey.asc
 
@@ -174,5 +180,8 @@ sub  1024g/8F5BCB58 2008-03-18
 
   asf_mapready-1.1.1-1.src.rpm: (sha1) dsa sha1 md5 gpg OK
 
-10)
+10) Jumping back to the release procedure, the tarrpms script will make the tarball that
+    contains the rpm, README files, and the exported public key (asf_tools-pubkey.asc)
+
+
 
