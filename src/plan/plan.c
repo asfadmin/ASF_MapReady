@@ -201,7 +201,7 @@ overlap(double t, stateVector *st, BeamModeInfo *bmi, double look_angle,
   }
   else {
     // no overlap
-    free(viewable_region);
+    polygon_free(viewable_region);
     return NULL;
   }
 }
@@ -241,7 +241,7 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
   // how many days to pad the repeat cycle time, before modding the
   // start/end time
-  const double days_of_padding = 1;
+  const double days_of_padding = 5;
 
   // this is the cutoff, 
   double threshold = repeat_cycle_time + 24*60*60 * days_of_padding;
@@ -263,9 +263,11 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
   }
 
   double time_adjustment = cycles_adjustment*repeat_cycle_time;
-  printf("Adjusted start/end times %s by %d repeat cycles.\n",
-         cycles_adjustment > 0 ? "forward" : "backward",
-         cycles_adjustment > 0 ? cycles_adjustment : -cycles_adjustment);
+  if (cycles_adjustment != 0)
+    printf("Adjusted start/end times %s by %d repeat cycle%s.\n",
+           cycles_adjustment > 0 ? "forward" : "backward",
+           cycles_adjustment > 0 ? cycles_adjustment : -cycles_adjustment,
+           cycles_adjustment == 1 || cycles_adjustment == -1 ? "" : "s");
 
   // no deep space orbits can be planned
   assert((sat.flags & DEEP_SPACE_EPHEM_FLAG) == 0);

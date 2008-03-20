@@ -204,6 +204,9 @@ void new_file(void)
 
 void set_title(int band_specified, const char *band_in)
 {
+    // acquisition planning -- leave the title as it is.
+    if (planner_is_active()) return;
+
     char title[256];
     char band[128];
 
