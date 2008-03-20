@@ -458,10 +458,11 @@ long long FTELL64(FILE *stream)
 int FCLOSE(FILE *stream)
 {
     if (stream)
-        return fclose(stream);
+        return (int) fclose(stream);
     else
-        return NULL;
+        return (int) NULL;
 }
+
 int FFLUSH(FILE *stream)
 {
     return fflush(stream);
