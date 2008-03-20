@@ -181,7 +181,7 @@ default: $(OBJS)
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt \
-	    $(SHAREDIR)/$(TARGET)*
+	    $(SHAREDIR)/$(TARGET)* *.bak
 
 ### End Unix Section
 

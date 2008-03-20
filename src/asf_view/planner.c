@@ -646,7 +646,7 @@ void setup_planner()
 
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (alpha build - Feb 28 2008)");
+    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Mar 20 2008)");
 
     // update look angle info label
     update_look();
