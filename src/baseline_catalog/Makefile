@@ -2,15 +2,24 @@
 
 include ../../make_support/system_rules
 
-CFLAGS := $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS) $(CFLAGS)
+CFLAGS := \
+	$(GEOTIFF_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(CFLAGS)
 
 LIBS =  \
 	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
