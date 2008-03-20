@@ -734,10 +734,14 @@ int is_stf(const char *file)
     if (pair != NO_STF_FILE_PAIR && inMetaName && strlen(inMetaName)) {
         processor = lzStr(inMetaName, "prep_block.processor_name:", NULL);
         if (strncmp(processor, "SKY", 3) == 0) {
+            FREE(inMetaName);
+            FREE(inDataName);
             FREE(processor);
             return 1;
         }
+        FREE(processor);
     }
-    FREE(processor);
+    FREE(inMetaName);
+    FREE(inDataName);
     return 0;
 }
