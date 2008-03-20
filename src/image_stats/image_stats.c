@@ -298,11 +298,14 @@ int main(int argc, char *argv[])
     case PHASE_IMAGE:
     case POWER_IMAGE:
     case COHERENCE_IMAGE:
+    case GEOREFERENCED_IMAGE:
     case GEOCODED_IMAGE:
+    case POLARIMETRIC_IMAGE:
     case LUT_IMAGE:
     case ELEVATION:
     case DEM:
     case IMAGE:
+    case MASK:
       break;
     }
 
