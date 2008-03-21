@@ -37,7 +37,7 @@
         "        geotiff   (GeoTIFF file)\n\n" \
         "   And the output format is one of the following:\n" \
         "        shape     (ESRI format shapefile output)\n" \
-        "        kml       (Google Earth kml file output for viewing in Google Earth - DEFAULT)\n" \
+        "        kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
         "        text      (An ASF-style polygon CSV text file (.csv) or a shape file dump (.txt)\n" \
         "                   depending on the type of input file)\n"
 
@@ -47,13 +47,13 @@
 #endif
 #define TOOL_DESCRIPTION \
     "   The convert2vector tool transforms point information into various other\n" \
-    "   formats that are compatible with external applications such as Google Earth (KML\n" \
+    "   formats that are compatible with external applications such as Google Earth(tm) (KML\n" \
     "   files), GIS software (shapefiles), text editors, and spreadsheets (CSV text files).  It\n" \
     "   is useful for visualizing the geographical location of data by plotting location\n" \
     "   coordinates in commonly available tools, or in the case of shape files, seeing a summary\n" \
     "   of the shape file contents.  The ASF-style CSV text format (point and polygon)\n" \
     "   can used to define areas of interest or bounding polygons which can then be visualized\n" \
-    ".  in Google Earth (etc).  The shapefile to text conversion is a simple text dump for a given\n" \
+    ".  in Google Earth(tm) (etc).  The shapefile to text conversion is a simple text dump for a given\n" \
     "   shapefile (not an ASF-style CSV file containing point locations or polygon corners.)\n" \
     "   \n" \
     "   NOTE: With the exception of using an ASF-style text file containing point data, all shapefile\n" \
@@ -118,7 +118,7 @@
         "   <output format>  This indicates the desired output format based on\n" \
         "        how you would like to view or utilize the location coordinate data.\n" \
         "        Valid values include: <shape | kml | text> where 'shape' means 'shapefile',\n" \
-        "        'kml' means 'Google Earth file (.kml)', and 'text' means either an 'ASF-style\n" \
+        "        'kml' means 'Google Earth(tm) file (.kml)', and 'text' means either an 'ASF-style\n" \
         "        CSV text file (.csv)' dump of the points or polygons found in the input file or\n" \
         "        a shapefile text dump (.txt) if the input file was a shape file.\n" \
         "   <output file>  The full name of the output file."
@@ -144,11 +144,11 @@
     "             polygon   (ASF-style CSV text file describing a single polygon (per file), use -help for more info)\n" \
     "             geotiff   (GeoTIFF file)\n" \
     "   -output-format\n" \
-    "        By default, the output file format will be for Google Earth (a kml file).  If some\n" \
+    "        By default, the output file format will be for Google Earth(tm) (a kml file).  If some\n" \
     "        other output format is desired, then the -output-format option should be used.  The\n" \
     "        output format may be one of the following:\n" \
     "             shape     (ESRI format shapefile output)\n" \
-    "             kml       (Google Earth kml file output for viewing in Google Earth - DEFAULT)\n" \
+    "             kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
     "             text      (An ASF-style polygon CSV text file or shape file dump)\n" \
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \

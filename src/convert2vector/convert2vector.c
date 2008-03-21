@@ -74,6 +74,50 @@ int main(int argc, char **argv)
 
   asfSplashScreen (argc, argv);
 
+  int meta_found    = ismetadata(infile);
+  int leader_found  = isleader(infile);
+  int point_found   = ispoint(infile);
+  int polygon_found = ispolygon(infile);
+  int shape_found   = isshape(infile);
+  int rgps_found    = isrgps(infile);
+  int types_found = meta_found    + 
+                    leader_found  +
+                    point_found   +
+                    polygon_found +
+                    shape_found   +
+                    rgps_found    ;
+  if (types_found > 1) {
+      char *type_list = (char *)MALLOC(sizeof(char)*types_found*1024);
+      char msg[7168];
+
+      *type_list = '\0';
+      if (meta_found) {
+          sprintf(msg, "    %s.meta\n", infile);
+          strcat(type_list, msg);
+      }
+      if (leader_found) {
+          sprintf(msg, "    %s.L (or LED-%s etcetera)\n", infile, infile);
+          strcat(type_list, msg);
+      }
+      if (point_found || polygon_found) {
+          sprintf(msg, "    %s.csv\n", infile);
+          strcat(type_list, msg);
+      }
+      if (shape_found) {
+          sprintf(msg, "    %s.shp (etcetera)\n", infile);
+          strcat(type_list, msg);
+      }
+      if (rgps_found) {
+          sprintf(msg, "    %s\n", infile);
+          strcat(type_list, msg);
+      }
+      sprintf(msg, "More than one file sharing the given basename, \"%s\", was found\n"
+                   "Try running convert2vector again but provide the full file name\n"
+                   "for the input file.  The following files were found:\n\n%s\n", infile, type_list);
+      FREE(type_list);
+      asfPrintError(msg);
+  }
+
   if (!inputFormatFlag) {
       // If the input format option was not used, try to determine the input format from the
       // file itself
@@ -233,7 +277,7 @@ int main(int argc, char **argv)
     else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting a point file into a shape file ...\n\n");
-      polygon2shape_new(infile, outfile); // Use write_shape(,,0)?  See branch...
+      polygon2shape_new(infile, outfile);
     }
     else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "KML")==0) {
