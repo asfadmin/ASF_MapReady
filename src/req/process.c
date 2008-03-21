@@ -1417,7 +1417,6 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
             l0_data_code);
         if (valid) {
             write_odl0(fout, downlink_segment_number, l0_data_code);
-            *req_id += 1;
         } else {
             // already complained about this in the first pass through,
             // can silently skip this time
@@ -1450,6 +1449,8 @@ void odl0_process(FILE *fin, const char *csv_file, const char *req_file,
             msg("File too large to verify size.\n");
         }
     }
+
+    *req_id += 1;
 }
 
 void gui_process(int for_real)
