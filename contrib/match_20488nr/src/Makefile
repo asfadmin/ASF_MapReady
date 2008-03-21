@@ -5,8 +5,8 @@
 
 include ../../../make_support/system_rules
 
-BINDIR  = ../../../bin
-LIBS    = -L$(XHOME) -lXm -lXt -lX11 -lm
+BINDIR = ../../../bin
+LIBS   = -L/usr/X11R6/lib -lXm -lXt -lX11 -lm
 HP_SGI = -DSGI
 
 FC     = g77
