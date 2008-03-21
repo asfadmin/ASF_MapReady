@@ -101,7 +101,7 @@ void vecMul(const vector matrix[3],const vector inVec,vector *outVec)
 	vecScale(&product,inVec.z);
 	vecAdd(product,*outVec,outVec);
 }
-double vecAngle(const vector a, const vector b)
+double vecAngle(vector a, vector b)
 {
     vecNormalize(&a);
     vecNormalize(&b);
