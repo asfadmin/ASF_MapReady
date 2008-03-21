@@ -150,8 +150,11 @@ void polygon2shape_new(char *inFile, char *outFile)
   while (fgets(line, 1024, fp)) {
     p = strchr(line, ',');
     if (p && line[0] != '#') {
-      sscanf(p+1, "%lf,%lf", &lat[ii], &lon[ii]);
-      *p = '\0';
+      lat[ii] = strtod(line,(char **)NULL);
+      p++;
+      lon[ii] = strtod(p,(char **)NULL);
+      //sscanf(p+1, "%lf,%lf", &lat[ii], &lon[ii]);
+      //*p = '\0';
       sprintf(id, "%s", line);
       *p = ',';
       ii++;
@@ -184,6 +187,12 @@ void polygon2shape_new(char *inFile, char *outFile)
 
 
 // Convert polygon to shape
+// FIXME: This function is broken ...it gets called by write_shape(), but
+// in all places where write_shape() would normally have been called (as is
+// done for POINT files) ...we call polygon2shape_new() instead.  For
+// consistency, we should fix polygon2shape() and then use write_shape() as
+// with other formats ...but calling polygon2shape_new() works for now ...
+// 
 void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 {
   int ii, vertices;

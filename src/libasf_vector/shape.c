@@ -25,93 +25,93 @@ void shape_init(char *inFile, format_type_t format)
     {
     case META:
       if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
-    asfPrintError("Could not add sensor field to database file\n");
+        asfPrintError("Could not add sensor field to database file\n");
       if (DBFAddField(dbase, "Sensor name", FTString, 15, 0) == -1)
-    asfPrintError("Could not add sensor field to database file\n");
+        asfPrintError("Could not add sensor field to database file\n");
       if (DBFAddField(dbase, "Beam mode", FTString, 4, 0) == -1)
-    asfPrintError("Could not add beam mode field to database file\n");
+        asfPrintError("Could not add beam mode field to database file\n");
       if (DBFAddField(dbase, "Polarization", FTString, 3, 0) == -1)
-    asfPrintError("Could not add polarization field to database file\n");
+        asfPrintError("Could not add polarization field to database file\n");
       if (DBFAddField(dbase, "Orbit", FTInteger, 5, 0) == -1)
-    asfPrintError("Could not add orbit field to database file\n");
+        asfPrintError("Could not add orbit field to database file\n");
       if (DBFAddField(dbase, "Frame", FTInteger, 4, 0) == -1)
-    asfPrintError("Could not add frame field to database file\n");
+        asfPrintError("Could not add frame field to database file\n");
       if (DBFAddField(dbase, "Date", FTString, 20, 0) == -1)
-    asfPrintError("Could not add acquisition date field to database file\n");
+        asfPrintError("Could not add acquisition date field to database file\n");
       if (DBFAddField(dbase, "Direction", FTString, 15, 0) == -1)
-    asfPrintError("Could not add orbit direction field to database file\n");
+        asfPrintError("Could not add orbit direction field to database file\n");
       if (DBFAddField(dbase, "Center Lat", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add center latitude field to database file\n");
+        asfPrintError("Could not add center latitude field to database file\n");
       if (DBFAddField(dbase, "Center Lon", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add center longitude field to database file\n");
+        asfPrintError("Could not add center longitude field to database file\n");
       if (DBFAddField(dbase, "Lat1", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add latitude field to database file\n");
+        asfPrintError("Could not add latitude field to database file\n");
       if (DBFAddField(dbase, "Lon1", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add longitude field to database file\n");
+        asfPrintError("Could not add longitude field to database file\n");
       if (DBFAddField(dbase, "Lat2", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add latitude field to database file\n");
+        asfPrintError("Could not add latitude field to database file\n");
       if (DBFAddField(dbase, "Lon2", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add longitude field to database file\n");
+        asfPrintError("Could not add longitude field to database file\n");
       if (DBFAddField(dbase, "Lat3", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add latitude field to database file\n");
+        asfPrintError("Could not add latitude field to database file\n");
       if (DBFAddField(dbase, "Lon3", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add longitude field to database file\n");
+        asfPrintError("Could not add longitude field to database file\n");
       if (DBFAddField(dbase, "Lat4", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add latitude field to database file\n");
+        asfPrintError("Could not add latitude field to database file\n");
       if (DBFAddField(dbase, "Lon4", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add longitude field to database file\n");
+        asfPrintError("Could not add longitude field to database file\n");
       break;
     case POINT:
       if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
-    asfPrintError("Could not add ID field to database file\n");
+        asfPrintError("Could not add ID field to database file\n");
       if (DBFAddField(dbase, "Lat", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add latitude field to database file\n");
+        asfPrintError("Could not add latitude field to database file\n");
       if (DBFAddField(dbase, "Lon", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add longitude field to database file\n");
+        asfPrintError("Could not add longitude field to database file\n");
       break;
     case POLYGON:
       if (DBFAddField(dbase, "ID", FTString, 255, 0) == -1)
-    asfPrintError("Could not add ID field to database file\n");
+        asfPrintError("Could not add ID field to database file\n");
       if (DBFAddField(dbase, "Vertices", FTInteger, 5, 0) == -1)
-    asfPrintError("Could not add 'Vertices' field to database file\n");
+        asfPrintError("Could not add 'Vertices' field to database file\n");
       break;
     case RGPS:
       if (DBFAddField(dbase, "Cell_ID", FTInteger, 6, 0) == -1)
-    asfPrintError("Could not add 'Cell_ID' field to database file\n");
+        asfPrintError("Could not add 'Cell_ID' field to database file\n");
       if (DBFAddField(dbase, "Vertices", FTInteger, 2, 0) == -1)
-    asfPrintError("Could not add 'Vertices' field to database file\n");
+        asfPrintError("Could not add 'Vertices' field to database file\n");
       if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
-    asfPrintError("Could not add 'Date' field to database file\n");
+        asfPrintError("Could not add 'Date' field to database file\n");
       if (DBFAddField(dbase, "SrcImage", FTString, 25, 0) == -1)
-    asfPrintError("Could not add 'SrcImage' field to database file\n");
+        asfPrintError("Could not add 'SrcImage' field to database file\n");
       if (DBFAddField(dbase, "TrgImage", FTString, 25, 0) == -1)
-        asfPrintError("Could not add 'TrgImage' field to database file\n");
+	asfPrintError("Could not add 'TrgImage' field to database file\n");
       if (DBFAddField(dbase, "Stream", FTString, 3, 0) == -1)
-    asfPrintError("Could not add 'Stream' field to database file\n");
+        asfPrintError("Could not add 'Stream' field to database file\n");
       if (DBFAddField(dbase, "Area", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'Area' field to database file\n");
+        asfPrintError("Could not add 'Area' field to database file\n");
       if (DBFAddField(dbase, "MY_ice", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'MY_ice' field to database file\n");
+        asfPrintError("Could not add 'MY_ice' field to database file\n");
       if (DBFAddField(dbase, "OpenWater", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'OpenWater' field to database file\n");
+        asfPrintError("Could not add 'OpenWater' field to database file\n");
       if (DBFAddField(dbase, "IncidAngle", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add 'IncidAngle' field to database file\n");
+        asfPrintError("Could not add 'IncidAngle' field to database file\n");
       if (DBFAddField(dbase, "Cell_x", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'Cell_x' field to database file\n");
+        asfPrintError("Could not add 'Cell_x' field to database file\n");
       if (DBFAddField(dbase, "Cell_y", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'Cell_y' field to database file\n");
+        asfPrintError("Could not add 'Cell_y' field to database file\n");
       if (DBFAddField(dbase, "dudx", FTDouble, 12, 6) == -1)
-    asfPrintError("Could not add 'dudx' field to database file\n");
+        asfPrintError("Could not add 'dudx' field to database file\n");
       if (DBFAddField(dbase, "dudy", FTDouble, 12, 6) == -1)
-    asfPrintError("Could not add 'dudy' field to database file\n");
+        asfPrintError("Could not add 'dudy' field to database file\n");
       if (DBFAddField(dbase, "dvdx", FTDouble, 12, 6) == -1)
-    asfPrintError("Could not add 'dvdx' field to database file\n");
+        asfPrintError("Could not add 'dvdx' field to database file\n");
       if (DBFAddField(dbase, "dvdy", FTDouble, 12, 6) == -1)
-    asfPrintError("Could not add 'dvdy' field to database file\n");
+        asfPrintError("Could not add 'dvdy' field to database file\n");
       if (DBFAddField(dbase, "dtp", FTDouble, 12, 6) == -1)
-    asfPrintError("Could not add 'dtp' field to database file\n");
+        asfPrintError("Could not add 'dtp' field to database file\n");
       if (DBFAddField(dbase, "Temp", FTDouble, 12, 3) == -1)
-    asfPrintError("Could not add 'Temp' field to database file\n");
+        asfPrintError("Could not add 'Temp' field to database file\n");
       if (DBFAddField(dbase, "u_wind", FTDouble, 12, 6) == -1)
         asfPrintError("Could not add 'u_wind' field to database file\n");
       if (DBFAddField(dbase, "v_wind", FTDouble, 12, 6) == -1)
@@ -139,25 +139,25 @@ void shape_init(char *inFile, format_type_t format)
       break;
     case RGPS_WEATHER:
       if (DBFAddField(dbase, "Date", FTString, 12, 0) == -1)
-    asfPrintError("Could not add 'Date' field to database file\n");
+        asfPrintError("Could not add 'Date' field to database file\n");
       if (DBFAddField(dbase, "Lat", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add 'Lat' field to database file\n");
+        asfPrintError("Could not add 'Lat' field to database file\n");
       if (DBFAddField(dbase, "Lon", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add 'Lon' field to database file\n");
+        asfPrintError("Could not add 'Lon' field to database file\n");
       if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add 'Direction' field to database file\n");
+        asfPrintError("Could not add 'Direction' field to database file\n");
       if (DBFAddField(dbase, "Speed", FTDouble, 5, 1) == -1)
-    asfPrintError("Could not add 'Speed' field to database file\n");
+        asfPrintError("Could not add 'Speed' field to database file\n");
       if (DBFAddField(dbase, "Temp", FTDouble, 5, 1) == -1)
-    asfPrintError("Could not add 'Temp' field to database file\n");
+        asfPrintError("Could not add 'Temp' field to database file\n");
       if (DBFAddField(dbase, "Pressure", FTDouble, 6, 1) == -1)
-    asfPrintError("Could not add 'Pressure' field to database file\n");
+        asfPrintError("Could not add 'Pressure' field to database file\n");
       break;
     case MULTIMATCH:
       if (DBFAddField(dbase, "Ref_x", FTDouble, 9, 2) == -1)
-    asfPrintError("Could not add 'Ref_x' field to database file\n");
+        asfPrintError("Could not add 'Ref_x' field to database file\n");
       if (DBFAddField(dbase, "Ref_y", FTDouble, 9, 2) == -1)
-    asfPrintError("Could not add 'Ref_y' field to database file\n");
+        asfPrintError("Could not add 'Ref_y' field to database file\n");
       if (DBFAddField(dbase, "Ref_z", FTDouble, 9, 2) == -1)
         asfPrintError("Could not add 'Ref_z' field to database file\n");
       if (DBFAddField(dbase, "Search_x", FTDouble, 9, 2) == -1)
@@ -167,15 +167,15 @@ void shape_init(char *inFile, format_type_t format)
       if (DBFAddField(dbase, "Search_z", FTDouble, 9, 2) == -1)
         asfPrintError("Could not add 'Ref_z' field to database file\n");
       if (DBFAddField(dbase, "dx", FTDouble, 7, 2) == -1)
-    asfPrintError("Could not add 'dx' field to database file\n");
+        asfPrintError("Could not add 'dx' field to database file\n");
       if (DBFAddField(dbase, "dy", FTDouble, 7, 2) == -1)
-    asfPrintError("Could not add 'dy' field to database file\n");
+        asfPrintError("Could not add 'dy' field to database file\n");
       if (DBFAddField(dbase, "dh", FTDouble, 7, 3) == -1)
-    asfPrintError("Could not add 'dh' field to database file\n");
+        asfPrintError("Could not add 'dh' field to database file\n");
       if (DBFAddField(dbase, "Direction", FTDouble, 9, 4) == -1)
-    asfPrintError("Could not add 'Direction' field to database file\n");
+        asfPrintError("Could not add 'Direction' field to database file\n");
       if (DBFAddField(dbase, "Speed", FTDouble, 6, 1) == -1)
-    asfPrintError("Could not add 'Speed' field to database file\n");
+        asfPrintError("Could not add 'Speed' field to database file\n");
       break;
     case TEXT:
     case URSA:

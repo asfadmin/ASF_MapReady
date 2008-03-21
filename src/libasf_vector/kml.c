@@ -181,12 +181,12 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
         fprintf(kml_file, "</Placemark>\n");
 
         if (!png_filename || !meta->projection)
-            printf("\nGoogle Earth overlay image not produced (because the data is not in a UTM map projection\n"
-                    "as required) -OR- a Google Earth (.kml) file is being produced from a non-image source such\n"
+            printf("\nGoogle Earth(tm) overlay image not produced (because the data is not in a UTM map projection\n"
+                    "as required) -OR- a Google Earth(tm) (.kml) file is being produced from a non-image source such\n"
                     "as an ASF metadata file etc.)  The data will be displayed as a transparent polygon (only)\n"
-                    "in Google Earth.\n\n");
+                    "in Google Earth(tm).\n\n");
         else
-            printf("Google Earth overlay not produced (because the image's rotation angle\n"
+            printf("Google Earth(tm) overlay not produced (because the image's rotation angle\n"
                     "is too large to overlay: %lf)\n\n", ang*R2D);
     }
     else
@@ -460,7 +460,9 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
       polygon2kml(line, fp);
       break;
     case SHAPEFILE:
-      printf("\n\nDEBUG OUTPUT - YO BRIAN: convert2kml() sees a SHAPEFILE\n\n");
+      // Conversion of shapefile to kml is actually handled in read_shape()
+      // not here...
+      asfPrintError("convert2kml: Should never reach this point.\n");
       break;
     case GEOTIFF_META:
       geotiff2kml(line, fp);
@@ -473,6 +475,11 @@ void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
     case URSA:
     case KMLFILE:
     default:
+      asfPrintWarning(
+          "Unsupported input file format detected.  TEXT, MULTIMATCH, URSA,\n"
+          "KML and other input formats either don't make sense to convert\n"
+          "to kml or are already in kml format or cannot be converted to\n"
+          "kml format for viewing in Google Earth(tm).\n");
       break;
     }
 
