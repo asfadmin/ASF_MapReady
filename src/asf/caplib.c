@@ -460,7 +460,7 @@ int FCLOSE(FILE *stream)
     if (stream)
         return (int) fclose(stream);
     else
-        return (int) NULL;
+        return 0;
 }
 
 int FFLUSH(FILE *stream)
