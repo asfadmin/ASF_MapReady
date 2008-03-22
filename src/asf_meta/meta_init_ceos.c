@@ -530,11 +530,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   struct proc_parm_rec *ppr=NULL;
   struct VMPDREC *mpdr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
-  char beamname[32], buf[50], **dataName;
-  ymd_date date;
-  hms_time time;
-  double firstTime, centerTime;
-  int nBands;
+  char beamname[32], buf[50];
   double re, rp, tan_lat;
 
   dssr = &ceos->dssr;
@@ -722,10 +718,7 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
 {
   struct dataset_sum_rec *dssr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
-  ymd_date date;
-  hms_time time;
   char buf[50];
-  double firstTime, centerTime;
 
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
@@ -1329,9 +1322,6 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
 {
   struct dataset_sum_rec *dssr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
-  ymd_date date;
-  hms_time time;
-  double firstTime, centerTime;
   char buf[50];
 
   dssr = &ceos->dssr;
@@ -1399,7 +1389,6 @@ void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
   struct ESA_FACDR *esa_facdr=NULL;
   ymd_date date;
   hms_time time;
-  double firstTime, centerTime;
   char buf[50];
 
   dssr = &ceos->dssr;

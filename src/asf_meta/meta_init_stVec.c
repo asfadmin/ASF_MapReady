@@ -113,12 +113,6 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,meta_param
 void ceos_init_stVec(const char *fName, ceos_description *ceos,
              meta_parameters *meta)
 {
-  int i;
-  double timeStart=0.0;/*Time of first state vector, relative to image start.*/
-  int areInertial=1;/*Flag: are state vectors in non-rotating frame?*/
-  int areInertialVelocity=0;/*Flag: have state vectors not been corrected for non-rotating frame?*/
-  int areFixedVelocity=0;/*Flag: were state vectors in fixed-earth velocity; but inertial coordinates?*/
-  meta_state_vectors *s;
   struct pos_data_rec ppdr;
 
   /*Fetch platform position data record.*/

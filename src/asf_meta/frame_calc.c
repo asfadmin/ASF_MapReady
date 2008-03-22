@@ -66,7 +66,7 @@ float ers_frame[901] =
 
 int asf_frame_calc(char *sensor, float latitude, char orbit_direction)
 {
-  int i=1, frame;
+  int i=1, frame=-1;
   float diff=99;
 
   if (strncmp(sensor, "ERS", 3)==0 || strncmp(sensor, "JERS", 4)==0) {

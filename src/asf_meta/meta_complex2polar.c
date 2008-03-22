@@ -6,36 +6,34 @@
 
 int meta_polar2complex(int data_type)
 {
-  int ret;
   if (data_type < COMPLEX_BYTE) {
    switch (data_type) {
-     case BYTE:      ret = COMPLEX_BYTE;      break;
-     case INTEGER16: ret = COMPLEX_INTEGER16; break;
-     case INTEGER32: ret = COMPLEX_INTEGER32; break;
-     case REAL32:    ret = COMPLEX_REAL32;    break;
-     case REAL64:    ret = COMPLEX_REAL64;    break;
+     case BYTE:      return COMPLEX_BYTE;      break;
+     case INTEGER16: return COMPLEX_INTEGER16; break;
+     case INTEGER32: return COMPLEX_INTEGER32; break;
+     case REAL32:    return COMPLEX_REAL32;    break;
+     case REAL64:    return COMPLEX_REAL64;    break;
+     default:        return -1;
     }
   }
   else
-    ret = data_type;
-  return ret;
+    return data_type;
 }
 
 int meta_complex2polar(int data_type)
 {
-  int ret;
   if (data_type > REAL64) {
     switch (data_type) {
-      case COMPLEX_BYTE:      ret = BYTE;      break;
-      case COMPLEX_INTEGER16: ret = INTEGER16; break;
-      case COMPLEX_INTEGER32: ret = INTEGER32; break;
-      case COMPLEX_REAL32:    ret = REAL32;    break;
-      case COMPLEX_REAL64:    ret = REAL64;    break;
+      case COMPLEX_BYTE:      return BYTE;      break;
+      case COMPLEX_INTEGER16: return INTEGER16; break;
+      case COMPLEX_INTEGER32: return INTEGER32; break;
+      case COMPLEX_REAL32:    return REAL32;    break;
+      case COMPLEX_REAL64:    return REAL64;    break;
+      default:        return -1;
     }
   }
   else
-    ret = data_type;
-  return ret;
+    return data_type;
 }
 
 
