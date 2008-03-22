@@ -152,7 +152,7 @@ $(OBJS): Makefile $(LOCAL_HEADERS) $(wildcard ../../include/*.h) \
 	$(YACC_SOURCES) $(LEX_SOURCES)
 
 clean:
-	rm -rf $(OBJS) $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
+	rm -rf *.o $(patsubst %.y, %.tab.c, $(YACC_SOURCES)) \
 	$(patsubst %.y, %.tab.h, $(YACC_SOURCES)) y.tab.h y.output \
 	asf_meta_tester meta_update asf_meta.a
 
