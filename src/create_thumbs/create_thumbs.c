@@ -511,9 +511,23 @@ void process_file(const char *file, int level, int size, int verbose,
 {
     char *base = get_filename(file);
     char *ext = findExt(base);
+    char *inDataName = NULL;
+    char filename[256], dir[1024];
+
+    split_dir_and_file(file, dir, filename);
     if ((L0Flag == stf || L0Flag == ceos) && is_stf(file)) { //Note that ceos is currently unsupported for L0
-        generate_level0_thumbnail(file, size, verbose, L0Flag, scale_factor, browseFlag,
-                                  output_format, out_dir);
+        if (get_stf_data_name(file, &inDataName)) {
+            if (strcmp(file, inDataName) == 0) {
+                asfPrintStatus("%s%s\n", spaces(level), base);
+                generate_level0_thumbnail(inDataName, size, verbose, L0Flag, scale_factor, browseFlag,
+                                          output_format, out_dir);
+            }
+        }
+        else {
+            if (verbose) {
+                asfPrintStatus("%s%s (ignored)\n", spaces(level), base);
+            }
+        }
     }
     else if ((ext && strcmp_case(ext, ".D") == 0) ||
          (strncmp(base, "IMG-", 4) == 0))
@@ -594,27 +608,29 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         tmp_basename, get_basename(file));
         stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
         if (pair != NO_STF_FILE_PAIR &&
-            strncmp(file, inDataName, strlen(file)) == 0) {
-            asf_import(r_AMP,
-                       0 /*db_flag*/,
-                       0 /*complex_flag*/,
-                       0 /*multilook_flag*/,
-                       "STF",
-                       NULL /*band_id*/,
-                       MAGIC_UNSET_STRING /*image_data_type*/,
-                       NULL /*lut*/,
-                       NULL /*prcPath*/,
-                       -99 /*lowerLat*/,
-                       -99 /*upperLat*/,
-                       0, // start line subset
-                       0, // start sample subset
-                       -99, // width of subset
-                       -99, // height of subset
-                       NULL /*p_range_scale*/,
-                       NULL /*p_azimuth_scale*/,
-                       NULL /*p_correct_y_pixel_size*/,
-                       NULL /*inMetaNameOption*/,
-                       (char*)file, out_file);
+            strncmp(file, inDataName, strlen(inDataName)) == 0)
+        {
+            asf_import(r_AMP,               /* power                  */
+                       0,                   /* db_flag                */
+                       0,                   /* complex_flag           */
+                       0,                   /* multilook_flag         */
+                       "STF",               /* format                 */
+                       NULL,                /* band_id                */
+                       MAGIC_UNSET_STRING,  /*  image_data_type       */
+                       NULL,                /* lut                    */
+                       NULL,                /* prcPath                */
+                       -99,                 /* lowerLat               */
+                       -99,                 /* upperLat               */
+                       0,                   /* start line subset      */
+                       0,                   /* start sample subset    */
+                       -99,                 /* width of subset        */
+                       -99,                 /* height of subset       */
+                       NULL,                /* p_range_scale          */
+                       NULL,                /* p_azimuth_scale        */
+                       NULL,                /* p_correct_y_pixel_size */
+                       NULL,                /* inMetaNameOption       */
+                       (char *)inDataName,  /* input basename         */
+                       out_file);           /* output basename        */
         }
         else {
             remove_dir(tmp_folder);
@@ -727,21 +743,107 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     FREE(tmp_basename);
 }
 
+// Checks to see if a DATA file is an STF Level 0 file
+// FIXME: Might be nice to enhance this to work with metadata files
+//        as well, i.e. find the metadata file then derive the data
+//        file from it and make sure they both exist, are SKY Telemetry
+//        Format etc
 int is_stf(const char *file)
 {
-    char *inDataName = NULL, *inMetaName = NULL, *processor = NULL;
-    stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
-    if (pair != NO_STF_FILE_PAIR && inMetaName && strlen(inMetaName)) {
-        processor = lzStr(inMetaName, "prep_block.processor_name:", NULL);
-        if (strncmp(processor, "SKY", 3) == 0) {
-            FREE(inMetaName);
-            FREE(inDataName);
-            FREE(processor);
-            return 1;
+    char *inDataName = NULL, *inMetaName = NULL, *processor = NULL, *basename;
+    char filename[256], dir[1024], path[2048];
+    stf_data_ext_t data_ext=NO_STF_DATA;
+
+    if (fileExists(file)) {
+        char basename_filename[256];
+        split_dir_and_file(file, dir, filename);
+        basename = get_stf_basename(file, &data_ext);
+        split_dir_and_file(basename, dir, basename_filename);
+        if (strlen(filename) != strlen(basename_filename)) {
+            // Prevent confusing the actual data file (file.XXX) with associated other
+            // files such as file.XXX.af, file.XXX.seg.aa etc.
+            data_ext = NO_STF_DATA;
         }
-        FREE(processor);
+        if (data_ext != NO_STF_DATA) {
+            inDataName = (char *)MALLOC(sizeof(char)*2048);
+            sprintf(inDataName, "%s%s", dir, filename);
+            if (fileExists(inDataName)) {
+                char *s, *t, *u;
+                inMetaName = (char *)MALLOC(sizeof(char)*2048);
+
+                // Try basename.XXX.par
+                sprintf(path, "%s%s%s",
+                        dir, basename_filename, ".par");
+                if (fileExists(path)) {
+                    processor = lzStr(path, "prep_block.processor_name:", NULL);
+                    if (strncmp(processor, "SKY", 3) == 0) {
+                        FREE(inMetaName);
+                        FREE(inDataName);
+                        FREE(processor);
+                        return 1;
+                    }
+                }
+
+                // Try basename.XXX.PAR
+                sprintf(path, "%s%s%s",
+                        dir, basename_filename, ".PAR");
+                if (fileExists(path)) {
+                    processor = lzStr(path, "prep_block.processor_name:", NULL);
+                    if (strncmp(processor, "SKY", 3) == 0) {
+                        FREE(inMetaName);
+                        FREE(inDataName);
+                        FREE(processor);
+                        return 1;
+                    }
+                }
+
+                if (strlen(get_stf_data_extension(data_ext)) > 0) {
+                    // Try basename_XXX.par
+                    u = STRDUP(get_stf_data_extension(data_ext));
+                    t = STRDUP(basename_filename);
+                    s = strstr(t, get_stf_data_extension(data_ext));
+                    *s = '\0';
+                    u++;
+                    sprintf(path, "%s%s_%s%s", dir, t, u, ".par");
+                    if (fileExists(path)) {
+                        processor = lzStr(path, "prep_block.processor_name:", NULL);
+                        if (strncmp(processor, "SKY", 3) == 0) {
+                            FREE(inMetaName);
+                            FREE(inDataName);
+                            FREE(processor);
+                            FREE(s);
+                            FREE(t);
+                            FREE(u);
+                            return 1;
+                        }
+                    }
+
+                    // Try basename_XXX.PAR
+                    sprintf(path, "%s%s_%s%s", dir, t, u, ".PAR");
+                    if (fileExists(path)) {
+                        processor = lzStr(path, "prep_block.processor_name:", NULL);
+                        if (strncmp(processor, "SKY", 3) == 0) {
+                            FREE(inMetaName);
+                            FREE(inDataName);
+                            FREE(processor);
+                            FREE(s);
+                            FREE(t);
+                            FREE(u);
+                            return 1;
+                        }
+                    }
+                }
+
+                FREE(s);
+                FREE(t);
+                FREE(u);
+            }
+        }
     }
+
+    FREE(processor);
     FREE(inMetaName);
     FREE(inDataName);
     return 0;
 }
+
