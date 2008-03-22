@@ -944,9 +944,9 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
 			char *comment)
 {
-  char param[64], format[15];
+  char param[100], format[15];
   sprintf(format, "%%-16.%ilf", decimals);
-  sprintf(param,format,value);
+  snprintf(param,99,format,value);
   strtok(param," ");/*remove all trailing spaces */
   if (is_empty(param)) { strcpy(param,"NaN"); }
   meta_put_string(meta_file,name,param,comment);
