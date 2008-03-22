@@ -79,6 +79,9 @@ LIBS
 	libasf_export
 	libasf_convert
 	libasf_insar
+	metadata
+	sgpsdp
+	plan
 }
 ############################### END OF LIBRARIES ##############################
 
@@ -227,7 +230,7 @@ DOCUMENTATION
 # makefile targets.
 CATEGORIES
 {
-	# MapReady package
+# MapReady package
 	mapready_package
 	{
 		asf_convert_gui
@@ -247,7 +250,7 @@ CATEGORIES
 		mapready-version_history.txt
 	}
 
-	# SAR Training Processor
+# SAR Training Processor
 	stp_package
 	{
 		ardop
@@ -260,7 +263,7 @@ CATEGORIES
 		stp-version_history.txt
 	}
 
-	# Data quality tools
+# Data quality tools
 	dq-tools
 	{
 		detect_cr
