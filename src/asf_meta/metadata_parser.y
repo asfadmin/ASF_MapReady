@@ -366,24 +366,24 @@ void fill_structure_field(char *field_name, void *valp)
    }
     if ( !strcmp(field_name, "radiometry") ) {
       if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE") )
-        MGENERAL->image_data_type = r_AMP;
+        MGENERAL->radiometry = r_AMP;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA") )
-        MGENERAL->image_data_type = r_SIGMA;
+        MGENERAL->radiometry = r_SIGMA;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA") )
-        MGENERAL->image_data_type = r_BETA;
+        MGENERAL->radiometry = r_BETA;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA") )
-        MGENERAL->image_data_type = r_GAMMA;
+        MGENERAL->radiometry = r_GAMMA;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_DB") )
-        MGENERAL->image_data_type = r_SIGMA_DB;
+        MGENERAL->radiometry = r_SIGMA_DB;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_DB") )
-        MGENERAL->image_data_type = r_BETA_DB;
+        MGENERAL->radiometry = r_BETA_DB;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_DB") )
-        MGENERAL->image_data_type = r_GAMMA_DB;
+        MGENERAL->radiometry = r_GAMMA_DB;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER") )
-        MGENERAL->image_data_type = r_POWER;
+        MGENERAL->radiometry = r_POWER;
       else {
-        warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
-        MGENERAL->image_data_type = MAGIC_UNSET_INT;
+        warning_message("Unrecognized radiometry (%s).\n",VALP_AS_CHAR_POINTER);
+        MGENERAL->radiometry = r_AMP;
       }
       return;
    }
