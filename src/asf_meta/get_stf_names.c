@@ -8,12 +8,78 @@
 #include "asf.h"
 #include "get_stf_names.h"
 
-/* Arrays with the extensions that will be checked for.
-   Make sure that the data & metadata extension indices match up with eachother.
-   Long list, but tried not go crazy, and still look for a couple of .00X 'extensions'
-   Don't forget to update the header file structures when you update these arrays!  */
-const char stf_metadata_extensions[][16] = {"",".PAR",".par",".000.PAR",".000.par",".001.PAR",".001.par","_000.PAR","_000.par","_001.PAR","_001.par"};
-const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".000",    ".001",    ".001",    ".000",    ".000",    ".001",    ".001"};
+/* Lists of STF data and metadata extensions */
+// NOTE: Must match 1:1 with the enums in stf_metadata_ext_t,
+// stf_data_ext_t, and stf_file_pairs_t (see get_stf_names.h)
+const char stf_metadata_extensions[][NUM_STF_METADATA_EXTS] = {
+    "",
+    ".PAR",     ".par",
+    ".000.PAR", ".000.par",
+    ".001.PAR", ".001.par",
+    ".002.PAR", ".002.par",
+    ".003.PAR", ".003.par",
+    ".004.PAR", ".004.par",
+    ".005.PAR", ".005.par",
+    ".006.PAR", ".006.par",
+    ".007.PAR", ".007.par",
+    ".008.PAR", ".008.par",
+    ".009.PAR", ".009.par",
+    ".010.PAR", ".010.par",
+    ".011.PAR", ".011.par",
+    ".012.PAR", ".012.par",
+    ".013.PAR", ".013.par",
+    ".014.PAR", ".014.par",
+    ".015.PAR", ".015.par",
+    ".016.PAR", ".016.par",
+    ".017.PAR", ".017.par",
+    ".018.PAR", ".018.par",
+    ".019.PAR", ".019.par",
+    "_000.PAR", "_000.par",
+    "_001.PAR", "_001.par",
+    "_002.PAR", "_002.par",
+    "_003.PAR", "_003.par",
+    "_004.PAR", "_004.par",
+    "_005.PAR", "_005.par",
+    "_006.PAR", "_006.par",
+    "_007.PAR", "_007.par",
+    "_008.PAR", "_008.par",
+    "_009.PAR", "_009.par",
+    "_010.PAR", "_010.par",
+    "_011.PAR", "_011.par",
+    "_012.PAR", "_012.par",
+    "_013.PAR", "_013.par",
+    "_014.PAR", "_014.par",
+    "_015.PAR", "_015.par",
+    "_016.PAR", "_016.par",
+    "_017.PAR", "_017.par",
+    "_018.PAR", "_018.par",
+    "_019.PAR", "_019.par",
+};
+
+const char stf_data_extensions[][NUM_STF_DATA_EXTS] = {
+    "",
+    "",     "",
+    ".000", ".000",
+    ".001", ".001",
+    ".002", ".002",
+    ".003", ".003",
+    ".004", ".004",
+    ".005", ".005",
+    ".006", ".006",
+    ".007", ".007",
+    ".008", ".008",
+    ".009", ".009",
+    ".010", ".010",
+    ".011", ".011",
+    ".012", ".012",
+    ".013", ".013",
+    ".014", ".014",
+    ".015", ".015",
+    ".016", ".016",
+    ".017", ".017",
+    ".018", ".018",
+    ".019", ".019",
+};
 
 /******************************************************************************
  * get_stf_metadata_name:
@@ -23,40 +89,32 @@ const char stf_data_extensions[][16]     = {"",    "",    "",    ".000",    ".00
  * ENUM stf_metadata_ext_t value.  */
 stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName)
 {
-  char dirName[256], fileName[256], metaTemp[1024], baseName[256], ext[256];
-  char *metaName;
-  FILE *metaFP;
-  int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
-  stf_metadata_ext_t ii;
+    stf_metadata_ext_t ret = NO_STF_METADATA;
+    char *pDataName = NULL, MetaName[1024];
+    int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
 
-  metaName = (char *) MALLOC(sizeof(char)*512);
-
-  *pMetaName = metaName;
-
-  /* Separate the filename from the path (if there's a path there) */
-  split_dir_and_file(stfName, dirName, fileName);
-
-  /* FYI: We're assuming that the potential extension is appended */
-  for (ii=begin; ii<end; ii++) {
-    /* Assume stfName came to the function as a base name */
-    sprintf(metaTemp,"%s%s%s",dirName,fileName,stf_metadata_extensions[ii]);
-    if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-      fclose(metaFP);
-      strcpy(metaName,metaTemp);
-      return ii;
+    stf_data_ext_t dret = get_stf_data_name(stfName, &pDataName);
+    if (dret != NO_STF_DATA) {
+        // A data basename exists, so look for a metadata name based on the data
+        // name
+        char dir[1024], dummy[1024], metaFilePath[1024];
+        split_dir_and_file(stfName, dir, dummy);
+        stf_metadata_ext_t i;
+        for (i=begin; i<end; i++) {
+            sprintf(MetaName, "%s%s", pDataName, stf_metadata_extensions[i]);
+            sprintf(metaFilePath, "%s%c%s", dir, DIR_SEPARATOR, MetaName);
+            if (fileExists(metaFilePath)) {
+                *pMetaName = (char *)MALLOC(sizeof(char)*(strlen(MetaName) + 64));
+                sprintf(*pMetaName, "%s%s", MetaName, stf_metadata_extensions[i]);
+                ret = i;
+                break;
+            }
+        }
+        if (ret == NO_STF_METADATA) *pMetaName = NULL;
     }
-    /* Hmmm, didn't work, maybe it's got an extension on there already,
-     * nix it and try again */
-    split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
-    sprintf(metaTemp,"%s%s%s",dirName,baseName,stf_metadata_extensions[ii]);
-    if ((metaFP=fopen(metaTemp,"r"))!=NULL) {
-      fclose(metaFP);
-      strcpy(metaName,metaTemp);
-      return ii;
-    }
-  }
-  /* If we haven't returned yet there ain't no metadata file */
-  return NO_STF_METADATA;
+
+    FREE(pDataName);
+    return ret;
 }
 
 /******************************************************************************
@@ -69,7 +127,7 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_STF_METADATA) {
-    char extensionList[128];
+    char extensionList[2048];
     int andFlag=TRUE;
     int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
     int ii;
@@ -98,16 +156,13 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
            "*   %s\n"
            "****************************************************************\n",
            stfName, extensionList);
-    if (logflag)   {printLog(logbuf);}
-    printf(logbuf);
-    exit(EXIT_FAILURE);
+    if (logflag) printLog(logbuf);
+    asfPrintError(logbuf);
   }
 
   /* If we found a file, return its extension type! */
-  else
-    return ret;
+  return ret;
 }
-
 
 /******************************************************************************
  * get_stf_data_name:
@@ -116,45 +171,20 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
  * extensions are the same, always return STF_BLANK on success.  */
 stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName)
 {
-  char dirName[256], fileName[256], dataTemp[1024], baseName[256], ext[128];
   char *dataName;
-  FILE *dataFP;
-  stf_data_ext_t ii;
-  stf_data_ext_t begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
+  stf_data_ext_t ii = NO_STF_DATA;
 
-  dataName = (char *) MALLOC(sizeof(char)*512);
+  dataName = get_stf_basename(stfName, &ii);
 
-  *pDataName = dataName;
-
-  /* Separate the filename from the path (if there's a path there) */
-  split_dir_and_file(stfName, dirName, fileName);
-
-  /* HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK: HACK:
-   * Lop off any .par extension. So we open the datafile, not the meta file */
-  split_base_and_ext(fileName, APPENDED_EXTENSION, '.', baseName, ext);
-  if      (0==strcmp(ext,".PAR")) { strcpy(fileName, baseName); }
-  else if (0==strcmp(ext,".par")) { strcpy(fileName, baseName); }
-
-  for (ii=begin; ii<end; ii++) {
-    /* Assume the FILENAME is the base name (so just tack the extension on) */
-    sprintf(dataTemp,"%s%s%s",dirName,fileName,stf_data_extensions[ii]);
-    if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
-      fclose(dataFP);
-      strcpy(dataName,dataTemp);
-      return ii;
-    }
-    /* Mokay, the given filename didn't work. Lets try the filename minus any
-     * extention it may have had (ie BASENAME).  */
-    sprintf(dataTemp,"%s%s%s",dirName,baseName,stf_data_extensions[ii]);
-    if ((dataFP=fopen(dataTemp,"r"))!=NULL) {
-      fclose(dataFP);
-      strcpy(dataName,dataTemp);
-      return ii;
-    }
+  if (dataName && strlen(dataName) && ii != NO_STF_DATA) {
+      *pDataName = (char *)MALLOC(sizeof(char)*(strlen(dataName) + 5));
+      strcpy(*pDataName, dataName);
+  }
+  else {
+      *pDataName = NULL;
   }
 
-  /* If we haven't returned yet there ain't no data file */
-  return NO_STF_DATA;
+  return ii;
 }
 
 /******************************************************************************
@@ -163,11 +193,11 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName)
  * Otherwise act like get_stf_data_name  */
 stf_data_ext_t require_stf_data(const char *stfName, char **dataName)
 {
-  stf_data_ext_t ret = get_stf_data_name(stfName, dataName);
+    stf_data_ext_t ret = get_stf_data_name(stfName, dataName);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_STF_DATA) {
-    char extensionList[128];
+    char extensionList[2048];
     int andFlag=TRUE;
     int begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
     int ii;
@@ -222,46 +252,126 @@ stf_file_pairs_t get_stf_names(const char *stfName, char **dataName,
   // statement was very important anyway, and I'm not sure offhand
   // exactly how to fix it.
   //    printf("stfName = %s, get_stf_metadata_name = %s, metaName = %s\n",
-  //	   stfName, get_stf_metadata_name(stfName, metaName), metaName);
+  //       stfName, get_stf_metadata_name(stfName, metaName), metaName);
 
   if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
       && get_stf_metadata_name(stfName, metaName) == STF_PAR)
     return STF_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
+  if (   get_stf_data_name(stfName, dataName)     == STF_blank
       && get_stf_metadata_name(stfName, metaName) == STF_par)
     return STF_par_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_000_PAR)
+  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_000_PAR)
     return STF_000_PAR_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_000_par)
+  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_000_par)
     return STF_000_par_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_000_PAR)
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_001_PAR)
+      return STF_001_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_001_par)
+      return STF_001_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_002_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_002_PAR)
+      return STF_002_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_002_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_002_par)
+      return STF_002_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_003_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_003_PAR)
+      return STF_003_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_003_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_003_par)
+      return STF_003_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_004_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_004_PAR)
+      return STF_004_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_004_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_004_par)
+      return STF_004_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_005_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_005_PAR)
+      return STF_005_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_005_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_005_par)
+      return STF_005_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_006_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_006_PAR)
+      return STF_006_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_006_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_006_par)
+      return STF_006_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_007_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_007_PAR)
+      return STF_007_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_007_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_007_par)
+      return STF_007_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_008_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_008_PAR)
+      return STF_008_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_008_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_008_par)
+      return STF_008_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_009_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_009_PAR)
+      return STF_009_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_009_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_009_par)
+      return STF_009_par_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_010_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_010_PAR)
+      return STF_010_PAR_PAIR;
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_010_BLANK
+         && get_stf_metadata_name(stfName, metaName) == STF_010_par)
+      return STF_010_par_PAIR; // YO BRIAN START HERE
+
+  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_U_000_PAR)
     return STF_U_000_PAR_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_000_par)
+  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_U_000_par)
     return STF_U_000_par_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_001_PAR)
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_U_001_PAR)
     return STF_U_001_PAR_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_001_par)
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_U_001_par)
     return STF_U_001_par_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_001_PAR)
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_001_PAR)
     return STF_001_PAR_PAIR;
 
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_001_par)
+  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
+      && get_stf_metadata_name(stfName, metaName) == STF_001_par)
     return STF_001_par_PAIR;
 
   return NO_STF_FILE_PAIR;
@@ -274,7 +384,7 @@ stf_file_pairs_t get_stf_names(const char *stfName, char **dataName,
 stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
                                     char **metaName)
 {
-  char extensionList[256];
+  char extensionList[2048];
   int andFlag=TRUE;
   int begin=NO_STF_FILE_PAIR+1, end=NUM_STF_FILE_PAIRS;
   int ii;
@@ -357,8 +467,62 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
 
 void free_stf_names(char *dataName, char *metaName)
 {
-  if (dataName != NULL)
-    FREE(dataName);
-  if (metaName != NULL)
-    FREE(metaName);
+  FREE(dataName);
+  FREE(metaName);
 }
+
+char *get_stf_basename(const char *file, stf_data_ext_t *idx)
+{
+    char *ext = NULL;
+    char *basename = STRDUP(file);
+    stf_data_ext_t i, begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
+
+    // Look for standard extensions of the form ".xxx" first...
+    for (i = begin, ext = NULL; i < end && ext == NULL; i++) {
+        if (strlen(stf_data_extensions[i])) {
+            ext = strstr(basename, stf_data_extensions[i]);
+        }
+    }
+    if (ext && strlen(ext)) {
+        // Whack the extension from the base name
+        *ext = '\0';
+        strcat(basename, stf_data_extensions[i]);
+        *idx = i;
+    }
+    else {
+        // If no standard extension is in the name, then look for (more rare)
+        // extensions of the form "_xxx" instead...
+        ext = NULL;
+        begin = NUM_STF_DATA_EXTS + 1;
+        end   = NUM_STF_DATA_EXTS * 2;
+        for (i = begin, ext = NULL; i < end && ext == NULL; i++) {
+            if (strlen(stf_data_extensions[i])) {
+                ext = strstr(basename, stf_data_extensions[i]);
+            }
+        }
+        if (ext && strlen(ext)) {
+        // Whack the extension from the base name
+            *ext = '\0';
+            strcat(basename, stf_data_extensions[i]);
+            *idx = i;
+        }
+    }
+
+    return basename;
+}
+
+// Accessor functions
+const char *get_stf_data_extension(stf_data_ext_t idx) {
+    if (idx > NO_STF_DATA && idx < NUM_STF_DATA_EXTS)
+        return stf_data_extensions[idx];
+    else
+        return (char*)NULL;
+}
+
+const char *get_stf_metadata_extension(stf_metadata_ext_t idx) {
+    if (idx > NO_STF_METADATA && idx < NUM_STF_METADATA_EXTS)
+        return stf_metadata_extensions[idx];
+    else
+        return (char*)NULL;
+}
+
