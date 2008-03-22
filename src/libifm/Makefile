@@ -55,9 +55,11 @@ IOBJS = imsl_c_smul.o \
         wks_allocate.o 
         
 all: libifm.a
-	rm *.o
 
 libifm.a: $(OBJS)
 	ar rv libifm.a $(OBJS)
 	$(RANLIB) libifm.a
 	mv libifm.a $(LIBDIR)
+
+clean:
+	-rm -f *.o

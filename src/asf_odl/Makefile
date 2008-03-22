@@ -39,4 +39,4 @@ asf_odl.a: $(OBJS)
 	echo "ASF ODL Library sucessfully built!"
 
 clean:
-	rm *.o asf_odl.a
+	-rm -f *.o asf_odl.a
