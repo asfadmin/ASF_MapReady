@@ -50,10 +50,10 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
       svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
- 6. Make working directories (names are important ...yes, that's still a "convert"):
+ 6. Make working directories:
 
       cd ~/asf/svn-r6472
-      mkdir -p release/tar_filelist release/tar/convert
+      mkdir -p release/tar_filelist release/tar
 
  7. If you have never copied the .rpmmacros and .rpmrc files to your
     home directory, then do so now, otherwise skip to step 7:
