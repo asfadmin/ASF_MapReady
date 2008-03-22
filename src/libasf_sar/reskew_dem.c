@@ -66,6 +66,7 @@ BUGS:
 #include "asf_meta.h"
 #include "asf_sar.h"
 #include "asf_vector.h"
+#include <assert.h>
 
 /* current earth radius, meters (FIXME: update with azimuth, range) */
 static double earth_radius;
@@ -213,7 +214,8 @@ Convert each grX to an srX.  Update amplitude and height images.*/
                     if (ind < sr_ns &&
                         (eq(srDEM[ind],unInitDEM,.0001) ||
                          eq(srDEM[ind],NO_DEM_DATA,.0001) ||
-                         eq(srDEM[ind],badDEMht,.0001))) {
+                         eq(srDEM[ind],badDEMht,.0001)))
+                    {
                         srDEM[ind]=height;
                     }
                 }
@@ -254,9 +256,6 @@ Convert each grX to an srX.  Update amplitude and height images.*/
     for (x=1;x<(sr_ns-2);x++)
     {
         if (srDEM[x]==badDEMht)
-            /* &&
-               srDEM[x-1]!=badDEMht &&
-               srDEM[x+1]!=badDEMht)*/
             srDEM[x]=(srDEM[x-1]+srDEM[x+1])/2;
 
         if (srDEM[x]==unInitDEM)
@@ -274,15 +273,114 @@ Diffuse (lambertian) reflection:
    	currAmp=reflPower/runLen;
 */
 
+static const char *radiometry_toString(radiometry_t rad)
+{
+  switch (rad)
+  {
+    case r_AMP:
+      return "Amplitude";
+
+    case r_POWER:
+      return "Power";
+
+    case r_SIGMA:
+      return "Sigma";
+
+    case r_SIGMA_DB:
+      return "Sigma (db)";
+
+    case r_BETA:
+      return "Beta";
+
+    case r_BETA_DB:
+      return "Beta (db)";
+
+    case r_GAMMA:
+      return "Gamma";
+
+    case r_GAMMA_DB:
+      return "Gamma (db)";
+
+    default:
+      return MAGIC_UNSET_STRING;
+  }
+}
+
+static void handle_radiometry(meta_parameters *meta, float *amp, int n,
+                              int line, radiometry_t rad)
+{
+  // converts the given amplitude data to the specified radiometry, in place
+  int i;
+  double incid,sigma;
+
+  switch (rad)
+  {
+    case r_AMP:
+      // we already have amplitude, don't need to do anything
+      return;
+
+    case r_POWER:
+      for (i=0; i<n; ++i)
+        amp[i] = amp[i]*amp[i];
+      return;
+
+    case r_SIGMA:
+    case r_SIGMA_DB:
+      for (i=0; i<n; ++i)
+        amp[i] = amp[i]*amp[i];
+      break;
+
+    case r_BETA:
+    case r_BETA_DB:
+      for (i=0; i<n; ++i) {
+        incid = meta_incid(meta, line, i);
+        sigma = amp[i]*amp[i];
+        amp[i] = sigma/sin(incid);
+      }
+      break;
+
+    case r_GAMMA:
+    case r_GAMMA_DB:
+      for (i=0; i<n; ++i) {
+        incid = meta_incid(meta, line, i);
+        sigma = amp[i]*amp[i];
+        amp[i] = sigma/cos(incid);
+      }
+      break;
+
+    default:
+      printf("Invalid radiometry: %d\n", rad);
+      assert(0);
+      break;
+  }
+
+  // calculate db if necessary
+  if (rad==r_SIGMA_DB || rad==r_BETA_DB || rad==r_GAMMA_DB) {
+    for (i=0; i<n; ++i) {
+      if (amp[i] > .001)
+        amp[i] = 10. * log10(amp[i]);
+      else
+        amp[i] = -30.;
+    }
+  }
+}
+
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
                char *outAmpFile, char *inMaskFile)
+{
+  return reskew_dem_rad(inMetafile, inDEMfile, outDEMfile, outAmpFile,
+                        inMaskFile, r_AMP);
+}
+
+int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
+                   char *outAmpFile, char *inMaskFile,
+                   radiometry_t rad)
 {
 	float *grDEMline,*srDEMline,*outAmpLine,*inMaskLine;
 	register int line,nl;
 	FILE *inDEM,*outDEM,*outAmp,*inMask=NULL;
 	meta_parameters *metaIn, *metaDEM, *metaInMask=NULL;
 
-        //printf("%s -> %s\n", inDEMfile, outDEMfile);
 /* Get metadata */
 	metaIn = meta_read(inMetafile);
 	metaDEM = meta_read(inDEMfile);
@@ -312,10 +410,9 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
         else
         {
             // make a blank mask
-            int i;
             float val = unmasked_value();
-            for (i=0; i<gr_ns; i++)
-                inMaskLine[i] = val;
+            for (line=0; line<gr_ns; ++line)
+                inMaskLine[line] = val;
         }
 					
 /*Allocate more memory (this time for data lines*/
@@ -323,8 +420,12 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	srDEMline  = (float *)MALLOC(sizeof(float)*sr_ns);
 	outAmpLine = (float *)MALLOC(sizeof(float)*sr_ns);
 
+/*Report with which radiometry we are going to generate the simulated sar*/
+        asfPrintStatus("Generating simulated sar image with radiometry: %s\n",
+                       radiometry_toString(rad));
+
 /* Read deskewed data, write out reskewed data */
-	for (line=0; line<nl; line++)
+	for (line=0; line<nl; ++line)
 	{
             get_float_line(inDEM,metaDEM,line,grDEMline);
             if (inMaskFile)
@@ -332,7 +433,12 @@ int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 
             dem_gr2sr(grDEMline,srDEMline,outAmpLine,inMaskLine);
 
+            // write out slant range DEM line
             put_float_line(outDEM,metaIn,line,srDEMline);
+
+            // convert amplitude data to desired radiometry, then
+            // write out the simulated sar image line
+            handle_radiometry(metaIn, outAmpLine, sr_ns, line, rad);
             put_float_line(outAmp,metaIn,line,outAmpLine);	
 	}
 

@@ -43,6 +43,9 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	       char *outAmpFile, char *inMaskFile);
+int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
+                   char *outAmpFile, char *inMaskFile,
+                   radiometry_t rad);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
