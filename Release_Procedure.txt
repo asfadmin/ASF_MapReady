@@ -314,7 +314,7 @@ SAR TRAINING PROCESSOR (STP) SOURCE AND RPM RELEASE PROCEDURE
     Or Branch:
     > svn co svn+ssh://svn/svn/asf_tools/branches/stp_v?-?-x asf_tools
 
-* Update STP_VERSION in src/stp/stp.c
+* Update STP_VERSION in include/asf_version.h
 
 * Tag the repository:
     Trunk:
