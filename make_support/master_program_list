@@ -192,13 +192,13 @@ PROGRAMS
 	sr2gr { }
 	srf2shape { }
 	stats { }
-#	stp { }
+	stp { }
 #	tle2equator { }
 	trim { }
 	xpix_ypix { }
 	zeroify { }
 	
-# 	put programs that depend on other programs at the bottom
+#	put programs that depend on other programs at the bottom
 
 	auto_sar_mosaic { PROGRAMS concat idtable }
 	auto_swath_mosaic { PROGRAMS accum_offset concatm resample }
@@ -209,20 +209,33 @@ PROGRAMS
 }
 ############################### END OF PROGRAMS ###############################
 
+
+############################# A list of documents #############################
+DOCUMENTATION
+{
+@doc/
+	mapready_manual.pdf
+	mapready-version_history.txt
+	SAR_training_processor.pdf
+	stp-version_history.txt
+}
+############################ END OF DOCUMENTATION #############################
+
+
 ############################## List of Categories #############################
 # The categories have no directories or source, but are valid autotar and
 # makefile targets.
 CATEGORIES
 {
-# Convert package
-	convert
+	# MapReady package
+	mapready_package
 	{
- 		asf_convert_gui
-  		asf_convert
+		asf_convert_gui
+		asf_convert
 		asf_export
 		asf_import
 		asf_geocode
-	        asf_terrcorr
+		asf_terrcorr
 		asf_view
 		gr2sr
 		metadata_gui
@@ -230,9 +243,24 @@ CATEGORIES
 		mosaic
 		refine_geolocation
 		sr2gr
+		mapready_manual.pdf
+		mapready-version_history.txt
 	}
 
-# Data quality tools
+	# SAR Training Processor
+	stp_package
+	{
+		ardop
+		c2p
+		convert2jpeg
+		multilook
+		stats
+		stp
+		SAR_training_processor.pdf
+		stp-version_history.txt
+	}
+
+	# Data quality tools
 	dq-tools
 	{
 		detect_cr
@@ -242,23 +270,4 @@ CATEGORIES
 		pta
 	}
 
-# General SAR stuff: importing, geocoding, terrain correcting, exporting, etc
-	general
-	{
-		convert
-		stats convert2byte convert2jpeg
-		deskew dspddr fftMatch makeddr meta2ddr metadata raster_calc
-		raster_diff remap resample sarout sr2gr trim accum_offset
-		concat concat_dem concatm fit_quadratic idimage
-	}
-
-# All the tools including the interferometry tools (old name: restricted)
-	all
-	{
-		general
-		ardop avg_in_dop c2p coh coregister_coarse coregister_fine
-		create_dem_grid dem2phase dem2seeds deskew_dem reskew_dem
-		deramp elev eleverr escher fit_line fit_plane fit_warp igram
-		multilook p2c phase_filter refine_base refine_offset zeroify
-	}
 }

@@ -117,7 +117,7 @@ typedef struct prog{
 	lib *libs[100];
 	int numProgs;
 	PROG *progs[100];
-	char isOnlyBinary,isCat;
+	char isOnlyBinary,isCat,isDoc;
 } prog;
 int numProgs;
 prog *progs[10000];
@@ -150,8 +150,8 @@ void parseMasterList(void)
 		libs[numLibs++]=l;
 		nextTokN();
 	}
-/*Parse PROGRAMS section*/
 	nextTok();
+/*Parse PROGRAMS section*/
 	if (tokNot("PROGRAMS")) wrong("Expected PROGRAMS, got ",tok);
 	nextTok();
 	if (tokNot("{")) wrong("Expected {, got ",tok);
@@ -161,7 +161,7 @@ void parseMasterList(void)
 		prog *p=(prog *)malloc(sizeof(prog));
 		strcpy(p->path,codeLoc);
 		strcpy(p->name,tok);
-		p->numLibs=p->numProgs=p->isOnlyBinary=p->isCat=0;
+		p->numLibs=p->numProgs=p->isOnlyBinary=p->isCat=p->isDoc=0;
 		progs[numProgs++]=p;
 		nextTok();
 		if (tokNot("{")) wrong("Expected {, got ",tok);
@@ -204,6 +204,22 @@ void parseMasterList(void)
 			wrong("Expected } to close PROGRAM, got ",tok);
 	}
 	nextTok();
+/*Parse DOCUMENTATION section*/
+	if (tokNot("DOCUMENTATION")) wrong("Expected DOCUMENTATION, got ",tok);
+	nextTok();
+	if (tokNot("{")) wrong("Expected {, got",tok);
+	nextTokN();
+	while (tokNot("}"))
+	{
+		prog *p=(prog *)malloc(sizeof(prog));
+		strcpy(p->path,codeLoc);
+		strcpy(p->name,tok);
+		p->numLibs=p->numProgs=p->isOnlyBinary=p->isCat=0;
+		p->isDoc=1;
+		progs[numProgs++]=p;
+		nextTokN();
+	}
+	nextTok();
 /*Parse CATEGORIES section*/
 	if (tokNot("CATEGORIES")) wrong("Expected CATEGORIES, got ",tok);
 	nextTok();
@@ -214,7 +230,7 @@ void parseMasterList(void)
 		prog *p=(prog *)malloc(sizeof(prog));
 		strcpy(p->path,"CATEGORY/");
 		strcpy(p->name,tok);
-		p->numProgs=p->numLibs=p->isOnlyBinary=0;
+		p->numProgs=p->numLibs=p->isOnlyBinary=p->isDoc=0;
 		p->isCat=1;
 		progs[numProgs++]=p;
 		nextTok();
@@ -228,8 +244,8 @@ void parseMasterList(void)
 		 			p->progs[p->numProgs++]=(PROG *)progs[progNo];
 			if (oldNumProgs==p->numProgs)
 			/*We couldn't find the referenced program.*/
-				printf("SEVERE WARNING: couldn't find program '%s',\n"
-					" part of program '%s'!  Ignoring...\n\n",tok,p->name);
+				printf("WARNING: couldn't find '%s',\n"
+					" a part of the '%s' package! Ignoring...\n\n",tok,p->name);
 			nextTokN();
 		}
 		if (tokIs("}"))
@@ -248,14 +264,20 @@ void findLibraries(void)
 		int libNo;
 		if (!progExists(p->path,p->name))
 			continue;
+
+		// Skip over documentation, but let the user know its there
+		if ( p->isDoc ) {
+			printf("\nAdding documentation: %s\n",p->name);
+			continue;
+		}
+
 		printf("\nProgram '%s' has libraries:\n",p->name);
 		for (libNo=0;libNo<numLibs;libNo++)
 		{
 			char makeFile[255];
 			char cmd[255];
 			int ret;
-			sprintf(makeFile,"../%s%s/Makefile",
-				p->path,p->name);
+			sprintf(makeFile,"../%s%s/Makefile", p->path, p->name);
 			sprintf(cmd,"fgrep %s.a %s > /dev/null\n",
 				libs[libNo]->name,makeFile);
 			ret=system(cmd);
@@ -268,7 +290,9 @@ void findLibraries(void)
 	}
 }
 
-/*********************** MakeMake, which prints the now-parsed program list to a makefile *********************/
+/********************************************************************/
+/* MakeMake, which prints the now-parsed program list to a makefile */
+/********************************************************************/
 void printMake(FILE *f,char *platform);
 #include "printMake.c"
   /*
@@ -298,7 +322,9 @@ void makeMakefile(char *platform)
 
 	fclose(make);
 }
-/*********************** UpdateAutotar, which creates the stuff in asf_tools/autotar *****************/
+/***************************************************************/
+/* UpdateAutotar, which creates the stuff in asf_tools/autotar */
+/***************************************************************/
 int strcmpr(const char **a, const char **b)
 {
 	return strcmp(*a,*b);
@@ -309,7 +335,6 @@ void cleanAndWrite(FILE *out)
 {
 	int i;
 	char *lastName="";
-/*	qsort(fnames,numFnames,sizeof(char *),(int (*)(const void *,const void *))strcmpr);*/
 	for (i=0;i<numFnames;i++)
 	{
 		if (0!=strcmp(lastName,fnames[i]))
@@ -330,13 +355,16 @@ void addProgram(prog *p,int writeSource)
 	int i;
 	if (p->isOnlyBinary&&writeSource)
 		return;
-	if (!p->isCat)
+	if (!p->isCat&&!p->isDoc)
 		addPathName(writeSource?p->path:"",p->name);
-	if (writeSource)
+	if (p->isDoc)
+		addPathName(p->path,p->name);
 	/*Also write out library names.*/
+	if (writeSource)
 		for (i=0;i<p->numLibs;i++)
 			addPathName(p->libs[i]->path,p->libs[i]->name);
-	for (i=0;i<p->numProgs;i++)/*Recursively add children's names.*/
+	/*Recursively add children's names.*/
+	for (i=0;i<p->numProgs;i++)
 		addProgram((prog *)p->progs[i],writeSource);
 }
 void updateAutotar(void)
@@ -354,7 +382,8 @@ void updateAutotar(void)
 		strcpy(name,"../../release/autotar/source.");
 		strcat(name,p->name);
 		out=fopen(name,"w");
-		fprintf(out,"include\n");
+		if (!p->isDoc)
+			fprintf(out,"include\n");
 		addProgram(p,1);
 		cleanAndWrite(out);
 		fclose(out);
