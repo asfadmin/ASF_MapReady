@@ -17,13 +17,8 @@ static char * s_argv0 = 0;
 #undef BYTE
 #include <windows.h>
 
-#ifdef BUILD_REQ
-static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\Req\\";
-static const char * s_version_string = REQ_PACKAGE_VERSION_STRING;
-#else
-static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\MapReady\\";
-static const char * s_version_string = MAPREADY_VERSION_STRING;
-#endif
+static const char * s_asf_application_key = "SOFTWARE\\ASF_Tools\\"TOOL_SUITE_NAME"\\";
+static const char * s_version_string = TOOL_SUITE_VERSION_STRING;
 
 static const char * s_asf_share_dir_key = "Install_Dir";
 static const char * s_asf_install_dir_key = "Install_Dir";
@@ -183,16 +178,16 @@ print_all_reg_vals()
 
 static int check_for_version_file_in_share_dir(const char *dir)
 {
-  const char *version_file = "mapready_version.txt";
+  const char *version_file = TOOL_SUITE_NAME "_version.txt";
 
   int len = strlen(dir) + strlen(version_file) + 3;
   if (len < 256) len = 256;
 
   char *file = MALLOC(len * sizeof(char));
-  sprintf(file, "%s/%s", dir, version_file);
+  sprintf(file, "%s/%s", dir, lc(version_file));
 
   int found = 0;
-  char *ver = MAPREADY_VERSION_STRING;
+  char *ver = TOOL_SUITE_VERSION_STRING;
 
   FILE *f = fopen(file, "r");
   if (f) {
@@ -372,8 +367,8 @@ get_asf_share_dir()
 	char *path, *buf, *share, *p;
 	int found = 0;
 
-	// printf("Known file not in config.h's share dir: %s\n", s_share_dir);
-	// printf("Searching the path...\n");
+	printf("Known file not in config.h's share dir: %s\n", s_share_dir);
+	printf("Searching the path...\n");
 
         /* kludgery! Must find the location of the share dir the hard  */
         /* way, which is to search the directories in the user's path, */
@@ -407,7 +402,7 @@ get_asf_share_dir()
         if (buf[strlen(buf) - 1] == '/')
             buf[strlen(buf) - 1] = '\0';
 
-	    // printf("Checking %s ...\n", buf);
+	    printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
 	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
 	        *(buf + strlen(buf) - 4) = '\0';
@@ -418,11 +413,11 @@ get_asf_share_dir()
 		    free(s_share_dir);
 		    s_share_dir = strdup(buf);
 		    found = 1;
-		    // printf("  Found in %s!\n", buf);
+		    printf("  Found in %s!\n", buf);
 		    break;
 		}
 
-		// printf("  Not found in %s.\n", buf);
+		printf("  Not found in %s.\n", buf);
 	    }
 	    p = q;
 	}

@@ -19,7 +19,7 @@
 #  endif
 #endif
 
-#define STP_VERSION "1.0.13"
+#include <asf_version.h>
 
 #ifndef win32
 # include "asf_meta.h"
@@ -1632,7 +1632,7 @@ main(int argc, char **argv)
     /* add version number to window title */
     char title[256];
     sprintf(title,
-            "SAR Training Processor: Version %s", STP_VERSION);
+            "SAR Training Processor: Version %s", STP_VERSION_STRING);
 
     GtkWidget *widget = glade_xml_get_widget (glade_xml, "ardop_main");
     gtk_window_set_title(GTK_WINDOW(widget), title);

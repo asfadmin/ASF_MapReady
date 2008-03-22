@@ -10,9 +10,7 @@
 # hand, if you want to rebuild just the module you are working on,
 # just do a make in that subdirectory.
 
-include make_support/system_rules
-
-MODULES = \
+MAPREADY_MODULES = \
 	src/asf \
 	src/libasf_proj \
 	src/asf_meta \
@@ -52,53 +50,173 @@ MODULES = \
 	src/diffimage \
 	src/sgpsdp \
 	src/plan \
+	src/metadata_gui \
+	src/asf_view \
 	@ASF_GUI@
-# src_x/sarview
 
-S_SHAREDIR := $(shell echo "$(SHAREDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
-S_BINDIR := $(shell echo "$(BINDIR)" | perl -p -i -e 's/\.\.\/\.\.\///')
+STP_MODULES = \
+	src/asf \
+	src/asf_fft \
+	src/libasf_proj \
+	src/asf_meta \
+	src/asf_odl \
+	src/libasf_ardop \
+	src/libifm \
+	src/libasf_sar \
+	src/libasf_raster \
+	src/ardop \
+	src/c2p \
+	src/convert2jpeg \
+	src/multilook \
+	src/stats \
+	src/stp
 
-all: external_libs
-	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib $(S_SHAREDIR)/doc
-	cp doc/*.pdf doc/mapready-version_history.txt $(S_SHAREDIR)/doc
+AP_MODULES = \
+	src/asf \
+	src/libasf_proj \
+	src/asf_meta \
+	src/libasf_ardop \
+	src/asf_fft \
+	src/libasf_raster \
+	src/libasf_import \
+	src/libasf_vector \
+	src/libasf_sar \
+	src/libasf_geocode \
+	src/libasf_export \
+	src/libasf_terrcorr \
+	src/libasf_convert \
+	src/metadata \
+	src/metadata_gui \
+	src/sgpsdp \
+	src/plan \
+	src/asf_view
+
+REQ_MODULES = \
+	src/asf \
+	src/libasf_proj \
+	src/libasf_raster \
+	src/asf_meta \
+	src/metadata \
+	src/req
+
+S_LIBDIR   = lib
+S_BINDIR   = bin
+S_SHAREDIR = share/asf_tools
+S_DOCDIR   = $(S_SHAREDIR)/doc
+
+VERSION_MAPREADY = $(shell awk -F '"' '$$1 ~ /define MAPREADY_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
+
+# Build the MapReady package by default
+default: mapready
+
+# MapReady Package
+mapready: mkdirs_for_build external_libs
+	echo BUILD_PKG = -D_PKG_MAPREADY > make_support/build_pkg.mk
+	cp doc/mapready_manual.pdf $(S_DOCDIR)
+	cp doc/mapready-version_history.txt $(S_DOCDIR)
 	cp LICENSE.txt $(S_SHAREDIR)
-	echo "@VERSION@" > $(S_SHAREDIR)/mapready_version.txt
+	echo $(VERSION_MAPREADY) > $(S_SHAREDIR)/mapready_version.txt
 	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
-	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
+	$(foreach MODULE, $(MAPREADY_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
-	@ echo "  XXXXXXXXXXXX All ASF Tools Compiled Successfully! XXXXXXXXXXX"
+	@ echo "  XXXXXXXXXXXX ASF MapReady Package Compiled! XXXXXXXXXXX"
 	@ echo ""
 
-install: all
-	mkdir -p "@BINDIR@" "@prefix@"/lib "@SHAREDIR@"
-	cp -R $(S_BINDIR)/* "@BINDIR@"
-	cp -R lib/* "@prefix@"/lib
-	cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
-	chmod 755 "@BINDIR@"/*
-	chmod -R a+r "@SHAREDIR@"/*
-	chmod a+x "@SHAREDIR@"/projections
-	chmod a+x "@SHAREDIR@"/projections/*
-	chmod a+x "@SHAREDIR@"/asf_mapready
-	chmod a+x "@SHAREDIR@"/proj
-	chmod -R ug+w "@SHAREDIR@"
+# SAR Training Processor Package
+stp: mkdirs_for_build external_libs
+	echo BUILD_PKG = -D_PKG_STP > make_support/build_pkg.mk
+	cp doc/SAR_training_processor.pdf $(S_DOCDIR)
+	cp doc/stp-version_history.txt $(S_DOCDIR)
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_STP) > $(S_SHAREDIR)/stp_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(STP_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX ASF SAR Training Processor Package Compiled! XXXXXXXXXXX"
+	@ echo ""
 
-external_libs:
-	mkdir -p $(S_BINDIR) $(S_SHAREDIR) lib
-	$(MAKE) -C external
-	-cp -R external/lib/* lib
-	-chmod -R ug+w lib
-	-cp -R external/include/* include
-	-chmod -R ug+w include
-	-cp -R external/share/* share/asf_tools
-	-chmod -R ug+w share
+# Acquisition Request Planner Package
+ap: mkdirs_for_build external_libs
+	echo BUILD_PKG = -D_PKG_AP > make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_AP) > $(S_SHAREDIR)/acquisitionplanner_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(AP_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX ASF Acquisition Planning Package Compiled! XXXXXXXXXXX"
+	@ echo ""
 
-clean:
-	rm -rf bin/* lib/* share/*
-	$(foreach MODULE, $(MODULES), $(MAKE) clean -C $(MODULE) &&) true
+# Request Generator Package
+req: mkdirs_for_build external_libs
+	echo BUILD_PKG = -D_PKG_REQ > make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_REQ) > $(S_SHAREDIR)/req_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX ASF Request Generator Compiled! XXXXXXXXXXX"
+	@ echo ""
 
-release:
-	cd make_support; $(MAKE); ./makemake @sys@; cd ..
-
-oldtools:
+# Build using our old system
+oldtools: mkdirs_for_build
 	cd make_support; $(MAKE); ./makemake @sys@; cd ..
 	$(MAKE) --makefile=Makefile.old
+
+# make everything!
+all: oldtools req ap stp mapready
+
+# This should install any & all package(s) that have been built
+install: 
+	mkdir -p "@BINDIR@" "@prefix@"/lib "@SHAREDIR@"
+	cp -R $(S_BINDIR)/* "@BINDIR@"
+	cp -R $(S_LIBDIR)/* "@prefix@"/lib
+	cp -R $(S_SHAREDIR)/* "@SHAREDIR@"
+	chmod 755 "@BINDIR@"/*
+	if [ -d @SHAREDIR@/projections ]; then \
+		chmod a+x "@SHAREDIR@"/projections ; \
+		chmod a+x "@SHAREDIR@"/projections/* ; \
+	fi
+	if [ -d @SHAREDIR@/asf_mapready ]; then \
+		chmod a+x "@SHAREDIR@"/asf_mapready ; \
+	fi
+	if [ -d @SHAREDIR@/asf_mapready ]; then \
+		chmod a+x "@SHAREDIR@"/proj ; \
+	fi
+	chmod -R a+r "@SHAREDIR@"
+	chmod -R ug+w "@SHAREDIR@"
+
+# Libraries written by non-ASF parties
+external_libs: mkdirs_for_build
+	$(MAKE) -C external
+	-cp -R external/lib/* $(S_LIBDIR)
+	-chmod -R ug+w $(S_LIBDIR)
+	-cp -R external/include/* include
+	-chmod -R ug+w include
+	-cp -R external/share/* $(S_SHAREDIR)
+	-chmod -R ug+w share
+
+# Prep the directory tree for the build
+mkdirs_for_build:
+	mkdir -p $(S_LIBDIR)
+	mkdir -p $(S_BINDIR)
+	mkdir -p $(S_DOCDIR)
+	mkdir -p $(S_SHAREDIR)
+	mkdir -p man/cat1
+	mkdir -p man/man1
+
+clean:
+	rm -rf $(S_LIBDIR)
+	rm -rf $(S_BINDIR)
+	rm -rf $(S_DOCDIR)
+	rm -rf $(S_SHAREDIR)
+	rm -rf share
+	rm -rf man
+	$(foreach MODULE, $(MAPREADY_MODULES) $(STP_MODULES) $(AP_MODULES), \
+		$(MAKE) clean -C $(MODULE) &&) true
+
+# Internal prep for release builds
+release:
+	cd make_support; $(MAKE); ./makemake @sys@; cd ..

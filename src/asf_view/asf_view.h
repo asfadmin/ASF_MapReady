@@ -1,7 +1,8 @@
 #ifndef __ASF_VIEW_H
 #define __ASF_VIEW_H
 
-#define VERSION "1.1"
+#include <asf_version.h>
+#define VERSION TOOL_SUITE_VERSION_STRING
 
 #define _GNU_SOURCE
 

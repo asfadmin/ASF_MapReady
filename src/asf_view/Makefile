@@ -175,7 +175,7 @@ default: $(OBJS)
 	cp startup.jpg $(SHAREDIR)
 	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
-#	cp $(TARGET).ico $(SHAREDIR)
+	cp planner_icon.ico $(SHAREDIR)
 
 %.c: %.h
 

@@ -47,7 +47,7 @@ main(int argc, char **argv)
     // add version number to window title
     char title[256];
     sprintf(title,
-        "The ALOS Request Generator: Version %s", REQ_PACKAGE_VERSION_STRING);
+        "The ALOS Request Generator: Version %s", REQ_VERSION_STRING);
 
     // pull out what is in the saved settings file
     apply_saved_settings();
