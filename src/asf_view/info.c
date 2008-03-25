@@ -16,7 +16,8 @@ static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
                      x, y, &projZ);
     }
     else {
-      latLon2UTM(lat, lon, 0, x, y);
+      int zone = utm_zone(meta->general->center_longitude);
+      latLon2UTM_zone(lat, lon, 0, zone, x, y);
     }
   } else {
     *x = samp;
