@@ -402,7 +402,7 @@ get_asf_share_dir()
         if (buf[strlen(buf) - 1] == '/')
             buf[strlen(buf) - 1] = '\0';
 
-	    printf("Checking %s ...\n", buf);
+	    //printf("Checking %s ...\n", buf);
 	    /* only try this one if it ends with 'bin' */
 	    if (strcmp(buf + strlen(buf) - 3, "bin") == 0) {
 	        *(buf + strlen(buf) - 4) = '\0';
@@ -413,11 +413,11 @@ get_asf_share_dir()
 		    free(s_share_dir);
 		    s_share_dir = strdup(buf);
 		    found = 1;
-		    printf("  Found in %s!\n", buf);
+		    //printf("  Found in %s!\n", buf);
 		    break;
 		}
 
-		printf("  Not found in %s.\n", buf);
+		//printf("  Not found in %s.\n", buf);
 	    }
 	    p = q;
 	}
