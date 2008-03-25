@@ -223,3 +223,24 @@ double meta_look(meta_parameters *meta,double y,double x)
     double ht = meta_get_sat_height(meta,y,x);
     return acos((SQR(sr) + SQR(ht) - SQR(er)) / (2.0*sr*ht));
 }
+
+// calculate the slant range, if we know the incidence angle,
+// the earth radius, and the satellite height
+double slant_from_incid(double incid,double er,double ht)
+{
+  double i=PI-incid;
+  double D=ht*ht - er*er*sin(i)*sin(i);
+
+  assert(D>=0);
+  assert(er*cos(i) - sqrt(D) < 0);
+
+  return er*cos(i) + sqrt(D);
+}
+
+// calculate the look angle, if we know the incidence angle,
+// the earth radius, and the satellite height
+double look_from_incid(double incid,double er,double ht)
+{
+  double sr=slant_from_incid(incid,er,ht);
+  return acos((SQR(sr) + SQR(ht) - SQR(er)) / (2.0*sr*ht));
+}

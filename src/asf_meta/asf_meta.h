@@ -507,6 +507,13 @@ double meta_incid(meta_parameters *sar,double y,double x);
   Returns radians.*/
 double meta_look(meta_parameters *sar,double y,double x);
 
+/* meta_look, meta_get_slant can be expensive -- if you already
+   have the incidence angle and need either of these values,
+   this two might be useful, calculate look and/or slant using
+   the law of cosines.  Returns radians.  incid should be radians. */
+double slant_from_incid(double incid,double er,double ht);
+double look_from_incid(double incid,double er,double ht);
+
 /************* Geolocation ***********************
 Geolocation Calls: in meta_get_geo.c.
 Here, latitude and longitude are always in degrees.*/
