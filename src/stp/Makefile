@@ -103,7 +103,7 @@ default: $(OBJS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
 	cp *.gif $(SHAREDIR)
-	cp $(TARGET)_icon.ico $(BINDIR)
+	cp $(TARGET)_icon.ico $(SHAREDIR)
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)*
