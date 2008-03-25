@@ -74,4 +74,6 @@ meta_parameters *import_airsar_meta(const char *inBaseName);
 
 void import_gamma_isp(const char *inBaseName, const char *outBaseName);
 
+void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
+
 #endif

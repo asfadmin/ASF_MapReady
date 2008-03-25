@@ -35,6 +35,7 @@ typedef struct {
   int samp_inc;       // table entry sampling increment
   double a3;          // linear scaling offset
   int slc;            // flag indicating data is SLC
+  int focus;          // flag indicating data processed by FOCUS
 } rsat_cal_params;
 
 typedef struct {
@@ -53,7 +54,8 @@ typedef struct {
 // cal_params.c
 quadratic_2d get_incid(char *sarName, meta_parameters *meta);
 cal_params *create_cal_params(const char *inSAR, meta_parameters *meta);
-float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag);
+float get_cal_dn(cal_params *cal, int line, int sample, float inDn, 
+		 int dbFlag);
 quadratic_2d find_quadratic(const double *out, const double *x,
                             const double *y, int numPts);
 

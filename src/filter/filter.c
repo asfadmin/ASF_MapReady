@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
   /* Assign filter type */
   if (strncmp(uc(filter_type), "AVERAGE", 7)==0) filter = AVERAGE;
-  if (strncmp(uc(filter_type), "GAMMA_MAP", 9)==0) filter = GAMMA_MAP;
+  else if (strncmp(uc(filter_type), "GAMMA_MAP", 9)==0) filter = GAMMA_MAP;
   /*** other filters to come here ***/
   else {
     sprintf(errbuf, "   ERROR: Unsupported filter type '%s'\n", filter_type);

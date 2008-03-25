@@ -181,10 +181,10 @@ given inSAR CEOS file.
 
 cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
 {
-  int ii, kk;
+  int ii, kk, numLines;
   struct dataset_sum_rec dssr; // Data set summary record
   double *noise;
-  char sarName[512], *facilityStr;
+  char sarName[512], *facilityStr, *processorStr;
   cal_params *cal = (cal_params *) MALLOC(sizeof(cal_params));
   cal->asf = NULL;
   cal->esa = NULL;
@@ -196,8 +196,10 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
   // Check for the varioius processors
   get_dssr(sarName, &dssr);
   facilityStr = trim_spaces(dssr.fac_id);
+  processorStr = trim_spaces(dssr.sys_id);
 
-  if (strncmp(facilityStr, "ASF", 3)== 0) {
+  if (strncmp(facilityStr, "ASF", 3)== 0 &&
+      strncmp(processorStr, "FOCUS", 5) != 0) {
     // ASF internal processor (PP or SSP)
     asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
     cal->asf = asf;
@@ -249,11 +251,12 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
       noise = rdr.noise;
 
     asf->tablePix = ((meta->general->sample_count + (TABLE-1))/TABLE);
-    asf->numLines = meta->general->line_count;
+    numLines = asf->numLines = meta->general->line_count;
   
     float noise_index=0, frac;
     int index, base;
-    for (ii=0; ii<asf->numLines; ii++) {
+    int tab = TABLE;
+    for (ii=0; ii<numLines; ii++) {
       for (kk=0; kk<TABLE; kk++) {
 	if (meta->projection && meta->projection->type == SCANSAR_PROJECTION)
 	  // index is look angle dependent
@@ -264,7 +267,11 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
 	  // all other data work with index by pixel
 	  noise_index = 
 	    (float)kk*asf->tablePix*256/meta->general->sample_count;
-	base = kk + (ii/(asf->numLines/TABLE)*TABLE);
+	base = kk + (ii/(numLines/tab)*tab);
+	if (ii == 100 && kk == 0)
+	  printf("ii: %d, kk: %d, lines: %d, TABLE: %d, noise index: %d, "
+		 "base: %d\n", ii, kk, numLines, tab, noise_index, 
+		 base);
 	// Clamp noise_index to within the noise table
 	if (noise_index <= 0)
 	  asf->noise[base] = noise[0];
@@ -280,28 +287,37 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
       }
     }
   }
-  else if (strncmp(facilityStr, "CDPF", 4) == 0 ||
-	   strncmp(facilityStr, "RSI", 3) == 0 ||
-	   (strncmp(facilityStr, "CSTARS", 6) == 0 && 
-	    strncmp(dssr.mission_id, "RSAT", 4) == 0)) {
+  else if ((strncmp(facilityStr, "ASF", 3) == 0 &&
+	    strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
+	   (strncmp(facilityStr, "CDPF", 4) == 0 ||
+	    strncmp(facilityStr, "RSI", 3) == 0 ||
+	    (strncmp(facilityStr, "CSTARS", 6) == 0 && 
+	     strncmp(dssr.mission_id, "RSAT", 4) == 0))) {
     // Radarsat style calibration
     rsat_cal_params *rsat = 
       (rsat_cal_params *) MALLOC(sizeof(rsat_cal_params));
     cal->rsat = rsat;
     rsat->slc = FALSE;
+    rsat->focus = FALSE;
     if (strncmp(dssr.product_type, "SLANT RANGE COMPLEX", 19) == 0 ||
 	strncmp(dssr.product_type, 
 		"SPECIAL PRODUCT(SINGL-LOOK COMP)", 32) == 0) {
       rsat->slc = TRUE;
     }
+    if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
+      rsat->focus = TRUE;
 
     // Read lookup up table from radiometric data record
     struct RSI_VRADDR radr;
     get_rsi_raddr(sarName, &radr);
     rsat->n = radr.n_samp;
     rsat->lut = (double *) MALLOC(sizeof(double) * rsat->n);
-    for (ii=0; ii<rsat->n; ii++)
-      rsat->lut[ii] = radr.lookup_tab[ii];
+    for (ii=0; ii<rsat->n; ii++) {
+      if (strncmp(dssr.sys_id, "FOCUS", 5) == 0)
+	rsat->lut[ii] = radr.lookup_tab[0];
+      else
+	rsat->lut[ii] = radr.lookup_tab[ii];
+    }
     rsat->samp_inc = radr.samp_inc;
     rsat->a3 = radr.offset;
     
@@ -334,7 +350,7 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
     // Reading calibration coefficient
     get_ardr(sarName, &ardr);
     if (strncmp(dssr.lev_code, "1.1", 3) == 0) // SLC
-      alos->cf = ardr.calibration_factor - 69.5;
+      alos->cf = ardr.calibration_factor - 32;
     else if (strncmp(dssr.lev_code, "1.5", 3) == 0) // regular detected
       alos->cf = ardr.calibration_factor;
   }
@@ -353,7 +369,7 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
         Convert amplitude image data number into calibrated image data
         number (in power scale), given the current noise value.
 ----------------------------------------------------------------------*/
-float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
+float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
 {
   double scaledPower, calValue, incidence_angle, invIncAngle;
   int x=line, y=sample;
@@ -364,16 +380,15 @@ float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
   incidence_angle = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y + 
     q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
 
-  if ((cal->radiometry == r_SIGMA && !cal->rsat) ||
-      (cal->radiometry == r_BETA && cal->rsat))
-    invIncAngle = 1.0;
-  else if (cal->radiometry == r_GAMMA && !cal->rsat)
-    invIncAngle = 1/cos(incidence_angle);
-  else if (cal->radiometry == r_BETA && !cal->rsat)
-    invIncAngle = 1/sin(incidence_angle);
-  
   // Calculate according to the calibration data type
   if (cal->asf) { // ASF style data (PP and SSP)
+
+    if (cal->radiometry == r_SIGMA || cal->radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incidence_angle*D2R);
+    else if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incidence_angle*D2R);
 
     asf_cal_params *p = cal->asf;
     double index = 
@@ -388,21 +403,40 @@ float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
 
     // Convert (amplitude) data number to scaled, noise-removed power
     scaledPower = 
-      (p->a1*((float)inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
   }
   else if (cal->esa) { // ESA style ERS and JERS data
 
+    if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incidence_angle*D2R);
+
     esa_cal_params *p = cal->esa;
 
-    scaledPower = 
-      (float)inDn*inDn/(p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R)) *
-      invIncAngle;
+    if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
+      scaledPower = inDn*inDn/p->k;
+    else if (cal->radiometry == r_SIGMA || cal->radiometry == r_SIGMA_DB)
+      scaledPower = 
+	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R);
+    if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      scaledPower = 
+	inDn*inDn/p->k*sin(p->ref_incid*D2R)/sin(incidence_angle*D2R) /
+	invIncAngle;
+
   }
   else if (cal->rsat) { // CDPF style Radarsat data
     
+    if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
+      invIncAngle = 1.0;
+    if (cal->radiometry == r_SIGMA || cal->radiometry == r_SIGMA_DB)
+      invIncAngle = 1/tan(incidence_angle*D2R);
+    else if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      invIncAngle = tan(incidence_angle*D2R);
+
     rsat_cal_params *p = cal->rsat;
-    int a2;
-    if (sample < (p->samp_inc*(p->n-1))) {
+    double a2;
+    if (cal->rsat->focus)
+      a2 = p->lut[0];
+    else if (sample < (p->samp_inc*(p->n-1))) {
       int i_low = sample/p->samp_inc;
       int i_up = i_low + 1;
       a2 = p->lut[i_low] +
@@ -412,15 +446,22 @@ float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
       a2 = p->lut[p->n-1] +
 	((p->lut[p->n-1] - p->lut[p->n-2])*((sample/p->samp_inc) - p->n-1));
     if (p->slc)
-      scaledPower = ((float)inDn*inDn)/(a2*a2)*invIncAngle;
+      scaledPower = (inDn*inDn)/(a2*a2)*invIncAngle;
     else
-      scaledPower = ((float)inDn*inDn + p->a3)/a2*invIncAngle;
+      scaledPower = (inDn*inDn + p->a3)/a2*invIncAngle;
   }
   else if (cal->alos) { // ALOS data
     
+    if (cal->radiometry == r_SIGMA || cal->radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incidence_angle*D2R);
+    else if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incidence_angle*D2R);
+
     alos_cal_params *p = cal->alos;
 
-    scaledPower = pow(10, p->cf/10.0)*(float)inDn*inDn*invIncAngle;
+    scaledPower = pow(10, p->cf/10.0)*inDn*inDn*invIncAngle;
   }
   else
     // should never get here
@@ -430,7 +471,7 @@ float get_cal_dn(cal_params *cal, int line, int sample, int inDn, int dbFlag)
   // since it messes up the statistics
   // We set all values lower than the noise floor (0.001 is the equivalent
   // to -30 dB) to the mininum value of 0.001, removing outliers.
-  if (scaledPower > 0.001 && inDn > 0) {
+  if (scaledPower > 0.001 && inDn > 0.0) {
     if (dbFlag)
       calValue = 10.0 * log10(scaledPower);
     else

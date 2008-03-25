@@ -333,6 +333,8 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
   //printf("firstTime: %lf, centerTime: %lf\n", firstTime, centerTime);
+  //meta->sar->azimuth_time_per_pixel = -0.0075685327312;
+  //meta->sar->range_time_per_pixel = 1.9339617657e-07;
 
   if (meta->general->orbit_direction == 'D')
     meta->sar->time_shift = 0.0;
@@ -2484,6 +2486,14 @@ double get_firstTime (const char *fName)
    FCLOSE(fp);
 
    FREE(buff);
+   printf("lat 1: %.4lf, lon 1: %.4lf\n", 
+	  (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
+	  (double)bigInt32((unsigned char *)&(linehdr.long_first)));
+   printf("lat 2: %.4lf, lon 2: %.4lf\n", 
+	  (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
+	  (double)bigInt32((unsigned char *)&(linehdr.long_last)));
+   printf("Time: %lf\n",
+	  (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
 

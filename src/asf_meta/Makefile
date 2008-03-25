@@ -109,6 +109,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	meta2esri.o \
 	meta2airsar.o \
 	meta2gamma.o \
+	meta2vexcel_plain.o \
 	meta_read.o \
 	meta_write.o \
 	orbital_state_vector.o \
