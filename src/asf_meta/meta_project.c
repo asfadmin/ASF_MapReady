@@ -329,8 +329,8 @@ void latlon_to_proj(meta_projection *proj, char look_dir,
       project_utm(&(proj->param), lat, lon, height, x, y, z, proj->datum);
       break;
     case LAT_LONG_PSEUDO_PROJECTION:
-      *x = lat*D2R;
-      *y = lon*D2R;
+      *x = lon*R2D;
+      *y = lat*R2D;
       *z = height;
       break;
     default:
