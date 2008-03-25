@@ -97,15 +97,14 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName)
     if (dret != NO_STF_DATA) {
         // A data basename exists, so look for a metadata name based on the data
         // name
-        char dir[1024], dummy[1024], metaFilePath[1024];
+        char dir[1024], dummy[1024];
         split_dir_and_file(stfName, dir, dummy);
         stf_metadata_ext_t i;
         for (i=begin; i<end; i++) {
             sprintf(MetaName, "%s%s", pDataName, stf_metadata_extensions[i]);
-            sprintf(metaFilePath, "%s%c%s", dir, DIR_SEPARATOR, MetaName);
-            if (fileExists(metaFilePath)) {
+            if (fileExists(MetaName)) {
                 *pMetaName = (char *)MALLOC(sizeof(char)*(strlen(MetaName) + 64));
-                sprintf(*pMetaName, "%s%s", MetaName, stf_metadata_extensions[i]);
+                strcpy(*pMetaName, MetaName);
                 ret = i;
                 break;
             }
@@ -193,7 +192,7 @@ stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName)
  * Otherwise act like get_stf_data_name  */
 stf_data_ext_t require_stf_data(const char *stfName, char **dataName)
 {
-    stf_data_ext_t ret = get_stf_data_name(stfName, dataName);
+  stf_data_ext_t ret = get_stf_data_name(stfName, dataName);
 
   /* If we didn't find anything, report & leave */
   if (ret == NO_STF_DATA) {
@@ -246,133 +245,336 @@ stf_data_ext_t require_stf_data(const char *stfName, char **dataName)
 stf_file_pairs_t get_stf_names(const char *stfName, char **dataName,
                                  char **metaName)
 {
-  //printf ("stfName = %s, metaName = %s\n", stfName, metaName);
-  // FIXME: there used to be this printf, but get_stf_metadata_name
-  // returns an enumerated type these days.  I don't this print
-  // statement was very important anyway, and I'm not sure offhand
-  // exactly how to fix it.
-  //    printf("stfName = %s, get_stf_metadata_name = %s, metaName = %s\n",
-  //       stfName, get_stf_metadata_name(stfName, metaName), metaName);
+    stf_data_ext_t     stf_data_type     = get_stf_data_name(stfName, dataName);
+    stf_metadata_ext_t stf_metadata_type = get_stf_metadata_name(stfName, metaName);
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_PAR)
+  if ((stf_data_type     == STF_BLANK || stf_data_type == STF_blank)
+      && stf_metadata_type == STF_PAR)
     return STF_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_blank
-      && get_stf_metadata_name(stfName, metaName) == STF_par)
+  else if ((stf_data_type     == STF_BLANK || stf_data_type == STF_blank)
+      && stf_metadata_type == STF_par)
     return STF_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_000_PAR)
+  else if ((stf_data_type     == STF_000_BLANK || stf_data_type == STF_000_blank)
+      && (stf_metadata_type == STF_000_PAR || stf_metadata_type == STF_PAR))
     return STF_000_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_000_par)
+  else if ((stf_data_type     == STF_000_BLANK || stf_data_type == STF_000_blank)
+      && (stf_metadata_type == STF_000_par || stf_metadata_type == STF_par))
     return STF_000_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_001_PAR)
+  else if ((stf_data_type     == STF_001_BLANK || stf_data_type == STF_001_blank)
+         && (stf_metadata_type == STF_001_PAR || stf_metadata_type == STF_PAR))
       return STF_001_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_001_par)
+  else if ((stf_data_type     == STF_001_BLANK || stf_data_type == STF_001_blank)
+         && (stf_metadata_type == STF_001_par || stf_metadata_type == STF_par))
       return STF_001_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_002_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_002_PAR)
+  else if ((stf_data_type     == STF_002_BLANK || stf_data_type == STF_002_blank)
+         && (stf_metadata_type == STF_002_PAR || stf_metadata_type == STF_PAR))
       return STF_002_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_002_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_002_par)
+  else if ((stf_data_type     == STF_002_BLANK || stf_data_type == STF_002_blank)
+         && (stf_metadata_type == STF_002_par || stf_metadata_type == STF_par))
       return STF_002_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_003_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_003_PAR)
+  else if ((stf_data_type     == STF_003_BLANK || stf_data_type == STF_003_blank)
+         && (stf_metadata_type == STF_003_PAR || stf_metadata_type == STF_PAR))
       return STF_003_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_003_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_003_par)
+  else if ((stf_data_type     == STF_003_BLANK || stf_data_type == STF_003_blank)
+         && (stf_metadata_type == STF_003_par || stf_metadata_type == STF_par))
       return STF_003_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_004_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_004_PAR)
+  else if ((stf_data_type     == STF_004_BLANK || stf_data_type == STF_004_blank)
+         && (stf_metadata_type == STF_004_PAR || stf_metadata_type == STF_PAR))
       return STF_004_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_004_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_004_par)
+  else if ((stf_data_type     == STF_004_BLANK || stf_data_type == STF_004_blank)
+         && (stf_metadata_type == STF_004_par || stf_metadata_type == STF_par))
       return STF_004_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_005_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_005_PAR)
+  else if ((stf_data_type     == STF_005_BLANK || stf_data_type == STF_005_blank)
+         && (stf_metadata_type == STF_005_PAR || stf_metadata_type == STF_PAR))
       return STF_005_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_005_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_005_par)
+  else if ((stf_data_type     == STF_005_BLANK || stf_data_type == STF_005_blank)
+         && (stf_metadata_type == STF_005_par || stf_metadata_type == STF_par))
       return STF_005_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_006_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_006_PAR)
+  else if ((stf_data_type     == STF_006_BLANK || stf_data_type == STF_006_blank)
+         && (stf_metadata_type == STF_006_PAR || stf_metadata_type == STF_PAR))
       return STF_006_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_006_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_006_par)
+  else if ((stf_data_type     == STF_006_BLANK || stf_data_type == STF_006_blank)
+         && (stf_metadata_type == STF_006_par || stf_metadata_type == STF_par))
       return STF_006_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_007_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_007_PAR)
+  else if ((stf_data_type     == STF_007_BLANK || stf_data_type == STF_007_blank)
+         && (stf_metadata_type == STF_007_PAR || stf_metadata_type == STF_PAR))
       return STF_007_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_007_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_007_par)
+  else if ((stf_data_type     == STF_007_BLANK || stf_data_type == STF_007_blank)
+         && (stf_metadata_type == STF_007_par || stf_metadata_type == STF_par))
       return STF_007_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_008_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_008_PAR)
+  else if ((stf_data_type     == STF_008_BLANK || stf_data_type == STF_008_blank)
+         && (stf_metadata_type == STF_008_PAR || stf_metadata_type == STF_PAR))
       return STF_008_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_008_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_008_par)
+  else if ((stf_data_type     == STF_008_BLANK || stf_data_type == STF_008_blank)
+         && (stf_metadata_type == STF_008_par || stf_metadata_type == STF_par))
       return STF_008_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_009_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_009_PAR)
+  else if ((stf_data_type     == STF_009_BLANK || stf_data_type == STF_009_blank)
+         && (stf_metadata_type == STF_009_PAR || stf_metadata_type == STF_PAR))
       return STF_009_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_009_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_009_par)
+  else if ((stf_data_type     == STF_009_BLANK || stf_data_type == STF_009_blank)
+         && (stf_metadata_type == STF_009_par || stf_metadata_type == STF_par))
       return STF_009_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_010_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_010_PAR)
+  else if ((stf_data_type     == STF_010_BLANK || stf_data_type == STF_010_blank)
+         && (stf_metadata_type == STF_010_PAR || stf_metadata_type == STF_PAR))
       return STF_010_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_010_BLANK
-         && get_stf_metadata_name(stfName, metaName) == STF_010_par)
-      return STF_010_par_PAIR; // YO BRIAN START HERE
+  else if ((stf_data_type     == STF_010_BLANK || stf_data_type == STF_010_blank)
+         && (stf_metadata_type == STF_010_par || stf_metadata_type == STF_par))
+      return STF_010_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_U_000_PAR)
+  else if ((stf_data_type     == STF_011_BLANK || stf_data_type == STF_011_blank)
+         && (stf_metadata_type == STF_011_PAR || stf_metadata_type == STF_PAR))
+      return STF_011_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_011_BLANK || stf_data_type == STF_011_blank)
+         && (stf_metadata_type == STF_011_par || stf_metadata_type == STF_par))
+      return STF_011_par_PAIR;
+
+  else if ((stf_data_type     == STF_012_BLANK || stf_data_type == STF_012_blank)
+         && (stf_metadata_type == STF_012_PAR || stf_metadata_type == STF_PAR))
+      return STF_012_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_012_BLANK || stf_data_type == STF_012_blank)
+         && (stf_metadata_type == STF_012_par || stf_metadata_type == STF_par))
+      return STF_012_par_PAIR;
+
+  else if ((stf_data_type     == STF_013_BLANK || stf_data_type == STF_013_blank)
+         && (stf_metadata_type == STF_013_PAR || stf_metadata_type == STF_PAR))
+      return STF_013_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_013_BLANK || stf_data_type == STF_013_blank)
+         && (stf_metadata_type == STF_013_par || stf_metadata_type == STF_par))
+      return STF_013_par_PAIR;
+
+  else if ((stf_data_type     == STF_014_BLANK || stf_data_type == STF_014_blank)
+         && (stf_metadata_type == STF_014_PAR || stf_metadata_type == STF_PAR))
+      return STF_014_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_014_BLANK || stf_data_type == STF_014_blank)
+         && (stf_metadata_type == STF_014_par || stf_metadata_type == STF_par))
+      return STF_014_par_PAIR;
+
+  else if ((stf_data_type     == STF_015_BLANK || stf_data_type == STF_015_blank)
+         && (stf_metadata_type == STF_015_PAR || stf_metadata_type == STF_PAR))
+      return STF_015_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_015_BLANK || stf_data_type == STF_015_blank)
+         && (stf_metadata_type == STF_015_par || stf_metadata_type == STF_par))
+      return STF_015_par_PAIR;
+
+  else if ((stf_data_type     == STF_016_BLANK || stf_data_type == STF_016_blank)
+         && (stf_metadata_type == STF_016_PAR || stf_metadata_type == STF_PAR))
+      return STF_016_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_016_BLANK || stf_data_type == STF_016_blank)
+         && (stf_metadata_type == STF_016_par || stf_metadata_type == STF_par))
+      return STF_016_par_PAIR;
+
+  else if ((stf_data_type     == STF_017_BLANK || stf_data_type == STF_017_blank)
+         && (stf_metadata_type == STF_017_PAR || stf_metadata_type == STF_PAR))
+      return STF_017_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_017_BLANK || stf_data_type == STF_017_blank)
+         && (stf_metadata_type == STF_017_par || stf_metadata_type == STF_par))
+      return STF_017_par_PAIR;
+
+  else if ((stf_data_type     == STF_018_BLANK || stf_data_type == STF_018_blank)
+         && (stf_metadata_type == STF_018_PAR || stf_metadata_type == STF_PAR))
+      return STF_018_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_018_BLANK || stf_data_type == STF_018_blank)
+         && (stf_metadata_type == STF_018_par || stf_metadata_type == STF_par))
+      return STF_018_par_PAIR;
+
+  else if ((stf_data_type     == STF_019_BLANK || stf_data_type == STF_019_blank)
+         && (stf_metadata_type == STF_019_PAR || stf_metadata_type == STF_PAR))
+      return STF_019_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_019_BLANK || stf_data_type == STF_019_blank)
+         && (stf_metadata_type == STF_019_par || stf_metadata_type == STF_par))
+      return STF_019_par_PAIR;
+
+  else if ((stf_data_type     == STF_000_BLANK || stf_data_type == STF_000_blank)
+      && (stf_metadata_type == STF_U_000_PAR || stf_metadata_type == STF_PAR))
     return STF_U_000_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_000_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_U_000_par)
+  else if ((stf_data_type     == STF_000_BLANK || stf_data_type == STF_000_blank)
+      && (stf_metadata_type == STF_U_000_par || stf_metadata_type == STF_par))
     return STF_U_000_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_U_001_PAR)
+  else if ((stf_data_type     == STF_001_BLANK || stf_data_type == STF_001_blank)
+      && (stf_metadata_type == STF_U_001_PAR || stf_metadata_type == STF_PAR))
     return STF_U_001_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_U_001_par)
+  else if ((stf_data_type     == STF_001_BLANK || stf_data_type == STF_001_blank)
+      && (stf_metadata_type == STF_U_001_par || stf_metadata_type == STF_par))
     return STF_U_001_par_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_001_PAR)
-    return STF_001_PAR_PAIR;
+  else if ((stf_data_type     == STF_002_BLANK || stf_data_type == STF_002_blank)
+         && (stf_metadata_type == STF_U_002_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_002_PAR_PAIR;
 
-  if (   get_stf_data_name(stfName, dataName)     == STF_001_BLANK
-      && get_stf_metadata_name(stfName, metaName) == STF_001_par)
-    return STF_001_par_PAIR;
+  else if ((stf_data_type     == STF_002_BLANK || stf_data_type == STF_002_blank)
+         && (stf_metadata_type == STF_U_002_par || stf_metadata_type == STF_par))
+      return STF_U_002_par_PAIR;
+
+  else if ((stf_data_type     == STF_003_BLANK || stf_data_type == STF_003_blank)
+         && (stf_metadata_type == STF_U_003_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_003_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_003_BLANK || stf_data_type == STF_003_blank)
+         && (stf_metadata_type == STF_U_003_par || stf_metadata_type == STF_par))
+      return STF_U_003_par_PAIR;
+
+  else if ((stf_data_type     == STF_004_BLANK || stf_data_type == STF_004_blank)
+         && (stf_metadata_type == STF_U_004_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_004_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_004_BLANK || stf_data_type == STF_004_blank)
+         && (stf_metadata_type == STF_U_004_par || stf_metadata_type == STF_par))
+      return STF_U_004_par_PAIR;
+
+  else if ((stf_data_type     == STF_005_BLANK || stf_data_type == STF_005_blank)
+         && (stf_metadata_type == STF_U_005_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_005_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_005_BLANK || stf_data_type == STF_005_blank)
+         && (stf_metadata_type == STF_U_005_par || stf_metadata_type == STF_par))
+      return STF_U_005_par_PAIR;
+
+  else if ((stf_data_type     == STF_006_BLANK || stf_data_type == STF_006_blank)
+         && (stf_metadata_type == STF_U_006_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_006_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_006_BLANK || stf_data_type == STF_006_blank)
+         && (stf_metadata_type == STF_U_006_par || stf_metadata_type == STF_par))
+      return STF_U_006_par_PAIR;
+
+  else if ((stf_data_type     == STF_007_BLANK || stf_data_type == STF_007_blank)
+         && (stf_metadata_type == STF_U_007_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_007_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_007_BLANK || stf_data_type == STF_007_blank)
+         && (stf_metadata_type == STF_U_007_par || stf_metadata_type == STF_par))
+      return STF_U_007_par_PAIR;
+
+  else if ((stf_data_type     == STF_008_BLANK || stf_data_type == STF_008_blank)
+         && (stf_metadata_type == STF_U_008_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_008_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_008_BLANK || stf_data_type == STF_008_blank)
+         && (stf_metadata_type == STF_U_008_par || stf_metadata_type == STF_par))
+      return STF_U_008_par_PAIR;
+
+  else if ((stf_data_type     == STF_009_BLANK || stf_data_type == STF_009_blank)
+         && (stf_metadata_type == STF_U_009_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_009_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_009_BLANK || stf_data_type == STF_009_blank)
+         && (stf_metadata_type == STF_U_009_par || stf_metadata_type == STF_par))
+      return STF_U_009_par_PAIR;
+
+  else if ((stf_data_type     == STF_010_BLANK || stf_data_type == STF_010_blank)
+         && (stf_metadata_type == STF_U_010_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_010_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_010_BLANK || stf_data_type == STF_010_blank)
+         && (stf_metadata_type == STF_U_010_par || stf_metadata_type == STF_par))
+      return STF_U_010_par_PAIR;
+
+  else if ((stf_data_type     == STF_011_BLANK || stf_data_type == STF_011_blank)
+         && (stf_metadata_type == STF_U_011_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_011_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_011_BLANK || stf_data_type == STF_011_blank)
+         && (stf_metadata_type == STF_U_011_par || stf_metadata_type == STF_par))
+      return STF_U_011_par_PAIR;
+
+  else if ((stf_data_type     == STF_012_BLANK || stf_data_type == STF_012_blank)
+         && (stf_metadata_type == STF_U_012_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_012_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_012_BLANK || stf_data_type == STF_012_blank)
+         && (stf_metadata_type == STF_U_012_par || stf_metadata_type == STF_par))
+      return STF_U_012_par_PAIR;
+
+  else if ((stf_data_type     == STF_013_BLANK || stf_data_type == STF_013_blank)
+         && (stf_metadata_type == STF_U_013_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_013_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_013_BLANK || stf_data_type == STF_013_blank)
+         && (stf_metadata_type == STF_U_013_par || stf_metadata_type == STF_par))
+      return STF_U_013_par_PAIR;
+
+  else if ((stf_data_type     == STF_014_BLANK || stf_data_type == STF_014_blank)
+         && (stf_metadata_type == STF_U_014_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_014_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_014_BLANK || stf_data_type == STF_014_blank)
+         && (stf_metadata_type == STF_U_014_par || stf_metadata_type == STF_par))
+      return STF_U_014_par_PAIR;
+
+  else if ((stf_data_type     == STF_015_BLANK || stf_data_type == STF_015_blank)
+         && (stf_metadata_type == STF_U_015_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_015_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_015_BLANK || stf_data_type == STF_015_blank)
+         && (stf_metadata_type == STF_U_015_par || stf_metadata_type == STF_par))
+      return STF_U_015_par_PAIR;
+
+  else if ((stf_data_type     == STF_016_BLANK || stf_data_type == STF_016_blank)
+         && (stf_metadata_type == STF_U_016_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_016_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_016_BLANK || stf_data_type == STF_016_blank)
+         && (stf_metadata_type == STF_U_016_par || stf_metadata_type == STF_par))
+      return STF_U_016_par_PAIR;
+
+  else if ((stf_data_type     == STF_017_BLANK || stf_data_type == STF_017_blank)
+         && (stf_metadata_type == STF_U_017_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_017_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_017_BLANK || stf_data_type == STF_017_blank)
+         && (stf_metadata_type == STF_U_017_par || stf_metadata_type == STF_par))
+      return STF_U_017_par_PAIR;
+
+  else if ((stf_data_type     == STF_018_BLANK || stf_data_type == STF_018_blank)
+         && (stf_metadata_type == STF_U_018_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_018_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_018_BLANK || stf_data_type == STF_018_blank)
+         && (stf_metadata_type == STF_U_018_par || stf_metadata_type == STF_par))
+      return STF_U_018_par_PAIR;
+
+  else if ((stf_data_type     == STF_019_BLANK || stf_data_type == STF_019_blank)
+         && (stf_metadata_type == STF_U_019_PAR || stf_metadata_type == STF_PAR))
+      return STF_U_019_PAR_PAIR;
+
+  else if ((stf_data_type     == STF_019_BLANK || stf_data_type == STF_019_blank)
+         && (stf_metadata_type == STF_U_019_par || stf_metadata_type == STF_par))
+      return STF_U_019_par_PAIR;
 
   return NO_STF_FILE_PAIR;
 }
@@ -389,46 +591,10 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
   int begin=NO_STF_FILE_PAIR+1, end=NUM_STF_FILE_PAIRS;
   int ii;
 
-  if (   require_stf_data(stfName, dataName)     == STF_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_PAR)
-    return STF_PAR_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_par)
-    return STF_par_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_000_PAR)
-    return STF_000_PAR_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_000_par)
-    return STF_000_par_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_000_PAR)
-    return STF_U_000_PAR_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_000_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_000_par)
-    return STF_U_000_par_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_001_PAR)
-    return STF_U_001_PAR_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_U_001_par)
-    return STF_U_001_par_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_001_PAR)
-    return STF_001_PAR_PAIR;
-
-  if (   require_stf_data(stfName, dataName)     == STF_001_BLANK
-      && require_stf_metadata(stfName, metaName) == STF_001_par)
-    return STF_001_par_PAIR;
-
+  stf_file_pairs_t ret = get_stf_names(stfName, dataName, metaName);
+  
+  if (ret != NO_STF_FILE_PAIR) return ret;
+  
 /****** We should never actually get here. The above code should either ******
  ****** return or exit with an error message, BUT... just in case       ******/
 
@@ -461,8 +627,7 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
           "****************************************************************\n",
           stfName, extensionList);
   if (logflag)   {printLog(logbuf);}
-  printf(logbuf);
-  exit(EXIT_FAILURE);
+  asfPrintError(logbuf);
 }
 
 void free_stf_names(char *dataName, char *metaName)
