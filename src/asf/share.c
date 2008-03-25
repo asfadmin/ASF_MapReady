@@ -367,8 +367,8 @@ get_asf_share_dir()
 	char *path, *buf, *share, *p;
 	int found = 0;
 
-	printf("Known file not in config.h's share dir: %s\n", s_share_dir);
-	printf("Searching the path...\n");
+	//printf("Known file not in config.h's share dir: %s\n", s_share_dir);
+	//printf("Searching the path...\n");
 
         /* kludgery! Must find the location of the share dir the hard  */
         /* way, which is to search the directories in the user's path, */

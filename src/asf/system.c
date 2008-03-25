@@ -5,9 +5,7 @@
 #include <errno.h>
 
 #ifdef win32
-#include <process.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <windows.h>
 #endif
 
 int
@@ -15,104 +13,46 @@ asfSystem(const char *format, ...)
 {
   va_list ap;
   char cmd[4096];
-  int ret;
 
   va_start(ap, format);
-  vsprintf(cmd, format, ap);
+  vsnprintf(cmd, 4095, format, ap);
 
   //printf("Running system commamd: %s\n", cmd);
 
 #ifdef win32
 
-#ifndef	HAVE_GNU_LD
-#define	__environ	environ
-#endif
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
 
-    int pid, save, status;
-    struct sigaction sa, intr, quit;
+  memset(&si, 0, sizeof(si));
+  memset(&pi, 0, sizeof(pi));
+  si.cb = sizeof(si);
 
-    sa.sa_handler = SIG_IGN;
-    sa.sa_flags = 0;
-    sigemptyset (&sa.sa_mask);
-
-    if (sigaction (SIGINT, &sa, &intr) < 0)
-    {
-        return -1;
-    }
-
-    if (sigaction (SIGQUIT, &sa, &quit) < 0)
-    {
-        save = errno;
-        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
-        errno = save;
-        return -1;
-    }
-
-    pid = fork();
-    if (pid == 0)
-    {
-        char shell_path[512];
-        const char *new_argv[4];
-
-        new_argv[0] = "sh.exe";
-        new_argv[1] = "-c";
-        new_argv[2] = cmd;
-        new_argv[3] = 0;
-
-        (void) sigaction (SIGINT, &intr, (struct sigaction *) NULL);
-        (void) sigaction (SIGQUIT, &quit, (struct sigaction *) NULL);
-
-        sprintf(shell_path, "%s/sh", get_asf_bin_dir());
-        int r = execve(shell_path, (char * const *) new_argv, __environ);
-
-        // we shouldn't get here, unless something went wrong
-        // and in that case, r should be -1.
-        if (r == -1) {
-            printf("Error running command: %s\n", strerror(errno));
-        } else {
-            printf("Impossible: execve returned %d!\n", r);
-        }
-
-        exit(127);
-    }
-    else if (pid < 0)
-    {
-        /* fork failed */
-        return -1;
-    }
-    else
-    {
-        int n;
-        do 
-        {
-            n = waitpid(pid, &status, 0);
-        }
-        while (n == -1 && errno == EINTR);
-
-        if (n != pid)
-        {
-            status = -1;
-        }
-    }
-
-    save = errno;
-    if (sigaction (SIGINT, &intr, (struct sigaction *) NULL) |
-        sigaction (SIGQUIT, &quit, (struct sigaction *) NULL))
-    {
-        if (errno == ENOSYS)
-            errno = save;
-        else
-            return -1;
-    }
-
-    return status;
+  if( !CreateProcess( NULL,   // No module name (use command line)
+          cmd,                // Command line
+          NULL,               // Process handle not inheritable
+          NULL,               // Thread handle not inheritable
+          FALSE,              // Set handle inheritance to FALSE
+          0,                  // No creation flags
+          NULL,               // Use parent's environment block
+          NULL,               // Use parent's starting directory 
+          &si,                // Pointer to STARTUPINFO structure
+          &pi )               // Pointer to PROCESS_INFORMATION structure
+      ) 
+  {
+      printf( "CreateProcess failed (%ld)\n", GetLastError() );
+      return -1;
+  }
+  return 0;
 
 #else
-  ret = system(cmd);
-#endif
+
+  int ret = system(cmd);
 
   if (ret != 0) {
     printf("Error running command %d: %s\n", errno, strerror(errno));
   }
   return ret;
+
+#endif
 }
