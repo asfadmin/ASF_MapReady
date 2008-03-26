@@ -53,7 +53,8 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
                                float scale_factor, int browseFlag,
                                output_format_t output_format, char *out_dir);
-int is_stf(const char *file);
+int is_stf_level0(const char *file);
+int is_ceos_level0(const char *file);
 
 int main(int argc, char *argv[])
 {
@@ -185,10 +186,10 @@ int main(int argc, char *argv[])
   if (sizeFlag)  scale_factor = -1.0;
 
   // FIXME: Remove this if-statement after CEOS format is supported
-  if (L0Flag == ceos) {
-      fprintf(stderr,"** Level 0 files in CEOS format are not currently supported (only STF).\n");
-      exit(1);
-  }
+//  if (L0Flag == ceos) {
+//      fprintf(stderr,"** Level 0 files in CEOS format are not currently supported (only STF).\n");
+//      exit(1);
+//  }
 
   if (!quietflag) {
       asfSplashScreen(argc, argv);
@@ -209,7 +210,7 @@ int main(int argc, char *argv[])
   }
 
   if (fLog) fclose(fLog);
-  if (out_dir) free(out_dir);
+  FREE(out_dir);
 
   exit(EXIT_SUCCESS);
 }
@@ -351,6 +352,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         imd = silent_meta_create(met);
 
         free_ceos_names(dataName, NULL);
+        FREE(baseName);
     }
     else
     {
@@ -515,7 +517,7 @@ void process_file(const char *file, int level, int size, int verbose,
     char filename[256], dir[1024];
 
     split_dir_and_file(file, dir, filename);
-    if ((L0Flag == stf || L0Flag == ceos) && is_stf(file)) { //Note that ceos is currently unsupported for L0
+    if (L0Flag == stf && is_stf_level0(file)) {
         if (get_stf_data_name(file, &inDataName)) {
             if (strcmp(file, inDataName) == 0) {
                 asfPrintStatus("%s%s\n", spaces(level), base);
@@ -527,6 +529,17 @@ void process_file(const char *file, int level, int size, int verbose,
             if (verbose) {
                 asfPrintStatus("%s%s (ignored)\n", spaces(level), base);
             }
+        }
+    }
+    else if (L0Flag == ceos && is_ceos_level0(file)) {
+        char **dataName = NULL, *baseName = (char *)MALLOC(sizeof(char) * 256);
+        int nBands;
+        ceos_data_ext_t data_ext = get_ceos_data_name(file, baseName, &dataName, &nBands);
+        FREE(baseName);
+        if (data_ext == CEOS_RAW || data_ext == CEOS_raw) {
+            asfPrintStatus("%s%s\n", spaces(level), base);
+            generate_level0_thumbnail(*dataName, size, verbose, L0Flag, scale_factor, browseFlag,
+                                      output_format, out_dir);
         }
     }
     else if ((ext && strcmp_case(ext, ".D") == 0) ||
@@ -642,22 +655,60 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         FREE(inMetaName);
     }
     else if (L0Flag == ceos) {
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // FIXME: Remove the error message and exit() when CEOS support is tested and works
-        // FIXME: Need to insert code to check for Level 0 CEOS pair before calling asf_import(), see above for STF
-        fprintf(stderr, "** CEOS format Level 0 products not yet supported...\n");
-        exit(1);
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+        char *basename = (char *)MALLOC(sizeof(char)*strlen(file)+10);
+        char **dataName = NULL, **metaName = NULL;
+        int nBands, trailer;
+        ceos_file_pairs_t pair = NO_CEOS_FILE_PAIR;
 
+        // Import to a temporary file
+        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR,
+                tmp_basename, get_basename(file));
+        pair = get_ceos_names(file, basename,
+                              &dataName, &metaName, &nBands, &trailer);
+        FREE(basename);
+        if (pair != NO_CEOS_FILE_PAIR && strcmp(file, *dataName) == 0)
+        {
+            printf("Importing from %s to %s\n", *dataName, out_file);
+            asf_import(r_AMP,               /* power                  */
+                       0,                   /* db_flag                */
+                       0,                   /* complex_flag           */
+                       0,                   /* multilook_flag         */
+                       "CEOS",              /* format                 */
+                       NULL,                /* band_id                */
+                       MAGIC_UNSET_STRING,  /*  image_data_type       */
+                       NULL,                /* lut                    */
+                       NULL,                /* prcPath                */
+                       -99,                 /* lowerLat               */
+                       -99,                 /* upperLat               */
+                       0,                   /* start line subset      */
+                       0,                   /* start sample subset    */
+                       -99,                 /* width of subset        */
+                       -99,                 /* height of subset       */
+                       NULL,                /* p_range_scale          */
+                       NULL,                /* p_azimuth_scale        */
+                       NULL,                /* p_correct_y_pixel_size */
+                       NULL,                /* inMetaNameOption       */
+                       (char *)*dataName,   /* input basename         */
+                       out_file);           /* output basename        */
+        }
+        else {
+            remove_dir(tmp_folder);
+            return;
+        }
+    }
+    else {
+        // Should never reach here
+        asfPrintError("Invalid -L0 flag detected.  Valid values are \"-L0 stf\" or \"-L0 ceos\"\n");
     }
 
     // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
     sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR,
         tmp_basename, get_basename(file));
+    printf("Ardop from %s to %s\n", in_file, out_file);
     params_in = get_input_ardop_params_struct(in_file, out_file);
-    // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
-    // while debugging level 0 products)
+// Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
+// while debugging level 0 products)
 //#define DEBUG_L0
 #ifdef DEBUG_L0
     params_in->npatches = (int*)MALLOC(sizeof(int));
@@ -673,12 +724,16 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(in_file, "%s_amp", out_file);
     sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
         tmp_basename, get_basename(file));
+    printf("Converting slant range to ground range from %s to %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
 
     // Resample image, flip if necessary, and export
     strcpy(in_file, out_file);
     if (browseFlag) {
-        strcpy(out_file, file);
+        char *basename = get_basename(file);
+        //strcpy(out_file, file);
+        strcpy(out_file, basename);
+        FREE(basename);
     }
     else {
         sprintf(out_file, "%s_thumb", file);
@@ -699,6 +754,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 "and values must be positive.\n", scale_factor, size);
     }
     char *band_name[1] = {MAGIC_UNSET_STRING};
+    printf("Resampling from %s to %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
     //flip(); // FIXME: Ask Jeremy ...maybe flip ...maybe not
     strcpy(in_file, out_file);
@@ -712,6 +768,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
         strcpy(export_path, out_file);
     }
+    printf("Exporting from %s to %s\n", in_file, export_path);
     asf_export_bands(output_format,
                      SIGMA,
                      0 /*rgb*/,
@@ -726,20 +783,23 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Clean up...
     remove_dir(tmp_folder);
+    char *basename = get_basename(file);
     if (browseFlag) {
-        sprintf(del_files, "%s.img", file);
+        sprintf(del_files, "rm -f %s*img", basename);
     }
     else {
-        sprintf(del_files, "%s_thumb.img", file);
+        sprintf(del_files, "rm -f %s*_thumb*img", basename);
     }
-    remove(del_files);
+//    remove(del_files);
+    asfSystem(del_files);
     if (browseFlag) {
-        sprintf(del_files, "%s.meta", file);
+        sprintf(del_files, "rm -f %s*meta", basename);
     }
     else {
-        sprintf(del_files, "%s_thumb.meta", file);
+        sprintf(del_files, "rm -f %s*_thumb*meta", basename);
     }
-    remove(del_files);
+//    remove(del_files);
+    asfSystem(del_files);
     FREE(tmp_basename);
 }
 
@@ -748,7 +808,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 //        as well, i.e. find the metadata file then derive the data
 //        file from it and make sure they both exist, are SKY Telemetry
 //        Format etc
-int is_stf(const char *file)
+int is_stf_level0(const char *file)
 {
     char *inDataName = NULL, *inMetaName = NULL, *processor = NULL, *basename;
     char filename[256], dir[1024], path[2048];
@@ -845,5 +905,39 @@ int is_stf(const char *file)
     FREE(inMetaName);
     FREE(inDataName);
     return 0;
+}
+
+int is_ceos_level0(const char *file) {
+    char *basename = (char *)MALLOC(sizeof(char)*strlen(file)+10);
+    char **dataName = NULL, **metaName = NULL;
+    int i, nBands, trailer, ret = 0;
+    ceos_file_pairs_t pair = NO_CEOS_FILE_PAIR;
+
+    pair = get_ceos_names(file, basename,
+                          &dataName, &metaName, &nBands, &trailer);
+    FREE(basename);
+
+    if (pair != NO_CEOS_FILE_PAIR) {
+        char dir[1024], filename[256];
+        char data_filename[256];
+        split_dir_and_file(file, dir, filename);
+        split_dir_and_file(*dataName, dir, data_filename);
+        if (filename && data_filename &&
+            strcmp(filename, data_filename) == 0)
+        {
+            ceos_description *ceos = get_ceos_description(file, NOREPORT);
+            if (ceos->product == RAW && ceos->ceos_data_type == CEOS_RAW_DATA) {
+                ret = 1;
+            }
+        }
+    }
+
+    for (i = 0; i < nBands; i++) {
+        FREE(dataName[i]);
+        FREE(metaName[i]);
+    }
+    FREE(dataName);
+    FREE(metaName);
+    return ret;
 }
 
