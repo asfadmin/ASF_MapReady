@@ -1302,7 +1302,7 @@ setup_completed_files_popup_menu()
         G_CALLBACK(popup_menu_view_output), NULL);
     gtk_widget_show(item);
 
-    item = gtk_menu_item_new_with_label("View With Google Earth");
+    item = gtk_menu_item_new_with_label("View With Google Earth(tm)");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_completed_files_google_earth), NULL);
@@ -1356,7 +1356,7 @@ setup_files_popup_menu()
         G_CALLBACK(popup_menu_ceos_metadata), NULL);
     gtk_widget_show(item);
 
-    item = gtk_menu_item_new_with_label("View With Google Earth");
+    item = gtk_menu_item_new_with_label("View With Google Earth(tm)");
     gtk_menu_shell_append( GTK_MENU_SHELL(menu), item );
     g_signal_connect_swapped(G_OBJECT(item), "activate",
         G_CALLBACK(popup_menu_google_earth), NULL);

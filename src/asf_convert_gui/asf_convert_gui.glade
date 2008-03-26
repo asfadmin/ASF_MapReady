@@ -4827,7 +4827,7 @@
 			      <child>
 				<widget class="GtkButton" id="google_earth_button">
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth</property>
+				  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth(tm)</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>
@@ -5401,7 +5401,7 @@
 			      <child>
 				<widget class="GtkButton" id="completed_files_google_earth_button">
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth (including overlaid image if UTM map-projected)</property>
+				  <property name="tooltip" translatable="yes">Display geographic area of selected dataset in Google Earth(tm) (including overlaid image if UTM map-projected)</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>

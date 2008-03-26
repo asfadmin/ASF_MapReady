@@ -125,7 +125,7 @@
                         and is where both the list of data files to be processed resides as well as
                         a variety of buttons that provide file-specific functionality, i.e. viewing
                         a data set's metadata or the area subtended by the image and shown by Google
-                        Earth.  The Input Files section may be hidden or shown by clicking the small
+                        Earth(tm).  The Input Files section may be hidden or shown by clicking the small
                         button in the top-left portion of this section (red ball with a minus sign or
                         green ball with plus sign.)
                     </para>
@@ -137,7 +137,7 @@
                         and is where both the list of data files that have completed processing resides
                         as well as a variety of buttons that provide file-specific functionality, i.e. viewing
                         a data set's ASF metadata or the area subtended by the image and shown by Google
-                        Earth.  The Output Files section may be hidden or shown by clicking the small
+                        Earth(tm).  The Output Files section may be hidden or shown by clicking the small
                         button in the top-left portion of this section (red ball with a minus sign or
                         green ball with plus sign.)
                     </para>
@@ -1183,25 +1183,25 @@
 
             </listitem>
             <listitem>
-                <para>Display Geographic Area in Google Earth</para>
+                <para>Display Geographic Area in Google Earth(tm)</para>
 
                 <para>
                     If you select a file in the Input Files section then click this
-                    button, Google Earth will execute (if installed on your machine)
+                    button, Google Earth(tm) will execute (if installed on your machine)
                     and display an outline of the geographical area where your input
                     data resides.  Future releases of MapReady will likely overlay
-                    the actual data from the data file in Google Earth as well.
+                    the actual data from the data file in Google Earth(tm) as well.
                 </para>
 
                 <para>
                     If you select a file in the Output Files section AND the file is
-                    geocoded with a UTM map-projection, then when Google Earth opens
+                    geocoded with a UTM map-projection, then when Google Earth(tm) opens
                     to display the data location, the actual image data will be
                     overlaid on top of the earth in the correct geographical location.
                     If the file that you selected is not geocoded to a UTM map projection
                     then only an outline of the area represented will be displayed in
-                    Google Earth.  Future releases of MapReady will likely overlay
-                    all types of data in Google Earth.
+                    Google Earth(tm).  Future releases of MapReady will likely overlay
+                    all types of data in Google Earth(tm).
                 </para>
             </listitem>
         </orderedlist>
