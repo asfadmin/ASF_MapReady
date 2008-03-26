@@ -112,7 +112,7 @@ int main (int argc, char **argv)
 	if (argc != 4) {
 		usage();
 	}
-
+/*
 	// Make sure data types are of the size we expect
 	asfRequire( sizeof(short) == SHORT_INT_SIZE,
 	            "Short integers need to be %d bytes (%d-bits),"
@@ -134,7 +134,7 @@ int main (int argc, char **argv)
 	            "Doubles need to be %d bytes (%d-bits),"
 		    " they appear to be %d bytes.\n",
 		    DOUBLE_SIZE, DOUBLE_SIZE*8, sizeof(long long));
-
+*/
 	// Fetch our required arguments
 	wordsize = atoi(argv[1]);
 	if (  ! (wordsize==16 || wordsize==32 || wordsize==64) ) {
