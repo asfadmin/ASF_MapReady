@@ -7,6 +7,7 @@ calibrate.*/
 #include "asf.h"
 #include "ceos.h"
 #include "calibrate.h"
+#include <assert.h>
 
 /**Harcodings to fix calibration of ASF data***
  --------------------------------------------
@@ -181,12 +182,13 @@ given inSAR CEOS file.
 
 cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
 {
-  int ii, kk, numLines;
+  int ii, kk;
   struct dataset_sum_rec dssr; // Data set summary record
   double *noise;
   char sarName[512], *facilityStr, *processorStr;
   cal_params *cal = (cal_params *) MALLOC(sizeof(cal_params));
   cal->asf = NULL;
+  cal->asf_scansar = NULL;
   cal->esa = NULL;
   cal->rsat = NULL;
   cal->alos = NULL;
@@ -199,10 +201,12 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
   processorStr = trim_spaces(dssr.sys_id);
 
   if (strncmp(facilityStr, "ASF", 3)== 0 &&
-      strncmp(processorStr, "FOCUS", 5) != 0) {
-    // ASF internal processor (PP or SSP)
-    asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
-    cal->asf = asf;
+      strncmp(processorStr, "FOCUS", 5) != 0 &&
+      meta->projection && meta->projection->type == SCANSAR_PROJECTION)
+  {
+    // ASF internal processor (PP or SSP), ScanSar data
+    asf_scansar_cal_params *asf = MALLOC(sizeof(asf_scansar_cal_params));
+    cal->asf_scansar = asf;
 
     // Get values for calibration coefficients and LUT
     struct VRADDR rdr; // Radiometric data record
@@ -249,29 +253,23 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
     } 
     else 
       noise = rdr.noise;
-
-    asf->tablePix = ((meta->general->sample_count + (TABLE-1))/TABLE);
+/*
+    int tab = TABLE;
+    asf->tablePix = ((meta->general->sample_count + (tab-1))/tab);
     numLines = asf->numLines = meta->general->line_count;
   
     float noise_index=0, frac;
     int index, base;
-    int tab = TABLE;
-    for (ii=0; ii<numLines; ii++) {
+    for (ii=0; ii<numLines; ++ii) {
       for (kk=0; kk<TABLE; kk++) {
-	if (meta->projection && meta->projection->type == SCANSAR_PROJECTION)
-	  // index is look angle dependent
-	  noise_index = 
-	    (meta_look(meta, (float)ii,
-		       (float)kk*asf->tablePix)*180.0/PI-16.3)*10.0;
-	else
-	  // all other data work with index by pixel
-	  noise_index = 
-	    (float)kk*asf->tablePix*256/meta->general->sample_count;
-	base = kk + (ii/(numLines/tab)*tab);
-	if (ii == 100 && kk == 0)
-	  printf("ii: %d, kk: %d, lines: %d, TABLE: %d, noise index: %d, "
-		 "base: %d\n", ii, kk, numLines, tab, noise_index, 
-		 base);
+        noise_index = (meta_look(meta, (float)ii,
+                                 (float)kk*asf->tablePix)*180.0/PI-16.3)*10.0;
+        base = kk + (ii/(numLines/tab)*tab);
+	//if (ii == 100 && kk == 0)
+        printf("ii: %d, kk: %d, lines: %d, noise index: %f, "
+               "base: %d\n", ii, kk, numLines, noise_index, base);
+        assert(base>=0);
+        assert(base<512);
 	// Clamp noise_index to within the noise table
 	if (noise_index <= 0)
 	  asf->noise[base] = noise[0];
@@ -286,6 +284,41 @@ cal_params *create_cal_params(const char *inSAR, meta_parameters *meta)
 	}
       }
     }
+*/
+
+    asf->tablePix = 256;
+    for (kk=0; kk<asf->tablePix; ++kk)
+      asf->noise[kk] = noise[kk];
+
+    asf->meta = meta;
+  }
+  else if (strncmp(facilityStr, "ASF", 3)== 0 &&
+           strncmp(processorStr, "FOCUS", 5) != 0)
+  {
+    // ASF internal processor (PP or SSP) (non-Scansar)
+    asf_cal_params *asf = (asf_cal_params *) MALLOC(sizeof(asf_cal_params));
+    cal->asf = asf;
+
+    // Get values for calibration coefficients and LUT
+    struct VRADDR rdr; // Radiometric data record
+    get_raddr(sarName, &rdr);
+    
+    // hardcodings for not-yet-calibrated fields
+    if (rdr.a[0] == -99.0 || rdr.a[1]==0.0 ) {
+      asf->a0 = 1.1E4;
+      asf->a1 = 2.2E-5;
+      asf->a2 = 0.0;
+    } 
+    else {
+      asf->a0 = rdr.a[0];
+      asf->a1 = rdr.a[1];
+      asf->a2 = rdr.a[2];
+    }
+
+    // grab the noise vector
+    for (kk=0; kk<256; ++kk)
+      asf->noise[kk] = rdr.noise[kk];
+    asf->sample_count = meta->general->sample_count;
   }
   else if ((strncmp(facilityStr, "ASF", 3) == 0 &&
 	    strncmp(dssr.sys_id, "FOCUS", 5) == 0) ||
@@ -391,15 +424,55 @@ float get_cal_dn(cal_params *cal, int line, int sample, float inDn, int dbFlag)
       invIncAngle = 1/sin(incidence_angle*D2R);
 
     asf_cal_params *p = cal->asf;
-    double index = 
-      (float) sample + (line/(p->numLines/TABLE)*TABLE)/ p->tablePix;
+    double index = (double)sample*256./(double)(p->sample_count);
     int base = (int) index;
     double frac = index - base;
     double *noise = p->noise;
 
     // Determine the noise value
+    double noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+
+    // Convert (amplitude) data number to scaled, noise-removed power
+    scaledPower = 
+      (p->a1*(inDn*inDn-p->a0*noiseValue) + p->a2)*invIncAngle;
+  }
+  else if (cal->asf_scansar) { // ASF style ScanSar data
+
+    asf_scansar_cal_params *p = cal->asf_scansar;
+    meta_parameters *meta = p->meta;
+
+    double er = meta_get_earth_radius(meta,line,sample);
+    double ht = meta_get_sat_height(meta,line,sample);
+    //double incid2 = R2D*meta_incid(meta,line,sample);
+    double look = R2D*look_from_incid(incidence_angle*D2R,er,ht);
+    //double look2 = R2D*look_from_incid(incid2*D2R,er,ht);
+    //double look3 = R2D*meta_look(meta,line,sample);
+    //if (fabs(look-look2)>.001)
+      //  printf("%d %d %f %f %f %f %f\n", line, sample, look, look2, look3, incidence_angle, incid2);
+      //printf("%d %d %f %f\n", line, sample, look, incidence_angle);
+
+    if (cal->radiometry == r_SIGMA || cal->radiometry == r_SIGMA_DB)
+      invIncAngle = 1.0;
+    else if (cal->radiometry == r_GAMMA || cal->radiometry == r_GAMMA_DB)
+      invIncAngle = 1/cos(incidence_angle*D2R);
+    else if (cal->radiometry == r_BETA || cal->radiometry == r_BETA_DB)
+      invIncAngle = 1/sin(incidence_angle*D2R);
+
+    double index = (look-16.3)*10.0;
     double noiseValue;
-    noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    double *noise = p->noise;
+
+    if (index <= 0)
+      noiseValue = noise[0];
+    else if (index >= 255)
+      noiseValue = noise[255];
+    else {
+      // Use linear interpolation on noise array
+      int base = (int)index;
+      double frac = index - base;
+
+      noiseValue = noise[base] + frac*(noise[base+1] - noise[base]);
+    }
 
     // Convert (amplitude) data number to scaled, noise-removed power
     scaledPower = 

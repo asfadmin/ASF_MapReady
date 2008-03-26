@@ -224,21 +224,27 @@ double meta_look(meta_parameters *meta,double y,double x)
     return acos((SQR(sr) + SQR(ht) - SQR(er)) / (2.0*sr*ht));
 }
 
-// calculate the slant range, if we know the incidence angle,
-// the earth radius, and the satellite height
+/**********************************************************
+ * slant_from_incide: Calculate the slant range, if we know
+ * the incidence angle, the earth radius, and the satellite height
+ * incid should be in radians */
 double slant_from_incid(double incid,double er,double ht)
 {
   double i=PI-incid;
-  double D=ht*ht - er*er*sin(i)*sin(i);
+  double D=SQR(ht) - SQR(er*sin(i));
+  double sr=er*cos(i) + sqrt(D);
 
-  assert(D>=0);
-  assert(er*cos(i) - sqrt(D) < 0);
+  // check degenerate cases
+  if (D<0 || sr<0 || er*cos(i) - sqrt(D) > 0)
+    asfPrintError("Satellite orbit is below the Earth's surface!\n");
 
-  return er*cos(i) + sqrt(D);
+  return sr;
 }
 
-// calculate the look angle, if we know the incidence angle,
-// the earth radius, and the satellite height
+/**********************************************************
+ * look_from_incid: Calculate the look angle, if we know the
+ * incidence angle, the earth radius, and the satellite height
+ * incid should be in radians, returns radians. */
 double look_from_incid(double incid,double er,double ht)
 {
   double sr=slant_from_incid(incid,er,ht);
