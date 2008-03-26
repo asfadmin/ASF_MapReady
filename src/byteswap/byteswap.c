@@ -99,6 +99,20 @@ int main (int argc, char **argv)
 	void		*buf=NULL;
 	void		(*byteswap)(unsigned char *);
 	
+	// Search the command line for help & report if requested
+	if (extract_flag_options(&argc, &argv, "-h", "-help", "--help", NULL)) {
+		help();
+	}
+
+	// Grab the common asf options (eg -version, -quiet, etc)
+	handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
+	
+	// Since handle_common_asf_args reduces argc for all the options
+	// we can check argc to see if we've got 3 arguments & the progname
+	if (argc != 4) {
+		usage();
+	}
+
 	// Make sure data types are of the size we expect
 	asfRequire( sizeof(short) == SHORT_INT_SIZE,
 	            "Short integers need to be %d bytes (%d-bits),"
@@ -120,20 +134,6 @@ int main (int argc, char **argv)
 	            "Doubles need to be %d bytes (%d-bits),"
 		    " they appear to be %d bytes.\n",
 		    DOUBLE_SIZE, DOUBLE_SIZE*8, sizeof(long long));
-
-	// Search the command line for help & report if requested
-	if (extract_flag_options(&argc, &argv, "-h", "-help", "--help", NULL)) {
-		help();
-	}
-
-	// Grab the common asf options (eg -version, -quiet, etc)
-	handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
-	
-	// Since handle_common_asf_args reduces argc for all the options
-	// we can check argc to see if we've got 3 arguments & the progname
-	if (argc != 4) {
-		usage();
-	}
 
 	// Fetch our required arguments
 	wordsize = atoi(argv[1]);
