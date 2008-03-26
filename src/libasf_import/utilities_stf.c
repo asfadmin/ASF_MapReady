@@ -29,7 +29,7 @@ void lzStateTime(const char *lzStr,ymd_date *date,hms_time *time)
   { /*We couldn't read the date correctly*/
     asfPrintError("* createMeta_lz:lzStTime couldn't parse LZP state vector date string:\n"
                   "* '%s'!\n"
-		  "* Month='%s'\n",lzStr,month);
+          "* Month='%s'\n",lzStr,month);
   }
 /*Try to figure out the month*/
   monthNo=0;
