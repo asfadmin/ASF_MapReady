@@ -382,7 +382,15 @@ void fill_structure_field(char *field_name, void *valp)
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER") )
         MGENERAL->radiometry = r_POWER;
       else {
-        warning_message("Unrecognized radiometry (%s).\n",VALP_AS_CHAR_POINTER);
+        // Only print the warning for image types that should have radiometry.
+        // Means the parser is order-dependent... image_data_type MUST
+        // occur before radiometry in the meta file.
+        if (MGENERAL->image_data_type == COMPLEX_IMAGE ||
+            MGENERAL->image_data_type == AMPLITUDE_IMAGE ||
+            MGENERAL->image_data_type == POLARIMETRIC_IMAGE)
+        {
+          warning_message("Unrecognized radiometry (%s).\n",VALP_AS_CHAR_POINTER);
+        }
         MGENERAL->radiometry = r_AMP;
       }
       return;
