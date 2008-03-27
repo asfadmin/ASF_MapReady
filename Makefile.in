@@ -20,9 +20,9 @@ MAPREADY_MODULES = \
 	src/libasf_import \
 	src/libasf_vector \
 	src/libasf_sar \
-	src/ardop \
 	src/libasf_geocode \
 	src/libasf_export \
+	src/ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
 	src/asf_import \
