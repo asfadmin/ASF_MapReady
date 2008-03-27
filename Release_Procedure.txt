@@ -100,12 +100,13 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       src/diffmeta \
       src/gr2sr \
 
-     Eliminate the following line (it is line 65, perhaps 61 after deleting
-     the above 4 lines):
+     Eliminate the following lines from Makefile.in.  At the time of writing
+     these instructions, this line occurs in FOUR places: near line 117, 130,
+     141, and 152:
 
       echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
- 14. Create the source.convert file in ~/asf/svn-r6472/releast/autotar
+ 14. Create the source.mapready_package file in ~/asf/svn-r6472/releast/autotar
      (automatically by makemake if you followed the directory structure
      instructions listed here):
 
@@ -114,11 +115,11 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       ./makemake
 
  15. ** KLUDGE #4 **
-    Add missing tools to the source.convert file:
+    Add missing tools to the source.mapready_package file:
 
       cd ~/asf/svn-r6472/release/autotar
 
-    Edit release/autotar/source.convert, adding these items:
+    Edit release/autotar/source.mapready_package, adding these items:
 
 src/libasf_insar
 external
