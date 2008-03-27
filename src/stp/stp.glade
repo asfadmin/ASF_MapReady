@@ -1337,7 +1337,7 @@
 			      <property name="spacing">0</property>
 
 			      <child>
-				<widget class="GtkLabel" id="label8">
+				<widget class="GtkLabel" id="step6_label">
 				  <property name="visible">True</property>
 				  <property name="label" translatable="yes">Step 6: Inverse FFT of Range data  </property>
 				  <property name="use_underline">False</property>

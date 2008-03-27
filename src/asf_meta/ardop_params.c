@@ -8,6 +8,7 @@ struct INPUT_ARDOP_PARAMS *get_input_ardop_params_struct(char *in1, char *out)
 
     strcpy(ret->in1, in1);
     strcpy(ret->out, out);
+    strcpy(ret->status, "");
     strcpy(ret->CALPRMS, "NO");
 
     ret->pwrFlag = NULL;
@@ -45,6 +46,7 @@ void apply_in_ardop_params_to_ardop_params(struct INPUT_ARDOP_PARAMS *in,
 {
     strcpy(a->in1, in->in1);
     strcpy(a->out, in->out);
+    strcpy(a->status, in->status);
 
     if (in->CALPRMS)
         strcpy(a->CALPRMS, in->CALPRMS);

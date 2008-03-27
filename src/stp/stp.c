@@ -9,6 +9,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
+#include <ctype.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -539,6 +540,39 @@ static const char * suffix_for_step(int step)
     }
 }
 
+static const char * label_text_for_step(int step)
+{
+    switch (step)
+    {
+        case 1:
+            return "Step 1: Ingest raw data";
+        case 2:
+            return "Step 2: FFT of raw data";
+        case 3:
+            return "Step 3: Build range reference function";
+        case 4:
+            return "Step 4: FFT of Range reference function";
+        case 5:
+            return "Step 5: Complex mult. raw with reference";
+        case 6:
+            return "Step 6: Inverse FFT of Range data";
+        case 7:
+            return "Step 7: FFT of range compressed data";
+        case 8:
+            return "Step 8: Range cell migration";
+        case 9:
+            return "Step 9: Build azimuth reference function";
+        case 10:
+            return "Step 10: FFT of azimuth reference function";
+        case 11:
+            return "Step 11: Complex multiply";
+        case 12:
+            return "Step 12: Inverse FFT of Azimuth data";
+        default:
+            return "";
+    }
+}
+
 void
 update_buttons()
 {
@@ -765,6 +799,26 @@ check_files(const char * input_file)
     return status == STATUS_OK;
 }
 
+static void highlight_step(int step, int is_highlighted)
+{
+    char label_id[32];
+    sprintf(label_id, "step%d_label", step);
+
+    GtkWidget * label =	glade_xml_get_widget(glade_xml, label_id);
+
+    char markup_str[256];
+    if (is_highlighted)
+      sprintf(markup_str, "<span foreground=\"red\">%s</span>  ",
+              label_text_for_step(step));
+    else {
+      strcpy(markup_str, label_text_for_step(step));
+      strcat(markup_str, "  ");
+    }
+
+    //printf("Label: %s, string: %s\n", label_id, markup_str);
+    gtk_label_set_markup(GTK_LABEL(label), markup_str);
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
@@ -811,7 +865,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget * start_line_entry =
 	glade_xml_get_widget(glade_xml, "start_line_entry");
 
-    int ifirstline =
+    int i,ifirstline =
         atoi(gtk_entry_get_text(GTK_ENTRY(start_line_entry)));
 
     /* check that we have all the required files */
@@ -850,6 +904,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     if (pid == 0)
     {
+      /* child */
       struct INPUT_ARDOP_PARAMS *params_in;
       params_in = get_input_ardop_params_struct(input_file, output_file);
 
@@ -858,6 +913,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       if (g_fd)   { l_fd = *g_fd;     params_in->fd = &l_fd;     }
       if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
       if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
+      sprintf(params_in->status, "%s.status", output_file);
 
       // this stuff shouldn't cause collisions, local stack variables      
       int npatches = 1;
@@ -872,19 +928,71 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     }
     else
     {
+      /* parent */
+      int counter = 1;
+      char *statFile = appendExt(output_file, ".status");
+
       while (waitpid(-1, NULL, WNOHANG) == 0)
       {
 	while (gtk_events_pending())
           gtk_main_iteration();
 
 	g_usleep(50);
-      }     
+
+        if (++counter % 200 == 0) {
+          /* check status file */
+          char buf[256];
+          FILE *fStat = fopen(statFile, "rt");
+          if (fStat)
+          {
+            fgets(buf, sizeof(buf), fStat);
+            fclose(fStat);
+
+            // strip trailing whitespace
+            while (isspace(buf[strlen(buf)-1]))
+              buf[strlen(buf)-1]='\0';
+
+            // figure out which step we are on
+            int on_step = 0;
+            if (strcmp_case(buf, "Range compressing")==0)
+              on_step=3;
+            else if (strcmp_case(buf, "Starting azimuth compression")==0)
+              on_step=7;
+            else if (strcmp_case(buf, "Range cell migration")==0)
+              on_step=8;
+            else if (strcmp_case(buf, "Finishing azimuth compression")==0)
+              on_step=11;
+            else if (strcmp_case(buf, "Range-doppler done")==0)
+              on_step=12;
+            else {
+              for (i=1; i<=12; ++i) {
+                if (strstr(buf,suffix_for_step(i))!=NULL) {
+                  on_step=i;
+                  break;
+                }
+              }
+            }
+
+            // if we figured it out, highlight that step's text
+            if (on_step>0) {
+              for (i=1; i<=12; ++i)
+                highlight_step(i, i==on_step);
+            }
+          }
+        }
+      }
+
+      unlink(statFile);
+      free(statFile);
     }
     
     free(output_file);
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
     gtk_widget_set_sensitive(execute_button, TRUE);
+
+    for (i=1; i<=12; ++i)
+      highlight_step(i, FALSE);
 }
 
 void

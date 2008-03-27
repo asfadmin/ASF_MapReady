@@ -137,7 +137,11 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
         }
 
 /*Apply user-overridden parameters*/
-        apply_in_ardop_params_to_ardop_params(params_in, &params);
+    apply_in_ardop_params_to_ardop_params(params_in, &params);
+    if (strlen(params.status)>0) {
+      printf("Status file is: %s\n", params.status);
+      set_status_file(params.status);
+    }
 
 /*Doppler*/
     if (params.fdd==-99.0)

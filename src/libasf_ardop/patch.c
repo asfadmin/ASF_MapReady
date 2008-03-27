@@ -106,6 +106,7 @@ static void clean(const char *file)
 
 static void patchToJpeg(char *outname)
 {
+  update_status("Generating %s", outname);
   if (!quietflag)
     printf("   Outputting Debugging image '%s'...\n",outname);
 
@@ -307,12 +308,14 @@ void processPatch(patch *p,const getRec *signalGetRec,const rangeRef *r,
 {
   int i;
 
+  update_status("Range compressing");
   if (!quietflag) printf("   RANGE COMPRESSING CHANNELS...\n");
   elapse(0);
   rciq(p,signalGetRec,r);
   if (!quietflag) elapse(1);
   if (s->debugFlag & AZ_RAW_T) debugWritePatch(p,"az_raw_t");
 
+  update_status("Starting azimuth compression");
   if (!quietflag) printf("   TRANSFORMING LINES...\n");
   elapse(0);
   cfft1d(p->n_az,NULL,0);
@@ -321,12 +324,14 @@ void processPatch(patch *p,const getRec *signalGetRec,const rangeRef *r,
   if (s->debugFlag & AZ_RAW_F) debugWritePatch(p,"az_raw_f");
   if (!(s->debugFlag & NO_RCM))
     {
+      update_status("Range cell migration");
       if (!quietflag) printf("   START RANGE MIGRATION CORRECTION...\n");
       elapse(0);
       rmpatch(p,s);
       if (!quietflag) elapse(1);
       if (s->debugFlag & AZ_MIG_F) debugWritePatch(p,"az_mig_f");
     }
+  update_status("Finishing azimuth compression");
   if (!quietflag) printf("   INVERSE TRANSFORMING LINES...\n");
   elapse(0);
   acpatch(p,s);
@@ -363,6 +368,7 @@ void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
     writeNoiseTable=1;  /* If first patch AND antenna pattern correction,
                write the noise table */
 
+  update_status("Range-doppler done");
   if (!quietflag) printf("   WRITING PATCH OUT...\n");
   elapse(0);
 

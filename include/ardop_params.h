@@ -24,6 +24,7 @@
 struct ARDOP_PARAMS {
   char	in1[256];	     /* First input file basename		   */
   char	out[256];	     /* Output File basename                       */
+  char  status[256];         /* Kludgey status file, for STP               */
   char	CALPRMS[255];        /* Calibration Parameters file (if desired)   */
   char	srm[4];		     /* Secondary range migration correction (y/n) */
   char	iqflip[4];	     /* Flip i/q or offset video (y/n flip;o off)  */ 
@@ -74,6 +75,7 @@ struct ARDOP_PARAMS {
 struct INPUT_ARDOP_PARAMS {
   char	in1[256];
   char	out[256];
+  char  status[256];
   char	CALPRMS[255];
   int *pwrFlag;
   int *sigmaFlag;

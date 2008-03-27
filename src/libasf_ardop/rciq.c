@@ -121,8 +121,8 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
     }
   }
   if (r_f) {debugWritePatch(r_f,"range_ref_map"); destroyPatch(r_f);}
-  if (raw_f) {debugWritePatch(raw_f,"range_raw_f"); destroyPatch(raw_f);}
   if (raw_t) {debugWritePatch(raw_t,"range_raw_t"); destroyPatch(raw_t);}
+  if (raw_f) {debugWritePatch(raw_f,"range_raw_f"); destroyPatch(raw_f);}
   if (r_x_f) {debugWritePatch(r_x_f,"range_X_f"); destroyPatch(r_x_f);}
   return;
 }
