@@ -103,10 +103,10 @@ BUGS:
 
 int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 {
-        meta_parameters *meta;
-        struct ARDOP_PARAMS params;
+    meta_parameters *meta;
+    struct ARDOP_PARAMS params;
 
-        fill_default_ardop_params(&params);
+    fill_default_ardop_params(&params);
 
 /*Structures: these are passed to the sub-routines which need them.*/
     patch *p;
@@ -130,18 +130,15 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
         } else {
                         /*No .meta exists--fabricate one*/
             meta=raw_init();
-                }
+        }
     }
     else    /*Read parameters & .meta from CEOS.*/ {
         get_params(params_in->in1,&params,&meta);
-        }
+    }
 
 /*Apply user-overridden parameters*/
     apply_in_ardop_params_to_ardop_params(params_in, &params);
-    if (strlen(params.status)>0) {
-      printf("Status file is: %s\n", params.status);
-      set_status_file(params.status);
-    }
+    if (strlen(params.status)>0) set_status_file(params.status);
 
 /*Doppler*/
     if (params.fdd==-99.0)
