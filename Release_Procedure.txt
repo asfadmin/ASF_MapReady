@@ -147,11 +147,11 @@ doc
  16. Run the autotar script:
 
       cd ~/asf/svn-r6472/release/autotar
-      ./tarfile src ~/asf/svn-r6472 convert
+      ./tarfile src ~/asf/svn-r6472 mapready_package
 
  17. Run the rpmprep script (from autotar folder):
 
-      ./rpmprep convert asf_mapready
+      ./rpmprep mapready_package asf_mapready
 
  18. Copy an older .spec file to the new one, then edit the new .spec
      file in to use the correct version:
