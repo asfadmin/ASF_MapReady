@@ -824,12 +824,12 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
             (char *) malloc(sizeof(char) * (strlen(input_file) + 20));
 
         if (p) {
-            char * ext = strdup(p + 1);
+            char * ext = STRDUP(p + 1);
             strcpy(output_file, input_file);
             *(output_file + (p - input_file)) = '\0';
             strcat(output_file, "_cpx");
             //strcat(output_file, ext);
-            free(ext);
+            FREE(ext);
         } else {
             sprintf(output_file, "%s%s", input_file, "_cpx");
         }
@@ -1257,6 +1257,79 @@ on_button_select_all_clicked(GtkWidget *button, gpointer user_data)
         select_button(i);
 }
 
+static char * escapify(const char * s)
+{
+    int i,j;
+    char * ret = MALLOC(2*strlen(s)*sizeof(char));
+    for (i = 0, j = 0; i <= strlen(s); ++i)
+    {
+        switch(s[i])
+        {
+            case '\\':
+                ret[j] = ret[j+1] = s[i];
+                ++j;
+                break;
+            default:
+                ret[j] = s[i];
+                break;
+        }
+        ++j;
+    }
+    return ret;
+}
+
+static char *find_in_bin(const char * s)
+{
+    char *ret = MALLOC(sizeof(char)*(strlen(get_asf_bin_dir())+strlen(s)+5));
+    sprintf(ret, "%s%c%s", get_asf_bin_dir(), DIR_SEPARATOR, s);
+    return ret;
+}
+
+static void asf_view_thread (GString *file, gpointer user_data)
+{
+#ifdef win32
+    gchar * asf_view = find_in_bin("asf_view.exe");
+#else
+    gchar * asf_view = find_in_bin("asf_view");
+#endif
+
+    char buf[1024];
+    char *escaped_str = escapify(file->str);
+    sprintf(buf, "\"%s\" \"%s\"", asf_view, escaped_str);
+    free(escaped_str);
+    asfSystem(buf);
+    g_string_free(file, TRUE);
+}
+
+static void show_image_with_asf_view(gchar * in_name)
+{
+#ifdef win32
+    gchar * asf_view = find_in_bin("asf_view.exe");
+#else
+    gchar * asf_view = find_in_bin("asf_view");
+#endif
+
+    if (asf_view)
+    {
+        static GThreadPool *ttp = NULL;
+        GError *err = NULL;
+
+        if (!ttp)
+        {
+            if (!g_thread_supported ()) g_thread_init (NULL);
+            ttp = g_thread_pool_new ((GFunc) asf_view_thread, NULL, 4, TRUE, &err);
+            g_assert(!err);
+        }
+
+        g_thread_pool_push (ttp, g_string_new (in_name), &err);
+        g_assert(!err);
+    }
+    else
+    {
+        message_box("Failed to open external viewer!");
+    }
+}
+
 static void view_debug_image(int step)
 {
     GtkWidget * output_image =
@@ -1264,10 +1337,6 @@ static void view_debug_image(int step)
     
     GtkWidget * output_file_entry =
         glade_xml_get_widget(glade_xml, "output_file_entry");
-
-    GdkPixbuf *pb;
-
-    switch_on_help(FALSE);
 
     const gchar *filename = 
         gtk_entry_get_text(GTK_ENTRY(output_file_entry));
@@ -1282,28 +1351,37 @@ static void view_debug_image(int step)
     
     if (g_file_test(image_file, G_FILE_TEST_EXISTS))
     {
-        GError *err = NULL;
-        pb = gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
+      switch_on_help(FALSE);
 
-        if (err) {
-            sprintf(lbl, "Error loading image: %s\n", err->message);
-	    gtk_widget_hide(output_image);
-        } else {
-            gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
-            g_object_unref(pb);
+      GError *err = NULL;
+      GdkPixbuf *pb =
+        gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
 
-            sprintf(lbl, " Output of Step %d", step);
-        }
-    }
+      if (err) {
+          sprintf(lbl, "Error loading image: %s\n", err->message);
+          gtk_widget_hide(output_image);
+      } else {
+          gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
+          g_object_unref(pb);
+      }
+
+      sprintf(lbl, " Output of Step %d", step);
+      GtkWidget * label_view_output =
+        glade_xml_get_widget(glade_xml, "label_view_output");
+      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+
+      //show_image_with_asf_view(image_file);
+      }
     else
     {
         sprintf(lbl, "File not found: %s", image_file);
 	gtk_widget_hide(output_image);
-    }
+        switch_on_help(FALSE);
 
-    GtkWidget * label_view_output =
-        glade_xml_get_widget(glade_xml, "label_view_output");
-    gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+        GtkWidget * label_view_output =
+          glade_xml_get_widget(glade_xml, "label_view_output");
+        gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+    }
 }
 
 SIGNAL_CALLBACK void

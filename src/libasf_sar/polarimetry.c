@@ -386,9 +386,13 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   meta_parameters *meta = meta_read(meta_name);
 
   char *in_img_name = appendExt(inFile, ".img");
-  char *out_img_name  = appendExt(outFile, ".img");
+  char *out_img_name = appendExt(outFile, ".img");
 
   int i, j;
+
+  // chunk_size represents the number of rows we keep in memory at one
+  // time, centered on the row currently being processed.  This is to
+  // handle the ensemble averaging that we do
   const int chunk_size = 5;
   assert((chunk_size-1)%2==0); // chunk_size should be odd
 

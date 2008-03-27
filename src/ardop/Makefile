@@ -2,12 +2,21 @@ include ../../make_support/system_rules
 
 LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
-	$(GSL_LIBS)
+	$(JPEG_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(PNG_LIBS) \
+	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
+	-lz
 
 LIBC = $(LIBS) -lm 
 

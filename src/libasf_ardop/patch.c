@@ -25,6 +25,9 @@ BUGS:
 #include "asf_meta.h"
 #include "ardop_defs.h"
 #include "../../include/asf_endian.h"
+#include <asf_export.h>
+#include <assert.h>
+#include <asf_sar.h>
 
 /* Functions in calibration.c (date: Jan 2003) */
 void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared,
@@ -79,23 +82,168 @@ void setPatchLoc(patch *p,satellite *s,meta_parameters *meta,int leftFile,int le
 
 meta_parameters *raw_init(void);
 
+static void remove_file(const char * file)
+{
+  if (fileExists(file))
+    unlink(file);
+}
+
+static void clean(const char *file)
+{
+    if (file)
+    {
+        char * img_file = appendExt(file, ".img");
+        char * meta_file = appendExt(file, ".meta");
+
+        remove_file(img_file);
+        remove_file(meta_file);
+        remove_file(file);
+
+        free(img_file);
+        free(meta_file);
+    }
+}
+
 static void patchToJpeg(char *outname)
+{
+  if (!quietflag)
+    printf("   Outputting Debugging image '%s'...\n",outname);
+
+  // input name is just the output name with ".img"
+  char *polar_name = MALLOC((strlen(outname)+20)*sizeof(char));
+  sprintf(polar_name, "%s_polar.img", outname);
+
+  // will multilook, as well as conver to polar, generates a 2-band
+  // file (amplitude is band 1, phase is band 2)
+  c2p(outname,polar_name,FALSE,TRUE);
+
+  // prepare for RGB conversion
+  int i,j;
+  meta_parameters *meta = meta_read(polar_name);
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  float *amp = MALLOC(sizeof(float)*ns);
+  float *phase = MALLOC(sizeof(float)*ns);
+  unsigned char *red = MALLOC(sizeof(unsigned char)*ns);
+  unsigned char *grn = MALLOC(sizeof(unsigned char)*ns);
+  unsigned char *blu = MALLOC(sizeof(unsigned char)*ns);
+  FILE *fp = fopenImage(polar_name, "rb");
+  const double TWOPI=2.*PI;
+  const double PIOVER3=PI/3.;
+  int n=0;
+
+  // first/second passes are stats gathering
+  asfPrintStatus("Gathering stats...\n");
+  double avg=0, stddev=0;
+  for (i=0; i<nl; i+=3) {
+    get_float_line(fp,meta,i,amp);
+    for (j=0; j<ns; j+=3) {
+      avg += amp[j];
+      ++n;
+    }
+    asfPercentMeter((float)i/((float)nl*2.));
+  }
+  avg /= (double)n;
+  for (i=0; i<nl; i+=3) {
+    get_float_line(fp,meta,i,amp);
+    for (j=0; j<ns; j+=3) {
+      stddev += (amp[j]-avg)*(amp[j]-avg);
+    }      
+    asfPercentMeter((float)(i+nl)/((float)nl*2.));
+  }
+  asfPercentMeter(1);
+  stddev = sqrt(stddev/(double)n);
+  double min = avg - 2*stddev;
+  double max = avg + 2*stddev;
+
+  // open up JPEG output file
+  FILE *ofp=NULL;
+  struct jpeg_compress_struct cinfo;
+  char *jpgname = appendExt(outname, ".jpg");
+  initialize_jpeg_file(jpgname,meta,&ofp,&cinfo,TRUE);
+  asfPrintStatus("Generating debug image...\n");
+
+  // now read in the polar image, calculate RGB values, write to jpeg
+  for (i=0; i<nl; ++i) {
+    get_band_float_line(fp,meta,0,i,amp);
+    get_band_float_line(fp,meta,1,i,phase);
+
+    for (j=0; j<ns; ++j) {
+      // scale to 2-sigma, to get brightness of the pixel
+      unsigned char intensity;
+      if (amp[j]<=min)
+        intensity=0;
+      else if (amp[j]>=max)
+        intensity=255;
+      else
+        intensity=(unsigned char)((amp[j]-min)/(max-min)*255.);
+      
+      // color of the pixel is determined by the phase
+      unsigned char r=0,g=0,b=0;
+      if (phase[j]<0) phase[j]+=TWOPI;        // ensure [0, TWOPI)
+      if (phase[j]>=TWOPI) phase[j]-=TWOPI;
+      int range = (int)(phase[j]/PIOVER3);    // will be 0-6 (and rarely 6)
+      switch (range) {
+        case 0: r=1;           break;
+        case 1: r=1; g=1;      break;
+        case 2:      g=1;      break;
+        case 3:      g=1; b=1; break;
+        case 4:           b=1; break;
+        case 5: r=1;      b=1; break;
+        case 6:                break; // left black
+        default:
+          printf("phase: %f, range: %d\n", phase[j], range);
+          assert(FALSE); break;
+      }
+      red[j] = r*intensity;
+      grn[j] = g*intensity;
+      blu[j] = b*intensity;
+    }
+
+    // write the line
+    write_rgb_jpeg_byte2byte(ofp,red,grn,blu,&cinfo,ns);
+
+    // keep the user interested!
+    asfPercentMeter((float)i/((float)nl));
+  }
+  asfPercentMeter(1.0);
+
+  // clean up
+  FCLOSE(fp);
+  FREE(amp);
+  FREE(phase);
+  FREE(red);
+  FREE(grn);
+  FREE(blu);
+  meta_free(meta);
+  finalize_jpeg_file(ofp,&cinfo);
+  FREE(jpgname);
+  clean(polar_name);
+  FREE(polar_name);
+}
+
+/*
+static void patchToJpeg_old(char *outname)
 {
   if (!quietflag) printf("   Outputting Debugging image '%s'...\n",outname);
   char cmd[512],name[320],multilookname[320],exportname[320];
   strcat(strcpy(name,outname),".img");
-  sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
-  asfSystem(cmd);
-  sprintf(multilookname, "%s_ml.img", outname);
-  sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n",
-      outname, multilookname);
-  asfSystem(cmd);
-  sprintf(exportname, "%s_ml_rgb.img", outname);
-  sprintf(cmd,"convert2jpeg -brighten \"%s\" \"%s\"\n", exportname, outname);
-  asfSystem(cmd);
+  //sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
+  //asfSystem(cmd);
+  c2p(name,outname,TRUE,FALSE);
+  //sprintf(multilookname, "%s_ml.img", outname);
+  //sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n",
+  //    outname, multilookname);
+  //asfSystem(cmd);
+  //sprintf(exportname, "%s_ml_rgb.img", outname);
+  sprintf(exportname, "%s_rgb.img", outname);
+  //sprintf(cmd,"convert2jpeg -brighten \"%s\" \"%s\"\n", exportname, outname);
+  //asfSystem(cmd);
+  asf_export_with_lut(JPEG,SIGMA,"interferogram.lut",outname,exportname);
   //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
   //asfSystem(cmd);
 }
+*/
 
 void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
                           int n_range, int n_az)

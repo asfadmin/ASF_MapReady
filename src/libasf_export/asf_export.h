@@ -142,6 +142,11 @@ void export_band_image(const char *metadata_file_name,
                        char *look_up_table_name,
                        output_format_t format);
 
+void initialize_jpeg_file(const char *output_file_name,
+                          meta_parameters *meta, FILE **ojpeg,
+                          struct jpeg_compress_struct *cinfo, int rgb);
+void finalize_jpeg_file(FILE *ojpeg, struct jpeg_compress_struct *cinfo);
+
 // Prototypes from key.c
 double spheroid_diff_from_axis (spheroid_type_t spheroid,
                                 double n_semi_major, double n_semi_minor);

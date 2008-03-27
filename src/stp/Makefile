@@ -5,14 +5,21 @@ SRCS = stp.c
 
 LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_odl.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
 	$(PROJ_LIBS) \
+	$(JPEG_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(PNG_LIBS) \
 	$(GSL_LIBS) \
-	-lm
+	$(GLIB_LIBS) \
+	-lz
 
 # different procedures for win/unix
 
