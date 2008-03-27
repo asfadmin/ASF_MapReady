@@ -4,12 +4,12 @@
 #include <math.h>
 #include <assert.h>
 #include <unistd.h>
+#include <ctype.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
-#include <ctype.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -20,7 +20,7 @@
 #  endif
 #endif
 
-#include <asf_version.h>
+#include "asf_version.h"
 
 #ifndef win32
 # include "asf_meta.h"
@@ -865,8 +865,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget * start_line_entry =
 	glade_xml_get_widget(glade_xml, "start_line_entry");
 
-    int i,ifirstline =
-        atoi(gtk_entry_get_text(GTK_ENTRY(start_line_entry)));
+    int i,ifirstline = atoi(gtk_entry_get_text(GTK_ENTRY(start_line_entry)));
 
     /* check that we have all the required files */
     if (!check_files(input_file))
@@ -1426,7 +1425,8 @@ static void show_image_with_asf_view(gchar * in_name)
         if (!ttp)
         {
             if (!g_thread_supported ()) g_thread_init (NULL);
-            ttp = g_thread_pool_new ((GFunc) asf_view_thread, NULL, 4, TRUE, &err);
+            ttp = g_thread_pool_new (
+              (GFunc) asf_view_thread, NULL, 4, TRUE, &err);
             g_assert(!err);
         }
 
@@ -1789,9 +1789,6 @@ on_doppler_parameters_dialog_ok_button_clicked(GtkWidget *w)
         *g_fddd = quadratic;
     }
 
-    //const gchar * filename = get_in_file_name();
-    //write_doppler_parameters(filename, constant, linear, quadratic);
-
     hide_doppler_parameters_dialog();
 }
 
@@ -1810,6 +1807,14 @@ on_doppler_parameters_dialog_restore_button_clicked(GtkWidget *w)
     g_free(in_file);
 }
 
+static void set_title()
+{
+    char title[256];
+    sprintf(title, "SAR Training Processor: Version %s", STP_VERSION_STRING);
+    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ardop_main");
+    gtk_window_set_title(GTK_WINDOW(widget), title);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -1825,15 +1830,8 @@ main(int argc, char **argv)
     if (argc > 1)
         add_file(argv[1]);
 
-    /* add version number to window title */
-    char title[256];
-    sprintf(title,
-            "SAR Training Processor: Version %s", STP_VERSION_STRING);
-
-    GtkWidget *widget = glade_xml_get_widget (glade_xml, "ardop_main");
-    gtk_window_set_title(GTK_WINDOW(widget), title);
-
     set_font();
+    set_title();
     set_images();
     set_toggles();
     help_text(1);
