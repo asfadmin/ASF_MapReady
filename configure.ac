@@ -328,6 +328,8 @@ BINDIR  = ../../bin
 SHAREDIR = ../../share/asf_tools
 DOCDIR = $(SHAREDIR)/doc
 
+GTKWIN32_DIR = ../../external/gtkwin32
+GTKWIN32_ZIP = ../../external/gtkwin32zip
 EOF
 
 # EOF (without quotes) makes cat print out strings with expanded variables

@@ -2,12 +2,11 @@
 # tools in one flat list, making no attempt to sort out the build
 # order automatically.
 
-# Note also that this simplistic build scheme takes the traditional
-# built-too-much approach: building the default target all will
-# rebuild everything.  So if you want to be sure all the prerequisite
-# to your tool are rebuilt, you should do a make all.  On the other
-# hand, if you want to rebuild just the module you are working on,
-# just do a make in that subdirectory.
+include ../make_support/system_rules
+
+GTK_ZIP_LOC = ../../support/win32/gtk
+GTKWIN32_DIR = gtkwin32
+GTKWIN32_ZIP = gtkwin32zip
 
 MODULES = \
 	@ASF_GLIB@ \
@@ -19,12 +18,29 @@ MODULES = \
 	@ASF_LIB_GEOTIFF@ \
 	@ASF_LIB_SHAPELIB@ \
 	@ASF_LIB_FFTW@
-#	@ASF_LIB_TCL_TK@
 
 
-all:
+all: libs gtkwin32
+
+libs:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
+
+gtkwin32:
+	if [ ! -f $(GTKWIN32_DIR)/README.txt -a "$(SYS)" == "win32" ]; then\
+	  rm -rf $(GTKWIN32_ZIP); \
+	  mkdir -p $(GTKWIN32_ZIP); \
+	  cp $(GTKWIN32_ZIP_LOC)/*.zip $(GTKWIN32_ZIP); \
+	  for f in $(GTKWIN32_ZIP)/*.zip; do( yes| unzip $$f -d $(GTKWIN32_DIR) ); done;\
+	  chmod +x $(GTKWIN32_DIR)/bin/*.dll; \
+	fi
 
 clean:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) clean &&) true
-	rm -rf bin/ include/ info/ lib/ man/ share/
+	rm -rf bin/ \
+		include/ \
+		info/ \
+		lib/ \
+		man/ \
+		share/ \
+		$(GTKWIN32_DIR)/ \
+		$(GTKWIN32_ZIP)/

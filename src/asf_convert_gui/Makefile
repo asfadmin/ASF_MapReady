@@ -10,12 +10,8 @@ ifeq ($(SYS),win32)
 ### Begin Windows Section
 
 GCC =gcc 
-GTK_DIR = gtkwin32
-GTK_ZIP = gtkwin32zip
-GTK_ZIP_LOC = ../../../support/win32/gtk
-
-GTK_INC = $(GTK_DIR)/include
-GTK_LIB = $(GTK_DIR)/lib
+GTK_INC = $(GTKWIN32_DIR)/include
+GTK_LIB = $(GTKWIN32_DIR)/lib
 
 ASF_LIB = ../../lib
 
@@ -79,13 +75,6 @@ LIB = \
 CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c htmlhelp.chm
-	if [ ! -f $(GTK_DIR)/README.txt ]; then\
-	  rm -rf $(GTK_ZIP); \
-	  mkdir $(GTK_ZIP); \
-	  cp $(GTK_ZIP_LOC)/*.zip $(GTK_ZIP); \
-	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
-	  chmod +x $(GTK_DIR)/bin/*.dll; \
-	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)/$(DEST_TARGET).exe
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
@@ -98,7 +87,7 @@ htmlhelp.chm: asf_convert_gui.sgml
 	-/cygdrive/c/Program\ Files/HTML\ Help\ Workshop/hhc.exe htmlhelp.hhp
 
 clean:
-	rm -rf $(GTK_DIR) $(TARGET).exe core.* *.html *.hhc *.hhp *.chm $(GTK_ZIP)
+	rm -f $(TARGET).exe core.* *.html *.hhc *.hhp *.chm
 
 ### End Windows Section
 

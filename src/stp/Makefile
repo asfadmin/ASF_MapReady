@@ -27,11 +27,9 @@ LIBS  = \
 ifeq ($(SYS),win32)
 
 GCC = gcc
-GTK_DIR = ../../src/asf_convert_gui/gtkwin32
-GTK_ZIP = ../../src/asf_convert_gui/gtkwin32zip
 
-GTK_INC = $(GTK_DIR)/include
-GTK_LIB = $(GTK_DIR)/lib
+GTK_INC = $(GTKWIN32_DIR)/include
+GTK_LIB = $(GTKWIN32_DIR)/lib
 
 ASF_LIB = ../../lib
 
@@ -75,10 +73,6 @@ LIB = \
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
-	if [ ! -f $(GTK_DIR)/README.txt ]; then\
-	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
-	  chmod +x $(GTK_DIR)/bin/*.dll; \
-	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
@@ -86,7 +80,7 @@ $(TARGET).exe: $(TARGET).c
 	cp $(TARGET)_icon.ico $(BINDIR)
 
 clean:
-	rm $(TARGET).exe core.*
+	-rm -f $(TARGET).exe core.*
 
 
 # UNIX build instructions
@@ -113,7 +107,7 @@ default: $(OBJS)
 	cp $(TARGET)_icon.ico $(SHAREDIR)
 
 clean:
-	rm -f *.o $(BINDIR)/$(TARGET)*
+	-rm -f *.o $(BINDIR)/$(TARGET)*
 
 doc:
 	docbook2html -u stp_install.sgml
