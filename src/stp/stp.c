@@ -148,6 +148,10 @@ GladeXML *glade_xml;
 gboolean user_modified_output_file = FALSE;
 float *g_fd = NULL, *g_fdd = NULL, *g_fddd = NULL;
 
+// Contains the currently being displayed image, for use with the
+// "ASF View" button
+static char image_file[512];
+
 static char *
 find_in_share(const char * filename)
 {
@@ -208,10 +212,12 @@ static void set_images()
     int i;
     for (i = 1; i <= 12; ++i)
       set_help_image(i);
+
+    strcpy(image_file, "");
 }
 
 static void
-add_file (const gchar * filename)
+add_file (const char * filename)
 {
     GtkWidget *input_file_entry;
 
@@ -337,8 +343,8 @@ on_file_selection_dialog_ok_button_clicked(GtkWidget *w)
 {
     GtkWidget *file_selection_dialog;
 
-    gchar **selections;
-    gchar **current;
+    char **selections;
+    char **current;
 
     file_selection_dialog =
 	glade_xml_get_widget(glade_xml, "file_selection_dialog");
@@ -469,39 +475,34 @@ set_widget_sensitive(const char * w, gboolean setting)
     gtk_widget_set_sensitive(ardop_main_scrolledwindow, setting);
 }
 
-const gchar *
-update_output_filename(const gchar * input_file_and_path)
+const char *
+update_output_filename(const char * input_file_and_path)
 {
     GtkWidget * output_file_entry =
 	glade_xml_get_widget(glade_xml, "output_file_entry");
 
     if (user_modified_output_file || strlen(input_file_and_path) == 0) {
-        const gchar * r = gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+        const char * r = gtk_entry_get_text(GTK_ENTRY(output_file_entry));
         if (!r) r = "";
         return r;
     }
     
-    gchar *output_file_and_path;
-
-    output_file_and_path = 
-      (gchar *) g_malloc(strlen(input_file_and_path) + 32);
-
+    char *output_file_and_path =
+      CALLOC(strlen(input_file_and_path)+32,sizeof(char));
     strcpy(output_file_and_path, input_file_and_path);
-
-    char * p = strrchr(output_file_and_path, '.');
+    char *p = strrchr(output_file_and_path, '.');
 
     if (p) {
-        gchar * ext = g_strdup(p + 1);
+        char *ext = STRDUP(p+1);
 	*p = '\0';
 	strcat(output_file_and_path, "_cpx.");
 	strcat(output_file_and_path, ext);
-	g_free (ext);
+	FREE(ext);
     } else {
         strcat(output_file_and_path, "_cpx");
     }
 
     gtk_entry_set_text(GTK_ENTRY(output_file_entry), output_file_and_path);
-
     return output_file_and_path;
 }
 
@@ -553,7 +554,7 @@ update_buttons()
     set_widget_sensitive("execute_button", 
         strlen(input_file_and_path) > 0);
 
-    const gchar * output_file_and_path =
+    const char * output_file_and_path =
         update_output_filename(input_file_and_path);
 
     gchar * input_file =
@@ -929,15 +930,15 @@ switch_on_help(int on)
 {
     GtkWidget *flowchart_image;
     GtkWidget *output_image;
-    GtkWidget *label_view_output;
+    GtkWidget *hbox_label_view_output;
     GtkWidget *help_label;
 
     flowchart_image =
         glade_xml_get_widget(glade_xml, "flowchart_image");
     output_image = 
         glade_xml_get_widget(glade_xml, "output_image");
-    label_view_output =
-        glade_xml_get_widget(glade_xml, "label_view_output");
+    hbox_label_view_output =
+        glade_xml_get_widget(glade_xml, "hbox_label_view_output");
     help_label = 
         glade_xml_get_widget(glade_xml, "help_label");
 
@@ -945,12 +946,12 @@ switch_on_help(int on)
         gtk_widget_show(flowchart_image);
         gtk_widget_show(help_label);
         gtk_widget_hide(output_image);
-        gtk_widget_hide(label_view_output);
+        gtk_widget_hide(hbox_label_view_output);
     } else {
         gtk_widget_hide(flowchart_image);
         gtk_widget_hide(help_label);
         gtk_widget_show(output_image);
-        gtk_widget_show(label_view_output);
+        gtk_widget_show(hbox_label_view_output);
     }
 }
 
@@ -1330,6 +1331,16 @@ static void show_image_with_asf_view(gchar * in_name)
     }
 }
 
+
+SIGNAL_CALLBACK void
+on_asf_view_button_clicked(GtkWidget *button, gpointer user_data)
+{
+    if (strlen(image_file) > 0)
+      show_image_with_asf_view(image_file);
+    else
+      message_box("No image to display.");
+}
+
 static void view_debug_image(int step)
 {
     GtkWidget * output_image =
@@ -1338,13 +1349,12 @@ static void view_debug_image(int step)
     GtkWidget * output_file_entry =
         glade_xml_get_widget(glade_xml, "output_file_entry");
 
-    const gchar *filename = 
-        gtk_entry_get_text(GTK_ENTRY(output_file_entry));
+    char *filename = 
+        STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
 
     char * ext = findExt(filename);
     if (ext) *ext = '\0';
 
-    char image_file[128];
     sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
 
     char lbl[256];
@@ -1369,19 +1379,19 @@ static void view_debug_image(int step)
       GtkWidget * label_view_output =
         glade_xml_get_widget(glade_xml, "label_view_output");
       gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
-
-      //show_image_with_asf_view(image_file);
-      }
+    }
     else
     {
-        sprintf(lbl, "File not found: %s", image_file);
-	gtk_widget_hide(output_image);
-        switch_on_help(FALSE);
+      sprintf(lbl, "File not found: %s", image_file);
+      gtk_widget_hide(output_image);
+      switch_on_help(FALSE);
 
-        GtkWidget * label_view_output =
-          glade_xml_get_widget(glade_xml, "label_view_output");
-        gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+      GtkWidget * label_view_output =
+        glade_xml_get_widget(glade_xml, "label_view_output");
+      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
     }
+
+    FREE(filename);
 }
 
 SIGNAL_CALLBACK void
@@ -1566,8 +1576,8 @@ get_in_file_name()
 static void
 set_entry_with_float_value(const gchar * entry_name, float value)
 {
-    gchar s[64];
-    GtkWidget * w = glade_xml_get_widget (glade_xml, entry_name);
+    char s[64];
+    GtkWidget *w = glade_xml_get_widget (glade_xml, entry_name);
 
     if (value == -99) {
         strcpy(s, "");

@@ -92,8 +92,8 @@ static void clean(const char *file)
 {
     if (file)
     {
-        char * img_file = appendExt(file, ".img");
-        char * meta_file = appendExt(file, ".meta");
+        char *img_file = appendExt(file, ".img");
+        char *meta_file = appendExt(file, ".meta");
 
         remove_file(img_file);
         remove_file(meta_file);
@@ -221,29 +221,6 @@ static void patchToJpeg(char *outname)
   clean(polar_name);
   FREE(polar_name);
 }
-
-/*
-static void patchToJpeg_old(char *outname)
-{
-  if (!quietflag) printf("   Outputting Debugging image '%s'...\n",outname);
-  char cmd[512],name[320],multilookname[320],exportname[320];
-  strcat(strcpy(name,outname),".img");
-  //sprintf(cmd,"c2p \"%s\" \"%s\"\n", name, outname);
-  //asfSystem(cmd);
-  c2p(name,outname,TRUE,FALSE);
-  //sprintf(multilookname, "%s_ml.img", outname);
-  //sprintf(cmd,"multilook -look 2x2 -step 2x2 \"%s\" \"%s\"\n",
-  //    outname, multilookname);
-  //asfSystem(cmd);
-  //sprintf(exportname, "%s_ml_rgb.img", outname);
-  sprintf(exportname, "%s_rgb.img", outname);
-  //sprintf(cmd,"convert2jpeg -brighten \"%s\" \"%s\"\n", exportname, outname);
-  //asfSystem(cmd);
-  asf_export_with_lut(JPEG,SIGMA,"interferogram.lut",outname,exportname);
-  //sprintf(cmd, "rm \"%s_*\" \"%s.meta\" \"%s.img\"\n", outname, outname, outname);
-  //asfSystem(cmd);
-}
-*/
 
 void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
                           int n_range, int n_az)
