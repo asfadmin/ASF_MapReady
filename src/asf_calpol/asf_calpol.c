@@ -5,8 +5,15 @@
 "          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
-"     This program decomposes SLC quad-pole data into some common\n"\
-"     polarimetric decompositions.\n"
+"     This program decomposes SLC quad-pole data into data required\n"\
+"     to build some common polarimetric decompositions.  The output\n"\
+"     is a six-band image:\n"\
+"       band 0: HH - VV (even bounce) [Pauli red]\n"\
+"       band 1: s*HV (rotated dihedral) [Pauli green]\n"\
+"       band 2: HH + VV (odd bounce) [Pauli blue]\n"\
+"       band 3: Entropy\n"\
+"       band 4: Anisotropy\n"\
+"       band 5: Alpha\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -67,7 +74,7 @@ static void print_help(void)
       "Examples:\n" ASF_EXAMPLES_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
-      "Version:\n   " CONVERT_PACKAGE_VERSION_STRING "\n\n");
+      "Version:\n   " SVN_REV " (part of " TOOL_SUITE_NAME " " MAPREADY_VERSION_STRING ")\n\n");
   exit(EXIT_SUCCESS);
 }
 
