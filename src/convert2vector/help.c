@@ -3,6 +3,7 @@
 #include <string.h>
 #include <strings.h>
 #include "cla.h"
+#include "asf_nan.h"
 #include "asf_meta.h"
 #include "asf_version.h"
 #include "asf_contact.h"
