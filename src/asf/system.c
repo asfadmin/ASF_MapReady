@@ -50,7 +50,10 @@ asfSystem(const char *format, ...)
   int ret = system(cmd);
 
   if (ret != 0) {
-    printf("Error running command %d: %s\n", errno, strerror(errno));
+    if (errno != 0)
+      printf("Error running command %d: %s\n", errno, strerror(errno));
+    else
+      printf("Error running command.\n");
   }
   return ret;
 
