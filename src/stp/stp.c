@@ -10,6 +10,7 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
+#include <asf_import.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -708,14 +709,14 @@ change_extension(const gchar * file, const gchar * ext)
     return replaced;
 }
 
+static const int STATUS_OK = 1;
+static const int STATUS_FILE_NOT_FOUND = 2;
+static const int STATUS_META_FILE_NOT_FOUND = 3;
+static const int STATUS_LDR_INSTEAD = 4;
+
 static int
 check_files(const char * input_file)
 {
-    const int STATUS_OK = 1;
-    const int STATUS_FILE_NOT_FOUND = 2;
-    const int STATUS_META_FILE_NOT_FOUND = 3;
-    const int STATUS_LDR_INSTEAD = 4;
-
     int status;
 
     gchar * meta_file = change_extension(input_file, "meta");
@@ -786,17 +787,18 @@ check_files(const char * input_file)
     }
     else if (status == STATUS_LDR_INSTEAD)
     {
-      message_box("It looks like you have selected a Level 0 CEOS File.\n"
-		  "This tool requires that you first import the data into\n"
-		  "ASF Internal Format.  You will need to run the ASF\n"
-		  "Convert tool first.");
+      //  Commenting this out... we are going to import the data!!
+      //message_box("It looks like you have selected a Level 0 CEOS File.\n"
+      //	  "This tool requires that you first import the data into\n"
+      //	  "ASF Internal Format.  You will need to run the ASF\n"
+      //	  "Convert tool first.");
     }
 
     g_free (meta_file);
     g_free (in_file);
     g_free (fmt_file);
 
-    return status == STATUS_OK;
+    return status;
 }
 
 static void highlight_step(int step, int is_highlighted)
@@ -868,7 +870,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     int i,ifirstline = atoi(gtk_entry_get_text(GTK_ENTRY(start_line_entry)));
 
     /* check that we have all the required files */
-    if (!check_files(input_file))
+    int status = check_files(input_file);
+    if (!(status == STATUS_OK || status == STATUS_LDR_INSTEAD))
         return;
 
     if (!output_file || strlen(output_file) == 0) {
@@ -900,12 +903,29 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     gtk_widget_set_sensitive(execute_button, FALSE);
 
     int pid = fork();
-
     if (pid == 0)
     {
       /* child */
+
+      // running import, if necessary
+      char *img_file;
+      if (status == STATUS_LDR_INSTEAD) {
+        // the imported file will go where the output file is
+        img_file = STRDUP(output_file);
+        asfPrintStatus("Importing Level 0 data...\n");
+        import_ceos(input_file, img_file, "CEOS", "", NULL, NULL,
+                    NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
+                    FALSE, FALSE);
+        asfPrintStatus("Import complete.\n");
+      }
+      else {
+        // no import necessary-- input to ardop is the original input file
+        img_file = STRDUP(input_file);
+      }
+
+      // running ardop
       struct INPUT_ARDOP_PARAMS *params_in;
-      params_in = get_input_ardop_params_struct(input_file, output_file);
+      params_in = get_input_ardop_params_struct(img_file, output_file);
 
       // make copies of the doppler data, so threads can't collide
       float l_fd, l_fdd, l_fddd;
@@ -922,6 +942,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
       ardop(params_in);
       free(params_in);
+      free(img_file);
 
       exit(EXIT_SUCCESS);
     }

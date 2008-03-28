@@ -60,6 +60,7 @@ STP_MODULES = \
 	src/libasf_proj \
 	src/asf_meta \
 	src/asf_odl \
+	src/libasf_import \
 	src/libasf_ardop \
 	src/libifm \
 	src/libasf_sar \
