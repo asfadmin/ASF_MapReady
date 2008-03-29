@@ -38,8 +38,7 @@
         "   And the output format is one of the following:\n" \
         "        shape     (ESRI format shapefile output)\n" \
         "        kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
-        "        text      (An ASF-style polygon CSV text file (.csv) or a shape file dump (.txt)\n" \
-        "                   depending on the type of input file)\n"
+        "        text      (An ASF-style polygon CSV text file (.csv)\n"
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION
@@ -50,22 +49,14 @@
     "   formats that are compatible with external applications such as Google Earth(tm) (KML\n" \
     "   files), GIS software (shapefiles), text editors, and spreadsheets (CSV text files).  It\n" \
     "   is useful for visualizing the geographical location of data by plotting location\n" \
-    "   coordinates in commonly available tools, or in the case of shape files, seeing a summary\n" \
-    "   of the shape file contents.  The ASF-style CSV text format (point and polygon)\n" \
+    "   coordinates in commonly available tools.  The ASF-style CSV text format (point and polygon)\n" \
     "   can used to define areas of interest or bounding polygons which can then be visualized\n" \
-    ".  in Google Earth(tm) (etc).  The shapefile to text conversion is a simple text dump for a given\n" \
-    "   shapefile (not an ASF-style CSV file containing point locations or polygon corners.)\n" \
-    "   \n" \
-    "   NOTE: With the exception of using an ASF-style text file containing point data, all shapefile\n" \
-    "   type output is into polygon type shapefiles (not point, line, polyline etc).  Shapefiles\n" \
-    "   derived from point text files will be point type shapefiles.  See I/O matrix below.\n" \
+    ".  in Google Earth(tm) (etc).\n" \
     "   \n" \
     "   NOTE: Choosing 'text' as the output format will produce a polygon type CSV file\n" \
     "   as described in the Examples section below, but if you wish the text file to be of\n" \
     "   point type instead, you may edit the first line in the text file which describes\n" \
-    "   the file type, i.e. change the word 'polygon' to 'point'.  Note that when using\n" \
-    "   convert2vector to convert a shapefile to a text file, that an ASCII text dump is\n" \
-    "   is provided instead (see Examples below.)\n" \
+    "   the file type, i.e. change the word 'polygon' to 'point'.\n" \
     "   \n" \
     "   Input Type          Output Type            Supported\n" \
     "   ----------       -------------------       ---------\n" \
@@ -118,9 +109,8 @@
         "   <output format>  This indicates the desired output format based on\n" \
         "        how you would like to view or utilize the location coordinate data.\n" \
         "        Valid values include: <shape | kml | text> where 'shape' means 'shapefile',\n" \
-        "        'kml' means 'Google Earth(tm) file (.kml)', and 'text' means either an 'ASF-style\n" \
-        "        CSV text file (.csv)' dump of the points or polygons found in the input file or\n" \
-        "        a shapefile text dump (.txt) if the input file was a shape file.\n" \
+        "        'kml' means 'Google Earth(tm) file (.kml)', and 'text' means an 'ASF-style\n" \
+        "        CSV text file (.csv)' dump of the points or polygons found in the input file.\n" \
         "   <output file>  The full name of the output file."
 
 // TOOL_OPTIONS is required but is allowed to be an empty string
@@ -149,7 +139,7 @@
     "        output format may be one of the following:\n" \
     "             shape     (ESRI format shapefile output)\n" \
     "             kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
-    "             text      (An ASF-style polygon CSV text file or shape file dump)\n" \
+    "             text      (An ASF-style polygon CSV text file)\n" \
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
@@ -229,20 +219,7 @@
     "      15,32.4125,-117.16\n" \
     "      16,33.09667,-117.36472\n" \
     "      17,33.51278,-117.84361\n" \
-    "\n" \
-    "   Example of a shapefile text dump:\n" \
-    "\n" \
-    "      NAME OF SHAPEFILE: CITIES\n" \
-    "      Number of structures: 1\n" \
-    "      Shape type: Polygon\n" \
-    "\n" \
-    "      Structure: 1\n" \
-    "\n" \
-    "      Number of fields: 4\n" \
-    "      CITY_FIPS: 82130\n" \
-    "      CITY_NAME: WALDEN\n" \
-    "      SHAPE_Leng:    4848.79682739000\n" \
-    "      SHAPE_Area:  900379.91342500004\n\n"
+    "\n\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS
@@ -256,7 +233,7 @@
 #undef  TOOL_SEE_ALSO
 #endif
 #define TOOL_SEE_ALSO \
-    "   c2v - Convert 2 Vector graphical user interface (GUI) version of convert2vector\n"
+    "   c2v - Convert 2 Vector graphical user interface (GUI) version of convert2vector\n\n"
 
 // Prototypes
 void check_for_help(int argc, char* argv[]);

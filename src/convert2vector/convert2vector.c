@@ -79,12 +79,14 @@ int main(int argc, char **argv)
   int point_found   = ispoint(infile);
   int polygon_found = ispolygon(infile);
   int shape_found   = isshape(infile);
+  int geotiff_found = isgeotiff(infile);
   int rgps_found    = isrgps(infile);
-  int types_found = meta_found    + 
+  int types_found = meta_found    +
                     leader_found  +
                     point_found   +
                     polygon_found +
                     shape_found   +
+                    geotiff_found +
                     rgps_found    ;
   if (types_found > 1) {
       char *type_list = (char *)MALLOC(sizeof(char)*types_found*1024);
@@ -107,6 +109,10 @@ int main(int argc, char **argv)
           sprintf(msg, "    %s.shp (etcetera)\n", infile);
           strcat(type_list, msg);
       }
+      if (geotiff_found) {
+          sprintf(msg, "    %s.tif or %s.tiff\n", infile, infile);
+          strcat(type_list, msg);
+      }
       if (rgps_found) {
           sprintf(msg, "    %s\n", infile);
           strcat(type_list, msg);
@@ -116,6 +122,40 @@ int main(int argc, char **argv)
                    "for the input file.  The following files were found:\n\n%s\n", infile, type_list);
       FREE(type_list);
       asfPrintError(msg);
+  }
+
+  if (types_found == 1 && inputFormatFlag) {
+      if ((meta_found    && strncmp(informat, "META", 4)    != 0) ||
+          (leader_found  && strncmp(informat, "LEADER", 6)  != 0) ||
+          (point_found   && strncmp(informat, "POINT", 5)   != 0) ||
+          (polygon_found && strncmp(informat, "POLYGON", 7) != 0) ||
+          (shape_found   && strncmp(informat, "SHAPE", 5)   != 0) ||
+          (geotiff_found && strncmp(informat, "GEOTIFF", 7) != 0) ||
+          (rgps_found    && strncmp(informat, "RGPS", 4)    != 0))
+      {
+          asfPrintWarning("\nData type found in input file does not agree with\n"
+                  "the data type specified with the -input-format flag (%s).\n\n"
+                  "Defaulting to the data type which was automatically found\n"
+                  "in the input file (%s)\n\n",
+                  uc(informat),
+                  meta_found    ? "ASF Metadata (META)"                  :
+                  leader_found  ? "CEOS Leader data (LEADER)"            :
+                  point_found   ? "Point data in a CSV file (POINT)"     :
+                  polygon_found ? "Polygon data in a CSV file (POLYGON)" :
+                  shape_found   ? "Shape file (SHAPE)"                   :
+                  geotiff_found ? "GeoTIFF file (GEOTIFF)"               :
+                  rgps_found    ? "RGPS file (RGPS)"                     :
+                                  "UNKNOWN FILE TYPE");
+          strcpy(informat,
+                 meta_found    ? "META"    :
+                 leader_found  ? "LEADER"  :
+                 point_found   ? "POINT"   :
+                 polygon_found ? "POLYGON" :
+                 shape_found   ? "SHAPE"   :
+                 geotiff_found ? "GEOTIFF" :
+                 rgps_found    ? "RGPS"    :
+                                  MAGIC_UNSET_STRING);
+      }
   }
 
   if (!inputFormatFlag) {
@@ -189,17 +229,17 @@ int main(int argc, char **argv)
       }
       else if
       (strcmp(uc(informat), "POINT")==0 && strcmp(uc(outformat), "KML")==0) {
-          asfPrintStatus("   Converting list of points into a kml file ...\n\n");
+          asfPrintStatus("   Converting list of point files into a kml file ...\n\n");
           write_kml(infile, outfile, POINT, 1);
       }
       else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-          asfPrintStatus("   Converting a list of point files into a shape file ...\n\n");
+          asfPrintStatus("   Converting a list of polygon files into a shape file ...\n\n");
           polygon2shape_new(infile, outfile);
       }
       else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "KML")==0) {
-          asfPrintStatus("   Converting list of points into a kml file ...\n\n");
+          asfPrintStatus("   Converting list of polygon files into a kml file ...\n\n");
           write_kml(infile, outfile, POLYGON, 1);
       }
       else if
@@ -209,7 +249,7 @@ int main(int argc, char **argv)
       }
       else if
       (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "TEXT")==0) {
-          asfPrintStatus("   Converting a list of shapefiles into a CSV polygon text file ...\n\n");
+          asfPrintStatus("   Converting a list of shape files into a CSV polygon text file ...\n\n");
           write_text(infile, outfile, TEXT, 1);
           //read_shape(infile, outfile, TEXT, 0); // Use 0?  See branch
       }
@@ -276,12 +316,12 @@ int main(int argc, char **argv)
     }
     else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "SHAPE")==0) {
-      asfPrintStatus("   Converting a point file into a shape file ...\n\n");
+      asfPrintStatus("   Converting a polygon file into a shape file ...\n\n");
       polygon2shape_new(infile, outfile);
     }
     else if
       (strcmp(uc(informat), "POLYGON")==0 && strcmp(uc(outformat), "KML")==0) {
-      asfPrintStatus("   Converting list of points into a kml file ...\n\n");
+      asfPrintStatus("   Converting a polygon into a kml file ...\n\n");
       write_kml(infile, outfile, POLYGON, 0);
     }
     else if
