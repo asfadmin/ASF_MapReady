@@ -12,7 +12,7 @@
 #include <ctype.h>
 
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
-         int multilook_flag, char *format_type, char *band_id,
+         int multilook_flag, int amp0_flag, char *format_type, char *band_id,
          char *image_data_type, char *lutName, char *prcPath,
          double lowerLat, double upperLat,
          int line, int sample, int width, int height,
@@ -53,8 +53,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     asfPrintStatus("   Data format: %s\n", format_type);
     import_ceos(inBaseName, outBaseName, format_type, band_id, lutName,
                 p_range_scale, p_azimuth_scale, p_correct_y_pixel_size,
-        line, sample, width, height, inMetaNameOption, radiometry,
-        db_flag, complex_flag, multilook_flag);
+                line, sample, width, height, inMetaNameOption, radiometry,
+                db_flag, complex_flag, multilook_flag, amp0_flag);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (strncmp(format_type, "STF", 3) == 0) {

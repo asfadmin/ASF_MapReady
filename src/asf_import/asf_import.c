@@ -176,6 +176,7 @@ typedef enum {
     f_POWER,
     f_COMPLEX,
     f_MULTILOOK,
+    f_AMP0,
     f_DB,
     f_SPROCKET,
     f_LUT,
@@ -345,6 +346,7 @@ int main(int argc, char *argv[])
     flags[f_POWER] = checkForOption("-power", argc, argv);
     flags[f_COMPLEX] = checkForOption("-complex", argc, argv);
     flags[f_MULTILOOK] = checkForOption("-multilook", argc, argv);
+    flags[f_AMP0] = checkForOption("-amp0", argc, argv);
     flags[f_DB] = checkForOption("-db", argc, argv);
     flags[f_SPROCKET] = checkForOption("-sprocket", argc, argv);
     flags[f_LUT] = checkForOption("-lut", argc, argv);
@@ -432,6 +434,7 @@ int main(int argc, char *argv[])
         if(flags[f_POWER] != FLAG_NOT_SET)    needed_args += 1;/*option*/
         if(flags[f_COMPLEX] != FLAG_NOT_SET)  needed_args += 1;/*option*/
         if(flags[f_MULTILOOK] != FLAG_NOT_SET) needed_args += 1;/*option*/
+        if(flags[f_AMP0] != FLAG_NOT_SET)     needed_args += 1;/*option*/
         if(flags[f_DB] != FLAG_NOT_SET)       needed_args += 1;/*option*/
         if(flags[f_SPROCKET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_LUT] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
@@ -678,6 +681,7 @@ int main(int argc, char *argv[])
         int db_flag = flags[f_DB] != FLAG_NOT_SET;
         int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
         int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
+        int amp0_flag = flags[f_AMP0] != FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -698,9 +702,9 @@ int main(int argc, char *argv[])
         if(flags[f_GAMMA] != FLAG_NOT_SET)    radiometry = r_GAMMA;
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
-        asf_import(radiometry, db_flag, complex_flag, multilook_flag, format_type, 
-		   band_id, image_data_type, lutName, prcPath, 
-		   lowerLat, upperLat, line, sample, width, height,
+        asf_import(radiometry, db_flag, complex_flag, multilook_flag,
+                   amp0_flag, format_type, band_id, image_data_type, lutName,
+                   prcPath, lowerLat, upperLat, line, sample, width, height,
 		   p_range_scale, p_azimuth_scale,p_correct_y_pixel_size, 
 		   inMetaNameOption, inBaseName, outBaseName);
 

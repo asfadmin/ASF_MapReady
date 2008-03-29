@@ -627,6 +627,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
                        0,                   /* multilook_flag         */
+                       0,                   /* amp0_flag              */
                        "STF",               /* format                 */
                        NULL,                /* band_id                */
                        MAGIC_UNSET_STRING,  /*  image_data_type       */
@@ -673,6 +674,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
                        0,                   /* multilook_flag         */
+                       0,                   /* amp0_flag              */
                        "CEOS",              /* format                 */
                        NULL,                /* band_id                */
                        MAGIC_UNSET_STRING,  /*  image_data_type       */

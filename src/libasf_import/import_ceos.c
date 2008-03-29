@@ -203,7 +203,7 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
      double *p_azimuth_scale, double *p_correct_y_pixel_size,
      int line, int sample, int width, int height,
      char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-     int complex_flag, int multilook_flag)
+     int complex_flag, int multilook_flag, int amp0_flag)
 {
   char outDataName[256], outMetaName[256];
   ceos_description *ceos;

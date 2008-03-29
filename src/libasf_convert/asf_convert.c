@@ -175,9 +175,9 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
-        asf_import(r_AMP, FALSE, FALSE, FALSE, "GEOTIFF", NULL, what, NULL,
-                   NULL, 0, 0, 0, 0, -99, -99, NULL, NULL, NULL, NULL, 
-		   tiff_basename, imported), status);
+        asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, "GEOTIFF", NULL,
+                   what, NULL, NULL, 0, 0, 0, 0, -99, -99, NULL, NULL,
+                   NULL, NULL, tiff_basename, imported), status);
 
     sprintf(status, "Geocoding %s...", uc_what);
     update_status(status);
@@ -1137,6 +1137,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
       }
 
+      // we add a "secret" band 0 containing amplitude data, if we are
+      // generating something other than amplitude, and are going to
+      // be terrain correcting
+      int amp0_flag = 
+        radiometry != r_AMP && cfg->general->terrain_correct;
+
       // LUT
       if (strlen(cfg->import->lut) > 0)
           lut_flag = TRUE;
@@ -1156,8 +1162,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
-            cfg->import->complex_slc,
-            cfg->import->multilook_slc,
+                              cfg->import->complex_slc,
+                              cfg->import->multilook_slc,
+                              amp0_flag,
                               uc(cfg->import->format),
                               NULL,
                               MAGIC_UNSET_STRING,

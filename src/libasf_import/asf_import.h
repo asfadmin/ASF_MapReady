@@ -17,9 +17,12 @@
 int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int db_flag,   // TRUE if the output should be in decibels
                               // only ok for radiometry=SIGMA,GAMMA,BETA
-         int complex_flag, // TRUE if ingested SLC should in I/Q
-         int multilook_flag, // TRUE is SLC should be multilooked while
-                             // being ingested.
+               int complex_flag, // TRUE if ingested SLC should in I/Q
+               int multilook_flag, // TRUE is SLC should be multilooked while
+                                   // being ingested.
+               int amp0_flag,      // TRUE if we should generate a band 0
+                                   // with amplitude data, with the rest
+                                   // starting at band 1
                char *format_type, // eg, "STF", "CEOS" - etc
                char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
                char *image_data_type, // "geocoded_image", "dem", or "mask"
@@ -58,10 +61,10 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
 		 int line, int sample, int width, int height,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-     int complex_flag, int multilook_flag);
+                 int complex_flag, int multilook_flag, int amp0_flag);
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
-    char *inMetaNameOption, int lat_constrained, double lowerLat,
-    double upperLat, char *prcPath);
+                char *inMetaNameOption, int lat_constrained, double lowerLat,
+                double upperLat, char *prcPath);
 
 void
 import_generic_geotiff (const char *inFileName, const char *outBaseName, ...);

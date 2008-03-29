@@ -915,7 +915,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
         asfPrintStatus("Importing Level 0 data...\n");
         import_ceos(input_file, img_file, "CEOS", "", NULL, NULL,
                     NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
-                    FALSE, FALSE);
+                    FALSE, FALSE, FALSE);
         asfPrintStatus("Import complete.\n");
       }
       else {
