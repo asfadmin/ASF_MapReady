@@ -16,6 +16,36 @@
 
 #include "c2v.h"
 
+void change_output_extension(char *current)
+{
+    char *ext=NULL;
+    int output_format = get_combo_box_item("output_format_combobox");
+    switch (output_format) {
+      case OUTPUT_KML:
+        ext=".kml";
+        break;
+      case OUTPUT_SHAPE:
+        ext=".shp";
+        break;
+      case OUTPUT_TEXT:
+        ext=".csv";
+        break;
+      case OUTPUT_ALOS_CSV:
+        ext=".csv";
+        break;
+      default:
+        break;
+    }
+
+    if (ext) {
+      char *base = get_filename(file);
+      char *out_file = appendExt(base, ext);
+      put_string_to_entry("output_file_entry", out_file);
+      free(out_file);
+      free(base);
+    }
+}
+
 void add_input_file(char *file)
 {
     put_string_to_entry("input_file_entry", file);
@@ -29,22 +59,18 @@ void add_input_file(char *file)
     }
 
     // change output filename, regardless
-    char *ext=NULL;
-    int output_format = get_combo_box_item("output_format_combobox");
-    switch (output_format) {
-      case OUTPUT_FORMAT_KML:
-        ext=".kml";
-        break;
-      default:
-        break;
-    }
+    change_output_extension(file);
+}
 
+SIGNAL_CALLBACK output_format_combox_changed(GtkWidget *w)
+{
+    // update the output file extension when user changes the output
+    // format selection
+    char *curr = get_string_from_entry("output_file_entry");
+    char *ext = findExt(curr);
     if (ext) {
-      char *s = get_filename(file);
-      char *out_file = appendExt(s, ext);
-      put_string_to_entry("output_file_entry", out_file);
-      free(out_file);
-      free(s);
+        // only change if current extension is something we know
+        change_output_extension(curr);    
     }
 }
 
@@ -160,13 +186,61 @@ static void create_input_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 csv_filt);
 
+    GtkFileFilter *meta_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(meta_filt, "Metadata Files (*.meta)");
+    gtk_file_filter_add_pattern(meta_filt, "*.meta");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                meta_filt);
+
+    GtkFileFilter *L_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(L_filt, "Leader Files (*.L)");
+    gtk_file_filter_add_pattern(L_filt, "*.L");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                L_filt);
+
+    GtkFileFilter *pt_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(pt_filt, "Point/Polygon Files (*.txt)");
+    gtk_file_filter_add_pattern(pt_filt, "*.csv");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                pt_filt);
+
+    //GtkFileFilter *poly_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(poly_filt, "Polygon Files (*.txt)");
+    //gtk_file_filter_add_pattern(poly_filt, "*.txt");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+    //                            poly_filt);
+
+    GtkFileFilter *shp_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(shp_filt, "Shape Files (*.shp)");
+    gtk_file_filter_add_pattern(shp_filt, "*.shp");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                shp_filt);
+
+    GtkFileFilter *kml_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(kml_filt, "KML Files (*.kml)");
+    gtk_file_filter_add_pattern(kml_filt, "*.kml");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                kml_filt);
+
+    GtkFileFilter *gtif_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(gtif_filt, "Geotiff Files (*.tif)");
+    gtk_file_filter_add_pattern(gtif_filt, "*.tif");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                gtif_filt);
+
+    GtkFileFilter *rgps_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
+    gtk_file_filter_add_pattern(rgps_filt, "*.rpgs");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                rgps_filt);
+
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
     gtk_file_filter_add_pattern(all_filt, "*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 all_filt);
 
-    // allow multi-select
+    // allow multi-select ... turned off until we get that working
     //gtk_file_chooser_set_select_multiple(
     //    GTK_FILE_CHOOSER(input_browse_widget), TRUE);
 
@@ -237,7 +311,15 @@ static void input_file_browse(void)
 #endif
 
     of.hwndOwner = NULL;
-    of.lpstrFilter = "CSV Files (*.csv)\0*.csv\0"
+    of.lpstrFilter =
+        "CSV Files (*.csv)\0*.csv\0"
+        "Metadata Files (*.meta)\0*.meta\0"
+        "Leader Files (*.L)\0*.L\0"
+        "Point/Polygon Files (*.csv)\0*.csv\0"
+        "Shape Files (*.shp)\0*.shp\0"
+        "KML Files (*.kml)\0*.kml\0"
+        "Geotiff Files (*.tif)\0*.tif\0"
+        "RPGS Files (*.rgps)\0*.rgps\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
