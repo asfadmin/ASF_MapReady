@@ -104,5 +104,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int entrpy_band,
                          int anisotropy_band,
                          int alpha_band);
+void cpx2pauli(const char *inFile, const char *outFile);
+void cpx2cloude_pottier(const char *inFile, const char *outFile);
 
 #endif

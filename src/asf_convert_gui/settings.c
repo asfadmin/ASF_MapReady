@@ -1706,8 +1706,6 @@ int apply_settings_from_config_file(char *configFile)
 
     s.truecolor_is_checked = cfg->export->truecolor;
     s.falsecolor_is_checked = cfg->export->falsecolor;
-    s.pauli_is_checked = cfg->export->pauli;
-    s.sinclair_is_checked = cfg->export->sinclair;
     s.user_defined_is_checked = strlen(cfg->export->rgb) > 0 &&
         ! (s.truecolor_is_checked ||
            s.falsecolor_is_checked ||

@@ -160,6 +160,12 @@ int init_convert_config(char *configFile)
   //        "# if you wish to do any further processing, this step is required.\n\n");
   //fprintf(fConfig, "c2p = 0\n\n");
 
+  // polarimetry flag
+  fprintf(fConfig, "\n# The polarimetry flag indicates whether the polarimetric parameters,\n"
+	  "# decompositions or classifications are applied (1 for applying, 0 for leave out\n"
+	  "# the polarimetry).\n\n");
+  fprintf(fConfig, "polarimetry = 0\n\n");
+
   // terrain correction flag
   fprintf(fConfig, "# The terrain correction flag indicates whether the data needs to be run\n"
           "# through 'asf_terrcorr' (1 for running it, 0 for leaving out the terrain\n"
@@ -284,6 +290,8 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->detect_cr->cr_location);
             FREE(cfg->detect_cr);
         }
+	if (cfg->polarimetry)
+	  FREE(cfg->polarimetry);
         if (cfg->terrain_correct) {
             FREE(cfg->terrain_correct->dem);
             FREE(cfg->terrain_correct->mask);
@@ -329,6 +337,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->c2p = newStruct(s_c2p);
   cfg->image_stats = newStruct(s_image_stats);
   cfg->detect_cr = newStruct(s_detect_cr);
+  cfg->polarimetry = newStruct(s_polarimetry);
   cfg->terrain_correct = newStruct(s_terrain_correct);
   cfg->geocoding = newStruct(s_geocoding);
   cfg->export = newStruct(s_export);
@@ -350,6 +359,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->general->c2p = 0;
   cfg->general->image_stats = 0;
   cfg->general->detect_cr = 0;
+  cfg->general->polarimetry = 0;
   cfg->general->terrain_correct = 0;
   cfg->general->geocoding = 0;
   cfg->general->export = 0;
@@ -411,6 +421,14 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->detect_cr->chips = 0;
   cfg->detect_cr->text = 0;
 
+  cfg->polarimetry->pauli = 0;
+  cfg->polarimetry->sinclair = 0;
+  cfg->polarimetry->cloude_pottier = 0;
+  cfg->polarimetry->cloude_pottier_ext = 0;
+  cfg->polarimetry->k_means_wishart = 0;
+  cfg->polarimetry->k_means_wishart_ext = 0;
+  cfg->polarimetry->lee_preserving = 0;
+
   cfg->terrain_correct->pixel = -99;
   cfg->terrain_correct->dem = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->terrain_correct->dem, "");
@@ -452,8 +470,6 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->band, "");
   cfg->export->truecolor = 0;
   cfg->export->falsecolor = 0;
-  cfg->export->pauli = 0;
-  cfg->export->sinclair = 0;
 
   cfg->mosaic->overlap = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->mosaic->overlap, "OVERLAY");
@@ -499,6 +515,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->general->image_stats = read_int(line, "image stats");
       if (strncmp(test, "detect corner reflectors", 24)==0)
         cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+      if (strncmp(test, "polarimetry", 11)==0)
+	cfg->general->polarimetry = read_int(line, "polarimetry");
       if (strncmp(test, "terrain correction", 18)==0)
         cfg->general->terrain_correct = read_int(line, "terrain correction");
       if (strncmp(test, "geocoding", 9)==0)
@@ -525,6 +543,7 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->general->suffix, read_str(line, "suffix"));
       if (strncmp(test, "thumbnail", 9)==0)
         cfg->general->thumbnail = read_int(line, "thumbnail");
+
       // Import
       if (strncmp(test, "input format", 12)==0)
         strcpy(cfg->import->format, read_str(line, "input format"));
@@ -538,6 +557,7 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+
       // AirSAR
       if (strncmp(test, "airsar c interferometric", 24)==0)
         cfg->airsar->c_vv = read_int(line, "airsar c interferometric");
@@ -549,21 +569,42 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->airsar->l_pol = read_int(line, "airsar l polarimetric");
       if (strncmp(test, "airsar p polarimetric", 21)==0)
         cfg->airsar->p_pol = read_int(line, "airsar p polarimetric");
+
       // SAR processing
       if (strncmp(test, "radiometry", 10)==0)
         strcpy(cfg->sar_processing->radiometry, read_str(line, "radiometry"));
+
       // C2P
       if (strncmp(test, "multilook", 9)==0)
         cfg->c2p->multilook = read_int(line, "multilook");
+
       // Image stats
       if (strncmp(test, "stats values", 12)==0)
         strcpy(cfg->image_stats->values, read_str(line, "stats values"));
+
       // Detect corner reflectors
       if (strncmp(test, "detect corner reflectors", 24)==0)
         cfg->general->detect_cr = read_int(line, "detect corner reflectors");
       if (strncmp(test, "corner reflector locations", 26)==0)
         strcpy(cfg->detect_cr->cr_location,
                read_str(line, "corner reflector locations"));
+
+      // Polarimetry
+      if (strncmp(test, "pauli", 5)==0)
+        cfg->polarimetry->pauli = read_int(line, "pauli");
+      if (strncmp(test, "sinclair", 8)==0)
+        cfg->polarimetry->sinclair = read_int(line, "sinclair");
+      if (strncmp(test, "cloude pottier", 14)==0)
+        cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
+      if (strncmp(test, "cloude pottier ext", 18)==0)
+	cfg->polarimetry->cloude_pottier_ext = 
+	  read_int(line, "cloude pottier ext");
+      if (strncmp(test, "k-means wishart", 15)==0)
+        cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
+      if (strncmp(test, "k-means wishart ext", 19)==0)
+	cfg->polarimetry->k_means_wishart_ext =
+	  read_int(line, "k-means wishart ext");
+
       // Terrain correction
       if (strncmp(test, "pixel spacing", 13)==0)
         cfg->terrain_correct->pixel = read_double(line, "pixel spacing");
@@ -631,10 +672,6 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->export->falsecolor = read_int(line, "falsecolor");
       if (strncmp(test, "band", 4)==0)
         strcpy(cfg->export->band, read_str(line, "band"));
-      if (strncmp(test, "pauli", 5)==0)
-        cfg->export->pauli = read_int(line, "pauli");
-      if (strncmp(test, "sinclair", 8)==0)
-        cfg->export->sinclair = read_int(line, "sinclair");
 
       // Mosaic
       if (strncmp(test, "overlap", 7)==0)
@@ -672,6 +709,8 @@ convert_config *init_fill_convert_config(char *configFile)
             cfg->general->image_stats = read_int(line, "image stats");
         if (strncmp(test, "detect corner reflectors", 24)==0)
             cfg->general->detect_cr = read_int(line, "detect corner reflectors");
+	if (strncmp(test, "polarimetry", 11)==0)
+	    cfg->general->polarimetry = read_int(line, "polarimetry");
         if (strncmp(test, "terrain correction", 18)==0)
             cfg->general->terrain_correct = read_int(line, "terrain correction");
         if (strncmp(test, "geocoding", 9)==0)
@@ -860,6 +899,29 @@ convert_config *read_convert_config(char *configFile)
       FREE(test);
     }
 
+    if (strncmp(line, "[Polarimetry]", 13)==0)
+      strcpy(params, "Polarimetry");
+    if (strncmp(params, "Polarimetry", 11)==0) {
+      test = read_param(line);
+      if (strncmp(test, "pauli", 5)==0)
+        cfg->polarimetry->pauli = read_int(line, "pauli");
+      if (strncmp(test, "sinclair", 8)==0)
+        cfg->polarimetry->sinclair = read_int(line, "sinclair");
+      if (strncmp(test, "cloude pottier", 14)==0)
+        cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
+      if (strncmp(test, "cloude pottier ext", 18)==0)
+	cfg->polarimetry->cloude_pottier_ext = 
+	  read_int(line, "cloude pottier ext");
+      if (strncmp(test, "k-means wishart", 15)==0)
+        cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
+      if (strncmp(test, "k-means wishart ext", 19)==0)
+	cfg->polarimetry->k_means_wishart_ext =
+	  read_int(line, "k-means wishart ext");
+      if (strncmp(test, "lee preserving", 14)==0)
+	cfg->polarimetry->lee_preserving = read_int(line, "lee preserving");
+      FREE(test);
+    }
+
     if (strncmp(line, "[Terrain correction]", 20)==0)
       strcpy(params, "Terrain correction");
     if (strncmp(params, "Terrain correction", 18)==0) {
@@ -937,10 +999,6 @@ convert_config *read_convert_config(char *configFile)
         cfg->export->falsecolor = read_int(line, "falsecolor");
       if (strncmp(test, "band", 4)==0)
         strcpy(cfg->export->band, read_str(line, "band"));
-      if (strncmp(test, "pauli", 5)==0)
-        cfg->export->pauli = read_int(line, "pauli");
-      if (strncmp(test, "sinclair", 8)==0)
-        cfg->export->sinclair = read_int(line, "sinclair");
       FREE(test);
     }
 
@@ -1043,6 +1101,12 @@ int write_convert_config(char *configFile, convert_config *cfg)
                 "# the detect corner reflector step).\n\n");
       fprintf(fConfig, "detect corner reflectors = %i\n", cfg->general->detect_cr);
     }
+    // General - Polarimetry
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The polarimetry flag indicates whether the polarimetric parameters,\n"
+	      "# decompositions or classifications are applied (1 for applying, 0 for leave out\n"
+	      "# the polarimetry).\n\n");
+    fprintf(fConfig, "polarimetry = %i\n", cfg->general->polarimetry);
     // General - Terrain correction
     if (!shortFlag) {
       fprintf(fConfig, "\n# The terrain correction flag indicates whether the data needs be run\n"
@@ -1235,6 +1299,49 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "chips = %i\n", cfg->detect_cr->chips);
       fprintf(fConfig, "text = %i\n", cfg->detect_cr->text);
     }
+
+    // Polarimetry
+    if (cfg->general->polarimetry) {
+      fprintf(fConfig, "\n[Polarimetry]\n");
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have quad-pol data available (HH, HV, VH and VV),\n"
+		"# you can use the standard Pauli decomposition to map the 4 bands to\n"
+                "# the R, G, and B channels in the output image.  In this decomposition,\n"
+                "# red is HH-VV, green is HV, and blue is HH+VV.  In addition, each channel\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization.\n\n");
+      fprintf(fConfig, "pauli = %i\n", cfg->polarimetry->pauli);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# If you have quad-pol data available (HH, HV, VH and VV),\n"
+                "# you can use the standard Sinclair decomposition to map the 4 bands to\n"
+                "# the R, G, and B channels in the output image.  In this decomposition,\n"
+                "# red is VV, green is (HV+VH)/2, and blue is HH.  In addition, each channel\n"
+                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
+                "# visualization.\n\n");
+      fprintf(fConfig, "sinclair = %i\n", cfg->polarimetry->sinclair);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
+		"# you can use the Cloude-Pottier classification using entropy and alpha\n"
+		"# to map the 4 bands to the eight classes in one band in the output image.\n\n");
+      fprintf(fConfig, "cloude pottier = %i\n\n", cfg->polarimetry->cloude_pottier);
+      /*
+      if (!shortFlag)
+	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
+		"# you can use the extended Cloude-Pottier classification using entropy, alpha\n"
+		"# and anisotropy to map the 4 bands to the 16 classes in one band in the output image.\n\n");
+      fprintf(fConfig, "cloude pottier ext = %i\n", cfg->polarimetry->cloude_pottier_ext);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Some description about k-means Wishart \n\n");
+      fprintf(fConfig, "k-means wishart = %i\n", cfg->polarimetry->k_means_wishart);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Some description about extended k-means Wishart \n\n");
+      fprintf(fConfig, "k-means wishart ext = %i\n", cfg->polarimetry->k_means_wishart_ext);
+      if (!shortFlag)
+	fprintf(fConfig, "\n# Some description about Lee category preserving \n\n");
+      fprintf(fConfig, "lee preserving = %i\n\n", cfg->polarimetry->lee_preserving);
+      */
+    }
+
     // Terrain correction
     if (cfg->general->terrain_correct) {
       fprintf(fConfig, "\n[Terrain correction]\n");
@@ -1424,23 +1531,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# If you wish to export a single band from the list of\n"
             "# available bands, e.g. HH, HV, VH, VV ...enter VV to export just\n"
                 "# the VV band (alone.)\n\n");
-      fprintf(fConfig, "band = %s\n", cfg->export->band);
-      if (!shortFlag)
-        fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
-            "# you can use the standard Pauli decomposition to map the 4 bands to\n"
-                "# the R, G, and B channels in the output image.  In this decomposition,\n"
-                "# red is HH-VV, green is HV, and blue is HH+VV.  In addition, each channel\n"
-                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
-                "# visualization.\n\n");
-      fprintf(fConfig, "pauli = %i\n", cfg->export->pauli);
-      if (!shortFlag)
-        fprintf(fConfig, "\n# If you have quad-pole data available (HH, VV, VH and VH),\n"
-                "# you can use the standard Sinclair decomposition to map the 4 bands to\n"
-                "# the R, G, and B channels in the output image.  In this decomposition,\n"
-                "# red is VV, green is (HV+VH)/2, and blue is HH.  In addition, each channel\n"
-                "# will individually contrast-expanded using a 2-sigma remapping for improved\n"
-                "# visualization.\n\n");
-      fprintf(fConfig, "sinclair = %i\n\n", cfg->export->sinclair);
+      fprintf(fConfig, "band = %s\n\n", cfg->export->band);
     }
     // Mosaic
     if (cfg->general->mosaic) {

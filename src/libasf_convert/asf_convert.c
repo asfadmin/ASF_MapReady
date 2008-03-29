@@ -448,40 +448,32 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
       (strlen(cfg->export->rgb) > 0 ||
       cfg->export->truecolor        ||
-      cfg->export->falsecolor       ||
-      cfg->export->pauli            ||
-      cfg->export->sinclair)
+      cfg->export->falsecolor)
      )
   {
     asfPrintWarning("Greyscale PGM output is not compatible with color options:\n"
-        "(RGB, True Color, False Color, Pauli, or Sinclair) ...\n"
+        "(RGB, True Color or False Color) ...\n"
         "Defaulting to producing separate greyscale PGM files for each\n"
         "available band.\n");
     strcpy(cfg->export->rgb, "");
     cfg->export->truecolor = 0;
     cfg->export->falsecolor = 0;
-    cfg->export->pauli = 0;
-    cfg->export->sinclair = 0;
   }
 
   // Check for greyscale single-band output versus selection of a color option
   if (strlen(cfg->export->band) > 0 &&
       (strlen(cfg->export->rgb) > 0 ||
           cfg->export->truecolor        ||
-          cfg->export->falsecolor       ||
-          cfg->export->pauli            ||
-          cfg->export->sinclair)
+          cfg->export->falsecolor)
      )
   {
     asfPrintWarning("Single-band output is not compatible with color options:\n"
-        "(RGB, True Color, False Color, Pauli, or Sinclair) ...\n"
+        "(RGB, True Color or False Color) ...\n"
         "Defaulting to producing a single greyscale file for the\n"
         "selected band (%s).\n", cfg->export->band);
     strcpy(cfg->export->rgb, "");
     cfg->export->truecolor = 0;
     cfg->export->falsecolor = 0;
-    cfg->export->pauli = 0;
-    cfg->export->sinclair = 0;
   }
 
   // Check for and resolve input/output name clashes
@@ -1095,18 +1087,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     int rgbBanding = strlen(cfg->export->rgb) > 0 ? 1 : 0;
     int truecolor = cfg->export->truecolor == 0 ? 0 : 1;
     int falsecolor = cfg->export->falsecolor == 0 ? 0 : 1;
-    int pauli = cfg->export->pauli == 0 ? 0 : 1;
-    int sinclair = cfg->export->sinclair == 0 ? 0 : 1;
-    if (rgbBanding + truecolor + falsecolor + pauli + sinclair > 1)
+    if (rgbBanding + truecolor + falsecolor > 1)
     {
-      asfPrintError("More than one color export mode was selected (rgb banding, truecolor,\n"
-          "falsecolor, pauli, or sinclair.)  Only one of these options may\n"
-          "be selected at a time.\n");
+      asfPrintError("More than one color export mode was selected (rgb banding, truecolor\n"
+          "or falsecolor)  Only one of these options may be selected at a time.\n");
     }
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
-        !cfg->general->terrain_correct && !cfg->general->geocoding &&
-        !cfg->general->export) {
+        !cfg->general->polarimetry && !cfg->general->terrain_correct && 
+	!cfg->general->geocoding && !cfg->general->export) {
       asfPrintError("Invalid configuration file found (%s) or no processing\n"
                     "is enabled, e.g. import, terrain correction, geocoding,\n"
                     "and export processing flags are all set to zero in the\n"
@@ -1157,8 +1146,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
-          cfg->general->sar_processing || cfg->general->terrain_correct ||
-          cfg->general->geocoding || cfg->general->export) {
+          cfg->general->sar_processing || cfg->general->polarimetry ||
+	  cfg->general->terrain_correct || cfg->general->geocoding || 
+	  cfg->general->export) {
         sprintf(outFile, "%s/import", cfg->general->tmp_dir);
       }
       else {
@@ -1249,7 +1239,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
           sprintf(inFile, "%s", outFile);
           if (cfg->general->image_stats || cfg->general->detect_cr ||
-              cfg->general->sar_processing || cfg->general->terrain_correct ||
+              cfg->general->polarimetry || cfg->general->terrain_correct ||
               cfg->general->geocoding || cfg->general->export) {
             sprintf(outFile, "%s/sar_processing", cfg->general->tmp_dir);
           }
@@ -1314,9 +1304,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         update_status("Converting Complex to Polar...");
 
         sprintf(inFile, "%s", outFile);
-        if (cfg->general->terrain_correct ||
-            cfg->general->geocoding ||
-            cfg->general->export)
+        if (cfg->general->polarimetry || cfg->general->terrain_correct ||
+            cfg->general->geocoding || cfg->general->export)
         {
             sprintf(outFile, "%s/c2p", cfg->general->tmp_dir);
         }
@@ -1344,9 +1333,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->terrain_correct ||
-          cfg->general->geocoding ||
-          cfg->general->export)
+      if (cfg->general->polarimetry || cfg->general->terrain_correct ||
+          cfg->general->geocoding || cfg->general->export)
       {
         sprintf(outFile, "%s/image_stats", cfg->general->tmp_dir);
       }
@@ -1370,7 +1358,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
-      if (cfg->general->geocoding || cfg->general->export) {
+      if (cfg->general->polarimetry || cfg->general->polarimetry ||
+	  cfg->general->geocoding || cfg->general->export) {
         sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
       }
       else {
@@ -1379,6 +1368,38 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       check_return(detect_cr(inFile, cfg->detect_cr->cr_location, outFile,
                              cfg->detect_cr->chips, cfg->detect_cr->text),
                    "detecting corner reflectors (detect_cr)\n");
+    }
+
+    if (cfg->general->polarimetry) {
+      
+      update_status("Polarimetric processing ...");
+
+      // Pass in command line
+      sprintf(inFile, "%s", outFile);
+      if (cfg->general->terrain_correct || cfg->general->geocoding ||
+	  cfg->general->export)
+	sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
+      else
+	sprintf(outFile, "%s", cfg->general->out_name);
+
+      // Calculate polarimetric parameters
+      if (cfg->polarimetry->pauli)
+	cpx2pauli(inFile, outFile);
+      else if (cfg->polarimetry->sinclair)
+	asfPrintError("Sinclair decomposition currently not support.\n");
+      else if (cfg->polarimetry->cloude_pottier)
+	cpx2cloude_pottier(inFile, outFile);
+      else if (cfg->polarimetry->cloude_pottier_ext)
+	asfPrintError("Extended Cloude-Pottier classification not supported yet.\n");
+      else if (cfg->polarimetry->k_means_wishart)
+	asfPrintError("K-means Wishart clustering not supported yet.\n");
+      else if (cfg->polarimetry->k_means_wishart_ext)
+	asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
+      else if (cfg->polarimetry->lee_preserving)
+	asfPrintError("Lee category preserving not supported yet.\n");
+      else
+	asfPrintError("Unsupported polarimetric processing technique.\n");
+	 
     }
 
     if (cfg->general->terrain_correct) {
@@ -1589,16 +1610,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         char *rgb = STRDUP(cfg->export->rgb);
         strcpy(cfg->export->rgb, "");
 
-        int pauli = cfg->export->pauli;
-        int sinclair = cfg->export->sinclair;
-        cfg->export->pauli = 0;
-        cfg->export->sinclair = 0;
-
-        if (pauli)
-          asfPrintStatus("Disabling Pauli export for non-quad-pol data.\n");
-        if (sinclair)
-          asfPrintStatus("Disabling Sinclair export for non-quad-pol data.\n");
-
         if (cfg->airsar->c_vv) {
           update_status("Exporting C-band...");
           char *in_tmp = appendToBasename(inFile, "_c_vv");
@@ -1666,9 +1677,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         // now put back the user's rgb settings
         strcpy(cfg->export->rgb, rgb);
         free(rgb);
-
-        cfg->export->pauli = pauli;
-        cfg->export->sinclair = sinclair;
 
         // airsar metadata...
         if (cfg->general->import) {
@@ -1832,19 +1840,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           else { // no rgb bands selected
             int true_color = cfg->export->truecolor == 0 ? 0 : 1;
             int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
-            if (cfg->export->pauli || cfg->export->sinclair) {
-              char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-              if (meta->general->band_count >= 4 && bands != NULL) {
-                check_return(asf_export_bands(format, SIGMA, TRUE,
-                                              0, 0, cfg->export->pauli, cfg->export->sinclair, NULL,
-                                              tmpFile, outFile, bands),
-                             "exporting thumbnail data file (asf_export), color banded.\n");
-                for (i=0; i<meta->general->band_count; ++i)
-                  FREE (bands[i]);
-                FREE(bands);
-              }
-            }
-            else if (meta->optical && (true_color || false_color))
+            if (meta->optical && (true_color || false_color))
             {
               if (meta->optical && (true_color || false_color)) {
                 // Multi-band optical data, exporting as true or false color single file
@@ -2073,34 +2069,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   if (strlen(cfg->export->rgb) == 0)
   {
     meta_parameters *meta = meta_read(inFile);
-    if (cfg->export->pauli || cfg->export->sinclair) {
-      asfPrintStatus("\nExporting %s-decomposition file...\n\n\n",
-                     cfg->export->pauli ? "Pauli" :
-                     cfg->export->sinclair ? "Sinclair" : "Unknown");
-      if (strstr(meta->general->bands, "HH") == NULL ||
-          strstr(meta->general->bands, "VV") == NULL ||
-          strstr(meta->general->bands, "VH") == NULL ||
-          strstr(meta->general->bands, "VV") == NULL)
-      {
-        asfPrintError("Imported file does not contain required bands\n"
-                      "necessary for pauli or sinclair output (HH, VV, HV, VH)\n");
-      }
-      char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-      if (meta->general->band_count >= 4 && bands != NULL) {
-        check_return(asf_export_bands(format, SIGMA, TRUE,
-                                      0, 0, cfg->export->pauli, cfg->export->sinclair, NULL,
-                                      inFile, outFile, bands),
-                     "exporting data file (asf_export), color banded.\n");
-        for (i=0; i < meta->general->band_count; i++)
-          FREE(bands[i]);
-        FREE(bands);
-      }
-      else {
-        asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
-                      inFile);
-      }
-    }
-    else if (meta->optical && (true_color || false_color)) {
+    if (meta->optical && (true_color || false_color)) {
       // Multi-band optical data, exporting as true or false color single file
       asfPrintStatus("\nExporting %s file...\n\n\n",
                      true_color ? "True Color" : false_color ? "False Color" : "Unknown");

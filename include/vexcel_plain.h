@@ -13,10 +13,10 @@ typedef struct {
 } vp_iq_statistics;
 
 typedef struct {
-  char polarization;
-  char polarization_amplitude;
-  char polarization_phase;
-  char stc_pattern_id;
+  char *polarization;
+  double polarization_amplitude;
+  double polarization_phase;
+  int stc_pattern_id;
   vp_iq_statistics iq_statistics;
 } vp_polarization;
 
@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
   vp_coefficients doppler_centroid_coefficients;
   double reference_range;
-  char reference_date[35];
+  char *reference_date;
   int ambiguity_number;
   int MLCC_ambiguity_number_occurence;
   int MLBF_ambiguity_number_occurence;
@@ -44,22 +44,22 @@ typedef struct {
   double Predict_doppler;
   double DAR_confidence;
   double doppler_fit_correlation;
-  char doppler_status[10];
+  char *doppler_status;
 } vp_doppler_centroid_parameters;
 
 typedef struct {
   vp_coefficients effective_velocity_coefficients;
   double veff;
   double reference_range;
-  char reference_date[35];
+  char *reference_date;
   double autofocus_scale_factor;
   double autofocus_snr;
   double autofocus_suggested_ambiguity_number;
-  char autofocus_status[10];
+  char *autofocus_status;
 } vp_doppler_rate_parameters;
 
 typedef struct {
-  char beam_name[10];
+  char *beam_name;
   int nr_of_samples;
   double echo_delay;
   double carrier_freq;
@@ -87,7 +87,7 @@ typedef struct {
   double xv;
   double yv;
   double zv;
-  char date[35];
+  char *date;
 } vp_state_vector;
 
 typedef struct {
@@ -98,14 +98,14 @@ typedef struct {
 typedef struct {
   double reference;
   int number_of_coefficients;
-  double *coefficients;
+  double *a;
 } vp_poly;
 
 typedef struct {
   double yaw;
   double roll;
   double pitch;
-  char date[35];
+  char *date;
   vp_poly yawpoly;
   vp_poly rollpoly;
   vp_poly pitchpoly;
@@ -113,16 +113,16 @@ typedef struct {
 
 typedef struct {
   double angle;
-  char date[35];
+  char *date;
 } vp_gha;
 
 typedef struct {
   vp_sv_block sv_block;
   vp_attitude attitude;
   int orbit_nr;
-  char orbit_nr_date[35];
+  char *orbit_nr_date;
   vp_gha gha;
-  char type[15];
+  char *type;
 } vp_ephemeris;
 
 typedef struct {
@@ -132,8 +132,8 @@ typedef struct {
 } vp_location;
 
 typedef struct {
-  char name[25];
-  char ellipsoid_name[25];
+  char *name;
+  char *ellipsoid_name;
   double major;
   double minor;
   double terrain_height;
@@ -157,10 +157,10 @@ typedef struct {
 } vp_coord;
 
 typedef struct {
-  char reference_date[35];
+  char *reference_date;
   double reference_range;
   int number_of_coefficients;
-  double *coefficients;
+  double *a;
 } vp_gr2sr;
 
 typedef struct {
@@ -169,11 +169,11 @@ typedef struct {
 } vp_gr2sr_block;
 
 typedef struct {
-  char facility[15];
-  char format[20];
-  char type[15];
+  char *facility;
+  char *format;
+  char *type;
   int bytes_per_pixel;
-  char title[50];
+  char *title;
   double pixel_spacing;
   double pixel_resolution;
   double line_spacing;
@@ -190,9 +190,9 @@ typedef struct {
 } vp_image_desc;
 
 typedef struct {
-  char sensor_name[10];
-  char instrument_name[10];
-  char instrument_type[10];
+  char *sensor_name;
+  char *instrument_name;
+  char *instrument_type;
   double clock_angle;
   int nr_temperatures;
   int nr_beams;
@@ -202,23 +202,23 @@ typedef struct {
 
 typedef struct {
   vp_image_desc image_desc;
-  char processor_name[10];
-  char processor_version[10];
-  char first_line[35];
-  char first_line_txpol;
+  char *processor_name;
+  char *processor_version;
+  char *first_line;
+  char *first_line_txpol;
   double time_per_line;
 } vp_raw_sar_image;
 
 typedef struct {
   vp_image_desc image_desc;
-  char processor_name[15];
-  char processor_version[15];
-  char image_type[15];
-  char polarization[5];
-  char first_line[35];
+  char *processor_name;
+  char *processor_version;
+  char *image_type;
+  char *polarization;
+  char *first_line;
   double time_per_line;
   double orbit_nr;
-  char orbit_nr_date;
+  char *orbit_nr_date;
   double track_angle;
   double near_range;
   double center_range;
@@ -251,7 +251,7 @@ typedef struct {
 
 typedef struct {
   vp_sensor sensor;
-  char flight_path_direction[15];
+  char *flight_path_direction;
   vp_raw_sar_image raw_sar_image;
   vp_gli_product gli_product;
 } vexcel_plain;

@@ -21,7 +21,7 @@ file. Save yourself the time and trouble, and use edit_man_header.pl. :)
 */
 
 #define ASF_NAME_STRING \
-"asf_convert"
+"asf_mapready"
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-create] [-log <logFile>] [-quiet] [-license]\n"\

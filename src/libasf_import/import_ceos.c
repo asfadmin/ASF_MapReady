@@ -252,7 +252,7 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
       strcpy(bandExt, "HH");
     else if (ceos->satellite == ERS || ceos->satellite == JERS)
       strcpy(bandExt, "VV");
-    else if (ceos->sensor == SAR && ceos->sensor == PALSAR) {
+    else if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
       char *polarization;
       polarization = get_polarization(inBandName[ii]);
       strcpy(bandExt, polarization);
@@ -330,6 +330,12 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     if (db_flag)
       radiometry += 3;
 
+    // Set LUT to NULL if string is empty
+    if (lutName && strlen(lutName) == 0) {
+      FREE(lutName);
+      lutName = NULL;
+    }
+    
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA)
         import_ceos_raw(inBandName[ii], inMetaName[0], outDataName, 
@@ -1010,7 +1016,8 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
     else
       sprintf(bandStr, "COMPLEX-%s", bandExt);
   }
-  else if (meta->general->image_data_type == COMPLEX_IMAGE) {
+  else if (meta->general->image_data_type == COMPLEX_IMAGE ||
+	   meta->general->image_data_type == POLARIMETRIC_IMAGE) {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "AMP-%s,PHASE-%s",
         meta->sar->polarization, meta->sar->polarization);
@@ -1147,12 +1154,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
   if (output_file_closed)
     asfPrintError("Impossible: Output file has already been closed!\n");
-
-  // Set LUT to NULL if string is empty
-  if (lutName && strlen(lutName) == 0) {
-    FREE(lutName);
-    lutName = NULL;
-  }
 
   // Create metadata
   meta = meta_create(inMetaName);

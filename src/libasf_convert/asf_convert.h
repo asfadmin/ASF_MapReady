@@ -16,6 +16,7 @@ typedef struct
   int c2p;                // complex -> polar flag
   int image_stats;        // image stats flag (for internal use only)
   int detect_cr;          // detect corner reflector flag (for internal use only)
+  int polarimetry;        // polarimetry flag
   int terrain_correct;    // terrain correction flag
   int geocoding;          // geocoding flag
   int export;             // export flag
@@ -97,6 +98,17 @@ typedef struct
 
 typedef struct
 {
+  int pauli;              // Pauli decomposition for quad-pole data
+  int sinclair;           // Sinclair decomposition for quad-pole data
+  int cloude_pottier;     // Entropy/Alpha segmentation (8 classes)
+  int cloude_pottier_ext; // Entropy/Alpha/Anisotropy segmentation (16 classes)
+  int k_means_wishart;    // K-means Wishart clustering
+  int k_means_wishart_ext;// K-means Wishart Entropy/Alpha/Anisotropy clustering
+  int lee_preserving;     // Lee category preserving
+} s_polarimetry;
+
+typedef struct
+{
   double pixel;           // pixel size for terrain corrected product
   char *dem;              // reference DEM file name
   char *mask;             // mask file name (should==NULL if auto_mask_water)
@@ -140,8 +152,6 @@ typedef struct
   int truecolor;          // True color flag (bands 3-2-1 w/2-sigma contrast expansion)
   int falsecolor;         // False color flag (ditto, but bands 4-3-2)
   char *band;             // Band ID string ("HH", "HV", "01", etc) for single-band export
-  int pauli;              // Pauli decomposition for quad-pole data
-  int sinclair;           // Sinclair decomposition for quad-pole data
 } s_export;
 
 typedef struct
@@ -159,6 +169,7 @@ typedef struct
   s_c2p *c2p;                          // complex -> polar parameters
   s_image_stats *image_stats;          // image stats parameters
   s_detect_cr *detect_cr;              // corner reflector detection parameters
+  s_polarimetry *polarimetry;          // polarimetric parameters
   s_terrain_correct *terrain_correct;  // terrain correction parameters
   s_geocoding *geocoding;              // geocoding parameters
   s_export *export;                    // exporting parameters

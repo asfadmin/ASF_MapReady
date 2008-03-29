@@ -613,3 +613,13 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
   meta_free(meta);
 }
+
+void cpx2pauli(const char *inFile, const char *outFile)
+{
+  polarimetric_decomp(inFile, outFile, 0, 1, 2, -1, -1, -1);
+}
+
+void cpx2cloude_pottier(const char *inFile, const char *outFile)
+{
+  polarimetric_decomp(inFile, outFile, -1, -1, -1, 0, 1, 2);
+}
