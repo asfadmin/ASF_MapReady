@@ -30,8 +30,38 @@ on_c2v_window_destroy(GtkWidget *w, gpointer data)
 
 static void select_defaults()
 {
-    set_combo_box_item("input_format_combobox", INPUT_FORMAT_ALOS_CSV);
-    set_combo_box_item("output_format_combobox", OUTPUT_FORMAT_KML);
+    set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+    set_combo_box_item("output_format_combobox", OUTPUT_KML);
+}
+
+static void select_defaults_by_file_type(const char *f)
+{
+    char *ext = findExt(f);
+  
+    if (strcmp_case(ext, ".csv") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+      set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".meta") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_META);
+      set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".ldr") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_LDR);
+      set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".shp") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_SHAPE);
+      set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".kml") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_KML);
+      set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);      
+    }
+    else if (strcmp_case(ext, ".tif") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_GEOTIFF);
+      set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
 }
 
 int
@@ -54,8 +84,13 @@ main(int argc, char **argv)
 
     if (argc>1) {
       add_input_file(argv[1]);
+      select_defaults_by_file_type(argv[1]);
+      int output_format = get_combo_box_item("output_format_combobox");
       process();
-      exit(EXIT_SUCCESS);
+      // if we opened up an external application, we can just exit now
+      // otherwise we will stay open
+      if (output_format == OUTPUT_KML || output_format == OUTPUT_ALOS_CSV)
+        exit(EXIT_SUCCESS);
     }
 
     glade_xml_signal_autoconnect(glade_xml);

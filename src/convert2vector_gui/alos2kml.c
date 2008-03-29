@@ -22,6 +22,7 @@ typedef struct _AlosCsvInfo
     double scn_rdlat, scn_rdlon;
     int grs_colno;
     double offnadir;
+    char full_line[1024];
 } AlosCsvInfo;
 
 static void strip_end_whitesp(char *s)
@@ -72,215 +73,106 @@ static char *my_parse_string(char *p, char *s, int max_len)
     return q+1;
 }
 
-static char *my_parse_int(char *p, int *i)
+static const char *get_str(char *line, int column_num)
 {
-    char tmp[64];
-    p = my_parse_string(p, tmp, 64);
-    if (p && strlen(tmp)>0)
-        *i = atoi(tmp);
-    else
-        *i = MAGIC_UNSET_INT;
-    return p;
-}
-
-static char *my_parse_char(char *p, char *c)
-{
-    char tmp[64];
-    p = my_parse_string(p, tmp, 64);
-    if (p && strlen(tmp)==1)
-        *c = tmp[0];
-    else
-        *c = 0;
-    return p;
-}
-
-static char *my_parse_double(char *p, double *d)
-{
-    char tmp[64];
-    p = my_parse_string(p, tmp, 64);
-    if (p && strlen(tmp)>0)
-        *d = atof(tmp);
-    else
-        *d = -999999.99;
-    return p;
-}
-
-static int parse_alos_csv_line(char *line, AlosCsvInfo *info)
-{
-    // cheat!  easier to validate if every piece will end with a comma
-    line[strlen(line)+1] = '\0';
-    line[strlen(line)] = ',';
-
-    // iterator
+    int i;
     char *p = line;
+    static char ret[256];
 
-    // sensor
-    p = my_parse_string(p, info->sensor, 64);
-    if (!p) return FALSE;
-
-    // scnid
-    p = my_parse_string(p, info->scnid, 64);
-    if (!p) return FALSE;
-
-    // opemd
-    p = my_parse_string(p, info->opemd, 64);
-    if (!p) return FALSE;
-
-    // pathno
-    p = my_parse_int(p, &info->pathno);
-    if (!p) return FALSE;
-    //if (info->pathno > 671 || info->pathno < 0) {
-    //  msg("  Invalid path number: %d\n", info->pathno);
-    //  return FALSE;
-    //}
-
-    // cenflmn
-    p = my_parse_int(p, &info->cenflmn);
-    if (!p) return FALSE;
-
-    // grs_line
-    p = my_parse_int(p, &info->grs_line);
-    if (!p) return FALSE;
-
-    // orbitdir
-    p = my_parse_char(p, &info->orbitdir);
-    if (!p) return FALSE;
-    if (info->orbitdir!='A' && info->orbitdir!='D') {
-      msg("  Invalid orbit direction: %c\n", info->orbitdir);
-      //  Make this non-fatal for now ...
-      //return FALSE;
-      info->orbitdir='?';
+    for (i=0; i<=column_num; ++i) {
+      p = my_parse_string(p,ret,256);
+      if (!p) {
+        // bad-- ran out of columns
+        strcpy(ret, "");
+        break;
+      }
     }
-
-    // scn_cdate
-    p = my_parse_string(p, info->scn_cdate, 64);
-    if (!p) return FALSE;
-
-    // scn_ctime
-    p = my_parse_string(p, info->scn_ctime, 64);
-    if (!p) return FALSE;
-
-    // scn_clat
-    p = my_parse_double(p, &info->scn_clat);
-    if (!p) return FALSE;
-    if (info->scn_clat < -90 || info->scn_clat > 90) {
-      msg("  Invalid scn_clat: %f\n", info->scn_clat);
-      return FALSE;
-    }
-
-    // scn_clon
-    p = my_parse_double(p, &info->scn_clon);
-    if (!p) return FALSE;
-    if (info->scn_clon < -360 || info->scn_clon > 360) {
-      msg("  Invalid scn_clon: %f\n", info->scn_clon);
-      return FALSE;
-    }
-
-    // scn_lulat
-    p = my_parse_double(p, &info->scn_lulat);
-    if (!p) return FALSE;
-    if (info->scn_lulat < -90 || info->scn_lulat > 90) {
-      msg("  Invalid scn_lulat: %f\n", info->scn_lulat);
-      return FALSE;
-    }
-
-    // scn_lulon
-    p = my_parse_double(p, &info->scn_lulon);
-    if (!p) return FALSE;
-    if (info->scn_lulon < -360 || info->scn_lulon > 360) {
-      msg("  Invalid scn_lulon: %f\n", info->scn_lulon);
-      return FALSE;
-    }
-
-    // scn_rulat
-    p = my_parse_double(p, &info->scn_rulat);
-    if (!p) return FALSE;
-    if (info->scn_rulat < -90 || info->scn_rulat > 90) {
-      msg("  Invalid scn_rulat: %f\n", info->scn_rulat);
-      return FALSE;
-    }
-
-    // scn_rulon
-    p = my_parse_double(p, &info->scn_rulon);
-    if (!p) return FALSE;
-    if (info->scn_rulon < -360 || info->scn_rulon > 360) {
-      msg("  Invalid scn_rulon: %f\n", info->scn_rulon);
-      return FALSE;
-    }
-
-    // scn_ldlat
-    p = my_parse_double(p, &info->scn_ldlat);
-    if (!p) return FALSE;
-    if (info->scn_ldlat < -90 || info->scn_ldlat > 90) {
-      msg("  Invalid scn_ldlat: %f\n", info->scn_ldlat);
-      return FALSE;
-    }
-
-    // scn_ldlon
-    p = my_parse_double(p, &info->scn_ldlon);
-    if (!p) return FALSE;
-    if (info->scn_ldlon < -360 || info->scn_ldlon > 360) {
-      msg("  Invalid scn_ldlon: %f\n", info->scn_ldlon);
-      return FALSE;
-    }
-
-    // scn_rdlat
-    p = my_parse_double(p, &info->scn_rdlat);
-    if (!p) return FALSE;
-    if (info->scn_rdlat < -90 || info->scn_rdlat > 90) {
-      msg("  Invalid scn_rdlat: %f\n", info->scn_rdlat);
-      return FALSE;
-    }
-
-    // scn_rdlon
-    p = my_parse_double(p, &info->scn_rdlon);
-    if (!p) return FALSE;
-    if (info->scn_rdlon < -360 || info->scn_rdlon > 360) {
-      msg("  Invalid scn_rdlon: %f\n", info->scn_rdlon);
-      return FALSE;
-    }
-
-    // the next four fields are all ignored for now ...
-    //   pntang, rec_cldscene, rec_allqlty, rec_linelos
-    char ignore[64];
-
-    // pntang
-    p = my_parse_string(p, ignore, 64);
-
-    // rec_cldscene
-    p = my_parse_string(p, ignore, 64);
-
-    // rec_allqlty
-    p = my_parse_string(p, ignore, 64);
-
-    // rec_linelos
-    p = my_parse_string(p, ignore, 64);
-
-    // ... now back to fields that are actually read in
-
-    // grs_colno
-    p = my_parse_int(p, &info->grs_colno);
-    if (!p) return FALSE;
-
-    // offnadir
-    p = my_parse_double(p, &info->offnadir);
-    if (!p) return FALSE;
-
-    if (*p != '\0') // non-fatal error
-      msg("  Line has extra characters\n");
-
-    return TRUE;
+    
+    return ret;
 }
 
-static void add_to_kml(FILE *fp, AlosCsvInfo *info)
+int get_int(char *line, int column_num)
+{
+    if (column_num >= 0)
+        return atoi(get_str(line, column_num));
+    else
+        return 0;
+}
+
+double get_double(char *line, int column_num)
+{
+    if (column_num >= 0)
+        return atof(get_str(line, column_num));
+    else
+        return 0.0;
+}
+
+double get_req_double(char *line, int column_num, int *ok)
+{
+    if (column_num >= 0) {
+        char *str = get_str(line, column_num);
+        if (strlen(str)>0) {
+            *ok=TRUE;
+            return atof(str);
+        }
+        else {
+            *ok=FALSE;
+            return 0;            
+        }
+    }
+    else {
+        *ok=FALSE;
+        return 0.0;
+    }
+}
+
+char get_char(char *line, int column_num)
+{
+    const char *str = get_str(line, column_num);
+    if (strlen(str)>0)
+        return str[0];
+    else
+        return '?';
+}
+
+int find_col(char *line, const char *column_header)
+{
+    char *p = line;
+    char val[256];
+    int col=0;
+
+    while (p) {
+        p=my_parse_string(p,val,256);
+        if (p) {
+            if (strcmp_case(val,column_header)==0)
+                return col;
+            ++col;
+        }
+    }
+
+    // column heading was not found
+    return -1;
+}
+
+static void add_to_kml(FILE *fp, AlosCsvInfo *info, char *header_line)
 {
   fprintf(fp, "<Placemark>\n");
   fprintf(fp, "  <description><![CDATA[\n");
-  fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", info->sensor);
+  if (strlen(header_line)>0)
+    fprintf(fp, "<!-- CSVHeader:%s -->", header_line);
+  fprintf(fp, "<!-- CSVLine:%s -->\n", info->full_line);
+  if (strlen(info->sensor)>0)
+    fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", info->sensor);
   fprintf(fp, "<strong>Scene ID</strong>: %s<br>\n", info->scnid);
-  fprintf(fp, "<strong>Path</strong>: %d<br>\n", info->pathno);
-  fprintf(fp, "<strong>Date/Time</strong>: %s %s<br>\n",
-          info->scn_cdate, info->scn_ctime);
+  if (info->pathno>0)
+    fprintf(fp, "<strong>Path</strong>: %d<br>\n", info->pathno);
+  if (strlen(info->scn_cdate)>0 && strlen(info->scn_ctime)>0)
+    fprintf(fp, "<strong>Date/Time</strong>: %s %s<br>\n",
+            info->scn_cdate, info->scn_ctime);
+  else if (strlen(info->scn_cdate)>0)
+    fprintf(fp, "<strong>Date</strong>: %s<br>\n", info->scn_cdate);
+  else if (strlen(info->scn_ctime)>0)
+    fprintf(fp, "<strong>Time</strong>: %s<br>\n", info->scn_ctime);
   if (info->orbitdir=='A')
     fprintf(fp, "<strong>Orbit Dir</strong>: Ascending<br>\n");
   else if (info->orbitdir=='D')
@@ -318,26 +210,120 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info)
   fprintf(fp, "</Placemark>\n");
 }
 
+int kml_to_alos_csv(const char *in_file, const char *out_file)
+{
+    FILE *ifp = FOPEN(in_file, "r");
+    assert(ifp);
+
+    FILE *ofp = FOPEN(out_file, "w");
+    if (!ofp) {
+      printf("Failed to open output file %s: %s\n", out_file, strerror(errno));
+      return 0;
+    }
+
+    char line[1024];
+    while (fgets(line, 1023, ifp) != NULL) {
+        if (strstr(line, "CSVHeader") || strstr(line, "CSVLine"))
+        {
+            char *p = strchr(line, ':');
+            if (p) {
+              ++p;
+              char *q = strstr(p, "-->");
+              if (q) {
+                *q='\0';
+                fprintf(ofp, "%s\n", p);                
+              }
+            }
+        }
+    }
+    
+    fclose(ifp);
+    fclose(ofp);
+    
+    return 1;
+}
+
 int alos_csv_to_kml(const char *in_file, const char *out_file)
 {
     FILE *ifp = FOPEN(in_file, "r");
     assert(ifp);
 
-    char line[1024];
-    fgets(line, 1024, ifp);
-    strip_end_whitesp(line);
+    char line[1024],header[1024];
+    fgets(header, 1024, ifp);
+    strip_end_whitesp(header);
 
-    const char const * expected_csv_header_line =
-      "SENSOR,SCNID,OPEMD,PATHNO,CENFLMNO,GRS_LINENO,OBTDIR,SCN_CDATE,"
-      "SCN_CTIME,SCN_CLAT,SCN_CLON,SCN_LULAT,SCN_LULON,SCN_RULAT,SCN_RULON,"
-      "SCN_LDLAT,SCN_LDLON,SCN_RDLAR,SCN_RDLON,PNTANG,REC_CLDSCENE,"
-      "REC_ALLQLTY,REC_LINELOS,GRS_COLNO,OFFNADIR";
+    // ensure we have the columns we need
+    int scnid_col = find_col(header, "SCNID");
+    int lulat_col = find_col(header, "SCN_LULAT");
+    int lulon_col = find_col(header, "SCN_LULON");
+    int rulat_col = find_col(header, "SCN_RULAT");
+    int rulon_col = find_col(header, "SCN_RULON");
+    int ldlat_col = find_col(header, "SCN_LDLAT");
+    int ldlon_col = find_col(header, "SCN_LDLON");
+    int rdlat_col = find_col(header, "SCN_RDLAT");
+    int rdlon_col = find_col(header, "SCN_RDLON");
 
-    if (strcmp(line, expected_csv_header_line) != 0) {
-      printf("Header line differed from expected!\n"
-             "Is '%s' a valid ALOS CSV file?\n", in_file);
+    int all_ok=TRUE;
+    if (scnid_col < 0) {
+      printf("Missing: SCNID\n");
+      all_ok=FALSE;
+    }
+    if (lulat_col < 0) {
+      printf("Missing: SCN_LULAT\n");
+      all_ok=FALSE;
+    }
+    if (lulon_col < 0) {
+      printf("Missing: SCN_LULON\n");
+      all_ok=FALSE;
+    }
+    if (rulat_col < 0) {
+      printf("Missing: SCN_RULAT\n");
+      all_ok=FALSE;
+    }
+    if (rulon_col < 0) {
+      printf("Missing: SCN_RULON\n");
+      all_ok=FALSE;
+    }
+    if (ldlat_col < 0) {
+      printf("Missing: SCN_LDLAT\n");
+      all_ok=FALSE;
+    }
+    if (ldlon_col < 0) {
+      printf("Missing: SCN_LDLON\n");
+      all_ok=FALSE;
+    }
+    if (rdlat_col < 0) {
+      printf("Missing: SCN_RDLAT\n");
+      all_ok=FALSE;
+    }
+    if (rdlon_col < 0) {
+      printf("Missing: SCN_RDLON\n");
+      all_ok=FALSE;
+    }
+    if (!all_ok) {
+      printf("Required data columns missing, cannot process this file.\n");
       return 0;
     }
+
+    // don't really care if any of these are missing    
+    int sensor_col = find_col(header, "SENSOR");
+    int opemd_col = find_col(header, "OPEMD");
+    int pathno_col = find_col(header, "PATHNO");
+    int cenflmno_col = find_col(header, "CENFLMNO");
+    int grs_line_col = find_col(header, "GRS_LINE");
+    int orbitdir_col = find_col(header, "OBTDIR");
+    int cdate_col = find_col(header, "SCN_CDATE");
+    int ctime_col = find_col(header, "SCN_CTIME");
+    int clat_col = find_col(header, "SCN_CLAT");
+    int clon_col = find_col(header, "SCN_CLON");
+    int grs_col = find_col(header, "GRS_COLNO");
+    int offnadir_col = find_col(header, "OFFNADIR");
+    
+    //const char const * expected_csv_header_line =
+    //  "SENSOR,SCNID,OPEMD,PATHNO,CENFLMNO,GRS_LINENO,OBTDIR,SCN_CDATE,"
+    //  "SCN_CTIME,SCN_CLAT,SCN_CLON,SCN_LULAT,SCN_LULON,SCN_RULAT,SCN_RULON,"
+    //  "SCN_LDLAT,SCN_LDLON,SCN_RDLAR,SCN_RDLON,PNTANG,REC_CLDSCENE,"
+    //  "REC_ALLQLTY,REC_LINELOS,GRS_COLNO,OFFNADIR";
 
     FILE *ofp = FOPEN(out_file, "w");
     if (!ofp) {
@@ -350,15 +336,48 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
     int n_valid_lines = 0;
     int n_invalid_lines = 0;
     int line_no = 2; // start at 2, we already read line 1
-    while (fgets(line, 1024, ifp) != NULL) {
+    while (fgets(line, 1022, ifp) != NULL) {
       strip_end_whitesp(line);
 
       AlosCsvInfo info;
-      int valid = parse_alos_csv_line(line, &info);
+      
+      // copy the full line before we add the kludgey comma
+      strcpy(info.full_line, line);
 
-      if (valid) {
-        add_to_kml(ofp, &info);
+      // ensure all lines end with a comma, that way the final column
+      // does not need special treatment
+      line[strlen(line)+1] = '\0';
+      line[strlen(line)] = ',';
+     
+      // now get the individual column values
+      int ok;      
+      strcpy(info.sensor, get_str(line, sensor_col));
+      strcpy(info.scnid, get_str(line, scnid_col));
+      strcpy(info.opemd, get_str(line, opemd_col));
+      info.pathno = get_int(line, pathno_col);
+      info.cenflmn = get_int(line, cenflmno_col);
+      info.grs_line = get_int(line, grs_line_col);
+      info.orbitdir = get_char(line, orbitdir_col);
+      strcpy(info.scn_cdate, get_str(line, cdate_col));
+      strcpy(info.scn_ctime, get_str(line, ctime_col));
+      info.scn_clat = get_double(line, clat_col);
+      info.scn_clon = get_double(line, clon_col);
+      info.scn_lulat = get_req_double(line, lulat_col, &ok);
+      info.scn_lulon = get_req_double(line, lulon_col, &ok);
+      info.scn_rulat = get_req_double(line, rulat_col, &ok);
+      info.scn_rulon = get_req_double(line, rulon_col, &ok);
+      info.scn_ldlat = get_req_double(line, ldlat_col, &ok);
+      info.scn_ldlon = get_req_double(line, ldlon_col, &ok);
+      info.scn_rdlat = get_req_double(line, rdlat_col, &ok);
+      info.scn_rdlon = get_req_double(line, rdlon_col, &ok);
+      info.grs_colno = get_int(line, grs_col);
+      info.offnadir = get_double(line, offnadir_col);
+
+      if (ok) {
+        add_to_kml(ofp, &info, header);
         ++n_valid_lines;
+        
+        strcpy(header, "");
       } else {
         msg("Invalid line %d in CSV file.\n", line_no);
         ++n_invalid_lines;

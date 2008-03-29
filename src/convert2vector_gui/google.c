@@ -147,3 +147,60 @@ void open_in_google_earth(const char *kml_file)
     }
 #endif
 }
+
+void open_in_excel(const char *csv_file)
+{
+    char *excel;
+
+#ifdef win32
+
+    char path[1024];
+    char *dirname = get_dirname(csv_file);
+    FindExecutable((LPCTSTR)csv_file, (LPCTSTR)dirname, (LPTSTR)path);
+    excel = escapify(path);
+    printf("Path to csv application: %s\n", excel);
+    free(dirname);
+
+    char cmd[1024];
+    assert(strlen(excel)+strlen(csv_file)<1000);
+    sprintf(cmd, "\"%s\" \"%s\"", excel, csv_file);
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    memset(&si, 0, sizeof(si));
+    memset(&pi, 0, sizeof(pi));
+    si.cb = sizeof(si);
+
+    if( !CreateProcess( NULL,   // No module name (use command line)
+            cmd,                // Command line
+            NULL,               // Process handle not inheritable
+            NULL,               // Thread handle not inheritable
+            FALSE,              // Set handle inheritance to FALSE
+            0,                  // No creation flags
+            NULL,               // Use parent's environment block
+            NULL,               // Use parent's starting directory 
+            &si,                // Pointer to STARTUPINFO structure
+            &pi )               // Pointer to PROCESS_INFORMATION structure
+            ) 
+    {
+        message_box("Error running external application:\n"
+                    "CreateProcess failed (%ld)\n", GetLastError());
+        return;
+    }
+#else
+    // hmm, what to do on linux?
+    excel = find_in_path("gnumeric");
+    if (!excel)
+    {
+       message_box("Couldn't find gnumeric! Is it installed?");
+       return;
+    }
+
+    int pid = fork();
+    if (pid == 0) {
+        asfSystem("\"%s\" \"%s\"", excel, csv_file);
+        exit(EXIT_SUCCESS);
+    }
+#endif
+}

@@ -28,12 +28,23 @@
 // the c2v.glade file.
 enum
 {
-  INPUT_FORMAT_ALOS_CSV = 0
+  INPUT_ALOS_CSV = 0,
+  INPUT_META = 1,
+  INPUT_LEADER = 2,
+  INPUT_POINT = 3,
+  INPUT_POLYGON = 4,
+  INPUT_SHAPE = 5,
+  INPUT_KML = 6,
+  INPUT_GEOTIFF = 7,
+  INPUT_RGPS = 8
 };
 
 enum
 {
-  OUTPUT_FORMAT_KML = 0
+  OUTPUT_KML = 0,
+  OUTPUT_SHAPE = 1,
+  OUTPUT_TEXT = 2,
+  OUTPUT_ALOS_CSV = 3
 };
 
 /********************************** Prototypes ******************************/
@@ -80,9 +91,11 @@ char *find_in_share(const char * filename);
 
 /* alos2kml.c */
 int alos_csv_to_kml(const char *in_file, const char *out_file);
+int kml_to_alos_csv(const char *in_file, const char *out_file);
 
 /* google.c */
 void open_in_google_earth(const char *kml_file);
+void open_in_excel(const char *csv_file);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
