@@ -46,9 +46,82 @@ void change_output_extension(char *current)
     }
 }
 
+void select_defaults_by_file_type(const char *f, int set_output_also)
+{
+    char *ext = findExt(f);
+  
+    // if we can figure it out by the extension, do that first
+    if (strcmp_case(ext, ".meta") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_META);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".ldr") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_LDR);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".shp") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_SHAPE);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (strcmp_case(ext, ".kml") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_KML);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);      
+    }
+    else if (isgeotiff(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_GEOTIFF);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+    else if (ismetadata(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_META);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    else if (isleader(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_LDR);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    else if (ispoint(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_POINT);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    else if (ispolygon(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_POLYGON);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    else if (isshape(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_SHAPE);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    else if (isrgps(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_RGPS);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
+    // moved the ALOS CSV case last... we should change this to open
+    // the file and check for certain required text in the header line
+    // ensure it is what we hope it is, as is done for point/polygon
+    else if (strcmp_case(ext, ".csv") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+    }
+}
+
 void add_input_file(char *file)
 {
     put_string_to_entry("input_file_entry", file);
+
+    // set the input file type, based on the extension of this file
+    select_defaults_by_file_type(file,FALSE);
 
     // set the output directory, if it is currently blank, to the
     // same as the input directory

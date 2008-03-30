@@ -82,6 +82,7 @@ void enable_widget(const char *widget_name, int enable);
 
 /* browse.c */
 void add_input_file(char *file);
+void select_defaults_by_file_type(const char *f, int set_output_also);
 
 /* process.c */
 void process(void);
