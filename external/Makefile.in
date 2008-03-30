@@ -4,7 +4,7 @@
 
 include ../make_support/system_rules
 
-GTK_ZIP_LOC = ../../support/win32/gtk
+GTKWIN32_ZIP_LOC = ../../support/win32/gtk
 GTKWIN32_DIR = gtkwin32
 GTKWIN32_ZIP = gtkwin32zip
 
