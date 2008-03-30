@@ -15,7 +15,16 @@
 #endif
 
 #include "c2v.h"
-#include "asf_vector.h"
+//  Commenting out the include for asf_vector, and just re-declaring the
+//  needed prototypes... we have a POINT definition conflict to resolve...
+//#include "asf_vector.h"
+int ismetadata(char *inFile);
+int isleader(char *inFile);
+int ispoint(char *inFile);
+int ispolygon(char *inFile);
+int isshape(char *inFile);
+int isgeotiff(char *inFile);
+int isrgps(char *inFile);
 
 void change_output_extension(char *current)
 {

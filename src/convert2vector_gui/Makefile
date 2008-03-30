@@ -58,6 +58,9 @@ LIB = \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
 	$(PROJ_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(JPEG_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
