@@ -53,24 +53,28 @@ static void msg(const char *format, ...)
 
 static char *my_parse_string(char *p, char *s, int max_len)
 {
-    if (*p == '\0') {
+    if (!p || *p == '\0') {
+        strcpy(s, "");
         msg("  --> Unexpected end of string\n");
         return NULL;
     }
 
-    // scan ahead to the comma (even last one should end with comma)
+    // scan ahead to the comma, or end of string
     char *q = strchr(p, ',');
-    if (!q) {
-        msg("  --> Couldn't find the end of the string: %s\n", p);
-        return NULL;
+    if (q) {
+      *q = '\0'; // temporarily...
+      strncpy_safe(s, p, max_len);
+      *q = ',';
+      
+      // point to beginning of next item
+      return q+1;
     }
+    else {
+      strncpy_safe(s, p, max_len);
 
-    *q = '\0'; // temporarily...
-    strncpy_safe(s, p, max_len);
-    *q = ',';
-
-    // point to beginning of next item
-    return q+1;
+      // no more strings
+      return NULL;
+    }
 }
 
 static const char *get_str(char *line, int column_num)
@@ -79,14 +83,8 @@ static const char *get_str(char *line, int column_num)
     char *p = line;
     static char ret[256];
 
-    for (i=0; i<=column_num; ++i) {
+    for (i=0; i<=column_num; ++i)
       p = my_parse_string(p,ret,256);
-      if (!p) {
-        // bad-- ran out of columns
-        strcpy(ret, "");
-        break;
-      }
-    }
     
     return ret;
 }
@@ -110,7 +108,7 @@ double get_double(char *line, int column_num)
 double get_req_double(char *line, int column_num, int *ok)
 {
     if (column_num >= 0) {
-        char *str = get_str(line, column_num);
+        const char *str = get_str(line, column_num);
         if (strlen(str)>0) {
             *ok=TRUE;
             return atof(str);
@@ -143,11 +141,9 @@ int find_col(char *line, const char *column_header)
 
     while (p) {
         p=my_parse_string(p,val,256);
-        if (p) {
-            if (strcmp_case(val,column_header)==0)
-                return col;
-            ++col;
-        }
+        if (strcmp_case(val,column_header)==0)
+          return col;
+        ++col;
     }
 
     // column heading was not found
@@ -159,7 +155,7 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info, char *header_line)
   fprintf(fp, "<Placemark>\n");
   fprintf(fp, "  <description><![CDATA[\n");
   if (strlen(header_line)>0)
-    fprintf(fp, "<!-- CSVHeader:%s -->", header_line);
+    fprintf(fp, "<!-- CSVHeader:%s -->\n", header_line);
   fprintf(fp, "<!-- CSVLine:%s -->\n", info->full_line);
   if (strlen(info->sensor)>0)
     fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", info->sensor);

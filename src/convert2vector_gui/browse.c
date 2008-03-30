@@ -15,6 +15,7 @@
 #endif
 
 #include "c2v.h"
+#include "asf_vector.h"
 
 void change_output_extension(char *current)
 {
@@ -38,7 +39,7 @@ void change_output_extension(char *current)
     }
 
     if (ext) {
-      char *base = get_filename(file);
+      char *base = get_filename(current);
       char *out_file = appendExt(base, ext);
       put_string_to_entry("output_file_entry", out_file);
       free(out_file);
@@ -46,27 +47,27 @@ void change_output_extension(char *current)
     }
 }
 
-void select_defaults_by_file_type(const char *f, int set_output_also)
+void select_defaults_by_file_type(char *f, int set_output_also)
 {
     char *ext = findExt(f);
   
     // if we can figure it out by the extension, do that first
-    if (strcmp_case(ext, ".meta") == 0) {
+    if (ext && strcmp_case(ext, ".meta") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_META);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);      
     }
-    else if (strcmp_case(ext, ".ldr") == 0) {
-      set_combo_box_item("input_format_combobox", INPUT_LDR);
+    else if (ext && strcmp_case(ext, ".L") == 0) {
+      set_combo_box_item("input_format_combobox", INPUT_LEADER);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);      
     }
-    else if (strcmp_case(ext, ".shp") == 0) {
+    else if (ext && strcmp_case(ext, ".shp") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_SHAPE);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);      
     }
-    else if (strcmp_case(ext, ".kml") == 0) {
+    else if (ext && strcmp_case(ext, ".kml") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_KML);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);      
@@ -82,7 +83,7 @@ void select_defaults_by_file_type(const char *f, int set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);          
     }
     else if (isleader(f)) {
-      set_combo_box_item("input_format_combobox", INPUT_LDR);
+      set_combo_box_item("input_format_combobox", INPUT_LEADER);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);          
     }
@@ -135,7 +136,7 @@ void add_input_file(char *file)
     change_output_extension(file);
 }
 
-SIGNAL_CALLBACK output_format_combox_changed(GtkWidget *w)
+SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
 {
     // update the output file extension when user changes the output
     // format selection
@@ -271,6 +272,12 @@ static void create_input_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 L_filt);
 
+    GtkFileFilter *LED_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(LED_filt, "ALOS Leader Files (LED-*)");
+    gtk_file_filter_add_pattern(LED_filt, "LED-*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                LED_filt);
+
     GtkFileFilter *pt_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(pt_filt, "Point/Polygon Files (*.txt)");
     gtk_file_filter_add_pattern(pt_filt, "*.csv");
@@ -301,11 +308,11 @@ static void create_input_file_chooser_dialog()
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 gtif_filt);
 
-    GtkFileFilter *rgps_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
-    gtk_file_filter_add_pattern(rgps_filt, "*.rpgs");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
-                                rgps_filt);
+    //GtkFileFilter *rgps_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
+    //gtk_file_filter_add_pattern(rgps_filt, "*.rpgs");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+    //                            rgps_filt);
 
     GtkFileFilter *all_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(all_filt, "All Files (*.*)");
@@ -388,6 +395,7 @@ static void input_file_browse(void)
         "CSV Files (*.csv)\0*.csv\0"
         "Metadata Files (*.meta)\0*.meta\0"
         "Leader Files (*.L)\0*.L\0"
+        "ALOS Leader Files (LED-*)\0LED-*\0"
         "Point/Polygon Files (*.csv)\0*.csv\0"
         "Shape Files (*.shp)\0*.shp\0"
         "KML Files (*.kml)\0*.kml\0"

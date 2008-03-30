@@ -46,8 +46,8 @@ main(int argc, char **argv)
     set_font();
 
     if (argc>1) {
-      add_input_file(argv[1]);
       select_defaults_by_file_type(argv[1],TRUE);
+      add_input_file(argv[1]);
       int output_format = get_combo_box_item("output_format_combobox");
       process();
       // if we opened up an external application, we can just exit now
