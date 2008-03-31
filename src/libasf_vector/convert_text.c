@@ -163,13 +163,17 @@ int ispoint(char *inFile)
             while(isspace((int)(*s))) ++s;
             if (*s == '#') {
                 char *tok = strtok(s,",");
-                s = strstr(uc(tok), "FILE");
-                if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                    tok = strtok(NULL, ",");
-                    s = strstr(uc(tok), "POINT");
-                    if (s && strncmp(uc(s), "POINT", 5) == 0) {
-                        isPoint = 1;
-                        break;
+                if (tok) {
+                    s = strstr(uc(tok), "FILE");
+                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
+                        tok = strtok(NULL, ",");
+                        if (tok) {
+                            s = strstr(uc(tok), "POINT");
+                            if (s && strncmp(uc(s), "POINT", 5) == 0) {
+                                isPoint = 1;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -208,13 +212,17 @@ int ispolygon(char *inFile)
             while(isspace((int)(*s))) ++s;
             if (*s == '#') {
                 char *tok = strtok(s,",");
-                s = strstr(uc(tok), "FILE");
-                if (s && strncmp(uc(s), "FILE", 4) == 0) {
-                    tok = strtok(NULL, ",");
-                    s = strstr(uc(tok), "POLYGON");
-                    if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
-                        isPolygon = 1;
-                        break;
+                if (tok) {
+                    s = strstr(uc(tok), "FILE");
+                    if (s && strncmp(uc(s), "FILE", 4) == 0) {
+                        tok = strtok(NULL, ",");
+                        if (tok) {
+                            s = strstr(uc(tok), "POLYGON");
+                            if (s && strncmp(uc(s), "POLYGON", 7) == 0) {
+                                isPolygon = 1;
+                                break;
+                            }
+                        }
                     }
                 }
             }
