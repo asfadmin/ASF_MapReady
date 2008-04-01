@@ -100,6 +100,25 @@ REQ_MODULES = \
 	src/metadata \
 	src/req
 
+C2V_MODULES = \
+	src/asf \
+	src/libasf_proj \
+	src/asf_meta \
+	src/libasf_ardop \
+	src/asf_fft \
+	src/sgpsdp \
+	src/libasf_raster \
+	src/libasf_import \
+	src/libasf_vector \
+	src/libasf_sar \
+	src/libasf_geocode \
+	src/libasf_export \
+	src/libasf_terrcorr \
+	src/libasf_insar \
+	src/libasf_convert \
+	src/convert2vector \
+	src/convert2vector_gui
+
 S_LIBDIR   = lib
 S_BINDIR   = bin
 S_SHAREDIR = share/asf_tools
@@ -109,6 +128,7 @@ VERSION_MAPREADY = $(shell awk -F '"' '$$1 ~ /define MAPREADY_VERSION_STRING/ {p
 VERSION_STP = $(shell awk -F '"' '$$1 ~ /define STP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_AP = $(shell awk -F '"' '$$1 ~ /define AP_VERSION_STRING/ {print $$2}' include/asf_version.h)
 VERSION_REQ = $(shell awk -F '"' '$$1 ~ /define REQ_VERSION_STRING/ {print $$2}' include/asf_version.h)
+VERSION_C2V = $(shell awk -F '"' '$$1 ~ /define C2V_VERSION_STRING/ {print $$2}' include/asf_version.h)
 
 # Build the MapReady package by default
 default: mapready
@@ -159,6 +179,17 @@ req: mkdirs_for_build external_libs
 	$(foreach MODULE, $(REQ_MODULES), $(MAKE) -C $(MODULE) &&) true
 	@ echo ""
 	@ echo "  XXXXXXXXXXXX ASF Request Generator Compiled! XXXXXXXXXXX"
+	@ echo ""
+
+# Convert To Vector Package
+c2v: mkdirs_for_build external_libs
+	echo BUILD_PKG = -D_PKG_C2V > make_support/build_pkg.mk
+	cp LICENSE.txt $(S_SHAREDIR)
+	echo $(VERSION_C2V) > $(S_SHAREDIR)/converttovector_version.txt
+	echo "#define SVN_REV \"`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+	$(foreach MODULE, $(C2V_MODULES), $(MAKE) -C $(MODULE) &&) true
+	@ echo ""
+	@ echo "  XXXXXXXXXXXX Convert To Vector Compiled! XXXXXXXXXXX"
 	@ echo ""
 
 # Build using our old system

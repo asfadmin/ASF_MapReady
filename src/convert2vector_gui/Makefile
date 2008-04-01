@@ -48,7 +48,6 @@ LIB = \
 	-lpango-1.0 \
 	-L/usr/lib/w32api \
 	-lgdi32 -llibgdk-win32-2.0 \
-	$(ASF_LIB)/libasf_metadata.a \
 	$(ASF_LIB)/libasf_vector.a \
 	$(ASF_LIB)/libasf_import.a \
 	$(ASF_LIB)/libasf_raster.a \
@@ -94,7 +93,6 @@ CFLAGS += \
 	$(JPEG_CFLAGS)
 
 LDLIBS = \
-	$(LIBDIR)/libasf_metadata.a \
 	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_raster.a \

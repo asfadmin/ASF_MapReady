@@ -28,6 +28,14 @@ on_c2v_window_destroy(GtkWidget *w, gpointer data)
     gtk_main_quit();
 }
 
+static void set_title()
+{
+    char title[256];
+    sprintf(title, "Convert To Vector: Version %s", C2V_VERSION_STRING);
+    GtkWidget *widget = glade_xml_get_widget (glade_xml, "c2v_window");
+    gtk_window_set_title(GTK_WINDOW(widget), title);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -44,6 +52,7 @@ main(int argc, char **argv)
     free(glade_xml_file);
 
     set_font();
+    set_title();
 
     if (argc>1) {
       select_defaults_by_file_type(argv[1],TRUE);

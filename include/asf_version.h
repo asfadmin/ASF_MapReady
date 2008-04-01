@@ -18,6 +18,9 @@
 #define MAPREADY_VERSION_STRING "2.0.0-dev"
 #define MAPREADY_VERSION 2.0
 
+// Convert To Vector
+#define C2V_VERSION_STRING "2.0.1-dev"
+#define C2V_VERSION 2.0
 
 // Set Tool suite stuff based on given build define
 #if defined (_PKG_STP)
@@ -34,6 +37,11 @@
 # define TOOL_SUITE_NAME		"REQ"
 # define TOOL_SUITE_VERSION_STRING	REQ_VERSION_STRING
 # define TOOL_SUITE_VERSION		REQ_VERSION
+
+#elif defined (_PKG_C2V)
+# define TOOL_SUITE_NAME		"ConvertToVector"
+# define TOOL_SUITE_VERSION_STRING	C2V_VERSION_STRING
+# define TOOL_SUITE_VERSION		C2V_VERSION
 
 // Default to MapReady
 #else //defined (_PKG_MAPREADY)
