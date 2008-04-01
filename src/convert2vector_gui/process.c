@@ -93,25 +93,25 @@ void process()
   {
     printf("Converting point file to a shape file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_base, out_base, POINT, 0);
+    write_shape(in_file, out_base, POINT, 0);
   }
   else if (input_format == INPUT_POINT && output_format == OUTPUT_KML)
   {
     printf("Converting point file to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, POINT, 0);
+    write_kml(in_file, out_base, POINT, 0);
   }
   else if (input_format == INPUT_POLYGON && output_format == OUTPUT_SHAPE)
   {
     printf("Converting polygon file to a shape file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    polygon2shape_new(in_base, out_base);
+    polygon2shape_new(in_file, out_base);
   }
   else if (input_format == INPUT_POLYGON && output_format == OUTPUT_KML)
   {
     printf("Converting polygon file to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, POLYGON, 0);
+    write_kml(in_file, out_base, POLYGON, 0);
   }
   else if (input_format == INPUT_SHAPE && output_format == OUTPUT_KML)
   {
@@ -129,31 +129,31 @@ void process()
   {
     printf("Converting geotiff file to a shape file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_base, out_base, GEOTIFF_META, 0);
+    write_shape(in_file, out_base, GEOTIFF_META, 0);
   }
   else if (input_format == INPUT_GEOTIFF && output_format == OUTPUT_KML)
   {
     printf("Converting geotiff file to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, GEOTIFF_META, 0);
+    write_kml(in_file, out_base, GEOTIFF_META, 0);
   }
   else if (input_format == INPUT_GEOTIFF && output_format == OUTPUT_TEXT)
   {
     printf("Converting geotiff file to a text file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_text(in_base, out_base, GEOTIFF_META, 0);
+    write_text(in_file, out_base, GEOTIFF_META, 0);
   }
   else if (input_format == INPUT_RGPS && output_format == OUTPUT_SHAPE)
   {
     printf("Converting list of RGPS cells to a shape file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_base, out_base, RGPS, 0);
+    write_shape(in_file, out_base, RGPS, 0);
   }
   else if (input_format == INPUT_RGPS && output_format == OUTPUT_KML)
   {
     printf("Converting list of RGPS cells to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, RGPS, 0);
+    write_kml(in_file, out_base, RGPS, 0);
   }
   else
   {
