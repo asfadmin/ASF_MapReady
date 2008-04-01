@@ -14,7 +14,6 @@ MAPREADY_MODULES = \
 	src/asf \
 	src/libasf_proj \
 	src/asf_meta \
-	src/libasf_ardop \
 	src/asf_fft \
 	src/libasf_raster \
 	src/libasf_import \
@@ -22,6 +21,7 @@ MAPREADY_MODULES = \
 	src/libasf_sar \
 	src/libasf_geocode \
 	src/libasf_export \
+	src/libasf_ardop \
 	src/ardop \
 	src/libasf_terrcorr \
 	src/libasf_insar \
