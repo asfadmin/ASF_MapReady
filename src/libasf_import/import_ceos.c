@@ -39,9 +39,10 @@ void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
         char *lutName, int db_flag);
 void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName, 
 		      char *outMetaName, char *bandExt, int band, int nBands,
-		      radiometry_t radiometry, int line, int sample, 
-		      int width, int height, int import_single_band, 
-		      int complex_flag, int multilook_flag, char *lutName);
+		      int nBandsOut, radiometry_t radiometry,
+                      int line, int sample, int width, int height,
+                      int import_single_band, int complex_flag,
+                      int multilook_flag, char *lutName);
 
 void import_ceos_byte_lut(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, meta_parameters *meta, int band,
@@ -210,8 +211,8 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
   meta_parameters *meta=NULL;
   char **inBandName = NULL, **inMetaName = NULL;
   char unscaledBaseName[256]="", bandExt[10]="";
-  int do_resample, do_metadata_fix, ii, nBands, trailer, import_single_band = 0;
-  int band;
+  int do_resample, do_metadata_fix, ii, nBands, trailer;
+  int band, import_single_band = 0;
   double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
 
   if (inMetaNameOption == NULL)
@@ -239,43 +240,73 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     strcat(unscaledBaseName, "_unscaled");
   }
 
+  // Add amplitude band, if requested, and applicable
+  int nBandsOut = nBands;
+  if (amp0_flag) {
+    if (radiometry == r_AMP) {
+      asfPrintWarning("amp0 flag ignored -- amplitude data is "
+                      "already being imported.\n");
+      amp0_flag = FALSE;
+    }
+    else {
+      ++nBandsOut;
+    }
+  }
+
   ceos = get_ceos_description(inBaseName, NOREPORT);
 
-  for (ii=0; ii<nBands; ii++) {
+  for (ii=0; ii<nBandsOut; ii++) {
 
     strcpy(outDataName, outBaseName);
     strcpy(outMetaName, outBaseName);
     strcat(outMetaName, TOOLS_META_EXT);
 
-    // Determine the band extension (band ID)
-    if (ceos->satellite == RSAT)
-      strcpy(bandExt, "HH");
-    else if (ceos->satellite == ERS || ceos->satellite == JERS)
-      strcpy(bandExt, "VV");
-    else if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
-      char *polarization;
-      polarization = get_polarization(inBandName[ii]);
-      strcpy(bandExt, polarization);
-      FREE(polarization);
-    }
-    else if (ceos->sensor == AVNIR) {
-      int band_number;
-      band_number = get_alos_band_number(inBandName[ii]);
-      sprintf(bandExt, "0%d", band_number);
-    }
-    else if (ceos->sensor == PRISM)
-      sprintf(bandExt, "01");
+    radiometry_t rad = radiometry;
+    int index = ii;
 
-    // p will point to the beginning of the actual file (past the path)
-    char *p = strrchr(inBandName[ii], '/');
-    if (!p)
-      p = inBandName[ii];
-    else
-      ++p;
+    // Here is where the handle the amp0 flag.  Trick the band loop
+    // into turning the ii==0 case into an AMPLITUDE band, using the
+    // data from band #1.  ii==1 will then become the normal ii==0
+    // case.  "index" serves as the adjusted value of ii.  (ie the index
+    // into the inBandName[] array.)
+    if (amp0_flag && ii==0) {
+      rad = r_AMP;
+      strcpy(bandExt,"AMP");
+      band = 1;
+    }
+    else {
+      if (amp0_flag)
+        --index;
+        
+      // Determine the band extension (band ID)
+      if (ceos->satellite == RSAT)
+        strcpy(bandExt, "HH");
+      else if (ceos->satellite == ERS || ceos->satellite == JERS)
+        strcpy(bandExt, "VV");
+      else if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
+        char *polarization;
+        polarization = get_polarization(inBandName[index]);
+        strcpy(bandExt, polarization);
+        FREE(polarization);
+      }
+      else if (ceos->sensor == AVNIR) {
+        int band_number;
+        band_number = get_alos_band_number(inBandName[index]);
+        sprintf(bandExt, "0%d", band_number);
+      }
+      else if (ceos->sensor == PRISM)
+        sprintf(bandExt, "01");
 
-    // Check to see if the user forced a band extension
-    // (band_id) upon us... override the above if so
-    if (band_id && strlen(band_id)) {
+      // p will point to the beginning of the actual file (past the path)
+      char *p = strrchr(inBandName[index], '/');
+      if (!p)
+        p = inBandName[index];
+      else
+        ++p;
+      
+      // Check to see if the user forced a band extension
+      // (band_id) upon us... override the above if so
+      if (band_id && strlen(band_id)) {
         // Force ii index to point at correct filename,
         // dying if it can't be found.
         char file_prefix[256];
@@ -304,8 +335,8 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
                 found = 1;
             ii++;
             if (ii > nBands)
-                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band data "
-                "and\n"
+                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band"
+                " data and\n"
                 "selected band (\"%s\") file was not found \"%s\"\n",
                 band_id, strcat(file_prefix, inBaseName));
         } while (!found);
@@ -314,12 +345,13 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
             import_single_band = 1;
             strcpy(bandExt, band_id);
         }
-    }
-    else
+      }
+      else
         band = ii+1;
-    asfPrintStatus("\n   File: %s\n", inBandName[ii]);
-    if (import_single_band)
+      asfPrintStatus("\n   File: %s\n", inBandName[index]);
+      if (import_single_band)
         nBands = 1;
+    }
 
     if (ceos->facility == CDPF &&
 	ceos->ceos_data_type != CEOS_SLC_DATA_INT &&
@@ -328,7 +360,7 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
 
     // Update the radiometry if db flag is set
     if (db_flag)
-      radiometry += 3;
+      rad += 3;
 
     // Set LUT to NULL if string is empty
     if (lutName && strlen(lutName) == 0) {
@@ -345,30 +377,30 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
 
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA)
-        import_ceos_raw(inBandName[ii], inMetaName[0], outDataName, 
-	outMetaName, bandExt, band, nBands, radiometry, 
+        import_ceos_raw(inBandName[index], inMetaName[0], outDataName, 
+	outMetaName, bandExt, band, nBands, rad, 
 	line, sample, width, height, import_single_band);
     else {
       if (ceos->facility == CDPF && 
 	  ceos->ceos_data_type != CEOS_SLC_DATA_INT) {
-	if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-	  import_ceos_int_slant_range_cal(inBandName[ii], inMetaName[0], 
+	if (rad >= r_SIGMA && rad <= r_GAMMA_DB)
+	  import_ceos_int_slant_range_cal(inBandName[index], inMetaName[0], 
             outDataName, outMetaName, meta, band, import_single_band, 
-            nBands, radiometry, db_flag);
+            nBands, rad, db_flag);
 	else if (ceos->product == SSG || ceos->product == GEC) {
-	  import_ceos_data(inBandName[ii], inMetaName[0], outDataName, 
-          outMetaName, bandExt, band, nBands, radiometry, 
+	  import_ceos_data(inBandName[index], inMetaName[0], outDataName, 
+          outMetaName, bandExt, band, nBands, nBandsOut, rad, 
 	  line, sample, width, height,
 	  import_single_band, complex_flag, multilook_flag, lutName);
 	}
 	else	  
-	  import_ceos_int_slant_range_amp(inBandName[ii], inMetaName[0], 
+	  import_ceos_int_slant_range_amp(inBandName[index], inMetaName[0], 
 	    outDataName, outMetaName, meta, band, import_single_band, 
-            nBands, radiometry);
+            nBands, rad);
       }
       else
-	import_ceos_data(inBandName[ii], inMetaName[0], outDataName, 
-        outMetaName, bandExt, band, nBands, radiometry, 
+	import_ceos_data(inBandName[index], inMetaName[0], outDataName, 
+        outMetaName, bandExt, band, nBands, nBandsOut, rad, 
 	line, sample, width, height,
 	import_single_band, complex_flag, multilook_flag, lutName);
     }
@@ -967,7 +999,8 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
 // Assign band names
 static void assign_band_names(meta_parameters *meta, char *outMetaName,
 			      char *bandExt, int band, int nBands, 
-			      radiometry_t radiometry, int complex_flag)
+                              int nBandsOut, radiometry_t radiometry,
+                              int complex_flag)
 {
   char bandStr[512];
 
@@ -981,7 +1014,11 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
   }
   if (strcmp(meta->general->bands, "") != 0)
     strcat(meta->general->bands, ",");
-  if (radiometry == r_SIGMA) {
+  if (band==1 && (nBandsOut == nBands+1) && radiometry==r_AMP) {
+    // This is the "-amp0" case
+    sprintf(bandStr, "AMP");
+  }
+  else if (radiometry == r_SIGMA) {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "SIGMA-%s", meta->sar->polarization);
     else
@@ -1043,9 +1080,10 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
 // Import all flavors of detected data
 void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName, 
 		      char *outMetaName, char *bandExt, int band, int nBands,
-		      radiometry_t radiometry, int line, int sample, 
-		      int width, int height, int import_single_band, 
-		      int complex_flag, int multilook_flag, char *lutName)
+		      int nBandsOut, radiometry_t radiometry,
+                      int line, int sample, int width, int height,
+                      int import_single_band, int complex_flag,
+                      int multilook_flag, char *lutName)
 {
   FILE *fpIn=NULL;
   int nl, ns, lc, nLooks,flip=FALSE, leftFill, rightFill, headerBytes;
@@ -1182,7 +1220,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Assign band names, set correct data type and band count
   if (meta->sar) {
-    assign_band_names(meta, outMetaName, bandExt, band, nBands, 
+    assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
 		      radiometry, complex_flag);
     if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
       meta->general->data_type = REAL32;
@@ -1754,7 +1792,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
   }
   
-  if (import_single_band || band == nBands) {
+  if (import_single_band || band == nBandsOut) {
     FCLOSE(fpOut);
     fpOut = NULL;
     output_file_closed = TRUE;

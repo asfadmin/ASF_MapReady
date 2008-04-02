@@ -86,8 +86,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        if the first line of any file in that directory has the format:\n"\
 "           # ASF Import YYYY/MM/DD <sensor>\n"\
 "        and, if so, if the imported file's sensor matches that given in the\n"\
-"        file, and the acquisition date is after what is given in the file,\n"\
-"        the look up table will be automatically applied.\n"\
+"        file, and the acquisition date is on or after what is given in the\n"\
+"        file, the look up table will be automatically applied.\n"\
 "   -lat <lower> <upper>\n"\
 "        Specify lower and upper latitude contraints (only available\n"\
 "        for STF). Note that the program is not able to verify whether\n"\

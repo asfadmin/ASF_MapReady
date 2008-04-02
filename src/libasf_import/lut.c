@@ -55,9 +55,10 @@ char *check_luts(meta_parameters *meta)
                 ymd_date ymd;
                 hms_time hms;
                 parse_DMYdate(meta->general->acquisition_date, &ymd, &hms);
-                if (ymd.year > y ||
+
+                if ((ymd.year > y) ||
                     (ymd.year == y && ymd.month > m) ||
-                    (ymd.year == y && ymd.month == m && ymd.day > d))
+                    (ymd.year == y && ymd.month == m && ymd.day >= d))
                 {
                   // Yes!  Look up table should be applied
                   char *base = get_basename(name);
