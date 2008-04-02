@@ -4,8 +4,10 @@
 #include "asf_raster.h"
 #include "calibrate.h"
 #include "decoder.h"
+#include "dateUtil.h"
 #include <ctype.h>
 #include <assert.h>
+#include <dirent.h>
 
 #define MAX_tableRes 512
 #define MAX_IMG_SIZE 100000
@@ -182,6 +184,68 @@ float get_default_ypix(const char *outBaseName)
   return az_pixsiz;
 }
 
+char *check_luts(meta_parameters *meta)
+{
+  char luts_dir[1024],name[1024];
+  sprintf(luts_dir,"%s/look_up_tables/import",get_asf_share_dir());
+  char *ret=NULL;
+  struct dirent *dp;
+  DIR *dfd;
+
+  if ((dfd = opendir(luts_dir)) == NULL)
+    return NULL; // directory not found, probably we have no luts
+
+  while ((dp = readdir(dfd)) != NULL) {
+    if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
+      continue;
+    }
+    if (strlen(luts_dir)+strlen(dp->d_name)+2 > sizeof(name)) {
+      asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
+                      luts_dir, dp->d_name);
+      return NULL; // error
+    }
+    else {
+      sprintf(name, "%s%c%s", luts_dir, DIR_SEPARATOR, dp->d_name);
+      //printf("name: %s\n", name);
+
+      FILE *fp = fopen(name, "r");
+      if (fp) {
+        char buf[256];
+        if (fgets(buf, 255, fp)) {
+          if (strlen(buf)>0 && buf[0]=='#' && strstr(buf,"ASF Import")!=NULL) {
+            int y, m, d;
+            char sensor[256];
+            sscanf(buf, "# ASF Import %d/%d/%d %s", &y, &m, &d, sensor);
+            //printf("LUT Found for %s after %d/%d/%d\n", sensor, y,m,d);
+            if (strstr(meta->general->sensor,sensor)!=NULL) {
+              //printf("Sensor matches!\n");
+              ymd_date ymd;
+              hms_time hms;
+              parse_DMYdate(meta->general->acquisition_date, &ymd, &hms);
+              if (ymd.year > y ||
+                  (ymd.year == y && ymd.month > m) ||
+                  (ymd.year == y && ymd.month == m && ymd.day > d))
+              {
+                //printf("Data is acquired after cutoff! "
+                //       "%d/%d/%d > %d/%d/%d\n",
+                //       ymd.year,ymd.month,ymd.day,y,m,d);
+                //printf("Look up table will be applied!\n");
+                char *base = get_basename(name);
+                asfPrintStatus("Applying look up table: %s\n", base);
+                ret = STRDUP(name);
+                FREE(base);
+              }
+            }
+          }
+        }
+      }
+      FCLOSE(fp);
+    }
+  }
+  closedir(dfd);
+  return ret;
+}
+
 /* Prototypes from the meta library */
 void meta_new2old(meta_parameters *meta);
 void meta_write_old(meta_parameters *meta, const char *file_name);
@@ -336,6 +400,13 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
       lutName = NULL;
     }
     
+    // If we have no LUT, check if we should use one of the defualt
+    // LUTs, that apply gain fixes, etc.
+    if (!lutName) {
+      meta = meta_create(inMetaName[0]);
+      lutName = check_luts(meta);
+    }
+
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA)
         import_ceos_raw(inBandName[ii], inMetaName[0], outDataName, 
@@ -1058,9 +1129,11 @@ void read_cal_lut(meta_parameters *meta, char *lutName,
     scale[ii] = 0.0;
   }
   while(fgets(line, 255, fpLut)) {
+    if (line[0]=='#') continue; // skip comment lines
     sscanf(line, "%lf\t%lf", &incid[nLut], &scale[nLut]);
     nLut++;
   }
+  FCLOSE(fpLut);
 
   // Calculate minimum and maximum incidence angle
   UL_incid = meta_incid(meta, 0, 0);

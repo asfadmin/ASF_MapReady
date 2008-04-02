@@ -252,6 +252,32 @@ void parse_refTime(const char *refTime, julian_date *julDay, hms_time *time)
 
  }
 
+/*Extract date from the metadata-style given string:
+instr="DD-MMM-YYYY, hh:mm:ss"
+index  000000000011111111112
+index  012345678901234567890
+*/
+void parse_DMYdate(const char *inStr,ymd_date *date,hms_time *time)
+{
+  char mon[][5]= 
+    {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
+  char buf[100];
+  int i,sec;
+#define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
+  subStr(7,4,&date->year);
+  for (i=0; i<13; i++) {
+    strncpy(buf, &inStr[3], 3);
+    buf[3] = 0;
+    if (strcmp_case(uc(buf), mon[i]) == 0)
+      date->month = i;
+  }
+  subStr(0,2,&date->day);
+  subStr(13,2,&time->hour);
+  subStr(16,2,&time->min);
+  subStr(19,2,&sec);
+  time->sec=sec;
+#undef subStr
+}
 
 /************************************************************
    Date/Time Mathematical Routines

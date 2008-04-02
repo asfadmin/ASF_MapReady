@@ -79,7 +79,15 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        ignored unless the -format parameter is \"geotiff\".\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
-"        incidence angle dependent scaling factor.\n"\
+"        incidence angle dependent scaling factor.\n\n"\
+"        asf_import may apply a look up table automatically.  Automatically\n"\
+"        applied look up tables are in the asf share directory, in the\n"\
+"        look_up_table/import subdirectory.  asf_import will check to see\n"\
+"        if the first line of any file in that directory has the format:\n"\
+"           # ASF Import YYYY/MM/DD <sensor>\n"\
+"        and, if so, if the imported file's sensor matches that given in the\n"\
+"        file, and the acquisition date is after what is given in the file,\n"\
+"        the look up table will be automatically applied.\n"\
 "   -lat <lower> <upper>\n"\
 "        Specify lower and upper latitude contraints (only available\n"\
 "        for STF). Note that the program is not able to verify whether\n"\
