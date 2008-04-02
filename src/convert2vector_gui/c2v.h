@@ -28,15 +28,14 @@
 // the c2v.glade file.
 enum
 {
-  INPUT_ALOS_CSV = 0,
-  INPUT_META = 1,
-  INPUT_LEADER = 2,
-  INPUT_POINT = 3,
-  INPUT_POLYGON = 4,
-  INPUT_SHAPE = 5,
-  INPUT_KML = 6,
-  INPUT_GEOTIFF = 7,
-  INPUT_RGPS = 8
+  INPUT_META = 0,
+  INPUT_LEADER = 1,
+  INPUT_POINT = 2,
+  INPUT_POLYGON = 3,
+  INPUT_SHAPE = 4,
+  INPUT_KML = 5,
+  INPUT_GEOTIFF = 6,
+  INPUT_ALOS_CSV = 7
 };
 
 enum

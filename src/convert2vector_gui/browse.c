@@ -111,11 +111,13 @@ void select_defaults_by_file_type(char *f, int set_output_also)
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);          
     }
-    else if (isrgps(f)) {
-      set_combo_box_item("input_format_combobox", INPUT_RGPS);
-      if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
-    }
+    //  Removing RGPS for now
+    //else if (isrgps(f)) {
+    //  set_combo_box_item("input_format_combobox", INPUT_RGPS);
+    //  if (set_output_also)
+    //    set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    //}
+
     // moved the ALOS CSV case last... we should change this to open
     // the file and check for certain required text in the header line
     // ensure it is what we hope it is, as is done for point/polygon

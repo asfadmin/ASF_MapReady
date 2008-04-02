@@ -152,15 +152,14 @@
 		    <widget class="GtkComboBox" id="input_format_combobox">
 		      <property name="width_request">120</property>
 		      <property name="visible">True</property>
-		      <property name="items" translatable="yes">ALOS CSV
-Metadata
+		      <property name="items" translatable="yes">Metadata
 Leader
 Point
 Polygon
 Shape
 KML
 Geotiff
-RGPS
+AUIG
 </property>
 		    </widget>
 		    <packing>
@@ -291,7 +290,7 @@ RGPS
 		      <property name="items" translatable="yes">KML
 Shape
 Text
-ALOS CSV
+AUIG
 </property>
 		      <signal name="changed" handler="on_output_format_combobox_changed" last_modification_time="Sat, 29 Mar 2008 21:16:48 GMT"/>
 		    </widget>

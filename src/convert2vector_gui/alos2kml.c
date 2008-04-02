@@ -157,17 +157,21 @@ static void add_to_kml(FILE *fp, AlosCsvInfo *info, char *header_line)
   if (strlen(header_line)>0)
     fprintf(fp, "<!-- CSVHeader:%s -->\n", header_line);
   fprintf(fp, "<!-- CSVLine:%s -->\n", info->full_line);
-  if (strlen(info->sensor)>0)
+  if (strlen(info->sensor)>0 && strcmp(info->sensor,MAGIC_UNSET_STRING)!=0)
     fprintf(fp, "<strong>Sensor</strong>: %s<br>\n", info->sensor);
   fprintf(fp, "<strong>Scene ID</strong>: %s<br>\n", info->scnid);
   if (info->pathno>0)
     fprintf(fp, "<strong>Path</strong>: %d<br>\n", info->pathno);
-  if (strlen(info->scn_cdate)>0 && strlen(info->scn_ctime)>0)
+  if (strlen(info->scn_cdate)>0 && strlen(info->scn_ctime)>0 &&
+      strcmp(info->scn_cdate,MAGIC_UNSET_STRING)!=0 &&
+      strcmp(info->scn_ctime,MAGIC_UNSET_STRING)!=0)
     fprintf(fp, "<strong>Date/Time</strong>: %s %s<br>\n",
             info->scn_cdate, info->scn_ctime);
-  else if (strlen(info->scn_cdate)>0)
+  else if (strlen(info->scn_cdate)>0 &&
+           strcmp(info->scn_cdate,MAGIC_UNSET_STRING)!=0)
     fprintf(fp, "<strong>Date</strong>: %s<br>\n", info->scn_cdate);
-  else if (strlen(info->scn_ctime)>0)
+  else if (strlen(info->scn_ctime)>0 &&
+           strcmp(info->scn_ctime,MAGIC_UNSET_STRING)!=0)
     fprintf(fp, "<strong>Time</strong>: %s<br>\n", info->scn_ctime);
   if (info->orbitdir=='A')
     fprintf(fp, "<strong>Orbit Dir</strong>: Ascending<br>\n");
@@ -217,10 +221,18 @@ int kml_to_alos_csv(const char *in_file, const char *out_file)
       return 0;
     }
 
+    int hdr_count = 0;
+    int line_count = 0;
+
     char line[1024];
     while (fgets(line, 1023, ifp) != NULL) {
         if (strstr(line, "CSVHeader") || strstr(line, "CSVLine"))
         {
+            if (strstr(line, "CSVHeader"))
+                ++hdr_count;
+            if (strstr(line, "CSVLine"))
+                ++line_count;
+
             char *p = strchr(line, ':');
             if (p) {
               ++p;
@@ -235,7 +247,18 @@ int kml_to_alos_csv(const char *in_file, const char *out_file)
     
     fclose(ifp);
     fclose(ofp);
-    
+
+    if (hdr_count < 1)
+      message_box("No header line found -- this may be a KML file that\n"
+                  "was not converted from ALOS CSV.  Currently, this program\n"
+                  "can only convert KML files that were created by this\n"
+                  "program from the ALOS CSV format.\n");
+    else if (hdr_count > 1)
+      message_box("More than one header line found! "
+                  "Output is probably invalid.\n");
+    else if (line_count == 0)
+      message_box("No data lines found.\n");
+
     return 1;
 }
 
