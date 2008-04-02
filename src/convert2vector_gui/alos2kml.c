@@ -250,9 +250,9 @@ int kml_to_alos_csv(const char *in_file, const char *out_file)
 
     if (hdr_count < 1)
       message_box("No header line found -- this may be a KML file that\n"
-                  "was not converted from ALOS CSV.  Currently, this program\n"
-                  "can only convert KML files that were created by this\n"
-                  "program from the ALOS CSV format.\n");
+                  "was not converted from an AUIG csv file.  Currently,\n"
+                  "Convert To Vector can only convert KML files that were\n"
+                  "created by this program from the ALOS CSV format.\n");
     else if (hdr_count > 1)
       message_box("More than one header line found! "
                   "Output is probably invalid.\n");
