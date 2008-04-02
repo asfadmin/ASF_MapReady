@@ -4,10 +4,8 @@
 #include "asf_raster.h"
 #include "calibrate.h"
 #include "decoder.h"
-#include "dateUtil.h"
 #include <ctype.h>
 #include <assert.h>
-#include <dirent.h>
 
 #define MAX_tableRes 512
 #define MAX_IMG_SIZE 100000
@@ -182,68 +180,6 @@ float get_default_ypix(const char *outBaseName)
   meta_free(omd);
 
   return az_pixsiz;
-}
-
-char *check_luts(meta_parameters *meta)
-{
-  char luts_dir[1024],name[1024];
-  sprintf(luts_dir,"%s/look_up_tables/import",get_asf_share_dir());
-  char *ret=NULL;
-  struct dirent *dp;
-  DIR *dfd;
-
-  if ((dfd = opendir(luts_dir)) == NULL)
-    return NULL; // directory not found, probably we have no luts
-
-  while ((dp = readdir(dfd)) != NULL) {
-    if (strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0) {
-      continue;
-    }
-    if (strlen(luts_dir)+strlen(dp->d_name)+2 > sizeof(name)) {
-      asfPrintWarning("dirwalk: name %s/%s exceeds buffersize.\n",
-                      luts_dir, dp->d_name);
-      return NULL; // error
-    }
-    else {
-      sprintf(name, "%s%c%s", luts_dir, DIR_SEPARATOR, dp->d_name);
-      //printf("name: %s\n", name);
-
-      FILE *fp = fopen(name, "r");
-      if (fp) {
-        char buf[256];
-        if (fgets(buf, 255, fp)) {
-          if (strlen(buf)>0 && buf[0]=='#' && strstr(buf,"ASF Import")!=NULL) {
-            int y, m, d;
-            char sensor[256];
-            sscanf(buf, "# ASF Import %d/%d/%d %s", &y, &m, &d, sensor);
-            //printf("LUT Found for %s after %d/%d/%d\n", sensor, y,m,d);
-            if (strstr(meta->general->sensor,sensor)!=NULL) {
-              //printf("Sensor matches!\n");
-              ymd_date ymd;
-              hms_time hms;
-              parse_DMYdate(meta->general->acquisition_date, &ymd, &hms);
-              if (ymd.year > y ||
-                  (ymd.year == y && ymd.month > m) ||
-                  (ymd.year == y && ymd.month == m && ymd.day > d))
-              {
-                //printf("Data is acquired after cutoff! "
-                //       "%d/%d/%d > %d/%d/%d\n",
-                //       ymd.year,ymd.month,ymd.day,y,m,d);
-                //printf("Look up table will be applied!\n");
-                char *base = get_basename(name);
-                asfPrintStatus("Applying look up table: %s\n", base);
-                ret = STRDUP(name);
-                FREE(base);
-              }
-            }
-          }
-        }
-      }
-      FCLOSE(fp);
-    }
-  }
-  closedir(dfd);
-  return ret;
 }
 
 /* Prototypes from the meta library */
@@ -1102,83 +1038,6 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
       sprintf(bandStr, "%s", bandExt);
   }
   strcat(meta->general->bands, bandStr);
-}
-
-// Read user defined look up table
-void read_cal_lut(meta_parameters *meta, char *lutName, 
-		  double **incid_table, double **scale_table, 
-		  int *min, int *max)
-{
-  FILE *fpLut;
-  double *incid, *scale, old, new;
-  double UL_incid, UR_incid, LL_incid, LR_incid;
-  double min_incid=100.0, max_incid=0.0;
-  char line[255];
-  int ii, nLut=0, n;
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
-
-  // Allocate memory for tables
-  incid = (double *) MALLOC(sizeof(double)*MAX_tableRes);
-  scale = (double *) MALLOC(sizeof(double)*MAX_tableRes);
-
-  // Read look up table
-  fpLut = FOPEN(lutName, "r");
-  for (ii=0; ii<MAX_tableRes; ii++) {
-    incid[ii] = 0.0;
-    scale[ii] = 0.0;
-  }
-  while(fgets(line, 255, fpLut)) {
-    if (line[0]=='#') continue; // skip comment lines
-    sscanf(line, "%lf\t%lf", &incid[nLut], &scale[nLut]);
-    nLut++;
-  }
-  FCLOSE(fpLut);
-
-  // Calculate minimum and maximum incidence angle
-  UL_incid = meta_incid(meta, 0, 0);
-  UR_incid = meta_incid(meta, nl, 0);
-  LL_incid = meta_incid(meta, 0, ns);
-  LR_incid = meta_incid(meta, nl, ns);
-  if (UL_incid < min_incid) min_incid = UL_incid;
-  if (UL_incid > max_incid) max_incid = UL_incid;
-  if (UR_incid < min_incid) min_incid = UR_incid;
-  if (UR_incid > max_incid) max_incid = UR_incid;
-  if (LL_incid < min_incid) min_incid = LL_incid;
-  if (LL_incid > max_incid) max_incid = LL_incid;
-  if (LR_incid < min_incid) min_incid = LR_incid;
-  if (LR_incid > max_incid) max_incid = LR_incid;
-  min_incid *= R2D;
-  max_incid *= R2D;
-
-  // Look up the index for the minimum in the LUT
-  n = 0;
-  old = 100000000;
-  for (ii=0; ii<nLut; ii++) {
-    new = min_incid - incid[ii];
-    if (fabs(new) < fabs(old)) {
-      old = new;
-      n++;
-    }
-    else break;
-  }
-  *min = n;
-
-  // Look up the index for the maximum in the LUT
-  n = 0;
-  old = 100000000;
-  for (ii=0; ii<nLut; ii++) {
-    new = max_incid - incid[ii];
-    if (fabs(new) < fabs(old)) {
-      old = new;
-      n++;
-    }
-    else break;
-  }
-  *max = n;
-  
-  *incid_table = incid;
-  *scale_table = scale;
 }
 
 // Import all flavors of detected data

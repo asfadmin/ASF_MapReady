@@ -76,6 +76,7 @@ OBJS  = ardop_write.o \
 	unpack.o \
 	utilities_ceos.o \
 	utilities_stf.o \
+	lut.o \
 	write_meta_and_img.o
 
 all: build_only

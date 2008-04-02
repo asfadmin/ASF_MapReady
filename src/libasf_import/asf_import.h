@@ -49,6 +49,11 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
 /*********************************************************************/
 /* The rest of these are private implementation functions for import */
 
+/* Prototypes from lut.c */
+char *check_luts(meta_parameters *meta);
+void read_cal_lut(meta_parameters *meta, char *lutName, double **incid_table,
+                  double **scale_table, int *min, int *max);
+
 /* Prototypes from utilities.c */
 int firstRecordLen(char *ceosName);
 
