@@ -10,7 +10,6 @@
 #include <glib.h>
 #include <glib/gprintf.h>
 #include <sys/wait.h>
-#include <asf_import.h>
 
 /* for win32, need __declspec(dllexport) on all signal handlers */
 #if !defined(SIGNAL_CALLBACK)
@@ -30,7 +29,6 @@
 #  include <pango/pango.h>
 
 #  define BYTE __byte
-#    include "asf.h"
 #    include "asf_meta.h"
 #  undef BYTE
 #  include <Windows.h>
@@ -136,6 +134,7 @@ void set_font () {}
 
 #endif /* defined(win32) */
 
+#include "asf_import.h"
 #include "ardop_defs.h"
 
 #ifdef win32
@@ -272,7 +271,7 @@ on_input_file_browse_button_clicked(GtkWidget *button)
 #endif
 
   of.hwndOwner = NULL;
-  of.lpstrFilter = "ASF Internal Format (*.raw)\0*.raw\0"
+  of.lpstrFilter = "ASF Internal Format (*.img)\0*.img\0"
                    "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
