@@ -97,13 +97,15 @@ void estdop(char file[],int nDopLines, float *a, float *b,float *c)
         y_vec[x] = phase[x];
     }
 
-    if (1) /*Output doppler vs. range*/
-    {
-        FILE *f=FOPEN("dop_vs_rng","w");
-        for (x=0;x<r->nSamples/MULTILOOK;x++)
-            fprintf(f,"%.0f\t%f\n",x_vec[x],y_vec[x]);
-        fclose(f);
-    }
+// Don't output this file for now since none of our other software uses it
+// This file causes the windows uninstaller not to fully uninstall
+//    if (1) /*Output doppler vs. range*/
+//    {
+//        FILE *f=FOPEN("dop_vs_rng","w");
+//        for (x=0;x<r->nSamples/MULTILOOK;x++)
+//            fprintf(f,"%.0f\t%f\n",x_vec[x],y_vec[x]);
+//        fclose(f);
+//    }
 
     sum = sum / (r->nSamples/MULTILOOK);
     if (!quietflag) printf("   Constant Average    : y = %f\n",(float)sum);
