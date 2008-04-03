@@ -251,7 +251,7 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 
         // HH-VV, 2*HV, HH+VV
         self->pauli_lines[n][j] = complex_vector_normalize(
-	    complex_vector_new(
+        complex_vector_new(
                 complex_sub(q.hh, q.vv),
                 complex_scale(q.hv, 2),
                 complex_add(q.hh, q.vv)));
@@ -267,7 +267,7 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     for (j=0; j<ns; ++j) {
         complexVector v = self->pauli_lines[n][j];
         complexVector vc = complex_vector_conj(v);
-        
+
         complexMatrix *m = self->coh_lines[n][j];
 
         complex_matrix_set(m,0,0,complex_mul(vc.A, v.A));
@@ -375,6 +375,7 @@ static double log3(double v)
 }
 
 void polarimetric_decomp(const char *inFile, const char *outFile,
+                         int amplitude_band,
                          int pauli_1_band,
                          int pauli_2_band,
                          int pauli_3_band,
@@ -482,7 +483,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       if (entropy_band >= 0 || anisotropy_band >= 0)
       {
           // coherence -- do ensemble averaging for each element
-          for (j=0; j<ns; ++j) {          
+          for (j=0; j<ns; ++j) {
               int ii,jj,m;
               for (ii=0; ii<3; ++ii) {
                   for (jj=0; jj<3; ++jj) {
@@ -528,7 +529,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
               // If a Pn value is small enough, the log value will be NaN.
               // In this case, the value of -Pn*log3(Pn) is supposed to be
               // zero - we have to force it.
-              entropy[j] = 
+              entropy[j] =
                   (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
                   (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
                   (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
@@ -616,10 +617,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
 void cpx2pauli(const char *inFile, const char *outFile)
 {
-  polarimetric_decomp(inFile, outFile, 0, 1, 2, -1, -1, -1);
+  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1);
 }
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile)
 {
-  polarimetric_decomp(inFile, outFile, -1, -1, -1, 0, 1, 2);
+  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2);
 }

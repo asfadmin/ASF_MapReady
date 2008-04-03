@@ -18,7 +18,7 @@
    the range too much when viewing the DEM */
 #define NO_DEM_DATA -3.333
 
-/* Number of pixels added by create_dem_grid at the right edge of the 
+/* Number of pixels added by create_dem_grid at the right edge of the
    image, to allow for height differences */
 #define DEM_GRID_RHS_PADDING 400
 
@@ -42,31 +42,31 @@ int sr2gr_pixsiz(const char *infile, const char *outfile, float srPixSize);
 
 /* Prototypes from reskew_dem.c */
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
-	       char *outAmpFile, char *inMaskFile);
+           char *outAmpFile, char *inMaskFile);
 int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
                    char *outAmpFile, char *inMaskFile,
                    radiometry_t rad);
 
 /* Prototypes from deskew_dem.c */
 int deskew_dem(char *inDemName, char *outName, char *inSarName,
-	       int doRadiometric, char *inMaskName, char *outMaskName,
-	       int fill_holes, int fill_value);
+           int doRadiometric, char *inMaskName, char *outMaskName,
+           int fill_holes, int fill_value);
 
 /* Prototypes from create_dem_grid.c */
 int create_dem_grid(const char *demName, const char *sarName,
-		    const char *outName);
+            const char *outName);
 int create_dem_grid_ext(const char *demName, const char *sarName,
-			const char *outName, int w, int h, int size,
-			double *coverage_pct);
+            const char *outName, int w, int h, int size,
+            double *coverage_pct);
 
 /* Prototypes from remap_poly.c */
 int remap_poly(poly_2d *fwX, poly_2d *fwY, poly_2d *bwX, poly_2d *bwY,
-	       int outWidth, int outHeight, char *infile, char *outfile,
+           int outWidth, int outHeight, char *infile, char *outfile,
                float background_value);
 
 /* Prototypes from fit_poly.c */
 int fit_poly(char * gridFile, int degree, double *maxErr,
-	     poly_2d **fwX, poly_2d **fwY, poly_2d **bwX, poly_2d **bwY);
+         poly_2d **fwX, poly_2d **fwY, poly_2d **bwX, poly_2d **bwY);
 
 /* Prototypes from refine_offset.c */
 void refine_offset(double x_off, double y_off, meta_parameters *meta,
@@ -102,7 +102,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int pauli_1_band,
                          int pauli_2_band,
                          int pauli_3_band,
-                         int entrpy_band,
+                         int entropy_band,
                          int anisotropy_band,
                          int alpha_band);
 void cpx2pauli(const char *inFile, const char *outFile);
