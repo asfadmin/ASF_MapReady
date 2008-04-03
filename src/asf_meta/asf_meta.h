@@ -767,4 +767,7 @@ void to_radians(projection_type_t pt, project_parameters_t * pps);
 */
 int is_map_projected(meta_parameters *md);
 
+/* Stuff from band_util.c */
+void remove_band(const char *file, int band, int save_orig);
+
 #endif

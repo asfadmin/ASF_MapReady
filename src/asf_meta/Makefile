@@ -128,6 +128,7 @@ OBJS =  $(LEX_YACC_OBJS) \
 	pp_corrected_vals.o \
 	read_proj_file.o \
 	is_map_projected.o \
+	band_util.o \
 	$(LAS_OBJS)
 
 all: asf_meta
