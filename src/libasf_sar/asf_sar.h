@@ -98,6 +98,7 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded);
 
 /* Prototypes from polarimetry.c */
 void polarimetric_decomp(const char *inFile, const char *outFile,
+                         int amplitude_band,
                          int pauli_1_band,
                          int pauli_2_band,
                          int pauli_3_band,

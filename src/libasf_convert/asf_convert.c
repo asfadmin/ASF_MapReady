@@ -864,18 +864,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         }
       }
 
-      // Do not allow terrain correction with sigma, beta, gamma radiometry
-      // and not using db.
-      if (cfg->general->terrain_correct && !cfg->import->output_db &&
-          (strncmp(uc(cfg->import->radiometry), "SIGMA_IMAGE", 11) == 0 ||
-           strncmp(uc(cfg->import->radiometry), "GAMMA_IMAGE", 11) == 0 ||
-           strncmp(uc(cfg->import->radiometry), "BETA_IMAGE", 10) == 0))
-      {
-          asfPrintError("When using Sigma, Beta, or Gamma radiometry and "
-                        "applying terrain correction,\nyou should output "
-                        "in dB.\n");
-      }
-
       // When importing AirSAR data, don't allow terrain correction
       if (is_airsar && cfg->general->terrain_correct) {
         asfPrintError("Terrain correction of AirSAR data is not supported.\n");
@@ -1112,6 +1100,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // global variable-- if set, tells meta_write to also dump .hdr (ENVI) files
     dump_envi_header = cfg->general->dump_envi;
 
+    // we add a "secret" band 0 containing amplitude data, if we are
+    // generating something other than amplitude, and are going to
+    // be terrain correcting
+    int amp0_flag = FALSE; 
+
+    // Call asf_import, if needed (=> input is not ASF Internal)
     if (cfg->general->import) {
 
       update_status("Importing...");
@@ -1137,11 +1131,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           }
       }
 
-      // we add a "secret" band 0 containing amplitude data, if we are
-      // generating something other than amplitude, and are going to
-      // be terrain correcting
-      int amp0_flag = 
-        radiometry != r_AMP && cfg->general->terrain_correct;
+      // See above, this is the flag that adds a "secret" AMP band
+      // for terrain correction
+      amp0_flag = radiometry != r_AMP && cfg->general->terrain_correct;
+      if (amp0_flag)
+        asfPrintStatus("Adding Amplitude band, for terrain correction.\n");
 
       // LUT
       if (strlen(cfg->import->lut) > 0)
@@ -1464,6 +1458,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                  cfg->terrain_correct->range_offset,
                  cfg->terrain_correct->azimuth_offset),
             "terrain correcting data file (asf_terrcorr)\n");
+      }
+
+      // If we added a "secret" AMP band to the beginning of the
+      // file, we can remove it now
+      if (amp0_flag) {
+        asfPrintStatus("\nRemoving added amplitude band...\n");
+        remove_band(outFile, 0, cfg->general->intermediates);
       }
 
       if (!cfg->general->export && !cfg->general->geocoding) {

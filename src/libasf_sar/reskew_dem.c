@@ -272,7 +272,7 @@ Diffuse (lambertian) reflection:
    	if (reflPower<0) reflPower=0;Radar Shadow.
    	currAmp=reflPower/runLen;
 */
-
+/*
 static const char *radiometry_toString(radiometry_t rad)
 {
   switch (rad)
@@ -364,7 +364,7 @@ static void handle_radiometry(meta_parameters *meta, float *amp, int n,
     }
   }
 }
-
+*/
 int reskew_dem(char *inMetafile, char *inDEMfile, char *outDEMfile,
                char *outAmpFile, char *inMaskFile)
 {
@@ -420,10 +420,6 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
 	srDEMline  = (float *)MALLOC(sizeof(float)*sr_ns);
 	outAmpLine = (float *)MALLOC(sizeof(float)*sr_ns);
 
-/*Report with which radiometry we are going to generate the simulated sar*/
-        asfPrintStatus("Generating simulated sar image with radiometry: %s\n",
-                       radiometry_toString(rad));
-
 /* Read deskewed data, write out reskewed data */
 	for (line=0; line<nl; ++line)
 	{
@@ -438,7 +434,6 @@ int reskew_dem_rad(char *inMetafile, char *inDEMfile, char *outDEMfile,
 
             // convert amplitude data to desired radiometry, then
             // write out the simulated sar image line
-            handle_radiometry(metaIn, outAmpLine, sr_ns, line, rad);
             put_float_line(outAmp,metaIn,line,outAmpLine);	
 	}
 

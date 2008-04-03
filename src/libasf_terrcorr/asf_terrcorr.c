@@ -100,8 +100,8 @@ static void
 fftMatchQ(char *file1, char *file2, float *dx, float *dy, float *cert)
 {
   int qf_saved = quietflag;
-  //quietflag = 1;
-  quietflag = 0;
+  quietflag = 1;
+  //quietflag = 0;
 
   fftMatch(file1, file2, NULL, dx, dy, cert);
 
@@ -822,15 +822,14 @@ int match_dem(meta_parameters *metaSAR,
         asfPrintError("Correlated images failed to match!\n\n"
                       " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
                       "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
-// commenting out this stuff, as we should be able to handle the
-// different radiometries now, so that if correlation fails the suggested
-// remedy probably won't work any longer ...
-//" If you selected decibel-scaled Sigma, Beta, or Gamma radiometry, the\n"
-//" rescaling of the data which occurs can sometimes result in an image\n"
-//" that does not correlate well with the DEM and this will cause terrain\n"
-//" correction to fail.  If Amplitude or Power radiometry is acceptable to\n"
-//" you, then you may wish to try processing the data again but with\n"
-//" Amplitude or Power radiometry selected instead.\n",
+" If you selected Power, Sigma, Beta, or Gamma radiometry, the rescaling\n"
+" of the data which occurs can sometimes result in an image that does\n"
+" not correlate well with the DEM and this will cause terrain correction\n"
+" to fail.\n\n"
+" You can use the '-amp0' flag in asf_import to add an amplitude band to\n"
+" your data, which generally terrain corrects succesfully.  The same offsets\n"
+" and other terrain correction transformations are then applied to the\n"
+" data with the troublesome radiometry.\n",
                       dx, dy, dx2, dy2);
       }
     }

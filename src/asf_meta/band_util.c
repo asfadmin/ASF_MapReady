@@ -26,19 +26,26 @@ static void cleanImgAndMeta(const char *file)
 
 void remove_band(const char *file, int band, int save_orig)
 {
-  if (!fileExists(file))
-    asfPrintError("remove_band: file not found: %s\n", file);
+  meta_parameters *meta = meta_read(file);
+  if (!meta)
+    asfPrintError("remove_band: could not read metadata: %s\n", file);
+
+  if (meta->general->band_count == 1) {
+    asfPrintWarning("remove_band: Won't remove the only band!\n");
+    return;
+  }
+  if (band < 0 || band > meta->general->band_count) {
+    asfPrintWarning("remove_band: Tried to remove non-existent band.\n");
+    return;
+  }
+
+  asfPrintStatus("Removing band %d from %s.\n", band, file);
 
   char *src = appendToBasename(file, "_orig");
   copyImgAndMeta(file, src);
 
   if (!save_orig)
     cleanImgAndMeta(file);
-
-  meta_parameters *meta = meta_read(src);
-
-  if (!meta)
-    asfPrintError("remove_band: could not read metadata: %s\n", src);
 
   int nl = meta->general->line_count;
   int ns = meta->general->sample_count;
@@ -66,5 +73,35 @@ void remove_band(const char *file, int band, int save_orig)
   FCLOSE(ifp);
   FCLOSE(ofp);
   FREE(buf);
+
+  // the only thing we need update in the metadata is the band info
+  meta->general->band_count = nb-1;
+
+  char *p = meta->general->bands;
+  char *new_band_str = MALLOC(sizeof(char)*(strlen(p)+1));
+  strcpy(new_band_str, "");
+
+  int n = 0;
+  do {
+    char *q = strchr(p, ',');
+    if (q) *q = '\0'; // don't care if we clobber existing string
+    if (n++ != band) {
+      strcat(new_band_str, p);
+      strcat(new_band_str, ",");
+    }
+    p = q ? q+1 : NULL;
+  } while (p);
+  if (strlen(new_band_str)==0) // just in case... though this shouldn't happen
+    strcpy(new_band_str, MAGIC_UNSET_STRING);
+  if (new_band_str[strlen(new_band_str)-1] == ',') // strip trailing comma
+    new_band_str[strlen(new_band_str)-1] = '\0';
+
+  strcpy(meta->general->bands, new_band_str);
+  meta_write(meta, file);
+
+  FREE(new_band_str);
+  meta_free(meta);
+
+  asfPrintStatus("Done.\n\n");
 }
 
