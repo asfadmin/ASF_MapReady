@@ -138,7 +138,7 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5);
+  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, 3, 4, 5);
 
   asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;
