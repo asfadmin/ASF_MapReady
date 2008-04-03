@@ -1018,6 +1018,12 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
     // This is the "-amp0" case
     sprintf(bandStr, "AMP");
   }
+  else if (radiometry == r_POWER) {
+    if (strlen(bandExt) == 0)
+      sprintf(bandStr, "POWER-%s", meta->sar->polarization);
+    else
+      sprintf(bandStr, "POWER-%s", bandExt);
+  }
   else if (radiometry == r_SIGMA) {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "SIGMA-%s", meta->sar->polarization);
