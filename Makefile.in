@@ -66,11 +66,12 @@ STP_MODULES = \
 	src/libifm \
 	src/libasf_sar \
 	src/libasf_raster \
-	src/ardop \
-	src/c2p \
-	src/convert2jpeg \
-	src/multilook \
-	src/stats \
+	src/libasf_export \
+	src/libasf_geocode \
+	src/libasf_vector \
+	src/sgpsdp \
+	src/plan \
+	src/asf_view \
 	src/stp
 
 AP_MODULES = \

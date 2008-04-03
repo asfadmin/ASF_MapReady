@@ -34,12 +34,10 @@ ifeq ($(SYS),win32)
 ### Begin Windows Section
 
 GCC = gcc
-GTK_DIR = ../asf_convert_gui/gtkwin32
-GTK_ZIP = ../asf_convert_gui/gtkwin32zip
 PLANNER_IMAGERY = ../../../support/planner_imagery
 
-GTK_INC = $(GTK_DIR)/include
-GTK_LIB = $(GTK_DIR)/lib
+GTK_INC = $(GTKWIN32_DIR)/include
+GTK_LIB = $(GTKWIN32_DIR)/lib
 
 ASF_LIB = ../../lib
 
@@ -75,13 +73,9 @@ LIB = \
 	-L/usr/lib/w32api \
 	-lgdi32 \
 	-llibgdk-win32-2.0 \
-	$(ASF_LIB)/libasf_convert.a \
-	$(ASF_LIB)/libasf_plan.a \
 	$(ASF_LIB)/libasf_import.a \
-	$(ASF_LIB)/libasf_export.a \
 	$(ASF_LIB)/libasf_geocode.a \
-	$(ASF_LIB)/libasf_terrcorr.a \
-	$(ASF_LIB)/libasf_ardop.a \
+	$(ASF_LIB)/libasf_plan.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/libasf_sar.a \
 	$(ASF_LIB)/libasf_vector.a \
@@ -91,7 +85,6 @@ LIB = \
 	$(ASF_LIB)/asf_meta.a \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
-	$(ASF_LIB)/asf_fft.a \
 	$(GSL_LIBS) \
 	$(TIFF_LIBS) \
 	$(GEOTIFF_LIBS) \
@@ -105,10 +98,6 @@ LIB = \
 CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
-	if [ ! -f $(GTK_DIR)/README.txt ]; then\
-	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
-	  chmod +x $(GTK_DIR)/bin/*.dll; \
-	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	cp $(TARGET).exe $(PLANNER_TARGET).exe
 	cp planner_icon.ico $(SHAREDIR)
@@ -122,7 +111,7 @@ $(TARGET).exe: $(TARGET).c
 #	cp $(TARGET).ico $(BINDIR)
 
 clean:
-	rm -rf $(GTK_DIR) $(TARGET).exe core.*
+	rm -f $(TARGET).exe core.*
 
 ### End Windows Section
 
