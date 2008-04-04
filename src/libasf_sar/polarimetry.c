@@ -42,6 +42,8 @@ typedef struct {
    int nrows; // # in held in memory, not total image rows
    meta_parameters *meta;
 
+   float *amp; // HH amplitude data
+
    quadPolFloat *data_buffer;
    quadPolFloat **lines;
 
@@ -196,6 +198,7 @@ static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
 
     int ns = meta->general->sample_count;
 
+    self->amp = CALLOC(ns, sizeof(float));
     self->data_buffer = CALLOC(nrows*ns, sizeof(quadPolFloat));
     self->lines = CALLOC(nrows, sizeof(quadPolFloat*));
 
@@ -287,71 +290,72 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
 static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
                                                   FILE *fin)
 {
-    // we discard the top row, slide all rows up one, then load
-    // the new row into the top position
+  // we discard the top row, slide all rows up one, then load
+  // the new row into the top position
 
-    // don't actually move any data -- update pointers into the
-    // buffers
+  // don't actually move any data -- update pointers into the
+  // buffers
 
-    // FIRST -- slide row pointers
-    int k;
-    for (k=0; k<self->nrows-1; ++k) {
-      self->lines[k] = self->lines[k+1];
-      self->pauli_lines[k] = self->pauli_lines[k+1];
+  // FIRST -- slide row pointers
+  int k;
+  for (k=0; k<self->nrows-1; ++k) {
+    self->lines[k] = self->lines[k+1];
+    self->pauli_lines[k] = self->pauli_lines[k+1];
+  }
+  
+  // the next line to load will go into the spot we just dumped
+  int last = self->nrows - 1;
+  self->lines[last] = self->lines[0];
+  self->pauli_lines[last] = self->pauli_lines[0];
+  
+  self->current_row++;
+  
+  // NEXT, load in new row into the final row
+  // if we have moved off the top of the image, we will need to
+  // fill with zeros, instead of loading a row
+  int ns = self->meta->general->sample_count;
+  float *amp_buf = MALLOC(sizeof(float)*ns);
+  float *phase_buf = MALLOC(sizeof(float)*ns);
+  int row = self->current_row + (self->nrows-1)/2;
+  if (row < self->meta->general->line_count) {
+    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[last][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[last][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[last][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[last][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    calculate_pauli_for_row(self, last);
+    calculate_coherence_for_row(self, last);
+  }
+  else {
+    // window has scrolled off top of image -- fill with zeros
+    for (k=0; k<self->meta->general->sample_count; ++k) {
+      self->lines[last][k] = qual_pol_zero();
+      self->pauli_lines[last][k] = complex_vector_zero();
     }
-
-    // the next line to load will go into the spot we just dumped
-    int last = self->nrows - 1;
-    self->lines[last] = self->lines[0];
-    self->pauli_lines[last] = self->pauli_lines[0];
-
-    self->current_row++;
-
-    // NEXT, load in new row into the final row
-    // if we have moved off the top of the image, we will need to
-    // fill with zeros, instead of loading a row
-    int ns = self->meta->general->sample_count;
-    float *amp_buf = MALLOC(sizeof(float)*ns);
-    float *phase_buf = MALLOC(sizeof(float)*ns);
-    int row = self->current_row + (self->nrows-1)/2;
-    if (row < self->meta->general->line_count) {
-      get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
-      get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
-      for (k=0; k<ns; ++k)
-          self->lines[last][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
-
-      get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
-      get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
-      for (k=0; k<ns; ++k)
-          self->lines[last][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
-
-      get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
-      get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
-      for (k=0; k<ns; ++k)
-          self->lines[last][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
-
-      get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
-      get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
-      for (k=0; k<ns; ++k)
-          self->lines[last][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
-
-      calculate_pauli_for_row(self, last);
-      calculate_coherence_for_row(self, last);
-    }
-    else {
-      // window has scrolled off top of image -- fill with zeros
-      for (k=0; k<self->meta->general->sample_count; ++k) {
-          self->lines[last][k] = qual_pol_zero();
-          self->pauli_lines[last][k] = complex_vector_zero();
-      }
-    }
-
-    free(amp_buf);
-    free(phase_buf);
+  }
+  
+  free(amp_buf);
+  free(phase_buf);
 }
 
 static void polarimetric_image_rows_free(PolarimetricImageRows* self)
 {
+    free(self->amp);
     free(self->data_buffer);
     free(self->lines);
     free(self->pauli_buffer);
@@ -365,7 +369,6 @@ static void polarimetric_image_rows_free(PolarimetricImageRows* self)
     free(self->coh_lines);
 
     // do not free metadata pointer!
-
     free(self);
 }
 
@@ -460,6 +463,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       // what corresponds to line i in the output. since the line pointers
       // slide, this never changes
       const int l = (chunk_size-1)/2;
+
+      // normal amplitude band (usually, this is added to allow terrcorr)
+      if (amplitude_band >= 0)
+          put_band_float_line(fout, meta, amplitude_band, i, img_rows->amp);
 
       // calculate the pauli output (magnitude of already-calculated
       // complex pauli basis elements), and save the requested pauli
@@ -581,14 +588,17 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   // of bands, and the band names
   char *out_meta_name = appendExt(outFile, ".meta");
   int nBands =
+      (amplitude_band>=0) +
       (pauli_1_band>=0) + (pauli_2_band>=0) + (pauli_3_band>=0) +
       (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0);
 
   char bands[255];
   strcpy(bands, "");
 
-  for (i=0; i<6; ++i) {
-      if (pauli_1_band == i)
+  for (i=0; i<7; ++i) {
+      if (amplitude_band == i)
+          strcat(bands, "HH-AMP,");
+      else if (pauli_1_band == i)
           strcat(bands, "PAULI1,");
       else if (pauli_2_band == i)
           strcat(bands, "PAULI2,");
