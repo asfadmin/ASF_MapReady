@@ -7,13 +7,14 @@
 #define ASF_DESCRIPTION_STRING \
 "     This program decomposes SLC quad-pole data into data required\n"\
 "     to build some common polarimetric decompositions.  The output\n"\
-"     is a six-band image:\n"\
-"       band 0: HH - VV (even bounce) [Pauli red]\n"\
-"       band 1: s*HV (rotated dihedral) [Pauli green]\n"\
-"       band 2: HH + VV (odd bounce) [Pauli blue]\n"\
-"       band 3: Entropy\n"\
-"       band 4: Anisotropy\n"\
-"       band 5: Alpha\n\n"
+"     is a seven-band image:\n"\
+"       band 0: Amplitude (HH)\n"\
+"       band 1: HH - VV (even bounce) [Pauli red]\n"\
+"       band 2: s*HV (rotated dihedral) [Pauli green]\n"\
+"       band 3: HH + VV (odd bounce) [Pauli blue]\n"\
+"       band 4: Entropy\n"\
+"       band 5: Anisotropy\n"\
+"       band 6: Alpha\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -138,7 +139,7 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, 3, 4, 5);
+  polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5, 6);
 
   asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;
