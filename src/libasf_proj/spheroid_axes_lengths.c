@@ -51,6 +51,14 @@ spheroid_axes_lengths (spheroid_type_t spheroid, double *major, double *minor)
     *major = HUGHES_SEMIMAJOR;
     *minor = *major - (1.0 / HUGHES_INV_FLATTENING) * *major;
     break;
+  case TOKYO_SPHEROID:
+    *major = TOKYO_SEMIMAJOR;
+    *minor = *major - (1.0 / TOKYO_INV_FLATTENING) * *major;
+    break;
+  case JGD2000_SPHEROID:
+    *major = JGD2000_SEMIMAJOR;
+    *minor = *major - (1.0 / JGD2000_INV_FLATTENING) * *major;
+    break;
   default:
     assert (0);
   break;

@@ -31,6 +31,8 @@ typedef enum {
   WGS72_SPHEROID,
   WGS84_SPHEROID,
   HUGHES_SPHEROID,
+  TOKYO_SPHEROID,
+  JGD2000_SPHEROID,
   UNKNOWN_SPHEROID
 } spheroid_type_t;
 
@@ -45,6 +47,8 @@ typedef enum {
   NAD83_DATUM,   /* North American Datum 1983 (GRS 1980) */
   WGS72_DATUM,   /* World Geodetic System 1972 (WGS72) */
   WGS84_DATUM,   /* World Geodetic System 1984 (WGS84) */
+  TOKYO_DATUM,   /* Tokyo Datum (based on Bessel 1841) */
+  JGD2000_DATUM, /* JGD2000 Datum (currently used by Japan) */
   HUGHES_DATUM
 } datum_type_t;
 
