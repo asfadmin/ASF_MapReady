@@ -31,6 +31,10 @@ just think that the paragraph above captures the gist of things in the briefest
 manner and is therefore suitable as a comment here.
 */
 
+/*
+NOTE: The TOKYO datum is based on the Bessel 1841.  Japan now uses JGD2000.
+*/
+
 #define BESSEL_SEMIMAJOR 6377397.155
 #define BESSEL_INV_FLATTENING 299.1528128
 #define CLARKE1866_SEMIMAJOR 6378206.4
@@ -59,4 +63,8 @@ manner and is therefore suitable as a comment here.
 #define WGS72_INV_FLATTENING 298.26
 #define WGS84_SEMIMAJOR 6378137
 #define WGS84_INV_FLATTENING 298.2572236
+#define TOKYO_SEMIMAJOR 6377397.155
+#define TOKYO_INV_FLATTENING 299.152813
+#define JGD2000 6378137.000
+#define JDG2000_INV_FLATTENING 298.257222101
 
