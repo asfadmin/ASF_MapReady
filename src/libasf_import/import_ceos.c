@@ -1066,8 +1066,8 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
     else
       sprintf(bandStr, "COMPLEX-%s", bandExt);
   }
-  else if (meta->general->image_data_type == COMPLEX_IMAGE ||
-	   meta->general->image_data_type == POLARIMETRIC_IMAGE) {
+  else if (meta->general->image_data_type == COMPLEX_IMAGE)
+  {
     if (strlen(bandExt) == 0)
       sprintf(bandStr, "AMP-%s,PHASE-%s",
         meta->sar->polarization, meta->sar->polarization);
@@ -1190,20 +1190,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   else
     lc = nLooks = 1;
 
-  // Take care of polarized imagery
-  if (meta->sar) {
-    if (nBands == 1)
-      strcpy(meta->sar->polarization, bandExt);
-    else if (nBands == 2) {
-      strcpy(meta->sar->polarization, "dual-pol");
-      meta->general->image_data_type = POLARIMETRIC_IMAGE;
-    }
-    else if (nBands == 4) {
-      strcpy(meta->sar->polarization, "quad-pol");
-      meta->general->image_data_type = POLARIMETRIC_IMAGE;
-    }
-  }
-
   // PP Earth Radius Kludge
   if (isPP(meta) && meta->sar)
   {
@@ -1243,6 +1229,20 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     else {
       meta->general->data_type = REAL32;
       meta->general->band_count = import_single_band ? 1 : band;      
+    }
+  }
+
+  // Take care of polarized imagery
+  if (meta->sar) {
+    if (nBands == 1)
+      strcpy(meta->sar->polarization, bandExt);
+    else if (nBands == 2) {
+      strcpy(meta->sar->polarization, "dual-pol");
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    }
+    else if (nBands == 4) {
+      strcpy(meta->sar->polarization, "quad-pol");
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
     }
   }
 
