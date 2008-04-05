@@ -7,6 +7,67 @@
 #define FLOAT_EQUIVALENT(a, b) (FLOAT_COMPARE_TOLERANCE \
                                 (a, b, ASF_EXPORT_FLOAT_MICRON))
 
+void shape_generic_init(char *inFile, dbf_header_t *dbf, int nColumns,
+			format_type_t format)
+{
+  char *dbaseFile;
+  DBFHandle dbase;
+  SHPHandle shape;
+  int ii, type;
+
+  // Open database for initialization
+  dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(inFile)+5));
+  sprintf(dbaseFile, "%s.dbf", inFile);
+  dbase = DBFCreate(dbaseFile);
+  if (!dbase)
+    asfPrintError("Could not create database file '%s'\n", dbaseFile);
+
+  for (ii=0; ii<nColumns; ii++) {
+
+    type = dbf[ii].format;
+    switch (type)
+      {
+      case DBF_STRING:
+	if (DBFAddField(dbase, dbf[ii].header, FTString, 50, 0) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			dbf[ii].header);
+	break;
+      case DBF_DOUBLE:
+	if (DBFAddField(dbase, dbf[ii].header, FTDouble, 16, 7) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			dbf[ii].header);
+	break;
+      case DBF_INTEGER:
+	if (DBFAddField(dbase, dbf[ii].header, FTInteger,15, 0) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			dbf[ii].header);
+	break;
+      default:
+	  asfPrintError("DBF column type not supported!\n");
+	  break;
+      }
+  }
+
+  // Close the database for initialization
+  DBFClose(dbase);
+
+  // Open shapefile for initialization
+  if (format == POINT)
+    shape = SHPCreate(inFile, SHPT_POINT);
+  else if (format == POLYGON)
+    shape = SHPCreate(inFile, SHPT_POLYGON);
+  if (!shape)
+    asfPrintError("Could not create shapefile '%s'\n", inFile);
+
+  // Close shapefile for initialization
+  SHPClose(shape);
+
+  FREE(dbaseFile);
+
+  return;
+}
+
+
 void shape_init(char *inFile, format_type_t format)
 {
   char *dbaseFile;

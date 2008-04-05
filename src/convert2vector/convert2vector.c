@@ -277,7 +277,11 @@ int main(int argc, char **argv)
       }
   }
   else {
-    if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+    if (strcmp(uc(informat), "CSV")==0 && strcmp(uc(outformat), "SHAPE")==0) {
+      asfPrintStatus("   Converting a generic csv file into a shape file ...\n\n");
+      csv2shape(infile, outfile);
+    }
+    else if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting a metadata file into a shape file ...\n\n");
       write_shape(infile, outfile, META, 0);
     }

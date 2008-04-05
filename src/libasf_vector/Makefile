@@ -11,6 +11,7 @@ CFLAGS += \
 	$(CFLAGS)
 
 OBJS = \
+	ingest.o \
 	kml.o \
 	convert_kml.o \
 	shape.o \

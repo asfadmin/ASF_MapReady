@@ -29,6 +29,26 @@ typedef enum {
   GEOTIFF_META
 } format_type_t;
 
+// Database fields
+typedef enum {
+  DBF_STRING=1,
+  DBF_DOUBLE,
+  DBF_INTEGER
+} dbf_format_t;
+
+// Generic CSV structure
+typedef struct {
+  char *header;
+  dbf_format_t format;
+} dbf_header_t;
+
+// Location header style
+typedef enum {
+  LOC_UNKNOWN=1,
+  LOC_ALOS_CSV,
+  LOC_LAT_LON
+} loc_style_t;
+
 // RGPS grid point definition
 typedef struct {
   long cell_id;
@@ -119,6 +139,8 @@ void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void shape2text(char *inFile, char *outFile);
 
 // Prototypes from shape.c
+void shape_generic_init(char *inFile, dbf_header_t *dbf, int nColumns,
+			format_type_t format);
 void shape_init(char *inFile, format_type_t format);
 int read_shape(char *inFile, char *outFile, format_type_t format, int list);
 int write_shape(char *inFile, char *outFile, format_type_t format, int list);
@@ -139,6 +161,12 @@ int isrgps(char *inFile);
 
 // Prototypes from text.c
 int write_text(char *inFile, char *outfile, format_type_t format, int list);
+
+// Prototypes from ingest.c
+void read_dbf_header_info(char *inFile, dbf_header_t **dbf, int *nCols, 
+			  int *nLatLons, loc_style_t *locStyle);
+int is_lat_name(const char *header);
+int is_lon_name(const char *header);
 
 
 #endif
