@@ -318,6 +318,12 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   float *phase_buf = MALLOC(sizeof(float)*ns);
   int row = self->current_row + (self->nrows-1)/2;
   if (row < self->meta->general->line_count) {
+    // amplutide, we only store the current row
+    if (self->current_row >= 0)
+      get_band_float_line(fin, self->meta, self->hh_amp_band,
+                          self->current_row, self->amp);
+
+    // now the SLC rows
     get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
     get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
     for (k=0; k<ns; ++k)
@@ -417,7 +423,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   int ok = polarimetric_image_rows_get_bands(img_rows);
 
   if (!ok)
-      asfPrintError("Not all required bands found-- is this quad-pol data?\n");
+      asfPrintError("Not all required bands found-- "
+                    "is this SLC quad-pol data?\n");
 
   float *buf = MALLOC(sizeof(float)*ns);
   float *entropy = MALLOC(sizeof(float)*ns);
