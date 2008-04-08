@@ -29,6 +29,27 @@ typedef enum {
   GEOTIFF_META
 } format_type_t;
 
+typedef enum {
+  CSV_UNKNOWN=0,
+  CSV_STRING,
+  CSV_DOUBLE,
+  CSV_INTEGER,
+  CSV_LOGICAL,
+  CSV_DATE
+} column_data_type_t;
+
+typedef struct {
+  char column_name[64];
+  column_data_type_t data_type;
+  int column_number;
+} csv_meta_column_t;
+
+typedef struct {
+  char column_name[64];
+  int column_number;
+  int is_lat; // TRUE for lat, FALSE for lon
+} csv_data_column_t;
+
 // Database fields
 typedef enum {
   DBF_STRING=1,
@@ -162,11 +183,25 @@ int isrgps(char *inFile);
 // Prototypes from text.c
 int write_text(char *inFile, char *outfile, format_type_t format, int list);
 
+// Prototypes from generic_csv.c
+FILE *csv_open(const char *filename,
+               int *num_meta_cols, csv_meta_column_t **meta_column_info,
+               int *num_data_cols, csv_data_column_t **data_column_info);
+void csv_info(int num_meta_cols, csv_meta_column_t *meta_column_info,
+              int num_data_cols, csv_data_column_t *data_column_info);
+int csv_line_parse(const char *line,
+                   int num_meta_cols, csv_meta_column_t *meta_column_info,
+                   int num_data_cols, csv_data_column_t *data_column_info,
+                   char ***column_data_o, double **lats_o, double **lons_o);
+void csv_free(int num_meta_cols, char **column_data,
+              double *lats, double *lons);
+void csv_dump(const char *filename);
+void csv2kml(const char *in_file, const char *out_file);
+
 // Prototypes from ingest.c
 void read_dbf_header_info(char *inFile, dbf_header_t **dbf, int *nCols, 
 			  int *nLatLons, loc_style_t *locStyle);
 int is_lat_name(const char *header);
 int is_lon_name(const char *header);
-
 
 #endif

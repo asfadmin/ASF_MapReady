@@ -17,6 +17,7 @@ OBJS = \
 	shape.o \
 	convert_shape.o \
 	text.o \
+	generic_csv.o \
 	convert_text.o
 
 LIBS = \
