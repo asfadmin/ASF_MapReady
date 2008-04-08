@@ -3,6 +3,7 @@
 #include "decoder.h"
 #include "lzFetch.h"
 #include "get_stf_names.h"
+#include "frame_calc.h"
 
 /* Prototypes */
 void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart,
@@ -168,6 +169,7 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
           0.0, &lat, &lon);
   meta->general->center_latitude = lat;
   meta->general->center_longitude = lon;
+  meta->general->frame = asf_frame_calc(meta->general->sensor, lat, meta->general->orbit_direction);
   meta_write(meta, outMetaName);
   meta_free(meta);
 

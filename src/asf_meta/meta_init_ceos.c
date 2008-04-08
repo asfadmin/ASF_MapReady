@@ -31,6 +31,7 @@ PROGRAM HISTORY:
 #include "libasf_proj.h"
 #include "spheroids.h"
 #include "meta_project.h"
+#include "frame_calc.h"
 
 #ifndef MIN
 #  define MIN(a,b)  (((a) < (b)) ? (a) : (b))
@@ -115,9 +116,6 @@ double get_timeDelta(ceos_description *ceos,struct pos_data_rec *ppdr,
 
 /* Prototypes from jpl_proj.c */
 int UTM_zone(double lon);
-
-/* Prototype from frame_calc.c */
-int asf_frame_calc(char *sensor, float latitude, char orbit_direction);
 
 /* Utility function: convert CEOS-style beam type to ASF meta-style beam name. */
 static void beam_type_to_asf_beamname(
@@ -318,7 +316,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   char **dataName;
   double firstTime, centerTime;
   if ((ceos->facility == CSTARS || ceos->facility == ESA ||
-       ceos->facility == DPAF || ceos->facility == IPAF) && 
+       ceos->facility == DPAF || ceos->facility == IPAF) &&
       ceos->satellite == ERS) {
     date_dssr2time(dssr->az_time_first, &date, &time);
     firstTime = date_hms2sec(&time);
@@ -637,7 +635,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   if (ceos->product == SLC || ceos->product == RAW)
     meta->sar->image_type = 'S';
   else if (ceos->product == SGF || ceos->product == SGX ||
-	   ceos->product == PRI) {
+       ceos->product == PRI) {
     meta->sar->image_type = 'G';
     meta->sar->multilook = 1;
   }
@@ -674,10 +672,10 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   else if (meta->general->orbit_direction == 'A')
     meta->sar->time_shift = fabs(meta->sar->original_line_count *
         meta->sar->azimuth_time_per_pixel);
-  meta->sar->satellite_height = 
+  meta->sar->satellite_height =
     meta_get_sat_height(meta,
-			meta->general->line_count/2,
-			meta->general->sample_count/2);
+            meta->general->line_count/2,
+            meta->general->sample_count/2);
   re = meta->general->re_major;
   rp = meta->general->re_minor;
   tan_lat = dssr->plat_lat*D2R;
@@ -1884,7 +1882,7 @@ void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
        projection->type=UNIVERSAL_TRANSVERSE_MERCATOR;
        projection->param.utm.zone=atoi(mpdr->utmzone);
        if (projection->param.utm.zone == 0)
-	 sscanf(mpdr->utmzone, "UT%d", &projection->param.utm.zone);
+     sscanf(mpdr->utmzone, "UT%d", &projection->param.utm.zone);
        projection->param.utm.false_easting=mpdr->utmeast;
        projection->param.utm.false_northing=mpdr->utmnorth;
        projection->param.utm.lat0=mpdr->utmlat;
@@ -2341,25 +2339,25 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
       if (0==strncmp(prodStr, "SCANSAR NARROW", 14))
         ceos->product = SCN;
       else if (0==strncmp(prodStr, "SCANSAR WIDE", 12))
-	ceos->product = SCANSAR;
+    ceos->product = SCANSAR;
       else if (0==strncmp(prodStr, "SAR GEOREF FINE", 15))
-	ceos->product = SGF;
+    ceos->product = SGF;
       else if (0==strncmp(prodStr, "SAR GEOREF EXTRA FINE", 21))
-	ceos->product = SGX;
+    ceos->product = SGX;
       else if (0==strncmp(prodStr, "SAR PRECISION IMAGE", 19))
-	ceos->product = PRI;
+    ceos->product = PRI;
       else if (0==strncmp(prodStr, "SYSTEMATIC  GEOCODED UTM", 24))
-	ceos->product = SSG;
+    ceos->product = SSG;
       else if (0==strncmp(prodStr, "GEC", 3))
-	ceos->product = GEC;
+    ceos->product = GEC;
       else if (0==strncmp(prodStr, "SLANT RANGE COMPLEX", 19))
-	ceos->product = SLC;
+    ceos->product = SLC;
       else if (0==strncmp(prodStr, "SPECIAL PRODUCT(SINGL-LOOK COMP)", 32))
-	ceos->product = SLC;
+    ceos->product = SLC;
       else if (0==strncmp(prodStr, "SAR RAW SIGNAL DATA", 19))
-	ceos->product = RAW;
+    ceos->product = RAW;
       else if (0==strncmp(prodStr, "UNPROCESSED SIGNAL DATA", 23))
-	ceos->product = RAW;
+    ceos->product = RAW;
       else {
         asfReport(level, "Get_ceos_description Warning! "
                   "Unknown CSTARS product type '%s'!\n", prodStr);
@@ -2486,14 +2484,14 @@ double get_firstTime (const char *fName)
    FCLOSE(fp);
 
    FREE(buff);
-   printf("lat 1: %.4lf, lon 1: %.4lf\n", 
-	  (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
-	  (double)bigInt32((unsigned char *)&(linehdr.long_first)));
-   printf("lat 2: %.4lf, lon 2: %.4lf\n", 
-	  (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
-	  (double)bigInt32((unsigned char *)&(linehdr.long_last)));
+   printf("lat 1: %.4lf, lon 1: %.4lf\n",
+      (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
+      (double)bigInt32((unsigned char *)&(linehdr.long_first)));
+   printf("lat 2: %.4lf, lon 2: %.4lf\n",
+      (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
+      (double)bigInt32((unsigned char *)&(linehdr.long_last)));
    printf("Time: %lf\n",
-	  (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
+      (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
 

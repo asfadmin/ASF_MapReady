@@ -592,9 +592,9 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
   int ii;
 
   stf_file_pairs_t ret = get_stf_names(stfName, dataName, metaName);
-  
+
   if (ret != NO_STF_FILE_PAIR) return ret;
-  
+
 /****** We should never actually get here. The above code should either ******
  ****** return or exit with an error message, BUT... just in case       ******/
 
@@ -628,6 +628,9 @@ stf_file_pairs_t require_stf_pair(const char *stfName, char **dataName,
           stfName, extensionList);
   if (logflag)   {printLog(logbuf);}
   asfPrintError(logbuf);
+
+  // Should never get here, but this will zip d'lips of the compiler
+  return ret;
 }
 
 void free_stf_names(char *dataName, char *metaName)

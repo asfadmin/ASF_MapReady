@@ -135,7 +135,7 @@ all: asf_meta
 
 asf_meta: build_only
 	mv asf_meta.a $(LIBDIR)
-	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h meta_project.h \
+	cp asf_meta.h get_ceos_names.h get_stf_names.h gamma.h meta_init_stVec.h meta_project.h frame_calc.h \
 		$(ASF_INCLUDE_DIR)
 
 build_only: $(OBJS)
@@ -170,3 +170,4 @@ meta_update: meta_update.c build_only
 
 distclean:
 	rm -f core *~ TAGS gdb_init.com
+

@@ -136,13 +136,91 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   meta->sar->azimuth_doppler_coefficients[1] = 0.0;
   meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
+/* Fill in missing metadata */
+  meta_general *mg = meta->general;
+  meta_sar *ms = meta->sar;
+  char *sensor_name;
+  char *pol;
+  char acquisition_date[256];
+  char polarization[256];
+  ymd_date acq_date;
+  hms_time acq_time;
+
+  strcpy(mg->basename, inN);
+  sensor_name = lzStr(parN, "ss_block.instrument:", NULL);
+  if (sensor_name && strlen(sensor_name)) {
+    strcpy(mg->sensor_name, sensor_name);
+  }
+  else {
+    strcpy(mg->sensor_name, MAGIC_UNSET_STRING);
+  }
+  double first_date = lzDouble(parN, "prep_block.first_date:", NULL);
+  double last_date  = lzDouble(parN, "prep_block.last_date:", NULL);
+  sprintf(acquisition_date, "%ld", (long)((first_date + last_date) / 2.0));
+  parse_ymdTime(acquisition_date, &acq_date, &acq_time);
+  sprintf(acquisition_date, "%d-%s-%d, %d:%d:%d",
+          acq_date.day,
+          (acq_date.month == 1)  ? "Jan" :
+          (acq_date.month == 2)  ? "Feb" :
+          (acq_date.month == 3)  ? "Mar" :
+          (acq_date.month == 4)  ? "Apr" :
+          (acq_date.month == 5)  ? "May" :
+          (acq_date.month == 6)  ? "Jun" :
+          (acq_date.month == 7)  ? "Jul" :
+          (acq_date.month == 8)  ? "Aug" :
+          (acq_date.month == 9)  ? "Sep" :
+          (acq_date.month == 10) ? "Oct" :
+          (acq_date.month == 11) ? "Nov" :
+          (acq_date.month == 12) ? "Dec" : "Unknown",
+          acq_date.year,
+          acq_time.hour, acq_time.min, (int)acq_time.sec);
+  mg->frame = MAGIC_UNSET_INT; // This is set in import_stf()
+  // mg->center_longitude and center_latitude are set in import_stf() separately from here
+  sprintf(mg->bands, "%s",
+          (mg->band_count == 1) ? "01" :
+          (mg->band_count == 2) ? "01,02" :
+          (mg->band_count == 3) ? "01,02,03" :
+          (mg->band_count == 4) ? "01,02,03,04" : MAGIC_UNSET_STRING);
+  spheroid_axes_lengths(TOKYO_SPHEROID, &mg->re_major, &mg->re_minor);
+  int num_pols = lzInt(parN, "prep_block.sensor.beam.PolarizationsBlock.NrPolarizations:", NULL);
+  int i;
+  strcpy(polarization, "");
+  for (i = 0; i < num_pols; i++) {
+    sprintf(buf, "prep_block.sensor.beam.PolarizationsBlock.Polarization[%d].polarization:", i);
+    pol = lzStr(parN, buf, NULL);
+    if (pol && strlen(pol)) {
+      if (i == 0) {
+        strcpy(polarization, pol);
+      }
+      else {
+        sprintf("%s,%s", polarization, pol);
+      }
+    }
+    else {
+      strcat(polarization, MAGIC_UNSET_STRING);
+    }
+    FREE(pol);
+  }
+  strcpy(ms->polarization, polarization);
+  ms->multilook = 0;
+  ms->earth_radius_pp = MAGIC_UNSET_DOUBLE;
+  ms->pitch = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.pitch:", NULL);
+  ms->roll = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.roll:", NULL);
+  ms->yaw = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.yaw:", NULL);
+  ms->chirp_rate = lzDouble(parN, "prep_block.sensor.beam.chirp_rate:", NULL);
+  ms->pulse_duration = s->pulsedur;
+  ms->range_sampling_rate = s->fs;
+
 /*Write out ARDOP .in parameter file.*/
   writeARDOPparams(s,outN,fd,fdd,fddd);
 
 /*Write out and free the metadata structure*/
+  // NOTE: import_stf() reads the metadata file (later), corrects a few items,
+  // then writes it back out.
   meta_write(meta,outN);
   meta_free(meta);
 
+  FREE(sensor_name);
   FREE(parN);
 }
 
@@ -175,7 +253,7 @@ bin_state *convertMetadata_lz(char *inName,char *outName,int *numLines,
     s=ERS_decoder_init(inName,outName,readNextPulse);
   else if (0==strncmp(satName,"JERS",4)) {
     /* JERS data temporarily disabled */
-    asfPrintError("   JERS data ingest currently under development\n");
+//    asfPrintError("   JERS data ingest currently under development\n");
     /**********************************/
     s=JRS_decoder_init(inName,outName,readNextPulse);
   }
