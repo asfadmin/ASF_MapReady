@@ -18,6 +18,24 @@
 
 #define LINE_MAX    (1024)
 
+char *fix_attribute_name(const char *name)
+{
+  int len = strlen(name);
+  if (len>10) len=10; // truncate to 10 characters
+
+  char *ret = CALLOC(sizeof(char),len+1);
+
+  int i;
+  for (i=0; i<len; ++i) {
+    if (isalnum(name[i]) || name[i]=='-')
+      ret[i]=name[i];
+    else
+      ret[i]='_';
+  }
+
+  return ret;
+}
+
 void csv2shape(char *inFile, char *outFile)
 {
   int num_meta_cols, num_data_cols;
@@ -52,25 +70,23 @@ void csv2shape(char *inFile, char *outFile)
 
   int i;
   for (i=0; i<num_meta_cols; i++) {
+    char *name = fix_attribute_name(meta_column_info[i].column_name);
     switch (meta_column_info[i].data_type)
       {
       case CSV_STRING:
       case CSV_DATE:
-        if (DBFAddField(dbase, meta_column_info[i].column_name,
-                        FTString, 50, 0) == -1)
+        if (DBFAddField(dbase, name, FTString, 50, 0) == -1)
         asfPrintError("Could not add %s field to database file\n",
                       meta_column_info[i].column_name);
         break;
       case CSV_DOUBLE:
-        if (DBFAddField(dbase, meta_column_info[i].column_name,
-                        FTDouble, 16, 7) == -1)
+        if (DBFAddField(dbase, name, FTDouble, 16, 7) == -1)
         asfPrintError("Could not add %s field to database file\n",
 			  meta_column_info[i].column_name);
         break;
       case CSV_INTEGER:
       case CSV_LOGICAL:
-        if (DBFAddField(dbase, meta_column_info[i].column_name,
-                        FTInteger,15, 0) == -1)
+        if (DBFAddField(dbase, name, FTInteger,15, 0) == -1)
         asfPrintError("Could not add %s field to database file\n",
         meta_column_info[i].column_name);
         break;
@@ -78,6 +94,7 @@ void csv2shape(char *inFile, char *outFile)
         asfPrintError("DBF column type not supported!\n");
         break;
       }
+    FREE(name);
   }
 
   // Close the database for initialization
