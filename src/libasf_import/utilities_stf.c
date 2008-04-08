@@ -3,6 +3,7 @@
 #include "decoder.h"
 #include "dateUtil.h"
 #include "get_stf_names.h"
+#include "asf_nan.h"
 
 /* allocation routine for meta_state_vectors */
 meta_state_vectors *meta_state_vectors_init(int num_of_vectors);
