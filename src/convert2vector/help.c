@@ -118,24 +118,24 @@ void check_for_help(int argc,char *argv[])
 void usage(char *msg)
 {
     if (msg && strlen(msg)) {
-        fprintf(stderr, "\n%s: %s\n", TOOL_NAME, msg);
+        fprintf(stdout, "\n%s: %s\n", TOOL_NAME, msg);
     }
-    fprintf(stderr,"\nUsage:\n   %s\n\n", TOOL_USAGE);
-    fprintf(stderr,"Try `%s -help' for more information.\n\n", TOOL_NAME);
+    fprintf(stdout,"\nUsage:\n   %s\n\n", TOOL_USAGE);
+    fprintf(stdout,"Try `%s -help' for more information.\n\n", TOOL_NAME);
 }
 
 void print_help()
 {
-    fprintf(stderr,"\nTool name:\n   %s\n", TOOL_NAME);
+    fprintf(stdout,"\nTool name:\n   %s\n", TOOL_NAME);
     usage(NULL);
-    fprintf(stderr,"Description:\n%s\n\n", TOOL_DESCRIPTION);
-    if(strlen(TOOL_INPUT)) fprintf(stderr,"Input:\n%s\n\n", TOOL_INPUT);
-    if(strlen(TOOL_OUTPUT)) fprintf(stderr,"Output:\n%s\n\n", TOOL_OUTPUT);
-    if(strlen(TOOL_OPTIONS)) fprintf(stderr,"Options:\n%s\n\n", TOOL_OPTIONS);
-    if(strlen(TOOL_EXAMPLES)) fprintf(stderr,"Examples:\n%s\n\n", TOOL_EXAMPLES);
-    if(strlen(TOOL_LIMITATIONS)) fprintf(stderr,"Limitations:\n%s\n\n", TOOL_LIMITATIONS);
-    if(strlen(TOOL_SEE_ALSO)) fprintf(stderr,"See Also:\n%s\n\n", TOOL_SEE_ALSO);
-    fprintf(stderr,"Contact:\n%s\n", ASF_CONTACT_STRING);
+    fprintf(stdout,"Description:\n%s\n\n", TOOL_DESCRIPTION);
+    if(strlen(TOOL_INPUT)) fprintf(stdout,"Input:\n%s\n\n", TOOL_INPUT);
+    if(strlen(TOOL_OUTPUT)) fprintf(stdout,"Output:\n%s\n\n", TOOL_OUTPUT);
+    if(strlen(TOOL_OPTIONS)) fprintf(stdout,"Options:\n%s\n\n", TOOL_OPTIONS);
+    if(strlen(TOOL_EXAMPLES)) fprintf(stdout,"Examples:\n%s\n\n", TOOL_EXAMPLES);
+    if(strlen(TOOL_LIMITATIONS)) fprintf(stdout,"Limitations:\n%s\n\n", TOOL_LIMITATIONS);
+    if(strlen(TOOL_SEE_ALSO)) fprintf(stdout,"See Also:\n%s\n\n", TOOL_SEE_ALSO);
+    fprintf(stdout,"Contact:\n%s\n", ASF_CONTACT_STRING);
     print_version(TOOL_NAME);
     print_copyright();
 }

@@ -27,11 +27,15 @@ char *fix_attribute_name(const char *name)
 
   int i;
   for (i=0; i<len; ++i) {
-    if (isalnum(name[i]) || name[i]=='-')
-      ret[i]=name[i];
-    else
+    // allowed characters are any except: space, period, comma
+    if (isspace(name[i]) || name[i]=='.' || name[i]==',')
       ret[i]='_';
+    else
+      ret[i]=name[i];
   }
+
+  if (strcmp(ret,name)!=0)
+    asfPrintStatus("Attribute name changed: %s -> %s\n", name, ret);
 
   return ret;
 }

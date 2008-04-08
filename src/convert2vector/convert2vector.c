@@ -281,6 +281,10 @@ int main(int argc, char **argv)
       asfPrintStatus("   Converting a generic csv file into a shape file ...\n\n");
       csv2shape(infile, outfile);
     }
+    else if (strcmp(uc(informat), "CSV")==0 && strcmp(uc(outformat), "KML")==0) {
+      asfPrintStatus("   Converting a generic csv file into a kml file ...\n\n");
+      csv2kml(infile, outfile);
+    }
     else if (strcmp(uc(informat), "META")==0 && strcmp(uc(outformat), "SHAPE")==0) {
       asfPrintStatus("   Converting a metadata file into a shape file ...\n\n");
       write_shape(infile, outfile, META, 0);

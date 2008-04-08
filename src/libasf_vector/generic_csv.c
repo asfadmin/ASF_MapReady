@@ -243,9 +243,10 @@ FILE *csv_open(const char *filename,
     return NULL;
   }
 
+  strip_end_whitesp_inplace(line);
+    
   // go through the columns
   // first time through, we are just counting columns
-  strip_end_whitesp_inplace(line);
   char *p = line;
   int n=0, n_lat_cols=0, n_lon_cols=0;
 
@@ -263,8 +264,7 @@ FILE *csv_open(const char *filename,
   int n_data_cols = n_lat_cols+n_lon_cols;
   int n_meta_cols = n;
 
-  printf("Found %d columns (%d meta, %d lat, %d lon).\n", n,
-         n_meta_cols, n_lat_cols, n_lon_cols);
+  printf("Found %d columns (%d lat, %d lon).\n", n, n_lat_cols, n_lon_cols);
 
   if (n_lat_cols != n_lon_cols) {
     printf("Lat/lon column numbers don't match!\n");
@@ -334,12 +334,18 @@ FILE *csv_open(const char *filename,
 
       if (strlen(val)>1)
         non_bool_flags[col] = TRUE;
+      if (strcmp(val,"-")==0) {
+        non_integer_flags[col] = TRUE;
+        non_number_flags[col] = TRUE;
+      }
 
       for (j=0; j<strlen(val); ++j) {
 
         if (!isdigit(val[j]) && val[j] != '+' && val[j] != '-')
           non_integer_flags[col] = TRUE;
-        
+        if (val[j] != '-' && val[j] != '+' && j>0)
+          non_integer_flags[col] = TRUE;
+
         if (val[j] != '0' && val[j] != '1' && 
             val[j] != 'Y' && val[j] != 'y' &&
             val[j] != 'N' && val[j] != 'n')
@@ -480,9 +486,9 @@ int csv_line_parse(const char *line_in,
   // not specified in a clockwise, or counterclockwise, manner.  We can
   // detect this an fix it.
   if (num_data_cols==4) {
-    if (lineSegmentsIntersect(lats[0],lons[0],
+    if (lineSegmentsIntersect(lats[1],lons[1],
                               lats[2],lons[2],
-                              lats[1],lons[1],
+                              lats[0],lons[0],
                               lats[3],lons[3]))
     {
       // swap 2 & 3...
