@@ -68,9 +68,10 @@ main(int argc, char **argv)
     set_font();
     set_title();
 
-    //GtkWidget *win = get_widget_checked("c2v_window");
+    GtkWidget *win = get_widget_checked("c2v_window");
     GError *err=NULL;
-    int ok=gtk_window_set_default_icon_from_file(imgloc("c2v.png"),&err);
+    int ok=gtk_window_set_icon_from_file(GTK_WINDOW(win),
+                                         imgloc("c2v.png"),&err);
     if (!ok)
       printf("Error loading icon: %s\n", err->message);
 
