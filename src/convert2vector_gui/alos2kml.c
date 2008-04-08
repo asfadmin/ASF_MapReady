@@ -91,17 +91,25 @@ static const char *get_str(char *line, int column_num)
 
 int get_int(char *line, int column_num)
 {
-    if (column_num >= 0)
-        return atoi(get_str(line, column_num));
+    if (column_num >= 0) {
+        char char *s = get_str(line, column_num);
+        if (s)
+          return atoi(s);
+        else
+          return 0;
     else
         return 0;
 }
 
 double get_double(char *line, int column_num)
 {
-    if (column_num >= 0)
-        return atof(get_str(line, column_num));
-    else
+    if (column_num >= 0) {
+        char char *s = get_str(line, column_num);
+        if (s)
+          return atof(s);
+        else
+          return 0.0;
+    } else
         return 0.0;
 }
 
@@ -109,7 +117,7 @@ double get_req_double(char *line, int column_num, int *ok)
 {
     if (column_num >= 0) {
         const char *str = get_str(line, column_num);
-        if (strlen(str)>0) {
+        if (str && strlen(str)>0) {
             *ok=TRUE;
             return atof(str);
         }
@@ -127,7 +135,7 @@ double get_req_double(char *line, int column_num, int *ok)
 char get_char(char *line, int column_num)
 {
     const char *str = get_str(line, column_num);
-    if (strlen(str)>0)
+    if (str && strlen(str)>0)
         return str[0];
     else
         return '?';
