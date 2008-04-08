@@ -157,6 +157,36 @@ SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
         // only change if current extension is something we know
         change_output_extension(curr);    
     }
+
+    // the "open output" checkbox is enabled only for Google Earth
+    // and AUIG
+    int enabled=FALSE;
+    int output_format = get_combo_box_item("output_format_combobox");
+    switch (output_format) {
+      case OUTPUT_ALOS_CSV:
+      case OUTPUT_KML:
+        enabled=TRUE;
+        break;
+    }
+
+    enable_widget("open_output_checkbutton", enabled);
+    enable_widget("open_output_label", enabled);
+    if (!enabled)
+      set_checked("open_output_checkbutton", FALSE);
+    else {
+      if (output_format==OUTPUT_ALOS_CSV)
+#ifdef win32
+        put_string_to_label("open_output_label",
+                            "Open Output:\n(in Excel)");
+#else
+        put_string_to_label("open_output_label","Open Output:");
+#endif
+      else if (output_format==OUTPUT_KML)
+        put_string_to_label("open_output_label",
+                            "Open Output:\n(in Google Earth)");
+      else
+        put_string_to_label("open_output_label","Open Output:");
+    }
 }
 
 #ifndef win32
