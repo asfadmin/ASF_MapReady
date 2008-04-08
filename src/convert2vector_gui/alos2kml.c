@@ -95,10 +95,8 @@ int get_int(char *line, int column_num)
         const char *s = get_str(line, column_num);
         if (s)
           return atoi(s);
-        }
-        else {
+        else
           return 0;
-        }
     }
     else {
         return 0;
