@@ -35,7 +35,8 @@ enum
   INPUT_SHAPE = 4,
   INPUT_KML = 5,
   INPUT_GEOTIFF = 6,
-  INPUT_ALOS_CSV = 7
+  INPUT_ALOS_CSV = 7,
+  INPUT_GENERIC_CSV = 8,
 };
 
 enum

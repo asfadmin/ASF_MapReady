@@ -143,6 +143,18 @@ void process()
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
     write_text(in_file, out_base, GEOTIFF_META, 0);
   }
+  else if (input_format == INPUT_GENERIC_CSV && output_format == OUTPUT_SHAPE)
+  {
+    printf("Converting generic CSV file to a shape file.\n");
+    printf("File %d: %s -> %s\n", 1, in_file, out_file);
+    csv2shape(in_file, out_base);
+  }
+  else if (input_format == INPUT_GENERIC_CSV && output_format == OUTPUT_KML)
+  {
+    printf("Converting generic CSV file to a kml file.\n");
+    printf("File %d: %s -> %s\n", 1, in_file, out_file);
+    csv2kml(in_file, out_base);
+  }
   //else if (input_format == INPUT_RGPS && output_format == OUTPUT_SHAPE)
   //{
   //  printf("Converting list of RGPS cells to a shape file.\n");
