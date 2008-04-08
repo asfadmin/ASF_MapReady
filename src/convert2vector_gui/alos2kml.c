@@ -65,7 +65,7 @@ static char *my_parse_string(char *p, char *s, int max_len)
       *q = '\0'; // temporarily...
       strncpy_safe(s, p, max_len);
       *q = ',';
-      
+
       // point to beginning of next item
       return q+1;
     }
@@ -85,26 +85,30 @@ static const char *get_str(char *line, int column_num)
 
     for (i=0; i<=column_num; ++i)
       p = my_parse_string(p,ret,256);
-    
+
     return ret;
 }
 
 int get_int(char *line, int column_num)
 {
     if (column_num >= 0) {
-        char char *s = get_str(line, column_num);
-        if (s)
+        char *s = (char *)(get_str(line, column_num));
+        if (s) {
           return atoi(s);
-        else
+        }
+        else {
           return 0;
-    else
+        }
+    }
+    else {
         return 0;
+    }
 }
 
 double get_double(char *line, int column_num)
 {
     if (column_num >= 0) {
-        char char *s = get_str(line, column_num);
+        char *s = (char *)get_str(line, column_num);
         if (s)
           return atof(s);
         else
@@ -123,7 +127,7 @@ double get_req_double(char *line, int column_num, int *ok)
         }
         else {
             *ok=FALSE;
-            return 0;            
+            return 0;
         }
     }
     else {
@@ -247,12 +251,12 @@ int kml_to_alos_csv(const char *in_file, const char *out_file)
               char *q = strstr(p, "-->");
               if (q) {
                 *q='\0';
-                fprintf(ofp, "%s\n", p);                
+                fprintf(ofp, "%s\n", p);
               }
             }
         }
     }
-    
+
     fclose(ifp);
     fclose(ofp);
 
@@ -332,7 +336,7 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
       return 0;
     }
 
-    // don't really care if any of these are missing    
+    // don't really care if any of these are missing
     int sensor_col = find_col(header, "SENSOR");
     int opemd_col = find_col(header, "OPEMD");
     int pathno_col = find_col(header, "PATHNO");
@@ -345,7 +349,7 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
     int clon_col = find_col(header, "SCN_CLON");
     int grs_col = find_col(header, "GRS_COLNO");
     int offnadir_col = find_col(header, "OFFNADIR");
-    
+
     //const char const * expected_csv_header_line =
     //  "SENSOR,SCNID,OPEMD,PATHNO,CENFLMNO,GRS_LINENO,OBTDIR,SCN_CDATE,"
     //  "SCN_CTIME,SCN_CLAT,SCN_CLON,SCN_LULAT,SCN_LULON,SCN_RULAT,SCN_RULON,"
@@ -367,7 +371,7 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
       strip_end_whitesp(line);
 
       AlosCsvInfo info;
-      
+
       // copy the full line before we add the kludgey comma
       strcpy(info.full_line, line);
 
@@ -375,9 +379,9 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
       // does not need special treatment
       line[strlen(line)+1] = '\0';
       line[strlen(line)] = ',';
-     
+
       // now get the individual column values
-      int ok;      
+      int ok;
       strcpy(info.sensor, get_str(line, sensor_col));
       strcpy(info.scnid, get_str(line, scnid_col));
       strcpy(info.opemd, get_str(line, opemd_col));
@@ -403,7 +407,7 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
       if (ok) {
         add_to_kml(ofp, &info, header);
         ++n_valid_lines;
-        
+
         strcpy(header, "");
       } else {
         msg("Invalid line %d in CSV file.\n", line_no);
