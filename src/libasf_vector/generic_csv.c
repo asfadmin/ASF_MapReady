@@ -4,6 +4,13 @@
 #include <assert.h>
 #include <ctype.h>
 
+static void strip_end_whitesp_inplace(char *s)
+{
+    char *p = s + strlen(s) - 1;
+    while (isspace(*p) && p>s)
+        *p-- = '\0';
+}
+
 static char *my_parse_string(char *p, char *s, int max_len)
 {
   // starting at p, eat characters, putting into s (allocated by caller),
@@ -43,7 +50,7 @@ static char *my_parse_string(char *p, char *s, int max_len)
     }
     else {
       // no trailing quote found!
-      // just put everything into the output string, return NULL
+      // just put everything that's left into the output string, return NULL
       strncpy_safe(s, p+1, max_len);
       return NULL;
     }
@@ -54,6 +61,7 @@ static char *my_parse_string(char *p, char *s, int max_len)
     if (q) {
       *q = '\0'; // temporary
       strncpy_safe(s, p, max_len);
+      strip_end_whitesp_inplace(s);
       *q = ',';
 
       // return pointer to just after the comma
@@ -63,6 +71,7 @@ static char *my_parse_string(char *p, char *s, int max_len)
       // no more commas, just return what is left in the string
       // and return NULL to indicate that we have everything now
       strncpy_safe(s, p, max_len);
+      strip_end_whitesp_inplace(s);
       return NULL;
     } 
   }
@@ -75,13 +84,6 @@ static char *strip_end_whitesp(const char *s)
     while (isspace(*p) && p>ret)
         *p-- = '\0';
     return ret;
-}
-
-static void strip_end_whitesp_inplace(char *s)
-{
-    char *p = s + strlen(s) - 1;
-    while (isspace(*p) && p>s)
-        *p-- = '\0';
 }
 
 static const char *get_str(char *line, int column_num)
@@ -459,8 +461,6 @@ int csv_line_parse(const char *line_in,
       tmp = lons[2];
       lons[2] = lons[3];
       lons[3] = tmp;
-
-      printf("swapping...\n");
     }
   }
 
