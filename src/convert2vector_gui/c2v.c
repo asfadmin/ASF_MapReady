@@ -8,6 +8,20 @@
 // pointer to the loaded XML file's internal struct
 GladeXML *glade_xml;
 
+static const char * imgloc(char * file)
+{
+    static char loc[1024];
+    gchar * tmp = find_in_share(file);
+    if (tmp) {
+      strcpy(loc, tmp);
+      g_free(tmp);
+    } else {
+      strcpy(loc, file);
+    }
+
+    return loc;
+}
+
 char *find_in_share(const char * filename)
 {
     char * ret = MALLOC(sizeof(char) *
@@ -53,6 +67,12 @@ main(int argc, char **argv)
 
     set_font();
     set_title();
+
+    //GtkWidget *win = get_widget_checked("c2v_window");
+    GError *err=NULL;
+    int ok=gtk_window_set_default_icon_from_file(imgloc("c2v.png"),&err);
+    if (!ok)
+      printf("Error loading icon: %s\n", err->message);
 
     if (argc>1) {
       select_defaults_by_file_type(argv[1],TRUE);
