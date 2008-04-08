@@ -92,8 +92,8 @@ static const char *get_str(char *line, int column_num)
 int get_int(char *line, int column_num)
 {
     if (column_num >= 0) {
-        char *s = (char *)(get_str(line, column_num));
-        if (s) {
+        const char *s = get_str(line, column_num);
+        if (s)
           return atoi(s);
         }
         else {
@@ -108,7 +108,7 @@ int get_int(char *line, int column_num)
 double get_double(char *line, int column_num)
 {
     if (column_num >= 0) {
-        char *s = (char *)get_str(line, column_num);
+        const char *s = get_str(line, column_num);
         if (s)
           return atof(s);
         else
