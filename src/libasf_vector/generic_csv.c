@@ -261,7 +261,7 @@ FILE *csv_open(const char *filename,
   } while (p);
 
   int n_data_cols = n_lat_cols+n_lon_cols;
-  int n_meta_cols = n-n_data_cols;
+  int n_meta_cols = n;
 
   printf("Found %d columns (%d meta, %d lat, %d lon).\n", n,
          n_meta_cols, n_lat_cols, n_lon_cols);
@@ -305,14 +305,13 @@ FILE *csv_open(const char *filename,
       ++lon_index;
       ++data_index;
     }
-    else {
-      assert(meta_index < n_meta_cols);
-      strncpy_safe(meta_inf[meta_index].column_name, col, 64);
-      meta_inf[meta_index].column_number = i;
-      meta_inf[meta_index].data_type = CSV_UNKNOWN;
 
-      ++meta_index;
-    }
+    assert(meta_index < n_meta_cols);
+    strncpy_safe(meta_inf[meta_index].column_name, col, 64);
+    meta_inf[meta_index].column_number = i;
+    meta_inf[meta_index].data_type = CSV_UNKNOWN;
+
+    ++meta_index;
   }
   assert(p==NULL); // we read the last column, should have gotten a NULL
   assert(lat_index == n_lat_cols);
@@ -398,8 +397,7 @@ void csv_info(int num_meta_cols, csv_meta_column_t *meta_column_info,
               int num_data_cols, csv_data_column_t *data_column_info)
 {
   int i;
-  asfPrintStatus("CSV File Information (%d columns)\n",
-                 num_meta_cols+num_data_cols);
+  asfPrintStatus("CSV File Information (%d columns)\n", num_meta_cols);
 
   asfPrintStatus("\nMetadata: (%d column%s)\n", num_meta_cols,
                  num_meta_cols==1?"":"s");
@@ -441,6 +439,10 @@ int csv_line_parse(const char *line_in,
 
   char *line = strip_end_whitesp(line_in);
 
+  // ignore blank lines, and comment lines
+  if (strlen(line)==0 || line[0]=='#')
+    return FALSE;
+    
   int i;
   int n_lat = 0, n_lon = 0;
 
@@ -542,7 +544,8 @@ void csv_dump(const char *filename)
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
 
-    // csv_line_parse() will return FALSE when the line is invalid
+    // csv_line_parse() will return FALSE when the line is invalid,
+    // or should be skipped for whatever reason (e.g., comment line)
     if (!ok)
       continue;
 

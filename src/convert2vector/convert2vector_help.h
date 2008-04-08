@@ -35,6 +35,7 @@
         "        point     (ASF-style CSV text file describing a set of points, use -help for more info)\n" \
         "        polygon   (ASF-style CSV text file describing a single polygon (per file), use -help for more info)\n" \
         "        geotiff   (GeoTIFF file)\n\n" \
+        "        csv       (Comma-separated value file)" \
         "   And the output format is one of the following:\n" \
         "        shape     (ESRI format shapefile output)\n" \
         "        kml       (Google Earth(tm) kml file output for viewing in Google Earth(tm) - DEFAULT)\n" \
@@ -51,7 +52,7 @@
     "   is useful for visualizing the geographical location of data by plotting location\n" \
     "   coordinates in commonly available tools.  The ASF-style CSV text format (point and polygon)\n" \
     "   can used to define areas of interest or bounding polygons which can then be visualized\n" \
-    ".  in Google Earth(tm) (etc).\n" \
+    "   in Google Earth(tm) (etc).\n" \
     "   \n" \
     "   NOTE: Choosing 'text' as the output format will produce a polygon type CSV file\n" \
     "   as described in the Examples section below, but if you wish the text file to be of\n" \
@@ -77,21 +78,23 @@
     "    shape            text                         Y\n" \
     "    geotiff          shape (polygon type)         Y\n" \
     "    geotiff          kml                          Y\n" \
-    "    geotiff          text                         Y\n"
-
+    "    geotiff          text                         Y\n" \
+    "    csv              shape (polygon or point)     Y\n" \
+    "    csv              kml                          Y\n" \
+    "    csv              text                    Not required"
 // TOOL_INPUT is required but is allowed to be an empty string
 #ifdef  TOOL_INPUT
 #undef  TOOL_INPUT
 #endif
 #define TOOL_INPUT \
         "   <input format>  This indicates the format of the data in the input file.\n" \
-        "        Valid values: <point | polygon | meta | leader | shape | geotiff>.  These\n" \
+        "        Valid values: <point | polygon | meta | leader | shape | geotiff | csv>.  These\n" \
         "        types are defined as follows: 'point' means 'points defined in a text file',\n" \
         "        (see examples below), 'polygon' means 'a single polygon defined in a text file'\n" \
         "        (see examples below), 'meta' means an 'ASF Internal format metadata (.meta) file',\n" \
         "        'leader' means 'CEOS format leader data file (.L, LED-), 'shape' means 'shapes\n" \
-        "        defined in a standard ESRI-type shapefile', and 'geotiff' means 'A map-projected\n" \
-        "        GeoTIFF (.tif) file'.\n" \
+        "        defined in a standard ESRI-type shapefile', 'geotiff' means 'A map-projected\n" \
+        "        GeoTIFF (.tif) file', and 'csv' means a text comma-separated value file." \
         "   <input file>  The full name of th file containing the location coordinate\n" \
         "        information.  All file formats are used for extracting only corner coordinate\n" \
         "        except for the point and polygon text file formats.  Obviously, these two formats\n" \
@@ -133,6 +136,7 @@
     "             point     (ASF-style CSV text file describing a set of points, use -help for more info)\n" \
     "             polygon   (ASF-style CSV text file describing a single polygon (per file), use -help for more info)\n" \
     "             geotiff   (GeoTIFF file)\n" \
+    "             csv       (Comma-separated value file)\n" \
     "   -output-format\n" \
     "        By default, the output file format will be for Google Earth(tm) (a kml file).  If some\n" \
     "        other output format is desired, then the -output-format option should be used.  The\n" \
@@ -219,6 +223,43 @@
     "      15,32.4125,-117.16\n" \
     "      16,33.09667,-117.36472\n" \
     "      17,33.51278,-117.84361\n" \
+    "\n" \
+    "   CSV file notes:\n\n" \
+    "   1. The first line in the file is the header line, which defines the data\n"\
+    "      columns in the file.  All subseqent lines are the data lines.\n"\
+    "   2. Lines beginning with the '#' character are comment lines\n" \
+    "      You may add comment lines anywhere else in the file as long as\n" \
+    "      they are after the first line.\n" \
+    "   3. Point or polygon data is taken from columns which start with the\n"\
+    "      characters 'lat' or 'lon'.  For example: 'Latitude1' or 'Lon_UL'\n"\
+    "      There must be an equal number of lat and lon columns.\n" \
+    "   4. Values and text strings shall be separated by a comma, ','\n" \
+    "   5. Values and text strings may be quoted with double-quotes.  The\n" \
+    "      quotes will be discarded.  To include the quote character in a\n" \
+    "      quoted string, use two double-quotes in a row.\n"\
+    "   7. Polygon text files do NOT need to list a closing point that is\n" \
+    "      the same as the first (beginning) point.  Polygons are automatically\n" \
+    "      closed by convert2vector.\n" \
+    "   8. Blank lines and white space before/after comma characters will be\n"\
+    "      ignored, unless surrounded by quotes.\n" \
+    "   9. In the output, all columns are exported as attributes for the point\n" \
+    "      or polygon.\n"\
+    "  10. convert2vector attempts to determine the data type of each column\n" \
+    "      by inspecting the column values.  At this time, the detected data\n" \
+    "      types are: string, double, integer, logical.\n"\
+    "\n" \
+    "   Example CSV file:\n" \
+    "\n" \
+    "       ID,DATE,LAT1,LON1,LAT2,LON2,LOOK ANGLE\n" \
+    "       1,11/27/07,41.9839,-124.263,41.8375,-120.9325,23.3\n" \
+    "       2,11/30/07,41.89028,-122.79667,42.29389,-112.64056,23.3\n" \
+    "       3,12/1/07,42.29389,-112.64056,41.885,-110.49084,37.7\n" \
+    "\n" \
+    "   In this file, the LAT/LON 1/2 columns define a 2-point polygon\n"\
+    "   on each line. (Normally, you would have 4 or more points per\n"\
+    "   polygon.)  The other columns are polygon attributes, ID would\n"\
+    "   be set to an integer attribute, DATE a string, and LOOK ANGLE\n"\
+    "   a double.\n"\
     "\n\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
