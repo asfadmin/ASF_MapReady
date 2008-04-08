@@ -135,7 +135,7 @@ void print_help()
     if(strlen(TOOL_EXAMPLES)) fprintf(stderr,"Examples:\n%s\n\n", TOOL_EXAMPLES);
     if(strlen(TOOL_LIMITATIONS)) fprintf(stderr,"Limitations:\n%s\n\n", TOOL_LIMITATIONS);
     if(strlen(TOOL_SEE_ALSO)) fprintf(stderr,"See Also:\n%s\n\n", TOOL_SEE_ALSO);
-    fprintf(stderr,"Contact:\n%s", ASF_CONTACT_STRING);
+    fprintf(stderr,"Contact:\n%s\n", ASF_CONTACT_STRING);
     print_version(TOOL_NAME);
     print_copyright();
 }
