@@ -18,6 +18,165 @@
 
 #define LINE_MAX    (1024)
 
+void csv2shape2(char *inFile, char *outFile)
+{
+  int num_meta_cols, num_data_cols;
+  csv_meta_column_t *meta_column_info;
+  csv_data_column_t *data_column_info;
+
+  FILE *fp = csv_open(inFile,
+                      &num_meta_cols, &meta_column_info,
+                      &num_data_cols, &data_column_info);
+
+  // csv_open() returns NULL if the file can't be processed
+  if (!fp)
+    return;
+
+  // this is just for debugging, if you want to print out what was found
+  csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
+
+  // start line counter at 2 (header line is not part of this loop)
+  int line_num=2;
+  int entry_num=0;
+
+  // shapefile stuff
+  DBFHandle dbase;
+  SHPHandle shape;
+
+  // Initialize output
+  char *dbaseFile = appendExt(outFile, ".dbf");
+  //printf("Creating dbase file: %s\n", dbaseFile);
+  dbase = DBFCreate(dbaseFile);
+  if (!dbase)
+    asfPrintError("Could not create database file '%s'\n", dbaseFile);
+
+  int i;
+  for (i=0; i<num_meta_cols; i++) {
+    switch (meta_column_info[i].data_type)
+      {
+      case CSV_STRING:
+      case CSV_DATE:
+	if (DBFAddField(dbase, meta_column_info[i].column_name,
+                        FTString, 50, 0) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			meta_column_info[i].column_name);
+	break;
+      case CSV_DOUBLE:
+	if (DBFAddField(dbase, meta_column_info[i].column_name,
+                        FTDouble, 16, 7) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			meta_column_info[i].column_name);
+	break;
+      case CSV_INTEGER:
+      case CSV_LOGICAL:
+	if (DBFAddField(dbase, meta_column_info[i].column_name,
+                        FTInteger,15, 0) == -1)
+	  asfPrintError("Could not add %s field to database file\n",
+			meta_column_info[i].column_name);
+	break;
+      default:
+	  asfPrintError("DBF column type not supported!\n");
+	  break;
+      }
+  }
+
+  // Close the database for initialization
+  DBFClose(dbase);
+
+  // Open shapefile for initialization
+  char *shpfile = appendExt(outFile, ".shp");
+  if (num_data_cols == 1)
+    shape = SHPCreate(shpfile, SHPT_POINT);
+  else if (num_data_cols > 1)
+    shape = SHPCreate(shpfile, SHPT_POLYGON);
+  else
+    asfPrintError("No geolocation information in the input file (%s).\n",
+		  inFile);
+
+  // Close shapefile for initialization
+  SHPClose(shape);
+  FREE(dbaseFile);
+
+  open_shape(shpfile, &dbase, &shape);
+
+  // these store the output lat/lon
+  double *write_lon = MALLOC(sizeof(double)*(num_data_cols+1));
+  double *write_lat = MALLOC(sizeof(double)*(num_data_cols+1));
+
+  char line[1024];
+  while (fgets(line, 1023, fp)) {
+
+    char **column_data;
+    double *lats, *lons;
+    int ok = csv_line_parse(line,
+                            num_meta_cols, meta_column_info,
+                            num_data_cols, data_column_info,
+                            &column_data, &lats, &lons);
+
+    // csv_line_parse() will return FALSE when the line is invalid
+    if (!ok)
+      continue;
+
+    // dealing with metadata
+    for (i=0; i<num_meta_cols; ++i) {
+
+      char *val = column_data[i];
+      char *name = meta_column_info[i].column_name;
+
+      switch (meta_column_info[i].data_type) {
+        case CSV_STRING:
+        case CSV_DATE:
+          DBFWriteStringAttribute(dbase, entry_num, i, val);
+          break;
+          
+        case CSV_DOUBLE:
+          DBFWriteDoubleAttribute(dbase, entry_num, i, atof(val));
+          break;
+          
+        case CSV_INTEGER:
+        case CSV_LOGICAL:
+          DBFWriteIntegerAttribute(dbase, entry_num, i, atoi(val));
+          break;
+
+        case CSV_UNKNOWN:
+          // should never happen
+          asfPrintStatus("%s (unknown): %s\n", name, val);
+          break;
+      }
+    }
+
+    // Write shape object
+    SHPObject *shapeObject=NULL;
+    if (num_data_cols == 1) {
+      shapeObject = 
+        SHPCreateSimpleObject(SHPT_POINT, 1, &lons[0], &lats[0], NULL);
+    }
+    else {
+      for (i=0; i<num_data_cols; ++i) {
+        write_lat[i] = lats[i];
+        write_lon[i] = lons[i];
+      }
+      write_lat[num_data_cols]=write_lat[0]; // closing the polygon
+      write_lon[num_data_cols]=write_lon[0];
+      shapeObject =
+        SHPCreateSimpleObject(SHPT_POLYGON, num_data_cols+1,
+                              write_lon, write_lat, NULL);
+    }
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+
+    csv_free(num_meta_cols, column_data, lats, lons);
+
+    ++line_num;
+    ++entry_num;
+  }
+  FCLOSE(fp);
+  FREE(write_lon);
+  FREE(write_lat);
+  FREE(shpfile);
+}
+
+
 // Convert generic CSV to shape
 void csv2shape(char *inFile, char *outFile)
 {

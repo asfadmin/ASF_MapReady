@@ -11,6 +11,23 @@ static void strip_end_whitesp_inplace(char *s)
         *p-- = '\0';
 }
 
+static void consolidate_quotes(char *s)
+{
+    char *buf = MALLOC(sizeof(char)*(strlen(s)+1));
+    int i,j=0,l=strlen(s);
+    for (i=0; i<l; ++i) {
+        if (s[i]=='\"' && s[i+1]=='\"') {
+            buf[j] = '\"';
+            ++i;
+        } else {
+            buf[j] = s[i];
+        }
+        ++j;
+    }
+    strcpy(s,buf);
+    FREE(buf);
+}
+
 static char *my_parse_string(char *p, char *s, int max_len)
 {
   // starting at p, eat characters, putting into s (allocated by caller),
@@ -27,10 +44,20 @@ static char *my_parse_string(char *p, char *s, int max_len)
     char *q = strchr(p+1, '\"');
     if (q) {
       // after the quote, the next non-whitespace character should be a comma
+      // if it is another quote, then we need to keep going until
       char *r = q+1;
+      while (*r == '\"') {
+        char *q1 = strchr(r+1, '\"');
+        if (!q1)
+          break;
+        else {
+          q = q1;
+          r = q+1;
+        }
+      }
+
       while (isspace(*r))
         ++r;
-      
       if (*r != ',') {
         printf("Column entry has extra characters");
         // scan ahead to the next comma...
@@ -41,7 +68,10 @@ static char *my_parse_string(char *p, char *s, int max_len)
       *q = '\0'; // temporary
       strncpy_safe(s, p+1, max_len);
       *q = '\"';
-      
+
+      // convert all instances of "" to just plain "
+      consolidate_quotes(s);
+
       // now return pointer to just after the comma (if we found one)
       if (r)
         return r+1;
