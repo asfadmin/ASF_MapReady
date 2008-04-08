@@ -174,6 +174,10 @@ void csv2shape2(char *inFile, char *outFile)
   FREE(write_lon);
   FREE(write_lat);
   FREE(shpfile);
+
+  // Clean up
+  close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
 }
 
 
