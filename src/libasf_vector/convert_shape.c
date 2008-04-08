@@ -18,7 +18,7 @@
 
 #define LINE_MAX    (1024)
 
-void csv2shape2(char *inFile, char *outFile)
+void csv2shape(char *inFile, char *outFile)
 {
   int num_meta_cols, num_data_cols;
   csv_meta_column_t *meta_column_info;
@@ -56,27 +56,27 @@ void csv2shape2(char *inFile, char *outFile)
       {
       case CSV_STRING:
       case CSV_DATE:
-	if (DBFAddField(dbase, meta_column_info[i].column_name,
+        if (DBFAddField(dbase, meta_column_info[i].column_name,
                         FTString, 50, 0) == -1)
-	  asfPrintError("Could not add %s field to database file\n",
-			meta_column_info[i].column_name);
-	break;
+        asfPrintError("Could not add %s field to database file\n",
+                      meta_column_info[i].column_name);
+        break;
       case CSV_DOUBLE:
-	if (DBFAddField(dbase, meta_column_info[i].column_name,
+        if (DBFAddField(dbase, meta_column_info[i].column_name,
                         FTDouble, 16, 7) == -1)
-	  asfPrintError("Could not add %s field to database file\n",
-			meta_column_info[i].column_name);
-	break;
+        asfPrintError("Could not add %s field to database file\n",
+			  meta_column_info[i].column_name);
+        break;
       case CSV_INTEGER:
       case CSV_LOGICAL:
-	if (DBFAddField(dbase, meta_column_info[i].column_name,
+        if (DBFAddField(dbase, meta_column_info[i].column_name,
                         FTInteger,15, 0) == -1)
-	  asfPrintError("Could not add %s field to database file\n",
-			meta_column_info[i].column_name);
-	break;
+        asfPrintError("Could not add %s field to database file\n",
+        meta_column_info[i].column_name);
+        break;
       default:
-	  asfPrintError("DBF column type not supported!\n");
-	  break;
+        asfPrintError("DBF column type not supported!\n");
+        break;
       }
   }
 
@@ -179,127 +179,6 @@ void csv2shape2(char *inFile, char *outFile)
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
 }
-
-
-// Convert generic CSV to shape
-void csv2shape(char *inFile, char *outFile)
-{
-  dbf_header_t *dbf;
-  loc_style_t location;
-  FILE *fp;
-  double *lat, *lon;
-  char line[4096], *p, *value;
-  int ii=0, kk, vertices, columns, type, n, nLat, nLon;
-  DBFHandle dbase;
-  SHPHandle shape;
-
-  // Read header information
-  read_dbf_header_info(inFile, &dbf, &columns, &vertices, &location);
-
-  // Allocate memory
-  lat = (double *) MALLOC(sizeof(double)*(vertices+1));
-  lon = (double *) MALLOC(sizeof(double)*(vertices+1));
-
-  // Initialize output
-  if (vertices == 1)
-    shape_generic_init(outFile, dbf, columns, POINT);
-  else if (vertices > 1)
-    shape_generic_init(outFile, dbf, columns, POLYGON);
-  else
-    asfPrintError("No geolocation information in the input file (%s).\n",
-		  inFile);
-  open_shape(outFile, &dbase, &shape);
-
-  // Read file again
-  fp = FOPEN(inFile, "r");
-  while (fgets(line, 4096, fp)) {
-    p = strchr(line, ',');
-    if (p && line[0] != '#') {
-
-      n = nLat = nLon = 0;
-      for (kk=0; kk<columns; kk++) {
-	// Write information into database file
-	value = get_column(line, kk+1);
-	type = dbf[kk].format;
-	switch (type)
-	  {
-	  case DBF_STRING:
-	    DBFWriteStringAttribute(dbase, ii, n, value);
-	    break;
-	  case DBF_DOUBLE:
-	    DBFWriteDoubleAttribute(dbase, ii, n, atof(value));
-	    break;
-	  case DBF_INTEGER:
-	    DBFWriteIntegerAttribute(dbase, ii, n, atof(value));
-	    break;
-	  }
-	n++;
-	// Fill lat/lon arrays with coordinates
-	if (is_lat_name(dbf[kk].header) || is_lon_name(dbf[kk].header)) {
-	  switch (location)
-	    {
-	    case LOC_ALOS_CSV:
-	      if (strcmp_case(dbf[kk].header, "SCN_LULAT")==0)
-		lat[0] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_RULAT")==0)
-		lat[1] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_LDLAT")==0)
-		lat[3] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_RDLAT")==0)
-		lat[2] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_LULON")==0)
-		lon[0] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_RULON")==0)
-		lon[1] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_LDLON")==0)
-		lon[3] = atof(value);
-	      if (strcmp_case(dbf[kk].header, "SCN_RDLON")==0)
-		lon[2] = atof(value);
-	      break;
-	    case LOC_LAT_LON:
-	      if (is_lat_name(dbf[kk].header)) {
-		lat[nLat] = atof(value);
-		nLat++;
-	      }
-	      if (is_lon_name(dbf[kk].header)) {
-		lon[nLon] = atof(value);
-		nLon++;
-	      }
-	      break;
-	    case LOC_UNKNOWN:
-	    default:
-	      asfPrintError("No geolocation information in the input file"
-			    " (%s).\n", inFile);
-	      break;
-	    }
-	}
-      }
-      lat[vertices] = lat[0];
-      lon[vertices] = lon[0];
-
-      // Write shape object
-      SHPObject *shapeObject=NULL;
-      if (vertices == 1)
-	shapeObject = 
-	  SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
-      else
-	shapeObject =
-	  SHPCreateSimpleObject(SHPT_POLYGON, vertices+1, lon, lat, NULL);
-      SHPWriteObject(shape, -1, shapeObject);
-      SHPDestroyObject(shapeObject);
-      
-      ii++;
-    }
-  }
-  FCLOSE(fp);
-
-  // Clean up
-  close_shape(dbase, shape);
-  write_esri_proj_file(outFile);
-
-  return;
-}
-
 
 // Convert metadata to shape
 void meta2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
