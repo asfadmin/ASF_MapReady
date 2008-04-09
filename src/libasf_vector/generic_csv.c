@@ -13,8 +13,8 @@ static void strip_end_whitesp_inplace(char *s)
 
 static void consolidate_quotes(char *s)
 {
-    char *buf = MALLOC(sizeof(char)*(strlen(s)+1));
-    int i,j=0,l=strlen(s);
+    int i,j=0,l=strlen(s)+1;
+    char *buf = MALLOC(sizeof(char)*l);
     for (i=0; i<l; ++i) {
         if (s[i]=='\"' && s[i+1]=='\"') {
             buf[j] = '\"';
@@ -28,8 +28,16 @@ static void consolidate_quotes(char *s)
     FREE(buf);
 }
 
-static char *my_parse_string(char *p, char *s, int max_len)
+static char *my_parse_string(char *p, char *s, int max_len, int line_num)
 {
+  if (!p) {
+    // reached end of the line prematurely
+    if (line_num>0)
+      printf("Line %d: Not enough data columns.\n", line_num);
+    strcpy(s,"");
+    return NULL;
+  }
+
   // starting at p, eat characters, putting into s (allocated by caller),
   // until we reach the ending comma, or max_len.  For quoted strings,
   // we eat until we find the closing quote.
@@ -59,7 +67,8 @@ static char *my_parse_string(char *p, char *s, int max_len)
       while (isspace(*r))
         ++r;
       if (*r != ',') {
-        printf("Column entry has extra characters");
+        if (line_num>0)
+          printf("Line %d: Column entry has extra characters\n", line_num);
         // scan ahead to the next comma...
         r = strchr(r,',');        
       }
@@ -116,14 +125,14 @@ static char *strip_end_whitesp(const char *s)
     return ret;
 }
 
-static const char *get_str(char *line, int column_num)
+static const char *get_str(char *line, int column_num, int line_num)
 {
     int i;
     char *p = line;
     static char ret[256];
 
     for (i=0; i<=column_num; ++i)
-      p = my_parse_string(p,ret,256);
+      p = my_parse_string(p,ret,256,line_num);
     
     return ret;
 }
@@ -252,7 +261,7 @@ FILE *csv_open(const char *filename,
 
   do {
     char col[256];
-    p = my_parse_string(p,col,256);
+    p = my_parse_string(p,col,256,1);
     ++n;
 
     if (is_lat_column(col))
@@ -291,7 +300,7 @@ FILE *csv_open(const char *filename,
 
   for (i=0; i<n; ++i) {
     char col[64];
-    p = my_parse_string(p,col,64);
+    p = my_parse_string(p,col,64,-1);
     
     if (is_lat_column(col)) {
       assert(data_index < n_data_cols);
@@ -331,12 +340,13 @@ FILE *csv_open(const char *filename,
   int *non_integer_flags = CALLOC(sizeof(int),n);
   int *non_bool_flags = CALLOC(sizeof(int),n);
 
+  int line_num=2;
   while (fgets(line,1023,fp)) {
     // go through the metadata columns
     strip_end_whitesp_inplace(line);
     for (i=0; i<n_meta_cols; ++i) {
       int col = meta_inf[i].column_number;
-      const char *val = get_str(line, col);
+      const char *val = get_str(line, col, line_num);
 
       if (strlen(val)>1)
         non_bool_flags[col] = TRUE;
@@ -363,6 +373,7 @@ FILE *csv_open(const char *filename,
           non_number_flags[col] = TRUE;
       }
     }
+    ++line_num;
   }
   FCLOSE(fp);
   
@@ -464,7 +475,7 @@ int csv_line_parse(const char *line_in,
 
   for (i=0; i<num_data_cols*2; ++i) {
     int col = data_column_info[i].column_number;
-    const char *data = get_str(line, col);
+    const char *data = get_str(line, col, -1);
     if (!data)
       return FALSE;
 
@@ -480,7 +491,7 @@ int csv_line_parse(const char *line_in,
   for (i=0; i<num_meta_cols; ++i) {
     column_data[i] = (char*)MALLOC(sizeof(char)*256);
     int col = meta_column_info[i].column_number;
-    const char *val = get_str(line, col);
+    const char *val = get_str(line, col, -1);
     if (!val)
       return FALSE;
 
@@ -657,7 +668,7 @@ int csv2kml(const char *in_file, const char *out_file)
   FILE *ofp = FOPEN(out_file, "w");
   if (!ofp) {
     printf("Failed to open output file %s: %s\n", out_file, strerror(errno));
-    return;
+    return FALSE;
   }
 
   kml_header(ofp);
