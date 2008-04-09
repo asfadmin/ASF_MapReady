@@ -160,6 +160,29 @@ int find_col(char *line, const char *column_header)
     return -1;
 }
 
+// kludge function to handle duplicate SCN_RULAT columns
+// in some AUIG csv files
+int find_2nd_col(char *line, const char *column_header)
+{
+    char *p = line;
+    char val[256];
+    int col=0;
+    int n_found=0;
+
+    while (p) {
+        p=my_parse_string(p,val,256);
+        if (strcmp_case(val,column_header)==0) {
+          ++n_found;
+          if (n_found==2)
+            return col;
+        }
+        ++col;
+    }
+
+    // column heading was not found
+    return -1;
+}
+
 static void add_to_kml(FILE *fp, AlosCsvInfo *info, char *header_line)
 {
   fprintf(fp, "<Placemark>\n");
@@ -291,6 +314,16 @@ int alos_csv_to_kml(const char *in_file, const char *out_file)
     int ldlon_col = find_col(header, "SCN_LDLON");
     int rdlat_col = find_col(header, "SCN_RDLAT");
     int rdlon_col = find_col(header, "SCN_RDLON");
+
+    // kludge to handle goofy AUIG files (duplicate SCN_RULAT cols,
+    // the second one should be SCN_RDLAT)
+    if (rdlat_col < 0) {
+      rdlat_col = find_2nd_col(header, "SCN_RULAT");
+      if (rdlat_col == rulat_col)
+        rdlat_col = -1;
+      else
+        printf("Using second SCN_RULAT column as SCN_RDLAT (missing)\n");
+    }
 
     int all_ok=TRUE;
     if (scnid_col < 0) {
