@@ -196,10 +196,9 @@ int csv_line_parse(const char *line,
 void csv_free(int num_meta_cols, char **column_data,
               double *lats, double *lons);
 void csv_dump(const char *filename);
-void csv2kml(const char *in_file, const char *out_file);
+int csv2kml(const char *in_file, const char *out_file);
 
-void csv2shape(char *inFile, char *outFile);
-void csv2shape2(char *inFile, char *outFile);
+int csv2shape(char *inFile, char *outFile);
 
 // Prototypes from ingest.c
 void read_dbf_header_info(char *inFile, dbf_header_t **dbf, int *nCols, 

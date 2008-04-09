@@ -40,7 +40,7 @@ char *fix_attribute_name(const char *name)
   return ret;
 }
 
-void csv2shape(char *inFile, char *outFile)
+int csv2shape(char *inFile, char *outFile)
 {
   int num_meta_cols, num_data_cols;
   csv_meta_column_t *meta_column_info;
@@ -52,7 +52,7 @@ void csv2shape(char *inFile, char *outFile)
 
   // csv_open() returns NULL if the file can't be processed
   if (!fp)
-    return;
+    return FALSE;
 
   // this is just for debugging, if you want to print out what was found
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
@@ -69,8 +69,11 @@ void csv2shape(char *inFile, char *outFile)
   char *dbaseFile = appendExt(outFile, ".dbf");
   //printf("Creating dbase file: %s\n", dbaseFile);
   dbase = DBFCreate(dbaseFile);
-  if (!dbase)
-    asfPrintError("Could not create database file '%s'\n", dbaseFile);
+  if (!dbase) {
+    asfPrintWarning("Could not create database file '%s'\n", dbaseFile);
+    FCLOSE(fp);
+    return FALSE;
+  }
 
   int i;
   for (i=0; i<num_meta_cols; i++) {
@@ -79,23 +82,35 @@ void csv2shape(char *inFile, char *outFile)
       {
       case CSV_STRING:
       case CSV_DATE:
-        if (DBFAddField(dbase, name, FTString, 50, 0) == -1)
-        asfPrintError("Could not add %s field to database file\n",
-                      meta_column_info[i].column_name);
+        if (DBFAddField(dbase, name, FTString, 50, 0) == -1) {
+          asfPrintWarning("Could not add %s field to database file\n",
+                          meta_column_info[i].column_name);
+          FCLOSE(fp);
+          DBFClose(dbase);
+          return FALSE;
+        }
         break;
       case CSV_DOUBLE:
-        if (DBFAddField(dbase, name, FTDouble, 16, 7) == -1)
-        asfPrintError("Could not add %s field to database file\n",
-			  meta_column_info[i].column_name);
+        if (DBFAddField(dbase, name, FTDouble, 16, 7) == -1) {
+          asfPrintWarning("Could not add %s field to database file\n",
+                          meta_column_info[i].column_name);
+          FCLOSE(fp);
+          DBFClose(dbase);
+          return FALSE;
+        }
         break;
       case CSV_INTEGER:
       case CSV_LOGICAL:
-        if (DBFAddField(dbase, name, FTInteger,15, 0) == -1)
-        asfPrintError("Could not add %s field to database file\n",
-        meta_column_info[i].column_name);
+        if (DBFAddField(dbase, name, FTInteger,15, 0) == -1) {
+          asfPrintWarning("Could not add %s field to database file\n",
+                          meta_column_info[i].column_name);
+          FCLOSE(fp);
+          DBFClose(dbase);
+          return FALSE;
+        }
         break;
       default:
-        asfPrintError("DBF column type not supported!\n");
+        asfPrintWarning("DBF column type not supported!\n");
         break;
       }
     FREE(name);
@@ -110,9 +125,13 @@ void csv2shape(char *inFile, char *outFile)
     shape = SHPCreate(shpfile, SHPT_POINT);
   else if (num_data_cols > 1)
     shape = SHPCreate(shpfile, SHPT_POLYGON);
-  else
-    asfPrintError("No geolocation information in the input file (%s).\n",
-		  inFile);
+  else {
+    asfPrintWarning("No geolocation information in the input file (%s).\n",
+		    inFile);
+    FCLOSE(fp);
+    DBFClose(dbase);
+    return FALSE;
+  }
 
   // Close shapefile for initialization
   SHPClose(shape);
@@ -199,6 +218,8 @@ void csv2shape(char *inFile, char *outFile)
   // Clean up
   close_shape(dbase, shape);
   write_esri_proj_file(outFile);
+
+  return TRUE;
 }
 
 // Convert metadata to shape

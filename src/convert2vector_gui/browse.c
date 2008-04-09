@@ -26,6 +26,29 @@ int isshape(char *inFile);
 int isgeotiff(char *inFile);
 int isrgps(char *inFile);
 
+static int isauig(char *f)
+{
+    char *ext = findExt(f);
+    if (!ext) {
+        return FALSE;
+    } else {
+        if (strcmp_case(ext,".csv")==0) {
+            FILE *fp = FOPEN(f,"r");
+            if (!fp) return FALSE;
+            char line[1024];
+            if (!fgets(line,1023,fp)) return FALSE;
+            // look for known column headers
+            int ret =
+                strstr(line,"SCNID")!=NULL && strstr(line,"SCN_LULAT")!=NULL;
+            FCLOSE(fp);
+            return ret;
+        }
+        else {
+            return FALSE;
+        } 
+    }
+}
+
 void change_output_extension(char *current)
 {
     char *ext=NULL;
@@ -117,12 +140,16 @@ void select_defaults_by_file_type(char *f, int set_output_also)
     //  if (set_output_also)
     //    set_combo_box_item("output_format_combobox", OUTPUT_KML);          
     //}
-
+    else if (isauig(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    }
     // moved the ALOS CSV case last... we should change this to open
     // the file and check for certain required text in the header line
     // ensure it is what we hope it is, as is done for point/polygon
     else if (strcmp_case(ext, ".csv") == 0) {
-      set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
+      set_combo_box_item("input_format_combobox", INPUT_GENERIC_CSV);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);      
     }

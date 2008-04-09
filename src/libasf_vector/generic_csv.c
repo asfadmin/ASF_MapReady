@@ -267,7 +267,13 @@ FILE *csv_open(const char *filename,
   printf("Found %d columns (%d lat, %d lon).\n", n, n_lat_cols, n_lon_cols);
 
   if (n_lat_cols != n_lon_cols) {
-    printf("Lat/lon column numbers don't match!\n");
+    printf("Don't have an equal number of lat and lon columns!\n");
+    printf("Cannot ingest this file.\n");
+    FCLOSE(fp);
+    return NULL;
+  }
+  if (n_lat_cols == 0 || n_lon_cols == 0) {
+    printf("No data columns found.\n");
     printf("Cannot ingest this file.\n");
     FCLOSE(fp);
     return NULL;
@@ -634,7 +640,7 @@ void csv_dump(const char *filename)
   FCLOSE(fp);
 }
 
-void csv2kml(const char *in_file, const char *out_file)
+int csv2kml(const char *in_file, const char *out_file)
 {
   int num_meta_cols, num_data_cols;
   csv_meta_column_t *meta_column_info;
@@ -646,7 +652,7 @@ void csv2kml(const char *in_file, const char *out_file)
 
   // csv_open() returns NULL if the file can't be processed
   if (!ifp)
-    return;
+    return FALSE;
 
   FILE *ofp = FOPEN(out_file, "w");
   if (!ofp) {
@@ -787,4 +793,5 @@ void csv2kml(const char *in_file, const char *out_file)
   FCLOSE(ifp);
   kml_footer(ofp);
   FCLOSE(ofp);
+  return TRUE;
 }

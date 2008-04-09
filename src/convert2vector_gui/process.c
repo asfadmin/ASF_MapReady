@@ -147,13 +147,13 @@ void process()
   {
     printf("Converting generic CSV file to a shape file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    csv2shape(in_file, out_base);
+    ret=csv2shape(in_file, out_base);
   }
   else if (input_format == INPUT_GENERIC_CSV && output_format == OUTPUT_KML)
   {
     printf("Converting generic CSV file to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    csv2kml(in_file, out_file);
+    ret=csv2kml(in_file, out_file);
   }
   //else if (input_format == INPUT_RGPS && output_format == OUTPUT_SHAPE)
   //{
