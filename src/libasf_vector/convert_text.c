@@ -101,6 +101,7 @@ int ismetadata(char *inFile)
         FREE(basename);
     }
     if (fp) {
+        int line_count = 0;
         line = (char*)MALLOC(sizeof(char)*LINE_MAX);
         while (fgets(line, LINE_MAX, fp)) {
             line[strlen(line)-1] = '\0';
@@ -113,6 +114,9 @@ int ismetadata(char *inFile)
                 isMetadata = 1;
                 break;
             }
+            // avoid scanning the entire contents of a huge file
+            if (++line_count>100)
+              break;
         }
     }
     FREE(line);
@@ -157,6 +161,7 @@ int ispoint(char *inFile)
     }
     if (fp) {
         line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        int line_count=0;
         while (fgets(line, LINE_MAX, fp)) {
             line[strlen(line)-1] = '\0';
             s=line;
@@ -177,6 +182,9 @@ int ispoint(char *inFile)
                     }
                 }
             }
+            // avoid scanning the entire contents of a huge file
+            if (++line_count>100)
+              break;
         }
     }
     FREE(line);
@@ -206,6 +214,7 @@ int ispolygon(char *inFile)
     }
     if (fp) {
         line = (char*)MALLOC(sizeof(char)*LINE_MAX);
+        int line_count=0;
         while (fgets(line, LINE_MAX, fp)) {
             line[strlen(line)-1] = '\0';
             s=line;
@@ -226,6 +235,9 @@ int ispolygon(char *inFile)
                     }
                 }
             }
+            // avoid scanning the entire contents of a huge file
+            if (++line_count>100)
+              break;
         }
     }
     FREE(line);
