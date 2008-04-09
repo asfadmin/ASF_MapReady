@@ -26,6 +26,11 @@ int isshape(char *inFile);
 int isgeotiff(char *inFile);
 int isrgps(char *inFile);
 
+void clear_results_message()
+{
+    put_string_to_label("result_label", "");
+}
+
 static int isauig(char *f)
 {
     char *ext = findExt(f);
@@ -169,6 +174,7 @@ void add_input_file(char *file)
       put_string_to_entry("output_directory_entry", dir);
       free(dir);
     }
+    clear_results_message();
 
     // change output filename, regardless
     change_output_extension(file);
@@ -214,11 +220,15 @@ SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
       else
         put_string_to_label("open_output_label","Open Output:");
     }
-    put_string_to_label("result_label",
-                        "");
+    clear_results_message();
 }
 
 #ifndef win32
+
+SIGNAL_CALLBACK void on_input_format_combobox_changed(GtkWidget *w)
+{
+    clear_results_message();
+}
 
 static GtkWidget *input_browse_widget = NULL;
 static GtkWidget *output_browse_widget = NULL;
@@ -530,3 +540,4 @@ on_output_browse_button_clicked(GtkWidget *w)
 {
     output_file_browse();
 }
+

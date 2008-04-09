@@ -11,6 +11,8 @@ void process()
   char in_file[1024];
   char out_file[1024];
 
+  clear_results_message();
+
   strcpy(in_file, get_string_from_entry("input_file_entry"));
 
   char *odir = get_string_from_entry("output_directory_entry");
@@ -196,6 +198,8 @@ void process()
     open_output = FALSE;
   }
   put_string_to_label("result_label", msg);
+  asfPrintStatus(msg);
+  asfPrintStatus("\nDone.\n");
 
   if (open_output) {
     switch (output_format) {
