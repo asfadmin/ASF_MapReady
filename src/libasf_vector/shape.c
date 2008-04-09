@@ -85,13 +85,14 @@ void shape_init(char *inFile, format_type_t format)
   switch (format)
     {
     case META:
+    case GEOTIFF_META:
       if (DBFAddField(dbase, "Sensor", FTString, 15, 0) == -1)
         asfPrintError("Could not add sensor field to database file\n");
       if (DBFAddField(dbase, "Sensor name", FTString, 15, 0) == -1)
         asfPrintError("Could not add sensor field to database file\n");
-      if (DBFAddField(dbase, "Beam mode", FTString, 4, 0) == -1)
+      if (DBFAddField(dbase, "Beam mode", FTString, 15, 0) == -1)
         asfPrintError("Could not add beam mode field to database file\n");
-      if (DBFAddField(dbase, "Polarization", FTString, 3, 0) == -1)
+      if (DBFAddField(dbase, "Polarization", FTString, 15, 0) == -1)
         asfPrintError("Could not add polarization field to database file\n");
       if (DBFAddField(dbase, "Orbit", FTInteger, 5, 0) == -1)
         asfPrintError("Could not add orbit field to database file\n");
@@ -242,7 +243,6 @@ void shape_init(char *inFile, format_type_t format)
     case URSA:
     case KMLFILE:
     case SHAPEFILE:
-    case GEOTIFF_META:
       break;
     }
 

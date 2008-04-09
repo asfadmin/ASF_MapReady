@@ -477,6 +477,8 @@ void geotiff2shape(char *inFile, DBFHandle dbase, SHPHandle shape, int n)
   }
 
   // Write information into database file
+  /* Can be used again once we write the entire metadata structure in a
+     GeoTIFF tag.
   DBFWriteStringAttribute(dbase, n, 0, meta->general->sensor);
   DBFWriteStringAttribute(dbase, n, 1, meta->general->sensor_name);
   DBFWriteStringAttribute(dbase, n, 2, meta->general->mode);
@@ -489,6 +491,15 @@ void geotiff2shape(char *inFile, DBFHandle dbase, SHPHandle shape, int n)
     DBFWriteStringAttribute(dbase, n, 7, "Descending");
   else if (meta->general->orbit_direction == 'A')
     DBFWriteStringAttribute(dbase, n, 7, "Ascending");
+  */
+  DBFWriteStringAttribute(dbase, n, 0, "unknown");
+  DBFWriteStringAttribute(dbase, n, 1, "unknown");
+  DBFWriteStringAttribute(dbase, n, 2, "unknown");
+  DBFWriteStringAttribute(dbase, n, 3, "unknown");
+  DBFWriteIntegerAttribute(dbase, n, 4, -99);
+  DBFWriteIntegerAttribute(dbase, n, 5, -99);
+  DBFWriteStringAttribute(dbase, n, 6, "unknown");
+  DBFWriteStringAttribute(dbase, n, 7, "unknown");
   DBFWriteDoubleAttribute(dbase, n, 8, meta->general->center_latitude);
   DBFWriteDoubleAttribute(dbase, n, 9, meta->general->center_longitude);
   DBFWriteDoubleAttribute(dbase, n, 10, lat[0]);
