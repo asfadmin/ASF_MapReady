@@ -269,7 +269,7 @@ FILE *csv_open(const char *filename,
   // now get the header line
   char line[1024];
   if (!fgets(line, 1023, fp)) {
-    asfPrintStatus("File %s: Empty.\n");
+    asfPrintStatus("File %s: Empty.\n", filename);
     FCLOSE(fp);
     return NULL;
   }
