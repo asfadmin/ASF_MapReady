@@ -95,6 +95,7 @@ int main(int argc, char **argv)
   int geotiff_found = isgeotiff(infile);
   int rgps_found    = isrgps(infile);
   int csv_found     = iscsv(infile);
+  if (point_found || polygon_found) csv_found = FALSE;
   int types_found = meta_found    +
                     leader_found  +
                     point_found   +
