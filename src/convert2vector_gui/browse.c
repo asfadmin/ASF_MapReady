@@ -153,7 +153,7 @@ void select_defaults_by_file_type(char *f, int set_output_also)
     // moved the ALOS CSV case last... we should change this to open
     // the file and check for certain required text in the header line
     // ensure it is what we hope it is, as is done for point/polygon
-    else if (strcmp_case(ext, ".csv") == 0) {
+    else if (ext && strcmp_case(ext, ".csv") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_GENERIC_CSV);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);
