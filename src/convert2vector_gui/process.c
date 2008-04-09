@@ -199,7 +199,7 @@ void process()
   }
   put_string_to_label("result_label", msg);
   asfPrintStatus(msg);
-  asfPrintStatus("\nDone.\n");
+  asfPrintStatus("\n\nDone.\n\n");
 
   if (open_output) {
     switch (output_format) {
