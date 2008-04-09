@@ -97,7 +97,7 @@ void shape_init(char *inFile, format_type_t format)
         asfPrintError("Could not add orbit field to database file\n");
       if (DBFAddField(dbase, "Frame", FTInteger, 4, 0) == -1)
         asfPrintError("Could not add frame field to database file\n");
-      if (DBFAddField(dbase, "Date", FTString, 20, 0) == -1)
+      if (DBFAddField(dbase, "Date", FTString, 25, 0) == -1)
         asfPrintError("Could not add acquisition date field to database file\n");
       if (DBFAddField(dbase, "Direction", FTString, 15, 0) == -1)
         asfPrintError("Could not add orbit direction field to database file\n");
