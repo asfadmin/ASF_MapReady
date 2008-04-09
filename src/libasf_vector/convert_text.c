@@ -236,6 +236,11 @@ int ispolygon(char *inFile)
 
 int isshape(char *inFile)
 {
+    char *ext = findExt(inFile);
+    if (ext && strcmp_case(ext,".shp")!=0) {
+        return FALSE;
+    }
+
     char *dbaseFile, *basename;
     int isShape = 0;
     int nEntities, pointType;

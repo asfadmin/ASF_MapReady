@@ -9,6 +9,19 @@
 
 #define DEFAULT_OUTPUT_FORMAT   "KML"
 
+static int iscsv(char *file)
+{
+  char *ext = findExt(file);
+  if (!ext) {
+    char *csvfile = appendExt(file, ".csv");
+    int ret = fileExists(csvfile);
+    free(csvfile);
+    return ret;
+  } else {
+    return strcmp_case(ext,".csv")==0;
+  }
+}
+
 int main(int argc, char **argv)
 {
   char informat[25], outformat[25], infile[255], outfile[255];
@@ -81,12 +94,14 @@ int main(int argc, char **argv)
   int shape_found   = isshape(infile);
   int geotiff_found = isgeotiff(infile);
   int rgps_found    = isrgps(infile);
+  int csv_found     = iscsv(infile);
   int types_found = meta_found    +
                     leader_found  +
                     point_found   +
                     polygon_found +
                     shape_found   +
                     geotiff_found +
+                    csv_found     +
                     rgps_found    ;
   if (types_found > 1) {
       char *type_list = (char *)MALLOC(sizeof(char)*types_found*1024);
@@ -113,6 +128,10 @@ int main(int argc, char **argv)
           sprintf(msg, "    %s.tif or %s.tiff\n", infile, infile);
           strcat(type_list, msg);
       }
+      if (csv_found) {
+          sprintf(msg, "    %s.csv\n", infile);
+          strcat(type_list, msg);
+      }
       if (rgps_found) {
           sprintf(msg, "    %s\n", infile);
           strcat(type_list, msg);
@@ -125,13 +144,14 @@ int main(int argc, char **argv)
   }
 
   if (types_found == 1 && inputFormatFlag) {
-      if ((meta_found    && strncmp(informat, "META", 4)    != 0) ||
-          (leader_found  && strncmp(informat, "LEADER", 6)  != 0) ||
-          (point_found   && strncmp(informat, "POINT", 5)   != 0) ||
-          (polygon_found && strncmp(informat, "POLYGON", 7) != 0) ||
-          (shape_found   && strncmp(informat, "SHAPE", 5)   != 0) ||
-          (geotiff_found && strncmp(informat, "GEOTIFF", 7) != 0) ||
-          (rgps_found    && strncmp(informat, "RGPS", 4)    != 0))
+      if ((meta_found    && strncmp_case(informat, "META", 4)    != 0) ||
+          (leader_found  && strncmp_case(informat, "LEADER", 6)  != 0) ||
+          (point_found   && strncmp_case(informat, "POINT", 5)   != 0) ||
+          (polygon_found && strncmp_case(informat, "POLYGON", 7) != 0) ||
+          (shape_found   && strncmp_case(informat, "SHAPE", 5)   != 0) ||
+          (geotiff_found && strncmp_case(informat, "GEOTIFF", 7) != 0) ||
+          (csv_found     && strncmp_case(informat, "CSV", 3)     != 0) ||
+          (rgps_found    && strncmp_case(informat, "RGPS", 4)    != 0))
       {
           asfPrintWarning("\nData type found in input file does not agree with\n"
                   "the data type specified with the -input-format flag (%s).\n\n"
@@ -144,6 +164,7 @@ int main(int argc, char **argv)
                   polygon_found ? "Polygon data in a CSV file (POLYGON)" :
                   shape_found   ? "Shape file (SHAPE)"                   :
                   geotiff_found ? "GeoTIFF file (GEOTIFF)"               :
+                  csv_found     ? "CSV file (CSV)"               :
                   rgps_found    ? "RGPS file (RGPS)"                     :
                                   "UNKNOWN FILE TYPE");
           strcpy(informat,
@@ -153,6 +174,7 @@ int main(int argc, char **argv)
                  polygon_found ? "POLYGON" :
                  shape_found   ? "SHAPE"   :
                  geotiff_found ? "GEOTIFF" :
+                 csv_found     ? "CSV"     :
                  rgps_found    ? "RGPS"    :
                                   MAGIC_UNSET_STRING);
       }
@@ -178,6 +200,9 @@ int main(int argc, char **argv)
       }
       else if (isgeotiff(infile)) {
           strcpy(informat, "GEOTIFF");
+      }
+      else if (iscsv(infile)) {
+          strcpy(informat, "CSV");
       }
       else if (isrgps(infile)) {
           strcpy(informat, "RGPS");
