@@ -45,7 +45,7 @@ static int isauig(char *f)
         }
         else {
             return FALSE;
-        } 
+        }
     }
 }
 
@@ -82,68 +82,68 @@ void change_output_extension(char *current)
 void select_defaults_by_file_type(char *f, int set_output_also)
 {
     char *ext = findExt(f);
-  
+
     // if we can figure it out by the extension, do that first
     if (ext && strcmp_case(ext, ".meta") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_META);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ext && strcmp_case(ext, ".L") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_LEADER);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ext && strcmp_case(ext, ".shp") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_SHAPE);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ext && strcmp_case(ext, ".kml") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_KML);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);      
+        set_combo_box_item("output_format_combobox", OUTPUT_ALOS_CSV);
     }
     else if (isgeotiff(f)) {
       set_combo_box_item("input_format_combobox", INPUT_GEOTIFF);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ismetadata(f)) {
       set_combo_box_item("input_format_combobox", INPUT_META);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (isleader(f)) {
       set_combo_box_item("input_format_combobox", INPUT_LEADER);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ispoint(f)) {
       set_combo_box_item("input_format_combobox", INPUT_POINT);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (ispolygon(f)) {
       set_combo_box_item("input_format_combobox", INPUT_POLYGON);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     else if (isshape(f)) {
       set_combo_box_item("input_format_combobox", INPUT_SHAPE);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     //  Removing RGPS for now
     //else if (isrgps(f)) {
     //  set_combo_box_item("input_format_combobox", INPUT_RGPS);
     //  if (set_output_also)
-    //    set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+    //    set_combo_box_item("output_format_combobox", OUTPUT_KML);
     //}
     else if (isauig(f)) {
       set_combo_box_item("input_format_combobox", INPUT_ALOS_CSV);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);          
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
     // moved the ALOS CSV case last... we should change this to open
     // the file and check for certain required text in the header line
@@ -151,7 +151,7 @@ void select_defaults_by_file_type(char *f, int set_output_also)
     else if (strcmp_case(ext, ".csv") == 0) {
       set_combo_box_item("input_format_combobox", INPUT_GENERIC_CSV);
       if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);      
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
 }
 
@@ -182,7 +182,7 @@ SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
     char *ext = findExt(curr);
     if (ext) {
         // only change if current extension is something we know
-        change_output_extension(curr);    
+        change_output_extension(curr);
     }
 
     // the "open output" checkbox is enabled only for Google Earth
@@ -214,6 +214,8 @@ SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
       else
         put_string_to_label("open_output_label","Open Output:");
     }
+    put_string_to_label("result_label",
+                        "");
 }
 
 #ifndef win32
