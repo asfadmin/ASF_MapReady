@@ -346,10 +346,26 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = COMPLEX_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "AMPLITUDE_IMAGE") )
         MGENERAL->image_data_type = AMPLITUDE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "PHASE_IMAGE") )
+          MGENERAL->image_data_type = PHASE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER_IMAGE") )
+          MGENERAL->image_data_type = POWER_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_IMAGE") )
+          MGENERAL->image_data_type = SIGMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_IMAGE") )
+          MGENERAL->image_data_type = GAMMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_IMAGE") )
+          MGENERAL->image_data_type = BETA_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
         MGENERAL->image_data_type = COHERENCE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOREFERENCED_IMAGE") )
+          MGENERAL->image_data_type = GEOREFERENCED_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
+          MGENERAL->image_data_type = GEOCODED_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_IMAGE") )
         MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "LUT_IMAGE") )
+          MGENERAL->image_data_type = LUT_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "ELEVATION") )
         MGENERAL->image_data_type = ELEVATION;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "DEM") )
@@ -829,7 +845,7 @@ void fill_structure_field(char *field_name, void *valp)
   /* Fields that go in the (proj->param).ps block.  */
   if ( !strcmp(stack_top->block_name, "ps") ) {
     if ( !strcmp(field_name, "slat") )
-      { (*MPARAM).ps.slat = VALP_AS_DOUBLE; 
+      { (*MPARAM).ps.slat = VALP_AS_DOUBLE;
         (*MPARAM).ps.is_north_pole = (*MPARAM).ps.slat > 0;
         return;
       }
