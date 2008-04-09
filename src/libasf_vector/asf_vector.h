@@ -26,7 +26,8 @@ typedef enum {
   RGPS_WEATHER,
   MULTIMATCH,
   URSA,
-  GEOTIFF_META
+  GEOTIFF_META,
+  CSV
 } format_type_t;
 
 typedef enum {
@@ -158,6 +159,7 @@ void rgps_grid2shape(grid_attr_t grid, DBFHandle dbase, SHPHandle shape,
 void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void multimatch2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 void shape2text(char *inFile, char *outFile);
+void shape2csv(char *inFile, char *outfile);
 
 // Prototypes from shape.c
 void shape_generic_init(char *inFile, dbf_header_t *dbf, int nColumns,

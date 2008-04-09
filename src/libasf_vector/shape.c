@@ -337,6 +337,8 @@ void convert_from_shape(char *inFile, char *outFile, format_type_t format)
   FILE *fp = NULL;
   if (format == TEXT)
     shape2text(inFile, outFile);
+  else if (format == CSV)
+    shape2csv(inFile, outFile);
   else if (format == KMLFILE) {
     fp = (FILE*)FOPEN(outFile, "w");
     kml_header(fp);
@@ -394,7 +396,7 @@ int read_shape(char *inFile, char *outfile, format_type_t format, int list)
   char outFile[1024];
   char ext[32];
 
-  if (format == TEXT || format == URSA)
+  if (format == TEXT || format == CSV || format == URSA)
     strcpy(ext, "csv");
   else if (format == KMLFILE)
     strcpy(ext, "kml");

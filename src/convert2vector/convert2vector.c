@@ -369,6 +369,11 @@ int main(int argc, char **argv)
         read_shape(infile, outfile, TEXT, 0);
     }
     else if
+      (strcmp(uc(informat), "SHAPE")==0 && strcmp(uc(outformat), "CSV")==0) {
+      asfPrintStatus("   Converting a shapefile into a csv file ...\n\n");
+      read_shape(infile, outfile, CSV, 0);
+    }
+    else if
     (strcmp(uc(informat), "GEOTIFF")==0 && strcmp(uc(outformat), "SHAPE")==0) {
         asfPrintStatus("   Converting a geotiff file into a shape file ...\n\n");
         write_shape(infile, outfile, GEOTIFF_META, 0);

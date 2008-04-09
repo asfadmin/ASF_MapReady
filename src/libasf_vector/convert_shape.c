@@ -769,3 +769,78 @@ void shape2text(char *inFile, char *outfile)
 
   return;
 }
+
+// Convert shapefile to csv file - general dump function but preserving
+// header names
+void shape2csv(char *inFile, char *outfile)
+{
+  DBFHandle dbase;
+  SHPHandle shape;
+  DBFFieldType dbaseType;
+  SHPObject *shapeObject;
+  char fieldName[25], str[50];;
+  FILE *fp = NULL;
+
+  int ii, kk, nEntities, pointType, nFields, nWidth, nDecimals, nValue;
+  double fValue;
+  const char *sValue;
+
+  // Open shapefile
+  open_shape(inFile, &dbase, &shape);
+
+  // Extract the vital information out of the shapefile
+  SHPGetInfo(shape, &nEntities, &pointType, NULL, NULL);
+
+  // Extract the attributes out of the database file
+  nFields = DBFGetFieldCount(dbase);
+  sValue = (char *) MALLOC(sizeof(char)*255);
+
+  // Open output file for writing
+  fp = FOPEN(outfile, "w");
+
+  // Write the header names
+  for (kk=0; kk<nFields-1; kk++) {
+    dbaseType = DBFGetFieldInfo(dbase, kk, fieldName, &nWidth, &nDecimals);
+    fprintf(fp, "%s,", fieldName);
+  }
+  dbaseType = DBFGetFieldInfo(dbase, nFields-1, fieldName, 
+			      &nWidth, &nDecimals);
+  fprintf(fp, "%s\n", fieldName);
+
+  for (ii=0; ii<nEntities; ii++) {
+    // Read object and report basic information
+    shapeObject = SHPReadObject(shape, ii);
+    for (kk=0; kk<nFields; kk++) {
+      dbaseType = DBFGetFieldInfo(dbase, kk, fieldName, &nWidth, &nDecimals);
+      switch (dbaseType) {
+      case FTString:
+	sValue = DBFReadStringAttribute(dbase, ii, kk);
+	fprintf(fp, "%s", sValue);
+	break;
+      case FTInteger:
+	nValue = DBFReadIntegerAttribute(dbase, ii, kk);
+	fprintf(fp, "%d", nValue);
+	break;
+      case FTDouble:
+	fValue = DBFReadDoubleAttribute(dbase, ii, kk);
+	sprintf(str, "%%.%dlf", nDecimals);
+	fprintf(fp, str, fValue);
+	break;
+      case FTLogical:
+      case FTInvalid:
+      default:
+	break;
+      }
+      if (kk < nFields-1)
+	fprintf(fp, ",");
+      else
+	fprintf(fp, "\n");
+    }
+    SHPDestroyObject(shapeObject);
+  }
+  FCLOSE(fp);
+
+  // Close shapefile
+  close_shape(dbase, shape);
+
+}
