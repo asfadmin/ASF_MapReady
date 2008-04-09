@@ -11,6 +11,25 @@ static void strip_end_whitesp_inplace(char *s)
         *p-- = '\0';
 }
 
+static void strip_begin_whitesp_comment_inplace(char *s)
+{
+    char *p = s;
+
+    // skip a # only if it is the first character
+    if (*p=='#')
+      ++p;
+    // now skip whitespace
+    while (isspace(*p))
+      ++p;
+    // now move characters starting at p back to s.
+    char *q = s;
+    while (*p != '\0') {
+      *q = *p;
+      ++p; ++q;
+    }
+    *q = '\0';
+}
+
 static void consolidate_quotes(char *s)
 {
     int i,j=0,l=strlen(s)+1;
@@ -52,7 +71,7 @@ static char *my_parse_string(char *p, char *s, int max_len, int line_num)
     char *q = strchr(p+1, '\"');
     if (q) {
       // after the quote, the next non-whitespace character should be a comma
-      // if it is another quote, then we need to keep going until
+      // if it is another quote, then we need to keep going
       char *r = q+1;
       while (*r == '\"') {
         char *q1 = strchr(r+1, '\"');
@@ -64,8 +83,10 @@ static char *my_parse_string(char *p, char *s, int max_len, int line_num)
         }
       }
 
+      // eat whitespace, until we get to what should be a comma
       while (isspace(*r))
         ++r;
+      // now, eat the comma
       if (*r != ',') {
         if (line_num>0)
           printf("Line %d: Column entry has extra characters\n", line_num);
@@ -73,7 +94,7 @@ static char *my_parse_string(char *p, char *s, int max_len, int line_num)
         r = strchr(r,',');        
       }
       
-      // do not include the quotes
+      // do not include the quotes in the returned value
       *q = '\0'; // temporary
       strncpy_safe(s, p+1, max_len);
       *q = '\"';
@@ -89,13 +110,14 @@ static char *my_parse_string(char *p, char *s, int max_len, int line_num)
     }
     else {
       // no trailing quote found!
-      // just put everything that's left into the output string, return NULL
+      // just put everything that's left into the output string
       strncpy_safe(s, p+1, max_len);
+      // return NULL (to indicate this is the last column)
       return NULL;
     }
   }
   else {
-    // normal, non-quoted string
+    // non-quoted string
     char *q = strchr(p, ',');
     if (q) {
       *q = '\0'; // temporary
@@ -152,7 +174,7 @@ static int is_lat_column(const char *name)
       strcmp_case(name,"lllat")==0 ||
       strcmp_case(name,"lrlat")==0 ||
       strcmp_case(name,"urlat")==0)
-{
+  {
     return TRUE;
   }
   return FALSE;
@@ -173,7 +195,7 @@ static int is_lon_column(const char *name)
       strcmp_case(name,"lllon")==0 ||
       strcmp_case(name,"lrlon")==0 ||
       strcmp_case(name,"urlon")==0)
-{
+  {
     return TRUE;
   }
   return FALSE;
@@ -253,7 +275,8 @@ FILE *csv_open(const char *filename,
   }
 
   strip_end_whitesp_inplace(line);
-    
+  strip_begin_whitesp_comment_inplace(line);
+
   // go through the columns
   // first time through, we are just counting columns
   char *p = line;
@@ -501,7 +524,7 @@ int csv_line_parse(const char *line_in,
 
   // it is often the case that for rectangular regions, the points are
   // not specified in a clockwise, or counterclockwise, manner.  We can
-  // detect this an fix it.
+  // detect this and fix it.
   if (num_data_cols==4) {
     if (lineSegmentsIntersect(lats[1],lons[1],
                               lats[2],lons[2],
