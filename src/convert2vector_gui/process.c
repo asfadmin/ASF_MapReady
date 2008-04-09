@@ -169,8 +169,11 @@ void process()
   //}
   else
   {
-    message_box(
+    put_string_to_label("result_label",
       "Unsupported combination of Input and Output formats selected.");
+    FREE(in_base);
+    FREE(out_base);
+    return;
   }
 
   int open_output = get_checked("open_output_checkbutton");
