@@ -1,5 +1,5 @@
 /*DateUtil:
-	A set of utilities to convert dates between various
+    A set of utilities to convert dates between various
 formats.
 */
 #include "asf.h"
@@ -9,48 +9,48 @@ formats.
 /*Get number of days in Gregorian Year.*/
 int date_getDaysInYear(int year)
 {
-	if (year<1536)
-		{printf("ERROR! The gregorian calender was not used before year %d!\n",year);exit(1);}
-	if (((year%4)==0)&&(((year%100)!=0)||((year%400)==0)))
-		return 366;
-	else
-		return 365;
+    if (year<1536)
+        {printf("ERROR! The gregorian calender was not used before year %d!\n",year);exit(1);}
+    if (((year%4)==0)&&(((year%100)!=0)||((year%400)==0)))
+        return 366;
+    else
+        return 365;
 }
 
 /*Get month/day given year, julian day.*/
 static int monthStart_leap[13]=
-	{1,32,61,92,122,153,183,214,245,275,306,336,367};
+    {1,32,61,92,122,153,183,214,245,275,306,336,367};
 static int monthStart_nonleap[13]=
-	{1,32,60,91,121,152,182,213,244,274,305,335,366};
+    {1,32,60,91,121,152,182,213,244,274,305,335,366};
 void date_jd2ymd(julian_date *in,ymd_date *out)
 {
-	int *monthStart;
-	int currMonth;
-	int daysInYear=date_getDaysInYear(in->year);
-	if (in->jd>daysInYear)
-		{printf("ERROR! Invalid julian day '%d' passed to date_jd2ymd!\n",in->jd);exit(1);}
-	if (daysInYear==366)
-		monthStart=monthStart_leap;
-	else
-		monthStart=monthStart_nonleap;
-	for (currMonth=1;monthStart[currMonth]<=in->jd;currMonth++) {}
-	out->year=in->year;
-	out->month=currMonth;
-	out->day=in->jd-monthStart[currMonth-1]+1;
+    int *monthStart;
+    int currMonth;
+    int daysInYear=date_getDaysInYear(in->year);
+    if (in->jd>daysInYear)
+        {printf("ERROR! Invalid julian day '%d' passed to date_jd2ymd!\n",in->jd);exit(1);}
+    if (daysInYear==366)
+        monthStart=monthStart_leap;
+    else
+        monthStart=monthStart_nonleap;
+    for (currMonth=1;monthStart[currMonth]<=in->jd;currMonth++) {}
+    out->year=in->year;
+    out->month=currMonth;
+    out->day=in->jd-monthStart[currMonth-1]+1;
 }
 /*Get julian day given month/day.*/
 void date_ymd2jd(ymd_date *in,julian_date *out)
 {
-	int *monthStart;
-	int daysInYear=date_getDaysInYear(in->year);
-	if ((in->month>12)||(in->day>31))
-		{printf("ERROR! Invalid month '%d' or day '%d' passed to date_ymd2jd!\n",in->month,in->day);exit(1);}
-	if (daysInYear==366)
-		monthStart=monthStart_leap;
-	else
-		monthStart=monthStart_nonleap;
-	out->year=in->year;
-	out->jd=monthStart[in->month-1]+(in->day-1);
+    int *monthStart;
+    int daysInYear=date_getDaysInYear(in->year);
+    if ((in->month>12)||(in->day>31))
+        {printf("ERROR! Invalid month '%d' or day '%d' passed to date_ymd2jd!\n",in->month,in->day);exit(1);}
+    if (daysInYear==366)
+        monthStart=monthStart_leap;
+    else
+        monthStart=monthStart_nonleap;
+    out->year=in->year;
+    out->jd=monthStart[in->month-1]+(in->day-1);
 }
 
 /*Compute the number of seconds since midnight, Jan 1, 1900.
@@ -58,27 +58,27 @@ This is sub-millisecond accurate; but ignores leap seconds.
 */
 double date2sec(julian_date *date,hms_time *time)
 {
-	double ret=date_hms2sec(time);
-	int year;
-	for (year=1900;year<date->year;year++)
-		ret+=date_getDaysInYear(year)*DAY2SEC;
-	ret+=(date->jd-1)*DAY2SEC;
-	return ret;
+    double ret=date_hms2sec(time);
+    int year;
+    for (year=1900;year<date->year;year++)
+        ret+=date_getDaysInYear(year)*DAY2SEC;
+    ret+=(date->jd-1)*DAY2SEC;
+    return ret;
 }
 
-/*Compute the date corresponding to this number of seconds 
+/*Compute the date corresponding to this number of seconds
 since midnight, Jan 1, 1900.
 This is sub-millisecond accurate; but ignores leap seconds.
 */
 void sec2date(double secs,julian_date *date,hms_time *time)
 {
-	int year=1900;
-	while (secs>=date_getDaysInYear(year)*DAY2SEC)
-		secs-=date_getDaysInYear(year++)*DAY2SEC;
-	date->year=year;
-	date->jd=1+(int)(secs/DAY2SEC);
-	secs-=(date->jd-1)*DAY2SEC;
-	date_sec2hms(secs,time);
+    int year=1900;
+    while (secs>=date_getDaysInYear(year)*DAY2SEC)
+        secs-=date_getDaysInYear(year++)*DAY2SEC;
+    date->year=year;
+    date->jd=1+(int)(secs/DAY2SEC);
+    secs-=(date->jd-1)*DAY2SEC;
+    date_sec2hms(secs,time);
 }
 
 
@@ -89,48 +89,48 @@ which easily and implicitly handles all the oddities of Gregorian dates
 
 double date_getJD(ymd_date *in)
 {
-	double ret;
-	int month=in->month,year=in->year;
-	if (month==1)
-	{
-		month=13;
-		year--;
-	} else if (month==2)
-	{
-		month=14.0;
-		year--;
-	}
-	ret=1721088.5+in->day+floor(365.25*year)+
-		floor(year/400.0)-floor(year/100.0)+
-		floor(30.59*(month-2.0));
-	return ret;
+    double ret;
+    int month=in->month,year=in->year;
+    if (month==1)
+    {
+        month=13;
+        year--;
+    } else if (month==2)
+    {
+        month=14.0;
+        year--;
+    }
+    ret=1721088.5+in->day+floor(365.25*year)+
+        floor(year/400.0)-floor(year/100.0)+
+        floor(30.59*(month-2.0));
+    return ret;
 }
 
 /*Get ESA-Modified Julian Day given conventional year and julian day.
 This is defined as "Days after Jan. 1, 1950".*/
 int date_getMJD(julian_date *in)
 {
-	int curYear=1950;
-	int curDay=0;
-	while (curYear<in->year)
-		curDay+=date_getDaysInYear(curYear++);
-	return curDay+in->jd-1;
+    int curYear=1950;
+    int curDay=0;
+    while (curYear<in->year)
+        curDay+=date_getDaysInYear(curYear++);
+    return curDay+in->jd-1;
 }
 
 /*Convert hour/minute/second to seconds in day.*/
 double date_hms2sec(hms_time *in)
 {
-	return (in->hour*60.0+in->min)*60+in->sec;
+    return (in->hour*60.0+in->min)*60+in->sec;
 }
 
 /*Convert seconds in day to hour/minute/second.*/
 void date_sec2hms(double sec,hms_time *out)
 {
-	out->hour=(int)(sec/(60*60));
-	sec-=(out->hour)*60*60;
-	out->min=(int)(sec/(60));
-	sec-=(out->min)*60;
-	out->sec=sec;
+    out->hour=(int)(sec/(60*60));
+    sec-=(out->hour)*60*60;
+    out->min=(int)(sec/(60));
+    sec-=(out->min)*60;
+    out->sec=sec;
 }
 
 
@@ -155,7 +155,7 @@ int date_ymd2gmt(ymd_date *date)
 
 
 /*************************************************************
-   Date/Time Input Parsing Routines 
+   Date/Time Input Parsing Routines
  ************************************************************/
 
 /* Date Utility Routine: Convert ODL style date to structure.
@@ -259,7 +259,7 @@ index  012345678901234567890
 */
 void parse_DMYdate(const char *inStr,ymd_date *date,hms_time *time)
 {
-  char mon[][5]= 
+  char mon[][5]=
     {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
   char buf[100];
   int i,sec;
@@ -443,17 +443,37 @@ void sub_time(double delta, ymd_date *date, hms_time *time)
    time->hour = (int) thour;
    time->min  = (int) tmin;
    time->sec  = tsec;
- }
+}
 
+/*
+   Compute the average ymd_date date and hms_time time
+  -----------------------------------------------------*/
+void average_ymdTimes(ymd_date *date1, ymd_date *date2,
+                      hms_time *time1, hms_time *time2,
+                      ymd_date *ave_date, hms_time *ave_time)
+{
+    double secs1, secs2, ave_secs;
+    julian_date jd_1, jd_2, ave_jd;
+
+    date_ymd2jd(date1, &jd_1); // Julian date contains year and day number within that year
+    date_ymd2jd(date2, &jd_2);
+
+    secs1 = date2sec(&jd_1, time1); // Seconds from midnight, Jan 1, 1900 to julian date plus seconds into that day
+    secs2 = date2sec(&jd_2, time2);
+    ave_secs = (secs1 + secs2) / 2.0;
+
+    sec2date(ave_secs, &ave_jd, ave_time);
+    date_jd2ymd(&ave_jd, ave_date);
+}
 
 
 /************Img_SceneCenterDateTime*************************************
 Date I/O Utilites:
-	These write characters into a raw buffer.
+    These write characters into a raw buffer.
 They don't even append a '/0' to the end of their
 inputs, because they are intended for use with fixed-
 size ASCII structures.
-	They return a pointer to just past the end
+    They return a pointer to just past the end
 of the string they wrote.
 */
 
@@ -463,17 +483,17 @@ index  01234567890123456
 */
 void date_dssr2date(const char *inStr,ymd_date *date,hms_time *time)
 {
-	char buf[100];
-	int sec,msec;
+    char buf[100];
+    int sec,msec;
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
-	subStr(0,4,&date->year);
-	subStr(4,2,&date->month);
-	subStr(6,2,&date->day);
-	subStr(8,2,&time->hour);
-	subStr(10,2,&time->min);
-	subStr(12,2,&sec);
-	subStr(14,3,&msec);
-	time->sec=sec+msec/1000.0;
+    subStr(0,4,&date->year);
+    subStr(4,2,&date->month);
+    subStr(6,2,&date->day);
+    subStr(8,2,&time->hour);
+    subStr(10,2,&time->min);
+    subStr(12,2,&sec);
+    subStr(14,3,&msec);
+    time->sec=sec+msec/1000.0;
 }
 
 /*Extract second DSSR-style date from the given string:
@@ -482,24 +502,24 @@ index  012345678901234567890123
 */
 void date_dssr2time(const char *inStr,ymd_date *date,hms_time *time)
 {
-  char mon[][5]= 
+  char mon[][5]=
     {"","JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"};
-	char buf[100];
-	int i,sec,msec;
+    char buf[100];
+    int i,sec,msec;
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
         subStr(7,4,&date->year);
         for (i=0; i<13; i++) {
-	  strncpy(buf, &inStr[3], 3);
-	  buf[3] = 0;
-	  if (strcmp(uc(buf), mon[i]) == 0)
-	    date->month = i;
-	}
+      strncpy(buf, &inStr[3], 3);
+      buf[3] = 0;
+      if (strcmp(uc(buf), mon[i]) == 0)
+        date->month = i;
+    }
         subStr(0,2,&date->day);
-	subStr(12,2,&time->hour);
-	subStr(15,2,&time->min);
-	subStr(18,2,&sec);
-	subStr(21,3,&msec);
-	time->sec=sec+msec/1000.0;
+    subStr(12,2,&time->hour);
+    subStr(15,2,&time->min);
+    subStr(18,2,&sec);
+    subStr(21,3,&msec);
+    time->sec=sec+msec/1000.0;
 }
 
 // Extract ALOS summary style date from the given string:
@@ -507,38 +527,38 @@ void date_dssr2time(const char *inStr,ymd_date *date,hms_time *time)
 // index  012345678901234567890
 void date_alos2date(const char *inStr,ymd_date *date,hms_time *time)
 {
-	char buf[100];
-	int sec,msec;
+    char buf[100];
+    int sec,msec;
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
-	subStr(0,4,&date->year);
-	subStr(4,2,&date->month);
-	subStr(6,2,&date->day);
-	subStr(9,2,&time->hour);
-	subStr(12,2,&time->min);
-	subStr(15,2,&sec);
-	subStr(18,3,&msec);
-	time->sec=sec+msec/1000.0;
+    subStr(0,4,&date->year);
+    subStr(4,2,&date->month);
+    subStr(6,2,&date->day);
+    subStr(9,2,&time->hour);
+    subStr(12,2,&time->min);
+    subStr(15,2,&sec);
+    subStr(18,3,&msec);
+    time->sec=sec+msec/1000.0;
 }
 // Extract SIR-C summary style date from the given string:
 // instr="YYYY/MM/DD hh:mm:ss.ttt"
 // index  01234567890123456789012
 void date_sirc2date(const char *inStr,ymd_date *date,hms_time *time)
 {
-	char buf[100];
-	int sec,msec;
+    char buf[100];
+    int sec,msec;
 #define subStr(start,len,dest) strncpy(buf,&inStr[start],len);buf[len]=0;sscanf(buf,"%d",dest);
-	subStr(0,4,&date->year);
-	subStr(5,2,&date->month);
-	subStr(8,2,&date->day);
-	subStr(11,2,&time->hour);
-	subStr(14,2,&time->min);
-	subStr(17,2,&sec);
-	subStr(20,3,&msec);
-	time->sec=sec+msec/1000.0;
+    subStr(0,4,&date->year);
+    subStr(5,2,&date->month);
+    subStr(8,2,&date->day);
+    subStr(11,2,&time->hour);
+    subStr(14,2,&time->min);
+    subStr(17,2,&sec);
+    subStr(20,3,&msec);
+    time->sec=sec+msec/1000.0;
 }
 
 
-/* Convert DSSR style date to time stamp 
+/* Convert DSSR style date to time stamp
 instr="YYYYMMDDhhmmssttt"
 index  01234567890123456
 */
@@ -571,43 +591,43 @@ void date_shr2date_stamp(const char *inStr, char *d_stamp)
 
 /*
 WriteInt: Internal call.
-	Write the N low-order decimal digits of the given
+    Write the N low-order decimal digits of the given
 integer into the given field. Returns pointer to just past
 end of written data;
 */
 char *date_writeInt(int number,int N,char *dest)
 {
-	int digitNo;
-	for (digitNo=N-1;digitNo>=0;digitNo--)
-	{
-		dest[digitNo]=(number%10)+'0';
-		number/=10;
-	}
-	return &(dest[N]);
+    int digitNo;
+    for (digitNo=N-1;digitNo>=0;digitNo--)
+    {
+        dest[digitNo]=(number%10)+'0';
+        number/=10;
+    }
+    return &(dest[N]);
 }
 
 /*Writes YY&MM&DD, where sep==&*/
 char * date_printY2Kdate(ymd_date *in,char sep,char *dest)
 {
-	dest=date_writeInt(in->year,2,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt(in->month,2,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt(in->day,2,dest);
-	*dest++ = '\0';
-	return dest;
+    dest=date_writeInt(in->year,2,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt(in->month,2,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt(in->day,2,dest);
+    *dest++ = '\0';
+    return dest;
 }
 
 /*Writes YYYY&MM&DD, where sep==&*/
 char * date_printDate(ymd_date *in,char sep,char *dest)
 {
-	dest=date_writeInt(in->year,4,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt(in->month,2,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt(in->day,2,dest);
-	*dest++ = '\0';
-	return dest;
+    dest=date_writeInt(in->year,4,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt(in->month,2,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt(in->day,2,dest);
+    *dest++ = '\0';
+    return dest;
 }
 
 /*Writes HH&MM&SS.CCCC,
@@ -615,19 +635,19 @@ where sep==& (no spaces if sep=='\0')
 where there are prec "C"'s. (no decimal if prec==0).*/
 char * date_printTime(hms_time *in,int prec,char sep,char *dest)
 {
-	dest=date_writeInt(in->hour,2,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt(in->min,2,dest);
-	if (sep) *dest++=sep;
-	dest=date_writeInt((int)in->sec,2,dest);
-	if (prec)
-	{
-		double frac=(in->sec-(int)in->sec);
-		int i;
-		*dest++='.';
-		for (i=0;i<prec;i++) frac*=10.0;
-		dest=date_writeInt((int)frac,prec,dest);
-	}
-	*dest++ = '\0';
-	return dest;
+    dest=date_writeInt(in->hour,2,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt(in->min,2,dest);
+    if (sep) *dest++=sep;
+    dest=date_writeInt((int)in->sec,2,dest);
+    if (prec)
+    {
+        double frac=(in->sec-(int)in->sec);
+        int i;
+        *dest++='.';
+        for (i=0;i<prec;i++) frac*=10.0;
+        dest=date_writeInt((int)frac,prec,dest);
+    }
+    *dest++ = '\0';
+    return dest;
 }

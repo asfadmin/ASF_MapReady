@@ -86,9 +86,6 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
   if (0==strncmp(satName,"E",1))
     s=ERS_ceos_decoder_init(inN,outN,readNextPulse);
   else if (0==strncmp(satName,"J",1)) {
-    /* JERS ingest temporarily disabled */
-    asfPrintError("   JERS data ingest currently under development\n");
-    /************************************/
     s=JRS_ceos_decoder_init(inN,outN,readNextPulse);
   }
   else if (0==strncmp(satName,"R",1))
@@ -100,13 +97,13 @@ bin_state *convertMetadata_ceos(char *inN, char *outN, int *nLines,
   createMeta_ceos(s,&dssr,inN,outN);
 
 /*Write out ARDOP input parameter files.*/
-  if (fabs(dssr.crt_dopcen[0]) > 15000) 
+  if (fabs(dssr.crt_dopcen[0]) > 15000)
     writeARDOPparams(s,outN, 0, -99, -99);
   else if (fabs(dssr.crt_dopcen[1]) > 1)
     writeARDOPparams(s,outN, dssr.crt_dopcen[0], -99*s->prf, -99*s->prf);
   else
     writeARDOPparams(s,outN,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
-		     dssr.crt_dopcen[2]);
+             dssr.crt_dopcen[2]);
   writeARDOPformat(s,outN);
 
   *nLines=s->nLines;

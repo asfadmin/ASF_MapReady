@@ -79,6 +79,26 @@ const char stf_data_extensions[][NUM_STF_DATA_EXTS] = {
     ".017", ".017",
     ".018", ".018",
     ".019", ".019",
+    ".000", ".000",
+    ".001", ".001",
+    ".002", ".002",
+    ".003", ".003",
+    ".004", ".004",
+    ".005", ".005",
+    ".006", ".006",
+    ".007", ".007",
+    ".008", ".008",
+    ".009", ".009",
+    ".010", ".010",
+    ".011", ".011",
+    ".012", ".012",
+    ".013", ".013",
+    ".014", ".014",
+    ".015", ".015",
+    ".016", ".016",
+    ".017", ".017",
+    ".018", ".018",
+    ".019", ".019",
 };
 
 /******************************************************************************
@@ -92,6 +112,10 @@ stf_metadata_ext_t get_stf_metadata_name(const char *stfName, char **pMetaName)
     stf_metadata_ext_t ret = NO_STF_METADATA;
     char *pDataName = NULL, MetaName[1024];
     int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
+
+    asfRequire(NUM_STF_METADATA_EXTS == NUM_STF_DATA_EXTS,
+               "Programming error: get_stf_names.h has a different number of extensions\n"
+               "for metadata and data files for STF data.\n");
 
     stf_data_ext_t dret = get_stf_data_name(stfName, &pDataName);
     if (dret != NO_STF_DATA) {
@@ -130,6 +154,10 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
     int andFlag=TRUE;
     int begin=NO_STF_METADATA+1, end=NUM_STF_METADATA_EXTS;
     int ii;
+
+    asfRequire(NUM_STF_METADATA_EXTS == NUM_STF_DATA_EXTS,
+               "Programming error: get_stf_names.h has a different number of extensions\n"
+                       "for metadata and data files for STF data.\n");
 
     /* Prepare a very readable list of possible extensions */
     sprintf(extensionList,"%s",stf_metadata_extensions[begin++]);
@@ -658,22 +686,7 @@ char *get_stf_basename(const char *file, stf_data_ext_t *idx)
         *idx = i;
     }
     else {
-        // If no standard extension is in the name, then look for (more rare)
-        // extensions of the form "_xxx" instead...
-        ext = NULL;
-        begin = NUM_STF_DATA_EXTS + 1;
-        end   = NUM_STF_DATA_EXTS * 2;
-        for (i = begin, ext = NULL; i < end && ext == NULL; i++) {
-            if (strlen(stf_data_extensions[i])) {
-                ext = strstr(basename, stf_data_extensions[i]);
-            }
-        }
-        if (ext && strlen(ext)) {
-        // Whack the extension from the base name
-            *ext = '\0';
-            strcat(basename, stf_data_extensions[i]);
-            *idx = i;
-        }
+        *idx = NO_STF_DATA;
     }
 
     return basename;

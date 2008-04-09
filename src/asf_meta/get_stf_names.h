@@ -80,6 +80,26 @@ typedef enum {
   STF_017_BLANK,  STF_017_blank,
   STF_018_BLANK,  STF_018_blank,
   STF_019_BLANK,  STF_019_blank,
+  STF_000_BLANK_,  STF_000_blank_, /* Technically, these elements (from here down) are not needed except to make */
+  STF_001_BLANK_,  STF_001_blank_, /* the stf_data_ext_t enum list contain the same number of elements as the    */
+  STF_002_BLANK_,  STF_002_blank_, /* stf_metadata_ext_t enum list, i.e. for loops                               */
+  STF_003_BLANK_,  STF_003_blank_,
+  STF_004_BLANK_,  STF_004_blank_,
+  STF_005_BLANK_,  STF_005_blank_,
+  STF_006_BLANK_,  STF_006_blank_,
+  STF_007_BLANK_,  STF_007_blank_,
+  STF_008_BLANK_,  STF_008_blank_,
+  STF_009_BLANK_,  STF_009_blank_,
+  STF_010_BLANK_,  STF_010_blank_,
+  STF_011_BLANK_,  STF_011_blank_,
+  STF_012_BLANK_,  STF_012_blank_,
+  STF_013_BLANK_,  STF_013_blank_,
+  STF_014_BLANK_,  STF_014_blank_,
+  STF_015_BLANK_,  STF_015_blank_,
+  STF_016_BLANK_,  STF_016_blank_,
+  STF_017_BLANK_,  STF_017_blank_,
+  STF_018_BLANK_,  STF_018_blank_,
+  STF_019_BLANK_,  STF_019_blank_,
   NUM_STF_DATA_EXTS
 } stf_data_ext_t;
 

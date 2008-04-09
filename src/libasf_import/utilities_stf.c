@@ -144,8 +144,8 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   char *pol;
   char acquisition_date[256];
   char polarization[256];
-  ymd_date acq_date;
-  hms_time acq_time;
+  ymd_date acq_date_first, acq_date_last, acq_date;
+  hms_time acq_time_first, acq_time_last, acq_time;
 
   strcpy(mg->basename, inN);
   sensor_name = lzStr(parN, "ss_block.instrument:", NULL);
@@ -155,11 +155,16 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
   else {
     strcpy(mg->sensor_name, MAGIC_UNSET_STRING);
   }
-  double first_date = lzDouble(parN, "prep_block.first_date:", NULL);
-  double last_date  = lzDouble(parN, "prep_block.last_date:", NULL);
-  sprintf(acquisition_date, "%ld", (long)((first_date + last_date) / 2.0));
-  parse_ymdTime(acquisition_date, &acq_date, &acq_time);
-  sprintf(acquisition_date, "%d-%s-%d, %d:%d:%d",
+  char *first_date = lzStr(parN, "prep_block.first_date:", NULL);
+  char *last_date  = lzStr(parN, "prep_block.last_date:", NULL);
+  parse_ymdTime(first_date, &acq_date_first, &acq_time_first);
+  parse_ymdTime(last_date, &acq_date_last, &acq_time_last);
+  average_ymdTimes(&acq_date_first, &acq_date_last,
+                   &acq_time_first, &acq_time_last,
+                   &acq_date,       &acq_time);
+  FREE(first_date);
+  FREE(last_date);
+  sprintf(acquisition_date, "%02d-%s-%04d, %02d:%02d:%02d",
           acq_date.day,
           (acq_date.month == 1)  ? "Jan" :
           (acq_date.month == 2)  ? "Feb" :
@@ -175,6 +180,7 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
           (acq_date.month == 12) ? "Dec" : "Unknown",
           acq_date.year,
           acq_time.hour, acq_time.min, (int)acq_time.sec);
+  strcpy(mg->acquisition_date, acquisition_date);
   mg->frame = MAGIC_UNSET_INT; // This is set in import_stf()
   // mg->center_longitude and center_latitude are set in import_stf() separately from here
   sprintf(mg->bands, "%s",
@@ -183,11 +189,16 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
           (mg->band_count == 3) ? "01,02,03" :
           (mg->band_count == 4) ? "01,02,03,04" : MAGIC_UNSET_STRING);
   spheroid_axes_lengths(TOKYO_SPHEROID, &mg->re_major, &mg->re_minor);
-  int num_pols = lzInt(parN, "prep_block.sensor.beam.PolarizationsBlock.NrPolarizations:", NULL);
+  int num_pols = lzInt(parN, "prep_block.sensor.beam.PolarizationBlock.NrPolarizations:", NULL);
   int i;
   strcpy(polarization, "");
   for (i = 0; i < num_pols; i++) {
-    sprintf(buf, "prep_block.sensor.beam.PolarizationsBlock.Polarization[%d].polarization:", i);
+    if (num_pols == 1) {
+      sprintf(buf, "prep_block.sensor.beam.PolarizationBlock.Polarization.polarization:");
+    }
+    else {
+      sprintf(buf, "prep_block.sensor.beam.PolarizationBlock.Polarization[%d].polarization:", i);
+    }
     pol = lzStr(parN, buf, NULL);
     if (pol && strlen(pol)) {
       if (i == 0) {
@@ -203,11 +214,12 @@ void createMeta_lz(bin_state *s, char *inN, char *outN, char *img_timeStr,
     FREE(pol);
   }
   strcpy(ms->polarization, polarization);
+  if (strlen(polarization) > 0) strcpy(mg->bands, polarization);
   ms->multilook = 0;
   ms->earth_radius_pp = MAGIC_UNSET_DOUBLE;
-  ms->pitch = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.pitch:", NULL);
-  ms->roll = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.roll:", NULL);
-  ms->yaw = lzDouble(parN, "prep_block.sensor.ephemeris.sv_block.Attitude.yaw:", NULL);
+  ms->pitch = lzDouble(parN, "prep_block.sensor.ephemeris.Attitude.pitch:", NULL);
+  ms->roll = lzDouble(parN, "prep_block.sensor.ephemeris.Attitude.roll:", NULL);
+  ms->yaw = lzDouble(parN, "prep_block.sensor.ephemeris.Attitude.yaw:", NULL);
   ms->chirp_rate = lzDouble(parN, "prep_block.sensor.beam.chirp_rate:", NULL);
   ms->pulse_duration = s->pulsedur;
   ms->range_sampling_rate = s->fs;
