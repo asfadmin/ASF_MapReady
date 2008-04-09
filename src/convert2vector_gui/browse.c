@@ -334,12 +334,6 @@ static void create_input_file_chooser_dialog()
         G_CALLBACK(input_browse_widget_destroy), NULL);
 
     // add the filters
-    GtkFileFilter *csv_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(csv_filt, "CSV Files (*.csv)");
-    gtk_file_filter_add_pattern(csv_filt, "*.csv");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
-                                csv_filt);
-
     GtkFileFilter *meta_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(meta_filt, "Metadata Files (*.meta)");
     gtk_file_filter_add_pattern(meta_filt, "*.meta");
@@ -359,7 +353,7 @@ static void create_input_file_chooser_dialog()
                                 LED_filt);
 
     GtkFileFilter *pt_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(pt_filt, "Point/Polygon Files (*.txt)");
+    gtk_file_filter_set_name(pt_filt, "Point/Polygon Files (*.csv)");
     gtk_file_filter_add_pattern(pt_filt, "*.csv");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 pt_filt);
@@ -387,6 +381,12 @@ static void create_input_file_chooser_dialog()
     gtk_file_filter_add_pattern(gtif_filt, "*.tif");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 gtif_filt);
+
+    GtkFileFilter *csv_filt = gtk_file_filter_new();
+    gtk_file_filter_set_name(csv_filt, "Generic CSV Files (*.csv)");
+    gtk_file_filter_add_pattern(csv_filt, "*.csv");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+                                csv_filt);
 
     //GtkFileFilter *rgps_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(rgps_filt, "RPGS Cell Files (*.rpgs)");
@@ -472,7 +472,6 @@ static void input_file_browse(void)
 
     of.hwndOwner = NULL;
     of.lpstrFilter =
-        "CSV Files (*.csv)\0*.csv\0"
         "Metadata Files (*.meta)\0*.meta\0"
         "Leader Files (*.L)\0*.L\0"
         "ALOS Leader Files (LED-*)\0LED-*\0"
@@ -480,7 +479,8 @@ static void input_file_browse(void)
         "Shape Files (*.shp)\0*.shp\0"
         "KML Files (*.kml)\0*.kml\0"
         "Geotiff Files (*.tif)\0*.tif\0"
-        "RPGS Files (*.rgps)\0*.rgps\0"
+        "Generic CSV Files (*.csv)\0*.csv\0"
+      //"RPGS Files (*.rgps)\0*.rgps\0"
         "All Files\0*\0";
     of.lpstrCustomFilter = NULL;
     of.nFilterIndex = 1;
