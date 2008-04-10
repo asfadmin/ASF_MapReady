@@ -19,7 +19,7 @@
 #define MAPREADY_VERSION 2.0
 
 // Convert To Vector
-#define C2V_VERSION_STRING "2.0.2"
+#define C2V_VERSION_STRING "2.0.3-dev"
 #define C2V_VERSION 2.0
 
 // Set Tool suite stuff based on given build define
