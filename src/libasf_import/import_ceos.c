@@ -4,6 +4,7 @@
 #include "asf_raster.h"
 #include "calibrate.h"
 #include "decoder.h"
+#include "dateUtil.h"
 #include <ctype.h>
 #include <assert.h>
 
@@ -1083,6 +1084,98 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
   strcat(meta->general->bands, bandStr);
 }
 
+static float get_ers2_gain_adj(meta_parameters *meta, radiometry_t radiometry)
+{
+    if (strcmp(meta->general->sensor,"ERS2") != 0)
+      return 0.0;
+
+    // First, compute the number of days since launch
+    ymd_date ref_ymd;
+    ref_ymd.year = 1995;
+    ref_ymd.month = 4;
+    ref_ymd.day = 21;
+    hms_time ref_hms;
+    ref_hms.hour = 0;
+    ref_hms.min = 0;
+    ref_hms.sec = 0.;
+
+    ymd_date ac_ymd;
+    hms_time ac_hms;
+    parse_DMYdate(meta->general->acquisition_date, &ac_ymd, &ac_hms);
+
+    // These gain adjustments are from Wade - the ERS2 satellite requires a
+    // date-dependent gain adjustment, a constant db adjustment to be applied
+    // to all pixels in the image uniformly.  We currently only do this for
+    // calibrated images.
+    //    Launch    - 1/ 1/2001  y = -0.0018x + 0.0023
+    //    1/ 2/2001 - 2/26/2003  y = -0.002247x + 0.9296
+    //    2/27/2003 - current    y = -0.0018x - 0.3323 + 3
+    // where:
+    //    x = days since launch
+    //    y = gain adjustment (in db)
+
+    double days_since_launch =
+      date_difference(&ref_ymd,&ref_hms,&ac_ymd,&ac_hms)/24./60./60.;
+
+    double db_adj;
+    if (days_since_launch < 2082) { // less than 1/1/2001
+      // y = -0.0018x + 0.0023
+      db_adj = -0.0018*days_since_launch + 0.0023;
+    }
+    else if (days_since_launch < 2869) { // less than 2/27/2003
+      // y = -0.002247x + 0.9296
+      db_adj = -0.002247*days_since_launch + 0.9296;
+    }
+    else { // after 2/27/2003
+      // y = -0.0018x - 0.3323 + 3
+      db_adj = -0.0018*days_since_launch - 0.3323 + 3.0;
+    }
+
+    double adj;
+    if (radiometry==r_SIGMA_DB || radiometry==r_BETA_DB || radiometry==r_GAMMA_DB)
+    {
+      // the easy case: already in db
+      adj = db_adj;
+      asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant adjustment)\n", adj);
+    }
+    else if (radiometry==r_AMP)
+    {
+      // don't apply correction to amplitude currently!
+      adj = 0;
+    }
+    else // r_SIGMA, r_BETA, r_GAMMA, r_POWER
+    {
+      // calculate scale factor
+      adj = pow(10., db_adj/10.);
+      asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant scale factor)\n", adj);
+    }
+
+    return (float)adj;
+}
+
+static float apply_ers2_gain_fix(radiometry_t radiometry, float correction,
+                                 float current_value)
+{
+    if (radiometry==r_SIGMA_DB || radiometry==r_BETA_DB || radiometry==r_GAMMA_DB)
+    {
+      // the easy case: already in db, just add the correction
+      return current_value + correction;
+    }
+    else if (radiometry==r_AMP)
+    {
+      // don't apply correction to amplitude currently!
+      return current_value;
+    }
+    else // r_SIGMA, r_BETA, r_GAMMA, r_POWER
+    {
+      // multiplicative correction
+      return current_value * correction;
+    }
+
+    assert(FALSE); // not reached
+    return 0;
+}
+
 // Import all flavors of detected data
 void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName, 
 		      char *outMetaName, char *bandExt, int band, int nBands,
@@ -1621,6 +1714,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
   else {
     // Go through detected imagery line by line
+    float gain_adj = get_ers2_gain_adj(meta,radiometry);
     for (ii=0; ii<nl; ii++) {
       asfLineMeter(ii, nl);
       
@@ -1793,11 +1887,16 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 	      break;
 	    }
 	}
+
+        if (strcmp(meta->general->sensor,"ERS2") == 0)
+          amp_float_buf[kk] =
+            apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
       }
+
       put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
     }
   }
-  
+
   if (import_single_band || band == nBandsOut) {
     FCLOSE(fpOut);
     fpOut = NULL;
