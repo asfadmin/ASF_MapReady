@@ -3,9 +3,11 @@
 #include "asf.h"
 #include <assert.h>
 
-void c2p(const char *infile, const char *outfile, int multilook, int banded)
+void c2p(const char *inDataName, const char *inMetaName, const char *outfile, 
+	 int multilook, int banded)
 {
-    meta_parameters *in_meta = meta_read(infile);
+  printf("outfile: %s\n", outfile);
+    meta_parameters *in_meta = meta_read(inMetaName);
     int data_type = in_meta->general->data_type;
     // the old code did this, but why??
     in_meta->general->data_type = meta_polar2complex(data_type);
@@ -19,14 +21,14 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
       case COMPLEX_REAL64:
           break;
       default:
-          asfPrintError("c2p: %s is not a complex image.\n", infile);
+          asfPrintError("c2p: %s is not a complex image.\n", inDataName);
     }
 
     if (in_meta->general->band_count != 1)
-        asfPrintError("c2p: %s is not a single-band image.\n", infile);
+        asfPrintError("c2p: %s is not a single-band image.\n", inDataName);
 
     if (!in_meta->sar)
-        asfPrintError("c2p: %s is missing a SAR block.\n", infile);
+        asfPrintError("c2p: %s is missing a SAR block.\n", inDataName);
 
     asfPrintStatus("Converting complex image to amplitude/phase...\n");
 
@@ -43,16 +45,14 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     if (multilook)
         asfPrintStatus("Multilooking with %d looks.\n", nlooks);
 
-    meta_parameters *out_meta = meta_read(infile);
+    meta_parameters *out_meta = meta_read(inMetaName);
     out_meta->general->data_type = meta_complex2polar(data_type);
 
     // set up input/output files
-    char *infile_img = appendExt(infile, ".img");
-    if (!fileExists(infile_img))
-        asfPrintError("The input file %s was not found.\n");
-    FILE *fin = fopenImage(infile_img, "rb");
+    FILE *fin = fopenImage(inDataName, "rb");
 
     // we either have 1 or 2 output files, per the "banded" flag.
+    printf("outfile: %s\n", outfile);
     char *outfile_img = appendExt(outfile, ".img");
     char *amp_name=NULL, *phase_name=NULL;
     FILE *fout_banded=NULL, *fout_amp=NULL, *fout_phase=NULL;
@@ -79,7 +79,7 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     }
 
     // input buffer
-    complexFloat *cpx = MALLOC(sizeof(complexFloat)*ns*nlooks);
+    complexFloat *cpx = MALLOC(sizeof(data_type)*ns*nlooks);
 
     // output buffers
     float *amp = MALLOC(sizeof(float)*ns*nlooks);
@@ -103,7 +103,8 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
         // read "nlooks" (or possibly fewer, if near eof) lines of data
         int blockSize = get_complexFloat_lines(fin,in_meta,line_in,lc,cpx);
         if (blockSize != lc*ns)
-            asfPrintError("bad blockSize: bs=%d nlooks=%d ns=%d\n", blockSize, nlooks, ns);
+            asfPrintError("bad blockSize: bs=%d nlooks=%d ns=%d\n", 
+			  blockSize, nlooks, ns);
 
         // first, compute the power/phase
         for (l=0; l<lc; ++l) {
@@ -207,7 +208,6 @@ void c2p(const char *infile, const char *outfile, int multilook, int banded)
     FREE(phase);
     FREE(cpx);
 
-    FREE(infile_img);
     FREE(outfile_img);
 
     FREE(amp_name);

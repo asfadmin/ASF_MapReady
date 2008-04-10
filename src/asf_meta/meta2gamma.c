@@ -25,11 +25,11 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
     meta->general->data_type = COMPLEX_REAL32;
   else if (strncmp(uc(gamma->image_format), "SCOMPLEX", 8) == 0)
     meta->general->data_type = COMPLEX_INTEGER16;
-  else if (strncmp(uc(gamma->image_format), "FLOAT", 8) == 0) // Should never happen ...isp files should be SLCs
+  else if (strncmp(uc(gamma->image_format), "FLOAT", 8) == 0)
     meta->general->data_type = REAL32;
-  else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0) // Should never happen ...isp files should be SLCs
+  else if (strncmp(uc(gamma->image_format), "SHORT", 8) == 0)
     meta->general->data_type = INTEGER16;
-  else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0) // Should never happen ...isp files should be SLCs
+  else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
     meta->general->data_type = BYTE;
   switch(meta->general->data_type) {
     case COMPLEX_REAL32:

@@ -94,7 +94,8 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
 void deskew(const char *infile, const char *outfile);
 
 /* Prototypes from c2p.c */
-void c2p(const char *infile, const char *outfile, int multilook, int banded);
+void c2p(const char *inDataName, const char *inMetaName, const char *outfile,
+         int multilook, int banded);
 
 /* Prototypes from polarimetry.c */
 void polarimetric_decomp(const char *inFile, const char *outFile,

@@ -1301,6 +1301,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     if (cfg->general->c2p) {
+      char inDataName[512], inMetaName[512];
+      char *baseName = (char *) MALLOC(sizeof(char)*512);
+      baseName = get_basename(inFile);
+      sprintf(inDataName, "%.img", baseName);
+      sprintf(inMetaName, "%.meta", baseName);
 
         update_status("Converting Complex to Polar...");
 
@@ -1314,8 +1319,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         {
             sprintf(outFile, "%s", cfg->general->out_name);
         }
-
-        c2p(inFile, outFile, cfg->c2p->multilook, TRUE);
+	
+        c2p(inDataName, inMetaName, outFile, cfg->c2p->multilook, TRUE);
     }
 
     if (cfg->general->image_stats) {

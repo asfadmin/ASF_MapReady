@@ -26,7 +26,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "              [-format <inputFormat>] [-band <band_id | all>] [-image-data-type <type>]\n"\
 "              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
 "              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
-"              [-range-scale[=<scale>] [-multilook] [-complex]\n"\
+"              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
 "              [-line <start line subset>] [-sample <start sample subset>]\n"\
 "              [-width <subset width>] [-height <subset height>] [-help]\n"\
 "              <inBaseName> <outBaseName>\n"
@@ -68,6 +68,10 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', and 'airsar'.\n"\
 "        'CEOS' is the default behavior.\n"\
+"   -metadata <metadata file>\n"\
+"        Allows the ingest of metadata that do not have the same basename as the\n"\
+"        image data. An example for this is 'gamma_isp' and 'gamma_msp' naming\n"\
+"        schemes that are completely up to the user.\n"\
 "   -band <band_id | all>\n"\
 "        If the data contains multiple data files, one for each band (channel)\n"\
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
@@ -361,8 +365,7 @@ int main(int argc, char *argv[])
     flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
     flags[f_PRC] = checkForOption("-prc", argc, argv);
     flags[f_OLD_META] = checkForOption("-old", argc, argv);
-    flags[f_METADATA_FILE] = FLAG_NOT_SET;
-    /* checkForOption("-metadata", argc, argv); */
+    flags[f_METADATA_FILE] = checkForOption("-metadata", argc, argv);
     flags[f_LOG] = checkForOption("-log", argc, argv);
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);

@@ -74,6 +74,8 @@ void usage(char *name);
 
 int main (int argc, char *argv[])
 {
+  char inDataName[255], inMetaName[255], *baseName;
+
 /* cla parsing */
   handle_common_asf_args(&argc, &argv, "c2p");
   int multilook = extract_flag_options(&argc, &argv, "-ml", "-multilook", NULL);
@@ -89,8 +91,18 @@ int main (int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
+  // Assign filenames and check their existence
+  baseName = (char *) MALLOC(sizeof(char)*255);
+  baseName = get_basename(argv[1]);
+  sprintf(inDataName, "%s.img", baseName);
+  if (!fileExists(inDataName))
+    asfPrintError("Data file (%s) does not exist.\n", inDataName);
+  sprintf(inMetaName, "%s.meta", baseName);
+  if (!fileExists(inMetaName))
+    asfPrintError("Metadata file (%s) does not exist.\n", inMetaName);
+
 /* Do it! */
-  c2p(argv[1], argv[2], multilook, multiband);
+  c2p(inDataName, inMetaName, argv[2], multilook, multiband);
   
   if (logflag)
       FCLOSE(fLog);

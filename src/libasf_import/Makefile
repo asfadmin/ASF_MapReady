@@ -5,6 +5,7 @@ include ../../make_support/system_rules
 LIBS  = $(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/asf.a \
 	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
