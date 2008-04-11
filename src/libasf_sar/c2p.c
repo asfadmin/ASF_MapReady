@@ -3,18 +3,19 @@
 #include "asf.h"
 #include <assert.h>
 
-void c2p(const char *inDataName, const char *outfile, 
+void c2p(const char *infile, const char *outfile, 
          int multilook, int banded)
 {
-  char *meta_name = appendExt(inDataName, ".meta");
-  c2p_ext(inDataName, meta_name, outfile, multilook, banded);
+  char *meta_name = appendExt(infile, ".meta");
+  char *data_name = appendExt(infile, ".img");
+  c2p_ext(data_name, meta_name, outfile, multilook, banded);
   FREE(meta_name);
+  FREE(data_name);
 }
 
 void c2p_ext(const char *inDataName, const char *inMetaName,
              const char *outfile, int multilook, int banded)
 {
-  printf("outfile: %s\n", outfile);
     meta_parameters *in_meta = meta_read(inMetaName);
     int data_type = in_meta->general->data_type;
     // the old code did this, but why??
@@ -60,7 +61,6 @@ void c2p_ext(const char *inDataName, const char *inMetaName,
     FILE *fin = fopenImage(inDataName, "rb");
 
     // we either have 1 or 2 output files, per the "banded" flag.
-    printf("outfile: %s\n", outfile);
     char *outfile_img = appendExt(outfile, ".img");
     char *amp_name=NULL, *phase_name=NULL;
     FILE *fout_banded=NULL, *fout_amp=NULL, *fout_phase=NULL;
@@ -87,7 +87,7 @@ void c2p_ext(const char *inDataName, const char *inMetaName,
     }
 
     // input buffer
-    complexFloat *cpx = MALLOC(sizeof(data_type)*ns*nlooks);
+    complexFloat *cpx = MALLOC(sizeof(complexFloat)*ns*nlooks);
 
     // output buffers
     float *amp = MALLOC(sizeof(float)*ns*nlooks);
