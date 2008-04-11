@@ -80,6 +80,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct scene_header_rec *shr=NULL;     // Scene Header record
   struct alos_map_proj_rec *ampr=NULL;   // Map Projection Data record - ALOS
   struct ESA_FACDR *esa_facdr=NULL;      // Facility Related Data (ESA) record
+  struct JAXA_FACDR *jaxa_facdr=NULL;    // Facility Related Data (JAXA) record
   struct proc_parm_rec *ppr=NULL;        // Processing Parameter record
   struct alos_rad_data_rec *ardr=NULL;   // Radiometric Data record (ALOS)
   struct RSI_VRADDR *rsi_raddr=NULL;     // Radiometric Data record (RSI/CDPF)
@@ -167,6 +168,8 @@ char *get_record_as_string(char *fileName, int reqrec)
 	0 == strncmp(facility, "I-PAF", 5) ||
 	0 == strncmp(facility, "Beijing", 7)) 
       reqrec = 220; // ESA style
+    if (0 == strncmp(facility, "EOC", 3))
+      reqrec = 230; // JAXA style
   }
 
   switch (reqrec) 
@@ -401,6 +404,19 @@ char *get_record_as_string(char *fileName, int reqrec)
 	}
       }
       FREE(esa_facdr);
+      break;
+    case (230):
+      strcpy(rectype_str, "JAXA facility related data");
+      jaxa_facdr = (struct JAXA_FACDR *) MALLOC(sizeof(struct JAXA_FACDR));
+      if (leaderNameExists) {
+	if (get_jaxa_facdr(metaName[0],jaxa_facdr) >= 0)
+	  ret = sprn_jaxa_facdr(jaxa_facdr);
+	else if (trailer) {
+	  if (get_jaxa_facdr(metaName[1],jaxa_facdr) >= 0)
+	    ret = sprn_jaxa_facdr(jaxa_facdr);
+	}
+      }
+      FREE(jaxa_facdr);
       break;
     case (300): 
       strcpy(rectype_str, "Leader file descriptor");

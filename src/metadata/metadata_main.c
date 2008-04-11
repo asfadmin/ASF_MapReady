@@ -20,6 +20,7 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
    -facdr       ASF or ESA Facility Related Data record
    -asf_facdr   ASF Facility Related Data record
    -esa_facdr   ESA Facility Related Data record
+   -jaxa_facdr  JAXA Facility Related Data record
    -ifdr        Image File Descriptor record
    -lfdr        Leader File Descriptor record
    infile       Base name of the SAR image
@@ -155,6 +156,7 @@ void usage(char *name)
    fprintf(stderr,"  -facdr       ASF or ESA Facility Related Data record\n");
    fprintf(stderr,"  -asf_facdr   Force ASF Facility Related Data record\n");
    fprintf(stderr,"  -esa_facdr   Force ESA Facility Related Data record\n");
+   fprintf(stderr,"  -jaxa_facdr  Force JAXA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
    fprintf(stderr,"  -meta        Generate ASF internal metadata file\n");
@@ -203,6 +205,8 @@ int main(int argc, char **argv)
           extract_flag_options(&argc, &argv, "-asf_facdr", "--asf_facdr", NULL);
   int esa_facdr_flag = 
           extract_flag_options(&argc, &argv, "-esa_facdr", "--esa_facdr", NULL);
+  int jaxa_facdr_flag =
+    extract_flag_options(&argc, &argv, "-jaxa_facdr", "--jaxa_facdr", NULL);
   int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
@@ -211,8 +215,8 @@ int main(int argc, char **argv)
   if (dssr_flag || shr_flag || mpdr_flag || ppdr_flag || atdr_flag ||
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
-      asf_facdr_flag || esa_facdr_flag || lfdr_flag || ardr_flag || all_flag ||
-      meta_flag)
+      asf_facdr_flag || esa_facdr_flag || jaxa_facdr_flag || lfdr_flag || 
+      ardr_flag || all_flag || meta_flag)
     found = 1;
 
   if (argc == 1 || !found)
@@ -268,6 +272,10 @@ int main(int argc, char **argv)
 // facility data record (not used with 'all' flag)
   if (esa_facdr_flag)
     output_record(fileName, ".esa_facdr", 220, save);
+  // This option is left for users to force the program to look for this
+  // specific facility data record (not used with 'all' flag)
+  if (jaxa_facdr_flag)
+    output_record(fileName, ".jaxa_facdr", 230, save);
   if (lfdr_flag || all_flag)
     output_record(fileName, ".lfdr", 300, save);
 

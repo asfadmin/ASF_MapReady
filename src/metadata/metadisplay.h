@@ -47,6 +47,9 @@ void prn_fdr(FILE *fp, struct FDR *fdr);
 char *sprn_esa_facdr(struct ESA_FACDR *f);
 void prn_esa_facdr(FILE *fp, struct ESA_FACDR *f);
 
+char *sprn_jaxa_facdr(struct JAXA_FACDR *f);
+void prn_jaxa_facdr(FILE *fp, struct JAXA_FACDR *f);
+
 char *sprn_rcdr(struct radio_comp_data_rec *rc);
 void prn_rcdr(FILE *fp, struct radio_comp_data_rec *rc);
 

@@ -26,6 +26,7 @@ OBJLIB  = prn_facdr.o \
 	prn_fdr.o \
 	prn_ampr.o \
 	prn_esa_facdr.o \
+	prn_jaxa_facdr.o \
 	prn_ppr.o \
 	prn_rcdr.o \
 	prn_shr.o \
