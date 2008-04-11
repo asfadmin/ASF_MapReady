@@ -162,7 +162,6 @@ find_in_share(const char * filename)
     return ret;
 }
 
-
 /* danger: returns pointer to static data!! */
 static const char * imgloc(char * file)
 {
@@ -820,6 +819,71 @@ static void highlight_step(int step, int is_highlighted)
     gtk_label_set_markup(GTK_LABEL(label), markup_str);
 }
 
+static void remove_file(const char *f)
+{
+    if (fileExists(f))
+      unlink(f);
+}
+
+static void delete_all_generated_images()
+{
+    GtkWidget * output_file_entry =
+	glade_xml_get_widget(glade_xml, "output_file_entry");
+    char *output_filename_full = 
+        STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
+    char *filename = stripExt(output_filename_full);
+    char *f = MALLOC(sizeof(float)*(strlen(filename)+64));
+
+    int i;
+    for (i=1; i<=12; ++i) {
+        sprintf(f, "%s%s.jpg", filename, suffix_for_step(i));
+        remove_file(f);
+        sprintf(f, "%s%s.img", filename, suffix_for_step(i));
+        remove_file(f);
+        sprintf(f, "%s%s.meta", filename, suffix_for_step(i));
+        remove_file(f);
+        sprintf(f, "%s%s_polar.img", filename, suffix_for_step(i));
+        remove_file(f);
+        sprintf(f, "%s%s_polar.meta", filename, suffix_for_step(i));
+        remove_file(f);
+        sprintf(f, "%s%s", filename, suffix_for_step(i));
+        remove_file(f);
+    }
+
+    sprintf(f, "%s_amp.img", filename);
+    remove_file(f);
+    sprintf(f, "%s_amp.meta", filename);
+    remove_file(f);
+
+    sprintf(f, "%s_cpx.img", filename);
+    remove_file(f);
+    sprintf(f, "%s_cpx.meta", filename);
+    remove_file(f);
+
+    sprintf(f, "%s.in", filename);
+    remove_file(f);
+    sprintf(f, "%s.status", filename);
+    remove_file(f);
+
+    FREE(filename);
+    filename = NULL;
+
+    GtkWidget * input_file_entry =
+	glade_xml_get_widget(glade_xml, "input_file_entry");
+    char *input_filename_full = 
+        STRDUP(gtk_entry_get_text(GTK_ENTRY(input_file_entry)));
+    filename = stripExt(input_filename_full);
+
+    for (i=1; i<=12; ++i) {
+        sprintf(f, "%s%s.txt", filename, suffix_for_step(i));
+        remove_file(f);
+    }
+
+    FREE(f);
+    FREE(input_filename_full);
+    FREE(output_filename_full);
+}
+
 SIGNAL_CALLBACK void
 on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 {
@@ -842,6 +906,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     if (debug_flag == 0)
       debug_flag = 1;
+
+    delete_all_generated_images();
 
     GtkWidget * input_file_entry =
 	glade_xml_get_widget(glade_xml, "input_file_entry");
@@ -900,6 +966,12 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Processing ...");
     gtk_widget_set_sensitive(execute_button, FALSE);
+
+    GtkWidget *stop_button = glade_xml_get_widget(glade_xml, "stop_button");
+    gtk_widget_set_sensitive(stop_button, TRUE);
+
+    GtkWidget *clear_button = glade_xml_get_widget(glade_xml, "clear_button");
+    gtk_widget_set_sensitive(clear_button, FALSE);
 
     int pid = fork();
     if (pid == 0)
@@ -1009,6 +1081,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
     gtk_widget_set_sensitive(execute_button, TRUE);
+    gtk_widget_set_sensitive(stop_button, FALSE);
+    gtk_widget_set_sensitive(clear_button, TRUE );
 
     for (i=1; i<=12; ++i)
       highlight_step(i, FALSE);
@@ -1825,6 +1899,46 @@ on_doppler_parameters_dialog_restore_button_clicked(GtkWidget *w)
     set_entry_with_float_value("quadratic_entry", quadratic);
 
     g_free(in_file);
+}
+
+static void set_stop()
+{
+    GtkWidget * output_file_entry =
+	glade_xml_get_widget(glade_xml, "output_file_entry");
+    char *output_filename_full = 
+        STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
+
+    char *dir = get_dirname(output_filename_full);
+    char *stop_file = MALLOC(sizeof(char) * (strlen(dir) + 24));
+    if (strlen(dir)>0)
+      sprintf(stop_file, "%s/stop.txt", dir);
+    else
+      sprintf(stop_file, "stop.txt");
+
+    FILE * fp = fopen(stop_file, "w");
+
+    if (fp) {
+        fprintf(fp,
+                "Temporary file.\n\n"
+                "Flags any asf tools currently running in this directory "
+                "to halt processing immediately.\n\n"
+                "This file should be deleted once processing has stopped.\n");
+        fclose(fp);
+    }
+
+    free(stop_file);
+    free(dir);
+    free(output_filename_full);
+}
+
+SIGNAL_CALLBACK void on_stop_button_clicked(GtkWidget *w)
+{
+    set_stop();
+}
+
+SIGNAL_CALLBACK void on_clear_button_clicked(GtkWidget *w)
+{
+    delete_all_generated_images();
 }
 
 static void set_title()
