@@ -544,14 +544,17 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
             (meta->general->band_count == 4) ? "01,02,03,04" : MAGIC_UNSET_STRING);
   }
   if (meta->sar) {
-    strcpy(meta->sar->polarization, meta->general->bands);
-    //s->range_gate=s->dwp+7.0/s->prf-CONF_JRS_rangePulseDelay;
-    s->range_gate = dssr.rng_gate / 1000000.0;
-    printf("\nRANGE GATE CALC: %f\nRANGE GATE from dssr: %f\n\n", s->range_gate, dssr.rng_gate);
-    meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
-    meta->sar->yaw = 0.0;
-    meta->sar->pitch = 0.0;
-    meta->sar->roll = 0.0;
+      struct VFDRECV facdr;
+      get_asf_facdr(inMetaName, &facdr);
+      meta->sar->yaw = facdr.scyaw;
+      meta->sar->pitch = facdr.scpitch;
+      meta->sar->roll = facdr.scroll;
+
+      strcpy(meta->sar->polarization, meta->general->bands);
+
+      //s->range_gate=s->dwp+7.0/s->prf-CONF_JRS_rangePulseDelay;
+      s->range_gate = dssr.rng_gate / 1000000.0;
+      meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
   }
   double lat, lon;
   meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
@@ -1763,11 +1766,11 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       for (mm = min; mm <= max; mm++) {
         if (incid < incid_table[mm]) {
           break;
-	}
+    }
         if (data_type == BYTE) {
           if (flip) {
             byte_buf[kk] = tmp_byte_buf[ns-kk-1];
-	  }
+      }
           amp_float_buf[kk] = (float) byte_buf[kk] *
                               (((scale_table[mm]-scale_table[mm]) /
                               (incid_table[mm]-incid_table[mm])) *
@@ -1776,7 +1779,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         else if (data_type == INTEGER16) {
           if (flip) {
             short_buf[kk] = tmp_short_buf[ns-kk-1];
-	  }
+      }
           amp_float_buf[kk] = (float) short_buf[kk] *
                               (((scale_table[mm]-scale_table[mm]) /
                               (incid_table[mm]-incid_table[mm])) *
@@ -1784,7 +1787,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         }
         else {
           asfPrintStatus("LUT not implemented for this data type!\n");
-	}
+    }
       }
     }
     else {
