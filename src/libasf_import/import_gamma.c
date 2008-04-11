@@ -206,10 +206,10 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
     sprintf(outFile, "%s.meta", outBaseName);
     meta_write(meta, outFile);
   }
-  //else {
-    //sprintf(tmpFile, "%s_slc.meta", outBaseName);
-    //meta_write(meta, tmpFile);
-  //}
+  else {
+    sprintf(tmpFile, "%s_slc.meta", outBaseName);
+    meta_write(meta, tmpFile);
+  }
 
   // Generate output file
   outFile = (char *) MALLOC(sizeof(char)*512);
@@ -218,8 +218,7 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
     if (complex_flag && !multilook_flag)
       fileCopy(inDataName, outFile);
     else 
-      //c2p(inDataName, tmpFile, outFile, multilook_flag, TRUE);
-      c2p(inDataName, outFile, multilook_flag, TRUE);
+      c2p(inDataName, tmpFile, outFile, multilook_flag, TRUE);
   }
   else
     fileCopy(inDataName, outFile);
