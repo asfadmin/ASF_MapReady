@@ -4,7 +4,6 @@
 #include "asf_raster.h"
 #include "calibrate.h"
 #include "decoder.h"
-#include "dateUtil.h"
 #include <ctype.h>
 #include <assert.h>
 
@@ -23,24 +22,24 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
 void import_ceos_complex_int(char *inDataName, char *inMetaName,
            char *outDataName, char *outMetaName,
            char *bandExt, int band, int nBands,
-           radiometry_t radiometry, 
-	   int line, int sample, int width, int height,int import_single_band,
+           radiometry_t radiometry,
+       int line, int sample, int width, int height,int import_single_band,
      int complex_flag, int multilook_flag);
 void import_ceos_complex_float(char *inDataName, char *inMetaName,
              char *outDataName, char *outMetaName,
              char *bandExt, int band, int nBands,
-	     radiometry_t radiometry, 
-             int line, int sample, int width, int height, 
+         radiometry_t radiometry,
+             int line, int sample, int width, int height,
              int import_single_band,
-	     int complex_flag, int multilook_flag, int db_flag);
+         int complex_flag, int multilook_flag, int db_flag);
 void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, char *bandExt, int band, int nBands,
-        radiometry_t radiometry, 
+        radiometry_t radiometry,
         int line, int sample, int width, int height, int import_single_band,
         char *lutName, int db_flag);
-void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName, 
-		      char *outMetaName, char *bandExt, int band, int nBands,
-		      int nBandsOut, radiometry_t radiometry,
+void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
+              char *outMetaName, char *bandExt, int band, int nBands,
+              int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
                       int multilook_flag, char *lutName);
@@ -68,11 +67,11 @@ void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
        int line, int sample, int height, int width,
        int import_single_band, int nBands,
                          radiometry_t radiometry);
-void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName, 
+void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
        char *outDataName, char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands, radiometry_t radiometry);
-void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName, 
-				     char *outDataName,
+void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
+                     char *outDataName,
        char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands,
        radiometry_t radiometry, int dbFlag);
@@ -216,9 +215,10 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
   int band, import_single_band = 0;
   double range_scale = -1, azimuth_scale = -1, correct_y_pixel_size = 0;
 
-  if (inMetaNameOption == NULL)
+  if (inMetaNameOption == NULL) {
     require_ceos_pair(inBaseName, &inBandName, &inMetaName, &nBands,
-          &trailer);
+                      &trailer);
+  }
   else {
     /* Allow the base name to be different for data & meta */
     require_ceos_data(inBaseName, &inBandName, &nBands);
@@ -229,12 +229,15 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
   do_resample = p_range_scale != NULL && p_azimuth_scale != NULL;
   do_metadata_fix = p_correct_y_pixel_size != NULL;
 
-  if (p_range_scale)
+  if (p_range_scale) {
     range_scale = *p_range_scale;
-  if (p_azimuth_scale)
-        azimuth_scale = *p_azimuth_scale;
-  if (p_correct_y_pixel_size)
+  }
+  if (p_azimuth_scale) {
+    azimuth_scale = *p_azimuth_scale;
+  }
+  if (p_correct_y_pixel_size) {
     correct_y_pixel_size = *p_correct_y_pixel_size;
+  }
 
   strcpy(unscaledBaseName, outBaseName);
   if (do_resample) {
@@ -276,14 +279,17 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
       band = 1;
     }
     else {
-      if (amp0_flag)
+      if (amp0_flag) {
         --index;
-        
+      }
+
       // Determine the band extension (band ID)
-      if (ceos->satellite == RSAT)
+      if (ceos->satellite == RSAT) {
         strcpy(bandExt, "HH");
-      else if (ceos->satellite == ERS || ceos->satellite == JERS)
+      }
+      else if (ceos->satellite == ERS || ceos->satellite == JERS) {
         strcpy(bandExt, "VV");
+      }
       else if (ceos->sensor == SAR || ceos->sensor == PALSAR) {
         char *polarization;
         polarization = get_polarization(inBandName[index]);
@@ -295,16 +301,19 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
         band_number = get_alos_band_number(inBandName[index]);
         sprintf(bandExt, "0%d", band_number);
       }
-      else if (ceos->sensor == PRISM)
+      else if (ceos->sensor == PRISM) {
         sprintf(bandExt, "01");
+      }
 
       // p will point to the beginning of the actual file (past the path)
       char *p = strrchr(inBandName[index], '/');
-      if (!p)
+      if (!p) {
         p = inBandName[index];
-      else
+      }
+      else {
         ++p;
-      
+      }
+
       // Check to see if the user forced a band extension
       // (band_id) upon us... override the above if so
       if (band_id && strlen(band_id)) {
@@ -318,57 +327,66 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
         // zeros, e.g. 01 or 1 ...they are equivalent
         int iBandNo = atoi(band_id);
         if (iBandNo > 0 && iBandNo <= MAX_BANDS) {
-            // band_id appears to be a valid numeric band number
-            int alpha = 0;
-            char *s = band_id;
-            while (*s != '\0') {
-                if (isalpha((int)*s)) alpha = 1;
-                s++;
-            }
-            if (!alpha)
-                sprintf(band_id, "%02d", iBandNo);
+          // band_id appears to be a valid numeric band number
+          int alpha = 0;
+          char *s = band_id;
+          while (*s != '\0') {
+            if (isalpha((int)*s)) alpha = 1;
+            s++;
+          }
+          if (!alpha) {
+            sprintf(band_id, "%02d", iBandNo);
+          }
         }
         band = atoi(band_id);
         sprintf(file_prefix, "IMG-%s-", band_id);
         ii = 0;
         do {
-            if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0)
-                found = 1;
-            ii++;
-            if (ii > nBands)
-                asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band"
-                " data and\n"
-                "selected band (\"%s\") file was not found \"%s\"\n",
-                band_id, strcat(file_prefix, inBaseName));
+          if (strncmp(inBandName[ii], file_prefix, strlen(file_prefix)) == 0) {
+            found = 1;
+          }
+          ii++;
+          if (ii > nBands) {
+            asfPrintError("Expected ALOS-type, CEOS-formatted, multi-band"
+                          " data and\n"
+                          "selected band (\"%s\") file was not found \"%s\"\n",
+                          band_id, strcat(file_prefix, inBaseName));
+          }
         } while (!found);
         if (found) {
-            ii--;
-            import_single_band = 1;
-            strcpy(bandExt, band_id);
+          ii--;
+          import_single_band = 1;
+          strcpy(bandExt, band_id);
         }
       }
-      else
+      else {
         band = ii+1;
+      }
       asfPrintStatus("\n   File: %s\n", inBandName[index]);
-      if (import_single_band)
+      if (import_single_band) {
         nBands = 1;
+      }
     }
 
-    if (ceos->facility == CDPF &&
-	ceos->ceos_data_type != CEOS_SLC_DATA_INT &&
-	ceos->product != SSG && ceos->product != GEC)
+    if (ceos->facility == CDPF                      &&
+        ceos->ceos_data_type != CEOS_SLC_DATA_INT   &&
+        ceos->product != SSG                        &&
+        ceos->product != GEC)
+    {
       meta = meta_create(inMetaName[0]);
+    }
 
     // Update the radiometry if db flag is set
-    if (db_flag)
+    if (db_flag) {
       rad += 3;
+    }
 
     // Set LUT to NULL if string is empty
     if (lutName && strlen(lutName) == 0) {
       FREE(lutName);
       lutName = NULL;
     }
-    
+
     // If we have no LUT, check if we should use one of the defualt
     // LUTs, that apply gain fixes, etc.
     if (!lutName) {
@@ -377,60 +395,69 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
     }
 
     // Ingest the different data types
-    if (ceos->ceos_data_type == CEOS_RAW_DATA)
-        import_ceos_raw(inBandName[index], inMetaName[0], outDataName, 
-	outMetaName, bandExt, band, nBands, rad, 
-	line, sample, width, height, import_single_band);
-    else {
-      if (ceos->facility == CDPF && 
-	  ceos->ceos_data_type != CEOS_SLC_DATA_INT) {
-	if (rad >= r_SIGMA && rad <= r_GAMMA_DB)
-	  import_ceos_int_slant_range_cal(inBandName[index], inMetaName[0], 
-            outDataName, outMetaName, meta, band, import_single_band, 
-            nBands, rad, db_flag);
-	else if (ceos->product == SSG || ceos->product == GEC) {
-	  import_ceos_data(inBandName[index], inMetaName[0], outDataName, 
-          outMetaName, bandExt, band, nBands, nBandsOut, rad, 
-	  line, sample, width, height,
-	  import_single_band, complex_flag, multilook_flag, lutName);
-	}
-	else	  
-	  import_ceos_int_slant_range_amp(inBandName[index], inMetaName[0], 
-	    outDataName, outMetaName, meta, band, import_single_band, 
-            nBands, rad);
-      }
-      else
-	import_ceos_data(inBandName[index], inMetaName[0], outDataName, 
-        outMetaName, bandExt, band, nBands, nBandsOut, rad, 
-	line, sample, width, height,
-	import_single_band, complex_flag, multilook_flag, lutName);
+    if (ceos->ceos_data_type == CEOS_RAW_DATA) {
+      import_ceos_raw(inBandName[index], inMetaName[0], outDataName,
+                      outMetaName, bandExt, band, nBands, rad,
+                      line, sample, width, height, import_single_band);
     }
-    if (meta)
+    else {
+      if (ceos->facility == CDPF &&
+          ceos->ceos_data_type != CEOS_SLC_DATA_INT)
+      {
+        if (rad >= r_SIGMA && rad <= r_GAMMA_DB) {
+          import_ceos_int_slant_range_cal(inBandName[index], inMetaName[0],
+                                          outDataName, outMetaName, meta, band,
+                                          import_single_band, nBands, rad, db_flag);
+        }
+        else if (ceos->product == SSG || ceos->product == GEC) {
+          import_ceos_data(inBandName[index], inMetaName[0], outDataName,
+                           outMetaName, bandExt, band, nBands, nBandsOut, rad,
+                           line, sample, width, height,
+                           import_single_band, complex_flag, multilook_flag, lutName);
+        }
+        else {
+          import_ceos_int_slant_range_amp(inBandName[index], inMetaName[0],
+                                          outDataName, outMetaName, meta, band,
+                                          import_single_band, nBands, rad);
+        }
+      }
+      else {
+        import_ceos_data(inBandName[index], inMetaName[0], outDataName,
+                         outMetaName, bandExt, band, nBands, nBandsOut, rad,
+                         line, sample, width, height,
+                         import_single_band, complex_flag, multilook_flag, lutName);
+      }
+    }
+    if (meta) {
       meta_free(meta);
+    }
   }
 
   // Resample, if necessary
   if (do_resample) {
-    if (range_scale < 0)
+    if (range_scale < 0) {
       range_scale = DEFAULT_RANGE_SCALE;
+    }
 
-    if (azimuth_scale < 0)
+    if (azimuth_scale < 0) {
       azimuth_scale = get_default_azimuth_scale(unscaledBaseName);
+    }
 
     asfPrintStatus("Resampling with scale factors: "
-       "%lf range, %lf azimuth.\n",
-       range_scale, azimuth_scale);
+                   "%lf range, %lf azimuth.\n",
+                   range_scale, azimuth_scale);
 
     resample_nometa(unscaledBaseName, outBaseName,
-        range_scale, azimuth_scale);
+                    range_scale, azimuth_scale);
 
-    asfPrintStatus("Done.\n");
+    asfPrintStatus("\n\nDone.\n\n");
   }
 
   // metadata pixel size fix, if necessary
   if (do_metadata_fix) {
-    if (correct_y_pixel_size < 0)
+    if (correct_y_pixel_size < 0) {
       correct_y_pixel_size = get_default_ypix(outBaseName);
+    }
 
     fix_ypix(outBaseName, correct_y_pixel_size);
   }
@@ -441,7 +468,7 @@ void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
 void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
          char *outMetaName, char *bandExt, int band, int nBands,
          radiometry_t radiometry, int line, int sample, int width, int height,
-	 int import_single_band)
+     int import_single_band)
 {
   FILE *fpOut=NULL;
   long long ii;
@@ -485,6 +512,9 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->image_data_type = RAW_IMAGE;
   s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
   asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
+  struct dataset_sum_rec dssr;
+  get_dssr(inMetaName, &dssr);
+  s->prf = meta->sar->prf; // = dssr.prf;  // NOTE: If this gets whacked at some point, use dssr.prf instead
   iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
   fpOut = FOPEN(outDataName, "wb");
   getNextCeosLine(s->binary, s, inMetaName, outDataName); /* Skip CEOS header. */
@@ -496,10 +526,40 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
     s->nLines++;
   }
   updateMeta(s,meta,NULL,0);
+  meta->general->radiometry = r_AMP;
   strcpy(meta->general->basename, inDataName);
   meta->general->band_count = import_single_band ? 1 : meta->general->band_count;
-  if (nBands == 1 && meta->sar)
-    strcpy(meta->general->bands, meta->sar->polarization);
+  if (dssr.sensor_id && strlen(dssr.sensor_id) && nBands == 1) {
+    // HACK ALERT!!!  There must be a better way to get the polarizations and band names...
+    char *s = dssr.sensor_id + strlen(dssr.sensor_id) - 1;
+    while (isspace((int)*s)) s--;
+    s -= 1;
+    strcpy(meta->general->bands, s);
+  }
+  else {
+    sprintf(meta->general->bands, "%s",
+            (meta->general->band_count == 1) ? "01" :
+            (meta->general->band_count == 2) ? "01,02" :
+            (meta->general->band_count == 3) ? "01,02,03" :
+            (meta->general->band_count == 4) ? "01,02,03,04" : MAGIC_UNSET_STRING);
+  }
+  if (meta->sar) {
+    strcpy(meta->sar->polarization, meta->general->bands);
+    //s->range_gate=s->dwp+7.0/s->prf-CONF_JRS_rangePulseDelay;
+    s->range_gate = dssr.rng_gate / 1000000.0;
+    printf("\nRANGE GATE CALC: %f\nRANGE GATE from dssr: %f\n\n", s->range_gate, dssr.rng_gate);
+    meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
+    meta->sar->yaw = 0.0;
+    meta->sar->pitch = 0.0;
+    meta->sar->roll = 0.0;
+  }
+  double lat, lon;
+  meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
+                  0.0, &lat, &lon);
+  meta->general->center_latitude = lat;
+  meta->general->center_longitude = lon;
+  //meta->general->frame = asf_frame_calc(meta->general->sensor, lat, meta->general->orbit_direction);
+
   meta_write(meta, outMetaName);
 
   if (isPP(meta)) {
@@ -578,8 +638,8 @@ static void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
   }
 }
 
-void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName, 
-				     char *outDataName,
+void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
+                     char *outDataName,
        char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands,
        radiometry_t radiometry)
@@ -622,10 +682,10 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
   }
   headerBytes = firstRecordLen(inDataName) +
     (image_fdr.reclen - (ns + leftFill + rightFill) * image_fdr.bytgroup);
-    
+
   ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   get_ppr(inDataName, ppr);
-  
+
   gr_inc = meta->general->x_pixel_size;
   sr0 = ppr->srgr_coefset[0].srgr_coef[0];
   srL = ppr->srgr_coefset[0].srgr_coef[0] +
@@ -634,13 +694,13 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
     EXP3(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[3] +
     EXP4(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[4] +
     EXP5(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[5];
-  sr_inc = SPD_LIGHT / 
+  sr_inc = SPD_LIGHT /
     ((4.0 * meta->sar->range_sampling_rate) *
      meta->general->sample_count / meta->sar->original_sample_count);
   ons = (int) ((srL - sr0)/sr_inc + 0.5);
   printf("slant range first: %.3lf, slant range last: %.3lf\n", sr0, srL);
   printf("slant range pixel size: %.3lf, number of output samples: %d\n",
-	 sr_inc, ons);
+     sr_inc, ons);
 
   lower = (int *) MALLOC(sizeof(int) * MAX_IMG_SIZE);
   upper = (int *) MALLOC(sizeof(int) * MAX_IMG_SIZE);
@@ -656,13 +716,13 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
     if (upper[kk] >= ns)
       upper[kk] = ns - 1;
   }
-  
+
   // Allocate memory
   short_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
   if (flip)
     tmp_buf = (unsigned short *) MALLOC(ns * sizeof(unsigned short));
   out_buf = (float *) MALLOC(ons * sizeof(float));
-  
+
   // Update metadata
   meta->general->x_pixel_size = sr_inc;
   meta->general->sample_count = ons;
@@ -680,19 +740,19 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
       /* Put the data in proper endian order before we do anything */
       big16(short_buf[kk]);
       if (flip)
-	tmp_buf[kk] = short_buf[kk];
+    tmp_buf[kk] = short_buf[kk];
     }
     // Now do our stuff
     for (kk=0; kk<ons; kk++) {
       if (flip)
-	short_buf[kk] = tmp_buf[ns-kk-1];
-      out_buf[kk] = (float)(short_buf[lower[kk]]*lfrac[kk] + 
-			    short_buf[upper[kk]]*ufrac[kk]);
+    short_buf[kk] = tmp_buf[ns-kk-1];
+      out_buf[kk] = (float)(short_buf[lower[kk]]*lfrac[kk] +
+                short_buf[upper[kk]]*ufrac[kk]);
       if (radiometry == r_POWER)
-	out_buf[kk] = (float)((short_buf[lower[kk]]*lfrac[kk] +
-			       short_buf[upper[kk]]*ufrac[kk]) *
-			      (short_buf[lower[kk]]*lfrac[kk] +
-			       short_buf[upper[kk]]*ufrac[kk]));
+    out_buf[kk] = (float)((short_buf[lower[kk]]*lfrac[kk] +
+                   short_buf[upper[kk]]*ufrac[kk]) *
+                  (short_buf[lower[kk]]*lfrac[kk] +
+                   short_buf[upper[kk]]*ufrac[kk]));
     }
     put_float_line(fpOut, meta, ii, out_buf);
     asfLineMeter(ii,nl);
@@ -721,8 +781,8 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
   FCLOSE(fpOut);
 }
 
-void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName, 
-				     char *outDataName,
+void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
+                     char *outDataName,
        char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands,
        radiometry_t radiometry, int dbFlag)
@@ -768,10 +828,10 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
   }
   headerBytes = firstRecordLen(inDataName) +
     (image_fdr.reclen - (ns + leftFill + rightFill) * image_fdr.bytgroup);
-    
+
   ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   get_ppr(inDataName, ppr);
-  
+
   gr_inc = meta->general->x_pixel_size;
   sr0 = ppr->srgr_coefset[0].srgr_coef[0];
   srL = ppr->srgr_coefset[0].srgr_coef[0] +
@@ -780,7 +840,7 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
     EXP3(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[3] +
     EXP4(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[4] +
     EXP5(ns*gr_inc)*ppr->srgr_coefset[0].srgr_coef[5];
-  sr_inc = SPD_LIGHT / 
+  sr_inc = SPD_LIGHT /
     ((4.0 * meta->sar->range_sampling_rate) *
      meta->general->sample_count / meta->sar->original_sample_count);
   ons = (int) ((srL - sr0)/sr_inc + 0.5);
@@ -799,7 +859,7 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
     if (upper[kk] >= ns)
       upper[kk] = ns - 1;
   }
-  
+
   // Read lookup up table from radiometric data record
   radr = (struct RSI_VRADDR *) MALLOC(sizeof(struct RSI_VRADDR));
   get_rsi_raddr(inDataName, radr);
@@ -812,10 +872,10 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
 
   // Allocate memory
   short_buf = (unsigned short *) MALLOC(sizeof(unsigned short) * ns);
-  tmp_buf = (unsigned short *) MALLOC(sizeof(unsigned short) * 
-				      (ns>ons ? ns : ons));
+  tmp_buf = (unsigned short *) MALLOC(sizeof(unsigned short) *
+                      (ns>ons ? ns : ons));
   out_buf = (float *) MALLOC(sizeof(float) * ons);
-  
+
   // Update metadata
   meta->general->x_pixel_size = sr_inc;
   meta->general->sample_count = ons;
@@ -833,36 +893,36 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
       /* Put the data in proper endian order before we do anything */
       big16(short_buf[kk]);
       if (flip)
-	tmp_buf[kk] = short_buf[kk];
+    tmp_buf[kk] = short_buf[kk];
     }
     if (flip) {
       for (kk=0; kk<ns; kk++)
-	short_buf[kk] = tmp_buf[ns-kk-1];
+    short_buf[kk] = tmp_buf[ns-kk-1];
     }
 
     // Now do our stuff
     for (kk=0; kk<ons; kk++) {
       if (kk < (tab_inc*(n-1))) {
-	i_low = kk/tab_inc;
-	i_up = i_low + 1;
-	assert(i_low>=0 && i_low<n);
-	assert(i_up>=0 && i_up<n);
-	a2 = rad_tab[i_low] + 
-	  ((rad_tab[i_up] - rad_tab[i_low])*((kk/tab_inc) - i_low));
+    i_low = kk/tab_inc;
+    i_up = i_low + 1;
+    assert(i_low>=0 && i_low<n);
+    assert(i_up>=0 && i_up<n);
+    a2 = rad_tab[i_low] +
+      ((rad_tab[i_up] - rad_tab[i_low])*((kk/tab_inc) - i_low));
       }
       else
-	a2 = rad_tab[n-1] + 
-	  ((rad_tab[n-1] - rad_tab[n-2])*((kk/tab_inc) - n-1));
-      tmp_buf[kk] = (float)(short_buf[lower[kk]]*lfrac[kk] + 
-			    short_buf[upper[kk]]*ufrac[kk]);
+    a2 = rad_tab[n-1] +
+      ((rad_tab[n-1] - rad_tab[n-2])*((kk/tab_inc) - n-1));
+      tmp_buf[kk] = (float)(short_buf[lower[kk]]*lfrac[kk] +
+                short_buf[upper[kk]]*ufrac[kk]);
       if (radiometry == r_BETA)
-	scaledPower = ((float)tmp_buf[kk]*tmp_buf[kk]+a3)/a2;
+    scaledPower = ((float)tmp_buf[kk]*tmp_buf[kk]+a3)/a2;
       if (scaledPower < 0.0 || tmp_buf[kk] < 0.0)
-	scaledPower = 0.0;
+    scaledPower = 0.0;
       if (dbFlag)
-	out_buf[kk] = (float)(10.0*log10(scaledPower));
+    out_buf[kk] = (float)(10.0*log10(scaledPower));
       else
-	out_buf[kk] = (float) scaledPower;
+    out_buf[kk] = (float) scaledPower;
     }
     put_float_line(fpOut, meta, ii, out_buf);
     asfLineMeter(ii,nl);
@@ -908,56 +968,56 @@ int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName)
 
 // Print input and output data types
 static void status_data_type(meta_parameters *meta, data_type_t data_type,
-			     radiometry_t radiometry,
-			     int complex_flag, int multilook_flag)
+                 radiometry_t radiometry,
+                 int complex_flag, int multilook_flag)
 {
   char radioStr[50], geoStr[50]="";
 
   switch (radiometry)
     {
     case r_AMP:
-      sprintf(radioStr, "amplitude"); 
+      sprintf(radioStr, "amplitude");
       break;
     case r_POWER:
-      sprintf(radioStr, "power"); 
+      sprintf(radioStr, "power");
       break;
     case r_SIGMA:
-      sprintf(radioStr, "calibrated sigma (power scale)"); 
+      sprintf(radioStr, "calibrated sigma (power scale)");
       break;
     case r_SIGMA_DB:
-      sprintf(radioStr, "calibrated sigma (decibel)"); 
+      sprintf(radioStr, "calibrated sigma (decibel)");
       break;
     case r_BETA:
       sprintf(radioStr, "calibrated beta (power scale)");
       break;
     case r_BETA_DB:
-      sprintf(radioStr, "calibrated beta (decibel)"); 
+      sprintf(radioStr, "calibrated beta (decibel)");
       break;
     case r_GAMMA:
-      sprintf(radioStr, "calibrated gamma (power scale)"); 
+      sprintf(radioStr, "calibrated gamma (power scale)");
       break;
     case r_GAMMA_DB:
-      sprintf(radioStr, "calibrated gamma (decibel)"); 
+      sprintf(radioStr, "calibrated gamma (decibel)");
       break;
     }
-  
+
   // Give status on input data type
   if (data_type >= COMPLEX_BYTE)
     asfPrintStatus("   Input data type: single look complex\n");
-  else if (meta->projection != NULL && 
-	   meta->projection->type != MAGIC_UNSET_CHAR) {
+  else if (meta->projection != NULL &&
+       meta->projection->type != MAGIC_UNSET_CHAR) {
     // This must be ScanSAR
     if (meta->projection->type != SCANSAR_PROJECTION &&
-	strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
-	strncmp(meta->general->processor, "ASF", 4) == 0) {
+    strncmp(meta->general->sensor, "RSAT", 4) == 0 &&
+    strncmp(meta->general->processor, "ASF", 4) == 0) {
       // This is actually geocoded.  We don't trust any
       // already-geocoded products other than polar stereo in the
       // northern hemisphere (because of the RGPS Ice tracking
       // project, these have been tested a lot and actually work
       // correctly).
-      if ( meta->projection->type != POLAR_STEREOGRAPHIC || 
-	   meta->projection->hem == 'S' ) {
-	asfPrintWarning("Import of map projected (Level 2) CEOS images other "
+      if ( meta->projection->type != POLAR_STEREOGRAPHIC ||
+       meta->projection->hem == 'S' ) {
+    asfPrintWarning("Import of map projected (Level 2) CEOS images other "
                         "than northern hemisphere polar stereo images is "
                         "prohibited, because these products are broken.  "
                         "Don't use them.\n");
@@ -966,12 +1026,12 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
       sprintf(geoStr, "geocoded ");
     }
     else if (strncmp(meta->general->processor, "CSTARS", 6) == 0 ||
-	     strncmp(meta->general->processor, "CDPF", 4) == 0) {
+         strncmp(meta->general->processor, "CDPF", 4) == 0) {
       asfPrintStatus("   Input data type: level two data\n");
       sprintf(geoStr, "geocoded ");
-    }      
+    }
     else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
-	     strcmp(meta->general->mode, "1B2G") == 0) {
+         strcmp(meta->general->mode, "1B2G") == 0) {
       asfPrintStatus("   Input data type: level two data\n");
       sprintf(geoStr, "geocoded ");
     }
@@ -994,12 +1054,12 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
       asfPrintStatus("   Output data type: single look complex (2-band)\n");
   }
   else
-    asfPrintStatus("   Output data type: %s%s image\n", geoStr, radioStr);    
+    asfPrintStatus("   Output data type: %s%s image\n", geoStr, radioStr);
 }
 
 // Assign band names
 static void assign_band_names(meta_parameters *meta, char *outMetaName,
-			      char *bandExt, int band, int nBands, 
+                  char *bandExt, int band, int nBands,
                               int nBandsOut, radiometry_t radiometry,
                               int complex_flag)
 {
@@ -1084,102 +1144,10 @@ static void assign_band_names(meta_parameters *meta, char *outMetaName,
   strcat(meta->general->bands, bandStr);
 }
 
-static float get_ers2_gain_adj(meta_parameters *meta, radiometry_t radiometry)
-{
-    if (strcmp(meta->general->sensor,"ERS2") != 0)
-      return 0.0;
-
-    // First, compute the number of days since launch
-    ymd_date ref_ymd;
-    ref_ymd.year = 1995;
-    ref_ymd.month = 4;
-    ref_ymd.day = 21;
-    hms_time ref_hms;
-    ref_hms.hour = 0;
-    ref_hms.min = 0;
-    ref_hms.sec = 0.;
-
-    ymd_date ac_ymd;
-    hms_time ac_hms;
-    parse_DMYdate(meta->general->acquisition_date, &ac_ymd, &ac_hms);
-
-    // These gain adjustments are from Wade - the ERS2 satellite requires a
-    // date-dependent gain adjustment, a constant db adjustment to be applied
-    // to all pixels in the image uniformly.  We currently only do this for
-    // calibrated images.
-    //    Launch    - 1/ 1/2001  y = -0.0018x + 0.0023
-    //    1/ 2/2001 - 2/26/2003  y = -0.002247x + 0.9296
-    //    2/27/2003 - current    y = -0.0018x - 0.3323 + 3
-    // where:
-    //    x = days since launch
-    //    y = gain adjustment (in db)
-
-    double days_since_launch =
-      date_difference(&ref_ymd,&ref_hms,&ac_ymd,&ac_hms)/24./60./60.;
-
-    double db_adj;
-    if (days_since_launch < 2082) { // less than 1/1/2001
-      // y = -0.0018x + 0.0023
-      db_adj = -0.0018*days_since_launch + 0.0023;
-    }
-    else if (days_since_launch < 2869) { // less than 2/27/2003
-      // y = -0.002247x + 0.9296
-      db_adj = -0.002247*days_since_launch + 0.9296;
-    }
-    else { // after 2/27/2003
-      // y = -0.0018x - 0.3323 + 3
-      db_adj = -0.0018*days_since_launch - 0.3323 + 3.0;
-    }
-
-    double adj;
-    if (radiometry==r_SIGMA_DB || radiometry==r_BETA_DB || radiometry==r_GAMMA_DB)
-    {
-      // the easy case: already in db
-      adj = db_adj;
-      asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant adjustment)\n", adj);
-    }
-    else if (radiometry==r_AMP)
-    {
-      // don't apply correction to amplitude currently!
-      adj = 0;
-    }
-    else // r_SIGMA, r_BETA, r_GAMMA, r_POWER
-    {
-      // calculate scale factor
-      adj = pow(10., db_adj/10.);
-      asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant scale factor)\n", adj);
-    }
-
-    return (float)adj;
-}
-
-static float apply_ers2_gain_fix(radiometry_t radiometry, float correction,
-                                 float current_value)
-{
-    if (radiometry==r_SIGMA_DB || radiometry==r_BETA_DB || radiometry==r_GAMMA_DB)
-    {
-      // the easy case: already in db, just add the correction
-      return current_value + correction;
-    }
-    else if (radiometry==r_AMP)
-    {
-      // don't apply correction to amplitude currently!
-      return current_value;
-    }
-    else // r_SIGMA, r_BETA, r_GAMMA, r_POWER
-    {
-      // multiplicative correction
-      return current_value * correction;
-    }
-
-    assert(FALSE); // not reached
-    return 0;
-}
-
 // Import all flavors of detected data
-void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName, 
-		      char *outMetaName, char *bandExt, int band, int nBands,
-		      int nBandsOut, radiometry_t radiometry,
+void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
+              char *outMetaName, char *bandExt, int band, int nBands,
+              int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
                       int multilook_flag, char *lutName)
@@ -1289,14 +1257,14 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     double pp_er, pp_atpp;
     pp_get_corrected_vals(inMetaName, &pp_er, &pp_atpp);
     if (meta->sar) meta->sar->earth_radius_pp = pp_er;
-  } 
+  }
 
   // Initialize calibration if you need to
   if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB && meta->sar) {
     cal_param = create_cal_params(inMetaName, meta);
     if (cal_param == NULL) // Die if we can't get the calibration params
       asfPrintError("Unable to extract calibration parameters from CEOS "
-		    "file.");
+            "file.");
     cal_param->radiometry = radiometry;
   }
 
@@ -1306,7 +1274,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Assign band names, set correct data type and band count
   if (meta->sar) {
     assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
-		      radiometry, complex_flag);
+              radiometry, complex_flag);
     if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
       meta->general->data_type = REAL32;
       meta->general->band_count = import_single_band ? 1 : band;
@@ -1321,7 +1289,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     }
     else {
       meta->general->data_type = REAL32;
-      meta->general->band_count = import_single_band ? 1 : band;      
+      meta->general->band_count = import_single_band ? 1 : band;
     }
   }
 
@@ -1375,8 +1343,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       break;
     case COMPLEX_BYTE:
       cpx_byte_buf = (unsigned char *) MALLOC(2*ns * sizeof(unsigned char) * lc);
-      tmp_byte_buf = 
-	(unsigned char *) MALLOC(2*ns * sizeof(unsigned char) *lc );
+      tmp_byte_buf =
+    (unsigned char *) MALLOC(2*ns * sizeof(unsigned char) *lc );
       asfPrintStatus("   Data type: COMPLEX_BYTE\n");
       break;
     case COMPLEX_INTEGER16:
@@ -1418,16 +1386,16 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     case COMPLEX_INTEGER32:
     case COMPLEX_REAL32:
       if (complex_flag)
-	cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
+    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
       else {
-	amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
-	phase_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+    amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+    phase_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
       }
       break;
     case COMPLEX_REAL64:
       break;
     }
-  
+
   // Read data
   if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
     get_ALOS_optical_ifiledr(inMetaName,&image_fdr);
@@ -1435,7 +1403,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     rightFill = image_fdr.sufdata + image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)
       + (image_fdr.reclen - (ns + leftFill + rightFill)
-	 * image_fdr.bytgroup);
+     * image_fdr.bytgroup);
   }
   else {
     get_ifiledr(inMetaName,&image_fdr);
@@ -1443,7 +1411,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     rightFill = image_fdr.rbrdrpxl;
     headerBytes = firstRecordLen(inDataName)
       + (image_fdr.reclen - (ns + leftFill + rightFill)
-	 * image_fdr.bytgroup);
+     * image_fdr.bytgroup);
   }
 
   // Set metadata for multilooking
@@ -1453,7 +1421,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       meta->general->y_pixel_size *= nLooks;
       meta->sar->azimuth_time_per_pixel *= nLooks;
       meta->sar->multilook = 1;
-    } 
+    }
     else if (data_type >= COMPLEX_BYTE)
       meta->sar->multilook = 0;
     else
@@ -1470,429 +1438,428 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   // Determine the incidence angle polynom for look up table ingest
   if (lutName)
     q = get_incid(inDataName, meta);
-  
-  if (data_type >= COMPLEX_BYTE) {  
+
+  if (data_type >= COMPLEX_BYTE) {
     // Go through complex imagery in chunks
     for (ii=0; ii<nl; ii+=nLooks) {
       lc = meta->sar->look_count;
-      if (ii + lc > nl) 
-	lc = nl - ii;
-    
+      if (ii + lc > nl)
+    lc = nl - ii;
+
       for (ll=0; ll<lc; ll++) {
-	int line = ii+ll;
-	asfLineMeter(line, nl);
-	offset = (long long)headerBytes+ (ii+ll)*(long long)image_fdr.reclen;
-	FSEEK64(fpIn, offset, SEEK_SET);
-	
-	// Read the data according to their data type
-	switch (data_type)
-	  { 
-	  case COMPLEX_BYTE:
-	    FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
-	    break;
-	  case COMPLEX_INTEGER16:
-	    FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
-	    break;
-	  case COMPLEX_INTEGER32:
-	    FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
-	    break;
-	  case COMPLEX_REAL64:
-	    FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
-	    break;
-	  case COMPLEX_REAL32:
-	    FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
-	    break;
-	  case BYTE:
-	  case INTEGER16:
-	  case INTEGER32:
-	  case REAL32:
-	  case REAL64:
-	    break;
-	  }
-	
-	// Put read in data in proper endian format
-	for (kk=0; kk<ns; kk++) {
-	  switch (data_type)
-	    {
-	    case COMPLEX_BYTE:
-	      break;
-	    case COMPLEX_INTEGER16:
-	      //if (strncmp(meta->general->processor, "CSTARS", 6) != 0) {
-	      big16(cpx_short_buf[ll*ns*2 + kk*2]);
-	      big16(cpx_short_buf[ll*ns*2 + kk*2+1]);
-	      //}
-	      if (flip) {
-		tmp_cpx_short_buf[ll*ns*2 + kk*2] = 
-		  cpx_short_buf[ll*ns*2 + kk*2];
-		tmp_cpx_short_buf[ll*ns*2 + kk*2+1] = 
-		  cpx_short_buf[ll*ns*2 * kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_INTEGER32:
-	      big32(cpx_int_buf[ll*ns*2 + kk*2]);
-	      big32(cpx_int_buf[ll*ns*2 + kk*2+1]);
-	      if (flip) {
-		tmp_int_buf[ll*ns*2 + kk*2] = cpx_int_buf[ll*ns*2 + kk*2];
-		tmp_int_buf[ll*ns*2 + kk*2+1] = cpx_int_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_REAL32:
-	      big32(cpx_float_buf[ll*ns*2 + kk*2]);
-	      big32(cpx_float_buf[ll*ns*2 + kk*2+1]);
-	      if (flip) {
-		tmp_float_buf[ll*ns*2 + kk*2] = 
-		  cpx_float_buf[ll*ns*2 + kk*2];
-		tmp_float_buf[ll*ns*2 + kk*2+1] = 
-		  cpx_float_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_REAL64:
-	      big64(cpx_double_buf[ll*ns*2 + kk*2]);
-	      big64(cpx_double_buf[ll*ns*2 + kk*2+1]);
-	      if (flip) {
-		tmp_double_buf[ll*ns*2 + kk*2] = 
-		  cpx_double_buf[ll*ns*2 + kk*2];
-		tmp_double_buf[ll*ns*2 + kk*2+1] = 
-		  cpx_double_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case BYTE:
-	    case INTEGER16:
-	    case INTEGER32:
-	    case REAL32:
-	    case REAL64:
-	      break;
-	    }
-	}
-	
-	// Flip the line if necessary and assign output value
-	for (kk=0; kk<ns; kk++) {
-	  switch (data_type)
-	    { 
-	    case BYTE:
-	    case INTEGER16:
-	    case INTEGER32:
-	    case REAL32:
-	    case REAL64:
-	      break;
-	    case COMPLEX_BYTE:
-	      if (flip) {
-		cpx.real = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2];
-		cpx.imag = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2+1];
-	      }
-	      else {
-		cpx.real = (float) cpx_byte_buf[ll*ns*2 + kk*2];
-		cpx.imag = (float) cpx_byte_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_INTEGER16:
-	      if (flip) {
-		cpx.real = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2];
-		cpx.imag = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2+1];
-	      }
-	      else {
-		cpx.real = (float) cpx_short_buf[ll*ns*2 + kk*2];
-		cpx.imag = (float) cpx_short_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_INTEGER32:
-	      if (flip) {
-		cpx.real = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2];
-		cpx.imag = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2+1];
-	      }
-	      else {
-		cpx.real = (float) cpx_int_buf[ll*ns*2 + kk*2];
-		cpx.imag = (float) cpx_int_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_REAL32:
-	      if (flip) {
-		cpx.real = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2];
-		cpx.imag = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2+1];
-	      }
-	      else {
-		cpx.real = cpx_float_buf[ll*ns*2 + kk*2];
-		cpx.imag = cpx_float_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    case COMPLEX_REAL64:
-	      if (flip) {
-		cpx.real = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2];
-		cpx.imag = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2+1];
-	      }
-	      else {
-		cpx.real = (float) cpx_double_buf[ll*ns*2 + kk*2];
-		cpx.imag = (float) cpx_double_buf[ll*ns*2 + kk*2+1];
-	      }
-	      break;
-	    }
-	  
-	  if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-	    fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);	
-	    //if (fValue != 0.0) {
-	      amp_float_buf[ll*ns + kk] =
-		get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
-	      /*
-	    } 
-	    else {
-	      amp_float_buf[ll*ns + kk]= 0.0;
-	    }
-	      */
-	  } 
-	  else if (complex_flag)
-	    cpxFloat_buf[ll*ns + kk] = cpx;
-	  else if (cpx.real != 0.0 || cpx.imag != 0.0) {
-	    amp_float_buf[ll*ns + kk] = 
-	      cpx.real*cpx.real + cpx.imag*cpx.imag;
-	    phase_float_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
-	  } 
-	  else
-	    amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
-	}
+    int line = ii+ll;
+    asfLineMeter(line, nl);
+    offset = (long long)headerBytes+ (ii+ll)*(long long)image_fdr.reclen;
+    FSEEK64(fpIn, offset, SEEK_SET);
+
+    // Read the data according to their data type
+    switch (data_type)
+      {
+      case COMPLEX_BYTE:
+        FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
+        break;
+      case COMPLEX_INTEGER16:
+        FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
+        break;
+      case COMPLEX_INTEGER32:
+        FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
+        break;
+      case COMPLEX_REAL64:
+        FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
+        break;
+      case COMPLEX_REAL32:
+        FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
+        break;
+      case BYTE:
+      case INTEGER16:
+      case INTEGER32:
+      case REAL32:
+      case REAL64:
+        break;
       }
-      
+
+    // Put read in data in proper endian format
+    for (kk=0; kk<ns; kk++) {
+      switch (data_type)
+        {
+        case COMPLEX_BYTE:
+          break;
+        case COMPLEX_INTEGER16:
+          //if (strncmp(meta->general->processor, "CSTARS", 6) != 0) {
+          big16(cpx_short_buf[ll*ns*2 + kk*2]);
+          big16(cpx_short_buf[ll*ns*2 + kk*2+1]);
+          //}
+          if (flip) {
+        tmp_cpx_short_buf[ll*ns*2 + kk*2] =
+          cpx_short_buf[ll*ns*2 + kk*2];
+        tmp_cpx_short_buf[ll*ns*2 + kk*2+1] =
+          cpx_short_buf[ll*ns*2 * kk*2+1];
+          }
+          break;
+        case COMPLEX_INTEGER32:
+          big32(cpx_int_buf[ll*ns*2 + kk*2]);
+          big32(cpx_int_buf[ll*ns*2 + kk*2+1]);
+          if (flip) {
+        tmp_int_buf[ll*ns*2 + kk*2] = cpx_int_buf[ll*ns*2 + kk*2];
+        tmp_int_buf[ll*ns*2 + kk*2+1] = cpx_int_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_REAL32:
+          big32(cpx_float_buf[ll*ns*2 + kk*2]);
+          big32(cpx_float_buf[ll*ns*2 + kk*2+1]);
+          if (flip) {
+        tmp_float_buf[ll*ns*2 + kk*2] =
+          cpx_float_buf[ll*ns*2 + kk*2];
+        tmp_float_buf[ll*ns*2 + kk*2+1] =
+          cpx_float_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_REAL64:
+          big64(cpx_double_buf[ll*ns*2 + kk*2]);
+          big64(cpx_double_buf[ll*ns*2 + kk*2+1]);
+          if (flip) {
+        tmp_double_buf[ll*ns*2 + kk*2] =
+          cpx_double_buf[ll*ns*2 + kk*2];
+        tmp_double_buf[ll*ns*2 + kk*2+1] =
+          cpx_double_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case BYTE:
+        case INTEGER16:
+        case INTEGER32:
+        case REAL32:
+        case REAL64:
+          break;
+        }
+    }
+
+    // Flip the line if necessary and assign output value
+    for (kk=0; kk<ns; kk++) {
+      switch (data_type)
+        {
+        case BYTE:
+        case INTEGER16:
+        case INTEGER32:
+        case REAL32:
+        case REAL64:
+          break;
+        case COMPLEX_BYTE:
+          if (flip) {
+        cpx.real = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2];
+        cpx.imag = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2+1];
+          }
+          else {
+        cpx.real = (float) cpx_byte_buf[ll*ns*2 + kk*2];
+        cpx.imag = (float) cpx_byte_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_INTEGER16:
+          if (flip) {
+        cpx.real = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2];
+        cpx.imag = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2+1];
+          }
+          else {
+        cpx.real = (float) cpx_short_buf[ll*ns*2 + kk*2];
+        cpx.imag = (float) cpx_short_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_INTEGER32:
+          if (flip) {
+        cpx.real = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2];
+        cpx.imag = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2+1];
+          }
+          else {
+        cpx.real = (float) cpx_int_buf[ll*ns*2 + kk*2];
+        cpx.imag = (float) cpx_int_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_REAL32:
+          if (flip) {
+        cpx.real = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2];
+        cpx.imag = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2+1];
+          }
+          else {
+        cpx.real = cpx_float_buf[ll*ns*2 + kk*2];
+        cpx.imag = cpx_float_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        case COMPLEX_REAL64:
+          if (flip) {
+        cpx.real = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2];
+        cpx.imag = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2+1];
+          }
+          else {
+        cpx.real = (float) cpx_double_buf[ll*ns*2 + kk*2];
+        cpx.imag = (float) cpx_double_buf[ll*ns*2 + kk*2+1];
+          }
+          break;
+        }
+
+      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+        fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+        //if (fValue != 0.0) {
+          amp_float_buf[ll*ns + kk] =
+        get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+          /*
+        }
+        else {
+          amp_float_buf[ll*ns + kk]= 0.0;
+        }
+          */
+      }
+      else if (complex_flag)
+        cpxFloat_buf[ll*ns + kk] = cpx;
+      else if (cpx.real != 0.0 || cpx.imag != 0.0) {
+        amp_float_buf[ll*ns + kk] =
+          cpx.real*cpx.real + cpx.imag*cpx.imag;
+        phase_float_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
+      }
+      else
+        amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
+    }
+      }
+
       // Multilook if requested
       if (multilook_flag) {
-	if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-	  for (kk=0; kk<ns; kk++) {
-	    fValue = 0.0;
-	    for (mm=0; mm<lc; mm++)
-	      fValue += amp_float_buf[mm*ns + kk];
-	    amp_float_buf[kk] = fValue / (float)lc;
-	  }
-	}
-	else {
-	  for (kk=0; kk<ns; kk++) {
-	    fValue = 0.0;
-	    for (mm=0; mm<lc; mm++)
-	      fValue += amp_float_buf[mm*ns + kk];
-	    amp_float_buf[kk] = sqrt(fValue / (float)lc);
-	    fValue = 0.0;
-	    for (mm=0; mm<lc; mm++)
-	      fValue += phase_float_buf[mm*ns + kk];
-	    phase_float_buf[kk] = fValue / (float)lc;
-	  }
-	} 
+    if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+      for (kk=0; kk<ns; kk++) {
+        fValue = 0.0;
+        for (mm=0; mm<lc; mm++)
+          fValue += amp_float_buf[mm*ns + kk];
+        amp_float_buf[kk] = fValue / (float)lc;
+      }
+    }
+    else {
+      for (kk=0; kk<ns; kk++) {
+        fValue = 0.0;
+        for (mm=0; mm<lc; mm++)
+          fValue += amp_float_buf[mm*ns + kk];
+        amp_float_buf[kk] = sqrt(fValue / (float)lc);
+        fValue = 0.0;
+        for (mm=0; mm<lc; mm++)
+          fValue += phase_float_buf[mm*ns + kk];
+        phase_float_buf[kk] = fValue / (float)lc;
+      }
+    }
       }
       else if (radiometry < r_SIGMA) {
-	for (kk=0; kk<lc*ns; kk++)
-	  amp_float_buf[kk] = sqrt(amp_float_buf[kk]);
+    for (kk=0; kk<lc*ns; kk++)
+      amp_float_buf[kk] = sqrt(amp_float_buf[kk]);
       }
-      
+
       // unless we are outputting as complex, we are actually outputting
       // two bands -- "out_band" is the first of the two (the amplitude),
       // the phase is out_band+1.
       int out_band = import_single_band ? 0 : (band-1)*2;
       if (multilook_flag) {
-	if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-	  put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
-	  out++;
-	}
-	else {
-	  put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-	  put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
-	  out++;
-	}
+    if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+      put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
+      out++;
+    }
+    else {
+      put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
+      put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+      out++;
+    }
       }
       else {
-	for (mm=0; mm<lc; mm++) {
-	  if (complex_flag)
-	    put_complexFloat_line(fpOut, meta, ii+mm, cpxFloat_buf+mm*ns);
-	  else if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-	    put_band_float_line(fpOut, meta, out_band, ii+mm, 
-				amp_float_buf+mm*ns);
-	  }
-	  else {
-	    put_band_float_line(fpOut, meta, out_band+0, ii+mm, 
-				amp_float_buf+mm*ns);
-	    put_band_float_line(fpOut, meta, out_band+1, ii+mm, 
-				phase_float_buf+mm*ns);
-	  }
-	}
+    for (mm=0; mm<lc; mm++) {
+      if (complex_flag)
+        put_complexFloat_line(fpOut, meta, ii+mm, cpxFloat_buf+mm*ns);
+      else if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+        put_band_float_line(fpOut, meta, out_band, ii+mm,
+                amp_float_buf+mm*ns);
+      }
+      else {
+        put_band_float_line(fpOut, meta, out_band+0, ii+mm,
+                amp_float_buf+mm*ns);
+        put_band_float_line(fpOut, meta, out_band+1, ii+mm,
+                phase_float_buf+mm*ns);
+      }
+    }
       }
     }
   }
   else {
     // Go through detected imagery line by line
-    float gain_adj = get_ers2_gain_adj(meta,radiometry);
     for (ii=0; ii<nl; ii++) {
       asfLineMeter(ii, nl);
-      
+
       offset = (long long)headerBytes+ ii*(long long)image_fdr.reclen;
       FSEEK64(fpIn, offset, SEEK_SET);
-      
+
       // Read the data according to their data type
       switch (data_type)
-	{ 
-	case REAL32:
-	  FREAD(float_buf, sizeof(float), ns, fpIn);
-	  break;
-	case BYTE:
-	  FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
-	  break;
-	case INTEGER16:
-	  FREAD(short_buf, sizeof(short), ns, fpIn);
-	  break;
-	case INTEGER32:
-	  FREAD(int_buf, sizeof(int), ns, fpIn);
-	  break;
-	case REAL64:
-	  FREAD(double_buf, sizeof(double), ns, fpIn);
-	  break;
-	case COMPLEX_BYTE:
-	  FREAD(cpx_byte_buf, sizeof(unsigned char), 2*ns, fpIn);
-	  break;
-	case COMPLEX_INTEGER16:
-	case COMPLEX_INTEGER32:
-	case COMPLEX_REAL32:
-	case COMPLEX_REAL64:
-	  break;
-	}
-      
+    {
+    case REAL32:
+      FREAD(float_buf, sizeof(float), ns, fpIn);
+      break;
+    case BYTE:
+      FREAD(byte_buf, sizeof(unsigned char), ns, fpIn);
+      break;
+    case INTEGER16:
+      FREAD(short_buf, sizeof(short), ns, fpIn);
+      break;
+    case INTEGER32:
+      FREAD(int_buf, sizeof(int), ns, fpIn);
+      break;
+    case REAL64:
+      FREAD(double_buf, sizeof(double), ns, fpIn);
+      break;
+    case COMPLEX_BYTE:
+      FREAD(cpx_byte_buf, sizeof(unsigned char), 2*ns, fpIn);
+      break;
+    case COMPLEX_INTEGER16:
+    case COMPLEX_INTEGER32:
+    case COMPLEX_REAL32:
+    case COMPLEX_REAL64:
+      break;
+    }
+
       // Put read in data in proper endian format
       for (kk=0; kk<ns; kk++) {
-	switch (data_type)
-	  {
-	  case REAL32:
-	    big32(float_buf[kk]);
-	    if (flip)
-	      tmp_float_buf[kk] = float_buf[kk];
-	    break;
-	  case BYTE:
-	    if (flip)
-	      tmp_byte_buf[kk] = byte_buf[kk];
-	    break;
-	  case INTEGER16:
-	    big16(short_buf[kk]);
-	    if (flip)
-	      tmp_short_buf[kk] = short_buf[kk];
-	    break;
-	  case INTEGER32:
-	    big32(int_buf[kk]);
-	    if (flip)
-	      tmp_int_buf[kk] = int_buf[kk];
-	    break;
-	  case REAL64:
-	    big64(double_buf[kk]);
-	    if (flip)
-	      tmp_double_buf[kk] = double_buf[kk];
-	    break;
-	  case COMPLEX_BYTE:
-	  case COMPLEX_INTEGER16:
-	  case COMPLEX_INTEGER32:
-	  case COMPLEX_REAL32:
-	  case COMPLEX_REAL64:
-	    break;
-	  }
+    switch (data_type)
+      {
+      case REAL32:
+        big32(float_buf[kk]);
+        if (flip)
+          tmp_float_buf[kk] = float_buf[kk];
+        break;
+      case BYTE:
+        if (flip)
+          tmp_byte_buf[kk] = byte_buf[kk];
+        break;
+      case INTEGER16:
+        big16(short_buf[kk]);
+        if (flip)
+          tmp_short_buf[kk] = short_buf[kk];
+        break;
+      case INTEGER32:
+        big32(int_buf[kk]);
+        if (flip)
+          tmp_int_buf[kk] = int_buf[kk];
+        break;
+      case REAL64:
+        big64(double_buf[kk]);
+        if (flip)
+          tmp_double_buf[kk] = double_buf[kk];
+        break;
+      case COMPLEX_BYTE:
+      case COMPLEX_INTEGER16:
+      case COMPLEX_INTEGER32:
+      case COMPLEX_REAL32:
+      case COMPLEX_REAL64:
+        break;
       }
-      
+      }
+
       // Flip the line if necessary and assign output value
       for (kk=0; kk<ns; kk++) {
-	if (lutName) {
-	  double incid;
-	  int x=ii, y=kk;
-	  incid = q.A + q.B*x + q.C*y + q.D*x*x + q.E*x*y+ q.F*y*y + 
-	    q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
-	  for (mm=min; mm<=max; mm++)
-	    if (incid < incid_table[mm])
-	      break;
-	  if (data_type == BYTE) {
-	    if (flip)
-	      byte_buf[kk] = tmp_byte_buf[ns-kk-1];
-	    amp_float_buf[kk] = (float) byte_buf[kk] *
-	      (((scale_table[mm]-scale_table[mm]) /
-		(incid_table[mm]-incid_table[mm])) *
-	       (incid - incid_table[mm-1]) * scale_table[mm-1]);
-	  }
-	  else if (data_type == INTEGER16) {
-	    if (flip)
-	      short_buf[kk] = tmp_short_buf[ns-kk-1];
-	    amp_float_buf[kk] = (float) short_buf[kk] *
-	      (((scale_table[mm]-scale_table[mm]) /
-		(incid_table[mm]-incid_table[mm])) *
-	       (incid - incid_table[mm-1]) * scale_table[mm-1]);
-	  }
-	  else
-	    asfPrintStatus("LUT not implemented for this data type!\n");
+    if (lutName) {
+      double incid;
+      int x=ii, y=kk;
+      incid = q.A       + q.B*x     + q.C*y       + q.D*x*x   + q.E*x*y   + q.F*y*y +
+              q.G*x*x*y + q.H*x*y*y + q.I*x*x*y*y + q.J*x*x*x + q.K*y*y*y;
+      for (mm = min; mm <= max; mm++) {
+        if (incid < incid_table[mm]) {
+          break;
 	}
-	else {
-	  switch (data_type)
-	    { 
-	    case BYTE:
-	      if (flip)
-		byte_buf[kk] = tmp_byte_buf[ns-kk-1];
-	      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-		amp_float_buf[kk] = 
-		  get_cal_dn(cal_param, ii, kk, (float)byte_buf[kk], db_flag);
-	      else if (radiometry == r_POWER)
-		amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
-	      else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
-		       meta->optical) {
-		amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
-	      }
-	      else
-		amp_float_buf[kk] = (float) byte_buf[kk];
-	      break;
-	    case INTEGER16:
-	      if (flip)
-		short_buf[kk] = tmp_short_buf[ns-kk-1];
-	      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-		amp_float_buf[kk] = 
-		  get_cal_dn(cal_param, ii, kk, (float)short_buf[kk], db_flag);
-	      else if (radiometry == r_POWER)
-		amp_float_buf[kk] = (float) short_buf[kk]*short_buf[kk];
-	      else	  
-		amp_float_buf[kk] = (float) short_buf[kk];
-	      break;
-	    case INTEGER32:
-	      if (flip)
-		int_buf[kk] = tmp_int_buf[ns-kk-1];
-	      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-		amp_float_buf[kk] = 
-		  get_cal_dn(cal_param, ii, kk, (float)int_buf[kk], db_flag);
-	      else if (radiometry == r_POWER)
-		amp_float_buf[ns+kk] = (float) int_buf[kk]*int_buf[kk];
-	      else
-		amp_float_buf[ns+kk] = (float) int_buf[kk];
-	      break;
-	    case REAL32:
-	      if (flip)
-		float_buf[kk] = tmp_float_buf[ns-kk-1];
-	      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-		amp_float_buf[kk] = 
-		  get_cal_dn(cal_param, ll, kk, float_buf[kk], db_flag);
-	      else if (radiometry == r_POWER)
-		amp_float_buf[kk] = float_buf[kk]*float_buf[kk];
-	      else 
-		amp_float_buf[kk] = float_buf[kk];
-	      break;
-	    case REAL64:
-	      if (flip)
-		double_buf[kk] = tmp_double_buf[ns-kk-1];
-	      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
-		amp_float_buf[kk] = 
-		  get_cal_dn(cal_param, ii, kk, (float)double_buf[kk], 
-			     db_flag);
-	      else if (radiometry == r_POWER)
-		amp_float_buf[kk] = 
-		  (float) double_buf[kk]*double_buf[kk];
-	      else
-		amp_float_buf[kk] = (float) double_buf[kk];
-	      break;
-	    case COMPLEX_BYTE:
-	    case COMPLEX_INTEGER16:
-	    case COMPLEX_INTEGER32:
-	    case COMPLEX_REAL32:
-	    case COMPLEX_REAL64:
-	      break;
-	    }
+        if (data_type == BYTE) {
+          if (flip) {
+            byte_buf[kk] = tmp_byte_buf[ns-kk-1];
+	  }
+          amp_float_buf[kk] = (float) byte_buf[kk] *
+                              (((scale_table[mm]-scale_table[mm]) /
+                              (incid_table[mm]-incid_table[mm])) *
+                              (incid - incid_table[mm-1]) * scale_table[mm-1]);
+        }
+        else if (data_type == INTEGER16) {
+          if (flip) {
+            short_buf[kk] = tmp_short_buf[ns-kk-1];
+	  }
+          amp_float_buf[kk] = (float) short_buf[kk] *
+                              (((scale_table[mm]-scale_table[mm]) /
+                              (incid_table[mm]-incid_table[mm])) *
+                              (incid - incid_table[mm-1]) * scale_table[mm-1]);
+        }
+        else {
+          asfPrintStatus("LUT not implemented for this data type!\n");
 	}
-
-        if (strcmp(meta->general->sensor,"ERS2") == 0)
-          amp_float_buf[kk] =
-            apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
       }
-
+    }
+    else {
+      switch (data_type)
+        {
+        case BYTE:
+          if (flip)
+        byte_buf[kk] = tmp_byte_buf[ns-kk-1];
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+        amp_float_buf[kk] =
+          get_cal_dn(cal_param, ii, kk, (float)byte_buf[kk], db_flag);
+          else if (radiometry == r_POWER)
+        amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
+          else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
+               meta->optical) {
+        amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
+          }
+          else
+        amp_float_buf[kk] = (float) byte_buf[kk];
+          break;
+        case INTEGER16:
+          if (flip)
+        short_buf[kk] = tmp_short_buf[ns-kk-1];
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+        amp_float_buf[kk] =
+          get_cal_dn(cal_param, ii, kk, (float)short_buf[kk], db_flag);
+          else if (radiometry == r_POWER)
+        amp_float_buf[kk] = (float) short_buf[kk]*short_buf[kk];
+          else
+        amp_float_buf[kk] = (float) short_buf[kk];
+          break;
+        case INTEGER32:
+          if (flip)
+        int_buf[kk] = tmp_int_buf[ns-kk-1];
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+        amp_float_buf[kk] =
+          get_cal_dn(cal_param, ii, kk, (float)int_buf[kk], db_flag);
+          else if (radiometry == r_POWER)
+        amp_float_buf[ns+kk] = (float) int_buf[kk]*int_buf[kk];
+          else
+        amp_float_buf[ns+kk] = (float) int_buf[kk];
+          break;
+        case REAL32:
+          if (flip)
+        float_buf[kk] = tmp_float_buf[ns-kk-1];
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+        amp_float_buf[kk] =
+          get_cal_dn(cal_param, ll, kk, float_buf[kk], db_flag);
+          else if (radiometry == r_POWER)
+        amp_float_buf[kk] = float_buf[kk]*float_buf[kk];
+          else
+        amp_float_buf[kk] = float_buf[kk];
+          break;
+        case REAL64:
+          if (flip)
+        double_buf[kk] = tmp_double_buf[ns-kk-1];
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB)
+        amp_float_buf[kk] =
+          get_cal_dn(cal_param, ii, kk, (float)double_buf[kk],
+                 db_flag);
+          else if (radiometry == r_POWER)
+        amp_float_buf[kk] =
+          (float) double_buf[kk]*double_buf[kk];
+          else
+        amp_float_buf[kk] = (float) double_buf[kk];
+          break;
+        case COMPLEX_BYTE:
+        case COMPLEX_INTEGER16:
+        case COMPLEX_INTEGER32:
+        case COMPLEX_REAL32:
+        case COMPLEX_REAL64:
+          break;
+        }
+    }
+      }
       put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
     }
   }
@@ -1905,9 +1872,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Set radiometry
   meta->general->radiometry = radiometry;
-  
+
   meta_write(meta, outMetaName);
-  
+
   /* for debugging
      if (isPP(meta))
      {
@@ -1916,7 +1883,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
      meta->sar->earth_radius);
      }
   */
-  
+
   // Clean up
   if (byte_buf) {
     FREE(byte_buf);

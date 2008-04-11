@@ -29,7 +29,7 @@ PROGRAM HISTORY:
   01/2004  R. Gens       Updated old to new metadata
   05/2004  P. Denny      Spruced up metadata & bin_state interaction
                            Initialize bin_state 'nLines' line
-			   incrementer at 0
+                           incrementer at 0
 
 ****************************************************************/
 
