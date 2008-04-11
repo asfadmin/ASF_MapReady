@@ -102,7 +102,7 @@ int main (int argc, char *argv[])
     asfPrintError("Metadata file (%s) does not exist.\n", inMetaName);
 
 /* Do it! */
-  c2p(inDataName, inMetaName, argv[2], multilook, multiband);
+  c2p_ext(inDataName, inMetaName, argv[2], multilook, multiband);
   
   if (logflag)
       FCLOSE(fLog);

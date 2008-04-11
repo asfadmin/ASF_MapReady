@@ -218,7 +218,7 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
     if (complex_flag && !multilook_flag)
       fileCopy(inDataName, outFile);
     else 
-      c2p(inDataName, tmpFile, outFile, multilook_flag, TRUE);
+      c2p_ext(inDataName, tmpFile, outFile, multilook_flag, TRUE);
   }
   else
     fileCopy(inDataName, outFile);

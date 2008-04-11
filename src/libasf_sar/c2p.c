@@ -3,8 +3,16 @@
 #include "asf.h"
 #include <assert.h>
 
-void c2p(const char *inDataName, const char *inMetaName, const char *outfile, 
-	 int multilook, int banded)
+void c2p(const char *inDataName, const char *outfile, 
+         int multilook, int banded)
+{
+  char *meta_name = appendExt(inDataName, ".meta");
+  c2p_ext(inDataName, meta_name, outfile, multilook, banded);
+  FREE(meta_name);
+}
+
+void c2p_ext(const char *inDataName, const char *inMetaName,
+             const char *outfile, int multilook, int banded)
 {
   printf("outfile: %s\n", outfile);
     meta_parameters *in_meta = meta_read(inMetaName);
