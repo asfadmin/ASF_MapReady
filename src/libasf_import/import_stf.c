@@ -67,6 +67,12 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
           sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
       case r_GAMMA:
           sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
+      case r_SIGMA_DB:
+          sprintf(logbuf, "%s sigma", logbuf);      tempFlag=TRUE; break;
+      case r_BETA_DB:
+          sprintf(logbuf, "%s beta", logbuf);       tempFlag=TRUE; break;
+      case r_GAMMA_DB:
+          sprintf(logbuf, "%s gamma", logbuf);      tempFlag=TRUE; break;
       case r_POWER:
           sprintf(logbuf, "%s power", logbuf);      tempFlag=TRUE; break;
   }

@@ -513,9 +513,6 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->image_data_type = RAW_IMAGE;
   s = convertMetadata_ceos(inMetaName, outMetaName, &trash, &readNextPulse);
   asfRequire (s->nBeams==1,"Unable to import level 0 ScanSAR data.\n");
-  struct dataset_sum_rec dssr;
-  get_dssr(inMetaName, &dssr);
-  s->prf = meta->sar->prf; // = dssr.prf;  // NOTE: If this gets whacked at some point, use dssr.prf instead
   iqBuf = (iqType*)MALLOC(sizeof(iqType)*2*(s->nSamp));
   fpOut = FOPEN(outDataName, "wb");
   getNextCeosLine(s->binary, s, inMetaName, outDataName); /* Skip CEOS header. */
@@ -525,6 +522,18 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
     FWRITE(iqBuf, s->nSamp*2, 1, fpOut);
     asfLineMeter(ii,nl);
     s->nLines++;
+  }
+  struct dataset_sum_rec dssr;
+  get_dssr(inMetaName, &dssr);
+  s->prf = dssr.prf;
+  s->range_gate = dssr.rng_gate / 1000000.0;
+  if (meta->sar &&
+      meta_is_valid_double(meta->sar->earth_radius) &&
+      meta_is_valid_double(meta->sar->satellite_height))
+  {
+      s->re = meta->sar->earth_radius;
+      s->ht = meta->sar->satellite_height - meta->sar->earth_radius;
+      s->vel = sqrt((s->re/s->ht)*s->re*s->ht);
   }
   updateMeta(s,meta,NULL,0);
   meta->general->radiometry = r_AMP;
@@ -550,11 +559,8 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
       meta->sar->yaw = facdr.scyaw;
       meta->sar->pitch = facdr.scpitch;
       meta->sar->roll = facdr.scroll;
-
       strcpy(meta->sar->polarization, meta->general->bands);
-
-      //s->range_gate=s->dwp+7.0/s->prf-CONF_JRS_rangePulseDelay;
-      s->range_gate = dssr.rng_gate / 1000000.0;
+      meta->sar->prf = s->prf;
       meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
   }
   double lat, lon;
@@ -564,6 +570,18 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   meta->general->center_longitude = lon;
   //meta->general->frame = asf_frame_calc(meta->general->sensor, lat, meta->general->orbit_direction);
 
+  /* Overwrite out ARDOP input parameter files.  (NOTE: They were written in convertMeta_ceos() previously */
+  /* (Now that certain variables such as the prf have been properly updated)                               */
+  if (fabs(dssr.crt_dopcen[0]) > 15000)
+      writeARDOPparams(s,outMetaName, 0, -99, -99);
+  else if (fabs(dssr.crt_dopcen[1]) > 1)
+      writeARDOPparams(s,outMetaName, dssr.crt_dopcen[0], -99*s->prf, -99*s->prf);
+  else
+      writeARDOPparams(s,outMetaName,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
+                       dssr.crt_dopcen[2]);
+  writeARDOPformat(s,outMetaName);
+
+  /* Write ASF metadata out */
   meta_write(meta, outMetaName);
 
   if (isPP(meta)) {
@@ -571,7 +589,6 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
     asfPrintStatus("  (for comparison) Scene Center Earth Radius: %.3lf\n",
        meta->sar->earth_radius);
   }
-
   meta_free(meta);
 
   FCLOSE(fpOut);

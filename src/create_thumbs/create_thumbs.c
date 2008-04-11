@@ -596,29 +596,34 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                                output_format_t output_format, char *out_dir)
 {
     char in_file[1024], out_file[1024], del_files[1024];
-    char export_path[2048], *tmp_basename, tmp_folder[256];
+    char export_path[2048], tmp_basename[1024], tmp_folder[256];
     struct INPUT_ARDOP_PARAMS *params_in;
 
-    if (!tmpnam(NULL)) {
-        fprintf(stderr, "** Cannot create temporary files.\n");
-        exit(1);
+    char tmp[1024];
+    time_t t;
+    char t_stamp[32];
+    t = time(NULL);
+    strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
+    sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s_%s", get_basename(file), t_stamp);
+    if (!is_dir(tmp_folder)) {
+        mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
     }
     else {
-        // Close the tmpnam() security hole by putting something
-        // in the name that nobody else would use :)
-        char tmp[(L_tmpnam)+256];
-        sprintf(tmp_folder, "./create_thumbs_tmp_dir_%s", get_basename(file));
-        if (!is_dir(tmp_folder)) {
-            mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
-        }
-        sprintf(tmp, "%s_UTD_ROCKS_", tmpnam(NULL));
-        tmp_basename = get_basename(tmp);
+        // Should never reach here
+        asfPrintError("Temporary folder already exists:\n    %s\n",
+                      tmp_folder);
     }
+    strcpy(tmp, "_UTD_ROCKS_XXXXXX");
+    if (mkstemp(tmp) < 0) {
+        asfPrintError("Cannot create filename for temporary file(s)\n");
+    }
+    strcpy(tmp_basename, get_basename(tmp));
+
     if (L0Flag == stf) {
         char *inDataName = NULL, *inMetaName = NULL;
         // Import to a temporary file
         sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR,
-        tmp_basename, get_basename(file));
+                tmp_basename, get_basename(file));
         stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
         if (pair != NO_STF_FILE_PAIR &&
             strncmp(file, inDataName, strlen(inDataName)) == 0)
@@ -706,7 +711,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
     sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR,
-        tmp_basename, get_basename(file));
+            tmp_basename, get_basename(file));
     printf("Ardop from %s to %s\n", in_file, out_file);
     params_in = get_input_ardop_params_struct(in_file, out_file);
 // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
@@ -725,7 +730,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     // Convert to ground range
     sprintf(in_file, "%s_amp", out_file);
     sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
-        tmp_basename, get_basename(file));
+            tmp_basename, get_basename(file));
     printf("Converting slant range to ground range from %s to %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
 
@@ -802,7 +807,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     }
 //    remove(del_files);
     asfSystem(del_files);
-    FREE(tmp_basename);
 }
 
 // Checks to see if a DATA file is an STF Level 0 file
