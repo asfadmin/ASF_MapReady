@@ -22,10 +22,10 @@
 /*   This structure contains all of the parameters needed to run asp.c     */
 /*-------------------------------------------------------------------------*/
 struct ARDOP_PARAMS {
-  char	in1[256];	     /* First input file basename		   */
-  char	out[256];	     /* Output File basename                       */
-  char  status[256];         /* Kludgey status file, for STP               */
-  char	CALPRMS[255];        /* Calibration Parameters file (if desired)   */
+  char	in1[1024];	     /* First input file basename		   */
+  char	out[1024];	     /* Output File basename                       */
+  char  status[1024];         /* Kludgey status file, for STP               */
+  char	CALPRMS[1024];        /* Calibration Parameters file (if desired)   */
   char	srm[4];		     /* Secondary range migration correction (y/n) */
   char	iqflip[4];	     /* Flip i/q or offset video (y/n flip;o off)  */ 
   int	iflag;		     /* Debugging Flag 	   			   */
@@ -73,10 +73,10 @@ struct ARDOP_PARAMS {
 };
 
 struct INPUT_ARDOP_PARAMS {
-  char	in1[256];
-  char	out[256];
-  char  status[256];
-  char	CALPRMS[255];
+  char	in1[1024];
+  char	out[1024];
+  char  status[1024];
+  char	CALPRMS[1024];
   int *pwrFlag;
   int *sigmaFlag;
   int *gammaFlag;
