@@ -727,6 +727,32 @@ struct ESA_FACDR {
    char spare6[10239]; /* spare */
 };
 
+struct JAXA_FACDR {
+  short seqence_number;         // FACDR sequence number
+  double a_map[10];             // map to line/sample coefficients
+  double b_map[10];             // map to line/sample coefficients
+  short cal_data_indicator;     // calibration data indicator
+  int start_line_up;            // start line of calibration at upper image
+  int stop_line_up;             // stop line of calibraiton at upper image
+  int start_line_bottom;        // start line of calibration at bottom image
+  int stop_line_bottom;         // stop line of calibraiton at bottom image
+  short prf_switching_indicator;// PRF switching indicator
+  int line_prf_switching;       // Line locator of PRF switching
+  int sigma_start_line;         // SIGMA-SAR processing start line number
+  int number_loss_lines_L0;     // Number of loss lines (level 1.0)
+  int number_loss_lines_L1;     // Number of loss lines (level 1.1, 1.5)
+  char blank1[311];             // Always blank
+  char blank2[224];             // System reserve
+  double a[25];                 // line/sample to lat/lon coefficients
+  double b[25];                 // line/sample to lat/lon coefficients
+  double origin_pixel;          // Origin pixel (P0)
+  double origin_line;           // Origin line (L0)
+  double c[25];                 // lat/lon to line/sample coefficients
+  double d[25];                 // lat/lon to line/sample coefficients
+  double origin_lat;            // Origin latitude [degrees]
+  double origin_lon;            // Origin longitude [degrees]
+};
+
 /* Map Projection Data Record - Value Structure */
 struct VMPDREC {
   char    mpdesc[33];    /* Map projection descriptor */
@@ -1630,6 +1656,7 @@ void   Code_DH(unsigned char *bf, struct hist_dset* q, codingDir dir);
 void   Code_RSR(unsigned char *bf, struct rng_spec_rec *q, codingDir dir);
 void   Code_ASF_FACDR(unsigned char *bf, struct VFDRECV *q, int era, codingDir dir);
 void   Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir);
+void   Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir);
 void   Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir);
 void   Code_RCDR(unsigned char *bf, struct radio_comp_data_rec *q, codingDir dir);
 void   Code_SHR(unsigned char *bf, struct scene_header_rec *q, codingDir dir);
@@ -1653,6 +1680,7 @@ int get_sdhr(const char *filename,struct data_hist_rec *rec);
 int get_dqsr(const char *filename,struct qual_sum_rec *rec);
 int get_dssr(const char *filename,struct dataset_sum_rec *rec);
 int get_asf_facdr(const char *filename,struct VFDRECV *rec);
+int get_jaxa_facdr(const char *filename,struct JAXA_FACDR *rec);
 int get_esa_facdr(const char *filename,struct ESA_FACDR *rec);
 int get_mpdr(const char *filename,struct VMPDREC *rec);
 int get_ppdr(const char *filename,struct pos_data_rec *rec);
