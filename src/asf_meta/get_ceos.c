@@ -20,6 +20,7 @@ typedef enum {
   CEOS_DSSR=10,         /* Data set summary record.*/
   CEOS_ASFFACDR=210,    /* ASF Facility-related data record.*/
   CEOS_ESAFACDR=220,    /* ESA Facility-related data record.*/
+  CEOS_JAXAFACDR=230,   // JAXA Facility-related data record
   CEOS_FACDR=200,       /* Pre-1996 Facdr*/
   CEOS_MPDR=20,         /* Map-projection data record.*/
   CEOS_PPDR=30,         /* Platform position data record.*/
@@ -169,6 +170,16 @@ int get_esa_facdr(const char *filename,struct ESA_FACDR *rec)
     FREE(buff);
   }
   return era;
+}
+
+int get_jaxa_facdr(const char *filename,struct JAXA_FACDR *rec)
+{
+  unsigned char *buff;
+  int era;
+  if ( (era = getCeosRecord(filename,CEOS_JAXAFACDR,1,&buff)) != -1) {
+    Code_JAXA_FACDR(buff,rec,fromASCII);
+    FREE(buff);
+  }
 }
 
 int get_mpdr(const char *filename,struct VMPDREC *rec)

@@ -986,6 +986,38 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
     strV(spare6,off,10238);
 }
 
+void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
+{
+    int off=12, i;
+    shrtV(seqence_number,12,4);
+    for (i=0; i<10; i++)
+      fltV(a_map[i],16+i*20,20);
+    for (i=0; i<10; i++)
+      fltV(b_map[i],216+i*20,20);
+    shrtV(cal_data_indicator,416,4);
+    intV(start_line_up,420,8);
+    intV(stop_line_up,428,8);
+    intV(start_line_bottom,436,8);
+    intV(stop_line_bottom,444,8);
+    shrtV(prf_switching_indicator,452,4);
+    intV(line_prf_switching,456,8);
+    intV(sigma_start_line,464,8);
+    intV(number_loss_lines_L0,472,8);
+    intV(number_loss_lines_L1,480,8);
+    for (i=0; i<25; i++)
+      fltV(a[i],1024+i*20,20);
+    for (i=0; i<25; i++)
+      fltV(b[i],1525+i*20,20);
+    fltV(origin_pixel,2024,20);
+    fltV(origin_line,2044,20);
+    for (i=0; i<25; i++)
+      fltV(c[i],2064+i*20,20);
+    for (i=0; i<25; i++)
+      fltV(d[i],2564+i*20,20);
+    fltV(origin_lat,3064,20);
+    fltV(origin_lon,3084,20);
+}
+
 void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
 {
     int off=12, i, j;
