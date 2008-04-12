@@ -160,7 +160,7 @@ print_all_reg_vals()
                 FORMAT_MESSAGE_FROM_SYSTEM,
                 0, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 (LPTSTR) &ErrBuf, 0, 0);
-            printf("ouch, got an error! %d: %s\n", dw, ErrBuf);
+            printf("ouch, got an error! %ld: %s\n", dw, (char*)ErrBuf);
             break;
         }
         ++ValEnumIndex;
@@ -337,6 +337,31 @@ get_asf_bin_dir()
   return s_bin_dir;
 }
 
+// returns a windows-friendly version of the binary dir (no "/cygdrive/...")
+// for compatibility with CreateProcess()
+const char *
+get_asf_bin_dir_win()
+{
+  if (!s_bin_dir) {
+
+#if defined(win32)
+    /* on windows, pull the install dir from the registry */
+    char str_value[REG_VALUE_SIZE];
+    get_string_from_registry(s_asf_install_dir_key, str_value);          
+    s_bin_dir = STRDUP(str_value);
+#else
+    /* normal version will work just fine on non-Win */
+    return get_asf_bin_dir();
+#endif
+
+    /* remove trailing path separator, if one is present */    
+    if (s_bin_dir[strlen(s_bin_dir) - 1] == DIR_SEPARATOR)
+      s_bin_dir[strlen(s_bin_dir) - 1] = '\0';
+  }
+
+  return s_bin_dir;
+}
+
 const char * 
 get_asf_share_dir()
 {
@@ -436,6 +461,8 @@ get_asf_share_dir()
     if (s_share_dir[strlen(s_share_dir) - 1] == DIR_SEPARATOR) {
       s_share_dir[strlen(s_share_dir) - 1] = '\0';
     }
+
+    //printf("Share dir: %s\n", s_share_dir);
   }
 
   return s_share_dir;

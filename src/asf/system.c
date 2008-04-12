@@ -17,7 +17,7 @@ asfSystem(const char *format, ...)
   va_start(ap, format);
   vsnprintf(cmd, 4095, format, ap);
 
-  //printf("Running system commamd: %s\n", cmd);
+  //printf("Running system command: %s\n", cmd);
 
 #ifdef win32
 
@@ -40,7 +40,24 @@ asfSystem(const char *format, ...)
           &pi )               // Pointer to PROCESS_INFORMATION structure
       ) 
   {
-      printf( "CreateProcess failed (%ld)\n", GetLastError() );
+      DWORD dw = GetLastError();
+      //printf( "CreateProcess failed (%ld)\n", dw );
+
+      LPVOID lpMsgBuf;
+      FormatMessage(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM |
+        FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        dw,
+        MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+        (LPTSTR)&lpMsgBuf,
+        0,
+        NULL);
+
+      printf("CreateProcess() failed with error %ld: %s\n",
+        dw, (char*)lpMsgBuf);
+
       return -1;
   }
   return 0;

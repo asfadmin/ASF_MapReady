@@ -235,6 +235,7 @@ const char *bin_postfix(void);
 const char * get_asf_share_dir(void);
 const char * get_asf_share_dir_with_argv0(const char *);
 const char * get_asf_bin_dir(void);
+const char * get_asf_bin_dir_win(void);
 FILE * fopen_share_file(const char * filename, const char * mode);
 const char *get_argv0(void);
 
