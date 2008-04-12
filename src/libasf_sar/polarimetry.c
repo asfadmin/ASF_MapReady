@@ -634,10 +634,13 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
 void cpx2pauli(const char *inFile, const char *outFile)
 {
+  asfPrintStatus("\n\nGenerating Paul decomposition channels\n");
   polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1);
 }
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile)
 {
+  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha"
+		 "for Cloude-Pottier classification\n");
   polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2);
 }
