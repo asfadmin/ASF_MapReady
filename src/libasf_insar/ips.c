@@ -10,7 +10,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 {
   meta_parameters *meta=NULL;
   char cmd[255], path[255], data[255], metadata[255], tmp[255], tmp2[255];
-  char format[255], metaFile[25], *newBase=NULL;
+  char metaFile[25], *newBase=NULL;
   int datatype=0;
   float avg;
   resample_method_t resample_method;
@@ -18,21 +18,22 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   int geocode_force_flag=1;
   double average_height=0.0;
   float background_value=0;
+  input_format_t in_format;
   output_format_t out_format;
   scale_t sample_mapping=SIGMA;
 
   // Determine datatype
   if (strncmp(uc(cfg->general->data_type), "STF", 3)==0) {
     datatype = 0;
-    sprintf(format, "STF");
+    in_format = STF;
   }
   if (strncmp(uc(cfg->general->data_type), "RAW", 3)==0) {
     datatype = 1;
-    sprintf(format, "CEOS");
+    in_format = CEOS;
   }
   if (strncmp(uc(cfg->general->data_type), "SLC", 3)==0) {
     datatype = 2;
-    sprintf(format, "CEOS");
+    in_format = CEOS;
   }
 
   if (strncmp(cfg->general->status, "new", 3)==0 && !createFlag) {
@@ -121,14 +122,14 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   // Ingest the various data types: STF, RAW, or SLC 
   if (check_status(cfg->ingest->status)) {
     
-    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, format, 
-			    NULL, NULL, NULL, cfg->ingest->prc_master,
+    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, in_format, 
+			    NULL, NULL, NULL, NULL, cfg->ingest->prc_master,
 			    cfg->general->lat_begin, cfg->general->lat_end,
 			    0, 0, -99, -99,
 			    NULL, NULL, NULL, NULL, "master", "a"),
 		 "ingesting master image (asf_import)");
-    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, format, 
-			    NULL, NULL, NULL, cfg->ingest->prc_slave,
+    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, in_format, 
+			    NULL, NULL, NULL, NULL, cfg->ingest->prc_slave,
 			    0, 0, -99, -99,
 			    cfg->general->lat_begin, cfg->general->lat_end,
 			    NULL, NULL, NULL, NULL, "slave", "b"),

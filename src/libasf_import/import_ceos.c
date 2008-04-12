@@ -200,7 +200,7 @@ bin_state *convertMetadata_ceos(char *inN,char *outN,int *nLines,
 /******************************************************************************
  * Import a wide variety for CEOS flavors (hopefully all) to our very own ASF
  * Tools format */
-void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
+void import_ceos(char *inBaseName, char *outBaseName,
      char *band_id, char *lutName, double *p_range_scale,
      double *p_azimuth_scale, double *p_correct_y_pixel_size,
      int line, int sample, int width, int height,

@@ -26,6 +26,7 @@ typedef struct {
   int range_looks;                         // Range look count (SLC = 1)
   int azimuth_looks;                       // Azimuth look count (SLC = 1)
   char image_format[FIELD_STRING_MAX];     // Image format (data type): FCOMPLEX, SCOMPLEX, FLOAT, SHORT, BYTE
+  char image_data_type[FIELD_STRING_MAX];  // Image data type: AMPLITUDE_IMAGE etc.
   char image_geometry[FIELD_STRING_MAX];   // Image geometry: SLANT_RANGE, GROUND_RANGE, GEOCODED
   double range_scale_factor;               // Range scale factor (1.0 unless resampled)
   double azimuth_scale_factor;             // Azimuth scale factor (1.0 unless resampled)
@@ -104,6 +105,7 @@ typedef struct {
   DATE acquisition;                       // Acquisition date - 2007 1 15
   TIME raw_data_start_time;               // Hrs, mins, seconds - 7 26 38.548176
   char band[FIELD_STRING_MAX];            // Polarization or channel; HH, HV, VH, VV, CH1, CH2 etc
+  char image_data_type[FIELD_STRING_MAX]; // Image data type: AMPLITUDE_IMAGE etc.
   double earth_semi_major_axis;           // Ellipsoid semi-major axis [m]
   double earth_semi_minor_axis;           // Ellipsoid semi-minor axis [m]
   double scene_center_latitude;           // Latitude at scene center [degrees]

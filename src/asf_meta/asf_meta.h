@@ -74,13 +74,7 @@ typedef enum {
   COMPLEX_IMAGE,
   AMPLITUDE_IMAGE,
   PHASE_IMAGE,
-  POWER_IMAGE,
-  SIGMA_IMAGE,
-  GAMMA_IMAGE,
-  BETA_IMAGE,
   COHERENCE_IMAGE,
-  GEOREFERENCED_IMAGE,
-  GEOCODED_IMAGE,
   POLARIMETRIC_IMAGE,
   LUT_IMAGE,
   ELEVATION,
@@ -99,6 +93,18 @@ typedef enum {
   r_GAMMA_DB,
   r_POWER
 } radiometry_t;
+
+typedef enum {
+  STF=1,
+  CEOS,
+  GENERIC_GEOTIFF,
+  BIL,
+  GRIDFLOAT,
+  AIRSAR,
+  GAMMA_MSP,
+  GAMMA_ISP,
+  VP  
+} input_format_t;
 
 /********************************************************************
  * meta_general: General Radio Detection And Ranging parameters

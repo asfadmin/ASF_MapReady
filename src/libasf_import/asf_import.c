@@ -12,9 +12,9 @@
 #include <ctype.h>
 
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
-         int multilook_flag, int amp0_flag, char *format_type, char *band_id,
-         char *image_data_type, char *lutName, char *prcPath,
-         double lowerLat, double upperLat,
+         int multilook_flag, int amp0_flag, input_format_t format_type, 
+	 char *band_id, char *data_type, char *image_data_type, char *lutName, 
+	 char *prcPath, double lowerLat, double upperLat,
          int line, int sample, int width, int height,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, char *inMetaNameOption,
@@ -32,8 +32,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
        radiometry == r_BETA  ||
        radiometry == r_GAMMA ||
        radiometry == r_POWER)   &&
-       !(strncmp(uc(format_type), "CEOS", 4) == 0 ||
-         strncmp(uc(format_type), "STF", 3)  == 0))
+       !(format_type == CEOS || format_type == STF))
   {
     // A power flag is on, but the input file is not CEOS or STF format
     // so it will be ignored
@@ -49,22 +48,22 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
 
   // Ingest all sorts of flavors of CEOS data/
-  if (strncmp(format_type, "CEOS", 4) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
-    import_ceos(inBaseName, outBaseName, format_type, band_id, lutName,
+  if (format_type == CEOS) {
+    asfPrintStatus("   Data format: CEOS\n");
+    import_ceos(inBaseName, outBaseName, band_id, lutName,
                 p_range_scale, p_azimuth_scale, p_correct_y_pixel_size,
                 line, sample, width, height, inMetaNameOption, radiometry,
                 db_flag, complex_flag, multilook_flag, amp0_flag);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
-  else if (strncmp(format_type, "STF", 3) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == STF) {
+    asfPrintStatus("   Data format: STF\n");
     int lat_constrained = upperLat != -99 && lowerLat != -99;
     import_stf(inBaseName, outBaseName, radiometry, inMetaNameOption,
                lat_constrained, lowerLat, upperLat, prcPath);
   }
-  else if ( strncmp (format_type, "GEOTIFF", 7) == 0 ) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == GENERIC_GEOTIFF) {
+    asfPrintStatus("   Data format: GEOTIFF\n");
     if (band_id != NULL &&
       strlen(band_id) > 0 &&
       strncmp(uc(band_id), "ALL", 3) != 0) {
@@ -95,41 +94,43 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
       import_generic_geotiff (inGeotiffName->str, outBaseName, NULL);
     }
   }
-  else if (strncmp(format_type, "BIL", 3) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == BIL) {
+    asfPrintStatus("   Data format: BIL\n");
     import_bil(inBaseName, outBaseName);
   }
-  else if (strncmp(format_type, "GRIDFLOAT", 9) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == GRIDFLOAT) {
+    asfPrintStatus("   Data format: GRIDFLOAT\n");
     import_gridfloat(inBaseName, outBaseName);
   }
-  else if (strncmp(format_type, "AIRSAR", 6) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == AIRSAR) {
+    asfPrintStatus("   Data format: AIRSAR\n");
     import_airsar(inBaseName, outBaseName);
   }
-  else if (strncmp(format_type, "GAMMA_MSP", 9) == 0) {
+  else if (format_type == GAMMA_MSP) {
     if (inMetaNameOption && fileExists(inMetaNameOption) &&
 	fileExists(inBaseName)) {
-      asfPrintStatus("   Data format: %s\n", format_type);
-      import_gamma_msp(inBaseName, inMetaNameOption, outBaseName);
+      asfPrintStatus("   Data format: GAMMA_MSP\n");
+      import_gamma_msp(inBaseName, inMetaNameOption, data_type, 
+		       image_data_type, outBaseName);
     }
     else
       asfPrintError("The GAMMA_MSP format requires the data file and metadata"
 		    "with their respective extensions.\n");
   }
-  else if (strncmp(format_type, "GAMMA_ISP", 9) == 0) {
+  else if (format_type == GAMMA_ISP) {
     if (inMetaNameOption && fileExists(inMetaNameOption) &&
 	fileExists(inBaseName)) {
-      asfPrintStatus("   Data format: %s\n", format_type);
-      import_gamma_isp(inBaseName, inMetaNameOption, complex_flag,
-		       multilook_flag, outBaseName);
+      asfPrintStatus("   Data format: GAMMA_ISP\n");
+      import_gamma_isp(inBaseName, inMetaNameOption, data_type, 
+		       image_data_type, complex_flag, multilook_flag, 
+		       outBaseName);
     }
     else
       asfPrintError("The GAMMA_ISP format requires the data file and metadata"
                     "with their respective extensions.\n");
   }
-  else if (strncmp(format_type, "VP", 2) == 0) {
-    asfPrintStatus("   Data format: %s\n", format_type);
+  else if (format_type == VP) {
+    asfPrintStatus("   Data format: VP\n");
     import_vexcel_plain(inBaseName, outBaseName);
   }
   // Don't recognize this data format; report & quit

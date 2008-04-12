@@ -23,8 +23,9 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                int amp0_flag,      // TRUE if we should generate a band 0
                                    // with amplitude data, with the rest
                                    // starting at band 1
-               char *format_type, // eg, "STF", "CEOS" - etc
+               input_format_t format_type, // eg, STF, CEOS - etc
                char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
+	       char *data_type,    // data type for gamma ingest
                char *image_data_type, // "geocoded_image", "dem", or "mask"
                char *lutName, // NULL for no lookup table
                               // otherwise, this is the lookup table filename
@@ -61,7 +62,7 @@ int firstRecordLen(char *ceosName);
 void create_sprocket_layers(const char *asfName, const char *importName);
 
 /* import_*() function prototypes */
-void import_ceos(char *inBaseName, char *outBaseName, char *format_type,
+void import_ceos(char *inBaseName, char *outBaseName,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
 		 int line, int sample, int width, int height,
@@ -81,10 +82,12 @@ void import_airsar(const char *inFileName, const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *inBaseName);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
+		      const char *data_type, const char *image_data_type, 
 		      int complex_flag, int multilook_flag, 
 		      const char *outBaseName);
 void import_gamma_msp(const char *inDataName, const char *inMetaName,
-                      const char *outBaseName);
+		      const char *data_type, const char *image_data_type, 
+		      const char *outBaseName);
 
 void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 

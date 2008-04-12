@@ -984,7 +984,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
         // the imported file will go where the output file is
         img_file = STRDUP(output_file);
         asfPrintStatus("Importing Level 0 data...\n");
-        import_ceos(input_file, img_file, "CEOS", "", NULL, NULL,
+        import_ceos(input_file, img_file, CEOS, NULL, NULL,
                     NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
                     FALSE, FALSE, FALSE);
         asfPrintStatus("Import complete.\n");

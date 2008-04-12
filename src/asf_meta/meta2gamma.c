@@ -31,14 +31,41 @@ meta_parameters* gamma_isp2meta(gamma_isp *gamma)
     meta->general->data_type = INTEGER16;
   else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
     meta->general->data_type = BYTE;
-  switch(meta->general->data_type) {
-    case COMPLEX_REAL32:
-    case COMPLEX_INTEGER16:
+  if (strcmp(gamma->image_data_type, "UNKNOWN") == 0) {
+    switch(meta->general->data_type) 
+      {
+      case COMPLEX_REAL32:
+      case COMPLEX_INTEGER16:
+	meta->general->image_data_type = COMPLEX_IMAGE;
+	break;
+      default:
+	meta->general->image_data_type = IMAGE;
+	break;
+      }
+  }
+  else {
+    if (strncmp(uc(gamma->image_data_type), "RAW_IMAGE", 9) == 0)
+      meta->general->image_data_type = RAW_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "COMPLEX_IMAGE", 13) == 0)
       meta->general->image_data_type = COMPLEX_IMAGE;
-      break;
-    default:
+    if (strncmp(uc(gamma->image_data_type), "AMPLITUDE_IMAGE", 15) == 0)
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "PHASE_IMAGE", 11) == 0)
+      meta->general->image_data_type = PHASE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "COHERENCE_IMAGE", 15) == 0)
+      meta->general->image_data_type = COHERENCE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "POLARIMETRIC_IMAGE", 18) == 0)
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "LUT_IMAGE", 9) == 0)
+      meta->general->image_data_type = LUT_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "ELEVATION", 9) == 0)
+      meta->general->image_data_type = ELEVATION;
+    if (strncmp(uc(gamma->image_data_type), "DEM", 3) == 0)
+      meta->general->image_data_type = DEM;
+    if (strncmp(uc(gamma->image_data_type), "IMAGE", 5) == 0)
       meta->general->image_data_type = IMAGE;
-      break;
+    if (strncmp(uc(gamma->image_data_type), "MASK", 4) == 0)
+      meta->general->image_data_type = MASK;
   }
   strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",
@@ -347,14 +374,41 @@ meta_parameters* gamma_msp2meta(gamma_msp *gamma)
     meta->general->data_type = INTEGER16;
   else if (strncmp(uc(gamma->image_format), "BYTE", 8) == 0)
     meta->general->data_type = BYTE;
-  switch(meta->general->data_type) {
-    case COMPLEX_REAL32:
-    case COMPLEX_INTEGER16:
+  if (strcmp(gamma->image_data_type, "UNKNOWN") == 0) {
+    switch(meta->general->data_type) 
+      {
+      case COMPLEX_REAL32:
+      case COMPLEX_INTEGER16:
+	meta->general->image_data_type = COMPLEX_IMAGE;
+	break;
+      default:
+	meta->general->image_data_type = IMAGE;
+	break;
+      }
+  }
+  else {
+    if (strncmp(uc(gamma->image_data_type), "RAW_IMAGE", 9) == 0)
+      meta->general->image_data_type = RAW_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "COMPLEX_IMAGE", 13) == 0)
       meta->general->image_data_type = COMPLEX_IMAGE;
-      break;
-    default:
+    if (strncmp(uc(gamma->image_data_type), "AMPLITUDE_IMAGE", 15) == 0)
+      meta->general->image_data_type = AMPLITUDE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "PHASE_IMAGE", 11) == 0)
+      meta->general->image_data_type = PHASE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "COHERENCE_IMAGE", 15) == 0)
+      meta->general->image_data_type = COHERENCE_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "POLARIMETRIC_IMAGE", 18) == 0)
+      meta->general->image_data_type = POLARIMETRIC_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "LUT_IMAGE", 9) == 0)
+      meta->general->image_data_type = LUT_IMAGE;
+    if (strncmp(uc(gamma->image_data_type), "ELEVATION", 9) == 0)
+      meta->general->image_data_type = ELEVATION;
+    if (strncmp(uc(gamma->image_data_type), "DEM", 3) == 0)
+      meta->general->image_data_type = DEM;
+    if (strncmp(uc(gamma->image_data_type), "IMAGE", 5) == 0)
       meta->general->image_data_type = IMAGE;
-      break;
+    if (strncmp(uc(gamma->image_data_type), "MASK", 4) == 0)
+      meta->general->image_data_type = MASK;
   }
   strcpy(meta->general->system, meta_get_system());
   sprintf(meta->general->acquisition_date, "%2d-%s-%4d",

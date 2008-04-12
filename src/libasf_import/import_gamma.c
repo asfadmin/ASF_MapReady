@@ -8,31 +8,34 @@
 gamma_isp *gamma_isp_init();
 gamma_msp *gamma_msp_init();
 
-void import_gamma_isp(const char *inDataName, const char *inMetaName,
-		      int complex_flag, int multilook_flag,
-		      const char *outBaseName)
+meta_parameters *meta_read_gamma_isp(const char *inName,
+				     const char *data_type,
+				     const char *image_data_type)
 {
   gamma_isp *gamma;
   meta_parameters *meta=NULL;
   FILE *fp;
   ymd_date ymd;
   julian_date jd;
-  char tmpFile[255], *outFile, line[1024], *p, key[512], *value, *str;
-  int ii, isComplex;
+  char line[1024], *p, key[512], *value, *str;
+  int ii;
   double interval;
 
   // Initialize the gamma ISP struct
   gamma = gamma_isp_init();
 
   // Read GAMMA ISP parameter file
-  fp = FOPEN(inMetaName, "r");
+  fp = FOPEN(inName, "r");
   while (fgets(line, 1024, fp)) {
     p = strchr(line, ':');
     if (p) {
       sscanf(line, "%s:", key);
       value = p+1;
-      sprintf(gamma->title, "%s", inDataName);
-      if (strncmp(key, "sensor:", 7) == 0) {
+      if (strncmp(key, "title:", 6) == 0) {
+        str = trim_spaces(value);
+        sprintf(gamma->title, "%s", str);
+      }
+      else if (strncmp(key, "sensor:", 7) == 0) {
         str = trim_spaces(value);
         sprintf(gamma->sensor, "%s", str);
       }
@@ -59,16 +62,9 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
         gamma->range_looks = atoi(value);
       else if (strncmp(key, "azimuth_looks:", 14) == 0)
         gamma->azimuth_looks = atoi(value);
-      else if (strncmp(key, "image_format:", 13) == 0) {
-        str = trim_spaces(value);
-        sprintf(gamma->image_format, "%s", str);
-	if (strcmp(uc(gamma->image_format), "FCOMPLEX") == 0 ||
-	    strcmp(uc(gamma->image_format), "SCOMPLEX") == 0)
-	  isComplex = TRUE;
-	else
-	  isComplex = FALSE;
-      }
-      else if (strncmp(key, "image_geometry:", 15) == 0) {
+      // overwrite the image format that is given in the file
+      sprintf(gamma->image_format, "%s", data_type);
+      if (strncmp(key, "image_geometry:", 15) == 0) {
         str = trim_spaces(value);
         sprintf(gamma->image_geometry, "%s", str);
       }
@@ -181,7 +177,7 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
         date_ymd2jd(&ymd, &jd);
         gamma->stVec->julDay = jd.jd;
         for (ii=0; ii<gamma->stVec->vector_count; ii++) {
-          gamma->stVec->vecs[ii].time = gamma->stVec->second + ii*interval;
+          gamma->stVec->vecs[ii].time = ii*interval;
           fgets(line, 1024, fp);
           sscanf(line, "%s:%s", key, value);
           sscanf(value, "%lf %lf %lf",
@@ -200,21 +196,44 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
   }
   FCLOSE(fp);
 
-  // Generate metadata
+  if (image_data_type)
+    sprintf(gamma->image_data_type, "%s", image_data_type);
+  else
+    sprintf(gamma->image_data_type, "UNKNOWN");
+
+  // Convert gamma_isp to metadata structure
   meta = gamma_isp2meta(gamma);
-  if (complex_flag || !isComplex) {
+
+  // No clean up
+  // Can't free gamma as the metadata structure uses the gamma state vector
+  // structure allocated over here.
+
+  return meta;
+}
+
+void import_gamma_isp(const char *inDataName, const char *inMetaName,
+		      const char *data_type, const char *image_data_type, 
+		      int complex_flag, int multilook_flag, 
+		      const char *outBaseName)
+{
+  meta_parameters *meta=NULL;
+  char tmpFile[255], *outFile;
+
+  // Read metadata from gamma file
+  meta = meta_read_gamma_isp(inMetaName, data_type, image_data_type);
+  if (complex_flag || meta->general->data_type <= REAL64) {
     sprintf(outFile, "%s.meta", outBaseName);
     meta_write(meta, outFile);
   }
   else {
-    sprintf(tmpFile, "%s_slc.meta", outBaseName);
+    sprintf(tmpFile, "%s_cpx.meta", outBaseName);
     meta_write(meta, tmpFile);
   }
 
   // Generate output file
   outFile = (char *) MALLOC(sizeof(char)*512);
   sprintf(outFile, "%s.img", outBaseName);
-  if (isComplex) {
+  if (meta->general->data_type >= COMPLEX_BYTE) {
     if (complex_flag && !multilook_flag)
       fileCopy(inDataName, outFile);
     else 
@@ -223,23 +242,20 @@ void import_gamma_isp(const char *inDataName, const char *inMetaName,
   else
     fileCopy(inDataName, outFile);
 
-  // Cleanup
-  if(gamma) {
-    FREE(gamma->stVec);
-    FREE(gamma);
-  }
   FREE(outFile);
 }
 
-void import_gamma_msp(const char *inDataName, const char *inMetaName,
-		      const char *outBaseName)
+
+meta_parameters *meta_read_gamma_msp(const char *inName,
+				     const char *data_type,
+				     const char *image_data_type)
 {
   gamma_msp *gamma;
   meta_parameters *meta=NULL;
   FILE *fp;
   ymd_date ymd;
   julian_date jd;
-  char outFile[255], line[1024], *p, key[512], *value, *str;
+  char line[1024], *p, key[512], *value, *str;
   int ii;
   double interval;
 
@@ -247,7 +263,7 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
   gamma = gamma_msp_init();
 
   // Read GAMMA MSP parameter file
-  fp = FOPEN(inMetaName, "r");
+  fp = FOPEN(inName, "r");
   while (fgets(line, 1024, fp)) {
     p = strchr(line, ':');
     if (p) {
@@ -255,13 +271,8 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
       value = p+1;
       if (strncmp(key, "title:", 6) == 0) {
         str = trim_spaces(value);
-        sprintf(gamma->title, "%s, %s", inDataName, str);
-        char *s;
-        s = &str[strlen(str)-1];
-        while (isdigit((int)*s) || *s == '.') s--;
-        s++;
-        if (isdigit((int)*s)) gamma->orbit = atoi(s);
-}
+        sprintf(gamma->title, "%s", str);
+      }
       else if (strncmp(key, "date:", 5) == 0)
         sscanf(value, "%d %d %d %d %d %lf",
                &gamma->acquisition.year,   &gamma->acquisition.month,
@@ -389,9 +400,9 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
         gamma->range_pixels = atoi(value);
       else if (strncmp(key, "azimuth_pixels:", 15) == 0)
         gamma->azimuth_pixels = atof(value);
-      else if (strncmp(key, "image_format:", 13) == 0)
-        sprintf(gamma->image_format, "%s", uc(value));
-      else if (strncmp(key, "sensor_latitude:", 16) == 0)
+      // overwrite the image format from the file
+      sprintf(gamma->image_format, "%s", data_type);
+      if (strncmp(key, "sensor_latitude:", 16) == 0)
         gamma->sensor_latitude = atof(value);
       else if (strncmp(key, "sensor_longitude:", 17) == 0)
         gamma->sensor_longitude = atof(value);
@@ -435,7 +446,7 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
         date_ymd2jd(&ymd, &jd);
         gamma->stVec->julDay = jd.jd;
         for (ii=0; ii<gamma->stVec->vector_count; ii++) {
-          gamma->stVec->vecs[ii].time = gamma->stVec->second + ii*interval;
+          gamma->stVec->vecs[ii].time = ii*interval;
           fgets(line, 1024, fp);
           sscanf(line, "%s:%s", key, value);
           sscanf(value, "%lf %lf %lf",
@@ -454,20 +465,36 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
   }
   FCLOSE(fp);
 
+  if (image_data_type)
+    sprintf(gamma->image_data_type, "%s", image_data_type);
+  else
+    sprintf(gamma->image_data_type, "IMAGE");
+
   // Generate metadata
-  sprintf(outFile, "%s.meta", outBaseName);
   meta = gamma_msp2meta(gamma);
+
+  // No clean up
+  // Can't free gamma as the metadata structure uses the gamma state vector
+  // structure allocated over here.
+
+  return meta;
+}
+
+void import_gamma_msp(const char *inDataName, const char *inMetaName,
+		      const char *data_type, const char *image_data_type, 
+		      const char *outBaseName)
+{
+  meta_parameters *meta=NULL;
+  char outFile[255];
+
+  // Read  metadata from gamma_msp file
+  meta = meta_read_gamma_msp(inMetaName, data_type, image_data_type);
+  sprintf(outFile, "%s.meta", outBaseName);
   meta_write(meta, outFile);
 
   // Copy generic binary file
   sprintf(outFile, "%s.img", outBaseName);
   fileCopy(inDataName, outFile);
-
-  // Cleanup
-  if(gamma){
-    FREE(gamma->stVec);
-    FREE(gamma);
-  }
 }
 
 gamma_isp *gamma_isp_init()
@@ -494,6 +521,7 @@ gamma_isp *gamma_isp_init()
   g->range_looks = MAGIC_UNSET_INT;
   g->azimuth_looks = MAGIC_UNSET_INT;
   strcpy(g->image_format, MAGIC_UNSET_STRING);
+  strcpy(g->image_data_type, "UNKNOWN");
   strcpy(g->image_geometry, MAGIC_UNSET_STRING);
   g->range_scale_factor = MAGIC_UNSET_DOUBLE;
   g->azimuth_scale_factor = MAGIC_UNSET_DOUBLE;
@@ -546,6 +574,7 @@ gamma_msp *gamma_msp_init()
   g->raw_data_start_time.minute = MAGIC_UNSET_INT;
   g->raw_data_start_time.seconds = MAGIC_UNSET_DOUBLE;
   strcpy(g->band, MAGIC_UNSET_STRING);
+  strcpy(g->image_data_type, "UNKNOWN");
   g->earth_semi_major_axis = MAGIC_UNSET_DOUBLE;
   g->earth_semi_minor_axis = MAGIC_UNSET_DOUBLE;
   g->scene_center_latitude = MAGIC_UNSET_DOUBLE;

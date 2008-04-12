@@ -23,7 +23,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-amplitude | -sigma | -gamma | -beta | -power] [-db]\n"\
-"              [-format <inputFormat>] [-band <band_id | all>] [-image-data-type <type>]\n"\
+"              [-format <inputFormat>] [-band <band_id | all>]\n"\
+"              [-data-type <type> ] [-image-data-type <type>]\n"\
 "              [-lut <file>] [-lat <lower> <upper>] [-prc] [-old] [-log <logFile>] [-quiet]\n"\
 "              [-license] [-version] [-azimuth-scale[=<scale>] | -fix-meta-ypix[=<pixsiz>]]\n"\
 "              [-range-scale[=<scale>] [-multilook] [-complex] [-metadata <file>]\n"\
@@ -66,7 +67,8 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        (ie do not use the -db flag if you plan on statistical analysis)\n"\
 "   -format <inputFormat>\n"\
 "        Force input data to be read as the given format type. Valid formats\n"\
-"        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', and 'airsar'.\n"\
+"        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', 'airsar',\n"\
+"        'bil', 'gridfloat' and 'vp'.\n"\
 "        'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that do not have the same basename as the\n"\
@@ -77,10 +79,20 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        then import the band identified by 'band_id' (only).  If 'all' is\n"\
 "        specified rather than a band_id, then import all available bands into\n"\
 "        a single ASF-format file.  Default is '-band all'.\n"\
+"   -data-type <type>\n"\
+"        Define the input data type (only required for GAMMA ingest)\n"\
+"        Supported formats:\n"\
+"        FCOMPLEX\n"\
+"        SCOMPLEX\n"\
+"        FLOAT\n"\
+"        SHORT\n"\
+"        BYTE\n"\
 "   -image-data-type <type>\n"\
 "        Force input data to be interpreted as the given image data type. Valid\n"\
-"        formats are 'geocoded_image', 'dem', and 'mask'.  This parameter is \n"\
-"        ignored unless the -format parameter is \"geotiff\".\n"\
+"        formats are 'amplitude_image', 'phase_image', 'coherence_image',\n"\
+"        'lut_image', 'elevation', 'dem', and 'image', 'mask'.  This parameter\n"\
+"        is ignored unless the -format parameter is \"geotiff\", \"gamma_isp\",\n"\
+"        or \"gamma_msp\".\n"\
 "   -lut <file>\n"\
 "        Applies a user defined look up table to the data. Look up contains\n"\
 "        incidence angle dependent scaling factor.\n\n"\
@@ -203,6 +215,7 @@ typedef enum {
     f_RANGE_SCALE,
     f_AZIMUTH_SCALE,
     f_FIX_META_YPIX,
+    f_DATA_TYPE,
     f_IMAGE_DATA_TYPE,
     f_BAND,
     f_LINE,
@@ -326,8 +339,10 @@ int main(int argc, char *argv[])
     char *inMetaNameOption=NULL;
     char *lutName=NULL;
     char *prcPath=NULL;
-    char format_type[256]="";
+    char format_type_str[256]="";
+    input_format_t format_type;
     char band_id[256]="";
+    char data_type[256]="";
     char image_data_type[256]="";
     int ii;
     int flags[NUM_IMPORT_FLAGS];
@@ -370,6 +385,7 @@ int main(int argc, char *argv[])
     flags[f_QUIET] = checkForOption("-quiet", argc, argv);
     flags[f_REAL_QUIET] = checkForOption("-real-quiet", argc, argv);
     flags[f_FORMAT] = checkForOption("-format", argc, argv);
+    flags[f_DATA_TYPE] = checkForOption("-data-type", argc, argv);
     flags[f_IMAGE_DATA_TYPE] = checkForOption("-image-data-type", argc, argv);
     flags[f_BAND] = checkForOption("-band", argc, argv);
     flags[f_LINE] = checkForOption("-line", argc, argv);
@@ -463,6 +479,7 @@ int main(int argc, char *argv[])
 	if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
 	if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
 	if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
         if(flags[f_AZIMUTH_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
@@ -632,13 +649,30 @@ int main(int argc, char *argv[])
 
     /* Deal with input format type */
     if(flags[f_FORMAT] != FLAG_NOT_SET) {
-        strcpy(format_type, argv[flags[f_FORMAT] + 1]);
-        for (ii=0; ii<strlen(format_type); ii++) {
-            format_type[ii] = (char)toupper(format_type[ii]);
-        }
+        strcpy(format_type_str, argv[flags[f_FORMAT] + 1]);
+	if (strncmp(uc(format_type_str), "STF", 3) == 0)
+	  format_type = STF;
+	else if (strncmp(uc(format_type_str), "CEOS", 4) == 0)
+	  format_type = CEOS;
+	else if (strncmp(uc(format_type_str), "GEOTIFF", 7) == 0)
+	  format_type = GENERIC_GEOTIFF;
+	else if (strncmp(uc(format_type_str), "BIL", 3) == 0)
+	  format_type = BIL;
+	else if (strncmp(uc(format_type_str), "GRIDFLOAT", 9) == 0)
+	  format_type = GRIDFLOAT;
+	else if (strncmp(uc(format_type_str), "AIRSAR", 6) == 0)
+	  format_type = AIRSAR;
+	else if (strncmp(uc(format_type_str), "GAMMA_MSP", 9) == 0)
+	  format_type = GAMMA_MSP;
+	else if (strncmp(uc(format_type_str), "GAMMA_ISP", 9) == 0)
+	  format_type = GAMMA_ISP;
+	else if (strncmp(uc(format_type_str), "VP", 2) == 0)
+	  format_type = VP;
+	else
+	  asfPrintError("Unsupported format: %s\n", format_type_str);
     }
     else
-        strcpy(format_type, "CEOS");
+      format_type = CEOS;
 
     /* Deal with band_id */
     if(flags[f_BAND] != FLAG_NOT_SET) {
@@ -648,9 +682,18 @@ int main(int argc, char *argv[])
       }
     }
 
+    // Deal with input data type
+    if (flags[f_DATA_TYPE] != FLAG_NOT_SET) {
+      strcpy(data_type, argv[flags[f_DATA_TYPE] + 1]);
+      for (ii=0; ii<strlen(data_type); ii++) {
+        data_type[ii] = (char)toupper(data_type[ii]);
+      }
+    }
+
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
-       strncmp(format_type, "GEOTIFF", 7) == 0)
+       (format_type == GAMMA_ISP || format_type == GAMMA_MSP ||
+	format_type == GENERIC_GEOTIFF))
     {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {
@@ -667,7 +710,7 @@ int main(int argc, char *argv[])
     }
 
     /* Make sure STF specific options are not used with other data types */
-    if (strcmp(format_type, "STF")!=0) {
+    if (format_type == STF) {
         if (flags[f_PRC] != FLAG_NOT_SET) {
             asfPrintWarning("Precision state vectors only work with STF data\n"
                 "and will not be used with this data set!\n");
@@ -714,10 +757,11 @@ int main(int argc, char *argv[])
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
         asf_import(radiometry, db_flag, complex_flag, multilook_flag,
-                   amp0_flag, format_type, band_id, image_data_type, lutName,
-                   prcPath, lowerLat, upperLat, line, sample, width, height,
-		   p_range_scale, p_azimuth_scale,p_correct_y_pixel_size, 
-		   inMetaNameOption, inBaseName, outBaseName);
+                   amp0_flag, format_type, band_id, data_type, image_data_type, 
+		   lutName,prcPath, lowerLat, upperLat, line, sample, 
+		   width, height, p_range_scale, p_azimuth_scale,
+		   p_correct_y_pixel_size, inMetaNameOption, inBaseName, 
+		   outBaseName);
 
     }
 
