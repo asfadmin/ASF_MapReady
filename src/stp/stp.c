@@ -1585,8 +1585,8 @@ static void view_debug_image(int step)
     else
     {
       sprintf(lbl, "File not found: %s", image_file);
-      gtk_widget_hide(output_image);
       switch_on_help(FALSE);
+      gtk_widget_hide(output_image);
 
       GtkWidget * label_view_output =
         glade_xml_get_widget(glade_xml, "label_view_output");
