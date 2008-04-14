@@ -135,7 +135,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   // Don't recognize this data format; report & quit
   else {
-    asfPrintError("Unrecognized data format: '%s'\n",format_type);
+    asfPrintError("Unrecognized data format: '%d'\n",format_type);
   }
 
   asfPrintStatus("Import complete.\n");

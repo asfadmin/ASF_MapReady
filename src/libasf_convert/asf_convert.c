@@ -175,9 +175,9 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
 
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
-        asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, "GEOTIFF", NULL,
-                   what, NULL, NULL, 0, 0, 0, 0, -99, -99, NULL, NULL,
-                   NULL, NULL, tiff_basename, imported), status);
+        asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
+                   NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 
+                   NULL, NULL, NULL, NULL, tiff_basename, imported), status);
 
     sprintf(status, "Geocoding %s...", uc_what);
     update_status(status);
@@ -1113,6 +1113,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       radiometry_t radiometry;
       int db_flag = FALSE;
       int lut_flag = FALSE;
+      input_format_t format_type;
 
       // Radiometry
       if (!cfg->general->sar_processing) {
@@ -1154,12 +1155,38 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       else {
         sprintf(outFile, "%s", cfg->general->out_name);
       }
+
+      // Input Format Type
+      if (strcmp_case(cfg->import->format, "CEOS") == 0)
+        format_type = CEOS;
+      else if (strcmp_case(cfg->import->format, "STF") == 0)
+        format_type = STF;
+      else if (strcmp_case(cfg->import->format, "GEOTIFF") == 0)
+        format_type = GENERIC_GEOTIFF;
+      else if (strcmp_case(cfg->import->format, "BIL") == 0)
+        format_type = BIL;
+      else if (strcmp_case(cfg->import->format, "GRIDFLOAT") == 0)
+        format_type = GRIDFLOAT;
+      else if (strcmp_case(cfg->import->format, "AIRSAR") == 0)
+        format_type = AIRSAR;
+      else if (strcmp_case(cfg->import->format, "GAMMA_MSP") == 0)
+        format_type = GAMMA_MSP;
+      else if (strcmp_case(cfg->import->format, "GAMMA_ISP") == 0)
+        format_type = GAMMA_ISP;
+      else if (strcmp_case(cfg->import->format, "VP") == 0)
+        format_type = VP;
+      else {
+        asfPrintError("Unknown Format: %s\n", cfg->import->format);
+        format_type = CEOS; // actually this is not reached
+      }
+
       // Call asf_import!
       check_return(asf_import(radiometry, db_flag,
                               cfg->import->complex_slc,
                               cfg->import->multilook_slc,
                               amp0_flag,
-                              uc(cfg->import->format),
+                              format_type,
+                              NULL,
                               NULL,
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
@@ -1304,7 +1331,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       char inDataName[512];
       char *baseName = (char *) MALLOC(sizeof(char)*512);
       baseName = get_basename(inFile);
-      sprintf(inDataName, "%.img", baseName);
+      sprintf(inDataName, "%s.img", baseName);
 
         update_status("Converting Complex to Polar...");
 
