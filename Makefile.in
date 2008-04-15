@@ -69,6 +69,7 @@ STP_MODULES = \
 	src/libasf_export \
 	src/libasf_geocode \
 	src/libasf_vector \
+	src/ardop \
 	src/sgpsdp \
 	src/plan \
 	src/asf_view \
