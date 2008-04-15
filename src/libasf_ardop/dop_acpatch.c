@@ -165,7 +165,8 @@ void acpatch(patch *p,const satellite *s)
 		/* inverse transform the product */
 		cfft1d(p->n_az,&(p->trans[lineOffset]),1);
 
-		if (!quietflag && (lineNo%1024 == 0)) printf("   ...Processing Line %i\n",lineNo);
+		if (!quietflag && (lineNo%1024 == 0))
+                  asfPrintStatus("   ...Processing Line %i\n",lineNo);
 	}
 	FREE((void *)ref);
 }

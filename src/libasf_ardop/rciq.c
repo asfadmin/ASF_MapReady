@@ -76,7 +76,7 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
   for (lineNo=0; lineNo<p->n_az; lineNo++)
   {
     if(!quietflag && ((lineNo%1024) == 0)) 
-      printf("   ...Processing Line %i\n",lineNo); 
+      asfPrintStatus("   ...Processing Line %i\n",lineNo); 
 
   /*Read i/q values into fft input buffer.*/
     getSignalLine(signalGetRec,p->fromLine+lineNo,fft,p->fromSample,readSamples);

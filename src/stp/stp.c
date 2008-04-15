@@ -24,12 +24,14 @@
 
 #ifndef win32
 # include "asf_meta.h"
+# include <asf_import.h>
 #endif
 #if defined(win32)
 #  include <pango/pango.h>
 
 #  define BYTE __byte
 #    include "asf_meta.h"
+#    include <asf_import.h>
 #  undef BYTE
 #  include <Windows.h>
 #  undef DIR_SEPARATOR
@@ -984,7 +986,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
         // the imported file will go where the output file is
         img_file = STRDUP(output_file);
         asfPrintStatus("Importing Level 0 data...\n");
-        import_ceos(input_file, img_file, CEOS, NULL, NULL,
+        import_ceos(input_file, img_file, NULL, NULL, NULL,
                     NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
                     FALSE, FALSE, FALSE);
         asfPrintStatus("Import complete.\n");
@@ -1004,6 +1006,10 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       if (g_fdd)  { l_fdd = *g_fdd;   params_in->fdd = &l_fdd;   }
       if (g_fddd) { l_fddd = *g_fddd; params_in->fddd = &l_fddd; }
       sprintf(params_in->status, "%s.status", output_file);
+
+      char *tmp_dir = get_dirname(output_file);
+      set_asf_tmp_dir(tmp_dir);
+      FREE(tmp_dir);
 
       // this stuff shouldn't cause collisions, local stack variables      
       int npatches = 1;
@@ -1483,7 +1489,7 @@ static char * escapify(const char * s)
 static char *find_in_bin(const char * s)
 {
     char *ret = MALLOC(sizeof(char)*(strlen(get_asf_bin_dir())+strlen(s)+5));
-    sprintf(ret, "%s%c%s", get_asf_bin_dir(), DIR_SEPARATOR, s);
+    sprintf(ret, "%s/%s", get_asf_bin_dir_win(), s);
     return ret;
 }
 
