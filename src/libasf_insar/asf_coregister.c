@@ -313,7 +313,7 @@ int asf_coregister(int datatype, char *coregType, char *baseName, int deskew,
     // Generate an amplitude image for the slave
     sprintf(coregSlave, "%s_corr_cpx", slaveFile);
     sprintf(tmp, "%s_corr", slaveFile);
-    check_return(c2p(coregSlave, tmp),
+    check_return(c2p_exec(coregSlave, tmp),
 		 "converting complex slave image into phase and amplitude (c2p)");
   }
 
