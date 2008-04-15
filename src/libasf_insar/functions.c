@@ -24,7 +24,7 @@ int ardop(char *option, int startLineNum, int numPatches, char *inFile,
   return ret;
 }
 
-int c2p(char *inFile, char *outFile)
+int c2p_exec(char *inFile, char *outFile)
 {
   char command[255];
   int ret;

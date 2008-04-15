@@ -155,13 +155,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
     }
     else { // Deal with complex single look complex
       
-      check_return(c2p("a_cpx", "a"),
-		   "converting complex master image into phase and amplitude (c2p)");
+      check_return(c2p_exec("a_cpx", "a"),
+		   "converting complex master image into phase and amplitude (c2p_exec)");
       meta = meta_init("a_cpx.meta");
       check_return(convert2byte("a_amp.img", "a_amp_byte.img", meta->ifm->nLooks, 1),
 		   "creating byte amplitude master image (convert2byte)");
-      check_return(c2p("b_cpx", "b"),
-		   "converting complex slave image into phase and amplitude (c2p)");
+      check_return(c2p_exec("b_cpx", "b"),
+		   "converting complex slave image into phase and amplitude (c2p_exec)");
       meta = meta_init("b_cpx.meta");
       cfg->igram_coh->looks = meta->sar->look_count;
     }
