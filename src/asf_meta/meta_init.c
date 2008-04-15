@@ -43,6 +43,7 @@ meta_general *meta_general_init(void)
   strcpy(general->processor, MAGIC_UNSET_STRING);
   general->data_type = MAGIC_UNSET_INT;
   general->image_data_type = MAGIC_UNSET_INT;
+  general->radiometry = r_AMP;
   strcpy(general->system, MAGIC_UNSET_STRING);
   strcpy(general->acquisition_date, MAGIC_UNSET_STRING);
   general->orbit = MAGIC_UNSET_INT;
