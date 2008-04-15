@@ -162,6 +162,14 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        example1> asf_import -band VH file outfile\n"\
 "        example2> asf_import -band 04 file outfile\n"
 
+#define ASF_NOTES_STRING \
+"   The ERS2 satellite has a known gain loss problem that this program\n"\
+"   will attempt to correct by applying a scale correction factor uniformly\n"\
+"   to all pixels in the image.  The correction is dependent on the date,\n"\
+"   and is only applied to calibrated data (i.e., everything but amplitude)\n"\
+"   For more information, see:\n"\
+"   <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n"
+
 #define ASF_LIMITATIONS_STRING \
 "   CEOS base name issue:\n"\
 "        If you have two or more CEOS filesets ([*.D & *.L], [*.RAW & *.LDR],\n"\
@@ -321,6 +329,7 @@ static void print_help(void)
       "Output:\n"ASF_OUTPUT_STRING "\n"
       "Options:\n" ASF_OPTIONS_STRING "\n"
       "Examples:\n" ASF_EXAMPLES_STRING "\n"
+      "Notes:\n" ASF_NOTES_STRING "\n"
       "Limitations:\n" ASF_LIMITATIONS_STRING "\n"
       "See also:\n" ASF_SEE_ALSO_STRING "\n"
       "Contact:\n" ASF_CONTACT_STRING "\n"
