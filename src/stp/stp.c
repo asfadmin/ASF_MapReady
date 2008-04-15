@@ -1086,6 +1086,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     free(output_file);
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
+    gtk_button_set_label(GTK_BUTTON(stop_button), "Stop");
     gtk_widget_set_sensitive(execute_button, TRUE);
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_widget_set_sensitive(clear_button, TRUE );
@@ -1940,6 +1941,10 @@ static void set_stop()
 SIGNAL_CALLBACK void on_stop_button_clicked(GtkWidget *w)
 {
     set_stop();
+
+    GtkWidget *stop_button = glade_xml_get_widget(glade_xml, "stop_button");
+    gtk_button_set_label(GTK_BUTTON(stop_button), "Stopping ...");
+    gtk_widget_set_sensitive(stop_button, FALSE);
 }
 
 SIGNAL_CALLBACK void on_clear_button_clicked(GtkWidget *w)
