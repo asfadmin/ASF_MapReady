@@ -1,6 +1,7 @@
 #include "image_stats.h"
 #include "least_squares.h"
 #include "matrix.h"
+#include "asf_meta.h"
 
 /* Global variables */
 extern int lines, samples, bins;
@@ -181,9 +182,9 @@ void calculate_plot(char *axis, char *gridFile, char *dataFile, char *maskFile,
   fpOut = FOPEN(outFile, "w");
   fprintf(fpOut, "%s", axis);
 
-  if (meta->general->image_data_type == SIGMA_IMAGE ||
-      meta->general->image_data_type == GAMMA_IMAGE ||
-      meta->general->image_data_type == BETA_IMAGE) {
+  if (meta->general->radiometry == r_SIGMA ||
+      meta->general->radiometry == r_GAMMA ||
+      meta->general->radiometry == r_BETA) {
     fprintf(fpOut, "\tMin value\tMax value\tMean value\tdB value\tCount"
 	    "\tStandard deviation\n");
     for (ii=0; ii<bins; ii++)

@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
   char outRange[255], outBase[255], outFile[255], *maskFile=NULL; 
   char cmd[255], *bufMask=NULL;
   float *bufImage=NULL, *bufLook=NULL, *bufIncid=NULL, *bufRange=NULL;
-  double latitude, longitude, time, doppler, earth_radius, satellite_height, range;
+  double latitude, longitude, time, doppler, earth_radius=0, satellite_height, range;
   double look_angle, incidence_angle, height;
   double line, sample, re=6378144.0, rp=6356754.9, px, py;
   double firstLook=0.0, firstIncid=0.0, firstRange=0.0;
@@ -278,7 +278,7 @@ int main(int argc, char *argv[])
     printf("   Detected slant range ");
   else if (meta->sar->image_type=='G')
     printf("   Detected ground range ");
-
+/*
   switch (meta->general->image_data_type) 
     {
     case AMPLITUDE_IMAGE: 
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
     case MASK:
       break;
     }
-
+*/
   /* Create a mask file for background fill - required only for ScanSAR */
   if (meta->sar->image_type=='P') {
     if (meta->projection->type==SCANSAR_PROJECTION) {
@@ -372,6 +372,8 @@ int main(int argc, char *argv[])
 	if (meta->sar->image_type=='P') {
 	  if (meta->projection->type==SCANSAR_PROJECTION) 
 	    earth_radius = meta->projection->param.atct.rlocal;
+	  else
+	    asfPrintError("Unable to determine earth radius.\n");
 	}
 	else
 	  earth_radius = get_earth_radius(time, stVec, re, rp);
