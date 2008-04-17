@@ -116,6 +116,8 @@ float interpolate(interpolate_type_t interpolation, FloatImage *inbuf, float yLi
 int trim(char *infile, char *outfile, long long startX, long long startY,
 	 long long sizeX, long long sizeY);
 void trim_zeros(char *infile, char *outfile, int *startX, int *endX);
+void trim_zeros_ext(char *infile, char *outfile, int update_meta,
+                    int do_top, int do_left);
 
 /* Prototypes from fftMatch.c ************************************************/
 void fftMatch(char *inFile1, char *inFile2, char *corrFile,
