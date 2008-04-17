@@ -459,12 +459,12 @@ void meta_write(meta_parameters *meta, const char *file_name)
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       meta_put_string(fp,"lamaz {","","Begin Lambert Azimuthal Equal Area projection");
-      meta_put_double_lf(fp,"center_lon:",
-			 meta->projection->param.lamaz.center_lon, 4,
-			 "Longitude at center of projection");
       meta_put_double_lf(fp,"center_lat:",
 			 meta->projection->param.lamaz.center_lat, 4,
 			 "Latitude at center of projection");
+      meta_put_double_lf(fp,"center_lon:",
+			 meta->projection->param.lamaz.center_lon, 4,
+			 "Longitude at center of projection");
       if (META_VERSION >= 1.3) {
 	meta_put_double_lf(fp,"false_easting:",
 			   meta->projection->param.lamaz.false_easting, 3,
