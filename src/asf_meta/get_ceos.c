@@ -57,21 +57,31 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   for (ii=0; ii<trailer+1; ii++) {
     fp=FOPEN(metaName[ii], "r");
     while (1==fread(&bufhdr, 12, 1, fp)) {
-      int itype,length,mallocBytes;
+      int itype,rec_seq,length,mallocBytes;
       itype = bufhdr.rectyp[1];
-      length=bigInt32(bufhdr.recsiz);
+      rec_seq = bigInt32(bufhdr.recnum);
+      length = bigInt32(bufhdr.recsiz);
       mallocBytes = (length>16920) ? length : 16920;
       *buff=(unsigned char *)MALLOC(mallocBytes);
       *(struct HEADER *)*buff=bufhdr;
-      //printf("get_ceos - record type: %d, length: %d, trailer: %d\n", 
-      //	     itype, length, trailer);
+      //printf("get_ceos - record type: %d, sequence: %d, length: %d, "
+      //       "trailer: %d\n", itype, rec_seq, length, trailer);
       FREAD((*buff)+12, length-12, 1, fp);
       
+      // The JAXA FACDR requires the sequence number to be able to pick
+      // the correct one. For level 1.1 it is sequence 17, for level 1.5
+      // it is sequence 18.
+
       if ((itype==recordType)||
 	  (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
-	  (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR))
+	  (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR) ||
+	  (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR &&
+	   length <=5000) ||
+	  (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
 	{/*We have the correct kind of record.*/
 	  nOccurences++;
+	  if (recordType == CEOS_JAXAFACDR)
+	    printf("record length: %d\n", length);
 	  if (nOccurences==recordNo)
 	    { /*This is the correct occurence! Clean up and return.*/
 	      FCLOSE(fp);
