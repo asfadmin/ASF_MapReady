@@ -1544,6 +1544,9 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   meta->optical = meta_optical_init();
 
   // General block
+  char *basename = get_basename(in_fName);
+  strcpy(meta->general->basename, basename);
+  if(basename)FREE(basename);
   strcpy(meta->general->sensor, ceos->shr.mission_id);
   strtok(meta->general->sensor, " "); // Remove spaces from field
   if (ceos->sensor == AVNIR)
