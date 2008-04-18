@@ -39,20 +39,20 @@ int main(int argc, char *argv[])
   if (dqtest) {
     char *top = appendToBasename(argv[1], "_top");
     char *left = appendToBasename(argv[1], "_left");
-    char *both = appendToBasename(argv[1], "_both");
+    char *none = appendToBasename(argv[1], "_none");
     
     asfPrintStatus("\nCreating %s...\n", top);
-    trim_zeros_ext(argv[1], top, FALSE, TRUE, FALSE);
+    trim_zeros_ext(argv[1], top, FALSE, FALSE, TRUE);
 
     asfPrintStatus("\nCreating %s...\n", left);
-    trim_zeros_ext(argv[1], left, FALSE, FALSE, TRUE);
+    trim_zeros_ext(argv[1], left, FALSE, TRUE, FALSE);
 
-    asfPrintStatus("\nCreating %s...\n", both);
-    trim_zeros_ext(argv[1], both, FALSE, TRUE, TRUE);
+    asfPrintStatus("\nCreating %s...\n", none);
+    trim_zeros_ext(argv[1], none, FALSE, TRUE, TRUE);
 
     FREE(top);
     FREE(left);
-    FREE(both);
+    FREE(none);
   } else {
     int update_meta = extract_flag_options(&argc, &argv, "-u", NULL);
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
       printf("*** Too many arguments.\n\n");
       usage();
     }
-    
+ 
     /* Call library function */
     trim_zeros_ext(argv[1], argv[2], update_meta, do_top, do_left);  
   }
