@@ -48,7 +48,7 @@ void output_record(char *fileName, char *extension, int rec, int save)
       fp = FOPEN(outName, "w");
       print_record(fp, fileName, rec);
       FCLOSE(fp);
-      FREE(fp);
+      FREE(outName);
     }
     else {
       fp = stdout;
