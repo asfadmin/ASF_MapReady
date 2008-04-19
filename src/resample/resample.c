@@ -122,37 +122,109 @@ int main(argc,argv)
     int      argc;
     char     **argv;
 {
-    static   char   infile[255],     /* name of input SAR image file   */
-                    outfile[255];    /* name of output RAW file        */
+    static   char   infile[1024],
+                    outfile[1024];
     meta_parameters *metaIn;
-    float   pixsiz = 0.0;           /* output image pixel size         */
-    double  xscalfact;              /* x scale factor                  */
-    double  yscalfact;              /* y scale factor                  */
+    double  xscalfact=1;              /* x scale factor                  */
+    double  yscalfact=1;              /* y scale factor                  */
+
+    int is_square_pixsiz = extract_flag_options(&argc, &argv, "-square", NULL);
+    int is_scaling = extract_flag_options(&argc, &argv, "-scale", NULL);
+    int is_scalex = extract_double_options(&argc, &argv, &xscalfact,
+                                          "-scalex", NULL);
+    int is_scaley = extract_double_options(&argc, &argv, &yscalfact,
+                                          "-scaley", NULL);
+
+    if ((is_square_pixsiz + is_scaling + is_scalex > 1) ||
+        (is_square_pixsiz + is_scaling + is_scaley > 1) ||
+        (is_scalex == 1 && is_scaley == 0) ||
+        (is_scaley == 1 && is_scalex == 0))
+    {
+       asfPrintStatus("*** Invalid combination of arguments.\n");
+       usage();
+       return 1;
+    }
 
    /*--------  Process Command Line Inputs -------------*/
     if (argc>1) {
         check_for_help(argc, argv);
         handle_license_and_version_args(argc, argv, TOOL_NAME);
     }
-    if (argc < 4) {
+
+    int args_required;
+    if (is_square_pixsiz)
+        args_required = 4; // resample <pixel_size> infile outfile
+    else if (is_scaling)
+        args_required = 4; // resample <scale_factor> infile outfile
+    else if (is_scalex || is_scaley)
+        args_required = 3; // resample infile outfile
+    else
+        args_required = 5; // resample <x pixsiz> <y pixsiz> infile outfile 
+
+    if (argc < args_required) {
         asfPrintStatus("*** Not enough arguments.\n");
         usage();
         return 1;
     }
-    if (argc > 4) {
+    if (argc > args_required) {
         asfPrintStatus("*** Too many arguments.\n");
         usage();
         return 1;
     }
 
-    strcpy(infile,argv[1]);
-    strcpy(outfile,argv[2]);
-    sscanf(argv[3],"%f",&pixsiz);
+    strcpy(infile,argv[args_required-2]);
+    strcpy(outfile,argv[args_required-1]);
 
-    metaIn = meta_read(infile);
-    xscalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
-    yscalfact = 1.0/(pixsiz/metaIn->general->y_pixel_size);
-    resample(infile, outfile, xscalfact, yscalfact);
+    //metaIn = meta_read(infile);
+    metaIn = raw_init();
+    metaIn->general->x_pixel_size = 100;
+    metaIn->general->y_pixel_size = 100;
+    
+    // calculate the xscalfact, yscalfact
+    if (is_square_pixsiz) {
+        double pixsiz = atof(argv[1]);
+        if (pixsiz<=0)
+            asfPrintError("Invalid pixel size: %f", pixsiz);
+        xscalfact = 1.0/(pixsiz/metaIn->general->x_pixel_size);
+        yscalfact = 1.0/(pixsiz/metaIn->general->y_pixel_size);
+        asfPrintStatus("Scaling to square pixels: %fm\n", pixsiz);
+    }
+    else if (is_scaling) {
+        double scale = atof(argv[1]);
+        if (scale<=0)
+            asfPrintError("Invalid scale factor: %s\n", argv[1]);
+        asfPrintStatus("Scaling in x and y by: %f\n", scale);
+        xscalfact = yscalfact = 1.0/scale;
+    }
+    else if (is_scalex || is_scaley) { // should always be both
+        asfPrintStatus("Scaling in x by: %f\n", xscalfact);
+        asfPrintStatus("Scaling in y by: %f\n", yscalfact);
+        if (xscalfact<=0)
+            asfPrintError("Invalid x scale factor: %f\n", xscalfact);
+        xscalfact = 1.0/xscalfact;
+        if (yscalfact<=0)
+            asfPrintError("Invalid y scale factor: %f\n", yscalfact);
+        yscalfact = 1.0/yscalfact;
+    }
+    else {
+        double xpixsiz = atof(argv[1]);
+        if (xpixsiz<=0)
+            asfPrintError("Invalid x pixel size: %s\n", argv[1]);
+        xscalfact = 1.0/(xpixsiz/metaIn->general->x_pixel_size);
 
+        double ypixsiz = atof(argv[2]);
+        if (ypixsiz<=0)
+            asfPrintError("Invalid y pixel size: %s\n", argv[2]);
+        yscalfact = 1.0/(ypixsiz/metaIn->general->y_pixel_size);
+
+        asfPrintStatus("Scaling to: %fm pixels in x.\n", xpixsiz);
+        asfPrintStatus("            %fm pixels in y.\n", ypixsiz);
+    }
+    
+    // finally ready
+    printf("Running> Resample(\"%s\", \"%s\", %f, %f)\n", infile, outfile, xscalfact, yscalfact);
+    //resample(infile, outfile, xscalfact, yscalfact);
+    
+    meta_free(metaIn);
     return(0);
 }

@@ -25,7 +25,13 @@
 #undef  TOOL_USAGE
 #endif
 #define TOOL_USAGE \
-        TOOL_NAME" <infile> <outfile> <pixsize>\n" \
+        TOOL_NAME"  [\n"\
+        "                -square <pixsiz> | \n"\
+        "                -scale <scale factor> | \n"\
+        "                -scalex <x scale factor> -scaley <y scale factor> |\n"\
+        "                <x pixel size> <y pixel size> \n"\
+        "             ]\n"\
+        "             <infile> <outfile>\n" \
         "             [-license] [-version] [-help]"
 
 // TOOL_DESCRIPTION is required
@@ -36,29 +42,56 @@
     "   The resample tool resamples the input file to produce a new\n" \
     "   file with the given pixel size.  Resampling is accomplished with a\n" \
     "   square filter kernel centered on the pixel to best interpolate the\n" \
-    "   values around the pixel to produce the new value."
+    "   values around the pixel to produce the new value.\n\n"\
+    "   If the input file is multi-banded, resample will apply the resampling\n"\
+    "   to each band separately."
 
 // TOOL_INPUT is required but is allowed to be an empty string
 #ifdef  TOOL_INPUT
 #undef  TOOL_INPUT
 #endif
 #define TOOL_INPUT \
-        "   <infile>  The basename of the input data file\n" \
-        "   <pixsize>  The desired pixel size in the output file."
+        "   <infile>  The basename of the input data file.\n\n"\
+        "   You have four different ways of specifying the size of the\n"\
+        "   output image:\n\n"\
+        "     X and Y Pixel Sizes:\n"\
+        "       resample <x pixel size> <y pixel size> infile outfile\n"\
+        "     Square Pixels (Equal X and Y Pixel Sizes):\n"\
+        "       resample -square <pixel size> infile outfile\n"\
+        "     X and Y Scale Factors:\n"\
+        "       resample -scalex <x scale factor> -scaley <y scale factor>\n"\
+        "                infile outfile\n"\
+        "     Uniform Scaling (Equal X and Y Scale Factors):\n"\
+        "       resample -scale <scale factor> infile outfile\n\n"
 
 // TOOL_OUTPUT is required but is allowed to be an empty string
 #ifdef  TOOL_OUTPUT
 #undef  TOOL_OUTPUT
 #endif
 #define TOOL_OUTPUT \
-        "   <outfile>  The basename of the output file.  The output file will contain\n" \
-        "        <pixsize> sized pixels."
+        "   <outfile>  The basename of the output file.\n"
 
 // TOOL_OPTIONS is required but is allowed to be an empty string
 #ifdef  TOOL_OPTIONS
 #undef  TOOL_OPTIONS
 #endif
 #define TOOL_OPTIONS \
+    "   -square <pixel size, in meters>\n"\
+    "        Creates an output image with square pixels of the given size.\n"\
+    "        May not be used with -scale,-scalex, or -scaley.\n"\
+    "   -scale <scale factor>\n"\
+    "        Creates an ouput image that is smaller by the given factor, in\n"\
+    "        each direction.  For example, using a scale factor of 2 will\n"\
+    "        result in an image with half as many lines, and half as many\n"\
+    "        samples.  May not be used with -square,-scalex, or -scaley.\n"\
+    "   -scalex <x scale factor>\n"\
+    "        Creates an ouput image that is smaller by the given factor, in\n"\
+    "        the x direction.  You must also specify a y scale factor when\n"\
+    "        using this option.  (-scaley)\n"\
+    "   -scaley <y scale factor>\n"\
+    "        Creates an ouput image that is smaller by the given factor, in\n"\
+    "        the y direction.  You must also specify a x scale factor when\n"\
+    "        using this option.  (-scalex)\n"\
     "   -license\n" \
     "        Print copyright and license for this software then exit.\n" \
     "   -version\n" \
@@ -71,14 +104,19 @@
 #undef  TOOL_EXAMPLES
 #endif
 #define TOOL_EXAMPLES \
-    ""
+    "   Produce an output image (b) with 100x100 meter pixels:\n"\
+    "   > resample -square 100 a b\n\n"\
+    "   Produce an output image with 100x200 meter pixels:\n"\
+    "   > resample 100 200 a b\n\n"\
+    "   Create an image 1/8 as large in each direction (1/64):\n"\
+    "   > resample -scale 8 a b\n"
 
 // TOOL_LIMITATIONS is required but is allowed to be an empty string
 #ifdef  TOOL_LIMITATIONS
 #undef  TOOL_LIMITATIONS
 #endif
 #define TOOL_LIMITATIONS \
-    "  At this time, fill_holes only works on ASF Internal format files (.img)"
+    "   resample only works on ASF Internal format files (.img)"
 
 // TOOL_SEE_ALSO is required but is allowed to be an empty string
 #ifdef  TOOL_SEE_ALSO
