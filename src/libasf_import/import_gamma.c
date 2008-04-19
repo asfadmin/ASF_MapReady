@@ -1,6 +1,5 @@
 #include <ctype.h>
 #include "gamma.h"
-#include "asf_sar.h"
 #include "asf_meta.h"
 #include "dateUtil.h"
 #include "asf_nan.h"
