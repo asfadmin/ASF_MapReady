@@ -28,7 +28,11 @@ OBJS  = caplib.o \
 	matrix.o \
 	vector.o
 
-CFLAGS += -D_XOPEN_SOURCE=600
+CFLAGS += $(shell \
+	if [ "$(SYS)x" != "solarisx" ]; \
+	then echo "-D_XOPEN_SOURCE=600"; \
+	else echo "-D_XOPEN_SOURCE=600 -std=c99"; \
+	fi)
 
 all: build_only
 	mv asf.a $(LIBDIR)
