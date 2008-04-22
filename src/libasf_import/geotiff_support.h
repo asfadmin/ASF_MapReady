@@ -34,7 +34,7 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src);
 int get_tiff_data_config(TIFF *tif,
                          short *sample_format, short *bits_per_sample, short *planar_config,
                          data_type_t *data_type, short *num_bands,
-                         int *is_scanline_format);
+                         int *is_scanline_format, report_level_t report_level);
 int get_bands_from_citation(int *num_bands, char **band_str, int *empty, char *citation, int num_expected);
 int tiff_image_band_statistics (TIFF *tif, meta_parameters *omd,
                                 meta_stats *stats, int is_dem,

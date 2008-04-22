@@ -217,7 +217,8 @@ int read_tiff_client(int row_start, int n_rows_to_get,
       &data_config.planar_config,
       &data_type,
       &data_config.samples_per_pixel,
-      &is_scanline_format))
+      &is_scanline_format,
+      NOREPORT))
   {
     return FALSE;
   }
@@ -489,7 +490,8 @@ int open_tiff_data(const char *data_name, const char *band, ClientInterface *cli
       &data_config.planar_config,
       &data_type,
       &data_config.samples_per_pixel,
-      &is_scanline_format))
+      &is_scanline_format,
+      NOREPORT))
   {
     return FALSE;
   }
@@ -967,7 +969,8 @@ int ReadScanline_from_ContiguousRGB_TIFF(TIFF *tiff, uint32 row, uint32 sample_c
       &data_config.planar_config,
       &data_type,
       &data_config.samples_per_pixel,
-      &is_scanline_format))
+      &is_scanline_format,
+      NOREPORT))
   {
     return FALSE;
   }

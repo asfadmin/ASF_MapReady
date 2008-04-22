@@ -362,7 +362,8 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->planar_config,
                        &t->data_type,
                        &t->num_bands,
-                       &t->is_scanline_format);
+                       &t->is_scanline_format,
+		       NOREPORT);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
   if (t->planar_config != PLANARCONFIG_CONTIG &&

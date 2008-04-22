@@ -173,7 +173,7 @@ void copy_proj_parms(meta_projection *dest, meta_projection *src)
 int get_tiff_data_config(TIFF *tif,
                          short *sample_format, short *bits_per_sample, short *planar_config,
                          data_type_t *data_type, short *num_bands,
-                         int *is_scanline_format)
+                         int *is_scanline_format, report_level_t report_level)
 {
   int     ret = 0, read_count;
   uint16  planarConfiguration = 0;
@@ -209,24 +209,28 @@ int get_tiff_data_config(TIFF *tif,
        bitsPerSample == 16  ||
        bitsPerSample == 32))
   {
-      asfPrintWarning("Found missing or invalid sample format.  Should be unsigned integer,\n"
+      asfReport(report_level,
+              "Found missing or invalid sample format.  Should be unsigned integer,\n"
               "integer, or IEEE floating point.\n");
       switch (bitsPerSample) {
           case 8:
-              asfPrintWarning("Data is 8-bit data ...guessing unsigned integer sample\n"
-                      "format and attempting to continue.\n");
+              asfReport(report_level,
+	                "Data is 8-bit data ...guessing unsigned integer sample\n"
+                        "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_UINT;
               read_count++;
               break;
           case 16:
-              asfPrintWarning("Data is 16-bit data ...guessing signed integer sample\n"
-                      "format and attempting to continue.\n");
+              asfReport(report_level,
+	                "Data is 16-bit data ...guessing signed integer sample\n"
+                        "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_INT;
               read_count++;
               break;
           case 32:
-              asfPrintWarning("Data is 32-bit data ...guessing IEEE floating point sample\n"
-                      "format and attempting to continue.\n");
+              asfReport(report_level,
+	                "Data is 32-bit data ...guessing IEEE floating point sample\n"
+                        "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_IEEEFP;
               read_count++;
               break;
@@ -350,13 +354,14 @@ int get_tiff_data_config(TIFF *tif,
     {
       ret = guess_planar_configuration(tif, planar_config);
       if (ret == 0) {
-        asfPrintWarning("Found multi-band TIFF but the planar configuration TIFF tag\n"
-            "is not populated ...GUESSING the planar configuration to be %s\n"
-            "based on calculated scanline lengths for interlaced and band-sequential\n"
-            "TIFFs v. the actual scanline length derived from the TIFF file itself.\n",
-            (*planar_config == PLANARCONFIG_CONTIG) ?
-                "Contiguous Planes (interlaced)" :
-                (*planar_config == PLANARCONFIG_SEPARATE) ?
+          asfReport(report_level,
+	            "Found multi-band TIFF but the planar configuration TIFF tag\n"
+                    "is not populated ...GUESSING the planar configuration to be %s\n"
+                    "based on calculated scanline lengths for interlaced and band-sequential\n"
+                    "TIFFs v. the actual scanline length derived from the TIFF file itself.\n",
+                    (*planar_config == PLANARCONFIG_CONTIG) ?
+                    "Contiguous Planes (interlaced)" :
+                    (*planar_config == PLANARCONFIG_SEPARATE) ?
                     "Separate Planes (band-sequential)" :
                     "Unknown Planar Config (?)");
       }

@@ -123,7 +123,8 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                            &planar_config,    // Contiguous == 1 (RGB or RGBA) or separate == 2 (separate bands)
                            &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex)
                            &num_bands,        // Initial number of bands
-                           &is_scanline_format))
+                           &is_scanline_format,
+			   WARNING))
   {
     // Failed to determine tiff info or tiff info was bad
     char msg[1024];
@@ -301,7 +302,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                              &planar_config, // Contiguous (RGB or RGBA) or separate (band sequential, not interlaced)
                              &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
                              &num_bands, // Initial number of bands
-                             &is_scanline_format);
+                             &is_scanline_format,
+			     WARNING);
 
   if (ret != 0) {
     char msg[1024];
