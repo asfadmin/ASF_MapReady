@@ -122,8 +122,8 @@ int main(argc,argv)
     int      argc;
     char     **argv;
 {
-    static   char   infile[1024],
-                    outfile[1024];
+    char *infile;
+    char *outfile;
     meta_parameters *metaIn;
     double  xscalfact=1;              /* x scale factor                  */
     double  yscalfact=1;              /* y scale factor                  */
@@ -172,13 +172,11 @@ int main(argc,argv)
         return 1;
     }
 
-    strcpy(infile,argv[args_required-2]);
-    strcpy(outfile,argv[args_required-1]);
+    infile = argv[args_required-2];
+    outfile = argv[args_required-1];
 
-    //metaIn = meta_read(infile);
-    metaIn = raw_init();
-    metaIn->general->x_pixel_size = 100;
-    metaIn->general->y_pixel_size = 100;
+    // read metadata
+    metaIn = meta_read(infile);
     
     // calculate the xscalfact, yscalfact
     if (is_square_pixsiz) {
@@ -222,8 +220,7 @@ int main(argc,argv)
     }
     
     // finally ready
-    printf("Running> Resample(\"%s\", \"%s\", %f, %f)\n", infile, outfile, xscalfact, yscalfact);
-    //resample(infile, outfile, xscalfact, yscalfact);
+    resample(infile, outfile, xscalfact, yscalfact);
     
     meta_free(metaIn);
     return(0);

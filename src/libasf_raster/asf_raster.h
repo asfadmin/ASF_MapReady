@@ -129,12 +129,14 @@ void fftMatch_withOffsetFile(char *inFile1, char *inFile2, char *corrFile,
 void shaded_relief(char *inFile, char *outFile, int addSpeckle, int water);
 
 /* Prototypes from resample.c ************************************************/
-int resample(char *infile, char *outfile, double xscalfact, double yscalfact);
-int resample_nometa(char *infile, char *outfile,
+int resample(const char *infile, const char *outfile, 
+             double xscalfact, double yscalfact);
+int resample_nometa(const char *infile, const char *outfile,
 		    double xscalfact, double yscalfact);
-int resample_to_pixsiz(char *infile, char *outfile,
+int resample_to_pixsiz(const char *infile, const char *outfile,
 		       double xpixsiz, double ypixsiz);
-int resample_to_square_pixsiz(char *infile, char *outfile, double pixsiz);
+int resample_to_square_pixsiz(const char *infile, const char *outfile, 
+                              double pixsiz);
 
 // Prototypes from tile.c
 void create_image_tiles(char *inFile, char *outBaseName, int tile_size);
