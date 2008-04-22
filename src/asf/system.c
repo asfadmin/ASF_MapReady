@@ -57,6 +57,7 @@ asfSystem(const char *format, ...)
 
       printf("CreateProcess() failed with error %ld: %s\n",
         dw, (char*)lpMsgBuf);
+      printf("Failed command: %s\n", cmd);
 
       return -1;
   }
