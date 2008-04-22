@@ -26,7 +26,7 @@ libs:
 	$(foreach MODULE, $(MODULES), $(MAKE) -C $(MODULE) &&) true
 
 gtkwin32:
-	if [ ! -f $(GTKWIN32_DIR)/README.txt -a "$(SYS)" == "win32" ]; then\
+	if [ ! -f $(GTKWIN32_DIR)/README.txt -a "$(SYS)" = "win32" ]; then\
 	  rm -rf $(GTKWIN32_ZIP); \
 	  mkdir -p $(GTKWIN32_ZIP); \
 	  cp $(GTKWIN32_ZIP_LOC)/*.zip $(GTKWIN32_ZIP); \
