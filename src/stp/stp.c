@@ -793,7 +793,7 @@ check_files(const char * input_file)
     return status;
 }
 
-static void highlight_step(int step, int is_highlighted)
+static void highlight_step(int step, int highlight_lvl)
 {
     char label_id[32];
     sprintf(label_id, "step%d_label", step);
@@ -801,16 +801,23 @@ static void highlight_step(int step, int is_highlighted)
     GtkWidget * label =	glade_xml_get_widget(glade_xml, label_id);
 
     char markup_str[256];
-    if (is_highlighted)
-      //sprintf(markup_str, "<span foreground=\"red\">%s</span>  ",
-      //        label_text_for_step(step));
-      sprintf(markup_str, "<b>%s</b>  ", label_text_for_step(step));
-    else {
-      strcpy(markup_str, label_text_for_step(step));
-      strcat(markup_str, "  ");
+    switch (highlight_lvl) {
+      case 0: // normal
+        strcpy(markup_str, label_text_for_step(step));
+        strcat(markup_str, "  ");
+        break;
+      case 1: // bold
+        sprintf(markup_str, "<b>%s</b>  ", label_text_for_step(step));
+        break;
+      case 2: // red
+        sprintf(markup_str, "<span foreground=\"red\">%s</span>  ",
+                label_text_for_step(step));
+        break;
+      default:
+        assert(FALSE);
+        break;
     }
 
-    //printf("Label: %s, string: %s\n", label_id, markup_str);
     gtk_label_set_markup(GTK_LABEL(label), markup_str);
 }
 
@@ -1065,8 +1072,14 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
             // if we figured it out, highlight that step's text
             if (on_step>0) {
-              for (i=1; i<=12; ++i)
-                highlight_step(i, i<on_step);
+              for (i=1; i<=12; ++i) {
+                int highlight_level = 0;
+                if (i<on_step)
+                  highlight_level = 1;
+                else if (i==on_step)
+                  highlight_level = 2;
+                highlight_step(i, highlight_level);
+              }
             }
           }
         }
