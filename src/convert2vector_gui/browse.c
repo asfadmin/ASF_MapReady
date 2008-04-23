@@ -223,14 +223,14 @@ SIGNAL_CALLBACK void on_output_format_combobox_changed(GtkWidget *w)
     clear_results_message();
 }
 
-#ifndef win32
-
 SIGNAL_CALLBACK void on_input_format_combobox_changed(GtkWidget *w)
 {
     clear_results_message();
     int input_format = get_combo_box_item("input_format_combobox");
     show_widget("kml_import_note_label", input_format==INPUT_KML);
 }
+
+#ifndef win32
 
 static GtkWidget *input_browse_widget = NULL;
 static GtkWidget *output_browse_widget = NULL;
