@@ -728,8 +728,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   } 
   else if (n_input_images == 1) {
     if (!meta->projection || 
-	meta->projection->type != SCANSAR_PROJECTION ||
-	meta->projection->type != LAT_LONG_PSEUDO_PROJECTION)
+	(meta->projection->type != SCANSAR_PROJECTION &&
+	 meta->projection->type != LAT_LONG_PSEUDO_PROJECTION))
       asfPrintStatus("Geocoding %s\n", in_base_names[0]);
     else
       asfPrintStatus("Resampling %s\n", in_base_names[0]);
