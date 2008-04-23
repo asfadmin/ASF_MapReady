@@ -1157,23 +1157,23 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // Input Format Type
-      if (strcmp_case(cfg->import->format, "CEOS") == 0)
+      if (strncmp_case(cfg->import->format, "CEOS", 4) == 0)
         format_type = CEOS;
-      else if (strcmp_case(cfg->import->format, "STF") == 0)
+      else if (strncmp_case(cfg->import->format, "STF", 3) == 0)
         format_type = STF;
-      else if (strcmp_case(cfg->import->format, "GEOTIFF") == 0)
+      else if (strncmp_case(cfg->import->format, "GEOTIFF", 7) == 0)
         format_type = GENERIC_GEOTIFF;
-      else if (strcmp_case(cfg->import->format, "BIL") == 0)
+      else if (strncmp_case(cfg->import->format, "BIL", 3) == 0)
         format_type = BIL;
-      else if (strcmp_case(cfg->import->format, "GRIDFLOAT") == 0)
+      else if (strncmp_case(cfg->import->format, "GRIDFLOAT", 9) == 0)
         format_type = GRIDFLOAT;
-      else if (strcmp_case(cfg->import->format, "AIRSAR") == 0)
+      else if (strncmp_case(cfg->import->format, "AIRSAR", 6) == 0)
         format_type = AIRSAR;
-      else if (strcmp_case(cfg->import->format, "GAMMA_MSP") == 0)
+      else if (strncmp_case(cfg->import->format, "GAMMA_MSP", 9) == 0)
         format_type = GAMMA_MSP;
-      else if (strcmp_case(cfg->import->format, "GAMMA_ISP") == 0)
+      else if (strncmp_case(cfg->import->format, "GAMMA_ISP", 9) == 0)
         format_type = GAMMA_ISP;
-      else if (strcmp_case(cfg->import->format, "VP") == 0)
+      else if (strncmp_case(cfg->import->format, "VP", 2) == 0)
         format_type = VP;
       else {
         asfPrintError("Unknown Format: %s\n", cfg->import->format);

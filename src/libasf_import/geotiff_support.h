@@ -47,5 +47,6 @@ void ReadScanline_from_TIFF_Strip(TIFF *tif, tdata_t buf, unsigned long row, int
 void ReadScanline_from_TIFF_TileRow(TIFF *tif, tdata_t buf, unsigned long row, int band);
 meta_parameters * read_generic_geotiff_metadata(const char *inFileName,
                              int *ignore, ...);
+int isGeotiff(const char *file);
 
 #endif

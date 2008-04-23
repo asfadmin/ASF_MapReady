@@ -393,7 +393,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   // NOTE: Since neither ERDAS or ESRI store tie points in the .aux
   // file associated with their geotiffs, it is _required_ that they
   // are found in their tiff files.
-  double *tie_point;
+  double *tie_point = NULL;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_TIEPOINTS, &count,
                                &tie_point);
   if (count != 6) {
@@ -401,7 +401,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   }
   // Get the scale factors which define the scale relationship between
   // raster pixels and geographic coordinate space.
-  double *pixel_scale;
+  double *pixel_scale = NULL;
   (input_gtif->gt_methods.get)(input_gtif->gt_tif, GTIFF_PIXELSCALE, &count,
                                &pixel_scale);
   if (count != 3) {
@@ -1483,19 +1483,18 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
     ml->lon_end_far_range = R2D*lon;
   }
 
-  // We're now done with the data and metadata.
+  // Clean up
   GTIFFree(input_gtif);
   XTIFFClose(input_tiff);
   if(stats)FREE(stats);
-
-  // We must be done with the citation string too :)
   FREE (tmp_citation);
   FREE (citation);
+	FREE (tie_point);
+	FREE (pixel_scale);
   for (band_num = 0; band_num < MAX_BANDS; band_num++) {
     FREE(bands[band_num]);
   }
 
-  FREE(empty);
   return meta_out;
 }
 

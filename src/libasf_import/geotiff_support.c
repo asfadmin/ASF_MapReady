@@ -1,6 +1,11 @@
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
+#include <geokeys.h>
+#include <geo_tiffp.h>
+#include <geo_keyp.h>
+#include <geotiff.h>
+#include <geotiffio.h>
 #include <tiff.h>
 #include <tiffio.h>
 #include <xtiffio.h>
@@ -436,5 +441,37 @@ int guess_planar_configuration(TIFF *tif, short *planar_config)
   }
 
   return ret;
+}
+
+// Returns true if georeferenced ...all geocoded and georeferenced GeoTIFFs qualify
+int isGeotiff(const char *file)
+{
+    TIFF *tiff = NULL;
+    GTIF *gtif = NULL;
+    int num_tie_points = 0;
+    int num_pixel_scales = 0;
+    double *tie_point = NULL;
+    double *pixel_scale = NULL;
+
+    tiff = XTIFFOpen (file, "r");
+    if (tiff != NULL) {
+        gtif = GTIFNew (tiff);
+    }
+    if (gtif) {
+        (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &num_tie_points, &tie_point);
+        (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &num_pixel_scales, &pixel_scale);
+    }
+    FREE(tie_point);
+    FREE(pixel_scale);
+    GTIFFree(gtif);
+    XTIFFClose(tiff);
+
+    if (num_tie_points == 6 && num_pixel_scales == 3 &&
+        pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0)
+    {
+        return 1;
+    }
+
+    return 0;
 }
 

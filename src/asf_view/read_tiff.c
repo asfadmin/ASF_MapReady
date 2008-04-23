@@ -150,35 +150,94 @@ int handle_tiff_file(const char *filename, char *meta_name, char *data_name,
 // with the "open_" function, below.
 meta_parameters *read_tiff_meta(const char *meta_name, ClientInterface *client)
 {
-  ReadTiffClientInfo *info = (ReadTiffClientInfo *)client->read_client_info;
-  int i;
-  int num_bands=0;
-  char band_str[256];
+    ReadTiffClientInfo *info = (ReadTiffClientInfo *)client->read_client_info;
+    int i;
+    int num_bands=0;
+    char band_str[256];
+    meta_parameters *meta = NULL;
 
-  // Read the metadata from the tiff tags and geokeys
-  for (i=0; i<MAX_BANDS; i++) info->ignore[i]=0;
-  meta_parameters *meta = read_generic_geotiff_metadata(meta_name, info->ignore, NULL);
-  if (meta->general->band_count > 1 &&
-      strncmp(meta->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
-  {
-    int band;
-    for (band=0; band < meta->general->band_count; band++) {
-      if (band == 0) {
-        sprintf(meta->general->bands, "%02d", band + 1);
-      }
-      else {
-        sprintf(meta->general->bands, "%s,%02d", meta->general->bands, band + 1);
-      }
+    // Read the metadata from the tiff tags and geokeys
+    for (i=0; i<MAX_BANDS; i++) info->ignore[i]=0;
+    if (isGeotiff(meta_name)) {
+        // Read the GeoTIFF metadata from the GeoTIFF file
+        meta = read_generic_geotiff_metadata(meta_name, info->ignore, NULL);
+        if (meta->general->band_count > 1 &&
+            strncmp(meta->general->bands, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
+        {
+            int band;
+            for (band=0; band < meta->general->band_count; band++) {
+            if (band == 0) {
+                sprintf(meta->general->bands, "%02d", band + 1);
+            }
+            else {
+                sprintf(meta->general->bands, "%s,%02d", meta->general->bands, band + 1);
+            }
+            }
+        }
+        add_empties(meta_name, band_str, &num_bands, meta->general->bands,
+                    meta->general->band_count, info->ignore);
+        if (num_bands > meta->general->band_count && strlen(band_str) > strlen(meta->general->bands)) {
+            strcpy(meta->general->bands, band_str);
+            meta->general->band_count = num_bands;
+        }
     }
-  }
-  add_empties(meta_name, band_str, &num_bands, meta->general->bands,
-              meta->general->band_count, info->ignore);
-  if (num_bands > meta->general->band_count && strlen(band_str) > strlen(meta->general->bands)) {
-    strcpy(meta->general->bands, band_str);
-    meta->general->band_count = num_bands;
-  }
+    else {
+        // The TIFF is not a GeoTIFF, so populate the metadata with generic
+        // information
+        TIFF *tiff = NULL;
+        meta = raw_init ();
+        meta->optical = NULL;
+        meta->thermal = NULL;
+        meta->projection = NULL;
+        meta->stats = NULL;
+        meta->state_vectors = NULL;
+        meta->location = meta_location_init ();
+        meta->stVec = NULL;
+        meta->geo = NULL;
+        meta->ifm = NULL;
+        meta->info = NULL;
 
-  return meta;
+        tiff = XTIFFOpen(meta_name, "r");
+        if (tiff) {
+            short sample_format;    // TIFFTAG_SAMPLEFORMAT
+            short bits_per_sample;  // TIFFTAG_BITSPERSAMPLE
+            short planar_config;    // TIFFTAG_PLANARCONFIG
+            short num_bands;
+            int is_scanline_format; // False if tiled or strips > 1 TIFF file format
+            data_type_t data_type;
+            get_tiff_data_config(tiff,
+                                 &sample_format, // TIFF type (uint, int, float)
+                                 &bits_per_sample, // 8, 16, or 32
+                                 &planar_config, // Contiguous (RGB or RGBA) or separate (band sequential)
+                                 &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
+                                 &num_bands, // Initial number of bands
+                                 &is_scanline_format,
+                                 NOREPORT);
+
+            uint32 width;
+            uint32 height;
+            TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height);
+            TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &width);
+            if (height <= 0 || width <= 0) {
+                asfPrintError("Invalid height and width parameters in TIFF file,\n"
+                        "Height = %ld, Width = %ld\n", height, width);
+            }
+            meta->general->data_type = data_type;
+            meta->general->image_data_type = IMAGE;
+            strcpy(meta->general->sensor, MAGIC_UNSET_STRING);
+            strcpy(meta->general->system, MAGIC_UNSET_STRING);
+            strcpy(meta->general->basename, meta_name);
+            meta->general->line_count = height;
+            meta->general->sample_count = width;
+            meta->general->start_line = 0;
+            meta->general->start_sample = 0;
+            meta->general->x_pixel_size = 1.0;
+            meta->general->y_pixel_size = 1.0;
+            meta->general->band_count = num_bands;
+        }
+    }
+
+    return meta;
 }
 
 //----------------------------------------------------------------------
