@@ -172,18 +172,19 @@ static void patchToJpeg(char *outname)
     for (j=0; j<ns; ++j) {
       // scale to 2-sigma, to get brightness of the pixel
       unsigned char intensity;
+          //=(unsigned char)(amp[j] * 128./(float)avg * 41./255.);
       if (amp[j]<=min)
         intensity=0;
       else if (amp[j]>=max)
         intensity=255;
       else
         intensity=(unsigned char)((amp[j]-min)/(max-min)*255.);
-      
+
       // color of the pixel is determined by the phase
       unsigned char r=0,g=0,b=0;
-      if (phase[j]<0) phase[j]+=TWOPI;        // ensure [0, TWOPI)
-      if (phase[j]>=TWOPI) phase[j]-=TWOPI;
-      int range = (int)(phase[j]/PIOVER3);    // will be 0-6 (and rarely 6)
+      if (phase[j]<-PI) phase[j]+=TWOPI;     // ensure [-PI, PI)
+      if (phase[j]>=PI) phase[j]-=TWOPI;
+      int range = (int)((phase[j]+PI)/PIOVER3); // will be 0-6 (and rarely 6)
       switch (range) {
         case 0: r=1;           break;
         case 1: r=1; g=1;      break;
@@ -196,6 +197,7 @@ static void patchToJpeg(char *outname)
           printf("phase: %f, range: %d\n", phase[j], range);
           assert(FALSE); break;
       }
+
       red[j] = r*intensity;
       grn[j] = g*intensity;
       blu[j] = b*intensity;

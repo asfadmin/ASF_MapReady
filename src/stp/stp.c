@@ -785,14 +785,6 @@ check_files(const char * input_file)
 
       message_box(msg);
     }
-    else if (status == STATUS_LDR_INSTEAD)
-    {
-      //  Commenting this out... we are going to import the data!!
-      //message_box("It looks like you have selected a Level 0 CEOS File.\n"
-      //	  "This tool requires that you first import the data into\n"
-      //	  "ASF Internal Format.  You will need to run the ASF\n"
-      //	  "Convert tool first.");
-    }
 
     g_free (meta_file);
     g_free (in_file);
@@ -810,8 +802,9 @@ static void highlight_step(int step, int is_highlighted)
 
     char markup_str[256];
     if (is_highlighted)
-      sprintf(markup_str, "<span foreground=\"red\">%s</span>  ",
-              label_text_for_step(step));
+      //sprintf(markup_str, "<span foreground=\"red\">%s</span>  ",
+      //        label_text_for_step(step));
+      sprintf(markup_str, "<b>%s</b>  ", label_text_for_step(step));
     else {
       strcpy(markup_str, label_text_for_step(step));
       strcat(markup_str, "  ");
@@ -909,7 +902,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     if (debug_flag == 0)
       debug_flag = 1;
 
-    delete_all_generated_images();
+    //delete_all_generated_images();
 
     GtkWidget * input_file_entry =
 	glade_xml_get_widget(glade_xml, "input_file_entry");
@@ -1046,34 +1039,34 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
             fclose(fStat);
 
             // strip trailing whitespace
-            while (isspace(buf[strlen(buf)-1]))
+            while (isspace(buf[strlen(buf)-1]) && strlen(buf)>0)
               buf[strlen(buf)-1]='\0';
 
             // figure out which step we are on
             int on_step = 0;
-            if (strcmp_case(buf, "Range compressing")==0)
-              on_step=3;
-            else if (strcmp_case(buf, "Starting azimuth compression")==0)
-              on_step=7;
-            else if (strcmp_case(buf, "Range cell migration")==0)
-              on_step=8;
-            else if (strcmp_case(buf, "Finishing azimuth compression")==0)
-              on_step=11;
-            else if (strcmp_case(buf, "Range-doppler done")==0)
-              on_step=12;
-            else {
+            //if (strcmp_case(buf, "Range compressing")==0)
+            //  on_step=3;
+            //else if (strcmp_case(buf, "Starting azimuth compression")==0)
+            //  on_step=7;
+            //else if (strcmp_case(buf, "Range cell migration")==0)
+            //  on_step=8;
+            //else if (strcmp_case(buf, "Finishing azimuth compression")==0)
+            //  on_step=11;
+            //else if (strcmp_case(buf, "Range-doppler done")==0)
+            //  on_step=12;
+            //else {
               for (i=1; i<=12; ++i) {
                 if (strstr(buf,suffix_for_step(i))!=NULL) {
                   on_step=i;
                   break;
                 }
               }
-            }
+            //}
 
             // if we figured it out, highlight that step's text
             if (on_step>0) {
               for (i=1; i<=12; ++i)
-                highlight_step(i, i==on_step);
+                highlight_step(i, i<on_step);
             }
           }
         }
@@ -1086,7 +1079,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     free(output_file);
 
     gtk_button_set_label(GTK_BUTTON(execute_button), "Execute");
-    gtk_button_set_label(GTK_BUTTON(stop_button), "Stop");
+    gtk_button_set_label(GTK_BUTTON(stop_button), "Abort");
     gtk_widget_set_sensitive(execute_button, TRUE);
     gtk_widget_set_sensitive(stop_button, FALSE);
     gtk_widget_set_sensitive(clear_button, TRUE );
@@ -1943,7 +1936,7 @@ SIGNAL_CALLBACK void on_stop_button_clicked(GtkWidget *w)
     set_stop();
 
     GtkWidget *stop_button = glade_xml_get_widget(glade_xml, "stop_button");
-    gtk_button_set_label(GTK_BUTTON(stop_button), "Stopping ...");
+    gtk_button_set_label(GTK_BUTTON(stop_button), "Aborting ...");
     gtk_widget_set_sensitive(stop_button, FALSE);
 }
 
