@@ -86,6 +86,8 @@ int  band_byte_image_write(UInt8Image *oim_b, meta_parameters *meta_out,
                            const char *outBaseName, int num_bands, int *ignore);
 int check_for_vintage_asf_utm_geotiff(const char *citation, int *geotiff_data_exists,
                                       short *model_type, short *raster_type, short *linear_units);
+int check_for_datum_in_string(const char *citation, datum_type_t *datum);
+int check_for_ellipse_definition_in_geotiff(GTIF *input_gtif, spheroid_type_t *spheroid);
 int vintage_utm_citation_to_pcs(const char *citation, int *zone, char *hem, datum_type_t *datum, short *pcs);
 static int UTM_2_PCS(short *pcs, datum_type_t datum, unsigned long zone, char hem);
 void classify_geotiff(GTIF *input_gtif, short *model_type, short *raster_type, short *linear_units,
@@ -552,8 +554,129 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
         if (datum != UNKNOWN_DATUM) {
           mp->datum = datum;
         }
-        else {
-          asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
+        else if (pcs/100 == 160 || pcs/100 == 161) {
+            // With user-defined UTMs (16001-16060, 16101-16160 in ProjectionGeoKey
+            // the zone and hemisphere is defined, but not the datum... We should try
+            // to determine the datum as follows:
+            //
+            // Read GeographicTypeGeoKey:
+            //
+            // GeographicTypeGeoKey, If the code is recognized, assign as appropriate.
+            //                       If the code is 32676 (user-defined ...which also often
+            //                         means "undefined" rather than "user defined") then
+            //                         check to see if the datum is specifically defined
+            //                         elsewhere:
+            //                         - Check GeogGeodeticDatumGeoKey
+            //                         - Check PCSCitationGeoKey, GeogCitationGeoKey, and
+            //                           GTCitationGeoKey to see if it is textually described
+            //                         - Check to see if semi-major and inv. flattening (etc)
+            //                           is defined and then do a best-fit to determine a
+            //                           ellipsoid
+            //                         - Default to WGS-84 (if GeographicTypeGeoKey is
+            //                           160xx or 161xx format), else error out
+            //
+            //asfPrintError("Unsupported or unknown datum found in GeoTIFF file.\n");
+            short gcs;
+            read_count = GTIFKeyGet (input_gtif, GeographicTypeGeoKey, &gcs, 0, 1);
+            if (read_count == 1) {
+                switch(geokey_datum){
+                    case GCS_WGS_84:
+                    case GCSE_WGS84:
+                        datum = WGS84_DATUM;
+                        break;
+                    case GCS_NAD27:
+                        datum = NAD27_DATUM;
+                        break;
+                    case GCS_NAD83:
+                        datum = NAD83_DATUM;
+                        break;
+                    default:
+                        datum = UNKNOWN_DATUM;
+                        break;
+                }
+            }
+            if (datum == UNKNOWN_DATUM) {
+                // The datum is not typically stored in GeogGeodeticDatumGeoKey, but some s/w
+                // does put it there
+                read_count = GTIFKeyGet (input_gtif, GeogGeodeticDatumGeoKey, &geokey_datum, 0, 1);
+                if (read_count == 1) {
+                    switch(geokey_datum){
+                        case Datum_WGS84:
+                            datum = WGS84_DATUM;
+                            break;
+                        case Datum_North_American_Datum_1927:
+                            datum = NAD27_DATUM;
+                            break;
+                        case Datum_North_American_Datum_1983:
+                            datum = NAD83_DATUM;
+                            break;
+                        default:
+                            datum = UNKNOWN_DATUM;
+                            break;
+                    }
+                }
+            }
+            if (datum == UNKNOWN_DATUM) {
+                // Try citation strings to see if the datum was textually described
+                char *citation = NULL;
+                int citation_length;
+                int typeSize;
+                tagtype_t citation_type;
+                citation_length = GTIFKeyInfo(input_gtif, GeogCitationGeoKey, &typeSize, &citation_type);
+                if (citation_length > 0) {
+                    citation = MALLOC ((citation_length) * typeSize);
+                    GTIFKeyGet (input_gtif, GeogCitationGeoKey, citation, 0, citation_length);
+                    check_for_datum_in_string(citation, &datum);
+                    FREE(citation);
+                }
+                if (datum == UNKNOWN_DATUM) {
+                    citation_length = GTIFKeyInfo(input_gtif, GTCitationGeoKey, &typeSize, &citation_type);
+                    if (citation_length > 0) {
+                        citation = MALLOC ((citation_length) * typeSize);
+                        GTIFKeyGet (input_gtif, GTCitationGeoKey, citation, 0, citation_length);
+                        check_for_datum_in_string(citation, &datum);
+                        FREE(citation);
+                    }
+                }
+                if (datum == UNKNOWN_DATUM) {
+                    citation_length = GTIFKeyInfo(input_gtif, PCSCitationGeoKey, &typeSize, &citation_type);
+                    if (citation_length > 0) {
+                        citation = MALLOC ((citation_length) * typeSize);
+                        GTIFKeyGet (input_gtif, PCSCitationGeoKey, citation, 0, citation_length);
+                        check_for_datum_in_string(citation, &datum);
+                        FREE(citation);
+                    }
+                }
+                if (datum == UNKNOWN_DATUM) {
+                    spheroid_type_t spheroid;
+                    check_for_ellipse_definition_in_geotiff(input_gtif, &spheroid);
+                    switch (spheroid) {
+                        case BESSEL_SPHEROID:
+                        case CLARKE1866_SPHEROID:
+                        case CLARKE1880_SPHEROID:
+                        case GEM6_SPHEROID:
+                        case GEM10C_SPHEROID:
+                        case GRS1980_SPHEROID:
+                        case INTERNATIONAL1924_SPHEROID:
+                        case INTERNATIONAL1967_SPHEROID:
+                        case WGS72_SPHEROID:
+                        case WGS84_SPHEROID:
+                        case HUGHES_SPHEROID:
+                        case UNKNOWN_SPHEROID:
+                        default:
+                            datum = UNKNOWN_DATUM;
+                            break;
+                    }
+                }
+                if (datum == UNKNOWN_DATUM) {
+                    // If all else fails, make it a WGS-84 and spit out a warning
+                    datum = WGS84_DATUM;
+                    mp->datum = datum;
+                    asfPrintWarning("Could not determine datum type from GeoTIFF, but since this\n"
+                            "is a EPSG 160xx/161xx type UTM projection (WGS84 typ.),\n"
+                            "a WGS84 datum type is assumed.\n");
+                }
+            }
         }
         char msg[256];
         sprintf(msg,"UTM scale factor defaulting to %0.4lf\n", DEFAULT_UTM_SCALE_FACTOR);
@@ -3265,6 +3388,18 @@ void classify_geotiff(GTIF *input_gtif,
     }
 }
 
+
+int check_for_datum_in_string(const char *citation, datum_type_t *datum)
+{
+    int ret = 0; // not found
+    return ret;
+}
+
+int check_for_ellipse_definition_in_geotiff(GTIF *input_gtif, spheroid_type_t *spheroid)
+{
+    int ret = 0; // failure
+    return ret;
+}
 
 
 
