@@ -29,7 +29,7 @@ I and Q DC offset, and i/q flip parameters from
 
 void getSignalFormat(char *baseName,long long bytesInFile,getRec *r)
 {
-    char name[255];
+    char name[1024];
     char buf[80];
     FILE *fp;
     create_name(name,baseName,".fmt");
@@ -87,7 +87,7 @@ getSignalLine to fetch a line of signal data.
 getRec * fillOutGetRec(char file[])
 {
     getRec *r=(getRec *)MALLOC (sizeof(getRec));
-    char name_ASF[255],name_RAW[255];
+    char name_ASF[1024],name_RAW[1024];
     FILE *fp_ASF, *fp_RAW;
     int skip_second_if=0;
 
@@ -241,7 +241,7 @@ void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen)
 {
     int i;
     FILE *in;
-    char name_REPLICA[255],line[255];
+    char name_REPLICA[1024],line[1024];
     create_name(name_REPLICA,fname,".replica");
     in=FOPEN(name_REPLICA,"rb");
 

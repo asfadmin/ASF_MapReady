@@ -1,6 +1,6 @@
 /****************************************************************************
-*                                           *
-*   ardop_setup.c -- Routines used to set up the parameters for a run        *
+*                                                                             *
+*   ardop_setup.c -- Routines used to set up the parameters for a run         *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -10,12 +10,12 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*   Alaska Satellite Facility                                         *
-*   Geophysical Institute           www.asf.alaska.edu            *
-*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
-*   P.O. Box 757320                               *
-*   Fairbanks, AK 99775-7320                          *
-*                                         *
+*   Alaska Satellite Facility                                                 *
+*   Geophysical Institute           www.asf.alaska.edu                        *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu                *
+*   P.O. Box 757320                                                           *
+*   Fairbanks, AK 99775-7320                                                  *
+*                                                                             *
 ******************************************************************************/
 /***********************************************************************
   ardop_setup.c  -- Routines to calculate input parameters for ASP.
@@ -211,8 +211,8 @@ satellite *newSatellite(void)
                 assert(0);
         /* If we have a CalParams file, then lets allocate the required memory for the vectors,
            255 was chosen as an arbitrary length, I think that they are less than 100 entries but...*/
-        s->ang_vec=(double *)MALLOC(sizeof(double)*255);
-        s->gain_vec=(double *)MALLOC(sizeof(double)*255);
+        s->ang_vec=(double *)MALLOC(sizeof(double)*512);
+        s->gain_vec=(double *)MALLOC(sizeof(double)*512);
         /*
         * Check to see if we have any trouble opening the CAL_PARAMS file *
         if((*errI=*ODLinit())!=0) {
@@ -359,7 +359,7 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 {
     int az_reflen, skew_lines;
     float slantToLast, a2;
-        char tmpOut[255];
+        char tmpOut[1024];
 
 /*Set parameters*/
     g=*g_in;
@@ -386,7 +386,7 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 
     az_reflen=(int)(refPerRange*slantToLast+skew_lines);
 
-
+//az_reflen=700;
 
     if (g.na_valid<0)
     {/*Automatically determine number of valid lines.*/

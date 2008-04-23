@@ -3,6 +3,7 @@
 #include "asf_meta.h"
 #include "ardop_defs.h"
 #include "asf_endian.h"
+#include "read_signal.h"
 
 #define mlX 8
 #define mlY 16

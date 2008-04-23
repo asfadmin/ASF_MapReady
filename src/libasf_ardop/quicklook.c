@@ -133,7 +133,7 @@ void prep_specan_file(int nLooks,int quality,double aspect,
     getRec *inFile;
     FILE *outFile;
     int outLines,outSamples/*,x*/;
-    /*char command[255];*/
+    /*char command[1024];*/
     int i;
 
     specan_struct rng={1.0/RFS,

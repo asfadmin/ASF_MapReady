@@ -177,6 +177,14 @@ bin_state *JRS_ceos_decoder_init(char *inName, char *outName,
     JRS_auxUpdate(&aux,s);
     FSEEK64(s->binary,0,0);
 
+    if (s->prf <= 0 || s->prf_code < 0 || s->prf_code > CONF_JRS_prfCodeMax) {
+        // Ceos line had bad or missing header information
+        struct dataset_sum_rec dssr;
+        get_dssr(inName, &dssr);
+        s->prf = dssr.prf;
+        s->range_gate = dssr.rng_gate / 1000000.0;
+    }
+
     return s;
 }
 

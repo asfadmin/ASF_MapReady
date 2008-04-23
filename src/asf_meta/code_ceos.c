@@ -500,12 +500,12 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
       if (q->annot_pts>=64)
         q->annot_pts=63;
       for (i=0,off=2022; i< q->annot_pts; i++) {
-          intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
+        intV(annot_line[i],off,8); intV(annot_pixel[i],off,8);
         strV(annot_text[i],off,16);
       }
     }
     else {
-        intV(no_beams,1766,2);
+      intV(no_beams,1766,2);
       strV(beam1,1768,4); strV(beam2,1772,4);
       strV(beam3,1776,4); strV(beam4,1780,4);
       sngV(prf1,1784,8); sngV(prf2,1792,8);
@@ -521,10 +521,11 @@ void Code_DSSR(unsigned char *bf,struct dataset_sum_rec *q,int era, codingDir di
     }
   }
   else if (strncmp(q->fac_id, "ES", 2)==0 ||
-	   strncmp(q->fac_id, "D-PAF", 5)==0 ||
-	   strncmp(q->fac_id, "I-PAF", 5)==0 ||
-	   (strncmp(q->fac_id, "CSTARS", 6) ==0 &&
-	    strncmp(q->mission_id, "ERS", 3) ==0)) {
+           strncmp(q->fac_id, "D-PAF", 5)==0 ||
+           strncmp(q->fac_id, "I-PAF", 5)==0 ||
+           (strncmp(q->fac_id, "CSTARS", 6) ==0 &&
+            strncmp(q->mission_id, "ERS", 3) ==0))
+  {
     int i;
     for (i=0; i<3; i++) fltV(rng_time[i],1766+i*16,16);
     strV(az_time_first,1814,24);
@@ -1083,7 +1084,7 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     for (i=0; i<q->n_pix_updates; i++) {
       strV(pix_count[i].pix_update,1111+i*29,21);
       for (j=0; j<4; j++)
-	intV(pix_count[i].n_pix[j],1132+i*29+j*8,8);
+    intV(pix_count[i].n_pix[j],1132+i*29+j*8,8);
     }
     fltV(pwin_start,2171,16);
     fltV(pwin_end,2187,16);
@@ -1092,7 +1093,7 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     intV(n_temp_set,2228,4);
     for (i=0; i<q->n_temp_set; i++)
       for (j=0; j<4; j++)
-	shrtV(temp[i].temp_set[j],2232+i*16+j*4,4);
+    shrtV(temp[i].temp_set[j],2232+i*16+j*4,4);
     intV(n_image_pix,2552,8);
     fltV(prc_zero_pix,2560,16);
     fltV(prc_satur_pix,2576,16);
@@ -1107,7 +1108,7 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
       fltV(dopcen_est[i].dopcen_conf,2708+i*48,16);
       fltV(dopcen_est[i].dopcen_ref_tim,2724+i*48,16);
       for (j=0; j<4; j++)
-	fltV(dopcen_est[i].dopcen_coef[j],2740+i*48+j*16,16);
+    fltV(dopcen_est[i].dopcen_coef[j],2740+i*48+j*16,16);
     }
     intV(dopamb_err,4628,4);
     fltV(dopamb_conf,4632,16);
@@ -1120,7 +1121,7 @@ void Code_PPR(unsigned char *bf, struct proc_parm_rec *q, codingDir dir)
     for (i=0; i<q->n_srgr; i++) {
       strV(srgr_coefset[i].srgr_update,4886+i*37,21);
       for (j=0; j<6; j++)
-	fltV(srgr_coefset[i].srgr_coef[j],4907+i*37+j*16,16);
+    fltV(srgr_coefset[i].srgr_coef[j],4907+i*37+j*16,16);
     }
     fltV(pixel_spacing,7226,16);
     strV(pics_reqd,7242,3);

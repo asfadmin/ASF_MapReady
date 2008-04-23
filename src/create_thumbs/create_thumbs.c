@@ -613,10 +613,16 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         asfPrintError("Temporary folder already exists:\n    %s\n",
                       tmp_folder);
     }
-    strcpy(tmp, "_UTD_ROCKS_XXXXXX");
-    if (mkstemp(tmp) < 0) {
+    strcpy(tmp, "create_thumbs_tmp_file_XXXXXX");
+    int fd = mkstemp(tmp);
+    if (fd < 0) {
         asfPrintError("Cannot create filename for temporary file(s)\n");
     }
+    else {
+      close(fd);
+    }
+    sprintf(del_files, "rm -f %s", tmp);
+    asfSystem(del_files);
     strcpy(tmp_basename, get_basename(tmp));
 
     if (L0Flag == stf) {
@@ -635,7 +641,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* amp0_flag              */
                        STF,                 /* format                 */
                        NULL,                /* band_id                */
-		       NULL,                // data type
+                       NULL,                // data type
                        MAGIC_UNSET_STRING,  /*  image_data_type       */
                        NULL,                /* lut                    */
                        NULL,                /* prcPath                */
@@ -683,7 +689,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* amp0_flag              */
                        CEOS,                /* format                 */
                        NULL,                /* band_id                */
-		       NULL,                // data type
+                       NULL,                // data type
                        MAGIC_UNSET_STRING,  /*  image_data_type       */
                        NULL,                /* lut                    */
                        NULL,                /* prcPath                */
@@ -715,6 +721,9 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
     printf("Ardop from %s to %s\n", in_file, out_file);
+    // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
+    // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
+    // else to NULL.  See ardop() for code that reads the .in file.
     params_in = get_input_ardop_params_struct(in_file, out_file);
 // Un-comment out the following line to limit ardop() to the processing of only 1 patch (for speed
 // while debugging level 0 products)

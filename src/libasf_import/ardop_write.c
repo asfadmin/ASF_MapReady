@@ -69,7 +69,7 @@ void writeARDOPparams(bin_state *s,char *outN,double fd, double fdd, double fddd
   g.na_valid*=g.nlooks;
   /* end calculate valid patches per line */
 
-  print_params(outN,&g,"import2asf");
+  print_params(outN,&g,"asf_import");
 }
 
 void writeARDOPformat(bin_state *s,char *outN)
@@ -78,11 +78,12 @@ void writeARDOPformat(bin_state *s,char *outN)
 /*Open & write out start of ARDOP input format file.*/
   s->dotFMT=FOPEN(ardopN=appendExt(outN,".fmt"),"w");
   fprintf(s->dotFMT,
-    "%d 0		! Bytes per line, bytes per header.\n"
-    "%f %f		! i,q bias\n"
-    "n			! Flip i/q?\n"
+    "%d 0       ! Bytes per line, bytes per header.\n"
+    "%f %f      ! i,q bias\n"
+    "n          ! Flip i/q?\n"
     "! Starting line #, Window Shift (pixels), AGC Scaling\n",
     2*s->nSamp,s->I_BIAS,s->Q_BIAS);
 /*s->dotFMT is written to by updateAGC_window, so don't close it yet!*/
+  FFLUSH(s->dotFMT); // Force the write w/o closing the file...
   free(ardopN);
 }

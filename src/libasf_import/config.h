@@ -77,6 +77,7 @@ These macros are used by the decoder_* files' *_init() routines.
 Satellite auxiliary parameters, used by aux_* routines.
 */
 #define CONF_ERS_timeBase 210.94E-9 /*ERS-series basic clock duration (s)*/
+#define CONF_JRS_prfCodeMax 8 /*8 codes in the CONF_JRS_prfCodeList array of prf's*/
 #define CONF_JRS_prfCodeList {1505.8,1530.1,1555.2,1581.1,1606.0,-99,-99,-99}
 #define CONF_RSAT_beamNameList {"   ", /*Table of beam names,indexed by beam number*/\
 		"ST1","ST2","ST3","ST4","ST5","ST6","ST7", \

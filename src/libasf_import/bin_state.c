@@ -71,6 +71,7 @@ bin_state *new_bin_state(void)
   s->estDop=0.0;
   s->I_BIAS=s->Q_BIAS=0.0;
 
+  // These defaults are for ERS...
   s->re=6363000.989; /*approximate earth radius at scene center.*/
   s->vel=7463.989;   /*satellite velocity, m/s.*/
   s->ht=792000.989;  /*satellite height above earth, m.*/
@@ -78,6 +79,15 @@ bin_state *new_bin_state(void)
   s->lookDir='R';
   s->azres=8.0;      /* Desired azimuth resolution (m)*/
   s->nLooks=5;       /* Number of looks to square up data */
+  s->nLines=0;       /* Start the line count at 0. */
+
+  s->re=0.0; /*approximate earth radius at scene center.*/
+  s->vel=0.0;   /*satellite velocity, m/s.*/
+  s->ht=0.0;  /*satellite height above earth, m.*/
+  s->pulsedur=0.0;     /*chirp length, in sec.*/
+  s->lookDir='R';
+  s->azres=0.0;      /* Desired azimuth resolution (m)*/
+  s->nLooks=0;       /* Number of looks to square up data */
   s->nLines=0;       /* Start the line count at 0. */
 
   s->dotFMT=NULL;

@@ -525,15 +525,21 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   }
   struct dataset_sum_rec dssr;
   get_dssr(inMetaName, &dssr);
-  s->prf = dssr.prf;
-  s->range_gate = dssr.rng_gate / 1000000.0;
-  if (meta->sar &&
+  if (strncmp(s->satName, "JERS1", 5) == 0) {
+      s->prf = dssr.prf;
+      s->range_gate = dssr.rng_gate / 1000000.0;
+  }
+  if (strncmp(s->satName, "ERS1", 4) == 0) {
+      double outputDelay=CONF_ERS1_rangePulseDelay;
+      s->range_gate = s->dwp+9.0/s->prf-outputDelay;
+  }
+  if (meta->sar && strncmp(s->satName, "JERS1", 5) == 0 &&
       meta_is_valid_double(meta->sar->earth_radius) &&
       meta_is_valid_double(meta->sar->satellite_height))
   {
       s->re = meta->sar->earth_radius;
       s->ht = meta->sar->satellite_height - meta->sar->earth_radius;
-      s->vel = sqrt((s->re/s->ht)*s->re*s->ht);
+      s->vel = sqrt(9.821*s->re*(s->re/(s->ht+s->re))); // sqrt(g*re*re/ht) where ht is platform ht from ctr earth
   }
   updateMeta(s,meta,NULL,0);
   meta->general->radiometry = r_AMP;
@@ -556,19 +562,32 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
   if (meta->sar) {
       struct VFDRECV facdr;
       get_asf_facdr(inMetaName, &facdr);
-      meta->sar->yaw = facdr.scyaw;
-      meta->sar->pitch = facdr.scpitch;
-      meta->sar->roll = facdr.scroll;
+      if (strncmp(s->satName, "ERS1", 4) == 0) {
+          // FIXME: Defaulting to 0.0 and spitting out a warning is a temporary fix ...see Mantis [723]
+          asfPrintWarning("Reading of the Facility Related Data Record for CEOS format Level 0 product\n"
+                     "is not currently supported.\n"
+                     "Platform yaw, pitch, and roll defaulting to 0.0...\n");
+          meta->sar->yaw = 0.0;
+          meta->sar->pitch = 0.0;
+          meta->sar->roll = 0.0;
+      }
+      else {
+          meta->sar->yaw = facdr.scyaw;
+          meta->sar->pitch = facdr.scpitch;
+          meta->sar->roll = facdr.scroll;
+      }
       strcpy(meta->sar->polarization, meta->general->bands);
       meta->sar->prf = s->prf;
       meta->sar->slant_range_first_pixel = s->range_gate*speedOfLight/2.0;
+      meta->sar->multilook = 0;
   }
-  double lat, lon;
-  meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
-                  0.0, &lat, &lon);
-  meta->general->center_latitude = lat;
-  meta->general->center_longitude = lon;
-  //meta->general->frame = asf_frame_calc(meta->general->sensor, lat, meta->general->orbit_direction);
+  if (strncmp(s->satName, "ERS1", 4) != 0) {
+      double lat, lon;
+      meta_get_latLon(meta, meta->general->line_count/2, meta->general->sample_count,
+                    0.0, &lat, &lon);
+      meta->general->center_latitude = lat;
+      meta->general->center_longitude = lon;
+  }
 
   /* Overwrite out ARDOP input parameter files.  (NOTE: They were written in convertMeta_ceos() previously */
   /* (Now that certain variables such as the prf have been properly updated)                               */
@@ -580,6 +599,7 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
       writeARDOPparams(s,outMetaName,dssr.crt_dopcen[0],dssr.crt_dopcen[1],
                        dssr.crt_dopcen[2]);
   writeARDOPformat(s,outMetaName);
+  delete_bin_state(s);
 
   /* Write ASF metadata out */
   meta_write(meta, outMetaName);

@@ -12,32 +12,32 @@
 
 const char ceos_metadata_extensions[][12] =
 {
-	"",
-	"LEA_ TRA_",
-	"lea_ tra_",
-	".sarl .sart",
-	".L",
-	".LDR",
-	".ldr",
-	"LEA.",
-	"lea.",
-	"lea_",
-	"LED-",
-	"LEA_"
+    "",
+    "LEA_ TRA_",
+    "lea_ tra_",
+    ".sarl .sart",
+    ".L",
+    ".LDR",
+    ".ldr",
+    "LEA.",
+    "lea.",
+    "lea_",
+    "LED-",
+    "LEA_"
 };
 const char ceos_data_extensions[][12] =
 {
-	"",
-	"DAT_",
-	".sard",
-	".D",
-	".RAW",
-	".raw",
-	"DAT.",
-	"dat.",
-	"dat_",
-	"IMG-",
-	"IMG_"
+    "",
+    "DAT_",
+    ".sard",
+    ".D",
+    ".RAW",
+    ".raw",
+    "DAT.",
+    "dat.",
+    "dat_",
+    "IMG-",
+    "IMG_"
 };
 
 static ceos_metadata_ext_t free_and_return(char *leaderExt,
@@ -59,8 +59,8 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
                                            char ***pMetaName,
                                            int *trailerFlag)
 {
-  char dirName[256], fileName[256], leaderTemp[1024], trailerTemp[1024];
-  char baseName[256], ext[256], *leaderExt, *trailerExt, **metaName;
+  char dirName[1024], fileName[1024], leaderTemp[1024], trailerTemp[1024];
+  char baseName[1024], ext[256], *leaderExt, *trailerExt, **metaName;
   FILE *leaderFP, *trailerFP;
   int begin=NO_CEOS_METADATA+1, end=NUM_CEOS_METADATA_EXTS;
   int ii, index;
@@ -143,7 +143,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    
+
     /* Second, look for prefix style extensions '.' */
     else if (leaderExt[strEnd] == EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
@@ -191,7 +191,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    
+
     /* Third, look for ALOS prefix style extensions '-' */
     else if (leaderExt[strEnd] == ALOS_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
@@ -219,7 +219,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '-', baseName, ext);
       if (baseName[2] == '-') {
-        char tmp[256];
+        char tmp[1024];
         strcpy(tmp, baseName);
         split_base_and_ext(tmp, PREPENDED_EXTENSION, '-', baseName, ext);
       }
@@ -244,7 +244,7 @@ ceos_metadata_ext_t get_ceos_metadata_name(const char *ceosName,
         }
       }
     }
-    
+
     /* Fourth, look for Canadian prefix style extensions '_' */
     else if (leaderExt[strEnd] == CAN_EXTENSION_SEPARATOR) {
       /* Assume ceosName came to the function as a base name */
@@ -358,7 +358,7 @@ ceos_metadata_ext_t require_ceos_metadata(const char *ceosName, char ***metaName
 ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *baseName,
            char ***pDataName, int *nBands)
 {
-  char dirName[256], fileName[256], dataTemp[1024], ext[256];
+  char dirName[1024], fileName[1024], dataTemp[1024], ext[256];
   char **dataName;
   FILE *dataFP;
   int begin=NO_CEOS_DATA+1, end=NUM_CEOS_DATA_EXTS;
@@ -475,7 +475,7 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *baseName,
        * nix it and try again */
       split_base_and_ext(fileName, PREPENDED_EXTENSION, '-', baseName, ext);
       if (baseName[2] == '-') {
-  char tmp[256];
+  char tmp[1024];
   strcpy(tmp, baseName);
   split_base_and_ext(tmp, PREPENDED_EXTENSION, '-', baseName, ext);
       }
@@ -554,7 +554,7 @@ ceos_data_ext_t get_ceos_data_name(const char *ceosName, char *baseName,
 ceos_data_ext_t require_ceos_data(const char *ceosName,char ***dataName,
           int *nBands)
 {
-  char baseName[256];
+  char baseName[1024];
 
   ceos_data_ext_t ret =
     get_ceos_data_name(ceosName, baseName, dataName, nBands);

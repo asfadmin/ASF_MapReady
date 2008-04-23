@@ -1,12 +1,12 @@
 /******************************************************************************
 NAME: calc_deltas
 
-SYNOPSIS: 
+SYNOPSIS:
 
    calc_deltas [-log <file>] <linePatch1> <linePatchL> <numLines> <output_deltas>
 
 DESCRIPTION:
-	Calc_deltas uses the two input lines, generally created
+    Calc_deltas uses the two input lines, generally created
 by fit_line(1) on the output of fico(1), to generate a deltas
 file for use with aisp(1).  To see this program in action, check
 out register_ccsd(1).
@@ -14,8 +14,8 @@ out register_ccsd(1).
 PROGRAM HISTORY:
     VERS:   DATE:  AUTHOR:      PURPOSE:
     ---------------------------------------------------------------
-    1.0	    3/97   T. Logan     For use with aisp(1) interferometry.
-    1.01    7/01   R. Gens	Added logfile switch
+    1.0     3/97   T. Logan     For use with aisp(1) interferometry.
+    1.01    7/01   R. Gens  Added logfile switch
     1.2     6/03   P. Denny     Update command line parsing
 
 HARDWARE/SOFTWARE LIMITATIONS:
@@ -28,9 +28,9 @@ BUGS:
 
 ******************************************************************************/
 /****************************************************************************
-*								            *
+*                                           *
 *   calc_deltas -- Uses two input lines to generate a deltas file for use   *
-*		   with aisp(1).					    *
+*          with aisp(1).                        *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -40,12 +40,12 @@ BUGS:
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*   Alaska Satellite Facility                                         *
+*   Geophysical Institute           www.asf.alaska.edu            *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
+*   P.O. Box 757320                               *
+*   Fairbanks, AK 99775-7320                          *
+*                                         *
 ******************************************************************************/
 #include "asf.h"
 
@@ -55,31 +55,31 @@ static
 void usage (char *name)
 {
  printf("\n"
-	"USAGE:\n"
-	"   %s [-log <file>]\n"
-	"               <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
-	name);
+    "USAGE:\n"
+    "   %s [-log <file>]\n"
+    "               <linePatch1> <linePatchL> <numLines> <output_deltas>\n",
+    name);
  printf("\n"
- 	"REQUIRED ARGUMENTS:\n"
-	"   linePatch1     Input - regressions for 1st patch\n"
-	"   linePatchL     Input - regressions for last patch\n"
-	"   numLines       Input - number of lines between first and last patch\n"
-	"   output_deltas  Output file - linear regression\n");
+    "REQUIRED ARGUMENTS:\n"
+    "   linePatch1     Input - regressions for 1st patch\n"
+    "   linePatchL     Input - regressions for last patch\n"
+    "   numLines       Input - number of lines between first and last patch\n"
+    "   output_deltas  Output file - linear regression\n");
  printf("\n"
-	"OPTIONAL ARGUMENT:\n"
-	"   -log <file>    Option to have output written to log file.\n");
+    "OPTIONAL ARGUMENT:\n"
+    "   -log <file>    Option to have output written to log file.\n");
  printf("\n"
-	"DESCRIPTION:\n"
-	"   Uses two input lines to generate a deltas file for use with aisp(1).\n");
+    "DESCRIPTION:\n"
+    "   Uses two input lines to generate a deltas file for use with aisp(1).\n");
  printf("\n"
-	"Version %.2f, ASF InSAR Tools\n"
-	"\n",VERSION);
+    "Version %.2f, ASF InSAR Tools\n"
+    "\n",VERSION);
  exit(EXIT_FAILURE);
 }
 
 int main(int argc,char *argv[])
 {
-   char inName1[256], inName2[256], outName[256];
+   char inName1[1024], inName2[1024], outName[1024];
    FILE *fp;
    float nLines;
    float mx1, bx1, my1, by1;
@@ -89,14 +89,14 @@ int main(int argc,char *argv[])
    /* parse command line */
    logflag=0;
    while (currArg < (argc-4)) {
-	char *key = argv[currArg++];
-	if (strmatch(key,"-log")) {
-		CHECK_ARG(1)
-		strcpy(logFile,GET_ARG(1));
-		fLog = FOPEN(logFile, "a");
-		logflag=1;
-	}
-	else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
+    char *key = argv[currArg++];
+    if (strmatch(key,"-log")) {
+        CHECK_ARG(1)
+        strcpy(logFile,GET_ARG(1));
+        fLog = FOPEN(logFile, "a");
+        logflag=1;
+    }
+    else {printf( "\n**Invalid option:  %s\n",argv[currArg-1]); usage(argv[0]);}
    }
    if ((argc-currArg) < 4) {printf("Insufficient arguments.\n"); usage(argv[0]);}
 
@@ -109,12 +109,12 @@ int main(int argc,char *argv[])
    }
    strcpy(outName,argv[currArg+3]);
 
-   fp = FOPEN(inName1,"r"); 
+   fp = FOPEN(inName1,"r");
    fscanf(fp,"%f %f\n",&mx1,&bx1);
    fscanf(fp,"%f %f\n",&my1,&by1);
    FCLOSE(fp);
 
-   fp = FOPEN(inName2,"r"); 
+   fp = FOPEN(inName2,"r");
    fscanf(fp,"%f %f\n",&mx2,&bx2);
    fscanf(fp,"%f %f\n",&my2,&by2);
    FCLOSE(fp);

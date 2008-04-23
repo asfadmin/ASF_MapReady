@@ -149,7 +149,7 @@ static void patchToJpeg(char *outname)
     get_float_line(fp,meta,i,amp);
     for (j=0; j<ns; j+=3) {
       stddev += (amp[j]-avg)*(amp[j]-avg);
-    }      
+    }
     asfPercentMeter((float)(i+nl)/((float)nl*2.));
   }
   asfPercentMeter(1);
@@ -267,7 +267,7 @@ void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
 void debugWritePatch(const patch *p,char *basename)
 {
   FILE *fp;
-  char name[320],outname[256];
+  char name[1024],outname[1024];
   meta_parameters *meta;
   int i;
 

@@ -132,9 +132,15 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
             meta=raw_init();
         }
     }
-    else    /*Read parameters & .meta from CEOS.*/ {
+    else
+    {
+        /*Read parameters & .meta from CEOS.*/
+        /* Caution: This puts hard-coded ERS parameters into params... correct
+           them upon return from get_params() based on which platform/beam */
         get_params(params_in->in1,&params,&meta);
     }
+    params_in->npatches = (int *)MALLOC(sizeof(int));
+    *params_in->npatches = 3;
 
 /*Apply user-overridden parameters*/
     apply_in_ardop_params_to_ardop_params(params_in, &params);
@@ -178,8 +184,10 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
     meta->general->band_count = 1;
     meta->general->x_pixel_size = meta->sar->range_time_per_pixel
                                        * (speedOfLight/2.0);
-    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
-                                       * params.vel * (params.re/params.ht);
+//    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
+//                                       * params.vel * (params.re/params.ht);
+    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel * params.vel *
+                                  (params.re/(params.ht+params.re));
 
     ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
     if (!quietflag) {

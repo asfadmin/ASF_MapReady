@@ -363,7 +363,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   }
   meta->sar->azimuth_processing_bandwidth = dssr->bnd_azi;
   meta->sar->chirp_rate = dssr->phas_coef[2];
-  meta->sar->pulse_duration = dssr->rng_length / 10000000;
+  meta->sar->pulse_duration = dssr->rng_length / 1000000;
   meta->sar->range_sampling_rate = dssr->rng_samp_rate *
     get_units(dssr->rng_samp_rate,EXPECTED_SAMP_RATE);
   meta->sar->multilook = 1;
@@ -576,7 +576,9 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->sar->look_count = 5;
     sprintf(meta->sar->polarization, "VV");
   }
-  else if (strncmp(dssr->mission_id, "JERS1", 5) == 0) {
+  else if (strncmp(dssr->mission_id, "JERS1", 5) == 0 ||
+           strncmp(dssr->mission_id, "JERS-1", 6) == 0)
+  {
     strcpy(meta->general->sensor,"JERS1");
     strcpy(meta->general->mode, "STD");
     meta->general->frame =
@@ -632,8 +634,9 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->general->bit_error_rate = 0.0;
 
   // SAR block
-  if (ceos->product == SLC || ceos->product == RAW)
+  if (ceos->product == SLC || ceos->product == RAW) {
     meta->sar->image_type = 'S';
+  }
   else if (ceos->product == SGF || ceos->product == SGX ||
        ceos->product == PRI) {
     meta->sar->image_type = 'G';
@@ -648,10 +651,13 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     meta->sar->satellite_height = mpdr->distplat;
     meta->sar->earth_radius = mpdr->distplat - mpdr->altplat;
   }
-  if (ceos->product == RAW)
+  if (ceos->product == RAW) {
     meta->sar->deskewed = 0;
-  else
+    meta->sar->multilook = 0;
+  }
+  else {
     meta->sar->deskewed = 1;
+  }
   meta->sar->original_sample_count = iof->datgroup;
   meta->sar->slant_range_first_pixel = dssr->rng_gate
     * get_units(dssr->rng_gate,EXPECTED_RANGEGATE) * speedOfLight / 2.0;

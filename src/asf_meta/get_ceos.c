@@ -64,44 +64,47 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
       mallocBytes = (length>16920) ? length : 16920;
       *buff=(unsigned char *)MALLOC(mallocBytes);
       *(struct HEADER *)*buff=bufhdr;
-      //printf("get_ceos - record type: %d, sequence: %d, length: %d, "
-      //       "trailer: %d\n", itype, rec_seq, length, trailer);
+      //printf("get_ceos - record type: %d, sub-record type: %d, sequence: %d, length: %d, "
+             //"trailer: %d\n", itype, bufhdr.rectyp[3], rec_seq, length, trailer);
       FREAD((*buff)+12, length-12, 1, fp);
-      
+
       // The JAXA FACDR requires the sequence number to be able to pick
       // the correct one. For level 1.1 it is sequence 17, for level 1.5
       // it is sequence 18.
 
       if ((itype==recordType)||
-	  (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
-	  (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR) ||
-	  (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR &&
-	   length <=5000) ||
-	  (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
-	{/*We have the correct kind of record.*/
-	  nOccurences++;
-	  if (recordType == CEOS_JAXAFACDR)
-	    printf("record length: %d\n", length);
-	  if (nOccurences==recordNo)
-	    { /*This is the correct occurence! Clean up and return.*/
-	      FCLOSE(fp);
-              free_ceos_names(dataName, metaName);
-	      return era;
-	    }
-	  else /*Move on.*/
-	    FREE(*buff);
-	}
+          (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
+          (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR) ||
+          (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR && length <=5000) ||
+          (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
+      {/*We have the correct kind of record.*/
+        nOccurences++;
+        if (recordType == CEOS_JAXAFACDR)
+          printf("record length: %d\n", length);
+        if (nOccurences==recordNo)
+        { /*This is the correct occurence! Clean up and return.*/
+          FCLOSE(fp);
+          free_ceos_names(dataName, metaName);
+          return era;
+        }
+        else /*Move on.*/
+          FREE(*buff);
+      }
       else /*Move on.*/
-	FREE(*buff);
+        FREE(*buff);
     }
     FCLOSE(fp);
   }
 
   free_ceos_names(dataName, metaName);
 
-  if (recordType==CEOS_MPDR || recordType==CEOS_DQSR || recordType==CEOS_DHR || 
+  if (recordType==CEOS_MPDR ||
+      recordType==CEOS_DQSR ||
+      recordType==CEOS_DHR  ||
       recordType==CEOS_PPR)
+  {
     return -1;/*It's OK if the MPDR, DQSR, or DHR are missing.*/
+  }
   return -1;
 }
 
@@ -190,6 +193,8 @@ int get_jaxa_facdr(const char *filename,struct JAXA_FACDR *rec)
     Code_JAXA_FACDR(buff,rec,fromASCII);
     FREE(buff);
   }
+
+  return era;
 }
 
 int get_mpdr(const char *filename,struct VMPDREC *rec)

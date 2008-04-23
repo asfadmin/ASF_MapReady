@@ -142,9 +142,9 @@ typedef struct {
 } satellite;
 
 typedef struct {
-	char in[255]; /*Input file.*/
-	char out_cpx[255],out_amp[255]; /*Complex and Amplitude output names.*/
-        char out_pwr[255], out_sig[255], out_gam[255], out_bet[255];  /*Power or RCS (dB) output names.*/
+	char in[1024]; /*Input file.*/
+	char out_cpx[1024],out_amp[1024]; /*Complex and Amplitude output names.*/
+        char out_pwr[1024], out_sig[1024], out_gam[1024], out_bet[1024];  /*Power or RCS (dB) output names.*/
 	float azpix,rngpix; /*Azimuth and range pixel size.*/
 	int firstLineToProcess,firstOutputLine,skipFile,skipSamp;
 	int n_az_valid,nlooks;
