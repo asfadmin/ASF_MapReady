@@ -1225,6 +1225,12 @@ datum_type_t get_datum(FILE *fp)
   {
       proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
+  else
+  {
+      // this should never happend
+      asfPrintWarning("Unknown projection: %s\n", buf);
+      return UNKNOWN_DATUM;
+  }
 
   // Parse for datum or spheroid keyword
   FSEEK(fp, 0, SEEK_SET);

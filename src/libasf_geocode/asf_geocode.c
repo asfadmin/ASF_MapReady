@@ -682,7 +682,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   int process_as_byte=TRUE;
   unsigned long out_of_range_negative = 0;
   unsigned long out_of_range_positive = 0;
-  overlap_method_t overlap;
+  overlap_method_t overlap=OVERLAY_OVERLAP;
 
   // FIXME: function needs to be extended to handle resampling of already
   // geocoded data.
