@@ -233,5 +233,6 @@ all of the input data.
       }
     }
 
+    printf("Successful completion!\n");
     return(0);
 }
