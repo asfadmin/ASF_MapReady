@@ -268,13 +268,8 @@ void shape_init(char *inFile, format_type_t format)
 
 void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
 {
-    char *basename;
-    char *dbaseFile;
-
     // Open database for adding values
-    basename = get_basename(inFile);
-    dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(basename)+5));
-    sprintf(dbaseFile, "%s.dbf", basename);
+    char *dbaseFile = appendExt(inFile, ".dbf");
     *dbase = DBFOpen(dbaseFile, "r+b");
     if (*dbase == NULL)
         asfPrintError("Could not open database file '%s'\n", dbaseFile);
@@ -284,9 +279,7 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
     if (*shape == NULL)
         asfPrintError("Could not open shapefile '%s\n", inFile);
 
-    FREE(basename);
     FREE(dbaseFile);
-
     return;
 }
 
