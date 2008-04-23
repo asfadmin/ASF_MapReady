@@ -452,9 +452,11 @@ void polygon2shape(char *line, DBFHandle dbase, SHPHandle shape, int n)
 void geotiff2shape(char *inFile, DBFHandle dbase, SHPHandle shape, int n)
 {
   double lat[5], lon[5];
-  int no_location_info=1;
+  int i,no_location_info=1;
   meta_parameters *meta = NULL; 
+
   int ignore[MAX_BANDS];
+  for (i=0; i<MAX_BANDS; i++) ignore[i]=0;
 
   meta = read_generic_geotiff_metadata(inFile, ignore);
   if (meta && meta->location) {

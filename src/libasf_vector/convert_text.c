@@ -31,7 +31,8 @@ void meta2text(char *inFile, FILE *outFP)
     meta_parameters *meta = NULL;
 
     if (isgeotiff(inFile)) {
-        int ignore[MAX_BANDS];
+        int i,ignore[MAX_BANDS];
+        for (i=0; i<MAX_BANDS; i++) ignore[i]=0;
         meta = read_generic_geotiff_metadata(inFile, ignore);
     }
     else if (isleader(inFile)) {

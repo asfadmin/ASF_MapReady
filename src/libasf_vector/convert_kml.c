@@ -194,10 +194,12 @@ void geotiff2kml(char *inFile, FILE *outFP)
 {
   double ulLong=0.0, urLong=0.0, lrLong=0.0, llLong=0.0; // Clockwise polygon
   double ulLat=0.0, urLat=0.0, lrLat=0.0, llLat=0.0;
-  int no_location_info=1;
+  int i,no_location_info=1;
   int vertices=4;
   meta_parameters *meta = NULL; 
+
   int ignore[MAX_BANDS];
+  for (i=0; i<MAX_BANDS; i++) ignore[i]=0;
 
   meta = read_generic_geotiff_metadata(inFile, ignore);
   if (meta && meta->location) {
