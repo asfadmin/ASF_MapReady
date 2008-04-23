@@ -350,16 +350,17 @@ static void create_input_file_chooser_dialog()
                                 meta_filt);
 
     GtkFileFilter *L_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(L_filt, "Leader Files (*.L)");
+    gtk_file_filter_set_name(L_filt, "Leader Files (*.L,LED-*)");
     gtk_file_filter_add_pattern(L_filt, "*.L");
+    gtk_file_filter_add_pattern(L_filt, "LED-*");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
                                 L_filt);
 
-    GtkFileFilter *LED_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(LED_filt, "ALOS Leader Files (LED-*)");
-    gtk_file_filter_add_pattern(LED_filt, "LED-*");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
-                                LED_filt);
+    //GtkFileFilter *LED_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(LED_filt, "ALOS Leader Files (LED-*)");
+    //gtk_file_filter_add_pattern(LED_filt, "LED-*");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(input_browse_widget),
+    //                            LED_filt);
 
     //GtkFileFilter *pt_filt = gtk_file_filter_new();
     //gtk_file_filter_set_name(pt_filt, "Point/Polygon Files (*.csv)");
@@ -477,7 +478,7 @@ static void input_file_browse(void)
     of.lpstrFilter =
         "CSV (Point, Polygon, AUIG, etc) (*.csv)\0*.csv\0"
         "Metadata Files (*.meta)\0*.meta\0"
-        "Leader Files (*.L)\0*.L\0"
+        "Leader Files (*.L,LED-*)\0*.L;LED-*\0"
         "ALOS Leader Files (LED-*)\0LED-*\0"
         "Point/Polygon Files (*.csv)\0*.csv\0"
         "Shape Files (*.shp)\0*.shp\0"

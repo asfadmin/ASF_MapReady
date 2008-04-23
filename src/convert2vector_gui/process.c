@@ -17,10 +17,16 @@ void process()
 
   char *odir = get_string_from_entry("output_directory_entry");
   char *ofile = get_string_from_entry("output_file_entry");
-  if (strlen(odir) > 0)
-    sprintf(out_file, "%s/%s", odir, ofile);
-  else
+
+  if (strlen(odir) > 0) {
+    if (odir[strlen(odir)-1]=='/')
+      sprintf(out_file, "%s%s", odir, ofile);
+    else
+      sprintf(out_file, "%s/%s", odir, ofile);
+  }
+  else {
     strcpy(out_file, ofile);
+  }
 
   if (strlen(out_file)==0) {
     message_box("No outfile file selected!");
