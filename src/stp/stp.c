@@ -273,6 +273,8 @@ on_input_file_browse_button_clicked(GtkWidget *button)
 
   of.hwndOwner = NULL;
   of.lpstrFilter = "ASF Internal Format (*.img)\0*.img\0"
+                   "CEOS Level 0 File (*.raw)\0*.raw\0"
+                   "STF (*.000)\0*.000\0"
                    "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
@@ -713,6 +715,7 @@ static const int STATUS_OK = 1;
 static const int STATUS_FILE_NOT_FOUND = 2;
 static const int STATUS_META_FILE_NOT_FOUND = 3;
 static const int STATUS_LDR_INSTEAD = 4;
+static const int STATUS_STF_INSTEAD = 5;
 
 static int
 check_files(const char * input_file)
@@ -739,6 +742,7 @@ check_files(const char * input_file)
       }
       else
       {
+        // check if we have .raw/.ldr (CEOS level 0)
 	gchar * ldr_file = change_extension(input_file, "ldr");
       
 	if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
@@ -753,7 +757,22 @@ check_files(const char * input_file)
 	  if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
 	    status = STATUS_LDR_INSTEAD;
 	  else
-	    status = STATUS_META_FILE_NOT_FOUND;
+          {
+            g_free(ldr_file);
+
+            // check if we have STF
+            char *ext = findExt(input_file);
+            if (strcmp_case(ext, ".000") == 0) {
+              gchar *par_file = change_extension(input_file, ".000.par");
+              if (g_file_test(par_file, G_FILE_TEST_EXISTS))
+                status = STATUS_STF_INSTEAD;
+              else
+                status = STATUS_META_FILE_NOT_FOUND;
+              g_free(par_file);
+            }
+            else
+              status = STATUS_META_FILE_NOT_FOUND;
+          }
 	}
 
 	g_free(ldr_file);
@@ -768,9 +787,9 @@ check_files(const char * input_file)
     }
     else if (status == STATUS_META_FILE_NOT_FOUND)
     {
-      char *meta_file_ok = meta_exists ? "FOUND" : "NOT FOUND";
-      char *in_file_ok = in_exists ? "FOUND" : "NOT FOUND";
-      char *fmt_file_ok = fmt_exists ? "FOUND" : "NOT FOUND";
+      char *meta_file_ok = meta_exists ? "Found" : "NOT FOUND";
+      char *in_file_ok = in_exists ? "Found" : "NOT FOUND";
+      char *fmt_file_ok = fmt_exists ? "Found" : "NOT FOUND";
 
       char msg[2048];
       sprintf(msg, "Not all of the required files were found.\n"
@@ -938,7 +957,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
     /* check that we have all the required files */
     int status = check_files(input_file);
-    if (!(status == STATUS_OK || status == STATUS_LDR_INSTEAD))
+    if (!(status == STATUS_OK || status == STATUS_LDR_INSTEAD ||
+          status == STATUS_STF_INSTEAD))
         return;
 
     if (!output_file || strlen(output_file) == 0) {
@@ -989,6 +1009,13 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
         import_ceos(input_file, img_file, NULL, NULL, NULL,
                     NULL, NULL, 0, 0, -99, -99, NULL, r_AMP, FALSE,
                     FALSE, FALSE, FALSE);
+        asfPrintStatus("Import complete.\n");
+      }
+      else if (status == STATUS_STF_INSTEAD) {
+        // the imported file will go where the output file is
+        img_file = STRDUP(output_file);
+        asfPrintStatus("Importing STF data...\n");
+        import_stf(input_file, img_file, r_AMP, NULL, 0, -99, -99, NULL);
         asfPrintStatus("Import complete.\n");
       }
       else {
