@@ -139,8 +139,8 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
            them upon return from get_params() based on which platform/beam */
         get_params(params_in->in1,&params,&meta);
     }
-    params_in->npatches = (int *)MALLOC(sizeof(int));
-    *params_in->npatches = 3;
+    //params_in->npatches = (int *)MALLOC(sizeof(int));
+    //*params_in->npatches = 3;
 
 /*Apply user-overridden parameters*/
     apply_in_ardop_params_to_ardop_params(params_in, &params);
