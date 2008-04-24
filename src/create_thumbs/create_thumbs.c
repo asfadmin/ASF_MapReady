@@ -49,9 +49,10 @@ void process_file(const char *file, int level, int size, int verbose,
 char *meta_file_name(const char * data_file_name);
 meta_parameters * silent_meta_create(const char *filename);
 int generate_ceos_thumbnail(const char *input_data, int size,
-                            output_format_t output_format, char *out_dir);
+                            output_format_t output_format, char *out_dir,
+                            double scale_factor, int browse_flag);
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
-                               float scale_factor, int browseFlag,
+                               double scale_factor, int browseFlag,
                                output_format_t output_format, char *out_dir);
 int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
@@ -320,7 +321,8 @@ meta_parameters * silent_meta_create(const char *filename)
 }
 
 int generate_ceos_thumbnail(const char *input_data, int size,
-                            output_format_t output_format, char *out_dir)
+                            output_format_t output_format, char *out_dir,
+                            double scale_factor, int browseFlag)
 {
     char *input_metadata = meta_file_name(input_data);
 
@@ -392,12 +394,26 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 
     // use a larger dimension at first, for our crude scaling.  We will
     // use a better scaling method later, from GdbPixbuf
+    if ((size <= 0 && scale_factor <= 0.0) ||
+         (size > 0 && scale_factor > 0.0))
+    {
+        // Should never reach here unless the initial option checking gets
+        // mucked up (see far above in main())
+        asfPrintError("generate_ceos_thumbnail(): Invalid combination of -scale and -size\n"
+                "options.  Either they are not initialized or both were used at the same\n"
+                "time.  Cannot utilize a pixel size and scale_factor\n"
+                "option simultaneously:\n\n"
+                "    -size        : %d\n"
+                "    -scale-factor: %f\n", size, scale_factor);
+    }
+    if (size < 0 && scale_factor > 0.0) size = 0;
+    if (scale_factor < 0 && size > 0) scale_factor = 0.0;
     int sf;
     if (size > 1024)
     {
         sf = 1; // read in the whole thing
     }
-    else
+    else if (size > 0) // if size == 0 then a scale factor is being used
     {
         int larger_dim = size*4;
         if (larger_dim < 1024) larger_dim = 1024;
@@ -408,6 +424,15 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         int hsf = ceil (imd->general->sample_count / larger_dim);
         // Overall scale factor to use is the greater of vsf and hsf.
         sf = (hsf > vsf ? hsf : vsf);
+    }
+    else if (scale_factor > 0.0) {
+        // Round the passed-in scale factor to nearest integer
+        sf = (int)(scale_factor + 0.5);
+    }
+    else {
+        // Shouldn't need to trap an error here...
+        asfPrintError("generate_ceos_thumbnail(): A pixel size or scale factor must\n"
+                "be specified for the output thumbnail (or browse image)\n");
     }
 
     // Thumbnail image sizes.
@@ -469,7 +494,15 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     fclose(fpIn);
 
     char *out_file;
-    char *thumb_file = appendToBasename(input_data, "_thumb");
+    char *thumb_file;
+    char base_ext[32];
+    if (browseFlag) {
+        strcpy(base_ext, "");
+    }
+    else {
+        strcpy(base_ext, "_thumb");
+    }
+    thumb_file = appendToBasename(input_data, base_ext);
 
 
     // Create the output file
@@ -487,6 +520,9 @@ int generate_ceos_thumbnail(const char *input_data, int size,
         case JPEG:
         default:
             if (out_dir && strlen(out_dir) > 0) {
+                if (!is_dir(out_dir)) {
+                    mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
+                }
                 char *basename = get_basename(thumb_file);
                 out_file = MALLOC((strlen(out_dir)+strlen(basename)+10)*sizeof(char));
                 sprintf(out_file, "%s/%s.jpg", out_dir, basename);
@@ -546,7 +582,8 @@ void process_file(const char *file, int level, int size, int verbose,
          (strncmp(base, "IMG-", 4) == 0))
     {
         asfPrintStatus("%s%s\n", spaces(level), base);
-        generate_ceos_thumbnail(file, size, output_format, out_dir);
+        generate_ceos_thumbnail(file, size, output_format, out_dir,
+                                scale_factor, browseFlag);
     }
     else {
         if (verbose) {
@@ -592,7 +629,7 @@ void process(const char *what, int level, int recursive, int size, int verbose,
 }
 
 void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_flag L0Flag,
-                               float scale_factor, int browseFlag,
+                               double scale_factor, int browseFlag,
                                output_format_t output_format, char *out_dir)
 {
     char in_file[1024], out_file[1024], del_files[1024];
