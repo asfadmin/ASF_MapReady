@@ -116,7 +116,7 @@ static void patchToJpeg(char *outname)
 
   // will multilook, as well as conver to polar, generates a 2-band
   // file (amplitude is band 1, phase is band 2)
-  c2p(outname,polar_name,TRUE,TRUE);
+  c2p(outname,polar_name,FALSE,TRUE);
 
   // prepare for RGB conversion
   int i,j;

@@ -494,14 +494,11 @@ update_output_filename(const char * input_file_and_path)
     char *output_file_and_path =
       CALLOC(strlen(input_file_and_path)+32,sizeof(char));
     strcpy(output_file_and_path, input_file_and_path);
-    char *p = strrchr(output_file_and_path, '.');
+    char *p = findExt(output_file_and_path);
 
     if (p) {
-        char *ext = STRDUP(p+1);
 	*p = '\0';
-	strcat(output_file_and_path, "_cpx.");
-	strcat(output_file_and_path, ext);
-	FREE(ext);
+	strcat(output_file_and_path, "_cpx.img");
     } else {
         strcat(output_file_and_path, "_cpx");
     }
@@ -691,19 +688,16 @@ set_widgets_sensitive(gboolean setting)
     set_widget_sensitive("input_file_browse_button", setting);
 }
 
-gchar *
-change_extension(const gchar * file, const gchar * ext)
+char *
+change_extension(const char * file, const char * ext)
 {
-    gchar * replaced = (gchar *)
-        g_malloc(sizeof(gchar) * (strlen(file) + strlen(ext) + 10));
+    char * replaced = MALLOC(sizeof(char)*(strlen(file) + strlen(ext) + 10));
 
     strcpy(replaced, file);
     char * p = strrchr(replaced, '.');
 
     if (p)
-    {
         *p = '\0';
-    }
 
     strcat(replaced, ".");
     strcat(replaced, ext);
@@ -717,65 +711,56 @@ static const int STATUS_META_FILE_NOT_FOUND = 3;
 static const int STATUS_LDR_INSTEAD = 4;
 static const int STATUS_STF_INSTEAD = 5;
 
+static int file_exists(const char *filename)
+{
+  return
+    g_file_test(filename, G_FILE_TEST_EXISTS) ||
+    g_file_test(uc(filename), G_FILE_TEST_EXISTS);
+}
+
 static int
 check_files(const char * input_file)
 {
     int status;
 
-    gchar * meta_file = change_extension(input_file, "meta");
-    gchar * in_file = change_extension(input_file, "in");
-    gchar * fmt_file = change_extension(input_file, "fmt");
+    char *ext = findExt(input_file);
+    if (!ext) ext = "";
 
-    int meta_exists = g_file_test(meta_file, G_FILE_TEST_EXISTS);
-    int in_exists = g_file_test(in_file, G_FILE_TEST_EXISTS);
-    int fmt_exists = g_file_test(fmt_file, G_FILE_TEST_EXISTS);
+    char *img_file = change_extension(input_file, "img");
+    char *meta_file = change_extension(input_file, "meta");
+    char *in_file = change_extension(input_file, "in");
+    char *fmt_file = change_extension(input_file, "fmt");
+    char *raw_file = change_extension(input_file, "raw");
+    char *ldr_file = change_extension(input_file, "ldr");
+    char *stf_file = change_extension(input_file, "000");
+    char *par_file = change_extension(input_file, "000.par");
 
-    if (!g_file_test(input_file, G_FILE_TEST_EXISTS))
+    int img_exists = file_exists(img_file);
+    int meta_exists = file_exists(meta_file);
+    int in_exists = file_exists(in_file);
+    int fmt_exists = file_exists(fmt_file);
+    int raw_exists = file_exists(raw_file);
+    int ldr_exists = file_exists(ldr_file);
+    int stf_exists = file_exists(stf_file);
+    int par_exists = file_exists(par_file);
+
+    if (!file_exists(input_file))
     {
       status = STATUS_FILE_NOT_FOUND;
     }
     else
     {
-      if (meta_exists && in_exists && fmt_exists)
-      {
+      if (meta_exists && in_exists && fmt_exists && img_exists) {
 	status = STATUS_OK;
       }
-      else
-      {
-        // check if we have .raw/.ldr (CEOS level 0)
-	gchar * ldr_file = change_extension(input_file, "ldr");
-      
-	if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
-	{
-	  status = STATUS_LDR_INSTEAD;
-	}
-	else
-	{
-	  g_free(ldr_file);
-	  ldr_file = change_extension(input_file, "LDR");
-	  
-	  if (g_file_test(ldr_file, G_FILE_TEST_EXISTS))
-	    status = STATUS_LDR_INSTEAD;
-	  else
-          {
-            g_free(ldr_file);
-
-            // check if we have STF
-            char *ext = findExt(input_file);
-            if (strcmp_case(ext, ".000") == 0) {
-              gchar *par_file = change_extension(input_file, ".000.par");
-              if (g_file_test(par_file, G_FILE_TEST_EXISTS))
-                status = STATUS_STF_INSTEAD;
-              else
-                status = STATUS_META_FILE_NOT_FOUND;
-              g_free(par_file);
-            }
-            else
-              status = STATUS_META_FILE_NOT_FOUND;
-          }
-	}
-
-	g_free(ldr_file);
+      else if (raw_exists && ldr_exists) {
+        status = STATUS_LDR_INSTEAD;
+      }
+      else if (stf_exists && par_exists) {
+        status = STATUS_STF_INSTEAD;
+      }
+      else {
+        status = STATUS_META_FILE_NOT_FOUND;
       }
     }
 
@@ -787,27 +772,49 @@ check_files(const char * input_file)
     }
     else if (status == STATUS_META_FILE_NOT_FOUND)
     {
-      char *meta_file_ok = meta_exists ? "Found" : "NOT FOUND";
-      char *in_file_ok = in_exists ? "Found" : "NOT FOUND";
-      char *fmt_file_ok = fmt_exists ? "Found" : "NOT FOUND";
-
       char msg[2048];
-      sprintf(msg, "Not all of the required files were found.\n"
-	      "  %s: FOUND\n"
-	      "  %s: %s\n"
-	      "  %s: %s\n"
-	      "  %s: %s",
-	      input_file,
-	      meta_file, meta_file_ok,
-	      in_file, in_file_ok,
-	      fmt_file, fmt_file_ok);
+      if (strcmp_case(ext, ".raw") == 0) {
+        sprintf(msg, "CEOS Level 0 Data:\n"
+                "Not all of the required files were found.\n"
+                "  %s: Found\n"
+                "  %s: NOT FOUND",
+                input_file,
+                ldr_file);
+      }
+      else if (strcmp_case(ext, ".000") == 0) {
+        sprintf(msg, "STF Data:\n"
+                "Not all of the required files were found.\n"
+                "  %s: Found\n"
+                "  %s: NOT FOUND",
+                input_file,
+                par_file);
+      }
+      else {
+        char *meta_file_ok = meta_exists ? "Found" : "NOT FOUND";
+        char *in_file_ok = in_exists ? "Found" : "NOT FOUND";
+        char *fmt_file_ok = fmt_exists ? "Found" : "NOT FOUND";
+        sprintf(msg, "Not all of the required files were found.\n"
+                "  %s: Found\n"
+                "  %s: %s\n"
+                "  %s: %s\n"
+                "  %s: %s",
+                input_file,
+                meta_file, meta_file_ok,
+                in_file, in_file_ok,
+                fmt_file, fmt_file_ok);
+      }
 
       message_box(msg);
     }
 
-    g_free (meta_file);
-    g_free (in_file);
-    g_free (fmt_file);
+    FREE (img_file);
+    FREE (meta_file);
+    FREE (in_file);
+    FREE (fmt_file);
+    FREE (raw_file);
+    FREE (ldr_file);
+    FREE (stf_file);
+    FREE (par_file);
 
     return status;
 }
@@ -1013,14 +1020,14 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       }
       else if (status == STATUS_STF_INSTEAD) {
         // the imported file will go where the output file is
-        img_file = STRDUP(output_file);
+        img_file = appendExt(output_file, "");
         asfPrintStatus("Importing STF data...\n");
         import_stf(input_file, img_file, r_AMP, NULL, 0, -99, -99, NULL);
         asfPrintStatus("Import complete.\n");
       }
       else {
-        // no import necessary-- input to ardop is the original input file
-        img_file = STRDUP(input_file);
+        // no import necessary-- input to ardop is the original .img file
+        img_file = change_extension(input_file, "img");
       }
 
       // running ardop
