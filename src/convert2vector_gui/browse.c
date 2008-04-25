@@ -119,11 +119,6 @@ void select_defaults_by_file_type(char *f, int set_output_also)
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
-    else if (isleader(f)) {
-      set_combo_box_item("input_format_combobox", INPUT_LEADER);
-      if (set_output_also)
-        set_combo_box_item("output_format_combobox", OUTPUT_KML);
-    }
     else if (ispoint(f)) {
       set_combo_box_item("input_format_combobox", INPUT_POINT);
       if (set_output_also)
@@ -136,6 +131,11 @@ void select_defaults_by_file_type(char *f, int set_output_also)
     }
     else if (isshape(f)) {
       set_combo_box_item("input_format_combobox", INPUT_SHAPE);
+      if (set_output_also)
+        set_combo_box_item("output_format_combobox", OUTPUT_KML);
+    }
+    else if (isleader(f)) {
+      set_combo_box_item("input_format_combobox", INPUT_LEADER);
       if (set_output_also)
         set_combo_box_item("output_format_combobox", OUTPUT_KML);
     }
