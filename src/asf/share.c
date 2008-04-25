@@ -7,6 +7,8 @@ static char * s_argv0 = 0;
 
 #if defined(win32)
 
+static char * s_bin_dir_win = 0;
+
 /* ugly hack here... windef.h and asf_meta.h both define a BYTE symbol. */
 /* since we don't use the BYTE from asf_meta.h here, we'll #define BYTE */
 /* to something else during the processing of that header, leaving BYTE */
@@ -342,24 +344,24 @@ get_asf_bin_dir()
 const char *
 get_asf_bin_dir_win()
 {
-  if (!s_bin_dir) {
-
 #if defined(win32)
+  if (!s_bin_dir_win) {
+
     /* on windows, pull the install dir from the registry */
     char str_value[REG_VALUE_SIZE];
     get_string_from_registry(s_asf_install_dir_key, str_value);          
-    s_bin_dir = STRDUP(str_value);
-#else
-    /* normal version will work just fine on non-Win */
-    return get_asf_bin_dir();
-#endif
+    s_bin_dir_win = STRDUP(str_value);
 
     /* remove trailing path separator, if one is present */    
-    if (s_bin_dir[strlen(s_bin_dir) - 1] == DIR_SEPARATOR)
-      s_bin_dir[strlen(s_bin_dir) - 1] = '\0';
+    if (s_bin_dir_win[strlen(s_bin_dir_win) - 1] == DIR_SEPARATOR)
+      s_bin_dir_win[strlen(s_bin_dir_win) - 1] = '\0';
   }
 
-  return s_bin_dir;
+  return s_bin_dir_win;
+#else
+  /* normal version will work just fine on non-Win */
+  return get_asf_bin_dir();
+#endif
 }
 
 const char * 
