@@ -98,6 +98,7 @@ char *findExt(const char *name)
         strcmp_case(ext, ".KML") == 0       ||
         strcmp_case(ext, ".LUT") == 0       ||
         strcmp_case(ext, ".RAW") == 0       ||
+        strcmp_case(ext, ".000") == 0       ||
         strcmp_case(ext, ".AIRSAR") == 0    ||
         strcmp_case(ext, ".D") == 0         ||
         strcmp_case(ext, ".L") == 0         ||
@@ -154,12 +155,15 @@ char *appendExt(const char *name, const char *newExt)
   if (ret[strlen(ret)-1] == '.')
       ret[strlen(ret)-1] = '\0';
 
-  /* if the new extension doesn't begin with ".", add one */
-  if (newExt[0] != '.')
+  /* Allow passing in an empty string as "newExt" in order to strip the ext */
+  if (strlen(newExt)>0) {
+    /* if the new extension doesn't begin with ".", add one */
+    if (newExt[0] != '.')
       strcat(ret, ".");
 
-  /* Put new extension on the end.  */
-  strcat (ret, newExt);
+    /* Put new extension on the end.  */
+    strcat (ret, newExt);
+  }
 
   return ret;
 }
