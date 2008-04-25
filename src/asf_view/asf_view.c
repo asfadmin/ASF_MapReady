@@ -83,8 +83,10 @@ main(int argc, char **argv)
         curr->filename = STRDUP(find_in_share("startup.jpg"));
     }
     else {
-        if (argc > 2)
+        if (argc > 3)
           asfPrintWarning("Extraneous command-line arguments ignored.\n");
+        if (argc > 2)
+          image_info[1].filename = STRDUP(argv[2]);
         curr->filename = STRDUP(argv[1]);
     }
 
@@ -96,7 +98,7 @@ main(int argc, char **argv)
     // initialize globals
     reset_globals(TRUE);
 
-    // strip off a trailing "."
+    // strip off any trailing "."
     if (curr->filename[strlen(curr->filename)-1] == '.')
         curr->filename[strlen(curr->filename)-1] = '\0';
 
@@ -110,10 +112,6 @@ main(int argc, char **argv)
     // to do get_thumbnail_data() as a separate step.
     ThumbnailData *thumbnail_data = get_thumbnail_data(curr);
     gtk_init(&argc, &argv);
-
-    //GtkWidget *eb = get_widget_checked("big_image_eventbox");
-    //int e = gtk_widget_get_events(eb);
-    //gtk_widget_set_events(eb, e|GDK_KEY_PRESS_MASK|GDK_POINTER_MOTION_MASK);
 
     gchar *glade_xml_file = (gchar *)find_in_share("asf_view.glade");
     printf("Found asf_view.glade: %s\n", glade_xml_file);
@@ -151,7 +149,7 @@ main(int argc, char **argv)
     fill_meta_info();
     fill_stats(curr);
     setup_bands_tab(curr->meta);
-
+    disable_meta_button_if_necessary();
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 

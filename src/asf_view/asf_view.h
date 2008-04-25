@@ -169,6 +169,7 @@ char * escapify(const char * s);
 void fill_meta_info(void);
 void open_mdv(void);
 char *br(const char *s);
+void disable_meta_button_if_necessary();
 
 /* stats.c */
 unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy);

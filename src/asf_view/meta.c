@@ -257,3 +257,14 @@ SIGNAL_CALLBACK void on_mdv_button_clicked(GtkWidget *w)
 {
     open_mdv();
 }
+
+void disable_meta_button_if_necessary()
+{
+#ifdef win32
+    gchar * mdv = find_in_bin("mdv.exe");
+#else
+    gchar * mdv = find_in_bin("mdv");
+#endif
+
+    enable_widget("mdv_button", fileExists(mdv));      
+}
