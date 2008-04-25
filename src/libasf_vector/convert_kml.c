@@ -430,10 +430,24 @@ void write_name_field_to_kml(DBFHandle dbase, int record, FILE *fp)
     }
 }
 
+static double valid_lat(double lat)
+{
+  // add a small amount of fudge, so that we don't trip on any floating
+  // point rounded latitude values
+  return lat<=90.0001 && lat>=-90.0001;
+}
+
+static double valid_lon(double lon)
+{
+  // for longitude, allow -360 to +360, we don't know where the values
+  // were wrapped.  like latitude, handle rounding errors by adding padding
+  return lon<=360.0001 && lon>=-360.0001;
+}
+
 // Convert shape to kml
 // In this conversion we only deal with point and polygon shapes
 // that don't have multiple parts. All other cases error out.
-void shape2kml(char *line, FILE *fp, char *name)
+int shape2kml(char *line, FILE *fp, char *name)
 {
   DBFHandle dbase;
   SHPHandle shape;
@@ -472,6 +486,19 @@ void shape2kml(char *line, FILE *fp, char *name)
     for (kk=0; kk<nVertices; kk++) {
       lat[kk] = shapeObject->padfY[kk];
       lon[kk] = shapeObject->padfX[kk];
+      if (!valid_lat(lat[kk]) || !valid_lon(lon[kk])) {
+        if (ii==0) {
+          asfPrintWarning("This file does not appear to use lat/lon to store "
+                          "the cooridinates.\nAborting...\n");
+          SHPDestroyObject(shapeObject);
+          close_shape(dbase,shape);
+          return FALSE;
+        }
+        else {
+          asfPrintWarning("Polygon %d, vertex %d: illegal lat/lon values: "
+                          "%f,%f\n",lat[kk],lon[kk]);
+        }
+      }
     }
     lat[nVertices] = lat[0];
     lon[nVertices] = lon[0];
@@ -527,6 +554,6 @@ void shape2kml(char *line, FILE *fp, char *name)
   // Close shapefile
   close_shape(dbase, shape);
 
-  return;
+  return TRUE;
 }
 

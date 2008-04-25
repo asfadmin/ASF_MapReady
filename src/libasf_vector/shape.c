@@ -325,7 +325,7 @@ void convert2shape(char *filename, format_type_t format,
     return;
 }
 
-void convert_from_shape(char *inFile, char *outFile, format_type_t format)
+int convert_from_shape(char *inFile, char *outFile, format_type_t format)
 {
   FILE *fp = NULL;
   if (format == TEXT)
@@ -335,12 +335,13 @@ void convert_from_shape(char *inFile, char *outFile, format_type_t format)
   else if (format == KMLFILE) {
     fp = (FILE*)FOPEN(outFile, "w");
     kml_header(fp);
-    shape2kml(inFile, fp, inFile);
+    int ok = shape2kml(inFile, fp, inFile);
     kml_footer(fp);
     FCLOSE(fp);
+    if (!ok) return 1; //error occurred
   }
 
-  return;
+  return 0;
 }
 
 int write_shape(char *inFile, char *outFile, format_type_t format, int list)
@@ -388,6 +389,7 @@ int read_shape(char *inFile, char *outfile, format_type_t format, int list)
   char *basename;
   char outFile[1024];
   char ext[32];
+  int ret;
 
   if (format == TEXT || format == CSV || format == URSA)
     strcpy(ext, "csv");
@@ -403,21 +405,24 @@ int read_shape(char *inFile, char *outfile, format_type_t format, int list)
       line[strlen(line)-1] = '\0';
       basename = get_basename(outfile);
       sprintf(outFile, "%s_%03d.%s", outfile, fileNum, ext);
-      convert_from_shape(line, outFile, format);
+      ret = convert_from_shape(line, outFile, format);
+      if (!ret)
+        asfPrintWarning("Failed to process: %s\n", line);
       fileNum++;
     }
     FCLOSE(fpIn);
     FREE(line);
+    ret=0;
   }
   else {
       basename = get_basename(outfile);
       sprintf(outFile, "%s.%s", outfile, ext);
-      convert_from_shape(inFile, outFile, format);
+      ret = convert_from_shape(inFile, outFile, format);
   }
 
   FREE(basename);
 
-  return 0;
+  return ret;
 }
 
 void write_esri_proj_file(char *inFile)

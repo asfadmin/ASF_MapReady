@@ -129,7 +129,7 @@ void point2kml(char *line, FILE *fp);
 void polygon2kml(char *line, FILE *fp);
 void rgps2kml(cell_t cell, double *lat, double *lon, FILE *fp);
 void rgps_grid2kml(grid_attr_t grid, FILE *fp);
-void shape2kml(char *inFile, FILE *fp, char *name);
+int shape2kml(char *inFile, FILE *fp, char *name);
 void geotiff2kml(char *line, FILE *fp);
 
 // Prototypes from kml.c

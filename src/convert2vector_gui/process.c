@@ -129,7 +129,9 @@ void process()
   {
     printf("Converting shape file to a kml file.\n");
     printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    read_shape(in_base, out_base, KMLFILE, 0);
+    ret = read_shape(in_base, out_base, KMLFILE, 0);
+    // read_shape returns 0 for success
+    ret = !ret;
   }
   else if (input_format == INPUT_SHAPE && output_format == OUTPUT_TEXT)
   {
