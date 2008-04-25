@@ -167,7 +167,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   will attempt to correct by applying a scale correction factor uniformly\n"\
 "   to all pixels in the image.  The correction is dependent on the date,\n"\
 "   and is only applied to calibrated data (i.e., everything but amplitude)\n"\
-"   For more information, see:\n"\
+"   For more information, see section 4 of:\n"\
 "   <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n"
 
 #define ASF_LIMITATIONS_STRING \
