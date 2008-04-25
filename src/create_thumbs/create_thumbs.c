@@ -56,6 +56,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                                output_format_t output_format, char *out_dir);
 int is_stf_level0(const char *file);
 int is_ceos_level0(const char *file);
+void flip_to_north_up(const char *in_file, const char *out_file);
 
 int main(int argc, char *argv[])
 {
@@ -380,7 +381,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     {
         // failed for some reason, quit without thumbnailing
         meta_free(imd);
-        asfPrintStatus("Failed to open: %s\n", data_name);
+        asfPrintStatus("Failed to open:\n    %s\n", data_name);
         return FALSE;
     }
 
@@ -671,6 +672,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         if (pair != NO_STF_FILE_PAIR &&
             strncmp(file, inDataName, strlen(inDataName)) == 0)
         {
+            asfPrintStatus("Importing from\n    %s\n      to\n    %s\n", inDataName, out_file);
             asf_import(r_AMP,               /* power                  */
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
@@ -718,7 +720,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         FREE(basename);
         if (pair != NO_CEOS_FILE_PAIR && strcmp(file, *dataName) == 0)
         {
-            printf("Importing from %s to %s\n", *dataName, out_file);
+            asfPrintStatus("Importing from\n    %s\n      to\n    %s\n", *dataName, out_file);
             asf_import(r_AMP,               /* power                  */
                        0,                   /* db_flag                */
                        0,                   /* complex_flag           */
@@ -757,7 +759,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     strcpy(in_file, out_file);
     sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
-    printf("Ardop from %s to %s\n", in_file, out_file);
+    asfPrintStatus("Ardop from\n    %s\n      to\n    %s\n", in_file, out_file);
     // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
     // populates in/out filenames, sets status and CALPRMS to blank and "NO" respectively, and all
     // else to NULL.  See ardop() for code that reads the .in file.
@@ -779,20 +781,18 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     sprintf(in_file, "%s_amp", out_file);
     sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
-    printf("Converting slant range to ground range from %s to %s\n", in_file, out_file);
+    asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
 
-    // Resample image, flip if necessary, and export
+    //sprintf(in_file, "%s_amp", out_file);
+    //sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
+    //        tmp_basename, get_basename(file));
+    //printf("Converting slant range to ground range from %s to %s\n", in_file, out_file);
+
+    // Resample image
     strcpy(in_file, out_file);
-    if (browseFlag) {
-        char *basename = get_basename(file);
-        //strcpy(out_file, file);
-        strcpy(out_file, basename);
-        FREE(basename);
-    }
-    else {
-        sprintf(out_file, "%s_thumb", file);
-    }
+    sprintf(out_file, "%s%c%s%s_resample", tmp_folder, DIR_SEPARATOR,
+            tmp_basename, get_basename(file));
     meta_parameters *meta = meta_read(in_file);
     double xsf, ysf;
     if (scale_factor > 0.0) {
@@ -809,13 +809,27 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                 "and values must be positive.\n", scale_factor, size);
     }
     char *band_name[1] = {MAGIC_UNSET_STRING};
-    printf("Resampling from %s to %s\n", in_file, out_file);
+    asfPrintStatus("Resampling from\n    %s\n      to\n    %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
-    //flip(); // FIXME: Ask Jeremy ...maybe flip ...maybe not
+
+    // Flip so the image is north-up, east-right
     strcpy(in_file, out_file);
+    sprintf(out_file, "%s%c%s%s_resample_flip", tmp_folder, DIR_SEPARATOR,
+            tmp_basename, get_basename(file));
+    asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
+    flip_to_north_up(in_file, out_file);
+
+    // Export to selected graphics file format
+    strcpy(in_file, out_file);
+    if (browseFlag) {
+        sprintf(out_file, "%s", get_basename(file));
+    }
+    else {
+        sprintf(out_file, "%s_thumb", get_basename(file));
+    }
     if (out_dir && strlen(out_dir)) {
         sprintf(export_path, "%s%c%s", out_dir, DIR_SEPARATOR,
-        get_basename(out_file));
+                out_file);
         if (!is_dir(out_dir)) {
             mkdir(out_dir, S_IRWXU | S_IRWXG | S_IRWXO);
         }
@@ -823,7 +837,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
         strcpy(export_path, out_file);
     }
-    printf("Exporting from %s to %s\n", in_file, export_path);
+    asfPrintStatus("Exporting from\n    %s\n      to\n    %s\n", in_file, export_path);
     asf_export_bands(output_format,
                      SIGMA,
                      0 /*rgb*/,
@@ -995,3 +1009,56 @@ int is_ceos_level0(const char *file) {
     return ret;
 }
 
+void flip_to_north_up(const char *in_file, const char *out_file)
+{
+    char input_meta_name[1024], input_data_name[1024];
+    char output_meta_name[1024], output_data_name[1024];
+    char file[256], path[1024-256+1];
+    int vert, horz;
+    FloatImage *input = NULL;
+    meta_parameters *imd = NULL;
+
+    if (!in_file  || strlen(in_file) <= 0 ||
+        !out_file || strlen(out_file) <= 0)
+    {
+        asfPrintError("flip_to_north_up(): Input and output file(s) not specified.\n");
+    }
+
+    split_dir_and_file(in_file, path, file);
+    sprintf(input_meta_name, "%s%c%s.meta", path, DIR_SEPARATOR, get_basename(file));
+    sprintf(input_data_name, "%s%c%s.img", path, DIR_SEPARATOR, get_basename(file));
+
+    split_dir_and_file(out_file, path, file);
+    sprintf(output_meta_name, "%s%c%s.meta", path, DIR_SEPARATOR, get_basename(file));
+    sprintf(output_data_name, "%s%c%s.img", path, DIR_SEPARATOR, get_basename(file));
+
+    imd = meta_read(input_meta_name);
+    meta_write(imd, output_meta_name);
+
+    vert = (imd->general->orbit_direction == 'D') ? 1 : 0; // Flip if descending during take
+    horz = 0; // Unless someone thinks of a need for this, default to using
+              // no horizontal flip (east/west)
+    asfPrintStatus("\nFlipping image %s.\n",
+                   (vert && horz) ? "vertically and horizontally" :
+                   (vert)         ? "vertically"                  : "horizontally");
+
+    asfPrintStatus("Input data file:\n    %s\n", input_data_name);
+    asfPrintStatus("Output data file:\n    %s\n", output_data_name);
+
+    input = float_image_new_from_file(imd->general->sample_count,
+                                      imd->general->line_count,
+                                      input_data_name, 0,
+                                      FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+    if (horz) {
+        float_image_flip_x(input);
+    }
+
+    if (vert) {
+        float_image_flip_y(input);
+    }
+
+    float_image_store(input, output_data_name,
+                      FLOAT_IMAGE_BYTE_ORDER_BIG_ENDIAN);
+
+    meta_free(imd);
+}
