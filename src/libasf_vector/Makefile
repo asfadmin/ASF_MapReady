@@ -11,14 +11,21 @@ CFLAGS += \
 	$(CFLAGS)
 
 OBJS = \
-	ingest.o \
+	convert2vector.o \
+	utils.o \
+	header.o \
+	geotiff.o \
+	polygon.o \
+	point.o \
+	auig.o \
+	rgps.o \
+	multimatch.o \
+	meta.o \
 	kml.o \
-	convert_kml.o \
 	shape.o \
-	convert_shape.o \
-	text.o \
 	generic_csv.o \
-	convert_text.o
+	custom.o \
+	utils.o
 
 LIBS = \
 	$(LIBDIR)/libasf_vector.a \
@@ -41,6 +48,8 @@ LIBS = \
 all: build_only
 	mv libasf_vector.a $(LIBDIR)
 	cp asf_vector.h $(ASF_INCLUDE_DIR)
+	mkdir -p $(SHAREDIR)
+	cp header.lst $(SHAREDIR)
 
 build_only: $(OBJS)
 	rm -f libasf_vector.a

@@ -1,5 +1,8 @@
+#include "shapefil.h"
 #include "asf_vector.h"
 #include "asf.h"
+#include <assert.h>
+#include <ctype.h>
 #include "asf_nan.h"
 #include "dateUtil.h"
 #include "float_image.h"
@@ -7,7 +10,6 @@
 #include "libasf_proj.h"
 #include <stdio.h>
 #include <math.h>
-#include <ctype.h>
 
 /*
    When invoking google earth from the command line, you can put a kml
@@ -20,6 +22,20 @@ static void swap(double *x, double *y)
     double tmp = *x;
     *x = *y;
     *y = tmp;
+}
+
+int check_meta_block(const char *block, dbf_header_t *dbf, int nCols)
+{
+  int ii, visible = FALSE;
+  char search[50];
+
+  sprintf(search, "meta.%s", block);
+  for (ii=0; ii<nCols; ii++) {
+    if (strncmp(dbf[ii].header, search, strlen(search)) == 0 &&
+        dbf[ii].visible)
+      visible = TRUE;
+  }
+  return visible;
 }
 
 void kml_header(FILE *kml_file)
@@ -74,221 +90,1149 @@ static double min4(double a, double b, double c, double d)
 static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
                            char *name, char *png_filename, char *dir)
 {
-    int nl = meta->general->line_count;
-    int ns = meta->general->sample_count;
-    double lat_UL, lon_UL;
-    double lat_UR, lon_UR;
-    double lat_LL, lon_LL;
-    double lat_LR, lon_LR;
+  dbf_header_t *dbf;
+  int ii, kk, nCols;
+  int nl = meta->general->line_count;
+  int ns = meta->general->sample_count;
+  double lat_UL, lon_UL;
+  double lat_UR, lon_UR;
+  double lat_LL, lon_LL;
+  double lat_LR, lon_LR;
+  char begin[10], end[10];
+  int general_block = FALSE;
+  int sar_block = FALSE;
+  int optical_block = FALSE;
+  int thermal_block = FALSE;
+  int transform_block = FALSE;
+  int airsar_block = FALSE;
+  int stats_block = FALSE;
+  int projection_block = FALSE;
+  int state_block = FALSE;
+  int location_block = FALSE;
 
+  if (meta->location) {
+    lat_UL = meta->location->lat_start_near_range;
+    lon_UL = meta->location->lon_start_near_range;
+    lat_UR = meta->location->lat_start_far_range;
+    lon_UR = meta->location->lon_start_far_range;
+    lat_LL = meta->location->lat_end_near_range;
+    lon_LL = meta->location->lon_end_near_range;
+    lat_LR = meta->location->lat_end_far_range;
+    lon_LR = meta->location->lon_end_far_range;
+  }
+  else {
     meta_get_latLon(meta, 0, 0, 0, &lat_UL, &lon_UL);
     meta_get_latLon(meta, nl, 0, 0, &lat_LL, &lon_LL);
     meta_get_latLon(meta, nl, ns, 0, &lat_LR, &lon_LR);
     meta_get_latLon(meta, 0, ns, 0, &lat_UR, &lon_UR);
+  }
 
-    fprintf(kml_file, "<Placemark>\n");
-    fprintf(kml_file, "  <description><![CDATA[\n");
-    fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
-    fprintf(kml_file, "<strong>Sensor name</strong>: %s<br>\n",
-        meta->general->sensor_name);
-    fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
-    fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
-    fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
-    fprintf(kml_file, "<strong>Acquisition date</strong>: %s<br>\n",
-        meta->general->acquisition_date);
-    if (meta->general->orbit_direction == 'D')
-      fprintf(kml_file, "<strong>Orbit direction</strong>: Descending<br>\n");
-    else if (meta->general->orbit_direction == 'A')
-      fprintf(kml_file, "<strong>Orbit direction</strong>: Ascending<br>\n");
-    fprintf(kml_file, "<strong>Center - Lat</strong>: %9.4lf, ",
-        meta->general->center_latitude);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n",
-        meta->general->center_longitude);
-    fprintf(kml_file, "<strong>Corner 1 - Lat</strong>: %9.4lf, ", lat_UL);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_UL);
-    fprintf(kml_file, "<strong>Corner 2 - Lat</strong>: %9.4lf, ", lat_UR);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_UR);
-    fprintf(kml_file, "<strong>Corner 3 - Lat</strong>: %9.4lf, ", lat_LR);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_LR);
-    fprintf(kml_file, "<strong>Corner 4 - Lat</strong>: %9.4lf, ", lat_LL);
-    fprintf(kml_file, "<strong>Lon</strong>: %9.4lf<br>\n", lon_LL);
-    fprintf(kml_file, "  ]]></description>\n");
-    fprintf(kml_file, "  <name>%s</name>\n", name);
-    fprintf(kml_file, "  <LookAt>\n");
-    fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
-            meta->general->center_longitude);
-    fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
-            meta->general->center_latitude);
-    fprintf(kml_file, "    <range>400000</range>\n");
-    fprintf(kml_file, "    <tilt>30</tilt>\n");
-    //fprintf(kml_file, "    <heading>50</heading>\n");
-    fprintf(kml_file, "  </LookAt>\n");
-    fprintf(kml_file, "  <visibility>1</visibility>\n");
-    fprintf(kml_file, "  <open>1</open>\n");
-    write_kml_style_keys(kml_file);
+  // Read configuration file
+  read_header_config("META", &dbf, &nCols);
 
-    fprintf(kml_file, "  <Polygon>\n");
-    // different behavior if we have an overlay - no extrude, and draw on
-    // the ground instead of at an absolute height above the terrain
-    fprintf(kml_file, "    <extrude>%d</extrude>\n",
-        png_filename ? 0 : 1);
-    fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
-        png_filename ? "relativeToGround" : "absolute");
-    fprintf(kml_file, "    <outerBoundaryIs>\n");
-    fprintf(kml_file, "      <LinearRing>\n");
-    fprintf(kml_file, "        <coordinates>\n");
-
-    double h = 0.0;
-    double clat = meta->general->center_latitude;
-    double clon = meta->general->center_longitude;
-    printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
-    meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
-    printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
-
-    double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
-        ctr_x, ctr_y;
-    double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
-        ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
-    double lat_UL_rot, lon_UL_rot;
-    double lat_UR_rot, lon_UR_rot;
-    double lat_LR_rot, lon_LR_rot;
-    double lat_LL_rot, lon_LL_rot;
-
-    int zone = utm_zone(clon);
-
-    latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
-    latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
-    latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
-    latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
-    latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
-
-    double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
-    double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
-    double ang = (ang1+ang2)/2;
-
-    if (!png_filename || !meta->projection || fabs(ang) > .1)
-    {
-        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
-        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
-        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
-        fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
-
-        fprintf(kml_file, "        </coordinates>\n");
-        fprintf(kml_file, "      </LinearRing>\n");
-        fprintf(kml_file, "    </outerBoundaryIs>\n");
-        fprintf(kml_file, "  </Polygon>\n");
-        fprintf(kml_file, "</Placemark>\n");
-
-        if (!png_filename || !meta->projection)
-            printf("\nGoogle Earth(tm) overlay image not produced (because the data is not in a UTM map projection\n"
-                    "as required) -OR- a Google Earth(tm) (.kml) file is being produced from a non-image source such\n"
-                    "as an ASF metadata file etc.)  The data will be displayed as a transparent polygon (only)\n"
-                    "in Google Earth(tm).\n\n");
-        else
-            printf("Google Earth(tm) overlay not produced (because the image's rotation angle\n"
-                    "is too large to overlay: %lf)\n\n", ang*R2D);
+  // Print out according to configuration
+  fprintf(kml_file, "<Placemark>\n");
+  fprintf(kml_file, "  <description><![CDATA[\n");
+  fprintf(kml_file, "<table width=\"350\"><tr><td>\n");
+  fprintf(kml_file, "<!-- Format: META (generated by convert2vector "
+          "(version %s)) -->\n", SVN_REV);
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
     }
-    else
-    {
-        printf("png filename: %s\n", png_filename);
-
-        if (!dir)
-            asfPrintError("Must pass in a directory for the overlay files!\n");
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // General block
+    if (check_meta_block("general", dbf, nCols) && !general_block) {
+      fprintf(kml_file, "<strong>General</strong><br>\n");
+      general_block = TRUE;
+    }
+    if (strcmp(dbf[ii].header, "meta.general.basename") == 0)
+      fprintf(kml_file, "%s<strong>Name</strong>: %s <br>%s",
+              begin, meta->general->basename, end);
+    else if (strcmp(dbf[ii].header, "meta.general.sensor") == 0)
+      fprintf(kml_file, "%s<strong>Sensor</strong>: %s <br>%s",
+              begin, meta->general->sensor, end);
+    else if (strcmp(dbf[ii].header, "meta.general.sensor_name") == 0)
+      fprintf(kml_file, "%s<strong>Sensor name</strong>: %s <br>%s",
+              begin, meta->general->sensor_name, end);
+    else if (strcmp(dbf[ii].header, "meta.general.mode") == 0)
+      fprintf(kml_file, "%s<strong>Mode</strong>: %s <br>%s",
+              begin, meta->general->mode, end);
+    else if (strcmp(dbf[ii].header, "meta.general.processor") == 0)
+      fprintf(kml_file, "%s<strong>Processor</strong>: %s <br>%s",
+              begin, meta->general->processor, end);
+    else if (strcmp(dbf[ii].header, "meta.general.data_type") == 0) {
+      if (meta->general->data_type == BYTE)
+        fprintf(kml_file, "%s<strong>Data type</strong>: BYTE <br>%s",
+                begin, end);
+      else if (meta->general->data_type == INTEGER16)
+        fprintf(kml_file, "%s<strong>Data type</strong>: INTEGER16 <br>%s",
+                begin, end);
+      else if (meta->general->data_type == INTEGER32)
+        fprintf(kml_file, "%s<strong>Data type</strong>: INTEGER32 <br>%s",
+                begin, end);
+      else if (meta->general->data_type == REAL32)
+        fprintf(kml_file, "%s<strong>Data type</strong>: REAL32 <br>%s",
+                begin, end);
+      else if (meta->general->data_type == REAL64)
+        fprintf(kml_file, "%s<strong>Data type</strong>: REAL64 <br>%s",
+                begin, end);
+      else if (meta->general->data_type == COMPLEX_BYTE)
+        fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_BYTE <br>%s",
+                begin, end);
+      else if (meta->general->data_type == COMPLEX_INTEGER16)
+        fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_INTEGER16 "
+                "<br>%s", begin, end);
+      else if (meta->general->data_type == COMPLEX_INTEGER32)
+        fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_INTEGER32 "
+                "<br>%s", begin, end);
+      else if (meta->general->data_type == COMPLEX_REAL32)
+        fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_REAL32 "
+                "<br>%s", begin, end);
+      else if (meta->general->data_type == COMPLEX_REAL64)
+        fprintf(kml_file, "%s<strong>Data type</strong>: COMPLEX_REAL64 "
+                "<br>%s", begin, end);
+    }
+    else if (strcmp(dbf[ii].header, "meta.general.image_data_type") == 0) {
+      if (meta->general->image_data_type == RAW_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "RAW_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == COMPLEX_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "COMPLEX_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == AMPLITUDE_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "AMPLITUDE_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == PHASE_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "PHASE_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == INTERFEROGRAM)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "INTERFEROGRAM <br>%s", begin, end);
+      else if (meta->general->image_data_type == COHERENCE_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "COHERENCE_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == POLARIMETRIC_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "POLARIMETRIC_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == LUT_IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "LUT_IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == ELEVATION)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "ELEVATION <br>%s", begin, end);
+      else if (meta->general->image_data_type == DEM)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "DEM <br>%s", begin, end);
+      else if (meta->general->image_data_type == IMAGE)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                "IMAGE <br>%s", begin, end);
+      else if (meta->general->image_data_type == MASK)
+        fprintf(kml_file, "%s<strong>Image data type</strong>: "
+                  "MASK <br>%s", begin, end);
+    }
+    else if (strcmp(dbf[ii].header, "meta.general.radiometry") == 0) {
+      if (meta->general->radiometry == r_AMP)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: AMPLITUDE <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_SIGMA)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: SIGMA <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_BETA)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: BETA <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_GAMMA)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: GAMMA <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_SIGMA_DB)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: SIGMA_DB <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_BETA_DB)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: BETA_DB <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_GAMMA_DB)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: GAMMA_DB <br>%s",
+                begin, end);
+      else if (meta->general->radiometry == r_POWER)
+        fprintf(kml_file, "%s<strong>Radiometry</strong>: POWER <br>%s",
+                begin, end);
+    }
+    else if (strcmp(dbf[ii].header, "meta.general.system") == 0)
+      fprintf(kml_file, "%s<strong>System</strong>: %s <br>%s",
+              begin, meta->general->system, end);
+    else if (strcmp(dbf[ii].header, "meta.general.acquisition_date") == 0)
+      fprintf(kml_file, "%s<strong>Acquisition date</strong>: %s <br>%s",
+              begin, meta->general->acquisition_date, end);
+    else if (strcmp(dbf[ii].header, "meta.general.orbit") == 0)
+      fprintf(kml_file, "%s<strong>Orbit</strong>: %d <br>%s",
+              begin, meta->general->orbit, end);
+    else if (strcmp(dbf[ii].header, "meta.general.orbit_direction") == 0) {
+      if (meta->general->orbit_direction == 'A')
+        fprintf(kml_file, "%s<strong>Orbit direction</strong>: Ascending "
+                "<br>%s", begin, end);
+      else
+        fprintf(kml_file, "%s<strong>Orbit direction</strong>: Descending "
+                "<br>%s", begin, end);
+    }
+    else if (strcmp(dbf[ii].header, "meta.general.frame") == 0)
+      fprintf(kml_file, "%s<strong>Frame</strong>: %d <br>%s",
+              begin, meta->general->frame, end);
+    else if (strcmp(dbf[ii].header, "meta.general.band_count") == 0)
+      fprintf(kml_file, "%s<strong>Band count</strong>: %d <br>%s",
+              begin, meta->general->band_count, end);
+    else if (strcmp(dbf[ii].header, "meta.general.bands") == 0)
+      fprintf(kml_file, "%s<strong>Bands</strong>: %s <br>%s",
+              begin, meta->general->bands, end);
+    else if (strcmp(dbf[ii].header, "meta.general.line_count") == 0)
+      fprintf(kml_file, "%s<strong>Line count</strong>: %d <br>%s",
+              begin, meta->general->line_count, end);
+    else if (strcmp(dbf[ii].header, "meta.general.sample_count") == 0)
+      fprintf(kml_file, "%s<strong>Sample count</strong>: %d <br>%s",
+              begin, meta->general->sample_count, end);
+    else if (strcmp(dbf[ii].header, "meta.general.start_line") == 0)
+      fprintf(kml_file, "%s<strong>Start line</strong>: %d <br>%s",
+              begin, meta->general->start_line, end);
+    else if (strcmp(dbf[ii].header, "meta.general.start_sample") == 0)
+      fprintf(kml_file, "%s<strong>Start sample</strong>: %d <br>%s",
+              begin, meta->general->start_sample, end);
+    else if (strcmp(dbf[ii].header, "meta.general.x_pixel_size") == 0)
+      fprintf(kml_file, "%s<strong>X pixel size</strong>: %s <br>%s",
+              begin, lf(meta->general->x_pixel_size), end);
+    else if (strcmp(dbf[ii].header, "meta.general.y_pixel_size") == 0)
+      fprintf(kml_file, "%s<strong>Y pixel size</strong>: %s <br>%s",
+              begin, lf(meta->general->y_pixel_size), end);
+    else if (strcmp(dbf[ii].header, "meta.general.center_latitude") == 0)
+      fprintf(kml_file, "%s<strong>Center latitude</strong>: %s <br>%s",
+              begin, lf(meta->general->center_latitude), end);
+    else if (strcmp(dbf[ii].header, "meta.general.center_longitude") == 0)
+      fprintf(kml_file, "%s<strong>Center longitude</strong>: %s <br>%s",
+              begin, lf(meta->general->center_longitude), end);
+    else if (strcmp(dbf[ii].header, "meta.general.re_major") == 0)
+      fprintf(kml_file, "%s<strong>Re major</strong>: %s <br>%s",
+              begin, lf(meta->general->re_major), end);
+    else if (strcmp(dbf[ii].header, "meta.general.re_minor") == 0)
+      fprintf(kml_file, "%s<strong>Re minor</strong>: %s <br>%s",
+              begin, lf(meta->general->re_minor), end);
+    else if (strcmp(dbf[ii].header, "meta.general.bit_error_rate") == 0)
+      fprintf(kml_file, "%s<strong>Bit error rate</strong>: %s <br>%s",
+              begin, lf(meta->general->bit_error_rate), end);
+    else if (strcmp(dbf[ii].header, "meta.general.missing_lines") == 0)
+      fprintf(kml_file, "%s<strong>Missing lines</strong>: %d <br>%s",
+              begin, meta->general->missing_lines, end);
+    else if (strcmp(dbf[ii].header, "meta.general.no_data") == 0)
+      fprintf(kml_file, "%s<strong>No data</strong>: %s <br>%s",
+              begin, lf(meta->general->no_data), end);
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // SAR block
+    if (meta->sar) {
+      if (check_meta_block("sar", dbf, nCols) && !sar_block) {
+        fprintf(kml_file, "<br><strong>SAR</strong><br>\n");
+        sar_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.sar.image_type") == 0)
+        fprintf(kml_file, "%s<strong>Image type</strong>: %c <br>%s",
+                begin, meta->sar->image_type, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.look_direction") == 0)
+        fprintf(kml_file, "%s<strong>Look direction</strong>: %c <br>%s",
+                begin, meta->sar->look_direction, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.look_count") == 0)
+        fprintf(kml_file, "%s<strong>Look count</strong>: %d <br>%s",
+                begin, meta->sar->look_count, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.deskewed") == 0)
+        fprintf(kml_file, "%s<strong>Deskewed</strong>: %d <br>%s",
+                begin, meta->sar->deskewed, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.original_line_count") == 0)
+        fprintf(kml_file, "%s<strong>Original line count</strong>: %d <br>%s",
+                begin, meta->sar->original_line_count, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.original_sample_count") == 0)
+        fprintf(kml_file, "%s<strong>Original sample count</strong>: %d "
+                "<br>%s", begin, meta->sar->original_sample_count, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.line_increment") == 0)
+        fprintf(kml_file, "%s<strong>Line increment</strong>: %s <br>%s",
+                begin, lf(meta->sar->line_increment), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.sample_increment") == 0)
+        fprintf(kml_file, "%s<strong>Sample increment</strong>: %s <br>%s",
+                begin, lf(meta->sar->sample_increment), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.range_time_per_pixel") == 0)
+        fprintf(kml_file, "%s<strong>Range time per pixel</strong>: %s <br>%s",
+                begin, lf(meta->sar->range_time_per_pixel), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.azimuth_time_per_pixel") == 0)
+        fprintf(kml_file, "%s<strong>Azimuth time per pixel</strong>: %s "
+                "<br>%s", begin, lf(meta->sar->azimuth_time_per_pixel), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.slant_shift") == 0)
+        fprintf(kml_file, "%s<strong>Slant shift</strong>: %s <br>%s",
+                begin, lf(meta->sar->slant_shift), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.time_shift") == 0)
+        fprintf(kml_file, "%s<strong>Time shift</strong>: %s <br>%s",
+                begin, lf(meta->sar->time_shift), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.slant_range_first_pixel") == 0)
+        fprintf(kml_file, "%s<strong>Slant range first pixel</strong>: %s "
+                "<br>%s", begin, lf(meta->sar->slant_range_first_pixel), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.wavelength") == 0)
+        fprintf(kml_file, "%s<strong>Wavelength</strong>: %s <br>%s",
+                begin, lf(meta->sar->wavelength), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.prf") == 0)
+        fprintf(kml_file, "%s<strong>PRF</strong>: %s <br>%s",
+                begin, lf(meta->sar->prf), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius") == 0)
+        fprintf(kml_file, "%s<strong>Earth radius</strong>: %s <br>%s",
+                begin, lf(meta->sar->earth_radius), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.earth_radius_pp") == 0)
+        fprintf(kml_file, "%s<strong>Earth radius PP</strong>: %s <br>%s",
+                begin, lf(meta->sar->earth_radius_pp), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.satellite_height") == 0)
+        fprintf(kml_file, "%s<strong>Satellite height</strong>: %s <br>%s",
+                begin, lf(meta->sar->satellite_height), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.satellite_binary_time") == 0)
+        fprintf(kml_file, "%s<strong>Satellite binary time</strong>: %s "
+                "<br>%s", begin, meta->sar->satellite_binary_time, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.satellite_clock_time") == 0)
+        fprintf(kml_file, "%s<strong>Satellite clock time</strong>: %s <br>%s",
+                begin, meta->sar->satellite_clock_time, end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.sar.range_doppler_coefficients") == 0) {
+        fprintf(kml_file, "%s<strong>Range doppler centroid</strong>: %s "
+                "<br>%s", begin, lf(meta->sar->range_doppler_coefficients[0]),
+                end);
+        fprintf(kml_file, "%s<strong>Range doppler per range pixel</strong>: "
+                "%s <br>%s", begin,
+                lf(meta->sar->range_doppler_coefficients[1]), end);
+        fprintf(kml_file, "%s<strong>Range doppler per range pixel 2</strong>:"
+                " %s <br>%s", begin,
+                lf(meta->sar->range_doppler_coefficients[2]), end);
+      }
+      else if (strcmp(dbf[ii].header,
+                      "meta.sar.azimuth_doppler_coefficients") == 0) {
+        fprintf(kml_file, "%s<strong>Azimuth doppler centroid</strong>: "
+                "%s <br>%s", begin,
+                lf(meta->sar->azimuth_doppler_coefficients[0]), end);
+        fprintf(kml_file, "%s<strong>Azimuth doppler per azimuth pixel"
+                "</strong>: %s <br>%s", begin,
+                lf(meta->sar->azimuth_doppler_coefficients[1]), end);
+        fprintf(kml_file, "%s<strong>Azimuth doppler per azimuth pixel 2"
+                "</strong>: %s <br>%s", begin,
+                lf(meta->sar->azimuth_doppler_coefficients[2]), end);
+      }
+      else if (strcmp(dbf[ii].header,
+                      "meta.sar.azimuth_processing_bandwidth") == 0)
+        fprintf(kml_file, "%s<strong>Azimuth processing bandwidth</strong>: "
+                "%s <br>%s", begin ,
+                lf(meta->sar->azimuth_processing_bandwidth), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.chirp_rate") == 0)
+        fprintf(kml_file, "%s<strong>Chirp rate</strong>: %s <br>%s",
+                begin, lf(meta->sar->chirp_rate), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.pulse_duration") == 0)
+        fprintf(kml_file, "%s<strong>Pulse duration</strong>: %s <br>%s",
+                begin, lf(meta->sar->pulse_duration), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.range_sampling_rate") == 0)
+        fprintf(kml_file, "%s<strong>Range sampling rate</strong>: %s "
+                "<br>%s", begin, lf(meta->sar->range_sampling_rate), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.polarization") == 0)
+        fprintf(kml_file, "%s<strong>Polarization</strong>: %s <br>%s",
+                begin, meta->sar->polarization, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.multilook") == 0)
+        fprintf(kml_file, "%s<strong>Multilook</strong>: %d <br>%s",
+                begin, meta->sar->multilook, end);
+      else if (strcmp(dbf[ii].header, "meta.sar.pitch") == 0)
+        fprintf(kml_file, "%s<strong>Pitch</strong>: %s <br>%s",
+                begin, lf(meta->sar->pitch), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.roll") == 0)
+        fprintf(kml_file, "%s<strong>Roll</strong>: %s <br>%s",
+                begin, lf(meta->sar->roll), end);
+      else if (strcmp(dbf[ii].header, "meta.sar.yaw") == 0)
+        fprintf(kml_file, "%s<strong>Yaw</strong>: %s <br>%s",
+                begin, lf(meta->sar->yaw), end);
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Optical block
+    if (meta->optical) {
+      if (check_meta_block("optical", dbf, nCols) && !optical_block) {
+        fprintf(kml_file, "<br><strong>Optical</strong><br>\n");
+        optical_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.optical.pointing_direction") == 0)
+        fprintf(kml_file, "%s<strong>Pointing direction</strong>: %s <br>%s",
+                begin, meta->optical->pointing_direction, end);
+      else if (strcmp(dbf[ii].header, "meta.optical.off_nadir_angle") == 0)
+        fprintf(kml_file, "%s<strong>Off nadir angle</strong>: %s <br>%s",
+                begin, lf(meta->optical->off_nadir_angle), end);
+      else if (strcmp(dbf[ii].header, "meta.optical.correction_level") == 0)
+        fprintf(kml_file, "%s<strong>Correction level</strong>: %s <br>%s",
+                begin, meta->optical->correction_level, end);
+      else if (strcmp(dbf[ii].header, "meta.optical.cloud_percentage") == 0)
+        fprintf(kml_file, "%s<strong>Cloud percentage</strong>: %s <br>%s",
+                begin, lf(meta->optical->cloud_percentage), end);
+      else if (strcmp(dbf[ii].header, "meta.optical.sun_azimuth_angle") == 0)
+        fprintf(kml_file, "%s<strong>Sun azimuth angle</strong>: %s <br>%s",
+                begin, lf(meta->optical->sun_azimuth_angle), end);
+      else if (strcmp(dbf[ii].header, "meta.optical.sun_elevation_angle") == 0)
+        fprintf(kml_file, "%s<strong>Sun elevation angle</strong>: %s <br>%s",
+                begin, lf(meta->optical->sun_elevation_angle), end);
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Thermal block
+    if (meta->thermal) {
+      if (check_meta_block("thermal", dbf, nCols) && !thermal_block) {
+        fprintf(kml_file, "<br><strong>Thermal</strong><br>\n");
+        thermal_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.thermal.band_gain") == 0)
+        fprintf(kml_file, "%s<strong>Band gain</strong>: %s <br>%s",
+                begin, lf(meta->thermal->band_gain), end);
+      else if (strcmp(dbf[ii].header, "meta.thermal.band_gain_change") == 0)
+        fprintf(kml_file, "%s<strong>Band gain change</strong>: %s <br>%s",
+                begin, lf(meta->thermal->band_gain_change), end);
+      else if (strcmp(dbf[ii].header, "meta.thermal.day") == 0)
+        fprintf(kml_file, "%s<strong>Day</strong>: %d <br>%s",
+                begin, meta->thermal->day, end);
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Transform block
+    if (meta->transform) {
+      if (check_meta_block("transform", dbf, nCols) && !transform_block) {
+        fprintf(kml_file, "<br><strong>Transform</strong><br>\n");
+        transform_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.transform.parameter_count") == 0)
+        fprintf(kml_file, "%s<strong>Parameter count</strong>: %d <br>%s",
+                begin, meta->transform->parameter_count, end);
+      else if (strcmp(dbf[ii].header, "meta.transform.x") == 0) {
+        for (kk=0; kk<meta->transform->parameter_count; kk++)
+          fprintf(kml_file, "%s<strong>phi(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->transform->x[kk]), end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.transform.y") == 0) {
+        for (kk=0; kk<meta->transform->parameter_count; kk++)
+          fprintf(kml_file, "%s<strong>lambda(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->transform->y[kk]), end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.transform.l") == 0) {
+        for (kk=0; kk<meta->transform->parameter_count; kk++)
+          fprintf(kml_file, "%s<strong>i(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->transform->l[kk]), end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.transform.s") == 0) {
+        for (kk=0; kk<meta->transform->parameter_count; kk++)
+          fprintf(kml_file, "%s<strong>j(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->transform->s[kk]), end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.transform.incid_a") == 0) {
+        for (kk=0; kk<6; kk++)
+          fprintf(kml_file, "%s<strong>incid_a(%d)</strong>: %s <br>%s",
+                  begin, kk, lf(meta->transform->incid_a[kk]), end);
+      }
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // AirSAR block
+    if (meta->airsar) {
+      if (check_meta_block("airsar", dbf, nCols) && !airsar_block) {
+        fprintf(kml_file, "<br><strong>AirSAR</strong><br>\n");
+        airsar_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.airsar.scale_factor") == 0)
+        fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
+                begin, lf(meta->airsar->scale_factor), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.gps_altitude") == 0)
+        fprintf(kml_file, "%s<strong>GPS altitude</strong>: %s <br>%s",
+                begin, lf(meta->airsar->gps_altitude), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.lat_peg_point") == 0)
+        fprintf(kml_file, "%s<strong>Lat peg point</strong>: %s <br>%s",
+                begin, lf(meta->airsar->lat_peg_point), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.lon_peg_point") == 0)
+        fprintf(kml_file, "%s<strong>Lon peg point</strong>: %s <br>%s",
+                begin, lf(meta->airsar->lon_peg_point), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.head_peg_point") == 0)
+        fprintf(kml_file, "%s<strong>Heading peg point</strong>: %s <br>%s",
+                begin, lf(meta->airsar->head_peg_point), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.along_track_offset") == 0)
+        fprintf(kml_file, "%s<strong>Along track offset</strong>: %s <br>%s",
+                begin, lf(meta->airsar->along_track_offset), end);
+      else if (strcmp(dbf[ii].header, "meta.airsar.cross_track_offset") == 0)
+        fprintf(kml_file, "%s<strong>Cross track offset</strong>: %s <br>%s",
+                begin, lf(meta->airsar->cross_track_offset), end);
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Projection block
+    if (meta->projection) {
+      if (check_meta_block("projection", dbf, nCols) && !projection_block) {
+        fprintf(kml_file, "<br><strong>Projection</strong><br>\n");
+        projection_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.projection.type") == 0) {
+        if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "UNIVERSAL_TRANSVERSE_MERCATOR <br>%s", begin, end);
+        else if (meta->projection->type == POLAR_STEREOGRAPHIC)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "POLAR_STEREOGRAPHIC <br>%s", begin, end);
+        else if (meta->projection->type == ALBERS_EQUAL_AREA)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "ALBERS_EQUAL_AREA <br>%s", begin, end);
+        else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "LAMBERT_CONFORMAL_CONIC <br>%s", begin, end);
+        else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "LAMBERT_AZIMUTHAL_EQUAL_AREA<br>%s", begin, end);
+        else if (meta->projection->type == STATE_PLANE)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "STATE_PLANE <br>%s", begin, end);
+        else if (meta->projection->type == SCANSAR_PROJECTION)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "SCANSAR_PROJECTION <br>%s", begin, end);
+        else if (meta->projection->type == LAT_LONG_PSEUDO_PROJECTION)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "LAT_LONG_PSEUDO_PROJECTION <br>%s", begin, end);
+        else if (meta->projection->type == UNKNOWN_PROJECTION)
+          fprintf(kml_file, "%s<strong>Type</strong>: "
+                  "UNKNOWN_PROJECTION <br>%s", begin, end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.projection.startX") == 0)
+        fprintf(kml_file, "%s<strong>StartX</strong>: %s <br>%s",
+                begin, lf(meta->projection->startX), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.startY") == 0)
+        fprintf(kml_file, "%s<strong>StartY</strong>: %s <br>%s",
+                begin, lf(meta->projection->startY), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.perX") == 0)
+        fprintf(kml_file, "%s<strong>PerX</strong>: %s <br>%s",
+                begin, lf(meta->projection->perX), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.perY") == 0)
+        fprintf(kml_file, "%s<strong>PerY</strong>: %s <br>%s",
+                begin, lf(meta->projection->perY), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.units") == 0)
+        fprintf(kml_file, "%s<strong>Units</strong>: %s <br>%s",
+                begin, meta->projection->units, end);
+      else if (strcmp(dbf[ii].header, "meta.projection.hem") == 0) {
+        if (meta->projection->hem == 'N')
+          fprintf(kml_file, "%s<strong>Hemisphere</strong>: North <br>%s",
+                  begin, end);
+        else if (meta->projection->hem == 'S')
+          fprintf(kml_file, "%s<strong>Hemisphere</strong>: South <br>%s",
+                  begin, end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.projection.spheroid") == 0) {
+        if (meta->projection->spheroid == BESSEL_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: BESSEL <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == CLARKE1866_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: CLARKE1866 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == CLARKE1880_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: CLARKE1880 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == GEM6_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: GEM6 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == GEM10C_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: GEM10C <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == GRS1980_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: GRS1980 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == INTERNATIONAL1924_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: INTERNATIONAL1924 "
+                  "<br>%s", begin, end);
+        else if (meta->projection->spheroid == INTERNATIONAL1967_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: INTERNATIONAL1967 "
+                  "<br>%s", begin, end);
+        else if (meta->projection->spheroid == WGS72_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: WGS72 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == WGS84_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: WGS84 <br>%s",
+                  begin, end);
+        else if (meta->projection->spheroid == HUGHES_SPHEROID)
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: HUGHES <br>%s",
+                  begin, end);
         else
-        {
-            printf("UL: %lf,%lf\n", ul_x,ul_y);
-            printf("UR: %lf,%lf\n", ur_x,ur_y);
-            printf("LL: %lf,%lf\n", ll_x,ll_y);
-            printf("LR: %lf,%lf\n", lr_x,lr_y);
-            printf("angle= %lf\n", ang*R2D);
-
-            rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
-            rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
-            rotate(ll_x, ll_y, ctr_x, ctr_y, ang, &ll_x_rot, &ll_y_rot);
-            rotate(lr_x, lr_y, ctr_x, ctr_y, ang, &lr_x_rot, &lr_y_rot);
-
-            printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
-            printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
-            printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
-            printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
-
-            if (clat < 0) {
-                // account for the false northing in the southern hemisphere
-                ul_y_rot -= 10000000;
-                ur_y_rot -= 10000000;
-                ll_y_rot -= 10000000;
-                lr_y_rot -= 10000000;
-            }
-
-            UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
-            UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
-            UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
-            UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
-            //double box_north_lat = (lat_UL_rot + lat_UR_rot)/2;
-            //double box_south_lat = (lat_LL_rot + lat_LR_rot)/2;
-            //double box_east_lon = (lon_UL_rot + lon_LL_rot)/2;
-            //double box_west_lon = (lon_UR_rot + lon_LR_rot)/2;
-
-            double box_north_lat = lat_UL_rot;
-            double box_south_lat = lat_LR_rot;
-            double box_east_lon = lon_UL_rot;
-            double box_west_lon = lon_LR_rot;
-
-            if (box_south_lat > box_north_lat)
-                swap(&box_south_lat, &box_north_lat);
-            if (box_east_lon < box_west_lon)
-                swap(&box_east_lon, &box_west_lon);
-
-            double upper_lat = max4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
-            double lower_lat = min4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
-            double upper_lon = max4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
-            double lower_lon = min4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
-
-            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
-            fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
-            fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
-            fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-            fprintf(kml_file, "        </coordinates>\n");
-            fprintf(kml_file, "      </LinearRing>\n");
-            fprintf(kml_file, "    </outerBoundaryIs>\n");
-            fprintf(kml_file, "  </Polygon>\n");
-            fprintf(kml_file, "</Placemark>\n");
-
-            //if (meta->general->orbit_direction == 'D')
-            //    swap(&box_south_lat, &box_north_lat);
-
-            fprintf(kml_file, "<GroundOverlay>\n");
-            //fprintf(kml_file, "  <description>\n");
-            //fprintf(kml_file, "    sensor/mode: %s/%s\n",
-            //        meta->general->sensor, meta->general->mode);
-            //fprintf(kml_file, "    orbit/frame: %d/%d\n",
-            //        meta->general->orbit, meta->general->frame);
-            //fprintf(kml_file, "  </description>\n");
-            fprintf(kml_file, "  <name>%s</name>\n", name);
-            fprintf(kml_file, "  <LookAt>\n");
-            fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
-            fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
-            fprintf(kml_file, "    <range>400000</range>\n");
-            fprintf(kml_file, "    <tilt>45</tilt>\n");
-            fprintf(kml_file, "    <heading>50</heading>\n");
-            fprintf(kml_file, "  </LookAt>\n");
-            fprintf(kml_file, "  <color>ffffffff</color>\n");
-            fprintf(kml_file, "  <Icon>\n");
-            fprintf(kml_file, "      <href>%s</href>\n", png_filename);
-            fprintf(kml_file, "  </Icon>\n");
-            fprintf(kml_file, "  <LatLonBox>\n");
-            fprintf(kml_file, "      <north>%.12f</north>\n", box_north_lat);
-            fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
-            fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
-            fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
-            fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
-            fprintf(kml_file, "  </LatLonBox>\n");
-
-            fprintf(kml_file, "</GroundOverlay>\n");
+          fprintf(kml_file, "%s<strong>Spheroid</strong>: UNKNOWN <br>%s",
+                  begin, end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.projection.re_major") == 0)
+        fprintf(kml_file, "%s<strong>re major</strong>: %s <br>%s",
+                begin, lf(meta->projection->re_major), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.re_minor") == 0)
+        fprintf(kml_file, "%s<strong>re minor</strong>: %s <br>%s",
+                begin, lf(meta->projection->re_minor), end);
+      else if (strcmp(dbf[ii].header, "meta.projection.datum") == 0) {
+        if (meta->projection->datum == EGM96_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: EGM96 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == ED50_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: ED50 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == ETRF89_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: ETRF89 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == ETRS89_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: ETRS89 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == ITRF97_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: ITRF97 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == NAD27_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: NAD27 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == NAD83_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: NAD83 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == WGS72_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: WGS72 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == WGS84_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: WGS84 <br>%s",
+                  begin, end);
+        else if (meta->projection->datum == HUGHES_DATUM)
+          fprintf(kml_file, "%s<strong>Datum</strong>: HUGHES <br>%s",
+                  begin, end);
+        else
+          fprintf(kml_file, "%s<strong>Datum</strong>: UNKNOWN <br>%s",
+                  begin, end);
+      }
+      else if (strcmp(dbf[ii].header, "meta.projection.height") == 0)
+        fprintf(kml_file, "%s<strong>Height</strong>: %s <br>%s",
+                begin, lf(meta->projection->height), end);
+      if (meta->projection->type == ALBERS_EQUAL_AREA) {
+        if (strcmp(dbf[ii].header,
+                   "meta.projection.param.albers.std_parallel1") == 0)
+          fprintf(kml_file, "%s<strong>First standard parallel</strong>: "
+                  "%s <br>%s", begin,
+                  lf(meta->projection->param.albers.std_parallel1), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.albers.std_parallel2") == 0)
+          fprintf(kml_file, "%s<strong>Second standard parallel</strong>: "
+                  "%s <br>%s", begin,
+                  lf(meta->projection->param.albers.std_parallel2), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.albers.center_meridian") == 0)
+          fprintf(kml_file, "%s<strong>Center meridian</strong>: "
+                  "%s <br>%s", begin,
+                  lf(meta->projection->param.albers.center_meridian), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.albers.orig_latitude") == 0)
+          fprintf(kml_file, "%s<strong>Latitude of origin</strong>: "
+                  "%s <br>%s", begin,
+                  lf(meta->projection->param.albers.orig_latitude), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.albers.false_easting") == 0)
+          fprintf(kml_file, "%s<strong>False easting</strong>: "
+                  "%s <br>%s", begin,
+                  lf(meta->projection->param.albers.false_easting), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.albers.false_northing") == 0)
+          fprintf(kml_file, "%s<strong>False northing</strong>: %s<br>%s",
+                  begin, lf(meta->projection->param.albers.false_northing),
+                  end);
+      }
+      else if (meta->projection->type == SCANSAR_PROJECTION) {
+        if (strcmp(dbf[ii].header, "meta.projection.param.atct.rlocal") == 0)
+          fprintf(kml_file, "%s<strong>rlocal</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.atct.rlocal), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.atct.alpha1") == 0)
+          fprintf(kml_file, "%s<strong>alpha 1</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.atct.alpha1), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.atct.alpha2") == 0)
+          fprintf(kml_file, "%s<strong>alpha 2</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.atct.alpha2), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.atct.alpha3") == 0)
+          fprintf(kml_file, "%s<strong>alpha 3</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.atct.alpha3), end);
+      }
+      else if (meta->projection->type == LAMBERT_AZIMUTHAL_EQUAL_AREA) {
+        if (strcmp(dbf[ii].header,
+                   "meta.projection.param.lamaz.center_lat") == 0)
+          fprintf(kml_file, "%s<strong>Center latitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamaz.center_lat), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamaz.center_lon") == 0)
+          fprintf(kml_file, "%s<strong>Center longitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamaz.center_lon), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamaz.false_easting") == 0)
+          fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamaz.false_easting), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamaz.false_northing") == 0)
+          fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamaz.false_northing),
+                  end);
+      }
+      else if (meta->projection->type == LAMBERT_CONFORMAL_CONIC) {
+        if (strcmp(dbf[ii].header, "meta.projection.param.lamcc.plat1") == 0)
+          fprintf(kml_file, "%s<strong>First standard parallel</strong>: %s "
+                  "<br>%s", begin, lf(meta->projection->param.lamcc.plat1),
+                  end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.plat2") == 0)
+          fprintf(kml_file, "%s<strong>Second standard parallel</strong>: %s "
+                  "<br>%s", begin, lf(meta->projection->param.lamcc.plat2),
+                  end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.lat0") == 0)
+          fprintf(kml_file, "%s<strong>Original latitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamcc.lat0), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.lon0") == 0)
+          fprintf(kml_file, "%s<strong>Original longitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamcc.lon0), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.false_easting") == 0)
+          fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamcc.false_easting), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.false_northing") == 0)
+          fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamcc.false_northing),
+                  end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.lamcc.scale_factor") == 0)
+          fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.lamcc.scale_factor), end);
+      }
+      else if (meta->projection->type == POLAR_STEREOGRAPHIC) {
+        if (strcmp(dbf[ii].header, "meta.projection.param.ps.slat") == 0)
+          fprintf(kml_file, "%s<strong>Reference latitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.ps.slat), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.ps.slon") == 0)
+          fprintf(kml_file, "%s<strong>Reference longitude</strong>: %s "
+                  "<br>%s", begin, lf(meta->projection->param.ps.slon), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.ps.false_easting") == 0)
+          fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.ps.false_easting), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.ps.false_northing") == 0)
+          fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.ps.false_northing), end);
+      }
+      else if (meta->projection->type == UNIVERSAL_TRANSVERSE_MERCATOR) {
+        if (strcmp(dbf[ii].header, "meta.projection.param.utm.zone") == 0)
+          fprintf(kml_file, "%s<strong>Zone</strong>: %d <br>%s",
+                  begin, meta->projection->param.utm.zone, end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.utm.false_easting") == 0)
+          fprintf(kml_file, "%s<strong>False easting</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.utm.false_easting), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.utm.false_northing") == 0)
+          fprintf(kml_file, "%s<strong>False northing</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.utm.false_northing), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.utm.lat0") == 0)
+          fprintf(kml_file, "%s<strong>Latitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.utm.lat0), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.utm.lon0") == 0)
+          fprintf(kml_file, "%s<strong>Longitude</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.utm.lon0), end);
+        else if (strcmp(dbf[ii].header,
+                        "meta.projection.param.utm.scale_factor") == 0)
+          fprintf(kml_file, "%s<strong>Scale factor</strong>: %s <br>%s",
+                  begin, lf(meta->projection->param.utm.scale_factor), end);
+      }
+      else if (meta->projection->type == STATE_PLANE) {
+        if (strcmp(dbf[ii].header, "meta.projection.param.state.zone") == 0)
+          fprintf(kml_file, "%s<strong>Zone</strong>: %d <br>%s",
+                  begin, meta->projection->param.state.zone, end);
+      }
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Stats block
+    if (meta->stats) {
+      if (check_meta_block("stats", dbf, nCols) && !stats_block) {
+        fprintf(kml_file, "<br><strong>Statistics</strong><br>\n");
+        stats_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.stats.band_count") == 0)
+        fprintf(kml_file, "%s<strong>Band count</strong>: %d <br>%s", begin,
+                meta->stats->band_count, end);
+      for (kk=0; kk<meta->stats->band_count; kk++) {
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.band_id") == 0)
+          fprintf(kml_file, "%s<strong>Band ID</strong>: %s <br>%s", begin,
+                  meta->stats->band_stats[kk].band_id, end);
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.min") == 0)
+          fprintf(kml_file, "%s<strong>Minimum value</strong>: %s <br>%s",
+                  begin, lf(meta->stats->band_stats[kk].min), end);
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.max") == 0)
+          fprintf(kml_file, "%s<strong>Maximum value</strong>: %s <br>%s",
+                  begin, lf(meta->stats->band_stats[kk].max), end);
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.mean") == 0)
+          fprintf(kml_file, "%s<strong>Mean value</strong>: %s <br>%s",
+                  begin, lf(meta->stats->band_stats[kk].mean), end);
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.rmse") == 0)
+          fprintf(kml_file, "%s<strong>Root mean square error</strong>: "
+                  "%s<br>%s", begin, lf(meta->stats->band_stats[kk].rmse),
+                  end);
+        if (strcmp(dbf[ii].header,
+                        "meta.stats.band_stats.std_deviation") == 0)
+          fprintf(kml_file, "%s<strong>Standard deviation</strong>: %s <br>%s",
+                  begin, lf(meta->stats->band_stats[kk].std_deviation), end);
+        if (strcmp(dbf[ii].header, "meta.stats.band_stats.mask") == 0)
+          fprintf(kml_file, "%s<strong>Mask value</strong>: %s <br>%s",
+                  begin, lf(meta->stats->band_stats[kk].mask), end);
+      }
+    }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // State vector block
+    if (meta->state_vectors) {
+      if (check_meta_block("state", dbf, nCols) && !state_block) {
+        fprintf(kml_file, "<br><strong>State vectors</strong><br>\n");
+        state_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.state.year") == 0)
+        fprintf(kml_file, "%s<strong>Year of image start</strong>: %d <br>%s",
+                begin, meta->state_vectors->year, end);
+      else if (strcmp(dbf[ii].header, "meta.state.julDay") == 0)
+        fprintf(kml_file, "%s<strong>Julian day</strong>: %d <br>%s",
+                begin, meta->state_vectors->julDay, end);
+      else if (strcmp(dbf[ii].header, "meta.state.second") == 0)
+        fprintf(kml_file, "%s<strong>Seconds of the day</strong>: %s <br>%s",
+                begin, lf(meta->state_vectors->second), end);
+      else if (strcmp(dbf[ii].header, "meta.state.vector_count") == 0)
+        fprintf(kml_file, "%s<strong>Vector count</strong>: %d <br>%s",
+                begin, meta->state_vectors->vector_count, end);
+      for (kk=0; kk<meta->state_vectors->vector_count; kk++) {
+        if (strcmp(dbf[ii].header, "meta.state.vectors") == 0) {
+          fprintf(kml_file, "%s<strong>Time [%d]</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].time), end);
+          fprintf(kml_file, "%s<strong>Position [%d} x</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.pos.x),
+                  end);
+          fprintf(kml_file, "%s<strong>Position [%d] y</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.pos.y),
+                  end);
+          fprintf(kml_file, "%s<strong>Position [%d] z</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.pos.z),
+                  end);
+          fprintf(kml_file, "%s<strong>Velocity [%d] x</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.vel.x),
+                  end);
+          fprintf(kml_file, "%s<strong>Velocity [%d] y</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.vel.y),
+                  end);
+          fprintf(kml_file, "%s<strong>Velocity [%d] z</strong>: %s <br>%s",
+                  begin, kk+1, lf(meta->state_vectors->vecs[kk].vec.vel.z),
+                  end);
         }
+      }
     }
+  }
+  for (ii=0; ii<nCols; ii++) {
+    if (dbf[ii].visible == 0) {
+      strcpy(begin, "<!--");
+      strcpy(end, "-->\n");
+    }
+    else {
+      strcpy(begin, "");
+      strcpy(end, "\n");
+    }
+    // Location block
+    if (meta->location) {
+      if (check_meta_block("location", dbf, nCols) && !location_block) {
+        fprintf(kml_file, "<br><strong>Location</strong><br>\n");
+        location_block = TRUE;
+      }
+      if (strcmp(dbf[ii].header, "meta.location.lat_start_near_range") == 0)
+        fprintf(kml_file, "%s<strong>Latitude start near range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lat_start_near_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lon_start_near_range") == 0)
+        fprintf(kml_file, "%s<strong>Longitude start near range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lon_start_near_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lat_start_far_range") == 0)
+        fprintf(kml_file, "%s<strong>Latitude start far range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lat_start_far_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lon_start_far_range") == 0)
+        fprintf(kml_file, "%s<strong>Longitude start far range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lon_start_far_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lat_end_near_range") == 0)
+        fprintf(kml_file, "%s<strong>Latitude end near range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lat_end_near_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lon_end_near_range") == 0)
+        fprintf(kml_file, "%s<strong>Longitude end near range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lon_end_near_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lat_end_far_range") == 0)
+        fprintf(kml_file, "%s<strong>Latitude end far range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lat_end_far_range),
+                end);
+      else if (strcmp(dbf[ii].header,
+                      "meta.location.lon_end_far_range") == 0)
+        fprintf(kml_file, "%s<strong>Longitude end far range</strong>: "
+                "%s <br>%s", begin, lf(meta->location->lon_end_far_range),
+                end);
+    }
+  }
+  fprintf(kml_file, "</td></tr></table>\n");
+  fprintf(kml_file, "  ]]></description>\n");
+  fprintf(kml_file, "  <name>%s</name>\n", name);
+  fprintf(kml_file, "  <LookAt>\n");
+  fprintf(kml_file, "    <longitude>%.10f</longitude>\n",
+          meta->general->center_longitude);
+  fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
+          meta->general->center_latitude);
+  fprintf(kml_file, "    <range>400000</range>\n");
+  fprintf(kml_file, "    <tilt>30</tilt>\n");
+  //fprintf(kml_file, "    <heading>50</heading>\n");
+  fprintf(kml_file, "  </LookAt>\n");
+  fprintf(kml_file, "  <visibility>1</visibility>\n");
+  fprintf(kml_file, "  <open>1</open>\n");
+  write_kml_style_keys(kml_file);
+
+  fprintf(kml_file, "  <Polygon>\n");
+  // different behavior if we have an overlay - no extrude, and draw on
+  // the ground instead of at an absolute height above the terrain
+  fprintf(kml_file, "    <extrude>%d</extrude>\n",
+          png_filename ? 0 : 1);
+  fprintf(kml_file, "    <altitudeMode>%s</altitudeMode>\n",
+          png_filename ? "relativeToGround" : "absolute");
+  fprintf(kml_file, "    <outerBoundaryIs>\n");
+  fprintf(kml_file, "      <LinearRing>\n");
+  fprintf(kml_file, "        <coordinates>\n");
+
+  double h = 0.0;
+  double clat = meta->general->center_latitude;
+  double clon = meta->general->center_longitude;
+  printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
+  meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
+  printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+
+  double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
+    ctr_x, ctr_y;
+  double ul_x_rot, ul_y_rot, ur_x_rot, ur_y_rot,
+    ll_x_rot, ll_y_rot, lr_x_rot, lr_y_rot;
+  double lat_UL_rot, lon_UL_rot;
+  double lat_UR_rot, lon_UR_rot;
+  double lat_LR_rot, lon_LR_rot;
+  double lat_LL_rot, lon_LL_rot;
+
+  int zone = utm_zone(clon);
+
+  latLon2UTM_zone(lat_UL, lon_UL, h, zone, &ul_x, &ul_y);
+  latLon2UTM_zone(lat_UR, lon_UR, h, zone, &ur_x, &ur_y);
+  latLon2UTM_zone(lat_LR, lon_LR, h, zone, &lr_x, &lr_y);
+  latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
+  latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
+
+  double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
+  double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
+  double ang = (ang1+ang2)/2;
+
+  if (!png_filename || !meta->projection || fabs(ang) > .1)
+    {
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+
+      fprintf(kml_file, "        </coordinates>\n");
+      fprintf(kml_file, "      </LinearRing>\n");
+      fprintf(kml_file, "    </outerBoundaryIs>\n");
+      fprintf(kml_file, "  </Polygon>\n");
+      fprintf(kml_file, "</Placemark>\n");
+
+      if (!png_filename || !meta->projection)
+        printf("\nGoogle Earth(tm) overlay image not produced (because the "
+	       "data is not in a UTM map projection\n"
+               "as required) -OR- a Google Earth(tm) (.kml) file is being "
+	       "produced from a non-image source such\n"
+               "as an ASF metadata file etc.)  The data will be displayed "
+	       "as a transparent polygon (only)\n"
+               "in Google Earth(tm).\n\n");
+      else
+        printf("Google Earth(tm) overlay not produced (because the image's "
+	       "rotation angle\n"
+               "is too large to overlay: %lf)\n\n", ang*R2D);
+    }
+  else {
+    printf("png filename: %s\n", png_filename);
+
+    if (!dir)
+      asfPrintError("Must pass in a directory for the overlay files!\n");
+    else {
+      printf("UL: %lf,%lf\n", ul_x,ul_y);
+      printf("UR: %lf,%lf\n", ur_x,ur_y);
+      printf("LL: %lf,%lf\n", ll_x,ll_y);
+      printf("LR: %lf,%lf\n", lr_x,lr_y);
+      printf("angle= %lf\n", ang*R2D);
+
+      rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
+      rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
+      rotate(ll_x, ll_y, ctr_x, ctr_y, ang, &ll_x_rot, &ll_y_rot);
+      rotate(lr_x, lr_y, ctr_x, ctr_y, ang, &lr_x_rot, &lr_y_rot);
+
+      printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
+      printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
+      printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
+      printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
+
+      if (clat < 0) {
+        // account for the false northing in the southern hemisphere
+        ul_y_rot -= 10000000;
+        ur_y_rot -= 10000000;
+        ll_y_rot -= 10000000;
+        lr_y_rot -= 10000000;
+      }
+
+      UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
+      UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
+      UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
+      UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
+      //double box_north_lat = (lat_UL_rot + lat_UR_rot)/2;
+      //double box_south_lat = (lat_LL_rot + lat_LR_rot)/2;
+      //double box_east_lon = (lon_UL_rot + lon_LL_rot)/2;
+      //double box_west_lon = (lon_UR_rot + lon_LR_rot)/2;
+
+      double box_north_lat = lat_UL_rot;
+      double box_south_lat = lat_LR_rot;
+      double box_east_lon = lon_UL_rot;
+      double box_west_lon = lon_LR_rot;
+
+      if (box_south_lat > box_north_lat)
+        swap(&box_south_lat, &box_north_lat);
+      if (box_east_lon < box_west_lon)
+        swap(&box_east_lon, &box_west_lon);
+
+      double upper_lat = max4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
+      double lower_lat = min4(lat_UL_rot, lat_LL_rot, lat_LR_rot, lat_UR_rot);
+      double upper_lon = max4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
+      double lower_lon = min4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
+
+      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
+      fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
+      fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
+      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+      fprintf(kml_file, "        </coordinates>\n");
+      fprintf(kml_file, "      </LinearRing>\n");
+      fprintf(kml_file, "    </outerBoundaryIs>\n");
+      fprintf(kml_file, "  </Polygon>\n");
+      fprintf(kml_file, "</Placemark>\n");
+
+      //if (meta->general->orbit_direction == 'D')
+      //    swap(&box_south_lat, &box_north_lat);
+
+      fprintf(kml_file, "<GroundOverlay>\n");
+      //fprintf(kml_file, "  <description>\n");
+      //fprintf(kml_file, "    sensor/mode: %s/%s\n",
+      //        meta->general->sensor, meta->general->mode);
+      //fprintf(kml_file, "    orbit/frame: %d/%d\n",
+      //        meta->general->orbit, meta->general->frame);
+      //fprintf(kml_file, "  </description>\n");
+      fprintf(kml_file, "  <name>%s</name>\n", name);
+      fprintf(kml_file, "  <LookAt>\n");
+      fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
+      fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
+      fprintf(kml_file, "    <range>400000</range>\n");
+      fprintf(kml_file, "    <tilt>45</tilt>\n");
+      fprintf(kml_file, "    <heading>50</heading>\n");
+      fprintf(kml_file, "  </LookAt>\n");
+      fprintf(kml_file, "  <color>ffffffff</color>\n");
+      fprintf(kml_file, "  <Icon>\n");
+      fprintf(kml_file, "      <href>%s</href>\n", png_filename);
+      fprintf(kml_file, "  </Icon>\n");
+      fprintf(kml_file, "  <LatLonBox>\n");
+      fprintf(kml_file, "      <north>%.12f</north>\n", box_north_lat);
+      fprintf(kml_file, "      <south>%.12f</south>\n", box_south_lat);
+      fprintf(kml_file, "      <east>%.12f</east>\n", box_east_lon);
+      fprintf(kml_file, "      <west>%.12f</west>\n", box_west_lon);
+      fprintf(kml_file, "      <rotation>%.12f</rotation>\n", -ang*R2D);
+      fprintf(kml_file, "  </LatLonBox>\n");
+
+      fprintf(kml_file, "</GroundOverlay>\n");
+      }
+  }
 }
 
 static
@@ -343,7 +1287,8 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "<Placemark>\n");
   fprintf(kml_file, "  <description><![CDATA[\n");
   fprintf(kml_file, "<strong>Sensor</strong>: %s<br>\n", meta->general->sensor);
-  fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode);
+  fprintf(kml_file, "<strong>Beam mode</strong>: %s<br>\n", meta->general->mode)
+;
   fprintf(kml_file, "<strong>Orbit</strong>: %d<br>\n", meta->general->orbit);
   fprintf(kml_file, "<strong>Frame</strong>: %d<br>\n", meta->general->frame);
   fprintf(kml_file, "<strong>Acquisition date</strong>: %d-%s-%d<br>\n",
@@ -394,7 +1339,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
       meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>45</tilt>\n");
+  //fprintf(kml_file, "    <tilt>45</tilt>\n");
   fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <color>9effffff</color>\n");
@@ -446,83 +1391,6 @@ void write_kml_overlay(char *filename)
 
 }
 
-void convert2kml(char *line, FILE *fp, char *name, format_type_t format)
-{
-  switch (format)
-    {
-    case META:
-      meta2kml(line, fp);
-      break;
-    case POINT:
-      point2kml(line, fp);
-      break;
-    case POLYGON:
-      polygon2kml(line, fp);
-      break;
-    case SHAPEFILE:
-      // Conversion of shapefile to kml is actually handled in read_shape()
-      // not here...
-      asfPrintError("convert2kml: Should never reach this point.\n");
-      break;
-    case GEOTIFF_META:
-      geotiff2kml(line, fp);
-      break;
-    case TEXT:
-    case RGPS:
-    case RGPS_GRID:
-    case RGPS_WEATHER:
-    case MULTIMATCH:
-    case URSA:
-    case KMLFILE:
-    default:
-      asfPrintWarning(
-          "Unsupported input file format detected.  TEXT, MULTIMATCH, URSA,\n"
-          "KML and other input formats either don't make sense to convert\n"
-          "to kml or are already in kml format or cannot be converted to\n"
-          "kml format for viewing in Google Earth(tm).\n");
-      break;
-    }
-
-  return;
-}
-
-void write_kml(char *inFile, char *basename, format_type_t format, int list)
-{
-  FILE *fpIn, *fpOut;
-  char *line, *outFile;
-  int n=0;
-
-  // Write kml header
-  outFile = (char *) MALLOC(sizeof(char)*255);
-  sprintf(outFile, "%s.kml", basename);
-  fpOut = FOPEN(outFile, "w");
-  kml_header(fpOut);
-
-  // Convert to kml
-  if (list) {
-    line = (char *) MALLOC(sizeof(char)*1024);
-    fpIn = FOPEN(inFile, "r");
-    while (fgets(line, 1024, fpIn)) {
-      // strip whitespace from the end of the line
-      while (isspace(line[strlen(line)-1])) line[strlen(line)-1] = '\0';
-
-      convert2kml(line, fpOut, basename, format);
-      n++;
-    }
-    FCLOSE(fpIn);
-    FREE(line);
-  }
-  else
-    convert2kml(inFile, fpOut, basename, format);
-
-  // Close business
-  kml_footer(fpOut);
-  FCLOSE(fpOut);
-  FREE(outFile);
-
-  return;
-}
-
 void write_kml_style_keys(FILE *kml_file)
 {
     // so all of our methods use the same "look" for the
@@ -536,4 +1404,779 @@ void write_kml_style_keys(FILE *kml_file)
     fprintf(kml_file, "      <color>1fff5500</color>\n");
     fprintf(kml_file, "    </PolyStyle>\n");
     fprintf(kml_file, "  </Style>\n");
+}
+
+void kml_open(char *filename, char **format, char ***sLines, int *nLines,
+              int *nVertices)
+{
+  // try to open the kml file
+  char *kml_filename=NULL;
+  FILE *fp = fopen(filename, "r");
+  if (!fp) {
+    // failed to open, try adding ".kml" extension
+    kml_filename = appendExt(filename, ".kml");
+    fp = fopen(kml_filename, "r");
+
+    if (!fp)
+      asfPrintError("Couldn't open: %s\n", filename);
+  }
+  else
+    kml_filename = STRDUP(filename);
+
+  // read KML file to figure out the number of placemarks and maximum
+  // number of vertices (and number of lines)
+  char *line = (char *) MALLOC(sizeof(char)*1024);
+  char *str;
+  int n = 0;
+  int nPlacemarks = 0;
+  int nCoordinates = 0;
+  int maxVertices = 0;
+  int count_on = FALSE;
+  while (fgets(line, 1024, fp)) {
+    str = STRDUP(line);
+    while (isspace(*str))
+      ++str;
+    if (strncmp(uc(str), "<COORDINATES>", 13) == 0)
+      count_on = TRUE;
+    if (count_on)
+      nCoordinates++;
+    if (strncmp(uc(str), "</COORDINATES>", 14) == 0)
+      count_on = FALSE;
+    if (strncmp(uc(str), "</PLACEMARK>", 12) == 0) {
+      nPlacemarks++;
+      nCoordinates -= 2;
+      if (nCoordinates > maxVertices)
+        maxVertices = nCoordinates;
+      nCoordinates = 0;
+    }
+    n++;
+  }
+  FCLOSE(fp);
+
+  // read KML file again to fill in the array
+  char *type = (char *) MALLOC(sizeof(char)*25);
+  strcpy(type, "UNKNOWN");
+  int ii;
+  char **lines = (char **) MALLOC(sizeof(char *)*n);
+  for (ii=0; ii<n; ii++)
+    lines[ii] = (char *) MALLOC(sizeof(char)*1024);
+  fp = FOPEN(kml_filename, "r");
+  for (ii=0; ii<n; ii++) {
+    fgets(line, 1024, fp);
+    while (isspace(*line))
+      line++;
+    if (strncmp(line, "<!-- Format:", 12) == 0)
+      sscanf(line, "<!-- Format: %s", type);
+    sprintf(lines[ii], "%s", line);
+  }
+  FCLOSE(fp);
+
+  asfPrintStatus("Found %d placemarks in KML file\n", nPlacemarks);
+
+  *format = type;
+  *sLines = lines;
+  *nLines = n;
+  *nVertices = maxVertices;
+}
+
+// Initialize shape file
+static void shape_kml_init(char *inFile, char *format, char *header, 
+			   int vertices)
+{
+  // We can only deal with formats that we can positively identify.
+  // Otherwise things can get pretty complicated.
+  if (strcmp(format, "META") == 0)
+    // FIXME: initialization currently requires metadata structure
+    asfPrintError("Conversion of META format currently not supported!\n");
+  else if (strcmp(format, "POINT") == 0)
+    shape_point_init(inFile);
+  else if (strcmp(format, "POLYGON") == 0)
+    shape_polygon_init(inFile, vertices);
+  else if (strcmp(format, "CSV") == 0) {
+    // We don't want to make any assumptions about the data types, so we
+    // initialize everything as string.
+    // Might want to make this more flexible later.  
+    csv_meta_column_t *meta_column_info;
+    int ii;
+    int nCols = get_number_columns(header);
+    char *str;
+    meta_column_info = 
+      (csv_meta_column_t *) MALLOC(sizeof(csv_meta_column_t)*nCols);
+    for (ii=0; ii<nCols; ii++) {
+      str = get_column(header, ii);
+      strcpy(meta_column_info[ii].column_name, str);
+      meta_column_info[ii].data_type = CSV_STRING;
+      meta_column_info[ii].column_number = ii;
+    }
+    shape_csv_init(inFile, meta_column_info, nCols, vertices*2);
+  }
+  else if (strcmp(format, "AUIG") == 0)
+    shape_auig_init(inFile, header);
+  else if (strcmp(format, "GEOTIFF") == 0)
+    shape_geotiff_init(inFile);
+  else
+    asfPrintError("Could not find a supported format.\n");
+}
+
+static void read_kml_line(char *line, char **param, char **value)
+{
+  char *para = (char *) MALLOC(sizeof(char)*255);
+  char *val = (char *) MALLOC(sizeof(char)*255);
+  char *c = strstr(line, "<!--");
+  char *p = strstr(line, "<strong>");
+  char *q = strstr(line, "</strong>");
+  int ii;
+  if (p && !c) {
+    for (ii=0; ii<8; ii++)
+      p++;
+    strncpy(para, p, strlen(p)-strlen(q));
+    p = strchr(line, ':');
+    if (p) {
+      p++;
+      sscanf(p, "%s", val);
+    }
+    else {
+      strcpy(para, MAGIC_UNSET_STRING);
+      strcpy(val, MAGIC_UNSET_STRING);
+    }
+  }
+  else {
+    strcpy(para, MAGIC_UNSET_STRING);
+    strcpy(val, MAGIC_UNSET_STRING);
+  }
+  *param = para;
+  *value = val;
+}
+
+static void kml2header(char **lines, int nLines, char **header)
+{
+  int ii;
+  char *param = (char *) MALLOC(sizeof(char)*255);
+  char *value = (char *) MALLOC(sizeof(char)*255);
+  char *header_str = (char *) MALLOC(sizeof(char)*255);
+  char str[255];
+  strcpy(header_str, "");
+  for (ii=0; ii<nLines; ii++) {
+    read_kml_line(lines[ii], &param, &value);
+    if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
+	strcmp(value, MAGIC_UNSET_STRING) != 0) {
+      sprintf(str, "\"%s\",", param);
+      strcat(header_str, str);
+    }
+    if (strstr(lines[ii], "</Placemark>"))
+      break;
+  }
+  header_str[strlen(header_str)-1] = '\0';
+  *header = header_str;
+}
+
+// Convert kml to point file
+int kml2point(char *inFile, char *outFile, int listFlag) 
+{
+  int found_format = FALSE;
+  float lat, lon;
+  char *p, format[10], id[255];
+
+  // Read input file
+  FILE *fpIn = FOPEN(inFile, "r");
+  assert(fpIn);
+
+  // Check out whether we can find the correct format string
+  // Try to write the file into the specific AUIG format only
+  // when the KML file was generated by convert2vector in the first place.
+  char *line = (char *) MALLOC(sizeof(char)*1023);
+  while (fgets(line, 1023, fpIn)) {
+    if (strstr(line, "Format: ")) {
+      p = strchr(line, ':');
+      p++;
+      while (isspace(*p))
+	p++;
+      sscanf(p, "%s", format);
+      if (strcmp(uc(format), "POINT") == 0) {
+	found_format = TRUE;
+	break;
+      }
+    }
+  }
+  if (!found_format) {
+    FCLOSE(fpIn);
+    asfPrintError("Found format (%s) that does not match requested format "
+		  "(POINT).\nPlease verify the format string at the begin "
+		  "of the <description> block.\n", format);
+  }
+	 
+  // Write file
+  FILE *fpOut = FOPEN(outFile, "w");
+  fprintf(fpOut, "# Format: POINT (generated by convert2vector "
+          "(version %s))\n", SVN_REV);
+  fprintf(fpOut, "#\n");
+  fprintf(fpOut, "# ID,Latitude,Longitude\n");
+
+  // Write point information
+  while (fgets(line, 1023, fpIn)) {
+    // Get ID
+    p = strstr(line, "<strong>ID</strong>:");
+    if (p) {
+      p = strchr(line, ':');
+      p++;
+      while (isspace(*p))
+	p++;;
+      sscanf(p, "%s", id);
+    }
+    // Get latitude
+    p = strstr(line, "<strong>Latitude</strong>:");
+    if (p) {
+      p = strchr(line, ':');
+      p++;
+      sscanf(p, "%f", &lat);
+    }
+    // Get longitude
+    p = strstr(line, "<strong>Longitude</strong>:");
+    if (p) {
+      p = strchr(line, ':');
+      p++;
+      sscanf(p, "%f", &lon);
+      fprintf(fpOut, "\"%s\",%f,%f\n", id, lat, lon);
+    }
+  }
+
+  return 1;
+}
+
+// Convert kml to polygon file
+int kml2polygon(char *inFile, char *outFile, int listFlag)
+{
+  int ii, vertices, found_format = FALSE;
+  float lat, lon;
+  char *p, str[10], format[10];
+
+  // Read input file
+  FILE *fpIn = FOPEN(inFile, "r");
+  assert(fpIn);
+
+  // Check out whether we can find the correct format string
+  // Try to write the file into the specific AUIG format only
+  // when the KML file was generated by convert2vector in the first place.
+  char *line = (char *) MALLOC(sizeof(char)*1023);
+  while (fgets(line, 1023, fpIn)) {
+    if (strstr(line, "Format: ")) {
+      p = strchr(line, ':');
+      p++;
+      while (isspace(*p))
+        p++;
+      sscanf(p, "%s", format);
+      if (strcmp(uc(format), "POLYGON") == 0) {
+        found_format = TRUE;
+        break;
+      }
+    }
+  }
+  if (!found_format) {
+    FCLOSE(fpIn);
+    asfPrintError("Found format (%s) that does not match requested format "
+                  "(POLYGON).\nPlease verify the format string at the begin "
+                  "of the <description> block.\n", format);
+  }
+
+  // Write file
+  FILE *fpOut = FOPEN(outFile, "w");
+  fprintf(fpOut, "# Format: POLYGON (generated by convert2vector "
+	  "(version %s))\n", SVN_REV);
+  fprintf(fpOut, "#\n");
+  fprintf(fpOut, "# ID,Latitude,Longitude\n");
+  
+  // Write point information
+  while (fgets(line, 1023, fpIn)) {
+    // Get number of vertices
+    p = strstr(line, "<strong>Vertices</strong>:");
+    if (p) {
+      p = strchr(line, ':');
+      p++;
+      while (isspace(*p))
+        p++;;
+      sscanf(p, "%d", &vertices);
+    }
+    for (ii=1; ii<=vertices; ii++) {
+      // Get latitude
+      sprintf(str, "<strong>Lat [%d]</strong>:", ii);
+      p = strstr(line, str);
+      if (p) {
+	p = strchr(line, ':');
+	p++;
+	sscanf(p, "%f", &lat);
+      }
+      // Get longitude
+      sprintf(str, "<strong>Lon [%d]</strong>:", ii);
+      p = strstr(line, str);
+      if (p) {
+	p = strchr(line, ':');
+	p++;
+	sscanf(p, "%f", &lon);
+	fprintf(fpOut, "%d,%f,%f\n", ii, lat, lon);
+      }
+    }
+  }
+
+  return 1;
+}
+
+// Convert kml to csv file
+int kml2csv(char *inFile, char *outFile, int listFlag)
+{
+  FILE *fp;
+  char line[4096], str[255], **lines, *format, *header;
+  int ii, n, nCols, nLines, nVertices;
+  char *param = (char *) MALLOC(sizeof(char)*4096);
+  char *value = (char *) MALLOC(sizeof(char)*4096);
+
+  // Figure out the format and number of vertices
+  kml_open(inFile, &format, &lines, &nLines, &nVertices);
+
+  // Initialize shape file
+  // Only known formats generated by convert2vector are supported
+  kml2header(lines, nLines, &header);
+
+  fp = FOPEN(outFile, "w");
+  fprintf(fp, "%s\n", header);
+  nCols = get_number_columns(header);
+  n = 0; 
+  for (ii=0; ii<nLines; ii++) {
+    read_kml_line(lines[ii], &param, &value);
+    if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
+	strcmp(value, MAGIC_UNSET_STRING) != 0) {
+      sprintf(str, "%s,", value);
+      strcat(line, str);
+      n++;
+      if (n == nCols) {
+	line[strlen(line)-1] = '\0';
+	fprintf(fp, "\"%s\"\n", line);
+	strcpy(line, "");
+	n = 0;
+      }
+    }
+  }
+  FCLOSE(fp);
+
+  // Clean up
+  FREE(param);
+  FREE(value);
+  for (ii=0; ii<nLines; ii++)
+    FREE(lines[ii]);
+  FREE(lines);
+
+  return 1;
+}
+
+// Convert kml to auig file
+int kml2auig(char *inFile, char *outFile, int listFlag)
+{
+  dbf_header_t *dbf;
+  int found_format = FALSE, nCols;
+  char format[10];
+
+  // Read configuration file
+  read_header_config("AUIG", &dbf, &nCols);
+
+  // Read input file
+  FILE *fpIn = FOPEN(inFile, "r");
+  assert(fpIn);
+
+  // Check out whether we can find the correct format string
+  // Try to write the file into the specific AUIG format only when the KML 
+  // file was generated by convert2vector in the first place.
+  char *p;
+  char *line = (char *) MALLOC(sizeof(char)*1023);
+  char *line_out = (char *) MALLOC(sizeof(char)*4096);
+  while (fgets(line, 1023, fpIn)) {
+    if (strstr(line, "Format: ")) {
+      p = strchr(line, ':');
+      p++;
+      while (isspace(*p))
+        p++;
+      sscanf(p, "%s", format);
+      if (strcmp(uc(format), "AUIG") == 0) {
+        found_format = TRUE;
+        break;
+      }
+    }
+  }
+  if (!found_format) {
+    FCLOSE(fpIn);
+    asfPrintError("Found format (%s) that does not match requested format "
+                  "(AUIG).\nPlease verify the format string at the begin "
+                  "of the <description> block.\n", format);
+  }
+
+  // Fill in header line
+  int ii=0, kk;
+  char *header = (char *) MALLOC(sizeof(char)*4096);
+  strcpy(header, "");
+  while (fgets(line, 1023, fpIn)) {
+    char *p = strstr(line, "<!--");
+    if (p) {
+      for (kk=0; kk<4; kk++)
+        p++;
+      ii++;
+    }
+    else
+      p = line;
+    if (strstr(p, "Sensor") && isVisible(dbf, nCols, "SENSOR"))
+      strcat(header, "SENSOR,");
+    else if (strstr(p, "Scene ID") && isVisible(dbf, nCols, "SCNID"))
+      strcat(header, "SCNID,");
+    else if (strstr(p, "DL path number") && isVisible(dbf, nCols, "DLPATHNO"))
+      strcat(header, "DLPATHNO,");
+    else if (strstr(p, "Used segment number") &&
+             isVisible(dbf, nCols, "USESEGNO"))
+      strcat(header, "USESEGNO,");
+    else if (strstr(p, "Recording mode") && isVisible(dbf, nCols, "RECMODE"))
+      strcat(header, "RECMODE,");
+    else if (strstr(p, "Recording path") && isVisible(dbf, nCols, "RECPATH"))
+      strcat(header, "RECPATH,");
+    else if (strstr(p, "GSCD") && isVisible(dbf, nCols, "GSCD"))
+      strcat(header, "GSCD,");
+    else if (strstr(p, "OPEMD") && isVisible(dbf, nCols, "OPEMD"))
+      strcat(header, "OPEMD,");
+    else if (strstr(p, "Table number") && isVisible(dbf, nCols, "TBLNO"))
+      strcat(header, "TBLNO,");
+    else if (strstr(p, "Revolution") && isVisible(dbf, nCols, "REV"))
+      strcat(header, "REV,");
+    else if (strstr(p, "Path number") && isVisible(dbf, nCols, "PATHNO"))
+      strcat(header, "PATHNO,");
+    else if (strstr(p, "CENFLMNO") && isVisible(dbf, nCols, "CENFLMNO"))
+      strcat(header, "CENFLMNO,");
+    else if (strstr(p, "Proof flag") && isVisible(dbf, nCols, "PROOFFLG"))
+      strcat(header, "PROOFFLG,");
+    else if (strstr(p, "Steering") && isVisible(dbf, nCols, "STEERING"))
+      strcat(header, "STEERING,");
+    else if (strstr(p, "Orbit status") && isVisible(dbf, nCols, "ORBITSTAT"))
+      strcat(header, "ORBITSTAT,");
+    else if (strstr(p, "GRS line number") &&
+             isVisible(dbf, nCols, "GRS_LINENO"))
+      strcat(header, "GRS_LINENO,");
+    else if (strstr(p, "OBS orbit number") &&
+             isVisible(dbf, nCols, "OBS_ORBITNO"))
+      strcat(header, "OBS_ORBITNO,");
+    else if (strstr(p, "Orbit direction") && isVisible(dbf, nCols, "OBTDIR"))
+      strcat(header, "OBTDIR,");
+    else if (strstr(p, "Sun elevation angle") &&
+             isVisible(dbf, nCols, "SUN_SUNELE"))
+      strcat(header, "SUN_SUNELE,");
+    else if (strstr(p, "Sun azimuth angle") &&
+             isVisible(dbf, nCols, "SUN_SUNAZI"))
+      strcat(header, "SUN_SUNAZI,");
+    else if (strstr(p, "Scene start date") &&
+             isVisible(dbf, nCols, "SCN_SDATE"))
+      strcat(header, "SCN_SDATE,");
+    else if (strstr(p, "Scene start time") &&
+             isVisible(dbf, nCols, "SCN_STIME"))
+      strcat(header, "SCN_STIME,");
+    else if (strstr(p, "Scene center date") &&
+             isVisible(dbf, nCols, "SCN_CDATE"))
+      strcat(header, "SCN_CDATE,");
+    else if (strstr(p, "Scene center time") &&
+             isVisible(dbf, nCols, "SCN_CTIME"))
+      strcat(header, "SCN_CTIME,");
+    else if (strstr(p, "Scene center latitude") &&
+             isVisible(dbf, nCols, "SCN_CLAT"))
+      strcat(header, "SCN_CLAT,");
+    else if (strstr(p, "Scene center longitude") &&
+             isVisible(dbf, nCols, "SCN_CLON"))
+      strcat(header, "SCN_CLON,");
+    else if (strstr(p, "Scene left upper latitude") &&
+             isVisible(dbf, nCols, "SCN_LULAT"))
+      strcat(header, "SCN_LULAT,");
+    else if (strstr(p, "Scene left upper longitude") &&
+             isVisible(dbf, nCols, "SCN_LULON"))
+      strcat(header, "SCN_LULON,");
+    else if (strstr(p, "Scene right upper latitude") &&
+             isVisible(dbf, nCols, "SCN_RULAT"))
+      strcat(header, "SCN_RULAT,");
+    else if (strstr(p, "Scene right upper longitude") &&
+             isVisible(dbf, nCols, "SCN_RULON"))
+      strcat(header, "SCN_RULON,");
+    else if (strstr(p, "Scene left down latitude") &&
+             isVisible(dbf, nCols, "SCN_LDLAT"))
+      strcat(header, "SCN_LDLAT,");
+    else if (strstr(p, "Scene left down longitude") &&
+             isVisible(dbf, nCols, "SCN_LDLON"))
+      strcat(header, "SCN_LDLON,");
+    else if (strstr(p, "Scene right down latitude") &&
+             isVisible(dbf, nCols, "SCN_RDLAT"))
+      strcat(header, "SCN_RDLAT,");
+    else if (strstr(p, "Scene right down longitude") &&
+             isVisible(dbf, nCols, "SCN_RDLON"))
+      strcat(header, "SCN_RDLON,");
+    else if (strstr(p, "Point flag") && isVisible(dbf, nCols, "POINTFLG"))
+      strcat(header, "POINTFLG,");
+    else if (strstr(p, "UCUT") && isVisible(dbf, nCols, "UCUT"))
+      strcat(header, "UCUT,");
+    else if (strstr(p, "FCUT") && isVisible(dbf, nCols, "FCUT"))
+      strcat(header, "FCUT,");
+    else if (strstr(p, "RCUT") && isVisible(dbf, nCols, "RCUT"))
+      strcat(header, "RCUT,");
+    else if (strstr(p, "UGAIN") && isVisible(dbf, nCols, "UGAIN"))
+      strcat(header, "UGAIN,");
+    else if (strstr(p, "FGAIN") && isVisible(dbf, nCols, "FGAIN"))
+      strcat(header, "FGAIN,");
+    else if (strstr(p, "RGAIN") && isVisible(dbf, nCols, "RGAIN"))
+      strcat(header, "RGAIN,");
+    else if (strstr(p, "Pointing angle") && isVisible(dbf, nCols, "PNTANG"))
+      strcat(header, "PNTANG,");
+    else if (strstr(p, "GAINSTS") && isVisible(dbf, nCols, "GAINSTS"))
+      strcat(header, "GAINSTS,");
+    else if (strstr(p, "EPSSTS") && isVisible(dbf, nCols, "EPSSTS"))
+      strcat(header, "EPSSTS,");
+    else if (strstr(p, "REC_CLDSCENE") &&
+             isVisible(dbf, nCols, "REC_CLDSCENE"))
+      strcat(header, "REC_CLDSCENE,");
+    else if (strstr(p, "REC_CLDDEVSCENE") &&
+             isVisible(dbf, nCols, "REC_CLDDEVSCENE"))
+      strcat(header, "REC_CLDDEVSCENE,");
+    else if (strstr(p, "REC_ALLQLTY") && isVisible(dbf, nCols, "REC_ALLQLTY"))
+      strcat(header, "REC_ALLQLTY,");
+    else if (strstr(p, "REC_LINELOS") && isVisible(dbf, nCols, "REC_LINELOS"))
+      strcat(header, "REC_LINELOS,");
+    else if (strstr(p, "DL segment number") &&
+             isVisible(dbf, nCols, "DLSEGNO"))
+      strcat(header, "DLSEGNO,");
+    else if (strstr(p, ">VLDS date<") && isVisible(dbf, nCols, "VLDSDATE"))
+      strcat(header, "VLDSDATE,");
+    else if (strstr(p, "TRNS date") && isVisible(dbf, nCols, "TRNSDATE"))
+      strcat(header, "TRNSDATE,");
+    else if (strstr(p, "OBSS date") && isVisible(dbf, nCols, "OBSSDATE"))
+      strcat(header, "OBSSDATE,");
+    else if (strstr(p, "OBSE date") && isVisible(dbf, nCols, "OBSEDATE"))
+      strcat(header, "OBSEDATE,");
+    else if (strstr(p, "SATCD") && isVisible(dbf, nCols, "SATCD"))
+      strcat(header, "SATCD,");
+    else if (strstr(p, "VLDSDEAD date") &&
+             isVisible(dbf, nCols, "VLDSDEAD_DATE"))
+      strcat(header, "VLDSDEAD_DATE,");
+    else if (strstr(p, "VLDEDEAD date") &&
+             isVisible(dbf, nCols, "VLDEDEAD_DATE"))
+      strcat(header, "VLDEDEAD_DATE,");
+    else if (strstr(p, "Data rate") && isVisible(dbf, nCols, "DATARATE"))
+      strcat(header, "DATARATE,");
+    else if (strstr(p, "File name") && isVisible(dbf, nCols, "FILENAME"))
+      strcat(header, "FILENAME,");
+    else if (strstr(p, "L0 status") && isVisible(dbf, nCols, "L0STATUS"))
+      strcat(header, "L0STATUS,");
+    else if (strstr(p, "Archive mode") && isVisible(dbf, nCols, "ARCHMODE"))
+      strcat(header, "ARCHMODE,");
+    else if (strstr(p, "Urgent flag") && isVisible(dbf, nCols, "URGFLG"))
+      strcat(header, "URGFLG,");
+    else if (strstr(p, "Semi real") && isVisible(dbf, nCols, "SEMIREAL"))
+      strcat(header, "SEMIREAL,");
+    else if (strstr(p, "GRS column number") &&
+             isVisible(dbf, nCols, "GRS_COLNO"))
+      strcat(header, "GRS_COLNO,");
+    else if (strstr(p, "Scene position x") &&
+             isVisible(dbf, nCols, "SCN_POSX"))
+      strcat(header, "SCN_POSX,");
+    else if (strstr(p, "Scene position y") &&
+             isVisible(dbf, nCols, "SCN_POSY"))
+      strcat(header, "SCN_POSY,");
+    else if (strstr(p, "Scene position z") &&
+             isVisible(dbf, nCols, "SCN_POSZ"))
+      strcat(header, "SCN_POSZ,");
+    else if (strstr(p, "Scene SPDX") && isVisible(dbf, nCols, "SCN_SPDX"))
+      strcat(header, "SCN_SPDX,");
+    else if (strstr(p, "Scene SPDY") && isVisible(dbf, nCols, "SCN_SPDY"))
+      strcat(header, "SCN_SPDY,");
+    else if (strstr(p, "Scene SPFZ") && isVisible(dbf, nCols, "SCN_SPDZ"))
+      strcat(header, "SCN_SPDZ,");
+    else if (strstr(p, "ROTCOREVISE") && isVisible(dbf, nCols, "ROTCOREVISE"))
+      strcat(header, "ROTCOREVISE,");
+    else if (strstr(p, "REC_CLD version") &&
+             isVisible(dbf, nCols, "REC_CLDVERSION"))
+      strcat(header, "REC_CLDVERSION,");
+    else if (strstr(p, "REC_PIXCEL") && isVisible(dbf, nCols, "REC_PIXCEL"))
+      strcat(header, "REC_PIXCEL,");
+    else if (strstr(p, "REC line number") &&
+             isVisible(dbf, nCols, "REC_LINENUM"))
+      strcat(header, "REC_LINENUM,");
+    else if (strstr(p, "PRC_BIT_PIXCEL") &&
+             isVisible(dbf, nCols, "PRC_BIT_PIXCEL"))
+      strcat(header, "PRC_BIT_PIXCEL,");
+    else if (strstr(p, "PRC_PIXCELSETSTAT") &&
+             isVisible(dbf, nCols, "PRC_PIXCELSETSTAT"))
+      strcat(header, "PRC_PIXCELSETSTAT,");
+    else if (strstr(p, "REC GPS DMS") &&
+             isVisible(dbf, nCols, "REC_GPS_DMS"))
+      strcat(header, "REC_GPS_DMS,");
+    else if (strstr(p, "REC orbit number") &&
+             isVisible(dbf, nCols, "REC_ORBITNUM"))
+      strcat(header, "REC_ORBITNUM,");
+    else if (strstr(p, "REC path date") &&
+             isVisible(dbf, nCols, "REC_PATHDATE"))
+      strcat(header, "REC_PATHDATE,");
+    else if (strstr(p, "REC path number") &&
+             isVisible(dbf, nCols, "REC_PATHNUM"))
+      strcat(header, "REC_PATHNUM,");
+    else if (strstr(p, "REC VLDS date") &&
+             isVisible(dbf, nCols, "REC_VLDSDATE"))
+      strcat(header, "REC_VLDSDATE,");
+    else if (strstr(p, "REC VLDE date") &&
+             isVisible(dbf, nCols, "REC_VLDEDATE"))
+      strcat(header, "REC_VLDEDATE,");
+    else if (strstr(p, "REC SATCNT period") &&
+             isVisible(dbf, nCols, "REC_SATCNTPERIOD"))
+      strcat(header, "REC_SATCNTPERIOD,");
+    else if (strstr(p, "REC BASESAT time") &&
+             isVisible(dbf, nCols, "REC_BASESATTIME"))
+      strcat(header, "REC_BASESATTIME,");
+    else if (strstr(p, "REC BASEGRD date") &&
+             isVisible(dbf, nCols, "REC_BASEGRDDATE"))
+      strcat(header, "REC_BASEGRDDATE,");
+    else if (strstr(p, "REC UTC GPS") && isVisible(dbf, nCols, "REC_UTC_GPS"))
+      strcat(header, "REC_UTC_GPS,");
+    else if (strstr(p, "Browse file name") &&
+             isVisible(dbf, nCols, "BRS_FILENAME"))
+      strcat(header, "BRS_FILENAME,");
+    else if (strstr(p, "Browse file size") &&
+             isVisible(dbf, nCols, "BRS_FILESIZE"))
+      strcat(header, "BRS_FILESIZE,");
+    else if (strstr(p, "Browse file date") &&
+             isVisible(dbf, nCols, "BRS_FILEDATE"))
+      strcat(header, "BRS_FILEDATE,");
+    else if (strstr(p, "TNL file name") &&
+             isVisible(dbf, nCols, "TNL_FILENAME"))
+      strcat(header, "TNL_FILENAME,");
+    else if (strstr(p, "TNL file size") &&
+             isVisible(dbf, nCols, "TNL_FILESIZE"))
+      strcat(header, "TNL_FILESIZE,");
+    else if (strstr(p, "TNL file date") &&
+             isVisible(dbf, nCols, "TNL_FILEDATE"))
+      strcat(header, "TNL_FILEDATE,");
+    else if (strstr(p, "L0_EX") && isVisible(dbf, nCols, "L0_EX"))
+      strcat(header, "L0_EX,");
+    else if (strstr(p, "CHK flag") && isVisible(dbf, nCols, "CHK_FLG"))
+      strcat(header, "CHK_FLG,");
+    else if (strstr(p, "OPE status") && isVisible(dbf, nCols, "OPESTAT"))
+      strcat(header, "OPESTAT,");
+    else if (strstr(p, "REC red band") && isVisible(dbf, nCols, "REC RBAND"))
+      strcat(header, "REC RBAND,");
+    else if (strstr(p, "REC green band") && isVisible(dbf, nCols, "REC_GBAND"))
+      strcat(header, "REC_GBAND,");
+    else if (strstr(p, "REC blue band") && isVisible(dbf, nCols, "REC_BBAND"))
+      strcat(header, "REC_BBAND,");
+    else if (strstr(p, "Off nadir angle") && isVisible(dbf, nCols, "OFFNADIR"))
+      strcat(header, "OFFNADIR,");
+    if (strstr(line, "</td></tr></table>"))
+      break;
+  }
+  FCLOSE(fpIn);
+
+  // Open output file and write header line
+  FILE *fpOut = FOPEN(outFile, "w");
+  header[strlen(header)-1] = '\0';
+  int nColumns = get_number_columns(header);
+  fprintf(fpOut, "%s\n", header);
+  header[strlen(header)-1] = ',';
+
+  // Read contents
+  fpIn = FOPEN(inFile, "r");
+  while (fgets(line, 1023, fpIn)) {
+    while (fgets(line, 1023, fpIn)) {
+      if (strstr(line, "Format: AUIG"))
+        break;
+    };
+    strcpy(line_out, "");
+    while (fgets(line, 1023, fpIn)) {
+      if (strstr(line, "</td></tr></table>"))
+        break;
+      char *test = (char *) MALLOC(sizeof(char)*255);
+      for (ii=0; ii<nColumns; ii++) {
+        test = get_column(header, ii);
+        if (isVisible(dbf, nCols, test)) {
+          char *p = strchr(line, ':');
+          if (p) {
+            ++p;
+            while (isspace(*p))
+              ++p;
+            char *q = strstr(p, "<br>");
+            if (q) {
+              *q = ',';
+              ++q;
+              *q = '\0';
+              strcat(line_out, p);
+            }
+          }
+        }
+      }
+    }
+    line_out[strlen(line_out)-1] = '\0';
+    fprintf(fpOut, "%s\n", line_out);
+  }
+
+  FCLOSE(fpIn);
+  FCLOSE(fpOut);
+
+  return 1;
+}
+
+// Convert kml to shapefile
+int kml2shape(char *inFile, char *outFile, int listFlag)
+{
+  DBFHandle dbase;
+  SHPHandle shape;
+  char **lines, *format, *header;
+  dbf_header_t *dbf;
+  int ii, kk, ll, nCols, n, nLines, nVertices;
+  char *param = (char *) MALLOC(sizeof(char)*255);
+  char *value = (char *) MALLOC(sizeof(char)*255);
+
+  // Figure out the format and number of vertices
+  kml_open(inFile, &format, &lines, &nLines, &nVertices);
+
+  // Read configuration file
+  if (!read_header_config(format, &dbf, &nCols))
+    asfPrintError("Don't currently know anything about the requested format "
+		  "(%s).\nHowever it can be added to 'header.lst' file in "
+		  "the share directory\n(%s)\n", format, get_asf_share_dir());
+
+  // Initialize shape file
+  // Only known formats generated by convert2vector are supported
+  kml2header(lines, nLines, &header);
+  shape_kml_init(outFile, format, header, nVertices);
+
+  // Open shape file for some action
+  open_shape(outFile, &dbase, &shape);
+
+  kk = 0;
+  n = 0;
+  for (ii=0; ii<nLines; ii++) {
+    read_kml_line(lines[ii], &param, &value);
+    if (strcmp(param, MAGIC_UNSET_STRING) != 0 &&
+        strcmp(value, MAGIC_UNSET_STRING) != 0) {
+      for (ll=0; ll<nCols; ll++) {
+	if (strcmp(dbf[ll].header, param) == 0 && dbf[ll].visible) {
+	  if (dbf[ll].format == DBF_STRING)
+	    DBFWriteStringAttribute(dbase, n, ll, value);
+	  else if (dbf[ll].format == DBF_STRING)
+	    DBFWriteIntegerAttribute(dbase, n, ll, atoi(value));
+	  else if (dbf[ii].format == DBF_DOUBLE)
+	    DBFWriteDoubleAttribute(dbase, n, ll, atof(value));
+	}
+      }
+      n++;
+      if (n == nCols) {
+        kk++;
+        n = 0;
+      }
+    }
+  }
+
+  // Clean up
+  FREE(param);
+  FREE(value);
+  for (ii=0; ii<nLines; ii++)
+    FREE(lines[ii]);
+  FREE(lines);
+
+  // Close shapefile
+  close_shape(dbase, shape);
+
+  return 1;
 }
