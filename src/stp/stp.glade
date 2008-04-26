@@ -5,7 +5,7 @@
 
 <widget class="GtkWindow" id="ardop_main">
   <property name="width_request">1024</property>
-  <property name="height_request">784</property>
+  <property name="height_request">625</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">SAR Training Processor</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
@@ -156,6 +156,7 @@
 			  <child>
 			    <widget class="GtkButton" id="input_file_browse_button">
 			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">Select a Radarsat or ERS Level 0/STF data file to process</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Browse...</property>
 			      <property name="use_underline">True</property>
@@ -885,6 +886,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 2 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -927,6 +929,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 2</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1006,6 +1009,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 3 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1047,6 +1051,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 3</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1126,6 +1131,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 4 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1167,6 +1173,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 4</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1247,6 +1254,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 5 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1289,6 +1297,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 5</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1368,6 +1377,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 6 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1410,6 +1420,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 6</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1460,6 +1471,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="range_complex_multiply_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Uncheck to skip range compression</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes"></property>
 				  <property name="use_underline">True</property>
@@ -1525,6 +1537,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 1 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1567,6 +1580,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 1 (raw data)</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1836,6 +1850,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display step 7 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1878,6 +1893,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 7</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1957,6 +1973,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 8 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -1999,6 +2016,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 8</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2077,6 +2095,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 9 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2119,6 +2138,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 9</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2198,6 +2218,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 10 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2240,6 +2261,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 10</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2318,6 +2340,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 11 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2360,6 +2383,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 11</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2438,6 +2462,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display Step 12 information</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2480,6 +2505,7 @@
 				      <property name="width_request">20</property>
 				      <property name="height_request">21</property>
 				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Display result after Step 12 (final product)</property>
 				      <property name="can_focus">True</property>
 				      <property name="relief">GTK_RELIEF_NORMAL</property>
 				      <property name="focus_on_click">True</property>
@@ -2529,6 +2555,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="range_migration_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Uncheck to skip range cell migration</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes"></property>
 				  <property name="use_underline">True</property>
@@ -2565,6 +2592,7 @@
 			      <child>
 				<widget class="GtkCheckButton" id="azimuth_complex_multiply_checkbutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Uncheck to skip azimuth compression</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes"></property>
 				  <property name="use_underline">True</property>
@@ -3131,23 +3159,6 @@
 			  <property name="fill">True</property>
 			</packing>
 		      </child>
-
-		      <child>
-			<widget class="GtkHBox" id="hbox19">
-			  <property name="visible">True</property>
-			  <property name="homogeneous">False</property>
-			  <property name="spacing">0</property>
-
-			  <child>
-			    <placeholder/>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">True</property>
-			  <property name="fill">True</property>
-			</packing>
-		      </child>
 		    </widget>
 		    <packing>
 		      <property name="padding">1</property>
@@ -3200,6 +3211,7 @@
 				<widget class="GtkEntry" id="start_line_entry">
 				  <property name="width_request">60</property>
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Only one patch of data (about 4000 lines) is processed by STP.  To look at features in the middle of an image, you'll need to change the start line.</property>
 				  <property name="can_focus">True</property>
 				  <property name="editable">True</property>
 				  <property name="visibility">True</property>
@@ -3240,6 +3252,7 @@
 			      <child>
 				<widget class="GtkButton" id="edit_doppler_parameters_button">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">The doppler parameters determine the orientation of the sensor during the acquisition, and therefore play a large role in the quality of the SAR processing.</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">Edit Doppler Parameters</property>
 				  <property name="use_underline">True</property>
