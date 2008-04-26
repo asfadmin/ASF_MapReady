@@ -300,10 +300,16 @@ void import_ceos(char *inBaseName, char *outBaseName,
       else if (ceos->sensor == AVNIR) {
         int band_number;
         band_number = get_alos_band_number(inBandName[index]);
-        sprintf(bandExt, "0%d", band_number);
+        if (band_number<9)
+          sprintf(bandExt, "0%d", band_number);
+        else
+          sprintf(bandExt, "%d", band_number);
       }
       else if (ceos->sensor == PRISM) {
-        sprintf(bandExt, "01");
+        strcpy(bandExt, "01");
+      }
+      else {
+        strcpy(bandExt, MAGIC_UNSET_STRING);
       }
 
       // p will point to the beginning of the actual file (past the path)
