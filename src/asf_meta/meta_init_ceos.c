@@ -2493,14 +2493,14 @@ double get_firstTime (const char *fName)
    FCLOSE(fp);
 
    FREE(buff);
-   printf("lat 1: %.4lf, lon 1: %.4lf\n",
-      (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
-      (double)bigInt32((unsigned char *)&(linehdr.long_first)));
-   printf("lat 2: %.4lf, lon 2: %.4lf\n",
-      (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
-      (double)bigInt32((unsigned char *)&(linehdr.long_last)));
-   printf("Time: %lf\n",
-      (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
+   //printf("lat 1: %.4lf, lon 1: %.4lf\n",
+   //   (double)bigInt32((unsigned char *)&(linehdr.lat_first)),
+   //   (double)bigInt32((unsigned char *)&(linehdr.long_first)));
+   //printf("lat 2: %.4lf, lon 2: %.4lf\n",
+   //   (double)bigInt32((unsigned char *)&(linehdr.lat_last)),
+   //   (double)bigInt32((unsigned char *)&(linehdr.long_last)));
+   //printf("Time: %lf\n",
+   //   (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0);
    return (double)bigInt32((unsigned char *)&(linehdr.acq_msec))/1000.0;
 }
 

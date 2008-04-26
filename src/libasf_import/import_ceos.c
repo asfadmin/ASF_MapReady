@@ -394,12 +394,14 @@ void import_ceos(char *inBaseName, char *outBaseName,
       lutName = NULL;
     }
 
+    // -- Turning this feature off for now
     // If we have no LUT, check if we should use one of the defualt
     // LUTs, that apply gain fixes, etc.
-    if (!lutName) {
-      meta = meta_create(inMetaName[0]);
-      lutName = check_luts(meta);
-    }
+    //if (!lutName) {
+    //  meta = meta_create(inMetaName[0]);
+    //  lutName = check_luts(meta);
+    //}
+    // -- End of disabled auto-lut feature
 
     // Ingest the different data types
     if (ceos->ceos_data_type == CEOS_RAW_DATA) {
