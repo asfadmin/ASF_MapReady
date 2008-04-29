@@ -6,6 +6,33 @@ SIGNAL_CALLBACK void on_convert_button_clicked(GtkWidget *w)
   process();
 }
 
+const char *input_format_to_str(int input_format)
+{
+  switch (input_format) {
+    case INPUT_META: return "META";
+    case INPUT_LEADER: return "LEADER";
+    case INPUT_POINT: return "POINT";
+    case INPUT_POLYGON: return "POLYGON";
+    case INPUT_SHAPE: return "SHAPE";
+    case INPUT_KML: return "KML";
+    case INPUT_GEOTIFF: return "GEOTIFF";
+    case INPUT_ALOS_CSV: return "AUIG";
+    case INPUT_GENERIC_CSV: return "CSV";
+    default: assert(0); return "";
+  }
+}
+
+const char *output_format_to_str(int output_format)
+{
+  switch (output_format) {
+    case OUTPUT_TEXT: return "CSV";
+    case OUTPUT_SHAPE: return "SHAPE";
+    case OUTPUT_KML: return "KML";
+    case OUTPUT_ALOS_CSV: return "AUIG";
+    default: assert(0); return "";
+  }
+}
+
 void process()
 {
   char in_file[1024];
@@ -35,7 +62,8 @@ void process()
   if (strlen(out_file)==0) {
     message_box("No outfile file selected!");
     return;
-  } else if (strlen(in_file)==0) {
+  }
+  else if (strlen(in_file)==0) {
     message_box("No input file specified!");
     return;
   }
@@ -47,148 +75,12 @@ void process()
 
   int ret=1, nfiles=1;
   int input_format = get_combo_box_item("input_format_combobox");
+  const char *inFormat = input_format_to_str(input_format);
+
   int output_format = get_combo_box_item("output_format_combobox");
+  const char *outFormat = output_format_to_str(output_format);
 
-  // some conversions perfer to be passed the basename
-  char *in_base = stripExt(in_file);
-  char *out_base = stripExt(out_file);
-
-  if (input_format == INPUT_ALOS_CSV && output_format == OUTPUT_KML)
-  {
-    printf("Converting ALOS CSV to kml.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    ret = alos_csv_to_kml(in_file, out_file);
-  }
-  else if (input_format == INPUT_KML && output_format == OUTPUT_ALOS_CSV)
-  {
-    printf("Converting kml to ALOS CSV.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    ret = kml_to_alos_csv(in_file, out_file);
-  }
-  else if (input_format == INPUT_META && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting metadata file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_META && output_format == OUTPUT_KML)
-  {
-    printf("Converting metadata file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_META && output_format == OUTPUT_TEXT)
-  {
-    printf("Converting metadata file to a CSV polygon text file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_text(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_LEADER && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting leader file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_LEADER && output_format == OUTPUT_KML)
-  {
-    printf("Converting leader file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_LEADER && output_format == OUTPUT_TEXT)
-  {
-    printf("Converting leader file to a CSV polygon text file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_text(in_base, out_base, META, 0);
-  }
-  else if (input_format == INPUT_POINT && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting point file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_file, out_base, POINT, 0);
-  }
-  else if (input_format == INPUT_POINT && output_format == OUTPUT_KML)
-  {
-    printf("Converting point file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_file, out_base, POINT, 0);
-  }
-  else if (input_format == INPUT_POLYGON && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting polygon file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    polygon2shape_new(in_file, out_base);
-  }
-  else if (input_format == INPUT_POLYGON && output_format == OUTPUT_KML)
-  {
-    printf("Converting polygon file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_file, out_base, POLYGON, 0);
-  }
-  else if (input_format == INPUT_SHAPE && output_format == OUTPUT_KML)
-  {
-    printf("Converting shape file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    ret = read_shape(in_base, out_base, KMLFILE, 0);
-    // read_shape returns 0 for success
-    ret = !ret;
-  }
-  else if (input_format == INPUT_SHAPE && output_format == OUTPUT_TEXT)
-  {
-    printf("Converting shape file to a text file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    read_shape(in_base, out_base, TEXT, 0);
-  }
-  else if (input_format == INPUT_GEOTIFF && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting geotiff file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_shape(in_file, out_base, GEOTIFF_META, 0);
-  }
-  else if (input_format == INPUT_GEOTIFF && output_format == OUTPUT_KML)
-  {
-    printf("Converting geotiff file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_kml(in_file, out_base, GEOTIFF_META, 0);
-  }
-  else if (input_format == INPUT_GEOTIFF && output_format == OUTPUT_TEXT)
-  {
-    printf("Converting geotiff file to a text file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    write_text(in_file, out_base, GEOTIFF_META, 0);
-  }
-  else if (input_format == INPUT_GENERIC_CSV && output_format == OUTPUT_SHAPE)
-  {
-    printf("Converting generic CSV file to a shape file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    ret=csv2shape(in_file, out_base);
-  }
-  else if (input_format == INPUT_GENERIC_CSV && output_format == OUTPUT_KML)
-  {
-    printf("Converting generic CSV file to a kml file.\n");
-    printf("File %d: %s -> %s\n", 1, in_file, out_file);
-    ret=csv2kml(in_file, out_file);
-  }
-  //else if (input_format == INPUT_RGPS && output_format == OUTPUT_SHAPE)
-  //{
-  //  printf("Converting list of RGPS cells to a shape file.\n");
-  //  printf("File %d: %s -> %s\n", 1, in_file, out_file);
-  //  write_shape(in_file, out_base, RGPS, 0);
-  //}
-  //else if (input_format == INPUT_RGPS && output_format == OUTPUT_KML)
-  //{
-  //  printf("Converting list of RGPS cells to a kml file.\n");
-  //  printf("File %d: %s -> %s\n", 1, in_file, out_file);
-  //  write_kml(in_file, out_base, RGPS, 0);
-  //}
-  else
-  {
-    put_string_to_label("result_label",
-      "Unsupported combination of Input and Output formats selected.");
-    FREE(in_base);
-    FREE(out_base);
-    return;
-  }
+  ret = convert2vector(in_file, inFormat, out_file, outFormat, FALSE);
 
   int open_output = get_checked("open_output_checkbutton");
 
@@ -196,10 +88,12 @@ void process()
   if (ret == nfiles) {
     if (nfiles == 1) {
       sprintf(msg, "Processed successfully!");
-    } else {
+    }
+    else {
       sprintf(msg, "Processed all %d files successfully!", nfiles);
     }
-  } else {
+  }
+  else {
     if (nfiles == 1) {
       sprintf(msg, "Processing failed!");
     } else {
@@ -225,7 +119,4 @@ void process()
         break;
     }
   }
-
-  FREE(in_base);
-  FREE(out_base);
 }

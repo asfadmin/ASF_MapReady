@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 // Initialize shape file
-static void shape_custom_init(char *inFile, char *format, char *header, 
+static void shape_custom_init(char *inFile, const char *format, char *header, 
 			      int vertices)
 {
   char *dbaseFile;
@@ -71,7 +71,7 @@ static void shape_custom_init(char *inFile, char *format, char *header,
 }
 
 // Convert custom to shapefile
-int custom2shape(char *inFile, char *format, char *outFile, int listFlag)
+int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
 {
   DBFHandle dbase;
   SHPHandle shape;

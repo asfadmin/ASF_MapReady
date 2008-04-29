@@ -121,9 +121,9 @@ typedef struct {
 } cell_t;
 
 // Prototypes from convert2vector.c
-format_type_t str2format(char *str);
-int convert2vector(char *inFile, char *inFormat_str,
-		   char *outFile, char *outFormat_str, int listFlag);
+format_type_t str2format(const char *str);
+int convert2vector(char *inFile, const char *inFormat_str,
+		   char *outFile, const char *outFormat_str, int listFlag);
 
 // Prototypes from kml_utils.c
 void kml_header(FILE *kml_file);
@@ -165,7 +165,7 @@ int isrgps(char *inFile);
 int isVisible(dbf_header_t *dbf, int nCols, char *header);
 char *get_column(char *line, int column);
 int get_number_columns(char *line);
-int read_header_config(char *format, dbf_header_t **dbf, int *nColumns);
+int read_header_config(const char *format, dbf_header_t **dbf, int *nColumns);
 
 // Prototypes from meta.c
 int meta2csv(char *inFile, char *outFile, int listFlag);
@@ -245,6 +245,7 @@ void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 int multimatch2shape(char *inFile, char *outFile, int listFlag);
 
 // Prototypes from custom.c
-int custom2shape(char *inFile, char *format, char *outFile, int listFlag);
+int custom2shape(char *inFile, const char *format,
+                 char *outFile, int listFlag);
 
 #endif

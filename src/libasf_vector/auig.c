@@ -308,7 +308,7 @@ static double get_req_double(char *line, int column_num, int *ok)
         }
         else {
             *ok=FALSE;
-            return 0;
+            return 0.0;
         }
     }
     else {
@@ -317,14 +317,14 @@ static double get_req_double(char *line, int column_num, int *ok)
     }
 }
 
-static char get_char(char *line, int column_num)
-{
-    char *str = get_str(line, column_num);
-    if (str && strlen(str)>0)
-        return str[0];
-    else
-        return '?';
-}
+//static char get_char(char *line, int column_num)
+//{
+//    char *str = get_str(line, column_num);
+//    if (str && strlen(str)>0)
+//        return str[0];
+//    else
+//        return '?';
+//}
 
 static int find_col(char *line, char *column_header)
 {
