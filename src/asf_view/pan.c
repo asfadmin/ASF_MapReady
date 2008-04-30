@@ -193,6 +193,11 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     int miny = MIN(start_y, y);
     int maxy = MAX(start_y, y);
 
+    if (minx < 0) minx = 0;
+    if (maxx > 256) maxx = 256;
+    if (miny < 0) miny = 0;
+    if (maxy > 256) maxy = 256;
+
     double w = (double)(maxx-minx)/(double)small_image_x_dim * curr->ns;
     double z1 = w/(double)get_big_image_width();
 
@@ -202,8 +207,15 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     center_line = ((double)(maxy+miny))/(double)small_image_y_dim*curr->nl/2.;
     center_samp = ((double)(maxx+minx))/(double)small_image_x_dim*curr->ns/2.;
 
-    zoom = z1 > z2 ? z1 : z2;
-    update_zoom();
+    // This check is here to handle the case where the user clicks in the
+    // image, but the window manager interpreted it as a click&drag.
+    // They'd get a super-zoomed-in image that is kind of confusing if you
+    // are not expecting it.  Skipping update_zoom() will handle it like
+    // a regular left-click.
+    if (maxx-minx > 2 || maxy-miny > 2) {
+      zoom = z1 > z2 ? z1 : z2;
+      update_zoom();
+    }
 
     fill_small(curr);
     fill_big(curr);
@@ -434,6 +446,11 @@ on_motion_notify_event(
       int maxx = MAX(start_x, x);
       int miny = MIN(start_y, y);
       int maxy = MAX(start_y, y);
+
+      if (minx < 0) minx = 0;
+      if (maxx > 256) maxx = 256;
+      if (miny < 0) miny = 0;
+      if (maxy > 256) maxy = 256;
 
       put_box(pb, minx, maxx, miny, maxy);
       gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
