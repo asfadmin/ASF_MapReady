@@ -193,10 +193,13 @@ on_button_release_event(GtkWidget *w, GdkEventButton *event, gpointer data)
     int miny = MIN(start_y, y);
     int maxy = MAX(start_y, y);
 
+    int width = gdk_pixbuf_get_width(pb)-1;
+    int height = gdk_pixbuf_get_height(pb)-1;
+
     if (minx < 0) minx = 0;
-    if (maxx > 256) maxx = 256;
+    if (maxx > width) maxx = width;
     if (miny < 0) miny = 0;
-    if (maxy > 256) maxy = 256;
+    if (maxy > height) maxy = height;
 
     double w = (double)(maxx-minx)/(double)small_image_x_dim * curr->ns;
     double z1 = w/(double)get_big_image_width();
@@ -447,10 +450,13 @@ on_motion_notify_event(
       int miny = MIN(start_y, y);
       int maxy = MAX(start_y, y);
 
+      int width = gdk_pixbuf_get_width(pb)-1;
+      int height = gdk_pixbuf_get_height(pb)-1;
+
       if (minx < 0) minx = 0;
-      if (maxx > 256) maxx = 256;
+      if (maxx > width) maxx = width;
       if (miny < 0) miny = 0;
-      if (maxy > 256) maxy = 256;
+      if (maxy > height) maxy = height;
 
       put_box(pb, minx, maxx, miny, maxy);
       gtk_image_set_from_pixbuf(GTK_IMAGE(img), pb);
