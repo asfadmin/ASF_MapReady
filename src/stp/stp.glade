@@ -409,6 +409,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step1_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 1 (raw data)</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_range_raw_t</property>
 				  <property name="use_underline">True</property>
@@ -473,6 +474,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step2_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 2</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_range_raw_f</property>
 				  <property name="use_underline">True</property>
@@ -536,6 +538,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step3_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 3</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_range_ref_t</property>
 				  <property name="use_underline">True</property>
@@ -599,6 +602,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step4_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 4</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_range_ref_f</property>
 				  <property name="use_underline">True</property>
@@ -662,6 +666,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step5_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 5</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_range_X_f</property>
 				  <property name="use_underline">True</property>
@@ -725,6 +730,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step6_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 6</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_raw_t</property>
 				  <property name="use_underline">True</property>
@@ -1761,6 +1767,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step7_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 7</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_raw_f</property>
 				  <property name="use_underline">True</property>
@@ -2656,6 +2663,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step8_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 8</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_mig_f</property>
 				  <property name="use_underline">True</property>
@@ -2720,6 +2728,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step9_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 9</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_ref_t</property>
 				  <property name="use_underline">True</property>
@@ -2784,6 +2793,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step10_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 10</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_ref_f</property>
 				  <property name="use_underline">True</property>
@@ -2848,6 +2858,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step11_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 11</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_X_f</property>
 				  <property name="use_underline">True</property>
@@ -2912,6 +2923,7 @@
 			      <child>
 				<widget class="GtkToggleButton" id="step12_togglebutton">
 				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Toggle to save the output of Step 12 (final result)</property>
 				  <property name="can_focus">True</property>
 				  <property name="label" translatable="yes">*_az_X_t</property>
 				  <property name="use_underline">True</property>

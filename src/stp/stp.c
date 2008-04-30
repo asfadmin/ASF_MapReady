@@ -272,9 +272,9 @@ on_input_file_browse_button_clicked(GtkWidget *button)
 #endif
 
   of.hwndOwner = NULL;
-  of.lpstrFilter = "ASF Internal Format (*.img)\0*.img\0"
-                   "CEOS Level 0 File (*.raw)\0*.raw\0"
+  of.lpstrFilter = "CEOS Level 0 File (*.raw)\0*.raw\0"
                    "STF (*.000)\0*.000\0"
+                   "ASF Internal Format (*.img)\0*.img\0"
                    "All Files\0*\0";
   of.lpstrCustomFilter = NULL;
   of.nFilterIndex = 1;
@@ -731,18 +731,21 @@ check_files(const char * input_file)
     char *in_file = change_extension(input_file, "in");
     char *fmt_file = change_extension(input_file, "fmt");
     char *raw_file = change_extension(input_file, "raw");
+    char *RAW_file = change_extension(input_file, "RAW");
     char *ldr_file = change_extension(input_file, "ldr");
+    char *LDR_file = change_extension(input_file, "LDR");
     char *stf_file = change_extension(input_file, "000");
     char *par_file = change_extension(input_file, "000.par");
+    char *PAR_file = change_extension(input_file, "000.PAR");
 
     int img_exists = file_exists(img_file);
     int meta_exists = file_exists(meta_file);
     int in_exists = file_exists(in_file);
     int fmt_exists = file_exists(fmt_file);
-    int raw_exists = file_exists(raw_file);
-    int ldr_exists = file_exists(ldr_file);
+    int raw_exists = file_exists(raw_file) || file_exists(RAW_file);
+    int ldr_exists = file_exists(ldr_file) || file_exists(LDR_file);
     int stf_exists = file_exists(stf_file);
-    int par_exists = file_exists(par_file);
+    int par_exists = file_exists(par_file) || file_exists(PAR_file);
 
     if (!file_exists(input_file))
     {
@@ -812,9 +815,12 @@ check_files(const char * input_file)
     FREE (in_file);
     FREE (fmt_file);
     FREE (raw_file);
+    FREE (RAW_file);
     FREE (ldr_file);
+    FREE (LDR_file);
     FREE (stf_file);
     FREE (par_file);
+    FREE (PAR_file);
 
     return status;
 }
@@ -1002,6 +1008,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
     GtkWidget *clear_button = glade_xml_get_widget(glade_xml, "clear_button");
     gtk_widget_set_sensitive(clear_button, FALSE);
 
+    highlight_step(1,2);
+
     int pid = fork();
     if (pid == 0)
     {
@@ -1085,8 +1093,8 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
 
             // figure out which step we are on
             int on_step = 0;
-            //if (strcmp_case(buf, "Range compressing")==0)
-            //  on_step=3;
+            if (strcmp_case(buf, "Range compressing")==0)
+              on_step=1;
             //else if (strcmp_case(buf, "Starting azimuth compression")==0)
             //  on_step=7;
             //else if (strcmp_case(buf, "Range cell migration")==0)
@@ -1095,14 +1103,14 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
             //  on_step=11;
             //else if (strcmp_case(buf, "Range-doppler done")==0)
             //  on_step=12;
-            //else {
+            else {
               for (i=1; i<=12; ++i) {
                 if (strstr(buf,suffix_for_step(i))!=NULL) {
                   on_step=i;
                   break;
                 }
               }
-            //}
+            }
 
             // if we figured it out, highlight that step's text
             if (on_step>0) {
