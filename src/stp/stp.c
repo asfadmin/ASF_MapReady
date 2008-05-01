@@ -721,7 +721,7 @@ static int file_exists(const char *filename)
 static int
 check_files(const char * input_file)
 {
-    int status;
+    int status=0;
 
     char *ext = findExt(input_file);
     if (!ext) ext = "";
@@ -738,34 +738,76 @@ check_files(const char * input_file)
     char *par_file = change_extension(input_file, "000.par");
     char *PAR_file = change_extension(input_file, "000.PAR");
 
-    int img_exists = file_exists(img_file);
-    int meta_exists = file_exists(meta_file);
-    int in_exists = file_exists(in_file);
-    int fmt_exists = file_exists(fmt_file);
-    int raw_exists = file_exists(raw_file) || file_exists(RAW_file);
-    int ldr_exists = file_exists(ldr_file) || file_exists(LDR_file);
-    int stf_exists = file_exists(stf_file);
-    int par_exists = file_exists(par_file) || file_exists(PAR_file);
+    int raw_exists=FALSE;
+    int ldr_exists=FALSE;
+    int stf_exists=FALSE;
+    int par_exists=FALSE;
+    int img_exists=FALSE;
+    int meta_exists=FALSE;
+    int in_exists=FALSE;
+    int fmt_exists=FALSE;
 
-    if (!file_exists(input_file))
-    {
+    if (!file_exists(input_file)) {
       status = STATUS_FILE_NOT_FOUND;
     }
-    else
-    {
-      if (meta_exists && in_exists && fmt_exists && img_exists) {
+    else if (strcmp_case(ext, "RAW")==0) {
+      ldr_exists = file_exists(ldr_file) || file_exists(LDR_file);
+      if (ldr_exists)
+        status = STATUS_LDR_INSTEAD;
+    }
+    else if (strcmp_case(ext, "000")==0) {
+      par_exists = file_exists(par_file) || file_exists(PAR_file);
+      if (par_exists)
+        status = STATUS_STF_INSTEAD;
+    }
+    else if (strcmp_case(ext, "IMG")==0) {
+      meta_exists = file_exists(meta_file);
+      in_exists = file_exists(in_file);
+      fmt_exists = file_exists(fmt_file);
+      if (meta_exists && in_exists && fmt_exists)
 	status = STATUS_OK;
-      }
-      else if (raw_exists && ldr_exists) {
+    }
+
+    // if we haven't figured it out yet, start getting agressive!
+
+    // Note that the ASF Internal check is last -- this is so we do
+    // not get fooled by previously imported files, which may or may
+    // not be fully imported (user may have used "Abort", and thus those
+    // files would be invalid)
+
+    if (status == 0) {
+      // First: check for .RAW/.LDR
+      raw_exists = file_exists(raw_file) || file_exists(RAW_file);
+      ldr_exists = file_exists(ldr_file) || file_exists(LDR_file);
+      
+      if (raw_exists && ldr_exists) {
         status = STATUS_LDR_INSTEAD;
       }
-      else if (stf_exists && par_exists) {
-        status = STATUS_STF_INSTEAD;
-      }
       else {
-        status = STATUS_META_FILE_NOT_FOUND;
+        // Second: check for STF
+        stf_exists = file_exists(stf_file);
+        par_exists = file_exists(par_file) || file_exists(PAR_file);
+        
+        if (stf_exists && par_exists) {
+          status = STATUS_STF_INSTEAD;
+        }
+        else {
+          // Third: check for ASF Internal
+          img_exists = file_exists(img_file);
+          meta_exists = file_exists(meta_file);
+          in_exists = file_exists(in_file);
+          fmt_exists = file_exists(fmt_file);
+          
+          if (meta_exists && in_exists && fmt_exists && img_exists) {
+            status = STATUS_OK;
+          }
+        }
       }
+
+      if (status == 0)
+        status = STATUS_META_FILE_NOT_FOUND;
     }
+    assert(status>0);
 
     if (status == STATUS_FILE_NOT_FOUND)
     {
