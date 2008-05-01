@@ -129,204 +129,6 @@ char *proj_info_as_string(projection_type_t projection_type,
   return ret;
 }
 
-/*
-static void map2ls(meta_parameters *meta, double N, double E,
-                   double *line, double *samp)
-{
-    double *a = meta->transform->map2ls_a;
-    double *b = meta->transform->map2ls_b;
-
-    *samp = a[0] + a[1]*N + a[2]*E + a[3]*N*E + a[4]*N*N + a[5]*E*E +
-            a[6]*N*N*E + a[7]*N*E*E + a[8]*N*N*N + a[9]*E*E*E;
-    *line = b[0] + b[1]*N + b[2]*E + b[3]*N*E + b[4]*N*N + b[5]*E*E +
-            b[6]*N*N*E + b[7]*N*E*E + b[8]*N*N*N + b[9]*E*E*E;
-}
-
-static void test_transform2(meta_parameters *meta)
-{
-  int i,j;
-  double line,samp;
-  for (i=-1000000; i<1000000; i+=100) {
-    for (j=-1000000; j<1000000; j+=100) {
-      map2ls(meta,j,i,&line,&samp);
-      double ls = sqrt(line*line+samp*samp);
-      if (ls<100000)
-        printf("%5d %5d %f %f\n", i, j, line, samp);
-    }
-  }
-}
-
-static void test_transform3(meta_parameters *meta)
-{
-
-  double N = 0;
-  double E = 0;
-  double range_N = 100000;
-  double range_E = 100000;
-
-  int i,j;
-  double line,samp;
-  double min_d;
-  int min_i=0, min_j=0;
-
-  while (1) {
-    for (i=-10; i<=10; ++i) {
-      if (i%5==0) printf("%3d: ",i);
-      for (j=-10; j<=10; ++j) {
-        double currN = N + range_N*i;
-        double currE = E + range_E*j;
-        
-        map2ls(meta,currN,currE,&line,&samp);
-        
-        // distance from (4000,4000)
-        double d = hypot(line-4000,samp-4000);
-        if ((i==-10 && j==-10) || d < min_d) {
-          min_d = d;
-          min_i = i;
-          min_j = j;
-        }
-
-        if (i%5==0 && j%5==0)
-          printf("(%12.1f) ",d);
-      }
-      if (i%5==0) printf("\n");
-    }
-
-    N = N + range_N*min_i;
-    E = E + range_E*min_j;
-    printf("\nNew center: (%f,%f) [%d,%d]\n", N,E, min_i,min_j);
-
-    if (min_i==-10 || min_i==10 || min_j==-10 || min_j==10) {
-      printf("Same range: (%f,%f) [min was on the edge]\n", range_N,range_E);
-    }
-    else {
-      range_N /= 2;
-      range_E /= 2;
-      printf("New range: (%f,%f)\n", range_N,range_E);
-    }
-    printf("Current distance to 4000,4000: %f\n", min_d);
-    printf("----------------------------------------------------\n\n");
-
-    if (min_d<.1)
-      break;
-    if (range_N + range_E < .00000001)
-      break;
-  }
-}
-
-static void test_transform(meta_parameters *meta)
-{
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
-
-  int i,j;
-
-  int zone = utm_zone(meta->general->center_longitude);
-
-  //double *a = meta->transform->map2ls_a;
-  //double *b = meta->transform->map2ls_b;
-
-  double max_line_err=0, max_samp_err=0;
-  double avg_err=0;
-
-  for (i=0; i<nl; i += 100) {
-    for (j=0; j<ns; j += 100) {
-
-      double lat, lon, E, N, line, samp;
-      meta_get_latLon(meta, i, j, 0, &lat, &lon);
-      latLon2UTM_zone(lat, lon, 0, zone, &E, &N);
-
-      E /= 1000.;
-      N /= 1000.;
-
-      map2ls(meta, N, E, &line, &samp);
-
-      double samp_err = samp - j;
-      double line_err = line - j;
-
-      double err = 0; //sqrt(samp_err*samp_err + line_err*line_err);
-      //avg_err += err;
-
-      if (i==0 && j==0) {
-        max_line_err = line_err;
-        max_samp_err = samp_err;
-      }
-      else {
-        if (fabs(samp_err) > fabs(max_samp_err))
-            max_samp_err = samp_err;
-        if (fabs(line_err) > fabs(max_line_err))
-            max_line_err = line_err;
-      }
-        
-      if (i%100==0 && j%100==0) {
-        printf("%4d %4d %10.4f %10.4f %12.4f %12.4f %10.4f %10.4f %14.7f\n",
-               i,j, lat,lon, E,N, line,samp, err);
-      }
-    }
-  }
-
-  printf("Maximum line error: %f pixels\n", max_line_err);
-  printf("Maximum sample error: %f pixels\n", max_samp_err);
-
-  avg_err /= (double)(nl*ns);
-  printf("Average error: %f\n", avg_err);
-}
-
-static void test_transform4(meta_parameters *meta)
-{
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
-
-  int i,j;
-
-  int zone = utm_zone(meta->general->center_longitude);
-
-  //double *a = meta->transform->map2ls_a;
-  //double *b = meta->transform->map2ls_b;
-
-  double max_line_err=0, max_samp_err=0;
-  double avg_err=0;
-
-  for (i=0; i<nl; i += 100) {
-    for (j=0; j<ns; j += 100) {
-
-      double lat, lon, E, N, line, samp;
-      meta_get_latLon(meta, i, j, 0, &lat, &lon);
-      map2ls(meta, lat, lon, &line, &samp);
-
-      double samp_err = samp - j;
-      double line_err = line - i;
-
-      double err = sqrt(samp_err*samp_err + line_err*line_err);
-      avg_err += err;
-
-      if (i==0 && j==0) {
-        max_line_err = line_err;
-        max_samp_err = samp_err;
-      }
-      else {
-        if (fabs(samp_err) > fabs(max_samp_err))
-            max_samp_err = samp_err;
-        if (fabs(line_err) > fabs(max_line_err))
-            max_line_err = line_err;
-      }
-        
-      //if (i%100==0 && j%100==0) {
-      if (err>2) {
-        printf("%4d %4d %10.4f %10.4f %12.4f %12.4f %10.4f %10.4f %14.7f\n",
-               i,j, lat,lon, E,N, line,samp, err);
-      }
-    }
-  }
-
-  printf("Maximum line error: %f pixels\n", max_line_err);
-  printf("Maximum sample error: %f pixels\n", max_samp_err);
-
-  avg_err /= (double)(nl*ns);
-  printf("Average error: %f\n", avg_err);
-}
-*/
-
 static void print_proj_info(projection_type_t projection_type,
                             project_parameters_t *pp, datum_type_t datum)
 {
@@ -743,7 +545,7 @@ int asf_geocode_utm(resample_method_t resample_method, double average_height,
   pp.utm.lat0 = MAGIC_UNSET_DOUBLE;
 
   return asf_geocode(&pp, projection_type, FALSE, resample_method,
-         average_height, datum, pixel_size, band_id,
+                     average_height, datum, pixel_size, band_id,
                      in_base_name, out_base_name, background_val);
 }
 
@@ -773,7 +575,7 @@ int asf_geocode_from_proj_file(const char *projection_file,
               datum_toString(tmp_datum), datum_toString(datum));
   }
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
-         average_height, datum, pixel_size, band_id,
+                     average_height, datum, pixel_size, band_id,
                      in_base_name, out_base_name, background_val);
 }
 
@@ -1442,19 +1244,6 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
   }
   double y_pixel_size = omd->general->y_pixel_size;
 
-  // I can't figure out what this code is for.  Commenting out for now
-  // and we'll see what breaks....     -kh 6/28/07
-  //// Check metadata ptrs (omd->general is theoretically guaranteed good)
-  //if (omd->projection) {
-  //  if (omd->projection->perY > 0) {
-  //    g_assert (0);   /* Shouldn't happen.  */
-  //    pc_per_y = (int) (omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-  //  }
-  //  else {
-  //    pc_per_y = (int) (-omd->projection->perY / y_pixel_size + 0.5) * pixel_size;
-  //  }
-  //}
-  // ... up to here
   if (omd->projection == NULL) {
     omd->projection = meta_projection_init();
   }
@@ -1463,10 +1252,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   // Update no data value
   if (!meta_is_valid_double(background_val)) background_val = 0;
-  //if (process_as_byte && background_val < 0) background_val = 0;
-  //if (process_as_byte && background_val > 255) background_val = 255;
-  if ((process_as_byte || omd->general->data_type == BYTE) && background_val < 0) background_val = 0;
-  if ((process_as_byte || omd->general->data_type == BYTE) && background_val > 255) background_val = 255;
+  if ((process_as_byte || omd->general->data_type==BYTE) && background_val<0)
+    background_val = 0;
+  if ((process_as_byte || omd->general->data_type==BYTE) && background_val>255)
+    background_val = 255;
   omd->general->no_data = background_val;
 
   omd->general->x_pixel_size = pixel_size;
@@ -1630,7 +1419,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // Issue a warning when the chosen pixel size is smaller than the
     // input pixel size.
     if ( GSL_MIN(imd->general->x_pixel_size,
-          imd->general->y_pixel_size) > pixel_size ) {
+          imd->general->y_pixel_size) > pixel_size )
+    {
         asfPrintWarning
         ("Requested pixel size %lf is smaller than the input image resolution "
         "(%le meters).\n", pixel_size,
@@ -1640,12 +1430,13 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     // The pixel size requested by the user better not oversample by
     // the factor of 2.  Specifying --force will skip this check
     if (!force_flag && GSL_MIN(imd->general->x_pixel_size,
-          imd->general->y_pixel_size) > (2*pixel_size) ) {
-        report_func
-        ("Requested pixel size %lf is smaller than the minimum implied by half \n"
-        "the input image resolution (%le meters), this is not supported.\n",
-        pixel_size, GSL_MIN (imd->general->x_pixel_size,
-              imd->general->y_pixel_size));
+          imd->general->y_pixel_size) > (2*pixel_size) )
+    {
+        report_func("Requested pixel size %lf is smaller than the minimum "
+                    "implied by half \nthe input image resolution "
+                    "(%le meters), this is not supported.\n",
+                    pixel_size, GSL_MIN (imd->general->x_pixel_size,
+                                         imd->general->y_pixel_size));
     }
 
     // Input image dimensions in pixels in x and y directions.
@@ -1654,8 +1445,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
     // The latitude and longitude of the center of the image.
     double lat_0, lon_0;
-    ret = meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0, average_height,
-                           &lat_0, &lon_0);
+    ret = meta_get_latLon (imd, ii_size_y / 2.0, ii_size_x / 2.0,
+                           average_height, &lat_0, &lon_0);
 
     // Flag true iff input image not map projected or pseudoprojected.
     gboolean input_projected = FALSE;
@@ -1665,7 +1456,8 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
     project_t *project_input;
     unproject_t *unproject_input;
 
-    if ( ((imd->sar && imd->sar->image_type == 'P') || imd->general->image_data_type == DEM)
+    if ( ((imd->sar && imd->sar->image_type == 'P') ||
+          imd->general->image_data_type == DEM)
         && imd->projection && imd->projection->type != SCANSAR_PROJECTION )
     {
         input_projected = TRUE;
@@ -1768,27 +1560,15 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                 // projection coordinates.
                 x_pix = (ipcx - ipb->startX) / ipb->perX;
                 y_pix = (ipcy - ipb->startY) / ipb->perY;
-
-                // some height experiments...
-                if (ii==4 && jj==4) {
-                  double ht;
-                  for (ht=-10000; ht<10000; ht+=2000) {
-                    double xx,yy,zz;
-                    project_input(ipp,D2R*lat,D2R*lon,ht,&xx,&yy,&zz,
-                                  imd->projection->datum);
-                    double xpix = (ipcx - ipb->startX) / ipb->perX;
-                    double ypix = (ipcy - ipb->startY) / ipb->perY;
-                    printf("%16.7f %16.7f %16.7f\n", ht, xpix, ypix);
-                  }
-                }
             }
             else {
                 ret = meta_get_lineSamp (imd, lat, lon, average_height,
                     &y_pix, &x_pix);
                 //g_assert (ret == 0);
                 if (ret != 0) {
-                    asfPrintError("Failed to determine line and sample from latitude "
-                        "and longitude\nLat: %f, Lon: %f\n", lat, lon);
+                    asfPrintError("Failed to determine line and sample from "
+                                  "latitude and longitude\n"
+                                  "Lat: %f, Lon: %f\n", lat, lon);
                 }
             }
             dtf.x_proj[current_mapping] = cxproj;
