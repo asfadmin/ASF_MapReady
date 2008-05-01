@@ -168,6 +168,8 @@ meta_transform *meta_transform_init(void)
     map->y[ii] = MAGIC_UNSET_DOUBLE;
     map->l[ii] = MAGIC_UNSET_DOUBLE;
     map->s[ii] = MAGIC_UNSET_DOUBLE;
+    map->map2ls_a[ii] = MAGIC_UNSET_DOUBLE;
+    map->map2ls_b[ii] = MAGIC_UNSET_DOUBLE;
   }
   return map;
 }

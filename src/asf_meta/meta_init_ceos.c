@@ -1032,12 +1032,18 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     meta->transform->s[1] = mpdr->b22;
     meta->transform->s[2] = mpdr->b23;
     meta->transform->s[3] = mpdr->b24;
-    meta->transform->incid_a[0] = dssr->incid_a[0];
-    meta->transform->incid_a[1] = dssr->incid_a[1];
-    meta->transform->incid_a[2] = dssr->incid_a[2];
-    meta->transform->incid_a[3] = dssr->incid_a[3];
-    meta->transform->incid_a[4] = dssr->incid_a[4];
-    meta->transform->incid_a[5] = dssr->incid_a[5];
+
+    int ii;
+    for (ii=0; ii<6; ++ii)      
+      meta->transform->incid_a[ii] = dssr->incid_a[ii];
+
+    struct JAXA_FACDR facdr;
+    get_jaxa_facdr(in_fName, &facdr);
+
+    for (ii=0; ii<10; ++ii) {
+      meta->transform->map2ls_a[ii] = facdr.a_map[ii];
+      meta->transform->map2ls_b[ii] = facdr.b_map[ii];
+    }
   }
 
   // Initialize map projection for projected images

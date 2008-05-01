@@ -584,6 +584,17 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp, coeff, meta->transform->incid_a[ii],
                       "incidence angle transformation parameter");
     }
+    for (ii=0; ii<10; ++ii) {
+      sprintf(coeff, "map_a(%d):", ii);
+      meta_put_double(fp, coeff, meta->transform->map2ls_a[ii],
+                      "Map to line/sample transformation parameter");
+    }
+    for (ii=0; ii<10; ++ii) {
+      sprintf(coeff, "map_b(%d):", ii);
+      meta_put_double(fp, coeff, meta->transform->map2ls_b[ii],
+                      "Map to line/sample transformation parameter");
+    }
+      
     meta_put_string(fp,"}","","End transform");
   }
 

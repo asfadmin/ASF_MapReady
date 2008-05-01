@@ -286,10 +286,41 @@ int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
 {
-    double x0, y0;
-    int err;
-    double tol = 0.2;
-    int num_iter = 0;
+  if (meta->transform) {
+    double *a = meta->transform->map2ls_a;
+    double *b = meta->transform->map2ls_b;
+
+    double lat2 = lat*lat;
+    double lon2 = lon*lon;
+
+    *xSamp = a[0] + a[1]*lat + a[2]*lon + a[3]*lat*lon + a[4]*lat2 +
+             a[5]*lon2 + a[6]*lat2*lon + a[7]*lat*lon2 +
+             a[8]*lat2*lat + a[9]*lon2*lon;
+    *yLine = b[0] + b[1]*lat + b[2]*lon + b[3]*lat*lon + b[4]*lat2 +
+             b[5]*lon2 + b[6]*lat2*lon + b[7]*lat*lon2 +
+             b[8]*lat2*lat + b[9]*lon2*lon;
+
+    if (elev != 0.0) {
+      // note that we don't need to worry about an expensive meta_incid()
+      // call, since for Palsar it is calculated from the transform block
+      double incid = meta_incid(meta, *yLine, *xSamp);
+
+      // shift LEFT in ascending images, RIGHT in descending
+      if (meta->general->orbit_direction=='A')
+        *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
+      else
+        *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;      
+    }
+
+    // we use 0-based indexing, whereas these functions are 1-based.
+    *xSamp -= 1;
+    *yLine -= 1;
+
+    return 0;
+  }
+  else {
+    double x0, y0, tol = 0.2;
+    int err,num_iter = 0;
 
     // Plan: added a tolerance factor to meta_get_lineSamp_imp, slowly
     // increase it as we get more and more desperate for convergence.
@@ -351,6 +382,7 @@ int meta_get_lineSamp(meta_parameters *meta,
     *xSamp = meta->general->sample_count/2;
     *yLine = meta->general->line_count/2;
     return 1;
+  }
 }
 
 void meta_get_corner_coords(meta_parameters *meta)

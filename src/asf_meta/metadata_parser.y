@@ -903,6 +903,16 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(field_name, coeff) )
       { MTRANSFORM->incid_a[ii] = VALP_AS_DOUBLE; return; }
     }
+    for (ii=0; ii<10; ii++) {
+      sprintf(coeff, "map_a(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+      { MTRANSFORM->map2ls_a[ii] = VALP_AS_DOUBLE; return; }
+    }
+    for (ii=0; ii<10; ii++) {
+      sprintf(coeff, "map_b(%d)", ii);
+      if ( !strcmp(field_name, coeff) )
+      { MTRANSFORM->map2ls_b[ii] = VALP_AS_DOUBLE; return; }
+    }
   }
 
   // Fields which normally go in the airsar block of the metadata file
