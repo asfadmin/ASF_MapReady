@@ -24,6 +24,8 @@ format_type_t str2format(const char *str)
     format = KMLFILE;
   else if (strcmp(uc(str), "SHAPE") == 0)
     format = SHAPEFILE;
+  else if (strcmp(uc(str), "URSA") == 0)
+    format = URSA;
   else
     format = CUSTOM_FORMAT;
 
@@ -76,6 +78,8 @@ int convert2vector(char *inFile, const char *inFormat_str,
     ret = kml2auig(inFile, outFile, listFlag);
   else if (inFormat == KMLFILE && outFormat == SHAPEFILE)
     ret = kml2shape(inFile, outFile, listFlag);
+  else if (inFormat == KMLFILE && outFormat == URSA)
+    ret = kml2ursa(inFile, outFile, listFlag);
   else if (inFormat == SHAPEFILE && outFormat == POINT)
     ret = shape2point(inFile, outFile, listFlag);
   else if (inFormat == SHAPEFILE && outFormat == POLYGON)

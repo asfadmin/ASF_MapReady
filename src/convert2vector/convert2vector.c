@@ -254,6 +254,8 @@ int main(int argc, char **argv)
     asfPrintStatus("into a list of points ...\n\n");
   else if (outFormat == AUIG) 
     asfPrintStatus("into an AUIG CSV file ...\n");
+  else if (outFormat == URSA)
+    asfPrintStatus("into an URSA bulk order file ...\n");
   else {
     dbf_header_t *dbf;
     int nCols;

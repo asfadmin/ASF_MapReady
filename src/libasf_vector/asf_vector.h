@@ -223,6 +223,7 @@ int kml2polygon(char *in_file, char *out_file, int listFlag);
 int kml2csv(char *in_file, char *out_file, int listFlag);
 int kml2auig(char *in_file, char *out_file, int listFlag);
 int kml2shape(char *in_file, char *out_file, int listFlag);
+int kml2ursa(char *in_file, char *out_file, int listFlag);
 
 // Prototypes from shape.c
 int shape2meta(char *inFile, char *outfile, int listFlag);

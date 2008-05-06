@@ -1467,6 +1467,8 @@ void kml_open(char *filename, char **format, char ***sLines, int *nLines,
       line++;
     if (strncmp(line, "<!-- Format:", 12) == 0)
       sscanf(line, "<!-- Format: %s", type);
+    else if (strncmp_case(line, "<NAME>URSA GRANULES</NAME>", 26) == 0)
+      strcpy(type, "URSA");
     sprintf(lines[ii], "%s", line);
   }
   FCLOSE(fp);
@@ -2177,6 +2179,45 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
   // Close shapefile
   close_shape(dbase, shape);
+
+  return 1;
+}
+
+int kml2ursa(char *inFile, char *outFile, int listFlag)
+{
+  FILE *fp;
+  char **lines, *format, *p, *q, *data_set;
+  int ii, nLines, nVertices, length;
+
+  // Figure out the format and number of vertices
+  kml_open(inFile, &format, &lines, &nLines, &nVertices);
+
+  // Check the format
+  if (strcmp_case(format, "URSA") != 0)
+    asfPrintError("Found format (%s) that does not match requested format "
+                  "(URSA).\nPlease verify that the KML file is in fact"
+		  "generated the URSA system.\n", format);
+
+  // Write the granules into the output file
+  data_set = (char *) MALLOC(sizeof(char)*50);
+  fp = FOPEN(outFile, "w");
+  for (ii=0; ii<nLines; ii++) {
+    if (strstr(lines[ii], "<Placemark>")) {
+      strcpy(data_set, "");
+      p = strstr(lines[ii+1], "<name>");
+      q = strstr(lines[ii+1], "</name>");
+      if (p && q) {
+	length = strlen(p) - strlen(q) - 6;
+	strncpy(data_set, p+6, length);
+	fprintf(fp, "%s\n", data_set);
+      }
+      ii++;
+    }
+  }
+  FCLOSE(fp);
+
+  // Clean up
+  FREE(data_set);
 
   return 1;
 }
