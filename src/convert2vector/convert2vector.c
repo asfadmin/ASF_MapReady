@@ -227,6 +227,8 @@ int main(int argc, char **argv)
     asfPrintStatus("   Converting a KML file ");
   else if (inFormat == GEOTIFF_META) 
     asfPrintStatus("   Converting a geotiff file ");
+  else if (inFormat == URSA)
+    asfPrintStatus("   Converting a generic URSA CSV file ");
   else {
     dbf_header_t *dbf;
     int nCols;

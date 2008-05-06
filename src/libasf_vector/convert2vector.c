@@ -88,9 +88,15 @@ int convert2vector(char *inFile, const char *inFormat_str,
     ret = shape2csv(inFile, outFile, listFlag);
   else if (inFormat == SHAPEFILE && outFormat == KMLFILE)
     ret = shape2kml(inFile, outFile, listFlag);
+  else if (inFormat == URSA && outFormat == KMLFILE)
+    ret = ursa2kml(inFile, outFile, listFlag);
+  else if (inFormat == URSA && outFormat == SHAPEFILE)
+    ret = ursa2shape(inFile, outFile, listFlag);
   // custom conversion defined by parameter set in 'header.lst'
   else if (inFormat == CUSTOM_FORMAT && outFormat == SHAPEFILE)
     ret = custom2shape(inFile, inFormat_str, outFile, listFlag);
+  else if (inFormat == CUSTOM_FORMAT && outFormat == KMLFILE)
+    ret = custom2kml(inFile, inFormat_str, outFile, listFlag);
   else
     asfPrintError("Conversion not supported.\n");
 

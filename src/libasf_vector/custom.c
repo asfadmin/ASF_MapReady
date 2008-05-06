@@ -207,3 +207,141 @@ int custom2shape(char *inFile, const char *format, char *outFile, int listFlag)
 
   return 1;
 }
+
+// Convert custom to KML file
+int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
+{
+  char *line = (char *) MALLOC(sizeof(char)*4096);
+  char *header = (char *) MALLOC(sizeof(char)*4096);
+  dbf_header_t *dbf;
+  int ii, kk, nVertices, nCols;
+  char *p, test_format[25];
+
+  // Read configuration file
+  if (!read_header_config(format, &dbf, &nCols))
+    asfPrintError("Don't currently know anything about the requested format "
+		  "(%s).\nHowever it can be added to 'header.lst' file in "
+		  "the share directory\n(%s)\n", uc(format), 
+		  get_asf_share_dir());
+
+  // Read input file and check the format
+  // The first line needs to contain a format. Otherwise we suggest the use
+  // of the generic csv format (with less control over the data formats).
+  // The second line contains the column header information.
+  FILE *fp = FOPEN(inFile, "r");
+  fgets(line, 4096, fp);
+  if (strstr(line, "# Format:")) {
+    p = strchr(line, ':');
+    if (p) {
+      p++;
+      while (isspace(*p))
+	p++;
+      sscanf(p, "%s", test_format);
+      if (strcmp_case(test_format, format) != 0)
+	asfPrintError("Format in the file (%s) does not match reqested "
+		      "format (%s),\n", test_format, format);
+    }
+  }
+  else
+    asfPrintError("The file (%s) does not contain any format information.\n"
+		  "In its current form it can only be ingested as generic "
+		  "csv file.\n", inFile);
+
+  // Read the header information and determine how many vertices we have
+  fgets(header, 4096, fp);
+  int nColumns = get_number_columns(header);;
+  int nLat=0, nLon=0;
+  char *param = (char *) MALLOC(sizeof(char)*255);
+  for (kk=0; kk<nColumns; kk++) {
+    param = get_column(header, kk);
+    if (strncmp_case(param, "LAT", 3) == 0)
+      nLat++;
+    else if (strncmp_case(param, "LON", 3) == 0)
+      nLon++;
+  }
+  if (nLat != nLon)
+    asfPrintError("Number of lat (%d) and lon (%d) columns not matching.\n",
+		  nLat, nLon);
+  nVertices = nLat;
+  double *lat = (double *) MALLOC(sizeof(double)*nVertices+1);
+  double *lon = (double *) MALLOC(sizeof(double)*nVertices+1);
+
+  // Now we have established that the format information seems to be in order
+  // and we have the column header information.
+  // Initialize the KML file
+  //kml_custom_init(outFile, format, header, nVertices);
+
+  // Open shape file for some action
+  //open_(outFile, &dbase, &shape);
+  
+  // Read values and write them to shape file
+  char *sValue = (char *) MALLOC(sizeof(char)*255);
+  int nValue, n=0;
+  double fValue;
+
+  while (fgets(line, 4096, fp)) {
+    nLat = nLon = 0;
+    int field = 0;
+    for (kk=0; kk<nColumns; kk++) {
+      sValue = get_column(line, kk);
+      param = get_column(header, kk);
+      for (ii=0; ii<nCols; ii++) {
+	if (strncmp_case(dbf[ii].header, param, strlen(dbf[ii].header)-1) == 0 
+			 && dbf[ii].visible) {
+	  
+	  // Check for geolocation columns
+	  if (strncmp_case(dbf[ii].header, "LAT", 3) == 0) {
+	    sscanf(sValue, "%lf", &lat[nLat]);
+	    nLat++;
+	  }
+	  else if (strncmp_case(dbf[ii].header, "LON", 3) == 0) {
+	    sscanf(sValue, "%lf", &lon[nLon]);
+	    nLon++;
+	  }
+
+	  /*
+	  // Write values into the database
+	  if (dbf[ii].format == DBF_STRING)
+	    DBFWriteStringAttribute(dbase, n, field, sValue);
+	  else if (dbf[ii].format == DBF_INTEGER) {
+	    sscanf(sValue, "%i", &nValue);
+	    DBFWriteIntegerAttribute(dbase, n, field, nValue);
+	  }
+	  else if (dbf[ii].format == DBF_DOUBLE) {
+	    sscanf(sValue, "%lf", &fValue);
+	    DBFWriteDoubleAttribute(dbase, n, field, fValue);
+	  }
+	  */
+	  field++;
+	}
+      }
+    }
+    lat[nVertices] = lat[0];
+    lon[nVertices] = lon[0];
+
+    /*
+    // Write shape object
+    SHPObject *shapeObject=NULL;
+    if (nVertices == 1)
+      shapeObject = 
+	SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
+    else
+      shapeObject =
+	SHPCreateSimpleObject(SHPT_POLYGON, nVertices+1, lon, lat, NULL);
+    SHPWriteObject(shape, -1, shapeObject);
+    SHPDestroyObject(shapeObject);
+    */
+    n++;
+  }
+  FCLOSE(fp);
+
+  // Close KML file
+
+  // Clean up
+  FREE(header);
+  FREE(line);
+  FREE(param);
+  FREE(sValue);
+
+  return 1;
+}

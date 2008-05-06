@@ -24,6 +24,7 @@ OBJS = \
 	kml.o \
 	shape.o \
 	generic_csv.o \
+	ursa.o \
 	custom.o \
 	utils.o
 

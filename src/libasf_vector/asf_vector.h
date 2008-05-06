@@ -245,8 +245,14 @@ void rgps_weather2shape(char *line, DBFHandle dbase, SHPHandle shape, int n);
 // Prototypes from multimatch.c
 int multimatch2shape(char *inFile, char *outFile, int listFlag);
 
+// Prototypes from ursa.c
+int ursa2shape(char *inFile, char *outFile, int listFlag);
+int ursa2kml(char *in_file, char *out_file, int listFlag);
+
 // Prototypes from custom.c
 int custom2shape(char *inFile, const char *format,
                  char *outFile, int listFlag);
+int custom2kml(char *inFile, const char *format,
+	       char *outFile, int listFlag);
 
 #endif
