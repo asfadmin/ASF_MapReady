@@ -414,7 +414,7 @@ main (int argc, char *argv[])
   {
     asfPrintWarning("The following options may only be used one at a time:\n"
         "    %s\n    %s\n    %s\n    %s\n    %s\n    %s\n",
-        "-rgb", "-truecolor", "-falsecolor", "-band", "-pauli", "-sinclair");
+        "-rgb", "-truecolor", "-falsecolor", "-band");
     print_help();
   }
   if ( (rgbFlag != FLAG_NOT_SET         ||
