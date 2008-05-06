@@ -33,7 +33,7 @@ void interp_dem_holes_data(meta_parameters *meta, float *dem_data,
     for (i=0; i<nl; ++i) {
         for (j=0; j<ns; ++j) {
             if (get_pixel(i,j) < cutoff) {
-                
+
                 // we found a hole
                 // scan up/down/left/right to find nearest good data
                 // then set this pixel to be a weighted average
@@ -42,9 +42,10 @@ void interp_dem_holes_data(meta_parameters *meta, float *dem_data,
                 while (right < ns-1 && get_pixel(i,right) < cutoff)
                     ++right;
 
-                if (right-j > 250) {
+                if (right-j > 1000) {
                     // huge giant hole... skip head to the end of it
                     // we will just leave it alone
+                    set_pixel(i,j,cutoff-pad-get_pixel(i,j));
                     j = right;
                     continue;
                 }
@@ -60,6 +61,12 @@ void interp_dem_holes_data(meta_parameters *meta, float *dem_data,
                 int down = i;
                 while (down < nl-1 && get_pixel(down,j) < cutoff)
                     ++down;
+
+                // if hole is along the edge, do nothing
+                if (left==0 || right==ns-1 || up==0 || down==nl-1) {
+                  set_pixel(i,j,cutoff-pad-get_pixel(i,j));
+                  continue;
+                }
 
                 float n = (i-up) + (down-i) + (j-left) + (right-j);
                 float pixel_value =
@@ -128,9 +135,11 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
                 while (right<ns-1 && float_image_get_pixel(img,right,i)<cutoff)
                     ++right;
 
-                if (right-j > 250) {
+                if (right-j > 1000) {
                     // huge giant hole... skip head to the end of it
                     // we will just leave it alone
+                    float pixel_value = float_image_get_pixel(img,j,i);
+                    float_image_set_pixel(img,j,i,cutoff-pad-pixel_value);
                     j = right;
                     continue;
                 }
@@ -146,6 +155,13 @@ void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose)
                 int down = i;
                 while (down < nl-1 && float_image_get_pixel(img,j,down) < cutoff)
                     ++down;
+
+                // if hole is along the edge, do nothing
+                if (left==0 || right==ns-1 || up==0 || down==nl-1) {
+                  float pixel_value = float_image_get_pixel(img,j,i);
+                  float_image_set_pixel(img,j,i,cutoff-pad-pixel_value);
+                  continue;
+                }
 
                 float n = 1./(i-up) + 1./(down-i) + 1./(j-left) + 1./(right-j);
                 float pixel_value =
