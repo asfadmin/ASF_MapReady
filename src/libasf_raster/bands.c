@@ -39,6 +39,10 @@ char **extract_band_names(char *bands, int band_count)
       if (t_channel != NULL) {
         band_ary[i] = STRDUP(t_channel);
       }
+      else {
+          band_ary[i] = (char*)MALLOC(sizeof(char)*strlen(MAGIC_UNSET_STRING)+1);
+          strcpy(band_ary[i], MAGIC_UNSET_STRING);
+      }
     }
   }
   else {
