@@ -19,6 +19,15 @@ PROGRAM HISTORY:
 #include <libasf_proj.h>
 //#include "jpl_proj.h"
 
+/*******************************************************************
+ * Prototypes                                                     */
+double *get_a_coeffs(meta_parameters *meta);
+double *get_b_coeffs(meta_parameters *meta);
+int is_valid_map2s_transform(meta_parameters *meta);
+int is_valid_map2l_transform(meta_parameters *meta);
+int is_valid_ll2l_transform(meta_parameters *meta);
+int is_valid_ll2s_transform(meta_parameters *meta);
+
 /*Geolocation Calls:*/
 
 /*******************************************************************
@@ -68,30 +77,14 @@ int meta_get_latLon(meta_parameters *meta,
       a lot more info than the other projections */
     if (meta->projection->type == SCANSAR_PROJECTION) {
         scan_to_latlon(meta, px, py, elev, lat, lon, &hgt);
-    //}
-    //else if (meta->projection->type == LAT_LONG_PSEUDO_PROJECTION) {
-    //    *lat = py;
-    //    *lon = px;
-    }
-    else {
+    } else {
         proj_to_latlon(meta->projection, px, py, pz, lat, lon, &hgt);
-        *lat *= R2D;
-        *lon *= R2D;
+        *lat *= R2D; *lon *= R2D;
     }
     return 0;
   }
-  else if (meta->airsar) {
-      double l = yLine, s = xSample;
-      if (meta->sar) {
-          l = (double)meta->sar->original_line_count/
-              (double)meta->general->line_count * yLine;
-          s = (double)meta->sar->original_sample_count/
-              (double)meta->general->sample_count * xSample;
-      }
-      airsar_to_latlon(meta, s, l, elev, lat, lon);
-      return 0;
-  }
   else if (meta->transform) {
+      /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
       if (meta->sar) {
           l = (double)meta->sar->original_line_count/
@@ -114,11 +107,10 @@ int meta_get_latLon(meta_parameters *meta,
     asfPrintError(
       "meta_get_latLon: Couldn't figure out what kind of image this is!\n"
       "meta->transform = %p, so it isn't ALOS.\n"
-      "meta->airsar = %p, so it isn't Airsar.\n"
       "meta->sar = %p, and it isn't Slant/Ground range.\n"
       "meta->projection = %p, so it isn't Projected, or Scansar.\n"
       "meta->general->name: %s\n",
-      meta->transform, meta->airsar, meta->sar, meta->projection,
+      meta->transform, meta->sar, meta->projection,
       meta->general ? meta->general->basename : "(null)");
     return 1; /* Not Reached */
   }
@@ -167,7 +159,7 @@ void meta_get_timeSlantDop(meta_parameters *meta,
         *dop=meta_get_dop(meta,yLine,xSample);
     }
   } else if (meta->sar->image_type=='P' ||
-             meta->sar->image_type=='R')
+           meta->sar->image_type=='R')
   {
     double lat,lon;
     meta_get_latLon(meta,yLine,xSample,0.0,&lat,&lon);
@@ -286,10 +278,11 @@ int meta_get_lineSamp(meta_parameters *meta,
                       double lat,double lon,double elev,
                       double *yLine,double *xSamp)
 {
-  if (meta->transform) {
-    double *a = meta->transform->map2ls_a;
-    double *b = meta->transform->map2ls_b;
+  double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
+  double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
 
+  if (meta->transform && a != NULL && b  != NULL) {
+    // If a valid transform block was found, use it...
     double lat2 = lat*lat;
     double lon2 = lon*lon;
 
@@ -309,7 +302,7 @@ int meta_get_lineSamp(meta_parameters *meta,
       if (meta->general->orbit_direction=='A')
         *xSamp -= elev*tan(PI/2-incid)/meta->general->x_pixel_size;
       else
-        *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;      
+        *xSamp += elev*tan(PI/2-incid)/meta->general->x_pixel_size;
     }
 
     // we use 0-based indexing, whereas these functions are 1-based.
@@ -372,7 +365,7 @@ int meta_get_lineSamp(meta_parameters *meta,
         //printf("Failed to converge at UR corner... trying (0,0) ??\n");
         x0 = y0 = 0.0;
         err = meta_get_lineSamp_imp(meta, x0, y0, lat, lon, elev,
-                                    yLine, xSamp, tol);
+            yLine, xSamp, tol);
         if (!err) return 0;
 
         tol += 0.2;
@@ -405,3 +398,121 @@ void meta_get_corner_coords(meta_parameters *meta)
   meta->location->lon_end_far_range = lon;
   meta->location->lat_end_far_range = lat;
 }
+
+double *get_a_coeffs(meta_parameters *meta)
+{
+    // Return a valid set of coefficients for transforming
+    // from lat/lon to sample (use together with get_b_coeffs()
+    // for going from lat/lon to line so you will have a line/samp
+    // pair.)
+    double *ret = NULL;
+
+    if (meta && meta->transform) {
+        // Prefer the map2ls_a[] array
+        if (is_valid_map2s_transform(meta)) {
+            ret = meta->transform->map2ls_a;
+        }
+        else if (is_valid_ll2s_transform(meta)) {
+            ret = meta->transform->s;
+        }
+        else {
+            ret = NULL;
+        }
+    }
+
+    return ret;
+}
+
+double *get_b_coeffs(meta_parameters *meta)
+{
+    // Return a valid set of coefficients for transforming
+    // from lat/lon to line (use together with get_a_coeffs()
+    // for going from lat/lon to sample so you will have a line/samp
+    // pair.)
+    double *ret = NULL;
+
+    if (meta && meta->transform) {
+        // Prefer the map2ls_b[] array
+        if (is_valid_map2l_transform(meta)) {
+            ret = meta->transform->map2ls_b;
+        }
+        else if (is_valid_ll2l_transform(meta)) {
+            ret = meta->transform->l;
+        }
+        else {
+            ret = NULL;
+        }
+    }
+
+    return ret;
+}
+
+int is_valid_map2s_transform(meta_parameters *meta)
+{
+    int ret = 1, i;
+
+    if (meta && meta->transform && meta->transform->parameter_count > 0)
+    {
+        for (i=0; i<meta->transform->parameter_count; i++) {
+            if (!meta_is_valid_double(meta->transform->map2ls_a[i])) {
+                ret = 0;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+int is_valid_map2l_transform(meta_parameters *meta)
+{
+    int ret = 1, i;
+
+    if (meta && meta->transform && meta->transform->parameter_count > 0)
+    {
+        for (i=0; i<meta->transform->parameter_count; i++) {
+            if (!meta_is_valid_double(meta->transform->map2ls_b[i])) {
+                ret = 0;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+int is_valid_ll2l_transform(meta_parameters *meta)
+{
+    int ret = 1, i;
+
+    if (meta && meta->transform && meta->transform->parameter_count > 0)
+    {
+        for (i=0; i<meta->transform->parameter_count; i++) {
+            if (!meta_is_valid_double(meta->transform->l[i])) {
+                ret = 0;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+int is_valid_ll2s_transform(meta_parameters *meta)
+{
+    int ret = 1, i;
+
+    if (meta && meta->transform && meta->transform->parameter_count > 0)
+    {
+        for (i=0; i<meta->transform->parameter_count; i++) {
+            if (!meta_is_valid_double(meta->transform->s[i])) {
+                ret = 0;
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
