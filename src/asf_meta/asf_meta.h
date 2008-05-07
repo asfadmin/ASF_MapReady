@@ -253,13 +253,13 @@ typedef struct {
 // meta_transform: parameters for coordinate transformations
 typedef struct {
   int parameter_count;     // Number of parameters
-  double x[10];            // Transformation coefficients for x
-  double y[10];            // Transformation coefficients for y
-  double l[10];            // Transformation coefficients for lines
-  double s[10];            // Transformation coefficients for samples
-  double incid_a[6];       // Transformation coefficients for incid angle
-  double map2ls_a[10];     // Transformation coefficients for map -> L/S
-  double map2ls_b[10];     // Transformation coefficients for map -> L/S
+  double x[10];            // Transform coeffs for x (ls to lon)
+  double y[10];            // Transform coeffs for y (ls to lat)
+  double l[10];            // Transform coeffs for lines (lat/lon to l)
+  double s[10];            // Transform coeffs for samples (lat/lon to s)
+  double incid_a[6];       // Transform coeffs for incid angle (sr to incid ang)
+  double map2ls_a[10];     // Transform coeffs for map -> L/S (lat/lon to s)
+  double map2ls_b[10];     // Transform coeffs for map -> L/S (lat/lon to l)
 } meta_transform;
 
 // meta_airsar: parameters for AirSAR geocoding
