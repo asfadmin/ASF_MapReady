@@ -246,6 +246,9 @@ static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
     return ok;
 }
 
+static double OOSQRT2;
+static double SQRT2;
+
 static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 {
     int j, ns=self->meta->general->sample_count;
@@ -253,11 +256,13 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
         quadPolFloat q = self->lines[n][j];
 
         // HH-VV, 2*HV, HH+VV
-        self->pauli_lines[n][j] = complex_vector_normalize(
-        complex_vector_new(
-                complex_sub(q.hh, q.vv),
-                complex_scale(q.hv, 2),
-                complex_add(q.hh, q.vv)));
+        self->pauli_lines[n][j] = //complex_vector_normalize(
+          complex_vector_new(
+            complex_scale(complex_sub(q.hh, q.vv), OOSQRT2),
+            complex_scale(q.hv, SQRT2),
+            complex_scale(complex_add(q.hh, q.vv), OOSQRT2))
+          //)
+          ;
     }
 }
 
@@ -399,6 +404,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *out_img_name = appendExt(outFile, ".img");
 
   int i, j;
+
+  SQRT2 = sqrt(2);
+  OOSQRT2 = 1./SQRT2;
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
