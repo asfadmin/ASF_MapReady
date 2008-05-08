@@ -1,6 +1,7 @@
 #include "asf.h"
 #include <ctype.h>
 #include "ceos.h"
+#include <stdlib.h>
 
 /*************************************************************************
   These #defines convert floats, ints, and strings to/from ascii.
@@ -990,25 +991,26 @@ void Code_ESA_FACDR(unsigned char *bf, struct ESA_FACDR *q, codingDir dir)
 void Code_JAXA_FACDR(unsigned char *bf, struct JAXA_FACDR *q, codingDir dir)
 {
     int off=12, i;
-    shrtV(seqence_number,12,4);
+    shrtV(seqence_number,off,4);
     for (i=0; i<10; i++)
-      fltV(a_map[i],16+i*20,20);
+      fltV(a_map[i],16+i*20,20);      
     for (i=0; i<10; i++)
       fltV(b_map[i],216+i*20,20);
-    shrtV(cal_data_indicator,416,4);
-    intV(start_line_up,420,8);
-    intV(stop_line_up,428,8);
-    intV(start_line_bottom,436,8);
-    intV(stop_line_bottom,444,8);
-    shrtV(prf_switching_indicator,452,4);
-    intV(line_prf_switching,456,8);
-    intV(sigma_start_line,464,8);
-    intV(number_loss_lines_L0,472,8);
-    intV(number_loss_lines_L1,480,8);
+    off=416;
+    shrtV(cal_data_indicator,off,4);
+    intV(start_line_up,off,8);
+    intV(stop_line_up,off,8);
+    intV(start_line_bottom,off,8);
+    intV(stop_line_bottom,off,8);
+    shrtV(prf_switching_indicator,off,4);
+    intV(line_prf_switching,off,8);
+    intV(sigma_start_line,off,8);
+    intV(number_loss_lines_L0,off,8);
+    intV(number_loss_lines_L1,off,8);
     for (i=0; i<25; i++)
       fltV(a[i],1024+i*20,20);
     for (i=0; i<25; i++)
-      fltV(b[i],1525+i*20,20);
+      fltV(b[i],1524+i*20,20);
     fltV(origin_pixel,2024,20);
     fltV(origin_line,2044,20);
     for (i=0; i<25; i++)
@@ -1439,4 +1441,43 @@ void Code_ARDR(unsigned char *bf, struct alos_rad_data_rec* q,codingDir dir)
 
 void Code_LHDR(unsigned char *bf, struct RHEADER *q,codingDir dir)
 {
+}
+
+void Code_TFDR(unsigned char *bf, struct trl_file_des_rec *q, codingDir dir)
+{
+  int off=180, i;
+  intV(num_dssr,off,6);
+  intV(dssr_len,off,6);
+  intV(num_mpdr,off,6);
+  intV(mpdr_len,off,6);
+  intV(num_ppdr,off,6);
+  intV(ppdr_len,off,6);
+  intV(num_atdr,off,6);
+  intV(atdr_len,off,6);
+  intV(num_radr,off,6);
+  intV(radr_len,off,6);
+  intV(num_rdcr,off,6);
+  intV(rdcr_len,off,6);
+  intV(num_dqsr,off,6);
+  intV(dqsr_len,off,6);
+  intV(num_dhr,off,6);
+  intV(dhr_len,off,6);
+  intV(num_rsr,off,6);
+  intV(rsr_len,off,6);
+  intV(num_dem_dr,off,6);
+  intV(dem_dr_len,off,6);
+  intV(num_rpur,off,6);
+  intV(rpur_len,off,6);
+  intV(num_adr,off,6);
+  intV(adr_len,off,6);
+  intV(num_dpr,off,6);
+  intV(dpr_len,off,6);
+  intV(num_calr,off,6);
+  intV(calr_len,off,6);
+  intV(num_gcpr,off,6);
+  intV(gcpr_len,off,6);
+  for (i=0; i<11; i++) {
+    intV(num_facdr[i],420+i*14,6);
+    intV(facdr_len[i],426+i*14,8);
+  }
 }

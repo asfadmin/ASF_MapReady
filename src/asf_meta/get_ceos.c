@@ -32,7 +32,8 @@ typedef enum {
   CEOS_SHR=18,          // Scene Header Record - ALOS
   CEOS_AMPR=36,         // Map Projection Record - ALOS
   CEOS_ARDR=50,         // Radiometric Data Record - ALOS
-  CEOS_RCDR=51          // Radiometric Compensation Data Record - RSI
+  CEOS_RCDR=51,         // Radiometric Compensation Data Record - RSI
+  CEOS_TFDR=193         // Trailer File Descriptor Record - ALOS
 } CEOS_RECORD_TYPE;
 
 int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
@@ -57,15 +58,24 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   for (ii=0; ii<trailer+1; ii++) {
     fp=FOPEN(metaName[ii], "r");
     while (1==fread(&bufhdr, 12, 1, fp)) {
-      int itype,rec_seq,length,mallocBytes;
+      int itype,subtype[3],rec_seq,length,mallocBytes;
+      subtype[0] = bufhdr.rectyp[0];
       itype = bufhdr.rectyp[1];
+      subtype[1] = bufhdr.rectyp[2];
+      subtype[2] = bufhdr.rectyp[3];
       rec_seq = bigInt32(bufhdr.recnum);
       length = bigInt32(bufhdr.recsiz);
-      mallocBytes = (length>16920) ? length : 16920;
+      if ((itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR && 
+	   length <=5000) ||
+          (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
+	mallocBytes = length = 5000;
+      else
+	mallocBytes = (length>16920) ? length : 16920;
       *buff=(unsigned char *)MALLOC(mallocBytes);
       *(struct HEADER *)*buff=bufhdr;
-      //printf("get_ceos - record type: %d, sub-record type: %d, sequence: %d, length: %d, "
-             //"trailer: %d\n", itype, bufhdr.rectyp[3], rec_seq, length, trailer);
+      //printf("get_ceos - record type: %d\nsub-record[1]: %d, sub-record[2]: %d"
+      //     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
+      //     subtype[0], subtype[1], subtype[2], rec_seq, length);
       FREAD((*buff)+12, length-12, 1, fp);
 
       // The JAXA FACDR requires the sequence number to be able to pick
@@ -76,7 +86,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
           (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
           (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR) ||
           (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR && length <=5000) ||
-          (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
+          (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR) ||
+	  (itype==CEOS_IFILEDR && recordType==CEOS_TFDR))
       {/*We have the correct kind of record.*/
         nOccurences++;
         if (recordType == CEOS_JAXAFACDR)
@@ -335,6 +346,17 @@ int get_ardr(const char *filename, struct alos_rad_data_rec *ardr)
   int era;
   if ( (era = getCeosRecord(filename, CEOS_ARDR, 1, &buff)) != -1) {
     Code_ARDR(buff,ardr,fromASCII);
+    FREE(buff);
+  }
+  return(era);
+}
+
+int get_tfdr(char *filename,struct trl_file_des_rec *tfdr)
+{
+  unsigned char *buff;
+  int era;
+  if ( (era = getCeosRecord(filename, CEOS_TFDR, 1, &buff)) != -1) {
+    Code_TFDR(buff,tfdr,fromASCII);
     FREE(buff);
   }
   return(era);

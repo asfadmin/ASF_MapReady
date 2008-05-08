@@ -23,6 +23,7 @@ SYNOPSIS:     metadata [ <record type> -all -save ] infile
    -jaxa_facdr  JAXA Facility Related Data record
    -ifdr        Image File Descriptor record
    -lfdr        Leader File Descriptor record
+   -tfdr        Trailer File Descriptor record
    infile       Base name of the SAR image
 
  NOTE: NOT ALL OF THESE OPTIONS ARE INCLUDED IN THIS RELEASE. SEE USAGE.
@@ -159,6 +160,7 @@ void usage(char *name)
    fprintf(stderr,"  -jaxa_facdr  Force JAXA Facility Related Data record\n");
    fprintf(stderr,"  -ifdr        Image File Descriptor record\n");
    fprintf(stderr,"  -lfdr        Leader File Descriptor record\n");
+   fprintf(stderr,"  -tfdr        Trailer File Descriptor record\n");
    fprintf(stderr,"  -meta        Generate ASF internal metadata file\n");
    fprintf(stderr,"  -license     Print the ASF licensing statement and quit\n");
    fprintf(stderr,"  -version     Print the version number information and quit\n");
@@ -208,6 +210,7 @@ int main(int argc, char **argv)
   int jaxa_facdr_flag =
     extract_flag_options(&argc, &argv, "-jaxa_facdr", "--jaxa_facdr", NULL);
   int lfdr_flag = extract_flag_options(&argc, &argv, "-lfdr", "--lfdr", NULL);
+  int tfdr_flag = extract_flag_options(&argc, &argv, "-tfdr", "--tfdr", NULL);
   int all_flag = extract_flag_options(&argc, &argv, "-all", "--all", NULL);
   int save = extract_flag_options(&argc, &argv, "-save", "--save", NULL);
   int meta_flag = extract_flag_options(&argc, &argv, "-meta", "--meta", NULL);
@@ -216,7 +219,7 @@ int main(int argc, char **argv)
       ampr_flag || radr_flag || rcdr_flag || dqsr_flag || pdhr_flag ||
       sdhr_flag || rasr_flag || ppr_flag || ifdr_flag || facdr_flag ||
       asf_facdr_flag || esa_facdr_flag || jaxa_facdr_flag || lfdr_flag || 
-      ardr_flag || all_flag || meta_flag)
+      tfdr_flag || ardr_flag || all_flag || meta_flag)
     found = 1;
 
   if (argc == 1 || !found)
@@ -278,6 +281,8 @@ int main(int argc, char **argv)
     output_record(fileName, ".jaxa_facdr", 230, save);
   if (lfdr_flag || all_flag)
     output_record(fileName, ".lfdr", 300, save);
+  if (tfdr_flag || all_flag)
+    output_record(fileName, ".tfdr", 193, save);
 
   exit (EXIT_SUCCESS);
 }

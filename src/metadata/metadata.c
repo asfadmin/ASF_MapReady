@@ -84,6 +84,7 @@ char *get_record_as_string(char *fileName, int reqrec)
   struct proc_parm_rec *ppr=NULL;        // Processing Parameter record
   struct alos_rad_data_rec *ardr=NULL;   // Radiometric Data record (ALOS)
   struct RSI_VRADDR *rsi_raddr=NULL;     // Radiometric Data record (RSI/CDPF)
+  struct trl_file_des_rec *tfdr=NULL;    // Trailer File Descriptor record - ALOS
 
   ceos_data_ext_t data_ext;
   ceos_metadata_ext_t metadata_ext;
@@ -375,6 +376,16 @@ char *get_record_as_string(char *fileName, int reqrec)
 	  ret = sprn_ifiledr(vfdr);
       }
       FREE(vfdr);
+      break;
+    case (193):
+      strcpy(rectype_str, "Trailer file descriptor");
+      tfdr = (struct trl_file_des_rec *) 
+	MALLOC(sizeof(struct trl_file_des_rec));
+      if (dataNameExists) {
+	if (get_tfdr(baseName,tfdr) >= 0)
+	  ret = sprn_tfdr(tfdr);
+      }
+      FREE(tfdr);
       break;
     case (200):
       asfPrintWarning("Unrecogized facility data record...\n"

@@ -741,8 +741,7 @@ struct JAXA_FACDR {
   int sigma_start_line;         // SIGMA-SAR processing start line number
   int number_loss_lines_L0;     // Number of loss lines (level 1.0)
   int number_loss_lines_L1;     // Number of loss lines (level 1.1, 1.5)
-  char blank1[311];             // Always blank
-  char blank2[224];             // System reserve
+  char spare1[535];             // Always blank
   double a[25];                 // line/sample to lat/lon coefficients
   double b[25];                 // line/sample to lat/lon coefficients
   double origin_pixel;          // Origin pixel (P0)
@@ -1637,6 +1636,42 @@ struct alos_rad_data_rec {
   double delta_receive_imag[4];  // Reception distortion matrix - imaginary
 };
 
+// Trailer File Descriptor Record - ALOS style
+struct trl_file_des_rec {
+  int num_dssr;            // Number of data set summary records
+  int dssr_len;            // Data set summary record length
+  int num_mpdr;            // Number of map projection data records
+  int mpdr_len;            // Map projection record length
+  int num_ppdr;            // Number of platform pos. data records
+  int ppdr_len;            // Platform position record length
+  int num_atdr;            // Number of attitude data records
+  int atdr_len;            // Attitude data record length
+  int num_radr;            // Number of radiometric data records
+  int radr_len;            // Radiometric record length
+  int num_rdcr;            // Number of radiometric compensation records
+  int rdcr_len;            // Radiometric compensation rec. length
+  int num_dqsr;            // Number of data quality summary records
+  int dqsr_len;            // Data quality summary record length
+  int num_dhr;             // Number of data histograms records
+  int dhr_len;             // Data histogram record length
+  int num_rsr;             // Number of range spectra records
+  int rsr_len;             // Range spectra record length
+  int num_dem_dr;          // Number of DEM descriptor records
+  int dem_dr_len;          // DEM descriptor record length
+  int num_rpur;            // Number of Radar par. update records
+  int rpur_len;            // Radar par. update record length
+  int num_adr;             // Number of Annotation data records
+  int adr_len;             // Annotation data record length
+  int num_dpr;             // Number of Det. processing records
+  int dpr_len;             // Det. processing record length
+  int num_calr;            // Number of Calibration records
+  int calr_len;            // Calibration record length
+  int num_gcpr;            // Number of GCP records
+  int gcpr_len;            // GCP record length
+  int num_facdr[11];       // Number of facility data records
+  int facdr_len[11];       // Facility data record lengths
+};
+
 /*Prototypes for converting character buffers to records, and back again.*/
 typedef enum {toASCII,fromASCII} codingDir;
 void   Code_FDR_common(unsigned char *bf, struct FDR* q,codingDir dir);
@@ -1669,7 +1704,7 @@ void   Code_DFPR(unsigned char *bf, struct FPREC *q, codingDir dir);
 void   Code_TR(unsigned char *bf, struct TREC *q, codingDir dir);
 
 void   Code_NVDR(unsigned char *bf, struct VDREC *q, codingDir dir);
-
+void   Code_TFDR(unsigned char *bf, struct trl_file_des_rec *q, codingDir dir);
 
 int set_era(const char *inbasename,char *outldrname,int operation);
 
@@ -1702,5 +1737,6 @@ int get_dfpr(char *filename,struct FPREC *rec);
 int get_tr(char *filename,struct TREC *rec);
 
 int get_nvdr(char *filename,struct VDREC *rec);
+int get_tfdr(char *filename,struct trl_file_des_rec *rec);
 
 #endif /* end of ceos.h */

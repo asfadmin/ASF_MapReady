@@ -64,3 +64,6 @@ void prn_ardr(FILE *fp, struct alos_rad_data_rec *dr);
 
 char *sprn_rsi_raddr(struct RSI_VRADDR *dr);
 void prn_rsi_raddr(FILE *fp, struct RSI_VRADDR *dr);
+
+char *sprn_tfdr(struct trl_file_des_rec *fd);
+void prn_tfdr(FILE *fp, struct trl_file_des_rec *fd);
