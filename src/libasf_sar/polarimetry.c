@@ -259,7 +259,8 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
         self->pauli_lines[n][j] = complex_vector_new(
           complex_scale(complex_add(q.hh, q.vv), OOSQRT2),
           complex_scale(q.hv, SQRT2),
-          complex_scale(complex_sub(q.hh, q.vv), OOSQRT2));
+          //complex_scale(complex_sub(q.hh, q.vv), OOSQRT2));
+          complex_scale(complex_add(q.hh, complex_scale(q.vv,-1)), OOSQRT2));
     }
 }
 
