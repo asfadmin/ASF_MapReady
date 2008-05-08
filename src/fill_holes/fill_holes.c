@@ -43,9 +43,11 @@ int main(int argc,char *argv[])
         return 1;
     }
 
-  char  infile[256];     /* Input file name               */
-  char  outfile[256];    /* Output file name              */
-  float cutoff = -900;   /* Height below which is a hole  */
+  char  infile[256];          // Input file name                         
+  char  outfile[256];         // Output file name                        
+  float cutoff = -900;        // Height below which is a hole            
+  float max_slope = 60;       // Maximum slope allowed (from horizontal) 
+  int max_hole_width = 1000;  // Maximum width of a hole
 
   do {
     char *key = argv[currArg++];
@@ -61,6 +63,14 @@ int main(int argc,char *argv[])
     else if (strmatches(key,"--cutoff","-cutoff","-c",NULL)) {
         CHECK_ARG(1);
         cutoff = atof(GET_ARG(1));
+    }
+    else if (strmatches(key,"--max-slope","-max-slope",NULL)) {
+        CHECK_ARG(1);
+        max_slope = atof(GET_ARG(1));
+    }
+    else if (strmatches(key,"--max-hole-width","-max-hole-width",NULL)) {
+        CHECK_ARG(1);
+        max_hole_width = atoi(GET_ARG(1));
     }
     else if (strmatches(key,"--",NULL)) {
         break;
@@ -95,7 +105,8 @@ int main(int argc,char *argv[])
   FloatImage *img = float_image_new_from_metadata(meta, infile);
 
   asfPrintStatus("Interpolating DEM holes...\n");
-  interp_dem_holes_float_image(img, cutoff, TRUE);
+  interp_dem_holes_float_image(meta, img, cutoff, TRUE,
+                               max_hole_width, max_slope);
 
   meta_write(meta, outfile);
   asfPrintStatus("Writing smoothed dem: %s\n", outfile);

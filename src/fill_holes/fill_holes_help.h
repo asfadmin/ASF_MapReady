@@ -26,7 +26,8 @@
 #endif
 #define TOOL_USAGE \
         TOOL_NAME" [-log <logfile>] [-quiet] [-cutoff <height>] <infile> <outfile>\n" \
-        "             [-license] [-version] [-help]"
+        "              [-max-slope <slope in degrees>] [-max-hole-width <pixels>]\n"\
+        "              [-license] [-version] [-help]"
 
 // TOOL_DESCRIPTION is required
 #ifdef  TOOL_DESCRIPTION

@@ -87,8 +87,11 @@ int to_sr_pixsiz(const char *infile, const char *outfile, double pixel_size);
 void interp_dem_holes_data(meta_parameters *meta, float *data, float cutoff,
                            int verbose);
 void interp_dem_holes_file(const char *infile, const char *outfile,
-                           float cutoff, int verbose);
-void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
+                           float cutoff, int verbose,
+                           int max_hole_width, double max_slope_angle);
+void interp_dem_holes_float_image(meta_parameters *meta, FloatImage *img,
+                                  float cutoff, int verbose,
+                                  int max_hole_width, double max_slope_angle);
 
 /* Prototypes from deskew.c */
 void deskew(const char *infile, const char *outfile);
