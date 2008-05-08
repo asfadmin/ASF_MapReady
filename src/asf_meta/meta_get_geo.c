@@ -309,6 +309,18 @@ int meta_get_lineSamp(meta_parameters *meta,
     *xSamp -= 1;
     *yLine -= 1;
 
+    // result is in the original line/sample count units,
+    // adjust in case we have scaled
+    if (meta->sar && (
+          (meta->sar->original_line_count != meta->general->line_count) ||
+          (meta->sar->original_sample_count != meta->general->sample_count)))
+    {
+      *yLine *= (double)meta->general->line_count/
+                (double)meta->sar->original_line_count;
+      *xSamp *= (double)meta->general->sample_count/
+                (double)meta->sar->original_sample_count;
+    }
+
     return 0;
   }
   else {
