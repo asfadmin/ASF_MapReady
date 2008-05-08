@@ -258,7 +258,8 @@ static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
         // HH-VV, 2*HV, HH+VV
         self->pauli_lines[n][j] = //complex_vector_normalize(
           complex_vector_new(
-            complex_scale(complex_sub(q.hh, q.vv), OOSQRT2),
+            //complex_scale(complex_sub(q.hh, q.vv), OOSQRT2),
+            complex_scale(complex_add(q.hh, complex_scale(q.vv, -1)), OOSQRT2),
             complex_scale(q.hv, SQRT2),
             complex_scale(complex_add(q.hh, q.vv), OOSQRT2))
           //)
@@ -614,11 +615,11 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       if (amplitude_band == i)
           strcat(bands, "HH-AMP,");
       else if (pauli_1_band == i)
-          strcat(bands, "PAULI1,");
+          strcat(bands, "HH-VV,");
       else if (pauli_2_band == i)
-          strcat(bands, "PAULI2,");
+          strcat(bands, "2*HV,");
       else if (pauli_3_band == i)
-          strcat(bands, "PAULI3,");
+          strcat(bands, "HH+VV,");
       else if (entropy_band == i)
           strcat(bands, "ENTROPY,");
       else if (anisotropy_band == i)
