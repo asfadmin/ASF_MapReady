@@ -79,8 +79,20 @@ int meta_get_latLon(meta_parameters *meta,
         scan_to_latlon(meta, px, py, elev, lat, lon, &hgt);
     } else {
         proj_to_latlon(meta->projection, px, py, pz, lat, lon, &hgt);
-        *lat *= R2D; *lon *= R2D;
+        *lat *= R2D;
+        *lon *= R2D;
     }
+    return 0;
+  }
+  else if (meta->airsar) {
+    double l = yLine, s = xSample;
+    if (meta->sar) {
+      l = (double)meta->sar->original_line_count/
+          (double)meta->general->line_count * yLine;
+      s = (double)meta->sar->original_sample_count/
+          (double)meta->general->sample_count * xSample;
+    }
+    airsar_to_latlon(meta, s, l, elev, lat, lon);
     return 0;
   }
   else if (meta->transform) {
