@@ -1010,7 +1010,7 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       asfPrintStatus("Interpolating DEM Holes.\n");
       asfPrintStatus("Hole height cutoff: < %.2fm.\n", cutoff);
 
-      interp_dem_holes_file(demFile, smoothedDem, cutoff, FALSE);
+      interp_dem_holes_file(demFile, smoothedDem, cutoff, FALSE, 250, 60);
 
       // now tell the rest of the code that the smoothedDem is the actual DEM
       // we don't need to re-read the metadata, it will not have changed
