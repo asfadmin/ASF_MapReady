@@ -172,6 +172,30 @@ settings_apply_to_gui(const Settings * s)
     set_combo_box_item(output_format_combobox, s->output_format);
     output_format_combobox_changed();
 
+    if (s->polarimetry_setting != POLARIMETRY_NONE)
+    {
+        GtkWidget *polarimetry_checkbutton =
+            get_widget_checked("polarimetry_checkbutton");
+        gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(polarimetry_checkbutton), TRUE);
+
+        rb_select("rb_pauli", s->polarimetry_setting==POLARIMETRY_PAULI);
+        rb_select("rb_sinclair", s->polarimetry_setting==POLARIMETRY_SINCLAIR);
+        rb_select("rb_cloude8", s->polarimetry_setting==POLARIMETRY_CLOUDE8);
+        rb_select("rb_cloude16", s->polarimetry_setting==POLARIMETRY_CLOUDE16);
+        rb_select("rb_cloude_noclassify",
+                  s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY);
+
+        polarimetry_settings_changed();
+    }
+    else 
+    {
+        GtkWidget *polarimetry_checkbutton =
+            get_widget_checked("polarimetry_checkbutton");
+        gtk_toggle_button_set_active(
+          GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
+    }
+
     if (s->export_is_checked)
     {
         output_bytes_checkbutton =
@@ -192,69 +216,29 @@ settings_apply_to_gui(const Settings * s)
             {
                 // true color
                 rb_select("rb_truecolor", TRUE);
-                rb_select("rb_optical", TRUE);
             }
             else if (s->falsecolor_is_checked)
             {
                 // false color
                 rb_select("rb_falsecolor", TRUE);
-                rb_select("rb_optical", TRUE);
-            }
-            else if (s->pauli_is_checked)
-            {
-                // Pauli decomposition
-                rb_select("rb_pauli", TRUE);
-                rb_select("rb_radar", TRUE);
-            }
-            else if (s->sinclair_is_checked)
-            {
-                // Sinclair decomposition
-                rb_select("rb_sinclair", TRUE);
-                rb_select("rb_radar", TRUE);
-            }
-            // we don't know whether to choose "user defined" for
-            // radar or optical -- so we have this kludge
-            else if (strcmp(s->red, "HH") == 0 ||
-                     strcmp(s->red, "HV") == 0 ||
-                     strcmp(s->red, "VH") == 0 ||
-                     strcmp(s->red, "VV") == 0 ||
-                     strcmp(s->green, "HH") == 0 ||
-                     strcmp(s->green, "HV") == 0 ||
-                     strcmp(s->green, "VH") == 0 ||
-                     strcmp(s->green, "VV") == 0 ||
-                     strcmp(s->blue, "HH") == 0 ||
-                     strcmp(s->blue, "HV") == 0 ||
-                     strcmp(s->blue, "VH") == 0 ||
-                     strcmp(s->blue, "VV") == 0)
-            {
-                // radar -- user defined
-                rb_select("rb_user_defined_radar", TRUE);
-                rb_select("rb_radar", TRUE);
-
-                set_combo_box_entry_item("red_radar_combo", s->red);
-                set_combo_box_entry_item("green_radar_combo", s->green);
-                set_combo_box_entry_item("blue_radar_combo", s->blue);
             }
             else
             {
-                // optical -- user defined
+                // user defined
                 rb_select("rb_user_defined", TRUE);
-                rb_select("rb_optical", TRUE);
                 rb_select("rb_rgb", TRUE);
-                set_combo_box_entry_item("red_optical_combo", s->red);
-                set_combo_box_entry_item("green_optical_combo", s->green);
-                set_combo_box_entry_item("blue_optical_combo", s->blue);
+                set_combo_box_entry_item("red_combo", s->red);
+                set_combo_box_entry_item("green_combo", s->green);
+                set_combo_box_entry_item("blue_combo", s->blue);
             }
         }
         else {
-            set_combo_box_entry_item("red_radar_combo", "-");
-            set_combo_box_entry_item("green_radar_combo", "-");
-            set_combo_box_entry_item("blue_radar_combo", "-");
-            set_combo_box_entry_item("red_optical_combo", "-");
-            set_combo_box_entry_item("green_optical_combo", "-");
-            set_combo_box_entry_item("blue_optical_combo", "-");
+            set_combo_box_entry_item("red_combo", "-");
+            set_combo_box_entry_item("green_combo", "-");
+            set_combo_box_entry_item("blue_combo", "-");
             rb_select("rb_all", TRUE);
         }
+
         rgb_settings_changed();
     }
 
@@ -566,6 +550,22 @@ settings_get_from_gui()
         }
     }
 
+    ret->polarimetry_setting = POLARIMETRY_NONE;
+    if (get_checked("polarimetry_checkbutton")) {
+      if (get_checked("rb_pauli"))
+        ret->polarimetry_setting = POLARIMETRY_PAULI;
+      else if (get_checked("rb_sinclair"))
+        ret->polarimetry_setting = POLARIMETRY_SINCLAIR;
+      else if (get_checked("rb_cloude8"))
+        ret->polarimetry_setting = POLARIMETRY_CLOUDE8;
+      else if (get_checked("rb_cloude16"))
+        ret->polarimetry_setting = POLARIMETRY_CLOUDE16;
+      else if (get_checked("rb_cloude_noclassify"))
+        ret->polarimetry_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+      else
+        ret->polarimetry_setting = POLARIMETRY_NONE;
+    }
+
     ret->export_is_checked = get_checked("export_checkbutton");
 
     if (ret->export_is_checked)
@@ -597,69 +597,37 @@ settings_get_from_gui()
             GTK_TOGGLE_BUTTON(rb_rgb));
 
         if (ret->export_bands) {
-            GtkWidget *rb_radar = get_widget_checked("rb_radar");
-            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_radar))) {
-                GtkWidget *rb_user_defined =
-                    get_widget_checked("rb_user_defined_radar");
-                GtkWidget *rb_pauli = get_widget_checked("rb_pauli");
-                GtkWidget *rb_sinclair = get_widget_checked("rb_sinclair");
+          GtkWidget *rb_user_defined =
+            get_widget_checked("rb_user_defined");
+          GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
+          GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
 
-                if (gtk_toggle_button_get_active(
-                        GTK_TOGGLE_BUTTON(rb_user_defined)))
-                {
-                    ret->user_defined_is_checked = 1;
-                    get_combo_box_entry_item("red_radar_combo",ret->red);
-                    get_combo_box_entry_item("green_radar_combo",ret->green);
-                    get_combo_box_entry_item("blue_radar_combo",ret->blue);
-                }
-                else if (gtk_toggle_button_get_active(
-                             GTK_TOGGLE_BUTTON(rb_pauli)))
-                {
-                    ret->pauli_is_checked = 1;
-                    strcpy(ret->red, "-");
-                    strcpy(ret->green, "-");
-                    strcpy(ret->blue, "-");
-                }
-                else if (gtk_toggle_button_get_active(
-                             GTK_TOGGLE_BUTTON(rb_sinclair)))
-                {
-                    ret->sinclair_is_checked = 1;
-                    strcpy(ret->red, "-");
-                    strcpy(ret->green, "-");
-                    strcpy(ret->blue, "-");
-                }
-            } else {
-                GtkWidget *rb_user_defined =
-                    get_widget_checked("rb_user_defined");
-                GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
-                GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
-
-                if (gtk_toggle_button_get_active(
-                        GTK_TOGGLE_BUTTON(rb_user_defined)))
-                {
-                    ret->user_defined_is_checked = 1;
-                    get_combo_box_entry_item("red_optical_combo",ret->red);
-                    get_combo_box_entry_item("green_optical_combo",ret->green);
-                    get_combo_box_entry_item("blue_optical_combo",ret->blue);
-                }
-                else if (gtk_toggle_button_get_active(
-                             GTK_TOGGLE_BUTTON(rb_truecolor)))
-                {
-                    ret->truecolor_is_checked = 1;
-                    strcpy(ret->red, "3");
-                    strcpy(ret->green, "2");
-                    strcpy(ret->blue, "1");
-                }
-                else if (gtk_toggle_button_get_active(
-                             GTK_TOGGLE_BUTTON(rb_falsecolor)))
-                {
-                    ret->falsecolor_is_checked = 1;
-                    strcpy(ret->red, "4");
-                    strcpy(ret->green, "3");
-                    strcpy(ret->blue, "2");
-                }
-            }
-        } else {
+          if (gtk_toggle_button_get_active(
+                GTK_TOGGLE_BUTTON(rb_user_defined)))
+          {
+            ret->user_defined_is_checked = 1;
+            get_combo_box_entry_item("red_combo",ret->red);
+            get_combo_box_entry_item("green_combo",ret->green);
+            get_combo_box_entry_item("blue_combo",ret->blue);
+          }
+          else if (gtk_toggle_button_get_active(
+                     GTK_TOGGLE_BUTTON(rb_truecolor)))
+          {
+            ret->truecolor_is_checked = 1;
+            strcpy(ret->red, "3");
+            strcpy(ret->green, "2");
+            strcpy(ret->blue, "1");
+          }
+          else if (gtk_toggle_button_get_active(
+                     GTK_TOGGLE_BUTTON(rb_falsecolor)))
+          {
+            ret->falsecolor_is_checked = 1;
+            strcpy(ret->red, "4");
+            strcpy(ret->green, "3");
+            strcpy(ret->blue, "2");
+          }
+        }
+        else {
             strcpy(ret->red, "");
             strcpy(ret->green, "");
             strcpy(ret->blue, "");
@@ -1463,6 +1431,8 @@ settings_to_config_file(const Settings *s,
     fprintf(cf, "sar processing = %d\n", s->process_to_level1);
     // fprintf(cf, "image stats=0\n");
     // fprintf(cf, "detect corner reflectors = 0\n");
+    fprintf(cf, "polarimetry = %d\n",
+            s->polarimetry_setting==POLARIMETRY_NONE ? 0 : 1);
     fprintf(cf, "terrain correction = %d\n",
             s->terrcorr_is_checked || s->refine_geolocation_is_checked);
     fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
@@ -1505,6 +1475,8 @@ settings_to_config_file(const Settings *s,
     if (s->input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
         s->input_data_format != INPUT_FORMAT_ASF_INTERNAL)
         fprintf(cf, "dump envi header = 0\n");
+    fprintf(cf, "multilook SLC = %d\n",
+            s->polarimetry_setting == POLARIMETRY_NONE ? 0 : 1);
     fprintf(cf, "\n");
 
     if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
@@ -1521,6 +1493,19 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "[SAR processing]\n");
         fprintf(cf, "radiometry = %s_image\n",
                 settings_get_data_type_string(s));
+        fprintf(cf, "\n");
+    }
+
+    if (s->polarimetry_setting != POLARIMETRY_NONE) {
+        fprintf(cf, "[Polarimetry]\n");
+        fprintf(cf, "pauli = %d\n",
+                s->polarimetry_setting==POLARIMETRY_PAULI?1:0);
+        fprintf(cf, "sinclair = %d\n",
+                s->polarimetry_setting==POLARIMETRY_SINCLAIR?1:0);
+        fprintf(cf, "cloude pottier = %d\n",
+                s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
+        fprintf(cf, "cloude pottier ext = %d\n",
+                s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
         fprintf(cf, "\n");
     }
 
@@ -1576,19 +1561,21 @@ settings_to_config_file(const Settings *s,
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
       if (s->output_bytes && !s->truecolor_is_checked &&
           !s->falsecolor_is_checked)
-        // these conditions used to be there as well, but I don't
-        // see why...
-        //    && !s->pauli_is_checked && !s->sinclair_is_checked)
       {
           fprintf(cf, "byte conversion = %s\n",
             scaling_method_string(s->scaling_method));
       } else {
           fprintf(cf, "byte conversion = none\n");
       }
-      if (s->export_bands)
+      if (s->export_bands || s->polarimetry_setting != POLARIMETRY_NONE)
       {
-        if (!s->truecolor_is_checked && !s->falsecolor_is_checked &&
-            !s->pauli_is_checked && !s->sinclair_is_checked)
+        if (s->polarimetry_setting == POLARIMETRY_PAULI) {
+          fprintf(cf, "rgb banding = HH-VV,HV+VH,HH+VV\n");
+        }
+        else if (s->polarimetry_setting == POLARIMETRY_SINCLAIR) {
+          fprintf(cf, "rgb banding = HH,(HV+VH)/2,VV\n");
+        }
+        else if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
         {
           const char *r =
             strlen(s->red)>0 && strcmp(s->red,"-")!=0 ? s->red : "ignore";
@@ -1603,9 +1590,6 @@ settings_to_config_file(const Settings *s,
         }
         fprintf(cf, "truecolor = %d\n", s->truecolor_is_checked ? 1 : 0);
         fprintf(cf, "falsecolor = %d\n", s->falsecolor_is_checked ? 1 : 0);
-        if (MAPREADY_VERSION > 1.0)
-            fprintf(cf, "pauli = %d\n", s->pauli_is_checked ? 1 : 0);
-        fprintf(cf, "sinclair = %d\n\n", s->sinclair_is_checked ? 1 : 0);
       }
       fprintf(cf, "\n");
     }
@@ -1676,6 +1660,21 @@ int apply_settings_from_config_file(char *configFile)
     s.latitude_low = cfg->import->lat_begin;
     s.latitude_hi = cfg->import->lat_end;
 
+    /* polarimetry */
+    s.polarimetry_setting = POLARIMETRY_NONE;
+    if (cfg->general->polarimetry) {
+      if (cfg->polarimetry->pauli)
+        s.polarimetry_setting = POLARIMETRY_PAULI;
+      else if (cfg->polarimetry->sinclair)
+        s.polarimetry_setting = POLARIMETRY_SINCLAIR;
+      else if (cfg->polarimetry->cloude_pottier)
+        s.polarimetry_setting = POLARIMETRY_CLOUDE8;
+      else if (cfg->polarimetry->cloude_pottier_ext)
+        s.polarimetry_setting = POLARIMETRY_CLOUDE16;
+      else
+        s.polarimetry_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
+    }
+
     /* export */
     s.export_is_checked = cfg->general->export;
 
@@ -1708,13 +1707,9 @@ int apply_settings_from_config_file(char *configFile)
     s.falsecolor_is_checked = cfg->export->falsecolor;
     s.user_defined_is_checked = strlen(cfg->export->rgb) > 0 &&
         ! (s.truecolor_is_checked ||
-           s.falsecolor_is_checked ||
-           s.pauli_is_checked ||
-           s.sinclair_is_checked );
+           s.falsecolor_is_checked);
     s.export_bands = s.truecolor_is_checked ||
         s.falsecolor_is_checked ||
-        s.pauli_is_checked ||
-        s.sinclair_is_checked ||
         s.user_defined_is_checked;
 
     if (strlen(cfg->export->rgb) > 0) {

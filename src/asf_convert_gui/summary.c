@@ -126,6 +126,23 @@ void update_summary()
         break;
     }
 
+    if (s->polarimetry_setting != POLARIMETRY_NONE)
+    {
+        strcat(text, "\nPolarimetry: Yes ");
+        switch (s->polarimetry_setting) {
+          case POLARIMETRY_PAULI:
+            strcat(text, "(Pauli)");
+            break;
+          case POLARIMETRY_SINCLAIR:
+            strcat(text, "(Sinclair)");
+            break;
+          case POLARIMETRY_CLOUDE8:
+          case POLARIMETRY_CLOUDE16:
+          case POLARIMETRY_CLOUDE_NOCLASSIFY: 
+            strcat(text, "(Cloude Pottier)");
+            break;
+        }
+    }
 
     if (s->terrcorr_is_checked || s->refine_geolocation_is_checked)
     {
@@ -345,10 +362,14 @@ void update_summary()
                 strcat(text, "\n   RGB Banding: True Color\n");
             else if (s->falsecolor_is_checked)
                 strcat(text, "\n   RGB Banding: False Color\n");
-            else if (s->pauli_is_checked)
+            else if (s->polarimetry_setting == POLARIMETRY_PAULI)
                 strcat(text, "\n   RGB Banding: Pauli Decomposition\n");
-            else if (s->sinclair_is_checked)
+            else if (s->polarimetry_setting == POLARIMETRY_SINCLAIR)
                 strcat(text, "\n   RGB Banding: Sinclair Decomposition\n");
+            else if (s->polarimetry_setting == POLARIMETRY_CLOUDE8)
+                strcat(text, "\n   RGB Banding: Cloude-Pottier (8)\n");
+            else if (s->polarimetry_setting == POLARIMETRY_CLOUDE16)
+                strcat(text, "\n   RGB Banding: Cloude-Pottier (16)\n");
             else
                 sprintf(text, "%s\n   RGB Banding: %s,%s,%s\n", text,
                         strlen(s->red) > 0 ? s->red : "-",

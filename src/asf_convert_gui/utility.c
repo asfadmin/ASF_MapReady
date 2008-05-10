@@ -7,7 +7,7 @@ static void set_combobox_entry_maxlen(const char *widget_name, int maxlen)
     gtk_entry_set_max_length(e, maxlen);
 }
 
-static void set_combobox_items_radar(const char *widget_name)
+static void set_combobox_items_user_defined(const char *widget_name)
 {
     GtkComboBox *w = GTK_COMBO_BOX(get_widget_checked(widget_name));
 
@@ -17,37 +17,24 @@ static void set_combobox_items_radar(const char *widget_name)
     gtk_combo_box_append_text(w, "HV");
     gtk_combo_box_append_text(w, "VH");
     gtk_combo_box_append_text(w, "VV");
-}
-
-static void set_combobox_items_optical(const char *widget_name)
-{
-    GtkComboBox *w = GTK_COMBO_BOX(get_widget_checked(widget_name));
-
-    gtk_combo_box_remove_text(w, 0);
-    gtk_combo_box_append_text(w, "-");
     gtk_combo_box_append_text(w, "1");
     gtk_combo_box_append_text(w, "2");
     gtk_combo_box_append_text(w, "3");
     gtk_combo_box_append_text(w, "4");
+    gtk_combo_box_append_text(w, "Entropy");
+    gtk_combo_box_append_text(w, "Anisotropy");
+    gtk_combo_box_append_text(w, "Alpha");
 }
 
 void setup_band_comboboxes()
 {
-    set_combobox_items_radar("red_radar_combo");
-    set_combobox_items_radar("green_radar_combo");
-    set_combobox_items_radar("blue_radar_combo");
+    set_combobox_items_user_defined("red_combo");
+    set_combobox_items_user_defined("green_combo");
+    set_combobox_items_user_defined("blue_combo");
 
-    set_combobox_items_optical("red_optical_combo");
-    set_combobox_items_optical("green_optical_combo");
-    set_combobox_items_optical("blue_optical_combo");
-
-    set_combobox_entry_maxlen("red_optical_combo", 8);
-    set_combobox_entry_maxlen("green_optical_combo", 8);
-    set_combobox_entry_maxlen("blue_optical_combo", 8);
-
-    set_combobox_entry_maxlen("red_radar_combo", 8);
-    set_combobox_entry_maxlen("green_radar_combo", 8);
-    set_combobox_entry_maxlen("blue_radar_combo", 8);
+    set_combobox_entry_maxlen("red_combo", 8);
+    set_combobox_entry_maxlen("green_combo", 8);
+    set_combobox_entry_maxlen("blue_combo", 8);
 }
 
 void
@@ -250,4 +237,10 @@ GtkWidget *get_widget_checked(const char *widget_name)
             "The widget %s was not found.\n", widget_name);
     }
     return w;
+}
+
+void enable_widget(const char *widget_name, int enable)
+{
+    GtkWidget *w = get_widget_checked(widget_name);
+    gtk_widget_set_sensitive(w, enable);
 }

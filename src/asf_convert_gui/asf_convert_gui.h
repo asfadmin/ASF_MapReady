@@ -85,6 +85,16 @@ enum Datums
     DATUM_HUGHES = 3
 };
 
+enum PolarimetricDecompositions
+{
+    POLARIMETRY_NONE = 0,
+    POLARIMETRY_PAULI = 1,
+    POLARIMETRY_SINCLAIR = 2,
+    POLARIMETRY_CLOUDE8 = 3,
+    POLARIMETRY_CLOUDE16 = 4,
+    POLARIMETRY_CLOUDE_NOCLASSIFY = 5
+};
+
 /*enum
 {
   RESAMPLE_NEAREST_NEIGHBOR = 0,
@@ -120,6 +130,9 @@ typedef struct
   double latitude_low;
   double latitude_hi;
 
+  /* polarimetry */
+  int polarimetry_setting;
+
   /* export */
   int export_is_checked;
   int output_format;
@@ -129,8 +142,6 @@ typedef struct
   int scaling_method;
   int truecolor_is_checked;
   int falsecolor_is_checked;
-  int pauli_is_checked;
-  int sinclair_is_checked;
   int user_defined_is_checked;
   int export_bands;
   char red[10];
@@ -248,6 +259,7 @@ void input_data_type_changed();
 void rgb_settings_changed();
 void import_settings_changed();
 void hide_sections_for_execute();
+void polarimetry_settings_changed();
 
 /* utility.c */
 void setup_band_comboboxes();
@@ -267,6 +279,7 @@ int get_int_from_entry(const char *widget_name);
 void put_int_to_entry(const char *widget_name, int val);
 int get_checked(const char *widget_name);
 void set_checked(const char *widget_name, int checked);
+void enable_widget(const char *widget_name, int enable);
 
 /* dnd.c */
 void setup_dnd();

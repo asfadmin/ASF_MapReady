@@ -578,15 +578,13 @@ on_clear_button_clicked(GtkWidget *widget)
 
 void rgb_combo_box_setup()
 {
-    rb_select("rb_truecolor", TRUE);
-    rb_select("rb_falsecolor", FALSE);
-    rb_select("rb_user_defined", FALSE);
-
-    rb_select("rb_radar", TRUE);
-    rb_select("rb_optical", FALSE);
-
     rb_select("rb_all", TRUE);
     rb_select("rb_rgb", FALSE);
+    rb_select("rb_rgb_polar", FALSE);
+
+    rb_select("rb_truecolor", FALSE);
+    rb_select("rb_falsecolor", FALSE);
+    rb_select("rb_user_defined", TRUE);
 
     rgb_settings_changed();
 }
@@ -594,77 +592,85 @@ void rgb_combo_box_setup()
 void rgb_settings_changed()
 {
     GtkWidget *rb_rgb = get_widget_checked("rb_rgb");
+    GtkWidget *rb_rgb_polar = get_widget_checked("rb_rgb_polar");
     GtkWidget *rgb_vbox = get_widget_checked("rgb_vbox");
+
+    int is_polarimetric = get_checked("polarimetry_checkbutton");
+    int is_cloude_noclassify;
+    if (is_polarimetric) {
+        is_cloude_noclassify = get_checked("rb_cloude_noclassify");
+        if (!is_cloude_noclassify) {
+            rb_select("rb_all", FALSE);
+            rb_select("rb_rgb_polar", TRUE);
+            rb_select("rb_rgb", FALSE);
+
+            enable_widget("rb_all", FALSE);
+            enable_widget("rb_rgb", FALSE);
+            enable_widget("rb_rgb_polar", FALSE);
+        }
+        else {
+            int rgb_polar_checked = get_checked("rb_rgb_polar");
+            if (rgb_polar_checked) {
+              rb_select("rb_rgb_polar", FALSE);
+              rb_select("rb_all", TRUE);
+            }
+
+            enable_widget("rb_all", TRUE);
+            enable_widget("rb_rgb", TRUE);
+            enable_widget("rb_rgb_polar", FALSE);
+        }
+    }
+    else {
+        is_cloude_noclassify = FALSE;
+
+        enable_widget("rb_all", TRUE);
+        enable_widget("rb_rgb", TRUE);
+        enable_widget("rb_rgb_polar", FALSE);
+    }
 
     gboolean is_rgb = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_rgb));
     gtk_widget_set_sensitive(rgb_vbox, is_rgb);
 
+    gboolean is_rgb_polar =
+      gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(rb_rgb_polar));
+
     if (is_rgb)
     {
         // "Export Multiple Bands in a single RGB Image"
-        GtkWidget *rb_radar = get_widget_checked("rb_radar");
-        GtkWidget *radar_vbox = get_widget_checked("radar_vbox");
-        GtkWidget *optical_vbox = get_widget_checked("optical_vbox");
+      GtkWidget *rb_user_defined = get_widget_checked("rb_user_defined");
+      GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
+      GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
 
-        gboolean is_radar = gtk_toggle_button_get_active(
-            GTK_TOGGLE_BUTTON(rb_radar));
+      int is_user_defined = gtk_toggle_button_get_active(
+        GTK_TOGGLE_BUTTON(rb_user_defined));
+      int is_truecolor = gtk_toggle_button_get_active(
+        GTK_TOGGLE_BUTTON(rb_truecolor));
+      int is_falsecolor = gtk_toggle_button_get_active(
+        GTK_TOGGLE_BUTTON(rb_falsecolor));
+      g_assert(is_user_defined + is_truecolor + is_falsecolor == 1);
 
-        gtk_widget_set_sensitive(radar_vbox, is_radar);
-        gtk_widget_set_sensitive(optical_vbox, !is_radar);
+      GtkWidget *bands_hbox = get_widget_checked("bands_hbox");
+      gtk_widget_set_sensitive(bands_hbox, is_user_defined);
 
-        if (is_radar)
-        {
-            GtkWidget *rb_user_defined =
-                get_widget_checked("rb_user_defined_radar");
-            GtkWidget *rb_pauli = get_widget_checked("rb_pauli");
-            GtkWidget *rb_sinclair = get_widget_checked("rb_sinclair");
+      // offset to get to the start of the optical bands
+      const int OPT_BASE = 4; 
 
-            int is_user_defined = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_user_defined));
-            int is_pauli = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_pauli));
-            int is_sinclair = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_sinclair));
-            g_assert(is_user_defined + is_pauli + is_sinclair == 1);
-
-            GtkWidget *radar_bands_hbox =
-                get_widget_checked("radar_bands_hbox");
-
-            gtk_widget_set_sensitive(radar_bands_hbox, is_user_defined);
-
-            set_combo_box_item_checked("red_optical_combo", 0);
-            set_combo_box_item_checked("green_optical_combo", 0);
-            set_combo_box_item_checked("blue_optical_combo", 0);
-        }
-        else
-        {
-            GtkWidget *rb_user_defined = get_widget_checked("rb_user_defined");
-            GtkWidget *rb_truecolor = get_widget_checked("rb_truecolor");
-            GtkWidget *rb_falsecolor = get_widget_checked("rb_falsecolor");
-
-            int is_user_defined = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_user_defined));
-            int is_truecolor = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_truecolor));
-            int is_falsecolor = gtk_toggle_button_get_active(
-                GTK_TOGGLE_BUTTON(rb_falsecolor));
-            g_assert(is_user_defined + is_truecolor + is_falsecolor == 1);
-
-            GtkWidget *optical_bands_hbox =
-                get_widget_checked("optical_bands_hbox");
-
-            gtk_widget_set_sensitive(optical_bands_hbox, is_user_defined);
-
-            if (is_truecolor) {
-                set_combo_box_item_checked("red_optical_combo", 3);
-                set_combo_box_item_checked("green_optical_combo", 2);
-                set_combo_box_item_checked("blue_optical_combo", 1);
-            } else if (is_falsecolor) {
-                set_combo_box_item_checked("red_optical_combo", 4);
-                set_combo_box_item_checked("green_optical_combo", 3);
-                set_combo_box_item_checked("blue_optical_combo", 2);
-            }
-        }
+      if (is_truecolor) {
+        set_combo_box_item_checked("red_combo", 3 + OPT_BASE);
+        set_combo_box_item_checked("green_combo", 2 + OPT_BASE);
+        set_combo_box_item_checked("blue_combo", 1 + OPT_BASE);
+      } else if (is_falsecolor) {
+        set_combo_box_item_checked("red_combo", 4 + OPT_BASE);
+        set_combo_box_item_checked("green_combo", 3 + OPT_BASE);
+        set_combo_box_item_checked("blue_combo", 2 + OPT_BASE);
+      }
+    }
+    else if (is_rgb_polar)
+    {
+        // "Export Using Polarimetric Settings"
+        // Here, we want to enable the band selection if the user
+        // has chosen the "rb_cloude_noclassify" option, which has entropy etc 
+        gtk_widget_set_sensitive(rgb_vbox, is_cloude_noclassify);
     }
     else
     {
@@ -689,14 +695,7 @@ on_rb_rgb_toggled(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
-on_rb_radar_toggled(GtkWidget *widget)
-{
-    rgb_settings_changed();
-    update_summary();
-}
-
-SIGNAL_CALLBACK void
-on_rb_optical_toggled(GtkWidget *widget)
+on_rb_rgb_polar_toggled(GtkWidget *widget)
 {
     rgb_settings_changed();
     update_summary();
@@ -738,9 +737,45 @@ on_rb_sinclair_toggled(GtkWidget *widget)
 }
 
 SIGNAL_CALLBACK void
-on_rb_user_defined_radar_toggled(GtkWidget *widget)
+on_rb_cloude8_toggled(GtkWidget *widget)
 {
     rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_cloude16_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+SIGNAL_CALLBACK void
+on_rb_cloude_noclassify_toggled(GtkWidget *widget)
+{
+    rgb_settings_changed();
+    update_summary();
+}
+
+void polarimetry_settings_changed()
+{
+    int is_checked = get_checked("polarimetry_checkbutton");
+
+    GtkWidget *polarimetry_tab_label =
+      get_widget_checked("polarimetry_tab_label");
+    GtkWidget *vbox_polarimetry =
+      get_widget_checked("vbox_polarimetry");
+
+    gtk_widget_set_sensitive(polarimetry_tab_label, is_checked);
+    gtk_widget_set_sensitive(vbox_polarimetry, is_checked);
+
+    rgb_settings_changed();
+}
+
+SIGNAL_CALLBACK void
+on_polarimetry_checkbutton_toggled(GtkWidget * widget)
+{
+    polarimetry_settings_changed();
     update_summary();
 }
 

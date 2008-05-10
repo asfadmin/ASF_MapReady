@@ -177,6 +177,7 @@ main(int argc, char **argv)
     /* initially in there                                         */
     default_to_terrcorr_on();
     terrcorr_options_changed();
+    polarimetry_settings_changed();
 
     /* put files on the command-line into the files section */
     populate_files_list(argc, argv);

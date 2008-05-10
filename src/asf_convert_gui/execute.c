@@ -99,170 +99,6 @@ static gboolean confirm_overwrite()
     }
 }
 
-gchar *
-do_cmd(gchar *cmd, gchar *log_file_name)
-{
-    gchar *the_output;
-    FILE *output;
-
-    int pid = fork();
-
-    if (pid == 0)
-    {
-        int ret;
-
-        ret = asfSystem(cmd);
-        if (ret == -1 || ret > 0)
-        {
-            int saved_errno;
-            /* Problem running the command... if we got a log file assume the
-            error is logged in there, and user will see it through that.
-
-            Otherwise, see if errno can give us anything useful.
-            Put this into the log file that parent expects to see.
-            */
-
-            saved_errno = errno;
-
-            if (!g_file_test(log_file_name, G_FILE_TEST_EXISTS))
-            {
-                output = fopen(log_file_name, "w");
-                if (output)
-                {
-                    if (saved_errno > 0)
-                    {
-                        fprintf(output,
-                            "*** Error! Could not run command. (%d) ***\n"
-                            "Command: %s\n"
-                            "Error %d: %s\n",
-                            ret, cmd, saved_errno, strerror(saved_errno));
-                    }
-                    else
-                    {
-                        gchar *p;
-                        gboolean have_import = FALSE, have_export = FALSE;
-
-                        /* one possibility is that they haven't got asf_import
-                        or asf_export.  Check for that. */
-                        p = find_in_path("asf_import");
-                        if (!p)
-                        {
-                            p = find_in_path("asf_import.exe");
-                            if (p)
-                            {
-                                have_import = TRUE;
-                                g_free(p);
-                            }
-                        }
-                        else
-                        {
-                            have_import = TRUE;
-                            g_free(p);
-                        }
-
-                        p = find_in_path("asf_export");
-                        if (!p)
-                        {
-                            p = find_in_path("asf_export.exe");
-                            if (p)
-                            {
-                                have_export = TRUE;
-                                g_free(p);
-                            }
-                        }
-                        else
-                        {
-                            have_export = TRUE;
-                            g_free(p);
-                        }
-
-                        if (have_import && have_export)
-                        {
-                            /* found the executable(s)... not sure what went wrong. */
-                            fprintf(output, "Unknown error trying to run command:\n%s\n",
-                                cmd);
-                        }
-                        else
-                        {
-                            fprintf(output,
-                                "*** ERROR! ***\n"
-                                "Couldn't find one, or both, of asf_import or "
-                                "asf_export!\n"
-                                "Please ensure that these programs are installed, "
-                                "and are in your PATH.\n"
-                                "Was trying to run the command:\n%s\n",
-                                cmd);
-                        }
-                    }
-                    fclose(output);
-                }
-                else
-                {
-                    /* couldn't open ... */
-                }
-            }
-        }
-
-        exit(EXIT_SUCCESS);
-    }
-    else
-    {
-        while (waitpid(pid, NULL, WNOHANG) == 0)
-        {
-            while (gtk_events_pending())
-                gtk_main_iteration();
-
-            g_usleep(50);
-        }
-    }
-
-
-    the_output = NULL;
-
-    output = fopen(log_file_name, "rt");
-
-    if (!output)
-    {
-        the_output = (gchar *)g_malloc(512);
-        sprintf(the_output, "Error Opening Log File: %s\n", strerror(errno));
-    }
-    else
-    {
-        while (!feof(output))
-        {
-            gchar buffer[4096];
-            gchar *p = fgets(buffer, sizeof(buffer), output);
-            if (p && !g_str_has_prefix(p, "Processing "))
-            {
-                if (the_output)
-                {
-                    the_output = (gchar *)g_realloc(the_output, sizeof(gchar) *
-                        (strlen(the_output) + strlen(buffer) + 1));
-
-                    strcat(the_output, buffer);
-                }
-                else
-                {
-                    the_output = (gchar *)g_malloc(sizeof(gchar) * (strlen(buffer) + 1));
-                    strcpy(the_output, buffer);
-                }
-            }
-        }
-        fclose(output);
-        remove(log_file_name);
-    }
-
-    if (!the_output)
-    {
-        /* Log file existed, but had immediate EOF */
-        /* This is most likely caused by a "Disk Full" situation... */
-        /*  ... or a segmentation fault! */
-        the_output = g_strdup("Error Opening Log File: Disk Full?\n");
-    }
-
-    return the_output;
-}
-
 static char *check_for_error(gchar * txt)
 {
     /* kludge */
@@ -306,8 +142,9 @@ static char *check_for_error(gchar * txt)
                     if (q - p > 2) {
                         char *err_string = MALLOC(sizeof(char)*64);
 
-                        // first 50 characters of the error string, unless line ends first
-                        // don't cut off in the middle of a word, though
+                        // first 50 characters of the error string, unless
+                        // line ends first don't cut off in the middle of
+                        // a word, though
                         strcpy(err_string, "Error: ");
                         strncat(err_string, p, 50);
                         while (isalnum(err_string[strlen(err_string)-1]))
@@ -319,9 +156,9 @@ static char *check_for_error(gchar * txt)
                         return err_string;
                     }
                 }
-                while (*p != '*' && ++n<5); // * flags the end of the error message
+                while (*p != '*' && ++n<5); // * flags the end of the msg
 
-                // coudln't pull out more error infomation...
+                // couldn't pull out more error infomation...
                 return STRDUP("Error");
             }
 
