@@ -93,7 +93,8 @@ static complexFloat complex_add(complexFloat a, complexFloat b)
 
 static float complex_amp(complexFloat c)
 {
-    return (float)hypot((float)(c.real), (float)(c.imag));
+  //    return (float)hypot((float)(c.real), (float)(c.imag));
+  return sqrt(c.real*c.real + c.imag*c.imag);
 }
 
 static complexFloat complex_scale(complexFloat c, float f)
@@ -246,22 +247,18 @@ static int polarimetric_image_rows_get_bands(PolarimetricImageRows *self)
     return ok;
 }
 
-static double OOSQRT2;
-static double SQRT2;
-
 static void calculate_pauli_for_row(PolarimetricImageRows *self, int n)
 {
     int j, ns=self->meta->general->sample_count;
     for (j=0; j<ns; ++j) {
         quadPolFloat q = self->lines[n][j];
 
-        // HH-VV, 2*HV, HH+VV
+        // HH-VV, HV+VH, HH+VV
         self->pauli_lines[n][j] =
           complex_vector_new(
-            //complex_scale(complex_sub(q.hh, q.vv), OOSQRT2),
-            complex_new(complex_amp(q.hh)-complex_amp(q.vv),0),
-            complex_scale(q.hv, SQRT2),
-            complex_scale(complex_add(q.hh, q.vv), OOSQRT2));
+	    complex_sub(q.hh, q.vv),
+	    complex_add(q.hv, q.vh),
+	    complex_add(q.hh, q.vv));
     }
 }
 
@@ -406,9 +403,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *out_img_name = appendExt(outFile, ".img");
 
   int i, j;
-
-  SQRT2 = sqrt(2);
-  OOSQRT2 = 1./SQRT2;
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
@@ -645,7 +639,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       else if (pauli_1_band == i)
           strcat(bands, "HH-VV,");
       else if (pauli_2_band == i)
-          strcat(bands, "2*HV,");
+          strcat(bands, "HV+VH,");
       else if (pauli_3_band == i)
           strcat(bands, "HH+VV,");
       else if (entropy_band == i)

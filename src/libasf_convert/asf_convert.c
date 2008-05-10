@@ -551,6 +551,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
 	FILE *fDef = FOPEN(tmpDefaults, "w");
 	fprintf(fDef, "import = %d\n", cfg->general->import);
+	fprintf(fDef, "polarimetry = %d\n", cfg->general->polarimetry);
 	fprintf(fDef, "terrain correction = %d\n",
 		cfg->general->terrain_correct);
 	fprintf(fDef, "geocoding = 0\n");
@@ -563,6 +564,12 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	  fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
 	  fprintf(fDef, "output db = %d\n", cfg->import->output_db);
 	  fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
+	}
+	if (cfg->general->polarimetry) {
+	  fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
+	  fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
+	  fprintf(fDef, "cloude pottier = %d\n", 
+		  cfg->polarimetry->cloude_pottier);
 	}
 	if (cfg->general->terrain_correct) {
 	  fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);

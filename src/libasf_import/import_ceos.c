@@ -661,8 +661,8 @@ static void set_alos_look_count(meta_parameters *meta, const char *inMetaName)
           meta->sar->look_count = 8;
       } else if (D == '6' && E == '2') {
           // polarimetry mode
-          asfPrintStatus("   Polarimetric data (look count = 4)\n");
-          meta->sar->look_count = 4;
+          asfPrintStatus("   Polarimetric data (look count = 8)\n");
+          meta->sar->look_count = 8;
       } else if (D == '6' && E == '3') {
           // direct downlink mode
           asfPrintStatus("   Direct downlink data (look count = 4)\n");
@@ -1321,7 +1321,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   unsigned char *amp_byte_buf=NULL;
   float *amp_float_buf=NULL;
   float *phase_float_buf=NULL;
-  complexFloat cpx, *cpxFloat_buf=NULL;
+  complexFloat cpx, *cpxFloat_buf=NULL, *cpx_float_ml_buf=NULL;
 
   // Output file will stay open through multiple calls to this function.
   // We open it on first call, try to close it on the last call.
@@ -1535,6 +1535,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       if (complex_flag)
     cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
       else {
+      cpx_float_ml_buf = (float *) MALLOC(2*ns * sizeof(float)*lc);	
     amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
     phase_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
       }
@@ -1744,22 +1745,14 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
       if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
         fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-        //if (fValue != 0.0) {
-          amp_float_buf[ll*ns + kk] =
-        get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
-          /*
-        }
-        else {
-          amp_float_buf[ll*ns + kk]= 0.0;
-        }
-          */
+	amp_float_buf[ll*ns + kk] =
+	  get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
       }
       else if (complex_flag)
         cpxFloat_buf[ll*ns + kk] = cpx;
       else if (cpx.real != 0.0 || cpx.imag != 0.0) {
-        amp_float_buf[ll*ns + kk] =
-          cpx.real*cpx.real + cpx.imag*cpx.imag;
-        phase_float_buf[ll*ns + kk] = atan2(cpx.imag, cpx.real);
+        cpx_float_ml_buf[ll*ns + kk].real = cpx.real;
+	cpx_float_ml_buf[ll*ns + kk].imag = cpx.imag;
       }
       else
         amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
@@ -1770,22 +1763,27 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       if (multilook_flag) {
     if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
       for (kk=0; kk<ns; kk++) {
-        fValue = 0.0;
-        for (mm=0; mm<lc; mm++)
-          fValue += amp_float_buf[mm*ns + kk];
-        amp_float_buf[kk] = fValue / (float)lc;
+	cpx.real = cpx.imag = 0.0;
+        for (mm=0; mm<lc; mm++) {
+          cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
+          cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+	}
+	cpx.real /= (float)lc;
+	cpx.imag /= (float)lc;
+        amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
       }
     }
     else {
       for (kk=0; kk<ns; kk++) {
-        fValue = 0.0;
-        for (mm=0; mm<lc; mm++)
-          fValue += amp_float_buf[mm*ns + kk];
-        amp_float_buf[kk] = sqrt(fValue / (float)lc);
-        fValue = 0.0;
-        for (mm=0; mm<lc; mm++)
-          fValue += phase_float_buf[mm*ns + kk];
-        phase_float_buf[kk] = fValue / (float)lc;
+        cpx.real = cpx.imag = 0.0;
+        for (mm=0; mm<lc; mm++) {
+          cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
+          cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+	}
+	cpx.real /= (float)lc;
+        cpx.imag /= (float)lc;
+        amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+        phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
       }
     }
       }
@@ -2084,6 +2082,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     FREE(amp_float_buf);
   if (phase_float_buf)
     FREE(phase_float_buf);
+  if (cpx_float_ml_buf)
+    FREE(cpx_float_ml_buf);
 
   meta_free(meta);
 
