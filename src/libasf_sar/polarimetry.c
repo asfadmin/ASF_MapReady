@@ -394,7 +394,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int pauli_3_band,
                          int entropy_band,
                          int anisotropy_band,
-                         int alpha_band)
+                         int alpha_band,
+                         int sinclair_1_band,
+                         int sinclair_2_band,
+                         int sinclair_3_band)
 {
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *meta = meta_read(meta_name);
@@ -481,6 +484,26 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       // normal amplitude band (usually, this is added to allow terrcorr)
       if (amplitude_band >= 0)
           put_band_float_line(fout, meta, amplitude_band, i, img_rows->amp);
+
+      // if requested, generate sinlair output
+      if (sinclair_1_band >= 0) {
+          for (j=0; j<ns; ++j)
+              buf[j] = complex_amp(img_rows->lines[l][j].hh);
+          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
+      }
+      if (sinclair_2_band >= 0) {
+          for (j=0; j<ns; ++j) {
+            complexFloat c = complex_add(img_rows->lines[l][j].hv,
+                                         img_rows->lines[l][j].vh);
+            buf[j] = complex_amp(complex_scale(c, 0.5));
+          }
+          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
+      }
+      if (sinclair_3_band >= 0) {
+          for (j=0; j<ns; ++j)
+              buf[j] = complex_amp(img_rows->lines[l][j].vv);
+          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
+      }
 
       // calculate the pauli output (magnitude of already-calculated
       // complex pauli basis elements), and save the requested pauli
@@ -604,14 +627,21 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   int nBands =
       (amplitude_band>=0) +
       (pauli_1_band>=0) + (pauli_2_band>=0) + (pauli_3_band>=0) +
-      (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0);
+      (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0) +
+      (sinclair_1_band>=0) + (sinclair_2_band>=0) + (sinclair_3_band>=0);
 
   char bands[255];
   strcpy(bands, "");
 
-  for (i=0; i<7; ++i) {
+  for (i=0; i<10; ++i) {
       if (amplitude_band == i)
           strcat(bands, "HH-AMP,");
+      else if (sinclair_1_band == i)
+          strcat(bands, "HH,");
+      else if (sinclair_2_band == i)
+          strcat(bands, "(HV+VH)/2,");
+      else if (sinclair_3_band == i)
+          strcat(bands, "VV,");
       else if (pauli_1_band == i)
           strcat(bands, "HH-VV,");
       else if (pauli_2_band == i)
@@ -639,15 +669,21 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   meta_free(meta);
 }
 
+void cpx2sinclair(const char *inFile, const char *outFile)
+{
+  asfPrintStatus("\n\nGenerating Sinclair decomposition channels\n");
+  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2);
+}
+
 void cpx2pauli(const char *inFile, const char *outFile)
 {
   asfPrintStatus("\n\nGenerating Paul decomposition channels\n");
-  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1);
+  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1, -1, -1, -1);
 }
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha"
 		 "for Cloude-Pottier classification\n");
-  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2);
+  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
 }

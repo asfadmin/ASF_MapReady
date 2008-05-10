@@ -10,7 +10,7 @@
 "     is a seven-band image:\n"\
 "       band 0: Amplitude (HH)\n"\
 "       band 1: HH - VV (even bounce) [Pauli red]\n"\
-"       band 2: s*HV (rotated dihedral) [Pauli green]\n"\
+"       band 2: 2*HV (rotated dihedral) [Pauli green]\n"\
 "       band 3: HH + VV (odd bounce) [Pauli blue]\n"\
 "       band 4: Entropy\n"\
 "       band 5: Anisotropy\n"\
@@ -139,7 +139,7 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5, 6);
+  polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
   asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;

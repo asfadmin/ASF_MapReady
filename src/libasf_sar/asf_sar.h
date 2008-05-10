@@ -111,7 +111,11 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int pauli_3_band,
                          int entropy_band,
                          int anisotropy_band,
-                         int alpha_band);
+                         int alpha_band,
+                         int sinclair_1_band,
+                         int sinclair_2_band,
+                         int sinclair_3_band);
+void cpx2sinclair(const char *inFile, const char *outFile);
 void cpx2pauli(const char *inFile, const char *outFile);
 void cpx2cloude_pottier(const char *inFile, const char *outFile);
 
