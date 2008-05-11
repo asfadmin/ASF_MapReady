@@ -108,9 +108,14 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Specify lower and upper latitude contraints (only available\n"\
 "        for STF). Note that the program is not able to verify whether\n"\
 "        the chosen latitude constraint is within the image.\n"\
-"   -prc Replace the restituted state vectors from the original raw data\n"\
+"   -prc\n"\
+"        Replace the restituted state vectors from the original raw data\n"\
 "        acquired by the ERS satellites with preceision\n"\
-"   -old Output in old style ASF internal format.\n"\
+"   -no-ers2-gain-fix\n"\
+"        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
+"        below.)\n"\
+"   -old\n"\
+"        Output in old style ASF internal format.\n"\
 "   -log <logFile>\n"\
 "        Output will be written to a specified log file.\n"\
 "   -quiet\n"\
@@ -214,6 +219,7 @@ typedef enum {
     f_LUT,
     f_LAT_CONSTRAINT,
     f_PRC,
+    f_NO_ERS2_GAIN_FIX,
     f_FORMAT,
     f_OLD_META,
     f_METADATA_FILE,
@@ -388,6 +394,7 @@ int main(int argc, char *argv[])
     flags[f_LUT] = checkForOption("-lut", argc, argv);
     flags[f_LAT_CONSTRAINT] = checkForOption("-lat", argc, argv);
     flags[f_PRC] = checkForOption("-prc", argc, argv);
+    flags[f_NO_ERS2_GAIN_FIX] = checkForOption("-no-ers2-gain-fix", argc, argv);
     flags[f_OLD_META] = checkForOption("-old", argc, argv);
     flags[f_METADATA_FILE] = checkForOption("-metadata", argc, argv);
     flags[f_LOG] = checkForOption("-log", argc, argv);
@@ -477,6 +484,7 @@ int main(int argc, char *argv[])
         if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
             needed_args += 3;/*option & parameter & parameter*/
         if(flags[f_PRC] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
+        if(flags[f_NO_ERS2_GAIN_FIX] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_OLD_META] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_METADATA_FILE] != FLAG_NOT_SET)  needed_args += 2;/*option & parameter*/
         if(flags[f_LOG] != FLAG_NOT_SET)      needed_args += 2;/*option & parameter*/
@@ -745,6 +753,7 @@ int main(int argc, char *argv[])
         int complex_flag = flags[f_COMPLEX] != FLAG_NOT_SET;
         int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
         int amp0_flag = flags[f_AMP0] != FLAG_NOT_SET;
+        int apply_ers2_gain_fix = flags[f_NO_ERS2_GAIN_FIX] == FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -767,9 +776,9 @@ int main(int argc, char *argv[])
 
         asf_import(radiometry, db_flag, complex_flag, multilook_flag,
                    amp0_flag, format_type, band_id, data_type, image_data_type, 
-		   lutName,prcPath, lowerLat, upperLat, line, sample, 
+   		 lutName,prcPath, lowerLat, upperLat, line, sample, 
 		   width, height, p_range_scale, p_azimuth_scale,
-		   p_correct_y_pixel_size, inMetaNameOption, inBaseName, 
+		   p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName, 
 		   outBaseName);
 
     }

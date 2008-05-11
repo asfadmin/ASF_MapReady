@@ -41,6 +41,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                double *p_range_scale, // NULL for no scaling
                double *p_azimuth_scale, // NULL for no scaling
                double *p_correct_y_pixel_size, // NULL for no fixing
+               int apply_ers2_gain_fix, // TRUE for correction of ers2 data
                char *inMetaNameOption, // NULL for normal metadata naming
                                        // otherwise, this is the meta file name
                char *inBaseName, // input file
@@ -67,7 +68,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
 		 int line, int sample, int width, int height,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-                 int complex_flag, int multilook_flag, int amp0_flag);
+                 int complex_flag, int multilook_flag, int amp0_flag,
+                 int apply_ers2_gain_fix);
 void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
                 char *inMetaNameOption, int lat_constrained, double lowerLat,
                 double upperLat, char *prcPath);

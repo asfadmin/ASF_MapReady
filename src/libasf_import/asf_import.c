@@ -17,7 +17,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
 	 char *prcPath, double lowerLat, double upperLat,
          int line, int sample, int width, int height,
          double *p_range_scale, double *p_azimuth_scale,
-         double *p_correct_y_pixel_size, char *inMetaNameOption,
+         double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
+         char *inMetaNameOption,
          char *inBaseName, char *outBaseName)
 {
   char outDataName[256], outMetaName[256];
@@ -53,7 +54,8 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     import_ceos(inBaseName, outBaseName, band_id, lutName,
                 p_range_scale, p_azimuth_scale, p_correct_y_pixel_size,
                 line, sample, width, height, inMetaNameOption, radiometry,
-                db_flag, complex_flag, multilook_flag, amp0_flag);
+                db_flag, complex_flag, multilook_flag, amp0_flag,
+                apply_ers2_gain_fix);
   }
   // Ingest Vexcel Sky Telemetry Format (STF) data
   else if (format_type == STF) {

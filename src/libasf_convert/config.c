@@ -399,6 +399,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->import->output_db = 0;
   cfg->import->complex_slc = 0;
   cfg->import->multilook_slc = 0;
+  cfg->import->ers2_gain_fix = TRUE;
 
   cfg->airsar->c_vv = 0;
   cfg->airsar->l_vv = 0;
@@ -557,6 +558,8 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+      if (strncmp(test, "apply ers2 gain fix", 19)==0)
+        cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
 
       // AirSAR
       if (strncmp(test, "airsar c interferometric", 24)==0)
@@ -839,6 +842,8 @@ convert_config *read_convert_config(char *configFile)
         cfg->import->complex_slc = read_int(line, "complex SLC");
       if (strncmp(test, "multilook SLC", 13)==0)
         cfg->import->multilook_slc = read_int(line, "multilook SLC");
+      if (strncmp(test, "apply ers2 gain fix", 19)==0)
+        cfg->import->ers2_gain_fix = read_int(line, "apply ers2 gain fix");
       FREE(test);
     }
 
@@ -1232,6 +1237,14 @@ int write_convert_config(char *configFile, convert_config *cfg)
           "look complex data that is stored as amplitude/phase is being\n"
           "# multilooked.\n\n");
     fprintf(fConfig, "multilook SLC = %d\n\n", cfg->import->multilook_slc);
+    if (!shortFlag)
+      fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
+          "# will attempt to correct by applying a scale correction factor uniformly\n"
+          "# to all pixels in the image.  The correctio is dependent on the date,\n"
+          "# and is only applied to calibrated data (i.e., everything but amplitude)\n"
+          "# For more information, see section 4 of:\n"
+          "# <http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf>\n\n");
+    fprintf(fConfig, "apply ers2 gain fix = %d\n\n", cfg->import->ers2_gain_fix);
 
     // AirSAR -- only write out if the import format is AirSAR
     if (cfg->general->import && strncmp_case(cfg->import->format, "airsar", 6)==0) {

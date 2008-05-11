@@ -43,7 +43,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
-                      int multilook_flag, char *lutName);
+                      int multilook_flag, char *lutName,
+                      int apply_ers2_gain_fix_flag);
 
 void import_ceos_byte_lut(char *inDataName, char *inMetaName, char *outDataName,
         char *outMetaName, meta_parameters *meta, int band,
@@ -205,7 +206,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
      double *p_azimuth_scale, double *p_correct_y_pixel_size,
      int line, int sample, int width, int height,
      char *inMetaNameOption, radiometry_t radiometry, int db_flag,
-     int complex_flag, int multilook_flag, int amp0_flag)
+     int complex_flag, int multilook_flag, int amp0_flag,
+     int apply_ers2_gain_fix)
 {
   char outDataName[256], outMetaName[256];
   ceos_description *ceos;
@@ -422,7 +424,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
           import_ceos_data(inBandName[index], inMetaName[0], outDataName,
                            outMetaName, bandExt, band, nBands, nBandsOut, rad,
                            line, sample, width, height,
-                           import_single_band, complex_flag, multilook_flag, lutName);
+                           import_single_band, complex_flag, multilook_flag,
+                           lutName, apply_ers2_gain_fix);
         }
         else {
           import_ceos_int_slant_range_amp(inBandName[index], inMetaName[0],
@@ -434,7 +437,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
         import_ceos_data(inBandName[index], inMetaName[0], outDataName,
                          outMetaName, bandExt, band, nBands, nBandsOut, rad,
                          line, sample, width, height,
-                         import_single_band, complex_flag, multilook_flag, lutName);
+                         import_single_band, complex_flag, multilook_flag,
+                         lutName, apply_ers2_gain_fix);
       }
     }
     if (meta) {
@@ -1297,7 +1301,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
-                      int multilook_flag, char *lutName)
+                      int multilook_flag, char *lutName,
+                      int apply_ers2_gain_fix_flag)
 {
   FILE *fpIn=NULL;
   int nl, ns, lc, nLooks,flip=FALSE, leftFill, rightFill, headerBytes;
@@ -1535,7 +1540,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       if (complex_flag)
     cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
       else {
-      cpx_float_ml_buf = (float *) MALLOC(2*ns * sizeof(float)*lc);	
+      cpx_float_ml_buf = (complexFloat *) MALLOC(2*ns * sizeof(float)*lc);	
     amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
     phase_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
       }
@@ -1827,7 +1832,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
   else {
     // Go through detected imagery line by line
-    float gain_adj = get_ers2_gain_adj(meta,radiometry);
+    float gain_adj = 0.0;
+    if (apply_ers2_gain_fix_flag)
+      gain_adj = get_ers2_gain_adj(meta,radiometry);
     for (ii=0; ii<nl; ii++) {
       asfLineMeter(ii, nl);
 

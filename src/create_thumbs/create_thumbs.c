@@ -693,6 +693,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* p_range_scale          */
                        NULL,                /* p_azimuth_scale        */
                        NULL,                /* p_correct_y_pixel_size */
+                       TRUE,                /* apply_ers_gain_fix     */
                        NULL,                /* inMetaNameOption       */
                        (char *)inDataName,  /* input basename         */
                        out_file);           /* output basename        */
@@ -741,6 +742,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        NULL,                /* p_range_scale          */
                        NULL,                /* p_azimuth_scale        */
                        NULL,                /* p_correct_y_pixel_size */
+                       TRUE,                /* apply_ers2_gain_fix    */
                        NULL,                /* inMetaNameOption       */
                        (char *)*dataName,   /* input basename         */
                        out_file);           /* output basename        */

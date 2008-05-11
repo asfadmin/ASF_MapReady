@@ -126,13 +126,13 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 			    NULL, NULL, NULL, NULL, cfg->ingest->prc_master,
 			    cfg->general->lat_begin, cfg->general->lat_end,
 			    0, 0, -99, -99,
-			    NULL, NULL, NULL, NULL, "master", "a"),
+			    NULL, NULL, NULL, TRUE, NULL, "master", "a"),
 		 "ingesting master image (asf_import)");
     check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, in_format, 
 			    NULL, NULL, NULL, NULL, cfg->ingest->prc_slave,
 			    0, 0, -99, -99,
 			    cfg->general->lat_begin, cfg->general->lat_end,
-			    NULL, NULL, NULL, NULL, "slave", "b"),
+			    NULL, NULL, NULL, TRUE, NULL, "slave", "b"),
 		 "ingesting slave image (asf_import)");
     
     // Setting patches and offsets for processing level zero data

@@ -177,7 +177,8 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     check_return(
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
                    NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 
-                   NULL, NULL, NULL, NULL, tiff_basename, imported), status);
+                   NULL, NULL, NULL, FALSE, NULL, tiff_basename, imported),
+        status);
 
     sprintf(status, "Geocoding %s...", uc_what);
     update_status(status);
@@ -1198,9 +1199,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               MAGIC_UNSET_STRING,
                               cfg->import->lut, cfg->import->prc,
                               cfg->import->lat_begin, cfg->import->lat_end,
-			      cfg->import->line, cfg->import->sample,
-			      cfg->import->width, cfg->import->height,
-                              NULL, NULL, NULL, NULL,
+                              cfg->import->line, cfg->import->sample,
+                              cfg->import->width, cfg->import->height,
+                              NULL, NULL, NULL,
+                              cfg->import->ers2_gain_fix, 
+                              NULL,
                               cfg->general->in_name, outFile),
                               "ingesting data file (asf_import)\n");
 

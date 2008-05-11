@@ -57,6 +57,7 @@ typedef struct
   int complex_slc;        // flag to save complex data as I/Q
                           // otherwise SLC data as stored as amp/phase
   int multilook_slc;      // flag to multilook single look complex data
+  int ers2_gain_fix;      // flag to apply ers2 gain correction
 } s_import;
 
 typedef struct
