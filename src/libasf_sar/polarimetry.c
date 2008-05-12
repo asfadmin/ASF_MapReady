@@ -460,7 +460,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
   // size of the horizontal window, used for ensemble averaging
   // actual window size is hw*2+1
-  const int hw = 2;
+  const int hw = 0;
 
   gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
   gsl_vector *eval = gsl_vector_alloc(3);
