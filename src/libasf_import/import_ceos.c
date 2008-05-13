@@ -1597,236 +1597,237 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     for (ii=0; ii<nl; ii+=nLooks) {
       lc = meta->sar->look_count;
       if (ii + lc > nl)
-    lc = nl - ii;
-
+        lc = nl - ii;
+      
       for (ll=0; ll<lc; ll++) {
-    int line = ii+ll;
-    asfLineMeter(line, nl);
-    offset = (long long)headerBytes+ (ii+ll)*(long long)image_fdr.reclen;
-    FSEEK64(fpIn, offset, SEEK_SET);
-
-    // Read the data according to their data type
-    switch (data_type)
-      {
-      case COMPLEX_BYTE:
-        FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
-        break;
-      case COMPLEX_INTEGER16:
-        FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
-        break;
-      case COMPLEX_INTEGER32:
-        FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
-        break;
-      case COMPLEX_REAL64:
-        FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
-        break;
-      case COMPLEX_REAL32:
-        FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
-        break;
-      case BYTE:
-      case INTEGER16:
-      case INTEGER32:
-      case REAL32:
-      case REAL64:
-        break;
-      }
-
-    // Put read in data in proper endian format
-    for (kk=0; kk<ns; kk++) {
-      switch (data_type)
+        int line = ii+ll;
+        asfLineMeter(line, nl);
+        offset = (long long)headerBytes+ (ii+ll)*(long long)image_fdr.reclen;
+        FSEEK64(fpIn, offset, SEEK_SET);
+        
+        // Read the data according to their data type
+        switch (data_type)
         {
-        case COMPLEX_BYTE:
-          break;
-        case COMPLEX_INTEGER16:
-          //if (strncmp(meta->general->processor, "CSTARS", 6) != 0) {
-          big16(cpx_short_buf[ll*ns*2 + kk*2]);
-          big16(cpx_short_buf[ll*ns*2 + kk*2+1]);
-          //}
-          if (flip) {
-        tmp_cpx_short_buf[ll*ns*2 + kk*2] =
-          cpx_short_buf[ll*ns*2 + kk*2];
-        tmp_cpx_short_buf[ll*ns*2 + kk*2+1] =
-          cpx_short_buf[ll*ns*2 * kk*2+1];
-          }
-          break;
-        case COMPLEX_INTEGER32:
-          big32(cpx_int_buf[ll*ns*2 + kk*2]);
-          big32(cpx_int_buf[ll*ns*2 + kk*2+1]);
-          if (flip) {
-        tmp_int_buf[ll*ns*2 + kk*2] = cpx_int_buf[ll*ns*2 + kk*2];
-        tmp_int_buf[ll*ns*2 + kk*2+1] = cpx_int_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_REAL32:
-          big32(cpx_float_buf[ll*ns*2 + kk*2]);
-          big32(cpx_float_buf[ll*ns*2 + kk*2+1]);
-          if (flip) {
-        tmp_float_buf[ll*ns*2 + kk*2] =
-          cpx_float_buf[ll*ns*2 + kk*2];
-        tmp_float_buf[ll*ns*2 + kk*2+1] =
-          cpx_float_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_REAL64:
-          big64(cpx_double_buf[ll*ns*2 + kk*2]);
-          big64(cpx_double_buf[ll*ns*2 + kk*2+1]);
-          if (flip) {
-        tmp_double_buf[ll*ns*2 + kk*2] =
-          cpx_double_buf[ll*ns*2 + kk*2];
-        tmp_double_buf[ll*ns*2 + kk*2+1] =
-          cpx_double_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case BYTE:
-        case INTEGER16:
-        case INTEGER32:
-        case REAL32:
-        case REAL64:
-          break;
+          case COMPLEX_BYTE:
+            FREAD(cpx_byte_buf+2*ll*ns, sizeof(unsigned char), 2*ns, fpIn);
+            break;
+          case COMPLEX_INTEGER16:
+            FREAD(cpx_short_buf+2*ll*ns, sizeof(short), 2*ns, fpIn);
+            break;
+          case COMPLEX_INTEGER32:
+            FREAD(cpx_int_buf+2*ll*ns, sizeof(int), 2*ns, fpIn);
+            break;
+          case COMPLEX_REAL64:
+            FREAD(cpx_double_buf+2*ll*ns, sizeof(double), 2*ns, fpIn);
+            break;
+          case COMPLEX_REAL32:
+            FREAD(cpx_float_buf+2*ll*ns, sizeof(float), 2*ns, fpIn);
+            break;
+          case BYTE:
+          case INTEGER16:
+          case INTEGER32:
+          case REAL32:
+          case REAL64:
+            break;
         }
-    }
-
-    // Flip the line if necessary and assign output value
-    for (kk=0; kk<ns; kk++) {
-      switch (data_type)
-        {
-        case BYTE:
-        case INTEGER16:
-        case INTEGER32:
-        case REAL32:
-        case REAL64:
-          break;
-        case COMPLEX_BYTE:
-          if (flip) {
-        cpx.real = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2];
-        cpx.imag = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2+1];
+        
+        // Put read in data in proper endian format
+        for (kk=0; kk<ns; kk++) {
+          switch (data_type)
+          {
+            case COMPLEX_BYTE:
+              break;
+            case COMPLEX_INTEGER16:
+              //if (strncmp(meta->general->processor, "CSTARS", 6) != 0) {
+              big16(cpx_short_buf[ll*ns*2 + kk*2]);
+              big16(cpx_short_buf[ll*ns*2 + kk*2+1]);
+              //}
+              if (flip) {
+                tmp_cpx_short_buf[ll*ns*2 + kk*2] =
+                  cpx_short_buf[ll*ns*2 + kk*2];
+                tmp_cpx_short_buf[ll*ns*2 + kk*2+1] =
+                  cpx_short_buf[ll*ns*2 * kk*2+1];
+              }
+              break;
+            case COMPLEX_INTEGER32:
+              big32(cpx_int_buf[ll*ns*2 + kk*2]);
+              big32(cpx_int_buf[ll*ns*2 + kk*2+1]);
+              if (flip) {
+                tmp_int_buf[ll*ns*2 + kk*2] = cpx_int_buf[ll*ns*2 + kk*2];
+                tmp_int_buf[ll*ns*2 + kk*2+1] = cpx_int_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_REAL32:
+              big32(cpx_float_buf[ll*ns*2 + kk*2]);
+              big32(cpx_float_buf[ll*ns*2 + kk*2+1]);
+              if (flip) {
+                tmp_float_buf[ll*ns*2 + kk*2] =
+                  cpx_float_buf[ll*ns*2 + kk*2];
+                tmp_float_buf[ll*ns*2 + kk*2+1] =
+                  cpx_float_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_REAL64:
+              big64(cpx_double_buf[ll*ns*2 + kk*2]);
+              big64(cpx_double_buf[ll*ns*2 + kk*2+1]);
+              if (flip) {
+                tmp_double_buf[ll*ns*2 + kk*2] =
+                  cpx_double_buf[ll*ns*2 + kk*2];
+                tmp_double_buf[ll*ns*2 + kk*2+1] =
+                  cpx_double_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case BYTE:
+            case INTEGER16:
+            case INTEGER32:
+            case REAL32:
+            case REAL64:
+              break;
           }
-          else {
-        cpx.real = (float) cpx_byte_buf[ll*ns*2 + kk*2];
-        cpx.imag = (float) cpx_byte_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_INTEGER16:
-          if (flip) {
-        cpx.real = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2];
-        cpx.imag = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2+1];
-          }
-          else {
-        cpx.real = (float) cpx_short_buf[ll*ns*2 + kk*2];
-        cpx.imag = (float) cpx_short_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_INTEGER32:
-          if (flip) {
-        cpx.real = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2];
-        cpx.imag = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2+1];
-          }
-          else {
-        cpx.real = (float) cpx_int_buf[ll*ns*2 + kk*2];
-        cpx.imag = (float) cpx_int_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_REAL32:
-          if (flip) {
-        cpx.real = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2];
-        cpx.imag = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2+1];
-          }
-          else {
-        cpx.real = cpx_float_buf[ll*ns*2 + kk*2];
-        cpx.imag = cpx_float_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
-        case COMPLEX_REAL64:
-          if (flip) {
-        cpx.real = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2];
-        cpx.imag = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2+1];
-          }
-          else {
-        cpx.real = (float) cpx_double_buf[ll*ns*2 + kk*2];
-        cpx.imag = (float) cpx_double_buf[ll*ns*2 + kk*2+1];
-          }
-          break;
         }
-
-      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-        fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-	amp_float_buf[ll*ns + kk] =
-	  get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+        
+        // Flip the line if necessary and assign output value
+        for (kk=0; kk<ns; kk++) {
+          switch (data_type)
+          {
+            case BYTE:
+            case INTEGER16:
+            case INTEGER32:
+            case REAL32:
+            case REAL64:
+              break;
+            case COMPLEX_BYTE:
+              if (flip) {
+                cpx.real = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2];
+                cpx.imag = (float) cpx_byte_buf[ll*ns*2 + (ns-kk-1)*2+1];
+              }
+              else {
+                cpx.real = (float) cpx_byte_buf[ll*ns*2 + kk*2];
+                cpx.imag = (float) cpx_byte_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_INTEGER16:
+              if (flip) {
+                cpx.real = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2];
+                cpx.imag = (float) cpx_short_buf[ll*ns*2 + (ns-kk-1)*2+1];
+              }
+              else {
+                cpx.real = (float) cpx_short_buf[ll*ns*2 + kk*2];
+                cpx.imag = (float) cpx_short_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_INTEGER32:
+              if (flip) {
+                cpx.real = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2];
+                cpx.imag = (float) cpx_int_buf[ll*ns*2 + (ns-kk-1)*2+1];
+              }
+              else {
+                cpx.real = (float) cpx_int_buf[ll*ns*2 + kk*2];
+                cpx.imag = (float) cpx_int_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_REAL32:
+              if (flip) {
+                cpx.real = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2];
+                cpx.imag = cpx_float_buf[ll*ns*2 + (ns-kk-1)*2+1];
+              }
+              else {
+                cpx.real = cpx_float_buf[ll*ns*2 + kk*2];
+                cpx.imag = cpx_float_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+            case COMPLEX_REAL64:
+              if (flip) {
+                cpx.real = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2];
+                cpx.imag = (float) cpx_double_buf[ll*ns*2 + (ns-kk-1)*2+1];
+              }
+              else {
+                cpx.real = (float) cpx_double_buf[ll*ns*2 + kk*2];
+                cpx.imag = (float) cpx_double_buf[ll*ns*2 + kk*2+1];
+              }
+              break;
+          }
+          
+          if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+            fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+            amp_float_buf[ll*ns + kk] =
+              get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+          }
+          else if (complex_flag)
+            cpxFloat_buf[ll*ns + kk] = cpx;
+          else if (cpx.real != 0.0 || cpx.imag != 0.0) {
+            amp_float_buf[ll*ns + kk] =
+              sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+            phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
+          }
+          else
+            amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
+        }
       }
-      else if (complex_flag)
-        cpxFloat_buf[ll*ns + kk] = cpx;
-      else if (cpx.real != 0.0 || cpx.imag != 0.0) {
-        cpx_float_ml_buf[ll*ns + kk].real = cpx.real;
-	cpx_float_ml_buf[ll*ns + kk].imag = cpx.imag;
-      }
-      else
-        amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
-    }
-      }
-
+      
       // Multilook if requested
       if (multilook_flag) {
-    if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-      for (kk=0; kk<ns; kk++) {
-	cpx.real = cpx.imag = 0.0;
-        for (mm=0; mm<lc; mm++) {
-          cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
-          cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
-	}
-	cpx.real /= (float)lc;
-	cpx.imag /= (float)lc;
-        amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-      }
-    }
-    else {
-      for (kk=0; kk<ns; kk++) {
-        cpx.real = cpx.imag = 0.0;
-        for (mm=0; mm<lc; mm++) {
-          cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
-          cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
-	}
-	cpx.real /= (float)lc;
-        cpx.imag /= (float)lc;
-        amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-        phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
-      }
-    }
+        if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+          for (kk=0; kk<ns; kk++) {
+            cpx.real = cpx.imag = 0.0;
+            for (mm=0; mm<lc; mm++) {
+              cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
+              cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+            }
+            cpx.real /= (float)lc;
+            cpx.imag /= (float)lc;
+            amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+          }
+        }
+        else {
+          for (kk=0; kk<ns; kk++) {
+            cpx.real = cpx.imag = 0.0;
+            for (mm=0; mm<lc; mm++) {
+              cpx.real += cpx_float_ml_buf[mm*ns + kk].real;
+              cpx.imag += cpx_float_ml_buf[mm*ns + kk].imag;
+            }
+            cpx.real /= (float)lc;
+            cpx.imag /= (float)lc;
+            amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+            phase_float_buf[kk] = atan2(cpx.imag, cpx.real);
+          }
+        }
       }
       else if (radiometry < r_SIGMA) {
-    for (kk=0; kk<lc*ns; kk++)
-      amp_float_buf[kk] = sqrt(amp_float_buf[kk]);
+        for (kk=0; kk<lc*ns; kk++)
+          amp_float_buf[kk] = sqrt(amp_float_buf[kk]);
       }
-
+      
       // unless we are outputting as complex, we are actually outputting
       // two bands -- "out_band" is the first of the two (the amplitude),
       // the phase is out_band+1.
       int out_band = import_single_band ? 0 : (band-1)*2;
       if (multilook_flag) {
-    if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-      put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
-      out++;
-    }
-    else {
-      put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-      put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
-      out++;
-    }
+        if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+          put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
+          out++;
+        }
+        else {
+          put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
+          put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+          out++;
+        }
       }
       else {
-    for (mm=0; mm<lc; mm++) {
-      if (complex_flag)
-        put_complexFloat_line(fpOut, meta, ii+mm, cpxFloat_buf+mm*ns);
-      else if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
-        put_band_float_line(fpOut, meta, out_band, ii+mm,
-                amp_float_buf+mm*ns);
-      }
-      else {
-        put_band_float_line(fpOut, meta, out_band+0, ii+mm,
-                amp_float_buf+mm*ns);
-        put_band_float_line(fpOut, meta, out_band+1, ii+mm,
-                phase_float_buf+mm*ns);
-      }
-    }
+        for (mm=0; mm<lc; mm++) {
+          if (complex_flag)
+            put_complexFloat_line(fpOut, meta, ii+mm, cpxFloat_buf+mm*ns);
+          else if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+            put_band_float_line(fpOut, meta, out_band, ii+mm,
+                                amp_float_buf+mm*ns);
+          }
+          else {
+            put_band_float_line(fpOut, meta, out_band+0, ii+mm,
+                                amp_float_buf+mm*ns);
+            put_band_float_line(fpOut, meta, out_band+1, ii+mm,
+                                phase_float_buf+mm*ns);
+          }
+        }
       }
     }
   }
