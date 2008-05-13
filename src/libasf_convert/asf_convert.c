@@ -1142,8 +1142,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // See above, this is the flag that adds a "secret" AMP band
       // for terrain correction
-      amp0_flag = (radiometry != r_AMP || cfg->general->polarimetry) &&
-        cfg->general->terrain_correct;
+      amp0_flag = radiometry != r_AMP && cfg->general->terrain_correct;
       if (amp0_flag)
         asfPrintStatus("Adding Amplitude band, for terrain correction.\n");
 
@@ -1416,6 +1415,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     if (cfg->general->polarimetry) {
       
       update_status("Polarimetric processing ...");
+      amp0_flag = cfg->general->terrain_correct;
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
