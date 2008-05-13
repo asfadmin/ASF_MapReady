@@ -583,8 +583,11 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
       if (alpha_band >= 0) {
           // alpha: arccos of the 1st pauli vector element
-          for (j=0; j<ns; ++j)
-              buf[j] = acos(complex_amp(img_rows->pauli_lines[l][j].A));
+          for (j=0; j<ns; ++j) {
+              complexVector v = img_rows->pauli_lines[l][j];
+              v = complex_vector_normalize(v);
+              buf[j] = acos(complex_amp(v.A));
+          }
           put_band_float_line(fout, meta, alpha_band, i, buf);
       }
 
