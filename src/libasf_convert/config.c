@@ -1236,7 +1236,7 @@ int write_convert_config(char *configFile, convert_config *cfg)
       fprintf(fConfig, "\n# When the multilook SLC flag in non-zero, single "
           "look complex data that is stored as amplitude/phase is being\n"
           "# multilooked.\n\n");
-    fprintf(fConfig, "multilook SLC = %d\n\n", cfg->import->multilook_slc);
+    fprintf(fConfig, "multilook SLC = %d\n", cfg->import->multilook_slc);
     if (!shortFlag)
       fprintf(fConfig, "\n# The ERS2 satellite has a known gain loss problem that this program\n"
           "# will attempt to correct by applying a scale correction factor uniformly\n"

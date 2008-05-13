@@ -760,6 +760,7 @@
 				      <property name="tooltip" translatable="yes">Radiometry setting for the image (if applicable.)  If you are planning to apply terrain correction, it is a good idea to select &quot;output DB&quot; when using sigma, beta or gamma.</property>
 				      <property name="can_focus">True</property>
 				      <property name="history">0</property>
+				      <signal name="changed" handler="on_input_data_type_combobox_changed" last_modification_time="Mon, 12 May 2008 18:40:56 GMT"/>
 
 				      <child>
 					<widget class="GtkMenu" id="menu2">
@@ -1125,7 +1126,7 @@
 		      <child>
 			<widget class="GtkTable" id="table9">
 			  <property name="visible">True</property>
-			  <property name="n_rows">6</property>
+			  <property name="n_rows">7</property>
 			  <property name="n_columns">1</property>
 			  <property name="homogeneous">False</property>
 			  <property name="row_spacing">2</property>
@@ -1169,8 +1170,8 @@
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">2</property>
-			      <property name="bottom_attach">3</property>
+			      <property name="top_attach">3</property>
+			      <property name="bottom_attach">4</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
@@ -1192,8 +1193,8 @@
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">3</property>
-			      <property name="bottom_attach">4</property>
+			      <property name="top_attach">4</property>
+			      <property name="bottom_attach">5</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
@@ -1215,8 +1216,8 @@
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">4</property>
-			      <property name="bottom_attach">5</property>
+			      <property name="top_attach">5</property>
+			      <property name="bottom_attach">6</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
@@ -1238,8 +1239,8 @@
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">5</property>
-			      <property name="bottom_attach">6</property>
+			      <property name="top_attach">6</property>
+			      <property name="bottom_attach">7</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
@@ -1257,6 +1258,29 @@
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
 			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:57:55 GMT"/>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">0</property>
+			      <property name="right_attach">1</property>
+			      <property name="top_attach">2</property>
+			      <property name="bottom_attach">3</property>
+			      <property name="x_options">fill</property>
+			      <property name="y_options"></property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkCheckButton" id="ers2_gain_fix_checkbutton">
+			      <property name="visible">True</property>
+			      <property name="tooltip" translatable="yes">The ERS2 satellite has a known gain loss problem.  If this option is checked, all pixels in the image will be scaled by a correction factor that is date-dependent.  This is only applied to calibrated data.</property>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">Apply ERS2 Gain Correction</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <property name="active">True</property>
+			      <property name="inconsistent">False</property>
+			      <property name="draw_indicator">True</property>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">0</property>

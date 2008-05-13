@@ -122,6 +122,7 @@ typedef struct
   int airsar_l_pol;
   int airsar_c_pol;
   int airsar_p_pol;
+  int apply_ers2_gain_fix;
 
   /* transformations */
   int data_type;
@@ -260,6 +261,7 @@ void rgb_settings_changed();
 void import_settings_changed();
 void hide_sections_for_execute();
 void polarimetry_settings_changed();
+void input_data_type_combobox_changed();
 
 /* utility.c */
 void setup_band_comboboxes();

@@ -166,6 +166,8 @@ settings_apply_to_gui(const Settings * s)
 
     input_data_format_combobox_changed();
 
+    set_checked("ers2_gain_fix_checkbutton", s->apply_ers2_gain_fix);
+
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(export_checkbutton), s->export_is_checked);
 
@@ -686,6 +688,7 @@ settings_get_from_gui()
 
     ret->keep_files = get_checked("keep_files_checkbutton");
     ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
+    ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
     if (get_checked("dem_checkbutton"))
     {
@@ -994,7 +997,8 @@ settings_equal(const Settings *s1, const Settings *s2)
         s1->output_format == s2->output_format &&
         s1->keep_files == s2->keep_files &&
         s1->terrcorr_is_checked == s2->terrcorr_is_checked &&
-        s1->apply_metadata_fix == s2->apply_metadata_fix)
+        s1->apply_metadata_fix == s2->apply_metadata_fix &&
+        s1->apply_ers2_gain_fix == s2->apply_ers2_gain_fix)
     {
         gchar * lat1 =
             g_strdup(settings_get_latitude_argument(s1));
@@ -1477,6 +1481,7 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "dump envi header = 0\n");
     fprintf(cf, "multilook SLC = %d\n",
             s->polarimetry_setting == POLARIMETRY_NONE ? 0 : 1);
+    fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     fprintf(cf, "\n");
 
     if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
@@ -1659,6 +1664,7 @@ int apply_settings_from_config_file(char *configFile)
         (cfg->import->lat_begin != -99 || cfg->import->lat_end != -99);
     s.latitude_low = cfg->import->lat_begin;
     s.latitude_hi = cfg->import->lat_end;
+    s.apply_ers2_gain_fix = cfg->import->ers2_gain_fix;
 
     /* polarimetry */
     s.polarimetry_setting = POLARIMETRY_NONE;
@@ -1851,6 +1857,7 @@ int apply_settings_from_config_file(char *configFile)
     /* misc */
     s.keep_files = cfg->general->intermediates;
     s.apply_metadata_fix = 1;
+    s.apply_ers2_gain_fix = 1;
 
     settings_apply_to_gui(&s);
 

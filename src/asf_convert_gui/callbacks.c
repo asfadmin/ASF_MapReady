@@ -914,3 +914,30 @@ on_about_dialog_key_press_event(GtkWidget *widget)
 {
   close_about_dialog();
 }
+
+void input_data_type_combobox_changed()
+{
+    GtkWidget *input_data_type_combobox =
+        get_widget_checked("input_data_type_combobox");
+    int data_type = get_combo_box_item(input_data_type_combobox);
+
+    GtkWidget *ers2_gain_fix_checkbutton =
+        get_widget_checked("ers2_gain_fix_checkbutton");
+
+    if (data_type == INPUT_TYPE_AMP) {
+      gtk_toggle_button_set_active(
+        GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), FALSE);
+      gtk_widget_set_sensitive(ers2_gain_fix_checkbutton, FALSE);
+    }
+    else {
+      gtk_toggle_button_set_active(
+        GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), TRUE);
+      gtk_widget_set_sensitive(ers2_gain_fix_checkbutton, TRUE);
+    }
+}
+
+SIGNAL_CALLBACK void
+on_input_data_type_combobox_changed(GtkWidget *widget)
+{
+  input_data_type_combobox_changed();
+}

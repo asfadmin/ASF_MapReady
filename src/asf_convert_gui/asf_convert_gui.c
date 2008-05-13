@@ -175,6 +175,7 @@ main(int argc, char **argv)
     /* explicit call to the function that refreshes the "summary" */
     /* section when options are changed, so get the settings      */
     /* initially in there                                         */
+    input_data_type_combobox_changed();
     default_to_terrcorr_on();
     terrcorr_options_changed();
     polarimetry_settings_changed();
