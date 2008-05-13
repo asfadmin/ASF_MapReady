@@ -379,13 +379,15 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     case (193):
       strcpy(rectype_str, "Trailer file descriptor");
-      tfdr = (struct trl_file_des_rec *) 
-	MALLOC(sizeof(struct trl_file_des_rec));
-      if (dataNameExists) {
-	if (get_tfdr(baseName,tfdr) >= 0)
-	  ret = sprn_tfdr(tfdr);
+      if (0 == strncmp(facility, "EOC", 3)) {
+	tfdr = (struct trl_file_des_rec *) 
+	  MALLOC(sizeof(struct trl_file_des_rec));
+	if (dataNameExists) {
+	  if (get_tfdr(baseName,tfdr) >= 0)
+	    ret = sprn_tfdr(tfdr);
+	}
+	FREE(tfdr);
       }
-      FREE(tfdr);
       break;
     case (200):
       asfPrintWarning("Unrecogized facility data record...\n"
@@ -419,12 +421,18 @@ char *get_record_as_string(char *fileName, int reqrec)
     case (230):
       strcpy(rectype_str, "JAXA facility related data");
       jaxa_facdr = (struct JAXA_FACDR *) MALLOC(sizeof(struct JAXA_FACDR));
+      struct trl_file_des_rec *tfdr = 
+	(struct trl_file_des_rec *) MALLOC(sizeof(struct trl_file_des_rec));
       if (leaderNameExists) {
-	if (get_jaxa_facdr(metaName[0],jaxa_facdr) >= 0)
-	  ret = sprn_jaxa_facdr(jaxa_facdr);
+	if (get_jaxa_facdr(metaName[0],jaxa_facdr) >= 0) {
+	  get_tfdr(metaName[0], tfdr);
+	  ret = sprn_jaxa_facdr(jaxa_facdr, tfdr->facdr_len[10]);
+	}
 	else if (trailer) {
-	  if (get_jaxa_facdr(metaName[1],jaxa_facdr) >= 0)
-	    ret = sprn_jaxa_facdr(jaxa_facdr);
+	  if (get_jaxa_facdr(metaName[1],jaxa_facdr) >= 0) {
+	    get_tfdr(metaName[1], tfdr);
+	    ret = sprn_jaxa_facdr(jaxa_facdr, tfdr->facdr_len[10]);
+	  }
 	}
       }
       FREE(jaxa_facdr);

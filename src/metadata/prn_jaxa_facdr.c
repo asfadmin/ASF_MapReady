@@ -2,7 +2,7 @@
 #include "ceos.h"
 #include "metadisplay.h"
 
-char *sprn_jaxa_facdr(struct JAXA_FACDR *fd)
+char *sprn_jaxa_facdr(struct JAXA_FACDR *fd, int length)
 {
   char *ret = MALLOC(sizeof(char)*1);
   strcpy(ret, "");
@@ -30,32 +30,34 @@ char *sprn_jaxa_facdr(struct JAXA_FACDR *fd)
   add(&ret, "\n SIGMA-SAR processing start line number\t\t%d", 
       fd->sigma_start_line);
   add(&ret, "\n Number of loss lines (level 1.0)\t\t%d", fd->number_loss_lines_L0);
-  add(&ret, "\n  Number of loss lines (level 1.1, 1.5)\t\t%d", 
+  add(&ret, "\n Number of loss lines (level 1.1, 1.5)\t\t%d", 
       fd->number_loss_lines_L1);
-  for (ii=0; ii<10; ii++)
-    add(&ret, "\n Line/sample to lat/lon coefficients: a[%d]\t\t%20.10lf",
-	ii, fd->a[ii]);
-  for (ii=0; ii<10; ii++)
-    add(&ret, "\n Line/sample to lat/lon coefficients: b[%d]\t\t%20.10lf", 
-	ii, fd->b[ii]);
-  add(&ret, "\n Origin pixel (P0)\t\t%20.10lf", fd->origin_pixel);
-  add(&ret, "\n Origin line (L0)\t\t%20.10lf", fd->origin_line);
-  for (ii=0; ii<10; ii++)
-    add(&ret, "\n Lat/lon to line/sample coefficients: c[%d]\t\t%20.10lf", 
-	ii, fd->c[ii]);
-  for (ii=0; ii<10; ii++)
-    add(&ret, "\n Lat/lon to line/sample coefficients: d[%d]\t\t%20.10lf", 
-	ii, fd->d[ii]);
-  add(&ret, "\n Origin latitude [degrees]\t\t%20.10lf", fd->origin_lat);
-  add(&ret, "\n Origin longitude [degrees]\t\t%20.10lf", fd->origin_lon);
+  if (length == 5000) {
+    for (ii=0; ii<25; ii++)
+      add(&ret, "\n Line/sample to lat/lon coefficients: a[%d]\t\t%g",
+	  ii, fd->a[ii]);
+    for (ii=0; ii<25; ii++)
+      add(&ret, "\n Line/sample to lat/lon coefficients: b[%d]\t\t%g", 
+	  ii, fd->b[ii]);
+    add(&ret, "\n Origin pixel (P0)\t\t%20.10lf", fd->origin_pixel);
+    add(&ret, "\n Origin line (L0)\t\t%20.10lf", fd->origin_line);
+    for (ii=0; ii<25; ii++)
+      add(&ret, "\n Lat/lon to line/sample coefficients: c[%d]\t\t%g", 
+	  ii, fd->c[ii]);
+    for (ii=0; ii<25; ii++)
+      add(&ret, "\n Lat/lon to line/sample coefficients: d[%d]\t\t%g", 
+	  ii, fd->d[ii]);
+    add(&ret, "\n Origin latitude [degrees]\t\t%20.10lf", fd->origin_lat);
+    add(&ret, "\n Origin longitude [degrees]\t\t%20.10lf", fd->origin_lon);
+  }
 
   add(&ret, "\n******** end of Facility Related Data (JAXA) record ***********\n");
   return ret;
 }
 
-void prn_jaxa_facdr(FILE *fp, struct JAXA_FACDR *fd)
+void prn_jaxa_facdr(FILE *fp, struct JAXA_FACDR *fd, int length)
 {
-    char *rec = sprn_jaxa_facdr(fd);
+    char *rec = sprn_jaxa_facdr(fd, length);
     fprintf(fp, "%s", rec);
     FREE(rec);
 }

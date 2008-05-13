@@ -42,6 +42,7 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   FILE *fp;
   char **dataName=NULL, **metaName=NULL;
   struct HEADER  bufhdr;
+  struct trl_file_des_rec *tfdr=NULL;
   int nOccurences=0, era=1, ii, trailer;
 
   if (recordType==CEOS_IFILEDR) {
@@ -65,17 +66,26 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
       subtype[2] = bufhdr.rectyp[3];
       rec_seq = bigInt32(bufhdr.recnum);
       length = bigInt32(bufhdr.recsiz);
-      if ((itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR && 
-	   length <=5000) ||
-          (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR))
-	mallocBytes = length = 5000;
+      if ((itype==CEOS_FACDR && rec_seq==17 && length<=5000) ||
+          (itype==CEOS_FACDR && rec_seq==18)) {
+	tfdr = (struct trl_file_des_rec *) 
+	  MALLOC(sizeof(struct trl_file_des_rec));
+	if (trailer)
+	  get_tfdr(metaName[1], tfdr);
+	else
+	  get_tfdr(metaName[0], tfdr);
+	mallocBytes = length = tfdr->facdr_len[10];
+	printf("mallocBytes: %d\n", mallocBytes);
+      }
       else
 	mallocBytes = (length>16920) ? length : 16920;
       *buff=(unsigned char *)MALLOC(mallocBytes);
       *(struct HEADER *)*buff=bufhdr;
-      //printf("get_ceos - record type: %d\nsub-record[1]: %d, sub-record[2]: %d"
-      //     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
-      //     subtype[0], subtype[1], subtype[2], rec_seq, length);
+      /*
+      printf("get_ceos - record type: %d\nsub-record[1]: %d, sub-record[2]: %d"
+	     " sub_record[3]: %d\nsequence: %d, length: %d\n", itype, 
+	     subtype[0], subtype[1], subtype[2], rec_seq, length);
+      */
       FREAD((*buff)+12, length-12, 1, fp);
 
       // The JAXA FACDR requires the sequence number to be able to pick
@@ -85,13 +95,12 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
       if ((itype==recordType)||
           (itype==CEOS_FACDR && recordType==CEOS_ASFFACDR) ||
           (itype==CEOS_FACDR && recordType==CEOS_ESAFACDR) ||
-          (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR && length <=5000) ||
+          (itype==CEOS_FACDR && rec_seq==17 && recordType==CEOS_JAXAFACDR &&
+	   length<=5000) ||
           (itype==CEOS_FACDR && rec_seq==18 && recordType==CEOS_JAXAFACDR) ||
 	  (itype==CEOS_IFILEDR && recordType==CEOS_TFDR))
       {/*We have the correct kind of record.*/
         nOccurences++;
-        if (recordType == CEOS_JAXAFACDR)
-          printf("record length: %d\n", length);
         if (nOccurences==recordNo)
         { /*This is the correct occurence! Clean up and return.*/
           FCLOSE(fp);
@@ -108,6 +117,8 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
   }
 
   free_ceos_names(dataName, metaName);
+  if (tfdr)
+    FREE(tfdr);
 
   if (recordType==CEOS_MPDR ||
       recordType==CEOS_DQSR ||
