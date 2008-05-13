@@ -34,6 +34,21 @@ void print_license(int license_id)
   exit(EXIT_SUCCESS);
 }
 
+const char *version_string(const char *program_name)
+{
+  static char out_buf[1024];
+
+  if (strlen(SVN_REV)>0) {
+    sprintf(out_buf, "%s (part of %s %s)",
+            SVN_REV, TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
+  } else {
+    sprintf(out_buf, "%s %s",
+            TOOL_SUITE_NAME, TOOL_SUITE_VERSION_STRING);
+  }
+
+  return out_buf;
+}
+
 void print_version(const char *program_name)
 {
     if (strlen(SVN_REV)>0) {

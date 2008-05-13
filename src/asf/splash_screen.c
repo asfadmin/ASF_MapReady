@@ -1,5 +1,8 @@
 #include "asf.h"
 
+/* this is over in license.c */
+const char *version_string(const char *program_name);
+
 /* Default splash screen
    This function should be called as soon as the log & quiet flags have been
    set the way the user wants them */
@@ -16,7 +19,8 @@ void asfSplashScreen(int argc, char* argv[])
                 "\n"
                 "Date: %s\n"
                 "PID:  %i\n"
+                "Version: %s\n"
                 "\n",
-                logbuf, date_time, (int)getpid());
+                 logbuf, date_time, (int)getpid(),
+                 version_string(argv[0]));
 }
-
