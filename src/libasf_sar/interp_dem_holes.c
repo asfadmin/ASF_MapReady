@@ -212,7 +212,7 @@ void interp_dem_holes_float_image(meta_parameters *meta, FloatImage *img,
       asfPrintStatus("Found %d pixels in the input data which violate the "
                      "slope constraint.\n",
                      n_bad_pixels);
-
+/*
     if (verbose) {
       asfPrintStatus("Creating byte mask of dem (with bad pixels removed).\n");
       asfPrintStatus("   [0 = No data, 255 = Valid Data]\n");
@@ -236,6 +236,7 @@ void interp_dem_holes_float_image(meta_parameters *meta, FloatImage *img,
       meta_write(meta, "good_data_mask.meta");
       meta->general->data_type = saved_dt;      
     }
+*/
 
     asfPrintStatus("Performing interpolations...\n");
     for (i=0; i<nl; ++i) {
