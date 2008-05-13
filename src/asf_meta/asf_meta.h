@@ -253,10 +253,10 @@ typedef struct {
 // meta_transform: parameters for coordinate transformations
 typedef struct {
   int parameter_count;     // Number of parameters
-  double x[10];            // Transform coeffs for x (ls to lon)
-  double y[10];            // Transform coeffs for y (ls to lat)
-  double l[10];            // Transform coeffs for lines (lat/lon to l)
-  double s[10];            // Transform coeffs for samples (lat/lon to s)
+  double x[25];            // Transform coeffs for x (ls to lon)
+  double y[25];            // Transform coeffs for y (ls to lat)
+  double l[25];            // Transform coeffs for lines (lat/lon to l)
+  double s[25];            // Transform coeffs for samples (lat/lon to s)
   double incid_a[6];       // Transform coeffs for incid angle (sr to incid ang)
   double map2ls_a[10];     // Transform coeffs for map -> L/S (lat/lon to s)
   double map2ls_b[10];     // Transform coeffs for map -> L/S (lat/lon to l)

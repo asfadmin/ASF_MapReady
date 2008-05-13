@@ -1013,32 +1013,45 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
   // Transformation block
   if (ceos->product != SLC) {
-    if (!meta->transform)
-      meta->transform = meta_transform_init();
-    meta->transform->parameter_count = 4;
-    meta->transform->x[0] = mpdr->a11;
-    meta->transform->x[1] = mpdr->a12;
-    meta->transform->x[2] = mpdr->a13;
-    meta->transform->x[3] = mpdr->a14;
-    meta->transform->y[0] = mpdr->a21;
-    meta->transform->y[1] = mpdr->a22;
-    meta->transform->y[2] = mpdr->a23;
-    meta->transform->y[3] = mpdr->a24;
-    meta->transform->l[0] = mpdr->b11;
-    meta->transform->l[1] = mpdr->b12;
-    meta->transform->l[2] = mpdr->b13;
-    meta->transform->l[3] = mpdr->b14;
-    meta->transform->s[0] = mpdr->b21;
-    meta->transform->s[1] = mpdr->b22;
-    meta->transform->s[2] = mpdr->b23;
-    meta->transform->s[3] = mpdr->b24;
-
     int ii;
-    for (ii=0; ii<6; ++ii)      
-      meta->transform->incid_a[ii] = dssr->incid_a[ii];
-
+    struct trl_file_des_rec tfdr;
+    get_tfdr(in_fName, &tfdr);
     struct JAXA_FACDR facdr;
     get_jaxa_facdr(in_fName, &facdr);
+
+    if (!meta->transform)
+      meta->transform = meta_transform_init();
+    if (tfdr.facdr_len[10] < 5000) {
+      meta->transform->parameter_count = 4;
+      meta->transform->x[0] = mpdr->a11;
+      meta->transform->x[1] = mpdr->a12;
+      meta->transform->x[2] = mpdr->a13;
+      meta->transform->x[3] = mpdr->a14;
+      meta->transform->y[0] = mpdr->a21;
+      meta->transform->y[1] = mpdr->a22;
+      meta->transform->y[2] = mpdr->a23;
+      meta->transform->y[3] = mpdr->a24;
+      meta->transform->l[0] = mpdr->b11;
+      meta->transform->l[1] = mpdr->b12;
+      meta->transform->l[2] = mpdr->b13;
+      meta->transform->l[3] = mpdr->b14;
+      meta->transform->s[0] = mpdr->b21;
+      meta->transform->s[1] = mpdr->b22;
+      meta->transform->s[2] = mpdr->b23;
+      meta->transform->s[3] = mpdr->b24;
+    }
+    else {
+      meta->transform->parameter_count = 25;
+      for (ii=0; ii<25; ii++) {
+	meta->transform->x[ii] = facdr.a[ii];
+	meta->transform->y[ii] = facdr.b[ii];
+	meta->transform->l[ii] = facdr.c[ii];
+	meta->transform->s[ii] = facdr.d[ii];
+      }
+    }
+
+    for (ii=0; ii<6; ++ii)      
+      meta->transform->incid_a[ii] = dssr->incid_a[ii];
 
     for (ii=0; ii<10; ++ii) {
       meta->transform->map2ls_a[ii] = facdr.a_map[ii];

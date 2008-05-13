@@ -75,7 +75,6 @@ int getCeosRecord(const char *inName, CEOS_RECORD_TYPE recordType, int recordNo,
 	else
 	  get_tfdr(metaName[0], tfdr);
 	mallocBytes = length = tfdr->facdr_len[10];
-	printf("mallocBytes: %d\n", mallocBytes);
       }
       else
 	mallocBytes = (length>16920) ? length : 16920;
