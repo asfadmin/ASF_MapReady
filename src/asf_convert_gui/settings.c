@@ -552,6 +552,10 @@ settings_get_from_gui()
         }
     }
 
+    ret->keep_files = get_checked("keep_files_checkbutton");
+    ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
+    ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
+
     ret->polarimetry_setting = POLARIMETRY_NONE;
     if (get_checked("polarimetry_checkbutton")) {
       if (get_checked("rb_pauli"))
@@ -685,10 +689,6 @@ settings_get_from_gui()
 
         ret->geocode_force = get_checked("force_checkbutton");
     }
-
-    ret->keep_files = get_checked("keep_files_checkbutton");
-    ret->apply_metadata_fix = get_checked("apply_metadata_fix_checkbutton");
-    ret->apply_ers2_gain_fix = get_checked("ers2_gain_fix_checkbutton");
 
     if (get_checked("dem_checkbutton"))
     {
