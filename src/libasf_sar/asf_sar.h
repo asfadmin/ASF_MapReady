@@ -115,8 +115,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int sinclair_1_band,
                          int sinclair_2_band,
                          int sinclair_3_band);
-void cpx2sinclair(const char *inFile, const char *outFile);
-void cpx2pauli(const char *inFile, const char *outFile);
-void cpx2cloude_pottier(const char *inFile, const char *outFile);
+void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag);
+void cpx2pauli(const char *inFile, const char *outFile, int tc_flag);
+void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag);
 
 #endif

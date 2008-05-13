@@ -1427,11 +1427,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       // Calculate polarimetric parameters
       if (cfg->polarimetry->pauli)
-	cpx2pauli(inFile, outFile);
+	cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->sinclair)
-	asfPrintError("Sinclair decomposition currently not support.\n");
+	cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier)
-	cpx2cloude_pottier(inFile, outFile);
+	cpx2cloude_pottier(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_ext)
 	asfPrintError("Extended Cloude-Pottier classification not supported yet.\n");
       else if (cfg->polarimetry->k_means_wishart)

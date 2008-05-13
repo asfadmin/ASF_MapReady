@@ -491,12 +491,12 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                                          img_rows->lines[l][j].vh);
             buf[j] = complex_amp(complex_scale(c, 0.5));
           }
-          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
+          put_band_float_line(fout, meta, sinclair_2_band, i, buf);
       }
       if (sinclair_3_band >= 0) {
           for (j=0; j<ns; ++j)
               buf[j] = complex_amp(img_rows->lines[l][j].vv);
-          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
+          put_band_float_line(fout, meta, sinclair_3_band, i, buf);
       }
 
       // calculate the pauli output (magnitude of already-calculated
@@ -669,21 +669,30 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   meta_free(meta);
 }
 
-void cpx2sinclair(const char *inFile, const char *outFile)
+void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Sinclair decomposition channels\n");
-  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2);
+  if (tc_flag)
+    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, -1, -1, -1, 1, 2, 3);
+  else
+    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2);
 }
 
-void cpx2pauli(const char *inFile, const char *outFile)
+void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Paul decomposition channels\n");
-  polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1, -1, -1, -1);
+  if (tc_flag)
+    polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, -1, -1, -1, -1, -1, -1);
+  else
+    polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1, -1, -1, -1);
 }
 
-void cpx2cloude_pottier(const char *inFile, const char *outFile)
+void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha"
 		 "for Cloude-Pottier classification\n");
-  polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
+  if (tc_flag)
+    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, 1, 2, 3, -1, -1, -1);
+  else 
+    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
 }
