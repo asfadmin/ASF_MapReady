@@ -186,7 +186,7 @@ static void complex_matrix_set(complexMatrix *self, int row, int column,
 }
 
 static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
-                                                          int nrows)
+                                                          int nrows, int multi)
 {
     PolarimetricImageRows *self = MALLOC(sizeof(PolarimetricImageRows));
 
@@ -194,8 +194,13 @@ static PolarimetricImageRows *polarimetric_image_rows_new(meta_parameters *meta,
     self->meta = meta;
 
     // nrows must be odd
-    assert((self->nrows-1)%2==0);
-    self->current_row = -(nrows+1)/2;
+    if (multi) {
+      self->current_row = 0;
+    }
+    else {
+      assert((self->nrows-1)%2==0);
+      self->current_row = -(nrows+1)/2;
+    }
 
     int ns = meta->general->sample_count;
 
@@ -269,7 +274,12 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     // [ A*C  B*C  C*C ]    C = 2*HV
     int j, ns=self->meta->general->sample_count;
     for (j=0; j<ns; ++j) {
-        complexVector v = self->pauli_lines[n][j];
+        quadPolFloat q = self->lines[n][j];
+        complexVector v = complex_vector_normalize(
+          complex_vector_new(
+            complex_add(q.hh, q.vv),
+            complex_sub(q.hh, q.vv),
+            complex_add(q.hv, q.vh)));
         complexVector vc = complex_vector_conj(v);
 
         complexMatrix *m = self->coh_lines[n][j];
@@ -291,7 +301,7 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
 static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
                                                   FILE *fin)
 {
-  // we discard the top row, slide all rows up one, then load
+  // we discard the top (0) row, slide all rows up one, then load
   // the new row into the top position
 
   // don't actually move any data -- update pointers into the
@@ -317,6 +327,7 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   int ns = self->meta->general->sample_count;
   float *amp_buf = MALLOC(sizeof(float)*ns);
   float *phase_buf = MALLOC(sizeof(float)*ns);
+
   int row = self->current_row + (self->nrows-1)/2;
   if (row < self->meta->general->line_count) {
     // amplutide, we only store the current row
@@ -360,6 +371,57 @@ static void polarimetric_image_rows_load_next_row(PolarimetricImageRows *self,
   free(phase_buf);
 }
 
+static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
+                                                  FILE *fin)
+{
+  int i,k,ns = self->meta->general->sample_count;
+  float *amp_buf = MALLOC(sizeof(float)*ns);
+  float *phase_buf = MALLOC(sizeof(float)*ns);
+
+  // multilook the amplitude values as we go
+  for (k=0; k<ns; ++k)
+    self->amp[k] = 0.0;
+
+  for (i=0; i<self->nrows; ++i) {
+    int row = self->current_row + i;
+    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+    for (k=0; k<ns; ++k)
+      self->amp[k] += amp_buf[k];
+
+    // now the SLC rows
+    get_band_float_line(fin, self->meta, self->hh_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->hh_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[i][k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->hv_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->hv_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[i][k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->vh_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->vh_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[i][k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    get_band_float_line(fin, self->meta, self->vv_amp_band, row, amp_buf);
+    get_band_float_line(fin, self->meta, self->vv_phase_band, row, phase_buf);
+    for (k=0; k<ns; ++k)
+      self->lines[i][k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+    
+    calculate_pauli_for_row(self, i);
+    calculate_coherence_for_row(self, i);
+  }
+
+  for (k=0; k<ns; ++k)
+    self->amp[k] /= self->nrows;
+
+  self->current_row += self->nrows;
+
+  free(amp_buf);
+  free(phase_buf);
+}
+
 static void polarimetric_image_rows_free(PolarimetricImageRows* self)
 {
     free(self->amp);
@@ -397,7 +459,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int sinclair_3_band)
 {
   char *meta_name = appendExt(inFile, ".meta");
-  meta_parameters *meta = meta_read(meta_name);
+  meta_parameters *inMeta = meta_read(meta_name);
+  meta_parameters *outMeta = meta_read(meta_name);
 
   char *in_img_name = appendExt(inFile, ".img");
   char *out_img_name = appendExt(outFile, ".img");
@@ -407,12 +470,21 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
   // handle the ensemble averaging that we do
-  const int chunk_size = 5;
+  int chunk_size = 5;
   assert((chunk_size-1)%2==0); // chunk_size should be odd
 
+  // If the image is not multilooked, we will multilook it here, and use
+  // the multilooked values for the ensemble averaging.  This will result
+  // in much less smoothing of the image.
+  int multi = FALSE;
+  if (inMeta->sar && inMeta->sar->multilook==0) {
+    multi = TRUE;
+    chunk_size = inMeta->sar->look_count;
+  }
+
   // aliases
-  int nl = meta->general->line_count;
-  int ns = meta->general->sample_count;
+  int nl = inMeta->general->line_count;
+  int ns = inMeta->general->sample_count;
 
   FILE *fin = fopenImage(in_img_name, "rb");
   FILE *fout = fopenImage(out_img_name, "wb");
@@ -420,7 +492,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   // this struct will hold the current row being processed, and
   // chunk_size/2 rows before & after
   PolarimetricImageRows *img_rows =
-      polarimetric_image_rows_new(meta, chunk_size);
+      polarimetric_image_rows_new(inMeta, chunk_size, multi);
 
   // make sure all bands we need are there, and find their numbers
   // and offsets
@@ -452,174 +524,28 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   // slide down one row (line 3 is loaded into the beginning of the buffer,
   // but line pointer 4 points at the beginning).
 
-  // preload rows --> center of window will be row 0.
-  // the next (chunk_size-1)/2 rows are also loaded, and ready to go.
-  for (i=0; i<(chunk_size+1)/2; ++i)
-      polarimetric_image_rows_load_next_row(img_rows, fin);
-  assert(img_rows->current_row == 0);
+  if (multi) {
+    // multilook case:
+    // preload rows --> load look_count rows, these will all be combined
+    // to produce a single output line
+    polarimetric_image_rows_load_new_rows(img_rows, fin);
+  }
+  else {
+    // non-multilook case:
+    // preload rows --> center of window will be row 0.
+    // the next (chunk_size+1)/2 rows are also loaded, and ready to go.
+    for (i=0; i<(chunk_size+1)/2; ++i)
+      polarimetric_image_rows_load_next_row(img_rows, fin);    
+    assert(img_rows->current_row == 0);
+  }
 
   // size of the horizontal window, used for ensemble averaging
   // actual window size is hw*2+1
-  const int hw = 0;
-
-  gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
-  gsl_vector *eval = gsl_vector_alloc(3);
-  gsl_matrix_complex *evec = gsl_matrix_complex_alloc(3,3);
-  gsl_eigen_hermv_workspace *ws = gsl_eigen_hermv_alloc(3);
-
-  // now loop through the lines of the output image
-  for (i=0; i<nl; ++i) {
-
-      // indicates which line in the various *lines arrays contains
-      // what corresponds to line i in the output. since the line pointers
-      // slide, this never changes
-      const int l = (chunk_size-1)/2;
-
-      // normal amplitude band (usually, this is added to allow terrcorr)
-      if (amplitude_band >= 0)
-          put_band_float_line(fout, meta, amplitude_band, i, img_rows->amp);
-
-      // if requested, generate sinlair output
-      if (sinclair_1_band >= 0) {
-          for (j=0; j<ns; ++j)
-              buf[j] = complex_amp(img_rows->lines[l][j].hh);
-          put_band_float_line(fout, meta, sinclair_1_band, i, buf);
-      }
-      if (sinclair_2_band >= 0) {
-          for (j=0; j<ns; ++j) {
-            complexFloat c = complex_add(img_rows->lines[l][j].hv,
-                                         img_rows->lines[l][j].vh);
-            buf[j] = complex_amp(complex_scale(c, 0.5));
-          }
-          put_band_float_line(fout, meta, sinclair_2_band, i, buf);
-      }
-      if (sinclair_3_band >= 0) {
-          for (j=0; j<ns; ++j)
-              buf[j] = complex_amp(img_rows->lines[l][j].vv);
-          put_band_float_line(fout, meta, sinclair_3_band, i, buf);
-      }
-
-      // calculate the pauli output (magnitude of already-calculated
-      // complex pauli basis elements), and save the requested pauli
-      // bands in the output
-      if (pauli_1_band >= 0) {
-          for (j=0; j<ns; ++j)
-              buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
-          put_band_float_line(fout, meta, pauli_1_band, i, buf);
-      }
-      if (pauli_2_band >= 0) {
-          for (j=0; j<ns; ++j)
-              buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
-          put_band_float_line(fout, meta, pauli_2_band, i, buf);
-      }
-      if (pauli_3_band >= 0) {
-          for (j=0; j<ns; ++j)
-              buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
-          put_band_float_line(fout, meta, pauli_3_band, i, buf);
-      }
-
-      if (entropy_band >= 0 || anisotropy_band >= 0)
-      {
-          // coherence -- do ensemble averaging for each element
-          for (j=0; j<ns; ++j) {
-              int ii,jj,m;
-              for (ii=0; ii<3; ++ii) {
-                  for (jj=0; jj<3; ++jj) {
-                      gsl_complex c = gsl_complex_rect(0,0);
-                      int k,n=0;
-                      for (m=0; m<chunk_size; ++m) {
-                          for (k=j-hw;k<=j+hw;++k) {
-                              if (k>=0 && k<ns && m+i>l && m+i<nl-l) {
-                                  ++n;
-                                  complexFloat f =
-                                    img_rows->coh_lines[m][k]->coeff[ii][jj];
-                                  // cheat for speed
-                                  c.dat[0] += f.real;
-                                  c.dat[1] += f.imag;
-                              }
-                          }
-                      }
-                      if (n>0) {
-                          c.dat[0] /= (float)n;
-                          c.dat[1] /= (float)n;
-                      }
-                      gsl_matrix_complex_set(T,ii,jj,c);
-                  }
-              }
-
-              gsl_eigen_hermv(T, eval, evec, ws);
-              gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
-
-              double e1 = gsl_vector_get(eval, 0);
-              double e2 = gsl_vector_get(eval, 1);
-              double e3 = gsl_vector_get(eval, 2);
-
-              double eT = e1+e2+e3;
-
-              double P1 = e1/eT;
-              double P2 = e2/eT;
-              double P3 = e3/eT;
-
-              double P1l3 = log3(P1);
-              double P2l3 = log3(P2);
-              double P3l3 = log3(P3);
-
-              // If a Pn value is small enough, the log value will be NaN.
-              // In this case, the value of -Pn*log3(Pn) is supposed to be
-              // zero - we have to force it.
-              entropy[j] =
-                  (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
-                  (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
-                  (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
-
-              if (e2+e3 != 0)
-                anisotropy[j] = (e2-e3)/(e2+e3);
-              else
-                anisotropy[j] = 0;
-          }
-
-          if (entropy_band >= 0)
-              put_band_float_line(fout, meta, entropy_band, i, entropy);
-          if (anisotropy_band >= 0)
-              put_band_float_line(fout, meta, anisotropy_band, i, anisotropy);
-      }
-
-      if (alpha_band >= 0) {
-          // alpha: arccos of the 1st pauli vector element
-          for (j=0; j<ns; ++j) {
-              complexVector v =
-                  complex_vector_normalize(img_rows->pauli_lines[l][j]);
-              buf[j] = R2D*acos(complex_amp(v.A));
-          }
-          put_band_float_line(fout, meta, alpha_band, i, buf);
-      }
-
-      // load the next row, if there are still more to go
-      if (i<nl-1) {
-          polarimetric_image_rows_load_next_row(img_rows, fin);
-          assert(img_rows->current_row == i+1);
-      }
-
-      asfLineMeter(i,nl);
-  }
-
-  gsl_vector_free(eval);
-  gsl_eigen_hermv_free(ws);
-  gsl_matrix_complex_free(evec);
-  gsl_matrix_complex_free(T);
-
-  polarimetric_image_rows_free(img_rows);
-
-  fclose(fin);
-  fclose(fout);
-
-  free(buf);
-  free(entropy);
-  free(anisotropy);
-
-  free(out_img_name);
-  free(in_img_name);
-  free(meta_name);
+  int hw;
+  if (multi)
+    hw = 0; // no horizontal averaging
+  else
+    hw = 2; // 5 pixels averaging horizontally
 
   // output metadata differs from input only in the number
   // of bands, and the band names
@@ -660,13 +586,273 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (strlen(bands) > 0) // chop last comma
       bands[strlen(bands)-1] = '\0';
 
-  meta->general->band_count = nBands;
-  strcpy(meta->general->bands, bands);
+  outMeta->general->band_count = nBands;
+  strcpy(outMeta->general->bands, bands);
 
-  meta_write(meta, out_meta_name);
+  // for multilooking, the number of output lines shrinks by look_count
+  int onl = multi ? nl/chunk_size : nl;
+
+  if (multi) {
+    outMeta->sar->multilook = 1;
+    outMeta->general->line_count = onl;
+    outMeta->general->y_pixel_size /= outMeta->sar->look_count;
+    outMeta->sar->azimuth_time_per_pixel /= outMeta->sar->look_count;
+  }
+
+  meta_write(outMeta, out_meta_name);
   free(out_meta_name);
 
-  meta_free(meta);
+  // done setting up metadata, now write the data
+  gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
+  gsl_vector *eval = gsl_vector_alloc(3);
+  gsl_matrix_complex *evec = gsl_matrix_complex_alloc(3,3);
+  gsl_eigen_hermv_workspace *ws = gsl_eigen_hermv_alloc(3);
+
+  // now loop through the lines of the output image
+  for (i=0; i<onl; ++i) {
+
+      // Indicates which line in the various *lines arrays contains
+      // what corresponds to line i in the output. since the line pointers
+      // slide, this never changes.
+      const int l = (chunk_size-1)/2;
+
+      // normal amplitude band (usually, this is added to allow terrcorr)
+      if (amplitude_band >= 0)
+        put_band_float_line(fout, outMeta, amplitude_band, i, img_rows->amp);
+
+      // if requested, generate sinlair output
+      if (multi) {
+        // multilook case -- average all buffered lines to produce a
+        // single output line
+        if (sinclair_1_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j)
+              buf[j] += complex_amp(img_rows->lines[m][j].hh);
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, sinclair_1_band, i, buf);
+        }
+        if (sinclair_2_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j) {
+              complexFloat c = complex_add(img_rows->lines[m][j].hv,
+                                           img_rows->lines[m][j].vh);
+              buf[j] += complex_amp(complex_scale(c, 0.5));
+            }
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, sinclair_2_band, i, buf);
+        }
+        if (sinclair_3_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j)
+              buf[j] += complex_amp(img_rows->lines[m][j].vv);
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, sinclair_3_band, i, buf);
+        }
+      }
+      else {
+        // not multilooking -- no averaging necessary
+        if (sinclair_1_band >= 0) {
+          for (j=0; j<ns; ++j)
+            buf[j] = complex_amp(img_rows->lines[l][j].hh);
+          put_band_float_line(fout, outMeta, sinclair_1_band, i, buf);
+        }
+        if (sinclair_2_band >= 0) {
+          for (j=0; j<ns; ++j) {
+            complexFloat c = complex_add(img_rows->lines[l][j].hv,
+                                         img_rows->lines[l][j].vh);
+            buf[j] = complex_amp(complex_scale(c, 0.5));
+          }
+          put_band_float_line(fout, outMeta, sinclair_2_band, i, buf);
+        }
+        if (sinclair_3_band >= 0) {
+          for (j=0; j<ns; ++j)
+            buf[j] = complex_amp(img_rows->lines[l][j].vv);
+          put_band_float_line(fout, outMeta, sinclair_3_band, i, buf);
+        }
+      }
+
+      // calculate the pauli output (magnitude of already-calculated
+      // complex pauli basis elements), and save the requested pauli
+      // bands in the output
+      if (multi) {
+        // multilook case -- average all buffered lines to produce a
+        // single output line
+        if (pauli_1_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j)
+              buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, pauli_1_band, i, buf);
+        }
+        if (pauli_2_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j)
+              buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, pauli_2_band, i, buf);
+        }
+        if (pauli_3_band >= 0) {
+          int m;
+          for (m=0; m<chunk_size; ++m) {
+            if (m==0) buf[j] = 0.0;
+            for (j=0; j<ns; ++j)
+              buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
+          }
+          for (j=0; j<ns; ++j)
+            buf[j] /= (float)chunk_size;
+          put_band_float_line(fout, outMeta, pauli_3_band, i, buf);
+        }
+      }
+      else {
+        // not multilooking -- no averaging necessary
+        if (pauli_1_band >= 0) {
+          for (j=0; j<ns; ++j)
+            buf[j] = complex_amp(img_rows->pauli_lines[l][j].A);
+          put_band_float_line(fout, outMeta, pauli_1_band, i, buf);
+        }
+        if (pauli_2_band >= 0) {
+          for (j=0; j<ns; ++j)
+            buf[j] = complex_amp(img_rows->pauli_lines[l][j].B);
+          put_band_float_line(fout, outMeta, pauli_2_band, i, buf);
+        }
+        if (pauli_3_band >= 0) {
+          for (j=0; j<ns; ++j)
+            buf[j] = complex_amp(img_rows->pauli_lines[l][j].C);
+          put_band_float_line(fout, outMeta, pauli_3_band, i, buf);
+        }
+      }
+
+      if (entropy_band >= 0 || anisotropy_band >= 0)
+      {
+          // coherence -- do ensemble averaging for each element
+          for (j=0; j<ns; ++j) {
+              int ii,jj,m;
+              for (ii=0; ii<3; ++ii) {
+                  for (jj=0; jj<3; ++jj) {
+                      gsl_complex c = gsl_complex_rect(0,0);
+                      int k,n=0;
+                      for (m=0; m<chunk_size; ++m) {
+                          for (k=j-hw;k<=j+hw;++k) {
+                              if (k>=0 && k<ns && m+i>l && m+i<onl-l) {
+                                  ++n;
+                                  complexFloat f =
+                                    img_rows->coh_lines[m][k]->coeff[ii][jj];
+                                  // cheat for speed
+                                  //c.dat[0] += f.real;
+                                  //c.dat[1] += f.imag;
+                                  c = gsl_complex_add_real(c, f.real);
+                                  c = gsl_complex_add_imag(c, f.imag);
+                              }
+                          }
+                      }
+                      if (n>1) {
+                          gsl_complex_div_real(c, (float)n);
+                      }
+                      gsl_matrix_complex_set(T,ii,jj,c);
+                  }
+              }
+
+              gsl_eigen_hermv(T, eval, evec, ws);
+              gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
+
+              double e1 = gsl_vector_get(eval, 0);
+              double e2 = gsl_vector_get(eval, 1);
+              double e3 = gsl_vector_get(eval, 2);
+
+              double eT = e1+e2+e3;
+
+              double P1 = e1/eT;
+              double P2 = e2/eT;
+              double P3 = e3/eT;
+
+              double P1l3 = log3(P1);
+              double P2l3 = log3(P2);
+              double P3l3 = log3(P3);
+
+              // If a Pn value is small enough, the log value will be NaN.
+              // In this case, the value of -Pn*log3(Pn) is supposed to be
+              // zero - we have to force it.
+              entropy[j] =
+                  (meta_is_valid_double(P1l3) ? -P1*P1l3 : 0) +
+                  (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
+                  (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
+
+              if (P2+P3 != 0)
+                anisotropy[j] = (P2-P3)/(P2+P3);
+              else
+                anisotropy[j] = 0;
+          }
+
+          if (entropy_band >= 0)
+              put_band_float_line(fout, outMeta, entropy_band, i, entropy);
+          if (anisotropy_band >= 0)
+              put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
+      }
+
+      if (alpha_band >= 0) {
+          // alpha: arccos of the 1st pauli vector element
+          for (j=0; j<ns; ++j) {
+              complexVector v =
+                  complex_vector_normalize(img_rows->pauli_lines[l][j]);
+              buf[j] = R2D*acos(complex_amp(v.A));
+          }
+          put_band_float_line(fout, outMeta, alpha_band, i, buf);
+      }
+
+      // load the next row, if there are still more to go
+      if (i<onl-1) {
+          if (multi) {
+              polarimetric_image_rows_load_new_rows(img_rows, fin);
+          }
+          else {
+              polarimetric_image_rows_load_next_row(img_rows, fin);
+              assert(img_rows->current_row == i+1);
+          }
+      }
+
+      asfLineMeter(i,onl);
+  }
+
+  gsl_vector_free(eval);
+  gsl_eigen_hermv_free(ws);
+  gsl_matrix_complex_free(evec);
+  gsl_matrix_complex_free(T);
+
+  polarimetric_image_rows_free(img_rows);
+
+  fclose(fin);
+  fclose(fout);
+
+  free(buf);
+  free(entropy);
+  free(anisotropy);
+
+  free(out_img_name);
+  free(in_img_name);
+  free(meta_name);
+
+  meta_free(inMeta);
+  meta_free(outMeta);
 }
 
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)

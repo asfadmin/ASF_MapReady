@@ -14,7 +14,10 @@
 "       band 3: HH + VV (odd bounce) [Pauli blue]\n"\
 "       band 4: Entropy\n"\
 "       band 5: Anisotropy\n"\
-"       band 6: Alpha\n\n"
+"       band 6: Alpha\n"\
+"       band 7: HH [Sinclair red]\n"\
+"       band 8: (HV+VH)/2 [Sinclair green]\n"\
+"       band 9: VV [Sinclair blue]\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -140,6 +143,7 @@ main (int argc, char *argv[])
   outFile = argv[currArg+1];
 
   polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+  //polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, -1, -1, -1, -1, -1, -1);
 
   asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;
