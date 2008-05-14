@@ -906,8 +906,18 @@ void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
 {
-  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha"
+  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
 		 "for Cloude-Pottier classification\n");
+  if (tc_flag)
+    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, 1, 2, 3, -1, -1, -1);
+  else 
+    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
+}
+
+void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
+                                  int tc_flag)
+{
+  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha.\n");
   if (tc_flag)
     polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, 1, 2, 3, -1, -1, -1);
   else 

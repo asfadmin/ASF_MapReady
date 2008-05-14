@@ -1479,8 +1479,7 @@ settings_to_config_file(const Settings *s,
     if (s->input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
         s->input_data_format != INPUT_FORMAT_ASF_INTERNAL)
         fprintf(cf, "dump envi header = 0\n");
-    fprintf(cf, "multilook SLC = %d\n",
-            s->polarimetry_setting == POLARIMETRY_NONE ? 0 : 1);
+    fprintf(cf, "multilook SLC = 0\n");
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     fprintf(cf, "\n");
 
@@ -1511,6 +1510,8 @@ settings_to_config_file(const Settings *s,
                 s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
         fprintf(cf, "cloude pottier ext = %d\n",
                 s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
+        fprintf(cf, "entropy anisotropy alpha = %d\n",
+                s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
         fprintf(cf, "\n");
     }
 
@@ -1572,7 +1573,9 @@ settings_to_config_file(const Settings *s,
       } else {
           fprintf(cf, "byte conversion = none\n");
       }
-      if (s->export_bands || s->polarimetry_setting != POLARIMETRY_NONE)
+      if (s->export_bands ||
+          s->polarimetry_setting == POLARIMETRY_PAULI ||
+          s->polarimetry_setting == POLARIMETRY_SINCLAIR)
       {
         if (s->polarimetry_setting == POLARIMETRY_PAULI) {
           fprintf(cf, "rgb banding = HH-VV,HV+VH,HH+VV\n");
@@ -1588,7 +1591,9 @@ settings_to_config_file(const Settings *s,
             strlen(s->green)>0 && strcmp(s->green,"-")!=0 ? s->green : "ignore";
           const char *b =
             strlen(s->blue)>0 && strcmp(s->blue,"-")!=0 ? s->blue : "ignore";
-          fprintf(cf, "rgb banding = %s,%s,%s\n", r, g, b);
+          fprintf(cf, "rgb banding = %s,", uc(r));
+          fprintf(cf, "%s,", uc(g));
+          fprintf(cf, "%s\n", uc(b));
         }
         else {
           fprintf(cf, "rgb banding = \n");
@@ -1677,7 +1682,7 @@ int apply_settings_from_config_file(char *configFile)
         s.polarimetry_setting = POLARIMETRY_CLOUDE8;
       else if (cfg->polarimetry->cloude_pottier_ext)
         s.polarimetry_setting = POLARIMETRY_CLOUDE16;
-      else
+      else if (cfg->polarimetry->cloude_pottier_nc)
         s.polarimetry_setting = POLARIMETRY_CLOUDE_NOCLASSIFY;
     }
 

@@ -1434,6 +1434,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	cpx2cloude_pottier(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_ext)
 	asfPrintError("Extended Cloude-Pottier classification not supported yet.\n");
+      else if (cfg->polarimetry->cloude_pottier_nc)
+	cpx2entropy_anisotropy_alpha(inFile, outFile,
+                                     cfg->general->terrain_correct);
       else if (cfg->polarimetry->k_means_wishart)
 	asfPrintError("K-means Wishart clustering not supported yet.\n");
       else if (cfg->polarimetry->k_means_wishart_ext)

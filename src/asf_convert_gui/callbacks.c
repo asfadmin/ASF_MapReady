@@ -934,10 +934,18 @@ void input_data_type_combobox_changed()
         GTK_TOGGLE_BUTTON(ers2_gain_fix_checkbutton), TRUE);
       gtk_widget_set_sensitive(ers2_gain_fix_checkbutton, TRUE);
     }
+
+    update_summary();
 }
 
 SIGNAL_CALLBACK void
 on_input_data_type_combobox_changed(GtkWidget *widget)
 {
   input_data_type_combobox_changed();
+}
+
+SIGNAL_CALLBACK void
+on_ers2_gain_fix_checkbutton_toggled(GtkWidget *widget)
+{
+  update_summary();
 }

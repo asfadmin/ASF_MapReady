@@ -1281,6 +1281,7 @@
 			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
+			      <signal name="toggled" handler="on_ers2_gain_fix_checkbutton_toggled" last_modification_time="Tue, 13 May 2008 21:56:28 GMT"/>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">0</property>

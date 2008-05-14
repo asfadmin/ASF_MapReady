@@ -426,6 +426,7 @@ convert_config *init_fill_convert_config(char *configFile)
   cfg->polarimetry->sinclair = 0;
   cfg->polarimetry->cloude_pottier = 0;
   cfg->polarimetry->cloude_pottier_ext = 0;
+  cfg->polarimetry->cloude_pottier_nc = 0;
   cfg->polarimetry->k_means_wishart = 0;
   cfg->polarimetry->k_means_wishart_ext = 0;
   cfg->polarimetry->lee_preserving = 0;
@@ -602,6 +603,9 @@ convert_config *init_fill_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier ext", 18)==0)
 	cfg->polarimetry->cloude_pottier_ext = 
 	  read_int(line, "cloude pottier ext");
+      if (strncmp(test, "entropy anisotropy alpha", 24)==0)
+        cfg->polarimetry->cloude_pottier_nc = 
+          read_int(line, "entropy anisotropy alpha");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
@@ -917,6 +921,9 @@ convert_config *read_convert_config(char *configFile)
       if (strncmp(test, "cloude pottier ext", 18)==0)
 	cfg->polarimetry->cloude_pottier_ext = 
 	  read_int(line, "cloude pottier ext");
+      if (strncmp(test, "entropy anisotropy alpha", 24)==0)
+        cfg->polarimetry->cloude_pottier_nc =
+          read_int(line, "entropy anisotropy alpha");
       if (strncmp(test, "k-means wishart", 15)==0)
         cfg->polarimetry->k_means_wishart =  read_int(line, "k-means wishart");
       if (strncmp(test, "k-means wishart ext", 19)==0)
@@ -1343,6 +1350,15 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# you can use the extended Cloude-Pottier classification using entropy, alpha\n"
 		"# and anisotropy to map the 4 bands to the 16 classes in one band in the output image.\n\n");
       fprintf(fConfig, "cloude pottier ext = %i\n", cfg->polarimetry->cloude_pottier_ext);
+      */
+      if (!shortFlag)
+	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
+		"# you can have the entropy, anisotropy, and alpha values (the values used\n"
+		"# in the Cloude Pottier classification) output in three separate\n"
+                "# bands.  This can be useful if you plan on doing your own classification,\n"
+                "# or simply wish to inspect the raw entropy, anisotropy, and/or alpha data.\n\n");
+      fprintf(fConfig, "entropy anisotropy alpha = %i\n\n", cfg->polarimetry->cloude_pottier_nc);
+      /*
       if (!shortFlag)
 	fprintf(fConfig, "\n# Some description about k-means Wishart \n\n");
       fprintf(fConfig, "k-means wishart = %i\n", cfg->polarimetry->k_means_wishart);

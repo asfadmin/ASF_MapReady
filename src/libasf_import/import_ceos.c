@@ -1756,12 +1756,21 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           else if (complex_flag)
             cpxFloat_buf[ll*ns + kk] = cpx;
           else if (cpx.real != 0.0 || cpx.imag != 0.0) {
-            amp_float_buf[ll*ns + kk] =
-              sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-            phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
+            if (multilook_flag) {
+              cpx_float_ml_buf[ll*ns + kk].real =
+                sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+              cpx_float_ml_buf[ll*ns + kk].imag =
+                atan2(cpx.imag, cpx.real);
+            }
+            else {
+              amp_float_buf[ll*ns + kk] =
+                sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+              phase_float_buf[ll*ns + kk] =  atan2(cpx.imag, cpx.real);
+            }
           }
-          else
+          else {
             amp_float_buf[ll*ns + kk] = phase_float_buf[ll*ns + kk] = 0.0;
+          }
         }
       }
       

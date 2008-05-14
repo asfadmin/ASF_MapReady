@@ -103,6 +103,7 @@ typedef struct
   int sinclair;           // Sinclair decomposition for quad-pole data
   int cloude_pottier;     // Entropy/Alpha segmentation (8 classes)
   int cloude_pottier_ext; // Entropy/Alpha/Anisotropy segmentation (16 classes)
+  int cloude_pottier_nc;  // Entropy/Alpha/Anisotropy data, not classified
   int k_means_wishart;    // K-means Wishart clustering
   int k_means_wishart_ext;// K-means Wishart Entropy/Alpha/Anisotropy clustering
   int lee_preserving;     // Lee category preserving

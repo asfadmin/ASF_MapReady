@@ -118,5 +118,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag);
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag);
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag);
+void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
+                                  int tc_flag);
 
 #endif

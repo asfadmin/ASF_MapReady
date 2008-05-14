@@ -126,7 +126,9 @@ void update_summary()
         break;
     }
 
-    if (!get_checked("ers2_gain_fix_checkbutton")) {
+    if (s->data_type != INPUT_TYPE_AMP &&
+        !get_checked("ers2_gain_fix_checkbutton"))
+    {
         sprintf(text, "%s\n  (no ERS2 gain correction)", text);
     }
 
