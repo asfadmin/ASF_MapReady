@@ -670,6 +670,47 @@ int asf_geocode_ext(project_parameters_t *pp, projection_type_t projection_type,
         lon_min, lon_max, overlap);
 }
 
+static int symmetry_test(meta_parameters *imd, double stpx, double stpy,
+                         double average_height)
+{
+  int ok = TRUE;
+  int ret1, ret2;
+
+  double st_lat, st_lon;   // Symmetry test lat and long values.
+  ret1 = meta_get_latLon (imd, stpy, stpx, average_height,
+                          &st_lat, &st_lon);
+  double strx, stry;       // Symmetry test result values.
+  ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height,
+                            &stry, &strx);
+  
+  // We will insist that the results are symmetric to within this
+  // fraction after transforming out and back.
+  const double sym_th = 0.1;   // Symmetry threshold.
+  if (ret1 || ret2) {
+    asfPrintWarning("Symmetry test failed! %s %s.\n",
+                    ret1 ? "meta_get_latLon returned error" : "",
+                    ret2 ? "meta_get_lineSamp returned error" : "");
+    ok = FALSE;
+  }
+  if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
+    asfPrintWarning("Failed symmetry test: x- |%.5f-%.5f| = %.5f\n"
+                  "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
+                  strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
+    
+    // Abort if the error is "horrible" (more than a pixel)
+    if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
+      asfPrintWarning("Symmetry testing error too large!\n");
+    }
+
+    ok = FALSE;
+  }
+  else {
+    //asfPrintStatus("Point %f,%f --> symmetry test passed.\n",stpx,stpy);
+  }
+
+  return ok;
+}
+
 int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
                int force_flag, resample_method_t resample_method,
                double average_height, datum_type_t datum, double pixel_size,
@@ -1709,36 +1750,24 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         // input data, where it is off by 1.5% or so and therefore throws
         // this error check just a bit outside of a pixel.  But if the
         // problem is somewhere else I want to know.
-        if ( imd->sar &&  imd->sar->image_type != 'P' && !imd->transform) {
-            int ret1, ret2;
-            const double stpx = 1.0, stpy = 1.0;   // Symmetry test pixel indicies.
-            double st_lat, st_lon;   // Symmetry test lat and long values.
-            ret1 = meta_get_latLon (imd, stpy, stpx, average_height,
-                                    &st_lat, &st_lon);
-            double strx, stry;       // Symmetry test result values.
-            ret2 = meta_get_lineSamp (imd, st_lat, st_lon, average_height,
-                                        &stry, &strx);
+        if ( (imd->sar &&  imd->sar->image_type != 'P') ||
+             (imd->transform && imd->transform->parameter_count == 25)) {
+            asfPrintStatus ("Symmetry testing latLong vs. lineSamp...\n");
+            
+            int ok1,ok2,ok3,ok4;
+            int nl = imd->general->line_count;
+            int ns = imd->general->sample_count;
 
-            // We will insist that the results are symmetric to within this
-            // fraction after transforming out and back.
-            asfPrintStatus ("Symmetry testing latLong vs. lineSamp... ");
-            const double sym_th = 0.1;   // Symmetry threshold.
-            if (ret1 || ret2) {
-                asfPrintError("Symmetry test failed! %s %s.\n",
-                                ret1 ? "meta_get_latLon returned error" : "",
-                                ret2 ? "meta_get_lineSamp returned error" : "");
+            ok1 = symmetry_test(imd, 2, 2, average_height);
+            ok1 = symmetry_test(imd, 200, 200, average_height);
+            ok2 = symmetry_test(imd, nl-3, ns-3, average_height);
+            ok3 = symmetry_test(imd, nl-3, 2, average_height);
+            ok4 = symmetry_test(imd, 2, ns-3, average_height);
+            if (!ok1 || !ok2 || !ok3 || !ok4) {
+              report_func("Symmetry testing failed.\n");
             }
-            if (!(fabs (strx - stpx) < sym_th && fabs (stry - stpy) < sym_th)) {
-                asfPrintWarning("Failed symmetry test: x- |%.5f-%.5f| = %.5f\n"
-                        "                      y- |%.5f-%.5f| = %.5f  (tol=%.2f)\n",
-                        strx,stpx,fabs(strx-stpx),stry,stpy,fabs(stry-stpy),sym_th);
-
-                // Abort if the error is "horrible" (more than a pixel)
-                if (fabs (strx-stpx) > 10*sym_th || fabs (stry-stpy) > 10*sym_th) {
-                    report_func("Symmetry testing error too large.\n");
-                }
-            } else {
-                asfPrintStatus ("good to within %lf pixels.\n", sym_th);
+            else {
+              asfPrintStatus("Good.\n");
             }
         }
 

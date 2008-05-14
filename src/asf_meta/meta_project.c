@@ -234,12 +234,12 @@ void alos_to_latlon(meta_parameters *meta,
                y[5]*i3*j4 + y[6]*i3*j3 + y[7]*i3*j2 + y[8]*i3*j + y[9]*i3 +
 	       y[10]*i2*j4 + y[11]*i2*j3 + y[12]*i2*j2 + y[13]*i2*j + 
 	       y[14]*i2 + y[15]*i*j4 + y[16]*i*j3 + y[17]*i*j2 + y[18]*i*j +
-	       y[20]*j4 + y[21]*j3 + y[22]*j2 + y[23]*j + y[24];
+               y[19]*i + y[20]*j4 + y[21]*j3 + y[22]*j2 + y[23]*j + y[24];
         *lat = x[0]*i4*j4 + x[1]*i4*j3 + x[2]*i4*j2 + x[3]*i4*j + x[4]*i4 +
                x[5]*i3*j4 + x[6]*i3*j3 + x[7]*i3*j2 + x[8]*i3*j + x[9]*i3 +
 	       x[10]*i2*j4 + x[11]*i2*j3 + x[12]*i2*j2 + x[13]*i2*j + 
 	       x[14]*i2 + x[15]*i*j4 + x[16]*i*j3 + x[17]*i*j2 + x[18]*i*j +
-	       x[20]*j4 + x[21]*j3 + x[22]*j2 + x[23]*j + x[24];
+               x[19]*i + x[20]*j4 + x[21]*j3 + x[22]*j2 + x[23]*j + x[24];
     }
 
     // optical data transformation
