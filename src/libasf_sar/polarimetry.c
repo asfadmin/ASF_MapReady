@@ -576,11 +576,11 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       else if (pauli_3_band == i)
           strcat(bands, "HH+VV,");
       else if (entropy_band == i)
-          strcat(bands, "ENTROPY,");
+          strcat(bands, "Entropy,");
       else if (anisotropy_band == i)
-          strcat(bands, "ANISOTROPY,");
+          strcat(bands, "Anisotropy,");
       else if (alpha_band == i)
-          strcat(bands, "ALPHA,");
+          strcat(bands, "Alpha,");
       else
           break;
   }

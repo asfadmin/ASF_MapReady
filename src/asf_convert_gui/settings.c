@@ -1591,9 +1591,9 @@ settings_to_config_file(const Settings *s,
             strlen(s->green)>0 && strcmp(s->green,"-")!=0 ? s->green : "ignore";
           const char *b =
             strlen(s->blue)>0 && strcmp(s->blue,"-")!=0 ? s->blue : "ignore";
-          fprintf(cf, "rgb banding = %s,", uc(r));
-          fprintf(cf, "%s,", uc(g));
-          fprintf(cf, "%s\n", uc(b));
+          fprintf(cf, "rgb banding = %s,", r);
+          fprintf(cf, "%s,", g);
+          fprintf(cf, "%s\n", b);
         }
         else {
           fprintf(cf, "rgb banding = \n");
