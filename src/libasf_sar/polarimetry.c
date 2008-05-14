@@ -505,6 +505,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   float *buf = MALLOC(sizeof(float)*ns);
   float *entropy = MALLOC(sizeof(float)*ns);
   float *anisotropy = MALLOC(sizeof(float)*ns);
+  float *alpha = MALLOC(sizeof(float)*ns);
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
   //   *lines[0] = ALL ZEROS
@@ -742,7 +743,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
       }
 
-      if (entropy_band >= 0 || anisotropy_band >= 0)
+      if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
       {
           // coherence -- do ensemble averaging for each element
           for (j=0; j<ns; ++j) {
@@ -801,14 +802,43 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                 anisotropy[j] = (P2-P3)/(P2+P3);
               else
                 anisotropy[j] = 0;
+
+              // mathematically, anisotropy is limited to be between 0 and 1.
+              // however, it sometimes sneaks out of that range because of
+              // numerical anomalies (usually, one really big eigenvalue)
+              if (!meta_is_valid_double(anisotropy[j]))
+                anisotropy[j] = 0.0;
+              else if (anisotropy[j] < 0)
+                anisotropy[j] = 0.0;
+              else if (anisotropy[j] > 1)
+                anisotropy[j] = 1.0;
+
+              // calculate the "mean alpha" (mean scattering angle)
+              // this is the polar angle when expressing each eigenvector
+              // in spherical coordinates.  the mean alpha is weighted by
+              // the eigenvector (so weight by P1-3)
+              gsl_complex evec00 = gsl_matrix_complex_get(evec, 0, 0);
+              double alpha1 = acos(GSL_REAL(evec00));
+
+              gsl_complex evec01 = gsl_matrix_complex_get(evec, 0, 1);
+              double alpha2 = acos(GSL_REAL(evec01));
+
+              gsl_complex evec02 = gsl_matrix_complex_get(evec, 0, 2);
+              double alpha3 = acos(GSL_REAL(evec02));
+
+              alpha[j] = R2D*(P1*alpha1 + P2*alpha2 + P3*alpha3);
+              if (!meta_is_valid_double(alpha[j]))
+                alpha[j] = 0.0;
           }
 
           if (entropy_band >= 0)
-              put_band_float_line(fout, outMeta, entropy_band, i, entropy);
+            put_band_float_line(fout, outMeta, entropy_band, i, entropy);
           if (anisotropy_band >= 0)
-              put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
+            put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
+          if (alpha_band >= 0)
+            put_band_float_line(fout, outMeta, alpha_band, i, alpha);
       }
-
+/*
       if (alpha_band >= 0) {
           // alpha: arccos of the 1st pauli vector element
           for (j=0; j<ns; ++j) {
@@ -818,7 +848,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           }
           put_band_float_line(fout, outMeta, alpha_band, i, buf);
       }
-
+*/
       // load the next row, if there are still more to go
       if (i<onl-1) {
           if (multi) {
@@ -846,6 +876,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   free(buf);
   free(entropy);
   free(anisotropy);
+  free(alpha);
 
   free(out_img_name);
   free(in_img_name);
