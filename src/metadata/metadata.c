@@ -172,6 +172,11 @@ char *get_record_as_string(char *fileName, int reqrec)
     if (0 == strncmp(facility, "EOC", 3))
       reqrec = 230; // JAXA style
   }
+  // Make sure the map projection record for ALOS is found, regardless of
+  // which switch is called
+  ceos_description *ceos = get_ceos_description(fileName, NOREPORT);
+  if ((ceos->sensor == AVNIR || ceos->sensor == PRISM) && reqrec == 20)
+    reqrec = 44;
 
   switch (reqrec) 
     {
@@ -455,6 +460,7 @@ char *get_record_as_string(char *fileName, int reqrec)
       break;
     }
   FREE(dssr);
+  FREE(ceos);
   free_ceos_names(dataNames, metaName);
   sprintf(ret_str,"%s record not found.\n\n", rectype_str);
   if (!ret)
