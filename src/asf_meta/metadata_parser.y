@@ -888,6 +888,12 @@ void fill_structure_field(char *field_name, void *valp)
       if ( !strcmp(field_name, coeff) )
       { MTRANSFORM->x[ii] = VALP_AS_DOUBLE; return; }
     }
+    if (MTRANSFORM->parameter_count == 25) {
+      if ( !strcmp(field_name, "origin pixel") )
+	{ MTRANSFORM->origin_pixel = VALP_AS_DOUBLE; return; }
+      if ( !strcmp(field_name, "origin line") )
+	{ MTRANSFORM->origin_line = VALP_AS_DOUBLE; return; }
+    }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "i(%d)", ii);
       if ( !strcmp(field_name, coeff) )
@@ -897,6 +903,12 @@ void fill_structure_field(char *field_name, void *valp)
       sprintf(coeff, "j(%d)", ii);
       if ( !strcmp(field_name, coeff) )
       { MTRANSFORM->l[ii] = VALP_AS_DOUBLE; return; }
+    }
+    if (MTRANSFORM->parameter_count == 25) {
+      if ( !strcmp(field_name, "origin lat") )
+	{ MTRANSFORM->origin_lat = VALP_AS_DOUBLE; return; }
+      if ( !strcmp(field_name, "origin lon") )
+	{ MTRANSFORM->origin_lon = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii<6; ii++) {
       sprintf(coeff, "incid_a(%d)", ii);

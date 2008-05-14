@@ -1048,6 +1048,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 	meta->transform->l[ii] = facdr.c[ii];
 	meta->transform->s[ii] = facdr.d[ii];
       }
+      meta->transform->origin_lat = facdr.origin_lat;
+      meta->transform->origin_lon = facdr.origin_lon;
+      meta->transform->origin_pixel = facdr.origin_pixel;
+      meta->transform->origin_line = facdr.origin_line;
     }
 
     for (ii=0; ii<6; ++ii)      

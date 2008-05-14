@@ -562,27 +562,39 @@ void meta_write(meta_parameters *meta, const char *file_name)
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "phi(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->y[ii],
-          "latitude transformation parameter");
+          "Latitude transformation parameter");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "lambda(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->x[ii],
-          "longitude transformation parameter");
+          "Longitude transformation parameter");
+    }
+    if (meta->transform->parameter_count == 25) {
+      meta_put_double(fp, "origin pixel:", meta->transform->origin_pixel,
+		      "Origin pixel for transformation");
+      meta_put_double(fp, "origin line:", meta->transform->origin_line,
+		      "Origin line for transformation");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "i(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->s[ii],
-          "pixel transformation parameter");
+          "Pixel transformation parameter");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "j(%d):", ii);
       meta_put_double(fp,coeff,meta->transform->l[ii],
-                      "line transformation parameter");
+                      "Line transformation parameter");
+    }
+    if (meta->transform->parameter_count == 25) {
+      meta_put_double(fp, "origin lat:", meta->transform->origin_lat,
+		      "Origin latitude [degrees]");
+      meta_put_double(fp, "origin lon:", meta->transform->origin_lon,
+		      "Origin longitude [degrees]");
     }
     for (ii=0; ii<6; ++ii) {
       sprintf(coeff, "incid_a(%d):", ii);
       meta_put_double(fp, coeff, meta->transform->incid_a[ii],
-                      "incidence angle transformation parameter");
+                      "Incidence angle transformation parameter");
     }
     for (ii=0; ii<10; ++ii) {
       sprintf(coeff, "map_a(%d):", ii);

@@ -193,7 +193,8 @@ void alos_to_latlon(meta_parameters *meta,
 {
     assert(meta->transform);
     assert(meta->transform->parameter_count == 4 ||
-           meta->transform->parameter_count == 10);
+           meta->transform->parameter_count == 10 ||
+	   meta->transform->parameter_count == 25);
 
     double *x = meta->transform->x;
     double *y = meta->transform->y;
@@ -209,15 +210,48 @@ void alos_to_latlon(meta_parameters *meta,
           xSample -= z*tan(PI/2-incid)/meta->general->x_pixel_size;
     }
 
-    double i = xSample + 1;
-    double j = yLine + 1;
+    double i, j;
+    if (meta->transform->parameter_count < 25) {
+      i = xSample + 1;
+      j = yLine + 1;
+    }
+    else {
+      i = xSample;
+      j = yLine;
+    }
+
+    // extended SAR data transformation
+    if (meta->transform->parameter_count == 25) {
+        i -= meta->transform->origin_pixel;
+        j -= meta->transform->origin_line;
+	double i2 = i*i;
+	double j2 = j*j;
+	double i3 = i2*i;
+	double j3 = j2*j;
+	double i4 = i2*i2;
+	double j4 = j2*j2;
+        *lon = y[0]*i4*j4 + y[1]*i4*j3 + y[2]*i4*j2 + y[3]*i4*j + y[4]*i4 +
+               y[5]*i3*j4 + y[6]*i3*j3 + y[7]*i3*j2 + y[8]*i3*j + y[9]*i3 +
+	       y[10]*i2*j4 + y[11]*i2*j3 + y[12]*i2*j2 + y[13]*i2*j + 
+	       y[14]*i2 + y[15]*i*j4 + y[16]*i*j3 + y[17]*i*j2 + y[18]*i*j +
+	       y[20]*j4 + y[21]*j3 + y[22]*j2 + y[23]*j + y[24];
+        *lat = x[0]*i4*j4 + x[1]*i4*j3 + x[2]*i4*j2 + x[3]*i4*j + x[4]*i4 +
+               x[5]*i3*j4 + x[6]*i3*j3 + x[7]*i3*j2 + x[8]*i3*j + x[9]*i3 +
+	       x[10]*i2*j4 + x[11]*i2*j3 + x[12]*i2*j2 + x[13]*i2*j + 
+	       x[14]*i2 + x[15]*i*j4 + x[16]*i*j3 + x[17]*i*j2 + x[18]*i*j +
+	       x[20]*j4 + x[21]*j3 + x[22]*j2 + x[23]*j + x[24];
+    }
 
     // optical data transformation
-    if (meta->transform->parameter_count == 10) {
-        *lat = y[0] + y[1]*i + y[2]*j + y[3]*i*j + y[4]*i*i + y[5]*j*j +
-               y[6]*i*i*j + y[7]*i*j*j + y[8]*i*i*i + y[9]*j*j*j;
-        *lon = x[0] + x[1]*i + x[2]*j + x[3]*i*j + x[4]*i*i + x[5]*j*j +
-               x[6]*i*i*j + x[7]*i*j*j + x[8]*i*i*i + x[9]*j*j*j;
+    else if (meta->transform->parameter_count == 10) {
+	double i2 = i*i;
+	double j2 = j*j;
+	double i3 = i2*i;
+	double j3 = j2*j;
+        *lat = y[0] + y[1]*i + y[2]*j + y[3]*i*j + y[4]*i2 + y[5]*j2 +
+               y[6]*i2*j + y[7]*i*j2 + y[8]*i3 + y[9]*j3;
+        *lon = x[0] + x[1]*i + x[2]*j + x[3]*i*j + x[4]*i2 + x[5]*j2 +
+               x[6]*i2*j + x[7]*i*j2 + x[8]*i3 + x[9]*j3;
     }
     // SAR data transformation
     else if (meta->transform->parameter_count == 4) {
