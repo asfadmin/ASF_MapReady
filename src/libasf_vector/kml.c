@@ -1,3 +1,4 @@
+
 #include "shapefil.h"
 #include "asf_vector.h"
 #include "asf.h"
@@ -1104,6 +1105,15 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   latLon2UTM_zone(lat_LL, lon_LL, h, zone, &ll_x, &ll_y);
   latLon2UTM_zone(clat, clon, h, zone, &ctr_x, &ctr_y);
 
+  // for points in the southern hemisphere, eliminate the false
+  // northing, so all points are -10000000 to +10000000 (normally,
+  // UTM has 0 to +10000000 twice)
+  if (lat_UL < 0) ul_y -= 10000000;
+  if (lat_UR < 0) ur_y -= 10000000;
+  if (lat_LL < 0) ll_y -= 10000000;
+  if (lat_LR < 0) lr_y -= 10000000;
+  if (clat < 0) ctr_y -= 10000000;
+
   double ang1 = atan2(ul_y-ur_y, ur_x-ul_x);
   double ang2 = atan2(ll_y-lr_y, lr_x-ll_x);
   double ang = (ang1+ang2)/2;
@@ -1141,38 +1151,32 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
     if (!dir)
       asfPrintError("Must pass in a directory for the overlay files!\n");
     else {
-      printf("UL: %lf,%lf\n", ul_x,ul_y);
-      printf("UR: %lf,%lf\n", ur_x,ur_y);
-      printf("LL: %lf,%lf\n", ll_x,ll_y);
-      printf("LR: %lf,%lf\n", lr_x,lr_y);
-      printf("angle= %lf\n", ang*R2D);
+      //printf("UL: %lf,%lf %f,%f\n", ul_x,ul_y,lat_UL,lon_UL);
+      //printf("UR: %lf,%lf %f,%f\n", ur_x,ur_y,lat_UR,lon_UR);
+      //printf("LL: %lf,%lf %f,%f\n", ll_x,ll_y,lat_LL,lon_LL);
+      //printf("LR: %lf,%lf %f,%f\n", lr_x,lr_y,lat_LR,lon_LR);
+      //printf("angle= %lf\n", ang*R2D);
 
       rotate(ul_x, ul_y, ctr_x, ctr_y, ang, &ul_x_rot, &ul_y_rot);
       rotate(ur_x, ur_y, ctr_x, ctr_y, ang, &ur_x_rot, &ur_y_rot);
       rotate(ll_x, ll_y, ctr_x, ctr_y, ang, &ll_x_rot, &ll_y_rot);
       rotate(lr_x, lr_y, ctr_x, ctr_y, ang, &lr_x_rot, &lr_y_rot);
 
-      printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
-      printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
-      printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
-      printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
-
-      if (clat < 0) {
-        // account for the false northing in the southern hemisphere
-        ul_y_rot -= 10000000;
-        ur_y_rot -= 10000000;
-        ll_y_rot -= 10000000;
-        lr_y_rot -= 10000000;
-      }
+      //printf("Rotated UL: %lf,%lf\n", ul_x_rot,ul_y_rot);
+      //printf("Rotated UR: %lf,%lf\n", ur_x_rot,ur_y_rot);
+      //printf("Rotated LL: %lf,%lf\n", ll_x_rot,ll_y_rot);
+      //printf("Rotated LR: %lf,%lf\n", lr_x_rot,lr_y_rot);
 
       UTM2latLon(ul_x_rot, ul_y_rot, h, zone, &lat_UL_rot, &lon_UL_rot);
       UTM2latLon(ur_x_rot, ur_y_rot, h, zone, &lat_UR_rot, &lon_UR_rot);
       UTM2latLon(ll_x_rot, ll_y_rot, h, zone, &lat_LL_rot, &lon_LL_rot);
       UTM2latLon(lr_x_rot, lr_y_rot, h, zone, &lat_LR_rot, &lon_LR_rot);
-      //double box_north_lat = (lat_UL_rot + lat_UR_rot)/2;
-      //double box_south_lat = (lat_LL_rot + lat_LR_rot)/2;
-      //double box_east_lon = (lon_UL_rot + lon_LL_rot)/2;
-      //double box_west_lon = (lon_UR_rot + lon_LR_rot)/2;
+
+      //printf("corner points (lat/lon):\n");
+      //printf("UL: %f,%f\n", lat_UL_rot, lon_UL_rot);
+      //printf("UR: %f,%f\n", lat_UR_rot, lon_UR_rot);
+      //printf("LL: %f,%f\n", lat_LL_rot, lon_LL_rot);
+      //printf("LR: %f,%f\n", lat_LR_rot, lon_LR_rot);
 
       double box_north_lat = lat_UL_rot;
       double box_south_lat = lat_LR_rot;
@@ -1189,6 +1193,11 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       double upper_lon = max4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
       double lower_lon = min4(lon_UL_rot, lon_LL_rot, lon_LR_rot, lon_UR_rot);
 
+      //printf("Upper lat: %f\n", upper_lat);
+      //printf("Lower lat: %f\n", lower_lat);
+      //printf("Upper lon: %f\n", upper_lon);
+      //printf("Lower lon: %f\n", lower_lon);
+
       fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
       fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
       fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
@@ -1199,17 +1208,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "    </outerBoundaryIs>\n");
       fprintf(kml_file, "  </Polygon>\n");
       fprintf(kml_file, "</Placemark>\n");
-
-      //if (meta->general->orbit_direction == 'D')
-      //    swap(&box_south_lat, &box_north_lat);
-
       fprintf(kml_file, "<GroundOverlay>\n");
-      //fprintf(kml_file, "  <description>\n");
-      //fprintf(kml_file, "    sensor/mode: %s/%s\n",
-      //        meta->general->sensor, meta->general->mode);
-      //fprintf(kml_file, "    orbit/frame: %d/%d\n",
-      //        meta->general->orbit, meta->general->frame);
-      //fprintf(kml_file, "  </description>\n");
       fprintf(kml_file, "  <name>%s</name>\n", name);
       fprintf(kml_file, "  <LookAt>\n");
       fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
@@ -1231,7 +1230,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "  </LatLonBox>\n");
 
       fprintf(kml_file, "</GroundOverlay>\n");
-      }
+    }
   }
 }
 
@@ -1388,7 +1387,6 @@ void write_kml_overlay(char *filename)
   FCLOSE(kml_file);
   FREE(basename);
   FREE(kml_filename);
-
 }
 
 void write_kml_style_keys(FILE *kml_file)
