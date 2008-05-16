@@ -323,8 +323,10 @@ char *image_data_type2str(int image_data_type)
       strcpy(retstr, "GEOREFERENCED_IMAGE");
       break;
     case GEOCODED_IMAGE:
-       strcpy(retstr, "GEOCODED_IMAGE");
+      strcpy(retstr, "GEOCODED_IMAGE");
       break;
+    case POLARIMETRIC_IMAGE:
+      strcpy(retstr, "POLARIMETRIC_IMAGE");
     case LUT_IMAGE:
       strcpy(retstr, "LUT_IMAGE");
       break;
