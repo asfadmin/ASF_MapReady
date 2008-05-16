@@ -76,8 +76,6 @@ void ceos_init_sar_dpaf(ceos_description *ceos, const char *in_fName,
       meta_parameters *meta);
 void ceos_init_sar_ipaf(ceos_description *ceos, const char *in_fName,
       meta_parameters *meta);
-void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
-         meta_parameters *meta);
 void ceos_init_sar_beijing(ceos_description *ceos, const char *in_fName,
          meta_parameters *meta);
 int  meta_sar_to_startXY (meta_parameters *meta,
@@ -530,8 +528,12 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   struct proc_parm_rec *ppr=NULL;
   struct VMPDREC *mpdr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
-  char beamname[32], buf[50];
+  char beamname[32], buf[50], **dataName;
   double re, rp, tan_lat;
+  ymd_date date;
+  hms_time time;
+  double firstTime, centerTime;
+  int nBands;
 
   dssr = &ceos->dssr;
   iof = (struct IOF_VFDR*) MALLOC(sizeof(struct IOF_VFDR));
@@ -1097,7 +1099,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   if (ceos->product != SLC) {
     int ii;
     struct trl_file_des_rec tfdr;
-    get_tfdr(in_fName, &tfdr);
+    get_tfdr((char*)in_fName, &tfdr);
     struct JAXA_FACDR facdr;
     get_jaxa_facdr(in_fName, &facdr);
 
