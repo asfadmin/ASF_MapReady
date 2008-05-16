@@ -301,8 +301,29 @@ char *image_data_type2str(int image_data_type)
     case PHASE_IMAGE:
       strcpy(retstr, "PHASE_IMAGE");
       break;
+    case POWER_IMAGE:
+      strcpy(retstr, "POWER_IMAGE");
+      break;
+    case SIGMA_IMAGE:
+      strcpy(retstr, "SIGMA_IMAGE");
+      break;
+    case GAMMA_IMAGE:
+      strcpy(retstr, "GAMMA_IMAGE");
+      break;
+    case BETA_IMAGE:
+      strcpy(retstr, "BETA_IMAGE");
+      break;
+    case INTERFEROGRAM:
+      strcpy(retstr, "INTERFEROGRAM");
+      break;
     case COHERENCE_IMAGE:
       strcpy(retstr, "COHERENCE_IMAGE");
+      break;
+    case GEOREFERENCED_IMAGE:
+      strcpy(retstr, "GEOREFERENCED_IMAGE");
+      break;
+    case GEOCODED_IMAGE:
+       strcpy(retstr, "GEOCODED_IMAGE");
       break;
     case LUT_IMAGE:
       strcpy(retstr, "LUT_IMAGE");
