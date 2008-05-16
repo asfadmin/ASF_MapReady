@@ -233,6 +233,26 @@ int main(int argc, char **argv)
   else {
     is_not_a_geotiff=1; // It's not a geotiff format input file
   }
+  meta_parameters *meta2 = meta_read(metafile2);
+  if (meta2 &&
+      strlen(meta2->general->basename) &&
+      strlen(meta2->general->sensor) &&
+      (strstr(".TIF", uc(meta2->general->basename)) ||
+       strncmp(meta2->general->sensor, "USGS", 4) == 0)
+     )
+  {
+    is_not_a_geotiff = 0; // Input file is a geotiff
+  }
+  if (meta2 &&
+      strlen(meta2->general->sensor_name) &&
+      strlen(meta2->general->basename) &&
+      !strstr(".TIF", uc(meta2->general->basename)) &&
+      strncmp_case(meta2->general->sensor_name, "SAR", 3) == 0
+     )
+  {
+    is_not_a_geotiff = 1; // Input file is not a geotiff
+  }
+  meta_free(meta2);
 
   /***** And away we go.... *****/
   diff_check_metadata(outputFile, is_not_a_geotiff, metafile1, metafile2);
