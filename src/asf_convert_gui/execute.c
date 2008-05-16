@@ -185,19 +185,21 @@ static void set_thumbnail(GtkTreeIter *iter, const gchar * tmp_dir,
 {
     if (use_thumbnails)
     {
-        int scaling_required = FALSE;
+        // changed this to always do scaling, no reason not to really
+        // since it is pretty quick 
+        int scaling_required = TRUE;
 
         char *basename = get_basename(out_full);
         char *thumbnail_name =
             MALLOC(sizeof(char)*(strlen(tmp_dir)+strlen(basename)+32));
         sprintf(thumbnail_name, "%s/%s_thumb.png", tmp_dir, basename);
 
-        if (!fileExists(thumbnail_name)) {
-            if (strcmp_case(findExt(out_full), ".png") == 0)
-            {
-                scaling_required = TRUE;
-                strcpy(thumbnail_name, out_full);
-            }
+        // if output was a png image, we will be using that instead
+        // of the "_thumb" file
+        if (!fileExists(thumbnail_name) && 
+            strcmp_case(findExt(out_full), ".png") == 0)
+        {
+            strcpy(thumbnail_name, out_full);
         }
 
         GError *err = NULL, *err_big = NULL;
