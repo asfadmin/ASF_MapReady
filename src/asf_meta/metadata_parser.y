@@ -348,8 +348,22 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = AMPLITUDE_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "PHASE_IMAGE") )
           MGENERAL->image_data_type = PHASE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "POWER_IMAGE") )
+          MGENERAL->image_data_type = POWER_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIGMA_IMAGE") )
+          MGENERAL->image_data_type = SIGMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GAMMA_IMAGE") )
+          MGENERAL->image_data_type = GAMMA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "BETA_IMAGE") )
+          MGENERAL->image_data_type = BETA_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "INTERFEROGRAM") )
+          MGENERAL->image_data_type = INTERFEROGRAM;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "COHERENCE_IMAGE") )
         MGENERAL->image_data_type = COHERENCE_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOREFERENCED_IMAGE") )
+          MGENERAL->image_data_type = GEOREFERENCED_IMAGE;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "GEOCODED_IMAGE") )
+          MGENERAL->image_data_type = GEOCODED_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "POLARIMETRIC_IMAGE") )
         MGENERAL->image_data_type = POLARIMETRIC_IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "LUT_IMAGE") )
@@ -890,9 +904,9 @@ void fill_structure_field(char *field_name, void *valp)
     }
     if (MTRANSFORM->parameter_count == 25) {
       if ( !strcmp(field_name, "origin pixel") )
-	{ MTRANSFORM->origin_pixel = VALP_AS_DOUBLE; return; }
+    { MTRANSFORM->origin_pixel = VALP_AS_DOUBLE; return; }
       if ( !strcmp(field_name, "origin line") )
-	{ MTRANSFORM->origin_line = VALP_AS_DOUBLE; return; }
+    { MTRANSFORM->origin_line = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii< MTRANSFORM->parameter_count; ii++) {
       sprintf(coeff, "i(%d)", ii);
@@ -906,9 +920,9 @@ void fill_structure_field(char *field_name, void *valp)
     }
     if (MTRANSFORM->parameter_count == 25) {
       if ( !strcmp(field_name, "origin lat") )
-	{ MTRANSFORM->origin_lat = VALP_AS_DOUBLE; return; }
+    { MTRANSFORM->origin_lat = VALP_AS_DOUBLE; return; }
       if ( !strcmp(field_name, "origin lon") )
-	{ MTRANSFORM->origin_lon = VALP_AS_DOUBLE; return; }
+    { MTRANSFORM->origin_lon = VALP_AS_DOUBLE; return; }
     }
     for (ii=0; ii<6; ii++) {
       sprintf(coeff, "incid_a(%d)", ii);

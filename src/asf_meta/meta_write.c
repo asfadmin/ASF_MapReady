@@ -16,7 +16,7 @@ void meta_put_double24(FILE *meta_file,char *name,double value,char *comment);
 void meta_put_int   (FILE *meta_file,char *name,int    value,char *comment);
 void meta_put_char  (FILE *meta_file,char *name,char   value,char *comment);
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
-			char *comment);
+                        char *comment);
 
 /* Given a meta_parameters structure pointer and a file name, write a
    metadata file for that structure.  */
@@ -104,74 +104,95 @@ void meta_write(meta_parameters *meta, const char *file_name)
     strcpy(comment,"Image data type (e.g. AMPLITUDE_IMAGE)");
     switch (meta->general->image_data_type) {
       case RAW_IMAGE:
-  meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","RAW_IMAGE",comment);
+        break;
       case COMPLEX_IMAGE:
-  meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","COMPLEX_IMAGE",comment);
+        break;
       case AMPLITUDE_IMAGE:
-  meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","AMPLITUDE_IMAGE",comment);
+        break;
       case PHASE_IMAGE:
-  meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","PHASE_IMAGE",comment);
+        break;
+      case POWER_IMAGE:
+        meta_put_string(fp,"image_data_type:","POWER_IMAGE",comment);
+        break;
+      case SIGMA_IMAGE:
+        meta_put_string(fp,"image_data_type:","SIGMA_IMAGE",comment);
+        break;
+      case GAMMA_IMAGE:
+        meta_put_string(fp,"image_data_type:","GAMMA_IMAGE",comment);
+        break;
+      case BETA_IMAGE:
+        meta_put_string(fp,"image_data_type:","BETA_IMAGE",comment);
+        break;
+      case INTERFEROGRAM:
+        meta_put_string(fp,"image_data_type:","INTERFEROGRAM",comment);
+        break;
       case COHERENCE_IMAGE:
-  meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","COHERENCE_IMAGE",comment);
+        break;
+      case GEOREFERENCED_IMAGE:
+        meta_put_string(fp,"image_data_type:","GEOREFERENCED_IMAGE",comment);
+        break;
+      case GEOCODED_IMAGE:
+        meta_put_string(fp,"image_data_type:","GEOCODED_IMAGE",comment);
+        break;
       case POLARIMETRIC_IMAGE:
-  meta_put_string(fp,"image_data_type:","POLARIMETRIC_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","POLARIMETRIC_IMAGE",comment);
+        break;
       case LUT_IMAGE:
-  meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","LUT_IMAGE",comment);
+        break;
       case ELEVATION:
-  meta_put_string(fp,"image_data_type:","ELEVATION",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","ELEVATION",comment);
+        break;
       case DEM:
-  meta_put_string(fp,"image_data_type:","DEM",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","DEM",comment);
+        break;
       case IMAGE:
-  meta_put_string(fp,"image_data_type:","IMAGE",comment);
-  break;
+        meta_put_string(fp,"image_data_type:","IMAGE",comment);
+        break;
       case MASK:
         meta_put_string(fp,"image_data_type:","MASK",comment);
         break;
       default:
-  meta_put_string(fp,"image_data_type:","???",comment);
-  break;
+        meta_put_string(fp,"image_data_type:",MAGIC_UNSET_STRING,comment);
+        break;
     }
   }
   if (META_VERSION >= 2.5) {
     strcpy(comment,"Radiometry (e.g. SIGMA)");
-    switch (meta->general->radiometry) 
+    switch (meta->general->radiometry)
       {
       case r_AMP:
-	meta_put_string(fp,"radiometry:","AMPLITUDE",comment);
-	break;
+    meta_put_string(fp,"radiometry:","AMPLITUDE",comment);
+    break;
       case r_SIGMA:
-	meta_put_string(fp,"radiometry:","SIGMA",comment);
-	break;
+    meta_put_string(fp,"radiometry:","SIGMA",comment);
+    break;
       case r_GAMMA:
-	meta_put_string(fp,"radiometry:","GAMMA",comment);
-	break;
+    meta_put_string(fp,"radiometry:","GAMMA",comment);
+    break;
       case r_BETA:
-	meta_put_string(fp,"radiometry:","BETA",comment);
-	break;
+    meta_put_string(fp,"radiometry:","BETA",comment);
+    break;
       case r_SIGMA_DB:
-	meta_put_string(fp,"radiometry:","SIGMA_DB",comment);
-	break;
+    meta_put_string(fp,"radiometry:","SIGMA_DB",comment);
+    break;
       case r_GAMMA_DB:
-	meta_put_string(fp,"radiometry:","GAMMA_DB",comment);
-	break;
+    meta_put_string(fp,"radiometry:","GAMMA_DB",comment);
+    break;
       case r_BETA_DB:
-	meta_put_string(fp,"radiometry:","BETA_DB",comment);
-	break;
+    meta_put_string(fp,"radiometry:","BETA_DB",comment);
+    break;
       case r_POWER:
-	meta_put_string(fp,"radiometry:","POWER",comment);
-	break;
+    meta_put_string(fp,"radiometry:","POWER",comment);
+    break;
       default:
-	meta_put_string(fp,"radiometry:","???",comment);
-	break;
+    meta_put_string(fp,"radiometry:","???",comment);
+    break;
       }
   }
   meta_put_string(fp,"system:", meta->general->system,
@@ -200,16 +221,16 @@ void meta_write(meta_parameters *meta, const char *file_name)
       "Range pixel size [m]");
   meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
       "Azimuth pixel size [m]");
-  meta_put_double_lf(fp,"center_latitude:", 
-		     meta->general->center_latitude, 4,
-		     "Approximate image center latitude");
-  meta_put_double_lf(fp,"center_longitude:", 
-		     meta->general->center_longitude, 4,
-		     "Approximate image center longitude");
+  meta_put_double_lf(fp,"center_latitude:",
+             meta->general->center_latitude, 4,
+             "Approximate image center latitude");
+  meta_put_double_lf(fp,"center_longitude:",
+             meta->general->center_longitude, 4,
+             "Approximate image center longitude");
   meta_put_double_lf(fp,"re_major:", meta->general->re_major, 3,
-		     "Major (equator) Axis of earth [m]");
+             "Major (equator) Axis of earth [m]");
   meta_put_double_lf(fp,"re_minor:", meta->general->re_minor, 3,
-		     "Minor (polar) Axis of earth [m]");
+             "Minor (polar) Axis of earth [m]");
   meta_put_double(fp,"bit_error_rate:", meta->general->bit_error_rate,
       "Fraction of bits which are in error");
   meta_put_int   (fp,"missing_lines:", meta->general->missing_lines,
@@ -306,11 +327,11 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double(fp,"cloud_percentage:",meta->optical->cloud_percentage,
         "Cloud cover percentage [%]");
     meta_put_double_lf(fp,"sun_azimuth_angle:",
-		       meta->optical->sun_azimuth_angle, 4,
-		       "Sun azimuth angle [degrees]");
+               meta->optical->sun_azimuth_angle, 4,
+               "Sun azimuth angle [degrees]");
     meta_put_double_lf(fp,"sun_elevation_angle:",
-		       meta->optical->sun_elevation_angle, 4,
-		       "Sun elevation angle [degrees]");
+               meta->optical->sun_elevation_angle, 4,
+               "Sun elevation angle [degrees]");
     meta_put_string(fp,"}","","End optical");
   }
 
@@ -390,15 +411,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
         "Projection Coordinate at top-left, Y direction");
     if (meta->projection->type != LAT_LONG_PSEUDO_PROJECTION) {
       meta_put_double_lf(fp,"perX:",meta->projection->perX, 3,
-			 "Projection Coordinate per pixel, X direction");
+             "Projection Coordinate per pixel, X direction");
       meta_put_double_lf(fp,"perY:",meta->projection->perY, 3,
-			 "Projection Coordinate per pixel, Y direction");
+             "Projection Coordinate per pixel, Y direction");
     }
     else {
       meta_put_double(fp,"perX:",meta->projection->perX,
-		      "Projection Coordinate per pixel, X direction");
+              "Projection Coordinate per pixel, X direction");
       meta_put_double(fp,"perY:",meta->projection->perY,
-			 "Projection Coordinate per pixel, Y direction");
+             "Projection Coordinate per pixel, Y direction");
     }
     meta_put_string(fp,"units:",meta->projection->units,
         "Units of projection [meters, seconds, degrees]");
@@ -418,60 +439,60 @@ void meta_write(meta_parameters *meta, const char *file_name)
     }
     if (META_VERSION >= 1.6)
       meta_put_double_lf(fp, "height:", meta->projection->height, 3,
-			 "Height [m]");
+             "Height [m]");
     meta_put_string(fp,"param {","","Projection specific parameters");
     switch ( meta->projection->type ) {
     case SCANSAR_PROJECTION: /* Along-track/cross-track projection.  */
       meta_put_string(fp,"atct {","","Begin along-track/cross-track projection");
       meta_put_double_lf(fp,"rlocal:",meta->projection->param.atct.rlocal, 3,
-			 "Local earth radius [m]");
+             "Local earth radius [m]");
       meta_put_double_lf(fp,"alpha1:",meta->projection->param.atct.alpha1, 4,
-			 "First rotation angle [degrees]");
+             "First rotation angle [degrees]");
       meta_put_double_lf(fp,"alpha2:",meta->projection->param.atct.alpha2, 4,
-			 "Second rotation angle [degrees]");
+             "Second rotation angle [degrees]");
       meta_put_double_lf(fp,"alpha3:",meta->projection->param.atct.alpha3, 4,
-			 "Third rotation angle [degrees]");
+             "Third rotation angle [degrees]");
       meta_put_string(fp,"}","","End atct");
       break;
     case ALBERS_EQUAL_AREA:
       meta_put_string(fp,"albers {","","Begin Albers Conical Equal Area projection");
       meta_put_double_lf(fp,"std_parallel1:",
-			 meta->projection->param.albers.std_parallel1, 4,
-			 "First standard parallel [degrees]");
+             meta->projection->param.albers.std_parallel1, 4,
+             "First standard parallel [degrees]");
       meta_put_double_lf(fp,"std_parallel2:",
-			 meta->projection->param.albers.std_parallel2, 4,
-			 "Second standard parallel [degrees]");
+             meta->projection->param.albers.std_parallel2, 4,
+             "Second standard parallel [degrees]");
       meta_put_double_lf(fp,"center_meridian:",
-			 meta->projection->param.albers.center_meridian, 4,
-			 "Longitude of center meridian [degrees]");
+             meta->projection->param.albers.center_meridian, 4,
+             "Longitude of center meridian [degrees]");
       meta_put_double_lf(fp,"orig_latitude:",
-			 meta->projection->param.albers.orig_latitude, 4,
-			 "Latitude of the projection origin [degrees]");
+             meta->projection->param.albers.orig_latitude, 4,
+             "Latitude of the projection origin [degrees]");
       if (META_VERSION >= 1.3) {
-	meta_put_double_lf(fp,"false_easting:",
-			   meta->projection->param.albers.false_easting, 3,
-			   "False easting [m]");
-	meta_put_double_lf(fp,"false_northing:",
-			   meta->projection->param.albers.false_northing, 3,
-			   "False northing [m]");
+    meta_put_double_lf(fp,"false_easting:",
+               meta->projection->param.albers.false_easting, 3,
+               "False easting [m]");
+    meta_put_double_lf(fp,"false_northing:",
+               meta->projection->param.albers.false_northing, 3,
+               "False northing [m]");
       }
       meta_put_string(fp,"}","","End albers");
       break;
     case LAMBERT_AZIMUTHAL_EQUAL_AREA:
       meta_put_string(fp,"lamaz {","","Begin Lambert Azimuthal Equal Area projection");
       meta_put_double_lf(fp,"center_lat:",
-			 meta->projection->param.lamaz.center_lat, 4,
-			 "Latitude at center of projection");
+             meta->projection->param.lamaz.center_lat, 4,
+             "Latitude at center of projection");
       meta_put_double_lf(fp,"center_lon:",
-			 meta->projection->param.lamaz.center_lon, 4,
-			 "Longitude at center of projection");
+             meta->projection->param.lamaz.center_lon, 4,
+             "Longitude at center of projection");
       if (META_VERSION >= 1.3) {
-	meta_put_double_lf(fp,"false_easting:",
-			   meta->projection->param.lamaz.false_easting, 3,
-			   "False easting [m]");
-	meta_put_double_lf(fp,"false_northing:",
-			   meta->projection->param.lamaz.false_northing, 3,
-			   "False northing [m]");
+    meta_put_double_lf(fp,"false_easting:",
+               meta->projection->param.lamaz.false_easting, 3,
+               "False easting [m]");
+    meta_put_double_lf(fp,"false_northing:",
+               meta->projection->param.lamaz.false_northing, 3,
+               "False northing [m]");
       }
       meta_put_string(fp,"}","","End lamaz");
       break;
@@ -516,15 +537,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_int   (fp,"zone:",meta->projection->param.utm.zone,"Zone Code");
       if (META_VERSION >= 1.3) {
   meta_put_double_lf(fp,"false_easting:",
-		     meta->projection->param.utm.false_easting, 3,
-		     "False easting [m]");
+             meta->projection->param.utm.false_easting, 3,
+             "False easting [m]");
   meta_put_double_lf(fp,"false_northing:",
-		     meta->projection->param.utm.false_northing, 3,
-		     "False northing [m]");
+             meta->projection->param.utm.false_northing, 3,
+             "False northing [m]");
   meta_put_double_lf(fp,"latitude:",meta->projection->param.utm.lat0, 4,
-		     "Latitude [degrees]");
+             "Latitude [degrees]");
   meta_put_double_lf(fp,"longitude:",meta->projection->param.utm.lon0, 4,
-		     "Longitude [degrees]");
+             "Longitude [degrees]");
   meta_put_double(fp,"scale_factor:", meta->projection->param.utm.scale_factor,
       "Scaling factor");
       }
@@ -571,9 +592,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
     }
     if (meta->transform->parameter_count == 25) {
       meta_put_double(fp, "origin pixel:", meta->transform->origin_pixel,
-		      "Origin pixel for transformation");
+              "Origin pixel for transformation");
       meta_put_double(fp, "origin line:", meta->transform->origin_line,
-		      "Origin line for transformation");
+              "Origin line for transformation");
     }
     for (ii=0; ii<meta->transform->parameter_count; ii++) {
       sprintf(coeff, "i(%d):", ii);
@@ -587,9 +608,9 @@ void meta_write(meta_parameters *meta, const char *file_name)
     }
     if (meta->transform->parameter_count == 25) {
       meta_put_double(fp, "origin lat:", meta->transform->origin_lat,
-		      "Origin latitude [degrees]");
+              "Origin latitude [degrees]");
       meta_put_double(fp, "origin lon:", meta->transform->origin_lon,
-		      "Origin longitude [degrees]");
+              "Origin longitude [degrees]");
     }
     for (ii=0; ii<6; ++ii) {
       sprintf(coeff, "incid_a(%d):", ii);
@@ -606,7 +627,7 @@ void meta_write(meta_parameters *meta, const char *file_name)
       meta_put_double(fp, coeff, meta->transform->map2ls_b[ii],
                       "Map to line/sample transformation parameter");
     }
-      
+
     meta_put_string(fp,"}","","End transform");
   }
 
@@ -623,13 +644,13 @@ void meta_write(meta_parameters *meta, const char *file_name)
     meta_put_double_lf(fp, "lon_peg_point:", meta->airsar->lon_peg_point, 4,
             "Longitude of peg point [degrees]");
     meta_put_double_lf(fp, "head_peg_point:", meta->airsar->head_peg_point, 4,
-		    "Heading at peg point [degrees]");
-    meta_put_double_lf(fp, "along_track_offset:", 
-		       meta->airsar->along_track_offset, 3,
-		       "Along-track offset S0 [m]");
-    meta_put_double_lf(fp, "cross_track_offset:", 
-		       meta->airsar->cross_track_offset, 3,
-		       "Cross-track offset C0 [m]");
+            "Heading at peg point [degrees]");
+    meta_put_double_lf(fp, "along_track_offset:",
+               meta->airsar->along_track_offset, 3,
+               "Along-track offset S0 [m]");
+    meta_put_double_lf(fp, "cross_track_offset:",
+               meta->airsar->cross_track_offset, 3,
+               "Cross-track offset C0 [m]");
     meta_put_string(fp, "}", "", "End airsar");
   }
 
@@ -658,29 +679,29 @@ void meta_write(meta_parameters *meta, const char *file_name)
   if (meta->location) {
     meta_put_string(fp,"location {","","Block containing image corner coordinates");
     meta_put_double_lf(fp,"lat_start_near_range:",
-		       meta->location->lat_start_near_range, 4,
-		       "Latitude at image start in near range");
+               meta->location->lat_start_near_range, 4,
+               "Latitude at image start in near range");
     meta_put_double_lf(fp,"lon_start_near_range:",
-		       meta->location->lon_start_near_range, 4,
-		       "Longitude at image start in near range");
+               meta->location->lon_start_near_range, 4,
+               "Longitude at image start in near range");
     meta_put_double_lf(fp,"lat_start_far_range:",
-		       meta->location->lat_start_far_range, 4,
-		       "Latitude at image start in far range");
+               meta->location->lat_start_far_range, 4,
+               "Latitude at image start in far range");
     meta_put_double_lf(fp,"lon_start_far_range:",
-		       meta->location->lon_start_far_range, 4,
-		       "Longitude at image start in far range");
+               meta->location->lon_start_far_range, 4,
+               "Longitude at image start in far range");
     meta_put_double_lf(fp,"lat_end_near_range:",
-		       meta->location->lat_end_near_range, 4,
-		       "Latitude at image end in near range");
+               meta->location->lat_end_near_range, 4,
+               "Latitude at image end in near range");
     meta_put_double_lf(fp,"lon_end_near_range:",
-		       meta->location->lon_end_near_range, 4,
-		       "Longitude at image end in near range");
+               meta->location->lon_end_near_range, 4,
+               "Longitude at image end in near range");
     meta_put_double_lf(fp,"lat_end_far_range:",
-		       meta->location->lat_end_far_range, 4,
-		       "Latitude at image end in far range");
+               meta->location->lat_end_far_range, 4,
+               "Latitude at image end in far range");
     meta_put_double_lf(fp,"lon_end_far_range:",
-		       meta->location->lon_end_far_range, 4,
-		       "Longitude at image end in far range");
+               meta->location->lon_end_far_range, 4,
+               "Longitude at image end in far range");
     meta_put_string(fp,"}","","End location");
   }
 
@@ -965,7 +986,7 @@ void meta_put_char(FILE *meta_file,char *name,char value,char *comment)
 }
 
 void meta_put_double_lf(FILE *meta_file,char *name,double value,int decimals,
-			char *comment)
+            char *comment)
 {
   char param[100], format[15];
   sprintf(format, "%%-16.%ilf", decimals);
