@@ -109,6 +109,10 @@
 #define DM_MAX_PERX               1500.0
 #define DM_MIN_PERY               -DM_MAX_PERX
 #define DM_MAX_PERY               -DM_MIN_PERX
+#define DM_GEOCENTRIC_MIN_PERX    0.0001
+#define DM_GEOCENTRIC_MAX_PERX    0.0010
+#define DM_GEOCENTRIC_MIN_PERY    -DM_GEOCENTRIC_MAX_PERX
+#define DM_GEOCENTRIC_MAX_PERY    -DM_GEOCENTRIC_MIN_PERX
 #define DM_MIN_HEIGHT             -2000.0
 #define DM_MAX_HEIGHT             25000.0
 //      UTM

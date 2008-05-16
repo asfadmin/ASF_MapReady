@@ -37,6 +37,7 @@ CAVEATS:
 
 /**** PROTOTYPES ****/
 void usage(char *name);
+int  is_geocentric(meta_parameters *meta);
 char *data_type2str(int data_type);
 char *image_data_type2str(int image_data_type);
 void projection_type_2_str(projection_type_t proj, char *proj_str);
@@ -1482,15 +1483,28 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
                   "Projection", "startY",
                   1, &failed);
 
-    verify_double(precheck_err_msgs, mp2->perX,
-                  DM_MIN_PERX, DM_MAX_PERX,
-                  "Projection", "perX",
-                  1, &failed);
-
-    verify_double(precheck_err_msgs, mp2->perY,
-                  DM_MIN_PERY, DM_MAX_PERY,
-                  "Projection", "perY",
-                  1, &failed);
+    if (!is_geocentric(meta2)) {
+        // Found geographic or other
+        verify_double(precheck_err_msgs, mp2->perX,
+                      DM_MIN_PERX, DM_MAX_PERX,
+                      "Projection", "perX",
+                      1, &failed);
+        verify_double(precheck_err_msgs, mp2->perY,
+                      DM_MIN_PERY, DM_MAX_PERY,
+                      "Projection", "perY",
+                      1, &failed);
+    }
+    else {
+        // Found geocentric
+        verify_double(precheck_err_msgs, mp2->perX,
+                      DM_GEOCENTRIC_MIN_PERX, DM_GEOCENTRIC_MAX_PERX,
+                      "Projection", "perX",
+                      1, &failed);
+        verify_double(precheck_err_msgs, mp2->perY,
+                      DM_GEOCENTRIC_MIN_PERY, DM_GEOCENTRIC_MAX_PERY,
+                      "Projection", "perY",
+                      1, &failed);
+    }
 
 #   define NUM_UNITS_STRINGS 3
     char *units_strings[NUM_UNITS_STRINGS] =
@@ -2684,4 +2698,20 @@ void diff_check_metadata(char *outputFile, int is_not_a_geotiff, char *metafile1
   ////////////////////////////////////////////////////////////
 
 } // End diff_check_metadata
+
+int is_geocentric(meta_parameters *meta)
+{
+    int ret = 0;
+
+    if (meta &&
+        meta->projection &&
+        (strncmp_case(meta->projection->units, "DEGREES", 7) == 0 ||
+         strncmp_case(meta->projection->units, "ARCSEC" , 6) == 0)
+       )
+    {
+        ret = 1;
+    }
+
+    return ret;
+}
 
