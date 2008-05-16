@@ -12,31 +12,6 @@
 #include "asf_convert_gui.h"
 #include "asf_version.h"
 #include <errno.h>
-/* Save file version history                  */
-
-/*   3.1: Updated to reflect recent changes   */
-/*        associated with multi-band imagery  */
-/*        Added file save dialog to allow     */
-/*        saving to a known name.             */
-/*   3.0: Added refine geolocation flag       */
-/*        Added mask file, auto water mask    */
-/*        Added TC Pixel Size, interp         */
-/*        Added Generate layover mask, DEM    */
-/*        Added "force"                       */
-/*   2.5: Added "Process to level1"           */
-/*   2.4: Added "keep files"                  */
-/*        Added terrcorr options              */
-/*   2.3: Added "output db"                   */
-/*   2.2: Added pixel size                    */
-/*        Added keep intermediate files       */
-/*   2.1: Added Resampling method             */
-/*        Added zone field for UTM            */
-/*   2.0: Added geocoding section/fields      */
-/*   1.2: Added flag for STF latitude setting */
-/*   1.1: Added flags for output bytes and    */
-/*           scaling method                   */
-/*        Small changes to file list layout   */
-/*   1.0: Initial version                     */
 
 // Protos
 void save_config(char *file, char* projfile);
@@ -578,6 +553,8 @@ void save_config(char *config_file, char* projfile)
   fprintf(cf, "sar processing = %d\n", s->process_to_level1);
 // fprintf(cf, "image stats=0\n");
 // fprintf(cf, "detect corner reflectors = 0\n");
+  fprintf(cf, "polarimetry = %d\n",
+          s->polarimetry_setting==POLARIMETRY_NONE ? 0 : 1);
   fprintf(cf, "terrain correction = %d\n",
           s->terrcorr_is_checked || s->refine_geolocation_is_checked);
   fprintf(cf, "geocoding = %d\n", s->geocode_is_checked);
@@ -619,12 +596,28 @@ void save_config(char *config_file, char* projfile)
   }
 // fprintf(cf, "precise =\n");
   fprintf(cf, "output db = %d\n", s->output_db);
+  fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
   fprintf(cf, "\n");
 
   if (s->process_to_level1) {
     fprintf(cf, "[SAR processing]\n");
     fprintf(cf, "radiometry = %s_image\n",
             settings_get_data_type_string(s));
+    fprintf(cf, "\n");
+  }
+
+  if (s->polarimetry_setting != POLARIMETRY_NONE) {
+    fprintf(cf, "[Polarimetry]\n");
+    fprintf(cf, "pauli = %d\n",
+            s->polarimetry_setting==POLARIMETRY_PAULI?1:0);
+    fprintf(cf, "sinclair = %d\n",
+            s->polarimetry_setting==POLARIMETRY_SINCLAIR?1:0);
+    fprintf(cf, "cloude pottier = %d\n",
+            s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
+    fprintf(cf, "cloude pottier ext = %d\n",
+            s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
+    fprintf(cf, "entropy anisotropy alpha = %d\n",
+            s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
     fprintf(cf, "\n");
   }
 
@@ -654,6 +647,7 @@ void save_config(char *config_file, char* projfile)
     if (s->mask_file_is_checked) {
       fprintf(cf, "mask = %s\n", s->mask_file);
     }
+    fprintf(cf, "smooth dem holes = %d\n", s->interp_dem_holes);
     fprintf(cf, "fill value = -1\n");
     fprintf(cf, "\n");
   }

@@ -166,8 +166,6 @@ settings_apply_to_gui(const Settings * s)
 
     input_data_format_combobox_changed();
 
-    set_checked("ers2_gain_fix_checkbutton", s->apply_ers2_gain_fix);
-
     gtk_toggle_button_set_active(
         GTK_TOGGLE_BUTTON(export_checkbutton), s->export_is_checked);
 
@@ -197,6 +195,8 @@ settings_apply_to_gui(const Settings * s)
         gtk_toggle_button_set_active(
           GTK_TOGGLE_BUTTON(polarimetry_checkbutton), FALSE);
     }
+
+    set_checked("ers2_gain_fix_checkbutton", s->apply_ers2_gain_fix);
 
     if (s->export_is_checked)
     {
@@ -1862,7 +1862,6 @@ int apply_settings_from_config_file(char *configFile)
     /* misc */
     s.keep_files = cfg->general->intermediates;
     s.apply_metadata_fix = 1;
-    s.apply_ers2_gain_fix = 1;
 
     settings_apply_to_gui(&s);
 
