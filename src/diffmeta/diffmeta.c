@@ -237,7 +237,7 @@ int main(int argc, char **argv)
   if (meta2 &&
       strlen(meta2->general->basename) &&
       strlen(meta2->general->sensor) &&
-      (strstr(".TIF", uc(meta2->general->basename)) ||
+      (strstr(uc(meta2->general->basename), ".TIF") ||
        strncmp(meta2->general->sensor, "USGS", 4) == 0)
      )
   {
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
   if (meta2 &&
       strlen(meta2->general->sensor_name) &&
       strlen(meta2->general->basename) &&
-      !strstr(".TIF", uc(meta2->general->basename)) &&
+      !strstr(uc(meta2->general->basename), ".TIF") &&
       strncmp_case(meta2->general->sensor_name, "SAR", 3) == 0
      )
   {
