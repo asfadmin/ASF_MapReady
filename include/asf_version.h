@@ -3,7 +3,7 @@
 
 
 // SAR Training Processor
-#define STP_VERSION_STRING "1.1.4"
+#define STP_VERSION_STRING "1.1.5"
 #define STP_VERSION 1.1
 
 // Acquisition Planner
@@ -15,7 +15,7 @@
 #define REQ_VERSION 2.0
 
 // MapReady
-#define MAPREADY_VERSION_STRING "2.0.0-dev"
+#define MAPREADY_VERSION_STRING "2.0.1-dev"
 #define MAPREADY_VERSION 2.0
 
 // Convert To Vector
