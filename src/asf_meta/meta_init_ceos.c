@@ -538,7 +538,10 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   get_ifiledr(in_fName, iof);
   ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   memset(ppr,0,sizeof(*ppr)); /* zero out ppr, to avoid uninitialized data */
-  get_ppr(in_fName, ppr);
+  if (get_ppr(in_fName, ppr) < 0) {
+      FREE(ppr);
+      ppr = NULL;
+  }
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
   if (get_esa_facdr(in_fName, esa_facdr) < 0) {
     if (esa_facdr) FREE(esa_facdr);
@@ -548,6 +551,57 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
 
+  // Azimuth time per pixel needs to be known for state vector propagation
+  require_ceos_data(in_fName, &dataName, &nBands);
+  firstTime = get_firstTime(dataName[0]);
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  meta->sar->azimuth_time_per_pixel =
+          (centerTime - firstTime) / (meta->sar->original_line_count/2);
+  if (meta->sar->azimuth_time_per_pixel < -0.07 ||
+      meta->sar->azimuth_time_per_pixel > 0.07)
+  {
+      // Funky azimuth_time_per_pixel ...here's a parachute
+      double er=0.0;
+      double ht=0.0;
+      switch (ceos->product) {
+          case SCANSAR:
+          case SCN:
+          case SSG:
+              meta->sar->image_type = 'P';
+              break;
+          case SLC:
+          case RAW:
+              meta->sar->image_type = 'S';
+              break;
+          case SGF:
+          case SGX:
+              meta->sar->image_type = 'G';
+              break;
+          default:
+              break; // Leave at original default setting
+      }
+      if (ceos->product == SSG) {
+          struct VMPDREC *mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
+          if (get_mpdr(in_fName, mpdr) >= 0) {
+              ht = mpdr->distplat;
+              er = mpdr->distplat - mpdr->altplat;
+          }
+          FREE(mpdr);
+      }
+      else {
+          er = meta_get_earth_radius(meta,
+                                     meta->general->line_count/2,
+                                     meta->general->sample_count/2);
+          ht = meta_get_sat_height(meta,
+                                   meta->general->line_count/2,
+                                   meta->general->sample_count/2);
+      }
+      double g = 9.81; //9.80665;
+      double swath_vel = sqrt(g*er*er/ht)*er/ht; // orbit_vel*er/ht
+      meta->sar->azimuth_time_per_pixel = meta->general->y_pixel_size / swath_vel;
+  }
+
   // State vector block
   if (ceos->product != SSG)
     ceos_init_stVec(in_fName,ceos,meta);
@@ -555,8 +609,11 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   meta->general->frame =
     asf_frame_calc("ERS", dssr->pro_lat, meta->general->orbit_direction);
   if (meta->general->orbit_direction==' ')
+  {
     meta->general->orbit_direction =
       (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
+  }
+  strcpy(beamname, MAGIC_UNSET_STRING);
 
   if (strncmp(dssr->mission_id, "ERS1", 4) == 0) {
     strcpy(meta->general->sensor,"ERS1");
@@ -588,39 +645,53 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     sprintf(meta->sar->polarization, "HH");
   }
   else if (ceos->satellite == RSAT) {
-    if (dssr->rng_samp_rate < 20.0) /* split finebeam from the rest */
+    if (dssr->rng_samp_rate < 20.0) { /* split finebeam from the rest */
       meta->sar->look_count = 4; /* ST1-ST7, WD1-WD3, EL1, EH1-EH6 */
-    else
+    }
+    else {
       meta->sar->look_count = 1; /* FN1-FN5 */
-    if (ceos->product == SCANSAR || ceos->product == SCN) {
-      rcdr = (struct radio_comp_data_rec *)
-      MALLOC(sizeof(struct radio_comp_data_rec));
+    }
+    if (ceos->product == SSG) {
+        if (dssr->n_azilok <= 0) {
+            meta->sar->look_count = 1;
+        }
+        else {
+            meta->sar->look_count = dssr->n_azilok;
+        }
+    }
+    else if (ceos->product == SCANSAR || ceos->product == SCN) {
+      rcdr = (struct radio_comp_data_rec *) MALLOC(sizeof(struct radio_comp_data_rec));
       get_rcdr(in_fName, rcdr);
-      if (rcdr->num_rec == 2)
+      if (rcdr->num_rec == 2) {
         strcpy(beamname, "SNA");
-      else if (rcdr->num_rec == 3)
+      }
+      else if (rcdr->num_rec == 3) {
         strcpy(beamname, "SNB");
+      }
       else if (rcdr->num_rec == 4) {
-  // We assume a nominal center look angle of 40.45 degrees for SWA
-  if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65)
-    strcpy(beamname, "SWA");
-  // We assume a nominla center look angle of 38.2 degrees for SWB
-  else if (rcdr->look_angle[3] > 38.0 && rcdr->look_angle[3] < 38.4)
-    strcpy(beamname, "SWB");
+        // We assume a nominal center look angle of 40.45 degrees for SWA
+        if (rcdr->look_angle[3] > 40.25 && rcdr->look_angle[3] < 40.65) {
+          strcpy(beamname, "SWA");
+        }
+        // We assume a nominal center look angle of 38.2 degrees for SWB
+        else if (rcdr->look_angle[3] > 38.0 && rcdr->look_angle[3] < 38.4) {
+          strcpy(beamname, "SWB");
+        }
       }
       meta->sar->image_type = 'P';
       mpdr = (struct VMPDREC*) MALLOC(sizeof(struct VMPDREC));
       if (get_mpdr(in_fName, mpdr) < 0) {
-        if (mpdr) FREE(mpdr);
-        mpdr = NULL;
+        if (mpdr) FREE(mpdr); {
+          mpdr = NULL;
+        }
       }
       ceos_init_scansar(in_fName, meta, dssr, mpdr, NULL);
     }
     else if (ppr) {
       beam_type_to_asf_beamname(ppr->beam_info[0].beam_type,
-        sizeof(ppr->beam_info[0].beam_type),
-    beamname,
-    sizeof(beamname));
+                                sizeof(ppr->beam_info[0].beam_type),
+                                beamname,
+                                sizeof(beamname));
     }
     strcpy(meta->general->mode, beamname);
     sprintf(meta->sar->polarization, "HH");
@@ -628,14 +699,25 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
     buf[3]=0;
     sscanf(buf, "%d", &meta->general->frame);
   }
-  if (esa_facdr)
+  if (esa_facdr) {
     meta->general->bit_error_rate = esa_facdr->ber;
-  else
+  }
+  else {
     meta->general->bit_error_rate = 0.0;
+  }
 
   // SAR block
+  if (meta->sar->prf <= 0) {
+      // Invalid prf ...so here's a parachute
+      if (meta->sar->azimuth_time_per_pixel > -0.07 &&
+          meta->sar->azimuth_time_per_pixel < 0.07)
+      {
+          meta->sar->prf = 1.0 / meta->sar->azimuth_time_per_pixel;
+      }
+  }
   if (ceos->product == SLC || ceos->product == RAW) {
     meta->sar->image_type = 'S';
+    meta->sar->look_count = 1;
   }
   else if (ceos->product == SGF || ceos->product == SGX ||
        ceos->product == PRI) {
@@ -819,7 +901,7 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
       ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
 
   // velocity calculation
-  const double g = 9.81;
+  const double g = 9.81; //9.80665;
   double orbit_vel = sqrt(g*er*er/ht);
 
   // simple scaling to get swath velocity from orbit vel
@@ -1043,10 +1125,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     else {
       meta->transform->parameter_count = 25;
       for (ii=0; ii<25; ii++) {
-	meta->transform->x[ii] = facdr.a[ii];
-	meta->transform->y[ii] = facdr.b[ii];
-	meta->transform->l[ii] = facdr.c[ii];
-	meta->transform->s[ii] = facdr.d[ii];
+    meta->transform->x[ii] = facdr.a[ii];
+    meta->transform->y[ii] = facdr.b[ii];
+    meta->transform->l[ii] = facdr.c[ii];
+    meta->transform->s[ii] = facdr.d[ii];
       }
       meta->transform->origin_lat = facdr.origin_lat;
       meta->transform->origin_lon = facdr.origin_lon;
@@ -1054,7 +1136,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
       meta->transform->origin_line = facdr.origin_line;
     }
 
-    for (ii=0; ii<6; ++ii)      
+    for (ii=0; ii<6; ++ii)
       meta->transform->incid_a[ii] = dssr->incid_a[ii];
 
     for (ii=0; ii<10; ++ii) {
@@ -2764,7 +2846,7 @@ void get_azimuth_time(ceos_description *ceos, const char *in_fName,
        ppdr.pos_vec[closest][2] * ppdr.pos_vec[closest][2]);
 
   // velocity calculation
-  const double g = 9.81;
+  const double g = 9.81; //9.80665;
   double orbit_vel = sqrt(g*er*er/ht);
 
   // simple scaling to get swath velocity from orbit vel
