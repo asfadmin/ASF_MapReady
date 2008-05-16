@@ -40,7 +40,7 @@
 
 // SAR Block
 #define DM_MIN_LOOK_COUNT               1
-#define DM_MAX_LOOK_COUNT               5
+#define DM_MAX_LOOK_COUNT               8
 #define DM_MIN_DESKEWED                 0
 #define DM_MAX_DESKEWED                 1
 #define DM_MIN_ORIGINAL_LINE_COUNT      DM_MIN_LINE_COUNT
