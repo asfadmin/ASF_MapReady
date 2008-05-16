@@ -627,8 +627,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         // single output line
         if (sinclair_1_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j)
               buf[j] += complex_amp(img_rows->lines[m][j].hh);
           }
@@ -638,8 +638,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
         if (sinclair_2_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j) {
               complexFloat c = complex_add(img_rows->lines[m][j].hv,
                                            img_rows->lines[m][j].vh);
@@ -652,8 +652,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
         if (sinclair_3_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j)
               buf[j] += complex_amp(img_rows->lines[m][j].vv);
           }
@@ -692,8 +692,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         // single output line
         if (pauli_1_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
           }
@@ -703,8 +703,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
         if (pauli_2_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
           }
@@ -714,8 +714,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
         if (pauli_3_band >= 0) {
           int m;
+          for (j=0; j<ns; ++j) buf[j] = 0.0;
           for (m=0; m<chunk_size; ++m) {
-            if (m==0) buf[j] = 0.0;
             for (j=0; j<ns; ++j)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
           }
