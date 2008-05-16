@@ -171,6 +171,10 @@ meta_transform *meta_transform_init(void)
     map->map2ls_a[ii] = MAGIC_UNSET_DOUBLE;
     map->map2ls_b[ii] = MAGIC_UNSET_DOUBLE;
   }
+  for (ii=0; ii<6; ii++) {
+    map->incid_a[ii] = MAGIC_UNSET_DOUBLE;
+  }
+
   return map;
 }
 
