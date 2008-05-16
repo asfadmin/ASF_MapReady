@@ -547,46 +547,55 @@ void verify_string(char *err_msgs, char *str,
                    char *block_id, char *var_name,
                    int required, int *failed)
 {
-  if (meta_is_valid_string(str) && strlen(str) > 0)
-  {
-    int i, found;
-    for (i=0, found=0; i<num_strings; i++) {
-      if (strcmp(valid_strings[i], str) == 0) {
-        found = 1;
-      }
-    }
-    if (!found) {
-      sprintf(err_msgs, "%s  [%s] Invalid %s field in new version file:\n    %s\n\n"
-              "    Expected one of:\n",
-              err_msgs, block_id, var_name, str);
-      char cat_str[1024];
-      strcpy(cat_str, "");
-      for (i=0; i<num_strings; i++) {
-        if (strlen(valid_strings[i]) > 0) {
-          sprintf(cat_str, "%s      %s\n", cat_str, valid_strings[i]);
+    int found = 0;
+    if (meta_is_valid_string(str) && strlen(str) > 0)
+    {
+        int i;
+        for (i=0; i<num_strings; i++) {
+            if (strcmp(valid_strings[i], str) == 0) {
+                found = 1;
+            }
         }
-      }
-      strcat(err_msgs, cat_str);
-      strcat(err_msgs, "\n\n");
-      *failed = 1;
+        if (!found) {
+            char *s = STRDUP(err_msgs);
+            sprintf(err_msgs, "%s  [%s] Invalid %s field in new version file:\n    %s\n\n"
+                    "    Expected one of:\n",
+                    s, block_id, var_name, str);
+            FREE(s);
+            char cat_str[2048];
+            strcpy(cat_str, "");
+            for (i=0; i<num_strings; i++) {
+                if (strlen(valid_strings[i]) > 0) {
+                    char *s = STRDUP(cat_str);
+                    sprintf(cat_str, "%s      %s\n", s, valid_strings[i]);
+                    FREE(s);
+                }
+            }
+            strcat(err_msgs, cat_str);
+            strcat(err_msgs, "\n\n");
+            *failed = 1;
+        }
     }
-  }
-  else if (required) {
-    sprintf(err_msgs, "%s  [%s] Missing %s field in new version file.\n\n"
-            "    Expected one of:\n",
-            err_msgs, block_id, var_name);
-    int i;
-    char cat_str[1024];
-    strcpy(cat_str, "");
-    for (i=0; i<num_strings; i++) {
-      if (strlen(valid_strings[i]) > 0) {
-        sprintf(cat_str, "%s      %s\n", cat_str, valid_strings[i]);
-      }
+    if (required && !found) {
+        char *s = STRDUP(err_msgs);
+        sprintf(err_msgs, "%s  [%s] Missing %s field in new version file.\n\n"
+                "    Expected one of:\n",
+                s, block_id, var_name);
+        FREE(s);
+        int i;
+        char cat_str[2048];
+        strcpy(cat_str, "");
+        for (i=0; i<num_strings; i++) {
+            if (strlen(valid_strings[i]) > 0) {
+                char *s = STRDUP(cat_str);
+                sprintf(cat_str, "%s      %s\n", s, valid_strings[i]);
+                FREE(s);
+            }
+        }
+        strcat(err_msgs, cat_str);
+        strcat(err_msgs, "\n\n");
+        *failed = 1;
     }
-    strcat(err_msgs, cat_str);
-    strcat(err_msgs, "\n\n");
-    *failed = 1;
-  }
 }
 
 void validate_int(char *err_msgs, int num,
