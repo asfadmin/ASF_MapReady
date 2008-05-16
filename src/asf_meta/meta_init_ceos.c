@@ -120,6 +120,13 @@ static void beam_type_to_asf_beamname(
     const char *beam_type,int btlen,
     char *beamname,int bnlen)
 {
+    if (strlen(beam_type) <= 0 || strlen(beamname) <= 0 ||
+        btlen <= 0 || bnlen <= 0 ||
+        strncmp(beam_type, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0 ||
+        strncmp(beamname, MAGIC_UNSET_STRING, strlen(MAGIC_UNSET_STRING)) == 0)
+    {
+        strcpy(beamname, MAGIC_UNSET_STRING);
+    }
     if (strncmp(beam_type, "F5", 2) == 0)
       strcpy(beamname, "FN5");
     else if (strncmp(beam_type, "F4", 2) == 0)
@@ -1249,6 +1256,8 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
   double firstTime, centerTime;
   int nBands, trailer;
 
+  strcpy(beamname,"");
+  strcpy(beamtype,"");
   dssr = &ceos->dssr;
   ppr = (struct proc_parm_rec*) MALLOC(sizeof(struct proc_parm_rec));
   memset(ppr,0,sizeof(*ppr)); /* zero out ppr, to avoid uninitialized data */
