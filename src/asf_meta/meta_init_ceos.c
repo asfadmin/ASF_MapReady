@@ -815,11 +815,18 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
 {
   struct dataset_sum_rec *dssr=NULL;
   struct ESA_FACDR *esa_facdr=NULL;
+  ymd_date date;
+  hms_time time;
   char buf[50];
+  double firstTime, centerTime;
 
   dssr = &ceos->dssr;
   esa_facdr = (struct ESA_FACDR*) MALLOC(sizeof(struct ESA_FACDR));
-  get_esa_facdr(in_fName, esa_facdr);
+  int ret = get_esa_facdr(in_fName, esa_facdr);
+  if (ret < 0) {
+      FREE(esa_facdr);
+      esa_facdr = NULL;
+  }
 
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
@@ -837,7 +844,13 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
   if (meta->general->orbit_direction==' ')
     meta->general->orbit_direction =
       (meta->general->frame>=1791 && meta->general->frame<=5391) ? 'D' : 'A';
-  meta->general->bit_error_rate = esa_facdr->ber;
+  if (esa_facdr) {
+    meta->general->bit_error_rate = (esa_facdr->ber < 0) ? 0 :
+                                    (esa_facdr->ber > 1) ? 1 : esa_facdr->ber;
+  }
+  else {
+      meta->general->bit_error_rate = 0;
+  }
 
   // State vector block
   ceos_init_stVec(in_fName,ceos,meta);
@@ -849,6 +862,23 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
     meta->sar->image_type = 'G';
   meta->sar->deskewed = 1;
   meta->sar->slant_range_first_pixel = dssr->rng_time[0]*speedOfLight/2000.0;
+  date_dssr2time(dssr->az_time_first, &date, &time);
+  firstTime = date_hms2sec(&time);
+  date_dssr2date(dssr->inp_sctim, &date, &time);
+  centerTime = date_hms2sec(&time);
+  meta->sar->azimuth_time_per_pixel = (centerTime - firstTime)
+    / (meta->sar->original_line_count/2);
+  if (meta->general->orbit_direction == 'D') {
+      meta->sar->time_shift = 0;
+  }
+  else if (meta->general->orbit_direction == 'A') {
+      meta->sar->time_shift = fabs(meta->sar->azimuth_time_per_pixel *
+              (float)meta->sar->original_line_count);
+  }
+  else {
+      asfPrintError("Invalid or missing orbit direction in metadata: orbit_direction = '%c'\n",
+                    meta->general->orbit_direction);
+  }
   meta->sar->earth_radius =
     meta_get_earth_radius(meta,
         meta->general->line_count/2,
@@ -869,7 +899,13 @@ void ceos_init_sar_esa(ceos_description *ceos, const char *in_fName,
   meta->sar->range_doppler_coefficients[2] = // two-way range time
     dssr->crt_dopcen[2] / (speedOfLight * speedOfLight * 4);
   */
+  // FIXME
   meta->sar->range_doppler_coefficients[0] = 0.0;
+  meta->sar->range_doppler_coefficients[1] = 0.0;
+  meta->sar->range_doppler_coefficients[2] = 0.0;
+  meta->sar->azimuth_doppler_coefficients[0] = 0.0;
+  meta->sar->azimuth_doppler_coefficients[1] = 0.0;
+  meta->sar->azimuth_doppler_coefficients[2] = 0.0;
 
   // Location block
   if (ceos->product != RAW)
