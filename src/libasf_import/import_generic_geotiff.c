@@ -126,7 +126,7 @@ void import_generic_geotiff (const char *inFileName, const char *outBaseName, ..
                            &data_type,        // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex)
                            &num_bands,        // Initial number of bands
                            &is_scanline_format,
-			   WARNING))
+               WARNING))
   {
     // Failed to determine tiff info or tiff info was bad
     char msg[1024];
@@ -305,7 +305,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
                              &data_type, // ASF datatype, (BYTE, INTEGER16, INTEGER32, or REAL32 ...no complex
                              &num_bands, // Initial number of bands
                              &is_scanline_format,
-			     WARNING);
+                 WARNING);
 
   if (ret != 0) {
     char msg[1024];
@@ -897,13 +897,15 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             if (read_count != 1) {
               asfPrintWarning(
                         "Unable to determine false easting from GeoTIFF file\n"
-                  "using ProjFalseEastingGeoKey\n");
+                  "using ProjFalseEastingGeoKey.  Assuming 0.0 meters and continuing...\n");
+              false_easting = 0.0;
             }
             read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
             if (read_count != 1) {
               asfPrintWarning(
                       "Unable to determine false northing from GeoTIFF file\n"
-                  "using ProjFalseNorthingGeoKey\n");
+                      "using ProjFalseNorthingGeoKey.  Assuming 0.0 meters and continuing...\n");
+              false_northing = 0.0;
             }
             read_count = GTIFKeyGet (input_gtif, ProjNatOriginLongGeoKey, &lonOrigin, 0, 1);
             if (read_count != 1) {
@@ -955,13 +957,15 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
             if (read_count != 1) {
               asfPrintWarning(
                       "Unable to determine false easting from GeoTIFF file\n"
-                  "using ProjFalseEastingGeoKey\n");
+                      "using ProjFalseEastingGeoKey.  Assuming 0.0 meters and continuing...\n");
+              false_easting = 0.0;
             }
             read_count = GTIFKeyGet (input_gtif, ProjFalseNorthingGeoKey, &false_northing, 0, 1);
             if (read_count != 1) {
               asfPrintWarning(
                       "Unable to determine false northing from GeoTIFF file\n"
-                  "using ProjFalseNorthingGeoKey\n");
+                      "using ProjFalseNorthingGeoKey.  Assuming 0.0 meters and continuing...\n");
+              false_northing = 0.0;
             }
             read_count = GTIFKeyGet (input_gtif, ProjFalseOriginLongGeoKey, &lonOrigin, 0, 1);
             if (read_count != 1) {
@@ -1612,8 +1616,8 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   if(stats)FREE(stats);
   FREE (tmp_citation);
   FREE (citation);
-	FREE (tie_point);
-	FREE (pixel_scale);
+    FREE (tie_point);
+    FREE (pixel_scale);
   for (band_num = 0; band_num < MAX_BANDS; band_num++) {
     FREE(bands[band_num]);
   }
