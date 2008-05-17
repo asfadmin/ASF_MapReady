@@ -953,6 +953,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   // General block
   ceos_init_sar_general(ceos, in_fName, meta);
   strcpy(meta->general->sensor,"ALOS");
+  strcpy(meta->general->processor, "JAXA");
   strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
   strncpy(buf, &dssr->product_id[11], 4);
   buf[4]=0;
@@ -1676,6 +1677,7 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   else if (ceos->sensor == PRISM)
     sprintf(meta->general->sensor_name,"PRISM");
   if (ceos->sensor == AVNIR || ceos->sensor == PRISM) {
+    sprintf(meta->general->processor, "JAXA");
     ampr = (struct alos_map_proj_rec *) MALLOC(sizeof(struct alos_map_proj_rec));
     if (get_ampr(in_fName, ampr) == -1) {
       FREE(ampr);
@@ -1707,7 +1709,6 @@ void ceos_init_optical(const char *in_fName,meta_parameters *meta)
   if (substr[3] == 'G' && (substr[5] == 'U' || substr[5] == 'P'))
     ceos_init_proj(meta, NULL, NULL, &(ceos->shr), ampr);
 
-  // processor ???
   meta->general->data_type = BYTE;
   meta->general->image_data_type = AMPLITUDE_IMAGE;
   strcpy(meta->general->system, meta_get_system());
