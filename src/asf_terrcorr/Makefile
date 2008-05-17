@@ -4,20 +4,26 @@ CFLAGS += $(GLIBS_CFLAGS)
 
 LIBS  = \
 	$(LIBDIR)/libasf_terrcorr.a \
-	$(LIBDIR)/libasf_sar.a \
-	$(LIBDIR)/libasf_geocode.a \
-	$(LIBDIR)/libasf_raster.a \
-	$(LIBDIR)/asf_meta.a \
-	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libasf_proj.a \
-	$(LIBDIR)/asf.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(TIFF_LIBS) \
-	$(PROJ_LIBS) \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_export.a \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/libasf_ardop.a \
+	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libshp.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/asf.a \
+	$(LIBDIR)/libasf_proj.a \
+	$(LIBDIR)/asf_fft.a \
 	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
 	$(GLIB_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
-	-lm
+	$(PNG_LIBS) \
+	-lz
 
 CFLAGS += \
 	$(TIFF_CFLAGS) \

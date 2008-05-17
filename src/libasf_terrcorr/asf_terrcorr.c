@@ -19,6 +19,7 @@
 #include <asf_sar.h>
 #include <libasf_proj.h>
 #include <poly.h>
+#include <asf_vector.h>
 
 #include <asf_terrcorr.h>
 
@@ -404,6 +405,39 @@ static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
     free(cutDemFile);
 }
 
+static int dem_and_slant_to_kml(char *file1,
+                                char *file2,
+                                char *outfile)
+{
+  FILE *kf = fopen(outfile, "w");
+  if (!kf) return FALSE;
+
+  meta_parameters *meta1 = meta_read(file1);
+  meta_parameters *meta2 = meta_read(file2);
+
+  char *base1 = get_basename(file1);
+  char *base2 = get_basename(file2);
+
+  if (!meta1 || !meta2) return FALSE;
+
+  int qf_saved=quietflag;
+  quietflag=TRUE;
+  kml_header(kf);
+  kml_entry(kf, meta1, base1);
+  kml_entry(kf, meta2, base2);
+  kml_footer(kf);
+  fclose(kf);
+  quietflag=qf_saved;
+
+  meta_free(meta1);
+  meta_free(meta2);
+
+  free(base1);
+  free(base2);
+
+  return TRUE;
+}
+
 void
 clip_dem(meta_parameters *metaSAR,
          char *srFile,
@@ -441,7 +475,21 @@ clip_dem(meta_parameters *metaSAR,
             &coverage_pct);
 
     if (coverage_pct <= 0) {
-      asfPrintError("%s and SAR images do not overlap!\n", what);
+      char *dir = get_dirname(srFile);
+      char *overlapFile = MALLOC(sizeof(char)*(strlen(dir)+64));
+      if (strlen(dir)>0)
+        sprintf(overlapFile, "%s/overlap.kml", dir);
+      else
+        strcpy(overlapFile, "overlap.kml");
+      int ok = dem_and_slant_to_kml(demFile, srFile, overlapFile);
+      free(dir);
+      free(overlapFile);
+
+      if (ok)
+        asfPrintError("%s and SAR images do not overlap!\n"
+                      "  (created overlap.kml)\n", what);
+      else
+        asfPrintError("%s and SAR images do not overlap!\n", what);
     } else if (coverage_pct <= 25) {
       asfPrintWarning("Insufficient %s coverage!\n", what);
     } else if (coverage_pct <= 99) {
