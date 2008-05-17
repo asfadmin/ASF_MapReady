@@ -8,6 +8,7 @@
 #include <xtiffio.h>
 
 #include "asf.h"
+#include "asf_nan.h"
 #include "dateUtil.h"
 #include "shapefil.h"
 #include "asf_vector.h"
