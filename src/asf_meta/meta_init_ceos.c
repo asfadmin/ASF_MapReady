@@ -1396,14 +1396,11 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
       meta_get_earth_radius(meta,
         meta->general->line_count/2,
         meta->general->sample_count/2);
-  meta->sar->satellite_height =
-    meta_get_sat_height(meta,
-      meta->general->line_count/2,
-      meta->general->sample_count/2);
 
   // Initialize map projection for projected images
-  if (meta->sar->image_type=='P' && mpdr)
+  if (meta->sar->image_type=='P' && mpdr) {
     ceos_init_proj(meta, dssr, mpdr, NULL, NULL);
+  }
 
   // Check to see if we need special startX / startY initialization
   if (!mpdr && !meta->transform && meta->projection) {
@@ -1413,6 +1410,10 @@ void ceos_init_sar_rsi(ceos_description *ceos, const char *in_fName,
           meta_sar_to_startXY(meta, &meta->projection->startX, &meta->projection->startY);
       }
   }
+  meta->sar->satellite_height =
+          meta_get_sat_height(meta,
+                              meta->general->line_count/2,
+                              meta->general->sample_count/2);
 
   // Location block
   if (ceos->product != RAW)
