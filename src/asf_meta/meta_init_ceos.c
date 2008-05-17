@@ -951,9 +951,9 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
   require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
+  strcpy(meta->general->processor, "JAXA");
   ceos_init_sar_general(ceos, in_fName, meta);
   strcpy(meta->general->sensor,"ALOS");
-  strcpy(meta->general->processor, "JAXA");
   strcpy(meta->general->mode, alos_beam_mode[ceos->dssr.ant_beam_num]);
   strncpy(buf, &dssr->product_id[11], 4);
   buf[4]=0;
