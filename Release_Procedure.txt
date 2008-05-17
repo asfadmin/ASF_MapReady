@@ -99,6 +99,8 @@ Note: The MapReady binaries are mapready and asf_mapready, but
       src/diffimage \
       src/diffmeta \
       src/gr2sr \
+      src/convert2vector \
+      src/convert2vector_gui \
 
      Eliminate the following lines from Makefile.in.  At the time of writing
      these instructions, this line occurs in FOUR places: near line 117, 130,
@@ -126,7 +128,6 @@ external
 src/asf_convert_gui
 src/metadata_gui
 src/gr2sr
-src/sr2gr
 src/mosaic
 src/refine_geolocation
 src/asf_terrcorr
@@ -135,7 +136,6 @@ src/resample
 src/fill_holes
 src/asf_view
 src/to_sr
-src/convert2vector
 src/deskew
 src/create_thumbs
 src/shift_geolocation
