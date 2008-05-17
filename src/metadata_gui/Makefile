@@ -52,6 +52,7 @@ LIB = \
 	$(ASF_LIB)/libasf_proj.a \
 	$(ASF_LIB)/asf.a \
 	$(GSL_LIBS) \
+	$(PROJ_LIBS) \
 	-lglib-2.0 \
 	-lcomdlg32
 
