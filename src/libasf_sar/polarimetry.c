@@ -76,6 +76,14 @@ static complexFloat complex_new_polar(float amp, float phase)
     return ret;
 }
 
+//static complexFloat complex_new_gsl(gsl_complex c)
+//{
+//    complexFloat ret;
+//    ret.real = GSL_REAL(c);
+//    ret.imag = GSL_IMAG(c);
+//    return ret;
+//}
+
 static complexFloat complex_zero()
 {
     return complex_new(0,0);
@@ -413,6 +421,9 @@ static void polarimetric_image_rows_load_new_rows(PolarimetricImageRows *self,
     calculate_coherence_for_row(self, i);
   }
 
+  // we multilook the amplitude data now, since we only keep one row
+  // around-- the rest of the stuff is not multilooked since it isn't
+  // the final result (all rows are kept in memory)
   for (k=0; k<ns; ++k)
     self->amp[k] /= self->nrows;
 
@@ -482,6 +493,17 @@ static void dump_ea_hist(const char *base_filename,
   free(filename);
 }
 
+static double calc_alpha(gsl_complex z)
+{
+  // alpha: acos(e[0]*conj(e[0])), e=eigenvector of coherence matrix
+  double re = GSL_REAL(z);
+  double im = GSL_IMAG(z);
+  double alpha = acos(re*re + im*im);
+  // alpha should be 0-90
+  assert(alpha > 0);
+  assert(alpha < 1.571);
+  return alpha;
+}
 
 void polarimetric_decomp(const char *inFile, const char *outFile,
                          int amplitude_band,
@@ -504,7 +526,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   char *in_img_name = appendExt(inFile, ".img");
   char *out_img_name = appendExt(outFile, ".img");
 
-  int i, j;
+  int i, j, m;
 
   // chunk_size represents the number of rows we keep in memory at one
   // time, centered on the row currently being processed.  This is to
@@ -663,7 +685,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   if (classFile != NULL && class_band >= 0)
     classifier = read_classifier(classFile);
 
-  // population density image, in entropy-alpha space
+  // population histogram image, in entropy-alpha space
   int ea_hist[hist_size][hist_size];
   for (i=0; i<hist_size; ++i)
     for (j=0; j<hist_size; ++j)
@@ -692,39 +714,33 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         // multilook case -- average all buffered lines to produce a
         // single output line
         if (sinclair_1_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j)
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m)
               buf[j] += complex_amp(img_rows->lines[m][j].hh);
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, sinclair_1_band, i, buf);
         }
         if (sinclair_2_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j) {
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m) {
               complexFloat c = complex_add(img_rows->lines[m][j].hv,
                                            img_rows->lines[m][j].vh);
               buf[j] += complex_amp(complex_scale(c, 0.5));
             }
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, sinclair_2_band, i, buf);
         }
         if (sinclair_3_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j)
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m)
               buf[j] += complex_amp(img_rows->lines[m][j].vv);
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, sinclair_3_band, i, buf);
         }
       }
@@ -757,36 +773,30 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         // multilook case -- average all buffered lines to produce a
         // single output line
         if (pauli_1_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j)
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].A);
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, pauli_1_band, i, buf);
         }
         if (pauli_2_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j)
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].B);
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, pauli_2_band, i, buf);
         }
         if (pauli_3_band >= 0) {
-          int m;
-          for (j=0; j<ns; ++j) buf[j] = 0.0;
-          for (m=0; m<chunk_size; ++m) {
-            for (j=0; j<ns; ++j)
+          for (j=0; j<ns; ++j) {
+            buf[j] = 0.0;
+            for (m=0; m<chunk_size; ++m)
               buf[j] += complex_amp(img_rows->pauli_lines[m][j].C);
-          }
-          for (j=0; j<ns; ++j)
             buf[j] /= (float)chunk_size;
+          }
           put_band_float_line(fout, outMeta, pauli_3_band, i, buf);
         }
       }
@@ -825,9 +835,6 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                                   ++n;
                                   complexFloat f =
                                     img_rows->coh_lines[m][k]->coeff[ii][jj];
-                                  // cheat for speed
-                                  //c.dat[0] += f.real;
-                                  //c.dat[1] += f.imag;
                                   c = gsl_complex_add_real(c, f.real);
                                   c = gsl_complex_add_imag(c, f.imag);
                               }
@@ -865,8 +872,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                   (meta_is_valid_double(P2l3) ? -P2*P2l3 : 0) +
                   (meta_is_valid_double(P3l3) ? -P3*P3l3 : 0);
 
-              if (P2+P3 != 0)
-                anisotropy[j] = (P2-P3)/(P2+P3);
+              if (e2+e3 != 0)
+                anisotropy[j] = (e2-e3)/(e2+e3);
               else
                 anisotropy[j] = 0;
 
@@ -884,14 +891,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
               // this is the polar angle when expressing each eigenvector
               // in spherical coordinates.  the mean alpha is weighted by
               // the eigenvector (so weight by P1-3)
-              gsl_complex evec00 = gsl_matrix_complex_get(evec, 0, 0);
-              double alpha1 = acos(GSL_REAL(evec00));
-
-              gsl_complex evec01 = gsl_matrix_complex_get(evec, 0, 1);
-              double alpha2 = acos(GSL_REAL(evec01));
-
-              gsl_complex evec02 = gsl_matrix_complex_get(evec, 0, 2);
-              double alpha3 = acos(GSL_REAL(evec02));
+              double alpha1 = calc_alpha(gsl_matrix_complex_get(evec, 0, 0));
+              double alpha2 = calc_alpha(gsl_matrix_complex_get(evec, 0, 1));
+              double alpha3 = calc_alpha(gsl_matrix_complex_get(evec, 0, 2));
 
               alpha[j] = R2D*(P1*alpha1 + P2*alpha2 + P3*alpha3);
               if (!meta_is_valid_double(alpha[j]))
@@ -904,6 +906,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
           if (alpha_band >= 0)
             put_band_float_line(fout, outMeta, alpha_band, i, alpha);
+
           if (class_band >= 0) {
             assert(classifier != NULL);
             for (j=0; j<ns; ++j) {
@@ -918,7 +921,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             if (entropy_index<0) entropy_index=0;
             if (entropy_index>hist_size-1) entropy_index=hist_size-1;
             
-            int alpha_index = hist_size-1-alpha[j]/180.0*(float)hist_size;
+            int alpha_index = hist_size-1-alpha[j]/90.0*(float)hist_size;
             if (alpha_index<0) alpha_index=0;
             if (alpha_index>hist_size-1) alpha_index=hist_size-1;
             
@@ -929,17 +932,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             ea_hist[alpha_index][entropy_index] += 1;
           }
       }
-/*
-      if (alpha_band >= 0) {
-          // alpha: arccos of the 1st pauli vector element
-          for (j=0; j<ns; ++j) {
-              complexVector v =
-                  complex_vector_normalize(img_rows->pauli_lines[l][j]);
-              buf[j] = R2D*acos(complex_amp(v.A));
-          }
-          put_band_float_line(fout, outMeta, alpha_band, i, buf);
-      }
-*/
+
       // load the next row, if there are still more to go
       if (i<onl-1) {
           if (multi) {
