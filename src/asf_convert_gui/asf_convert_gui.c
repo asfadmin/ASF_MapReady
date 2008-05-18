@@ -71,7 +71,7 @@ main(int argc, char **argv)
     /* add version number to window title */
     char gtitle [256];
     sprintf (gtitle,
-             "ASF MapReady: Version %s (alpha build 1)",
+             "ASF MapReady: Version %s",
              MAPREADY_VERSION_STRING);
 
     widget = get_widget_checked("asf_convert");

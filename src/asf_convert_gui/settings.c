@@ -1508,7 +1508,7 @@ settings_to_config_file(const Settings *s,
                 s->polarimetry_setting==POLARIMETRY_SINCLAIR?1:0);
         fprintf(cf, "cloude pottier = %d\n",
                 s->polarimetry_setting==POLARIMETRY_CLOUDE8?1:0);
-        fprintf(cf, "cloude pottier ext = %d\n",
+        fprintf(cf, "extended cloude pottier = %d\n",
                 s->polarimetry_setting==POLARIMETRY_CLOUDE16?1:0);
         fprintf(cf, "entropy anisotropy alpha = %d\n",
                 s->polarimetry_setting==POLARIMETRY_CLOUDE_NOCLASSIFY?1:0);
@@ -1573,9 +1573,13 @@ settings_to_config_file(const Settings *s,
       } else {
           fprintf(cf, "byte conversion = none\n");
       }
-      if (s->export_bands ||
-          s->polarimetry_setting == POLARIMETRY_PAULI ||
-          s->polarimetry_setting == POLARIMETRY_SINCLAIR)
+      if (s->polarimetry_setting == POLARIMETRY_CLOUDE8)
+        fprintf(cf,"rgb look up table = cloude8\n");
+      else if (s->polarimetry_setting == POLARIMETRY_CLOUDE16)
+        fprintf(cf,"rgb look up table = cloude16\n");
+      else if (s->export_bands ||
+               s->polarimetry_setting == POLARIMETRY_PAULI ||
+               s->polarimetry_setting == POLARIMETRY_SINCLAIR)
       {
         if (s->polarimetry_setting == POLARIMETRY_PAULI) {
           fprintf(cf, "rgb banding = HH-VV,HV+VH,HH+VV\n");

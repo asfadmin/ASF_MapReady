@@ -1084,9 +1084,9 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   double h = 0.0;
   double clat = meta->general->center_latitude;
   double clon = meta->general->center_longitude;
-  printf("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
+  asfPrintStatus("1) Estimated center lat, lon:  %lf, %lf\n", clat, clon);
   meta_get_latLon(meta, nl/2, ns/2, h, &clat, &clon);
-  printf("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
+  asfPrintStatus("2) Calculated center lat, lon: %lf, %lf\n", clat, clon);
 
   double ul_x, ul_y, ur_x, ur_y, ll_x, ll_y, lr_x, lr_y,
     ctr_x, ctr_y;
@@ -1132,21 +1132,23 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "  </Polygon>\n");
       fprintf(kml_file, "</Placemark>\n");
 
-      if (!png_filename || !meta->projection)
-        printf("\nGoogle Earth(tm) overlay image not produced (because the "
-	       "data is not in a UTM map projection\n"
-               "as required) -OR- a Google Earth(tm) (.kml) file is being "
-	       "produced from a non-image source such\n"
-               "as an ASF metadata file etc.)  The data will be displayed "
-	       "as a transparent polygon (only)\n"
-               "in Google Earth(tm).\n\n");
-      else
-        printf("Google Earth(tm) overlay not produced (because the image's "
-	       "rotation angle\n"
-               "is too large to overlay: %lf)\n\n", ang*R2D);
+      if (!quietflag) {
+        if (!png_filename || !meta->projection)
+          printf("\nGoogle Earth(tm) overlay image not produced (because the "
+                 "data is not in a UTM map projection\n"
+                 "as required) -OR- a Google Earth(tm) (.kml) file is being "
+                 "produced from a non-image source such\n"
+                 "as an ASF metadata file etc.)  The data will be displayed "
+                 "as a transparent polygon (only)\n"
+                 "in Google Earth(tm).\n\n");
+        else
+          printf("Google Earth(tm) overlay not produced (because the image's "
+                 "rotation angle\n"
+                 "is too large to overlay: %lf)\n\n", ang*R2D);
+      }
     }
   else {
-    printf("png filename: %s\n", png_filename);
+    asfPrintStatus("png filename: %s\n", png_filename);
 
     if (!dir)
       asfPrintError("Must pass in a directory for the overlay files!\n");

@@ -30,6 +30,20 @@
 #include "asf_meta.h"
 #include "float_image.h"
 
+/* For use by the "classifier" in the polarimetry calculations
+   Used by: classify.c and polarimetry.c
+   Not really for use outside of this library. */
+typedef struct {
+    int n_classes;
+    double *entropy_min;
+    double *entropy_max;
+    double *anisotropy_min;
+    double *anisotropy_max;
+    double *alpha_min;
+    double *alpha_max;
+    int *greyscale_value;
+} classifier_t;
+
 /* Prototypes from gr2sr.c */
 int gr2sr(const char *infile, const char *outfile);
 int gr2sr_pixsiz(const char *infile, const char *outfile, float srPixSize);
@@ -103,6 +117,12 @@ void c2p(const char *inDataName, const char *outfile,
 void c2p_ext(const char *inDataName, const char *inMetaName,
              const char *outfile, int multilook, int banded);
 
+/* Prototypes from classify.c (helper stuff for polarimetry) */
+classifier_t *read_classifier(const char *classFile);
+void free_classifier(classifier_t *classifier);
+int classify(classifier_t *classifier, float entropy, float anisotropy,
+             float alpha);
+
 /* Prototypes from polarimetry.c */
 void polarimetric_decomp(const char *inFile, const char *outFile,
                          int amplitude_band,
@@ -114,7 +134,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int alpha_band,
                          int sinclair_1_band,
                          int sinclair_2_band,
-                         int sinclair_3_band);
+                         int sinclair_3_band,
+                         const char *classFile,
+                         int class_band);
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag);
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag);
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag);

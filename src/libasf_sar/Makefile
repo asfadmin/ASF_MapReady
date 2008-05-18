@@ -19,6 +19,7 @@ OBJS = \
 	to_sr.o \
 	refine_offset.o \
 	interp_dem_holes.o \
+	classify.o \
 	polarimetry.o \
 	c2p.o
 
@@ -35,6 +36,10 @@ LIBS = \
 all: build_only
 	cp libasf_sar.a $(LIBDIR)
 	cp asf_sar.h poly.h $(ASF_INCLUDE_DIR)
+	mkdir -p $(SHAREDIR)/classifications
+	cp cloude8.cla cloude16.cla $(SHAREDIR)/classifications
+	mkdir -p $(SHAREDIR)/look_up_tables
+	cp cloude8.lut cloude16.lut $(SHAREDIR)/look_up_tables
 
 build_only: $(OBJS)
 	rm -f libasf_sar.a

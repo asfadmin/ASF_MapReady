@@ -307,6 +307,7 @@ void free_convert_config(convert_config *cfg)
             FREE(cfg->export->band);
             FREE(cfg->export->format);
             FREE(cfg->export->byte);
+            FREE(cfg->export->lut);
             FREE(cfg->export->rgb);
             FREE(cfg->export);
         }
@@ -466,6 +467,8 @@ convert_config *init_fill_convert_config(char *configFile)
   strcpy(cfg->export->format, "GEOTIFF");
   cfg->export->byte = (char *)MALLOC(sizeof(char)*25);
   strcpy(cfg->export->byte, "SIGMA");
+  cfg->export->lut = (char *)MALLOC(sizeof(char)*255);
+  strcpy(cfg->export->lut, "");
   cfg->export->rgb = (char *)MALLOC(sizeof(char)*255);
   strcpy(cfg->export->rgb, "");
   cfg->export->band = (char *)MALLOC(sizeof(char)*25);
@@ -600,9 +603,9 @@ convert_config *init_fill_convert_config(char *configFile)
         cfg->polarimetry->sinclair = read_int(line, "sinclair");
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
-      if (strncmp(test, "cloude pottier ext", 18)==0)
+      if (strncmp(test, "extended cloude pottier", 23)==0)
 	cfg->polarimetry->cloude_pottier_ext = 
-	  read_int(line, "cloude pottier ext");
+	  read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc = 
           read_int(line, "entropy anisotropy alpha");
@@ -671,6 +674,8 @@ convert_config *init_fill_convert_config(char *configFile)
         strcpy(cfg->export->format, read_str(line, "output format"));
       if (strncmp(test, "byte conversion", 15)==0)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
+      if (strncmp(test, "rgb look up table", 17)==0)
+        strcpy(cfg->export->lut, read_str(line, "rgb look up table"));
       if (strncmp(test, "rgb banding", 11)==0)
         strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
       if (strncmp(test, "truecolor", 9)==0)
@@ -918,9 +923,9 @@ convert_config *read_convert_config(char *configFile)
         cfg->polarimetry->sinclair = read_int(line, "sinclair");
       if (strncmp(test, "cloude pottier", 14)==0)
         cfg->polarimetry->cloude_pottier = read_int(line, "cloude pottier");
-      if (strncmp(test, "cloude pottier ext", 18)==0)
+      if (strncmp(test, "extended cloude pottier", 23)==0)
 	cfg->polarimetry->cloude_pottier_ext = 
-	  read_int(line, "cloude pottier ext");
+	  read_int(line, "extended cloude pottier");
       if (strncmp(test, "entropy anisotropy alpha", 24)==0)
         cfg->polarimetry->cloude_pottier_nc =
           read_int(line, "entropy anisotropy alpha");
@@ -1003,6 +1008,8 @@ convert_config *read_convert_config(char *configFile)
         strcpy(cfg->export->format, read_str(line, "format"));
       if (strncmp(test, "byte conversion", 15)==0)
         strcpy(cfg->export->byte, read_str(line, "byte conversion"));
+      if (strncmp(test, "rgb look up table", 17)==0)
+        strcpy(cfg->export->lut, read_str(line, "rgb banding"));
       if (strncmp(test, "rgb banding", 11)==0)
         strcpy(cfg->export->rgb, read_str(line, "rgb banding"));
       if (strncmp(test, "truecolor", 9)==0)
@@ -1344,13 +1351,11 @@ int write_convert_config(char *configFile, convert_config *cfg)
 		"# you can use the Cloude-Pottier classification using entropy and alpha\n"
 		"# to map the 4 bands to the eight classes in one band in the output image.\n\n");
       fprintf(fConfig, "cloude pottier = %i\n\n", cfg->polarimetry->cloude_pottier);
-      /*
       if (!shortFlag)
 	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
 		"# you can use the extended Cloude-Pottier classification using entropy, alpha\n"
 		"# and anisotropy to map the 4 bands to the 16 classes in one band in the output image.\n\n");
-      fprintf(fConfig, "cloude pottier ext = %i\n", cfg->polarimetry->cloude_pottier_ext);
-      */
+      fprintf(fConfig, "extended cloude pottier = %i\n", cfg->polarimetry->cloude_pottier_ext);
       if (!shortFlag)
 	fprintf(fConfig, "\n# If you have quad_pol data available (HH, HV, VH and VV),\n"
 		"# you can have the entropy, anisotropy, and alpha values (the values used\n"
@@ -1533,6 +1538,13 @@ int write_convert_config(char *configFile, convert_config *cfg)
         fprintf(fConfig, "\n# The byte conversion options are SIGMA, MINMAX, TRUNCATE or\n"
                 "# HISTOGRAM_EQUALIZE. They scale the floating point values to byte values.\n\n");
       fprintf(fConfig, "byte conversion = %s\n", cfg->export->byte);
+      if (!shortFlag)
+        fprintf(fConfig, "\n# Applies a look-up-table to the greyscale values, to convert them to RGB,\n"
+                "# using the table in with the given filename.  Only allowed for single-band\n"
+                "# images.  Some look up table files are in the look_up_tables subdirectory\n"
+                "# in the ASF tools share directory.  The tool will look in the share\n"
+                "# directory, if the given look up table file is not found.\n\n");
+      fprintf(fConfig, "rgb look up table = %s\n", cfg->export->lut);
       if (!shortFlag)
         fprintf(fConfig, "\n# If you have more than one band available in your data, you can\n"
                 "# create the exported file using the different bands for the R, G, and B\n"

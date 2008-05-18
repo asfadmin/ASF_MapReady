@@ -446,6 +446,43 @@ static double log3(double v)
     return log(v)/log(3.);
 }
 
+// dump a 2D histogram image in entropy-alpha space
+static const int hist_size = 512;
+static void dump_ea_hist(const char *base_filename,
+                         int ea_hist[hist_size][hist_size])
+{
+  char *filename = appendToBasename(base_filename, "_ea_hist");
+  int size=hist_size;
+
+  meta_parameters *m = raw_init();
+  m->general->line_count = size;
+  m->general->sample_count = size;
+  m->general->data_type = INTEGER16;
+  strcpy(m->general->basename, filename);
+
+  char *meta_file = appendExt(filename, ".meta");
+  char *img_file = appendExt(filename, ".img");
+  meta_write(m, meta_file);
+
+  FILE *fp = fopenImage(img_file, "wb");
+
+  int i,j;
+  float *buf = MALLOC(sizeof(float)*size);
+
+  for (i=0; i<size; ++i) {
+    for (j=0; j<size; ++j)
+      buf[j] = ea_hist[i][j];
+    put_float_line(fp,m,i,buf);
+  }
+  fclose(fp);
+  meta_free(m);
+
+  free(meta_file);
+  free(img_file);
+  free(filename);
+}
+
+
 void polarimetric_decomp(const char *inFile, const char *outFile,
                          int amplitude_band,
                          int pauli_1_band,
@@ -456,7 +493,9 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int alpha_band,
                          int sinclair_1_band,
                          int sinclair_2_band,
-                         int sinclair_3_band)
+                         int sinclair_3_band,
+                         const char *classFile,
+                         int class_band)
 {
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
@@ -555,7 +594,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       (amplitude_band>=0) +
       (pauli_1_band>=0) + (pauli_2_band>=0) + (pauli_3_band>=0) +
       (entropy_band>=0) + (anisotropy_band>=0) + (alpha_band>=0) +
-      (sinclair_1_band>=0) + (sinclair_2_band>=0) + (sinclair_3_band>=0);
+      (sinclair_1_band>=0) + (sinclair_2_band>=0) + (sinclair_3_band>=0) +
+      (class_band >= 0);
 
   char bands[255];
   strcpy(bands, "");
@@ -581,6 +621,21 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           strcat(bands, "Anisotropy,");
       else if (alpha_band == i)
           strcat(bands, "Alpha,");
+      else if (class_band == i) {
+        if (!classFile)
+          strcat(bands,"Classified,");
+        else if (strncmp_case(classFile,"cloude8",7)==0)
+          strcat(bands, "Cloude-Pottier-8,");
+        else if (strncmp_case(classFile,"cloude16",8)==0)
+          strcat(bands, "Cloude-Pottier-16,");
+        else {
+          // append the classification filename as the band name (minus .cla)
+          char *s = appendExt(classFile,"");
+          strcat(bands, s);
+          strcat(bands, ",");
+          free(s);
+        }
+      }
       else
           break;
   }
@@ -602,6 +657,17 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
 
   meta_write(outMeta, out_meta_name);
   free(out_meta_name);
+
+  // set up the classification, if needed
+  classifier_t *classifier = NULL;
+  if (classFile != NULL && class_band >= 0)
+    classifier = read_classifier(classFile);
+
+  // population density image, in entropy-alpha space
+  int ea_hist[hist_size][hist_size];
+  for (i=0; i<hist_size; ++i)
+    for (j=0; j<hist_size; ++j)
+      ea_hist[i][j] = 0;
 
   // done setting up metadata, now write the data
   gsl_matrix_complex *T = gsl_matrix_complex_alloc(3,3);
@@ -743,7 +809,8 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
         }
       }
 
-      if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0)
+      if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 ||
+          class_band >= 0)
       {
           // coherence -- do ensemble averaging for each element
           for (j=0; j<ns; ++j) {
@@ -837,6 +904,30 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             put_band_float_line(fout, outMeta, anisotropy_band, i, anisotropy);
           if (alpha_band >= 0)
             put_band_float_line(fout, outMeta, alpha_band, i, alpha);
+          if (class_band >= 0) {
+            assert(classifier != NULL);
+            for (j=0; j<ns; ++j) {
+              buf[j] = (float)classify(classifier, entropy[j], anisotropy[j],
+                                       alpha[j]);
+            }
+            put_band_float_line(fout, outMeta, class_band, i, buf);
+          }
+
+          for (j=0; j<ns; ++j) {
+            int entropy_index = entropy[j]*(float)hist_size;
+            if (entropy_index<0) entropy_index=0;
+            if (entropy_index>hist_size-1) entropy_index=hist_size-1;
+            
+            int alpha_index = hist_size-1-alpha[j]/180.0*(float)hist_size;
+            if (alpha_index<0) alpha_index=0;
+            if (alpha_index>hist_size-1) alpha_index=hist_size-1;
+            
+            //printf("%10.1f %10.1f %5d %5d --> %4d\n",
+            //       entropy[j], alpha[j],
+            //       entropy_index, alpha_index,
+            //      ea_hist[entropy_index][alpha_index]+1);
+            ea_hist[alpha_index][entropy_index] += 1;
+          }
       }
 /*
       if (alpha_band >= 0) {
@@ -863,6 +954,13 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       asfLineMeter(i,onl);
   }
 
+  if (entropy_band >= 0 || anisotropy_band >= 0 || alpha_band >= 0 || 
+      class_band >= 0)
+  {
+    // dump population graph
+    dump_ea_hist(outFile, ea_hist);
+  }
+
   gsl_vector_free(eval);
   gsl_eigen_hermv_free(ws);
   gsl_matrix_complex_free(evec);
@@ -881,37 +979,60 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   free(out_img_name);
   free(in_img_name);
   free(meta_name);
+  free_classifier(classifier);
 
   meta_free(inMeta);
   meta_free(outMeta);
+}
+
+void cpx2classification(const char *inFile, const char *outFile,
+                        int tc_flag, const char *classFile)
+{
+  if (tc_flag)
+    polarimetric_decomp(inFile, outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+                        classFile, 1);
+  else
+    polarimetric_decomp(inFile, outFile,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+                        classFile, 0);
 }
 
 void cpx2sinclair(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Sinclair decomposition channels\n");
   if (tc_flag)
-    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, -1, -1, -1, 1, 2, 3);
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,1,2,3,NULL,-1);
   else
-    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2);
+    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,-1,-1,-1,0,1,2,NULL,-1);
 }
 
 void cpx2pauli(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nGenerating Paul decomposition channels\n");
   if (tc_flag)
-    polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, -1, -1, -1, -1, -1, -1);
+    polarimetric_decomp(inFile,outFile,0,1,2,3,-1,-1,-1,-1,-1,-1,NULL,-1);
   else
-    polarimetric_decomp(inFile, outFile, -1, 0, 1, 2, -1, -1, -1, -1, -1, -1);
+    polarimetric_decomp(inFile,outFile,-1,0,1,2,-1,-1,-1,-1,-1,-1,NULL,-1);
 }
 
 void cpx2cloude_pottier(const char *inFile, const char *outFile, int tc_flag)
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
 		 "for Cloude-Pottier classification\n");
-  if (tc_flag)
-    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, 1, 2, 3, -1, -1, -1);
-  else 
-    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
+  cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
+}
+
+void cpx2cloude_pottier8(const char *inFile, const char *outFile, int tc_flag)
+{
+  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
+		 "for Cloude-Pottier classification (8 classes)\n");
+  cpx2classification(inFile, outFile, tc_flag, "cloude8.cla");
+}
+
+void cpx2cloude_pottier16(const char *inFile, const char *outFile, int tc_flag)
+{
+  asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha "
+		 "for Cloude-Pottier classification (16 classes)\n");
+  cpx2classification(inFile, outFile, tc_flag, "cloude16.cla");
 }
 
 void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
@@ -919,7 +1040,7 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
 {
   asfPrintStatus("\n\nCalculating entropy, anisotropy and alpha.\n");
   if (tc_flag)
-    polarimetric_decomp(inFile, outFile, 0, -1, -1, -1, 1, 2, 3, -1, -1, -1);
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,1,2,3,-1,-1,-1,NULL,-1);
   else 
-    polarimetric_decomp(inFile, outFile, -1, -1, -1, -1, 0, 1, 2, -1, -1, -1);
+    polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,NULL,-1);
 }

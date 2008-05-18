@@ -1431,9 +1431,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       else if (cfg->polarimetry->sinclair)
 	cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier)
-	cpx2cloude_pottier(inFile, outFile, cfg->general->terrain_correct);
+	cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_ext)
-	asfPrintError("Extended Cloude-Pottier classification not supported yet.\n");
+	cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_nc)
 	cpx2entropy_anisotropy_alpha(inFile, outFile,
                                      cfg->general->terrain_correct);
@@ -2086,132 +2086,159 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   if (cfg->general->import && !is_airsar)
     copy_meta(inFile, outFile);
 
-  if (strlen(cfg->export->rgb) > 0) {
-    // user has requested banding
-    char *red,  *green, *blue;
-    if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
-      int num_found;
-      char **bands = find_bands(inFile, TRUE, red, green, blue,
-                                &num_found);
-      if (num_found > 0) {
-        asfPrintStatus("\nExporting RGB bands into single color file:\n"
-                       "Red band  : %s\n"
-                       "Green band: %s\n"
-                       "Blue band : %s\n\n",
-                       red, green, blue);
-        check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
-                                      inFile, outFile, bands),
-                     "export data file (asf_export), banded.\n");
-        for (i=0; i<num_found; i++)
-          FREE(bands[i]);
-        FREE(bands);
-      } else {
-        asfPrintError("The requested bands (%s) "
-                      "were not available in the file: %s\n",
-                      cfg->export->rgb, inFile);
-        strcpy(cfg->export->rgb, "");
+  meta_parameters *meta = meta_read(inFile);
+  if (strlen(cfg->export->lut) > 0) {
+    if (meta->general->band_count != 1) {
+      asfPrintWarning("RGB Look-up-table not allowed for multi-band images."
+                      " Ignored.\n");
+      strcpy(cfg->export->lut,"");
+    }
+    else {
+      if (strlen(cfg->export->rgb) > 0) {
+        asfPrintWarning("RGB Banding option not allowed with RGB look up table."
+                        " Ignored.\n");
       }
-      FREE(red); FREE(green); FREE(blue);
-    } else {
-      asfPrintError("Invalid listing of RGB bands: %s\n",
-                    cfg->export->rgb);
-      strcpy(cfg->export->rgb, "");
+      if (scale != TRUNCATE) {
+        asfPrintWarning("Scale option %s not allowed with RGB look-up-table."
+                        " Using TRUNCATE\n",
+                        cfg->export->byte);
+      }
+      asfPrintStatus("Exporting using look-up-table: %s\n", cfg->export->lut);
+      check_return(
+        asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0, cfg->export->lut,
+                         inFile, outFile, NULL),
+        "exporting data file (asf_export), using rgb look up table.\n");
     }
   }
 
-  if (strlen(cfg->export->rgb) == 0)
-  {
-    meta_parameters *meta = meta_read(inFile);
-    if (meta->optical && (true_color || false_color)) {
-      // Multi-band optical data, exporting as true or false color single file
-      asfPrintStatus("\nExporting %s file...\n\n\n",
-                     true_color ? "True Color" : false_color ? "False Color" : "Unknown");
-      if (true_color &&
-          (strstr(meta->general->bands, "01") == NULL ||
-           strstr(meta->general->bands, "02") == NULL ||
-           strstr(meta->general->bands, "03") == NULL)
-        )
-      {
-        asfPrintError("Imported file does not contain required color bands\n"
-                      "necessary for true color output (03, 02, 01)\n");
+  if (strlen(cfg->export->lut)==0) {
+    // non look-up-table case
+    if (strlen(cfg->export->rgb) > 0) {
+      // user has requested banding
+      char *red,  *green, *blue;
+      if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
+        int num_found;
+        char **bands = find_bands(inFile, TRUE, red, green, blue,
+                                  &num_found);
+        if (num_found > 0) {
+          asfPrintStatus("\nExporting RGB bands into single color file:\n"
+                         "Red band  : %s\n"
+                         "Green band: %s\n"
+                         "Blue band : %s\n\n",
+                         red, green, blue);
+          check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+                                        inFile, outFile, bands),
+                       "export data file (asf_export), banded.\n");
+          for (i=0; i<num_found; i++)
+            FREE(bands[i]);
+          FREE(bands);
+        } else {
+          asfPrintError("The requested bands (%s) "
+                        "were not available in the file: %s\n",
+                        cfg->export->rgb, inFile);
+          strcpy(cfg->export->rgb, "");
+        }
+        FREE(red); FREE(green); FREE(blue);
+      } else {
+        asfPrintError("Invalid listing of RGB bands: %s\n",
+                      cfg->export->rgb);
+        strcpy(cfg->export->rgb, "");
       }
-      if (false_color &&
-          (strstr(meta->general->bands, "02") == NULL ||
-           strstr(meta->general->bands, "03") == NULL ||
-           strstr(meta->general->bands, "04") == NULL)
-        )
-      {
-        asfPrintError("Imported file does not contain required color bands\n"
-                      "necessary for false color output (04, 03, 02)\n");
-      }
-      if (scale != NONE) {
-        asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
-                        "True Color or False Color output was selected, the byte conversion\n"
-                        "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
-      }
-      char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-      if (meta->general->band_count >= 4 && bands != NULL) {
-        // The imported file IS a multiband file with enough bands,
-        // but the extract bands need to be ordered correctly
-        if (true_color) {
-          strcpy(bands[0], "03");
-          strcpy(bands[1], "02");
-          strcpy(bands[2], "01");
-          strcpy(bands[3], "");
+    }
+    
+    if (strlen(cfg->export->rgb) == 0)
+    {
+      if (meta->optical && (true_color || false_color)) {
+        // Multi-band optical data, exporting as true or false color single file
+        asfPrintStatus("\nExporting %s file...\n\n\n",
+                       true_color ? "True Color" : false_color ? "False Color" : "Unknown");
+        if (true_color &&
+            (strstr(meta->general->bands, "01") == NULL ||
+             strstr(meta->general->bands, "02") == NULL ||
+             strstr(meta->general->bands, "03") == NULL)
+          )
+        {
+          asfPrintError("Imported file does not contain required color bands\n"
+                        "necessary for true color output (03, 02, 01)\n");
+        }
+        if (false_color &&
+            (strstr(meta->general->bands, "02") == NULL ||
+             strstr(meta->general->bands, "03") == NULL ||
+             strstr(meta->general->bands, "04") == NULL)
+          )
+        {
+          asfPrintError("Imported file does not contain required color bands\n"
+                        "necessary for false color output (04, 03, 02)\n");
+        }
+        if (scale != NONE) {
+          asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
+                          "True Color or False Color output was selected, the byte conversion\n"
+                          "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
+        }
+        char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
+        if (meta->general->band_count >= 4 && bands != NULL) {
+          // The imported file IS a multiband file with enough bands,
+          // but the extract bands need to be ordered correctly
+          if (true_color) {
+            strcpy(bands[0], "03");
+            strcpy(bands[1], "02");
+            strcpy(bands[2], "01");
+            strcpy(bands[3], "");
+          }
+          else {
+            strcpy(bands[0], "04");
+            strcpy(bands[1], "03");
+            strcpy(bands[2], "02");
+            strcpy(bands[3], "");
+          }
+          check_return(asf_export_bands(format, NONE, TRUE,
+                                        true_color, false_color, 0, 0, NULL,
+                                        inFile, outFile, bands),
+                       "exporting data file (asf_export), color banded.\n");
+          for (i=0; i<meta->general->band_count; ++i)
+            FREE (bands[i]);
+          FREE(bands);
         }
         else {
-          strcpy(bands[0], "04");
-          strcpy(bands[1], "03");
-          strcpy(bands[2], "02");
-          strcpy(bands[3], "");
+          asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
+                        inFile);
         }
-        check_return(asf_export_bands(format, NONE, TRUE,
-                                      true_color, false_color, 0, 0, NULL,
-                                      inFile, outFile, bands),
-                     "exporting data file (asf_export), color banded.\n");
-        for (i=0; i<meta->general->band_count; ++i)
-          FREE (bands[i]);
-        FREE(bands);
       }
       else {
-        asfPrintError("Cannot determine band names from imported metadata file:\n  %s\n",
-                      inFile);
-      }
-    }
-    else {
-      if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
-        // multi-band, exporting as separate greyscale files
-        asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
-                       meta->general->band_count);
-        check_return(asf_export_bands(format, scale, FALSE,
-                                      0, 0, 0, 0, NULL,
-                                      inFile, outFile, NULL),
-                     "exporting data file (asf_export), greyscale bands.\n");
-      }
-      else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
-        // multi-band, exporting single band in one greyscale file
-        asfPrintStatus("\nExporting band \"%s\" in a single greyscale file...\n",
-                       cfg->export->band);
-        int num_bands_found = 0;
-        char **band_names = find_single_band(inFile, cfg->export->band,
-                                             &num_bands_found);
-        if (num_bands_found != 1) {
-          asfPrintError("Selected band for export not found.\n");
+        if (meta->general->band_count != 1 && strlen(cfg->export->band) == 0) {
+          // multi-band, exporting as separate greyscale files
+          asfPrintStatus("\nExporting %d bands as separate greyscale files...\n",
+                         meta->general->band_count);
+          check_return(asf_export_bands(format, scale, FALSE,
+                                        0, 0, 0, 0, NULL,
+                                        inFile, outFile, NULL),
+                       "exporting data file (asf_export), greyscale bands.\n");
         }
-        check_return(asf_export_bands(format, scale, FALSE,
-                                      0, 0, 0, 0, NULL,
-                                      inFile, outFile, band_names),
-                     "exporting data file (asf_export), single selected greyscale band.\n");
-        if (*band_names) FREE(*band_names);
-        if (band_names) FREE(band_names);
-      }
-      else {
-        // single band
-        check_return(asf_export(format, scale, inFile, outFile),
-                     "exporting data file (asf_export), single band.\n");
+        else if (meta->general->band_count != 1 && strlen(cfg->export->band) > 0) {
+          // multi-band, exporting single band in one greyscale file
+          asfPrintStatus("\nExporting band \"%s\" in a single greyscale file...\n",
+                         cfg->export->band);
+          int num_bands_found = 0;
+          char **band_names = find_single_band(inFile, cfg->export->band,
+                                               &num_bands_found);
+          if (num_bands_found != 1) {
+            asfPrintError("Selected band for export not found.\n");
+          }
+          check_return(asf_export_bands(format, scale, FALSE,
+                                        0, 0, 0, 0, NULL,
+                                        inFile, outFile, band_names),
+                       "exporting data file (asf_export), single selected greyscale band.\n");
+          if (*band_names) FREE(*band_names);
+          if (band_names) FREE(band_names);
+        }
+        else {
+          // single band
+          check_return(asf_export(format, scale, inFile, outFile),
+                       "exporting data file (asf_export), single band.\n");
+        }
       }
     }
-    meta_free(meta);
   }
+  meta_free(meta);
 }
 

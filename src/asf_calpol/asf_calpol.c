@@ -1,13 +1,13 @@
 #define ASF_NAME_STRING "asf_calpol"
 
 #define ASF_USAGE_STRING \
-"   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-update]\n"\
+"   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-c <classification file>]\n"\
 "          <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program decomposes SLC quad-pole data into data required\n"\
-"     to build some common polarimetric decompositions.  The output\n"\
-"     is a seven-band image:\n"\
+"     to build some common polarimetric decompositions.\n\n"\
+"     Without the -c option, the output is a nine-band image:\n"\
 "       band 0: Amplitude (HH)\n"\
 "       band 1: HH - VV (even bounce) [Pauli red]\n"\
 "       band 2: 2*HV (rotated dihedral) [Pauli green]\n"\
@@ -17,7 +17,10 @@
 "       band 6: Alpha\n"\
 "       band 7: HH [Sinclair red]\n"\
 "       band 8: (HV+VH)/2 [Sinclair green]\n"\
-"       band 9: VV [Sinclair blue]\n\n"
+"       band 9: VV [Sinclair blue]\n\n"\
+"     When used with the -c option, the output is a 2-band image:\n"\
+"       band 0: Amplitude (HH)\n"\
+"       band 1: Classification band\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -26,6 +29,14 @@
 "     The output file, also required, will be in ASF Internal format.\n"
 
 #define ASF_OPTIONS_STRING \
+"     -c <classification file>\n"\
+"          Uses the entropy, anisotropy and alpha values to classify\n"\
+"          the output according to the classification scheme defined\n"\
+"          in the given file.  The file may be in the current directory\n"\
+"          or in the ASF share directory.\n\n"\
+"          cloude8.cla and cloude16.cla are available for producing\n"\
+"          Cloude-Pottier 8 and 16 class classifications.\n"\
+"\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
 "\n"\
@@ -114,6 +125,9 @@ main (int argc, char *argv[])
   handle_common_asf_args(&argc, &argv, ASF_NAME_STRING);
   asfSplashScreen(argc, argv);
 
+  char classFile[255];
+  int classify = extract_string_options(&argc,&argv,classFile,"-c",NULL);
+
   if (argc<=1)
       usage(ASF_NAME_STRING);
   else if (strmatches(argv[1],"-help","--help",NULL))
@@ -142,8 +156,14 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-  //polarimetric_decomp(inFile, outFile, 0, 1, 2, 3, -1, -1, -1, -1, -1, -1);
+  if (classify) {
+    polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+                        classFile,1);    
+  }
+  else {
+    polarimetric_decomp(inFile,outFile,0,1,2,3,4,5,6,7,8,9,NULL,-1);
+  }
+
 
   asfPrintStatus("Done.\n");
   return EXIT_SUCCESS;

@@ -74,12 +74,12 @@ LIB = \
 
 CFLAGS += -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c htmlhelp.chm
+$(TARGET).exe: $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)/$(DEST_TARGET).exe
 	cp $(TARGET).glade $(SHAREDIR)/$(DEST_TARGET).glade
 	cp $(TARGET).ico $(SHAREDIR)/$(DEST_TARGET).ico
-	cp htmlhelp.chm $(SHAREDIR)/$(DEST_TARGET).chm
+	-cp htmlhelp.chm $(SHAREDIR)/$(DEST_TARGET).chm
 
 htmlhelp.chm: asf_convert_gui.sgml
 	xsltproc --nonet /usr/share/docbook-xsl/htmlhelp/htmlhelp.xsl \

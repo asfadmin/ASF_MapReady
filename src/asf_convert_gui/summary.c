@@ -143,9 +143,13 @@ void update_summary()
             strcat(text, "(Sinclair)");
             break;
           case POLARIMETRY_CLOUDE8:
+            strcat(text, "(Cloude Pottier 8)");
+            break;
           case POLARIMETRY_CLOUDE16:
+            strcat(text, "(Cloude Pottier 16)");
+            break;
           case POLARIMETRY_CLOUDE_NOCLASSIFY: 
-            strcat(text, "(Cloude Pottier)");
+            strcat(text, "(Entropy,Anisotropy,Alpha)");
             break;
         }
     }

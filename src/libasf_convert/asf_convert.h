@@ -150,6 +150,7 @@ typedef struct
   char *format;           // output format: ASF, GEOTIFF, JPEG, PGM
   char *byte;             // conversion to byte: SIGMA, MINMAX, TRUNCATE,
                           // HISTOGRAM_EQUALIZE
+  char *lut;              // A look-up-table to convert greyscale to rgb
   char *rgb;              // RGB banding setting
   int truecolor;          // True color flag (bands 3-2-1 w/2-sigma contrast expansion)
   int falsecolor;         // False color flag (ditto, but bands 4-3-2)
