@@ -105,8 +105,8 @@ int main(int argc,char *argv[])
   FloatImage *img = float_image_new_from_metadata(meta, infile);
 
   asfPrintStatus("Interpolating DEM holes...\n");
-  interp_dem_holes_float_image(meta, img, cutoff, TRUE,
-                               max_hole_width, max_slope);
+  interp_dem_holes_float_image(img, cutoff, TRUE);
+                               //max_hole_width, max_slope);
 
   meta_write(meta, outfile);
   asfPrintStatus("Writing smoothed dem: %s\n", outfile);
