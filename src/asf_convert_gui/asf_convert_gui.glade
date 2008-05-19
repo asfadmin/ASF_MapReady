@@ -1658,7 +1658,7 @@
 					    <widget class="GtkEntry" id="dem_entry">
 					      <property name="width_request">370</property>
 					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).</property>
+					      <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).  The DEM should be projected, and use meters as the horizontal and vertical unit.</property>
 					      <property name="can_focus">True</property>
 					      <property name="editable">True</property>
 					      <property name="visibility">True</property>

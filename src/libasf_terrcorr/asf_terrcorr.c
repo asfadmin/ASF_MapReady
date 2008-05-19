@@ -869,7 +869,16 @@ int match_dem(meta_parameters *metaSAR,
       if (fabs(dy2) > required_match || fabs(dx2) > required_match) {
         asfPrintError("Correlated images failed to match!\n\n"
                       " Original fftMatch offset: (dx,dy) = %14.9f,%14.9f\n"
-                      "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n",
+                      "   After shift, offset is: (dx,dy) = %14.9f,%14.9f\n\n"
+" If you are trying to terrain correct an area that does not have enough\n"
+" relief, or has too much water, or too many moving features (such as\n"
+" glaciers), it can be difficult to determine good offsets.  This can also\n"
+" occur if you DEM doesn't use meters as the verical unit.  In these cases\n"
+" sometimes the -auto-water-mask option can help.  Or, you can create your\n"
+" own mask file, to remove the regions of the scene which do not have\n"
+" sufficient relief (i.e., are too flat) to match.\n\n"
+" You may be able to determine the offsets manually, and use the -offsets\n"
+" option to skip the coregistration portion and use the provided offsets.\n\n"
 " If you selected Power, Sigma, Beta, or Gamma radiometry, the rescaling\n"
 " of the data which occurs can sometimes result in an image that does\n"
 " not correlate well with the DEM and this will cause terrain correction\n"
