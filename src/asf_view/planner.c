@@ -889,7 +889,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     int max_days = get_int_from_entry("max_days_entry");
     if (date_diff(startdate, enddate) > max_days) {
       char tmp[64];
-      sprintf(tmp, "Date range exceeds the maximum of %d days", max_days);
+      sprintf(tmp, "Date range too large (%d days max)\n", max_days);
       strcat(errstr, tmp);
     }
 
@@ -1046,6 +1046,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
         aoi = polygon_new_closed(g_poly->n+1, x, y);
       }
     }
+
+    // make sure polygon is not "too small" to plan in
+    if (aoi && polygon_area(aoi) < 100)
+      strcat(errstr, "Area of interest is too small.\n");
 
     // pass type
     i = get_combo_box_item("orbit_direction_combobox");

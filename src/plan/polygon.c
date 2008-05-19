@@ -171,6 +171,39 @@ void polygon_get_bbox(Polygon *p, double *xmin, double *xmax,
   }
 }
 
+double polygon_area(Polygon *p)
+{
+  if (p->n <= 1)
+    return 0.0;
+
+  int i;
+  double A=0.0;
+
+  for (i=1; i<p->n; ++i)
+    A += p->x[i-1] * p->y[i] - p->x[i] * p->y[i-1];
+
+  // close the polygon automatically -- if the polygon is already
+  // closed, this will just add 0
+  A += p->x[p->n-1] * p->y[0] - p->x[0] * p->y[p->n-1];
+
+  return A/2.;
+}
+
+double polygon_perimeter(Polygon *p)
+{
+  if (p->n <= 1)
+    return 0.0;
+
+  int i;
+  double d=0.0;
+
+  for (i=1; i<p->n; ++i)
+    d += hypot(p->x[i]-p->x[i-1], p->y[i]-p->y[i-1]);
+
+  // no automatic closing for the perimeter calculation
+  return d;
+}
+
 void polygon_free(Polygon *self)
 {
   if (self) {

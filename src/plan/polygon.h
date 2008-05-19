@@ -15,7 +15,8 @@ int point_in_polygon(Polygon *self, double x, double y);
 int polygon_overlap(Polygon *p1, Polygon *p2);
 void polygon_get_bbox(Polygon *p, double *xmin, double *xmax,
                       double *ymin, double *ymax);
-
+double polygon_area(Polygon *p);
+double polygon_perimeter(Polygon *p);
 void polygon_free(Polygon *self);
 
 #endif
