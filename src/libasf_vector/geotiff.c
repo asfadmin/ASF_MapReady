@@ -110,14 +110,24 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
   read_header_config("GEOTIFF", &dbf, &nCols);
   for (ii=0; ii<nCols; ii++)
     if (dbf[ii].visible) {
-      sprintf(str, "%s,", dbf[ii].header);
-      strcat(header, str);
+      if (strcmp(dbf[ii].header, "LAT") == 0 ||
+	  strcmp(dbf[ii].header, "LON") == 0) {
+	for (kk=0; kk<4; kk++) {	
+	  sprintf(str, "%s%d,", dbf[ii].header, kk+1);
+	  strcat(header, str);
+	}
+      }
+      else {
+	sprintf(str, "%s,", dbf[ii].header);
+	strcat(header, str);
+      }
     }
 
   // Read GeoTIFF information
   read_geotiff(inFile, &geo);
 
   // Write generic csv file
+  strcpy(line, "");
   fp = FOPEN(outFile, "w");
   header[strlen(header)-1] = '\0';
   fprintf(fp, "%s\n", header);
@@ -144,10 +154,15 @@ int geotiff2csv(char *inFile, char *outFile, int listFlag)
 	sprintf(str, "%d,", geo->band_count);
         strcat(line, str);
       }
-      else if (strcmp(dbf[ii].header, "LAT") == 0 &&
-	       strcmp(dbf[ii].header, "LON") == 0) {
+      else if (strcmp(dbf[ii].header, "LAT") == 0) {
 	for (kk=0; kk<4; kk++) {
-	  sprintf(str, "%s,%s,", lf(geo->lat[kk]), lf(geo->lon[kk]));
+	  sprintf(str, "%s,", lf(geo->lat[kk]));
+	  strcat(line, str);
+	}
+      }
+      else if (strcmp(dbf[ii].header, "LON") == 0) {
+	for (kk=0; kk<4; kk++) {
+	  sprintf(str, "%s,", lf(geo->lon[kk]));
 	  strcat(line, str);
 	}
       }
@@ -245,14 +260,10 @@ int geotiff2kml(char *inFile, char *outFile, int listFlag)
   FILE *fp;
   dbf_header_t *dbf;
   geotiff_type_t *geo;
-  int ii, nCols;
+  int nCols;
 
   // Read configuration file
   read_header_config("GEOTIFF", &dbf, &nCols);
-
-  for (ii=0; ii<nCols; ii++)
-    printf("ii: %d, header: %s, format: %d, visible: %d",
-	   ii, dbf[ii].header, dbf[ii].format, dbf[ii].visible);
 
   // Read GeoTIFF information
   read_geotiff(inFile, &geo);

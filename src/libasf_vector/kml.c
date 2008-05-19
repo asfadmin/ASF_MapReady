@@ -1487,9 +1487,12 @@ static void shape_kml_init(char *inFile, char *format, char *header,
 {
   // We can only deal with formats that we can positively identify.
   // Otherwise things can get pretty complicated.
-  if (strcmp(format, "META") == 0)
+  if (strcmp(format, "META") == 0) {
     // FIXME: initialization currently requires metadata structure
     asfPrintError("Conversion of META format currently not supported!\n");
+    meta_parameters *meta;
+    shape_meta_init(inFile, meta);
+  }
   else if (strcmp(format, "POINT") == 0)
     shape_point_init(inFile);
   else if (strcmp(format, "POLYGON") == 0)
@@ -1514,6 +1517,8 @@ static void shape_kml_init(char *inFile, char *format, char *header,
   }
   else if (strcmp(format, "AUIG") == 0)
     shape_auig_init(inFile, header);
+  else if (strcmp(format, "URSA") == 0)
+    shape_ursa_init(inFile, header);
   else if (strcmp(format, "GEOTIFF") == 0)
     shape_geotiff_init(inFile);
   else
@@ -2097,7 +2102,7 @@ int kml2auig(char *inFile, char *outFile, int listFlag)
             ++p;
             while (isspace(*p))
               ++p;
-            char *q = strstr(p, "<br>");
+            char *q = strstr(p, " <br>");
             if (q) {
               *q = ',';
               ++q;
@@ -2179,6 +2184,7 @@ int kml2shape(char *inFile, char *outFile, int listFlag)
 
   // Close shapefile
   close_shape(dbase, shape);
+  write_esri_proj_file(outFile);
 
   return 1;
 }

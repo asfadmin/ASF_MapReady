@@ -270,9 +270,6 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
   // and we have the column header information.
   // Initialize the KML file
   //kml_custom_init(outFile, format, header, nVertices);
-
-  // Open shape file for some action
-  //open_(outFile, &dbase, &shape);
   
   // Read values and write them to shape file
   char *sValue = (char *) MALLOC(sizeof(char)*255);
@@ -299,19 +296,6 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
 	    nLon++;
 	  }
 
-	  /*
-	  // Write values into the database
-	  if (dbf[ii].format == DBF_STRING)
-	    DBFWriteStringAttribute(dbase, n, field, sValue);
-	  else if (dbf[ii].format == DBF_INTEGER) {
-	    sscanf(sValue, "%i", &nValue);
-	    DBFWriteIntegerAttribute(dbase, n, field, nValue);
-	  }
-	  else if (dbf[ii].format == DBF_DOUBLE) {
-	    sscanf(sValue, "%lf", &fValue);
-	    DBFWriteDoubleAttribute(dbase, n, field, fValue);
-	  }
-	  */
 	  field++;
 	}
       }
@@ -319,18 +303,6 @@ int custom2kml(char *inFile, const char *format, char *outFile, int listFlag)
     lat[nVertices] = lat[0];
     lon[nVertices] = lon[0];
 
-    /*
-    // Write shape object
-    SHPObject *shapeObject=NULL;
-    if (nVertices == 1)
-      shapeObject = 
-	SHPCreateSimpleObject(SHPT_POINT, 1, &lon[0], &lat[0], NULL);
-    else
-      shapeObject =
-	SHPCreateSimpleObject(SHPT_POLYGON, nVertices+1, lon, lat, NULL);
-    SHPWriteObject(shape, -1, shapeObject);
-    SHPDestroyObject(shapeObject);
-    */
     n++;
   }
   FCLOSE(fp);
