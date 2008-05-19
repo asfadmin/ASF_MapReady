@@ -499,9 +499,13 @@ static double calc_alpha(gsl_complex z)
   double re = GSL_REAL(z);
   double im = GSL_IMAG(z);
   double alpha = acos(re*re + im*im);
+
   // alpha should be 0-90
-  assert(alpha > 0);
-  assert(alpha < 1.571);
+  if (alpha < 0 || alpha > 1.571) {
+    printf("Invalid alpha value: %f\n", alpha);
+    alpha = 0;
+  }
+
   return alpha;
 }
 
