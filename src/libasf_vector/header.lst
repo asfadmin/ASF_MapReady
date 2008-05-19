@@ -290,3 +290,10 @@ Path_Number = integer
 Frame_Number = integer
 Cloud_Cover = integer
 Faraday_Rotation = double
+
+[TEST]
+string = string
+double = double
+integer = integer
+lat = double
+lon = double
