@@ -225,6 +225,23 @@ long add_a_day(long l)
     return l2;
 }
 
+int date_diff(long date1, long date2)
+{
+  long startdate = date1;
+  long enddate = date2;
+  if (date1 > date2) {
+    startdate = date2;
+    enddate = date1;
+  }
+  int ndays = 0;
+  while (startdate < enddate) {
+    startdate = add_a_day(startdate);
+    ++ndays;
+  }
+  
+  return ndays;
+}
+
 void date_tester()
 {
     int i;

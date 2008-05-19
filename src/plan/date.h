@@ -10,3 +10,4 @@ long add_a_day(long l);
 long add_days(long l, int d);
 long current_date(void);
 void date_tester(void);
+int date_diff(long date1, long date2);

@@ -355,11 +355,13 @@ static void populate_config_info()
         fp = fopen(config_filename, "r");
 
     char *output_dir, *output_file;
+    int max_days;
 
     if (!fp) {
         // no config file -- default to the share dir
         output_dir = STRDUP(get_asf_share_dir());
         output_file = STRDUP("output.csv");
+        max_days = 30;
     }
     else {
         char s[256], *junk;
@@ -383,6 +385,21 @@ static void populate_config_info()
         }
         free(junk);
 
+        char *tmp;
+        if (!fgets(s, 255, fp))
+            strcpy(s,"max days = 30");
+        split2(s, '=', &junk, &tmp);
+        if (strcmp_case(junk, "output file")!=0) {
+          printf("Invalid config file line 3, "
+                 "does not specify maximum days.\n");
+          max_days = 30;
+        }
+        else {
+          max_days = atoi(tmp);
+        }
+        free(junk);
+        free(tmp);
+
         fclose(fp);
     }
 
@@ -391,6 +408,8 @@ static void populate_config_info()
 
     put_string_to_entry("output_file_entry", output_file);
     free(output_file);
+    
+    put_int_to_entry("max_days_entry", max_days);
 }
 
 static void select_planner_map()
@@ -867,6 +886,13 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
     if (!is_valid_date(enddate))
       strcat(errstr, "Invalid end date.\n");
 
+    int max_days = get_int_from_entry("max_days_entry");
+    if (date_diff(startdate, enddate) > max_days) {
+      char tmp[64];
+      sprintf(tmp, "Date range exceeds the maximum of %d days", max_days);
+      strcat(errstr, tmp);
+    }
+
     // collect together the polygon, calculate min_lat, etc
     meta_parameters *meta = curr->meta;
     if (!(meta->projection || (meta->sar&&meta->state_vectors) ||
@@ -1230,6 +1256,7 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 {
     char *output_dir = STRDUP(get_string_from_entry("output_dir_entry"));
     char *output_file = STRDUP(get_string_from_entry("output_file_entry"));
+
     if (strlen(output_file)==0)
       output_file = STRDUP("output.csv");
 
@@ -1414,6 +1441,8 @@ SIGNAL_CALLBACK void on_save_setup_button_clicked(GtkWidget *w)
                 get_string_from_entry("output_dir_entry"));
         fprintf(ofp, "output file = %s\n",
                 get_string_from_entry("output_file_entry"));
+        fprintf(ofp, "max days = %d\n",
+                get_int_from_entry("max_days_entry"));
         fclose(ofp);
     }
 }
