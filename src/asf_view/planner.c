@@ -348,7 +348,7 @@ static void populate_tle_info()
 
 static void populate_config_info()
 {
-    char *config_filename = find_in_share("planner_config.txt");
+    char *config_filename = find_in_share("planner.cfg");
     FILE *fp = NULL;
 
     if (config_filename)
@@ -389,7 +389,7 @@ static void populate_config_info()
         if (!fgets(s, 255, fp))
             strcpy(s,"max days = 30");
         split2(s, '=', &junk, &tmp);
-        if (strcmp_case(junk, "output file")!=0) {
+        if (strcmp_case(junk, "max days")!=0) {
           printf("Invalid config file line 3, "
                  "does not specify maximum days.\n");
           max_days = 30;

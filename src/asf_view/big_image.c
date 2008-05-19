@@ -711,7 +711,8 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
     }
 
     if (has_focus("output_dir_entry") || 
-        has_focus("output_file_entry"))
+        has_focus("output_file_entry") ||
+        has_focus("max_days_entry"))
     {
         return FALSE;
     }
