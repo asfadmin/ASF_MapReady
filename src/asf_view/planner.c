@@ -457,7 +457,7 @@ void setup_planner()
     GtkCellRenderer *rend;
 
     GtkListStore *ls = gtk_list_store_new(
-                           11,              // (# of columns)
+                           13,              // (# of columns)
                            GDK_TYPE_PIXBUF, // color pixbuf
                            G_TYPE_BOOLEAN,  // checkbox col
                            G_TYPE_STRING,   // date (string)
@@ -669,6 +669,11 @@ void setup_planner()
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
     gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Mar 20 2008)");
+
+    // take the "Help" text in the planner from the regular planner
+    GtkWidget *help_label = get_widget_checked("help_label");
+    put_string_to_label("planner_help_label",
+                        gtk_label_get_text(GTK_LABEL(help_label)));
 
     // update look angle info label
     update_look();
@@ -1254,7 +1259,8 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
 
     fprintf(ofp, 
             "Year,Month,Day,Hour,Minute,Second,Duration,Start Latitude,"
-            "Stop Latitude,Orbit,Path,Coverage\n");
+            "Stop Latitude,Orbit,Path,Direction,Pointing Angle,Beam Mode,"
+            "Coverage\n");
 
     gboolean valid = gtk_tree_model_get_iter_first(liststore, &iter);
     while (valid)

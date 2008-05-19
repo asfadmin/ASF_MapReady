@@ -16,7 +16,15 @@ static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
                      x, y, &projZ);
     }
     else {
-      int zone = utm_zone(meta->general->center_longitude);
+      int zone;
+      if (meta_is_valid_double(meta->general->center_longitude) &&
+          meta->general->center_longitude > -180 &&
+          meta->general->center_longitude < 180)
+      {
+        zone = utm_zone(meta->general->center_longitude);
+      } else {
+        zone = utm_zone(lon);
+      }
       latLon2UTM_zone(lat, lon, 0, zone, x, y);
     }
   } else {
