@@ -52,6 +52,8 @@ enum
   COL_START_LAT,
   COL_STOP_LAT,
   COL_DURATION,
+  COL_BEAMMODE,
+  COL_ANGLE,
   COL_INDEX
 };
 
@@ -466,6 +468,8 @@ void setup_planner()
                            G_TYPE_STRING,   // stop lat -- hidden
                            G_TYPE_STRING,   // duration
                            G_TYPE_STRING,   // orbit direction
+                           G_TYPE_STRING,   // beam mode -- hidden
+                           G_TYPE_STRING,   // pointing angle -- hidden
                            G_TYPE_STRING);  // index (into g_polys) -- hidden
 
     liststore = GTK_TREE_MODEL(ls);
@@ -567,6 +571,24 @@ void setup_planner()
     rend = gtk_cell_renderer_text_new();
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_ORBITDIR);
+
+    // Column: Beam Mode (hidden)
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_BEAMMODE);
+
+    // Column: Pointing Angle (hidden)
+    col = gtk_tree_view_column_new();
+    gtk_tree_view_column_set_title(col, "");
+    gtk_tree_view_column_set_visible(col, FALSE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
+    rend = gtk_cell_renderer_text_new();
+    gtk_tree_view_column_pack_start(col, rend, TRUE);
+    gtk_tree_view_column_add_attribute(col, rend, "text", COL_ANGLE);
 
     // Column: Index (hidden)
     col = gtk_tree_view_column_new();
@@ -1133,6 +1155,10 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char orbit_dir[5];
           sprintf(orbit_dir, "%c", pi->dir);
 
+          // pointing angle
+          char pointing_angle_info[64];
+          sprintf(pointing_angle_info, "%.1f", look_angle*R2D);
+
           // select ones with >60% of the max coverage
           int selected = pi->total_pct > coverage_cutoff;
 
@@ -1170,6 +1196,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
                              COL_STOP_LAT, stop_lat_info,
                              COL_DURATION, duration_info,
                              COL_ORBITDIR, orbit_dir,
+                             COL_BEAMMODE, beam_mode,
+                             COL_ANGLE, pointing_angle_info,
                              COL_INDEX, index_info,
                              -1);
               
@@ -1232,7 +1260,8 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
     while (valid)
     {
         char *dbl_date_str, *coverage_str, *orbit_path_str,
-             *start_lat_str, *stop_lat_str, *duration_str;
+             *start_lat_str, *stop_lat_str, *duration_str,
+             *orbit_dir_str, *beam_mode_str, *pointing_angle_str;
         gboolean enabled;
         gtk_tree_model_get(liststore, &iter,
                            COL_SELECTED, &enabled,
@@ -1241,7 +1270,10 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                            COL_START_LAT, &start_lat_str,
                            COL_STOP_LAT, &stop_lat_str,
                            COL_DURATION, &duration_str,
+                           COL_ORBITDIR, &orbit_dir_str,
                            COL_ORBIT_PATH, &orbit_path_str,
+                           COL_BEAMMODE, &beam_mode_str,
+                           COL_ANGLE, &pointing_angle_str,
                            -1);
 
         ymd_date ymd;
@@ -1255,6 +1287,7 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         double stop_lat = atof(stop_lat_str);
         double dur = atof(duration_str);
         double cov = atof(coverage_str);
+        double pointing_angle = atof(pointing_angle_str);
 
         int orbit, path;
         sscanf(orbit_path_str, "%d/%d", &orbit, &path);
@@ -1276,10 +1309,14 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
                   ",%.2f"  // stop latitude
                   ",%d"    // orbit
                   ",%d"    // path
+                  ",%s"    // orbit direction
+                  ",%.1f"  // pointing angle
+                  ",%s"    // beam mode
                   ",%.1f"  // coverage pct
                   "\n",
-                ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
-                hms.sec,dur,start_lat,stop_lat,orbit,path,cov);
+                  ymd.year,ymd.month,ymd.day,hms.hour,hms.min,
+                  hms.sec,dur,start_lat,stop_lat,orbit,path,
+                  orbit_dir_str,pointing_angle,beam_mode_str,cov);
 
           ++num;
         }
@@ -1290,6 +1327,9 @@ SIGNAL_CALLBACK void on_save_acquisitions_button_clicked(GtkWidget *w)
         g_free(stop_lat_str);
         g_free(duration_str);
         g_free(orbit_path_str);
+        g_free(orbit_dir_str);
+        g_free(beam_mode_str);
+        g_free(pointing_angle_str);
 
         valid = gtk_tree_model_iter_next(liststore, &iter);
     }
