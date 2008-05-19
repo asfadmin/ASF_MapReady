@@ -293,7 +293,10 @@ int meta_get_lineSamp(meta_parameters *meta,
   double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
   double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
 
-  if (meta->transform && a != NULL && b  != NULL) {
+  if (meta->transform && a != NULL && b  != NULL &&
+      (meta->transform->parameter_count == 10 ||
+       meta->transform->parameter_count == 25))
+  {
     if (meta->transform->parameter_count == 25) {
       //printf("before - lat: %.4lf, lon: %.4lf\n", lat, lon);
       lat -= meta->transform->origin_lat;

@@ -37,6 +37,9 @@ static void ts2ls(meta_parameters *meta, double time, double slant,
 
   meta_timeSlantDop2latLon(meta, time, slant, 0, 0, &lat, &lon);
   meta_get_lineSamp(meta, lat, lon, 0, pLine, pSamp);
+
+  //printf("ts2ls: %f,%f -> %f,%f -> %f,%f\n",
+  //       time,slant, lat,lon, *pLine,*pSamp);
 }
 
 static int
