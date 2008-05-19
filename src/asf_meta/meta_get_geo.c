@@ -293,10 +293,11 @@ int meta_get_lineSamp(meta_parameters *meta,
   double *a = get_a_coeffs(meta); // Usually meta->transform->map2ls_a;
   double *b = get_b_coeffs(meta); // Usually meta->transform->map2ls_b;
 
-  if (meta->transform && a != NULL && b  != NULL &&
-      (meta->transform->parameter_count == 10 ||
-       meta->transform->parameter_count == 25))
+  if (meta->transform && a != NULL && b  != NULL)
   {
+    int pc = meta->transform->parameter_count;
+    assert(pc==25 || pc==10 || pc==4);
+
     if (meta->transform->parameter_count == 25) {
       //printf("before - lat: %.4lf, lon: %.4lf\n", lat, lon);
       lat -= meta->transform->origin_lat;
@@ -326,9 +327,8 @@ int meta_get_lineSamp(meta_parameters *meta,
 	       b[14]*lat2 + b[15]*lat*lon4 + b[16]*lat*lon3 + b[17]*lat*lon2 +
 	       b[18]*lat*lon + b[19]*lat + b[20]*lon4 + b[21]*lon3 + 
 	       b[22]*lon2 + b[23]*lon + b[24];
-      //printf("xSamp: %.3lf, yLine: %.3lf\n", *xSamp, *yLine);
     }
-    else if (meta->transform->parameter_count == 10) {
+    else { // if (meta->transform->parameter_count == 10) {
       *xSamp = a[0] + a[1]*lat + a[2]*lon + a[3]*lat*lon + a[4]*lat2 +
 	       a[5]*lon2 + a[6]*lat2*lon + a[7]*lat*lon2 +
 	       a[8]*lat2*lat + a[9]*lon2*lon;
@@ -350,7 +350,7 @@ int meta_get_lineSamp(meta_parameters *meta,
     }
 
     // we use 0-based indexing, whereas these functions are 1-based.
-    if (meta->transform->parameter_count == 10) {
+    if (meta->transform->parameter_count != 25) {
       *xSamp -= 1;
       *yLine -= 1;
     }

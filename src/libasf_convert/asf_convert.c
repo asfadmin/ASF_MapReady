@@ -1969,7 +1969,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // Process the clipped DEM if requested
     if (cfg->terrain_correct->save_terrcorr_dem) {
         // We know the name of the cut DEM in the temporary directory
-        char *tmp = appendToBasename(cfg->terrain_correct->dem, "_cut");
+        char *tmp;
+        if (cfg->terrain_correct->smooth_dem_holes)
+          tmp = appendToBasename(cfg->terrain_correct->dem, "_tc_smooth_cut");
+        else
+          tmp = appendToBasename(cfg->terrain_correct->dem, "_cut");
         char *tmp2 = get_basename(tmp);
         sprintf(inFile, "%s/%s", cfg->general->tmp_dir, tmp2);
         free(tmp);
