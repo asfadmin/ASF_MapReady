@@ -45,7 +45,7 @@ ALOS 2 WB1 300 300 45 1 27.1
 
 # Prism: -1.5 to 1.5?
 #ALOS 2 Prism 40 40 6.3 5 -1.5,1.5
-ALOS 1 Prism 40 40 6.3 5 -1.5 1.5 0.1
+ALOS 1 Prism 40 40 6.3 9 -1.5 1.5 0.1
 
 # Avnir... ?
 ALOS 1 Avnir 70 70 11 1 -44 44 0.1
