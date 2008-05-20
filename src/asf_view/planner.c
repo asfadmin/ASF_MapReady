@@ -416,7 +416,7 @@ static void select_planner_map()
 {
     if (strstr(curr->filename, "land_shallow_topo") != NULL)
       set_combo_box_item("planner_map_combobox", 1);
-    else if (strstr(curr->filename, "terramodis") != NULL)
+    else if (strstr(curr->filename, "Arctic4_1800") != NULL)
       set_combo_box_item("planner_map_combobox", 2);
     else if (strstr(curr->filename, "moa125_hp1") != NULL)
       set_combo_box_item("planner_map_combobox", 3);
@@ -687,7 +687,7 @@ void setup_planner()
 
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Mar 20 2008)");
+    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Apr 02 2008)");
 
     // take the "Help" text in the planner from the regular planner
     GtkWidget *help_label = get_widget_checked("help_label");
@@ -1476,7 +1476,7 @@ SIGNAL_CALLBACK void on_switch_map_button_clicked(GtkWidget *w)
       case 2:
         // "North Pole"
         printf("Loading north pole map...\n");
-        load_file("terramodis.jpg");
+        load_file("Arctic4_1800.tif");
         break;
 
       case 3:
