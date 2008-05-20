@@ -743,63 +743,78 @@ handle_view_output()
         gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
             COMP_COL_OUTPUT_FILE, &out_name, -1);
 
-    if (g_file_test(out_name, G_FILE_TEST_EXISTS))
-    {
-        show_image_with_asf_view(out_name);
-    }
-    else
-    {
-            // could be that band names were appended
-            char *tmp_out=NULL;
-
-            if (try_suffix(out_name, "_HH", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_VV", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_HV", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_VH", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_01", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_02", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_03", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_04", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-
-            // some airsar possibilities
-            else if (try_suffix(out_name, "_c_vv", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_l_vv", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_c_POWER", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_l_POWER", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-            else if (try_suffix(out_name, "_p_POWER", &tmp_out))
-                show_image_with_asf_view(tmp_out);
-
-            // give up
-            else {
-                char msg[2048];
-                sprintf(msg, "Processing on selected file not complete OR\n"
-                             "output image file was not found:\n"
-                     "   %s\n", out_name);
-                message_box(msg);
-            }
-
-            FREE(tmp_out);
-    }
-
+        if (g_file_test(out_name, G_FILE_TEST_EXISTS))
+        {
+          show_image_with_asf_view(out_name);
+        }
+        else
+        {
+          // could be that band names were appended
+          char *tmp_out=NULL;
+          
+          if (try_suffix(out_name, "_HH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_VV", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_HV", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_VH", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_01", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_02", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_03", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_04", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          
+          // some airsar possibilities
+          else if (try_suffix(out_name, "_c_vv", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_l_vv", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_c_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_l_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_p_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          
+          // some SLC possibilities
+          else if (try_suffix(out_name, "_HH-AMP", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_VV-AMP", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_VH-AMP", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_HV-AMP", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_Entropy", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_Anisotropy", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_Alpha", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          
+          // give up
+          else {
+            char msg[2048];
+            sprintf(msg, "Processing on selected file not complete OR\n"
+                    "output image file was not found:\n"
+                    "   %s\n", out_name);
+            message_box(msg);
+          }
+          
+          FREE(tmp_out);
+        }
+        
         g_free(out_name);
     }
-    else
-    {
-        show_please_select_message();
+    else {
+      show_please_select_message();
     }
-
+    
     return TRUE;
 }
 

@@ -1786,7 +1786,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         output_format_t format = PNG;
         scale_t scale = SIGMA;
         meta_parameters *meta;
-        double in_side_length, out_pixel_size;
+        double in_side_length, out_x_pixel_size, out_y_pixel_size;
         char *tmpFile;
         int i,n;
 
@@ -1852,11 +1852,6 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // Calculate pixel size for generating right size thumbnail
           meta = meta_read(inFile);
 
-          in_side_length =
-            (meta->general->line_count > meta->general->sample_count) ?
-            meta->general->line_count : meta->general->sample_count;
-          out_pixel_size =  meta->general->x_pixel_size * in_side_length / 512;
-
           // Put the thumbnail in the intermediates directory, if it is
           // being kept, otherwise in the output directory.
           char *basename = get_basename(cfg->general->out_name);
@@ -1873,90 +1868,121 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
             strcat(outFile, ".png");
             free(tmp);
           }
-          check_return(resample_to_square_pixsiz(inFile, tmpFile, out_pixel_size),
-                       "resampling data to thumbnail size (resample)\n");
 
-          if (strlen(cfg->export->rgb) > 0) {
-            char *red, *green, *blue;
-            if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
-              char **bands = find_bands(inFile, 1, red, green, blue, &n);
-              if (n > 0) {
-                check_return(asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
-                                              tmpFile, outFile, bands),
-                             "exporting thumbnail data file (asf_export), banded\n");
-                for (i=0; i<n; ++i)
-                  FREE(bands[i]);
-                FREE(bands);
-              }
-            }
+          if (strlen(cfg->export->lut) > 0) {
+            // using a LUT -- we can't downsample in this case, because
+            // that will screw up the behavior of TRUNCATE.  The burden
+            // will be on the GUI to do the downsampling, but after we have
+            // generated an RGB image.
+            check_return(
+              asf_export_bands(format, TRUNCATE, TRUE, 0, 0, 0, 0,
+                               cfg->export->lut, inFile, outFile, NULL),
+              "exporting thumbnail (asf_export), using rgb look up table.\n");
           }
-          else { // no rgb bands selected
-            int true_color = cfg->export->truecolor == 0 ? 0 : 1;
-            int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
-            if (meta->optical && (true_color || false_color))
-            {
-              if (meta->optical && (true_color || false_color)) {
-                // Multi-band optical data, exporting as true or false color single file
-                char **bands = extract_band_names(meta->general->bands, meta->general->band_count);
-                if (meta->general->band_count >= 4 && bands != NULL) {
-                  // The imported file IS a multiband file with enough bands,
-                  // but the extract bands need to be ordered correctly
-                  if (true_color) {
-                    strcpy(bands[0], "03");
-                    strcpy(bands[1], "02");
-                    strcpy(bands[2], "01");
-                    strcpy(bands[3], "");
-                  }
-                  else {
-                    strcpy(bands[0], "04");
-                    strcpy(bands[1], "03");
-                    strcpy(bands[2], "02");
-                    strcpy(bands[3], "");
-                  }
-                  check_return(asf_export_bands(format, NONE, TRUE,
-                                                true_color, false_color, 0, 0, NULL,
-                                                tmpFile, outFile, bands),
-                               "exporting thumbnail data file (asf_export), color banded.\n");
-                  for (i=0; i<meta->general->band_count; ++i)
-                    FREE (bands[i]);
+          else {
+            // non-LUT case
+            in_side_length =
+              (meta->general->line_count > meta->general->sample_count) ?
+              meta->general->line_count : meta->general->sample_count;
+
+            // calculate the reduced pixel sizes
+            out_x_pixel_size = meta->general->x_pixel_size*in_side_length/512.;
+            out_y_pixel_size = meta->general->y_pixel_size*in_side_length/512.;
+
+            check_return(
+              resample_to_pixsiz(inFile, tmpFile, out_x_pixel_size,
+                                 out_y_pixel_size),
+              "resampling data to thumbnail size (resample)\n");
+
+            if (strlen(cfg->export->rgb) > 0) {
+              char *red, *green, *blue;
+              if (split3(cfg->export->rgb, &red, &green, &blue, ',')) {
+                char **bands = find_bands(inFile, 1, red, green, blue, &n);
+                if (n > 0) {
+                  check_return(
+                    asf_export_bands(format, scale, TRUE, 0, 0, 0, 0, NULL,
+                                     tmpFile, outFile, bands),
+                    "exporting thumbnail data file (asf_export), banded\n");
+                  for (i=0; i<n; ++i)
+                    FREE(bands[i]);
                   FREE(bands);
                 }
               }
             }
-            else { // not a true or false color optical image
-              if (meta->general->band_count == 1) {
-                check_return(asf_export(format, scale, tmpFile, outFile),
-                             "exporting thumbnail data file (asf_export)\n");
-              }
-              else {
-                // just the first band -- set the others to NULL
-                char **bands = find_single_band(tmpFile, "all", &n);
-                for (i=1; i<n; ++i) {
-                  FREE(bands[i]); bands[i] = NULL;
+            else { // no rgb bands selected
+              int true_color = cfg->export->truecolor == 0 ? 0 : 1;
+              int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+              if (meta->optical && (true_color || false_color))
+              {
+                if (meta->optical && (true_color || false_color)) {
+                  // Multi-band optical data, exporting as true or 
+                  // false color single file
+                  char **bands = extract_band_names(meta->general->bands,
+                                                    meta->general->band_count);
+                  if (meta->general->band_count >= 4 && bands != NULL) {
+                    // The imported file IS a multiband file with enough bands,
+                    // but the extract bands need to be ordered correctly
+                    if (true_color) {
+                      strcpy(bands[0], "03");
+                      strcpy(bands[1], "02");
+                      strcpy(bands[2], "01");
+                      strcpy(bands[3], "");
+                    }
+                    else {
+                      strcpy(bands[0], "04");
+                      strcpy(bands[1], "03");
+                      strcpy(bands[2], "02");
+                      strcpy(bands[3], "");
+                    }
+                    check_return(
+                      asf_export_bands(format, NONE, TRUE,
+                                       true_color, false_color, 0, 0, NULL,
+                                       tmpFile, outFile, bands),
+                      "exporting thumbnail (asf_export), color banded.\n");
+                    for (i=0; i<meta->general->band_count; ++i)
+                      FREE (bands[i]);
+                    FREE(bands);
+                  }
                 }
-                check_return(asf_export_bands(format, scale, FALSE, 0, 0,
-                                              0, 0, NULL, tmpFile, outFile, bands),
-                             "exporting thumbnail data file (asf_export)\n");
-              // strip off the band name at the end!
-                char *banded_name = MALLOC(sizeof(char)*(strlen(outFile)+10));
-                if (cfg->general->intermediates) {
-                  sprintf(banded_name, "%s/%s_thumb_%s.png",
-                          cfg->general->tmp_dir, basename, bands[0]);
-                  sprintf(outFile, "%s/%s_thumb.png",
-                          cfg->general->tmp_dir, basename);
+              }
+              else { // not a true or false color optical image
+                if (meta->general->band_count == 1) {
+                  check_return(asf_export(format, scale, tmpFile, outFile),
+                               "exporting thumbnail data file (asf_export)\n");
                 }
                 else {
-                  sprintf(banded_name, "%s_thumb_%s.png",
-                          cfg->general->out_name, bands[0]);
-                  char *tmp = appendToBasename(cfg->general->out_name, "_thumb");
-                  strcpy(outFile, tmp);
-                  strcat(outFile, ".png");
-                  free(tmp);
+                  // just the first band -- set the others to NULL
+                  char **bands = find_single_band(tmpFile, "all", &n);
+                  for (i=1; i<n; ++i) {
+                    FREE(bands[i]); bands[i] = NULL;
+                  }
+                  check_return(
+                    asf_export_bands(format, scale, FALSE, 0, 0,
+                                     0, 0, NULL, tmpFile, outFile, bands),
+                    "exporting thumbnail data file (asf_export)\n");
+                  // strip off the band name at the end!
+                  char *banded_name =
+                    MALLOC(sizeof(char)*(strlen(outFile)+10));
+                  if (cfg->general->intermediates) {
+                    sprintf(banded_name, "%s/%s_thumb_%s.png",
+                            cfg->general->tmp_dir, basename, bands[0]);
+                    sprintf(outFile, "%s/%s_thumb.png",
+                            cfg->general->tmp_dir, basename);
+                  }
+                  else {
+                    sprintf(banded_name, "%s_thumb_%s.png",
+                            cfg->general->out_name, bands[0]);
+                    char *tmp = appendToBasename(cfg->general->out_name,
+                                                 "_thumb");
+                    strcpy(outFile, tmp);
+                    strcat(outFile, ".png");
+                    free(tmp);
+                  }
+                  fileRename(banded_name, outFile);
+                  FREE(bands[0]);
+                  FREE(bands);
+                  FREE(banded_name);
                 }
-                fileRename(banded_name, outFile);
-                FREE(bands[0]);
-                FREE(bands);
-                FREE(banded_name);
               }
             }
           }
