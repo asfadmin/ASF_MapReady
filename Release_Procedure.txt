@@ -5,7 +5,7 @@ The User Tool Development Group's Release Procedure Instructions:
 MapReady v1.x RPM Build Procedure:
 ----------------------------------
 Note: The following example assumes version 3.2.10, subversion
-  revision 6472, and a work folder at ~/asf.
+  revision 7399, and a work folder at ~/asf.
 
 Note: The MapReady binaries are mapready and asf_mapready, but
   they are still built in the asf_convert_gui and asf_convert
@@ -31,34 +31,34 @@ Note: The MapReady binaries are mapready and asf_mapready, but
  3. Tag the repository:
 
       svn copy svn+ssh://svn/svn/asf_tools/trunk
-               svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-10
+               svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-1
 
     [[ Or if tagging a branched revision --
       svn copy svn+ssh://svn/svn/asf_tools/branches/convert_v3-2-x
-               svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-10
+               svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-1
     ]]
 
  4. Create a clean directory where you will produce the build (etc),
     for example (change the revision number to the one that you have
     checked out):
 
-      mkdir ~/asf/svn-r6472
+      mkdir ~/asf/svn-r7399
 
  5. Check out autotar and rpmbuild into this work directory.  Example:
 
-      cd ~/asf/svn-r6472
+      cd ~/asf/svn-r7399
       svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
       svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
 
  6. Make working directories:
 
-      cd ~/asf/svn-r6472
+      cd ~/asf/svn-r7399
       mkdir -p release/tar_filelist release/tar
 
  7. If you have never copied the .rpmmacros and .rpmrc files to your
     home directory, then do so now, otherwise skip to step 7:
 
-      cd ~/asf/svn-r6472/release/rpmbuild
+      cd ~/asf/svn-r7399/release/rpmbuild
       cp dot.rpmmacros ~/.rpmmacros
       cp dot.rpmrc ~/.rpmrc
 
@@ -66,19 +66,19 @@ Note: The MapReady binaries are mapready and asf_mapready, but
     parent directory, i.e. the 'release' folder.  Find the %_topdir line and
     edit as follows:
 
-      %_topdir      %(echo $HOME)/asf/svn-r6472/release
+      %_topdir      %(echo $HOME)/asf/svn-r7399/release
 
  9. Check out a copy of the release:
 
-      cd ~/asf/svn-r6472
-      svn export svn+ssh://svn/svn/asf_tools/tags/convert_v3-2-10 asf_tools
+      cd ~/asf/svn-r7399
+      svn export svn+ssh://svn/svn/asf_tools/tags/mapready_v2-0-1 asf_tools
 
  10. Make sure DEBUG_BUILD is not set to any particular debug level:
 
       unset DEBUG_BUILD
 
  11. If you want to meddle with what the package will include you'll need to
-     edit ~/asf/svn-r6472/asf_tools/make_support/master_program_list. That is
+     edit ~/asf/svn-r7399/asf_tools/make_support/master_program_list. That is
      where all the tools to be compiled are listed with other tools that they
      depend on.  There's also a CATEGORIES category in the master_program_list.
      You can make special groupings of tools in CATEGORIES section (eg 'mapready'
@@ -87,11 +87,11 @@ Note: The MapReady binaries are mapready and asf_mapready, but
  12. ** KLUDGE #1 **
      Create svn_rev.h:
 
-      cd ~/asf/svn-r6472/asf_tools/include
-      echo "#define SVN_REV \"6472\"" > svn_rev.h
+      cd ~/asf/svn-r7399/asf_tools/include
+      echo "#define SVN_REV \"7399\"" > svn_rev.h
 
  13. ** KLUDGE #2 **
-     Edit ~/asf/svn-r6472/asf_tools/Makefile.in, eliminate the following
+     Edit ~/asf/svn-r7399/asf_tools/Makefile.in, eliminate the following
      lines from the MODULES list:
 
       src/ardop \
@@ -108,18 +108,18 @@ Note: The MapReady binaries are mapready and asf_mapready, but
 
       echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
 
- 14. Create the source.mapready_package file in ~/asf/svn-r6472/releast/autotar
+ 14. Create the source.mapready_package file in ~/asf/svn-r7399/releast/autotar
      (automatically by makemake if you followed the directory structure
      instructions listed here):
 
-      cd ~/asf/svn-r6472/asf_tools/make_support
+      cd ~/asf/svn-r7399/asf_tools/make_support
       make
       ./makemake
 
  15. ** KLUDGE #4 **
     Add missing tools to the source.mapready_package file:
 
-      cd ~/asf/svn-r6472/release/autotar
+      cd ~/asf/svn-r7399/release/autotar
 
     Edit release/autotar/source.mapready_package, adding these items:
 
@@ -142,12 +142,11 @@ src/shift_geolocation
 src/trim
 src/proj2proj
 src/sgpsdp
-doc
 
  16. Run the autotar script:
 
-      cd ~/asf/svn-r6472/release/autotar
-      ./tarfile src ~/asf/svn-r6472 mapready_package
+      cd ~/asf/svn-r7399/release/autotar
+      ./tarfile src ~/asf/svn-r7399 mapready_package
 
  17. Run the rpmprep script (from autotar folder):
 
@@ -156,7 +155,7 @@ doc
  18. Copy an older .spec file to the new one, then edit the new .spec
      file in to use the correct version:
 
-      cd ~/asf/svn-r6472/release/rpmbuild
+      cd ~/asf/svn-r7399/release/rpmbuild
       cp <old .spec file> asf_mapready-1.0.0-1.spec
       vi asf_mapready-1.0.0-1.spec
 
@@ -187,7 +186,7 @@ doc
      cd public_key
      sudo rpm -import asf_tools-pubkey.asc
 
- 21. Build and check the rpm (still in ~/asf/svn-r6472/release/rpmbuild):
+ 21. Build and check the rpm (still in ~/asf/svn-r7399/release/rpmbuild):
 
       rpmbuild -ba --sign asf_mapready-1.0.0-1.spec
       cd RPMS
@@ -203,23 +202,23 @@ doc
      yet.
 
  22. Create tarballs of the rpms (the binary rpm will also contain the
-     README_rpm.txt file from ~/asf/svn-r6472/asf_tools folder) (still in
-     ~/asf/svn-r6472/release/rpmbuild):
+     README_rpm.txt file from ~/asf/svn-r7399/asf_tools folder) (still in
+     ~/asf/svn-r7399/release/rpmbuild):
 
       ./tarrpms asf_mapready mapready
 
  23. **OPTIONAL**
      I like to do this:
 
-      mv ~/asf/svn-r6472 ~/asf/mapready-v1.0.0
+      mv ~/asf/svn-r7399 ~/asf/mapready-v1.0.0
 
- 23. Put the built files on dq (still in ~/asf/svn-r6472/release/rpmbuild):
+ 23. Put the built files on dq (still in ~/asf/svn-r7399/release/rpmbuild):
 
       mkdir /stor/dq/release_builds/mapready/v3.2.10
-      cp RPMS/mapready-1.0.0-rpm.* Source/mapready-1.0.0-src.*
+      cp dist/mapready-1.0.0-rpm.* dist/mapready-1.0.0-src.*
           /stor/dq/release_builds/mapready/v3.2.10
       chmod 755 /stor/dq/release_builds/mapready/v3.2.10
-      chmod 644 /stor/dq/release_builds/mapready/v3.2.10*
+      chmod 644 /stor/dq/release_builds/mapready/v3.2.10/*
 
  24. In your regular subversion checkout (not your exported version), bump
      the version in include/asf_version.h and add "-dev" to the end, then
