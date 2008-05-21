@@ -272,6 +272,9 @@ void import_ceos(char *inBaseName, char *outBaseName,
     strcpy(outMetaName, outBaseName);
     strcat(outMetaName, TOOLS_META_EXT);
 
+    if (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)
+      import_single_band = TRUE;
+     
     radiometry_t rad = radiometry;
     int index = ii;
 
@@ -303,17 +306,14 @@ void import_ceos(char *inBaseName, char *outBaseName,
         strcpy(bandExt, polarization);
         FREE(polarization);
       }
-      else if (ceos->sensor == AVNIR) {
+      else if (ceos->sensor == AVNIR || ceos->sensor == PRISM) {
         int band_number;
         band_number = get_alos_band_number(inBandName[index]);
         if (band_number<9)
           sprintf(bandExt, "0%d", band_number);
         else
           sprintf(bandExt, "%d", band_number);
-      }
-      else if (ceos->sensor == PRISM) {
-        strcpy(bandExt, "01");
-      }
+       }
       else {
         strcpy(bandExt, MAGIC_UNSET_STRING);
       }
@@ -1479,14 +1479,13 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       meta->general->band_count = import_single_band ? 1 : band;
     }
   }
-  else if (meta->optical) {
-    if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0) 
-      sprintf(bandExt, "0%d", band);
-    else if (strcmp_case(meta->general->sensor_name, "PRISM") == 0)
-      sprintf(bandExt, "01");
+  else if (meta->optical) { 
+    sprintf(bandExt, "0%d", band);
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
-    if (band > 1) {
+    if (band > 1 &&
+	strcmp_case(meta->general->mode, "1A") != 0 &&
+	strcmp_case(meta->general->mode, "1B1") != 0) {
       meta_parameters *metaTmp=NULL;
       metaTmp = meta_read(outMetaName);
       strcat(meta->general->bands, metaTmp->general->bands);
@@ -1512,7 +1511,15 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
 
   // Open files
-  strcat(outDataName,TOOLS_IMAGE_EXT);
+  if (strcmp_case(meta->general->mode, "1A") != 0 ||
+      strcmp_case(meta->general->mode, "1B1") != 0) {
+    char *append = (char *) MALLOC(sizeof(char)*15);
+    sprintf(append, "_%s%s", bandExt, TOOLS_IMAGE_EXT);
+    sprintf(outMetaName, "%s_%s%s", outDataName, bandExt, TOOLS_META_EXT);
+    strcat(outDataName, append);
+  }
+  else
+    strcat(outDataName, TOOLS_IMAGE_EXT);
   fpIn  = fopenImage(inDataName, "rb");
   if (!fpOut)
     fpOut = fopenImage(outDataName, "wb");
@@ -2078,7 +2085,12 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           amp_float_buf[kk] =
             apply_ers2_gain_fix(radiometry, gain_adj, amp_float_buf[kk]);
       }
-      put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
+      if (import_single_band)
+	put_band_float_line(fpOut, meta, 0, ii, amp_float_buf);
+      else
+	// This only works if the bands start with number 1
+	// Not necessarily the case
+	put_band_float_line(fpOut, meta, band-1, ii, amp_float_buf);
     }
   }
 

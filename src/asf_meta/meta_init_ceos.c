@@ -585,6 +585,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
               break;
           case SGF:
           case SGX:
+          case PRI:
               meta->sar->image_type = 'G';
               break;
           default:
@@ -2350,11 +2351,9 @@ ceos_description *get_ceos_description(const char *fName, report_level_t level)
         else if (0==strncmp(prodStr,"FUL",3))
           ceos->processor = PREC;
       }
-      else {
-        asfReport(level, "get_ceos_description Warning! "
-            "Unknown ASF processor '%s'!\n", procStr);
-        ceos->processor = unknownProcessor;
-      }
+      // Taken out any warnings about unknown processors. With the processing
+      // on the grid these names will keep changing, so there is no point in
+      // tracking those.
 
       if (0==strncmp(prodStr,"LOW",3))
         ceos->product = LOW_REZ;
