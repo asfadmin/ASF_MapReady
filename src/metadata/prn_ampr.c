@@ -46,7 +46,7 @@ char *sprn_ampr(struct alos_map_proj_rec *mp)
 	  mp->line_count2);
   add(&ret, "\n Nominal inter-pixel distance at scene center (1B2)\t%24.7f",
 	  mp->x_pixel_size2);
-  add(&ret, "\n Nominal inter-pixel distance at scene center (1B2)\t%24.7f",
+  add(&ret, "\n Nominal inter-line distance at scene center (1B2)\t%24.7f",
 	  mp->y_pixel_size2);
   add(&ret, "\n Angle map projection and true north\t\t\t%24.7f", 
 	  mp->angle_true_north3);

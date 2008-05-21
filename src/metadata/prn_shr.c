@@ -21,7 +21,7 @@ char *sprn_shr(struct scene_header_rec *sh)
   add(&ret, "\n*********** begin of Scene Header Record  *******************\n");
   add(&ret, "\n Product ID\t\t\t\t\t\t%16s", sh->product_id);
   add(&ret, "\n Uncorrected scene ID\t\t\t%16s", sh->uncorr_sc_id);
-  add(&ret, "\n Level 1A and 1B1 scene latiude\t\t\t%16.7f", sh->sc_lat);
+  add(&ret, "\n Level 1A and 1B1 scene latitude\t\t\t%16.7f", sh->sc_lat);
   add(&ret, "\n Level 1A and 1B1 scene longitude\t\t%16.7f", sh->sc_lon);
   add(&ret, "\n Line number of level 1A and 1B1 scene center\t%16.7f", 
 	  sh->sc_line);
