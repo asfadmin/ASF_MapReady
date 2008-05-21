@@ -15,15 +15,19 @@ OBJS  = asf_check_geolocation.o
 
 LIBS = \
 	$(LIBDIR)/libasf_terrcorr.a \
+	$(LIBDIR)/libasf_vector.a \
+	$(LIBDIR)/libasf_import.a \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(SHAPELIB_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
+	$(GEOTIFF_LIBS) \
 	$(TIFF_LIBS) \
 	$(JPEG_LIBS) \
 	$(LIBDIR)/asf_fft.a \
