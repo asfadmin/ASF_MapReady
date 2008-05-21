@@ -79,6 +79,10 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
        radiometry_t radiometry, int dbFlag);
 int is_alos_palsar_1_5_plus(char *inDataName, char *inMetaName);
 
+static void status_data_type(meta_parameters *meta, data_type_t data_type,
+			     radiometry_t radiometry,
+			     int complex_flag, int multilook_flag);
+
 /*
 These next few functions are used to fix scaling errors in the data that
 result from the PP using an incorrect swath velocity during some of
@@ -383,6 +387,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
         ceos->product != GEC)
     {
       meta = meta_create(inMetaName[0]);
+      meta->general->radiometry = radiometry;
     }
 
     // Update the radiometry if db flag is set
@@ -717,6 +722,21 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
        strncmp(meta->general->processor, "CSTARS", 6) == 0))
     flip = TRUE;
 
+  // Read data type from metadata
+  data_type_t data_type = meta->general->data_type;
+
+  // Set image data type
+  if (data_type >= COMPLEX_BYTE)
+    meta->general->image_data_type = COMPLEX_IMAGE;
+  else
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+
+  // Set image data type
+  meta->general->radiometry = radiometry;
+
+  // Give user status on input and output data type
+  status_data_type(meta, data_type, radiometry, 0, 1);
+
   // Open image files
   fpIn = fopenImage(inDataName, "rb");
   if (band == 1)
@@ -862,6 +882,21 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
        strncmp(meta->general->processor, "CDPF", 4) == 0 ||
        strncmp(meta->general->processor, "CSTARS", 6) == 0))
     flip = TRUE;
+
+  // Read data type from metadata
+  data_type_t data_type = meta->general->data_type;
+
+  // Set image data type
+  if (data_type >= COMPLEX_BYTE)
+    meta->general->image_data_type = COMPLEX_IMAGE;
+  else
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+
+  // Set image data type
+  meta->general->radiometry = radiometry;
+
+  // Give user status on input and output data type
+  status_data_type(meta, data_type, radiometry, 0, 1);
 
   // Open image files
   fpIn = fopenImage(inDataName, "rb");
@@ -1443,6 +1478,23 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       meta->general->data_type = REAL32;
       meta->general->band_count = import_single_band ? 1 : band;
     }
+  }
+  else if (meta->optical) {
+    if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0) 
+      sprintf(bandExt, "0%d", band);
+    else if (strcmp_case(meta->general->sensor_name, "PRISM") == 0)
+      sprintf(bandExt, "01");
+    if (nBands > 1)
+      asfPrintStatus("   Input band: %s\n", bandExt);
+    if (band > 1) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcat(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
+    if (strcmp(meta->general->bands, "") != 0)
+      strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, bandExt);
   }
 
   // Take care of polarized imagery
