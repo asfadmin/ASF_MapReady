@@ -272,7 +272,8 @@ void import_ceos(char *inBaseName, char *outBaseName,
     strcpy(outMetaName, outBaseName);
     strcat(outMetaName, TOOLS_META_EXT);
 
-    if (ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1)
+    if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
+	ceos->sensor == PRISM)
       import_single_band = TRUE;
      
     radiometry_t rad = radiometry;
@@ -1483,13 +1484,15 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
     sprintf(bandExt, "0%d", band);
     if (nBands > 1)
       asfPrintStatus("   Input band: %s\n", bandExt);
-    if (band > 1 &&
-	strcmp_case(meta->general->mode, "1A") != 0 &&
-	strcmp_case(meta->general->mode, "1B1") != 0) {
-      meta_parameters *metaTmp=NULL;
-      metaTmp = meta_read(outMetaName);
-      strcat(meta->general->bands, metaTmp->general->bands);
-      meta_free(metaTmp);
+    if (band > 1) {
+      if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
+	  (strcmp_case(meta->general->mode, "1A") != 0 ||
+	   strcmp_case(meta->general->mode, "1B1") != 0)) {
+	meta_parameters *metaTmp=NULL;
+	metaTmp = meta_read(outMetaName);
+	strcat(meta->general->bands, metaTmp->general->bands);
+	meta_free(metaTmp);
+      }
     }
     if (strcmp(meta->general->bands, "") != 0)
       strcat(meta->general->bands, ",");
@@ -1511,8 +1514,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   }
 
   // Open files
-  if (strcmp_case(meta->general->mode, "1A") != 0 ||
-      strcmp_case(meta->general->mode, "1B1") != 0) {
+  if (strcmp_case(meta->general->sensor_name, "PRISM") == 0 &&
+      (strcmp_case(meta->general->mode, "1A") != 0 ||
+       strcmp_case(meta->general->mode, "1B1") != 0)) {
     char *append = (char *) MALLOC(sizeof(char)*15);
     sprintf(append, "_%s%s", bandExt, TOOLS_IMAGE_EXT);
     sprintf(outMetaName, "%s_%s%s", outDataName, bandExt, TOOLS_META_EXT);
