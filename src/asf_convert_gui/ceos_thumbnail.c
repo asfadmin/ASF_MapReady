@@ -368,7 +368,8 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     size_t tsx, tsy;
     int kk;
     for (kk=0; kk<nBands; kk++) {
-      if (nBands > 1)
+      if (nBands > 1 &&
+	  strcmp_case(imd->general->sensor_name, "PRISM") != 0)
 	data_name = STRDUP(dataName[kk]);
     FILE *fpIn = fopen(data_name, "rb");
     if (!fpIn)
@@ -493,13 +494,42 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 	  data[n+1] = uval;
 	  data[n+2] = uval;
 	}
-	// Multi-band image
-	else if (kk == 1)
-	  data[n+2] = uval;
-	else if (kk == 2)
-	  data[n+1] = uval;
-	else if (kk == 3)
-	  data[n] = uval;
+	// Multi-band image: AVNIR
+	else {
+	  if (strcmp_case(imd->general->sensor_name, "PRISM") == 0) {
+	    data[n] = uval;
+	    data[n+1] = uval;
+	    data[n+2] = uval;
+	  }
+	  else if (strcmp_case(imd->general->sensor_name, "AVNIR") == 0) { 
+	    if (kk == 1)
+	      data[n+2] = uval;
+	    else if (kk == 2)
+	      data[n+1] = uval;
+	    else if (kk == 3)
+	      data[n] = uval;
+	  }
+	  else if (strcmp_case(imd->general->sensor_name, "SAR") == 0) {
+	    // Dual-pol data
+	    if (nBands == 2) {
+	      if (kk == 0)
+		data[n] = uval;
+	      else if (kk == 1) {
+		data[n+1] = uval;
+		data[n+2] = 0;
+	      }
+	    }
+	    // Quad-pol data
+	    else if (nBands == 4) {
+	      if (kk == 0)
+		data[n] = uval;
+	      else if (kk == 1)
+		data[n+1] = uval;
+	      else if (kk == 3)
+		data[n+2] = uval;
+	    }
+	  }
+	}
     }
 
     g_free(idata);
