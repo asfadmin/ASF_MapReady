@@ -268,9 +268,16 @@ void import_ceos(char *inBaseName, char *outBaseName,
 
   for (ii=0; ii<nBandsOut; ii++) {
 
-    strcpy(outDataName, outBaseName);
-    strcpy(outMetaName, outBaseName);
-    strcat(outMetaName, TOOLS_META_EXT);
+    if (do_resample) {
+      strcpy(outDataName, unscaledBaseName);
+      strcpy(outMetaName, unscaledBaseName);
+      strcat(outMetaName, TOOLS_META_EXT);
+    }
+    else {
+      strcpy(outDataName, outBaseName);
+      strcpy(outMetaName, outBaseName);
+      strcat(outMetaName, TOOLS_META_EXT);
+    }
 
     if ((ceos->product == LEVEL_1A || ceos->product == LEVEL_1B1) &&
 	ceos->sensor == PRISM)
@@ -466,8 +473,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
                    "%lf range, %lf azimuth.\n",
                    range_scale, azimuth_scale);
 
-    resample_nometa(unscaledBaseName, outBaseName,
-                    range_scale, azimuth_scale);
+    resample(unscaledBaseName, outBaseName, range_scale, azimuth_scale);
 
     asfPrintStatus("\n\nDone.\n\n");
   }
