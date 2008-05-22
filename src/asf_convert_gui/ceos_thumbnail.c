@@ -326,13 +326,13 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 
     // Input metadata
     meta_parameters *imd;
-    char *data_name, *met;
+    char *data_name, *met, **dataName;
+    int nBands = 1;
 
     int pre = has_prepension(input_metadata);
     if (pre > 0)
     {
-        int nBands;
-        char **dataName, *baseName;
+        char *baseName;
         baseName = MALLOC(sizeof(char)*255);
         char filename[255], dirname[255];
         split_dir_and_file(input_metadata, dirname, filename);
@@ -344,7 +344,6 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         imd = silent_meta_create(met);
         data_name = STRDUP(dataName[0]);
 
-        free_ceos_names(dataName, NULL);
         free(baseName);
     }
     else
@@ -365,6 +364,12 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
     }
 
+    guchar *data;
+    size_t tsx, tsy;
+    int kk;
+    for (kk=0; kk<nBands; kk++) {
+      if (nBands > 1)
+	data_name = STRDUP(dataName[kk]);
     FILE *fpIn = fopen(data_name, "rb");
     if (!fpIn)
     {
@@ -393,15 +398,16 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
     int sf = (hsf > vsf ? hsf : vsf);
 
     // Thumbnail image sizes.
-    size_t tsx = imd->general->sample_count / sf;
-    size_t tsy = imd->general->line_count / sf;
+    tsx = imd->general->sample_count / sf;
+    tsy = imd->general->line_count / sf;
 
     // Thumbnail image buffers - 'idata' is the temporary data prior
     // to scaling to 2-sigma, 'data' is the byte buffer used to create the
     // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
     // wants an RGB value.
     int *idata = g_new(int, tsx*tsy);
-    guchar *data = g_new(guchar, 3*tsx*tsy);
+    if (kk == 0)
+      data = g_new(guchar, 3*tsx*tsy);
 
     // Form the thumbnail image by grabbing individual pixels.  FIXME:
     // Might be better to do some averaging or interpolating.
@@ -481,12 +487,23 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
             uval = (guchar) round(((val - lmin) / (lmax - lmin)) * 255);
 
         int n = 3*ii;
-        data[n] = uval;
-        data[n+1] = uval;
-        data[n+2] = uval;
+	// Single-band image
+	if (nBands == 1) {
+	  data[n] = uval;
+	  data[n+1] = uval;
+	  data[n+2] = uval;
+	}
+	// Multi-band image
+	else if (kk == 1)
+	  data[n+2] = uval;
+	else if (kk == 2)
+	  data[n+1] = uval;
+	else if (kk == 3)
+	  data[n] = uval;
     }
 
     g_free(idata);
+    }
 
     // Create the pixbuf
     GdkPixbuf *pb =
