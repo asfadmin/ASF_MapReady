@@ -1273,6 +1273,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     }
   }
 
+  set_alos_look_count(meta, metaName[0]);
+
   // Clean up
   FREE(mpdr);
   free_ceos_names(dataName, metaName);

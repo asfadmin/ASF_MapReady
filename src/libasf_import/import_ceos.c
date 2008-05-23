@@ -1370,9 +1370,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   else
     meta->general->data_type = REAL32;
 
-  if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->sar)
-    set_alos_look_count(meta, inMetaName);
-
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
   if (meta->sar)

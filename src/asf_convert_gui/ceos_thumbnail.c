@@ -313,9 +313,6 @@ make_complex_thumb(meta_parameters* imd,
         return NULL;
     }
 
-    if (strcmp(imd->general->sensor, "ALOS") == 0 && imd->sar)
-      set_alos_look_count(imd, meta_name);
-
     struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
     get_ifiledr(meta_name, &image_fdr);
     int leftFill = image_fdr.lbrdrpxl;
