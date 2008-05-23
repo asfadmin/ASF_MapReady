@@ -1088,10 +1088,9 @@ static void status_data_type(meta_parameters *meta, data_type_t data_type,
 }
 
 // Assign band names
-static void assign_band_names(meta_parameters *meta, char *outMetaName,
-                  char *bandExt, int band, int nBands,
-                              int nBandsOut, radiometry_t radiometry,
-                              int complex_flag)
+void assign_band_names(meta_parameters *meta, char *outMetaName,
+		       char *bandExt, int band, int nBands, int nBandsOut, 
+		       radiometry_t radiometry, int complex_flag)
 {
   char bandStr[512];
 

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "asf_meta.h"
 
 typedef struct
 {
@@ -179,8 +180,11 @@ typedef struct
   s_mosaic *mosaic;                    // mosaicking parameters
 } convert_config;
 
+meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg);
 // checking return values in the main program
 void check_return(int ret, char *msg);
+// checking whether input is sufficient for processing
+void check_input(convert_config *cfg, char *processing_step, char *input);
 
 // configuration functions
 int init_convert_config(char *configFile);

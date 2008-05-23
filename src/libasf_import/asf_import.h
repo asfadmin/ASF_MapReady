@@ -93,4 +93,8 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
 
 void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 
+void assign_band_names(meta_parameters *meta, char *outMetaName,
+		       char *bandExt, int band, int nBands, int nBandsOut, 
+		       radiometry_t radiometry, int complex_flag);
+
 #endif

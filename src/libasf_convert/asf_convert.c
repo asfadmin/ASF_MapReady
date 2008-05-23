@@ -11,10 +11,182 @@
 #include "asf_geocode.h"
 #include "asf_nan.h"
 #include "ardop_defs.h"
+#include "get_ceos_names.h"
+#include "get_stf_names.h"
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
 #include <dirent.h>    /* for opendir itself            */
+
+
+int isCEOS(char *input_file)
+{
+  char **inBandName = NULL, **inMetaName = NULL;
+  int nBands, trailer;
+
+  if (require_ceos_pair(input_file, &inBandName, &inMetaName, 
+			&nBands, &trailer))
+    return TRUE;
+  else
+    return FALSE;
+}
+
+int isSTF(char *input_file)
+{
+  char **inBandName = NULL, **inMetaName = NULL;
+
+  if (require_stf_pair(input_file, inBandName, inMetaName))
+    return TRUE;
+  else
+    return FALSE;
+}
+
+static void setup_tmp_dir(char *tmp_dir)
+{
+  // Create temporary test directory
+  strcpy(tmp_dir, "tmp_meta-");
+  strcat(tmp_dir, time_stamp_dir());
+  create_clean_dir(tmp_dir);
+}
+
+meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
+{
+  // Setup temporary directory for metadata file
+  char *tmpDir = (char *) MALLOC(sizeof(char)*512);
+  setup_tmp_dir(tmpDir);
+
+  // Get the regular metadata structure
+  char **inBandName = NULL, **inMetaName = NULL;
+  int nBands=1, trailer;
+  if (isCEOS(inName))
+    require_ceos_pair(inName, &inBandName, &inMetaName, 
+		      &nBands, &trailer);
+  else if (isSTF(inName))
+    require_stf_pair(inName, inBandName, inMetaName);
+  meta_parameters *meta = meta_read(inMetaName[0]);
+
+  // Assign temporary metadata file
+  char *outMetaName = (char *) MALLOC(sizeof(char)*255);
+  sprintf(outMetaName, "%s/tmp.meta", tmpDir);
+
+  // Assign a couple values out of the configuration file
+  int import_single_band = 0;
+  int complex_flag = cfg->import->complex_slc;
+  int nBandsOut = cfg->general->terrain_correct ? nBands+1 : nBands;
+  char *bandExt = (char *) MALLOC(sizeof(char)*10);
+  int ii;
+
+  // Read radiometry
+  radiometry_t radiometry;
+  if (strncmp_case(cfg->import->radiometry, "AMPLITUDE_IMAGE", 15) == 0)
+    radiometry = r_AMP;
+  else if (strncmp_case(cfg->import->radiometry, "POWER_IMAGE", 11) == 0)
+    radiometry = r_POWER;
+  else if (strncmp_case(cfg->import->radiometry, "SIGMA_IMAGE", 11) == 0)
+    radiometry = r_SIGMA;
+  else if (strncmp_case(cfg->import->radiometry, "GAMMA_IMAGE", 11) == 0)
+    radiometry = r_GAMMA;
+  else if (strncmp_case(cfg->import->radiometry, "BETA_IMAGE", 10) == 0)
+    radiometry = r_BETA;
+
+  // Set image data type
+  data_type_t data_type = meta->general->data_type;
+  char *lutName = (char *) MALLOC(sizeof(char)*255);
+  strcpy(lutName, cfg->import->lut);
+  if (data_type >= COMPLEX_BYTE)
+    meta->general->image_data_type = COMPLEX_IMAGE;
+  else if (lutName)
+    meta->general->image_data_type = LUT_IMAGE;
+  else
+    meta->general->image_data_type = AMPLITUDE_IMAGE;
+
+  // Set data type and band count
+  for (ii=0; ii<nBands; ii++) {
+    int band = ii + 1;
+
+    // Determine the band extension (band ID)
+    if (strcmp_case(meta->general->sensor, "RSAT") == 0)
+      strcpy(bandExt, "HH");
+    else if (strcmp_case(meta->general->sensor, "ERS") == 0 || 
+	     strcmp_case(meta->general->sensor, "JERS") == 0)
+      strcpy(bandExt, "VV");
+    else if (strcmp_case(meta->general->sensor_name, "SAR") == 0 || 
+	     strcmp_case(meta->general->sensor_name, "PALSAR") == 0)
+      bandExt = get_polarization(inBandName[ii]);
+    else if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0 || 
+	     strcmp_case(meta->general->sensor_name, "PRISM") == 0) {
+      int band_number;
+      band_number = get_alos_band_number(inBandName[ii]);
+      if (band_number<9)
+	sprintf(bandExt, "0%d", band_number);
+      else
+	sprintf(bandExt, "%d", band_number);
+    }
+    strcpy(meta->general->bands, "");
+
+    if (meta->sar) {
+      // Assign band names
+      assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
+			radiometry, complex_flag);
+      if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
+	meta->general->data_type = REAL32;
+	meta->general->band_count = import_single_band ? 1 : band;
+      }
+      else if (complex_flag) {
+	meta->general->data_type = COMPLEX_REAL32;
+	meta->general->band_count = import_single_band ? 1 : band;
+      }
+      else if (data_type >= COMPLEX_BYTE) {
+	meta->general->data_type = REAL32;
+	meta->general->band_count = import_single_band ? 2 : band*2;
+      }
+      else {
+	meta->general->data_type = REAL32;
+	meta->general->band_count = import_single_band ? 1 : band;
+      }
+      meta_write(meta, outMetaName);
+    }
+    else if (meta->optical) { 
+      int band_number;
+      band_number = get_alos_band_number(inBandName[ii]);
+      if (band_number<9)
+	sprintf(bandExt, "0%d", band_number);
+      else
+	sprintf(bandExt, "%d", band_number);
+      if (nBands > 1)
+	asfPrintStatus("   Input band: %s\n", bandExt);
+      if (band > 1) {
+	if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
+	    (strcmp_case(meta->general->mode, "1A") != 0 ||
+	     strcmp_case(meta->general->mode, "1B1") != 0)) {
+	  meta_parameters *metaTmp=NULL;
+	  metaTmp = meta_read(outMetaName);
+	  strcat(meta->general->bands, metaTmp->general->bands);
+	  meta_free(metaTmp);
+	}
+      }
+      if (strcmp(meta->general->bands, "") != 0)
+	strcat(meta->general->bands, ",");
+      strcat(meta->general->bands, bandExt);
+    }
+  }
+  if (nBands == 2) {
+    strcpy(meta->sar->polarization, "dual-pol");
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+  }
+  else if (nBands == 4) {
+    strcpy(meta->sar->polarization, "quad-pol");
+    meta->general->image_data_type = POLARIMETRIC_IMAGE;
+  }
+  
+  // Clean up
+  remove_dir(tmpDir);
+  FREE(tmpDir);
+  FREE(outMetaName);
+  FREE(bandExt);
+  
+  return meta;
+}
 
 int findDemFile(char *fileName)
 {
@@ -70,6 +242,35 @@ void check_return(int ret, char *msg)
 {
   if (ret != 0)
     asfPrintError(msg);
+}
+
+void check_input(convert_config *cfg, char *processing_step, char *input) 
+{
+  char **inBandName = NULL, **inMetaName = NULL;
+  int nBands, trailer;
+  
+  if (strcmp_case(processing_step, "polarimetry") == 0) {
+    if (isCEOS(input))
+      require_ceos_pair(input, &inBandName, &inMetaName, 
+			&nBands, &trailer);
+    else if (isSTF(input))
+      require_stf_pair(input, inBandName, inMetaName);
+    meta_parameters *meta = meta_read_cfg(inMetaName[0], cfg);
+    if (meta->sar) {
+      // Pauli decomposition only works for complex quad-pol data
+      if (cfg->polarimetry->pauli &&
+	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
+	   meta->general->band_count < 8))
+	asfPrintError("Pauli decomposition requires complex quad-pol data\n");
+      // Sinclair decomposition ought to work on complex and detected
+      // quad-pol data
+      if (cfg->polarimetry->sinclair &&
+	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
+	asfPrintError("Sinclair decomposition requires quad-pol data\n");
+    }
+  }
 }
 
 // If a temporary directory has not been specified, create one using the time
@@ -937,6 +1138,24 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
     }
 
+    // Check whether everything in the [Polarimetry] block is reasonable
+    if (cfg->general->polarimetry) {
+      int pauli = cfg->polarimetry->pauli == 0 ? 0 : 1;
+      int sinclair = cfg->polarimetry->sinclair == 0 ? 0 : 1;
+      int cloude_pottier = cfg->polarimetry->cloude_pottier == 0 ? 0 : 1;
+      int cloude_pottier_ext = 
+	cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
+      int cloude_pottier_nc = cfg->polarimetry->cloude_pottier_nc == 0 ? 0 : 1;
+      int k_means_wishart = cfg->polarimetry->k_means_wishart == 0 ? 0 : 1;
+      int k_means_wishart_ext = 
+	cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
+      if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
+	  cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
+	asfPrintError("More than one polarimetric processing scheme selected."
+		      "\nOnly one of these options may be selected at a time."
+		      "\n");
+    }
+
     // Check whether everything in the [Terrain correction] block is
     // reasonable
     if (cfg->general->terrain_correct) {
@@ -1097,6 +1316,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                     "and export processing flags are all set to zero in the\n"
                     "configuration file.\n", configFileName);
     }
+
+    // Check input
+    if (cfg->general->polarimetry)
+      check_input(cfg, "polarimetry", cfg->general->in_name);
 
     //---------------------------------------------------------------
     // Let's finally get to work
