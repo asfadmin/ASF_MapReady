@@ -301,6 +301,274 @@ make_asf_internal_thumb(const char *input_metadata, const char *input_data,
 }
 
 GdkPixbuf *
+make_complex_thumb(meta_parameters* imd,
+                   char *meta_name, char *data_name,
+                   size_t max_thumbnail_dimension)
+{
+    FILE *fpIn = fopen(data_name, "rb");
+    if (!fpIn)
+    {
+        // failed for some reason, quit without thumbnailing
+        meta_free(imd);
+        return NULL;
+    }
+
+    if (strcmp(imd->general->sensor, "ALOS") == 0 && imd->sar)
+      set_alos_look_count(imd, meta_name);
+
+    struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
+    get_ifiledr(meta_name, &image_fdr);
+    int leftFill = image_fdr.lbrdrpxl;
+    int rightFill = image_fdr.rbrdrpxl;
+    int headerBytes = firstRecordLen(data_name) +
+        (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
+         * image_fdr.bytgroup);
+
+    int larger_dim = 512;
+    int ns = imd->general->sample_count;
+    int nl = imd->general->line_count;
+    int lc = imd->sar->look_count;
+    int ii, kk;
+
+    // Vertical and horizontal scale factors required to meet the
+    // max_thumbnail_dimension part of the interface contract.
+    int vsf = ceil (nl / lc / larger_dim);
+    int hsf = ceil (ns / larger_dim);
+
+    // Overall scale factor to use is the greater of vsf and hsf.
+    int sf = (hsf > vsf ? hsf : vsf);
+
+    // Thumbnail image sizes.
+    int tsx = ns / sf;
+    int tsy = nl / lc / sf;
+
+    float *fdata = MALLOC(sizeof(float)*tsx*tsy); // raw data, prior to scaling
+    guchar *ucdata = g_new(guchar, 3*tsx*tsy);    // RGB data, after scaling
+
+    // These are the input arrays, directly from the file (complex)
+    // only one of these is actually allocated, depends on input data type
+    unsigned char *chars=NULL;
+    unsigned short *shorts=NULL;
+    unsigned int *ints=NULL;
+    float *floats=NULL;
+
+    // This is the array of multilooked & converted to amplitude
+    float *amp_line=MALLOC(sizeof(float)*ns);
+
+    // allocate the right input array
+    switch (imd->general->data_type) {
+      case COMPLEX_BYTE:
+        chars = MALLOC(sizeof(unsigned char)*ns*2*lc);
+        break;
+      case COMPLEX_INTEGER16:
+        shorts = MALLOC(sizeof(unsigned short)*ns*2*lc);
+        break;
+      case COMPLEX_INTEGER32:
+        ints = MALLOC(sizeof(unsigned int)*ns*2*lc);
+        break;
+      case COMPLEX_REAL32:
+        floats = MALLOC(sizeof(float)*ns*2*lc);
+        break;
+      default:
+        asfPrintWarning("Invalid data type for complex thumbnail: %d\n",
+                        imd->general->data_type);
+        return NULL;
+    }
+
+    // now read in "look_count" lines at a time, skipping ahead in the file
+    // according to our thumbnail downsizing.  however, the multilooking is
+    // always done on consecutive lines
+    float avg = 0.0;
+    for ( ii = 0 ; ii < tsy ; ii++ ) {
+        int jj;
+
+        //printf("line %d nl=%d\n", ii*sf*lc, nl);
+        if (imd->general->data_type == COMPLEX_INTEGER16)
+        {
+            for (kk=0; kk<lc; ++kk) {
+                assert(shorts);
+                int line = ii*sf*lc + kk;
+                //printf("reading line %d\n", line);
+
+                // if we would read past the end of the file, just read the
+                // last line multiple times.  the last line in the thumb might
+                // look weird, but hey it is just a thumbnail.  if this code
+                // is pulled over to create_thumbs, then we should check for
+                // this possiblity ahead of time, and back up to start the
+                // process at an earlier line
+                if (line>=nl)
+                  line=nl-1;
+
+                long long offset =
+                  (long long)headerBytes+line*(long long)image_fdr.reclen;
+                FSEEK64(fpIn, offset, SEEK_SET);
+                FREAD(shorts + kk*ns*2, sizeof(unsigned short), ns*2, fpIn);
+            }
+
+            // proper endianness for all those int16s
+            for (jj=0; jj<ns*2*lc; ++jj)
+                big16(shorts[jj]);
+
+            // now multilook and convert to amplitude
+            for (jj=0; jj<ns; ++jj) {
+                complexFloat c;
+                c.real = c.imag = 0.0;
+                for (kk=0; kk<lc; ++kk) {
+                    c.real += (float)shorts[kk*ns*2 + jj*2];
+                    c.imag += (float)shorts[kk*ns*2 + jj*2 + 1];
+                }
+                if (lc>1) {
+                    c.real /= (float)lc;
+                    c.imag /= (float)lc;
+                }
+                amp_line[jj] = sqrt(c.real*c.real + c.imag*c.imag);
+            }
+        }
+        else if (imd->general->data_type == COMPLEX_BYTE)
+        {
+            for (kk=0; kk<lc; ++kk) {
+                int line = ii*sf*lc + kk;
+                if (line>=nl) line=nl-1;
+                long long offset =
+                  (long long)headerBytes+line*(long long)image_fdr.reclen;
+                FSEEK64(fpIn, offset, SEEK_SET);
+                FREAD(chars + kk*ns*2, sizeof(unsigned char), ns*2, fpIn);
+            }
+
+            // now multilook and convert to amplitude
+            for (jj=0; jj<ns; ++jj) {
+                complexFloat c;
+                c.real = c.imag = 0.0;
+                for (kk=0; kk<lc; ++kk) {
+                    c.real += (float)chars[kk*ns*2 + jj*2];
+                    c.imag += (float)chars[kk*ns*2 + jj*2 + 1];
+                }
+                c.real /= (float)lc;
+                c.imag /= (float)lc;
+                amp_line[jj] = sqrt(c.real*c.real + c.imag*c.imag);
+            }
+        }
+        else if (imd->general->data_type == COMPLEX_REAL32)
+        {
+            for (kk=0; kk<lc; ++kk) {
+                int line = ii*sf*lc + kk;
+                if (line>=nl) line=nl-1;
+                long long offset =
+                  (long long)headerBytes+line*(long long)image_fdr.reclen;
+                FSEEK64(fpIn, offset, SEEK_SET);
+                FREAD(floats + kk*ns*2, sizeof(float), ns*2, fpIn);
+            }
+
+            // proper endianness for all those real32s
+            for (jj = 0; jj < ns*2*lc; ++jj)
+                ieee_big32(floats[jj]);
+
+            // now multilook and convert to amplitude
+            for (jj=0; jj<ns; ++jj) {
+                complexFloat c;
+                c.real = c.imag = 0.0;
+                for (kk=0; kk<lc; ++kk) {
+                    c.real += floats[kk*ns*2 + jj*2];
+                    c.imag += floats[kk*ns*2 + jj*2 + 1];
+                }
+                c.real /= (float)lc;
+                c.imag /= (float)lc;
+                amp_line[jj] = sqrt(c.real*c.real + c.imag*c.imag);
+            }
+        }
+
+        for ( jj = 0 ; jj < tsx ; jj++ ) {
+            // Current sampled value.
+            float csv;
+
+            // We will average a couple pixels together.
+            if ( jj * sf < ns - 1 ) {
+                csv = (amp_line[jj*sf] + amp_line[jj*sf+1]) * 0.5;
+            }
+            else {
+                csv = (amp_line[jj*sf] + amp_line[jj*sf-1]) * 0.5;
+            }
+
+            fdata[ii*tsx + jj] = csv;
+            avg += csv;
+        }
+    }
+    FREE(chars);
+    FREE(ints);
+    FREE(floats);
+    FREE(shorts);
+    fclose(fpIn);
+
+    // Compute the std devation
+    avg /= tsx*tsy;
+    float stddev = 0.0;
+    for (ii = 0; ii < tsx*tsy; ++ii)
+        stddev += (fdata[ii] - avg) * (fdata[ii] - avg);
+    stddev = sqrt(stddev / (tsx*tsy));
+
+    // Set the limits of the scaling - 2-sigma on either side of the mean
+    float lmin = avg - 2*stddev;
+    float lmax = avg + 2*stddev;
+
+    // Now actually scale the data, and convert to bytes.
+    // Note that we need 3 values, one for each of the RGB channels.
+    for (ii = 0; ii < tsx*tsy; ++ii) {
+        float val = fdata[ii];
+        guchar uval;
+        if (val < lmin)
+            uval = 0;
+        else if (val > lmax)
+            uval = 255;
+        else
+            uval = (unsigned char) round(((val - lmin) / (lmax - lmin)) * 255);
+
+        int n = 3*ii;
+        ucdata[n] = uval;
+        ucdata[n+1] = uval;
+        ucdata[n+2] = uval;
+    }
+
+    FREE(fdata);
+
+    // Create the pixbuf
+    GdkPixbuf *pb =
+        gdk_pixbuf_new_from_data(ucdata, GDK_COLORSPACE_RGB, FALSE,
+                                 8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+
+    if (!pb) {
+        printf("Failed to create the thumbnail pixbuf: %s\n", data_name);
+        meta_free(imd);
+        g_free(ucdata);
+        return NULL;
+    }
+
+    // Scale down to the size we actually want, using the built-in Gdk
+    // scaling method, much nicer than what we did above
+
+    // Must ensure we scale the same in each direction
+    double scale_y = tsy / max_thumbnail_dimension;
+    double scale_x = tsx / max_thumbnail_dimension;
+    double scale = scale_y > scale_x ? scale_y : scale_x;
+    int x_dim = tsx / scale;
+    int y_dim = tsy / scale;
+
+    GdkPixbuf *pb_s =
+        gdk_pixbuf_scale_simple(pb, x_dim, y_dim, GDK_INTERP_BILINEAR);
+    gdk_pixbuf_unref(pb);
+
+    if (!pb_s) {
+        printf("Failed to allocate scaled thumbnail pixbuf: %s\n", data_name);
+        meta_free(imd);
+        return NULL;
+    }
+
+    meta_free(imd);
+    FREE(data_name);
+    FREE(meta_name);
+    return pb_s;
+}
+
+GdkPixbuf *
 make_input_image_thumbnail_pixbuf (const char *input_metadata,
                                    const char *input_data,
                                    size_t max_thumbnail_dimension)
@@ -353,14 +621,21 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         met = STRDUP(input_metadata);
     }
 
-    if (imd->general->data_type != BYTE &&
-        imd->general->data_type != INTEGER16)
+    if (imd->general->data_type >= COMPLEX_BYTE &&
+        imd->general->data_type <= COMPLEX_REAL32)
+    {
+        return make_complex_thumb(imd, met, data_name,
+                                  max_thumbnail_dimension);
+    }
+    else if (imd->general->data_type != BYTE &&
+             imd->general->data_type != INTEGER16)
 // Turning off support for these guys for now.
 //        imd->general->data_type != INTEGER32 &&
 //        imd->general->data_type != REAL32 &&
 //        imd->general->data_type != REAL64)
     {
         /* don't know how to make a thumbnail for this type ... */
+        printf("Cannot make thumbnail for: %d\n", imd->general->data_type);
         return NULL;
     }
 
