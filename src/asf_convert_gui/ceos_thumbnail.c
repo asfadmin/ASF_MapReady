@@ -510,6 +510,13 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 	      data[n] = uval;
 	  }
 	  else if (strcmp_case(imd->general->sensor_name, "SAR") == 0) {
+	    // Keep all SAR images grayscale, reading the first band
+	    if (kk == 0) {
+	      data[n] = uval;
+	      data[n+1] = uval;
+	      data[n+2] = uval;
+	    }
+	    /*
 	    // Dual-pol data
 	    if (nBands == 2) {
 	      if (kk == 0)
@@ -528,6 +535,7 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 	      else if (kk == 3)
 		data[n+2] = uval;
 	    }
+	    */
 	  }
 	}
     }
