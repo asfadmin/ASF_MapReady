@@ -9,11 +9,8 @@ ifeq ($(SYS),win32)
 ### Begin Windows Section
 
 GCC = gcc
-GTK_DIR = ../asf_convert_gui/gtkwin32
-GTK_ZIP = ../asf_convert_gui/gtkwin32zip
-
-GTK_INC = $(GTK_DIR)/include
-GTK_LIB = $(GTK_DIR)/lib
+GTK_INC = $(GTKWIN32_DIR)/include
+GTK_LIB = $(GTKWIN32_DIR)/lib
 
 ASF_LIB = ../../lib
 
@@ -77,10 +74,6 @@ LIB = \
 CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
 $(TARGET).exe: $(TARGET).c
-	if [ ! -f $(GTK_DIR)/README.txt ]; then\
-	  for f in $(GTK_ZIP)/*.zip; do( yes| unzip $$f -d $(GTK_DIR) ); done;\
-	  chmod +x $(GTK_DIR)/bin/*.dll; \
-	fi
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
