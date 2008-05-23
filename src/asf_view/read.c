@@ -125,7 +125,8 @@ int read_file(const char *filename, const char *band, int multilook,
         if (handle_ceos_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = read_ceos_meta(meta_name);
-            open_ceos_data(data_name, meta_name, band, meta, client);
+            open_ceos_data(data_name, meta_name, band, multilook, meta,
+                           client);
         } else {
             err_func(err);
             free(err);

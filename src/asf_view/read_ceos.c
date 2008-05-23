@@ -8,7 +8,25 @@ typedef struct {
     FILE *fp;
     int headerBytes;
     int reclen;
+    int multilook;
 } ReadCeosClientInfo;
+
+static const char *data_type_as_str(data_type_t data_type)
+{
+    switch (data_type) {
+      case BYTE:              return "BYTE";
+      case INTEGER16:         return "INTEGER16";
+      case INTEGER32:         return "INTEGER32";
+      case REAL32:            return "REAL32";
+      case REAL64:            return "REAL64";
+      case COMPLEX_BYTE:      return "COMPLEX_BYTE";
+      case COMPLEX_INTEGER16: return "COMPLEX_INTEGER16";
+      case COMPLEX_INTEGER32: return "COMPLEX_INTEGER32";
+      case COMPLEX_REAL32:    return "COMPLEX_REAL32";
+      case COMPLEX_REAL64:    return "COMPLEX_REAL64";
+      default:                return MAGIC_UNSET_STRING;
+    }
+}
 
 int try_ceos(const char *filename)
 {
@@ -108,12 +126,16 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     int ii, jj;
     int ns = meta->general->sample_count;
 
+    int skip = 1;
+    if (info->multilook)
+      skip = meta->sar->look_count;
+
     if (meta->general->data_type == INTEGER16)
     {
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
             long long offset = (long long)(info->headerBytes +
-                (ii+row_start)*info->reclen);
+                                           (ii*skip+row_start)*info->reclen);
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns, info->fp);
@@ -130,7 +152,7 @@ int read_ceos_client(int row_start, int n_rows_to_get,
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<n_rows_to_get; ++ii) {
             long long offset = (long long)(info->headerBytes +
-                (ii+row_start)*info->reclen);
+                                           (ii*skip+row_start)*info->reclen);
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns, info->fp);
@@ -140,9 +162,60 @@ int read_ceos_client(int row_start, int n_rows_to_get,
         }
         free(bytes);
     }
+    else if (meta->general->data_type == COMPLEX_REAL32)
+    {
+        float *floats = MALLOC(sizeof(float)*ns*2);
+        for (ii=0; ii<n_rows_to_get; ++ii) {
+            long long offset = (long long)(info->headerBytes +
+                                           (ii*skip+row_start)*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(floats, sizeof(float), ns*2, info->fp);
+
+            for (jj=0; jj<ns*2; ++jj)
+                ieee_big32(floats[jj]);
+
+            for (jj=0; jj<ns; ++jj)
+                dest[jj + ii*ns] = hypot(floats[jj*2], floats[jj*2+1]);
+        }
+        free(floats);
+    }
+    else if (meta->general->data_type == COMPLEX_BYTE)
+    {
+        unsigned char *bytes = MALLOC(sizeof(unsigned char)*2*ns);
+        for (ii=0; ii<n_rows_to_get; ++ii) {
+            long long offset = (long long)(info->headerBytes +
+                                           (ii*skip+row_start)*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
+
+            for (jj = 0; jj < ns; ++jj)
+                dest[jj + ii*ns] = hypot(bytes[jj*2], bytes[jj*2+1]);
+        }
+        free(bytes);
+    }
+    else if (meta->general->data_type == COMPLEX_INTEGER16)
+    {
+        unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns*2);
+        for (ii=0; ii<n_rows_to_get; ++ii) {
+            long long offset = (long long)(info->headerBytes +
+                                           (ii*skip+row_start)*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
+
+            for (jj = 0; jj < ns*2; ++jj)
+                big16(shorts[jj]);
+
+            for (jj = 0; jj < ns; ++jj)
+                dest[jj + ii*ns] = hypot(shorts[jj*2], shorts[jj*2+1]);
+        }
+        free(shorts);
+    }
     else {
-        asfPrintError("Unsupported data type in CEOS data: %d\n",
-            meta->general->data_type);
+        asfPrintError("Unsupported data type in CEOS data: %s\n",
+            data_type_as_str(meta->general->data_type));
     }
 
     return TRUE;
@@ -163,19 +236,25 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
     int sf = nl / thumb_size_y;
     //assert(sf==ns / thumb_size_x);
 
+    if (info->multilook)
+      sf *= meta->sar->look_count;
+
     if (meta->general->data_type == INTEGER16)
     {
         unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns);
         for (ii=0; ii<thumb_size_y; ++ii) {
-            long long offset = (long long)(info->headerBytes + ii*sf*info->reclen);
+            int line = ii*sf;
+            long long offset = (long long)(info->headerBytes +
+                                           line*info->reclen);
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns, info->fp);
 
-            for (jj = 0; jj < thumb_size_x; ++jj) {
+            for (jj = 0; jj < ns; ++jj)
                 big16(shorts[jj]);
+
+            for (jj = 0; jj < thumb_size_x; ++jj)
                 dest[jj + ii*thumb_size_x] = (float)(shorts[jj*sf]);
-            }
 
             asfPercentMeter((float)ii/(thumb_size_y-1));
         }
@@ -185,7 +264,9 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
     {
         unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns);
         for (ii=0; ii<thumb_size_y; ++ii) {
-            long long offset = (long long)(info->headerBytes + ii*sf*info->reclen);
+            int line = ii*sf;
+            long long offset = (long long)(info->headerBytes +
+                                           line*info->reclen);
 
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(bytes, sizeof(unsigned char), ns, info->fp);
@@ -197,9 +278,70 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
         }
         free(bytes);
     }
+    else if (meta->general->data_type == COMPLEX_REAL32)
+    {
+        float *floats = MALLOC(sizeof(float)*ns*2);
+        for (ii=0; ii<thumb_size_y; ++ii) {
+            int line = ii*sf;
+            long long offset = (long long)(info->headerBytes +
+                                           line*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(floats, sizeof(float), ns*2, info->fp);
+
+            for (jj=0; jj<thumb_size_x; ++jj) {
+                ieee_big32(floats[jj*2]);
+                ieee_big32(floats[jj*2+1]);
+                dest[jj+ii*thumb_size_x] = hypot(floats[jj*2], floats[jj*2+1]);
+            }
+            asfPercentMeter((float)ii/(thumb_size_y-1));
+        }
+        free(floats);
+    }
+    else if (meta->general->data_type == COMPLEX_BYTE)
+    {
+        unsigned char *bytes = MALLOC(sizeof(unsigned char)*ns*2);
+        for (ii=0; ii<thumb_size_y; ++ii) {
+            int line = ii*sf;
+            long long offset = (long long)(info->headerBytes +
+                                           line*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(bytes, sizeof(unsigned char), ns*2, info->fp);
+
+            for (jj = 0; jj < thumb_size_x; ++jj)
+                dest[jj + ii*thumb_size_x] = hypot(bytes[jj*sf*2],
+                                                   bytes[jj*sf*2+1]);
+
+            asfPercentMeter((float)ii/(thumb_size_y-1));
+        }
+        free(bytes);
+    }
+    else if (meta->general->data_type == COMPLEX_INTEGER16)
+    {
+        unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns*2);
+        for (ii=0; ii<thumb_size_y; ++ii) {
+            int line = ii*sf;
+            long long offset = (long long)(info->headerBytes +
+                                           line*info->reclen);
+
+            FSEEK64(info->fp, offset, SEEK_SET);
+            FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
+
+            for (jj = 0; jj < ns*2; ++jj)
+                big16(shorts[jj]);
+
+            for (jj = 0; jj < thumb_size_x; ++jj)
+                dest[jj + ii*thumb_size_x] =
+                  hypot(shorts[jj*sf*2], shorts[jj*sf*2+1]);
+
+            asfPercentMeter((float)ii/(thumb_size_y-1));
+        }
+        free(shorts);
+    }
     else {
         asfPrintError("Unsupported data type in CEOS data: %d\n",
-            meta->general->data_type);
+            data_type_as_str(meta->general->data_type));
     }
 
     return TRUE;
@@ -213,7 +355,7 @@ void free_ceos_client_info(void *read_client_info)
 }
 
 int open_ceos_data(const char *data_name, const char *meta_name,
-                   const char *band, meta_parameters *meta,
+                   const char *band, int multilook, meta_parameters *meta,
                    ClientInterface *client)
 {
     ReadCeosClientInfo *info = MALLOC(sizeof(ReadCeosClientInfo));
@@ -230,6 +372,7 @@ int open_ceos_data(const char *data_name, const char *meta_name,
         (image_fdr.reclen - (ns + leftFill + rightFill)*image_fdr.bytgroup);
 
     info->reclen = image_fdr.reclen;
+    info->multilook = multilook;
 
     info->fp = fopen(data_name, "rb");
     if (!info->fp) {
@@ -237,6 +380,9 @@ int open_ceos_data(const char *data_name, const char *meta_name,
             data_name, strerror(errno));
         return FALSE;
     }
+
+    asfPrintStatus("CEOS Data Type: %s\n",
+                   data_type_as_str(meta->general->data_type));
 
     client->read_client_info = info;
     client->read_fn = read_ceos_client;

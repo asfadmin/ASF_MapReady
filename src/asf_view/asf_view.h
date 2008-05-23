@@ -116,7 +116,7 @@ int handle_ceos_file(const char *filename, char *meta_name, char *data_name,
                     char **err);
 meta_parameters *read_ceos_meta(const char *meta_name);
 int open_ceos_data(const char *dataname, const char *metaname,
-                   const char *band, meta_parameters *meta,
+                   const char *band, int multilook, meta_parameters *meta,
                    ClientInterface *client);
 void free_ceos_client_info(void *read_client_info);
 
