@@ -20,24 +20,6 @@ void import_ceos_raw(char *inDataName, char *inMetaName, char *outDataName,
          char *outMetaName, char *bandExt, int band, int nBands,
          radiometry_t radiometry, int line, int sample, int width, int height,
          int import_single_band);
-void import_ceos_complex_int(char *inDataName, char *inMetaName,
-           char *outDataName, char *outMetaName,
-           char *bandExt, int band, int nBands,
-           radiometry_t radiometry,
-       int line, int sample, int width, int height,int import_single_band,
-     int complex_flag, int multilook_flag);
-void import_ceos_complex_float(char *inDataName, char *inMetaName,
-             char *outDataName, char *outMetaName,
-             char *bandExt, int band, int nBands,
-         radiometry_t radiometry,
-             int line, int sample, int width, int height,
-             int import_single_band,
-         int complex_flag, int multilook_flag, int db_flag);
-void import_ceos_detected(char *inDataName, char *inMetaName, char *outDataName,
-        char *outMetaName, char *bandExt, int band, int nBands,
-        radiometry_t radiometry,
-        int line, int sample, int width, int height, int import_single_band,
-        char *lutName, int db_flag);
 void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               char *outMetaName, char *bandExt, int band, int nBands,
               int nBandsOut, radiometry_t radiometry,
@@ -46,29 +28,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
                       int multilook_flag, char *lutName,
                       int apply_ers2_gain_fix_flag);
 
-void import_ceos_byte_lut(char *inDataName, char *inMetaName, char *outDataName,
-        char *outMetaName, meta_parameters *meta, int band,
-        int import_single_band, int nBands, char *lutName);
-void import_ceos_int_lut(char *inDataName, char *inMetaName, char *outDataName,
-       char *outMetaName, meta_parameters *meta, int band,
-       int import_single_band, int nBands, char *lutName);
-void import_ceos_byte_cal(char *inDataName, char *inMetaName, char *outDataName,
-        char *outMetaName, int band, int import_single_band,
-        int nBands, meta_parameters *meta, int db_flag,
-        radiometry_t radiometry);
-void import_ceos_int_cal(char *inDataName, char *inMetaName, char *outDataName,
-       char *outMetaName, int band, int import_single_band,
-       int nBands, meta_parameters *meta, int db_flag,
-       radiometry_t radiometry);
-void import_ceos_byte_amp(char *inDataName, char *inMetaName, char *outDataName,
-        char *outMetaName, meta_parameters *meta, int band,
-        int import_single_band, int nBands,
-                          radiometry_t radiometry);
-void import_ceos_int_amp(char *inDataName, char *inMetaName, char *outDataName,
-       char *outMetaName, meta_parameters *meta, int band,
-       int line, int sample, int height, int width,
-       int import_single_band, int nBands,
-                         radiometry_t radiometry);
 void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
        char *outDataName, char *outMetaName, meta_parameters *meta, int band,
        int import_single_band, int nBands, radiometry_t radiometry);
@@ -790,7 +749,6 @@ void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
     if (strncmp(meta->sar->polarization, "???", 3) == 0)
       strcpy(meta->sar->polarization, meta->general->bands);
   meta_write(meta, outMetaName);
-  meta_free(meta);
 
   FCLOSE(fpIn);
   FCLOSE(fpOut);
@@ -980,7 +938,6 @@ void import_ceos_int_slant_range_cal(char *inDataName, char *inMetaName,
     if (strncmp(meta->sar->polarization, "???", 3) == 0)
       strcpy(meta->sar->polarization, meta->general->bands);
   meta_write(meta, outMetaName);
-  meta_free(meta);
 
   FCLOSE(fpIn);
   FCLOSE(fpOut);
