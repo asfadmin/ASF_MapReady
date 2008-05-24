@@ -256,6 +256,9 @@ int get_band_number(char *bands, int band_count, char *channel)
   // Tokenize and strip leading zeros/white space and trailing
   // white space at the same time
   band = (char **) MALLOC(sizeof(char*) * (band_count+1));
+  for (i = 0; i < band_count; ++i)
+    band[i] = NULL;
+
   band[0] = channel_trim(strtok_r(t_bands, ",", &ptrptr));
   for (i = 0; band[i] != NULL;) {
     i++;
@@ -270,7 +273,7 @@ int get_band_number(char *bands, int band_count, char *channel)
   //
   found = 0;
   for (band_no = 0; !found && band_no < band_count; band_no++) {
-    if (strcmp(band[band_no], t_channel) == 0) {
+    if (band[band_no] && strcmp(band[band_no], t_channel) == 0) {
       found = 1;
     }
   }
@@ -279,9 +282,9 @@ int get_band_number(char *bands, int band_count, char *channel)
   // Clean up
   FREE(t_bands);
   FREE(t_channel);
-  for (i=0; band[i] != NULL; i++) {
+  for (i=0; i<band_count; i++)
     FREE(band[i]);
-  }
+  FREE(band);
 
   if (found)
     return band_no;
