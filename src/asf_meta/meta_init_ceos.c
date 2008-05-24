@@ -779,7 +779,7 @@ void ceos_init_sar_focus(ceos_description *ceos, const char *in_fName,
   tan_lat = dssr->plat_lat*D2R;
   meta->sar->earth_radius = rp*sqrt(1 + tan_lat*tan_lat) /
     sqrt(rp*rp/(re*re) + tan_lat*tan_lat);
-  if (ppr->eph_orb_data[0] > 0.0)
+  if (ppr && ppr->eph_orb_data[0] > 0.0)
     meta->sar->satellite_height = ppr->eph_orb_data[0];
   meta->sar->range_doppler_coefficients[0] = dssr->crt_dopcen[0];
   meta->sar->range_doppler_coefficients[1] = dssr->crt_dopcen[1];
