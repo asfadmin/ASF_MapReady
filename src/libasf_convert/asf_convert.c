@@ -646,6 +646,16 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
   else {
     cfg = read_convert_config(configFileName);
   }
+  // Using PGM with polarimetry is not allowed -- all are color output
+  // (except when using entropy/anisotropy/alpha -- that could be PGM,
+  // if each is exported as a separate file)
+  if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
+      (cfg->general->polarimetry && !cfg->polarimetry->cloude_pottier_nc))
+  {
+    asfPrintError("Greyscale PGM output is not compatible with the color "
+                  "polarimetric options.\n");
+  }
+
   // Check for greyscale PGM output versus selection of a color option
   if (strncmp(uc(cfg->export->format), "PGM", 3) == 0 &&
       (strlen(cfg->export->rgb) > 0 ||
