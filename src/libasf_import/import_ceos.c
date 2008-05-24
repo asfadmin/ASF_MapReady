@@ -1549,23 +1549,20 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       break;
     }
 
-  // Read data
+  // Figure out left fill and right fill
   if (strcmp(meta->general->sensor, "ALOS") == 0 && meta->optical) {
     get_ALOS_optical_ifiledr(inMetaName,&image_fdr);
     leftFill = image_fdr.predata + image_fdr.lbrdrpxl;
     rightFill = image_fdr.sufdata + image_fdr.rbrdrpxl;
-    headerBytes = firstRecordLen(inDataName)
-      + (image_fdr.reclen - (ns + leftFill + rightFill)
-     * image_fdr.bytgroup);
   }
   else {
     get_ifiledr(inMetaName,&image_fdr);
     leftFill = image_fdr.lbrdrpxl;
     rightFill = image_fdr.rbrdrpxl;
-    headerBytes = firstRecordLen(inDataName)
-      + (image_fdr.reclen - (ns + leftFill + rightFill)
-     * image_fdr.bytgroup);
   }
+  headerBytes = firstRecordLen(inDataName) +
+    (image_fdr.reclen - (ns + leftFill + rightFill) * image_fdr.bytgroup);
+  meta->general->sample_count -= leftFill;
 
   // Set metadata for multilooking
   if (meta->sar) {
