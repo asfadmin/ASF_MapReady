@@ -114,7 +114,7 @@ do_rename_selected(const gchar *new_name)
 
     files_list = get_widget_checked("files_list");
 
-    if (get_iter_to_first_selected_row(files_list, &iter))
+    if (get_iter_to_first_selected_row(files_list, list_store, &iter))
     {
         do_rename(GTK_TREE_MODEL(list_store), &iter, new_name);
     }
@@ -128,7 +128,7 @@ rename_selected_output_filename()
 
     files_list = get_widget_checked("files_list");
 
-    if (get_iter_to_first_selected_row(files_list, &iter))
+    if (get_iter_to_first_selected_row(files_list, list_store, &iter))
     {
         gchar *current_output_name;
         gchar *name_without_path;

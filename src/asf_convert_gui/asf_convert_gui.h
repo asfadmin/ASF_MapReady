@@ -287,7 +287,8 @@ void enable_widget(const char *widget_name, int enable);
 void setup_dnd();
 
 /* popup_menu.c */
-gboolean get_iter_to_first_selected_row();
+gboolean get_iter_to_first_selected_row(GtkWidget *, GtkListStore *,
+                                        GtkTreeIter *);
 void setup_popup_menu();
 void show_please_select_message();
 void set_toolbar_images();

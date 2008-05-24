@@ -643,113 +643,113 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
       if (nBands > 1 &&
 	  strcmp_case(imd->general->sensor_name, "PRISM") != 0)
 	data_name = STRDUP(dataName[kk]);
-    FILE *fpIn = fopen(data_name, "rb");
-    if (!fpIn)
-    {
+      FILE *fpIn = fopen(data_name, "rb");
+      if (!fpIn)
+      {
         // failed for some reason, quit without thumbnailing
         meta_free(imd);
         return NULL;
-    }
-
-    struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
-    get_ifiledr(met, &image_fdr);
-    int leftFill = image_fdr.lbrdrpxl;
-    int rightFill = image_fdr.rbrdrpxl;
-    int headerBytes = firstRecordLen(data_name) +
+      }
+      
+      struct IOF_VFDR image_fdr;              /* CEOS File Descriptor Record */
+      get_ifiledr(met, &image_fdr);
+      int leftFill = image_fdr.lbrdrpxl;
+      int rightFill = image_fdr.rbrdrpxl;
+      int headerBytes = firstRecordLen(data_name) +
         (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
          * image_fdr.bytgroup);
-
-    // use a larger dimension at first, for our crude scaling.  We will
-    // use a better scaling method later, from GdbPixbuf
-    int larger_dim = 512;
-
-    // Vertical and horizontal scale factors required to meet the
-    // max_thumbnail_dimension part of the interface contract.
-    int vsf = ceil (imd->general->line_count / larger_dim);
-    int hsf = ceil (imd->general->sample_count / larger_dim);
-    // Overall scale factor to use is the greater of vsf and hsf.
-    int sf = (hsf > vsf ? hsf : vsf);
-
-    // Thumbnail image sizes.
-    tsx = imd->general->sample_count / sf;
-    tsy = imd->general->line_count / sf;
-
-    // Thumbnail image buffers - 'idata' is the temporary data prior
-    // to scaling to 2-sigma, 'data' is the byte buffer used to create the
-    // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
-    // wants an RGB value.
-    int *idata = g_new(int, tsx*tsy);
-    if (kk == 0)
-      data = g_new(guchar, 3*tsx*tsy);
-
-    // Form the thumbnail image by grabbing individual pixels.  FIXME:
-    // Might be better to do some averaging or interpolating.
-    size_t ii;
-    unsigned short *line = g_new (unsigned short, imd->general->sample_count);
-    unsigned char *bytes = g_new (unsigned char, imd->general->sample_count);
-
-    // Keep track of the average pixel value, so later we can do a 2-sigma
-    // scaling - makes the thumbnail look a little nicer and more like what
-    // they'd get if they did the default jpeg export.
-    double avg = 0.0;
-    for ( ii = 0 ; ii < tsy ; ii++ ) {
-
+      
+      // use a larger dimension at first, for our crude scaling.  We will
+      // use a better scaling method later, from GdbPixbuf
+      int larger_dim = 512;
+      
+      // Vertical and horizontal scale factors required to meet the
+      // max_thumbnail_dimension part of the interface contract.
+      int vsf = ceil (imd->general->line_count / larger_dim);
+      int hsf = ceil (imd->general->sample_count / larger_dim);
+      // Overall scale factor to use is the greater of vsf and hsf.
+      int sf = (hsf > vsf ? hsf : vsf);
+      
+      // Thumbnail image sizes.
+      tsx = imd->general->sample_count / sf;
+      tsy = imd->general->line_count / sf;
+      
+      // Thumbnail image buffers - 'idata' is the temporary data prior
+      // to scaling to 2-sigma, 'data' is the byte buffer used to create the
+      // pixbuf, it will need 3 bytes per value, all equal, since the pixbuf
+      // wants an RGB value.
+      int *idata = g_new(int, tsx*tsy);
+      if (kk == 0)
+        data = g_new(guchar, 3*tsx*tsy);
+      
+      // Form the thumbnail image by grabbing individual pixels.  FIXME:
+      // Might be better to do some averaging or interpolating.
+      size_t ii;
+      unsigned short *line = g_new (unsigned short, imd->general->sample_count);
+      unsigned char *bytes = g_new (unsigned char, imd->general->sample_count);
+      
+      // Keep track of the average pixel value, so later we can do a 2-sigma
+      // scaling - makes the thumbnail look a little nicer and more like what
+      // they'd get if they did the default jpeg export.
+      double avg = 0.0;
+      for ( ii = 0 ; ii < tsy ; ii++ ) {
+        
         size_t jj;
         long long offset =
-            (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
-
+          (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
+        
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
         {
-            FREAD(line, sizeof(unsigned short), imd->general->sample_count,
-                  fpIn);
-
-            for (jj = 0; jj < imd->general->sample_count; ++jj)
-                big16(line[jj]);
+          FREAD(line, sizeof(unsigned short), imd->general->sample_count,
+                fpIn);
+          
+          for (jj = 0; jj < imd->general->sample_count; ++jj)
+            big16(line[jj]);
         }
         else if (imd->general->data_type == BYTE)
         {
-            FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
-                  fpIn);
-
-            for (jj = 0; jj < imd->general->sample_count; ++jj)
-                line[jj] = (unsigned short)bytes[jj];
+          FREAD(bytes, sizeof(unsigned char), imd->general->sample_count,
+                fpIn);
+          
+          for (jj = 0; jj < imd->general->sample_count; ++jj)
+            line[jj] = (unsigned short)bytes[jj];
         }
-
+        
         for ( jj = 0 ; jj < tsx ; jj++ ) {
-            // Current sampled value.
-            double csv;
-
-            // We will average a couple pixels together.
-            if ( jj * sf < imd->general->line_count - 1 ) {
-                csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
-            }
-            else {
-                csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
-            }
-
-            idata[ii*tsx + jj] = (int)csv;
-            avg += csv;
+          // Current sampled value.
+          double csv;
+          
+          // We will average a couple pixels together.
+          if ( jj * sf < imd->general->line_count - 1 ) {
+            csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
+          }
+          else {
+            csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+          }
+          
+          idata[ii*tsx + jj] = (int)csv;
+          avg += csv;
         }
-    }
-    g_free (line);
-    g_free (bytes);
-    fclose(fpIn);
-
-    // Compute the std devation
-    avg /= tsx*tsy;
-    double stddev = 0.0;
-    for (ii = 0; ii < tsx*tsy; ++ii)
+      }
+      g_free (line);
+      g_free (bytes);
+      fclose(fpIn);
+      
+      // Compute the std devation
+      avg /= tsx*tsy;
+      double stddev = 0.0;
+      for (ii = 0; ii < tsx*tsy; ++ii)
         stddev += ((double)idata[ii] - avg) * ((double)idata[ii] - avg);
-    stddev = sqrt(stddev / (tsx*tsy));
-
-    // Set the limits of the scaling - 2-sigma on either side of the mean
-    double lmin = avg - 2*stddev;
-    double lmax = avg + 2*stddev;
-
-    // Now actually scale the data, and convert to bytes.
-    // Note that we need 3 values, one for each of the RGB channels.
-    for (ii = 0; ii < tsx*tsy; ++ii) {
+      stddev = sqrt(stddev / (tsx*tsy));
+      
+      // Set the limits of the scaling - 2-sigma on either side of the mean
+      double lmin = avg - 2*stddev;
+      double lmax = avg + 2*stddev;
+      
+      // Now actually scale the data, and convert to bytes.
+      // Note that we need 3 values, one for each of the RGB channels.
+      for (ii = 0; ii < tsx*tsy; ++ii) {
         int val = idata[ii];
         guchar uval;
         if (val < lmin)
@@ -810,15 +810,15 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
 	    */
 	  }
 	}
+      }
+      
+      g_free(idata);
     }
-
-    g_free(idata);
-    }
-
+    
     // Create the pixbuf
     GdkPixbuf *pb =
-        gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
-                                 8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
+      gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, FALSE,
+                               8, tsx, tsy, tsx*3, destroy_pb_data, NULL);
 
     if (!pb) {
         printf("Failed to create the thumbnail pixbuf: %s\n", data_name);

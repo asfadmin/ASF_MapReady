@@ -68,7 +68,11 @@ on_help_button_clicked(GtkWidget *widget)
                 ++j;
             }
             hh[j] = '\0';
-            strcat(hh, "/hh.exe mapready.chm");
+            strcat(hh, "/hh.exe ");
+            char * escaped_share_dir = escapify(get_asf_share_dir());
+            strcat(hh, escaped_share_dir);
+            strcat(hh, "/mapready.chm");
+            FREE(escaped_share_dir);
             ret = system(hh);
             if (ret != -1) exit(0);
         }

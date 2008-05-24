@@ -425,6 +425,28 @@ static gboolean confirm_overwrite()
     return ret;
 }
 
+static GList *get_selected_rows(GtkWidget *files_list, GtkListStore *store)
+{
+  GtkTreeSelection *selection;
+  selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
+
+  GtkTreeModel *model = GTK_TREE_MODEL(store);
+  
+  GList *selected_rows;
+  selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+  
+  if (!selected_rows) {
+    // if we have just 1 item in the whole list, select it, and return it
+    int n = gtk_tree_model_iter_n_children(model, NULL);
+    if (n==1) {
+      gtk_tree_selection_select_all(selection);      
+      selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    }
+  }
+
+  return selected_rows;
+}
+
 static int
 handle_remove_imp(const char *widget_name, GtkListStore *store)
 {
@@ -437,6 +459,10 @@ handle_remove_imp(const char *widget_name, GtkListStore *store)
     files_list = get_widget_checked(widget_name);
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(store);
+
+    //  Don't allow the auto-pick for "remove" -- don't want to have
+    //  that happen by accident
+    //selected_rows = get_selected_rows(files_list, store);
 
     selected_rows = gtk_tree_selection_get_selected_rows(
         selection, &model);
@@ -501,7 +527,9 @@ handle_remove()
 }
 
 gboolean
-get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
+get_iter_to_first_selected_row(GtkWidget *files_list,
+                               GtkListStore *store,
+                               GtkTreeIter *iter)
 {
     GList * selected_rows;
     GtkTreeModel *model;
@@ -509,9 +537,10 @@ get_iter_to_first_selected_row(GtkWidget * files_list, GtkTreeIter * iter)
     gboolean found;
 
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
-    model = GTK_TREE_MODEL(list_store);
+    model = GTK_TREE_MODEL(store);
 
-    selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    selected_rows = get_selected_rows(files_list, store);
     if (selected_rows)
     {
         GtkTreePath * path;
@@ -540,7 +569,7 @@ handle_display_ceos_metadata()
 
     files_list = get_widget_checked("files_list");
 
-    if (get_iter_to_first_selected_row(files_list, &iter))
+    if (get_iter_to_first_selected_row(files_list, list_store, &iter))
     {
         gchar * in_name;
 
@@ -565,7 +594,9 @@ handle_display_asf_metadata()
 
     completed_files_list = get_widget_checked("completed_files_list");
 
-    if (get_iter_to_first_selected_row(completed_files_list, &iter))
+    if (get_iter_to_first_selected_row(completed_files_list,
+                                       completed_list_store,
+                                       &iter))
     {
         gchar * out_name;
 
@@ -605,7 +636,7 @@ handle_view_log(int completed)
     GtkWidget *list = get_widget_checked(widget);
     GtkTreeIter iter;
 
-    if (get_iter_to_first_selected_row(list, &iter))
+    if (get_iter_to_first_selected_row(list, ls, &iter))
     {
         gchar *log_txt, *input_file;
 
@@ -646,7 +677,8 @@ handle_process()
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(list_store);
 
-    selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    selected_rows = get_selected_rows(files_list, list_store);
 
     if (!selected_rows)
     {
@@ -737,7 +769,9 @@ handle_view_output()
 
     completed_files_list = get_widget_checked("completed_files_list");
 
-    if (get_iter_to_first_selected_row(completed_files_list, &iter))
+    if (get_iter_to_first_selected_row(completed_files_list,
+                                       completed_list_store,
+                                       &iter))
     {
         gchar *out_name;
         gtk_tree_model_get(GTK_TREE_MODEL(completed_list_store), &iter,
@@ -826,7 +860,7 @@ handle_view_input()
 
     files_list = get_widget_checked("files_list");
 
-    if (get_iter_to_first_selected_row(files_list, &iter))
+    if (get_iter_to_first_selected_row(files_list, list_store, &iter))
     {
         gchar * in_name;
 
@@ -862,7 +896,8 @@ handle_google_earth_imp(const char *widget_name, GtkListStore *store)
     files_list = get_widget_checked(widget_name);
     selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(files_list));
     model = GTK_TREE_MODEL(store);
-    selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    selected_rows = get_selected_rows(files_list, store);
 
     refs = NULL;
     i = selected_rows;
@@ -1059,7 +1094,9 @@ handle_reprocess()
         GTK_TREE_VIEW(completed_files_list));
     model = GTK_TREE_MODEL(completed_list_store);
 
-    selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    //selected_rows = gtk_tree_selection_get_selected_rows(selection, &model);
+    selected_rows = get_selected_rows(completed_files_list,
+                                      completed_list_store);
 
     refs = NULL;
     i = selected_rows;
