@@ -287,8 +287,13 @@ GTIF* write_tags_for_geotiff (TIFF *otif, const char *metadata_file_name,
       tie_point[0] = 0.0;
       tie_point[1] = 0.0;
       tie_point[2] = 0.0;
-      tie_point[3] = md->projection->startX; // meters
-      tie_point[4] = md->projection->startY; // meters
+
+      // these are both meters
+      tie_point[3] = md->projection->startX +
+                     md->general->start_sample * md->projection->perX;
+      tie_point[4] = md->projection->startY +
+                     md->general->start_line * md->projection->perY;
+
       tie_point[5] = 0.0;
       TIFFSetField(otif, TIFFTAG_GEOTIEPOINTS, 6, tie_point);
 
