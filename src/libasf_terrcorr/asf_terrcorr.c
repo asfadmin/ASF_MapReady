@@ -321,7 +321,8 @@ static char * getOutputDir(char *outFile)
 static void update_extents(int lineSAR, int sampSAR,
                            meta_parameters *metaDEM, meta_parameters *metaSAR,
                            int *line_min, int *line_max,
-                           int *samp_min, int *samp_max)
+                           int *samp_min, int *samp_max,
+                           int add_padding)
 {
     double lat, lon, x, y, z;
     int line, samp;      // line & samp in the DEM
@@ -340,11 +341,23 @@ static void update_extents(int lineSAR, int sampSAR,
     samp -= metaDEM->general->start_sample;
     line -= metaDEM->general->start_line;
 
-    // padding, allow for subsequent geocoding & height-induced offsets
-    int line_lo = line - 20;
-    int line_hi = line + 20;
-    int samp_lo = samp - 100;
-    int samp_hi = samp + 500;
+    int line_lo, line_hi;
+    int samp_lo, samp_hi;
+
+    // the padding, if we are to add it, is to allow for subsequent
+    // geocoding & height-induced offsets
+    if (add_padding) {
+        line_lo = line - 20;
+        line_hi = line + 20;
+        samp_lo = samp - 100;
+        samp_hi = samp + 500;
+    }
+    else {
+        line_lo = line;
+        line_hi = line;
+        samp_lo = samp;
+        samp_hi = samp;
+    }
 
     if (line_lo < 0) line_lo = 0;
     if (line_hi > metaDEM->general->line_count - 1)
@@ -376,13 +389,13 @@ static void cut_dem(meta_parameters *metaSAR, meta_parameters *metaDEM,
     samp_max = 0;
 
     update_extents(0,    0,    metaDEM, metaSAR,
-                   &line_min, &line_max, &samp_min, &samp_max);
+                   &line_min, &line_max, &samp_min, &samp_max, FALSE);
     update_extents(nl-1, 0,    metaDEM, metaSAR,
-                   &line_min, &line_max, &samp_min, &samp_max);
+                   &line_min, &line_max, &samp_min, &samp_max, FALSE);
     update_extents(0,    ns-1, metaDEM, metaSAR,
-                   &line_min, &line_max, &samp_min, &samp_max);
+                   &line_min, &line_max, &samp_min, &samp_max, FALSE);
     update_extents(nl-1, ns-1, metaDEM, metaSAR,
-                   &line_min, &line_max, &samp_min, &samp_max);
+                   &line_min, &line_max, &samp_min, &samp_max, FALSE);
 
     char *cutDemFile = getOutName(output_dir, demFile, "_cut");
 
