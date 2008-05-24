@@ -85,8 +85,8 @@ int test_nad27(double lat, double lon)
     pz = MALLOC(sizeof(double));
 */
     double px[1], py[1], pz[1];
-    px[0] = lat*D2R;
-    py[0] = lon*D2R;
+    py[0] = lat*D2R;
+    px[0] = lon*D2R;
     pz[0] = 0;
 
     pj_transform (ll_proj, utm_proj, 1, 1, px, py, pz);
@@ -96,8 +96,8 @@ int test_nad27(double lat, double lon)
     {
         ret = FALSE;
     }
-    else if (pj_errno != 0) // some other error (pj errors are negative, system errors are positive)
-    {
+    else if (pj_errno != 0) // some other error (pj errors are negative,
+    {                       // system errors are positive)
         asfPrintError("libproj Error: %s\n", pj_strerrno(pj_errno));
     }
 
