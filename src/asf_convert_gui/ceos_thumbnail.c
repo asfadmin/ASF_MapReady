@@ -636,8 +636,8 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
     }
 
-    guchar *data;
-    size_t tsx, tsy;
+    guchar *data=NULL;
+    int tsx=-1, tsy=-1;
     int kk;
     for (kk=0; kk<nBands; kk++) {
       if (nBands > 1 &&
