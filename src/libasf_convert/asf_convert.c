@@ -1651,8 +1651,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Calculate polarimetric parameters
       if (cfg->polarimetry->pauli)
 	cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
-      else if (cfg->polarimetry->sinclair)
-	cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
+      else if (cfg->polarimetry->sinclair) {
+        // for sinclair, there are two possibilities: SLC & non-SLC
+        meta_parameters *meta = meta_read(inFile);
+        if (meta->general->band_count >= 8) {
+          cpx2sinclair(inFile, outFile, cfg->general->terrain_correct);
+        }
+        else {
+          // here, we don't need to do any processing -- we just need to
+          // update the RGB Bands to Red=HH, Green=HV, Blue=VV
+          strcpy(cfg->export->rgb, "HH,HV,VV");
+          strcpy(outFile, inFile);
+        }
+        meta_free(meta);
+      }
       else if (cfg->polarimetry->cloude_pottier)
 	cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_ext)
