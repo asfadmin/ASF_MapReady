@@ -345,7 +345,7 @@ make_complex_thumb(meta_parameters* imd,
     // These are the input arrays, directly from the file (complex)
     // only one of these is actually allocated, depends on input data type
     unsigned char *chars=NULL;
-    unsigned short *shorts=NULL;
+    short *shorts=NULL;
     unsigned int *ints=NULL;
     float *floats=NULL;
 
@@ -358,7 +358,7 @@ make_complex_thumb(meta_parameters* imd,
         chars = MALLOC(sizeof(unsigned char)*ns*2*lc);
         break;
       case COMPLEX_INTEGER16:
-        shorts = MALLOC(sizeof(unsigned short)*ns*2*lc);
+        shorts = MALLOC(sizeof(short)*ns*2*lc);
         break;
       case COMPLEX_INTEGER32:
         ints = MALLOC(sizeof(unsigned int)*ns*2*lc);
@@ -399,7 +399,7 @@ make_complex_thumb(meta_parameters* imd,
                 long long offset =
                   (long long)headerBytes+line*(long long)image_fdr.reclen;
                 FSEEK64(fpIn, offset, SEEK_SET);
-                FREAD(shorts + kk*ns*2, sizeof(unsigned short), ns*2, fpIn);
+                FREAD(shorts + kk*ns*2, sizeof(short), ns*2, fpIn);
             }
 
             // proper endianness for all those int16s

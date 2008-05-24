@@ -197,13 +197,13 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     }
     else if (meta->general->data_type == COMPLEX_INTEGER16)
     {
-        unsigned short *shorts = MALLOC(sizeof(unsigned short)*ns*2);
+        short *shorts = MALLOC(sizeof(short)*ns*2);
         for (ii=0; ii<n_rows_to_get; ++ii) {
             long long offset = (long long)(info->headerBytes +
                                            (ii*skip+row_start)*info->reclen);
 
             FSEEK64(info->fp, offset, SEEK_SET);
-            FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
+            FREAD(shorts, sizeof(short), ns*2, info->fp);
 
             for (jj = 0; jj < ns*2; ++jj)
                 big16(shorts[jj]);
@@ -328,6 +328,7 @@ int get_ceos_thumbnail_data(int thumb_size_x, int thumb_size_y,
             FSEEK64(info->fp, offset, SEEK_SET);
             FREAD(shorts, sizeof(unsigned short), ns*2, info->fp);
 
+            
             for (jj = 0; jj < ns*2; ++jj)
                 big16(shorts[jj]);
 
