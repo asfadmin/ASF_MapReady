@@ -21,9 +21,9 @@ static void set_combobox_items_user_defined(const char *widget_name)
     gtk_combo_box_append_text(w, "2");
     gtk_combo_box_append_text(w, "3");
     gtk_combo_box_append_text(w, "4");
-    gtk_combo_box_append_text(w, "Entropy");
-    gtk_combo_box_append_text(w, "Anisotropy");
-    gtk_combo_box_append_text(w, "Alpha");
+    //gtk_combo_box_append_text(w, "Entropy");
+    //gtk_combo_box_append_text(w, "Anisotropy");
+    //gtk_combo_box_append_text(w, "Alpha");
 }
 
 void setup_band_comboboxes()
