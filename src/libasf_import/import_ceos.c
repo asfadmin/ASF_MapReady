@@ -1452,8 +1452,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Open files
   if (strcmp_case(meta->general->sensor_name, "PRISM") == 0 &&
-      (strcmp_case(meta->general->mode, "1A") != 0 ||
-       strcmp_case(meta->general->mode, "1B1") != 0)) {
+      (strcmp_case(meta->general->mode, "1A") == 0 ||
+       strcmp_case(meta->general->mode, "1B1") == 0)) {
     char *append = (char *) MALLOC(sizeof(char)*15);
     sprintf(append, "_%s%s", bandExt, TOOLS_IMAGE_EXT);
     sprintf(outMetaName, "%s_%s%s", outDataName, bandExt, TOOLS_META_EXT);
