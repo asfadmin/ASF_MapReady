@@ -1128,9 +1128,11 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
           meta->sar->azimuth_time_per_pixel);
 
     // for comparison, calculate using the workreport file (old method)
+    // -- taking out this for now, it seems the swath velocity calculation
+    //    is working out ok...
     double delta, workreport_atpp=-1;
-    if (get_alos_delta_time (in_fName, &delta))
-        workreport_atpp = delta / meta->sar->original_line_count;
+    //if (get_alos_delta_time (in_fName, &delta))
+    //    workreport_atpp = delta / meta->sar->original_line_count;
 
     asfPrintStatus("\nAzimuth Time Per Pixel Calculation:\n");
     if (workreport_atpp > 0)
