@@ -396,9 +396,15 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     }
     meta_write(mp, imported);
 
-    // now allow lat/lon pseudo as a valid map projection for the dem
-    // this means that in pretty much every case, we won't do geocode
-    if (!is_map_projected(mp) && !is_lat_lon_pseudo(mp)) {
+    // Now we allow lat/lon pseudoprojected dems with terrain correction
+    // So, we can usually get away with skipping the geocoding step for
+    // the dem.  However, in the case where the user wants to save the
+    // cut dem, we do geocode since in that case the cut dem will use the
+    // the same projection as the final result (and the layover/shadow mask,
+    // if they've also saved that)
+    if ((!is_map_projected(mp) && !is_lat_lon_pseudo(mp)) ||
+        (cfg->terrain_correct->save_terrcorr_dem && cfg->general->geocoding))
+    {
       if (cfg->general->geocoding) {
           // use the user's projection, if we have it
           sprintf(status, "geocoding GeoTIFF %s (asf_geocode)\n", uc_what);
