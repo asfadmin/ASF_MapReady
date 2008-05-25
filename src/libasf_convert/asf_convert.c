@@ -19,7 +19,7 @@
 #include <dirent.h>    /* for opendir itself            */
 
 
-int isCEOS(char *input_file)
+int isCEOS(const char *input_file)
 {
   char **inBandName = NULL, **inMetaName = NULL;
   int nBands, trailer;
@@ -31,7 +31,7 @@ int isCEOS(char *input_file)
     return FALSE;
 }
 
-int isSTF(char *input_file)
+int isSTF(const char *input_file)
 {
   char **inBandName = NULL, **inMetaName = NULL;
 
@@ -414,41 +414,10 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
                               NAN, NULL, imported, geocoded, 0.0), status);
       }
     }
-    else { // is map projected, so copy the imported file to the geocoded filename for consistency
-      char *infile;
-      char *outfile;
-      int ch;
-      FILE *fin;
-      FILE *fout;
-
-      // Copy the .img file
-      infile = appendExt(imported, ".img");
-      outfile = appendExt(geocoded, ".img");
-      fin = FOPEN(infile, "r");
-      fout = FOPEN(outfile, "w");
-
-      fread(&ch, 1, 1, fin);
-      while (!feof(fin)) {
-        FWRITE(&ch, 1, 1, fout);
-        fread(&ch, 1, 1, fin);
-      }
-      FCLOSE(fin);
-      FCLOSE(fout);
-
-      // Copy the .meta file
-      char metaStr[256];
-      infile = appendExt(imported, ".meta");
-      outfile = appendExt(geocoded, ".meta");
-      fin = FOPEN(infile, "r");
-      fout = FOPEN(outfile, "w");
-
-      fgets(metaStr, 256, fin);
-      while (!feof(fin)) {
-        fputs(metaStr, fout);
-        fgets(metaStr, 256, fin);
-      }
-      FCLOSE(fin);
-      FCLOSE(fout);
+    else {
+      // is map projected, so copy the imported file to the geocoded
+      // filename for consistency
+      copyImgAndMeta(imported, geocoded);
     }
 
     meta_free(mp);
@@ -1634,7 +1603,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->polarimetry || cfg->general->polarimetry ||
-	  cfg->general->geocoding || cfg->general->export) {
+          cfg->general->geocoding || cfg->general->export) {
         sprintf(outFile, "%s/detect_cr", cfg->general->tmp_dir);
       }
       else {
@@ -1653,14 +1622,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->terrain_correct || cfg->general->geocoding ||
-	  cfg->general->export)
-	sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
+	        cfg->general->export)
+        sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
       else
-	sprintf(outFile, "%s", cfg->general->out_name);
+        sprintf(outFile, "%s", cfg->general->out_name);
 
       // Calculate polarimetric parameters
       if (cfg->polarimetry->pauli)
-	cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
+        cpx2pauli(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->sinclair) {
         // for sinclair, there are two possibilities: SLC & non-SLC
         meta_parameters *meta = meta_read(inFile);
@@ -1676,21 +1645,20 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         meta_free(meta);
       }
       else if (cfg->polarimetry->cloude_pottier)
-	cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
+        cpx2cloude_pottier8(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_ext)
-	cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
+        cpx2cloude_pottier16(inFile, outFile, cfg->general->terrain_correct);
       else if (cfg->polarimetry->cloude_pottier_nc)
-	cpx2entropy_anisotropy_alpha(inFile, outFile,
+        cpx2entropy_anisotropy_alpha(inFile, outFile,
                                      cfg->general->terrain_correct);
       else if (cfg->polarimetry->k_means_wishart)
-	asfPrintError("K-means Wishart clustering not supported yet.\n");
+        asfPrintError("K-means Wishart clustering not supported yet.\n");
       else if (cfg->polarimetry->k_means_wishart_ext)
-	asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
+        asfPrintError("Extended K-means Wishart clustering not supported yet.\n");
       else if (cfg->polarimetry->lee_preserving)
-	asfPrintError("Lee category preserving not supported yet.\n");
+        asfPrintError("Lee category preserving not supported yet.\n");
       else
-	asfPrintError("Unsupported polarimetric processing technique.\n");
-	 
+        asfPrintError("Unsupported polarimetric processing technique.\n");
     }
 
     if (cfg->general->terrain_correct) {
