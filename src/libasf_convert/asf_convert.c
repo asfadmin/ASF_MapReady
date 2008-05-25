@@ -395,7 +395,10 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
       mp->general->image_data_type = MASK;
     }
     meta_write(mp, imported);
-    if (!is_map_projected(mp)) {
+
+    // now allow lat/lon pseudo as a valid map projection for the dem
+    // this means that in pretty much every case, we won't do geocode
+    if (!is_map_projected(mp) && !is_lat_lon_pseudo(mp)) {
       if (cfg->general->geocoding) {
           // use the user's projection, if we have it
           sprintf(status, "geocoding GeoTIFF %s (asf_geocode)\n", uc_what);

@@ -31,3 +31,9 @@ int is_map_projected(meta_parameters *md)
              mp->type == LAT_LONG_PSEUDO_PROJECTION)
          ) ? 1 : 0;
 }
+
+int is_lat_lon_pseudo(meta_parameters *md)
+{
+  meta_projection *mp = md->projection;
+  return mp && mp->type == LAT_LONG_PSEUDO_PROJECTION;
+}
