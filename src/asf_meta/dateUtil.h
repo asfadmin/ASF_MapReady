@@ -175,9 +175,11 @@ char *date_printTime(hms_time *in,int prec,char sep,char *dest);
 void parse_date(const char *inStr,ymd_date *date,hms_time *time);
 const char *date_str(double s);
 const char *date_str_long(double s);
-double seconds_from_s(const char *date_str);
-double seconds_from_l(long date);
+double seconds_from_str(const char *date_str);
 
+// "Dates as longs" utilities
+// These are all in longdate.c
+double seconds_from_long(long date);
 int is_leap_year(int year);
 int is_valid_date(long l);
 void long_to_date(long l, int *y, int *m, int *d);
