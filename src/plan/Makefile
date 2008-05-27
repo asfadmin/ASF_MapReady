@@ -44,7 +44,7 @@ lib: $(OBJS)
 	$(RANLIB) $(LIBNAME)
 	mv $(LIBNAME) $(LIBDIR)
 	cp beam_modes.txt $(SHAREDIR)
-	cp date.h polygon.h plan.h $(ASF_INCLUDE_DIR)
+	cp polygon.h plan.h $(ASF_INCLUDE_DIR)
 	cp plan_internal.h $(ASF_INCLUDE_DIR)
 	cp tle $(SHAREDIR)
 

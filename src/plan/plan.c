@@ -5,7 +5,7 @@
 #include "asf.h"
 #include "asf_meta.h"
 
-#include "date.h"
+#include "dateUtil.h"
 #include "beam_mode_table.h"
 
 #include "asf_vector.h"
@@ -58,8 +58,6 @@ get_target_latlon(stateVector *st, double look, double *tlat, double *tlon)
   double D = er*er - ht*ht*sin(look)*sin(look);
   if (D < 0) 
     return 0; // can't see the Earth from here
-  //double sr1 = -ht*cos(look) + sqrt(D);
-  //double sr2 = -ht*cos(look) - sqrt(D);
   double sr1 = ht*cos(look) + sqrt(D);
   double sr2 = ht*cos(look) - sqrt(D);
   double sr = sr1>sr2 ? sr2 : sr1;

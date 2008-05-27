@@ -52,7 +52,7 @@
 #include <asf_contact.h>
 #include <libasf_proj.h>
 #include <polygon.h>
-#include <date.h>
+#include <dateUtil.h>
 #include <plan.h>
 
 // Print minimalistic usage info & exit
