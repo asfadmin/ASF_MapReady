@@ -2,26 +2,43 @@
 
 include ../../make_support/system_rules
 
-CFLAGS += $(GSL_CFLAGS) $(JPEG_CFLAGS) $(PROJ_CFLAGS) $(GLIB_CFLAGS)
+CFLAGS += \
+	$(GSL_CFLAGS) \
+	$(JPEG_CFLAGS) \
+	$(PROJ_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(PNG_CFLAGS) \
+	$(TIFF_CFLAGS) \
+	$(GEOTIFF_CFLAGS)
 
 LIBS =  \
 	$(LIBDIR)/libasf_export.a \
 	$(LIBDIR)/libasf_terrcorr.a \
+	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_sar.a \
+	$(LIBDIR)/libasf_vector.a \
 	$(LIBDIR)/libasf_raster.a \
+	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_sgpsdp.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
 	$(LIBDIR)/libshp.a \
 	$(LIBDIR)/libasf_proj.a \
 	$(LIBDIR)/asf.a \
+	$(SHAPELIB_LIBS) \
+	$(GEOTIFF_LIBS) \
+	$(TIFF_LIBS) \
+	$(PNG_LIBS) \
 	$(JPEG_LIBS) \
 	$(PROJ_LIBS) \
 	$(GSL_LIBS) \
 	$(GLIB_LIBS) \
 	$(LDFLAGS) \
-	-lm
+	-lm -lz
 
 OBJLIB = 	\
+	tle.o \
+	config.o \
 	sar_simulation_tool.o
 
 all: lib exe clean

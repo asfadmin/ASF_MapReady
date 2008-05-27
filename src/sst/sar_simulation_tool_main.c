@@ -2,7 +2,6 @@
 
 #define VERSION 1.0
 
-static
 void usage(char *name)
 {
   printf("\n"
@@ -26,19 +25,13 @@ void usage(char *name)
 
 int main(int argc, char *argv[])
 {
-  satellite_t *sat;
-  tle_t *tle;
-  char *demFile, *satellite, *beam_mode, *orbit_direction, *tleFile;
-  char header[30];
-
   // Allocate some memory
-  demFile = (char *) MALLOC(sizeof(char)*255);
-  satellite = (char *) MALLOC(sizeof(char)*15);
-  beam_mode = (char *) MALLOC(sizeof(char)*15);
-  orbit_direction = (char *) MALLOC(sizeof(char)*15);
-  tleFile = (char *) MALLOC(sizeof(char)*255);
-  tle = (tle_t *) MALLOC(sizeof(tle_t));
-  sat = (satellite_t *) MALLOC(sizeof(satellite_t));
+  char *demFile = (char *) MALLOC(sizeof(char)*255);
+  char *satellite = (char *) MALLOC(sizeof(char)*15);
+  char *beam_mode = (char *) MALLOC(sizeof(char)*15);
+  char *tleFile = (char *) MALLOC(sizeof(char)*255);
+  sat_t *tle = (sat_t *) MALLOC(sizeof(sat_t));
+  satellite_t *sat = (satellite_t *) MALLOC(sizeof(satellite_t));
 
   // Parse command line
   if (argc < 6) {
@@ -49,27 +42,25 @@ int main(int argc, char *argv[])
   strcpy(satellite, argv[2]);
   strcpy(beam_mode, argv[3]);
   strcpy(tleFile, argv[4]);
-  strcpy(orbit_direction, argv[5]);
-  
+  strcpy(sat->orbit_direction, argv[5]);
+
   asfSplashScreen (argc, argv);
   
   // Read TLE file
   read_tle(tleFile, satellite, tle);
 
   // Read satellite configuration file
-  sprintf(header, "%s %s", satellite, beam_mode);
-  read_satellite_config("satellite.config", header, sat);
+  sat = read_satellite_config("satellite.config", satellite, beam_mode);
+  strcpy(sat->orbit_direction, argv[5]);
+  strcpy(sat->satellite, satellite);
 
   // Simulate SAR image
   sar_simulation_tool(demFile, sat, tle);
-
-  exit(0);
 
   // Clean up
   FREE(demFile);
   FREE(satellite);
   FREE(beam_mode);
-  FREE(orbit_direction);
   FREE(tleFile);
   FREE(tle);
   FREE(sat);

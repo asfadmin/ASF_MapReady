@@ -6,7 +6,6 @@
 #include "asf_meta.h"
 
 #include "date.h"
-#include "date_util.h"
 #include "beam_mode_table.h"
 
 #include "asf_vector.h"

@@ -30,10 +30,8 @@ CFLAGS += \
 	$(GEOTIFF_CFLAGS)
 
 OBJS  = $(TARGET).o \
-	date.o \
 	polygon.o \
 	beam_mode_table.o \
-	date_util.o \
 	kml.o \
 	pass.o \
 	overlap.o \

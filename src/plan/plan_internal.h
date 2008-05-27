@@ -2,7 +2,7 @@
 #define PLAN_INT_H
 
 #include "plan.h"
-#include "date_util.h"
+#include "dateUtil.h"
 #include "asf_meta.h"
 #include "sgpsdp.h"
 

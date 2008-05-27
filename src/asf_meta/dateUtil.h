@@ -171,4 +171,23 @@ where sep==& (no spaces if sep=='\0')
 where there are prec "C"'s. (no decimal if prec==0).*/
 char *date_printTime(hms_time *in,int prec,char sep,char *dest);
 
+// Acquisition planning and simulation
+void parse_date(const char *inStr,ymd_date *date,hms_time *time);
+const char *date_str(double s);
+const char *date_str_long(double s);
+double seconds_from_s(const char *date_str);
+double seconds_from_l(long date);
+
+int is_leap_year(int year);
+int is_valid_date(long l);
+void long_to_date(long l, int *y, int *m, int *d);
+long date_to_long(int y, int m, int d);
+int get_day_of_week(long l);
+long subtract_a_day(long l);
+long add_a_day(long l);
+long add_days(long l, int d);
+long current_date(void);
+void date_tester(void);
+int date_diff(long date1, long date2);
+
 #endif

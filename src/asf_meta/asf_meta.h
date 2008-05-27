@@ -87,6 +87,7 @@ typedef enum {
   ELEVATION,
   DEM,
   IMAGE,
+  SIMULATED_IMAGE,
   MASK
 } image_data_type_t;
 

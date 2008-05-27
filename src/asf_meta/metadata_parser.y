@@ -376,6 +376,8 @@ void fill_structure_field(char *field_name, void *valp)
         MGENERAL->image_data_type = IMAGE;
       else if ( !strcmp(VALP_AS_CHAR_POINTER, "MASK") )
         MGENERAL->image_data_type = MASK;
+      else if ( !strcmp(VALP_AS_CHAR_POINTER, "SIMULATED_IMAGE") )
+	MGENERAL->image_data_type = SIMULATED_IMAGE;
       else {
         warning_message("Unrecognized image_data_type (%s).\n",VALP_AS_CHAR_POINTER);
         MGENERAL->image_data_type = MAGIC_UNSET_INT;
