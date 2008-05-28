@@ -686,7 +686,11 @@ void setup_planner()
 
     // redo the title to reflect that this is now a planner app
     GtkWidget *widget = get_widget_checked("ssv_main_window");
-    gtk_window_set_title(GTK_WINDOW(widget),"Alaska Satellite Facility Acquisition Planning Application Program Software Tool Utility (ASF-APAPSTU) (beta build - Apr 02 2008)");
+
+    char title[512];
+    sprintf(title, "ASF ALOS Acqusition Planner - Version %s",
+            AP_VERSION_STRING);
+    gtk_window_set_title(GTK_WINDOW(widget), title);
 
     // take the "Help" text in the planner from the regular planner
     GtkWidget *help_label = get_widget_checked("help_label");
