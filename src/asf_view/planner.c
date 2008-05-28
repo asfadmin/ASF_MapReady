@@ -1048,7 +1048,8 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 
     // make sure polygon is not "too small" to plan in
     if (aoi && polygon_area(aoi) < 100)
-      strcat(errstr, "Area of interest is too small.\n");
+      sprintf(errstr, "%sArea of interest is too small (%.0f km)\n",
+              errstr, polygon_area(aoi));
 
     // pass type
     i = get_combo_box_item("orbit_direction_combobox");
@@ -1164,6 +1165,7 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char orbit_info[256];
           int orbit = pi->orbit;
           int path = revolution2path(orbit);
+          //sprintf(orbit_info, "%.2f/%d", orbit + pi->orbit_part, path);
           sprintf(orbit_info, "%d/%d", orbit, path);
 
           char pct_info[256];

@@ -3,7 +3,7 @@
 #include <time.h>
 #include <assert.h>
 
-double seconds_from_l(long date)
+double seconds_from_long(long date)
 {
   ymd_date d;
   long_to_date(date, &d.year, &d.month, &d.day);

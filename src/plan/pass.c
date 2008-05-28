@@ -2,7 +2,7 @@
 #include "asf_vector.h"
 #include <assert.h>
 
-PassInfo *pass_info_new(int orbit, char dir)
+PassInfo *pass_info_new(int orbit, double orbit_part, char dir)
 {
     PassInfo *ret = MALLOC(sizeof(PassInfo));
 
@@ -12,6 +12,7 @@ PassInfo *pass_info_new(int orbit, char dir)
     ret->start_time_as_string = NULL;
     ret->dir = dir;
     ret->orbit = orbit;
+    ret->orbit_part = orbit_part;
     ret->start_lat = -1;
     ret->stop_lat = -1;
     ret->duration = -1;

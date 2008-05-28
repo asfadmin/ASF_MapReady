@@ -186,5 +186,34 @@ int read_file(const char *filename, const char *band, int multilook,
     curr->data_name = STRDUP(data_name);
     free(data_name);
 
+    double lat, lon;
+    double lat_min, lat_max, lon_min, lon_max;
+    meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+    lat_min = lat;
+    lat_max = lat;
+    lon_min = lon;
+    lon_max = lon;
+
+    meta_get_latLon(meta, nl-1, 0, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    meta_get_latLon(meta, nl-1, ns-1, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    meta_get_latLon(meta, 0, ns-1, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    printf("Bounding Box:\n");
+    printf("LAT: %.1f %.1f\n", lat_min, lat_max);
+    printf("LON: %.1f %.1f\n", lon_min, lon_max);
     return TRUE;
 }

@@ -215,8 +215,11 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
     return -1;
   }
 
-  double start_secs = seconds_from_l(startdate);
-  double end_secs = seconds_from_l(enddate);
+  // Convert the input start/end times from longdates (dates as long ints)
+  // to seconds from some reference time.  (midnight jan 1, 1900)
+  // We add a day to the end date, so that the passed-in range is inclusive
+  double start_secs = seconds_from_long(startdate);
+  double end_secs = seconds_from_long(add_a_day(enddate));
 
   sat_t sat;
   read_tle(tle_filename, satellite, &sat);
@@ -321,11 +324,28 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
       if (oi) {
         int n=0;
 
-        // calculate the orbit number -- we have to fudge this if we
-        // modded the start time
+        // Calculate the orbit number -- we have to fudge this if we
+        // modded the start time.
         int orbit_num = sat.orbit + orbits_per_cycle*cycles_adjustment;
 
-        PassInfo *pass_info = pass_info_new(orbit_num, dir);
+        // This is an alternate way of calculating the orbit number that
+        // was being used during testing... seems to produce numbers close
+        // to (within 1) of the number obtained by sgpsdp...
+        //double secs_per_orbit = repeat_cycle_time / orbits_per_cycle;
+        // ALOS was launced on 1/24/06
+        //double launch_secs = seconds_from_long(20060124);
+        //double orbit_num2 = (curr - launch_secs) / secs_per_orbit;
+        //orbit_num2 += orbits_per_cycle*cycles_adjustment;
+        //printf("%f %f %f\n", orbit_num + sat.orbit_part,
+        //       orbit_num2, orbit_num+sat.orbit_part-orbit_num2);
+
+        // The propagator uses a different start location for the orbit
+        // numbers than JAXA does.  FIXME: If we extend the planner to
+        // Radarsat, etc, we may have to fudge this some more...
+        if (sat.orbit_part<.35)
+          --orbit_num;
+
+        PassInfo *pass_info = pass_info_new(orbit_num, sat.orbit_part, dir);
         double start_time = curr - bmi->num_buffer_frames*incr;
 
         // add on the buffer frames before the area of interest
@@ -402,6 +422,9 @@ int plan(const char *satellite, const char *beam_mode, double look_angle,
 
     curr += incr;
     lat_prev = sat.ssplat;
+
+    //printf("Lat: %f, Orbit: %d, Orbit Part: %f\n", sat.ssplat,
+    //       (int)sat.orbit, sat.orbit_part);
 
     asfPercentMeter((curr-start_secs)/(end_secs-start_secs));
   }

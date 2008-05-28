@@ -186,7 +186,7 @@ double polygon_area(Polygon *p)
   // closed, this will just add 0
   A += p->x[p->n-1] * p->y[0] - p->x[0] * p->y[p->n-1];
 
-  return A/2.;
+  return fabs(A/2.);
 }
 
 double polygon_perimeter(Polygon *p)
