@@ -220,21 +220,21 @@ int get_tiff_data_config(TIFF *tif,
       switch (bitsPerSample) {
           case 8:
               asfReport(report_level,
-	                "Data is 8-bit data ...guessing unsigned integer sample\n"
+                    "Data is 8-bit data ...guessing unsigned integer sample\n"
                         "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_UINT;
               read_count++;
               break;
           case 16:
               asfReport(report_level,
-	                "Data is 16-bit data ...guessing signed integer sample\n"
+                    "Data is 16-bit data ...guessing signed integer sample\n"
                         "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_INT;
               read_count++;
               break;
           case 32:
               asfReport(report_level,
-	                "Data is 32-bit data ...guessing IEEE floating point sample\n"
+                    "Data is 32-bit data ...guessing IEEE floating point sample\n"
                         "format and attempting to continue.\n");
               sampleFormat = SAMPLEFORMAT_IEEEFP;
               read_count++;
@@ -360,7 +360,7 @@ int get_tiff_data_config(TIFF *tif,
       ret = guess_planar_configuration(tif, planar_config);
       if (ret == 0) {
           asfReport(report_level,
-	            "Found multi-band TIFF but the planar configuration TIFF tag\n"
+                "Found multi-band TIFF but the planar configuration TIFF tag\n"
                     "is not populated ...GUESSING the planar configuration to be %s\n"
                     "based on calculated scanline lengths for interlaced and band-sequential\n"
                     "TIFFs v. the actual scanline length derived from the TIFF file itself.\n",
@@ -461,17 +461,19 @@ int isGeotiff(const char *file)
         (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_TIEPOINTS, &num_tie_points, &tie_point);
         (gtif->gt_methods.get)(gtif->gt_tif, GTIFF_PIXELSCALE, &num_pixel_scales, &pixel_scale);
     }
-    FREE(tie_point);
-    FREE(pixel_scale);
     GTIFFree(gtif);
     XTIFFClose(tiff);
 
     if (num_tie_points == 6 && num_pixel_scales == 3 &&
         pixel_scale[0] > 0.0 && pixel_scale[1] > 0.0)
     {
+        FREE(tie_point);
+        FREE(pixel_scale);
         return 1;
     }
 
+    FREE(tie_point);
+    FREE(pixel_scale);
     return 0;
 }
 
