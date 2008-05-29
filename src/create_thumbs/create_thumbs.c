@@ -595,14 +595,15 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
         asfPrintError("Temporary folder already exists:\n    %s\n",
                       tmp_folder);
     }
-    strcpy(tmp, "create_thumbs_tmp_file_XXXXXX");
-    int fd = mkstemp(tmp);
-    if (fd < 0) {
-        asfPrintError("Cannot create filename for temporary file(s)\n");
-    }
-    else {
-      close(fd);
-    }
+    //strcpy(tmp, "create_thumbs_tmp_file_XXXXXX");
+    //int fd = mkstemp(tmp);
+    //if (fd < 0) {
+        //close(fd);
+        //asfPrintError("Cannot create filename for temporary file(s)\n");
+    //}
+    //else {
+      //close(fd);
+    //}
     // Remove temporary file if it exists and grab basename to be processed
     sprintf(del_files, "rm -f %s", tmp);
     asfSystem(del_files);
