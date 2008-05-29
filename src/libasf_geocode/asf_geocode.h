@@ -85,8 +85,8 @@ project_parameters_t * get_geocode_options(int *argc, char ***argv,
 char *proj_info_as_string(projection_type_t projection_type,
                           project_parameters_t *pp, datum_type_t *datum);
 
-void parse_proj_args_file(const char * file, project_parameters_t * pps,
-        projection_type_t * proj_type, datum_type_t *datum);
+int parse_proj_args_file(const char *file, project_parameters_t *pps,
+        projection_type_t *proj_type, datum_type_t *datum, char **err);
 
 /* Might want to make these static... they are called from get_geocode_options
    before it returns. */

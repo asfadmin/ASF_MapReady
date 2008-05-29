@@ -558,8 +558,11 @@ int asf_geocode_from_proj_file(const char *projection_file,
   project_parameters_t pp;
   projection_type_t projection_type;
   datum_type_t tmp_datum = datum;
+  char *err=NULL;
 
-  parse_proj_args_file(projection_file, &pp, &projection_type, &datum);
+  if (!parse_proj_args_file(projection_file, &pp, &projection_type, &datum, &err)) {
+       asfPrintError("%s",err);
+  }
   if (tmp_datum != UNKNOWN_DATUM &&
       datum     != tmp_datum)
   {

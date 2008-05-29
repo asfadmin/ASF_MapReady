@@ -502,11 +502,14 @@ bool findPeak(int x, int y, float elev, char *szImg, float *peakX, float *peakY,
   // Geocode to the height of the point target before analyzing when projection 
   // parameter file is passed in. Geocoded chip needs to be read in again.
   if (projFile) {
+    char **err=NULL;
     FREE(s);
     s = NULL;
     sprintf(szChipGeo, "%s_geo", chip);
     metaChip = meta_read(chip);
-    parse_proj_args_file(projFile, &pps, &proj_type, &datum);
+    if (!parse_proj_args_file(projFile, &pps, &proj_type, &datum, &err)) {
+      asfPrintError("%s",err);
+    }
     asf_geocode (&pps, proj_type, 0, RESAMPLE_BILINEAR, elev, datum,
 		 metaChip->general->x_pixel_size, NULL, chip, szChipGeo, 0.0);
     meta = meta_read(szChipGeo);

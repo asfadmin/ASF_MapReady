@@ -201,21 +201,12 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
     break;
 
   case POLAR_STEREOGRAPHIC:
-    {
-      char spheroid_str[256];
-      if (datum == HUGHES_DATUM) {
-        strcpy(spheroid_str, "HUGHES");
-      }
-      else {
-        strcpy(spheroid_str, "WGS84");
-      }
-      fprintf(fp, "First Standard Parallel=%.10f\n", pps->ps.slat);
-      fprintf(fp, "Central Meridian=%.10f\n", pps->ps.slon);
-      fprintf(fp, "False Easting=%.10f\n", pps->ps.false_easting);
-      fprintf(fp, "False Northing=%.10f\n", pps->ps.false_northing);
-      fprintf(fp, "Northern Projection=%d\n", pps->ps.is_north_pole);
-      fprintf(fp, "spheroid=%s\n", spheroid_str);
-    }
+    fprintf(fp, "First Standard Parallel=%.10f\n", pps->ps.slat);
+    fprintf(fp, "Central Meridian=%.10f\n", pps->ps.slon);
+    fprintf(fp, "False Easting=%.10f\n", pps->ps.false_easting);
+    fprintf(fp, "False Northing=%.10f\n", pps->ps.false_northing);
+    fprintf(fp, "Northern Projection=%d\n", pps->ps.is_north_pole);
+    fprintf(fp, "datum=%s\n", datum_toString(datum));
     break;
 
   case ALBERS_EQUAL_AREA:
@@ -264,22 +255,23 @@ void write_args(projection_type_t proj_type, project_parameters_t *pps,
   fclose(fp);
 }
 
-void parse_proj_args_file(const char * file, project_parameters_t * pps,
-        projection_type_t * proj_type, datum_type_t *datum)
+int parse_proj_args_file(const char *file, project_parameters_t *pps,
+        projection_type_t* proj_type, datum_type_t *datum, char **err)
 {
   FILE * fp;
   char buf[256];
+  int ret = TRUE;
 
   fp = fopen_proj_file(file, "r");
   if (!fp)
   {
-    asfPrintError("Couldn't open projection file: %s\n", file);
-    return;
+    *err = (char*)MALLOC(sizeof(char)*(strlen(file)+100));
+    sprintf(*err,"Couldn't open projection file: %s\n", file);
+    return FALSE;
   }
 
   readline(fp, buf, sizeof(buf));
 
-  *datum = WGS84_DATUM;
   if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
     strcmp(buf, "[Albers Equal Area Conic]") == 0)
   {
@@ -363,16 +355,18 @@ void parse_proj_args_file(const char * file, project_parameters_t * pps,
   }
   else
   {
-    asfPrintError("Unknown Projection in file '%s': %s\n",
-      file, buf);
+    *err = (char*)MALLOC(sizeof(char)*(strlen(file)+strlen(buf)+100));
+    sprintf(*err,"Unknown projection in file '%s': %s\n", file, buf);
+    ret = FALSE;
   }
   if (*datum == UNKNOWN_DATUM) {
-    asfPrintWarning("Datum or reference ellipsoid missing in projection file.  Defaulting\n"
-                   "to a WGS84 datum\n");
+    asfPrintWarning("Datum or reference ellipsoid missing in projection file.\n"
+                    "Defaulting to a WGS84 datum\n");
     *datum = WGS84_DATUM;
   }
 
   fclose(fp);
+  return ret;
 }
 
 static int matches_write_proj_file(char * param)
@@ -568,7 +562,10 @@ static int parse_read_proj_file_option(int *i, int argc, char *argv[],
     }
     else
     {
-      parse_proj_args_file(argv[*i], pps, proj_type, datum);
+      char *err=NULL;
+      if (!parse_proj_args_file(argv[*i], pps, proj_type, datum, &err)) {
+        asfPrintError("%s",err);
+      }
       *ok = TRUE;
     }
 

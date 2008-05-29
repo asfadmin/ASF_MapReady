@@ -858,6 +858,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     resample_method_t resample_method;
     int multiband = 1;
     int band_num = 0;
+    char *err=NULL;
 
     if (strcmp(cfg->geocoding->resampling, "NEAREST NEIGHBOR") == 0)
       resample_method = RESAMPLE_NEAREST_NEIGHBOR;
@@ -870,7 +871,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       sprintf(outFile, "%s/%s", mosaic_dir, cfg->general->out_name);
     else
       sprintf(outFile, "%s", cfg->general->out_name);
-    parse_proj_args_file(cfg->geocoding->projection, &pp, &proj_type, &datum);
+    if (!parse_proj_args_file(cfg->geocoding->projection, &pp, &proj_type, &datum, &err)) {
+      asfPrintError("%s",err);
+    }
     update_status("Mosaicking...");
     asf_mosaic(&pp, proj_type, cfg->geocoding->force, resample_method, 
 	       cfg->geocoding->height, datum, cfg->geocoding->pixel, 
