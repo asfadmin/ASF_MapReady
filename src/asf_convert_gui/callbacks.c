@@ -623,6 +623,12 @@ void rgb_settings_changed()
     else {
         is_cloude_noclassify = FALSE;
 
+        if (get_checked("rb_rgb_polar")) {
+            // user had selected a no-longer-valid option
+            rb_select("rb_all", TRUE);
+            rb_select("rb_rgb_polar", FALSE);
+        }
+
         enable_widget("rb_all", TRUE);
         enable_widget("rb_rgb", TRUE);
         enable_widget("rb_rgb_polar", FALSE);
