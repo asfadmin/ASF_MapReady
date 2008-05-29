@@ -524,16 +524,35 @@ Here's what it looked like before optimization:
     {
         double dx,dy,grX,vecLen,cosAng;
 
-        /*Find terrain normal.*/
         grX=grDEM[x];
-        if ((grX==badDEMht)||
-            (grDEMprev[x]==badDEMht)||
-            (grDEM[x-1]==badDEMht)) 
-        {
+        if (line > 0) {
+          if ((grX==badDEMht)||
+              (grDEMprev[x]==badDEMht)||
+              (grDEM[x-1]==badDEMht)) 
+          {
             inout[x]=0;
             continue;
+          }
+        }
+        else {
+          if ((grX==badDEMht)||
+              (grDEM[x-1]==badDEMht)) 
+          {
+            inout[x]=0;
+            continue;
+          }
         }
 
+        // if form==0, we aren't actually doing radiometric terrain
+        // correction, we're just here for the zeroing of the badDEMht values
+        if (form==0)
+          continue;
+
+        // on the first line, we don't do radiometric terrain correction
+        if (line==0)
+          continue;
+
+        /*Find terrain normal.*/
         dx=(grX-grDEM[x-1])/d->grPixelSize;
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
@@ -554,11 +573,13 @@ Here's what it looked like before optimization:
         if (cosAng>=0) {
             switch (form) {
                 default:
-                case 0:
                     /* should not be in here... */
                     asfPrintError("Bad radiometric correction formula: %d\n",
                                   form);
                     return;
+                case 0:
+                  //inout[x] *= 1.0;
+                    break;
                 case 1:
                     /* From the old terrcorr: ftcli */
                     inout[x] *= tan(li) / tanphie;
@@ -780,9 +801,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 geo_compensate(&d,grDEMline,inSarLine,outLine,
                                d.numSamples,1,maskLine,y);
 	      }		
-	      if (y>0&&doRadiometric)
-		radio_compensate(&d,grDEMline,grDEMlast,outLine,
-				 d.numSamples,y,doRadiometric);
+              radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                               d.numSamples,y,doRadiometric);
 	      
 	      // subtract away the masked region
 	      mask_float_line(d.numSamples,fill_value,outLine,
