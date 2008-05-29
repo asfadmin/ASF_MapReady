@@ -584,6 +584,11 @@ int getLatLongMeta(const stateVector stVec,meta_parameters *meta,
                    double range,double doppler,double elev,
                    double *targLat, double *targLon, double *targRadius);
 
+/* quick code to get a bounding box for the metadata */
+void meta_get_bounding_box(meta_parameters *meta,
+                           double *plat_min, double *plat_max,  
+                           double *plon_min, double *plon_max);
+
 /* This low-level routine is used internally by asf_meta.  */
 GEOLOCATE_REC *init_geolocate_meta(const stateVector *stVec,meta_parameters *meta);
 

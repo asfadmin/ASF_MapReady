@@ -577,4 +577,46 @@ int is_valid_ll2s_transform(meta_parameters *meta)
     return ret;
 }
 
+void meta_get_bounding_box(meta_parameters *meta,
+                           double *plat_min, double *plat_max,  
+                           double *plon_min, double *plon_max)
+{
+    int nl = meta->general->line_count;
+    int ns = meta->general->sample_count;
 
+    double lat, lon;
+    double lat_min, lat_max, lon_min, lon_max;
+    meta_get_latLon(meta, 0, 0, 0, &lat, &lon);
+    lat_min = lat;
+    lat_max = lat;
+    lon_min = lon;
+    lon_max = lon;
+
+    meta_get_latLon(meta, nl-1, 0, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    meta_get_latLon(meta, nl-1, ns-1, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    meta_get_latLon(meta, 0, ns-1, 0, &lat, &lon);
+    if (lat<lat_min) lat_min=lat;
+    if (lat>lat_max) lat_max=lat;
+    if (lon<lon_min) lon_min=lon;
+    if (lon>lon_max) lon_max=lon;
+
+    //printf("Bounding Box:\n");
+    //printf("LAT: %.1f %.1f\n", lat_min, lat_max);
+    //printf("LON: %.1f %.1f\n", lon_min, lon_max);
+
+    *plat_min = lat_min;
+    *plat_max = lat_max;
+
+    *plon_min = lon_min;
+    *plon_max = lon_max;
+}
