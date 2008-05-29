@@ -290,11 +290,19 @@ int generate_ceos_thumbnail(const char *input_data, int size,
                             output_format_t output_format, char *out_dir,
                             double scale_factor, int browseFlag)
 {
-    // Check that input data is available
     FloatImage *img;
     char **inBandName = NULL, **inMetaName = NULL;
+    char baseName[512];
     int nBands, trailer;
-    require_ceos_pair(input_data, &inBandName, &inMetaName, &nBands, &trailer);
+    ceos_file_pairs_t ceos_pair = NO_CEOS_FILE_PAIR;
+
+    //Check that input data is available
+    ceos_pair = get_ceos_names(input_data, baseName,
+                               &inBandName, &inMetaName,
+                               &nBands, &trailer);
+    if (ceos_pair == NO_CEOS_FILE_PAIR) {
+        return FALSE;
+    }
 
     // Input metadata
     meta_parameters *imd = silent_meta_create(inMetaName[0]);
@@ -307,7 +315,7 @@ int generate_ceos_thumbnail(const char *input_data, int size,
 //        imd->general->data_type != REAL64)
     {
         /* don't know how to make a thumbnail for this type ... */
-        asfPrintStatus("Unknown data type: %d\n", imd->general->data_type);
+        asfPrintStatus("Unknown or unsupported data type: %d\n", imd->general->data_type);
         return FALSE;
     }
 
@@ -317,57 +325,57 @@ int generate_ceos_thumbnail(const char *input_data, int size,
     for (ll=0; ll<nBands; ll++) {
 
       if (ll == 0) {
-	fpIn = fopen(inBandName[ll], "rb");
-	if (!fpIn)
-	  {
-	    // failed for some reason, quit without thumbnailing
-	    meta_free(imd);
-	    asfPrintStatus("Failed to open:\n    %s\n", inBandName[ll]);
-	    return FALSE;
-	  }
+    fpIn = fopen(inBandName[ll], "rb");
+    if (!fpIn)
+      {
+        // failed for some reason, quit without thumbnailing
+        meta_free(imd);
+        asfPrintStatus("Failed to open:\n    %s\n", inBandName[ll]);
+        return FALSE;
       }
-      
+      }
+
       struct IOF_VFDR image_fdr;                /* CEOS File Descriptor Record */
       get_ifiledr(inBandName[0], &image_fdr);
       int leftFill = image_fdr.lbrdrpxl;
       int rightFill = image_fdr.rbrdrpxl;
       int headerBytes = firstRecordLen(inBandName[0]) +
-	(image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
-	 * image_fdr.bytgroup);
-      
+              (image_fdr.reclen - (imd->general->sample_count + leftFill + rightFill)
+              * image_fdr.bytgroup);
+
       // use a larger dimension at first, for our crude scaling.  We will
       // use a better scaling method later, from GdbPixbuf
       if ((size <= 0 && scale_factor <= 0.0) ||
-	  (size > 0 && scale_factor > 0.0))
-	{
-	  // Should never reach here unless the initial option checking gets
-	  // mucked up (see far above in main())
+      (size > 0 && scale_factor > 0.0))
+    {
+      // Should never reach here unless the initial option checking gets
+      // mucked up (see far above in main())
         asfPrintError("generate_ceos_thumbnail(): Invalid combination of -scale and -size\n"
-		      "options.  Either they are not initialized or both were used at the same\n"
-		      "time.  Cannot utilize a pixel size and scale_factor\n"
-		      "option simultaneously:\n\n"
-		      "    -size        : %d\n"
-		      "    -scale-factor: %f\n", size, scale_factor);
-	}
+              "options.  Either they are not initialized or both were used at the same\n"
+              "time.  Cannot utilize a pixel size and scale_factor\n"
+              "option simultaneously:\n\n"
+              "    -size        : %d\n"
+              "    -scale-factor: %f\n", size, scale_factor);
+    }
       if (size < 0 && scale_factor > 0.0) size = 0;
       if (scale_factor < 0 && size > 0) scale_factor = 0.0;
       int sf;
       if (size > 1024)
-	{
-	  sf = 1; // read in the whole thing
-	}
+    {
+      sf = 1; // read in the whole thing
+    }
       else if (size > 0) // if size == 0 then a scale factor is being used
-	{
-	  int larger_dim = size*4;
-	  if (larger_dim < 1024) larger_dim = 1024;
-	  
-	  // Vertical and horizontal scale factors required to meet the
-	  // max_thumbnail_dimension part of the interface contract.
-	  int vsf = ceil (imd->general->line_count / larger_dim);
-	  int hsf = ceil (imd->general->sample_count / larger_dim);
-	  // Overall scale factor to use is the greater of vsf and hsf.
-	  sf = (hsf > vsf ? hsf : vsf);
-	}
+    {
+      int larger_dim = size*4;
+      if (larger_dim < 1024) larger_dim = 1024;
+
+      // Vertical and horizontal scale factors required to meet the
+      // max_thumbnail_dimension part of the interface contract.
+      int vsf = ceil (imd->general->line_count / larger_dim);
+      int hsf = ceil (imd->general->sample_count / larger_dim);
+      // Overall scale factor to use is the greater of vsf and hsf.
+      sf = (hsf > vsf ? hsf : vsf);
+    }
       else if (scale_factor > 0.0) {
         // Round the passed-in scale factor to nearest integer
         sf = (int)(scale_factor + 0.5);
@@ -375,61 +383,61 @@ int generate_ceos_thumbnail(const char *input_data, int size,
       else {
         // Shouldn't need to trap an error here...
         asfPrintError("generate_ceos_thumbnail(): A pixel size or scale factor must\n"
-		      "be specified for the output thumbnail (or browse image)\n");
+              "be specified for the output thumbnail (or browse image)\n");
       }
-      
+
       // Thumbnail image sizes.
       size_t tsx = imd->general->sample_count / sf;
       size_t tsy = imd->general->line_count / sf;
-      
+
       // Form the thumbnail image by grabbing individual pixels.  FIXME:
       // Might be better to do some averaging or interpolating.
       size_t ii, jj;
       unsigned short *line = MALLOC (sizeof(unsigned short) * imd->general->sample_count);
       unsigned char *bytes = MALLOC (sizeof(unsigned char) * imd->general->sample_count);
-      
+
       // Here's where we're putting all this data
       img = float_image_new(tsx, tsy);
-      
+
       // Read in data line-by-line
       for ( ii = 0 ; ii < tsy ; ii++ ) {
         long long offset = (long long)headerBytes+ii*sf*(long long)image_fdr.reclen;
-	
+
         FSEEK64(fpIn, offset, SEEK_SET);
         if (imd->general->data_type == INTEGER16)
-	  {
+      {
             FREAD(line, sizeof(unsigned short), imd->general->sample_count, fpIn);
-	    
+
             for (jj = 0; jj < imd->general->sample_count; ++jj) {
-	      big16(line[jj]);
+          big16(line[jj]);
             }
-	  }
+      }
         else if (imd->general->data_type == BYTE)
-	  {
+      {
             FREAD(bytes, sizeof(unsigned char), imd->general->sample_count, fpIn);
-	    
+
             for (jj = 0; jj < imd->general->sample_count; ++jj) {
-	      line[jj] = (unsigned short)bytes[jj];
+          line[jj] = (unsigned short)bytes[jj];
             }
-	  }
-	
+      }
+
         for ( jj = 0 ; jj < tsx ; jj++ ) {
-	  // Current sampled value.
-	  double csv;
-	  
-	  if (sf == 1) {
-	    csv = line[jj];
-	  } else {
-	    // We will average a couple pixels together.
-	    if ( jj * sf < imd->general->line_count - 1 ) {
-	      csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
-	    }
-	    else {
-	      csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
-	    }
-	  }
-	  
-	  float_image_set_pixel(img, jj, ii, csv);
+      // Current sampled value.
+      double csv;
+
+      if (sf == 1) {
+        csv = line[jj];
+      } else {
+        // We will average a couple pixels together.
+        if ( jj * sf < imd->general->line_count - 1 ) {
+          csv = (line[jj * sf] + line[jj * sf + 1]) / 2;
+        }
+        else {
+          csv = (line[jj * sf] + line[jj * sf - 1]) / 2;
+        }
+      }
+
+      float_image_set_pixel(img, jj, ii, csv);
         }
       }
       FREE (line);
@@ -490,7 +498,6 @@ void process_file(const char *file, int level, int size, int verbose,
                   output_format_t output_format, char *out_dir)
 {
     char *base = get_filename(file);
-    char *ext = findExt(base);
     char *inDataName = NULL;
     char filename[256], dir[1024];
 
@@ -520,7 +527,7 @@ void process_file(const char *file, int level, int size, int verbose,
                                       output_format, out_dir);
         }
     }
-    else 
+    else
       generate_ceos_thumbnail(file, size, output_format, out_dir,
                                 scale_factor, browseFlag);
     FREE(base);
@@ -537,8 +544,8 @@ void process(const char *what, int level, int recursive, int size, int verbose,
       char **inBandName = NULL, **inMetaName = NULL;
       int nBands, trailer;
       if (!require_ceos_pair(what, &inBandName, &inMetaName, &nBands, &trailer)) {
-	asfPrintStatus("Cannot access: %s\n", what);
-	return;
+    asfPrintStatus("Cannot access: %s\n", what);
+    return;
       }
     }
 
@@ -596,14 +603,16 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
       close(fd);
     }
+    // Remove temporary file if it exists and grab basename to be processed
     sprintf(del_files, "rm -f %s", tmp);
     asfSystem(del_files);
     strcpy(tmp_basename, get_basename(tmp));
 
+    // Import the level 0 file...
     if (L0Flag == stf) {
         char *inDataName = NULL, *inMetaName = NULL;
         // Import to a temporary file
-        sprintf(out_file, "%s%c%s%s_import", tmp_folder, DIR_SEPARATOR,
+        sprintf(out_file, "%s%c%s_%s_import", tmp_folder, DIR_SEPARATOR,
                 tmp_basename, get_basename(file));
         stf_file_pairs_t pair = get_stf_names(file, &inDataName, &inMetaName);
         if (pair != NO_STF_FILE_PAIR &&
@@ -696,7 +705,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
 
     // Run range-doppler algorithm on the raw data
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s%s_ardop", tmp_folder, DIR_SEPARATOR,
+    sprintf(out_file, "%s%c%s_%s_ardop", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
     asfPrintStatus("Ardop from\n    %s\n      to\n    %s\n", in_file, out_file);
     // get_input_ardop_params_struct() does not read the .in file.  It creates a new struct,
@@ -710,27 +719,32 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     params_in->npatches = (int*)MALLOC(sizeof(int));
     *params_in->npatches = 1;
 #endif
-    ardop(params_in);
+    ardop(params_in); // ARDOP
 #ifdef DEBUG_L0
     FREE(params_in->npatches);
 #endif
     FREE(params_in);
 
+    // Get rid of temporary files that were input to the last step
+    sprintf(del_files, "rm -f %s*", in_file);
+    asfSystem(del_files);
+
     // Convert to ground range
+    char del_files2[1024];
+    sprintf(del_files2, "%s_cpx", out_file); // Save these filenames for later deletion
     sprintf(in_file, "%s_amp", out_file);
-    sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
+    sprintf(out_file, "%s%c%s_%s_gr", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
     asfPrintStatus("Converting slant range to ground range from\n    %s\n      to\n    %s\n", in_file, out_file);
     sr2gr(in_file, out_file);
 
-    //sprintf(in_file, "%s_amp", out_file);
-    //sprintf(out_file, "%s%c%s%s_gr", tmp_folder, DIR_SEPARATOR,
-    //        tmp_basename, get_basename(file));
-    //printf("Converting slant range to ground range from %s to %s\n", in_file, out_file);
+    // Get rid of temporary files that were input to the last step
+    sprintf(del_files, "rm -f %s* %s* %s%c*.in", in_file, del_files2, tmp_folder, DIR_SEPARATOR);
+    asfSystem(del_files);
 
     // Resample image
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s%s_resample", tmp_folder, DIR_SEPARATOR,
+    sprintf(out_file, "%s%c%s_%s_resample", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
     meta_parameters *meta = meta_read(in_file);
     double xsf, ysf;
@@ -751,12 +765,20 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     asfPrintStatus("Resampling from\n    %s\n      to\n    %s\n", in_file, out_file);
     resample(in_file, out_file, xsf, ysf);
 
-    // Flip so the image is north-up, east-right
+    // Get rid of temporary files that wer input to the last step
+    sprintf(del_files, "rm -f %s*", in_file);
+    asfSystem(del_files);
+
+    // Flip so the image is north-up, west-left
     strcpy(in_file, out_file);
-    sprintf(out_file, "%s%c%s%s_resample_flip", tmp_folder, DIR_SEPARATOR,
+    sprintf(out_file, "%s%c%s_%s_resample_flip", tmp_folder, DIR_SEPARATOR,
             tmp_basename, get_basename(file));
     asfPrintStatus("Flipping to north-up orientation from\n    %s\n      to\n    %s\n", in_file, out_file);
     flip_to_north_up(in_file, out_file);
+
+    // Get rid of temporary file that was input to the last step
+    sprintf(del_files, "rm -f %s.*", in_file);
+    asfSystem(del_files);
 
     // Export to selected graphics file format
     strcpy(in_file, out_file);
@@ -798,7 +820,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
         sprintf(del_files, "rm -f %s*_thumb*img", basename);
     }
-//    remove(del_files);
     asfSystem(del_files);
     if (browseFlag) {
         sprintf(del_files, "rm -f %s*meta", basename);
@@ -806,7 +827,6 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
     else {
         sprintf(del_files, "rm -f %s*_thumb*meta", basename);
     }
-//    remove(del_files);
     asfSystem(del_files);
 }
 

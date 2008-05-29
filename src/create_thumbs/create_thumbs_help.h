@@ -82,13 +82,17 @@
 "\n"\
 "     -L0 <stf|ceos>\n"\
 "          Force Level 0 (zero) processing.  'stf' or 'ceos' indicates input file\n"\
-"          format.  NOTE: Only STF format is supported at this time.  Level 0 processing\n"\
-"          results in the following additional processing steps:\n\n"\
+"          format.  Level 0 processing results in the following additional processing steps:\n\n"\
+"            - import into ASF Internal Format\n"\
 "            - range-doppler (ardop) processing\n"\
 "            - conversion of amplitude output from slant range to ground range\n"\
+"            - scale ground range amplitude image to size indicated by -size or -scale\n"\
+"              command line parameters\n"\
+"            - image is flipped/rotated to north-up, west-left orientation\n"\
+"            - export of scaled image into selected graphics file format\n"\
 "\n"\
 "     -output-format <tiff|jpeg>\n"\
-"          Choose graphics file format for output file.  Default is JPEG."\
+"          Choose graphics file format for output file.  Default is JPEG.\n"\
 "\n"\
 "     -log <log file>\n"\
 "          Output will be written to a specified log file.\n"\
@@ -139,8 +143,7 @@
 #undef  TOOL_LIMITATIONS
 #endif
 #define TOOL_LIMITATIONS \
-"     1. At this time, only STF format is supported for Level 0 data files.\n"\
-"     2. The output file naming convention is not user-customizable."
+"     1. The output file naming convention is not user-customizable."
 
 // TOOL_SEE_ALSO is required but is allowed to be an empty string
 #ifdef  TOOL_SEE_ALSO
