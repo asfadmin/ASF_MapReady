@@ -1130,7 +1130,8 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // for comparison, calculate using the workreport file (old method)
     // -- taking out this for now, it seems the swath velocity calculation
     //    is working out ok...
-    double delta, workreport_atpp=-1;
+    // double delta; 
+    double workreport_atpp=-1;
     //if (get_alos_delta_time (in_fName, &delta))
     //    workreport_atpp = delta / meta->sar->original_line_count;
 

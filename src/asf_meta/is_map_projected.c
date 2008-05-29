@@ -37,3 +37,4 @@ int is_lat_lon_pseudo(meta_parameters *md)
   meta_projection *mp = md->projection;
   return mp && mp->type == LAT_LONG_PSEUDO_PROJECTION;
 }
+

@@ -14,17 +14,6 @@
 
 extern report_level_t level; // default: WARNING
 
-/* We don't always have strdup() around.  */
-static char *
-strdup (const char *s)
-{
-  size_t ii = 0;
-  while ( s[ii] != '\0' ) ii++;
-
-  char *ret = malloc ((ii + 1) * sizeof (char));
-  return strcpy (ret, s);
-}
-
 /* Lex provides this parser function.  */
 int yylex(void);
 
@@ -1068,7 +1057,7 @@ field:   NAME ':' field_value
 field_value:   DOUBLE { double *tmp = (double *) malloc(sizeof(double));
                         *tmp = $1;
                         $$ = tmp; }
-             | STRING { $$ = strdup($1); }
+             | STRING { $$ = STRDUP($1); }
              ;
 
 block:   block_start element_seq '}'
