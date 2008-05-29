@@ -17,6 +17,7 @@ int exit_code;
 int ardop(char *option, int startLineNum, int numPatches, char *inFile, 
 	  char *outFile);
 int c2p(char *inFile, char *outFile);
+int c2p_exec(char *inFile, char *outFile);
 int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFile);
 int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFile, 
 		    char *maskFile, int gridSize, int useFFT);
