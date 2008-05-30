@@ -1479,7 +1479,16 @@ settings_to_config_file(const Settings *s,
     if (s->input_data_format != INPUT_FORMAT_CEOS_LEVEL1 &&
         s->input_data_format != INPUT_FORMAT_ASF_INTERNAL)
         fprintf(cf, "dump envi header = 0\n");
-    fprintf(cf, "multilook SLC = 0\n");
+
+    // the "multilook SLC" option is ignored on non-SLC data
+    // we multilook on import if we are going to be geocoding,
+    // though we don't multilook if we going to be doing a polarimetric
+    // decomposition, since in that case we'll multilook as we do Pauli, etc
+    int multilook_on_import = s->geocode_is_checked;
+    if (s->polarimetric != POLARIMETRY_NONE)
+      multilook_on_import = FALSE;
+
+    fprintf(cf, "multilook SLC = %d\n", multilook_on_import ? 1 : 0);
     fprintf(cf, "apply ers2 gain fix = %d\n", s->apply_ers2_gain_fix);
     fprintf(cf, "\n");
 
