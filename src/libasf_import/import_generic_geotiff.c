@@ -1218,6 +1218,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   else if (strncmp(image_data_type, "MASK", 4) == 0) {
     mg->image_data_type = MASK;
   }
+  else if (strncmp(image_data_type, "AMPLITUDE_IMAGE", 15) == 0) {
+    mg->image_data_type = AMPLITUDE_IMAGE;
+  }
   else if (strncmp(image_data_type, "IMAGE", 5) == 0) {
     mg->image_data_type = IMAGE;
   }
