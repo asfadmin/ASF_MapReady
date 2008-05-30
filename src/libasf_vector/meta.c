@@ -2546,25 +2546,30 @@ int meta2csv(char *inFile, char *outFile, int listFlag)
 // Convert metadata to kml file
 int meta2kml(char *inFile, char *outFile, int listFlag)
 {
-  FILE *fp;
+  FILE *fpIn, *fpOut;
   char *line = (char *) MALLOC(sizeof(char)*1024);
-  int n=0;
 
   if (listFlag) {
-    fp = FOPEN(inFile, "r");
-    while (fgets(line, 1024, fp)) {
+    fpIn = FOPEN(inFile, "r");
+    fpOut = FOPEN(outFile, "w");
+    kml_header(fpOut);
+    while (fgets(line, 1024, fpIn)) {
       line[strlen(line)-1] = '\0';
-      meta2kml(line, outFile, 0);
-      n++;
+      meta_parameters *meta = meta_read(line);
+      kml_entry(fpOut, meta, meta->general->basename);
+      meta_free(meta);
     }
+    kml_footer(fpOut);
+    FCLOSE(fpIn);
+    FCLOSE(fpOut);
   }
   else {
     meta_parameters *meta = meta_read(inFile);
-    fp = FOPEN(outFile, "w");
-    kml_header(fp);
-    kml_entry(fp, meta, meta->general->basename);
-    kml_footer(fp);
-    FCLOSE(fp);
+    fpOut = FOPEN(outFile, "w");
+    kml_header(fpOut);
+    kml_entry(fpOut, meta, meta->general->basename);
+    kml_footer(fpOut);
+    FCLOSE(fpOut);
     meta_free(meta);
   }
 
