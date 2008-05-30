@@ -1485,7 +1485,7 @@ settings_to_config_file(const Settings *s,
     // though we don't multilook if we going to be doing a polarimetric
     // decomposition, since in that case we'll multilook as we do Pauli, etc
     int multilook_on_import = s->geocode_is_checked;
-    if (s->polarimetric != POLARIMETRY_NONE)
+    if (s->polarimetry_setting != POLARIMETRY_NONE)
       multilook_on_import = FALSE;
 
     fprintf(cf, "multilook SLC = %d\n", multilook_on_import ? 1 : 0);
