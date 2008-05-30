@@ -1205,7 +1205,7 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
       strcpy(image_data_type, "DEM");
     }
     else if (geotiff_data_exists) {
-      strcpy(image_data_type, "AMPLITUDE_IMAGE");
+      strcpy(image_data_type, "GEOCODED_IMAGE");
     }
     else {
       strcpy(image_data_type, "IMAGE");
@@ -1220,6 +1220,9 @@ meta_parameters * read_generic_geotiff_metadata(const char *inFileName, int *ign
   }
   else if (strncmp(image_data_type, "AMPLITUDE_IMAGE", 15) == 0) {
     mg->image_data_type = AMPLITUDE_IMAGE;
+  }
+  else if (strncmp(image_data_type, "GEOCODED_IMAGE", 15) == 0) {
+    mg->image_data_type = GEOCODED_IMAGE;
   }
   else if (strncmp(image_data_type, "IMAGE", 5) == 0) {
     mg->image_data_type = IMAGE;
