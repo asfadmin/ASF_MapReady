@@ -130,9 +130,9 @@ stateVector tle_propagate(sat_t *sat, double t)
   return st;
 }
 
-void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
+void read_tle(const char *satellite, sat_t *sat)
 {
-  FILE *fp = fopen(tle_filename, "r");
+  FILE *fp = fopen_share_file("tle", "r");
   char tle_str[3][80];
   if (fp) {
 
@@ -147,7 +147,7 @@ void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
         int ret = Get_Next_Tle_Set (tle_str, &sat->tle);
 
         if (ret != 1) {
-          printf("Error reading '%s' from %s\n", satellite, tle_filename);
+          printf("Error reading '%s' from 'tle'\n", satellite);
           break;
         }
         else {
@@ -218,17 +218,17 @@ void read_tle(const char *tle_filename, const char *satellite, sat_t *sat)
     }
 
     // reached end of file without finding TLE
-    printf("Couldn't find '%s' in %s.\n", satellite, tle_filename);
+    printf("Couldn't find '%s' in 'tle'.\n", satellite);
   }
   else { // failed to open TLE file
-    printf("Couldn't read: %s\n", tle_filename);
+    printf("Couldn't read: tle\n");
   }
 }
 
 const char *get_tle_info(const char *tle_filename, const char *satellite)
 {
     sat_t sat;
-    read_tle(tle_filename, satellite, &sat);
+    read_tle(satellite, &sat);
 
     static char tle_info[256];
     sprintf(tle_info,

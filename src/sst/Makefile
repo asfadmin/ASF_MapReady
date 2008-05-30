@@ -17,8 +17,8 @@ LIBS =  \
 	$(LIBDIR)/libasf_geocode.a \
 	$(LIBDIR)/libasf_sar.a \
 	$(LIBDIR)/libasf_vector.a \
-	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_import.a \
+	$(LIBDIR)/libasf_raster.a \
 	$(LIBDIR)/libasf_sgpsdp.a \
 	$(LIBDIR)/asf_meta.a \
 	$(LIBDIR)/asf_fft.a \
@@ -49,6 +49,7 @@ lib: $(OBJLIB)
 	$(RANLIB) libasf_simulation.a
 	mv libasf_simulation.a $(LIBDIR)
 	cp asf_simulation.h $(ASF_INCLUDE_DIR)
+	cp satellite.config $(SHAREDIR)
 
 exe: sar_simulation_tool
 

@@ -70,7 +70,7 @@ static double read_double(char *line, char *param)
   return value;
 }
 
-satellite_t *read_satellite_config(char *configFile, char *sensor, char *mode)
+satellite_t *read_satellite_config(char *sensor, char *mode)
 {
   FILE *fp;
   char line[255], params[50];
@@ -81,7 +81,7 @@ satellite_t *read_satellite_config(char *configFile, char *sensor, char *mode)
   strcpy(params, "");
   if (sat == NULL) 
     check_return(1, "Creating configuration structure.\n");
-  fp = fopen(configFile, "r");
+  fp = fopen_share_file("satellite.config", "r");
   if (!fp) 
     return NULL;
   while (fgets(line, 255, fp)) {
