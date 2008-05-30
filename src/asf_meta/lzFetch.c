@@ -98,7 +98,9 @@ which we use to keep track of where we are in the file's structure.*/
           printErr(errbuf);
         }
         else
-            {*err=3;return NULL;}
+            {
+            *err=3;
+            return NULL;}
     }
 
 /*Initially, stack contains only the empty string.*/
@@ -168,8 +170,11 @@ which we use to keep track of where we are in the file's structure.*/
     {/*Warn user that field wasn't there, but carry on bravely*/
         sprintf(errbuf,"   WARNING: Couldn't find field '%s' in\n"
             "   granule file '%s'.\n",desiredParam,lzN);
+        FCLOSE(in);
         return NULL;
     }
     *err=1;
+    FCLOSE(in);
     return NULL;
 }
+
