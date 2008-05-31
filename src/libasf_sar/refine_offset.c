@@ -98,10 +98,10 @@ static void print_state(int iter, gsl_multiroot_fsolver *s)
 }
 */
 
-void coarse_search(double t_extent_min, double t_extent_max,
-                   double x_extent_min, double x_extent_max,
-                   double *t_min, double *x_min,
-                   struct refine_offset_params *params)
+static void coarse_search(double t_extent_min, double t_extent_max,
+                          double x_extent_min, double x_extent_max,
+                          double *t_min, double *x_min,
+                          struct refine_offset_params *params)
 {
     double the_min = 9999999;
     double min_t=99, min_x=99;
@@ -147,8 +147,8 @@ void coarse_search(double t_extent_min, double t_extent_max,
     gsl_vector_free(u);
 }
 
-void generate_start(struct refine_offset_params *params,
-                    double *start_t, double *start_x)
+static void generate_start(struct refine_offset_params *params,
+                           double *start_t, double *start_x)
 {
     int i;
 
