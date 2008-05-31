@@ -1328,10 +1328,12 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   nl = meta->general->line_count;
   ns = meta->general->sample_count;
-  if (meta->sar)
+  if (meta->sar) {
     lc = nLooks = meta->sar->look_count;
-  else
+  }
+  else {
     lc = nLooks = 1;
+  }
 
   // PP Earth Radius Kludge
   if (isPP(meta) && meta->sar)
@@ -1349,6 +1351,10 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             "file.");
     cal_param->radiometry = radiometry;
   }
+
+  // If multilook flag is true but data is already multilooked, turn off flag
+  if (multilook_flag && meta->sar && meta->sar->multilook)
+    multilook_flag = FALSE;
 
   // Give user status on input and output data type
   status_data_type(meta, data_type, radiometry, complex_flag, multilook_flag);
