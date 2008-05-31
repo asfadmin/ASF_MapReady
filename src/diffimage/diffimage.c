@@ -51,7 +51,7 @@ ISSUES:
 #define FLOAT_COMPARE_TOLERANCE(a, b, t) (fabs (a - b) <= t ? 1: 0)
 #define FLOAT_TOLERANCE 0.000001
 #define MISSING_PSNR -32000
-#define MIN_MATCH_CERTAINTY 0.30
+#define MIN_MATCH_CERTAINTY 0.25
 #define FILE1_FFTFILE "tmp_file1.img"
 #define FILE1_FFTFILE_META "tmp_file1.meta"
 #define FILE2_FFTFILE "tmp_file2.img"
@@ -2228,7 +2228,7 @@ void get_tiff_info(TIFF *tif, tiff_data_t *t)
                        &t->data_type,
                        &t->num_bands,
                        &t->is_scanline_format,
-		       WARNING);
+               WARNING);
   TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &t->height);
   TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &t->width);
   if (t->planar_config != PLANARCONFIG_CONTIG &&
