@@ -21,8 +21,6 @@ static GtkWidget * target_lamcc_menu = NULL;
 static GtkWidget * target_lamaz_menu = NULL;
 static GtkWidget * target_latlon_menu = NULL;
 
-static datum_type_t get_datum(FILE *fp);
-static spheroid_type_t get_spheroid(FILE *fp);
 
 static char * projection_directory(int projection)
 {
