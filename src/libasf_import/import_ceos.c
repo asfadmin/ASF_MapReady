@@ -1923,7 +1923,11 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         amp_float_buf[kk] = (float) byte_buf[kk]*byte_buf[kk];
           else if (strcmp(meta->general->sensor, "ALOS") == 0 &&
                meta->optical) {
-        amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
+            if (kk+leftFill>=ns) {
+              //printf("%d %d %d!!\n", kk, leftFill, ns);
+            } else
+            //assert(kk+leftFill<ns);
+            amp_float_buf[kk] = (float) byte_buf[kk+leftFill];
           }
           else
         amp_float_buf[kk] = (float) byte_buf[kk];
