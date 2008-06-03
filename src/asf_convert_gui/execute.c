@@ -1,5 +1,15 @@
 #include <ctype.h>
 #include <unistd.h>
+
+#ifdef win32
+#define BYTE __byte
+#include "asf.h"
+#include "asf_meta.h"
+#undef BYTE
+#include <windows.h>
+#undef DIR_SEPARATOR
+#endif
+
 #include "asf_convert_gui.h"
 #include <asf.h>
 #include <asf_convert.h>
@@ -306,11 +316,75 @@ static char *
 do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
            int keep_files)
 {
-    extern int logflag;
-    extern FILE *fLog;
-
     FILE *output;
     char *logFile = appendExt(cfg_file, ".log");
+
+#ifdef win32
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    memset(&si, 0, sizeof(si));
+    memset(&pi, 0, sizeof(pi));
+    si.cb = sizeof(si);
+    
+    char *cmd = MALLOC(sizeof(char)*
+        (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 25));
+    sprintf(cmd, "%s/asf_mapready.exe %s", get_asf_bin_dir_win(), cfg_file);
+
+    if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+    {
+        DWORD dw = GetLastError();
+        //printf( "CreateProcess failed (%ld)\n", dw );
+
+        LPVOID lpMsgBuf;
+        FormatMessage(
+          FORMAT_MESSAGE_ALLOCATE_BUFFER |
+          FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+          NULL,
+          dw,
+          MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+              (LPTSTR)&lpMsgBuf,
+          0,
+          NULL);
+
+        printf("CreateProcess() failed with error %ld: %s\n",
+            dw, (char*)lpMsgBuf);
+        printf("Failed command: %s\n", cmd);
+    }
+
+    char *statFile = appendExt(cfg_file, ".status");
+    DWORD dwWaitResult;
+    int counter = 1;
+
+    // now wait for process to finish
+    do {
+        while (gtk_events_pending())
+            gtk_main_iteration();
+
+        if (++counter % 200 == 0) {
+            /* check status file */
+            char buf[256];
+            FILE *fStat = fopen(statFile, "rt");
+            if (fStat)
+            {
+                fgets(buf, sizeof(buf), fStat);
+                fclose(fStat);
+
+                gtk_list_store_set(list_store, iter, COL_STATUS, buf, -1);
+            }
+        }
+
+        dwWaitResult = WaitForSingleObject(pi.hProcess, 50);
+    }
+    while (dwWaitResult == WAIT_TIMEOUT);
+
+    unlink(statFile);
+    free(statFile);
+    free(cmd);
+#else
+    extern int logflag;
+    extern FILE *fLog;
 
     pid = fork();
     if (pid == 0)
@@ -390,6 +464,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         unlink(statFile);
         free(statFile);
     }
+#endif
 
     gchar *the_output = NULL;
 
