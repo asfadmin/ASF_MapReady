@@ -92,12 +92,10 @@ void ceos_init_scansar(const char *leaderName, meta_parameters *meta,
 
 // Importing specific metadata blocks
 void ceos_init_location_block(meta_parameters *meta);
-
 void ceos_init_proj(meta_parameters *meta,  struct dataset_sum_rec *dssr,
                     struct VMPDREC *mpdr, struct scene_header_rec *shr,
                     struct alos_map_proj_rec *ampr);
 double get_firstTime(const char *fName);
-int get_alos_delta_time (const char *fileName, double *delta);
 double get_alos_firstTime (const char *fName);
 
 double get_chirp_rate (const char *fName);
@@ -975,7 +973,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 {
   struct dataset_sum_rec *dssr=NULL;
   struct VMPDREC *mpdr=NULL;
-  char buf[50];
+  char buf[50], basename[512];
   char **dataName=NULL, **metaName=NULL;
   int nBands, trailer;
 
@@ -985,7 +983,9 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     FREE(mpdr);
     mpdr = NULL;
   }
-  require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
+
+  get_ceos_names(in_fName, basename, &dataName, &metaName, &nBands, &trailer);
+  //require_ceos_pair(in_fName, &dataName, &metaName, &nBands, &trailer);
 
   // General block
   strcpy(meta->general->processor, "JAXA");
@@ -1192,6 +1192,48 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     for (ii=0; ii<10; ++ii) {
       meta->transform->map2ls_a[ii] = facdr.a_map[ii];
       meta->transform->map2ls_b[ii] = facdr.b_map[ii];
+    }
+  }
+  else {
+    // SLC images -- no transform block
+    // See if we can get better geolocations using the workreport
+    double time_shift, slant_shift;
+    asfPrintStatus("Refining geolocation estimates using workreport...\n");
+    if (refine_slc_geolocation_from_workreport(basename, meta,
+                                               &time_shift, &slant_shift))
+    {
+          asfPrintStatus("SLC Geolocation refinement results:\n");
+          asfPrintStatus("  Time Shift: %f -> %f\n"
+                         "  Slant Shift: %f -> %f\n",
+                         meta->sar->time_shift,
+                         meta->sar->time_shift + time_shift,
+                         meta->sar->slant_shift,
+                         meta->sar->slant_shift + slant_shift);
+          // Figure out how much shift we had to do
+          double lat, lon, px1, py1, px2, py2;
+          meta_get_latLon(meta, meta->general->line_count/2.,
+                          meta->general->sample_count/2., 0, &lat, &lon);
+          asfPrintStatus("Before center lat/lon: %f,%f\n", lat, lon);
+          latLon2UTM(lat, lon, 0, &px1, &py1);
+          int zone = utm_zone(lon);
+          meta->sar->time_shift += time_shift;
+          meta->sar->slant_shift += slant_shift;
+          meta_get_latLon(meta, meta->general->line_count/2.,
+                          meta->general->sample_count/2., 0, &lat, &lon);
+          asfPrintStatus("After center lat/lon: %f,%f\n", lat, lon);
+          latLon2UTM_zone(lat, lon, 0, zone, &px2, &py2);
+          double dx = px2-px1;
+          double dy = py2-py1;
+          if (fabs(dx)<2000 && fabs(dy)<2000) {
+            asfPrintStatus("  E-W Shift: %.1fm\n", dx);
+            asfPrintStatus("  N-S Shift: %.1fm\n", dy);
+            asfPrintStatus("  Total    : %.1fm\n", hypot(dx,dy));
+          }
+          else {
+            asfPrintStatus("  E-W Shift: %.2fkm\n", dx/1000.);
+            asfPrintStatus("  N-S Shift: %.2fkm\n", dy/1000.);
+            asfPrintStatus("  Total    : %.2fkm\n", hypot(dx,dy)/1000.);
+          }
     }
   }
 
@@ -2773,91 +2815,6 @@ double get_sensor_orientation (const char *fName)
    printf("yaw: %lf\n", (double)bigInt16(linehdr.yaw));
    printf("pitch: %lf\n", (double)bigInt16(linehdr.pitch));
    return (double)bigInt16(linehdr.yaw);
-}
-
-
-// Get the delta image time for ALOS data out of the summary file
-int get_alos_delta_time (const char *fileName, double *delta)
-{
-  FILE *fp;
-  struct dataset_sum_rec dssr;
-  hms_time dssr_time, summary_time, start_time, end_time;
-  ymd_date dssr_date, summary_date, start_date, end_date;
-  char *summaryFile, line[512], dateStr[30], *str;
-
-  get_dssr(fileName, &dssr);
-  date_dssr2date(dssr.inp_sctim, &dssr_date, &dssr_time);
-  summaryFile = (char *) MALLOC(sizeof(char)*(strlen(fileName)+5));
-  // Assume that workreport is following the basename paradigm
-  sprintf(summaryFile, "%s.txt", fileName);
-  if (!fileExists(summaryFile)) {
-      asfPrintWarning("Summary file '%s' not found.\nWill try 'workreport'\n",
-                      summaryFile);
-
-      // try "path/workreport"
-      char *path = getPath(fileName);
-      if (strlen(path) > 0) {
-        if(summaryFile)FREE(summaryFile);
-        summaryFile = (char*) MALLOC(sizeof(char) * (strlen(path) + 12));
-        sprintf(summaryFile, "%s%cworkreport", path, DIR_SEPARATOR);
-      }
-      else {
-        if(summaryFile)FREE(summaryFile);
-        summaryFile = (char*) MALLOC(sizeof(char) * 12);
-        strcpy(summaryFile, "workreport");
-      }
-      FREE(path);
-
-      if (!fileExists(summaryFile)) {
-
-        asfPrintWarning("Summary file '%s' does not exist.\n"
-                        "If you received a 'workreport' file with this data "
-                        "please make sure it is\nin the same directory as "
-                        "the data file.\n",
-                        summaryFile);
-        FREE(summaryFile);
-        *delta = 0;
-        return 0;
-      } else
-          asfPrintStatus("Summary file 'workreport' found.\n");
-  }
-
-  fp = FOPEN(summaryFile, "r");
-  while (fgets(line, 512, fp)) {
-    if (strstr(line, "Img_SceneCenterDateTime")) {
-      str = strchr(line, '"');
-      sprintf(dateStr, "%s", str+1);
-      dateStr[strlen(dateStr)-2] = '\0';
-      date_alos2date(dateStr, &summary_date, &summary_time);
-      if (date_difference(&dssr_date, &dssr_time,
-          &summary_date, &summary_time) > 0.0)
-      {
-        asfPrintWarning("Summary file does not correspond to leader file.\n"
-                        "DSSR: %s\nSummary: %s\n", dssr.inp_sctim, dateStr);
-        *delta = 0;
-        FCLOSE(fp);
-        FREE(summaryFile);
-        return 0;
-      }
-    }
-    else if (strstr(line, "Img_SceneStartDateTime")) {
-      str = strchr(line, '"');
-      sprintf(dateStr, "%s", str+1);
-      dateStr[strlen(dateStr)-2] = '\0';
-      date_alos2date(dateStr, &start_date, &start_time);
-    }
-    else if (strstr(line, "Img_SceneEndDateTime")) {
-      str = strchr(line, '"');
-      sprintf(dateStr, "%s", str+1);
-      dateStr[strlen(dateStr)-2] = '\0';
-      date_alos2date(dateStr, &end_date, &end_time);
-    }
-  }
-
-  *delta = date_difference(&start_date, &start_time, &end_date, &end_time);
-  FREE(summaryFile);
-  FCLOSE(fp);
-  return 1;
 }
 
 void get_azimuth_time(ceos_description *ceos, const char *in_fName,

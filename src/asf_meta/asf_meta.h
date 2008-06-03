@@ -799,4 +799,11 @@ int is_lat_lon_pseudo(meta_parameters *md);
 /* Stuff from band_util.c */
 void remove_band(const char *file, int band, int save_orig);
 
+/* workreport.c: dealing with the ALOS workreport file */
+FILE *fopen_workreport(const char *fileName);
+int get_alos_delta_time (const char *fileName, double *delta);
+int refine_slc_geolocation_from_workreport(const char *fileName,
+                                           meta_parameters *meta,
+                                           double *time_shift_adjustment,
+                                           double *slant_shift_adjustment);
 #endif
