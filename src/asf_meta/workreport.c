@@ -16,6 +16,7 @@ FILE *fopen_workreport(const char *fileName)
 
   // first attempt: basename.txt
   FILE *fp;
+  //printf("filename: %s\n", workreport_filename);
   if (!fileExists(workreport_filename)) {
     // second attempt: path/'workreport'
     FREE(workreport_filename);
@@ -28,6 +29,7 @@ FILE *fopen_workreport(const char *fileName)
       strcpy(workreport_filename, "workreport");
     FREE(path);
 
+    //printf("filename2: %s\n", workreport_filename);
     if (!fileExists(workreport_filename)) {
       // failed!
       fp = NULL;
@@ -328,12 +330,20 @@ static void print_state(int iter, gsl_multiroot_fsolver *s)
 // usually you will only want to do this if the function returns TRUE
 // (on success), though if it returns FALSE (failed) these two parameters
 // will be 0
-int refine_slc_geolocation_from_workreport(const char *fileName,
+int refine_slc_geolocation_from_workreport(const char *metaName,
+                                           const char *basename,
                                            meta_parameters *meta,
                                            double *time_shift_adjustment,
                                            double *slant_shift_adjustment)
 {
+  char *fileName = MALLOC(sizeof(char)*(10+strlen(basename)+strlen(metaName)));
+  char *dirname = get_dirname(metaName);
+  if (strlen(dirname)>0)
+    sprintf(fileName, "%s%s", dirname, basename);
+  else
+    strcpy(fileName, basename);
   FILE *fp = fopen_workreport(fileName);
+  FREE(dirname);
   if (!fp) {
     // failed to open workreport file
     asfPrintWarning(
@@ -344,6 +354,7 @@ int refine_slc_geolocation_from_workreport(const char *fileName,
 "Proceeding... however, extremely poor geolocations may result.\n");
     *slant_shift_adjustment = 0.0;
     *time_shift_adjustment = 0.0;
+    FREE(fileName);
     return FALSE;
   }
 
@@ -355,7 +366,7 @@ int refine_slc_geolocation_from_workreport(const char *fileName,
   hms_time dssr_time, summary_time;
   ymd_date dssr_date, summary_date;
   char line[512], tmp[512], *p;
-  get_dssr(fileName, &dssr);
+  get_dssr(metaName, &dssr);
   date_dssr2date(dssr.inp_sctim, &dssr_date, &dssr_time);
 
   double center_lat=-999, center_lon=-999;
@@ -386,6 +397,7 @@ int refine_slc_geolocation_from_workreport(const char *fileName,
         *slant_shift_adjustment = 0;
         *time_shift_adjustment = 0;
         FCLOSE(fp);
+        FREE(fileName);
         return 0;
       }
     }
@@ -431,6 +443,7 @@ int refine_slc_geolocation_from_workreport(const char *fileName,
     }
   }
 
+  FREE(fileName);
   fclose(fp);
 
   // Did we get all that we needed?

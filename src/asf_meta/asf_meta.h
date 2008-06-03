@@ -802,7 +802,8 @@ void remove_band(const char *file, int band, int save_orig);
 /* workreport.c: dealing with the ALOS workreport file */
 FILE *fopen_workreport(const char *fileName);
 int get_alos_delta_time (const char *fileName, double *delta);
-int refine_slc_geolocation_from_workreport(const char *fileName,
+int refine_slc_geolocation_from_workreport(const char *metaName,
+                                           const char *basename,
                                            meta_parameters *meta,
                                            double *time_shift_adjustment,
                                            double *slant_shift_adjustment);

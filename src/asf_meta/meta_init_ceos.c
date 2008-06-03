@@ -1199,7 +1199,7 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // See if we can get better geolocations using the workreport
     double time_shift, slant_shift;
     asfPrintStatus("Refining geolocation estimates using workreport...\n");
-    if (refine_slc_geolocation_from_workreport(basename, meta,
+    if (refine_slc_geolocation_from_workreport(metaName[0], basename, meta,
                                                &time_shift, &slant_shift))
     {
           asfPrintStatus("SLC Geolocation refinement results:\n");
