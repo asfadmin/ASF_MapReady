@@ -3233,7 +3233,7 @@
 				  <child>
 				    <widget class="GtkOptionMenu" id="resample_option_menu">
 				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Method used to resample the data.  Nearest neighbor uses the nearest point in the input image.  Bilinear uses linear interpolation.  Bicubic uses cubic splines.  You will probably want to use bilinear.</property>
+				      <property name="tooltip" translatable="yes">Method used to resample the data.  Nearest neighbor uses the nearest point in the input image.  Bilinear uses linear interpolation.  Bicubic uses cubic splines.  Nearest neighbor is generally only used for mask images.  You will probably want to use bilinear, bicubic is quite a bit slower and usually doesn't improve the image quality perceptibly.</property>
 				      <property name="can_focus">True</property>
 				      <property name="history">0</property>
 
