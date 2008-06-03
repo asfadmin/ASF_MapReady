@@ -566,16 +566,12 @@ int asf_geocode_from_proj_file(const char *projection_file,
   if (tmp_datum != UNKNOWN_DATUM &&
       datum     != tmp_datum)
   {
-      // Provides backwards compatibility with older configuration files, i.e. warns
-      // user attempting to change the datum by changing the 'datum =' setting in
-      // the older style (pre-MapReady v1.1 and all Convert versions) configuration
-      // files.
-      asfPrintWarning("Datum read from MapReady configuration file (%s) differs from\n"
-              "the datum defined in the specified projection description (.proj) file.\n"
-              "The projection description version (%s) will override the configuration\n"
-              "file definition. NOTE: For UTM projections, WGS84 will be used unless\n"
-              "specified otherwise in a projection description file.\n",
-              datum_toString(tmp_datum), datum_toString(datum));
+      asfPrintWarning(
+              "The datum read from the MapReady configuration file differs from\n"
+              "the datum read from the  projection description file. The datum\n"
+              "given in the projection file will override that of the configuration\n"
+              "file (%s overrides %s).\n",
+              datum_toString(datum), datum_toString(tmp_datum));
   }
   return asf_geocode(&pp, projection_type, force_flag, resample_method,
                      average_height, datum, pixel_size, band_id,

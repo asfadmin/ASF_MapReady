@@ -261,6 +261,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
   FILE * fp;
   char buf[256];
   int ret = TRUE;
+  datum_type_t datum_orig = *datum;
 
   fp = fopen_proj_file(file, "r");
   if (!fp)
@@ -343,11 +344,6 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       "Zone", &zone,
       NULL);
     *datum = get_datum(fp);
-    if (*datum == UNKNOWN_DATUM) {
-        asfPrintStatus("\nNo datum specified in UTM type projection description file.\n"
-                "Defaulting to WGS84...\n\n");
-        *datum = WGS84_DATUM;
-    }
     pps->utm.zone = (int) zone;
 
     if (pps->utm.zone == 0 || !meta_is_valid_double(zone))
@@ -359,9 +355,18 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
     sprintf(*err,"Unknown projection in file '%s': %s\n", file, buf);
     ret = FALSE;
   }
-  if (*datum == UNKNOWN_DATUM) {
-    asfPrintWarning("Datum or reference ellipsoid missing in projection file.\n"
-                    "Defaulting to a WGS84 datum\n");
+
+  // Fall back to the datum from the config file if it hasn't been set in the proj file
+  if ((*datum==UNKNOWN_DATUM) && (datum_orig!=UNKNOWN_DATUM)) {
+    asfPrintWarning("Datum or ellipsoid not found in projection the file. Using the\n"
+                    "datum specified in the MapReady config file (%s).\n",
+		    datum_toString(datum_orig));
+    *datum = datum_orig;
+  }
+
+  // Default to WGS84 if the datum hasn't been set by the proj or config file
+  if ((*datum==UNKNOWN_DATUM) && (datum_orig==UNKNOWN_DATUM)) {
+    asfPrintWarning("Datum or ellipsoid not found; defaulting to the WGS84 datum.\n");
     *datum = WGS84_DATUM;
   }
 
