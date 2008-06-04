@@ -841,6 +841,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             // the mask has just 1 band, regardless of how many input has
             outMeta->general->band_count = 1;
             strcpy(outMeta->general->bands, "");
+            outMeta->general->image_data_type = MASK;
 
             // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
