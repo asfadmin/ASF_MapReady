@@ -245,7 +245,8 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 }
 
 static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
-                            float *grDEM, struct deskew_dem_data *d)
+                            float *grDEM, struct deskew_dem_data *d,
+                            int do_interp)
 {
     int x;
     for (x=0; x<ns; x++)
@@ -258,6 +259,13 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
             // other values are user specified values that should be put in
             if (fill_value != LEAVE_MASK)
                 in[x] = fill_value;
+        }
+        else if (!do_interp &&
+                 (inMask[x] == MASK_LAYOVER || inMask[x] == MASK_SHADOW))
+        {
+            // do_interp: fill layover/shadow regions with interpolated values
+            // so when this is false, zero out output for layover/shadow pixels
+            in[x] = 0.0;
         }
 
         // where we have no DEM data, set output to 0
@@ -773,9 +781,14 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 get_float_line(inDemFp,inDemMeta,y,grDEMline);
             } else {
                 get_float_line(inDemFp,inDemMeta,y,srDEMline);
-                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
+                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,TRUE);
             }
-            
+
+            // we are currently stuck with 0 as the badDEMht (see asf_sar.h)
+            // so... change legitimate zeros to .1
+            for (x=0; x<d.numSamples; ++x)
+              if (grDEMline[x]==0) grDEMline[x]=.1;
+
             if (inMaskFlag) {
                 /* Read in the next line of the mask, update the values */
                 get_float_line(inMaskFp,inMaskMeta,y,maskLine);
@@ -806,7 +819,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	      
 	      // subtract away the masked region
 	      mask_float_line(d.numSamples,fill_value,outLine,
-			      maskLine,grDEMline,&d);
+			      maskLine,grDEMline,&d,fill_holes);
 	      
 	      put_band_float_line(outFp,outMeta,b,y,outLine);
 	    }
@@ -821,7 +834,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             meta_free(inMaskMeta);
         }
 
-/*Write the updated mask*/
+/*Write the updated mask's metadata, close mask data file*/
         if (outMaskFlag) {
             FCLOSE(outMaskFp);
 

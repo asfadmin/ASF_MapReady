@@ -223,6 +223,13 @@ void import_ceos(char *inBaseName, char *outBaseName,
     }
   }
 
+  // can't do db when radiometry is AMPLITUDE
+  if (radiometry == r_AMP && db_flag) {
+    asfPrintWarning("Since the requested output radiometry is AMPLITUDE, "
+                    "the DB flag will\nbe ignored.\n");
+    db_flag=FALSE;
+  }
+
   ceos = get_ceos_description(inBaseName, NOREPORT);
 
   for (ii=0; ii<nBandsOut; ii++) {
