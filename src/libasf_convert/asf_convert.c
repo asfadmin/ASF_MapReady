@@ -153,8 +153,8 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
 	sprintf(bandExt, "0%d", band_number);
       else
 	sprintf(bandExt, "%d", band_number);
-      if (nBands > 1)
-	asfPrintStatus("   Input band: %s\n", bandExt);
+      //if (nBands > 1)
+      //  asfPrintStatus("   Input band: %s\n", bandExt);
       if (band > 1) {
 	if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
 	    (strcmp_case(meta->general->mode, "1A") != 0 ||
@@ -255,8 +255,11 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
 			&nBands, &trailer);
     else if (isSTF(input))
       require_stf_pair(input, inBandName, inMetaName);
-    meta_parameters *meta = meta_read_cfg(inMetaName[0], cfg);
+    meta_parameters *meta = meta_create(inMetaName[0]);
     if (meta->sar) {
+      meta_free(meta);
+      // re-read meta with additional info
+      meta = meta_read_cfg(inMetaName[0], cfg);
       // Pauli decomposition only works for complex quad-pol data
       if (cfg->polarimetry->pauli &&
 	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
@@ -269,6 +272,9 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
 	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
 	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
 	asfPrintError("Sinclair decomposition requires quad-pol data\n");
+    }
+    else {
+      asfPrintError("Polarimetry requires SAR data.\n");
     }
   }
 }
