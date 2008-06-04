@@ -577,10 +577,16 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return NULL;
 
     char *ext = findExt(input_data);
-    if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0)) {
-        // don't have support for thumbnails of geotiffs yet
+
+    // don't have support for thumbnails of geotiffs yet
+    if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0))
         return NULL;
-    }
+
+    // no point in a thumbnail of Level 0 data
+    if (ext && strcmp_case(ext, ".raw") == 0)
+        return NULL; 
+
+    // split some cases into their own funcs
     if (ext && strcmp_case(ext, ".img") == 0)
         return make_asf_internal_thumb(input_metadata, input_data,
             max_thumbnail_dimension);
