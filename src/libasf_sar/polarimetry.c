@@ -632,7 +632,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       else if (sinclair_1_band == i)
           strcat(bands, "HH,");
       else if (sinclair_2_band == i)
-          strcat(bands, "half(HV+VH),");
+          strcat(bands, "HV+VH_2,");
       else if (sinclair_3_band == i)
           strcat(bands, "VV,");
       else if (pauli_1_band == i)

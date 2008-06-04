@@ -1594,7 +1594,7 @@ settings_to_config_file(const Settings *s,
           fprintf(cf, "rgb banding = HH-VV,HV+VH,HH+VV\n");
         }
         else if (s->polarimetry_setting == POLARIMETRY_SINCLAIR) {
-          fprintf(cf, "rgb banding = HH,half(HV+VH),VV\n");
+          fprintf(cf, "rgb banding = HH,HV+VH_2,VV\n");
         }
         else if (!s->truecolor_is_checked && !s->falsecolor_is_checked)
         {
