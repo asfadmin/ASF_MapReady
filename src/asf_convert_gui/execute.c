@@ -328,9 +328,11 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     si.cb = sizeof(si);
     
     char *cmd = MALLOC(sizeof(char)*
-        (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 25));
-    sprintf(cmd, "%s/asf_mapready.exe %s", get_asf_bin_dir_win(), cfg_file);
+        (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 256));
+    sprintf(cmd, "\"%s/asf_mapready.exe\" -log \"%s\" \"%s\"",
+        get_asf_bin_dir_win(), logFile, cfg_file);
 
+    //printf("Running command> %s\n", cmd);
     if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
     {
         DWORD dw = GetLastError();
@@ -363,9 +365,9 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
             gtk_main_iteration();
 
         if (++counter % 200 == 0) {
-            /* check status file */
+            // check status file
             char buf[256];
-            FILE *fStat = fopen(statFile, "rt");
+            FILE *fStat = fopen(statFile, "r");
             if (fStat)
             {
                 fgets(buf, sizeof(buf), fStat);
@@ -381,7 +383,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 
     unlink(statFile);
     free(statFile);
-    free(cmd);
+    // Don't do this, CreateProcess() take it
+    //free(cmd);
 #else
     extern int logflag;
     extern FILE *fLog;
@@ -416,7 +419,7 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
             if (++counter % 200 == 0) {
                 /* check status file */
                 char buf[256];
-                FILE *fStat = fopen(statFile, "rt");
+                FILE *fStat = fopen(statFile, "r");
                 if (fStat)
                 {
                     fgets(buf, sizeof(buf), fStat);
@@ -467,7 +470,6 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 #endif
 
     gchar *the_output = NULL;
-
     output = fopen(logFile, "r");
 
     if (!output)
