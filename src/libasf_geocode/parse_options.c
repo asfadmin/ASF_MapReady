@@ -358,8 +358,8 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 
   // Fall back to the datum from the config file if it hasn't been set in the proj file
   if ((*datum==UNKNOWN_DATUM) && (datum_orig!=UNKNOWN_DATUM)) {
-    asfPrintWarning("Datum or ellipsoid not found in projection the file. Using the\n"
-                    "datum specified in the MapReady config file (%s).\n",
+    asfPrintWarning("Datum or ellipsoid not found in the projection file.\n"
+                    "Using datum specified in the MapReady config file (%s).\n",
 		    datum_toString(datum_orig));
     *datum = datum_orig;
   }
@@ -368,6 +368,17 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
   if ((*datum==UNKNOWN_DATUM) && (datum_orig==UNKNOWN_DATUM)) {
     asfPrintWarning("Datum or ellipsoid not found; defaulting to the WGS84 datum.\n");
     *datum = WGS84_DATUM;
+  }
+
+  // If a datum other than WGS-84 is used with a UTM, the projection is no
+  // longer technically a UTM ...it's a TM (no 'U'niversal).
+  if (strcmp(buf,bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR))==0
+      && WGS84_DATUM != *datum) {
+     asfPrintWarning("Datum other than WGS84 specified with a UTM map projection,\n"
+                     "hence it is no longer technically a UTM projection. The datum\n"
+                     "specified is %s, so the map projection can now be viewed\n"
+                     "as \"%s Transverse Mercator\".\n",
+                     datum_toString(*datum), datum_toString(*datum));
   }
 
   fclose(fp);
