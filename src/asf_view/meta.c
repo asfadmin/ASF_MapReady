@@ -173,8 +173,8 @@ static char *
 find_in_bin(const char * filename)
 {
     char * ret = (char *) malloc(sizeof(char) *
-        (strlen(get_asf_bin_dir()) + strlen(filename) + 5));
-    sprintf(ret, "%s%c%s", get_asf_bin_dir(), DIR_SEPARATOR, filename);
+        (strlen(get_asf_bin_dir_win()) + strlen(filename) + 5));
+    sprintf(ret, "%s%c%s", get_asf_bin_dir_win(), DIR_SEPARATOR, filename);
     return ret;
 }
 
