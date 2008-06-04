@@ -1037,6 +1037,23 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         free(raw_file); free(RAW_file);
     }
 
+    // Check if the user said the file is L1, but we really have a L0 file
+    if (strcmp_case(cfg->import->format, "CEOS (1)") == 0) {
+        char *raw_file = appendExt(cfg->general->in_name, ".raw");
+        char *ldr_file = appendExt(cfg->general->in_name, ".ldr");
+        if (fileExists(raw_file) && fileExists(ldr_file))
+          asfPrintError("You selected CEOS Level 1 import, however the input "
+                        "file appears to be Level 0:\n  %s\n", raw_file);
+        free(raw_file); free(ldr_file);
+
+        char *RAW_file = appendExt(cfg->general->in_name, ".RAW");
+        char *LDR_file = appendExt(cfg->general->in_name, ".LDR");
+        if (fileExists(RAW_file) && fileExists(LDR_file))
+          asfPrintError("You selected CEOS Level 1 import, however the input "
+                        "file appears to be Level 0:\n  %s\n", RAW_file);
+        free(RAW_file); free(LDR_file);
+    }
+    
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
 

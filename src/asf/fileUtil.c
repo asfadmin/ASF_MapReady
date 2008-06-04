@@ -97,6 +97,8 @@ char *findExt(const char *name)
         strcmp_case(ext, ".CPX") == 0       ||
         strcmp_case(ext, ".KML") == 0       ||
         strcmp_case(ext, ".LUT") == 0       ||
+        strcmp_case(ext, ".IN") == 0        ||
+        strcmp_case(ext, ".LDR") == 0       ||
         strcmp_case(ext, ".RAW") == 0       ||
         strcmp_case(ext, ".000") == 0       ||
         strcmp_case(ext, ".AIRSAR") == 0    ||
