@@ -267,10 +267,15 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
             // so when this is false, zero out output for layover/shadow pixels
             in[x] = 0.0;
         }
+        else if (inMask[x] == MASK_INVALID_DATA)
+        {
+            // this is supposed to be edge effect stuff
+            in[x] = 0.0;
+        }
 
         // where we have no DEM data, set output to 0
         if (eq(grDEM[x],NO_DEM_DATA,.0001)) {
-          in[x] = 0.0;
+            in[x] = 0.0;
         }
     }
 }
