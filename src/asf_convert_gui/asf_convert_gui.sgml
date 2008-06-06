@@ -48,6 +48,21 @@
                     </para>
                 </listitem>
                 <listitem>
+                    <para>Polarimetry:</para>
+                    <para>
+                        Allows the user to select one of a few
+                        standard polarimetric decompositions to
+                        process quad-pol SLC (single-look complex)
+                        data.  Currently, this means ALOS/Palsar
+                        Level 1.1 data, though the Sinclair
+                        decomposition can be done with Palsar 1.5
+                        data.  Using a polarimetric decomposition
+                        is a technique used to visualize the great
+                        deal of information contained in quad-pol
+                        data with an RGB image.
+                    </para>
+                </listitem>
+                <listitem>
                     <para>Terrain Correction:</para>
                     <para>
                         Terrain correction processing allows geometric
@@ -166,7 +181,7 @@
             in the tabbed setup pages which appear in the graphical user
             interface.  In general, you will first want to select the list of
             processing steps that you would like to apply to your data
-            (import, terrain correction, geocoding, and exporting) by checking
+            (import, polarimetry, terrain correction, geocoding, and exporting) by checking
             the appropriate checkboxes on the General tab, then go to each
             individual tab to set up each individual processing step.  The graphical
             user interface will activate each tab which may require additional set
@@ -350,6 +365,31 @@
                 </para>
             </listitem>
         </orderedlist>
+    </chapter>
+    <chapter id="polarimetry-options">
+        <title>Polarimetry Tab Options</title>
+        <para>
+            MapReady 2.0 supports two polarimetric decompositions,
+            Pauli and Sinclair.  The Pauli decomposition only works
+            with quad-pol SLC (single-look complex) images.  (Only
+            ALOS/Palsar currently supplies such imagery, it is
+            Level 1.1 data.)  The Sinclair decomposition also requires
+            quad-pol imagery but can be done on non-complex (Level
+            1.5) data as well as SLC (Level 1.1) data.
+        </para>
+        <para>
+            When the Polarimetry tab is active, the Export tab's
+            RGB options changes to "Export RGB Image according to
+            Polarimetric selection".  This means that the RGB
+            channels in the final result are determined by the
+            polarimetric decomposition.  The channels and how
+            they are calculated from the input qual-pol data are
+            listed next to the radio button on the Polarimetry
+            tab.  For example, for Pauli the red channel is
+            calculated by subtracting the complex VV-band value 
+            from the complex HH-band value, and then determining
+            the magnitude of the resulting complex value.
+        </para>
     </chapter>
     <chapter id="dem">
         <title>Terrain Correction Tab Options</title>
@@ -903,6 +943,17 @@
                 </para>
             </listitem>
             <listitem>
+                <para>Export RGB Image according to Polarimetric
+                      selection:</para>
+                <para>
+                    This option is automatically activated when the
+                    "Polarimetry" checkbox in the "General" tab has
+                    been checked.  The assignment of band to RGB
+                    channels is determined by the selected
+                    Polarimetric decomposition.
+                </para>
+            </listitem>
+            <listitem>
                 <para>Export Multiple Bands in a Single RGB Image:</para>
 
                 <para>
@@ -915,9 +966,8 @@
                     non-selected bands are not exported.
                 </para>
                 <para>
-                    Radar and Optical data are separated.  If you have
-                    Radar data, your band options are HH, HV, VH, VV.
-                    For optical data, the bands are 1-4.
+                    The "User Defined" option allows you to specify
+                    which band is assigned to which color channel.
                 </para>
                 <para>
                     The True Color option exports the third band as
@@ -939,12 +989,6 @@
                     band.  This is different than if you choose "User
                     Defined" and select 4,3,2 -- in that case, the
                     2-sigma contrast expansion is not performed.
-                </para>
-                <para>
-                    If you are exporting full-pol (HH, HV, VH, VV) data, you
-                    also have the option of producing a color Sinclair Decomposition
-                    image (Red = VV amplitude, Green = HV + VH amplitudes,
-                    Blue = HH amplitude.)
                 </para>
             </listitem>
         </orderedlist>
