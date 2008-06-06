@@ -274,7 +274,7 @@ void asfPercentMeter(double inPercent)
     printLog(logbuf);
   }
 
-  /* Check if we should abort, 4 times during processing */
-  if (newPercent%25==0)
+  /* Check if we should abort, 10 times during processing */
+  if (newPercent%10==0)
     check_stop();
 }
