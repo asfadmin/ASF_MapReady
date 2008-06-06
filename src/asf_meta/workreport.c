@@ -52,7 +52,7 @@ int get_alos_delta_time (const char *fileName, double *delta)
   struct dataset_sum_rec dssr;
   hms_time dssr_time, summary_time, start_time, end_time;
   ymd_date dssr_date, summary_date, start_date, end_date;
-  char *summaryFile, line[512], dateStr[30], *str;
+  char line[512], dateStr[30], *str;
 
   get_dssr(fileName, &dssr);
   date_dssr2date(dssr.inp_sctim, &dssr_date, &dssr_time);
@@ -78,7 +78,6 @@ int get_alos_delta_time (const char *fileName, double *delta)
                         dssr.inp_sctim, dateStr);
         *delta = 0;
         FCLOSE(fp);
-        FREE(summaryFile);
         return 0;
       }
     }
@@ -97,7 +96,6 @@ int get_alos_delta_time (const char *fileName, double *delta)
   }
 
   *delta = date_difference(&start_date, &start_time, &end_date, &end_time);
-  FREE(summaryFile);
   FCLOSE(fp);
   return 1;
 }
