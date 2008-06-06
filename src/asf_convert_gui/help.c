@@ -73,7 +73,7 @@ on_help_button_clicked(GtkWidget *widget)
             strcat(hh, escaped_share_dir);
             strcat(hh, "/mapready.chm");
             FREE(escaped_share_dir);
-            ret = system(hh);
+            ret = asfSystem(hh);
             if (ret != -1) exit(0);
         }
 
