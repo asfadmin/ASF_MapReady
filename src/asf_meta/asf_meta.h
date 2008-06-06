@@ -473,6 +473,7 @@ void proj2meta(struct DDR *ddr, meta_parameters *meta);
 meta_general *meta_general_init(void);
 meta_sar *meta_sar_init(void);
 meta_optical *meta_optical_init(void);
+meta_thermal *meta_thermal_init(void);
 meta_projection *meta_projection_init(void);
 meta_transform *meta_transform_init(void);
 meta_airsar *meta_airsar_init(void);

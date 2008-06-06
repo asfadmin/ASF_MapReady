@@ -117,9 +117,9 @@ meta_sar *meta_sar_init(void)
 }
 
 /********************************************************
- * meta_sar_init():
+ * meta_optical_init():
  * Allocate memory for and initialize elements of a meta
- * sar structure */
+ * optical structure */
 meta_optical *meta_optical_init(void)
 {
   meta_optical *optical = (meta_optical *)MALLOC(sizeof(meta_optical));
@@ -131,6 +131,21 @@ meta_optical *meta_optical_init(void)
   optical->sun_elevation_angle = MAGIC_UNSET_DOUBLE;
 
   return optical;
+}
+
+/********************************************************
+ * meta_thermal_init():
+ * Allocate memory for and initialize elements of a meta
+ * thermal structure */
+meta_thermal *meta_thermal_init(void)
+{
+  meta_thermal *thermal = (meta_thermal *)MALLOC(sizeof(meta_thermal));
+
+  /* Fill with ludicrous values.  */
+  thermal->band_gain = MAGIC_UNSET_DOUBLE;
+  thermal->band_gain_change = MAGIC_UNSET_DOUBLE;
+
+  return thermal;
 }
 
 /********************************************************
