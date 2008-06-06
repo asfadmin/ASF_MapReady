@@ -82,7 +82,7 @@ int meta_is_new_style(const char *file_name)
 #define MAX_METADATA_LINE 1024
  /* Version where new metadata was adopted.  */
 #define NEW_FORMAT_VERSION 1.0
-  int return_value;   /* Value to be returned.  */
+  int return_value = FALSE;   /* Value to be returned.  */
   char *meta_name = appendExt(file_name, ".meta");
   FILE *meta_file = FOPEN(meta_name, "r");
   char              line[MAX_METADATA_LINE]; /* Metadata line.  */
@@ -109,11 +109,11 @@ int meta_is_new_style(const char *file_name)
         err_die ("%s function: error parsing Meta vesion field\n",
               "meta_is_new_style");
     }
+    // If the given version is greater than or equal to our latest meta
+    // version then we've got a new style meta file... 
     if ( strtod(version_string, &end_ptr)
-        < NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare.  */ ) {
-      return_value = 0;
-    } else {
-      return_value = 1;
+         >= NEW_FORMAT_VERSION - 0.0002 /* <-- for sloppy float compare */ ) {
+      return_value = TRUE;
     }
 
     FCLOSE(meta_file);            /* Done using meta file directly.  */

@@ -47,6 +47,7 @@ int slantRange2groundPixel(meta_parameters *meta,double slant)
 //        printf("GP = (%f-%f) / %f = %i\n",GrX,Gr0,meta->general->x_pixel_size,groundPixel);
     }
     else {
+        groundPixel=0;    // just to quiet the compiler warning
         asfPrintError("Cannot convert slant range to ground range without a valid perX size.\n");
     }
 
