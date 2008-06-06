@@ -444,8 +444,11 @@ FILE *fopenImage(const char *fName,const char *access)
 }
 
 
+// had to reduce the buffer size even further, getting crashes with
+// the 1mb buffer on Windows Vista
 //#define BUFFER_SIZE 16777216 /* 16 megabyte buffer */
-#define BUFFER_SIZE 1048576 /* 1 megabyte buffer */
+//#define BUFFER_SIZE 1048576 /* 1 megabyte buffer */
+#define BUFFER_SIZE 262144 /* 250k buffer */
 /******************************************************************************
  * fileCopy:
  * Copy the file specified by "src" to the file specified by "dst". Error
