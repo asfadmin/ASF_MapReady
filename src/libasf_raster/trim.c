@@ -39,15 +39,19 @@ int trim(char *infile, char *outfile,
   metaOut->general->sample_count = sizeX;
   if (metaOut->sar) {
     if (!meta_is_valid_double(metaOut->sar->line_increment))
-      metaOut->sar->line_increment = 1;
+        metaOut->sar->line_increment = 1;
     if (!meta_is_valid_double(metaOut->sar->sample_increment))
-      metaOut->sar->sample_increment = 1;
-    metaOut->general->start_line += startY * metaOut->sar->line_increment;
-    metaOut->general->start_sample += startX * metaOut->sar->sample_increment;
+        metaOut->sar->sample_increment = 1;
+    metaOut->general->start_line += startY *
+        metaOut->sar->line_increment * metaOut->general->line_scaling;
+    metaOut->general->start_sample += startX *
+         metaOut->sar->sample_increment * metaOut->general->sample_scaling;
   }
   else {
-    metaOut->general->start_line += startY;
-    metaOut->general->start_sample += startX;
+    metaOut->general->start_line +=
+        startY * metaOut->general->line_scaling;
+    metaOut->general->start_sample +=
+        startX * metaOut->general->sample_scaling;
   }
 
   /* Some sort of conditional on the validity of the corner coordinates would 

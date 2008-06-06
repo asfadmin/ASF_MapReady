@@ -87,10 +87,10 @@ int meta_get_latLon(meta_parameters *meta,
   else if (meta->airsar) {
     double l = yLine, s = xSample;
     if (meta->sar) {
-      l = (double)meta->sar->original_line_count/
-          (double)meta->general->line_count * yLine;
-      s = (double)meta->sar->original_sample_count/
-          (double)meta->general->sample_count * xSample;
+          l = meta->general->start_line +
+                  meta->general->line_scaling * yLine;
+          s = meta->general->start_sample +
+                  meta->general->sample_scaling * xSample;
     }
     airsar_to_latlon(meta, s, l, elev, lat, lon);
     return 0;
@@ -99,10 +99,10 @@ int meta_get_latLon(meta_parameters *meta,
       /* ALOS data (not projected) -- use transform block */
       double l = yLine, s = xSample;
       if (meta->sar) {
-          l = (double)meta->sar->original_line_count/
-              (double)meta->general->line_count * yLine;
-          s = (double)meta->sar->original_sample_count/
-              (double)meta->general->sample_count * xSample;
+          l = meta->general->start_line +
+                  meta->general->line_scaling * yLine;
+          s = meta->general->start_sample +
+                  meta->general->sample_scaling * xSample;
       }
       alos_to_latlon(meta, s, l, elev, lat, lon, &hgt);
       return 0;

@@ -55,6 +55,8 @@ meta_general *meta_general_init(void)
   general->sample_count = MAGIC_UNSET_INT;
   general->start_line = MAGIC_UNSET_INT;
   general->start_sample = MAGIC_UNSET_INT;
+  general->line_scaling = 1;
+  general->sample_scaling = 1;
   general->x_pixel_size = MAGIC_UNSET_DOUBLE;
   general->y_pixel_size = MAGIC_UNSET_DOUBLE;
   general->center_latitude = MAGIC_UNSET_DOUBLE;

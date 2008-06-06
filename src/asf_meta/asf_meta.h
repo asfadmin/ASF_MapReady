@@ -177,6 +177,8 @@ typedef struct {
   int sample_count;          /* Number of samples in image.                */
   int start_line;            /* First line relative to original image.     */
   int start_sample;          /* First sample relative to original image.   */
+  double line_scaling;       /* Scale relative to original image           */
+  double sample_scaling;     /* Scale relative to original image           */
   double x_pixel_size;       /* Range pixel size, in meters                */
   double y_pixel_size;       /* Azimuth pixel size, in meters              */
   double center_latitude;    /* Approximate image center latitude.         */

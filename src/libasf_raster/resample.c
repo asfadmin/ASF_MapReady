@@ -159,6 +159,8 @@ resample_impl(const char *infile, const char *outfile,
       /* Write output metadata file */
       metaOut->general->x_pixel_size = xpixsiz;
       metaOut->general->y_pixel_size = ypixsiz;
+      metaOut->general->line_scaling /= yscalfact;
+      metaOut->general->sample_scaling /= xscalfact;
       if (metaOut->sar) {
         metaOut->sar->range_time_per_pixel /= xscalfact;
         metaOut->sar->azimuth_time_per_pixel /= yscalfact;

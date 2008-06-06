@@ -452,6 +452,10 @@ void fill_structure_field(char *field_name, void *valp)
       { MGENERAL->start_line = VALP_AS_INT; return; }
     if ( !strcmp(field_name, "start_sample") )
       { MGENERAL->start_sample = VALP_AS_INT; return; }
+    if ( !strcmp(field_name, "line_scaling") )
+      { MGENERAL->line_scaling = VALP_AS_DOUBLE; return; }
+    if ( !strcmp(field_name, "sample_scaling") )
+      { MGENERAL->sample_scaling = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "x_pixel_size") )
       { MGENERAL->x_pixel_size = VALP_AS_DOUBLE; return; }
     if ( !strcmp(field_name, "y_pixel_size") )
