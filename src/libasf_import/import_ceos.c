@@ -1788,9 +1788,17 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       // the phase is out_band+1.
       // exception: if -amp0 flag was used, the first band is amplitude
       // only (no phase), so we have to subtract one to account for this
-      int out_band = import_single_band ? 0 : (band-1)*2;
-      if (amp0_flag && out_band > 0)
-        --out_band;
+      // exception2: for sigma, etc, output, don't have 2 bands per input
+      int out_band;
+
+      if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
+        out_band = import_single_band ? 0 : band-1;
+      }
+      else {
+        out_band = import_single_band ? 0 : (band-1)*2;
+        if (amp0_flag && out_band > 0)
+          --out_band;
+      }
 
       if (multilook_flag) {
         if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
