@@ -25,7 +25,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
-                      int multilook_flag, char *lutName,
+                      int multilook_flag, char *lutName, int amp0_flag,
                       int apply_ers2_gain_fix_flag);
 
 void import_ceos_int_slant_range_amp(char *inDataName, char *inMetaName,
@@ -404,7 +404,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
                            outMetaName, bandExt, band, nBands, nBandsOut, rad,
                            line, sample, width, height,
                            import_single_band, complex_flag, multilook_flag,
-                           lutName, apply_ers2_gain_fix);
+                           lutName, amp0_flag, apply_ers2_gain_fix);
         }
         else {
           import_ceos_int_slant_range_amp(inBandName[index], inMetaName[0],
@@ -417,7 +417,7 @@ void import_ceos(char *inBaseName, char *outBaseName,
                          outMetaName, bandExt, band, nBands, nBandsOut, rad,
                          line, sample, width, height,
                          import_single_band, complex_flag, multilook_flag,
-                         lutName, apply_ers2_gain_fix);
+                         lutName, amp0_flag, apply_ers2_gain_fix);
       }
     }
     if (meta) {
@@ -1241,7 +1241,7 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
               int nBandsOut, radiometry_t radiometry,
                       int line, int sample, int width, int height,
                       int import_single_band, int complex_flag,
-                      int multilook_flag, char *lutName,
+                      int multilook_flag, char *lutName, int amp0_flag,
                       int apply_ers2_gain_fix_flag)
 {
   FILE *fpIn=NULL;
@@ -1358,10 +1358,6 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             "file.");
     cal_param->radiometry = radiometry;
   }
-
-  // If multilook flag is true but data is already multilooked, turn off flag
-  if (multilook_flag && meta->sar && meta->sar->multilook)
-    multilook_flag = FALSE;
 
   // Give user status on input and output data type
   status_data_type(meta, data_type, radiometry, complex_flag, multilook_flag);
@@ -1536,16 +1532,21 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
 
   // Set metadata for multilooking
   if (meta->sar) {
+    if (data_type >= COMPLEX_BYTE)
+      meta->sar->multilook = 0;
+    else
+      meta->sar->multilook = 1;
+
+    // If multilook flag is true but data is already multilooked, turn off flag
+    if (multilook_flag && meta->sar && meta->sar->multilook)
+      multilook_flag = FALSE;
+
     if (multilook_flag) {
       meta->general->line_count = (int)((float)nl / (float)nLooks + 0.99);
       meta->general->y_pixel_size *= nLooks;
       meta->sar->azimuth_time_per_pixel *= nLooks;
       meta->sar->multilook = 1;
     }
-    else if (data_type >= COMPLEX_BYTE)
-      meta->sar->multilook = 0;
-    else
-      meta->sar->multilook = 1;
   }
 
   // Check whether image needs to be flipped
@@ -1717,8 +1718,16 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           
           if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
             fValue = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
-            amp_float_buf[ll*ns + kk] =
-              get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+            if (multilook_flag) {
+              // put calibrated value in the real part, leave imaginary
+              // part 0, so the multilooking will work -- kludge
+              cpx_float_ml_buf[ll*ns + kk].real =
+                get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
+              cpx_float_ml_buf[ll*ns + kk].imag = 0;
+            }
+            else
+              amp_float_buf[ll*ns + kk] =
+                get_cal_dn(cal_param, ii+ll, kk, fValue, db_flag);
           }
           else if (complex_flag)
             cpxFloat_buf[ll*ns + kk] = cpx;
@@ -1777,7 +1786,12 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
       // unless we are outputting as complex, we are actually outputting
       // two bands -- "out_band" is the first of the two (the amplitude),
       // the phase is out_band+1.
+      // exception: if -amp0 flag was used, the first band is amplitude
+      // only (no phase), so we have to subtract one to account for this
       int out_band = import_single_band ? 0 : (band-1)*2;
+      if (amp0_flag && out_band > 0)
+        --out_band;
+
       if (multilook_flag) {
         if (radiometry >= r_SIGMA && radiometry <= r_GAMMA_DB) {
           put_band_float_line(fpOut, meta, out_band, out, amp_float_buf);
@@ -1785,7 +1799,8 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
         }
         else {
           put_band_float_line(fpOut, meta, out_band+0, out, amp_float_buf);
-          put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
+          if (!(amp0_flag && out_band==0))
+            put_band_float_line(fpOut, meta, out_band+1, out, phase_float_buf);
           out++;
         }
       }
@@ -1800,8 +1815,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
           else {
             put_band_float_line(fpOut, meta, out_band+0, ii+mm,
                                 amp_float_buf+mm*ns);
-            put_band_float_line(fpOut, meta, out_band+1, ii+mm,
-                                phase_float_buf+mm*ns);
+            if (!(amp0_flag && out_band==0))
+              put_band_float_line(fpOut, meta, out_band+1, ii+mm,
+                                  phase_float_buf+mm*ns);
           }
         }
       }
