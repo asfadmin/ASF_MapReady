@@ -32,54 +32,70 @@ char * escapify(const char * s)
     return ret;
 }
 
+#ifdef win32
+static void help_viewer_thread(GString *hh, gpointer user_data)
+{
+    asfSystem(hh->str);
+    g_string_free(hh, TRUE);
+}
+#endif
+
 SIGNAL_CALLBACK void
 on_help_button_clicked(GtkWidget *widget)
 {
 #ifdef win32
-    if (fork() == 0)
-    {
-        char hh[1024];
-        int ret;
+    char hh[1024];
 
-        // First method, get location of help viewer from the standard registry location
-        get_string_from_registry_ex("SOFTWARE\\Classes\\chm.file\\shell\\open\\command", "", hh);
+    // First method, get location of help viewer from the standard registry location
+    get_string_from_registry_ex("SOFTWARE\\Classes\\chm.file\\shell\\open\\command", "", hh);
 
-        if (strlen(hh) > 0) {
-            char *p = strstr(hh, "%1");
-            if (p) *p = '\0';
+    if (strlen(hh) > 0) {
+        char *p = strstr(hh, "%1");
+        if (p) *p = '\0';
 
-            char * escaped_share_dir = escapify(get_asf_share_dir());
-            strcat(hh, escaped_share_dir);
-            strcat(hh, "/mapready.chm");
-            FREE(escaped_share_dir);
-            ret = asfSystem(hh);
-            if (ret != -1) exit(0);
-        }
+        char * escaped_share_dir = escapify(get_asf_share_dir());
+        strcat(hh, escaped_share_dir);
+        strcat(hh, "/mapready.chm");
+        FREE(escaped_share_dir);
+    }
 
-        // Failed to find location of hh.exe through registry... try the system directory
-        char *sr = getenv("SYSTEMROOT");
-        if (strlen(sr) > 0) {
-            int i, j = 0;
-            for (i = 0; i < strlen(sr); ++i) {
-                switch(sr[i]) {
-                    case '\\': hh[j] = '\\'; hh[j+1] = '\\'; ++j; break;
-                    default:   hh[j] = sr[i]; break;
-                }
-                ++j;
+    // Failed to find location of hh.exe through registry... try the system directory
+    char *sr = getenv("SYSTEMROOT");
+    if (strlen(sr) > 0) {
+        int i, j = 0;
+        for (i = 0; i < strlen(sr); ++i) {
+            switch(sr[i]) {
+                case '\\': hh[j] = '\\'; hh[j+1] = '\\'; ++j; break;
+                default:   hh[j] = sr[i]; break;
             }
-            hh[j] = '\0';
-            strcat(hh, "/hh.exe ");
-            char * escaped_share_dir = escapify(get_asf_share_dir());
-            strcat(hh, escaped_share_dir);
-            strcat(hh, "/mapready.chm");
-            FREE(escaped_share_dir);
-            ret = asfSystem(hh);
-            if (ret != -1) exit(0);
+            ++j;
+        }
+        hh[j] = '\0';
+        strcat(hh, "/hh.exe ");
+        char * escaped_share_dir = escapify(get_asf_share_dir());
+        strcat(hh, escaped_share_dir);
+        strcat(hh, "/mapready.chm");
+        FREE(escaped_share_dir);
+    }
+
+    if (strlen(hh)>0) {
+        static GThreadPool *ttp = NULL;
+        GError *err = NULL;
+
+        if (!ttp)
+        {
+            if (!g_thread_supported ()) g_thread_init (NULL);
+            ttp = g_thread_pool_new ((GFunc)help_viewer_thread, NULL,
+                                     4, TRUE, &err);
+            g_assert(!err);
         }
 
+        g_thread_pool_push (ttp, g_string_new (hh), &err);
+        g_assert(!err);
+    }
+    else {
         // Failed, give up.
         message_box("Couldn't find the help viewer!");
-        exit(0);
     }
 #else
     GtkWidget *help_dialog;
