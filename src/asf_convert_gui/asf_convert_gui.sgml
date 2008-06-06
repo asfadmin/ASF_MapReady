@@ -333,6 +333,22 @@
                     are logarithmically scaled).
                 </para>
             </listitem>
+            <listitem>
+                <para>Apply ERS Gain Correction</para>
+                <para>
+                    The ERS2 satellite has a known gain loss
+                    problem that MapReady will attempt to correct by
+                    applying a scale correction factor uniformly
+                    to all pixels in the image.  The correction is
+                    dependent on the date, and is only applied to
+                    calibrated data (i.e., everything but
+                    amplitude)
+                </para>
+                <para>
+                    For more information, see section 4 of:
+                    http://www.asf.alaska.edu/reference/dq/Envisat_symp_ers2_performance.pdf
+                </para>
+            </listitem>
         </orderedlist>
     </chapter>
     <chapter id="dem">
