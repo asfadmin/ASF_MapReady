@@ -816,13 +816,13 @@ handle_view_output()
             show_image_with_asf_view(tmp_out);
           
           // some SLC possibilities
-          else if (try_suffix(out_name, "_HH-AMP", &tmp_out))
+          else if (try_suffix(out_name, "_AMP-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_VV-AMP", &tmp_out))
+          else if (try_suffix(out_name, "_AMP-VV", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_VH-AMP", &tmp_out))
+          else if (try_suffix(out_name, "_AMP-VH", &tmp_out))
             show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_HV-AMP", &tmp_out))
+          else if (try_suffix(out_name, "_AMP-HV", &tmp_out))
             show_image_with_asf_view(tmp_out);
           else if (try_suffix(out_name, "_SIGMA-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
