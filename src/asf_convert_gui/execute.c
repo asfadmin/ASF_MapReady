@@ -319,6 +319,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
     FILE *output;
     char *logFile = appendExt(cfg_file, ".log");
 
+    gtk_list_store_set(list_store, iter, COL_STATUS, "Processing...", -1);
+
 #ifdef win32
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
