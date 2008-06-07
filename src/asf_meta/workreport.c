@@ -16,7 +16,6 @@ FILE *fopen_workreport(const char *fileName)
 
   // first attempt: basename.txt
   FILE *fp;
-  //printf("filename: %s\n", workreport_filename);
   if (!fileExists(workreport_filename)) {
     // second attempt: path/'workreport'
     FREE(workreport_filename);
@@ -27,19 +26,39 @@ FILE *fopen_workreport(const char *fileName)
       sprintf(workreport_filename, "%s/workreport", path);
     else
       strcpy(workreport_filename, "workreport");
-    FREE(path);
 
-    //printf("filename2: %s\n", workreport_filename);
     if (!fileExists(workreport_filename)) {
-      // failed!
-      fp = NULL;
+
+      // third attempt: path/'summary.txt'
+      if (strlen(path) > 0)
+        sprintf(workreport_filename, "%s/summary.txt", path);
+      else
+        strcpy(workreport_filename, "summary.txt");
+
+      if (!fileExists(workreport_filename)) {
+        // failed!
+        fp = NULL;
+      }
+      else {
+        // success with 'summary.txt'
+        asfPrintStatus("workreport file found as: summary.txt\n");
+        fp = FOPEN(workreport_filename, "r");
+      }
     }
     else {
+      // success with 'workreport'
+      asfPrintStatus("workreport file found as: workreport\n");
       fp = FOPEN(workreport_filename, "r");
     }
+
+    FREE(path);
   }
   else {
+    // success with 'basename.txt'
+    char *basename = get_basename(workreport_filename);
+    asfPrintStatus("workreport file found as: %s\n", basename);
     fp = FOPEN(workreport_filename, "r");
+    FREE(basename);
   }
 
   FREE(workreport_filename);
