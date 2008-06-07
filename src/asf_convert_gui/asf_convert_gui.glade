@@ -739,7 +739,7 @@
 				  <child>
 				    <widget class="GtkOptionMenu" id="input_data_type_combobox">
 				      <property name="visible">True</property>
-				      <property name="tooltip" translatable="yes">Radiometry setting for the image (if applicable.)  If you are planning to apply terrain correction, it is a good idea to select &quot;output DB&quot; when using sigma, beta or gamma.</property>
+				      <property name="tooltip" translatable="yes">Radiometry setting for the image (if applicable).</property>
 				      <property name="can_focus">True</property>
 				      <property name="history">0</property>
 				      <signal name="changed" handler="on_input_data_type_combobox_changed" last_modification_time="Mon, 12 May 2008 18:40:56 GMT"/>
@@ -812,7 +812,7 @@
 				<widget class="GtkCheckButton" id="checkbutton_db">
 				  <property name="border_width">1</property>
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Output calibrated image in decibels. This can only be used if Sigma, Beta, or Gamma radiometry is selected from the drop-down list.  Scaling output to decibels is recommended when performing terrain correction</property>
+				  <property name="tooltip" translatable="yes">Output calibrated image in decibels. This can only be used if Sigma, Beta, or Gamma radiometry is selected from the drop-down list.</property>
 				  <property name="can_focus">True</property>
 				  <property name="relief">GTK_RELIEF_NORMAL</property>
 				  <property name="focus_on_click">True</property>
@@ -1637,7 +1637,7 @@
 					    <widget class="GtkEntry" id="dem_entry">
 					      <property name="width_request">370</property>
 					      <property name="visible">True</property>
-					      <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).  The DEM should be projected, and use meters as the horizontal and vertical unit.</property>
+					      <property name="tooltip" translatable="yes">The DEM (Digital Elevation Model) file that contains the scene(s).  The DEM should be projected (the lat/lon pseudoprojection is supported) and use meters as the horizontal and vertical unit.</property>
 					      <property name="can_focus">True</property>
 					      <property name="editable">True</property>
 					      <property name="visibility">True</property>
@@ -2035,6 +2035,7 @@
 						  <child>
 						    <widget class="GtkCheckButton" id="tc_pixel_size_checkbutton">
 						      <property name="visible">True</property>
+ 						      <property name="tooltip" translatable="yes">This is different than the pixel size specified on the Geocode tab, in that there you are specifying the size of the final output, but here you're looking for a good pixel size to maximize the success of the terrain correction calculations.  A pixel size of half that of the DEM is common.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">Specify Pixel Size:  </property>
 						      <property name="use_underline">True</property>
@@ -2068,7 +2069,7 @@
 							    <widget class="GtkEntry" id="tc_pixel_size_entry">
 							      <property name="width_request">80</property>
 							      <property name="visible">True</property>
-							      <property name="tooltip" translatable="yes">Pixel size of the resulting terrain corrected product.  It should not </property>
+							      <property name="tooltip" translatable="yes">Pixel size of the resulting terrain corrected product.  Generally, it should not differ significantly from the pixel size of the DEM.</property>
 							      <property name="can_focus">True</property>
 							      <property name="editable">True</property>
 							      <property name="visibility">True</property>
