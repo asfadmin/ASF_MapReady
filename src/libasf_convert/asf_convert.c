@@ -1510,6 +1510,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         meta_free(meta);
       }
     }
+    else {
+      // skipping import ==> "outFile" (what import should have produced)
+      // is really just the original input file (already ASF Internal)
+      strcpy(outFile, cfg->general->in_name);
+    }
 
     if (cfg->general->sar_processing) {
       if (is_airsar)
@@ -1867,7 +1872,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       if (!is_airsar)
       {
         // Do normal export
-        update_status("Exporting...");
+        update_status("Exporting... ");
         do_export(cfg, inFile, outFile);
       }
       else
