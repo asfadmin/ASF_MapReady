@@ -87,6 +87,8 @@ void parse_refTime(const char *refTime, julian_date *julDay, hms_time *time);
 /*Extract date from the metadata-style given string: DD-MMM-YYYY, hh:mm:ss */
 void parse_DMYdate(const char *inStr,ymd_date *date,hms_time *time);
 
+/*Returns the current time & date*/
+void get_current_date(ymd_date *date, hms_time *time);
 
 /************************************************
      Date/Time mathematical routines:

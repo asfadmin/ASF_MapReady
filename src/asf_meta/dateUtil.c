@@ -280,6 +280,23 @@ void parse_DMYdate(const char *inStr,ymd_date *date,hms_time *time)
 #undef subStr
 }
 
+void get_current_date(ymd_date *ymd_date, hms_time *hms_time)
+{
+  time_t rawtime;
+  struct tm *timeinfo;
+
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+
+  ymd_date->year = timeinfo->tm_year+1900;
+  ymd_date->month = timeinfo->tm_mon+1;
+  ymd_date->day = timeinfo->tm_mday;
+
+  hms_time->hour = timeinfo->tm_hour;
+  hms_time->min = timeinfo->tm_min;
+  hms_time->sec = timeinfo->tm_sec;
+}
+
 /************************************************************
    Date/Time Mathematical Routines
  ***********************************************************/

@@ -13,6 +13,7 @@
 #include "ardop_defs.h"
 #include "get_ceos_names.h"
 #include "get_stf_names.h"
+#include "dateUtil.h"
 #include <ctype.h>
 #include <string.h>
 #include <sys/types.h> /* 'DIR' structure (for opendir) */
@@ -1012,6 +1013,15 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       set_status_file(cfg->general->status_file);
 
     update_status("Processing...");
+
+    // these are so we can tell how long processing took
+    ymd_date start_date;
+    hms_time start_time;
+    get_current_date(&start_date, &start_time);
+
+    char tmp[64];
+    date_printTime(&start_time,1,':',tmp);
+    asfPrintStatus("Starting at: %s\n", tmp);
 
     split_dir_and_file(cfg->general->out_name, out_dir, junk);
     create_and_set_tmp_dir(cfg->general->in_name, out_dir,
@@ -2319,11 +2329,52 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         remove_dir(cfg->general->tmp_dir);
     }
 
+    // figure out how long the processing took, tell the user all about it
+    ymd_date end_date;
+    hms_time end_time;
+    get_current_date(&end_date, &end_time);
+    double elapsed = date_difference(&end_date, &end_time,
+                                     &start_date, &start_time);
+
+    date_printTime(&end_time,1,':',tmp);
+    asfPrintStatus("Done at: %s\n", tmp);
+
+    if (elapsed < 60) {
+      asfPrintStatus("Elapsed time: %d seconds.\n", (int)elapsed);
+    }
+    else if (elapsed < 60*60) {
+      int min = elapsed/60;
+      int sec = elapsed-min*60;
+      asfPrintStatus("Elapsed time: %d minute%s, %d second%s.\n",
+                     min, min==1?"":"s", sec, sec==1?"":"s");
+    }
+    else if (elapsed < 60*60*24) {
+      int hour = elapsed/(60*60);
+      double rem = elapsed-hour*60*60;
+      int min = rem/60;
+      int sec = rem-min*60;
+      asfPrintStatus("Elapsed time: %d hour%s, %d minute%s, %d second%s.\n",
+                     hour, hour==1?"":"s", min, min==1?"":"s",
+                     sec, sec==1?"":"s");
+    }
+    else {
+      int day = elapsed/(60*60*24);
+      double rem = elapsed-day*60*60*24;
+      int hour = rem/(60*60);
+      rem -= hour*60*60;
+      int min = rem/60;
+      int sec = rem-min*60;
+      asfPrintStatus("Elapsed time: %d day%s, %d hour%s, %d minute%s, "
+                     "%d second%s.\n",
+                     day, day==1?"":"s", hour, hour==1?"":"s",
+                     min, min==1?"":"s", sec, sec==1?"":"s");
+    }
+
     // Don't change this message unless you also change the code in
     // asf_convert_gui/execute.c to look for a different successful
     // completion string.  GUI currently detects successful processing
     // by looking for this message in the log file.... (yeah, I know.)
-    asfPrintStatus("Successful completion!\n\n");
+    asfPrintStatus("\nSuccessful completion!\n\n");
   }
 
   update_status("Done");
