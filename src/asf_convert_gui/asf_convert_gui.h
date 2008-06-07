@@ -44,11 +44,11 @@ enum InputFormat
     INPUT_FORMAT_CEOS_LEVEL1 = 1,
     INPUT_FORMAT_STF = 2,
     INPUT_FORMAT_GEOTIFF = 3,
-    INPUT_FORMAT_COMPLEX = 4,
-    INPUT_FORMAT_ASF_INTERNAL = 5,
-    INPUT_FORMAT_AIRSAR = 6,
-    INPUT_FORMAT_ESRI = 7, // not implemented
-    INPUT_FORMAT_ENVI = 8  // not implemented
+    //INPUT_FORMAT_COMPLEX
+    INPUT_FORMAT_ASF_INTERNAL = 4,
+    INPUT_FORMAT_AIRSAR = 5,
+    INPUT_FORMAT_ESRI = 6, // not implemented
+    INPUT_FORMAT_ENVI = 7  // not implemented
 };
 
 enum InputType

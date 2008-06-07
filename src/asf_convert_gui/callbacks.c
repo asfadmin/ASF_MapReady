@@ -87,12 +87,12 @@ input_data_format_combobox_changed()
             show_process_to_level1_checkbutton = FALSE;
             show_airsar_checkbuttons = FALSE;
             break;
-        case INPUT_FORMAT_COMPLEX:
-            show_data_type_combobox = FALSE;
-            show_latitude_spinbuttons = FALSE;
-            show_process_to_level1_checkbutton = FALSE;
-            show_airsar_checkbuttons = FALSE;
-            break;
+        //case INPUT_FORMAT_COMPLEX:
+            //show_data_type_combobox = FALSE;
+            //show_latitude_spinbuttons = FALSE;
+            //show_process_to_level1_checkbutton = FALSE;
+            //show_airsar_checkbuttons = FALSE;
+            //break;
         case INPUT_FORMAT_CEOS_LEVEL0:
             show_data_type_combobox = FALSE;
             show_latitude_spinbuttons = FALSE;
@@ -410,12 +410,12 @@ on_stf_activate(GtkWidget *widget)
     update_summary();
 }
 
-SIGNAL_CALLBACK void
-on_complex_activate(GtkWidget *widget)
-{
-    input_data_format_combobox_changed();
-    update_summary();
-}
+//SIGNAL_CALLBACK void
+//on_complex_activate(GtkWidget *widget)
+//{
+//    input_data_format_combobox_changed();
+//    update_summary();
+//}
 
 SIGNAL_CALLBACK void
 on_geotiff_input_activate(GtkWidget *widget)

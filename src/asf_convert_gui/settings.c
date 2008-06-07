@@ -89,9 +89,9 @@ settings_apply_to_gui(const Settings * s)
       case INPUT_FORMAT_GEOTIFF:
         set_combo_box_item(input_data_format_combobox, 3);
         break;
-      case INPUT_FORMAT_COMPLEX:
-        set_combo_box_item(input_data_format_combobox, 4);
-        break;
+      //case INPUT_FORMAT_COMPLEX:
+        //set_combo_box_item(input_data_format_combobox, 4);
+        //break;
       case INPUT_FORMAT_ESRI:
         // Caution: Not implemented in the GUI
         set_combo_box_item(input_data_format_combobox, 5);
@@ -504,13 +504,13 @@ settings_get_from_gui()
       case 3:
         ret->input_data_format = INPUT_FORMAT_GEOTIFF;
         break;
+      //case 4:
+        //ret->input_data_format = INPUT_FORMAT_COMPLEX;
+        //break;
       case 4:
-        ret->input_data_format = INPUT_FORMAT_COMPLEX;
-        break;
-      case 5:
         ret->input_data_format = INPUT_FORMAT_ASF_INTERNAL;
         break;
-      case 6:
+      case 5:
         ret->input_data_format = INPUT_FORMAT_AIRSAR;
         ret->airsar_p_pol = get_checked("airsar_p_pol_checkbutton");
         ret->airsar_l_pol = get_checked("airsar_l_pol_checkbutton");
@@ -518,11 +518,11 @@ settings_get_from_gui()
         ret->airsar_c_vv = get_checked("airsar_c_vv_checkbutton");
         ret->airsar_l_vv = get_checked("airsar_l_vv_checkbutton");
         break;
-      case 7:
+      case 6:
         // Caution: Not implemented in the GUI
         ret->input_data_format = INPUT_FORMAT_ENVI;
         break;
-      case 8:
+      case 7:
         // Caution: Not implemented in the GUI
         ret->input_data_format = INPUT_FORMAT_ESRI;
         break;
@@ -960,9 +960,9 @@ settings_get_input_data_format_string(const Settings *s)
         format_arg_to_import = "envi";
         break;
 
-    case INPUT_FORMAT_COMPLEX:
-        format_arg_to_import = "ceos";  /* FIXME: is this correct? */
-        break;
+    //case INPUT_FORMAT_COMPLEX:
+        //format_arg_to_import = "ceos";
+        //break;
 
     case INPUT_FORMAT_ASF_INTERNAL:
         format_arg_to_import = "asf";
@@ -1131,9 +1131,9 @@ settings_get_output_format_extension(const Settings *s)
         }
         break;
 
-    case INPUT_FORMAT_COMPLEX:
-        out_extension = "cpx";
-        break;
+    //case INPUT_FORMAT_COMPLEX:
+        //out_extension = "cpx";
+        //break;
 
     case INPUT_FORMAT_STF:
         out_extension = "raw";

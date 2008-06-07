@@ -105,10 +105,10 @@ static void create_file_chooser_dialog()
     gtk_file_filter_add_pattern(geotiff_filt, "*.tif");
     gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), geotiff_filt);
 
-    GtkFileFilter *cpx_filt = gtk_file_filter_new();
-    gtk_file_filter_set_name(cpx_filt, "Complex Files (*.cpx)");
-    gtk_file_filter_add_pattern(cpx_filt, "*.cpx");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), cpx_filt);
+    //GtkFileFilter *cpx_filt = gtk_file_filter_new();
+    //gtk_file_filter_set_name(cpx_filt, "Complex Files (*.cpx)");
+    //gtk_file_filter_add_pattern(cpx_filt, "*.cpx");
+    //gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(browse_widget), cpx_filt);
 
     GtkFileFilter *alos_filt = gtk_file_filter_new();
     gtk_file_filter_set_name(alos_filt, "ALOS Leader Files (LED-*)");
@@ -168,7 +168,7 @@ on_browse_input_files_button_clicked(GtkWidget *widget)
             "CEOS Level 0 (*.raw)\0*.raw\0"
             "STF Files (*.000)\0*.000\0"
             "GeoTIFF Files (*.tif)\0*.tif\0"
-            "Complex Files (*.cpx)\0*.cpx\0"
+             //"Complex Files (*.cpx)\0*.cpx\0"
             "ALOS Files (LED-*)\0LED-*\0"
             "AirSAR Files (*.airsar)\0*.airsar\0"
             "ASF Internal Files (*.img)\0*.img\0"

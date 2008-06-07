@@ -78,9 +78,9 @@ void update_summary()
         }
         break;
 
-      case INPUT_FORMAT_COMPLEX:
-        strcat(text, "Complex");
-        break;
+      //case INPUT_FORMAT_COMPLEX:
+        //strcat(text, "Complex");
+        //break;
 
       case INPUT_FORMAT_GEOTIFF:
         strcat(text, "Geocoded GeoTIFF");
