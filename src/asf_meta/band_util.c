@@ -74,8 +74,6 @@ void remove_band(const char *file, int band, int save_orig)
   FCLOSE(ofp);
   FREE(buf);
 
-  asfPrintStatus("Generating new metadata file for: %s\n", file);
-
   // the only thing we need update in the metadata is the band info
   meta->general->band_count = nb-1;
 
