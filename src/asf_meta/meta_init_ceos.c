@@ -334,6 +334,7 @@ void ceos_init_sar_general(ceos_description *ceos, const char *in_fName,
   meta->sar->azimuth_time_per_pixel =
       (centerTime - firstTime) / (meta->sar->original_line_count/2);
   //printf("firstTime: %lf, centerTime: %lf\n", firstTime, centerTime);
+  //printf("azimuth time per pixel: %f\n", meta->sar->azimuth_time_per_pixel);
   //meta->sar->azimuth_time_per_pixel = -0.0075685327312;
   //meta->sar->range_time_per_pixel = 1.9339617657e-07;
 
@@ -949,6 +950,7 @@ static double calc_swath_velocity(struct dataset_sum_rec *dssr,
   double orbit_vel = sqrt(g*er*er/ht);
 
   // simple scaling to get swath velocity from orbit vel
+  // printf("calculated swath velocity: %f\n", orbit_vel * er/ht);
   return orbit_vel * er / ht;
 }
 
@@ -1007,8 +1009,10 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
     // calculate azimuth time per pixel from the swath velocity
     double swath_vel = calc_swath_velocity(dssr,in_fName,meta);
 
-    meta->sar->azimuth_time_per_pixel =
-        meta->general->y_pixel_size / swath_vel;
+    if (meta->general->y_pixel_size != 0) {
+        meta->sar->azimuth_time_per_pixel =
+            meta->general->y_pixel_size / swath_vel;
+    }
     ceos_init_stVec(in_fName,ceos,meta);
   }
   if (meta->general->orbit_direction == 'A')
@@ -1108,9 +1112,21 @@ void ceos_init_sar_eoc(ceos_description *ceos, const char *in_fName,
 
         meta->general->y_pixel_size = hypot(x1-x2, y1-y2)/(double)nl;
         printf("Calculated y pixel size: %f\n", meta->general->y_pixel_size);
+        
+        double swath_vel = calc_swath_velocity(dssr,dataName[0],meta);
+        printf("     Other method gives: %f\n",
+            meta->sar->azimuth_time_per_pixel * swath_vel);
 
-        double swath_val = calc_swath_velocity(dssr,dataName[0],meta);
-        printf("     Other method gives: %f\n", meta->sar->azimuth_time_per_pixel * swath_val);
+        if (meta->general->y_pixel_size == 0) {
+            // use value from other method...
+            meta->general->y_pixel_size =
+                meta->sar->azimuth_time_per_pixel * swath_vel;
+            
+            if (meta->general->y_pixel_size == 0) {
+                // can't figure out the azimuth pixel size...
+                asfPrintWarning("Failed to determine azimuth pixel size.\n");
+            }
+        }
     }
   }
 
