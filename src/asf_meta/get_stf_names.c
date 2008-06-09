@@ -193,25 +193,27 @@ stf_metadata_ext_t require_stf_metadata(const char *stfName, char **metaName)
 
 /******************************************************************************
  * get_stf_data_name:
- * This one sort of cheats, since currently the STF data file represents the
- * base name. The stf_data_ext_t enum is sort of buggered up since its only two
- * extensions are the same, always return STF_BLANK on success.  */
+ */
 stf_data_ext_t get_stf_data_name(const char *stfName, char **pDataName)
 {
-  char *dataName;
-  stf_data_ext_t ii = NO_STF_DATA;
+  char dataName[1024];
+  stf_data_ext_t ret = NO_STF_DATA;
+  int begin=NO_STF_DATA+1, end=NUM_STF_DATA_EXTS;
 
-  dataName = get_stf_basename(stfName, &ii);
-
-  if (dataName && strlen(dataName) && ii != NO_STF_DATA) {
-      *pDataName = (char *)MALLOC(sizeof(char)*(strlen(dataName) + 5));
+  stf_data_ext_t i;
+  for (i=begin; i<end; i++) {
+    sprintf(dataName, "%s%s", stfName, stf_data_extensions[i]);
+    if (fileExists(dataName)) {
+      *pDataName = (char *)MALLOC(sizeof(char)*(strlen(dataName) + 64\
+						));
       strcpy(*pDataName, dataName);
+      ret = i;
+      break;
+    }
   }
-  else {
-      *pDataName = NULL;
-  }
-
-  return ii;
+  if (ret == NO_STF_DATA) *pDataName = NULL;
+  
+  return ret;
 }
 
 /******************************************************************************
