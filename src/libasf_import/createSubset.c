@@ -407,9 +407,9 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
     lowerTime = upperTime;
     upperTime = line;
   }
-  asfPrintStatus(logbuf,"   Starting line of subset: %ld (%lf)\n",
-     *imgStart, upperTime);
-  asfPrintStatus(logbuf, "   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
+  asfPrintStatus("   Starting line of subset: %ld (%lf)\n", 
+		 *imgStart, upperTime);
+  asfPrintStatus("   End line of subset: %ld (%lf)\n", *imgEnd, lowerTime);
 
   // Clean up
   FREE(parN);

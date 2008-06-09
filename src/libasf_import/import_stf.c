@@ -38,8 +38,9 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
   double lat, lon;
   int prc_flag = FALSE;
 
-  if (inMetaNameOption == NULL)
+  if (inMetaNameOption == NULL) {
     require_stf_pair(inBaseName, &inDataName, &inMetaName);
+  }
   else {
     /* Allow the base name to be different for data & meta */
     require_stf_data(inBaseName, &inDataName);
