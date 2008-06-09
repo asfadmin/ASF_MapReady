@@ -22,6 +22,8 @@
 #ifndef __ASPMATH_H     /* include only once */
 #define __ASPMATH_H
 
+#include <read_signal.h>
+
 /*-----------------------------*/
 /* Simple function definitions */
 /*-----------------------------*/
