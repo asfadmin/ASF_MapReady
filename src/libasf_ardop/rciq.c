@@ -1,6 +1,6 @@
 /****************************************************************************
-*								            *
-*   rciq.c --  Performs range compression using I,Q data      		    *
+*                                           *
+*   rciq.c --  Performs range compression using I,Q data                *
 *  Parts of this code are Copyright Howard Zebker at Stanford University      *
 *  Modifications are Copyright Geophysical Institute, University of Alaska    *
 *  Fairbanks. All rights reserved.                                            *
@@ -11,12 +11,12 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*	Alaska Satellite Facility	    	                              *
-*	Geophysical Institute			www.asf.alaska.edu            *
-*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
-*	P.O. Box 757320							      *
-*	Fairbanks, AK 99775-7320					      *
-*									      *
+*   Alaska Satellite Facility                                         *
+*   Geophysical Institute           www.asf.alaska.edu            *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
+*   P.O. Box 757320                               *
+*   Fairbanks, AK 99775-7320                          *
+*                                         *
 ******************************************************************************/
 /****************************************************************
 FUNCTION NAME: rciq - Read a patch from file
@@ -26,9 +26,9 @@ SYNTAX: rciq(p,signalGetRec,r)
 PARAMETERS:
     NAME:       TYPE:           PURPOSE:
     --------------------------------------------------------
-    p		patch 		Output storage
-    signalGetRec getRec		Allow raw signal data input.
-    r		rangeRef	Range Reference Function
+    p       patch       Output storage
+    signalGetRec getRec     Allow raw signal data input.
+    r       rangeRef    Range Reference Function
 
 DESCRIPTION:
     Read raw signal data for a single patch,
@@ -43,9 +43,11 @@ SPECIAL CONSIDERATIONS:
 PROGRAM HISTORY:  Converted from H Zebker's rciq.c - T. Logan 8/96
 ****************************************************************/
 #include "asf.h"
-#include "asf_meta.h"
-#include "ardop_defs.h"
+#include "asf_complex.h"
 #include "read_signal.h"
+#include "geolocate.h"
+#include "asf_meta.h"
+#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
 
 extern struct ARDOP_PARAMS g;/*ARDOP Globals, defined in ardop_params.h*/
 
@@ -53,8 +55,8 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
 {
   static complexFloat *fft=NULL;
   register int i,lineNo;
-  int readSamples=p->n_range+r->refLen;/*readSamples is the number of samples 
-				  of uncompressed signal which are to be read in.*/
+  int readSamples=p->n_range+r->refLen;/*readSamples is the number of samples
+                  of uncompressed signal which are to be read in.*/
   patch *r_f=NULL, *raw_f=NULL, *raw_t=NULL, *r_x_f = NULL;
 
   if (g.iflag & RANGE_REF_MAP) r_f=copyPatch(p);
@@ -71,21 +73,21 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
     readSamples=signalGetRec->nSamples-p->fromSample;
 
 /* Initialize the FFT routine */
-  cfft1d(r->rangeFFT,fft,0);	
+  cfft1d(r->rangeFFT,fft,0);
 
   for (lineNo=0; lineNo<p->n_az; lineNo++)
   {
-    if(!quietflag && ((lineNo%1024) == 0)) 
-      asfPrintStatus("   ...Processing Line %i\n",lineNo); 
+    if(!quietflag && ((lineNo%1024) == 0))
+      printf("   ...Processing Line %i\n",lineNo);
 
   /*Read i/q values into fft input buffer.*/
     getSignalLine(signalGetRec,p->fromLine+lineNo,fft,p->fromSample,readSamples);
 
-  /*Zero-fill the end of the FFT buffer.*/	
+  /*Zero-fill the end of the FFT buffer.*/
     for (i=readSamples;i<r->rangeFFT;i++)
       fft[i].real = fft[i].imag = 0.0;
     if (raw_t) {
-      for (i=0; i<p->n_range; i++) 
+      for (i=0; i<p->n_range; i++)
         raw_t->trans[i*p->n_az+lineNo]=fft[i];
     }
   /* forward transform the data.*/
@@ -105,15 +107,15 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
       }
     }
     if (r_x_f) {
-      for (i=0; i<p->n_range; i++) 
-	r_x_f->trans[i*p->n_az+lineNo] = fft[i];
+      for (i=0; i<p->n_range; i++)
+    r_x_f->trans[i*p->n_az+lineNo] = fft[i];
     }
 
   /*Reverse transform the (now range-compressed) data.*/
     cfft1d(r->rangeFFT,fft,1);
 
   /* Copy data into the p->trans array - transposed */
-    for (i=0; i<p->n_range; i++) 
+    for (i=0; i<p->n_range; i++)
       p->trans[i*p->n_az+lineNo]=fft[i];
     if (r_f) {
       for (i=0; i<p->n_range; i++)
@@ -121,8 +123,8 @@ void rciq(patch *p,const getRec *signalGetRec,const rangeRef *r)
     }
   }
   if (r_f) {debugWritePatch(r_f,"range_ref_map"); destroyPatch(r_f);}
-  if (raw_t) {debugWritePatch(raw_t,"range_raw_t"); destroyPatch(raw_t);}
   if (raw_f) {debugWritePatch(raw_f,"range_raw_f"); destroyPatch(raw_f);}
+  if (raw_t) {debugWritePatch(raw_t,"range_raw_t"); destroyPatch(raw_t);}
   if (r_x_f) {debugWritePatch(r_x_f,"range_X_f"); destroyPatch(r_x_f);}
   return;
 }

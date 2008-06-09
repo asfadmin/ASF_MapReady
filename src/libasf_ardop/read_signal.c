@@ -15,8 +15,11 @@ void getSignalLine(getRec *r,long long lineNo,complexFloat *destArr,int readStar
 */
 #include "asf.h"
 #include <unistd.h>
+#include "asf_complex.h"
+#include "read_signal.h"
+#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h"
+#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
 #include "ceos.h"
 
 /****************************************
@@ -29,7 +32,7 @@ I and Q DC offset, and i/q flip parameters from
 
 void getSignalFormat(char *baseName,long long bytesInFile,getRec *r)
 {
-    char name[1024];
+    char name[255];
     char buf[80];
     FILE *fp;
     create_name(name,baseName,".fmt");
@@ -87,7 +90,7 @@ getSignalLine to fetch a line of signal data.
 getRec * fillOutGetRec(char file[])
 {
     getRec *r=(getRec *)MALLOC (sizeof(getRec));
-    char name_ASF[1024],name_RAW[1024];
+    char name_ASF[255],name_RAW[255];
     FILE *fp_ASF, *fp_RAW;
     int skip_second_if=0;
 
@@ -110,10 +113,10 @@ getRec * fillOutGetRec(char file[])
         if(!quietflag)printf("Looking for %s...\n",name_ASF);
 
     /**Make sure input file is a CCSD file and not a CEOS**/
-        if (strcmp(ifiledr.formcode,"CI*2")!=0)
+         if (strcmp(ifiledr.formcode,"CI*2")!=0)
         {
-          fprintf(stderr, "  %s is not a CCSD file.\n", name_ASF);
-          if (!quietflag)printf("Looking for %s...\n",name_RAW);
+        printf("  %s is not a CCSD file.\n", name_ASF);
+        if (!quietflag)printf("Looking for %s...\n",name_RAW);
         }
          else
         {
@@ -241,7 +244,7 @@ void fetchReferenceFunction(char *fname,complexFloat *ref,int refLen)
 {
     int i;
     FILE *in;
-    char name_REPLICA[1024],line[1024];
+    char name_REPLICA[255],line[255];
     create_name(name_REPLICA,fname,".replica");
     in=FOPEN(name_REPLICA,"rb");
 

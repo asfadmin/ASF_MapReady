@@ -21,6 +21,7 @@ baseline find_baseline(char *file1,char *file2)
   meta_parameters *meta1 = meta_read(file1);
   meta_parameters *meta2 = meta_read(file2);
   int ncol;
+  quietflag = TRUE;
   
   ncol = meta1->sar->original_sample_count;
 
@@ -203,13 +204,10 @@ void write_baseline(char *fnm, baseline b)
 {
   FILE *fp=FOPEN(fnm,"w");
   
-  sprintf(logbuf,
-	  "\n   Baseline: Bn = %f, dBn = %f, Bp = %f, dBp = %f, Btemp = %f\n",
-	  b.Bn,b.dBn,b.Bp,b.dBp,b.temporal);
-  printf("%s",logbuf);
-  if (logflag) { printLog(logbuf); }
+  asfPrintStatus("\n   Baseline: Bn = %f, dBn = %f, Bp = %f, dBp = %f, "
+		 "Btemp = %f\n", b.Bn, b.dBn, b.Bp, b.dBp, b.temporal);
   
-  fprintf(fp,"%f  %f  %f  %f %f\n",b.Bn,b.dBn,b.Bp,b.dBp,b.temporal);
+  fprintf(fp,"%f  %f  %f  %f %f\n", b.Bn, b.dBn, b.Bp, b.dBp, b.temporal);
   FCLOSE(fp);
   return;
 }

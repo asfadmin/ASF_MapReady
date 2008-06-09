@@ -98,15 +98,18 @@ BUGS:
 
 
 #include "asf.h"
+#include "asf_complex.h"
+#include "read_signal.h"
+#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h"
+#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
 
 int ardop(struct INPUT_ARDOP_PARAMS * params_in)
 {
-    meta_parameters *meta;
-    struct ARDOP_PARAMS params;
+        meta_parameters *meta;
+        struct ARDOP_PARAMS params;
 
-    fill_default_ardop_params(&params);
+        fill_default_ardop_params(&params);
 
 /*Structures: these are passed to the sub-routines which need them.*/
     patch *p;
@@ -130,21 +133,14 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
         } else {
                         /*No .meta exists--fabricate one*/
             meta=raw_init();
-        }
+                }
     }
-    else
-    {
-        /*Read parameters & .meta from CEOS.*/
-        /* Caution: This puts hard-coded ERS parameters into params... correct
-           them upon return from get_params() based on which platform/beam */
+    else    /*Read parameters & .meta from CEOS.*/ {
         get_params(params_in->in1,&params,&meta);
-    }
-    //params_in->npatches = (int *)MALLOC(sizeof(int));
-    //*params_in->npatches = 1;
+        }
 
 /*Apply user-overridden parameters*/
-    apply_in_ardop_params_to_ardop_params(params_in, &params);
-    if (strlen(params.status)>0) set_status_file(params.status);
+        apply_in_ardop_params_to_ardop_params(params_in, &params);
 
 /*Doppler*/
     if (params.fdd==-99.0)
@@ -184,10 +180,8 @@ int ardop(struct INPUT_ARDOP_PARAMS * params_in)
     meta->general->band_count = 1;
     meta->general->x_pixel_size = meta->sar->range_time_per_pixel
                                        * (speedOfLight/2.0);
-//    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
-//                                       * params.vel * (params.re/params.ht);
-    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel * params.vel *
-                                  (params.re/(params.ht+params.re));
+    meta->general->y_pixel_size = meta->sar->azimuth_time_per_pixel
+                                       * params.vel * (params.re/params.ht);
 
     ardop_setup(&params,meta,&n_az,&n_range,&s,&r,&f,&signalGetRec);
     if (!quietflag) {
@@ -205,11 +199,11 @@ all of the input data.
     for (patchNo=1; patchNo<=f->nPatches; patchNo++)
     {
         int lineToBeRead;
-        if (!quietflag) printf("\n   *****    PROCESSING PATCH %i    *****\n\n",patchNo);
+        printf("\n   *****    PROCESSING PATCH %i    *****\n\n",patchNo);
 
         lineToBeRead = f->firstLineToProcess + (patchNo-1) * f->n_az_valid;
         if (lineToBeRead+p->n_az>signalGetRec->nLines) {
-          if (!quietflag) printf("   Read all the patches in the input file.\n");
+          printf("   Read all the patches in the input file.\n");
           if (logflag) printLog("   Read all the patches in the input file.\n");
           break;
         }
@@ -217,12 +211,12 @@ all of the input data.
         /*Update patch parameters for location.*/
         setPatchLoc(p,s,meta,f->skipFile,f->skipSamp,lineToBeRead);
         processPatch(p,signalGetRec,r,s);/*SAR Process patch.*/
-        writePatch(p,s,meta,f,patchNo);/*Output patch data to file.*/
+        writePatch(p,s,f,patchNo);/*Output patch data to file.*/
     } /***********************end patch loop***********************************/
 
 
     destroyPatch(p);
-/*  if (!quietflag) printf("\nPROGRAM COMPLETED\n\n");*/
+/*  printf("\nPROGRAM COMPLETED\n\n");*/
 
     if (logflag) {
       if (f->nPatches==1)
@@ -233,6 +227,5 @@ all of the input data.
       }
     }
 
-    printf("Successful completion!\n");
     return(0);
 }

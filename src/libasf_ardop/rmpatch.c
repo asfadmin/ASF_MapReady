@@ -1,6 +1,6 @@
 /****************************************************************************
-*                                                                             *
-*   rmpatch.c --  Performs range migrations for a patch                       *
+*                                           *
+*   rmpatch.c --  Performs range migrations for a patch                     *
 *  Parts of this code are Copyright Howard Zebker at Stanford University      *
 *  Modifications are Copyright Geophysical Institute, University of Alaska    *
 *  Fairbanks. All rights reserved.                                            *
@@ -11,13 +11,13 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*   Alaska Satellite Facility                                                 *
-*   Geophysical Institute           www.asf.alaska.edu                        *
-*       University of Alaska Fairbanks      uso@asf.alaska.edu                *
-*   P.O. Box 757320                                                           *
-*   Fairbanks, AK 99775-7320                                                  *
-*                                                                             *
- *****************************************************************************/
+*   Alaska Satellite Facility                                         *
+*   Geophysical Institute           www.asf.alaska.edu            *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
+*   P.O. Box 757320                               *
+*   Fairbanks, AK 99775-7320                          *
+*                                         *
+******************************************************************************/
 /************************************************************************
 FUNCTION NAME: rmpatch - perform range migration on a patch
 
@@ -50,8 +50,11 @@ PROGRAM HISTORY:  converted from H. Zebker's RMpatch.f - T. Logan 8/96
         Changed variable names - O. Lawlor 8/97
 ************************************************************************/
 #include "asf.h"
+#include "asf_complex.h"
+#include "read_signal.h"
+#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h"
+#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
 void create_sinc(int nfilter, float *xintp);
 
 void rmpatch(patch *p,const satellite *s)

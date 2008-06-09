@@ -10,8 +10,8 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 		  char *masterFile, char *slaveFile, char *outBase,
 		  float *average)
 {
-  char ampFile[255], phaseFile[255];
-  char cohFile[255], ml_ampFile[255], ml_phaseFile[255];
+  char ampFile[255], phaseFile[255], igramFile[512];
+  char cohFile[512], ml_ampFile[255], ml_phaseFile[255], ml_igramFile[512];
   FILE *fpMaster, *fpSlave, *fpAmp, *fpPhase, *fpCoh, *fpAmp_ml, *fpPhase_ml;
   int line, sample_count, line_count, count;
   float	bin_high, bin_low, max=0.0, sum_a, sum_b, ampScale;
@@ -22,11 +22,14 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   float *amp, *phase, *sum_cpx_a, *sum_cpx_b, *coh, *pCoh;
   float *ml_amp, *ml_phase;
 
-  create_name(ampFile, outBase,"_igram_amp.img");
-  create_name(phaseFile, outBase,"_igram_phase.img");
-  create_name(ml_ampFile, outBase,"_igram_ml_amp.img");
-  create_name(ml_phaseFile, outBase,"_igram_ml_phase.img");
-  sprintf(cohFile, "coherence.img");
+  //create_name(ampFile, outBase,"_igram_amp.img");
+  create_name(igramFile, outBase,"_igram.img");
+  //create_name(phaseFile, outBase,"_igram_phase.img");
+  //create_name(ml_ampFile, outBase,"_igram_ml_amp.img");
+  //create_name(ml_phaseFile, outBase,"_igram_ml_phase.img");
+  create_name(ml_igramFile, outBase, "_igram_ml.img");
+  //sprintf(cohFile, "coherence.img");
+  create_name(cohFile, outBase, "_coh.img");
 
   // Read input meta file
   inMeta = meta_read(masterFile);
@@ -38,6 +41,7 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   outMeta = meta_read(masterFile);
   outMeta->general->data_type = REAL32;
 
+  /*
   // Write metadata for interferometric amplitude
   outMeta->general->image_data_type = AMPLITUDE_IMAGE;
   meta_write(outMeta, ampFile);
@@ -45,7 +49,14 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   // Write metadata for interferometric phase
   outMeta->general->image_data_type = PHASE_IMAGE;
   meta_write(outMeta, phaseFile);
+  */
 
+  // Write metadata for interferogram
+  outMeta->general->image_data_type = INTERFEROGRAM;
+  outMeta->general->band_count = 2;
+  strcpy(outMeta->general->bands, "IGRAM-PHASE,IGRAM-AMP");
+  meta_write(outMeta, igramFile);
+	     
   // Generate metadata for multilooked images
   ml_outMeta = meta_read(masterFile);
   ml_outMeta->general->data_type = REAL32;
@@ -53,9 +64,13 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   ml_outMeta->general->sample_count = sample_count/stepSample;
   ml_outMeta->general->x_pixel_size *= stepSample;
   ml_outMeta->general->y_pixel_size *= stepLine;
-  ml_outMeta->sar->line_increment   *= stepLine;
-  ml_outMeta->sar->sample_increment *= stepSample;
+  ml_outMeta->sar->multilook = 1;
+  //ml_outMeta->sar->line_increment   *= stepLine;
+  //ml_outMeta->sar->sample_increment *= stepSample;
+  ml_outMeta->sar->line_increment = 1;
+  ml_outMeta->sar->sample_increment = 1;
 
+  /*
   // Write metadata for multilooked interferometric amplitude
   ml_outMeta->general->image_data_type = AMPLITUDE_IMAGE;
   meta_write(ml_outMeta, ml_ampFile);
@@ -63,10 +78,17 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   // Write metadata for multilooked interferometric phase
   ml_outMeta->general->image_data_type = PHASE_IMAGE;
   meta_write(ml_outMeta, ml_phaseFile);
+  */
 
   // Write metadata for coherence image
   ml_outMeta->general->image_data_type = COHERENCE_IMAGE;
   meta_write(ml_outMeta, cohFile);
+
+  // Write metadata for multilooked interferogram
+  ml_outMeta->general->image_data_type = INTERFEROGRAM;
+  strcpy(ml_outMeta->general->bands, "IGRAM-PHASE,IGRAM-AMP");
+  ml_outMeta->general->band_count = 2;
+  meta_write(ml_outMeta, ml_igramFile);
 
   // Allocate memory
   master = (complexFloat *) MALLOC(sizeof(complexFloat)*sample_count*lookLine);
@@ -84,16 +106,18 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   // Open files
   fpMaster = FOPEN(masterFile,"rb");
   fpSlave = FOPEN(slaveFile,"rb");
-  fpAmp = FOPEN(ampFile,"wb");
-  fpPhase = FOPEN(phaseFile,"wb");
-  fpAmp_ml = FOPEN(ml_ampFile,"wb");
-  fpPhase_ml = FOPEN(ml_phaseFile,"wb");
+  //fpAmp = FOPEN(ampFile,"wb");
+  //fpPhase = FOPEN(phaseFile,"wb");
+  //fpAmp_ml = FOPEN(ml_ampFile,"wb");
+  //fpPhase_ml = FOPEN(ml_phaseFile,"wb");
+  FILE *fpIgram = FOPEN(igramFile, "wb");
+  FILE *fpIgram_ml = FOPEN(ml_igramFile, "wb");
   fpCoh = FOPEN(cohFile,"wb");
 
   // Initialize histogram
   for (count=0; count<HIST_SIZE; count++) hist_val[count] = 0;
 
-  printf("Calculating interferogram and coherence ...\n\n");
+  asfPrintStatus("   Calculating interferogram and coherence ...\n\n");
 
   for (line=0; line<line_count; line+=stepLine)
   {
@@ -162,10 +186,14 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
     }
 
     // Write single-look and multilooked amplitude and phase
-    put_float_lines(fpAmp, outMeta, line, stepLine, amp);
-    put_float_lines(fpPhase, outMeta, line, stepLine, phase);
-    put_float_line(fpAmp_ml, ml_outMeta, line/stepLine, ml_amp);
-    put_float_line(fpPhase_ml, ml_outMeta, line/stepLine, ml_phase);
+    //put_float_lines(fpAmp, outMeta, line, stepLine, amp);
+    //put_float_lines(fpPhase, outMeta, line, stepLine, phase);
+    //put_float_line(fpAmp_ml, ml_outMeta, line/stepLine, ml_amp);
+    //put_float_line(fpPhase_ml, ml_outMeta, line/stepLine, ml_phase);
+    put_band_float_lines(fpIgram, outMeta, 1, line, stepLine, amp);
+    put_band_float_lines(fpIgram, outMeta, 0, line, stepLine, phase);
+    put_band_float_line(fpIgram_ml, ml_outMeta, 1, line/stepLine, ml_amp);
+    put_band_float_line(fpIgram_ml, ml_outMeta, 0, line/stepLine, ml_phase);
 
     // Calculate the coherence by adding from sum vectors
     for (inCol=0; inCol<sample_count; inCol+=stepSample)
@@ -200,7 +228,7 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
 	  *pCoh=1.0;
 	}
       }
-      pCoh++;
+     pCoh++;
     } 
 
     // Write out values for coherence
@@ -249,16 +277,18 @@ int asf_igram_coh(int lookLine, int lookSample, int stepLine, int stepSample,
   FREE(master); 
   FREE(slave);
   FREE(amp); 
-  FREE(phase); 
+  FREE(phase);
   FREE(ml_amp); 
   FREE(ml_phase); 
   FREE(coh); 
   FCLOSE(fpMaster); 
   FCLOSE(fpSlave);
-  FCLOSE(fpAmp); 
-  FCLOSE(fpPhase); 
-  FCLOSE(fpAmp_ml); 
-  FCLOSE(fpPhase_ml); 
+  //FCLOSE(fpAmp); 
+  //FCLOSE(fpPhase);
+  FCLOSE(fpIgram);
+  //FCLOSE(fpAmp_ml); 
+  //FCLOSE(fpPhase_ml);
+  FCLOSE(fpIgram_ml);
   FCLOSE(fpCoh); 
   meta_free(inMeta);
   meta_free(outMeta);

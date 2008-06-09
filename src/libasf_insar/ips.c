@@ -21,6 +21,11 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   input_format_t in_format;
   output_format_t out_format;
   scale_t sample_mapping=SIGMA;
+  radiometry_t radiometry=r_AMP;
+  int db_flag=0;
+  int complex_flag=0;
+  int multilook_flag=0;
+  int amp0_flag=0;
 
   // Determine datatype
   if (strncmp(uc(cfg->general->data_type), "STF", 3)==0) {
@@ -111,27 +116,24 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   }
 
   // Tell the user what data type and processing mode we found
-  printf("   Data type: %s\n   Processing mode: %s\n",
-	 cfg->general->data_type, cfg->general->mode);
   fLog = FOPEN(logFile, "a");
   logflag=TRUE;
-  sprintf(logbuf, "   Data type: %s\n   Processing mode: %s\n",
-	  cfg->general->data_type, cfg->general->mode);
-  printLog(logbuf);
+  asfPrintStatus("   Data type: %s\n   Processing mode: %s\n",
+		 cfg->general->data_type, cfg->general->mode);
 
   // Ingest the various data types: STF, RAW, or SLC 
   if (check_status(cfg->ingest->status)) {
     
-    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, in_format, 
-			    NULL, NULL, NULL, NULL, cfg->ingest->prc_master,
-			    cfg->general->lat_begin, cfg->general->lat_end,
-			    0, 0, -99, -99,
+    check_return(asf_import(radiometry, db_flag, complex_flag, multilook_flag,
+			    amp0_flag, in_format, NULL, NULL, NULL, NULL, 
+			    cfg->ingest->prc_master, cfg->general->lat_begin, 
+			    cfg->general->lat_end, 0, 0, -99, -99,
 			    NULL, NULL, NULL, TRUE, NULL, "master", "a"),
 		 "ingesting master image (asf_import)");
-    check_return(asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, in_format, 
-			    NULL, NULL, NULL, NULL, cfg->ingest->prc_slave,
-			    0, 0, -99, -99,
-			    cfg->general->lat_begin, cfg->general->lat_end,
+    check_return(asf_import(radiometry, db_flag, complex_flag, multilook_flag,
+			    amp0_flag, in_format, NULL, NULL, NULL, NULL, 
+			    cfg->ingest->prc_slave, cfg->general->lat_begin, 
+			    cfg->general->lat_end, 0, 0, -99, -99,
 			    NULL, NULL, NULL, TRUE, NULL, "slave", "b"),
 		 "ingesting slave image (asf_import)");
     
@@ -153,6 +155,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 
       cfg->coreg->slave_patches = cfg->coreg->master_patches;
     }
+    /*
     else { // Deal with complex single look complex
       
       check_return(c2p_exec("a_cpx", "a"),
@@ -165,6 +168,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
       meta = meta_init("b_cpx.meta");
       cfg->igram_coh->looks = meta->sar->look_count;
     }
+    */
 
     sprintf(cfg->ingest->status, "success");
     check_return(write_config(configFile, cfg),
@@ -240,7 +244,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   if (check_status(cfg->offset_match->status)) {
 
     asfPrintStatus("\nRefining the geolocation ...\n\n");
-    sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
+    sprintf(tmp, "%s_ml.img", cfg->igram_coh->igram);
     check_return(asf_check_geolocation(tmp, cfg->general->dem, NULL,
 				       "dem_sim.img", "dem_slant.img"),
 		 "refining the geolocation of the SAR image");

@@ -2,14 +2,14 @@
 NAME:calibration.c
 
 SYNOPSIS:
-	Applies calibration to processed image data.
+    Applies calibration to processed image data.
 
 DESCRIPTION:
-	Combines subroutines from ardop_setup.c with new algorithms, all to 
-	calibrate the output of the ardop
+    Combines subroutines from ardop_setup.c with new algorithms, all to
+    calibrate the output of the ardop
 
 EXTERNAL ASSOCIATES:
-	Called mainly from patch.c
+    Called mainly from patch.c
 
 FILE REFERENCES:
 
@@ -22,8 +22,11 @@ BUGS:
 *****************************************************************************/
 #include "asf.h"
 #include "ceos.h"
+#include "asf_complex.h"
+#include "read_signal.h"
+#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h"
+#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
 #include "odl.h"
 #include <math.h>
 
@@ -47,15 +50,15 @@ SYNTAX: multilook(complexFloat *, int, int, int, float *)
 PARAMETERS:
     NAME:       TYPE:           PURPOSE:
     --------------------------------------------------------
-    patch	complexFloat *	Complex Image Patch (n_range X n_looks)
-    n_range	int		lines in patch
-    nlooks	int		number of looks to perform
-    amps	float *		return multiooked amplitude patch
+    patch   complexFloat *  Complex Image Patch (n_range X n_looks)
+    n_range int     lines in patch
+    nlooks  int     number of looks to perform
+    amps    float *     return multiooked amplitude patch
 
 DESCRIPTION:
-    Given a complex input patch of size n_range * n_looks, returns a 
+    Given a complex input patch of size n_range * n_looks, returns a
     multilooked amplitude lines using nlooks in the sample direction
-    (output size is n_range X nlooks). 
+    (output size is n_range X nlooks).
 
 RETURN VALUE: none
 
@@ -67,13 +70,11 @@ PROGRAM HISTORY:
  Extensively modified to allow simultaneous writing of AMP and CPX images -
  Mark Ayers 8/00
 ****************************************************************/
-#include "asf.h"
-#include "ardop_defs.h"
 
 void multilook(complexFloat *patch,int n_range,int nlooks,float *pwrs)
 {
   float   temp_pwr;
-  int     samp, line;	
+  int     samp, line;
 
   for (samp=0; samp<n_range; samp++)
   {
@@ -85,17 +86,17 @@ void multilook(complexFloat *patch,int n_range,int nlooks,float *pwrs)
 
     }
     pwrs[samp] = temp_pwr/nlooks;
-    
+
   }
 }
 void intensity(int n_range,float *pwrs,float *amps)
 {
-  int     samp;	
+  int     samp;
 
   for (samp=0; samp<n_range; samp++)
   {
     amps[samp] = sqrt(pwrs[samp]);
-  } 
+  }
 }
 /*-------------------------------------------------------------------------*/
 /* The five functions (noiseFromAntennaPattern, sigma_naught, gamma_naught,
@@ -106,19 +107,19 @@ void intensity(int n_range,float *pwrs,float *amps)
 /*_________________________________________________________________________
   calibrationGain calculates the correction to apply to the data. Note that
   it is the correction to the digital number squared, so you must take the
-  square root. gainFromFile is two-way correction gain from the input file. 
-  _________________________________________________________________________*/ 
+  square root. gainFromFile is two-way correction gain from the input file.
+  _________________________________________________________________________*/
 
 double calibrationGain(double gainFromFile, double slantRange, double rangeRef,double incidAngle)
 {
-	return pow(slantRange/rangeRef,3)*sin(incidAngle)*gainFromFile;
+    return pow(slantRange/rangeRef,3)*sin(incidAngle)*gainFromFile;
 }
 
 
 
 double interpolate(double x, double x_1, double x_2, double y_1, double y_2)
 {
-	return (y_2-y_1)*(x-x_1)/(x_2-x_1)+y_1;
+    return (y_2-y_1)*(x-x_1)/(x_2-x_1)+y_1;
 }
 
 /* Three different definitions of RCS, each a diffent projected area */
@@ -140,58 +141,58 @@ double beta_naught(double noise,double noise_factor,double linear_conversion_fac
 
 double lookUpGain(meta_parameters *meta,int line, int sample, const satellite *s)
 {
- 
-  static int ind;		/* The WHILE loop index for finding the right table entry */
-  double lookAngle;		/* Calculated look angle for each pixel */  	
-  double gainThisPixel;		/* Antenna gain for this pixel */
-  int old_ind;			/* Just to make sure we are not caught in an infinite loop*/
-  
+
+  static int ind;       /* The WHILE loop index for finding the right table entry */
+  double lookAngle;     /* Calculated look angle for each pixel */
+  double gainThisPixel;     /* Antenna gain for this pixel */
+  int old_ind;          /* Just to make sure we are not caught in an infinite loop*/
+
   /* Calculate the look angle for this pixel and check to see if it is valid */
-  
+
   lookAngle=meta_look(meta,line,sample);
   if(lookAngle>s->ang_vec[s->vecLen-1] || lookAngle<s->ang_vec[0])
   {
-    	printErr("   Look angle outside of valid range\n");
-	return 0.0;
+        printErr("   Look angle outside of valid range\n");
+    return 0.0;
   }
 
   if (ind>s->vecLen-1) ind=0;
   old_ind=ind;
-  
- 
-		
-  /* Loop through the Elevation Angle table and find the gain for this pixel */	
+
+
+
+  /* Loop through the Elevation Angle table and find the gain for this pixel */
   while (ind < s->vecLen-1)
     {
-       
+
       if((lookAngle >= s->ang_vec[ind]) && (lookAngle < s->ang_vec[ind+1]))
-	{
-	  /* Find the difference between the steps in Elevation Angle in the table */
-	  
-	  gainThisPixel=interpolate(lookAngle, s->ang_vec[ind], s->ang_vec[ind+1], s->gain_vec[ind], s->gain_vec[ind+1]);
-	  
-	  /* We found the right bin, so we exit */
-	  break;
-	}
+    {
+      /* Find the difference between the steps in Elevation Angle in the table */
+
+      gainThisPixel=interpolate(lookAngle, s->ang_vec[ind], s->ang_vec[ind+1], s->gain_vec[ind], s->gain_vec[ind+1]);
+
+      /* We found the right bin, so we exit */
+      break;
+    }
       /* Keeping searching for the right bin */
       else
-	ind++;
-	if (ind>s->vecLen-2) ind=0;
-	if (ind==old_ind) break;	/*You almost got caught in an infinite loop*/
+    ind++;
+    if (ind>s->vecLen-2) ind=0;
+    if (ind==old_ind) break;    /*You almost got caught in an infinite loop*/
     }
   return gainThisPixel;
 }
 
 void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared, float *radarCrossSection, int curLine,int numSamples, const satellite *s)
 {
-  double incidAngle=0;		/* Calculated incidence angle for each pixel */
-  double slantRange=0;		/* Calculated slant range for each pixel */
+  double incidAngle=0;      /* Calculated incidence angle for each pixel */
+  double slantRange=0;      /* Calculated slant range for each pixel */
   int ii;                       /* Loops through all samples in current line */
   double myGain,noiseVector;    /* Gain and noise element for the current line & sample */
 
   if (projectionFlag==BETA_0)     /*Beta_Naught*/
   {
-    for (ii=0;ii<numSamples;ii++)    
+    for (ii=0;ii<numSamples;ii++)
     {
       incidAngle=meta_incid(meta,curLine,ii);
 
@@ -204,7 +205,7 @@ void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared, f
   }
  else if (projectionFlag==GAMMA_0) /*Gamma_Naught*/
   {
-    for (ii=0;ii<numSamples;ii++)    
+    for (ii=0;ii<numSamples;ii++)
     {
       incidAngle=meta_incid(meta,curLine,ii);
       slantRange=meta_get_slant(meta,curLine,ii);
@@ -215,7 +216,7 @@ void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared, f
   }
   else                       /*Sigma_Naught*/
   {
-    for (ii=0;ii<numSamples;ii++)    
+    for (ii=0;ii<numSamples;ii++)
     {
       incidAngle=meta_incid(meta,curLine,ii);
       slantRange=meta_get_slant(meta,curLine,ii);
@@ -224,9 +225,9 @@ void calculateRCS(int projectionFlag, meta_parameters *meta, float *DNsquared, f
 
       radarCrossSection[ii]=sigma_naught(noiseVector,s->noise,s->gain, DNsquared[ii]);
 
-    } 
- 
-  } 
+    }
+
+  }
 }
 
 
@@ -237,22 +238,22 @@ the look angle, added by Mark Ayers 7/00 */
 
 void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,int numSamples,const satellite *s)
 {
-   int samp;			/* Current Sample index for FOR loop */
-   double incidAngle=0;		/* Calculated incidence angle for each pixel */
-   double slantRange=0;		/* Calculated slant range for each pixel */	
-   double gainThisPixel;		/* Antenna gain for this pixel */	 
-	
+   int samp;            /* Current Sample index for FOR loop */
+   double incidAngle=0;     /* Calculated incidence angle for each pixel */
+   double slantRange=0;     /* Calculated slant range for each pixel */
+   double gainThisPixel;        /* Antenna gain for this pixel */
+
    /* Process line "curLine" of data */
    for(samp=0;samp<numSamples;samp++)
-   {	
-	incidAngle=meta_incid(meta,curLine,samp);
-	slantRange=meta_get_slant(meta,curLine,samp);
- 	gainThisPixel=lookUpGain(meta,curLine,samp,s)*PROC_GAIN;
+   {
+    incidAngle=meta_incid(meta,curLine,samp);
+    slantRange=meta_get_slant(meta,curLine,samp);
+    gainThisPixel=lookUpGain(meta,curLine,samp,s)*PROC_GAIN;
 
-	/* Now that we have the right gain, multiply it by the I and Q values in the output Buffer */
-	outputBuf[samp].real = sqrt(calibrationGain(gainThisPixel,slantRange,
+    /* Now that we have the right gain, multiply it by the I and Q values in the output Buffer */
+    outputBuf[samp].real = sqrt(calibrationGain(gainThisPixel,slantRange,
                                     RANGEREF,incidAngle))*outputBuf[samp].real;
-	outputBuf[samp].imag = sqrt(calibrationGain(gainThisPixel,slantRange,
+    outputBuf[samp].imag = sqrt(calibrationGain(gainThisPixel,slantRange,
                                     RANGEREF,incidAngle))*outputBuf[samp].imag;
 
    }
@@ -267,36 +268,36 @@ void antptn_correct(meta_parameters *meta,complexFloat *outputBuf,int curLine,in
 void writeTable(meta_parameters *meta,const satellite *s,int numSamples)
 {
 
-	int line=0;			/* Line to calculate the noise vector from */
-	int index;			/* Table indexing counter */
-	int tableEntries=256;		/* Number of table entries */
+    int line=0;         /* Line to calculate the noise vector from */
+    int index;          /* Table indexing counter */
+    int tableEntries=256;       /* Number of table entries */
         char cmd[300];                  /* arg for system command*/
-	double slantRange,incidAngle;	/* Slant range and Incidence angle variables */
-	double lookAngle,antennaGain;	/* Look angle and Antennta Gain variables */
-	double *table;			/* Noise table */
-	double indexDelta;		/* Index delta between elements across the image */
-	FILE *noisePtr;			/* Noise vector output file pointer */
+    double slantRange,incidAngle;   /* Slant range and Incidence angle variables */
+    double lookAngle,antennaGain;   /* Look angle and Antennta Gain variables */
+    double *table;          /* Noise table */
+    double indexDelta;      /* Index delta between elements across the image */
+    FILE *noisePtr;         /* Noise vector output file pointer */
 
-	table=(double *)MALLOC(sizeof(double)*tableEntries);
-	indexDelta=numSamples/tableEntries;
+    table=(double *)MALLOC(sizeof(double)*tableEntries);
+    indexDelta=numSamples/tableEntries;
 
-	/* Generate the Noise Table and Write it out on the execution of ardop_setup */
-	for(index=0;index<tableEntries;index++)
-	{
-		table[index]=0;
-		slantRange=meta_get_slant(meta,line,index*indexDelta);
-		incidAngle=meta_incid(meta,line,index*indexDelta);
-		lookAngle=meta_look(meta,line,index*indexDelta);
-	        antennaGain=lookUpGain(meta,line,index*indexDelta,s);
-		table[index]=calibrationGain(antennaGain,slantRange, RANGEREF, incidAngle);
-	}
-	/* Write out the noise vector and the antenna pattern */
+    /* Generate the Noise Table and Write it out on the execution of ardop_setup */
+    for(index=0;index<tableEntries;index++)
+    {
+        table[index]=0;
+        slantRange=meta_get_slant(meta,line,index*indexDelta);
+        incidAngle=meta_incid(meta,line,index*indexDelta);
+        lookAngle=meta_look(meta,line,index*indexDelta);
+            antennaGain=lookUpGain(meta,line,index*indexDelta,s);
+        table[index]=calibrationGain(antennaGain,slantRange, RANGEREF, incidAngle);
+    }
+    /* Write out the noise vector and the antenna pattern */
         sprintf(cmd,"cp %s %s.ant",g.CALPRMS,g.out);     system(cmd);
         noisePtr=FOPEN(strcat(g.out,".noise"),"w");
         fprintf(noisePtr,"%d\n",tableEntries);
-	for(index=0;index<tableEntries;index++)
-		fprintf(noisePtr,"%f\n",table[index]);
+    for(index=0;index<tableEntries;index++)
+        fprintf(noisePtr,"%f\n",table[index]);
 
-	FCLOSE(noisePtr);
+    FCLOSE(noisePtr);
         FREE(table);
 }
