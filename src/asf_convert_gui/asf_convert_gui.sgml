@@ -3,19 +3,19 @@
    "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" >
 <book>
     <bookinfo>
-        <date>2007-11-29</date>
-        <title>The ASF MapReady Remote Sensing Toolkit</title>
+        <date>June 8, 2008</date>
+        <title>ASF MapReady</title>
     </bookinfo>
     <toc></toc>
     <chapter id="overview">
         <title>Overview</title>
         <para>
-            The ASF MapReady suite of remote sensing tools consists of
-            several separate applications, several of which have their
-            own graphical user interfaces and many that are additionally
-            available, or only available, as command line tools suitable
-            for running by hand or building into scripts or batch files
-            as appropriate.
+            ASF MapReady is a program for converting SAR data into
+            a GIS-ready image format (i.e., GeoTIFF).  Also, the SAR
+            data can be geocoded, and/or terrain corrected.  Version 2.0
+            of MapReady now supports SLC (single-look complex) SAR data,
+            and for quad-pol SLC (i.e., ALOS/PALSAR Level 1.1) data, some
+            polarimetric analysis is supported.
         </para>
         <para>
             This document only pertains to the ASF MapReady tool in its
@@ -100,7 +100,7 @@
                         remapping values to bytes etcetera ...which means
                         information such as data statistics may not be
                         valid for the exported file (but is valid for the
-                        data prior to export.)
+                        data prior to export).
                     </para>
                 </listitem>
             </orderedlist>
@@ -439,7 +439,7 @@
                 </para>
                 <para>Fill DEM holes with interpolated values:</para>
                 <para>
-                    Some DEMs have holes in them; this is particularly
+                    Some DEMs have holes in them; this is often
                     a problem with SRTM DEMs.  Holes are small spots or
                     areas in the image that have no height data in them (or a data
                     value that indicates 'no data'.)  If this is the case,
@@ -453,6 +453,10 @@
                     properly, you should assume that the data within an
                     area that had a hole in it is still just a best guess...
                     a mathematical best guess.
+                </para>
+                <para>
+                    If you are planning to apply radiometric terrain correction,
+                    you should be especially careful in the hole-filled regions.
                 </para>
             </listitem>
             <listitem>
@@ -531,8 +535,14 @@
                 <para>Also apply radiometric Terrain Correction:</para>
                 <para>
                     Radiometric terrain correction consists of normalising a SAR image
-                    for well-understood variations in backscatter contributions in order
-                    to amplify less easily apparent influences, i.e. thematic land cover
+                    for well-understood variations in backscatter contributions from
+                    the terrain slope.  For example, a hill facing towards the sensor
+                    will produce might brighter returns than a backslope of the hill.
+                    Since these slope values can be obtained from the DEM, the expected
+                    backscatter can be adjusted to remove the impact of the slope.
+                </para>
+                <para>  
+                    The idea is to amplify less easily apparent influences, i.e. thematic land cover
                     variance for example.
                 </para>
             </listitem>
@@ -546,7 +556,7 @@
                     result.  You may wish to leave the layover regions blank instead.  In
                     a similar manner, area in SAR shadow regions area also missing
                     data.  Selecting this option will also result in interpolated
-                    values getting placed into the shado regions.
+                    values getting placed into the shadow regions.
                 </para>
             </listitem>
             <listitem>
@@ -611,7 +621,7 @@
             a polar stereographic projection for equatorial regions.
             If asf_geocode reports that your projection errors are
             too large, but you wish to use the projection type and settings
-            as they are anyway, may check the "Ignore projection errors"
+            as they are anyway, check the "Ignore projection errors"
             check box.  With this box checked, errors will be issued
             as warnings instead and processing will continue (unless
             a nonrecoverable error occurs.)
