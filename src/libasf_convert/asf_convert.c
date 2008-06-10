@@ -1178,6 +1178,17 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 	asfPrintError("More than one polarimetric processing scheme selected."
 		      "\nOnly one of these options may be selected at a time."
 		      "\n");
+      if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
+	  cloude_pottier_nc + k_means_wishart + k_means_wishart_ext < 1)
+	asfPrintError("No polarimetric processing scheme selected.\n");
+      
+      if (strncmp_case(cfg->import->radiometry, "AMPLITUDE",9)!=0) {
+        asfPrintError("Polarimetric processing requires the import "
+                      "radiometry AMPLITUDE.\n");
+        // this isn't reached
+        asfPrintWarning("Changing radiometry to AMPLITUDE.\n");
+        strcpy(cfg->import->radiometry, "AMPLITUDE_IMAGE");
+      }
     }
 
     // Check whether everything in the [Terrain correction] block is
