@@ -21,8 +21,8 @@ LIBS = \
 all: shaded_relief
 	-rm *.o
 
-shaded_relief: $(OBJS) $(LIBS)
-	${CC} ${CFLAGS} -o shaded_relief $(OBJS) $(LIBS) -lm
+shaded_relief: $(OBJS)
+	$(CC) $(CFLAGS) -o shaded_relief $(OBJS) $(LIBS) -lm
 	mv shaded_relief$(BIN_POSTFIX) $(BINDIR)
 
 clean:
