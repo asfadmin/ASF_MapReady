@@ -332,7 +332,7 @@ void createSubset(char *inN, float lowerLat, float upperLat, long *imgStart, lon
   hms_time hmsTime;
   ymd_date ymdDate;
   julian_date jDate;
-  char *parN, buf[255],*locTimeStr,ymdStr[10],hmsStr[10],tmp[10]="";
+  char *parN, buf[255],*locTimeStr,ymdStr[10],hmsStr[12],tmp[10]="";
   int i,nLoc,centerVec,upperVec,lowerVec;
   float centerLat;
   stateVector locVec;
