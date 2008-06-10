@@ -194,7 +194,7 @@ int asf_baseline(char *baseName, char *interferogram, char *seeds,
   char *veryoldBase=NULL, *oldBase=NULL, *newBase=NULL, tmp[255];
   int i;
 
-  sprintf(tmp, "%s_ml_amp.img", interferogram);
+  sprintf(tmp, "%s_ml.img", interferogram);
   check_return(dem2seeds("dem_slant.img", tmp, seeds, 0),
 	       "creating seed points (dem2seeds)");
 

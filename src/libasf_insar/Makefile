@@ -19,8 +19,7 @@ OBJS = \
 	deramp.o \
 	refine_baseline.o \
 	multilook.o \
-	phase_filter.o \
-	escher.o
+	phase_filter.o
 
 all: build_only
 	mv libasf_insar.a $(LIBDIR)

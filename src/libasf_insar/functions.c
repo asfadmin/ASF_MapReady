@@ -228,6 +228,62 @@ int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1,
   return ret;
 }
 
+int phase_filter(char *inFile, double strength, char *outFile)
+{
+  char options[255]="", command[255];
+  int ret;
+  
+  sprintf(options, "-log %s", logFile);
+  sprintf(command, "phase_filter %s %s %.1lf %s", 
+	  options, inFile, strength, outFile);
+  
+  printf("\nCommand line: %s\nDate: ", command);
+  fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printLog(logbuf);
+  FCLOSE(fLog);
+  ret = system(command);
+  
+  return ret;
+}
+
+int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
+{
+  char options[255]="", command[255];
+  int ret;
+  
+  sprintf(options, "-log %s", logFile);
+  sprintf(command, "zeroify %s %s %s %s", 
+	  options, phaseFile1, phaseFile2, outFile);
+  
+  printf("\nCommand line: %s\nDate: ", command);
+  fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printLog(logbuf);
+  FCLOSE(fLog);
+  ret = system(command);
+  
+  return ret;
+}
+
+int escher(char *inFile, char *outFile)
+{       
+  char options[255]="", command[255];
+  int ret;
+  
+  sprintf(options, "-log %s", logFile);
+  sprintf(command, "escher %s %s %s", options, inFile, outFile);
+  
+  printf("\nCommand line: %s\nDate: ", command);
+  fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printLog(logbuf);
+  FCLOSE(fLog);
+  ret = system(command);
+  
+  return ret;
+}
+
 int raster_calc(char *outFile, char *operation)
 {
   char options[255]="", command[255];

@@ -193,30 +193,32 @@ void blendData(complex **chunks,complex **last_chunks,
 void image_filter(FILE *in, meta_parameters *meta,
 		  FILE *out, double strength);
 
+/* FIXME: result comes in short - calling the command line tool for the moment
 int phase_filter(char *inFile, double strength, char *outFile)
 {
   FILE *fpIn, *fpOut;
   meta_parameters *meta;
 
-  /*Open input files.*/
+  // Open input files
   fpIn = fopenImage(inFile, "rb");
   fpOut = fopenImage(outFile, "wb");
   meta = meta_read(inFile);
   
-  /*Round up to find image size which is an even number of output chunks..*/
+  // Round up to find image size which is an even number of output chunks..
   ns = (meta->general->sample_count+ox-1)/ox*ox;
   nl = (meta->general->line_count+oy-1)/oy*oy;
   asfPrintStatus("Output Size: %d samples by %d lines\n\n", ns, nl);
   
-  /*Set up output file.*/
+  // Set up output file
   meta_write(meta, outFile);
   
-  /*Perform the filtering, write out.*/
+  // Perform the filtering, write out
   fft2dInit(dMy, dMx);
   image_filter(fpIn, meta, fpOut, strength);
   
   return (0);
 }
+*/
 
 /**************************************************
  read_image: reads the image file given by in & ddr
@@ -387,6 +389,8 @@ void image_filter(FILE *in, meta_parameters *meta,
   
 }
 
+/* FIXME: does not perform properly - call command line and clean up after
+          course.
 int zeroify(char *inFile, char *testFile, char *outFile)
 {
   float *buf, *testbuf;
@@ -395,21 +399,21 @@ int zeroify(char *inFile, char *testFile, char *outFile)
   int x, y;
   int line_count, sample_count;
     
-  /*Open output files.*/
+  // Open output files
   fpIn = fopenImage(inFile, "rb");
   fpTest = fopenImage(testFile, "rb");
   fpOut = fopenImage(outFile, "wb");
   
-  /*Read and copy over DDR.*/
+  // Read and copy over DDR
   metaIn = meta_read(inFile);
   metaTest = meta_read(testFile);
   meta_write(metaIn, outFile);
   
-  /*Allocate buffers.*/
+  // Allocate buffers
   buf = (float *) MALLOC(sizeof(float)*metaIn->general->sample_count);
   testbuf = (float *) MALLOC(sizeof(float)*metaTest->general->sample_count);
   
-  /*Copy over each line of input to the output.*/
+  // Copy over each line of input to the output
   line_count = metaIn->general->line_count;
   sample_count = metaIn->general->sample_count;
   for (y=0; y<line_count; y++) {
@@ -423,3 +427,4 @@ int zeroify(char *inFile, char *testFile, char *outFile)
 
   return 0;
 }
+*/

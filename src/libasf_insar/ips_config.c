@@ -211,7 +211,6 @@ dem_config *create_config_with_defaults()
   cfg->igram_coh = newStruct(s_igram_coh);
   cfg->offset_match = newStruct(s_offset);
   cfg->dinsar = newStruct(s_dinsar);
-  cfg->deramp_ml = newStruct(s_status);
   cfg->unwrap = newStruct(s_unwrap);
   cfg->refine = newStruct(s_refine);
   cfg->elevation = newStruct(s_elev);
@@ -275,8 +274,6 @@ dem_config *create_config_with_defaults()
   
   cfg->dinsar->igram = new_blank_str();
   cfg->dinsar->status = new_str("new");
-  
-  cfg->deramp_ml->status = new_str("new");
   
   cfg->unwrap->algorithm = new_str("escher");
   cfg->unwrap->flattening = 1;
@@ -619,13 +616,6 @@ dem_config *read_config(char *configFile, int createFlag)
       if (strncmp(test, "igram", 5)==0) read_str(cfg->dinsar->igram, line, "igram");
       if (strncmp(test, "status", 6)==0) 
 	read_str(cfg->dinsar->status, line, "status");
-    }
-    
-    if (strncmp(line, "[Deramp/multilook]", 18)==0) strcpy(params, "deramp_ml");
-    if (strcmp(params, "deramp_ml")==0) {
-      test = read_param(line);
-      if (strncmp(test, "status", 6)==0) 
-	read_str(cfg->deramp_ml->status, line, "status");
     }
     
     if (strncmp(line, "[Phase unwrapping]", 18)==0) strcpy(params, "unwrap");
@@ -1033,15 +1023,6 @@ int write_config(char *configFile, dem_config *cfg)
   
   if (strncmp(cfg->general->mode, "DEM", 3)==0) {
     
-    // [Deramp/multilook] section
-    fprintf(fConfig, "[Deramp/multilook]\n");
-    if (!shortFlag)
-      fprintf(fConfig, "\n# The status field indicates the progress of the processing.\n"
-              "# The status 'new' indicates that this processing step has not been\n"
-	      "# performed. When the processing is complete it is changed to 'success'\n"
-	      "# The processing flow can be interrupted by setting the status to 'stop'\n\n");
-    fprintf(fConfig, "status = %s\n\n\n", cfg->deramp_ml->status);
-
     // [Phase unwrapping] section
     fprintf(fConfig, "[Phase unwrapping]\n");
     if (!shortFlag)

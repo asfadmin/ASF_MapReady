@@ -26,9 +26,13 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   create_name(inPhase, inFile, "_phase.img");
   metaIn = meta_read(inPhase);
   metaOut = meta_read(inPhase);
+  // FIXME: Should write out two-banded file. Too much to fix in the rest of
+  //        the unwrapping code. Leaving that for clean up after the course.
   create_name(outAmp, outFile, "_amp.img");
   create_name(outPhase, outFile, "_phase.img");
-  create_name(outRGB, outFile, "_phase_rgb.img");
+  create_name(outRGB, outFile, "_rgb.img");
+  metaIn = meta_read(inFile);
+  metaOut = meta_read(inFile);
 
   // Create new metadata file for the amplitude and phase.
   look_sample = step_sample = 1;
@@ -39,6 +43,7 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   metaOut->general->line_count /= step_line;
   out_sample_count = metaOut->general->sample_count;
   out_line_count = metaOut->general->line_count;
+  metaOut->sar->multilook = 1;
   metaOut->sar->line_increment = 1;
   metaOut->sar->sample_increment = 1;
   metaOut->sar->azimuth_time_per_pixel *= step_line;
@@ -46,6 +51,7 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   metaOut->general->y_pixel_size *= step_line;
   meta_write(metaOut, outAmp);
   meta_write(metaOut, outPhase);
+  //meta_write(metaOut, outFile);
   meta_write(metaOut, outRGB);
   
   // Open the files
@@ -53,6 +59,8 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   fpPhaseIn = fopenImage(inPhase, "rb");
   fpAmpOut = fopenImage(outAmp, "wb");
   fpPhaseOut = fopenImage(outPhase, "wb");
+  //FILE *fpIn = fopenImage(inFile, "rb");
+  //FILE *fpOut = fopenImage(outFile, "wb");
   fpRGB = fopenImage(outRGB, "wb");
   if (overlay)
     fpOverlay = fopenImage(overlay, "rb");
@@ -88,6 +96,9 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
     
     get_float_lines(fpAmpIn, metaIn, line*step_line, look_line, ampIn);
     get_float_lines(fpPhaseIn, metaIn, line*step_line, look_line, phaseIn);
+    //get_band_float_lines(fpIn, metaIn, 0, line*step_line, look_line, ampIn);
+    //get_band_float_lines(fpIn, metaIn, 1, line*step_line, look_line, 
+    //			 phaseIn);
     if (overlay)
       get_float_lines(fpOverlay, metaOut, line, 1, scaleIn);
     
@@ -124,6 +135,8 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
     }
     
     // Write out data to file
+    //put_band_float_line(fpOut, metaOut, 0, line, ampOut);
+    //put_band_float_line(fpOut, metaOut, 1, line, phaseOut);
     put_float_line(fpAmpOut, metaOut, line, ampOut);
     put_float_line(fpPhaseOut, metaOut, line, phaseOut);
     put_float_line(fpRGB, metaOut, line, rgb);
@@ -151,16 +164,20 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   FCLOSE(fpPhaseIn);
   FCLOSE(fpAmpOut);
   FCLOSE(fpPhaseOut);
+  //FCLOSE(fpIn);
+  //FCLOSE(fpOut);
   FCLOSE(fpRGB);
   
   meta_free(metaIn);
   meta_free(metaOut);
-  
+
+  /*  
   // Export a color version of the interferogram to JPEG
-  create_name(outPhase, outFile, "_phase_rgb");
+  create_name(outRGB, outFile, "_rgb");
   check_return(asf_export_with_lut(JPEG, SIGMA, "interferogram.lut", 
-				   outPhase, outPhase),
+				   outFile, outRGB),
 	       "colorized interferogram (asf_export)");
+  */
 
   return 0;
 }

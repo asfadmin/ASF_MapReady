@@ -136,7 +136,6 @@ typedef struct {
   s_igram_coh *igram_coh;      	/* interferogram/coherence generation */
   s_offset *offset_match;      	/* pixel offset matching */
   s_dinsar *dinsar;	        /* differential interferogram */
-  s_status *deramp_ml;		/* multilook deramped interferogram */
   s_unwrap *unwrap;		/* phase unwrapping */
   s_refine *refine;		/* baseline refinement */
   s_elev *elevation;		/* elevation and elevation error */

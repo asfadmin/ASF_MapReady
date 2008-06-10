@@ -281,7 +281,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 
     check_return(asf_phase_unwrap(cfg->unwrap->algorithm, 
 				  cfg->igram_coh->igram, "a_cpx.meta",
-				  cfg->general->dem, "base.00",
+				  "dem_slant.img", "base.00",
 				  cfg->unwrap->filter, cfg->unwrap->flattening,
 				  "unwrap_mask", "unwrap"),
 		 "unwrapping the phase (asf_phase_unwrap)");
@@ -325,7 +325,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
 	    cfg->unwrap->qc);
     asfSystem(cmd);
     sprintf(tmp, "a_amp.img");
-    sprintf(tmp2, "coherence.img");
+    sprintf(tmp2, cfg->igram_coh->coh);
 
     check_return(asf_elevation("unwrap_phase.img", "unwrap_dem_mask.img",
 			       newBase, cfg->refine->seeds,
