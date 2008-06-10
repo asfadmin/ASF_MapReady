@@ -1,14 +1,5 @@
 include ../../make_support/system_rules
 
-LIBS  = \
-	$(LIBDIR)/asf.a \
-	$(LIBDIR)/asf_meta.a \
-	$(GSL_LIBS) \
-	$(LIBDIR)/asf_fft.a \
-	$(LIBDIR)/libasf_proj.a \
-	$(PROJ_LIBS)
-LIBC = $(LIBS) -lm 
-
 OBJLIB = ardop_libs.o \
 	 cfft1d_risc.o \
 	 estdop.o \
@@ -30,6 +21,7 @@ ASPLIB = patch.o \
 
 # Filter out the ISOC99 FLAGS which causes some problems.
 CFLAGS := $(patsubst -D_ISOC99_SOURCE, , $(CFLAGS))
+CFLAGS += $(GLIB_CFLAGS)
 
 all: build_only
 	mv libasf_ardop.a $(LIBDIR)

@@ -74,11 +74,8 @@ BUGS:
 
 *****************************************************************************/
 #include "asf.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 /********
 findPeak:
     Given a 1-D array of floats, finds the maximum value and
@@ -178,7 +175,7 @@ double amp_corr(patch *p1,patch *p2,file *f)
             fprintf(fout,"%d %f\n",x,corr[x+fftLen]);
         else/*Must be an infinity or NaN*/
         {
-            printf("   WARNING!! Found infinity at offset %d!\n",x);
+            fprintf(stderr, "   WARNING!! Found infinity at offset %d!\n",x);
             if (logflag) {
               sprintf(logbuf,"   WARNING!! Found infinity at offset %d!\n",x);
               printLog(logbuf);
@@ -214,13 +211,13 @@ int main (int argc, char *argv [])
     meta_parameters *meta;
 
     StartWatch();
-    printf("   Doppler Determination:\n");
+    if (!quietflag) printf("   Doppler Determination:\n");
     if (logflag) printLog("   Doppler Determination:\n");
     if (!parse_cla(argc,argv,&params,&meta))
       printErr("   ERROR: Usage: dop_prf as ardop\n");
 
 /*Set the initial doppler parameters.*/
-    printf("   Processing to doppler at %f prf...\n",params.fd);
+    if (!quietflag) printf("   Processing to doppler at %f prf...\n",params.fd);
     if (logflag) {
       sprintf(logbuf,"   Processing to doppler at %f prf...\n",params.fd);
       printLog(logbuf);
@@ -260,8 +257,8 @@ Create "patch"es of data.
     StopWatch();
 
     dopDel=2*pixShift*f->rngpix/(s->wavl*s->refPerRange/2*(p1->slantToFirst+p1->slantPer*p1->n_range/2));
-    printf("   The image's doppler is off by %.2f pixels, or %.2f PRF.\n",
-        pixShift,dopDel);
+    if (!quietflag) printf("   The image's doppler is off by %.2f pixels, or %.2f PRF.\n",
+                           pixShift,dopDel);
     if (logflag) {
       sprintf(logbuf,"   The image's doppler is off by %.2f pixels, or %.2f PRF.\n",
         pixShift,dopDel);
@@ -271,9 +268,9 @@ Create "patch"es of data.
     /*dopDel-=0.2; <-- Constant frequency offset?*/
     dopDel=floor(dopDel+0.5);
 
-    printf("   The doppler coefficients should be:\n"
-    "   %.10f %.10f %.10f\n\n",s->orig_fd-dopDel,s->orig_fdd,s->orig_fddd);
-    printf("   These coefficients have been written into '%s'\n",appendExt(params.in1,".in"));
+    if (!quietflag) printf("   The doppler coefficients should be:\n"
+                           "   %.10f %.10f %.10f\n\n",s->orig_fd-dopDel,s->orig_fdd,s->orig_fddd);
+    if (!quietflag) printf("   These coefficients have been written into '%s'\n",appendExt(params.in1,".in"));
     if (logflag) {
       sprintf(logbuf,"   The doppler coefficients should be:\n"
               "   %.10f %.10f %.10f\n\n",s->orig_fd-dopDel,s->orig_fdd,s->orig_fddd);

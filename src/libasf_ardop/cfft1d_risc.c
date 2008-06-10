@@ -1,6 +1,6 @@
 /****************************************************************************
-*                                           *
-*   cfft1d_risc.c -- FFT routine that calls asf_fft.a routines              *
+*								            *
+*   cfft1d_risc.c -- FFT routine that calls asf_fft.a routines         	    *
 *  Parts of this code are Copyright Howard Zebker at Stanford University      *
 *  Modifications are Copyright Geophysical Institute, University of Alaska    *
 *  Fairbanks. All rights reserved.                                            *
@@ -11,28 +11,28 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*   Alaska Satellite Facility                                         *
-*   Geophysical Institute           www.asf.alaska.edu            *
-*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
-*   P.O. Box 757320                               *
-*   Fairbanks, AK 99775-7320                          *
-*                                         *
+*	Alaska Satellite Facility	    	                              *
+*	Geophysical Institute			www.asf.alaska.edu            *
+*       University of Alaska Fairbanks		uso@asf.alaska.edu	      *
+*	P.O. Box 757320							      *
+*	Fairbanks, AK 99775-7320					      *
+*									      *
 ******************************************************************************/
 /****************************************************************
-FUNCTION NAME: cfft1d - performs forward and reverse 1d ffts
+FUNCTION NAME: cfft1d - performs forward and reverse 1d ffts 
 SYNTAX: cfft1d(int n, complexFloat *c, int dir)
 PARAMETERS:
     NAME:   TYPE:       PURPOSE:
     --------------------------------------------------------
-    n       int       length of the vector to transform
-    c       complexFloat *  pointer to vector to transform
-    dir     int       operations flag: -1 forward, 1 reverse, 0 init.
-
+    n       int	      length of the vector to transform
+    c 	    complexFloat *  pointer to vector to transform
+    dir	    int	      operations flag: -1 forward, 1 reverse, 0 init.
+    
 DESCRIPTION:
     Performs a fourier transform of the input data using the asf_fft.a
-  routines.
-
-RETURN VALUE:   None
+  routines. 
+  
+RETURN VALUE:	None
 
 SPECIAL CONSIDERATIONS:
    Automatically initializes fft cosine/coefficients array.
@@ -40,37 +40,34 @@ SPECIAL CONSIDERATIONS:
 
 ****************************************************************/
 #include "asf.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 #include "fft.h"
 
 void cfft1d(int n, complexFloat *c, int dir)
 {
         static int prev_m = 0;
-    int m=(int)(log(n)/log(2.0)+0.5);
-    if (dir == 0)
-    {
+ 	int m=(int)(log(n)/log(2.0)+0.5);
+	if (dir == 0)
+	{
             //printf("fftInit called for m=%d\n", m);
             if (prev_m != m) {
                 if (prev_m > 0) {
                     //printf("Freeing FFT data for m=%d\n", prev_m);
                     fftFree();
                 }
-        int ret=fftInit(m);
-        if (ret!=0) {
-          sprintf(errbuf,"   ERROR: Problem %d in FFT!\n",ret);
-          printErr(errbuf);
-        }
+		int ret=fftInit(m);
+		if (ret!=0) {
+		  sprintf(errbuf,"   ERROR: Problem %d in FFT!\n",ret);
+		  printErr(errbuf);
+		}
                 prev_m = m;
             } else {
                 //printf("Already initialized FFT for m=%d.\n", m);
             }
-    }
-    if (dir > 0)  iffts((float *)c,m,1);
-    if (dir < 0)  ffts((float *)c,m, 1);
+	}
+	if (dir > 0)  iffts((float *)c,m,1);
+	if (dir < 0)  ffts((float *)c,m, 1);
 }
 
 

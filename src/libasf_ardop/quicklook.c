@@ -103,11 +103,8 @@ BUGS:
 *                                       *
 ****************************************************************************/
 #include "asf.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 #include "specan.h"
 #include "ddr.h"
 
@@ -136,7 +133,7 @@ void prep_specan_file(int nLooks,int quality,double aspect,
     getRec *inFile;
     FILE *outFile;
     int outLines,outSamples/*,x*/;
-    /*char command[255];*/
+    /*char command[1024];*/
     int i;
 
     specan_struct rng={1.0/RFS,
@@ -161,22 +158,23 @@ image, better quality.*/
     rng.fftLen=(int)(rng.fftLen*aspect);
 
 /*Open files.*/
-    printf("Opening input files...\n");
+    if (!quietflag) printf("Opening input files...\n");
     inFile=fillOutGetRec(g->in1);
     outFile=fopenImage(g->out,"wb");
 
 /*Init. Range Variables*/
-    printf("Init SPECAN\n");
+    if (!quietflag) printf("Init SPECAN\n");
     rng.iSamp=1.0/g->fs;/*Sample size, range (s)= 1.0/sample freqency (Hz)*/
     rng.chirpSlope=g->slope;/*Range chirp slope (Hz/Sec)*/
     specan_init(&rng);
 
 /*Init. Azimuth Variables*/
-    printf("Estimate Doppler\n");
+    if (!quietflag) printf("Estimate Doppler\n");
     az.iSamp=1.0/g->prf;/*Sample size, azimuth (s)=1.0/sample freqency (Hz)*/
 
-    if (meta->stVec==NULL)
-        {printf("Can only quicklook scenes with state vectors!\n");exit(1);}
+    if (meta->stVec==NULL) {
+        fprintf(stderr, "Can only quicklook scenes with state vectors!\n");
+        exit(1);}
     else {  /*Find doppler rate (Hz/sec) <=> azimuth chirp slope*/
         double dopRate,yaw=0.0;
         GEOLOCATE_REC *g=init_geolocate_meta(&meta->stVec->vecs[0].vec,meta);
@@ -194,12 +192,12 @@ image, better quality.*/
     az.powerCenter=(1.0/az.iSamp)*
         fftEstDop(inFile,inFile->nLines/2,1,az.fftLen);
 
-    printf("Doppler centroid at %.0f Hz, %.0f Hz/sec\n",az.chirpCenter,az.chirpSlope);
+    if (!quietflag) printf("Doppler centroid at %.0f Hz, %.0f Hz/sec\n",az.chirpCenter,az.chirpSlope);
     specan_init(&az);
 
-    printf("Efficiency: Range(%d): %.0f%%   Azimuth(%d): %.0f%%\n",
-        rng.fftLen,100.0*rng.oNum/rng.fftLen,
-        az.fftLen,100.0*az.oNum/az.fftLen);
+    if (!quietflag) printf("Efficiency: Range(%d): %.0f%%   Azimuth(%d): %.0f%%\n",
+                           rng.fftLen,100.0*rng.oNum/rng.fftLen,
+                           az.fftLen,100.0*az.oNum/az.fftLen);
 
 /*Process image.*/
     specan_file(inFile,nLooks,outFile,&rng,&az,&outLines,&outSamples);
@@ -277,7 +275,7 @@ int main(int argc,char *argv[])
 
 void usage(char *mess1,char *mess2)
 {
-    printf("\n"
+    fprintf(stderr, "\n"
         "Usage:\n"
         "   quicklook [-k <nLooks>] [-q <quality>] [-a <aspect ratio>]\n"
         "             <input signal> <output image>\n"
@@ -298,8 +296,8 @@ void usage(char *mess1,char *mess2)
 
     if (mess1)
     {
-        printf("Error:\n");
-        printf(mess1,mess2);
+        fprintf(stderr, "Error:\n");
+        fprintf(stderr, mess1,mess2);
     }
     exit(1);
 }

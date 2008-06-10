@@ -12,11 +12,7 @@ Sig_hist:
 ***********************************************************/
 #include "asf.h"
 #include "asf_meta.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
-#include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 
 #define SIGNAL_LENGTH 1000 /*Program reads a SIGNAL_LENGTH x SIGNAL_LENGTH block of data*/
 #define OUTPUT_SIZE 200
@@ -49,9 +45,15 @@ int main(int argc,char **argv)
             startY = atoi(GET_ARG(2));
             startX = atoi(GET_ARG(1));
         }
-        else {printf("\n*****Invalid option:  %s\n\n",argv[currArg-1]);usage(argv[0]);}
+        else {
+            fprintf(stderr, "\n*****Invalid option:  %s\n\n",argv[currArg-1]);
+            usage(argv[0]);
+        }
     }
-    if ((argc-currArg) < 6) {printf("Insufficient arguments.\n"); usage(argv[0]);}
+    if ((argc-currArg) < 6) {
+        fprintf(stderr, "Insufficient arguments.\n");
+        usage(argv[0]);
+    }
 
     r=fillOutGetRec(argv[currArg]);
 
@@ -87,14 +89,14 @@ int main(int argc,char **argv)
     cov=(sumRI-sumR*sumI/n)/(n-1);
     /*Correlation is covariance over standard deviations*/
     corr=cov/(stdR*stdI);
-    printf( "   Mean_R= %f Mean_I= %f \n"
-        "   Mean R*R=%f; Mean I*I=%f\n"
-        "   Std. Dev. R=%f; Std. Dev. I=%f\n"
-        "   Mean R*I=%f; non-orthogonality correction=%f\n"
-        "   Correlation coefficient=%f\n",
-        sumR/n,sumI/n,sumRR/n,sumII/n,
-        stdR,stdI,
-        sumRI/n,sumRI/sumRR,corr);
+    if (!quietflag) printf( "   Mean_R= %f Mean_I= %f \n"
+                            "   Mean R*R=%f; Mean I*I=%f\n"
+                            "   Std. Dev. R=%f; Std. Dev. I=%f\n"
+                            "   Mean R*I=%f; non-orthogonality correction=%f\n"
+                            "   Correlation coefficient=%f\n",
+                            sumR/n,sumI/n,sumRR/n,sumII/n,
+                            stdR,stdI,
+                            sumRI/n,sumRI/sumRR,corr);
     if (logflag) {
       sprintf(logbuf, "   Mean_R= %f Mean_I= %f \n"
               "   Mean R*R=%f; Mean I*I=%f\n"
@@ -123,24 +125,24 @@ int main(int argc,char **argv)
 
 void usage (char *name)
 {
- printf("\n"
+ fprintf(stderr, "\n"
     "USAGE:\n"
     "   %s [-log <logfile>] [-offset <Line> <Sample>] <ccsd>\n",name);
- printf("\n"
+ fprintf(stderr, "\n"
     "REQUIRED ARGUMENT:\n"
     "   ccsd   CCSD image to create histogram for.\n");
- printf("\n"
+ fprintf(stderr, "\n"
     "OPTIONAL ARGUMENTS:\n"
     "   -log     Copy standard output to <logfile>.\n"
     "   -offset  <line> and <sample> to start collecting\n"
     "              the histogram data at. (default 0x0)\n");
- printf("\n"
+ fprintf(stderr, "\n"
     "DESCRIPTION:\n"
     "   Computes a signal data histogram. Writes a histogram\n"
     "   image based on a %dx%d block of signal data with its\n"
     "   upper left corner at the line and sample specified by\n"
     "   the -offset option.\n", SIGNAL_LENGTH, SIGNAL_LENGTH);
- printf("\n"
+ fprintf(stderr, "\n"
     "Version %.2f, ASF InSAR Tools\n"
     "\n", SIG_HIST_VERSION);
  exit(EXIT_FAILURE);

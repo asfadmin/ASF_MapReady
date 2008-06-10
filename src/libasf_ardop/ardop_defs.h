@@ -22,7 +22,12 @@
 #ifndef __ASPMATH_H     /* include only once */
 #define __ASPMATH_H
 
-#include <read_signal.h>
+/*-----------------------------------------------------*/
+/* define complex variable type if not already defined */
+/*-----------------------------------------------------*/
+#include "asf_complex.h"
+#include "read_signal.h"
+#include "geolocate.h"
 
 /*-----------------------------*/
 /* Simple function definitions */
@@ -137,9 +142,9 @@ typedef struct {
 } satellite;
 
 typedef struct {
-	char in[255]; /*Input file.*/
-	char out_cpx[255],out_amp[255]; /*Complex and Amplitude output names.*/
-        char out_pwr[255], out_sig[255], out_gam[255], out_bet[255];  /*Power or RCS (dB) output names.*/
+	char in[1024]; /*Input file.*/
+	char out_cpx[1024],out_amp[1024]; /*Complex and Amplitude output names.*/
+        char out_pwr[1024], out_sig[1024], out_gam[1024], out_bet[1024];  /*Power or RCS (dB) output names.*/
 	float azpix,rngpix; /*Azimuth and range pixel size.*/
 	int firstLineToProcess,firstOutputLine,skipFile,skipSamp;
 	int n_az_valid,nlooks;
@@ -158,9 +163,6 @@ void estdop(char file[], int nDopLines, float *a, float *b,float *c);
 void calc_range_ref(complexFloat *range_ref, int rangeFFT, int refLen);
 void elapse(int fnc);
 void multilook(complexFloat *patch,int n_range,int nlooks, float *pwrs);
-void save_meta(meta_parameters *meta, const char *fname,
-	int nl,int ns,int sl,int ss,
-	double pdx,double pdy, int li);
 
 /*-------------Populating ARDOP_PARAMS and the metadata---------------*/
 void get_params(char *,struct ARDOP_PARAMS *,meta_parameters **);
@@ -180,7 +182,8 @@ void debugWritePatch_Line(int lineNo, complexFloat *line, char *basename,
                           int n_range, int n_az);
 void processPatch(patch *p,const getRec *signalGetRec,
 	const rangeRef *r,const satellite *s);
-void writePatch(const patch *p,const satellite *s,const file *f,int patchNo);
+void writePatch(const patch *p,const satellite *s,meta_parameters *meta,
+	const file *f,int patchNo);
 void destroyPatch(patch *p);
 
 /*-------Routines to manipulate patches.----------*/

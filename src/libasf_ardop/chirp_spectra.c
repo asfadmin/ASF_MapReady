@@ -9,15 +9,12 @@ This is only useful for debugging chirp files.
 */
 
 #include "asf.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 
 void read_reference(char *fName,complexFloat *ref,int *len)
 {
-    char buf[255];
+    char buf[1024];
     FILE *f=FOPEN(fName,"r");
     float r,i;
     (*len)=0;

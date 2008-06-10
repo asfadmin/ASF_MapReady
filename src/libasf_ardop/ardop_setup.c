@@ -1,6 +1,6 @@
 /****************************************************************************
-*                                           *
-*   ardop_setup.c -- Routines used to set up the parameters for a run        *
+*                                                                             *
+*   ardop_setup.c -- Routines used to set up the parameters for a run         *
 * Copyright (c) 2004, Geophysical Institute, University of Alaska Fairbanks   *
 * All rights reserved.                                                        *
 *                                                                             *
@@ -10,12 +10,12 @@
 *                                                                             *
 *       For more information contact us at:                                   *
 *                                                                             *
-*   Alaska Satellite Facility                                         *
-*   Geophysical Institute           www.asf.alaska.edu            *
-*       University of Alaska Fairbanks      uso@asf.alaska.edu        *
-*   P.O. Box 757320                               *
-*   Fairbanks, AK 99775-7320                          *
-*                                         *
+*   Alaska Satellite Facility                                                 *
+*   Geophysical Institute           www.asf.alaska.edu                        *
+*       University of Alaska Fairbanks      uso@asf.alaska.edu                *
+*   P.O. Box 757320                                                           *
+*   Fairbanks, AK 99775-7320                                                  *
+*                                                                             *
 ******************************************************************************/
 /***********************************************************************
   ardop_setup.c  -- Routines to calculate input parameters for ASP.
@@ -32,11 +32,8 @@
 ***********************************************************************/
 #include "asf.h"
 #include "ceos.h"
-#include "asf_complex.h"
-#include "read_signal.h"
-#include "geolocate.h"
 #include "asf_meta.h"
-#include "ardop_defs.h" // Requires asf_complex.h, read_signal.h, geolocate.h, and asf_meta.h
+#include "ardop_defs.h"
 #include "odl.h"
 #include <math.h>
 #include <assert.h>
@@ -148,8 +145,8 @@ satellite *newSatellite(void)
 
     if(s->hamming==1 && s->kaiser==1)
     {
-        printf("   You can't have both a Kaiser and a Hamming window simultaneously\n");
-        printf("   Using a rectangular window in azimuth\n");
+        if (!quietflag) printf("   You can't have both a Kaiser and a Hamming window simultaneously\n");
+        if (!quietflag) printf("   Using a rectangular window in azimuth\n");
         if (logflag) {
           printLog("   You can't have both a Kaiser and a Hamming window simultaneously\n");
           printLog("   Using a rectangular window in azimuth\n");
@@ -158,27 +155,27 @@ satellite *newSatellite(void)
         s->kaiser=0;
     }
     if(s->hamming==1) {
-      printf("   Using Hamming window on Azimuth Reference function\n");
+      if (!quietflag) printf("   Using Hamming window on Azimuth Reference function\n");
       if (logflag) printLog("   Using Hamming window on Azimuth Reference function\n");
     }
     if(s->kaiser==1) {
-      printf("   Using Kaiser window on Azimuth Reference function\n");
+      if (!quietflag) printf("   Using Kaiser window on Azimuth Reference function\n");
       if (logflag) printLog("   Using Kaiser window on Azimuth Reference function\n");
     }
     if(s->imageType.power) {
-      printf("   Calculating power image\n");
+      if (!quietflag) printf("   Calculating power image\n");
       if (logflag) printLog("   Calculating power image\n");
     }
     if(s->imageType.sigma) {
-      printf("   Calculating sigma_0 image\n");
+      if (!quietflag) printf("   Calculating sigma_0 image\n");
       if (logflag) printLog("   Calculating sigma_0 image\n");
     }
     if(s->imageType.gamma) {
-      printf("   Calculating gamma_0 image\n");
+      if (!quietflag) printf("   Calculating gamma_0 image\n");
       if (logflag) printLog("   Calculating gamma_0 image\n");
     }
     if(s->imageType.beta) {
-      printf("   Calculating beta_0 image\n");
+      if (!quietflag) printf("   Calculating beta_0 image\n");
       if (logflag) printLog("   Calculating beta_0 image\n");
     }
 
@@ -211,11 +208,11 @@ satellite *newSatellite(void)
     the gain vectors and put them in the satellite structure */
     if(strcmp(g.CALPRMS,"NO")!=0)
     {
-        assert(0);
+                assert(0);
         /* If we have a CalParams file, then lets allocate the required memory for the vectors,
            255 was chosen as an arbitrary length, I think that they are less than 100 entries but...*/
-        s->ang_vec=(double *)MALLOC(sizeof(double)*255);
-        s->gain_vec=(double *)MALLOC(sizeof(double)*255);
+        s->ang_vec=(double *)MALLOC(sizeof(double)*512);
+        s->gain_vec=(double *)MALLOC(sizeof(double)*512);
         /*
         * Check to see if we have any trouble opening the CAL_PARAMS file *
         if((*errI=*ODLinit())!=0) {
@@ -241,7 +238,7 @@ satellite *newSatellite(void)
             s->gain_vec[cols]=pow(10,-2*s->gain_vec[cols]/10);
 /*          printf("%f %f\n",s->ang_vec[cols],s->gain_vec[cols]); */
         }
-        printf("   Calibration Parameters File Read, Elevation Angle and Gain Vectors stored\n");
+        if (!quietflag) printf("   Calibration Parameters File Read, Elevation Angle and Gain Vectors stored\n");
     }
 
 /*Compute a few bizarre numbers.*/
@@ -307,7 +304,7 @@ file *newFile(void)
     f->rngpix=rngpix;
     f->firstLineToProcess=g.ifirstline;
         if (f->firstLineToProcess > 0)
-            printf("   First line to process: %d\n", f->firstLineToProcess);
+          if (!quietflag) printf("   First line to process: %d\n", f->firstLineToProcess);
     f->skipFile=g.ifirst+g.isave;
 
     f->firstOutputLine = (n_az-g.na_valid)/2;
@@ -362,7 +359,7 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 {
     int az_reflen, skew_lines;
     float slantToLast, a2;
-        char tmpOut[255];
+        char tmpOut[1024];
 
 /*Set parameters*/
     g=*g_in;
@@ -389,7 +386,7 @@ void ardop_setup(struct ARDOP_PARAMS *g_in,meta_parameters *meta,int *N_az,int *
 
     az_reflen=(int)(refPerRange*slantToLast+skew_lines);
 
-
+//az_reflen=700;
 
     if (g.na_valid<0)
     {/*Automatically determine number of valid lines.*/
