@@ -35,14 +35,10 @@ LIBS = \
 all: asf_check_geolocation
 	-rm *.o
 
-asf_check_geolocation: $(OBJS) $(LIBS)
-	${CC} ${CFLAGS} -o asf_check_geolocation $(OBJS) $(LIBS) -lm
+asf_check_geolocation: $(OBJS)
+	$(CC) $(CFLAGS) -o asf_check_geolocation $(OBJS) $(LIBS) -lm
 	mv asf_check_geolocation$(BIN_POSTFIX) $(BINDIR)
 
 clean:
 	-rm -f core *.o
-
-
-
-
 
