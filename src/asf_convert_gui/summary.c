@@ -329,7 +329,7 @@ void update_summary()
             break;
 
         case OUTPUT_FORMAT_GEOTIFF:
-            strcat(text, "geoTIFF");
+            strcat(text, "GeoTIFF");
             break;
 
         case OUTPUT_FORMAT_TIFF:

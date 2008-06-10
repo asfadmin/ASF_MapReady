@@ -306,7 +306,8 @@ on_input_file_selection_ok_button_clicked(GtkWidget *widget)
         }
         else
         {
-            message_box("Some of the files were not added -- unknown types or extensions.");
+            message_box("Some of the files were not added -- "
+                        "unknown types or extensions.");
         }
     }
 

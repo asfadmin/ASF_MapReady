@@ -76,6 +76,12 @@ static char *file_is_valid(const gchar * file)
         return appendExt(file, ".meta");
     }
 
+    // second possiblity: geotiff
+    // (we don't actually check that it is a geotiff (instead of a tiff)
+    // it'll error out during import if it isn't)
+    if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0))
+        return STRDUP(file);
+
     // now, the ceos check
     char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
     char **dataName = NULL, **metaName = NULL;
