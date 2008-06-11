@@ -14,12 +14,13 @@ int ardop(char *option, int startLineNum, int numPatches, char *inFile,
 	  logFile, numPatches, ARDOP_VALID_PATCH_LENGTH, startLineNum, option);
   sprintf(command, "ardop %s %s %s", options, inFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -31,12 +32,13 @@ int c2p_exec(char *inFile, char *outFile)
   
   sprintf(command, "c2p %s %s", inFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -51,12 +53,13 @@ int coregister_coarse(char *inFile1, char *inFile2, char *outFile, char *maskFil
   sprintf(command, "coregister_coarse %s %s %s base.00 %s", 
 	  options, inFile1, inFile2, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -73,11 +76,12 @@ int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFil
   sprintf(command, "coregister_fine %s %s %s %s %s", 
 	  options, inFile1, inFile2, inCtrlFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);	
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);	
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
+
   if( (ret = system(command) >> 8) == 101)
     {
       printf("Error: Register_fine could not find many offsets with\n");
@@ -90,6 +94,7 @@ int coregister_fine(char *inFile1, char *inFile2, char *inCtrlFile, char *outFil
       printf("Now exiting.\n");
       return 1;
     }
+  fLog = FOPEN(logFile, "a");
   return ret;
 }
 
@@ -101,12 +106,13 @@ int fit_line(char *inFile, char *outFile)
   sprintf(options, "-log %s -quiet", logFile);
   sprintf(command, "fit_line %s %s %s", options, inFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -120,12 +126,13 @@ int calc_deltas(char *inFile1, char *inFile2, int lineDiff, char *outFile)
   sprintf(command, "calc_deltas %s %s %i %s", 
 	  inFile1, inFile2, lineDiff, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -139,12 +146,13 @@ int convert2byte(char *inFile, char *outFile, int nLooks, int nSmooth)
   sprintf(command, "convert2byte %s -look %dx%d -step %dx%d %s %s", 
 	  options, nLooks, nLooks, nSmooth, nSmooth, inFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -157,8 +165,8 @@ int fit_plane(char *inFile, char *outFile, double fraction)
 	sprintf(options, "-log %s -k %.1lf", logFile, fraction);
         sprintf(command, "fit_plane %s %s %s", options, inFile, outFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
+        printf("\nCommand line: %s\n", command);
+	//fLog = FOPEN(logFile, "a");
 	sprintf(logbuf,"\nCommand line: %s\n", command);
 	printLog(logbuf);
 	FCLOSE(fLog);
@@ -174,12 +182,13 @@ int fit_warp(char *inFile1, char *inFile2, char *outFile)
 
         sprintf(command, "fit_warp %s %s %s", inFile1, inFile2, outFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
+        printf("\nCommand line: %s\n", command);
+	//fLog = FOPEN(logFile, "a");
 	sprintf(logbuf,"\nCommand line: %s\n", command);
 	printLog(logbuf);
 	FCLOSE(fLog);
         ret = system(command);
+        fLog = FOPEN(logFile, "a");
          
         return ret;
 }       
@@ -192,12 +201,13 @@ int remap(char *inFile, char *outFile, char *options)
 	sprintf(options, "%s -log %s", options, logFile);
         sprintf(command, "remap %s %s %s", options, inFile, outFile);
 
-        printf("\nCommand line: %s\nDate: ", command);
-	fLog = FOPEN(logFile, "a");
+        printf("\nCommand line: %s\n", command);
+	//fLog = FOPEN(logFile, "a");
 	sprintf(logbuf,"\nCommand line: %s\n", command);
 	printLog(logbuf);
 	FCLOSE(fLog);
         ret = system(command);
+        fLog = FOPEN(logFile, "a");
  
         return ret;
 }
@@ -218,12 +228,13 @@ int snaphu(char *snaphu_version, char *phaseFile, char *ampFile, char *pwrFile1,
 	    snaphu_version, nAzimuth, nRange, nOverAzi, nOverRng, nProcs, 
 	    phaseFile, ampFile, pwrFile1, pwrFile2, config, outFile);        
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
   sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -237,12 +248,13 @@ int phase_filter(char *inFile, double strength, char *outFile)
   sprintf(command, "phase_filter %s %s %.1lf %s", 
 	  options, inFile, strength, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -256,12 +268,13 @@ int zeroify(char *phaseFile1, char *phaseFile2, char *outFile)
   sprintf(command, "zeroify %s %s %s %s", 
 	  options, phaseFile1, phaseFile2, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -274,12 +287,13 @@ int escher(char *inFile, char *outFile)
   sprintf(options, "-log %s", logFile);
   sprintf(command, "escher %s %s %s", options, inFile, outFile);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
@@ -292,12 +306,13 @@ int raster_calc(char *outFile, char *operation)
   sprintf(options, "-log %s", logFile);
   sprintf(command, "raster_calc %s %s %s", options, outFile, operation);
   
-  printf("\nCommand line: %s\nDate: ", command);
-  fLog = FOPEN(logFile, "a");
-  sprintf(logbuf,"\nCommand line: %s\nDate: ", command);
+  printf("\nCommand line: %s\n", command);
+  //fLog = FOPEN(logFile, "a");
+  sprintf(logbuf,"\nCommand line: %s\n", command);
   printLog(logbuf);
   FCLOSE(fLog);
   ret = system(command);
+  fLog = FOPEN(logFile, "a");
   
   return ret;
 }
