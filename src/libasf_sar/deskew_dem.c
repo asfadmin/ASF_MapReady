@@ -245,8 +245,7 @@ static double calc_ranges(struct deskew_dem_data *d,meta_parameters *meta)
 }
 
 static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
-                            float *grDEM, struct deskew_dem_data *d,
-                            int do_interp)
+                            float *grDEM, struct deskew_dem_data *d)
 {
     int x;
     for (x=0; x<ns; x++)
@@ -260,22 +259,10 @@ static void mask_float_line(int ns, int fill_value, float *in, float *inMask,
             if (fill_value != LEAVE_MASK)
                 in[x] = fill_value;
         }
-        else if (!do_interp &&
-                 (inMask[x] == MASK_LAYOVER || inMask[x] == MASK_SHADOW))
-        {
-            // do_interp: fill layover/shadow regions with interpolated values
-            // so when this is false, zero out output for layover/shadow pixels
-            in[x] = 0.0;
-        }
-        else if (inMask[x] == MASK_INVALID_DATA)
-        {
-            // this is supposed to be edge effect stuff
-            in[x] = 0.0;
-        }
 
         // where we have no DEM data, set output to 0
         if (eq(grDEM[x],NO_DEM_DATA,.0001)) {
-            in[x] = 0.0;
+          in[x] = 0.0;
         }
     }
 }
@@ -537,35 +524,16 @@ Here's what it looked like before optimization:
     {
         double dx,dy,grX,vecLen,cosAng;
 
-        grX=grDEM[x];
-        if (line > 0) {
-          if ((grX==badDEMht)||
-              (grDEMprev[x]==badDEMht)||
-              (grDEM[x-1]==badDEMht)) 
-          {
-            inout[x]=0;
-            continue;
-          }
-        }
-        else {
-          if ((grX==badDEMht)||
-              (grDEM[x-1]==badDEMht)) 
-          {
-            inout[x]=0;
-            continue;
-          }
-        }
-
-        // if form==0, we aren't actually doing radiometric terrain
-        // correction, we're just here for the zeroing of the badDEMht values
-        if (form==0)
-          continue;
-
-        // on the first line, we don't do radiometric terrain correction
-        if (line==0)
-          continue;
-
         /*Find terrain normal.*/
+        grX=grDEM[x];
+        if ((grX==badDEMht)||
+            (grDEMprev[x]==badDEMht)||
+            (grDEM[x-1]==badDEMht)) 
+        {
+            inout[x]=0;
+            continue;
+        }
+
         dx=(grX-grDEM[x-1])/d->grPixelSize;
         dy=(grDEMprev[x]-grX)/d->grPixelSize;
 
@@ -586,13 +554,11 @@ Here's what it looked like before optimization:
         if (cosAng>=0) {
             switch (form) {
                 default:
+                case 0:
                     /* should not be in here... */
                     asfPrintError("Bad radiometric correction formula: %d\n",
                                   form);
                     return;
-                case 0:
-                  //inout[x] *= 1.0;
-                    break;
                 case 1:
                     /* From the old terrcorr: ftcli */
                     inout[x] *= tan(li) / tanphie;
@@ -748,7 +714,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	else
 	  sprintf(msg,"%s geometrically.\n",msg);
 
-	asfPrintStatus(msg);
+	printf(msg);
 
 /*Allocate input buffers.*/
 	if (inSarFlag) {
@@ -786,14 +752,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 get_float_line(inDemFp,inDemMeta,y,grDEMline);
             } else {
                 get_float_line(inDemFp,inDemMeta,y,srDEMline);
-                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,TRUE);
+                dem_sr2gr(&d,srDEMline,grDEMline,d.numSamples,fill_holes);
             }
-
-            // we are currently stuck with 0 as the badDEMht (see asf_sar.h)
-            // so... change legitimate zeros to .1
-            for (x=0; x<d.numSamples; ++x)
-              if (grDEMline[x]==0) grDEMline[x]=.1;
-
+            
             if (inMaskFlag) {
                 /* Read in the next line of the mask, update the values */
                 get_float_line(inMaskFp,inMaskMeta,y,maskLine);
@@ -819,12 +780,13 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 geo_compensate(&d,grDEMline,inSarLine,outLine,
                                d.numSamples,1,maskLine,y);
 	      }		
-              radio_compensate(&d,grDEMline,grDEMlast,outLine,
-                               d.numSamples,y,doRadiometric);
+	      if (y>0&&doRadiometric)
+		radio_compensate(&d,grDEMline,grDEMlast,outLine,
+				 d.numSamples,y,doRadiometric);
 	      
 	      // subtract away the masked region
 	      mask_float_line(d.numSamples,fill_value,outLine,
-			      maskLine,grDEMline,&d,fill_holes);
+			      maskLine,grDEMline,&d);
 	      
 	      put_band_float_line(outFp,outMeta,b,y,outLine);
 	    }
@@ -839,19 +801,18 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             meta_free(inMaskMeta);
         }
 
-/*Write the updated mask's metadata, close mask data file*/
+/*Write the updated mask*/
         if (outMaskFlag) {
             FCLOSE(outMaskFp);
 
             // the mask has just 1 band, regardless of how many input has
             outMeta->general->band_count = 1;
             strcpy(outMeta->general->bands, "");
-            outMeta->general->image_data_type = MASK;
 
             // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
             int tot=d.numSamples*d.numLines;
-            asfPrintStatus("Mask Statistics:\n"
+            printf("Mask Statistics:\n"
                    "    Layover Pixels: %9d/%d (%f%%)\n"
                    "     Shadow Pixels: %9d/%d (%f%%)\n"
                    "User Masked Pixels: %9d/%d (%f%%)\n",

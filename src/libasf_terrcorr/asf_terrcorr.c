@@ -1057,21 +1057,6 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       }
   }
 
-  // generate a water mask if asked to do so
-  if (generate_water_mask) {
-      userMaskFile = getOutName(output_dir, demFile, "_water_mask");
-
-      const float cutoff = mask_height_cutoff + 0.00001; // a little fudge
-      asfPrintStatus("Generating a Water Mask from DEM: %s.\n", demFile);
-      asfPrintStatus("Height cutoff: %.2fm.\n", mask_height_cutoff);
-
-      dem_to_mask(demFile, userMaskFile, cutoff);
-
-      // setting this to true allows the clipping code to apply the same
-      // clipping parameters to the dem and the mask.
-      madssap = TRUE;
-  }
-
   // create a smoothed dem if asked to do so
   if (smooth_dem_holes) {
       char *smoothedDem = getOutName(output_dir, demFile, "_tc_smooth");
@@ -1085,6 +1070,21 @@ int asf_terrcorr_ext(char *sarFile_in, char *demFile_in, char *userMaskFile,
       // now tell the rest of the code that the smoothedDem is the actual DEM
       // we don't need to re-read the metadata, it will not have changed
       demFile = smoothedDem;
+  }
+
+  // generate a water mask if asked to do so
+  if (generate_water_mask) {
+      userMaskFile = getOutName(output_dir, demFile, "_water_mask");
+
+      const float cutoff = mask_height_cutoff + 0.00001; // a little fudge
+      asfPrintStatus("Generating a Water Mask from DEM: %s.\n", demFile);
+      asfPrintStatus("Height cutoff: %.2fm.\n", mask_height_cutoff);
+
+      dem_to_mask(demFile, userMaskFile, cutoff);
+
+      // setting this to true allows the clipping code to apply the same
+      // clipping parameters to the dem and the mask.
+      madssap = TRUE;
   }
 
   if (userMaskFile) {
