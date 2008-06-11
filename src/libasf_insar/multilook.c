@@ -30,7 +30,7 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   //        the unwrapping code. Leaving that for clean up after the course.
   create_name(outAmp, outFile, "_amp.img");
   create_name(outPhase, outFile, "_phase.img");
-  create_name(outRGB, outFile, "_rgb.img");
+  create_name(outRGB, outFile, "_phase_rgb.img");
   metaIn = meta_read(inFile);
   metaOut = meta_read(inFile);
 
@@ -171,13 +171,11 @@ int multilook(char *inFile, char *outFile, char *metaFile, char *overlay)
   meta_free(metaIn);
   meta_free(metaOut);
 
-  /*  
   // Export a color version of the interferogram to JPEG
-  create_name(outRGB, outFile, "_rgb");
+  create_name(outPhase, outFile, "_phase_rgb");
   check_return(asf_export_with_lut(JPEG, SIGMA, "interferogram.lut", 
-				   outFile, outRGB),
+				   outPhase, outPhase),
 	       "colorized interferogram (asf_export)");
-  */
 
   return 0;
 }
