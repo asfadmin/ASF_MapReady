@@ -244,7 +244,7 @@ int ips(dem_config *cfg, char *configFile, int createFlag)
   if (check_status(cfg->offset_match->status)) {
 
     asfPrintStatus("\nRefining the geolocation ...\n\n");
-    sprintf(tmp, "%s_ml.img", cfg->igram_coh->igram);
+    sprintf(tmp, "%s_ml_amp.img", cfg->igram_coh->igram);
     check_return(asf_check_geolocation(tmp, cfg->general->dem, NULL,
 				       "dem_sim.img", "dem_slant.img"),
 		 "refining the geolocation of the SAR image");
