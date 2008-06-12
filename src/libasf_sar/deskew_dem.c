@@ -670,11 +670,11 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	inDemFp = fopenImage(inDemName,"rb");
 	outFp   = fopenImage(outName,"wb");
 	if (inSarFlag) {
-          inSarFp = fopenImage(inSarName,"rb");
-          outMeta->general->band_count = inSarMeta->general->band_count;
-          strcpy(outMeta->general->bands, inSarMeta->general->bands);
-        }
-        if (inMaskFlag) {
+    inSarFp = fopenImage(inSarName,"rb");
+    outMeta->general->band_count = inSarMeta->general->band_count;
+    strcpy(outMeta->general->bands, inSarMeta->general->bands);
+  }
+  if (inMaskFlag) {
             if (!inSarFlag)
                 asfPrintError("Cannot produce a mask without a SAR!\n");
             inMaskMeta = meta_read(inMaskName);
@@ -691,9 +691,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                 asfPrintError("The mask and the SAR image must be the "
                               "same size.\n");
             }
-        }
+  }
         
-        // output file's metadata is all set, now
+  // output file's metadata is all set, now
 	meta_get_corner_coords(outMeta);
 	meta_write(outMeta, outName);
 
@@ -781,8 +781,8 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
                                d.numSamples,1,maskLine,y);
 	      }		
 	      if (y>0&&doRadiometric)
-		radio_compensate(&d,grDEMline,grDEMlast,outLine,
-				 d.numSamples,y,doRadiometric);
+            radio_compensate(&d,grDEMline,grDEMlast,outLine,
+                             d.numSamples,y,doRadiometric);
 	      
 	      // subtract away the masked region
 	      mask_float_line(d.numSamples,fill_value,outLine,
@@ -808,6 +808,9 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             // the mask has just 1 band, regardless of how many input has
             outMeta->general->band_count = 1;
             strcpy(outMeta->general->bands, "");
+
+            // mask doesn't really have a radiometry, just set amp
+            outMeta->general->radiometry = r_AMP;
 
             // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
