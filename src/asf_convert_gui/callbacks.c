@@ -955,3 +955,9 @@ on_ers2_gain_fix_checkbutton_toggled(GtkWidget *widget)
 {
   update_summary();
 }
+
+SIGNAL_CALLBACK void
+on_checkbutton_db_toggled(GtkWidget *widget)
+{
+  update_summary();
+}

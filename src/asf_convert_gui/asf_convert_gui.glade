@@ -819,6 +819,7 @@
 				  <property name="active">False</property>
 				  <property name="inconsistent">False</property>
 				  <property name="draw_indicator">True</property>
+				  <signal name="toggled" handler="on_checkbutton_db_toggled" last_modification_time="Thu, 12 Jun 2008 17:20:54 GMT"/>
 
 				  <child>
 				    <widget class="GtkAlignment" id="alignment16">

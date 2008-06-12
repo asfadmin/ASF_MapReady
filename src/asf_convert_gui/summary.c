@@ -41,6 +41,10 @@ const char *get_summary_text()
             break;
     }
 
+    char *dbstr = "";
+    if (s->output_db)
+      dbstr = " (dB)";
+
     switch (s->input_data_format) {
       case INPUT_FORMAT_CEOS_LEVEL0:
       {
@@ -55,15 +59,15 @@ const char *get_summary_text()
 
         if (process_to_level1_is_checked)
         {
-            sprintf(text, "%s\n   Process to Level 1\nData Type: %s",
-                    text, type);
+            sprintf(text, "%s\n   Process to Level 1\nData Type: %s%s",
+                    text, type, dbstr);
         }
       }
       break;
 
       case INPUT_FORMAT_CEOS_LEVEL1:
         strcat(text, "CEOS Level One");
-        sprintf(text, "%s\nData type: %s", text, type);
+        sprintf(text, "%s\nData type: %s%s", text, type, dbstr);
 
         break;
 
@@ -120,12 +124,11 @@ const char *get_summary_text()
 
       default:
         strcat(text, "CEOS Level One");
-        sprintf(text, "%s\nData type: %s", text, type);
+        sprintf(text, "%s\nData type: %s%s", text, type, dbstr);
         break;
     }
 
-    if (s->data_type != INPUT_TYPE_AMP &&
-        !get_checked("ers2_gain_fix_checkbutton"))
+    if (s->data_type != INPUT_TYPE_AMP && !s->apply_ers2_gain_fix)
     {
         sprintf(text, "%s\n  (no ERS2 gain correction)", text);
     }
