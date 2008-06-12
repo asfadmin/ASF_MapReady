@@ -361,11 +361,12 @@ void import_ceos(char *inBaseName, char *outBaseName,
         ceos->product != GEC)
     {
       meta = meta_create(inMetaName[0]);
-      meta->general->radiometry = radiometry;
+      meta->general->radiometry = rad;
     }
 
     // Update the radiometry if db flag is set
-    if (db_flag) {
+    // (UNLESS we are doing the secret amplitude band at the beginning)
+    if (db_flag && !(amp0_flag && ii==0)) {
       rad += 3;
     }
 
