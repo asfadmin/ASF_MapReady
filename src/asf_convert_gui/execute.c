@@ -302,6 +302,15 @@ have_access_to_dir(const gchar * dir, gchar ** err_string)
     return TRUE;
 }
 
+static void log_summary_text(FILE *fp)
+{
+    const char *s = get_summary_text();
+    printf("MapReady version %s\nRunning with settings:\n\n%s\n\n",
+           MAPREADY_VERSION_STRING, s);
+    fprintf(fp, "MapReady version %s\nRunning with settings:\n\n%s\n\n",
+            MAPREADY_VERSION_STRING, s);
+}
+
 //static void
 //build_executable(char *buf, const char *exec_name)
 //{
@@ -333,6 +342,10 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
         (strlen(cfg_file) + strlen(get_asf_bin_dir_win()) + 256));
     sprintf(cmd, "\"%s/asf_mapready.exe\" -log \"%s\" \"%s\"",
         get_asf_bin_dir_win(), logFile, cfg_file);
+
+    fLog = fopen(logFile, "a");
+    log_summary_text(fLog);
+    FCLOSE(fLog);
 
     //printf("Running command> %s\n", cmd);
     if (!CreateProcess(NULL, cmd, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
@@ -400,6 +413,8 @@ do_convert(int pid, GtkTreeIter *iter, char *cfg_file, int save_dem,
 
         asfPrintStatus("Running MapReady with configuration file: %s\n",
                        cfg_file);
+
+        log_summary_text(fLog);
 
         asf_convert_ext(FALSE, cfg_file, save_dem);
 

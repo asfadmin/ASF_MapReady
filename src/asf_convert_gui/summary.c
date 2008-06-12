@@ -7,18 +7,16 @@ return((int)(((lon + 180.0) / 6.0) + 1.0));
 }
 */
 
-SIGNAL_CALLBACK
-void update_summary()
+const char *get_summary_text()
 {
-    GtkWidget * summary_label;
-    Settings * s;
-    gchar text[1024];
-    gchar * type;
+    static char text[1024];
 
+    Settings * s;
     s = settings_get_from_gui();
 
     strcpy(text, "Import: ");
 
+    const char *type;
     switch (s->data_type)
     {
         case INPUT_TYPE_SIGMA:
@@ -393,8 +391,14 @@ void update_summary()
         strcat(text, "<none>\n");
     }
 
-    summary_label = get_widget_checked("summary_label");
-    gtk_label_set_text(GTK_LABEL(summary_label), text);
-
     settings_delete(s);
+    return text;
+}
+
+SIGNAL_CALLBACK
+void update_summary()
+{
+    const char *text = get_summary_text();
+    GtkWidget *summary_label = get_widget_checked("summary_label");
+    gtk_label_set_text(GTK_LABEL(summary_label), text);
 }

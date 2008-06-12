@@ -335,6 +335,7 @@ void show_asf_meta_data(gchar *);
 void show_ceos_meta_data(gchar *);
 
 /* summary.c */
+const char *get_summary_text();
 void update_summary();
 
 /* geocode.c */
