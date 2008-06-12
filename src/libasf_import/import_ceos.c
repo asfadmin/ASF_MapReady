@@ -1762,7 +1762,9 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
             }
             cpx.real /= (float)lc;
             cpx.imag /= (float)lc;
-            amp_float_buf[kk] = sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
+            // for sigma-gamma, we no longer have actual complex values,
+            // we put the calibrated value in the real array
+            amp_float_buf[kk] = cpx.real; //sqrt(cpx.real*cpx.real + cpx.imag*cpx.imag);
           }
         }
         else {
