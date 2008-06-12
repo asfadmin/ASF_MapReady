@@ -1254,7 +1254,7 @@
 			  <child>
 			    <widget class="GtkCheckButton" id="ers2_gain_fix_checkbutton">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">The ERS2 satellite has a known gain loss problem.  If this option is checked, all pixels in the image will be scaled by a correction factor that is date-dependent.  This is only applied to calibrated data.</property>
+			      <property name="tooltip" translatable="yes">The ERS2 satellite has a known gain loss problem.  If this option is checked, all pixels in the image will be scaled by a correction factor that is date-dependent.  This is only applied to calibrated data.  This option has no effect for non-ERS2 data.</property>
 			      <property name="can_focus">True</property>
 			      <property name="label" translatable="yes">Apply ERS2 Gain Correction</property>
 			      <property name="use_underline">True</property>
@@ -2035,7 +2035,7 @@
 						  <child>
 						    <widget class="GtkCheckButton" id="tc_pixel_size_checkbutton">
 						      <property name="visible">True</property>
- 						      <property name="tooltip" translatable="yes">This is different than the pixel size specified on the Geocode tab, in that there you are specifying the size of the final output, but here you're looking for a good pixel size to maximize the success of the terrain correction calculations.  A pixel size of half that of the DEM is common.</property>
+						      <property name="tooltip" translatable="yes">This is different than the pixel size specified on the Geocode tab, in that there you are specifying the size of the final output, but here you're looking for a good pixel size to maximize the success of the terrain correction calculations.  A pixel size of half that of the DEM is common.</property>
 						      <property name="can_focus">True</property>
 						      <property name="label" translatable="yes">Specify Pixel Size:  </property>
 						      <property name="use_underline">True</property>
