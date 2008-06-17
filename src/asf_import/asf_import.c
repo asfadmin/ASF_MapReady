@@ -685,6 +685,8 @@ int main(int argc, char *argv[])
 	  format_type = GAMMA_ISP;
 	else if (strncmp(uc(format_type_str), "VP", 2) == 0)
 	  format_type = VP;
+        else if (strncmp(uc(format_type_str), "JAXA_L0", 7) == 0)
+          format_type = JAXA_L0;
 	else
 	  asfPrintError("Unsupported format: %s\n", format_type_str);
     }
