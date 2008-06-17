@@ -111,7 +111,8 @@ typedef enum {
   AIRSAR,
   GAMMA_MSP,
   GAMMA_ISP,
-  VP
+  VP,
+  JAXA_L0 // JAXA PRISM and AVNIR-2 (optical) Level 0 Format
 } input_format_t;
 
 /********************************************************************
