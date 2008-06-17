@@ -1167,7 +1167,41 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           sprintf(date_hidden_info, "%f", pi->start_time);
 
           char orbit_info[256];
-          int orbit = pi->orbit;
+
+          // KLUDGE: This should all be moved to a config file!
+          double recurrent_period = 46;              // days
+          double orbits_per_recurrent_period = 671;
+
+          // reference: 26-Dec-2006, 6:15:34
+          // subtract 8 minutes, estimate to equator crossing
+          // reference orbit: 4904
+          ymd_date ref_ymd;
+          hms_time ref_hms;
+
+          ref_ymd.year = 2006;
+          ref_ymd.month = 12;
+          ref_ymd.day = 26;
+
+          ref_hms.hour = 6;
+          ref_hms.min = 15-8;
+          ref_hms.sec = 34;
+
+          int ref_orbit = 4904;
+
+          julian_date ref_jd;
+          date_ymd2jd(&ref_ymd, &ref_jd);
+          double ref = date2sec(&ref_jd, &ref_hms);
+
+          double revolutions_per_day =
+            orbits_per_recurrent_period/recurrent_period;
+          double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
+
+          double revs_since_ref = (pi->start_time - ref)/orbital_period;
+          int orbit = (int)floor(ref_orbit + revs_since_ref);
+          // end of the ALOS orbit number calculation kludge
+
+          //int orbit = pi->orbit;
+
           int path = revolution2path(orbit);
           //sprintf(orbit_info, "%.2f/%d", orbit + pi->orbit_part, path);
           sprintf(orbit_info, "%d/%d", orbit, path);
