@@ -286,12 +286,9 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
         float *fdata = MALLOC(sizeof(float)*tsx*tsy*3);
         load_thumbnail_data(ii->data_ci, tsx, tsy, fdata);
 
-        ii->stats.act_max = ii->stats.act_min = fdata[0];
+        ii->stats.act_min = 0;
+        ii->stats.act_max = 0;
 
-        int have_nd = meta_is_valid_double(ii->stats.no_data_value);
-        double nd = ii->stats.no_data_value;
-
-        // Use the average of the three RGB channels
         int n=0;
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
@@ -300,21 +297,22 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                 int is_valid_data = 
                     meta_is_valid_double(fdata[kk]) &&
                     meta_is_valid_double(fdata[kk+1]) &&
-                    meta_is_valid_double(fdata[kk+2]) &&
-                    (!have_nd ||
-                        (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd));
+                    meta_is_valid_double(fdata[kk+2]);
     
                 if (is_valid_data)
                 {
-                    float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
-                    ii->stats.avg += v;
-                    if (v > ii->stats.act_max) ii->stats.act_max = v;
-                    if (v < ii->stats.act_min) ii->stats.act_min = v;
+                    ii->stats_r.avg += fdata[kk];
+                    ii->stats_g.avg += fdata[kk+1];
+                    ii->stats_b.avg += fdata[kk+2];
                     ++n;
                 }
             }
         }
-        ii->stats.avg /= (double)n;
+        
+        ii->stats_r.avg /= (double)n;
+        ii->stats_g.avg /= (double)n;
+        ii->stats_b.avg /= (double)n;
+
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 int kk = 3*(j+i*tsx);
@@ -322,37 +320,92 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy)
                 int is_valid_data = 
                     meta_is_valid_double(fdata[kk]) &&
                     meta_is_valid_double(fdata[kk+1]) &&
-                    meta_is_valid_double(fdata[kk+2]) &&
-                    (!have_nd ||
-                        (fdata[kk]!=nd && fdata[kk+1]!=nd && fdata[kk+2]!=nd));
+                    meta_is_valid_double(fdata[kk+2]);
 
                 if (is_valid_data)
                 {
-                    float v = (fdata[kk]+fdata[kk+1]+fdata[kk+2])/3;
-                    ii->stats.stddev +=
-                      (v - ii->stats.avg) * (v - ii->stats.avg);
+                    float d = fdata[kk] - ii->stats_r.avg;
+                    ii->stats_r.stddev += d*d;
+
+                    d = fdata[kk+1] - ii->stats_g.avg;
+                    ii->stats_g.stddev += d*d;
+
+                    d = fdata[kk+2] - ii->stats_b.avg;
+                    ii->stats_b.stddev += d*d;
                 }
             }
         }
-        ii->stats.stddev = sqrt(ii->stats.stddev / (double)n);
-        ii->stats.map_min = ii->stats.avg - 2*ii->stats.stddev;
-        ii->stats.map_max = ii->stats.avg + 2*ii->stats.stddev;
 
-        // Scale the data
-        for (i=0; i<tsx*tsy*3; ++i) {
-            if (!meta_is_valid_double(fdata[i]))
-                bdata[i] = 0;
-            else if (have_nd && fdata[i] == nd)
-                bdata[i] = 0;
-            else if (fdata[i] < ii->stats.map_min)
-                bdata[i] = 0;
-            else if (fdata[i] > ii->stats.map_max)
-                bdata[i] = 255;
-            else
-                bdata[i] = (unsigned char)(((fdata[i]-ii->stats.map_min)/(ii->stats.map_max-ii->stats.map_min))*255+0.5);
+        ii->stats_r.stddev = sqrt(ii->stats_r.stddev / (double)n);
+        ii->stats_r.map_min = ii->stats_r.avg - 2*ii->stats_r.stddev;
+        ii->stats_r.map_max = ii->stats_r.avg + 2*ii->stats_r.stddev;
+
+        ii->stats_g.stddev = sqrt(ii->stats_g.stddev / (double)n);
+        ii->stats_g.map_min = ii->stats_g.avg - 2*ii->stats_g.stddev;
+        ii->stats_g.map_max = ii->stats_g.avg + 2*ii->stats_g.stddev;
+
+        ii->stats_b.stddev = sqrt(ii->stats_b.stddev / (double)n);
+        ii->stats_b.map_min = ii->stats_b.avg - 2*ii->stats_b.stddev;
+        ii->stats_b.map_max = ii->stats_b.avg + 2*ii->stats_b.stddev;
+
+        // clear out the stats for the greyscale image - we'll just use
+        // the histogram
+        ii->stats.avg = 0;
+        ii->stats.stddev = 0;
+        ii->stats.map_min = 0;
+        ii->stats.map_max = 0;
+
+        // Scale the data: Red
+        float red_range = ii->stats_r.map_max - ii->stats_r.map_min;
+        float green_range = ii->stats_g.map_max - ii->stats_g.map_min;
+        float blue_range = ii->stats_b.map_max - ii->stats_b.map_min;
+
+        for (i=0; i<tsy; ++i) {
+            for (j=0; j<tsx; ++j) {
+                int kk = 3*(j+i*tsx);
+
+                if (!meta_is_valid_double(fdata[kk]))
+                    bdata[kk] = 0;
+                else if (fdata[kk] < ii->stats_r.map_min)
+                    bdata[kk] = 0;
+                else if (fdata[kk] > ii->stats_r.map_max)
+                    bdata[kk] = 255;
+                else {
+                   float rel = fdata[kk]-ii->stats_r.map_min;
+                   bdata[kk] = (unsigned char)(rel/red_range*255.+0.5);
+                }
+
+                // kk = 3*(j+i*tsx)+1;
+                ++kk;
+
+                if (!meta_is_valid_double(fdata[kk]))
+                    bdata[kk] = 0;
+                else if (fdata[kk] < ii->stats_g.map_min)
+                    bdata[kk] = 0;
+                else if (fdata[kk] > ii->stats_g.map_max)
+                    bdata[kk] = 255;
+                else {
+                    float rel = fdata[kk]-ii->stats_g.map_min;
+                    bdata[kk] = (unsigned char)(rel/green_range*255.+0.5);
+                }
+
+                // kk = 3*(j+i*tsx)+2;
+                ++kk;
+
+                if (!meta_is_valid_double(fdata[kk]))
+                    bdata[kk] = 0;
+                else if (fdata[kk] < ii->stats_b.map_min)
+                    bdata[kk] = 0;
+                else if (fdata[kk] > ii->stats_b.map_max)
+                    bdata[kk] = 255;
+                else {
+                    float rel = fdata[kk]-ii->stats_b.map_min;
+                    bdata[kk] = (unsigned char)(rel/blue_range*255.+0.5);
+                }
+            }
         }
 
-        // Update the histogram
+        // Update the histogram -- use greyscale average
         for (i=0; i<tsy; ++i) {
             for (j=0; j<tsx; ++j) {
                 int kk = 3*(j+i*tsx);
@@ -384,34 +437,74 @@ int calc_scaled_pixel_value(ImageStats *stats, float val)
         return (int) round(((val-stats->map_min)/(stats->map_max-stats->map_min))*255);
 }
 
+int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val)
+{
+    if (val < stats->map_min)
+        return 0;
+    else if (val > stats->map_max)
+        return 255;
+    else
+        return (int) round(((val-stats->map_min)/(stats->map_max-stats->map_min))*255);
+}
+
 static void fill_stats_label(ImageInfo *ii)
 {
     char s[1024];
     strcpy(s, "");
 
-    // y = m*x + b
-    double m = 255.0/(ii->stats.map_max-ii->stats.map_min);
-    double b = -ii->stats.map_min*255.0/
-      (ii->stats.map_max-ii->stats.map_min);
-
-    // we will take charge of displaying the sign
-    char c = b>0 ? '+' : '-';
-    b = fabs(b);
-
     // Not sure we should put the Max/Min in here... after all, these
     // are only from a subset.  The aggregate values (avg, stddev, mapping)
     // will be fine, but max/min could be quite far off, if there are
     // an outlier or two.
-    sprintf(&s[strlen(s)],
-        "Average: %.3f\n"
-        "Standard Deviation: %.3f\n"
-        "Min Value: %.2f\n"
-        "Max Value: %.2f\n"
-        "Mapping Fn for pixels:\n"
-        "  Y = %.3f * X %c %.3f",
-        ii->stats.avg, ii->stats.stddev,
-        ii->stats.act_min, ii->stats.act_max, 
-        m, c, b);
+    if (ii->data_ci->data_type == RGB_FLOAT) {
+      double rb = -ii->stats_r.map_min*255.0/
+        (ii->stats_r.map_max-ii->stats_r.map_min);
+      double gb = -ii->stats_g.map_min*255.0/
+        (ii->stats_g.map_max-ii->stats_g.map_min);
+      double bb = -ii->stats_b.map_min*255.0/
+        (ii->stats_b.map_max-ii->stats_b.map_min);
+
+      sprintf(&s[strlen(s)],
+              "Average: %.3f, %.3f, %.3f\n"
+              "Standard Deviation: %.3f, %.3f, %.3f\n"
+              "Mapping Fn for pixels:\n"
+              "  Y = %.3f * X %c %.3f (red)\n"
+              "  Y = %.3f * X %c %.3f (green)\n"
+              "  Y = %.3f * X %c %.3f (blue)\n",
+              ii->stats_r.avg, 
+              ii->stats_g.avg, 
+              ii->stats_b.avg, 
+              ii->stats_r.stddev,
+              ii->stats_g.stddev,
+              ii->stats_b.stddev,
+              255.0/(ii->stats_r.map_max-ii->stats_r.map_min),
+              rb > 0 ? '+' : '-',
+              fabs(rb),
+              255.0/(ii->stats_g.map_max-ii->stats_g.map_min),
+              gb > 0 ? '+' : '-',
+              fabs(gb),
+              255.0/(ii->stats_b.map_max-ii->stats_b.map_min),
+              bb > 0 ? '+' : '-',
+              fabs(bb));
+    }
+    else {
+      // y = m*x + b
+      double m = 255.0/(ii->stats.map_max-ii->stats.map_min);
+      double b = -ii->stats.map_min*255.0/
+        (ii->stats.map_max-ii->stats.map_min);
+
+      // we will take charge of displaying the sign
+      char c = b>0 ? '+' : '-';
+      b = fabs(b);
+
+      sprintf(&s[strlen(s)],
+              "Average: %.3f\n"
+              "Standard Deviation: %.3f\n"
+              "Mapping Fn for pixels:\n"
+              "  Y = %.3f * X %c %.3f",
+              ii->stats.avg, ii->stats.stddev,
+              m, c, b);
+    }
 
     put_string_to_label("stats_label", s);
 }

@@ -51,6 +51,9 @@ typedef struct {
     CachedImage *data_ci;
     BandConfig band_cfg;
     ImageStats stats;
+    ImageStatsRGB stats_r;
+    ImageStatsRGB stats_g;
+    ImageStatsRGB stats_b;
     char *filename;
     char *data_name;
     char *meta_name;
@@ -176,6 +179,7 @@ unsigned char *generate_thumbnail_data(ImageInfo *ii, int tsx, int tsy);
 int fill_stats(ImageInfo *ii);
 void calc_stats_thread(gpointer user_data);
 int calc_scaled_pixel_value(ImageStats *stats, float val);
+int calc_rgb_scaled_pixel_value(ImageStatsRGB *stats, float val);
 void clear_stats(ImageInfo *ii);
 
 /* google.c */

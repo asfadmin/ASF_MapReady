@@ -230,7 +230,15 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
 
     switch (what_to_save) {
         case PIXEL_VALUE:
-            return cached_image_get_pixel(data_ci, line, samp);
+            if (ii->data_ci->data_type == RGB_FLOAT) {
+              // can't handle RGB subsets... return average of RGB values
+              float r, g, b;
+              cached_image_get_rgb_float(data_ci, line, samp, &r, &g, &b);
+              return (r+g+b)/3.;
+            }
+            else {
+              return cached_image_get_pixel(data_ci, line, samp);
+            }
 
         case INCIDENCE_ANGLE:
             if (meta->sar)
@@ -252,8 +260,19 @@ static float get_data(ImageInfo *ii, int what_to_save, int line, int samp)
                 return 0;
 
         case SCALED_PIXEL_VALUE:
-            return calc_scaled_pixel_value(&(ii->stats),
+            if (ii->data_ci->data_type == RGB_FLOAT) {
+              // can't handle RGB subsets... return average of scaled values
+              float r, g, b;
+              cached_image_get_rgb_float(data_ci, line, samp, &r, &g, &b);
+              int rs = calc_rgb_scaled_pixel_value(&(ii->stats_r), r);
+              int gs = calc_rgb_scaled_pixel_value(&(ii->stats_g), g);
+              int bs = calc_rgb_scaled_pixel_value(&(ii->stats_b), b);
+              return (rs+gs+bs)/3.;
+            }
+            else {
+              return calc_scaled_pixel_value(&(ii->stats),
                 cached_image_get_pixel(data_ci, line, samp));
+            }
 
         case TIME:
             if (meta->sar) {

@@ -226,7 +226,8 @@ void load_thumbnail_data(CachedImage *self, int thumb_size_x, int thumb_size_y,
 
 CachedImage * cached_image_new_from_file(
     const char *file, meta_parameters *meta, ClientInterface *client,
-    ImageStats *stats)
+    ImageStats *stats, ImageStatsRGB *stats_r, ImageStatsRGB *stats_g,
+    ImageStatsRGB *stats_b)
 {
     CachedImage *self = MALLOC(sizeof(CachedImage));
 
@@ -235,9 +236,14 @@ CachedImage * cached_image_new_from_file(
     self->data_type = client->data_type;
     assert(self->data_type != UNDEFINED);
 
-    self->client = client; // take ownership of this
-    self->meta = meta;     // do NOT take ownership of this
-    self->stats = stats;   // do NOT take ownership of this
+    self->client = client;     // take ownership of this
+    self->meta = meta;         // do NOT take ownership of this
+
+    self->stats = stats;       // do NOT take ownership of this
+
+    self->stats_r = stats_r;   // do NOT take ownership of this
+    self->stats_g = stats_g;   // do NOT take ownership of this
+    self->stats_b = stats_b;   // do NOT take ownership of this
 
     // line line_count may have been fudges, if we are multilooking
     self->nl = meta->general->line_count;
@@ -338,9 +344,9 @@ void cached_image_get_rgb(CachedImage *self, int line, int samp,
     else if (self->data_type == RGB_FLOAT) {
         float *f = (float*)get_pixel(self, line, samp);
 
-        *r = (unsigned char)calc_scaled_pixel_value(self->stats,f[0]);
-        *g = (unsigned char)calc_scaled_pixel_value(self->stats,f[1]);
-        *b = (unsigned char)calc_scaled_pixel_value(self->stats,f[2]);
+        *r = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_r,f[0]);
+        *g = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_g,f[1]);
+        *b = (unsigned char)calc_rgb_scaled_pixel_value(self->stats_b,f[2]);
     }
     else {
         // impossible!
