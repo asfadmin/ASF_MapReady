@@ -75,11 +75,18 @@ int numFiles(const char *path)
   }
 
   while ((dp = readdir(dir)) != NULL) {
-    if (stat(dp->d_name, &statbuf) < 0) {
-      continue;
+    char file[1024];
+    if (dp->d_name && strlen(dp->d_name)) {
+      sprintf(file, "%s%c%s", path, DIR_SEPARATOR, dp->d_name);
+      if (stat(file, &statbuf) < 0) {
+        continue;
+      }
+      else if (S_ISREG(statbuf.st_mode)) {
+        fileCount++;
+      }
     }
-    else if (S_ISREG(statbuf.st_mode)) {
-      fileCount++;
+    else {
+      continue;
     }
   }
 
