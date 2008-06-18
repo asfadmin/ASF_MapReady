@@ -69,6 +69,7 @@ OBJS  = ardop_write.o \
 	import_airsar.o \
 	import_gamma.o \
 	import_vexcel_plain.o \
+	import_jaxa_L0.o \
 	least_squares.o \
 	missing.o \
 	projected_image_import.o \

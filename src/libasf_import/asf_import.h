@@ -92,6 +92,7 @@ void import_gamma_msp(const char *inDataName, const char *inMetaName,
 		      const char *outBaseName);
 
 void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
+void import_jaxa_L0(const char *inBaseName, const char *outBaseName);
 
 void assign_band_names(meta_parameters *meta, char *outMetaName,
 		       char *bandExt, int band, int nBands, int nBandsOut, 

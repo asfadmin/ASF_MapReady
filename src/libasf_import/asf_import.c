@@ -12,9 +12,9 @@
 #include <ctype.h>
 
 int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
-         int multilook_flag, int amp0_flag, input_format_t format_type, 
-	 char *band_id, char *data_type, char *image_data_type, char *lutName, 
-	 char *prcPath, double lowerLat, double upperLat,
+         int multilook_flag, int amp0_flag, input_format_t format_type,
+         char *band_id, char *data_type, char *image_data_type, char *lutName,
+         char *prcPath, double lowerLat, double upperLat,
          int line, int sample, int width, int height,
          double *p_range_scale, double *p_azimuth_scale,
          double *p_correct_y_pixel_size, int apply_ers2_gain_fix,
@@ -76,6 +76,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
           "imported into a single ASF-format file.  You may select any\n"
           "individual band for export however.\n");
     }
+
     char *ext = findExt(inBaseName);
     if (ext != NULL) {
       *ext = '\0';
@@ -110,22 +111,22 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   }
   else if (format_type == GAMMA_MSP) {
     if (inMetaNameOption && fileExists(inMetaNameOption) &&
-	fileExists(inBaseName)) {
+    fileExists(inBaseName)) {
       asfPrintStatus("   Data format: GAMMA_MSP\n");
-      import_gamma_msp(inBaseName, inMetaNameOption, data_type, 
-		       image_data_type, outBaseName);
+      import_gamma_msp(inBaseName, inMetaNameOption, data_type,
+               image_data_type, outBaseName);
     }
     else
       asfPrintError("The GAMMA_MSP format requires the data file and metadata"
-		    "with their respective extensions.\n");
+            "with their respective extensions.\n");
   }
   else if (format_type == GAMMA_ISP) {
     if (inMetaNameOption && fileExists(inMetaNameOption) &&
-	fileExists(inBaseName)) {
+    fileExists(inBaseName)) {
       asfPrintStatus("   Data format: GAMMA_ISP\n");
-      import_gamma_isp(inBaseName, inMetaNameOption, data_type, 
-		       image_data_type, complex_flag, multilook_flag, 
-		       outBaseName);
+      import_gamma_isp(inBaseName, inMetaNameOption, data_type,
+               image_data_type, complex_flag, multilook_flag,
+               outBaseName);
     }
     else
       asfPrintError("The GAMMA_ISP format requires the data file and metadata"
@@ -134,6 +135,10 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
   else if (format_type == VP) {
     asfPrintStatus("   Data format: VP\n");
     import_vexcel_plain(inBaseName, outBaseName);
+  }
+  else if (format_type == JAXA_L0) {
+      asfPrintStatus("   Data format: JAXA_L0 (ALOS PRISM or AVNIR-2 Level 0)\n");
+      import_jaxa_L0(inBaseName, outBaseName);
   }
   // Don't recognize this data format; report & quit
   else {
