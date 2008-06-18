@@ -414,7 +414,7 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
     assert(ii->data_ci);
     assert(ii->meta);
 
-    int i, j, k;
+    int i, j, k, m, n;
     int nchan = 3; // RGB for now, don't support RGBA yet
     int biw = get_big_image_width();
     int bih = get_big_image_height();
@@ -444,14 +444,70 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
                 g = background_green;
                 b = background_blue;
             } else {
-                cached_image_get_rgb(ii->data_ci, (int)floor(l),
-                    (int)floor(s), &r, &g, &b);
+                // here we have some averaging, that will make the
+                // images look a bit smoother when zoomed out
+                if (zoom<=1) {
+                    // one-to-one view -- no averaging
+                    cached_image_get_rgb(ii->data_ci, (int)floor(l),
+                        (int)floor(s), &r, &g, &b);
+                }
+                else if (zoom<=2) {
+                    // 2x view -- average 4 pixels to produce 1.
+                    int l2 = (int)floor(l);
+                    int s2 = (int)floor(s);
+                    unsigned char r1,r2,r3,r4,g1,g2,g3,g4,b1,b2,b3,b4;
+                    cached_image_get_rgb(ii->data_ci, l2,   s2,   &r1,&g1,&b1);
+                    cached_image_get_rgb(ii->data_ci, l2+1, s2,   &r2,&g2,&b2);
+                    cached_image_get_rgb(ii->data_ci, l2,   s2+1, &r3,&g3,&b3);
+                    cached_image_get_rgb(ii->data_ci, l2+1, s2+1, &r4,&g4,&b4);
+                    r=(r1+r2+r3+r4)/4;
+                    g=(g1+g2+g3+g4)/4;
+                    b=(b1+b2+b3+b4)/4;
+                }
+                else if (zoom<=3) {
+                    // 3x view average 9 pixels to produce 1.
+                    int l2 = (int)floor(l);
+                    int s2 = (int)floor(s);
+                    int rt=0, gt=0, bt=0;
+                    for (m=0; m<3; ++m) {
+                        for (n=0; n<3; ++n) {
+                            cached_image_get_rgb(ii->data_ci, l2+m, s2+n,
+                                                 &r, &g, &b);
+                            rt += (int)r;
+                            gt += (int)g;
+                            bt += (int)b;
+                        }
+                    }
+                    r = (unsigned char) (rt/9);
+                    g = (unsigned char) (gt/9);
+                    b = (unsigned char) (bt/9);
+                }
+                else {
+                    // 4x or greater view-- average 16 pixels to produce 1.
+                    int l2 = (int)floor(l);
+                    int s2 = (int)floor(s);
+                    int fac = (int)floor(zoom/4);
+                    int rt=0, gt=0, bt=0;
+                    for (m=0; m<4; ++m) {
+                        for (n=0; n<4; ++n) {
+                            cached_image_get_rgb(ii->data_ci,
+                                                 l2+m*fac, s2+n*fac,
+                                                 &r, &g, &b);
+                            rt += (int)r;
+                            gt += (int)g;
+                            bt += (int)b;
+                        }
+                    }
+                    r = (unsigned char) (rt/16);
+                    g = (unsigned char) (gt/16);
+                    b = (unsigned char) (bt/16);
+                }
             }
 
-            int n = 3*mm;
-            bdata[n] = r;
-            bdata[n+1] = g;
-            bdata[n+2] = b;
+            int p = 3*mm;
+            bdata[p] = r;
+            bdata[p+1] = g;
+            bdata[p+2] = b;
             ++mm;
         }
     }
