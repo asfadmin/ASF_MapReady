@@ -446,12 +446,12 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
             } else {
                 // here we have some averaging, that will make the
                 // images look a bit smoother when zoomed out
-                if (zoom<=1) {
-                    // one-to-one view -- no averaging
+                if (zoom<2) {
+                    // one-to-one (or thereabouts) view -- no averaging
                     cached_image_get_rgb(ii->data_ci, (int)floor(l),
                         (int)floor(s), &r, &g, &b);
                 }
-                else if (zoom<=2) {
+                else if (zoom<3) {
                     // 2x view -- average 4 pixels to produce 1.
                     int l2 = (int)floor(l);
                     int s2 = (int)floor(s);
@@ -464,8 +464,8 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
                     g=(g1+g2+g3+g4)/4;
                     b=(b1+b2+b3+b4)/4;
                 }
-                else if (zoom<=3) {
-                    // 3x view average 9 pixels to produce 1.
+                else if (zoom<4) {
+                    // 3x view -- average 9 pixels to produce 1.
                     int l2 = (int)floor(l);
                     int s2 = (int)floor(s);
                     int rt=0, gt=0, bt=0;
@@ -483,13 +483,13 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
                     b = (unsigned char) (bt/9);
                 }
                 else {
-                    // 4x or greater view-- average 16 pixels to produce 1.
+                    // 4x or greater view -- average 9 pixels to produce 1.
                     int l2 = (int)floor(l);
                     int s2 = (int)floor(s);
-                    int fac = (int)floor(zoom/4);
+                    int fac = (int)floor(zoom/3);
                     int rt=0, gt=0, bt=0;
-                    for (m=0; m<4; ++m) {
-                        for (n=0; n<4; ++n) {
+                    for (m=0; m<3; ++m) {
+                        for (n=0; n<3; ++n) {
                             cached_image_get_rgb(ii->data_ci,
                                                  l2+m*fac, s2+n*fac,
                                                  &r, &g, &b);
@@ -498,9 +498,9 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
                             bt += (int)b;
                         }
                     }
-                    r = (unsigned char) (rt/16);
-                    g = (unsigned char) (gt/16);
-                    b = (unsigned char) (bt/16);
+                    r = (unsigned char) (rt/9);
+                    g = (unsigned char) (gt/9);
+                    b = (unsigned char) (bt/9);
                 }
             }
 
