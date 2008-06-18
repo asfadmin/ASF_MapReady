@@ -175,6 +175,10 @@ int fileExists(const char *name);
    true, but without the memory leak fileExists(appendExt(name,
    newExt)) would produce. */
 int extExists(const char *name,const char *newExt);
+/* Return number of bytes in the named file */
+int fileSize(const char *name);
+/* Return the number of regular files found in the given path */
+int numFiles(const char *path);
 /* Add a string to the end of the filename's basename.  For example, if
    if filename is "file.ext" and suffix is "_2" then "file_2.ext" is
    returned.  The return value must be freed by the caller. */
