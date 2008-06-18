@@ -52,9 +52,5 @@ exe: $(TARGET)_main.o
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET)_main.c $(LIBDIR)/$(LIBNAME) $(LIBS) $(LDFLAGS)
 	mv $(TARGET)$(BIN_POSTFIX) $(BINDIR)
 
-test: test.c
-	$(CC) $(CFLAGS) -o orbtest$(BIN_POSTFIX) test.c $(LIBS) $(LDFLAGS)
-	mv orbtest$(BIN_POSTFIX) $(BINDIR)
-
 clean:
 	rm -f core $(OBJS) *.o
