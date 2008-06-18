@@ -21,9 +21,12 @@ void get_chunk_names(const char *red_dir, const char *green_dir,
                      int *num_chunks, char ***red_chunks,
                      char ***green_chunks, char ***blue_chunks,
                      char ***nir_chunks);
+void free_chunk_names(int num_chunks,
+                      char ***red_chunks, char ***green_chunks,
+                      char ***blue_chunks, char ***nir_chunks);
 
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
-    asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
+    //asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
     // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
     // 2. The various pieces of ancilliary data and band (scan) data are in VCID subfolders, i.e.
     //    Blue band (band 01) is VCID 45
@@ -61,17 +64,9 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                     &blue_chunks, &nir_chunks);
 
     // Clean up
-    int i;
-    for (i=0; i<num_chunks; i++) {
-        FREE(red_chunks[i]);
-        FREE(green_chunks[i]);
-        FREE(blue_chunks[i]);
-        FREE(nir_chunks[i]);
-    }
-    FREE(red_chunks);
-    FREE(green_chunks);
-    FREE(blue_chunks);
-    FREE(nir_chunks);
+    free_chunk_names(num_chunks,
+                     &red_chunks, &green_chunks,
+                     &blue_chunks, &nir_chunks);
 }
 
 void get_chunk_names(const char *red_dir, const char *green_dir,
@@ -98,7 +93,13 @@ void get_chunk_names(const char *red_dir, const char *green_dir,
     num_green_files = numFiles(green_dir);
     num_blue_files = numFiles(blue_dir);
     num_nir_files = numFiles(nir_dir);
-    if (!(num_red_files == num_green_files == num_blue_files == num_nir_files)) {
+    if (num_red_files == num_green_files &&
+        num_red_files == num_blue_files  &&
+        num_red_files == num_nir_files)
+    {
+        *num_chunks = num_red_files; // Since all 4 bands have the same number, just pick one...
+    }
+    else {
         *num_chunks = (num_red_files < num_green_files) ? num_red_files  : num_green_files;
         *num_chunks = (*num_chunks > num_blue_files)    ? num_blue_files :
                       (*num_chunks > num_nir_files)     ? num_nir_files  : 0;
@@ -112,8 +113,41 @@ void get_chunk_names(const char *red_dir, const char *green_dir,
                        JL0_NIR_VCID,   num_nir_files,
                        *num_chunks);
     }
-    else {
-        *num_chunks = num_red_files; // Since all 4 bands have the same number, just pick one...
+}
+
+void free_chunk_names(int num_chunks,
+                      char ***red_chunks, char ***green_chunks,
+                      char ***blue_chunks, char ***nir_chunks)
+{
+    int chunk;
+
+    if (*red_chunks != NULL && num_chunks > 0) {
+        for (chunk = 0; chunk < num_chunks; chunk++) {
+            FREE((*red_chunks)[chunk]);
+        }
+        FREE(*red_chunks);
+        *red_chunks = NULL;
+    }
+    if (*green_chunks != NULL && num_chunks > 0) {
+        for (chunk = 0; chunk < num_chunks; chunk++) {
+            FREE((*green_chunks)[chunk]);
+        }
+        FREE(*green_chunks);
+        *green_chunks = NULL;
+    }
+    if (*blue_chunks != NULL && num_chunks > 0) {
+        for (chunk = 0; chunk < num_chunks; chunk++) {
+            FREE((*blue_chunks)[chunk]);
+        }
+        FREE(*blue_chunks);
+        *blue_chunks = NULL;
+    }
+    if (*nir_chunks != NULL && num_chunks > 0) {
+        for (chunk = 0; chunk < num_chunks; chunk++) {
+            FREE((*nir_chunks)[chunk]);
+        }
+        FREE(*nir_chunks);
+        *nir_chunks = NULL;
     }
 }
 
