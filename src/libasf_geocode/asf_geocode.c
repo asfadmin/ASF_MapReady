@@ -1399,7 +1399,7 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
   meta_write (omd, output_meta_data);
 
-  //-----------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
   // Now working on generating the output images
 
   double *projX = MALLOC(sizeof(double)*(oix_max+1));
@@ -1465,6 +1465,41 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         ("Requested pixel size %lf is smaller than the input image resolution "
         "(%le meters).\n", pixel_size,
         GSL_MIN (imd->general->x_pixel_size, imd->general->y_pixel_size));
+    }
+
+    // We will call "resample" on the input data if the geocoding
+    // will significantly downsample.  This is because asf_geocode will
+    // (with bilinear) use just 4 input pixels, which will throw away a
+    // lot of information when downsampling by a lot.  So, when in this
+    // situation, we call resample first, since resample will do the
+    // averaging first.
+    // This will also result in significantly faster geocoding.
+    int do_resample = FALSE;
+    if (pixel_size/2. > imd->general->x_pixel_size ||
+        pixel_size/2. > imd->general->y_pixel_size)
+    {
+      // this flag is so that we can clean up the intermediate resample file
+      do_resample = TRUE; 
+
+      // downsample to 2x the target resolution
+      double resample_ps = pixel_size / 2.;
+      char *resample_file = appendToBasename(in_base_name, "_down");
+
+      asfPrintStatus("Downsampling input image to %gm.\n", resample_ps);
+      resample_to_square_pixsiz(in_base_name, resample_file, resample_ps);
+
+      // now point to new input files for the remainder of the geocoding
+      FREE(input_image);
+      input_image = appendExt(resample_file, ".img");
+
+      FREE(input_meta_data);
+      input_meta_data = appendExt(resample_file, ".meta");
+
+      // re-read metadata
+      meta_free(imd);
+      imd = meta_read(input_meta_data);
+
+      FREE(resample_file);
     }
 
     // The pixel size requested by the user better not oversample by
@@ -2081,6 +2116,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
         }
 
       } // End of 'if multiband or single band and current band is requested band'
+
+      // if we did a downsampling, we should delete the "_down" file
+      if (do_resample) {
+        asfPrintStatus("Removing temporary downsampled file...\n");
+        unlink(input_meta_data);
+        unlink(input_image);
+      }
+
     } // End of 'for each band' in the file, 'map-project the data into the file'
 
     /////////////////////////////////////////////////////////////////////////
