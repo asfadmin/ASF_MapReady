@@ -46,8 +46,9 @@ int fileSize(const char *name)
   dir = opendir(".");
   while ((dp = readdir(dir)) != NULL) {
 
-    if (stat(dp->d_name, &statbuf) == -1)
+    if (stat(dp->d_name, &statbuf) == -1) {
       continue;
+    }
     sprintf(file_name, "%s", dp->d_name);
     if (strcmp(file_name, name) == 0) {
       file_size = (int)statbuf.st_size;
@@ -57,6 +58,32 @@ int fileSize(const char *name)
   closedir(dir);
 
   return file_size;
+}
+
+int numFiles(const char *path)
+{
+  struct stat statbuf;
+  struct dirent *dp;
+  DIR *dir;
+  int fileCount = 0;
+
+  if (path && strlen(path) > 0) {
+    dir = opendir(path);
+  }
+  else {
+    dir = opendir(".");
+  }
+
+  while ((dp = readdir(dir)) != NULL) {
+    if (stat(dp->d_name, &statbuf) < 0) {
+      continue;
+    }
+    else if (S_ISREG(statbuf.st_mode)) {
+      fileCount++;
+    }
+  }
+
+  return fileCount;
 }
 
 int fileExists(const char *name)
