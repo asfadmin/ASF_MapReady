@@ -16,6 +16,18 @@
 // string.
 const char *planner_satellite = "ALOS";
 
+// *** HOWEVER ***
+// This is a fair bit of ALOS-specific code in here, in particular the
+// orbit number calculations.  To extend this planner to use other
+// satellites, this calculation is going to have be updated.  We have
+// this function here to help isolate the ALOS-specific code, but I
+// can't say for sure that things will work if this ever returns FALSE.
+// (Though it SHOULD)
+static int is_alos()
+{
+  return strcmp(planner_satellite,"ALOS")==0;
+}
+
 // flag indicating whether or not asf_view is running with the acquisition
 // planning stuff turned on.  access from elsewhere with "planner_is_active()"
 
@@ -159,15 +171,32 @@ int sort_compare_func(GtkTreeModel *model,
       gtk_tree_model_get(model, a, COL_ORBIT_PATH, &str1, -1);
       gtk_tree_model_get(model, b, COL_ORBIT_PATH, &str2, -1);
 
-      int orbit1, orbit2, frame1, frame2;
-      sscanf(str1, "%d/%d", &orbit1, &frame1);
-      sscanf(str2, "%d/%d", &orbit2, &frame2);
+      if (is_alos()) {
+        // alos case
+        // sort based on orbit/frame (actually, the path number)
+        int orbit1, orbit2, frame1, frame2;
+        sscanf(str1, "%d/%d", &orbit1, &frame1);
+        sscanf(str2, "%d/%d", &orbit2, &frame2);
+        
+        if (orbit1 != orbit2) {
+          ret = orbit1 > orbit2 ? 1 : -1;
+        } else {
+          if (frame1 != frame2) {
+            ret = frame1 > frame2 ? 1 : -1;
+          } else {
+            ret = 0;
+          }
+        }
+      }
+      else {
+        // non-alos case
+        // sort just on orbit number (no path present)
+        int orbit1, orbit2;
+        sscanf(str1, "%d", &orbit1);
+        sscanf(str2, "%d", &orbit2);
 
-      if (orbit1 != orbit2) {
-        ret = orbit1 > orbit2 ? 1 : -1;
-      } else {
-        if (frame1 != frame2) {
-          ret = frame1 > frame2 ? 1 : -1;
+        if (orbit1 != orbit2) {
+          ret = orbit1 > orbit2 ? 1 : -1;
         } else {
           ret = 0;
         }
@@ -531,9 +560,16 @@ void setup_planner()
     gtk_tree_view_column_pack_start(col, rend, TRUE);
     gtk_tree_view_column_add_attribute(col, rend, "text", COL_DATE_HIDDEN);
 
-    // Column: Orbit/Path
+    // Column: Orbit/Path (ALOS)
+    // Column: Orbit (other)
+    // NOTE that if this is changed (for example, for other satellites
+    // including a frame number), you'll need to update how the column
+    // is populated and sorted elsewhere in this file (look for is_alos())
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Orbit/Path");
+    if (is_alos())
+      gtk_tree_view_column_set_title(col, "Orbit/Path");
+    else
+      gtk_tree_view_column_set_title(col, "Orbit");
     gtk_tree_view_column_set_resizable(col, TRUE);
     gtk_tree_view_column_set_sort_column_id(col, SORTID_ORBIT_PATH);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tv), col);
@@ -737,60 +773,12 @@ int row_is_checked(int row)
   return ret;
 }
 
+// Warning: ALOS specific!
+// Not sure if other satellites even use a "path number" though
 static int revolution2path(int revolution)
 {
     return ((46*revolution+85)%671);
 }
-
-// calculate a satellite's nadir latitude for a particular frame
-//static double sat_lat(int ALOS_frame)
-//{
-//    double inclination = 90 - 98.16;
-//    double angle_thing = cos(D2R*inclination);
-//    double orbit = ALOS_frame/7200*360.;
-//    double ret = R2D*asin(sin(D2R*orbit)*angle_thing);
-//    return ret;
-//}
-
-//static double fake_lat(double real_lat, double inclination)
-//{
-//    return R2D*asin(sin(D2R*real_lat)/cos(D2R*inclination));
-//}
-
-//static double esa_node(double esa_lat, int direction)
-//{
-//    if (direction==0) {
-//        if (esa_lat < 0) esa_lat += 360;
-//    } else {
-//        esa_lat = 180-esa_lat;
-//    }
-//    return esa_lat*20;
-//}
-
-// how long the satellite needs to stay on
-//static double alos_time(double start_lat, int start_direction,
-//                        double stop_lat, int stop_direction)
-//{
-//    double inclination=8.2352631198113;
-//    double secs_node=.822652757;
-//    double fake_1 = fake_lat(start_lat, inclination);
-//    double fake_2 = fake_lat(stop_lat, inclination);
-//    double node_1 = esa_node(fake_1, start_direction);
-//    double node_2 = esa_node(fake_2, stop_direction);
-//    if (node_2 <= node_1)
-//        node_2 = 7200 + node_2;
-//    double ret = secs_node*(node_2-node_1);
-//    return ret; 
-//}
-
-//static void calc_frame(double lat, int *frame)
-//{
-//  double sat_lat = lat*D2R;
-//  double inclination = D2R * (90-98.16);
-//  double angle_thing = cos(inclination);
-//  double rev = asin(sin(sat_lat)/angle_thing);
-//  *frame = (int)(rev*7200 + .5);
-//}
 
 SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
 {
@@ -1166,45 +1154,73 @@ SIGNAL_CALLBACK void on_plan_button_clicked(GtkWidget *w)
           char date_hidden_info[256];
           sprintf(date_hidden_info, "%f", pi->start_time);
 
+          int orbit;
+          if (is_alos()) {
+            // ALOS specific calculation of the orbit number, where we just
+            // take a known reference orbit number, and do a simple period-
+            // based division to get the current orbit number.
+            // KLUDGE: This should all be moved to a config file!
+            double recurrent_period = 46;              // days
+            double orbits_per_recurrent_period = 671;
+            
+            // reference: 26-Dec-2006, 6:15:34
+            // reference orbit: 4904
+
+            // [subtract 8 minutes: estimate of equator crossing, since this
+            //  reference is for a scene 30 degrees above equator crossing
+            //  (where orbit number is incremented), and 98.7/12 ~ 8. ]
+
+            ymd_date ref_ymd;
+            hms_time ref_hms;
+            
+            ref_ymd.year = 2006;
+            ref_ymd.month = 12;
+            ref_ymd.day = 26;
+            
+            ref_hms.hour = 6;
+            ref_hms.min = 15-8; // see above for the -8 explanation
+            ref_hms.sec = 34;
+            
+            int ref_orbit = 4904;
+            
+            // here on out are the actual calculations, no need to change
+            // any of this if you just wanted to update the reference
+            julian_date ref_jd;
+            date_ymd2jd(&ref_ymd, &ref_jd);
+            double ref = date2sec(&ref_jd, &ref_hms);
+            
+            double revolutions_per_day =
+              orbits_per_recurrent_period/recurrent_period;
+            double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
+
+            double revs_since_ref = (pi->start_time - ref)/orbital_period;
+            orbit = (int)floor(ref_orbit + revs_since_ref);
+            // end of the ALOS orbit number calculation kludge
+          }
+          else {
+            // use the orbit number from the TLE calc
+            // not sure how good this number is -- seems to work 70% of
+            // the time for ALOS (that's why we had to change to the above
+            // calculation), for other satellites it could be better, or
+            // worse!
+            orbit = pi->orbit;
+          }
+
+
           char orbit_info[256];
 
-          // KLUDGE: This should all be moved to a config file!
-          double recurrent_period = 46;              // days
-          double orbits_per_recurrent_period = 671;
+          if (is_alos()) {          
+            // ALOS specific thing here-- orbit/path is the column contents
+            int path = revolution2path(orbit);
 
-          // reference: 26-Dec-2006, 6:15:34
-          // subtract 8 minutes, estimate to equator crossing
-          // reference orbit: 4904
-          ymd_date ref_ymd;
-          hms_time ref_hms;
-
-          ref_ymd.year = 2006;
-          ref_ymd.month = 12;
-          ref_ymd.day = 26;
-
-          ref_hms.hour = 6;
-          ref_hms.min = 15-8;
-          ref_hms.sec = 34;
-
-          int ref_orbit = 4904;
-
-          julian_date ref_jd;
-          date_ymd2jd(&ref_ymd, &ref_jd);
-          double ref = date2sec(&ref_jd, &ref_hms);
-
-          double revolutions_per_day =
-            orbits_per_recurrent_period/recurrent_period;
-          double orbital_period = 24.*60.*60. / revolutions_per_day; // sec
-
-          double revs_since_ref = (pi->start_time - ref)/orbital_period;
-          int orbit = (int)floor(ref_orbit + revs_since_ref);
-          // end of the ALOS orbit number calculation kludge
-
-          //int orbit = pi->orbit;
-
-          int path = revolution2path(orbit);
-          //sprintf(orbit_info, "%.2f/%d", orbit + pi->orbit_part, path);
-          sprintf(orbit_info, "%d/%d", orbit, path);
+            //sprintf(orbit_info, "%.2f/%d", orbit + pi->orbit_part, path);
+            sprintf(orbit_info, "%d/%d", orbit, path);
+          }
+          else {
+            // non-ALOS, don't give a path, orbit number only appears in
+            // the table
+            sprintf(orbit_info, "%d", orbit);
+          }
 
           char pct_info[256];
           sprintf(pct_info, "%.1f", 100.*pi->total_pct);

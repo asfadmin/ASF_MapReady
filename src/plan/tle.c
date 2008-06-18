@@ -107,8 +107,16 @@ stateVector tle_propagate(sat_t *sat, double t)
   // I really don't know if we need the -1 in here or not!!
   int revnum = sat->tle.revnum; // - 1;
 
-  double orbit = (sat->tle.xno * xmnpda/twopi +
+  double orbit1 = (sat->tle.xno * xmnpda/twopi +
                   age * sat->tle.bstar * ae) * age + sat->tle.xmo/twopi;
+  double orbit2 = sat->tle.xno * xmnpda/twopi * age + sat->tle.xmo/twopi;
+  double orbit3 = sat->tle.xno * xmnpda/twopi * age;
+
+  //printf("orbit: %f %f %f\n", orbit1, orbit2, orbit3);
+
+  // use the second calculation...
+  double orbit = orbit3;
+
   sat->orbit = (long) floor(orbit) + revnum;
   sat->orbit_part = orbit + revnum - (double)sat->orbit;
 
