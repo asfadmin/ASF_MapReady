@@ -637,6 +637,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* start sample subset    */
                        -99,                 /* width of subset        */
                        -99,                 /* height of subset       */
+                       0,                   /* save_intermediates     */
                        NULL,                /* p_range_scale          */
                        NULL,                /* p_azimuth_scale        */
                        NULL,                /* p_correct_y_pixel_size */
@@ -686,6 +687,7 @@ void generate_level0_thumbnail(const char *file, int size, int verbose, level_0_
                        0,                   /* start sample subset    */
                        -99,                 /* width of subset        */
                        -99,                 /* height of subset       */
+                       0,                   /* save_intermediates     */
                        NULL,                /* p_range_scale          */
                        NULL,                /* p_azimuth_scale        */
                        NULL,                /* p_correct_y_pixel_size */

@@ -25,8 +25,8 @@ int isCEOS(const char *input_file)
   char **inBandName = NULL, **inMetaName = NULL;
   int nBands, trailer;
 
-  if (require_ceos_pair(input_file, &inBandName, &inMetaName, 
-			&nBands, &trailer))
+  if (require_ceos_pair(input_file, &inBandName, &inMetaName,
+            &nBands, &trailer))
     return TRUE;
   else
     return FALSE;
@@ -60,8 +60,8 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
   char **inBandName = NULL, **inMetaName = NULL;
   int nBands=1, trailer;
   if (isCEOS(inName))
-    require_ceos_pair(inName, &inBandName, &inMetaName, 
-		      &nBands, &trailer);
+    require_ceos_pair(inName, &inBandName, &inMetaName,
+              &nBands, &trailer);
   else if (isSTF(inName))
     require_stf_pair(inName, inBandName, inMetaName);
   meta_parameters *meta = meta_read(inMetaName[0]);
@@ -108,66 +108,66 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
     // Determine the band extension (band ID)
     if (strcmp_case(meta->general->sensor, "RSAT") == 0)
       strcpy(bandExt, "HH");
-    else if (strcmp_case(meta->general->sensor, "ERS") == 0 || 
-	     strcmp_case(meta->general->sensor, "JERS") == 0)
+    else if (strcmp_case(meta->general->sensor, "ERS") == 0 ||
+         strcmp_case(meta->general->sensor, "JERS") == 0)
       strcpy(bandExt, "VV");
-    else if (strcmp_case(meta->general->sensor_name, "SAR") == 0 || 
-	     strcmp_case(meta->general->sensor_name, "PALSAR") == 0)
+    else if (strcmp_case(meta->general->sensor_name, "SAR") == 0 ||
+         strcmp_case(meta->general->sensor_name, "PALSAR") == 0)
       bandExt = get_polarization(inBandName[ii]);
-    else if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0 || 
-	     strcmp_case(meta->general->sensor_name, "PRISM") == 0) {
+    else if (strcmp_case(meta->general->sensor_name, "AVNIR") == 0 ||
+         strcmp_case(meta->general->sensor_name, "PRISM") == 0) {
       int band_number;
       band_number = get_alos_band_number(inBandName[ii]);
       if (band_number<9)
-	sprintf(bandExt, "0%d", band_number);
+    sprintf(bandExt, "0%d", band_number);
       else
-	sprintf(bandExt, "%d", band_number);
+    sprintf(bandExt, "%d", band_number);
     }
     strcpy(meta->general->bands, "");
 
     if (meta->sar) {
       // Assign band names
       assign_band_names(meta, outMetaName, bandExt, band, nBands, nBandsOut,
-			radiometry, complex_flag);
+            radiometry, complex_flag);
       if (radiometry >= r_SIGMA && radiometry <= r_BETA_DB) {
-	meta->general->data_type = REAL32;
-	meta->general->band_count = import_single_band ? 1 : band;
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
       }
       else if (complex_flag) {
-	meta->general->data_type = COMPLEX_REAL32;
-	meta->general->band_count = import_single_band ? 1 : band;
+    meta->general->data_type = COMPLEX_REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
       }
       else if (data_type >= COMPLEX_BYTE) {
-	meta->general->data_type = REAL32;
-	meta->general->band_count = import_single_band ? 2 : band*2;
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 2 : band*2;
       }
       else {
-	meta->general->data_type = REAL32;
-	meta->general->band_count = import_single_band ? 1 : band;
+    meta->general->data_type = REAL32;
+    meta->general->band_count = import_single_band ? 1 : band;
       }
       meta_write(meta, outMetaName);
     }
-    else if (meta->optical) { 
+    else if (meta->optical) {
       int band_number;
       band_number = get_alos_band_number(inBandName[ii]);
       if (band_number<9)
-	sprintf(bandExt, "0%d", band_number);
+    sprintf(bandExt, "0%d", band_number);
       else
-	sprintf(bandExt, "%d", band_number);
+    sprintf(bandExt, "%d", band_number);
       //if (nBands > 1)
       //  asfPrintStatus("   Input band: %s\n", bandExt);
       if (band > 1) {
-	if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
-	    (strcmp_case(meta->general->mode, "1A") != 0 ||
-	     strcmp_case(meta->general->mode, "1B1") != 0)) {
-	  meta_parameters *metaTmp=NULL;
-	  metaTmp = meta_read(outMetaName);
-	  strcat(meta->general->bands, metaTmp->general->bands);
-	  meta_free(metaTmp);
-	}
+    if (strcmp_case(meta->general->sensor_name, "PRISM") != 0 &&
+        (strcmp_case(meta->general->mode, "1A") != 0 ||
+         strcmp_case(meta->general->mode, "1B1") != 0)) {
+      meta_parameters *metaTmp=NULL;
+      metaTmp = meta_read(outMetaName);
+      strcat(meta->general->bands, metaTmp->general->bands);
+      meta_free(metaTmp);
+    }
       }
       if (strcmp(meta->general->bands, "") != 0)
-	strcat(meta->general->bands, ",");
+    strcat(meta->general->bands, ",");
       strcat(meta->general->bands, bandExt);
     }
   }
@@ -179,13 +179,13 @@ meta_parameters *meta_read_cfg(const char *inName, convert_config *cfg)
     strcpy(meta->sar->polarization, "quad-pol");
     meta->general->image_data_type = POLARIMETRIC_IMAGE;
   }
-  
+
   // Clean up
   remove_dir(tmpDir);
   FREE(tmpDir);
   FREE(outMetaName);
   FREE(bandExt);
-  
+
   return meta;
 }
 
@@ -245,15 +245,15 @@ void check_return(int ret, char *msg)
     asfPrintError(msg);
 }
 
-void check_input(convert_config *cfg, char *processing_step, char *input) 
+void check_input(convert_config *cfg, char *processing_step, char *input)
 {
   char **inBandName = NULL, **inMetaName = NULL;
   int nBands, trailer;
-  
+
   if (strcmp_case(processing_step, "polarimetry") == 0) {
     if (isCEOS(input))
-      require_ceos_pair(input, &inBandName, &inMetaName, 
-			&nBands, &trailer);
+      require_ceos_pair(input, &inBandName, &inMetaName,
+            &nBands, &trailer);
     else if (isSTF(input))
       require_stf_pair(input, inBandName, inMetaName);
     meta_parameters *meta = meta_create(inMetaName[0]);
@@ -263,16 +263,16 @@ void check_input(convert_config *cfg, char *processing_step, char *input)
       meta = meta_read_cfg(inMetaName[0], cfg);
       // Pauli decomposition only works for complex quad-pol data
       if (cfg->polarimetry->pauli &&
-	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
-	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
-	   meta->general->band_count < 8))
-	asfPrintError("Pauli decomposition requires complex quad-pol data\n");
+      (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+       strcmp_case(meta->sar->polarization, "QUAD-POL") != 0 ||
+       meta->general->band_count < 8))
+    asfPrintError("Pauli decomposition requires complex quad-pol data\n");
       // Sinclair decomposition ought to work on complex and detected
       // quad-pol data
       if (cfg->polarimetry->sinclair &&
-	  (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
-	   strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
-	asfPrintError("Sinclair decomposition requires quad-pol data\n");
+      (meta->general->image_data_type != POLARIMETRIC_IMAGE ||
+       strcmp_case(meta->sar->polarization, "QUAD-POL") != 0))
+    asfPrintError("Sinclair decomposition requires quad-pol data\n");
     }
     else {
       asfPrintError("Polarimetry requires SAR data.\n");
@@ -384,7 +384,7 @@ convert_tiff(const char *tiff_file, char *what, convert_config *cfg,
     sprintf(status, "ingesting GeoTIFF %s (asf_import)\n", uc_what);
     check_return(
         asf_import(r_AMP, FALSE, FALSE, FALSE, FALSE, GENERIC_GEOTIFF, NULL,
-                   NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 
+                   NULL, what, NULL, NULL, -99, -99, 0, 0, -99, -99, 0,
                    NULL, NULL, NULL, FALSE, NULL, tiff_basename, imported),
         status);
 
@@ -715,7 +715,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       mosaic_dir = MALLOC(sizeof(char)*255);
 
     if (batch) {
-      // Create a temporary directory to collect intermediate processing 
+      // Create a temporary directory to collect intermediate processing
       // results
       char fileName[255], batchPreDir[255];
       char *p = findExt(configFileName);
@@ -734,98 +734,98 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
       strcpy(tmp_dir, cfg->general->tmp_dir);
       while (fgets(line, 255, fBatch) != NULL) {
-	char batchItem[255], fileName[255], batchPreDir[255];
-	sscanf(line, "%s", batchItem);
-	
-	// Create temporary directory for processing
-	char *p = findExt(batchItem);
-	if (p) *p = '\0';
-	split_dir_and_file(batchItem, batchPreDir, fileName);
-	create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
-	
-	// Generate temporary defaults values file
-	char tmpDefaults[255];
-	sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
-	FILE *fDef = FOPEN(tmpDefaults, "w");
-	fprintf(fDef, "import = %d\n", cfg->general->import);
-	fprintf(fDef, "polarimetry = %d\n", cfg->general->polarimetry);
-	fprintf(fDef, "terrain correction = %d\n",
-		cfg->general->terrain_correct);
-	fprintf(fDef, "geocoding = 0\n");
-	fprintf(fDef, "export = 0\n");
-	fprintf(fDef, "intermediates = %d\n", cfg->general->intermediates);
-	fprintf(fDef, "quiet = 1\n");
-	fprintf(fDef, "short configuration file = 1\n");
-	if (cfg->general->import) {
-	  fprintf(fDef, "input format = %s\n", cfg->import->format);
-	  fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
-	  fprintf(fDef, "output db = %d\n", cfg->import->output_db);
-	  fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
-	}
-	if (cfg->general->polarimetry) {
-	  fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
-	  fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
-	  fprintf(fDef, "cloude pottier = %d\n", 
-		  cfg->polarimetry->cloude_pottier);
-	}
-	if (cfg->general->terrain_correct) {
-	  fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
-	  fprintf(fDef, "digital elevation model = %s\n",
-		  cfg->terrain_correct->dem);
-	  fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);
-	  fprintf(fDef, "smooth dem holes =1\n");
-	  fprintf(fDef, "do radiometric = %d\n",
-		  cfg->terrain_correct->do_radiometric);
-	  fprintf(fDef, "interpolate = 1\n");
-	}
-	FCLOSE(fDef);
-	
-	// Create temporary configuration file
-	sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
-	FILE *fConfig = FOPEN(tmpCfgName, "w");
-	fprintf(fConfig, "asf_convert temporary configuration file\n\n");
-	fprintf(fConfig, "[General]\n");
-	fprintf(fConfig, "default values = %s\n", tmpDefaults);
-	fprintf(fConfig, "input file = %s\n", batchItem);
-	fprintf(fConfig, "output file = %s%s/%s\n", batchPreDir, 
-		mosaic_dir, fileName);
-	fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
-	FCLOSE(fConfig);
-	
-	// Extend the temporary configuration file
-	tmp_cfg = read_convert_config(tmpCfgName);
-	check_return(write_convert_config(tmpCfgName, tmp_cfg),
-		     "Could not update configuration file");
-	free_convert_config(tmp_cfg);
-	
-	// This is really quite a kludge-- we used to call the library
-	// function here, now we shell out and run the tool directly, sort
-	// of a step backwards, it seems.  Unfortunately, in order to keep
-	// processing the batch even if an error occurs, we're stuck with
-	// this method.  (Otherwise, we'd have to teach asfPrintError to
-	// get us back here, to continue the loop.)
-	asfPrintStatus("\nProcessing %s ...\n", batchItem);
-	char cmd[1024];
-	if (logflag) {
-	  sprintf(cmd, "%sasf_convert%s -log %s %s",
-		  get_argv0(), bin_postfix(), logFile, tmpCfgName);
-	}
-	else {
-	  sprintf(cmd, "%sasf_convert%s %s",
-		  get_argv0(), bin_postfix(), tmpCfgName);
-	}
-	int ret = asfSystem(cmd);
-	
-	if (ret != 0) {
+    char batchItem[255], fileName[255], batchPreDir[255];
+    sscanf(line, "%s", batchItem);
+
+    // Create temporary directory for processing
+    char *p = findExt(batchItem);
+    if (p) *p = '\0';
+    split_dir_and_file(batchItem, batchPreDir, fileName);
+    create_and_set_tmp_dir(fileName, batchPreDir, tmp_dir);
+
+    // Generate temporary defaults values file
+    char tmpDefaults[255];
+    sprintf(tmpDefaults, "%s/tmp.defaults", tmp_dir);
+    FILE *fDef = FOPEN(tmpDefaults, "w");
+    fprintf(fDef, "import = %d\n", cfg->general->import);
+    fprintf(fDef, "polarimetry = %d\n", cfg->general->polarimetry);
+    fprintf(fDef, "terrain correction = %d\n",
+        cfg->general->terrain_correct);
+    fprintf(fDef, "geocoding = 0\n");
+    fprintf(fDef, "export = 0\n");
+    fprintf(fDef, "intermediates = %d\n", cfg->general->intermediates);
+    fprintf(fDef, "quiet = 1\n");
+    fprintf(fDef, "short configuration file = 1\n");
+    if (cfg->general->import) {
+      fprintf(fDef, "input format = %s\n", cfg->import->format);
+      fprintf(fDef, "radiometry = %s\n", cfg->import->radiometry);
+      fprintf(fDef, "output db = %d\n", cfg->import->output_db);
+      fprintf(fDef, "multilook SLC = %d\n", cfg->import->multilook_slc);
+    }
+    if (cfg->general->polarimetry) {
+      fprintf(fDef, "pauli = %d\n", cfg->polarimetry->pauli);
+      fprintf(fDef, "sinclair = %d\n", cfg->polarimetry->sinclair);
+      fprintf(fDef, "cloude pottier = %d\n",
+          cfg->polarimetry->cloude_pottier);
+    }
+    if (cfg->general->terrain_correct) {
+      fprintf(fDef, "pixel spacing = %lf\n", cfg->terrain_correct->pixel);
+      fprintf(fDef, "digital elevation model = %s\n",
+          cfg->terrain_correct->dem);
+      fprintf(fDef, "mask = %s\n", cfg->terrain_correct->mask);
+      fprintf(fDef, "smooth dem holes =1\n");
+      fprintf(fDef, "do radiometric = %d\n",
+          cfg->terrain_correct->do_radiometric);
+      fprintf(fDef, "interpolate = 1\n");
+    }
+    FCLOSE(fDef);
+
+    // Create temporary configuration file
+    sprintf(tmpCfgName, "%s/%s.cfg", tmp_dir, fileName);
+    FILE *fConfig = FOPEN(tmpCfgName, "w");
+    fprintf(fConfig, "asf_convert temporary configuration file\n\n");
+    fprintf(fConfig, "[General]\n");
+    fprintf(fConfig, "default values = %s\n", tmpDefaults);
+    fprintf(fConfig, "input file = %s\n", batchItem);
+    fprintf(fConfig, "output file = %s%s/%s\n", batchPreDir,
+        mosaic_dir, fileName);
+    fprintf(fConfig, "tmp dir = %s\n", tmp_dir);
+    FCLOSE(fConfig);
+
+    // Extend the temporary configuration file
+    tmp_cfg = read_convert_config(tmpCfgName);
+    check_return(write_convert_config(tmpCfgName, tmp_cfg),
+             "Could not update configuration file");
+    free_convert_config(tmp_cfg);
+
+    // This is really quite a kludge-- we used to call the library
+    // function here, now we shell out and run the tool directly, sort
+    // of a step backwards, it seems.  Unfortunately, in order to keep
+    // processing the batch even if an error occurs, we're stuck with
+    // this method.  (Otherwise, we'd have to teach asfPrintError to
+    // get us back here, to continue the loop.)
+    asfPrintStatus("\nProcessing %s ...\n", batchItem);
+    char cmd[1024];
+    if (logflag) {
+      sprintf(cmd, "%sasf_convert%s -log %s %s",
+          get_argv0(), bin_postfix(), logFile, tmpCfgName);
+    }
+    else {
+      sprintf(cmd, "%sasf_convert%s %s",
+          get_argv0(), bin_postfix(), tmpCfgName);
+    }
+    int ret = asfSystem(cmd);
+
+    if (ret != 0) {
           asfPrintStatus("%s: failed\n", batchItem);
           ++n_bad;
-	} else {
+    } else {
           asfPrintStatus("%s: ok\n", batchItem);
-	  fprintf(fList, "%s/%s.img\n", mosaic_dir, batchItem);
+      fprintf(fList, "%s/%s.img\n", mosaic_dir, batchItem);
           ++n_ok;
-	}
-	
-	strcpy(tmp_dir, cfg->general->tmp_dir);
+    }
+
+    strcpy(tmp_dir, cfg->general->tmp_dir);
       }
       FCLOSE(fBatch);
       FCLOSE(fList);
@@ -833,7 +833,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
 
     // Read file names to pass to mosaicking
     int ii, nFiles = 0;
-    if (mosaic_dir) 
+    if (mosaic_dir)
       fList = FOPEN(tmpList, "r");
     else
       fList = FOPEN(cfg->general->batchFile, "r");
@@ -882,11 +882,11 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       asfPrintError("%s",err);
     }
     update_status("Mosaicking...");
-    asf_mosaic(&pp, proj_type, cfg->geocoding->force, resample_method, 
-	       cfg->geocoding->height, datum, cfg->geocoding->pixel, 
-	       multiband, band_num, in_base_names, outFile, 
-	       cfg->geocoding->background, 
-	       lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap);
+    asf_mosaic(&pp, proj_type, cfg->geocoding->force, resample_method,
+           cfg->geocoding->height, datum, cfg->geocoding->pixel,
+           multiband, band_num, in_base_names, outFile,
+           cfg->geocoding->background,
+           lat_min, lat_max, lon_min, lon_max, cfg->mosaic->overlap);
 
     // Export mosaic
     if (cfg->general->export) {
@@ -1063,7 +1063,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                         "file appears to be Level 0:\n  %s\n", RAW_file);
         free(RAW_file); free(LDR_file);
     }
-    
+
     // Check whether everything in the [Import] block is reasonable
     if (cfg->general->import) {
 
@@ -1167,21 +1167,21 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       int pauli = cfg->polarimetry->pauli == 0 ? 0 : 1;
       int sinclair = cfg->polarimetry->sinclair == 0 ? 0 : 1;
       int cloude_pottier = cfg->polarimetry->cloude_pottier == 0 ? 0 : 1;
-      int cloude_pottier_ext = 
-	cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
+      int cloude_pottier_ext =
+    cfg->polarimetry->cloude_pottier_ext == 0 ? 0 : 1;
       int cloude_pottier_nc = cfg->polarimetry->cloude_pottier_nc == 0 ? 0 : 1;
       int k_means_wishart = cfg->polarimetry->k_means_wishart == 0 ? 0 : 1;
-      int k_means_wishart_ext = 
-	cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
+      int k_means_wishart_ext =
+    cfg->polarimetry->k_means_wishart_ext == 0 ? 0 : 1;
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
-	  cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
-	asfPrintError("More than one polarimetric processing scheme selected."
-		      "\nOnly one of these options may be selected at a time."
-		      "\n");
+      cloude_pottier_nc + k_means_wishart + k_means_wishart_ext > 1)
+    asfPrintError("More than one polarimetric processing scheme selected."
+              "\nOnly one of these options may be selected at a time."
+              "\n");
       if (pauli + sinclair + cloude_pottier + cloude_pottier_ext +
-	  cloude_pottier_nc + k_means_wishart + k_means_wishart_ext < 1)
-	asfPrintError("No polarimetric processing scheme selected.\n");
-      
+      cloude_pottier_nc + k_means_wishart + k_means_wishart_ext < 1)
+    asfPrintError("No polarimetric processing scheme selected.\n");
+
       if (strncmp_case(cfg->import->radiometry, "AMPLITUDE",9)!=0) {
         asfPrintError("Polarimetric processing requires the import "
                       "radiometry AMPLITUDE.\n");
@@ -1344,8 +1344,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     if (!cfg->general->import && !cfg->general->sar_processing &&
-        !cfg->general->polarimetry && !cfg->general->terrain_correct && 
-	!cfg->general->geocoding && !cfg->general->export) {
+        !cfg->general->polarimetry && !cfg->general->terrain_correct &&
+    !cfg->general->geocoding && !cfg->general->export) {
       asfPrintError("Invalid configuration file found (%s) or no processing\n"
                     "is enabled, e.g. import, terrain correction, geocoding,\n"
                     "and export processing flags are all set to zero in the\n"
@@ -1369,7 +1369,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     // we add a "secret" band 0 containing amplitude data, if we are
     // generating something other than amplitude, and are going to
     // be terrain correcting
-    int amp0_flag = FALSE; 
+    int amp0_flag = FALSE;
 
     // Call asf_import, if needed (=> input is not ASF Internal)
     if (cfg->general->import) {
@@ -1414,8 +1414,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       // Generate a temporary output filename
       if (cfg->general->image_stats || cfg->general->detect_cr ||
           cfg->general->sar_processing || cfg->general->polarimetry ||
-	  cfg->general->terrain_correct || cfg->general->geocoding || 
-	  cfg->general->export) {
+      cfg->general->terrain_correct || cfg->general->geocoding ||
+      cfg->general->export) {
         sprintf(outFile, "%s/import", cfg->general->tmp_dir);
       }
       else {
@@ -1459,8 +1459,8 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
                               cfg->import->lat_begin, cfg->import->lat_end,
                               cfg->import->line, cfg->import->sample,
                               cfg->import->width, cfg->import->height,
-                              NULL, NULL, NULL,
-                              cfg->import->ers2_gain_fix, 
+                              cfg->general->intermediates, NULL, NULL, NULL,
+                              cfg->import->ers2_gain_fix,
                               NULL,
                               cfg->general->in_name, outFile),
                               "ingesting data file (asf_import)\n");
@@ -1618,7 +1618,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         {
             sprintf(outFile, "%s", cfg->general->out_name);
         }
-	
+
         c2p(inDataName, outFile, cfg->c2p->multilook, TRUE);
     }
 
@@ -1676,14 +1676,14 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     }
 
     if (cfg->general->polarimetry) {
-      
+
       update_status("Polarimetric processing ...");
       amp0_flag = cfg->general->terrain_correct;
 
       // Pass in command line
       sprintf(inFile, "%s", outFile);
       if (cfg->general->terrain_correct || cfg->general->geocoding ||
-	        cfg->general->export)
+            cfg->general->export)
         sprintf(outFile, "%s/polarimetry", cfg->general->tmp_dir);
       else
         sprintf(outFile, "%s", cfg->general->out_name);
@@ -2189,7 +2189,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
               if (meta->optical && (true_color || false_color))
               {
                 if (meta->optical && (true_color || false_color)) {
-                  // Multi-band optical data, exporting as true or 
+                  // Multi-band optical data, exporting as true or
                   // false color single file
                   char **bands = extract_band_names(meta->general->bands,
                                                     meta->general->band_count);
@@ -2490,7 +2490,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
         strcpy(cfg->export->rgb, "");
       }
     }
-    
+
     if (strlen(cfg->export->rgb) == 0)
     {
       if (meta->optical && (true_color || false_color)) {

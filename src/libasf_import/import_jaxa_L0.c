@@ -57,20 +57,20 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         sprintf(blue_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_BLUE_VCID);
         sprintf(nir_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_NIR_VCID);
 
-        // Build base data chunk names
+        // Retrieve file names of each band's chunks (sub-files)
         int num_chunks = 0;
         char **red_chunks=NULL;
         char **green_chunks=NULL;
         char **blue_chunks=NULL;
         char **nir_chunks=NULL;
         get_avnir_chunk_names(red_dir, green_dir, blue_dir, nir_dir, &num_chunks,
-                            &red_chunks, &green_chunks,
-                            &blue_chunks, &nir_chunks);
+                              &red_chunks, &green_chunks,
+                              &blue_chunks, &nir_chunks);
 
         // Clean up
         free_avnir_chunk_names(num_chunks,
-                            &red_chunks, &green_chunks,
-                            &blue_chunks, &nir_chunks);
+                               &red_chunks, &green_chunks,
+                               &blue_chunks, &nir_chunks);
     }
     else if (sensor_type == PRISM) {
         asfPrintError("ALOS PRISM Level 0 not yet supported.\n");
@@ -158,10 +158,10 @@ void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
 
     // Copy the sorted names to the returned arrays
     for (chunk=0; chunk < *num_chunks; chunk++) {
-        strcpy((*red_chunks)[chunk]  , red_files->file);
-        strcpy((*green_chunks)[chunk], green_files->file);
-        strcpy((*blue_chunks)[chunk] , blue_files->file);
-        strcpy((*nir_chunks)[chunk]  , nir_files->file);
+        strcpy((*red_chunks)[chunk]  , red_files[chunk].file);
+        strcpy((*green_chunks)[chunk], green_files[chunk].file);
+        strcpy((*blue_chunks)[chunk] , blue_files[chunk].file);
+        strcpy((*nir_chunks)[chunk]  , nir_files[chunk].file);
     }
 
     // Clean up

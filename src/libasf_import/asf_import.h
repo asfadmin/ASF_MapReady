@@ -25,7 +25,7 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                                    // starting at band 1
                input_format_t format_type, // eg, STF, CEOS - etc
                char *band_id, // eg, "" (default for all bands), "VH", "03" - etc
-	       char *data_type,    // data type for gamma ingest
+               char *data_type,    // data type for gamma ingest
                char *image_data_type, // "geocoded_image", "dem", or "mask"
                char *lutName, // NULL for no lookup table
                               // otherwise, this is the lookup table filename
@@ -34,10 +34,11 @@ int asf_import(radiometry_t radiometry, // r_AMP,R_SIGMA,r_BETA,r_GAMMA,r_POWER
                               // path
                double lowerLat, // -99 means not constrained
                double upperLat, // -99 means not constrained
-	       int line, // start line subset - default set to 0
-	       int sample, // start sample subset - default set to 0
-	       int width, // -99 means no subsetting
-	       int height, // -99 means no subsetting
+               int line, // start line subset - default set to 0
+               int sample, // start sample subset - default set to 0
+               int width, // -99 means no subsetting
+               int height, // -99 means no subsetting
+               int save_intermediates, // save intermediate files if any were created
                double *p_range_scale, // NULL for no scaling
                double *p_azimuth_scale, // NULL for no scaling
                double *p_correct_y_pixel_size, // NULL for no fixing
@@ -66,7 +67,7 @@ void create_sprocket_layers(const char *asfName, const char *importName);
 void import_ceos(char *inBaseName, char *outBaseName,
                  char *band_id, char *lutName, double *p_range_scale,
                  double *p_azimuth_scale, double *p_correct_y_pixel_size,
-		 int line, int sample, int width, int height,
+         int line, int sample, int width, int height,
                  char *inMetaNameOption, radiometry_t radiometry, int db_flag,
                  int complex_flag, int multilook_flag, int amp0_flag,
                  int apply_ers2_gain_fix);
@@ -84,18 +85,18 @@ void import_airsar(const char *inFileName, const char *outBaseName);
 meta_parameters *import_airsar_meta(const char *inBaseName);
 
 void import_gamma_isp(const char *inDataName, const char *inMetaName,
-		      const char *data_type, const char *image_data_type, 
-		      int complex_flag, int multilook_flag, 
-		      const char *outBaseName);
+              const char *data_type, const char *image_data_type,
+              int complex_flag, int multilook_flag,
+              const char *outBaseName);
 void import_gamma_msp(const char *inDataName, const char *inMetaName,
-		      const char *data_type, const char *image_data_type, 
-		      const char *outBaseName);
+              const char *data_type, const char *image_data_type,
+              const char *outBaseName);
 
 void import_vexcel_plain(const char *inBaseName, const char *outBaseName);
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName);
 
 void assign_band_names(meta_parameters *meta, char *outMetaName,
-		       char *bandExt, int band, int nBands, int nBandsOut, 
-		       radiometry_t radiometry, int complex_flag);
+               char *bandExt, int band, int nBands, int nBandsOut,
+               radiometry_t radiometry, int complex_flag);
 
 #endif

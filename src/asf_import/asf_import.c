@@ -115,6 +115,12 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "   -no-ers2-gain-fix\n"\
 "        Do not apply the ERS2 gain correction.  (See the 'Notes' section\n"\
 "        below.)\n"\
+"   -save-intermediates\n"\
+"        Save any intermediate files which may have been created during the\n"\
+"        import process.  At this time, this only applies to the ingest of \n"\
+"        'jaxa_L0' format since this type of dataset is first imported into\n"\
+"        a standard JPEG format then the JPEG is converted to ASF Internal\n"\
+"        format.\n"\
 "   -old\n"\
 "        Output in old style ASF internal format.\n"\
 "   -log <logFile>\n"\
@@ -237,6 +243,7 @@ typedef enum {
     f_SAMPLE,
     f_WIDTH,
     f_HEIGHT,
+    f_SAVE_INTERMEDIATES,
     NUM_IMPORT_FLAGS
 } import_flag_indices_t;
 
@@ -346,7 +353,10 @@ static void print_help(void)
 }
 
 /******************************************************************************
-* Lets rock 'n roll!
+* Lets do some front porch pickin' with a few hillbilly classics!  (See hillbillyclassics.com
+* or maybe even hillbillyhousewife.com fer some genuine hillbilly cookin'!)
+* Or if you're REALLY in the mood to get things going around here, check out yodelcourse.com
+* and learn to yodel!
 *****************************************************************************/
 int main(int argc, char *argv[])
 {
@@ -409,6 +419,7 @@ int main(int argc, char *argv[])
     flags[f_SAMPLE] = checkForOption("-sample", argc, argv);
     flags[f_WIDTH] = checkForOption("-width", argc, argv);
     flags[f_HEIGHT] = checkForOption("-height", argc, argv);
+    flags[f_SAVE_INTERMEDIATES] = checkForOption("-save-intermediates", argc, argv);
 
     flags[f_RANGE_SCALE] = checkForOptionWithArg("-range-scale", argc, argv);
     if (flags[f_RANGE_SCALE] == FLAG_NOT_SET)
@@ -493,10 +504,11 @@ int main(int argc, char *argv[])
         if(flags[f_REAL_QUIET] != FLAG_NOT_SET) needed_args += 1;/*option*/
         if(flags[f_FORMAT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
         if(flags[f_BAND] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-	if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
-	if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
-	if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
-	if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+    if(flags[f_LINE] != FLAG_NOT_SET)     needed_args += 2;/*option & parameter*/
+    if(flags[f_SAMPLE] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+    if(flags[f_WIDTH] != FLAG_NOT_SET)    needed_args += 2;/*option & parameter*/
+    if(flags[f_HEIGHT] != FLAG_NOT_SET)   needed_args += 2;/*option & parameter*/
+        if(flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET)  needed_args += 1;/*option*/
         if(flags[f_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET)  needed_args += 2; /*option & parameter*/
         if(flags[f_RANGE_SCALE] != FLAG_NOT_SET)   needed_args += 1;/*option*/
@@ -510,7 +522,7 @@ int main(int argc, char *argv[])
     }
 
     /*We also need to make sure any options that have parameters are specified
-    correctly.  This includes: -lat, -prc, -log, -lut*/
+    correctly.  This includes: -lat, -prc, -log, -lut etc */
     if(flags[f_LAT_CONSTRAINT] != FLAG_NOT_SET)
         /*Make sure there's no "bleeding" into the required arguments
         No check for '-' in the two following fields because negative numbers
@@ -668,28 +680,28 @@ int main(int argc, char *argv[])
     /* Deal with input format type */
     if(flags[f_FORMAT] != FLAG_NOT_SET) {
         strcpy(format_type_str, argv[flags[f_FORMAT] + 1]);
-	if (strncmp(uc(format_type_str), "STF", 3) == 0)
-	  format_type = STF;
-	else if (strncmp(uc(format_type_str), "CEOS", 4) == 0)
-	  format_type = CEOS;
-	else if (strncmp(uc(format_type_str), "GEOTIFF", 7) == 0)
-	  format_type = GENERIC_GEOTIFF;
-	else if (strncmp(uc(format_type_str), "BIL", 3) == 0)
-	  format_type = BIL;
-	else if (strncmp(uc(format_type_str), "GRIDFLOAT", 9) == 0)
-	  format_type = GRIDFLOAT;
-	else if (strncmp(uc(format_type_str), "AIRSAR", 6) == 0)
-	  format_type = AIRSAR;
-	else if (strncmp(uc(format_type_str), "GAMMA_MSP", 9) == 0)
-	  format_type = GAMMA_MSP;
-	else if (strncmp(uc(format_type_str), "GAMMA_ISP", 9) == 0)
-	  format_type = GAMMA_ISP;
-	else if (strncmp(uc(format_type_str), "VP", 2) == 0)
-	  format_type = VP;
+    if (strncmp(uc(format_type_str), "STF", 3) == 0)
+      format_type = STF;
+    else if (strncmp(uc(format_type_str), "CEOS", 4) == 0)
+      format_type = CEOS;
+    else if (strncmp(uc(format_type_str), "GEOTIFF", 7) == 0)
+      format_type = GENERIC_GEOTIFF;
+    else if (strncmp(uc(format_type_str), "BIL", 3) == 0)
+      format_type = BIL;
+    else if (strncmp(uc(format_type_str), "GRIDFLOAT", 9) == 0)
+      format_type = GRIDFLOAT;
+    else if (strncmp(uc(format_type_str), "AIRSAR", 6) == 0)
+      format_type = AIRSAR;
+    else if (strncmp(uc(format_type_str), "GAMMA_MSP", 9) == 0)
+      format_type = GAMMA_MSP;
+    else if (strncmp(uc(format_type_str), "GAMMA_ISP", 9) == 0)
+      format_type = GAMMA_ISP;
+    else if (strncmp(uc(format_type_str), "VP", 2) == 0)
+      format_type = VP;
         else if (strncmp(uc(format_type_str), "JAXA_L0", 7) == 0)
           format_type = JAXA_L0;
-	else
-	  asfPrintError("Unsupported format: %s\n", format_type_str);
+    else
+      asfPrintError("Unsupported format: %s\n", format_type_str);
     }
     else
       format_type = CEOS;
@@ -713,7 +725,7 @@ int main(int argc, char *argv[])
     /* Deal with input image data type */
     if(flags[f_IMAGE_DATA_TYPE] != FLAG_NOT_SET &&
        (format_type == GAMMA_ISP || format_type == GAMMA_MSP ||
-	format_type == GENERIC_GEOTIFF))
+    format_type == GENERIC_GEOTIFF))
     {
       strcpy(image_data_type, argv[flags[f_IMAGE_DATA_TYPE] + 1]);
       for (ii=0; ii<strlen(image_data_type); ii++) {
@@ -757,6 +769,7 @@ int main(int argc, char *argv[])
         int multilook_flag = flags[f_MULTILOOK] != FLAG_NOT_SET;
         int amp0_flag = flags[f_AMP0] != FLAG_NOT_SET;
         int apply_ers2_gain_fix = flags[f_NO_ERS2_GAIN_FIX] == FLAG_NOT_SET;
+        int save_intermediates = flags[f_SAVE_INTERMEDIATES] != FLAG_NOT_SET;
 
         double *p_correct_y_pixel_size = NULL;
         if (do_metadata_fix)
@@ -778,11 +791,11 @@ int main(int argc, char *argv[])
         if(flags[f_POWER] != FLAG_NOT_SET)    radiometry = r_POWER;
 
         asf_import(radiometry, db_flag, complex_flag, multilook_flag,
-                   amp0_flag, format_type, band_id, data_type, image_data_type, 
-   		 lutName,prcPath, lowerLat, upperLat, line, sample, 
-		   width, height, p_range_scale, p_azimuth_scale,
-		   p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName, 
-		   outBaseName);
+                   amp0_flag, format_type, band_id, data_type, image_data_type,
+                   lutName,prcPath, lowerLat, upperLat, line, sample,
+                   width, height, save_intermediates, p_range_scale, p_azimuth_scale,
+                   p_correct_y_pixel_size, apply_ers2_gain_fix, inMetaNameOption, inBaseName,
+                   outBaseName);
 
     }
 
