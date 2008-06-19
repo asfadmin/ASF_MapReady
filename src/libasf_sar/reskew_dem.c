@@ -65,7 +65,6 @@ BUGS:
 #include "asf.h"
 #include "asf_meta.h"
 #include "asf_sar.h"
-#include "asf_vector.h"
 #include <assert.h>
 
 /* current earth radius, meters (FIXME: update with azimuth, range) */
