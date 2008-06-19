@@ -11,6 +11,14 @@ testing to see if the files actually exist
 
 #include "asf_meta.h"
 
+typedef enum {
+    unknownSensor,
+    SAR,
+    PALSAR,
+    AVNIR,
+    PRISM
+} ceos_sensor_t;
+
 /* Useful stuff for meta initialization from CEOS metadata */
 typedef struct {
   struct dataset_sum_rec dssr;
@@ -36,13 +44,7 @@ typedef struct {
     ALOS,
     SIR_C
   } satellite;
-  enum {
-    unknownSensor,
-    SAR,
-    PALSAR,
-    AVNIR,
-    PRISM
-  } sensor;
+  ceos_sensor_t sensor;
   double version;/*Processor version number, or zero.*/
   enum {
     unknownProcessor,
