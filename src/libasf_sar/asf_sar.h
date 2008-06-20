@@ -103,6 +103,13 @@ void interp_dem_holes_data(meta_parameters *meta, float *data, float cutoff,
 void interp_dem_holes_file(const char *infile, const char *outfile,
                            float cutoff, int verbose);
 void interp_dem_holes_float_image(FloatImage *img, float cutoff, int verbose);
+void interp_dem_holes_float_image_rick(meta_parameters *meta,
+                                       FloatImage *img,
+                                       float cutoff, int verbose,
+                                       int max_hole_width,
+                                       int max_hole_height,
+                                       double max_slope_angle,
+                                       int do_diags);
 
 /* Prototypes from deskew.c */
 void deskew(const char *infile, const char *outfile);
