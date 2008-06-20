@@ -1102,6 +1102,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintError("Terrain correction of AirSAR data is not supported.\n");
       }
 
+      // When importing a GeoTIFF, don't allow terrain correction.
+      if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0 && 
+          cfg->general->terrain_correct)
+      {
+        asfPrintError("Terrain correction of GeoTIFFs is not supported.\n");
+      }
+
       // Precision state vector file check can only be done
       // from within asf_import
 
