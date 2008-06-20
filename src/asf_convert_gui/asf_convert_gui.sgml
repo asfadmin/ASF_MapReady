@@ -377,6 +377,28 @@
             quad-pol imagery but can be done on non-complex (Level
             1.5) data as well as SLC (Level 1.1) data.
         </para>
+        <orderedlist>
+        <listitem>
+            <para>The Pauli Decomposition</para>
+            <para>Red: HH-VV (even bounce)</para>
+            <para>Green: 2HV (rotated dihedral)</para>
+            <para>Blue: HH+VV (odd bounce)</para>
+            <para>Using the Pauli decomposotion to visualize the data
+                allows one to see the dominant scattering
+                mechanisms in different areas of the scene.  For
+                example, areas with buildings (where the even bounce
+                return will dominate) will look reddish.</para>
+        </listitem>
+        <listitem>
+            <para>The Sinclair Decomposition</para>
+            <para>This is a simple decomposition that combines all
+               four polarizations into a single RGB image in a simple
+               way that doesn't require complex data.  The green
+               channel is the average of the cross-polarization
+               terms, which theoretically are equal but may not
+               be due to noise, etc.</para>
+        </listitem>
+        </orderedlist>
         <para>
             When the Polarimetry tab is active, the Export tab's
             RGB options changes to "Export RGB Image according to
