@@ -1191,7 +1191,7 @@ static float get_ers2_gain_adj(meta_parameters *meta, radiometry_t radiometry)
         radiometry==r_GAMMA_DB)
     {
       // the easy case: already in db
-      adj = db_adj;
+      adj = -db_adj;
       asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant adjustment)\n",
                      adj);
     }
@@ -1203,7 +1203,7 @@ static float get_ers2_gain_adj(meta_parameters *meta, radiometry_t radiometry)
     else // r_SIGMA, r_BETA, r_GAMMA, r_POWER
     {
       // calculate scale factor
-      adj = pow(10., db_adj/10.);
+      adj = pow(10., -db_adj/10.);
       asfPrintStatus("ERS2 Gain Adjustment: %.2f (constant scale factor)\n",
                      adj);
     }
