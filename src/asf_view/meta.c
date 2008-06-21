@@ -199,43 +199,68 @@ void open_mdv()
     char *f=NULL;
 
     char *ceos_filename = appendExt(curr->filename, ".L");
+    char *palsar_filename = NULL;
+
     if (fileExists(ceos_filename)) {
-        f = ceos_filename;
-    } else {
-        free(ceos_filename);
-        if (strncmp_case(curr->filename, "LED-", 4) == 0) {
+        f = STRDUP(ceos_filename);
+    }
+    else {
+        char *dir = MALLOC(sizeof(char)*(strlen(curr->filename)+2));
+        char *file_ext = MALLOC(sizeof(char)*(strlen(curr->filename)+2));
+        split_dir_and_file(curr->filename, dir, file_ext);
+        char *file = stripExt(file_ext);
+        FREE(file_ext);
+
+        if (strncmp_case(file, "LED-", 4) == 0) {
             if (fileExists(curr->filename)) {
                 f = STRDUP(curr->filename);
             }
-        } else if (strncmp_case(curr->filename, "IMG-", 4) == 0) {
-            char *led = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
-            char *p = strchr(curr->filename, '-');
+        } else if (strncmp_case(file, "IMG-", 4) == 0) {
+            palsar_filename = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
+            char *p = strchr(file, '-');
             if (p) {
                 p = strchr(p+1, '-');
                 if (p) {
-                    sprintf(led, "LED-%s", p+1);
-                    if (fileExists(led)) {
-                        f = STRDUP(led);
+                    sprintf(palsar_filename, "%sLED-%s", dir, p+1);
+                    if (fileExists(palsar_filename)) {
+                        f = STRDUP(palsar_filename);
                     }
                 }
             }
-            free(led);
         } else {
-            char *led = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
-            sprintf(led, "LED-%s", curr->filename);
-            if (fileExists(led)) {
-                f = STRDUP(led);
+            palsar_filename = MALLOC(sizeof(char)*(strlen(curr->filename)+10));
+            sprintf(palsar_filename, "%sLED-%s", dir, file);
+            if (fileExists(palsar_filename)) {
+                f = STRDUP(palsar_filename);
             } else {
                 // anything else we should try?
             }
-            free(led);
         }
+
+        FREE(dir);
+        FREE(file);
     }
 
-    if (!f) {
-        message_box("Couldn't find CEOS metadata file.\n");
-        //asfPrintWarning("Couldn't find CEOS metadata file.\n");
-    } else {
+    if (!f) {  
+        char *msg = MALLOC(sizeof(char)*(strlen(curr->filename)*3+100));
+        if (palsar_filename) {
+          sprintf(msg,
+                  " Couldn't find CEOS metadata file.\n\n"
+                  " Was looking for:\n"
+                  "    %s\n"
+                  " or\n"
+                  "    %s\n\n", ceos_filename, palsar_filename);
+        }
+        else {
+          sprintf(msg,
+                  " Couldn't find CEOS metadata file.\n\n"
+                  " Was looking for:\n"
+                  "    %s\n\n", ceos_filename);
+        }
+        message_box(msg);
+        free(msg);
+    }
+    else {
         asfPrintStatus("Opening in MDV: %s\n", f);
         static GThreadPool *ttp = NULL;
         GError *err = NULL;
@@ -251,6 +276,9 @@ void open_mdv()
 
         free(f);
     }
+
+    FREE(ceos_filename);
+    FREE(palsar_filename);
 }
 
 SIGNAL_CALLBACK void on_mdv_button_clicked(GtkWidget *w)
