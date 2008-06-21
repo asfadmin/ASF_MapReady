@@ -319,7 +319,10 @@ void append_band_ext(char *inFile, char *outFile, char *bandExt)
 /****************************************************************************
  * split_dir_and_file:
  * Takes a string and fills one pre-allocated array with any path prior to
- * the file name, and fills another pre-allocated array with the file name */
+ * the file name, and fills another pre-allocated array with the file name 
+ * The path name will include a trailing directory separator
+ * The path name will be the empty string if there was no path in the input
+ */
 void split_dir_and_file(const char *inString, char *dirName, char *fileName)
 {
   int ii;
