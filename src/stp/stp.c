@@ -901,6 +901,108 @@ static void remove_file(const char *f)
       unlink(f);
 }
 
+void
+switch_on_help(int on)
+{
+    GtkWidget *flowchart_image;
+    GtkWidget *output_image;
+    GtkWidget *hbox_label_view_output;
+    GtkWidget *help_label;
+
+    flowchart_image =
+        glade_xml_get_widget(glade_xml, "flowchart_image");
+    output_image = 
+        glade_xml_get_widget(glade_xml, "output_image");
+    hbox_label_view_output =
+        glade_xml_get_widget(glade_xml, "hbox_label_view_output");
+    help_label = 
+        glade_xml_get_widget(glade_xml, "help_label");
+
+    if (on) {
+        gtk_widget_show(flowchart_image);
+        gtk_widget_show(help_label);
+        gtk_widget_hide(output_image);
+        gtk_widget_hide(hbox_label_view_output);
+    } else {
+        gtk_widget_hide(flowchart_image);
+        gtk_widget_hide(help_label);
+        gtk_widget_show(output_image);
+        gtk_widget_show(hbox_label_view_output);
+    }
+}
+
+static void view_debug_image(int step)
+{
+    GtkWidget * output_image =
+        glade_xml_get_widget(glade_xml, "output_image");
+    
+    GtkWidget * output_file_entry =
+        glade_xml_get_widget(glade_xml, "output_file_entry");
+
+    GtkWidget *asf_view_button =
+        glade_xml_get_widget(glade_xml, "asf_view_button");
+
+    char lbl[256];
+
+    if (step==0) {
+      strcpy(lbl, "");
+      gtk_widget_hide(output_image);
+
+      GtkWidget * label_view_output =
+        glade_xml_get_widget(glade_xml, "label_view_output");
+      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+
+      gtk_widget_hide(asf_view_button);
+    }
+    else {
+      char *filename = 
+        STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
+
+      char * ext = findExt(filename);
+      if (ext) *ext = '\0';
+
+      sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
+    
+      if (g_file_test(image_file, G_FILE_TEST_EXISTS))
+      {
+        switch_on_help(FALSE);
+        
+        GError *err = NULL;
+        GdkPixbuf *pb =
+          gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
+        
+        if (err) {
+          sprintf(lbl, "Error loading image: %s\n", err->message);
+          gtk_widget_hide(output_image);
+        } else {
+          gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
+          g_object_unref(pb);
+        }
+        
+        sprintf(lbl, " Output of Step %d", step);
+        GtkWidget * label_view_output =
+          glade_xml_get_widget(glade_xml, "label_view_output");
+        gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+
+        gtk_widget_show(asf_view_button);
+      }
+      else
+      {
+        sprintf(lbl, "File not found: %s", image_file);
+        switch_on_help(FALSE);
+        gtk_widget_hide(output_image);
+        
+        GtkWidget * label_view_output =
+          glade_xml_get_widget(glade_xml, "label_view_output");
+        gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+
+        gtk_widget_hide(asf_view_button);
+      }
+      
+      FREE(filename);
+    }
+}
+
 static void delete_all_generated_images()
 {
     GtkWidget * output_file_entry =
@@ -984,6 +1086,7 @@ on_execute_button_clicked(GtkWidget *button, gpointer user_data)
       debug_flag = 1;
 
     //delete_all_generated_images();
+    view_debug_image(0);
 
     GtkWidget * input_file_entry =
 	glade_xml_get_widget(glade_xml, "input_file_entry");
@@ -1221,36 +1324,6 @@ set_toggles()
     int i;
     for (i = 1; i <= 12; ++i)
 	set_underlines_off(i);
-}
-
-void
-switch_on_help(int on)
-{
-    GtkWidget *flowchart_image;
-    GtkWidget *output_image;
-    GtkWidget *hbox_label_view_output;
-    GtkWidget *help_label;
-
-    flowchart_image =
-        glade_xml_get_widget(glade_xml, "flowchart_image");
-    output_image = 
-        glade_xml_get_widget(glade_xml, "output_image");
-    hbox_label_view_output =
-        glade_xml_get_widget(glade_xml, "hbox_label_view_output");
-    help_label = 
-        glade_xml_get_widget(glade_xml, "help_label");
-
-    if (on) {
-        gtk_widget_show(flowchart_image);
-        gtk_widget_show(help_label);
-        gtk_widget_hide(output_image);
-        gtk_widget_hide(hbox_label_view_output);
-    } else {
-        gtk_widget_hide(flowchart_image);
-        gtk_widget_hide(help_label);
-        gtk_widget_show(output_image);
-        gtk_widget_show(hbox_label_view_output);
-    }
 }
 
 void
@@ -1638,59 +1711,6 @@ on_asf_view_button_clicked(GtkWidget *button, gpointer user_data)
       show_image_with_asf_view(image_file);
     else
       message_box("No image to display.");
-}
-
-static void view_debug_image(int step)
-{
-    GtkWidget * output_image =
-        glade_xml_get_widget(glade_xml, "output_image");
-    
-    GtkWidget * output_file_entry =
-        glade_xml_get_widget(glade_xml, "output_file_entry");
-
-    char *filename = 
-        STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
-
-    char * ext = findExt(filename);
-    if (ext) *ext = '\0';
-
-    sprintf(image_file, "%s%s.jpg", filename, suffix_for_step(step));
-
-    char lbl[256];
-    
-    if (g_file_test(image_file, G_FILE_TEST_EXISTS))
-    {
-      switch_on_help(FALSE);
-
-      GError *err = NULL;
-      GdkPixbuf *pb =
-        gdk_pixbuf_new_from_file_at_size(image_file, 380, 720, &err);
-
-      if (err) {
-          sprintf(lbl, "Error loading image: %s\n", err->message);
-          gtk_widget_hide(output_image);
-      } else {
-          gtk_image_set_from_pixbuf(GTK_IMAGE(output_image), pb);
-          g_object_unref(pb);
-      }
-
-      sprintf(lbl, " Output of Step %d", step);
-      GtkWidget * label_view_output =
-        glade_xml_get_widget(glade_xml, "label_view_output");
-      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
-    }
-    else
-    {
-      sprintf(lbl, "File not found: %s", image_file);
-      switch_on_help(FALSE);
-      gtk_widget_hide(output_image);
-
-      GtkWidget * label_view_output =
-        glade_xml_get_widget(glade_xml, "label_view_output");
-      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
-    }
-
-    FREE(filename);
 }
 
 SIGNAL_CALLBACK void
