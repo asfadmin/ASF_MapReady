@@ -942,21 +942,21 @@ static void view_debug_image(int step)
     GtkWidget *asf_view_button =
         glade_xml_get_widget(glade_xml, "asf_view_button");
 
-    char lbl[256];
-
     if (step==0) {
-      strcpy(lbl, "");
+      // this means: don't show any image at all
       gtk_widget_hide(output_image);
 
       GtkWidget * label_view_output =
         glade_xml_get_widget(glade_xml, "label_view_output");
-      gtk_label_set_text(GTK_LABEL(label_view_output), lbl);
+      gtk_label_set_text(GTK_LABEL(label_view_output), "");
 
       gtk_widget_hide(asf_view_button);
     }
     else {
+      // normal case: show debug image for step "step"
       char *filename = 
         STRDUP(gtk_entry_get_text(GTK_ENTRY(output_file_entry)));
+      char lbl[256];
 
       char * ext = findExt(filename);
       if (ext) *ext = '\0';
