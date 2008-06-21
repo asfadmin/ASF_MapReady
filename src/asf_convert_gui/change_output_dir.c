@@ -257,6 +257,7 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
     
     BROWSEINFO bi = { 0 };
     bi.lpszTitle = "Select Output Directory";
+    bi.ulFlags |= BIF_USENEWUI;
     LPITEMIDLIST pidl = SHBrowseForFolder ( &bi );
     if ( pidl != 0 )
     {
