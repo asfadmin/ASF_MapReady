@@ -45,6 +45,12 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
     else if (sensor_type == PRISM) {
         asfPrintError("ALOS PRISM Level 0 not yet supported.\n");
     }
+    // FIXME: Try checking for the 'basename' folder existence and error out if
+    // it is not there.  The import must be run from one folder above
+    // the basename folder.  Optionally be smart about running from one above or
+    // actually IN the basename folder ...probably a better idea.  This would effect
+    // the sprintf()'s below where the path is built, then all should run
+    // fine after that.
 
     // Build the subfolders where the various bands exist
     if (sensor_type == AVNIR) {
@@ -67,6 +73,15 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                               &red_chunks, &green_chunks,
                               &blue_chunks, &nir_chunks);
 
+        // Grab the necessary info from the JAXA header (hidden inside JPEG markers)
+        // and write out a JPEG-compliant baseline header
+        //   NOTE: Cannot use the jpeg library here since it's probably difficult to
+        // guarantee that you can set up the compression struct in a way that matches
+        // the ALOS compression ...which is usually either reversable (uncompressed) or
+        // compressed ...and described by the jpeg marker FFC4, the Huffman table.  I
+        // think it's better to write out our own jpeg header byte by byte according to
+        // the jpeg standard.
+
         // Clean up
         free_avnir_chunk_names(num_chunks,
                                &red_chunks, &green_chunks,
@@ -80,6 +95,9 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
     }
 }
 
+// Returns arrays of names in each VCID (band) subdirectory, sorted in numerical
+// order according to the Signal Data File Number.Sequence Number, ready for
+// ordered extraction of signal data.
 void get_avnir_chunk_names(const char *red_dir, const char *green_dir,
                      const char *blue_dir, const char *nir_dir,
                      int *num_chunks, char ***red_chunks,
