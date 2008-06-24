@@ -3,7 +3,7 @@
 
 
 // SAR Training Processor
-#define STP_VERSION_STRING "1.1.5"
+#define STP_VERSION_STRING "1.1.6"
 #define STP_VERSION 1.1
 
 // Acquisition Planner
