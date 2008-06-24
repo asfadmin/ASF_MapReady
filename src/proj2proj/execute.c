@@ -294,8 +294,9 @@ static void execute(const char *from, const char *to)
                         target_pp.utm.zone==0)
                     {
                         fill_in_utm(lat*R2D, lon*R2D, &target_pp);
-                        put_int_to_entry("target_utm_zone_entry",
-                                         target_pp.utm.zone);
+                        char name[64];
+                        sprintf(name, "%s_utm_zone_entry", to);
+                        put_int_to_entry(name, target_pp.utm.zone);
                     }
 
                     target_proj_fn(&target_pp, lat, lon, ht, &x, &y, &z,
