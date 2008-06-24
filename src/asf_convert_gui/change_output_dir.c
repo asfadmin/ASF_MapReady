@@ -246,10 +246,69 @@ on_change_output_directory_dialog_key_press_event(GtkWidget * widget,
     return FALSE;
 }
 
+static GtkWidget *browse_widget = NULL;
+
+// called when "cancel" clicked on the "Save" GtkFileChooser
+SIGNAL_CALLBACK void browse_cancel_clicked()
+{
+  gtk_widget_hide(browse_widget);
+}
+
+// called when "ok" clicked on the "Save" GtkFileChooser
+SIGNAL_CALLBACK void browse_ok_clicked()
+{
+  const char *folder =
+      gtk_file_chooser_get_current_folder(GTK_FILE_CHOOSER(browse_widget));
+  if (folder) {
+    GtkWidget *entry_new_output_directory =
+        get_widget_checked("entry_new_output_directory");      
+    gtk_entry_set_text(GTK_ENTRY(entry_new_output_directory), folder);
+  }
+  gtk_widget_hide(browse_widget);
+}
+
+static void create_browse_file_chooser_dialog()
+{
+  GtkWidget *parent =
+      get_widget_checked("change_output_directory_dialog");
+
+  browse_widget = gtk_file_chooser_dialog_new(
+      "Change Output Directory", GTK_WINDOW(parent),
+      GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER,
+      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,  //Cancel button
+      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,    //Save button
+      NULL);
+
+  // we need to extract the buttons, so we can connect them to our
+  // button handlers, above
+  GtkHButtonBox *box = 
+    (GtkHButtonBox*)(((GtkDialog*)browse_widget)->action_area);
+  GList *buttons = box->button_box.box.children;
+
+  GtkWidget *cancel_btn = ((GtkBoxChild*)buttons->data)->widget;
+  GtkWidget *ok_btn = ((GtkBoxChild*)buttons->next->data)->widget;
+
+  g_signal_connect((gpointer)cancel_btn, "clicked",
+                    G_CALLBACK(browse_cancel_clicked), NULL);
+  g_signal_connect((gpointer)ok_btn, "clicked",
+                    G_CALLBACK(browse_ok_clicked), NULL);
+  g_signal_connect(browse_widget, "destroy",
+                   G_CALLBACK(browse_cancel_clicked), NULL);
+  g_signal_connect(browse_widget, "destroy_event",
+                   G_CALLBACK(browse_cancel_clicked), NULL);
+  g_signal_connect(browse_widget, "delete_event",
+                   G_CALLBACK(browse_cancel_clicked), NULL);
+
+
+  gtk_window_set_modal(GTK_WINDOW(browse_widget), TRUE);
+  gtk_window_set_destroy_with_parent(GTK_WINDOW(browse_widget), TRUE);
+  gtk_dialog_set_default_response(GTK_DIALOG(browse_widget), GTK_RESPONSE_OK);
+}
+
 SIGNAL_CALLBACK void
 on_browse_output_directory_button_clicked(GtkWidget *widget)
 {
-#ifdef win32
+#ifdef win32XXX
     GtkWidget *entry_new_output_directory;
 
     entry_new_output_directory =
@@ -268,10 +327,17 @@ on_browse_output_directory_button_clicked(GtkWidget *widget)
         }
     }
 #else
-    GtkWidget *output_directory_selection_dialog =
-        get_widget_checked("output_directory_selection");
+    if (!browse_widget)
+        create_browse_file_chooser_dialog();
 
-    gtk_widget_show(output_directory_selection_dialog);
+    GtkWidget *entry_new_output_directory =
+        get_widget_checked("entry_new_output_directory");
+    const char *dir = gtk_entry_get_text(
+        GTK_ENTRY(entry_new_output_directory));
+    gtk_file_chooser_set_current_folder(
+        GTK_FILE_CHOOSER(browse_widget), dir);
+
+    gtk_widget_show(browse_widget);
 #endif
 }
 
@@ -281,7 +347,7 @@ hide_output_directory_selection_dialog()
     GtkWidget *output_directory_selection_dialog =
         get_widget_checked("output_directory_selection");
 
-    gtk_widget_hide(output_directory_selection_dialog);
+    gtk_widget_show(output_directory_selection_dialog);
 }
 
 SIGNAL_CALLBACK void
