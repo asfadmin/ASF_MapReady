@@ -1,9 +1,12 @@
 // Import a JAXA Level 0 (JL0) dataset into ASF Internal Format (.img, .meta)
 // Applies only to ALOS PRISM and AVNIR-2 Level 0 data
 //
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <ctype.h>
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
@@ -12,7 +15,7 @@
 
 // Prototypes
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
-
+int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -63,7 +66,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         sprintf(blue_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_BLUE_VCID);
         sprintf(nir_dir, "%s%c%d", inBaseName, DIR_SEPARATOR, JL0_NIR_VCID);
 
-        // Retrieve file names of each band's chunks (sub-files)
+        // Retrieve (sorted) file names of each band's chunks (sub-files)
         int num_chunks = 0;
         char **red_chunks=NULL;
         char **green_chunks=NULL;
@@ -73,14 +76,29 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                               &red_chunks, &green_chunks,
                               &blue_chunks, &nir_chunks);
 
-        // Grab the necessary info from the JAXA header (hidden inside JPEG markers)
-        // and write out a JPEG-compliant baseline header
-        //   NOTE: Cannot use the jpeg library here since it's probably difficult to
-        // guarantee that you can set up the compression struct in a way that matches
-        // the ALOS compression ...which is usually either reversable (uncompressed) or
-        // compressed ...and described by the jpeg marker FFC4, the Huffman table.  I
-        // think it's better to write out our own jpeg header byte by byte according to
-        // the jpeg standard.
+        // Import the 4 color bands into 4 band files in ASF Internal format (.img, .meta)
+        // (appending "_L0_nn" to each file)
+        int red_lines;
+        int green_lines;
+        int blue_lines;
+        int nir_lines;
+        red_lines   = import_jaxa_L0_avnir_band(red_chunks, JL0_RED_BAND, outBaseName);
+        green_lines = import_jaxa_L0_avnir_band(green_chunks, JL0_GREEN_BAND, outBaseName);
+        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, JL0_BLUE_BAND, outBaseName);
+        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, JL0_NIR_BAND, outBaseName);
+        if (red_lines != green_lines ||
+            red_lines != blue_lines  ||
+            red_lines != nir_lines)
+        {
+            asfPrintWarning("AVNIR-2 Level 0 files do not all have the same number of lines:\n"
+                    "  Number of red lines:            %d\n"
+                    "  Number of green lines:          %d\n"
+                    "  Number of blue lines:           %d\n"
+                    "  Number of near-infrared lines:  %d\n"
+                    "If these files are merged into a single color image, then this\n"
+                    "have to be taken into consideration (missing data?)\n",
+                    red_lines, green_lines, blue_lines, nir_lines);
+        }
 
         // Clean up
         free_avnir_chunk_names(num_chunks,
@@ -298,3 +316,66 @@ int compare_file_key(const void* file1, const void *file2)
 
     return (f1->key - f2->key);
 }
+
+// Reads 1100 byte packet, skips past 6-byte header, returns the // remaining line as data, i.e. 1094 byte data line.
+// CALLER MUST FREE THIS DATA LINE
+size_t get_data_line(FILE *in, unsigned char **data) {
+    size_t bytes_read = 0;
+    unsigned char *line = (unsigned char *)malloc(1101 * sizeof(unsigned char));
+    if (!line) {
+        printf("\nCannot allocate memory\n\n");
+        return 1;
+    }
+    bytes_read = fread(line,1, 1100, in);
+    *data = line + 6; // Skip 6 bytes of header
+    free(line);
+
+    return bytes_read;
+}
+
+int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName)
+{
+    FILE *out = NULL;
+    int tot_lines = 0;
+
+    // Read each file (chunk) in the list of files for this band, converting
+    // each frame into ASF Internal format individually.
+    //
+    // IMPORTANT NOTES:
+    // 1. The Jaxa Level 0 AVNIR data exists across several sub-files (chunks),
+    //    each in their own subdirectory (by VCID number, i.e. ./<basename>/<vcid>)
+    // 2. Each sub-file contains several frames of data,
+    // 3. Each frame (typically) contains 16 scanlines of actual image data.
+    // 4. Each frame is stored in the file(s) within their own jpeg 'image' format
+    //    (starting with JPEG SOI and ending with JPEG EOI markers.)  There may be
+    //    1 to 3 0x00 padding bytes after the EOI in order to make a frame land on
+    //    a 32-bit boundary (these bytes should be ignored.)
+    // 5. The frames can and do span sub-file boundaries.
+    // 6. Each line of data contains 7100 actual data pixels (bytes), but including other
+    //    information are actually 7152 bytes long.
+    // 7. Each line is divided into odd and even pixels, and there is other information before
+    //    and after the actual data.  The format of each line is as follows (number of bytes in
+    //    parenthesis):
+    //
+    //     a. Dummy bytes (4)
+    //     b. Optical black (4)
+    //     c. Optical white (4)
+    //     d. Valid ODD pixels (3550)
+    //     e. Optical white (4)
+    //     f. Dummy bytes (2)
+    //     g. Electrical calibration (8)
+    //     h. Dummy bytes (4)
+    //     i. Optical black (4)
+    //     j. Optical white (4)
+    //     k. Valid EVEN pixels (3550)
+    //     l. Optical white (4)
+    //     m. Dummy bytes (2)
+    //     n. Electrical calibration (8)
+    //
+    //    The odd and even pixels need to be interlaced to restore the data line.
+    //
+
+    return tot_lines;
+}
+
+
