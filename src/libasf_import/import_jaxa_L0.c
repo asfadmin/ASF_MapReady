@@ -15,7 +15,8 @@
 
 // Prototypes
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
-int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName);
+int import_jaxa_L0_avnir_band(char **chunks, char *band,
+                              int save_intermediates, const char *outBaseName);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -30,7 +31,10 @@ int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName
 //    contain 1100-byte lines of data (including line header) and several are typically included
 //    in individual full scanlines of image data.
 //
+// FIXME: Add save_intermediates flag to import_jaxa_L0() and carry through to
+// import_jaxa_L0_avnir_band();
 void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
+    int save_intermediates = 0;
     ceos_sensor_t sensor_type=AVNIR;
 
     asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
@@ -82,10 +86,14 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         int green_lines;
         int blue_lines;
         int nir_lines;
-        red_lines   = import_jaxa_L0_avnir_band(red_chunks, JL0_RED_BAND, outBaseName);
-        green_lines = import_jaxa_L0_avnir_band(green_chunks, JL0_GREEN_BAND, outBaseName);
-        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, JL0_BLUE_BAND, outBaseName);
-        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, JL0_NIR_BAND, outBaseName);
+        red_lines   = import_jaxa_L0_avnir_band(red_chunks, JL0_RED_BAND,
+                                                save_intermediates, outBaseName);
+        green_lines = import_jaxa_L0_avnir_band(green_chunks, JL0_GREEN_BAND,
+                                                save_intermediates, outBaseName);
+        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, JL0_BLUE_BAND,
+                                                save_intermediates, outBaseName);
+        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, JL0_NIR_BAND,
+                                                save_intermediates, outBaseName);
         if (red_lines != green_lines ||
             red_lines != blue_lines  ||
             red_lines != nir_lines)
@@ -333,8 +341,10 @@ size_t get_data_line(FILE *in, unsigned char **data) {
     return bytes_read;
 }
 
-int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName)
+int import_jaxa_L0_avnir_band(char **chunks, char *band,
+                              int save_intermediates, const char *outBaseName)
 {
+    FILE *in = NULL;
     FILE *out = NULL;
     int tot_lines = 0;
 
@@ -344,37 +354,98 @@ int import_jaxa_L0_avnir_band(char **chunks, char *band, const char *outBaseName
     // IMPORTANT NOTES:
     // 1. The Jaxa Level 0 AVNIR data exists across several sub-files (chunks),
     //    each in their own subdirectory (by VCID number, i.e. ./<basename>/<vcid>)
-    // 2. Each sub-file contains several frames of data,
-    // 3. Each frame (typically) contains 16 scanlines of actual image data.
-    // 4. Each frame is stored in the file(s) within their own jpeg 'image' format
+    // 2. Each subfile is made up from 1100-byte long lines of binary information,
+    //    the first 6-bytes of which are CCSDS header information.  These bytes can
+    //    be skipped over (ignored.)  The remaining 1094 bytes are to be parsed as
+    //    described below.  These 1100-byte lines are telemetry frames, not to be
+    //    confused with the lossless compression (Huffman) JPEG frames mentioned
+    //    in the following notes (just called 'frames' below.)
+    // 3. Each sub-file contains several frames of data,
+    // 4. Each frame (typically) contains 16 scanlines of actual image data.
+    // 5. Each frame is stored in the file(s) within their own jpeg 'image' format
     //    (starting with JPEG SOI and ending with JPEG EOI markers.)  There may be
-    //    1 to 3 0x00 padding bytes after the EOI in order to make a frame land on
-    //    a 32-bit boundary (these bytes should be ignored.)
-    // 5. The frames can and do span sub-file boundaries.
-    // 6. Each line of data contains 7100 actual data pixels (bytes), but including other
+    //    one to three 0x00 padding bytes after the EOI in order to make a frame land
+    //    on a 32-bit boundary (these bytes should be ignored.)
+    // 6. The frames can and do span sub-file boundaries.
+    // 7. Each line of data contains 7100 actual data pixels (bytes), but including other
     //    information are actually 7152 bytes long.
-    // 7. Each line is divided into odd and even pixels, and there is other information before
+    // 8. Each line is divided into odd and even pixels, and there is other information before
     //    and after the actual data.  The format of each line is as follows (number of bytes in
     //    parenthesis):
     //
     //     a. Dummy bytes (4)
     //     b. Optical black (4)
     //     c. Optical white (4)
-    //     d. Valid ODD pixels (3550)
+    //     d. Valid ODD pixels (3550) <-- Here's the actual data (odd pixels)
     //     e. Optical white (4)
     //     f. Dummy bytes (2)
     //     g. Electrical calibration (8)
     //     h. Dummy bytes (4)
     //     i. Optical black (4)
     //     j. Optical white (4)
-    //     k. Valid EVEN pixels (3550)
+    //     k. Valid EVEN pixels (3550)  <-- Here's the actual data (even pixels)
     //     l. Optical white (4)
     //     m. Dummy bytes (2)
     //     n. Electrical calibration (8)
     //
-    //    The odd and even pixels need to be interlaced to restore the data line.
+    //    The odd and even pixels need to be interlaced to restore the data line.  Note that
+    //    this is NOT consistent with the JPEG standard.
+    // 9. The JAXA format also includes a non-standard JPEG marker and payload (the information
+    //    bytes which follow the 0xFF marker byte).  This marker is 0xFFF0 and is RESERVED in
+    //    the JPEG standard and is not supposed to be used.  In order for the JPEG library to
+    //    work this marker and payload must be ignored and not stored in any JPEG file.
     //
 
+    //
+    //     Open output .img file (will write metadata later)
+    //     Open first chunk, and then at each feof() close it and open/use the next until done
+    //     PROCESS EACH SOI->EOI FRAME:
+    //      Open temporary output file for write
+    //       Scan for SOI and write it out when found
+    //       Scan for SOF0 or SOF3 and write it out when found
+    //       Read number of lines (Y) from SOF payload and add to tot_lines
+    //       Read number of samples (X) from SOF and check to make sure it's 7152
+    //       Read number of image components and check for 0x01 (greyscale single band)
+    //       Scan for JPG0 (0xfff0)
+    //       Read version number from JPG0 and check to make sure it's 0x00
+    //       Read CAP0 and CAP1 from JPG0 and check for 0x00 and 0x21 respectively
+    //       Scan for SOS (APP1 DQT DHS DHT read/write along the way)
+    //       Read number of image components and check for 0x01 (greyscale single band)
+    //       Scan for EOI and read/write all data (and the EOI) along the way
+    //      Close temporary output file
+    //      Use jpeg library to read data lines from the temporary jpeg file and write to .img file
+    //      Close temporary jpeg file (leaving the .img file open)
+    //      Continue reading/writing frames as described ...until the last chunk runs out
+    //      Close the .img file
+    //      Populate and write the metadata file
+    //
+
+
+/*  FROM DUMPSCAN.C:
+    writing = 0;
+    do {
+        bytes_read = get_data_line(in, &data);
+        if (!feof(in) && bytes_read > 0) {
+            unsigned char *c, *m;
+            int i;
+            for (i = 0, c = data, m = data + 1; i < bytes_read && i < 1094; i++, c++, m++) {
+                if (!writing && i < 1093 && i < bytes_read - 1 && *c == MARKER) {
+                    switch (*m) {
+                        case
+                    }
+                }
+                if (writing) {
+                    fwrite(c, 1, 1, out);
+                }
+            }
+        }
+        if (data) free(data);
+    } while (!feof(in));
+
+    printf("\nFinished successfully.\n\n");
+    fclose(in);
+    fclose(out);
+*/
     return tot_lines;
 }
 
