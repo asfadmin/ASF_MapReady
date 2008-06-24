@@ -57,18 +57,21 @@ MAPREADY_MODULES = \
 
 STP_MODULES = \
 	src/asf \
-	src/asf_fft \
 	src/libasf_proj \
 	src/asf_meta \
-	src/asf_odl \
-	src/libasf_import \
-	src/libasf_ardop \
-	src/libifm \
-	src/libasf_sar \
+	src/asf_fft \
 	src/libasf_raster \
-	src/libasf_export \
-	src/libasf_geocode \
+	src/libasf_sar \
+	src/libasf_import \
 	src/libasf_vector \
+	src/libasf_geocode \
+	src/libasf_export \
+	src/libasf_ardop \
+	src/libasf_terrcorr \
+	src/libasf_insar \
+	src/metadata \
+	src/asf_import \
+	src/asf_export \
 	src/ardop \
 	src/sgpsdp \
 	src/plan \
