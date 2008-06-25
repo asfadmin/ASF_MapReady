@@ -254,10 +254,12 @@ CATEGORIES
 	stp_package
 	{
 		ardop
-		c2p
-		convert2jpeg
-		multilook
-		stats
+		asf_export
+		asf_import
+		asf_view
+		metadata
+		plan
+		sgpsdp
 		stp
 		SAR_training_processor.pdf
 		stp-version_history.txt
