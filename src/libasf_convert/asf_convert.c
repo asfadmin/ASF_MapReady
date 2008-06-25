@@ -1103,7 +1103,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
       }
 
       // When importing a GeoTIFF, don't allow terrain correction.
-      if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) != 0 && 
+      if (strncmp(uc(cfg->import->format), "GEOTIFF", 7) == 0 && 
           cfg->general->terrain_correct)
       {
         asfPrintError("Terrain correction of GeoTIFFs is not supported.\n");
