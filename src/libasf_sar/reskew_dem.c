@@ -162,6 +162,15 @@ Convert each grX to an srX.  Update amplitude and height images.*/
     for (grX=0;grX<gr_ns;grX++)
     {
         double height=grDEM[grX];
+
+        // This little kludge prevents DEMs with lots of zeros (badDEMht is
+        // currently 0) from blanking out big parts of the sar image.  Ideally
+        // we would change badDEMht to something that could never occur in
+        // a real DEM, however there is a problem with that (see asf_sar.h)
+        if (height == badDEMht) height = badDEMht + 0.01;
+
+        // SRTM DEMs use inconsistent values for "no data here" -- generally
+        // large negative values.  This maps all those to our "no data" value
         if (height < -900) height = badDEMht;
 
 	/*srX: float slant range pixel position.*/
