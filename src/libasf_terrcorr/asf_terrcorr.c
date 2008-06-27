@@ -23,7 +23,7 @@
 
 #include <asf_terrcorr.h>
 
-#define MASK_SEED_POINTS 20
+#define MASK_SEED_POINTS 25
 
 static const int PAD = DEM_GRID_RHS_PADDING;
 
