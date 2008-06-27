@@ -2522,8 +2522,8 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
           asfPrintError("Imported file does not contain required color bands\n"
                         "necessary for false color output (04, 03, 02)\n");
         }
-        if (scale != NONE) {
-          asfPrintWarning("A byte conversion other than NONE was specified.  Since\n"
+        if (scale != SIGMA) {
+          asfPrintWarning("A byte conversion other than SIGMA was specified.  Since\n"
                           "True Color or False Color output was selected, the byte conversion\n"
                           "will be overridden with SIGMA, a 2-sigma contrast expansion.\n");
         }
@@ -2543,7 +2543,7 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
             strcpy(bands[2], "02");
             strcpy(bands[3], "");
           }
-          check_return(asf_export_bands(format, NONE, TRUE,
+          check_return(asf_export_bands(format, SIGMA, TRUE,
                                         true_color, false_color, 0, 0, NULL,
                                         inFile, outFile, bands),
                        "exporting data file (asf_export), color banded.\n");

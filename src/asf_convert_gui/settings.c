@@ -1574,12 +1574,14 @@ settings_to_config_file(const Settings *s,
     if (s->export_is_checked) {
       fprintf(cf, "[Export]\n");
       fprintf(cf, "format = %s\n", settings_get_output_format_string(s));
-      if (s->output_bytes && !s->truecolor_is_checked &&
-          !s->falsecolor_is_checked)
-      {
+      if (s->truecolor_is_checked || s->falsecolor_is_checked) {
+          fprintf(cf, "byte conversion = sigma\n");
+      }
+      else if (s->output_bytes) {
           fprintf(cf, "byte conversion = %s\n",
-            scaling_method_string(s->scaling_method));
-      } else {
+                  scaling_method_string(s->scaling_method));
+      }
+      else {
           fprintf(cf, "byte conversion = none\n");
       }
       if (s->polarimetry_setting == POLARIMETRY_CLOUDE8)
