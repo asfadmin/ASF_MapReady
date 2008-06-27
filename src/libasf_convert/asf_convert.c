@@ -1797,6 +1797,10 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // if this was the last step, get the terrain corrected output
           // to the output directory -- as well as any other needed files
           renameImgAndMeta(outFile, cfg->general->out_name);
+
+          // this is to get the thumbnail code all set -- it will use
+          // "outFile" as the file to generate the thumbnail from
+          strcpy(outFile, cfg->general->out_name);
       }
     }
 
