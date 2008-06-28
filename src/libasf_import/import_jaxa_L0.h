@@ -12,7 +12,9 @@
 #define JL0_GREEN_BAND  "02"
 #define JL0_BLUE_BAND   "01"
 #define JL0_NIR_BAND    "04"
-
+#define JL0_AVNIR_TFRAME_DATA_LEN   1094
+#define JL0_AVNIR_TFRAME_LEN        1100
+#define JL0_AVNIR_CCSDS_HDR_LEN     6
 // Magic defns
 #define MARKER  ((unsigned char)0xff)
 #define PAD     ((unsigned char)0x00)

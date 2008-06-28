@@ -7,6 +7,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
+#include <time.h>
+#include <jpeglib.h>
 #include "asf.h"
 #include "asf_nan.h"
 #include "asf_import.h"
@@ -15,8 +17,10 @@
 
 // Prototypes
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
-int import_jaxa_L0_avnir_band(char **chunks, char *band,
+int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                               int save_intermediates, const char *outBaseName);
+size_t fread_checked(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok);
+void import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out);
 
 // import_jaxa_L0()
 // 1. inBaseName is the name of the folder that the data is in, i.e. W0306544001-01
@@ -86,14 +90,26 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         int green_lines;
         int blue_lines;
         int nir_lines;
-        red_lines   = import_jaxa_L0_avnir_band(red_chunks, JL0_RED_BAND,
-                                                save_intermediates, outBaseName);
-        green_lines = import_jaxa_L0_avnir_band(green_chunks, JL0_GREEN_BAND,
-                                                save_intermediates, outBaseName);
-        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, JL0_BLUE_BAND,
-                                                save_intermediates, outBaseName);
-        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, JL0_NIR_BAND,
-                                                save_intermediates, outBaseName);
+        char *tmp_filename1;
+        char tmp_filename2[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+        char *out_file;
+
+        tmp_filename1 = appendExt(outBaseName, ""); // Strips extension but keeps path info
+        sprintf(tmp_filename2, "%s_L0", tmp_filename1); // Append Level 0 indication
+        out_file = appendExt(tmp_filename2, ".img"); // Append a .img extension
+        FILE *tmp = FOPEN(out_file, "wb"); // Create an empty .img file.  The imports will append...
+        FCLOSE(tmp);
+        FREE(tmp_filename1);
+
+        red_lines   = import_jaxa_L0_avnir_band(red_chunks, num_chunks, JL0_RED_BAND,
+                                                save_intermediates, out_file);
+        green_lines = import_jaxa_L0_avnir_band(green_chunks, num_chunks, JL0_GREEN_BAND,
+                                                save_intermediates, out_file);
+        blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, num_chunks, JL0_BLUE_BAND,
+                                                save_intermediates, out_file);
+        nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, num_chunks, JL0_NIR_BAND,
+                                                save_intermediates, out_file);
+        FREE(out_file);
         if (red_lines != green_lines ||
             red_lines != blue_lines  ||
             red_lines != nir_lines)
@@ -119,6 +135,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
     else {
         asfPrintError("Invalid or unrecognized ALOS Level 0 format found.\n");
     }
+    asfPrintStatus("\n");
 }
 
 // Returns arrays of names in each VCID (band) subdirectory, sorted in numerical
@@ -325,128 +342,426 @@ int compare_file_key(const void* file1, const void *file2)
     return (f1->key - f2->key);
 }
 
-// Reads 1100 byte packet, skips past 6-byte header, returns the // remaining line as data, i.e. 1094 byte data line.
+// Reads one telemetry frame from the input file, skips past header, returns the
+// remaining line as data (there is no trailing info to remove... just a short header)
 // CALLER MUST FREE THIS DATA LINE
-size_t get_data_line(FILE *in, unsigned char **data) {
+size_t get_avnir_data_line(FILE *in, unsigned char **data) {
     size_t bytes_read = 0;
-    unsigned char *line = (unsigned char *)malloc(1101 * sizeof(unsigned char));
-    if (!line) {
-        printf("\nCannot allocate memory\n\n");
-        return 1;
+    unsigned char *line = (unsigned char *)MALLOC((JL0_AVNIR_TFRAME_LEN + 1) * sizeof(unsigned char));
+    *data = (unsigned char *)MALLOC
+                       ((JL0_AVNIR_TFRAME_LEN - JL0_AVNIR_CCSDS_HDR_LEN + 1) * sizeof(unsigned char));
+    int i;
+    unsigned char *d=NULL;
+    if (!feof(in)) {
+        bytes_read = fread_checked(line, 1, JL0_AVNIR_TFRAME_LEN, in, 1);
     }
-    bytes_read = fread(line,1, 1100, in);
-    *data = line + 6; // Skip 6 bytes of header
+    for (i=0, d = line + JL0_AVNIR_CCSDS_HDR_LEN;
+         bytes_read > (JL0_AVNIR_CCSDS_HDR_LEN + 1) && i < (bytes_read - JL0_AVNIR_CCSDS_HDR_LEN);
+         i++, d++)
+    {
+        (*data)[i] = *d;
+    }
     free(line);
 
-    return bytes_read;
+    return bytes_read - JL0_AVNIR_CCSDS_HDR_LEN;
 }
 
-int import_jaxa_L0_avnir_band(char **chunks, char *band,
-                              int save_intermediates, const char *outBaseName)
+// Read each file (chunk) in the list of files for this band, converting
+// each frame into ASF Internal format individually.
+//
+// IMPORTANT NOTES:
+// 1. The Jaxa Level 0 AVNIR data exists across several sub-files (chunks),
+//    each in their own subdirectory (by VCID number, i.e. ./<basename>/<vcid>)
+// 2. Each subfile is made up from 1100-byte long lines of binary information,
+//    the first 6-bytes of which are CCSDS header information.  These bytes can
+//    be skipped over (ignored.)  The remaining 1094 bytes are to be parsed as
+//    described below.  These 1100-byte lines are telemetry frames, not to be
+//    confused with the lossless compression (Huffman) JPEG frames mentioned
+//    in the following notes (just called 'frames' below.)
+// 3. Each sub-file contains several frames of data,
+// 4. Each frame (typically) contains 16 scanlines of actual image data.
+// 5. Each frame is stored in the file(s) within their own jpeg 'image' format
+//    (starting with JPEG SOI and ending with JPEG EOI markers.)  There may be
+//    one to three 0x00 padding bytes after the EOI in order to make a frame land
+//    on a 32-bit boundary (these bytes should be ignored.)
+// 6. The frames can and do span sub-file boundaries.
+// 7. Each line of data contains 7100 actual data pixels (bytes), but including other
+//    information are actually 7152 bytes long.
+// 8. Each line is divided into odd and even pixels, and there is other information before
+//    and after the actual data.  The format of each line is as follows (number of bytes in
+//    parenthesis):
+//
+//     a. Dummy bytes (4)
+//     b. Optical black (4)
+//     c. Optical white (4)
+//     d. Valid ODD pixels (3550) <-- Here's the actual data (odd pixels)
+//     e. Optical white (4)
+//     f. Dummy bytes (2)
+//     g. Electrical calibration (8)
+//     h. Dummy bytes (4)
+//     i. Optical black (4)
+//     j. Optical white (4)
+//     k. Valid EVEN pixels (3550)  <-- Here's the actual data (even pixels)
+//     l. Optical white (4)
+//     m. Dummy bytes (2)
+//     n. Electrical calibration (8)
+//
+//    The odd and even pixels need to be interlaced to restore the data line.  Note that
+//    this is NOT consistent with the JPEG standard.
+// 9. The JAXA format also includes a non-standard JPEG marker and payload (the information
+//    bytes which follow the 0xFF marker byte).  This marker is 0xFFF0 and is RESERVED in
+//    the JPEG standard and is not supposed to be used.  In order for the JPEG library to
+//    work this marker and payload must be ignored and not stored in any JPEG file.
+//
+
+//
+//     Open output .img file (will write metadata later)
+//     Open first chunk, and then at each feof() close it and open/use the next until done
+//     PROCESS EACH SOI->EOI FRAME:
+//      Open temporary output file for write
+//       Scan for SOI and write it out when found
+//       Scan for SOF0 or SOF3 and write it out when found
+//       Read number of lines (Y) from SOF payload and add to tot_lines
+//       Read number of samples (X) from SOF and check to make sure it's 7152
+//       Read number of image components and check for 0x01 (greyscale single band)
+//       Scan for JPG0 (0xfff0)
+//       Read version number from JPG0 and check to make sure it's 0x00
+//       Read CAP0 and CAP1 from JPG0 and check for 0x00 and 0x21 respectively
+//       Scan for SOS (APP1 DQT DHS DHT read/write along the way)
+//       Read number of image components and check for 0x01 (greyscale single band)
+//       While EOI is not found
+//         Read 3550 odd pixels into buffer
+//         Read 3550 even pixels into buffer
+//         Write interlaced odd/even pixels to temporary jpeg file
+//       End while
+//      Write EOI to temporary jpeg file
+//      Close temporary jpeg file
+//      Use jpeg library to read data lines from the temporary jpeg file and write to .img file
+//      Close temporary jpeg file (leaving the .img file open)
+//      Continue reading/writing frames as described ...until the last chunk runs out
+//      Close the .img file
+//      Populate and write the metadata file
+//
+// NOTE: out_file should already have the .img extension on it, but maybe not.
+//       Use appendExt() to add or replace the ext with a new one, i.e. with .meta
+//       The outfile will already have the level 0 identifier in it etc... don't
+//       modify the name here.
+//
+int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
+                              int save_intermediates, const char *out_file)
 {
+    char tmpJpegName[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
+    char tmp_folder[256];
     FILE *in = NULL;
     FILE *out = NULL;
+    FILE *jpeg = NULL;
     int tot_lines = 0;
+    time_t t;
+    char t_stamp[32];
 
-    // Read each file (chunk) in the list of files for this band, converting
-    // each frame into ASF Internal format individually.
-    //
-    // IMPORTANT NOTES:
-    // 1. The Jaxa Level 0 AVNIR data exists across several sub-files (chunks),
-    //    each in their own subdirectory (by VCID number, i.e. ./<basename>/<vcid>)
-    // 2. Each subfile is made up from 1100-byte long lines of binary information,
-    //    the first 6-bytes of which are CCSDS header information.  These bytes can
-    //    be skipped over (ignored.)  The remaining 1094 bytes are to be parsed as
-    //    described below.  These 1100-byte lines are telemetry frames, not to be
-    //    confused with the lossless compression (Huffman) JPEG frames mentioned
-    //    in the following notes (just called 'frames' below.)
-    // 3. Each sub-file contains several frames of data,
-    // 4. Each frame (typically) contains 16 scanlines of actual image data.
-    // 5. Each frame is stored in the file(s) within their own jpeg 'image' format
-    //    (starting with JPEG SOI and ending with JPEG EOI markers.)  There may be
-    //    one to three 0x00 padding bytes after the EOI in order to make a frame land
-    //    on a 32-bit boundary (these bytes should be ignored.)
-    // 6. The frames can and do span sub-file boundaries.
-    // 7. Each line of data contains 7100 actual data pixels (bytes), but including other
-    //    information are actually 7152 bytes long.
-    // 8. Each line is divided into odd and even pixels, and there is other information before
-    //    and after the actual data.  The format of each line is as follows (number of bytes in
-    //    parenthesis):
-    //
-    //     a. Dummy bytes (4)
-    //     b. Optical black (4)
-    //     c. Optical white (4)
-    //     d. Valid ODD pixels (3550) <-- Here's the actual data (odd pixels)
-    //     e. Optical white (4)
-    //     f. Dummy bytes (2)
-    //     g. Electrical calibration (8)
-    //     h. Dummy bytes (4)
-    //     i. Optical black (4)
-    //     j. Optical white (4)
-    //     k. Valid EVEN pixels (3550)  <-- Here's the actual data (even pixels)
-    //     l. Optical white (4)
-    //     m. Dummy bytes (2)
-    //     n. Electrical calibration (8)
-    //
-    //    The odd and even pixels need to be interlaced to restore the data line.  Note that
-    //    this is NOT consistent with the JPEG standard.
-    // 9. The JAXA format also includes a non-standard JPEG marker and payload (the information
-    //    bytes which follow the 0xFF marker byte).  This marker is 0xFFF0 and is RESERVED in
-    //    the JPEG standard and is not supposed to be used.  In order for the JPEG library to
-    //    work this marker and payload must be ignored and not stored in any JPEG file.
-    //
+    asfPrintStatus("\nImporting band %s from %d sub-files...\n\n", band, num_chunks);
 
-    //
-    //     Open output .img file (will write metadata later)
-    //     Open first chunk, and then at each feof() close it and open/use the next until done
-    //     PROCESS EACH SOI->EOI FRAME:
-    //      Open temporary output file for write
-    //       Scan for SOI and write it out when found
-    //       Scan for SOF0 or SOF3 and write it out when found
-    //       Read number of lines (Y) from SOF payload and add to tot_lines
-    //       Read number of samples (X) from SOF and check to make sure it's 7152
-    //       Read number of image components and check for 0x01 (greyscale single band)
-    //       Scan for JPG0 (0xfff0)
-    //       Read version number from JPG0 and check to make sure it's 0x00
-    //       Read CAP0 and CAP1 from JPG0 and check for 0x00 and 0x21 respectively
-    //       Scan for SOS (APP1 DQT DHS DHT read/write along the way)
-    //       Read number of image components and check for 0x01 (greyscale single band)
-    //       Scan for EOI and read/write all data (and the EOI) along the way
-    //      Close temporary output file
-    //      Use jpeg library to read data lines from the temporary jpeg file and write to .img file
-    //      Close temporary jpeg file (leaving the .img file open)
-    //      Continue reading/writing frames as described ...until the last chunk runs out
-    //      Close the .img file
-    //      Populate and write the metadata file
-    //
+    // Make temporary folder for temporary files
+    t = time(NULL);
+    strftime(t_stamp, 22, "%d%b%Y-%Hh_%Mm_%Ss", localtime(&t));
+    sprintf(tmp_folder, "./asf_import_tmp_dir_%s_%s", get_basename(out_file), t_stamp);
+    if (!is_dir(tmp_folder)) {
+        mkdir(tmp_folder, S_IRWXU | S_IRWXG | S_IRWXO);
+    }
+    else {
+        // Should never reach here
+        asfPrintError("Temporary folder already exists:\n    %s\n",
+                      tmp_folder);
+    }
 
+    // Build input and output filenames
+    sprintf(tmpJpegName, "%s%c%s_L0_%s.jpg", tmp_folder, DIR_SEPARATOR, out_file, band);
+    sprintf(all_chunks, "%s%call_chunks_band_%s", tmp_folder, DIR_SEPARATOR, band);
 
-/*  FROM DUMPSCAN.C:
-    writing = 0;
-    do {
-        bytes_read = get_data_line(in, &data);
-        if (!feof(in) && bytes_read > 0) {
-            unsigned char *c, *m;
-            int i;
-            for (i = 0, c = data, m = data + 1; i < bytes_read && i < 1094; i++, c++, m++) {
-                if (!writing && i < 1093 && i < bytes_read - 1 && *c == MARKER) {
-                    switch (*m) {
-                        case
-                    }
-                }
-                if (writing) {
-                    fwrite(c, 1, 1, out);
+    // Concatenate all chunks for this band into a single file while at the same
+    // time, stripping telemetry frame CCSDS headers out of the data.
+    int chunk;
+    int bytes_read;
+    int lines_read = 0;
+    unsigned char *data;
+    out = (FILE *)FOPEN(all_chunks, "wb");
+    asfPrintStatus("Combining sub-files and stripping CCSDS headers from telemetry frames...\n\n");
+    for (chunk = 0; chunk < num_chunks; chunk++) {
+        in = (FILE *)FOPEN(chunks[chunk], "rb");
+        bytes_read = get_avnir_data_line(in, &data);
+        lines_read++;
+        while (!feof(in)) {
+            if (bytes_read > 0) {
+                int i;
+                unsigned char *c;
+                for (i = 0, c = data; i < bytes_read; i++, c++) {
+                    FWRITE(c, 1, 1, out);
                 }
             }
+            FREE(data);
+            bytes_read = get_avnir_data_line(in, &data);
+            lines_read++;
+            asfLineMeter(lines_read, 40000);
         }
-        if (data) free(data);
-    } while (!feof(in));
+        FCLOSE(in);
+        asfLineMeter(40000, 40000);
+        lines_read = 0;
+    }
+    FCLOSE(out);
 
-    printf("\nFinished successfully.\n\n");
-    fclose(in);
-    fclose(out);
-*/
+    // Open output .img, temporary jpeg, and input files
+    char *outFileName = appendExt(out_file, ".img"); // Just in case out_file had no .img extension
+    out = (FILE *)FOPEN(outFileName, "ab"); // .img file
+    jpeg = (FILE *)FOPEN(tmpJpegName, "wb");
+    in = (FILE *)FOPEN(all_chunks, "rb");
+
+    asfPrintStatus("\nExtracting embedded AVNIR-2 jpeg-format frames\n"
+            "for band %s and converting to ASF Internal format...\n\n", band);
+
+    // Scan and discard bytes until start of image is found
+    unsigned char c;
+    int done = 0;
+    while (!done) {
+        fread_checked(&c, 1, 1, in, 0);
+        if (c == MARKER) {
+            fread_checked(&c, 1, 1, in, 0);
+            if (c == SOI) {
+                unsigned char val = MARKER;
+                FWRITE(&val, 1, 1, jpeg); // SOI will get written in next loop by default...
+                done = 1;
+            }
+        }
+    }
+    while (!feof(in)) {
+        if (c == MARKER) {
+            // Marker found...
+            // ... Read marker ID
+            fread_checked(&c, 1, 1, in, 0);
+            if (c == JPG0) {
+                // Found the non-standard JPG0 marker from ALOS
+                unsigned int payload_length;
+                int i;
+                fread_checked(&c, 1, 1, in, 0);
+                payload_length = (unsigned int) c;
+                payload_length = payload_length << 8;
+                fread_checked(&c, 1, 1, in, 0);
+                payload_length += (unsigned int) c;
+                for (i = 0; i < payload_length - 2; i++) {
+                    fread_checked(&c, 1, 1, in, 0); // Read and discard payload from JPG0
+                }
+            }
+            else if (c == EOI) {
+                // Found end of image marker
+                unsigned char val = MARKER;
+                FWRITE(&val, 1, 1, jpeg);
+                FWRITE(&c, 1, 1, jpeg);
+                // Skip zero-fill that follows EOI markers (0 to 3 bytes of 0x00)
+                fread_checked(&c, 1, 1, in, 0);
+                while (c == PAD) {
+                    fread_checked(&c, 1, 1, in, 0);
+                }
+                fseek(in, -1, SEEK_CUR); // Back up one byte
+                FCLOSE(jpeg); // The temporary jpeg is now ready for import
+
+                // Import the recently-read frame, appending it to the open .img file,
+                // then zero out the temporary jpeg and leave it open to be used for the]
+                // next frame
+                import_avnir_frame_jpeg_to_img(tmpJpegName, out);
+                jpeg = (FILE *)FOPEN(tmpJpegName, "wb");  // Zero-out the temporary jpeg
+
+                // Scan forward until the next SOI is found (the next 16-line frame)
+                done = 0;
+                while (!done) {
+                    fread_checked(&c, 1, 1, in, 0);
+                    if (c == MARKER) {
+                        fread_checked(&c, 1, 1, in, 0);
+                        if (c == SOI) {
+                            unsigned char val = MARKER;
+                            FWRITE(&val, 1, 1, jpeg); // Write the jpeg marker to the temporary jpeg
+                            FWRITE(&c, 1, 1, jpeg);   // Write the SOI to the temporary jpeg
+                            done = 1;
+                        }
+                    }
+                }
+            }
+            else if (c == SOS) {
+                // Found start of scan marker NOTE 1: There is no end of scan marker ...the scan ends at
+                // the end of image marker, EOI.  NOTE 2: Each 'image' in the ALOS JAXA Level 0 Avnir
+                // files, and there are a great many, is just one frame... and a frame is 16 lines of
+                // image data.  To create the entire image, you concatenate all the frames together.
+                unsigned char val = MARKER;
+                FWRITE(&val, 1, 1, jpeg);
+                FWRITE(&c, 1, 1, jpeg);
+                int i;
+                unsigned char odds[3550];
+                unsigned char evens[3550];
+                // FIXME: Should use number of lines from frame marker
+                for (i = 0;
+                     i < 16 && !feof(in);
+                     i++)
+                {
+                    fread_checked(odds, 1, 12, in, 0); // Read and discard 12 bytes
+                    fread_checked(odds, 1, 3550, in, 0); // Read the odd numbered bytes
+                    fread_checked(evens, 1, 26, in, 0); // Read and discard 26 bytes
+                    fread_checked(evens, 1, 3550, in, 0); // Read the even numbered bytes
+                    // Write the data to the jpeg, interlacing odds/evens as you go
+                    int byte;
+                    for (byte = 0; byte < 3550; byte++) {
+                        FWRITE(&odds[byte], 1, 1, jpeg);
+                        FWRITE(&evens[byte], 1, 1, jpeg);
+                    }
+                    // FIXME: Should fix the number of samples in the frame marker payload rather
+                    // than write zero-fill bytes here ...
+                    unsigned char val = 0x00;
+                    for (byte = 0; byte < 52; byte++) {
+                        FWRITE(&val, 1, 1, jpeg);
+                    }
+                    fread_checked(&odds, 1, 14, in, 0); // Read and discard 14 bytes
+                }
+            }
+            else {
+                // Write marker ID's from ignored markers
+                unsigned char val = MARKER;
+                FWRITE(&val, 1, 1, jpeg);
+                FWRITE(&c, 1, 1, jpeg);
+            }
+        }
+        else {
+            FWRITE(&c, 1, 1, jpeg);
+        }
+        fread_checked(&c, 1, 1, in, 1);
+    }
+    FCLOSE(in);
+
+    // Clean up
+    //sprintf(del_files, "rm -f %s", tmp);
+    //asfSystem(del_files);
+    //strcpy(tmp_basename, get_basename(tmp));
+
     return tot_lines;
 }
+
+size_t fread_checked(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok)
+{
+    size_t ret = 0;
+
+    if (ptr == NULL || ptr < 0) {
+        asfPrintError("Programmer error: Invalid data pointer passed to fread_checked\n");
+    }
+    if (stream == NULL || stream < 0) {
+        asfPrintError("Programmer error: Invalid FILE stream passed to fread_checked\n");
+    }
+    if (size < 1) {
+        asfPrintError("Programmer error: Invalid data size (%d) passed to fread_checked\n", size);
+    }
+    if (nitems < 0) {
+        asfPrintError("Programmer error: Invalid number of items (%d) to fread_checked\n", nitems);
+    }
+
+    if (!feof(stream)) {
+        ret = fread(ptr, size, nitems, stream);
+    }
+
+    if (ret < nitems && !short_ok) {
+        asfPrintError("File too short.  Attempted to read %d bytes past end of file\n",
+                      (nitems * size) - ret);
+    }
+
+    return ret;
+}
+
+// Reads a jpeg file and appends all data lines to the end of an .img file
+// Assumes 'out' is opened for append, and it's up to the programmer to make
+// sure that lines written in several calls to this function are all the same
+// length (sample count) and data type.
+void import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out)
+{
+    struct jpeg_decompress_struct *cinfo =
+            (struct jpeg_decompress_struct *)MALLOC(sizeof(struct jpeg_decompress_struct));
+    unsigned char *dest;
+
+    jpeg_create_decompress(cinfo);
+    cinfo->buffered_image = TRUE;
+
+    static struct jpeg_error_mgr mgr;
+    cinfo->err = jpeg_std_error(&mgr);
+
+    FILE *fp = (FILE *)FOPEN(tmpJpegName, "rb");
+
+    jpeg_stdio_src(cinfo, fp);
+    jpeg_read_header(cinfo, TRUE);
+    jpeg_start_decompress(cinfo);
+
+    dest = (unsigned char *)MALLOC(cinfo->image_width * sizeof(unsigned char)); // greyscale, 1 component
+    JSAMPLE *buf = (JSAMPLE *)MALLOC(cinfo->image_width * sizeof(unsigned char));
+
+    int i;
+    for (i = 0; i < cinfo->image_height; i++) {
+        jpeg_read_scanlines(cinfo, &buf, 1);
+
+        int j;
+        for (j = 0; j < cinfo->image_width; j++) {
+            dest[j] = (unsigned char)buf[j];
+        }
+        FWRITE(buf, sizeof(unsigned char), cinfo->image_width, out);
+    }
+
+    FCLOSE(fp);
+
+    jpeg_finish_decompress(cinfo);
+    jpeg_destroy_decompress(cinfo);
+    FREE(cinfo);
+
+    FREE(buf);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

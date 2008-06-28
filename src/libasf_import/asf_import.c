@@ -137,7 +137,7 @@ int asf_import(radiometry_t radiometry, int db_flag, int complex_flag,
     import_vexcel_plain(inBaseName, outBaseName);
   }
   else if (format_type == JAXA_L0) {
-      asfPrintStatus("   Data format: JAXA_L0 (ALOS PRISM or AVNIR-2 Level 0)\n");
+      asfPrintStatus("   Data format: JAXA_L0 (ALOS AVNIR-2 Level 0)\n");
       import_jaxa_L0(inBaseName, outBaseName);
   }
   // Don't recognize this data format; report & quit
