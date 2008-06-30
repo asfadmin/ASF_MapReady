@@ -2117,14 +2117,14 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
 
       } // End of 'if multiband or single band and current band is requested band'
 
-      // if we did a downsampling, we should delete the "_down" file
-      if (do_resample) {
+    } // End of 'for each band' in the file, 'map-project the data into the file'
+
+    // if we did a downsampling, we should delete the "_down" file
+    if (do_resample) {
         asfPrintStatus("Removing temporary downsampled file...\n");
         unlink(input_meta_data);
         unlink(input_image);
-      }
-
-    } // End of 'for each band' in the file, 'map-project the data into the file'
+    }
 
     /////////////////////////////////////////////////////////////////////////
     //
