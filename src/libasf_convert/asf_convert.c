@@ -600,6 +600,7 @@ static int check_airsar(char *outFile, char *suffix)
   return ret;
 }
 
+static scale_t get_scale(convert_config *cfg);
 static void do_export(convert_config *cfg, char *inFile, char *outFile);
 
 int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
@@ -2069,7 +2070,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintStatus("Generating Thumbnail image...\n");
 
         output_format_t format = PNG;
-        scale_t scale = SIGMA;
+        scale_t scale = get_scale(cfg);
         meta_parameters *meta;
         double in_side_length, out_x_pixel_size, out_y_pixel_size;
         char *tmpFile;
@@ -2416,11 +2417,8 @@ int asf_convert(int createflag, char *configFileName)
     return asf_convert_ext(createflag, configFileName, FALSE);
 }
 
-static void do_export(convert_config *cfg, char *inFile, char *outFile)
+static scale_t get_scale(convert_config *cfg)
 {
-  int true_color = cfg->export->truecolor == 0 ? 0 : 1;
-  int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
-  output_format_t format = get_format(cfg);
   scale_t scale = SIGMA;
 
   // Byte scaling
@@ -2435,6 +2433,16 @@ static void do_export(convert_config *cfg, char *inFile, char *outFile)
   } else if (strncmp(uc(cfg->export->byte), "NONE", 4) == 0) {
     scale = NONE;
   }
+
+  return scale;
+}
+
+static void do_export(convert_config *cfg, char *inFile, char *outFile)
+{
+  int true_color = cfg->export->truecolor == 0 ? 0 : 1;
+  int false_color = cfg->export->falsecolor == 0 ? 0 : 1;
+  output_format_t format = get_format(cfg);
+  scale_t scale = get_scale(cfg);
 
   // Move the .meta file out of temporary status
   // Don't need to do this if we skipped import, we'd already have .meta
