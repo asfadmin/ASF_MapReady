@@ -127,8 +127,10 @@ int read_ceos_client(int row_start, int n_rows_to_get,
     int ns = meta->general->sample_count;
 
     int skip = 1;
-    if (info->multilook)
+    if (info->multilook) {
       skip = meta->sar->look_count;
+      row_start *= skip;
+    }
 
     if (meta->general->data_type == INTEGER16)
     {
