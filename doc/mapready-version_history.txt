@@ -1,4 +1,53 @@
 MapReady Version History
+v2.0.x (released 2008 July xx)
+New Functionality (GUI and command-line tools)
+- Support for single-look complex (SLC) data, including Palsar
+  Level 1.1.
+- Allow processing quad-pol (Palsar Level 1.1, 1.5) data into
+  the Sinclair polarimetric decomposition
+- Allow processing quad-pol SLC (Palsar Level 1.1) data into
+  the Pauli polarimetric decomposition
+- Implemented correction for the ERS2 gain loss.
+- Use the new ALOS 25-parameter transform block, available in data
+  produced by the ALOS processor 9.0+.  Significantly improves
+  geolocation of ALOS data.
+- Support in asf_terrcorr for skipping the coregistration and
+  using user-supplied offsets.
+- Support for use of DEMs in the lat/lon pseudoprojection during
+  terrain correction.
+- Support for AirSAR data. [command-line only]
+- Support for Gamma data. [command-line only]
+
+Bugs Fixed
+- When using "Save Clipped DEM" with terrain correction, the saved
+  DEM was not always clipped properly.
+- MapReady would crash on Windows Vista.
+- MapReady's "Help" option would not work on Windows Vista.
+- ASF View would not always find the CEOS Metadata file when that
+  button was clicked.
+- ASF View's "Save Subset" option would produce invalid ASF Internal
+  files when generated from CEOS images.
+- ASF View's "Save Subset" option would have incorrect geolocations
+  when used on projected data.
+- Projection converted would not detect the zone when converting
+  back to UTM from lat/lon.
+
+Features Enchanced
+- On Windows, changed to use of the GTK+ browse-for-folder widget
+  when using the "Browse" button on the "Destination Folder" dialog,
+  instead of the Windows one.  Allows creating directories within
+  the widget, and can be set to start up in the current directory.
+- Allow terrain correction of calibrated and polarimetric data
+  by adding an amplitude band that is used only for coregistration.
+- Include processing settings and timing information in the MapReady
+  log file.
+- Geocode would produce grainy results when significantly
+  downsampling.
+- Improved ASF View's depiction of RGB images by using separate
+  constrast expansion on all three bands, instead of a single mapping
+  for all three.
+- Pixel averaging in ASF View when zoomed out.  (Results in a less
+  grainy image.)
 
 v1.0.2 (released 2008 January 2)
 New Functionality (GUI and command-line tools)
