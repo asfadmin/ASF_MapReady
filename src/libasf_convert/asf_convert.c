@@ -1710,6 +1710,9 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
           // update the RGB Bands to Red=HH, Green=HV, Blue=VV
           strcpy(cfg->export->rgb, "HH,HV,VV");
           strcpy(outFile, inFile);
+
+          // turn off the amp0_flag -- we don't need it in this case
+          amp0_flag = FALSE;
         }
         meta_free(meta);
       }
@@ -2070,7 +2073,13 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
         asfPrintStatus("Generating Thumbnail image...\n");
 
         output_format_t format = PNG;
+
+        // scale using the same scaling as we did for the output image,
+        // unless it was a floating-point output (not possible for PNG),
+        // in which case we will use SIGMA.
         scale_t scale = get_scale(cfg);
+        if (scale == NONE) scale = SIGMA;
+
         meta_parameters *meta;
         double in_side_length, out_x_pixel_size, out_y_pixel_size;
         char *tmpFile;
