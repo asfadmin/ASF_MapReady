@@ -3,10 +3,28 @@ include ../../make_support/system_rules
 TARGET = proj2proj
 SRCS = proj2proj.c utility.c font.c projfile.c geocode.c execute.c new.c
 
+REQUIRED_LIBS = \
+	$(LIBDIR)/libasf_geocode.a \
+	$(LIBDIR)/asf_meta.a \
+	$(LIBDIR)/libasf_proj.a \
+        $(LIBDIR)/asf.a \
+	$(GSL_LIBS) \
+	$(GLIB_LIBS) \
+	$(PROJ_LIBS) -lm
+
+default: proj2proj asf_proj2proj
+cli.o: cli.c
+
+asf_proj2proj: cli.o
+	$(CC) $(CFLAGS) -o asf_proj2proj cli.o $(REQUIRED_LIBS) $(LDFLAGS)
+	mv asf_proj2proj$(BIN_POSTFIX) $(BINDIR)
+
 # Unfortunately compilation is completely different on windows
 ifeq ($(SYS),win32)
 
 ### Begin Windows Section
+
+proj2proj: $(TARGET).exe
 
 GCC = gcc
 GTK_INC = $(GTKWIN32_DIR)/include
@@ -80,7 +98,7 @@ $(TARGET).exe: $(TARGET).c
 	cp $(TARGET)_icon.ico $(SHAREDIR)
 
 clean:
-	rm -rf $(GTK_DIR) $(TARGET).exe core.*
+	rm -rf $(GTK_DIR) $(TARGET).exe asf_$(TARGET) core.*
 
 ### End Windows Section
 
@@ -121,7 +139,7 @@ LDFLAGS = -Wl,--export-dynamic
 
 OBJS = $(patsubst %.c, %.o, $(SRCS))
 
-default: $(OBJS)
+proj2proj: $(OBJS)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) $(LDLIBS) $(LDFLAGS)
 	mv $(TARGET) $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
@@ -131,7 +149,7 @@ default: $(OBJS)
 
 clean:
 	rm -f *.o $(BINDIR)/$(TARGET)* $(TARGET).txt \
-	    $(SHAREDIR)/$(TARGET)*
+	    $(SHAREDIR)/$(TARGET)* asf_$(TARGET)
 
 ### End Unix Section
 
