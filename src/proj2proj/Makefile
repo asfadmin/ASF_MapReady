@@ -12,7 +12,9 @@ REQUIRED_LIBS = \
 	$(GLIB_LIBS) \
 	$(PROJ_LIBS) -lm
 
-default: proj2proj asf_proj2proj
+CFLAGS += $(GLIB_CFLAGS)
+
+default: asf_proj2proj proj2proj
 cli.o: cli.c
 
 asf_proj2proj: cli.o
@@ -23,8 +25,6 @@ asf_proj2proj: cli.o
 ifeq ($(SYS),win32)
 
 ### Begin Windows Section
-
-proj2proj: $(TARGET).exe
 
 GCC = gcc
 GTK_INC = $(GTKWIN32_DIR)/include
@@ -91,7 +91,7 @@ LIB = \
 
 CFLAGS += -DLARGE64_FILES -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c
+$(TARGET): $(TARGET).c
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
