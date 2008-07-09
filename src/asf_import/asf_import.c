@@ -69,7 +69,7 @@ file. Save yourself the time and trouble, and use edit_man_header. :)
 "        Force input data to be read as the given format type. Valid formats\n"\
 "        are 'ceos', 'stf', 'gamma_isp', 'gamma_msp', 'geotiff', 'airsar',\n"\
 "        'bil', 'gridfloat', 'vp', and 'jaxa_L0'.  The 'jaxa_L0' format refers\n"\
-"        to the  ALOS PRISM and AVNIR-2 Level 0 dataset format.\n"\
+"        to the ALOS AVNIR-2 Level 0 dataset format.\n"\
 "        'CEOS' is the default behavior.\n"\
 "   -metadata <metadata file>\n"\
 "        Allows the ingest of metadata that do not have the same basename as the\n"\
