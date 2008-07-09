@@ -273,8 +273,8 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 
   readline(fp, buf, sizeof(buf));
 
-  if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
-    strcmp(buf, "[Albers Equal Area Conic]") == 0)
+  if (strcmp_case(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+    strcmp_case(buf, "[Albers Equal Area Conic]") == 0)
   {
     *proj_type = ALBERS_EQUAL_AREA;
     get_fields(fp,
@@ -287,7 +287,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       NULL);
     *datum = get_datum(fp);
   }
-  else if (strcmp(buf, bracketed_projection_name(
+  else if (strcmp_case(buf, bracketed_projection_name(
     LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
   {
     *proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
@@ -299,7 +299,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       NULL);
     *datum = get_datum(fp);
   }
-  else if (strcmp(buf, bracketed_projection_name(
+  else if (strcmp_case(buf, bracketed_projection_name(
     LAMBERT_CONFORMAL_CONIC)) == 0)
   {
     *proj_type = LAMBERT_CONFORMAL_CONIC;
@@ -314,7 +314,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
       NULL);
     *datum = get_datum(fp);
   }
-  else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
   {
     double is_north_pole;
     *proj_type = POLAR_STEREOGRAPHIC;
@@ -330,8 +330,9 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
     pps->ps.is_north_pole = pps->ps.slat > 0;
     *datum = get_datum(fp);
   }
-  else if (strcmp(buf, bracketed_projection_name(
-    UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(
+                    UNIVERSAL_TRANSVERSE_MERCATOR)) == 0 ||
+           strcmp_case(buf, "[UTM]") == 0)
   {
     double zone;
     *proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -372,7 +373,7 @@ int parse_proj_args_file(const char *file, project_parameters_t *pps,
 
   // If a datum other than WGS-84 is used with a UTM, the projection is no
   // longer technically a UTM ...it's a TM (no 'U'niversal).
-  if (strcmp(buf,bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR))==0
+  if (strcmp_case(buf,bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR))==0
       && WGS84_DATUM != *datum) {
      asfPrintWarning("Datum other than WGS84 specified with a UTM map projection,\n"
                      "hence it is no longer technically a UTM projection. The datum\n"
@@ -1217,30 +1218,31 @@ datum_type_t get_datum(FILE *fp)
   // Find projection type
   FSEEK(fp, 0, SEEK_SET);
   readline(fp, buf, sizeof(buf));
-  if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
-      strcmp(buf, "[Albers Equal Area Conic]") == 0)
+  if (strcmp_case(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+      strcmp_case(buf, "[Albers Equal Area Conic]") == 0)
   {
       proj_type = ALBERS_EQUAL_AREA;
   }
-  else if (strcmp(buf, bracketed_projection_name(LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
   {
       proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
   }
-  else if (strcmp(buf, bracketed_projection_name(LAMBERT_CONFORMAL_CONIC)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(LAMBERT_CONFORMAL_CONIC)) == 0)
   {
       proj_type = LAMBERT_CONFORMAL_CONIC;
   }
-  else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
   {
       proj_type = POLAR_STEREOGRAPHIC;
   }
-  else if (strcmp(buf, bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR)) == 0 ||
+           strcmp_case(buf, "[UTM]") == 0)
   {
       proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
   }
   else
   {
-      // this should never happend
+      // this should never happen
       asfPrintWarning("Unknown projection: %s\n", buf);
       return UNKNOWN_DATUM;
   }

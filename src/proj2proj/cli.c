@@ -107,9 +107,9 @@ int main(int argc, char *argv[])
       fprintf(ofp, "%s\n", buf); // write what we got of the line
     }
 
-    // blank line?  pass through without comment
-    else if (len==0) {
-      fprintf(ofp, "\n");
+    // blank line?  comment line?  pass through without comment
+    else if (len==0 || buf[0]=='#') {
+      fprintf(ofp, "%s\n", buf);
     }
 
     // normal line-- try to parse 2/3 floating point numbers

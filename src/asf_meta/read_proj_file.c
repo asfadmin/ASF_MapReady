@@ -233,7 +233,7 @@ void read_proj_file(char * file, project_parameters_t * pps,
 {
   FILE * fp;
   char buf[256];
-  
+
   fp = fopen_proj_file(file, "r");
   if (!fp)
   {
@@ -243,8 +243,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
   
   readline(fp, buf, sizeof(buf));
   
-  if (strcmp(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
-      strcmp(buf, "[Albers Equal Area Conic]") == 0)
+  if (strcmp_case(buf, bracketed_projection_name(ALBERS_EQUAL_AREA)) == 0 ||
+      strcmp_case(buf, "[Albers Equal Area Conic]") == 0)
     {
       *proj_type = ALBERS_EQUAL_AREA;
       get_fields(fp,
@@ -257,7 +257,7 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 NULL);
     }
   else if 
-    (strcmp(buf, bracketed_projection_name(LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
+    (strcmp_case(buf, bracketed_projection_name(LAMBERT_AZIMUTHAL_EQUAL_AREA)) == 0)
     {
       *proj_type = LAMBERT_AZIMUTHAL_EQUAL_AREA;
       get_fields(fp,
@@ -268,7 +268,7 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 NULL);
     }
   else if 
-    (strcmp(buf, bracketed_projection_name(LAMBERT_CONFORMAL_CONIC)) == 0)
+    (strcmp_case(buf, bracketed_projection_name(LAMBERT_CONFORMAL_CONIC)) == 0)
     {
       *proj_type = LAMBERT_CONFORMAL_CONIC;
       get_fields(fp,
@@ -281,7 +281,7 @@ void read_proj_file(char * file, project_parameters_t * pps,
 		 /* "Scale Factor", &pps->lamcc.scale_factor, */
 		 NULL);
     }
-  else if (strcmp(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
+  else if (strcmp_case(buf, bracketed_projection_name(POLAR_STEREOGRAPHIC)) == 0)
     {
       //char area[10];
       double is_north_pole;
@@ -297,7 +297,9 @@ void read_proj_file(char * file, project_parameters_t * pps,
       pps->ps.is_north_pole = pps->ps.slat > 0;
     }
   else if 
-    (strcmp(buf, bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR)) == 0)
+    (0 == strcmp_case(buf,
+                      bracketed_projection_name(UNIVERSAL_TRANSVERSE_MERCATOR))
+     || 0==strcmp_case(buf, "[UTM]"))
     {
       double zone;
       *proj_type = UNIVERSAL_TRANSVERSE_MERCATOR;
@@ -317,8 +319,8 @@ void read_proj_file(char * file, project_parameters_t * pps,
     }
   else
     {
-      asfPrintError("Unknown Projection in file '%s': %s\n",
-		    file, buf);
+      asfPrintError("Unknown projection in file '%s': %s %d\n",
+		    file, buf, strcmp_case(buf, "[UTM]"));
     }
   
   fclose(fp);
