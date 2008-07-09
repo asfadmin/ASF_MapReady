@@ -19,7 +19,6 @@
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
 int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                               int save_intermediates, const char *outBaseName);
-size_t fread_checked(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok);
 void import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out);
 
 // import_jaxa_L0()
@@ -353,7 +352,7 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data) {
     int i;
     unsigned char *d=NULL;
     if (!feof(in)) {
-        bytes_read = fread_checked(line, 1, JL0_AVNIR_TFRAME_LEN, in, 1);
+        bytes_read = FREAD_CHECKED(line, 1, JL0_AVNIR_TFRAME_LEN, in, 1);
     }
     for (i=0, d = line + JL0_AVNIR_CCSDS_HDR_LEN;
          bytes_read > (JL0_AVNIR_CCSDS_HDR_LEN + 1) && i < (bytes_read - JL0_AVNIR_CCSDS_HDR_LEN);
@@ -523,9 +522,9 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
     unsigned char c;
     int done = 0;
     while (!done) {
-        fread_checked(&c, 1, 1, in, 0);
+        FREAD_CHECKED(&c, 1, 1, in, 0);
         if (c == MARKER) {
-            fread_checked(&c, 1, 1, in, 0);
+            FREAD_CHECKED(&c, 1, 1, in, 0);
             if (c == SOI) {
                 unsigned char val = MARKER;
                 FWRITE(&val, 1, 1, jpeg); // SOI will get written in next loop by default...
@@ -537,18 +536,18 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
         if (c == MARKER) {
             // Marker found...
             // ... Read marker ID
-            fread_checked(&c, 1, 1, in, 0);
+            FREAD_CHECKED(&c, 1, 1, in, 0);
             if (c == JPG0) {
                 // Found the non-standard JPG0 marker from ALOS
                 unsigned int payload_length;
                 int i;
-                fread_checked(&c, 1, 1, in, 0);
+                FREAD_CHECKED(&c, 1, 1, in, 0);
                 payload_length = (unsigned int) c;
                 payload_length = payload_length << 8;
-                fread_checked(&c, 1, 1, in, 0);
+                FREAD_CHECKED(&c, 1, 1, in, 0);
                 payload_length += (unsigned int) c;
                 for (i = 0; i < payload_length - 2; i++) {
-                    fread_checked(&c, 1, 1, in, 0); // Read and discard payload from JPG0
+                    FREAD_CHECKED(&c, 1, 1, in, 0); // Read and discard payload from JPG0
                 }
             }
             else if (c == EOI) {
@@ -557,9 +556,9 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                 FWRITE(&val, 1, 1, jpeg);
                 FWRITE(&c, 1, 1, jpeg);
                 // Skip zero-fill that follows EOI markers (0 to 3 bytes of 0x00)
-                fread_checked(&c, 1, 1, in, 0);
+                FREAD_CHECKED(&c, 1, 1, in, 0);
                 while (c == PAD) {
-                    fread_checked(&c, 1, 1, in, 0);
+                    FREAD_CHECKED(&c, 1, 1, in, 0);
                 }
                 fseek(in, -1, SEEK_CUR); // Back up one byte
                 FCLOSE(jpeg); // The temporary jpeg is now ready for import
@@ -573,9 +572,9 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                 // Scan forward until the next SOI is found (the next 16-line frame)
                 done = 0;
                 while (!done) {
-                    fread_checked(&c, 1, 1, in, 0);
+                    FREAD_CHECKED(&c, 1, 1, in, 0);
                     if (c == MARKER) {
-                        fread_checked(&c, 1, 1, in, 0);
+                        FREAD_CHECKED(&c, 1, 1, in, 0);
                         if (c == SOI) {
                             unsigned char val = MARKER;
                             FWRITE(&val, 1, 1, jpeg); // Write the jpeg marker to the temporary jpeg
@@ -597,14 +596,16 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                 unsigned char odds[3550];
                 unsigned char evens[3550];
                 // FIXME: Should use number of lines from frame marker
+                // FIXME: Should read compressed jpeg line into a buffer THEN pick the
+                //        data out!!!
                 for (i = 0;
                      i < 16 && !feof(in);
                      i++)
                 {
-                    fread_checked(odds, 1, 12, in, 0); // Read and discard 12 bytes
-                    fread_checked(odds, 1, 3550, in, 0); // Read the odd numbered bytes
-                    fread_checked(evens, 1, 26, in, 0); // Read and discard 26 bytes
-                    fread_checked(evens, 1, 3550, in, 0); // Read the even numbered bytes
+                    FREAD_CHECKED(odds, 1, 12, in, 0); // Read and discard 12 bytes
+                    FREAD_CHECKED(odds, 1, 3550, in, 0); // Read the odd numbered bytes
+                    FREAD_CHECKED(evens, 1, 26, in, 0); // Read and discard 26 bytes
+                    FREAD_CHECKED(evens, 1, 3550, in, 0); // Read the even numbered bytes
                     // Write the data to the jpeg, interlacing odds/evens as you go
                     int byte;
                     for (byte = 0; byte < 3550; byte++) {
@@ -617,7 +618,7 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
                     for (byte = 0; byte < 52; byte++) {
                         FWRITE(&val, 1, 1, jpeg);
                     }
-                    fread_checked(&odds, 1, 14, in, 0); // Read and discard 14 bytes
+                    FREAD_CHECKED(&odds, 1, 14, in, 0); // Read and discard 14 bytes
                 }
             }
             else {
@@ -630,7 +631,7 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
         else {
             FWRITE(&c, 1, 1, jpeg);
         }
-        fread_checked(&c, 1, 1, in, 1);
+        FREAD_CHECKED(&c, 1, 1, in, 1);
     }
     FCLOSE(in);
 
@@ -640,35 +641,6 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
     //strcpy(tmp_basename, get_basename(tmp));
 
     return tot_lines;
-}
-
-size_t fread_checked(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok)
-{
-    size_t ret = 0;
-
-    if (ptr == NULL || ptr < 0) {
-        asfPrintError("Programmer error: Invalid data pointer passed to fread_checked\n");
-    }
-    if (stream == NULL || stream < 0) {
-        asfPrintError("Programmer error: Invalid FILE stream passed to fread_checked\n");
-    }
-    if (size < 1) {
-        asfPrintError("Programmer error: Invalid data size (%d) passed to fread_checked\n", size);
-    }
-    if (nitems < 0) {
-        asfPrintError("Programmer error: Invalid number of items (%d) to fread_checked\n", nitems);
-    }
-
-    if (!feof(stream)) {
-        ret = fread(ptr, size, nitems, stream);
-    }
-
-    if (ret < nitems && !short_ok) {
-        asfPrintError("File too short.  Attempted to read %d bytes past end of file\n",
-                      (nitems * size) - ret);
-    }
-
-    return ret;
 }
 
 // Reads a jpeg file and appends all data lines to the end of an .img file

@@ -65,7 +65,8 @@ void RSAT_readNextPulse(bin_state *s,iqType *iqBuf, char *inName,
                 RSAT_readNextFrame(s, &f);
         }
     }
-    else if (s->readStatus) {
+
+    if (s->readStatus) {
         // Assume we're pointing at the echo data now...
         // Unpack the echo data in each remaining frame
         bytesToRead = s->nSamp;

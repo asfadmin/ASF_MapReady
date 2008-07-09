@@ -81,7 +81,7 @@ ERS_frame * ERS_readNextFrame(bin_state *s, ERS_frame *f)
             else {
                 f->is_echo = 1;
                 asfForcePrintStatus(
-                        "Error at frame %i - Unknown frame type (%i); assumed to be bit error.\n",
+                        "\n\n** Error at frame %i - Unknown frame type (%i); assumed to be bit error.\n\n",
                         s->curFrame, f->type);
             }
 

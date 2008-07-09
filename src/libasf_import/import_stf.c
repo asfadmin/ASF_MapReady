@@ -137,7 +137,7 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
 
   for (outLine=0; outLine<nTotal; outLine++) {
       if (s->curFrame >= s->nFrames) {
-        asfPrintStatus("   Reached end of file\n");
+        asfPrintStatus("\n\n   Reached end of file\n\n");
         break;
       }
 
