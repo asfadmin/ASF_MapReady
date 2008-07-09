@@ -1021,7 +1021,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     get_current_date(&start_date, &start_time);
 
     char tmp[64];
-    date_printTime(&start_time,1,':',tmp);
+    date_printTime(&start_time,0,':',tmp);
     asfPrintStatus("Starting at: %s\n", tmp);
 
     split_dir_and_file(cfg->general->out_name, out_dir, junk);
@@ -2373,7 +2373,7 @@ int asf_convert_ext(int createflag, char *configFileName, int saveDEM)
     double elapsed = date_difference(&end_date, &end_time,
                                      &start_date, &start_time);
 
-    date_printTime(&end_time,1,':',tmp);
+    date_printTime(&end_time,0,':',tmp);
     asfPrintStatus("Done at: %s\n", tmp);
 
     if (elapsed < 60) {

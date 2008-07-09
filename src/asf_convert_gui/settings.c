@@ -1561,10 +1561,10 @@ settings_to_config_file(const Settings *s,
         fprintf(cf, "pixel spacing = %.2f\n", s->pixel_size);
       if (s->specified_height)
         fprintf(cf, "height = %.2f\n", s->height);
-      // As of MapReady v1.1.x, the datum is no longer written to the
-      // config file ...the datum in the (temporary) proj file is used instead.
-      // The user-selected datum is written to the temporary proj file above.
-      //fprintf(cf, "datum = %s\n", datum_string(s->datum));
+      // The user-selected datum is written to the temporary proj file above,
+      // but we also write it here, to avoid an annoying warning in
+      // asf_mapready.
+      fprintf(cf, "datum = %s\n", datum_string(s->datum));
       fprintf(cf, "resampling = %s\n",
         resample_method_string(s->resample_method));
       fprintf(cf, "force = %d\n", s->geocode_force);
