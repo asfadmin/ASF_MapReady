@@ -25,31 +25,42 @@ void ERS_readNextPulse(bin_state *s,iqType *iqBuf, char *inName, char *outName)
   nLines++;
 
   /*Seek to next auxiliary data record.*/
-  while (ERS_readNextFrame(s,&f)->is_aux!=1) {}
-
-  ERS_auxAGC_window(s,&f.aux);
-
-  /*Unpack the 20 leftover bytes (16 samples) in auxilary frame.*/
-  iqCurr = ERS_unpackBytes(&f.data[ERS_datPerAux],
-                           ERS_datPerFrame-ERS_datPerAux,
-                           iqCurr);
-
-  /*Unpack each 250 bytes (200 samples) in framesPerLine remaining echo frames.*/
-  for (ii=1; ii<ERS_framesPerLine; ii++) {
-    ERS_readNextFrame(s,&f);
-    if (f.is_echo==0) {
-      asfForcePrintStatus(
-        "   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
-        f.type);
-    }
-    iqCurr=ERS_unpackBytes(f.data,ERS_datPerFrame,iqCurr);
+  ERS_readNextFrame(s, &f);
+  while (f.is_aux != 1 && s->readStatus) {
+      ERS_readNextFrame(s, &f);
   }
 
-  /* Occasionally print out the auxiliary data record */
-/*  if (nLines%1000==0) {
+  if (f.is_aux == 1 && s->readStatus) {
+      // Found the aux. data frame ...process it
+      ERS_auxAGC_window(s,&f.aux);
+
+      // Unpack the 20 leftover bytes (16 samples) in auxilary frame
+      iqCurr = ERS_unpackBytes(&f.data[ERS_datPerAux],
+                               ERS_datPerFrame-ERS_datPerAux,
+                               iqCurr);
+  }
+
+  // Unpack each 250 bytes (200 samples) in framesPerLine remaining echo frames
+  for (ii = 1; s->readStatus && ii < ERS_framesPerLine; ii++) {
+      ERS_readNextFrame(s, &f);
+      if (f.is_echo == 0) {
+          asfForcePrintStatus(
+                  "   Error! Expected echo frame; got '%d' frame! Assuming bit error\n",
+                  f.type);
+      }
+      iqCurr=ERS_unpackBytes(f.data,ERS_datPerFrame,iqCurr);
+  }
+
+  // Occasionally print out the auxiliary data record
+/*  if (s->readStatus && nLines%1000==0) {
  *    ERS_auxPrint(&f.aux,stdout);
  *  }
  */
+
+  if (!s->readStatus) {
+      // Last frame read is short bytes or some other error occurred, so invalidate it
+      f.is_aux = f.is_zero = f.is_echo = 0;
+  }
 }
 
 

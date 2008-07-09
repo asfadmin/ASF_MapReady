@@ -25,7 +25,8 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
 {
   char outDataName[256]="", outMetaName[256]="", imgTimeStr[20]="";
   char *inDataName, *inMetaName;
-  int nTotal, nVec=1;
+  int nTotal;
+  int  nVec=1;
   int outLine;                     /* Used to handle missing lines correctly */
   long imgStart=0, imgEnd=0;       /* Used to handle missing lines correctly */
   float fd, fdd, fddd;                               /* Doppler coefficients */
@@ -111,7 +112,9 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
       parse_ymdTime(tmp_timeStr,&tmp_date,&tmp_time);
       vec_sec = date_hms2sec(&tmp_time);
       new_delta = fabs(vec_sec - loc_sec);
-      if ((new_delta>delta) && (old_delta>delta)) done=TRUE;
+      if ((new_delta > delta) && (old_delta > delta)) {
+          done=TRUE;
+      }
       old_delta = delta;
       delta = new_delta;
       nVec++;
@@ -139,7 +142,7 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
       }
 
       /* Now read the next pulse of data. */
-     readNextPulse(s, iqBuf, inDataName, outDataName); /* I think outDataName is just a place holder... at least for now */
+     readNextPulse(s, iqBuf, inDataName, outDataName);
 
       /* If the read status is good, write this data. */
       if (s->readStatus == 1) {
@@ -152,8 +155,9 @@ void import_stf(char *inBaseName, char *outBaseName, radiometry_t radiometry,
         }
       }
       // Write status information to screen.
-      asfLineMeter(outLine,nTotal);
+      asfLineMeter(outLine, nTotal);
   }
+  asfLineMeter(nTotal, nTotal);
 
   if (lat_constrained) {
     s->nLines -= 4096; /* reduce the line number from extra padding */
