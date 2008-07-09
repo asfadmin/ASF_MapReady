@@ -302,10 +302,9 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
     if (stream==NULL)
         programmer_error("NULL file pointer passed to FREAD.\n");
     ret=fread(ptr,size,nitems,stream);
-    if (ret!=nitems)
+    if (ret < nitems)
     {
-        if (0!=feof(stream))
-        {
+        if (feof(stream)) {
             sprintf(error_message,
                 "*****  ERROR!  Read past end of file! *******\n"
                 "* \n"
@@ -315,18 +314,19 @@ size_t FREAD(void *ptr,size_t size,size_t nitems,FILE *stream)
                 "* to the program.\n",
                 (int)size*nitems,(int)stream);
 
-                        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                            strcat(error_message,
-                                   "**    Program terminating... Attempted read past end of file.\n");
+            if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                strcat(error_message, "**    Program terminating... Attempted read past end of file.\n");
 
             fprintf(stderr,error_message);
-            if (fLog!=NULL)  fprintf(fLog,error_message);
+            if (fLog!=NULL)
+                fprintf(fLog,error_message);
 
-                        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                            exit(204);
-                        else
-                            return ret;
-fprintf(stderr, error_message); exit(204);
+            if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+                exit(204);
+            else
+                return ret;
+            fprintf(stderr, error_message);
+            exit(204);
         }
 
         sprintf(error_message,
@@ -336,25 +336,57 @@ fprintf(stderr, error_message); exit(204);
             "*  encountered the following error:\n",
             (int)stream);
         fprintf(stderr,error_message);
-        if (fLog!=NULL) fprintf(fLog,error_message);
+        if (fLog!=NULL)
+            fprintf(fLog,error_message);
 
         perror(NULL);
 
         sprintf(error_message,
             "* Note that this was NOT a read-past end of file error.\n");
 
-                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                    strcat(error_message,
-                           "**   Program terminating... Error encounter while reading.\n");
+        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+            strcat(error_message, "**   Program terminating... Error encounter while reading.\n");
 
         fprintf(stderr,error_message);
-        if (fLog!=NULL) fprintf(fLog,error_message);
+        if (fLog!=NULL)
+            fprintf(fLog,error_message);
 
-                if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
-                    exit(205);
+        if (caplib_behavior_on_error == BEHAVIOR_ON_ERROR_ABORT)
+            exit(205);
     }
     return ret;
 }
+
+size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int short_ok)
+{
+    size_t ret = 0;
+
+    if (ptr == NULL || ptr < 0) {
+        asfPrintError("Programmer error: Invalid data pointer passed to FREAD_CHECKED\n");
+    }
+    if (stream == NULL || stream < 0) {
+        asfPrintError("Programmer error: Invalid FILE stream passed to FREAD_CHECKED\n");
+    }
+    if (size < 1) {
+        asfPrintError("Programmer error: Invalid data size (%d) passed to FREAD_CHECKED\n", size);
+    }
+    if (nitems < 0) {
+        asfPrintError("Programmer error: Invalid number of items (%d) to FREAD_CHECKED\n", nitems);
+    }
+
+    ret = fread(ptr, size, nitems, stream);
+
+    if (feof(stream) && !short_ok) {
+        asfPrintError("End of file reached!  Cannot read requested number of bytes.\n");
+    }
+    else if (ret < nitems && !short_ok) {
+        asfPrintError("File too short.  FREAD_CHECKED attempted to read %d bytes past end of file\n",
+                      (nitems * size) - ret);
+    }
+
+    return ret;
+}
+
 size_t FWRITE(const void *ptr,size_t size,size_t nitems,FILE *stream)
 {
     size_t ret;
