@@ -15,6 +15,8 @@ New Functionality (GUI and command-line tools)
   using user-supplied offsets.
 - Support for use of DEMs in the lat/lon pseudoprojection during
   terrain correction.
+- New tool!  asf_proj2proj is a command-line interface to the ASF
+  Projection Coordinate Converter.
 - Support for AirSAR data. [command-line only]
 - Support for Gamma data. [command-line only]
 
