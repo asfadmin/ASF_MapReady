@@ -714,7 +714,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
 	else
 	  sprintf(msg,"%s geometrically.\n",msg);
 
-	printf(msg);
+	asfPrintStatus(msg);
 
 /*Allocate input buffers.*/
 	if (inSarFlag) {
@@ -815,7 +815,7 @@ int deskew_dem(char *inDemName, char *outName, char *inSarName,
             // write the mask's metadata, then print mask stats
             meta_write(outMeta, outMaskName);
             int tot=d.numSamples*d.numLines;
-            printf("Mask Statistics:\n"
+            asfPrintStatus("Mask Statistics:\n"
                    "    Layover Pixels: %9d/%d (%f%%)\n"
                    "     Shadow Pixels: %9d/%d (%f%%)\n"
                    "User Masked Pixels: %9d/%d (%f%%)\n",
