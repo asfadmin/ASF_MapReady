@@ -517,3 +517,360 @@ NOTE: it is assumed that you have already tagged the repository in preparation
 
 * Rejoice! For this task is done!
 
+
+The User Tool Development Group's Release Procedure Instructions:
+=================================================================
+
+create_thumbs RPM Build Procedure:
+----------------------------------
+Note: The following example assumes version 2.0.2, subversion
+  revision 7410, and a work folder at ~/asf.
+
+NOTE: This release procedure assumes that create_thumbs is just
+  one tool of many in the MapReady package (and repository) and
+  that create_thumbs is to be released as a separate tool from
+  within that package.  Once (or if) create_thumbs becomes a
+  separate release, then this procedure will (somewhat obviously)
+  change as well.
+
+ 1. Create a clean directory where you will produce the build (etc),
+    for example (change the revision number to the one that you have
+    checked out):
+
+      mkdir ~/asf/svn-r7410ct
+
+ 2. Check out autotar and rpmbuild into this work directory.  Example:
+
+      cd ~/asf/svn-r7410ct
+      svn co svn+ssh://svn/svn/release/trunk/autotar release/autotar
+      svn co svn+ssh://svn/svn/release/trunk/rpmbuild release/rpmbuild
+
+ 3. Make working directories:
+
+      cd ~/asf/svn-r7410ct
+      mkdir -p release/tar_filelist release/tar
+
+ 4. If you have never copied the .rpmmacros and .rpmrc files to your
+    home directory, then do so now, otherwise skip to step 7:
+
+      cd ~/asf/svn-r7410ct/release/rpmbuild
+      cp dot.rpmmacros ~/.rpmmacros
+      cp dot.rpmrc ~/.rpmrc
+
+ 5. Edit ~/.rpmmacros to update the top directory for your build's rpmbuild
+    parent directory, i.e. the 'release' folder.  Find the %_topdir line and
+    edit as follows:
+
+      %_topdir      %(echo $HOME)/asf/svn-r7410ct/release
+
+ 6. Check out (export w/o SVN info) a copy of the release:
+
+      cd ~/asf/svn-r7410ct
+      svn export svn+ssh://svn/svn/asf_tools/trunk asf_tools
+
+ 7. Make sure DEBUG_BUILD is not set to any particular debug level:
+
+      unset DEBUG_BUILD
+
+ 8. Meddle with what the packages will include you'll need to
+     edit ~/asf/svn-r7410ct/asf_tools/make_support/master_program_list. That
+     is where all the tools to be compiled are listed with other tools that they
+     depend on.
+
+     Here is what the LIBS list looks like (much removed, create_thumbs
+     dependencies kept):
+
+LIBS
+{
+@src/
+        asf
+        asf_fft
+        libasf_proj
+        asf_meta
+        libasf_sar
+        libasf_raster
+        libasf_vector
+        libasf_import
+        libasf_ardop
+        libasf_export
+}
+
+    And here is what the PROGRAMS list looks like:
+
+PROGRAMS
+{
+@src/
+        detect_cr { }
+        image_stats { }
+        meta_check { }
+        offset_test { }
+        pta { }
+        create_thumbs { }
+
+}
+
+    And here is what the (now emptied) DOCUMENTATION list looks like:
+
+DOCUMENTATION
+{
+@doc/
+
+}
+
+    And here is what the mapready and all package descriptions look like
+    (NOTE: stp_package is emptied, mapready_package emptied and create_thumbs
+    added to it, and the 'all' package added as shown below):
+
+CATEGORIES
+{
+# MapReady package
+        mapready_package
+        {
+                create_thumbs
+        }
+
+# SAR Training Processor
+        stp_package
+        {
+        }
+
+# Data quality tools
+        dq-tools
+        {
+        }
+
+# All
+        all
+        {
+                mapready_package
+        }
+
+}
+
+
+ 9. ** KLUDGE #1 **
+     Create svn_rev.h:
+
+      cd ~/asf/svn-r7410ct/asf_tools/include
+      echo "#define SVN_REV \"7410\"" > svn_rev.h
+
+ 10. ** KLUDGE #2 **
+     Edit ~/asf/svn-r7410ct/asf_tools/Makefile.in and include only the
+     following lines from the original MAPREADY_MODULES list:
+
+MAPREADY_MODULES = \
+        src/asf \
+        src/libasf_proj \
+        src/asf_meta \
+        src/asf_fft \
+        src/libasf_raster \
+        src/libasf_sar \
+        src/libasf_import \
+        src/libasf_vector \
+        src/libasf_export \
+        src/libasf_ardop \
+        src/create_thumbs
+
+ 11. Eliminate the following lines from Makefile.in.  At the time of writing
+     these instructions, this line occurs in FIVE places: near line 140, 153,
+     164, 175, and 186:
+
+        echo "#define SVN_REV \"0`svn info|grep Revision|cut -c11-`\"">include/svn_rev.h
+
+ 12. Remove the mapready documentation from Makefile.in (since we are not
+     building mapready).  Delete the following lines from Makefile.in (around
+     lines 111-112) in the 'mapready:' build rules:
+
+        cp doc/mapready_manual.pdf $(S_DOCDIR)
+        cp doc/mapready-version_history.txt $(S_DOCDIR)
+
+ 13. In the list of modules to remove during a 'make clean', remove all
+     packages other than the mapready package:
+
+clean:
+        rm -rf $(S_LIBDIR)
+        rm -rf $(S_BINDIR)
+        rm -rf $(S_DOCDIR)
+        rm -rf $(S_SHAREDIR)
+        rm -rf share
+        rm -rf man
+        $(foreach MODULE, $(MAPREADY_MODULES), \
+                $(MAKE) clean -C $(MODULE) &&) true
+
+ 14. Finally, remove the line that makes an asf_convert soft link to
+     asf_mapready.  Remove the following line (near line 110):
+
+        ln -sf asf_mapready $(S_BINDIR)/asf_convert
+
+ 15. Create the source.create_thumbs file in ~/asf/svn-r7410ct/release/autotar
+     (automatically by makemake if you followed the directory structure
+     instructions listed here):
+
+      cd ~/asf/svn-r7410/asf_tools/make_support
+      make
+      ./makemake
+
+     NOTE: In this case, the source.mapready_package and source.create_thumbs
+     files should be identical (check them with diff to make sure), so we'll
+     just use the create_thumbs version from here on out ...for clarity.
+
+ 16. Run the autotar script:
+
+      cd ~/asf/svn-r7410ct/release/autotar
+      ./tarfile src ~/asf/svn-r7410ct create_thumbs
+
+ 17. Run the rpmprep script (from autotar folder):
+
+      ./rpmprep create_thumbs asf_create_thumbs
+
+ 18. Copy an older .spec file to the new one, then edit the new .spec
+     file in to use the correct version:
+
+      cd ~/asf/svn-r7410ct/release/rpmbuild
+      cp <old .spec file> asf_create_thumbs-1.3-1.spec
+      vi asf_create_thumbs-1.3-1.spec
+
+     NOTE: See example .spec file (below) at the end of these
+       release procedures
+
+ 19. a) If you have not already added the secret and public gpg keys
+     to your ~/.gnupg folder, then do so now or the rpm build will
+     not sign the rpms.  Note that you CAN sign the rpms after they
+     have been created with "rpm --addsign <rpm file name>".  Note that
+     the first step below is unnessary if you already have a .gnupg
+     folder in your home directory:
+
+     mkdir ~/.gnupg
+     cp dot.gnupg* ~/.gnupg
+     cd ~/.gnupg
+     gunzip *
+     tar xvf *
+
+     b) If the machine that you are using has not had the public key
+     imported to the rpm public keys database yet, you will not be
+     able to check your rpms to see if they were signed properly.
+     Import the public key into the rpm public keys database as
+     shown below (you must have root access).  Still in the rpmbuild
+     folder ...do the following:
+
+     cd ~/asf/svn-r7410ct/release/rpmbuild/public_key
+     sudo rpm -import asf_tools-pubkey.asc
+
+ 20. Clean up any old rpm builds if necessary:
+
+     cd ~/asf/svn-r7410ct/release/rpmbuild
+     rm -rf BUILD/*
+     rm -rf RPMS/*
+     rm -rf SRPMS/*
+
+ 21. Build and check the rpm:
+
+      cd ~/asf/svn-r7410ct/release/rpmbuild
+      rpmbuild -ba --sign asf_create_thumbs-1.3-1.spec
+      <password is 'bob'>
+
+      OPTIONAL: Check the results of the rpm build:
+
+      cd RPMS
+      rpm -K asf_create_thumbs-1.3-1.i386.rpm
+      rpm -qlp asf_create_thumbs-1.3-1.i386.rpm
+
+     After the "rpm -K" command, you should see an 'OK' statement similar
+     to the one below that indicates the rpm was properly signed:
+
+      asf_create_thumbs-1.3-1.i386.rpm: (sha1) dsa sha1 md5 gpg OK
+
+     If you get a response that includes the words "NOT OK", then it usually
+     means the ASCII public key has not been imported with "rpm -import"
+     yet.
+
+     After the -qlp query, you'll get a long list of all that is contained
+     in rpm ...useful for checking to make sure that no components were left
+     out.
+
+ 22. Create tarballs of the rpms (the binary rpm will also contain the
+     README_rpm.txt file from ~/asf/svn-r7410/asf_tools folder):
+
+      cd ~/asf/svn-r7410ct/release/rpmbuild
+      ./tarrpms asf_create_thumbs create_thumbs
+
+ 23. Put the built files on dq (still in ~/asf/svn-r7410/release/rpmbuild):
+
+      mkdir /stor/dq/release_builds/create_thumbs/v1.3
+      cp dist/* /stor/dq/release_builds/create_thumbs/v1.3
+      chmod 777 /stor/dq/release_builds/create_thumbs/v1.3
+      chmod 666 /stor/dq/release_builds/create_thumbs/v1.3/*
+
+
+EXAMPLE .spec FILE CONTENTS (you can copy this and edit if necessary):
+----------------------------------------------------------------------
+Summary: ASF create_thumbs package
+Name: asf_create_thumbs
+Version: 1.5
+Release: 1
+License: BSD
+Group: Applications/Scientific
+URL: http://www.asf.alaska.edu
+Source: asf_create_thumbs.src.tar.gz
+BuildRoot: %{_buildroot}
+Prefix: /usr/local
+
+%description
+This package contains create_thumbs (only), a tool
+for creating thumbnails and browse images from SAR
+files.  This is a subset of the ASF Remote Sensing
+Toolkit.
+%prep
+%setup -q -n ${NAME}
+
+%build
+cd %{_builddir}/asf_tools
+./configure --prefix=$RPM_BUILD_ROOT/usr/local
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+cd %{_builddir}/asf_tools
+make install
+rm -rf $RPM_BUILD_ROOT/usr/local/lib
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(666,root,root,777)
+%attr(-,root,root) /usr/local/bin
+/usr/local/share
+
+%changelog
+* Wed Jul 09 2008 Brian Dixon <bdixon@asf.alaska.edu> - 1.5
+- enhanced to allow RSAT and ERS data with missing frames to proceed
+
+* Wed May 28 2008 Brian Dixon <bdixon@asf.alaska.edu> - 1.4
+- minor bug fixes, cleaner handling of temporary files
+
+* Sun Apr 27 2008 Brian Dixon <bdixon@asf.alaska.edu> - 1.3
+- changed name of package to asf_create_thumbs
+
+* Tue Apr 24 2008 Brian Dixon <bdixon@asf.alaska.edu> - 1.1.3-1
+- create_thumbs (alone), JERS1 support added
+
+* Tue Mar 26 2008 Brian Dixon <bdixon@asf.alaska.edu> - 1.1.2-1
+- create_thumbs (alone)
+
+* Tue Dec 04 2007 Brian Dixon <bdixon@asf.alaska.edu> - 1.0.0-1
+- MapReady name change, new tools, new version series
+
+* Mon Aug 13 2007 Kirk Hogenson <khogenso@asf.alaska.edu> - 3.2.0-1
+- ALOS terrain correction
+
+* Wed Feb 14 2007 Kirk Hogenson <khogenso@asf.alaska.edu> - 3.1.0-1
+- ALOS release
+
+* Tue Nov 7 2006 Kirk Hogenson <khogenso@asf.alaska.edu> - 3.0.0-1
+- Update to 3.0
+
+* Fri Mar 24 2006 Kirk Hogenson <khogenso@asf.alaska.edu> - 2.1.0-1
+- Initial build.
+
+
