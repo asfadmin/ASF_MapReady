@@ -186,7 +186,7 @@ int read_file(const char *filename, const char *band, int multilook,
     FREE(curr->data_name);
     curr->data_name = STRDUP(data_name);
     free(data_name);
-
+/*
     // debug code -- prints bounding box
     if (meta->projection || (meta->sar&&meta->state_vectors) ||
         meta->transform || meta->airsar)
@@ -221,6 +221,6 @@ int read_file(const char *filename, const char *band, int multilook,
       printf("LAT: %.1f %.1f\n", lat_min, lat_max);
       printf("LON: %.1f %.1f\n", lon_min, lon_max);
     }
-
+*/
     return TRUE;
 }
