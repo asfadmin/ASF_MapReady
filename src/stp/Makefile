@@ -2,6 +2,7 @@ include ../../make_support/system_rules
 
 TARGET = stp
 SRCS = stp.c
+OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 LIBS  = \
 	$(LIBDIR)/libasf_ardop.a \
@@ -73,7 +74,7 @@ LIB = \
 
 CFLAGS = -D_REENTRANT -mms-bitfields -Dwin32 -g -Wall
 
-$(TARGET).exe: $(TARGET).c
+$(TARGET).exe: $(OBJS)
 	$(GCC) -o $(TARGET).exe $(SRCS) $(INCLUDE) $(LIB) $(CFLAGS)
 	mv $(TARGET).exe $(BINDIR)
 	cp $(TARGET).glade $(SHAREDIR)
@@ -97,8 +98,6 @@ LDLIBS = $(LIBS) \
          $(shell /usr/bin/pkg-config --libs gthread-2.0)
 
 LDFLAGS = -Wl,--export-dynamic
-
-OBJS = $(patsubst %.c, %.o, $(SRCS))
 
 default: $(OBJS)
 	gcc $(OBJS) $(LDLIBS) -o $(TARGET) $(LDFLAGS)
