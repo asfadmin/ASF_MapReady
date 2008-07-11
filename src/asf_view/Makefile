@@ -25,6 +25,7 @@ SRCS = asf_view.c \
 	lut.c \
 	planner.c \
 	pan.c \
+	goto.c \
 	csv.c \
 	excel.c
 

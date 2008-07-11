@@ -1333,6 +1333,684 @@
 		      </child>
 
 		      <child>
+			<widget class="GtkVBox" id="vbox18">
+			  <property name="visible">True</property>
+			  <property name="homogeneous">False</property>
+			  <property name="spacing">0</property>
+
+			  <child>
+			    <widget class="GtkHBox" id="hbox62">
+			      <property name="visible">True</property>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
+
+			      <child>
+				<widget class="GtkVBox" id="vbox19">
+				  <property name="visible">True</property>
+				  <property name="homogeneous">False</property>
+				  <property name="spacing">0</property>
+
+				  <child>
+				    <widget class="GtkLabel" id="label96">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Move Crosshair To</property>
+				      <property name="use_underline">False</property>
+				      <property name="use_markup">False</property>
+				      <property name="justify">GTK_JUSTIFY_LEFT</property>
+				      <property name="wrap">False</property>
+				      <property name="selectable">False</property>
+				      <property name="xalign">0</property>
+				      <property name="yalign">0</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				    </packing>
+				  </child>
+
+				  <child>
+				    <widget class="GtkHBox" id="hbox63">
+				      <property name="visible">True</property>
+				      <property name="homogeneous">False</property>
+				      <property name="spacing">0</property>
+
+				      <child>
+					<widget class="GtkVBox" id="vbox20">
+					  <property name="visible">True</property>
+					  <property name="homogeneous">False</property>
+					  <property name="spacing">0</property>
+
+					  <child>
+					    <widget class="GtkHBox" id="hbox64">
+					      <property name="visible">True</property>
+					      <property name="homogeneous">False</property>
+					      <property name="spacing">0</property>
+
+					      <child>
+						<widget class="GtkVBox" id="vbox21">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkLabel" id="label97">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">&lt;b&gt;Lat/Lon:&lt;/b&gt;</property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">True</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0</property>
+						      <property name="yalign">0</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkHBox" id="hbox65">
+						      <property name="visible">True</property>
+						      <property name="homogeneous">False</property>
+						      <property name="spacing">0</property>
+
+						      <child>
+							<widget class="GtkLabel" id="label103">
+							  <property name="visible">True</property>
+							  <property name="label" translatable="yes">  </property>
+							  <property name="use_underline">False</property>
+							  <property name="use_markup">False</property>
+							  <property name="justify">GTK_JUSTIFY_LEFT</property>
+							  <property name="wrap">False</property>
+							  <property name="selectable">False</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">False</property>
+							  <property name="fill">False</property>
+							</packing>
+						      </child>
+
+						      <child>
+							<widget class="GtkEntry" id="go_to_lat_entry">
+							  <property name="width_request">70</property>
+							  <property name="visible">True</property>
+							  <property name="tooltip" translatable="yes">Latitude</property>
+							  <property name="can_focus">True</property>
+							  <property name="editable">True</property>
+							  <property name="visibility">True</property>
+							  <property name="max_length">0</property>
+							  <property name="text" translatable="yes"></property>
+							  <property name="has_frame">True</property>
+							  <property name="invisible_char" translatable="yes">*</property>
+							  <property name="activates_default">False</property>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">True</property>
+							  <property name="fill">True</property>
+							</packing>
+						      </child>
+
+						      <child>
+							<widget class="GtkEntry" id="go_to_lon_entry">
+							  <property name="width_request">70</property>
+							  <property name="visible">True</property>
+							  <property name="tooltip" translatable="yes">Longitude</property>
+							  <property name="can_focus">True</property>
+							  <property name="editable">True</property>
+							  <property name="visibility">True</property>
+							  <property name="max_length">0</property>
+							  <property name="text" translatable="yes"></property>
+							  <property name="has_frame">True</property>
+							  <property name="invisible_char" translatable="yes">*</property>
+							  <property name="activates_default">False</property>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">True</property>
+							  <property name="fill">True</property>
+							</packing>
+						      </child>
+
+						      <child>
+							<widget class="GtkLabel" id="label98">
+							  <property name="visible">True</property>
+							  <property name="label" translatable="yes">   </property>
+							  <property name="use_underline">False</property>
+							  <property name="use_markup">False</property>
+							  <property name="justify">GTK_JUSTIFY_LEFT</property>
+							  <property name="wrap">False</property>
+							  <property name="selectable">False</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">False</property>
+							  <property name="fill">False</property>
+							</packing>
+						      </child>
+
+						      <child>
+							<widget class="GtkButton" id="go_to_lat_lon_button">
+							  <property name="visible">True</property>
+							  <property name="tooltip" translatable="yes">Moves crosshair to given lat/lon</property>
+							  <property name="can_focus">True</property>
+							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
+							  <signal name="clicked" handler="on_go_to_lat_lon_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:37:34 GMT"/>
+
+							  <child>
+							    <widget class="GtkImage" id="image10">
+							      <property name="visible">True</property>
+							      <property name="stock">gtk-go-forward</property>
+							      <property name="icon_size">4</property>
+							      <property name="xalign">0.5</property>
+							      <property name="yalign">0.5</property>
+							      <property name="xpad">0</property>
+							      <property name="ypad">0</property>
+							    </widget>
+							  </child>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">False</property>
+							  <property name="fill">False</property>
+							</packing>
+						      </child>
+
+						      <child>
+							<widget class="GtkButton" id="add_to_lat_lon_button">
+							  <property name="visible">True</property>
+							  <property name="tooltip" translatable="yes">Adds given lat/lon point to current path</property>
+							  <property name="can_focus">True</property>
+							  <property name="relief">GTK_RELIEF_NORMAL</property>
+							  <property name="focus_on_click">True</property>
+							  <signal name="clicked" handler="on_add_to_lat_lon_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:37:52 GMT"/>
+
+							  <child>
+							    <widget class="GtkImage" id="image11">
+							      <property name="visible">True</property>
+							      <property name="stock">gtk-add</property>
+							      <property name="icon_size">4</property>
+							      <property name="xalign">0.5</property>
+							      <property name="yalign">0.5</property>
+							      <property name="xpad">0</property>
+							      <property name="ypad">0</property>
+							    </widget>
+							  </child>
+							</widget>
+							<packing>
+							  <property name="padding">0</property>
+							  <property name="expand">False</property>
+							  <property name="fill">False</property>
+							</packing>
+						      </child>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">True</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkVBox" id="vbox22">
+					      <property name="visible">True</property>
+					      <property name="homogeneous">False</property>
+					      <property name="spacing">0</property>
+
+					      <child>
+						<widget class="GtkLabel" id="label99">
+						  <property name="visible">True</property>
+						  <property name="label" translatable="yes">&lt;b&gt;Line/Sample:&lt;/b&gt;</property>
+						  <property name="use_underline">False</property>
+						  <property name="use_markup">True</property>
+						  <property name="justify">GTK_JUSTIFY_LEFT</property>
+						  <property name="wrap">False</property>
+						  <property name="selectable">False</property>
+						  <property name="xalign">0</property>
+						  <property name="yalign">0</property>
+						  <property name="xpad">0</property>
+						  <property name="ypad">0</property>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkHBox" id="hbox66">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkLabel" id="label104">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">  </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="go_to_line_entry">
+						      <property name="width_request">70</property>
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Line Number</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">True</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="go_to_samp_entry">
+						      <property name="width_request">70</property>
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Sample Number</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">True</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkLabel" id="label100">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">   </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkButton" id="go_to_line_samp_button">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Moves crosshair to given line/sample</property>
+						      <property name="can_focus">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <signal name="clicked" handler="on_go_to_line_samp_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:44:37 GMT"/>
+
+						      <child>
+							<widget class="GtkImage" id="image12">
+							  <property name="visible">True</property>
+							  <property name="stock">gtk-go-forward</property>
+							  <property name="icon_size">4</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+						      </child>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkButton" id="add_to_line_samp_button">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Adds given line/sample to current path</property>
+						      <property name="can_focus">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <signal name="clicked" handler="on_add_to_line_samp_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:44:17 GMT"/>
+
+						      <child>
+							<widget class="GtkImage" id="image13">
+							  <property name="visible">True</property>
+							  <property name="stock">gtk-add</property>
+							  <property name="icon_size">4</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+						      </child>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+
+					  <child>
+					    <widget class="GtkVBox" id="vbox23">
+					      <property name="visible">True</property>
+					      <property name="homogeneous">False</property>
+					      <property name="spacing">0</property>
+
+					      <child>
+						<widget class="GtkLabel" id="label101">
+						  <property name="visible">True</property>
+						  <property name="label" translatable="yes">&lt;b&gt;Projected X/Y:&lt;/b&gt;</property>
+						  <property name="use_underline">False</property>
+						  <property name="use_markup">True</property>
+						  <property name="justify">GTK_JUSTIFY_LEFT</property>
+						  <property name="wrap">False</property>
+						  <property name="selectable">False</property>
+						  <property name="xalign">0</property>
+						  <property name="yalign">0</property>
+						  <property name="xpad">0</property>
+						  <property name="ypad">0</property>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">False</property>
+						  <property name="fill">False</property>
+						</packing>
+					      </child>
+
+					      <child>
+						<widget class="GtkHBox" id="hbox67">
+						  <property name="visible">True</property>
+						  <property name="homogeneous">False</property>
+						  <property name="spacing">0</property>
+
+						  <child>
+						    <widget class="GtkLabel" id="label105">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">  </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="go_to_projx_entry">
+						      <property name="width_request">70</property>
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Projected Coordinate X</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">True</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkEntry" id="go_to_projy_entry">
+						      <property name="width_request">70</property>
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Projected Coordinate Y</property>
+						      <property name="can_focus">True</property>
+						      <property name="editable">True</property>
+						      <property name="visibility">True</property>
+						      <property name="max_length">0</property>
+						      <property name="text" translatable="yes"></property>
+						      <property name="has_frame">True</property>
+						      <property name="invisible_char" translatable="yes">*</property>
+						      <property name="activates_default">False</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">True</property>
+						      <property name="fill">True</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkLabel" id="label102">
+						      <property name="visible">True</property>
+						      <property name="label" translatable="yes">   </property>
+						      <property name="use_underline">False</property>
+						      <property name="use_markup">False</property>
+						      <property name="justify">GTK_JUSTIFY_LEFT</property>
+						      <property name="wrap">False</property>
+						      <property name="selectable">False</property>
+						      <property name="xalign">0.5</property>
+						      <property name="yalign">0.5</property>
+						      <property name="xpad">0</property>
+						      <property name="ypad">0</property>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkButton" id="on_go_to_projxy_button">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Moves crosshair to given x/y coordinates</property>
+						      <property name="can_focus">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <signal name="clicked" handler="on_go_to_projxy_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:46:32 GMT"/>
+
+						      <child>
+							<widget class="GtkImage" id="image14">
+							  <property name="visible">True</property>
+							  <property name="stock">gtk-go-forward</property>
+							  <property name="icon_size">4</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+						      </child>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+
+						  <child>
+						    <widget class="GtkButton" id="add_to_projxy_button">
+						      <property name="visible">True</property>
+						      <property name="tooltip" translatable="yes">Adds given x/y coordinate to current path</property>
+						      <property name="can_focus">True</property>
+						      <property name="relief">GTK_RELIEF_NORMAL</property>
+						      <property name="focus_on_click">True</property>
+						      <signal name="clicked" handler="on_add_to_projxy_button_clicked" last_modification_time="Wed, 09 Jul 2008 21:46:50 GMT"/>
+
+						      <child>
+							<widget class="GtkImage" id="image15">
+							  <property name="visible">True</property>
+							  <property name="stock">gtk-add</property>
+							  <property name="icon_size">4</property>
+							  <property name="xalign">0.5</property>
+							  <property name="yalign">0.5</property>
+							  <property name="xpad">0</property>
+							  <property name="ypad">0</property>
+							</widget>
+						      </child>
+						    </widget>
+						    <packing>
+						      <property name="padding">0</property>
+						      <property name="expand">False</property>
+						      <property name="fill">False</property>
+						    </packing>
+						  </child>
+						</widget>
+						<packing>
+						  <property name="padding">0</property>
+						  <property name="expand">True</property>
+						  <property name="fill">True</property>
+						</packing>
+					      </child>
+					    </widget>
+					    <packing>
+					      <property name="padding">0</property>
+					      <property name="expand">True</property>
+					      <property name="fill">True</property>
+					    </packing>
+					  </child>
+					</widget>
+					<packing>
+					  <property name="padding">5</property>
+					  <property name="expand">True</property>
+					  <property name="fill">True</property>
+					</packing>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">5</property>
+				      <property name="expand">True</property>
+				      <property name="fill">True</property>
+				    </packing>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">0</property>
+				  <property name="expand">True</property>
+				  <property name="fill">True</property>
+				</packing>
+			      </child>
+			    </widget>
+			    <packing>
+			      <property name="padding">5</property>
+			      <property name="expand">False</property>
+			      <property name="fill">False</property>
+			    </packing>
+			  </child>
+			</widget>
+			<packing>
+			  <property name="tab_expand">False</property>
+			  <property name="tab_fill">True</property>
+			</packing>
+		      </child>
+
+		      <child>
+			<widget class="GtkLabel" id="label95">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">GoTo</property>
+			  <property name="use_underline">False</property>
+			  <property name="use_markup">False</property>
+			  <property name="justify">GTK_JUSTIFY_LEFT</property>
+			  <property name="wrap">False</property>
+			  <property name="selectable">False</property>
+			  <property name="xalign">0.5</property>
+			  <property name="yalign">0.5</property>
+			  <property name="xpad">0</property>
+			  <property name="ypad">0</property>
+			</widget>
+			<packing>
+			  <property name="type">tab</property>
+			</packing>
+		      </child>
+
+		      <child>
 			<widget class="GtkLabel" id="help_label">
 			  <property name="visible">True</property>
 			  <property name="label" translatable="yes"> Left-Click: Place crosshair

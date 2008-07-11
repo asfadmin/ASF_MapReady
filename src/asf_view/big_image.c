@@ -598,7 +598,7 @@ void small_clicked(GdkEventButton *event)
 
 // Keeps track of which crosshair should be affected when the user
 // presses an arrow key.
-static int last_was_crosshair = TRUE;
+int last_was_crosshair = TRUE;
 
 void big_clicked(GdkEventButton *event)
 {
@@ -611,10 +611,7 @@ void big_clicked(GdkEventButton *event)
                 g_poly->line[g_poly->n] = l;
                 g_poly->samp[g_poly->n] = s;
                 ++g_poly->n;
-                if (g_poly->n == 1)
-                    g_poly->c = 0;
-                else
-                    g_poly->c = g_poly->n-1;
+                g_poly->c = g_poly->n-1;
             } else {
                 asfPrintWarning("Exceeded maximum polygon length.\n"
                                 "No more points can be added.\n");
@@ -726,6 +723,12 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
          has_focus("lat_max_entry") ||
          has_focus("lon_min_entry") ||
          has_focus("lon_max_entry") ||
+         has_focus("go_to_lat_entry") ||
+         has_focus("go_to_lon_entry") ||
+         has_focus("go_to_line_entry") ||
+         has_focus("go_to_samp_entry") ||
+         has_focus("go_to_projx_entry") ||
+         has_focus("go_to_projy_entry") ||
          has_focus("look_angle_entry") ||
          has_focus("show_box_button") ||
          has_focus("mode_combobox") ||
@@ -854,7 +857,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         g_poly->n = g_poly->c = 0;
         update_pixel_info(ii);
     }
-    else if (event->keyval == GDK_c) {
+    else if (event->keyval == GDK_c || event->keyval == GDK_C) {
         // c: Center image view on crosshair
         if (event->state & GDK_CONTROL_MASK &&
             g_poly->n > 0 && g_poly->c >= 0)
@@ -876,12 +879,12 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         fill_small(ii);
     }
-    else if (event->keyval == GDK_g) {
+    else if (event->keyval == GDK_g || event->keyval == GDK_G) {
         // g: open google earth
         open_google_earth();
         return TRUE;
     }
-    else if (event->keyval == GDK_m) {
+    else if (event->keyval == GDK_m || event->keyval == GDK_M) {
         // m: open metadata viewer
         open_mdv();
         return TRUE;
@@ -892,7 +895,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
             save_subset(ii);
         return TRUE;
     }
-    else if (event->keyval == GDK_l) {
+    else if (event->keyval == GDK_l || event->keyval == GDK_L) {
         // l: move to a local maxima (30x30 pixel search area)
         //    if ctrl-l is clicked, search 300x300 area
         // affects the same crosshair that would be moved with
@@ -931,7 +934,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         update_pixel_info(ii);
     }
-    else if (event->keyval == GDK_n) {
+    else if (event->keyval == GDK_n || event->keyval == GDK_N) {
         // n: next polygon
         if (which_poly < MAX_POLYS-1) {
           int i;
@@ -964,7 +967,7 @@ static int handle_keypress(GdkEventKey *event, ImageInfo *ii)
         }
         update_pixel_info(ii);
     }
-    else if (event->keyval == GDK_p) {
+    else if (event->keyval == GDK_p || event->keyval == GDK_P) {
         // p: previous polygon
         if (which_poly > 0) {
           int i;
