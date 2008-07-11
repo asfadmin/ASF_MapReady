@@ -572,136 +572,14 @@
 		      <property name="spacing">0</property>
 
 		      <child>
-			<widget class="GtkHBox" id="hbox64">
+			<widget class="GtkTable" id="table16">
+			  <property name="border_width">2</property>
 			  <property name="visible">True</property>
+			  <property name="n_rows">7</property>
+			  <property name="n_columns">2</property>
 			  <property name="homogeneous">False</property>
-			  <property name="spacing">0</property>
-
-			  <child>
-			    <widget class="GtkTable" id="table7">
-			      <property name="border_width">4</property>
-			      <property name="visible">True</property>
-			      <property name="n_rows">1</property>
-			      <property name="n_columns">3</property>
-			      <property name="homogeneous">False</property>
-			      <property name="row_spacing">2</property>
-			      <property name="column_spacing">2</property>
-
-			      <child>
-				<widget class="GtkOptionMenu" id="input_data_format_combobox">
-				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Format of the input data.</property>
-				  <property name="can_focus">True</property>
-				  <property name="history">0</property>
-
-				  <child>
-				    <widget class="GtkMenu" id="menu1">
-
-				      <child>
-					<widget class="GtkMenuItem" id="ceos_level_0">
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">CEOS (Level 0)</property>
-					  <property name="use_underline">True</property>
-					  <signal name="activate" handler="on_ceos_level_0_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
-					</widget>
-				      </child>
-
-				      <child>
-					<widget class="GtkMenuItem" id="ceos_level_1">
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">CEOS (Level 1)</property>
-					  <property name="use_underline">True</property>
-					  <signal name="activate" handler="on_ceos_level_1_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
-					</widget>
-				      </child>
-
-				      <child>
-					<widget class="GtkMenuItem" id="stf">
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">STF</property>
-					  <property name="use_underline">True</property>
-					  <signal name="activate" handler="on_stf_activate" last_modification_time="Wed, 08 Sep 2004 19:31:17 GMT"/>
-					</widget>
-				      </child>
-
-				      <child>
-					<widget class="GtkMenuItem" id="geotiff">
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">GeoTIFF</property>
-					  <property name="use_underline">True</property>
-					  <signal name="activate" handler="on_geotiff_input_activate" last_modification_time="Tue, 17 Apr 2007 18:55:23 GMT"/>
-					</widget>
-				      </child>
-
-				      <child>
-					<widget class="GtkMenuItem" id="asf_internal">
-					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">ASF Internal</property>
-					  <property name="use_underline">True</property>
-					  <signal name="activate" handler="on_asf_internal_activate" last_modification_time="Wed, 04 Jul 2007 21:39:52 GMT"/>
-					</widget>
-				      </child>
-				    </widget>
-				  </child>
-				</widget>
-				<packing>
-				  <property name="left_attach">1</property>
-				  <property name="right_attach">3</property>
-				  <property name="top_attach">0</property>
-				  <property name="bottom_attach">1</property>
-				  <property name="x_options">fill</property>
-				  <property name="y_options"></property>
-				</packing>
-			      </child>
-
-			      <child>
-				<widget class="GtkLabel" id="label80">
-				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Select Data Format: </property>
-				  <property name="use_underline">False</property>
-				  <property name="use_markup">False</property>
-				  <property name="justify">GTK_JUSTIFY_LEFT</property>
-				  <property name="wrap">False</property>
-				  <property name="selectable">False</property>
-				  <property name="xalign">0</property>
-				  <property name="yalign">0.5</property>
-				  <property name="xpad">0</property>
-				  <property name="ypad">0</property>
-				</widget>
-				<packing>
-				  <property name="left_attach">0</property>
-				  <property name="right_attach">1</property>
-				  <property name="top_attach">0</property>
-				  <property name="bottom_attach">1</property>
-				  <property name="y_padding">23</property>
-				  <property name="x_options"></property>
-				  <property name="y_options"></property>
-				</packing>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkVBox" id="vbox73">
-			      <property name="visible">True</property>
-			      <property name="homogeneous">False</property>
-			      <property name="spacing">0</property>
-
-			      <child>
-				<placeholder/>
-			      </child>
-			    </widget>
-			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
+			  <property name="row_spacing">0</property>
+			  <property name="column_spacing">0</property>
 
 			  <child>
 			    <widget class="GtkVBox" id="vbox72">
@@ -718,7 +596,7 @@
 				  <child>
 				    <widget class="GtkLabel" id="input_data_type_label">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">Select Radiometry: </property>
+				      <property name="label" translatable="yes">Select Radiometry:    </property>
 				      <property name="use_underline">False</property>
 				      <property name="use_markup">False</property>
 				      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -802,7 +680,7 @@
 				  </child>
 				</widget>
 				<packing>
-				  <property name="padding">22</property>
+				  <property name="padding">5</property>
 				  <property name="expand">True</property>
 				  <property name="fill">True</property>
 				</packing>
@@ -888,250 +766,154 @@
 			      </child>
 			    </widget>
 			    <packing>
-			      <property name="padding">0</property>
-			      <property name="expand">True</property>
-			      <property name="fill">True</property>
-			    </packing>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">True</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkTable" id="table8">
-			  <property name="visible">True</property>
-			  <property name="n_rows">1</property>
-			  <property name="n_columns">1</property>
-			  <property name="homogeneous">False</property>
-			  <property name="row_spacing">2</property>
-			  <property name="column_spacing">2</property>
-
-			  <child>
-			    <widget class="GtkCheckButton" id="process_to_level1_checkbutton">
-			      <property name="tooltip" translatable="yes">Use the ASF Sar Processor (ARDoP) to process the Level 0 data to Level 1.  Doing this will allow you to terrain correct, geocode, and export the data.</property>
-			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process to Level 1</property>
-			      <property name="use_underline">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
-			      <property name="inconsistent">False</property>
-			      <property name="draw_indicator">True</property>
-			      <signal name="toggled" handler="on_process_to_level1_checkbutton_toggled" last_modification_time="Fri, 09 Jun 2006 18:27:08 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
-			      <property name="top_attach">0</property>
-			      <property name="bottom_attach">1</property>
-			      <property name="x_padding">4</property>
-			      <property name="y_padding">2</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">2</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkTable" id="table1">
-			  <property name="border_width">4</property>
-			  <property name="visible">True</property>
-			  <property name="n_rows">2</property>
-			  <property name="n_columns">3</property>
-			  <property name="homogeneous">False</property>
-			  <property name="row_spacing">2</property>
-			  <property name="column_spacing">2</property>
-
-			  <child>
-			    <widget class="GtkCheckButton" id="latitude_checkbutton">
-			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Restrict the latitudes that will be processed.  Please be sure that the Low &amp; Hi values are within the image.</property>
-			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Latitude:</property>
-			      <property name="use_underline">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <property name="focus_on_click">True</property>
-			      <property name="active">False</property>
-			      <property name="inconsistent">False</property>
-			      <property name="draw_indicator">True</property>
-			      <signal name="toggled" handler="on_latitude_checkbutton_toggled" last_modification_time="Mon, 20 Sep 2004 18:07:06 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
-			      <property name="top_attach">0</property>
-			      <property name="bottom_attach">1</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
-
-			  <child>
-			    <widget class="GtkLabel" id="latitude_low_label">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Low: </property>
-			      <property name="use_underline">False</property>
-			      <property name="use_markup">False</property>
-			      <property name="justify">GTK_JUSTIFY_LEFT</property>
-			      <property name="wrap">False</property>
-			      <property name="selectable">False</property>
-			      <property name="xalign">0</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			    <packing>
 			      <property name="left_attach">1</property>
 			      <property name="right_attach">2</property>
 			      <property name="top_attach">0</property>
 			      <property name="bottom_attach">1</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
+			      <property name="y_options">fill</property>
 			    </packing>
 			  </child>
 
 			  <child>
-			    <widget class="GtkEntry" id="latitude_low_entry">
-			      <property name="width_request">80</property>
+			    <widget class="GtkVBox" id="vbox79">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Image data below this latitude will be discarded.</property>
-			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
-			      <property name="visibility">True</property>
-			      <property name="max_length">0</property>
-			      <property name="text" translatable="yes"></property>
-			      <property name="has_frame">True</property>
-			      <property name="invisible_char" translatable="yes">*</property>
-			      <property name="activates_default">False</property>
-			      <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:10 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">2</property>
-			      <property name="right_attach">3</property>
-			      <property name="top_attach">0</property>
-			      <property name="bottom_attach">1</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
+			      <property name="homogeneous">False</property>
+			      <property name="spacing">0</property>
 
-			  <child>
-			    <widget class="GtkLabel" id="latitude_hi_label">
-			      <property name="width_request">31</property>
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes">Hi:   </property>
-			      <property name="use_underline">False</property>
-			      <property name="use_markup">False</property>
-			      <property name="justify">GTK_JUSTIFY_LEFT</property>
-			      <property name="wrap">False</property>
-			      <property name="selectable">False</property>
-			      <property name="xalign">0</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">1</property>
-			      <property name="right_attach">2</property>
-			      <property name="top_attach">1</property>
-			      <property name="bottom_attach">2</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
+			      <child>
+				<widget class="GtkHBox" id="hbox86">
+				  <property name="visible">True</property>
+				  <property name="homogeneous">False</property>
+				  <property name="spacing">0</property>
 
-			  <child>
-			    <widget class="GtkEntry" id="latitude_hi_entry">
-			      <property name="width_request">80</property>
-			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Image data above this latitude will be discarded.</property>
-			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
-			      <property name="visibility">True</property>
-			      <property name="max_length">0</property>
-			      <property name="text" translatable="yes"></property>
-			      <property name="has_frame">True</property>
-			      <property name="invisible_char" translatable="yes">*</property>
-			      <property name="activates_default">False</property>
-			      <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:25 GMT"/>
-			    </widget>
-			    <packing>
-			      <property name="left_attach">2</property>
-			      <property name="right_attach">3</property>
-			      <property name="top_attach">1</property>
-			      <property name="bottom_attach">2</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
-			    </packing>
-			  </child>
+				  <child>
+				    <widget class="GtkLabel" id="label80">
+				      <property name="visible">True</property>
+				      <property name="label" translatable="yes">Select Data Format:    </property>
+				      <property name="use_underline">False</property>
+				      <property name="use_markup">False</property>
+				      <property name="justify">GTK_JUSTIFY_LEFT</property>
+				      <property name="wrap">False</property>
+				      <property name="selectable">False</property>
+				      <property name="xalign">0</property>
+				      <property name="yalign">0.5</property>
+				      <property name="xpad">0</property>
+				      <property name="ypad">0</property>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				    </packing>
+				  </child>
 
-			  <child>
-			    <widget class="GtkLabel" id="label68">
-			      <property name="visible">True</property>
-			      <property name="label" translatable="yes"></property>
-			      <property name="use_underline">False</property>
-			      <property name="use_markup">False</property>
-			      <property name="justify">GTK_JUSTIFY_LEFT</property>
-			      <property name="wrap">False</property>
-			      <property name="selectable">False</property>
-			      <property name="xalign">0</property>
-			      <property name="yalign">0.5</property>
-			      <property name="xpad">0</property>
-			      <property name="ypad">0</property>
+				  <child>
+				    <widget class="GtkOptionMenu" id="input_data_format_combobox">
+				      <property name="visible">True</property>
+				      <property name="tooltip" translatable="yes">Format of the input data.</property>
+				      <property name="can_focus">True</property>
+				      <property name="history">0</property>
+
+				      <child>
+					<widget class="GtkMenu" id="menu1">
+
+					  <child>
+					    <widget class="GtkMenuItem" id="ceos_level_0">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">CEOS (Level 0)</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_ceos_level_0_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="ceos_level_1">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">CEOS (Level 1)</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_ceos_level_1_activate" last_modification_time="Wed, 08 Sep 2004 19:45:09 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="stf">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">STF</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_stf_activate" last_modification_time="Wed, 08 Sep 2004 19:31:17 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="geotiff">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">GeoTIFF</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_geotiff_input_activate" last_modification_time="Tue, 17 Apr 2007 18:55:23 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="asf_internal">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">ASF Internal</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_asf_internal_activate" last_modification_time="Wed, 04 Jul 2007 21:39:52 GMT"/>
+					    </widget>
+					  </child>
+
+					  <child>
+					    <widget class="GtkMenuItem" id="airsar">
+					      <property name="visible">True</property>
+					      <property name="label" translatable="yes">AirSAR</property>
+					      <property name="use_underline">True</property>
+					      <signal name="activate" handler="on_airsar_activate" last_modification_time="Thu, 10 Jul 2008 23:08:39 GMT"/>
+					    </widget>
+					  </child>
+					</widget>
+				      </child>
+				    </widget>
+				    <packing>
+				      <property name="padding">0</property>
+				      <property name="expand">False</property>
+				      <property name="fill">False</property>
+				    </packing>
+				  </child>
+				</widget>
+				<packing>
+				  <property name="padding">5</property>
+				  <property name="expand">False</property>
+				  <property name="fill">True</property>
+				</packing>
+			      </child>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">1</property>
-			      <property name="bottom_attach">2</property>
-			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
+			      <property name="top_attach">0</property>
+			      <property name="bottom_attach">1</property>
+			      <property name="y_options">fill</property>
 			    </packing>
 			  </child>
-			</widget>
-			<packing>
-			  <property name="padding">0</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
-			</packing>
-		      </child>
-
-		      <child>
-			<widget class="GtkTable" id="table9">
-			  <property name="visible">True</property>
-			  <property name="n_rows">7</property>
-			  <property name="n_columns">1</property>
-			  <property name="homogeneous">False</property>
-			  <property name="row_spacing">2</property>
-			  <property name="column_spacing">2</property>
 
 			  <child>
-			    <widget class="GtkCheckButton" id="apply_metadata_fix_checkbutton">
-			      <property name="tooltip" translatable="yes">Images produces by the Precision Processor have a small error in the Y pixel size due to a problem in the calculation of the relative velocity between the satellite and the center of the scene.  If this option is checked, then the metadata for the scene will be adjusted to correct for this error.</property>
+			    <widget class="GtkCheckButton" id="airsar_c_vv_checkbutton">
+			      <property name="tooltip" translatable="yes">C-band cross-track interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Apply Azimuth Pixel Size Metadata Fix</property>
+			      <property name="label" translatable="yes">C-band interferometric</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
 			      <property name="active">True</property>
 			      <property name="inconsistent">False</property>
 			      <property name="draw_indicator">True</property>
+			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:57:55 GMT"/>
 			    </widget>
 			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
-			      <property name="top_attach">0</property>
-			      <property name="bottom_attach">1</property>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
+			      <property name="top_attach">2</property>
+			      <property name="bottom_attach">3</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
@@ -1139,9 +921,9 @@
 
 			  <child>
 			    <widget class="GtkCheckButton" id="airsar_l_vv_checkbutton">
-			      <property name="tooltip" translatable="yes">L-band interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
+			      <property name="tooltip" translatable="yes">L-band cross-track interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process AirSAR L-band cross track interferometric data</property>
+			      <property name="label" translatable="yes">L-band interferometric</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -1151,8 +933,8 @@
 			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:58:26 GMT"/>
 			    </widget>
 			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
 			      <property name="top_attach">3</property>
 			      <property name="bottom_attach">4</property>
 			      <property name="x_options">fill</property>
@@ -1164,7 +946,7 @@
 			    <widget class="GtkCheckButton" id="airsar_c_pol_checkbutton">
 			      <property name="tooltip" translatable="yes">C-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process AirSAR C-band polarimetric data</property>
+			      <property name="label" translatable="yes">C-band polarimetric</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -1174,8 +956,8 @@
 			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:59:01 GMT"/>
 			    </widget>
 			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
 			      <property name="top_attach">4</property>
 			      <property name="bottom_attach">5</property>
 			      <property name="x_options">fill</property>
@@ -1187,7 +969,7 @@
 			    <widget class="GtkCheckButton" id="airsar_l_pol_checkbutton">
 			      <property name="tooltip" translatable="yes">L-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process AirSAR L-band polarimetric data</property>
+			      <property name="label" translatable="yes">L-band polarimetric</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -1197,8 +979,8 @@
 			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:59:15 GMT"/>
 			    </widget>
 			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
 			      <property name="top_attach">5</property>
 			      <property name="bottom_attach">6</property>
 			      <property name="x_options">fill</property>
@@ -1210,7 +992,7 @@
 			    <widget class="GtkCheckButton" id="airsar_p_pol_checkbutton">
 			      <property name="tooltip" translatable="yes">P-band polarimetric data contains 9 bands: power and amplitude/phase for each polarization (HH,HV,VH,VV).  AirSAR data sets contain only a subset of the five types of data.</property>
 			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process AirSAR P-band polarimetric data</property>
+			      <property name="label" translatable="yes">P-band polarimetric</property>
 			      <property name="use_underline">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
 			      <property name="focus_on_click">True</property>
@@ -1220,8 +1002,8 @@
 			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:59:36 GMT"/>
 			    </widget>
 			    <packing>
-			      <property name="left_attach">0</property>
-			      <property name="right_attach">1</property>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
 			      <property name="top_attach">6</property>
 			      <property name="bottom_attach">7</property>
 			      <property name="x_options">fill</property>
@@ -1230,25 +1012,168 @@
 			  </child>
 
 			  <child>
-			    <widget class="GtkCheckButton" id="airsar_c_vv_checkbutton">
-			      <property name="tooltip" translatable="yes">C-band interferometric data contains a single-pol image (VV), a DEM, and a Coherence Image.  AirSAR data sets contain only a subset of the five types of data.</property>
-			      <property name="can_focus">True</property>
-			      <property name="label" translatable="yes">Process AirSAR C-band cross track interferometric data</property>
-			      <property name="use_underline">True</property>
-			      <property name="relief">GTK_RELIEF_NORMAL</property>
-			      <property name="focus_on_click">True</property>
-			      <property name="active">True</property>
-			      <property name="inconsistent">False</property>
-			      <property name="draw_indicator">True</property>
-			      <signal name="toggled" handler="update_summary" last_modification_time="Wed, 19 Dec 2007 21:57:55 GMT"/>
+			    <widget class="GtkTable" id="table1">
+			      <property name="visible">True</property>
+			      <property name="n_rows">2</property>
+			      <property name="n_columns">3</property>
+			      <property name="homogeneous">False</property>
+			      <property name="row_spacing">3</property>
+			      <property name="column_spacing">5</property>
+
+			      <child>
+				<widget class="GtkCheckButton" id="latitude_checkbutton">
+				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Restrict the latitudes that will be processed.  Please be sure that the Low &amp; Hi values are within the image.</property>
+				  <property name="can_focus">True</property>
+				  <property name="label" translatable="yes">Latitude restriction (STF only):</property>
+				  <property name="use_underline">True</property>
+				  <property name="relief">GTK_RELIEF_NORMAL</property>
+				  <property name="focus_on_click">True</property>
+				  <property name="active">False</property>
+				  <property name="inconsistent">False</property>
+				  <property name="draw_indicator">True</property>
+				  <signal name="toggled" handler="on_latitude_checkbutton_toggled" last_modification_time="Mon, 20 Sep 2004 18:07:06 GMT"/>
+				</widget>
+				<packing>
+				  <property name="left_attach">0</property>
+				  <property name="right_attach">1</property>
+				  <property name="top_attach">0</property>
+				  <property name="bottom_attach">1</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="latitude_low_label">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Low: </property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">False</property>
+				  <property name="justify">GTK_JUSTIFY_LEFT</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">1</property>
+				  <property name="right_attach">2</property>
+				  <property name="top_attach">0</property>
+				  <property name="bottom_attach">1</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkEntry" id="latitude_low_entry">
+				  <property name="width_request">80</property>
+				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Image data below this latitude will be discarded.</property>
+				  <property name="can_focus">True</property>
+				  <property name="editable">True</property>
+				  <property name="visibility">True</property>
+				  <property name="max_length">0</property>
+				  <property name="text" translatable="yes"></property>
+				  <property name="has_frame">True</property>
+				  <property name="invisible_char" translatable="yes">*</property>
+				  <property name="activates_default">False</property>
+				  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:10 GMT"/>
+				</widget>
+				<packing>
+				  <property name="left_attach">2</property>
+				  <property name="right_attach">3</property>
+				  <property name="top_attach">0</property>
+				  <property name="bottom_attach">1</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="latitude_hi_label">
+				  <property name="width_request">31</property>
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Hi:   </property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">False</property>
+				  <property name="justify">GTK_JUSTIFY_LEFT</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">1</property>
+				  <property name="right_attach">2</property>
+				  <property name="top_attach">1</property>
+				  <property name="bottom_attach">2</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkEntry" id="latitude_hi_entry">
+				  <property name="width_request">80</property>
+				  <property name="visible">True</property>
+				  <property name="tooltip" translatable="yes">Image data above this latitude will be discarded.</property>
+				  <property name="can_focus">True</property>
+				  <property name="editable">True</property>
+				  <property name="visibility">True</property>
+				  <property name="max_length">0</property>
+				  <property name="text" translatable="yes"></property>
+				  <property name="has_frame">True</property>
+				  <property name="invisible_char" translatable="yes">*</property>
+				  <property name="activates_default">False</property>
+				  <signal name="changed" handler="update_summary" last_modification_time="Wed, 03 Nov 2004 23:31:25 GMT"/>
+				</widget>
+				<packing>
+				  <property name="left_attach">2</property>
+				  <property name="right_attach">3</property>
+				  <property name="top_attach">1</property>
+				  <property name="bottom_attach">2</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
+
+			      <child>
+				<widget class="GtkLabel" id="label68">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes"></property>
+				  <property name="use_underline">False</property>
+				  <property name="use_markup">False</property>
+				  <property name="justify">GTK_JUSTIFY_LEFT</property>
+				  <property name="wrap">False</property>
+				  <property name="selectable">False</property>
+				  <property name="xalign">0</property>
+				  <property name="yalign">0.5</property>
+				  <property name="xpad">0</property>
+				  <property name="ypad">0</property>
+				</widget>
+				<packing>
+				  <property name="left_attach">0</property>
+				  <property name="right_attach">1</property>
+				  <property name="top_attach">1</property>
+				  <property name="bottom_attach">2</property>
+				  <property name="x_options">fill</property>
+				  <property name="y_options"></property>
+				</packing>
+			      </child>
 			    </widget>
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">2</property>
-			      <property name="bottom_attach">3</property>
+			      <property name="top_attach">1</property>
+			      <property name="bottom_attach">2</property>
 			      <property name="x_options">fill</property>
-			      <property name="y_options"></property>
+			      <property name="y_options">fill</property>
 			    </packing>
 			  </child>
 
@@ -1269,17 +1194,85 @@
 			    <packing>
 			      <property name="left_attach">0</property>
 			      <property name="right_attach">1</property>
-			      <property name="top_attach">1</property>
-			      <property name="bottom_attach">2</property>
+			      <property name="top_attach">2</property>
+			      <property name="bottom_attach">3</property>
 			      <property name="x_options">fill</property>
 			      <property name="y_options"></property>
 			    </packing>
 			  </child>
+
+			  <child>
+			    <widget class="GtkCheckButton" id="process_to_level1_checkbutton">
+			      <property name="tooltip" translatable="yes">Use the ASF Sar Processor (ARDoP) to process the Level 0 data to Level 1.  Doing this will allow you to terrain correct, geocode, and export the data.</property>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">Process to Level 1</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <property name="active">False</property>
+			      <property name="inconsistent">False</property>
+			      <property name="draw_indicator">True</property>
+			      <signal name="toggled" handler="on_process_to_level1_checkbutton_toggled" last_modification_time="Fri, 09 Jun 2006 18:27:08 GMT"/>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">0</property>
+			      <property name="right_attach">1</property>
+			      <property name="top_attach">3</property>
+			      <property name="bottom_attach">4</property>
+			      <property name="x_options">fill</property>
+			      <property name="y_options"></property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkCheckButton" id="apply_metadata_fix_checkbutton">
+			      <property name="tooltip" translatable="yes">Images produces by the Precision Processor have a small error in the Y pixel size due to a problem in the calculation of the relative velocity between the satellite and the center of the scene.  If this option is checked, then the metadata for the scene will be adjusted to correct for this error.</property>
+			      <property name="can_focus">True</property>
+			      <property name="label" translatable="yes">Apply Azimuth Pixel Size Metadata Fix</property>
+			      <property name="use_underline">True</property>
+			      <property name="relief">GTK_RELIEF_NORMAL</property>
+			      <property name="focus_on_click">True</property>
+			      <property name="active">True</property>
+			      <property name="inconsistent">False</property>
+			      <property name="draw_indicator">True</property>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">0</property>
+			      <property name="right_attach">1</property>
+			      <property name="top_attach">4</property>
+			      <property name="bottom_attach">5</property>
+			      <property name="x_options">fill</property>
+			      <property name="y_options"></property>
+			    </packing>
+			  </child>
+
+			  <child>
+			    <widget class="GtkLabel" id="airsar_label">
+			      <property name="label" translatable="yes">&lt;b&gt;AirSAR data to process (if present)&lt;/b&gt;</property>
+			      <property name="use_underline">False</property>
+			      <property name="use_markup">True</property>
+			      <property name="justify">GTK_JUSTIFY_LEFT</property>
+			      <property name="wrap">False</property>
+			      <property name="selectable">False</property>
+			      <property name="xalign">0</property>
+			      <property name="yalign">1</property>
+			      <property name="xpad">0</property>
+			      <property name="ypad">0</property>
+			    </widget>
+			    <packing>
+			      <property name="left_attach">1</property>
+			      <property name="right_attach">2</property>
+			      <property name="top_attach">1</property>
+			      <property name="bottom_attach">2</property>
+			      <property name="x_options">fill</property>
+			      <property name="y_options">fill</property>
+			    </packing>
+			  </child>
 			</widget>
 			<packing>
-			  <property name="padding">1</property>
-			  <property name="expand">False</property>
-			  <property name="fill">False</property>
+			  <property name="padding">0</property>
+			  <property name="expand">True</property>
+			  <property name="fill">True</property>
 			</packing>
 		      </child>
 		    </widget>

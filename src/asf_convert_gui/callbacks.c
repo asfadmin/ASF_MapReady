@@ -56,6 +56,7 @@ input_data_format_combobox_changed()
         *latitude_hi_label,
         *latitude_hi_entry,
         *process_to_level1_checkbutton,
+        *airsar_label,
         *airsar_p_pol_checkbutton,
         *airsar_l_pol_checkbutton,
         *airsar_c_pol_checkbutton,
@@ -139,6 +140,7 @@ input_data_format_combobox_changed()
     gtk_widget_set_sensitive(process_to_level1_checkbutton,
                              show_process_to_level1_checkbutton);
 
+    airsar_label = get_widget_checked("airsar_label");
     airsar_p_pol_checkbutton = get_widget_checked("airsar_p_pol_checkbutton");
     airsar_l_pol_checkbutton = get_widget_checked("airsar_l_pol_checkbutton");
     airsar_c_pol_checkbutton = get_widget_checked("airsar_c_pol_checkbutton");
@@ -151,12 +153,14 @@ input_data_format_combobox_changed()
       gtk_widget_show(airsar_c_pol_checkbutton);
       gtk_widget_show(airsar_c_vv_checkbutton);
       gtk_widget_show(airsar_l_vv_checkbutton);
+      gtk_widget_show(airsar_label);
     } else {
       gtk_widget_hide(airsar_p_pol_checkbutton);
       gtk_widget_hide(airsar_l_pol_checkbutton);
       gtk_widget_hide(airsar_c_pol_checkbutton);
       gtk_widget_hide(airsar_c_vv_checkbutton);
       gtk_widget_hide(airsar_l_vv_checkbutton);
+      gtk_widget_hide(airsar_label);
     }
 
     show_export_section = TRUE;
