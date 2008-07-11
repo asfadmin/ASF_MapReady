@@ -1315,6 +1315,10 @@ int asf_mosaic(project_parameters_t *pp, projection_type_t projection_type,
       //omd->sar->azimuth_doppler_coefficients[1] *= y_scale;
       //omd->sar->azimuth_doppler_coefficients[2] *= y_scale * y_scale;
   }
+  omd->general->start_line = 0;
+  omd->general->start_sample = 0;
+  omd->general->line_scaling = 1;
+  omd->general->sample_scaling = 1;
   omd->projection->type = projection_type;
   omd->projection->startX = min_x;
   omd->projection->startY = max_y;
