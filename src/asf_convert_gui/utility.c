@@ -167,6 +167,11 @@ meta_file_name(const gchar * file_name)
     return ret;
   }
 
+  // airsar
+  else if (ext && strcmp_case(ext, ".airsar")==0) {
+    return g_strdup(file_name);
+  }
+
   // second, try CEOS
   char *basename = MALLOC(sizeof(char)*(strlen(file_name)+10));
   char **dataName = NULL, **metaName = NULL;
@@ -203,6 +208,40 @@ data_file_name(const gchar * file_name)
     gchar *ret = g_strdup(tmp);
     FREE(tmp);
     return ret;
+  }
+
+  // airsar
+  else if (ext && strcmp_case(ext, ".airsar")==0) {
+    char *data_name = STRDUP(file_name);
+    char *p = strstr(data_name, "_meta.airsar");
+    if (p) {
+      // c-band first
+      *p = '\0';
+      strcat(data_name, "_c.vvi2");
+      if (fileExists(data_name)) {
+        gchar *ret = g_strdup(data_name);
+        FREE(data_name);
+        return ret;
+      }
+
+      // l-band next
+      *p = '\0';
+      strcat(data_name, "_l.vvi2");
+      if (fileExists(data_name)) {
+        gchar *ret = g_strdup(data_name);
+        FREE(data_name);
+        return ret;
+      }
+      
+      // ?
+      FREE(data_name);
+      return g_strdup("");
+    }
+    else {
+      // ?
+      FREE(data_name);
+      return g_strdup("");
+    }
   }
 
   // second, try CEOS

@@ -82,6 +82,10 @@ static char *file_is_valid(const gchar * file)
     if (ext && (strcmp_case(ext, ".tif")==0 || strcmp_case(ext, ".tiff")==0))
         return STRDUP(file);
 
+    // third possibility: airsar
+    if (ext && (strcmp_case(ext, ".airsar")==0))
+        return STRDUP(file);
+
     // now, the ceos check
     char *basename = MALLOC(sizeof(char)*(strlen(file)+10));
     char **dataName = NULL, **metaName = NULL;

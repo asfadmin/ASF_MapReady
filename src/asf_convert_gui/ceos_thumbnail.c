@@ -42,11 +42,8 @@ static GdkPixbuf *
 make_airsar_thumb(const char *input_metadata, const char *input_data,
                   size_t max_thumbnail_dimension)
 {
-    // input_metadata and input_data are both the airsar metadata file,
-    // which is "<basename>_meta.airsar"
-
     // the airsar metadata importer wants just the basename
-    char *airsar_basename = STRDUP(input_data);
+    char *airsar_basename = STRDUP(input_metadata);
     char *p = strstr(airsar_basename, "_meta.airsar");
     if (!p) {
       p = strstr(airsar_basename, "_META.AIRSAR");
@@ -591,7 +588,9 @@ make_input_image_thumbnail_pixbuf (const char *input_metadata,
         return make_asf_internal_thumb(input_metadata, input_data,
             max_thumbnail_dimension);
 
-    if (ext && strcmp_case(ext, ".airsar") == 0)
+    // for airsar, need to check the metadata extension, that's more reliable
+    char *meta_ext = findExt(input_metadata);
+    if (meta_ext && strcmp_case(meta_ext, ".airsar") == 0)
         return make_airsar_thumb(input_metadata, input_data,
                                  max_thumbnail_dimension);
 

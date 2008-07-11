@@ -1420,7 +1420,7 @@ settings_to_config_file(const Settings *s,
     }
     // must strip _meta.airsar for airsar
     else if (s->input_data_format == INPUT_FORMAT_AIRSAR) {
-        char *tmp = STRDUP(input_basename);
+        char *tmp = STRDUP(input_file);
         char *p = strstr(tmp, "_meta.airsar");
         if (p) *p = '\0';
         fprintf(cf, "input file = %s\n", tmp);
