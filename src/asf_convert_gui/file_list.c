@@ -635,7 +635,7 @@ setup_files_list()
 
     /* Next Column: thumbnail of input image.  */
     col = gtk_tree_view_column_new ();
-    gtk_tree_view_column_set_title (col, "Thumbnail");
+    gtk_tree_view_column_set_title (col, "");
     gtk_tree_view_column_set_resizable (col, FALSE);
     gtk_tree_view_append_column (GTK_TREE_VIEW (files_list), col);
     renderer = gtk_cell_renderer_pixbuf_new ();
@@ -740,7 +740,7 @@ setup_files_list()
 
     /* Next Column: Pixbuf of output image */
     col = gtk_tree_view_column_new();
-    gtk_tree_view_column_set_title(col, "Thumbnail");
+    gtk_tree_view_column_set_title(col, "");
     gtk_tree_view_column_set_resizable(col, FALSE);
     gtk_tree_view_append_column(GTK_TREE_VIEW(completed_files_list), col);
     renderer = gtk_cell_renderer_pixbuf_new();
