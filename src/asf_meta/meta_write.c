@@ -220,10 +220,15 @@ void meta_write(meta_parameters *meta, const char *file_name)
       "First line relative to original image");
   meta_put_int   (fp,"start_sample:", meta->general->start_sample,
       "First sample relative to original image");
-  meta_put_double(fp,"line_scaling:", meta->general->line_scaling,
-      "Scale factor relative to original image, y");
-  meta_put_double(fp,"sample_scaling:", meta->general->sample_scaling,
-      "Scale factor relative to original image, x");
+  // These are only used by ALOS & Airsar and for other image types it'll be
+  // misleading -- so don't write it out
+  if ((meta->sar && meta->sar->image_type == 'R') || meta->airsar) {
+  //if (strcmp_case(meta->general->sensor, "ALOS") == 0 || meta->airsar) {
+    meta_put_double(fp,"line_scaling:", meta->general->line_scaling,
+                    "Scale factor relative to original image, y");
+    meta_put_double(fp,"sample_scaling:", meta->general->sample_scaling,
+                    "Scale factor relative to original image, x");
+  }
   meta_put_double(fp,"x_pixel_size:", meta->general->x_pixel_size,
       "Range pixel size [m]");
   meta_put_double(fp,"y_pixel_size:", meta->general->y_pixel_size,
