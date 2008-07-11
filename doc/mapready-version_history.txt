@@ -1,5 +1,7 @@
 MapReady Version History
-v2.0.x (released 2008 July xx)
+
+
+MapReady 2.0.x (released 2008 July xx)
 New Functionality (GUI and command-line tools)
 - Support for single-look complex (SLC) data, including Palsar
   Level 1.1.
@@ -51,7 +53,70 @@ Features Enchanced
 - Pixel averaging in ASF View when zoomed out.  (Results in a less
   grainy image.)
 
-v1.0.2 (released 2008 January 2)
+
+
+MapReady 1.0.4 (released 2008 May 23)
+New Functionality
+- Added support for user-defined UTM projections used by GRASS.
+- Metadata Viewer: Added support for the JAXA Facility Data Record.
+
+Bugs Fixed
+- MapReady: Fix crash when selecting Palsar IMG- file under some
+  circumstances.
+- MapReady: Fix problem viewing help under Vista.
+- MapReady: Fix core dump importing USGS DEM under Solaris.
+- MapReady: Some UTM DEMs using NAD27 were being incorrectly
+  interpreted as WGS84.
+- MapReady: Error out when trying to import SLC data, as this is not
+  supported for 1.0.
+- MapReady: Error out when trying to import Level 0 data, as this is not
+  supported for 1.0.
+- MapReady: Error out gracefully (instead of crashing) when trying to
+  terrain correct with DEMs in the Lat/Lon pseudoprojection.
+- MapReady: Use a different transformation block when geocoding Palsar
+  data.  Should improve Palsar geolocations, particularly at higher
+  latitudes.
+- MapReady: Fix some incorrectly populated metadata fields for CDPF
+  SSG data.
+- MapReady: Fix some incorrectly populated metadata fields for RSI
+  SGF data.
+- MapReady: GeoTIFF import was not populating False Easting/Northing
+  for some files using Lambert Conformal Conic.
+- ASF View: Can now view non-map-projected TIFFs
+- ASF View: Fix incorrect distance reported when trying to measure
+  across a UTM zone boundary.
+
+
+
+MapReady 1.0.3 (released 2008 February 12)
+New Functionality (GUI and command-line tools)
+- Added GeoTIFF DEM ingest support to asf_import
+- New installer scripts for all tools
+
+Bugs Fixed
+- Some documentation topics were clarified (.meta files, ASF Internal
+  format description)
+- Location block in metadata not populated when importing certain RSI
+  data
+- Metadata viewer failed to display the data set summary record for
+  certain CDPF data
+- Configure script improved so that if GTK libraries are not available,
+  it is made very clear that the applications with graphical user
+  interfaces will not be built
+- Some polar stereographic map projected data sets would not reproject
+- Some polar stereographic SSM/I map projected data sets failed to
+  import or imported with scaling errors
+- Improved tool tips in MapReady GUI
+- Better file clean up (temporary thumbnail files)
+- asf_import fail to process long STF swath
+- Resolved build errors for building on Sun Solaris v8 and v9 systems
+- asf_geocode failed for missing projection parameters (parameters that
+  could be surmised from existing information)
+- Some ALOS L1.5 data failed to reproject
+
+
+
+MapReady 1.0.2 (released 2008 January 2)
 New Functionality (GUI and command-line tools)
 - Convert GUI name changed to MapReady and redesigned and reorganized
   the user interface for more intuitive use, advanced tool tips,
@@ -141,7 +206,8 @@ Features Enhanced
   images
 
 
-v3.1.16 (released 2007 July 13)
+
+ASF Convert 3.1.16 (released 2007 July 13)
 New Functionality (GUI and command-line tools)
 - Added ALOS support for the import, radiometry, geocode, and export
   functionalities. This includes all ALOS sensors: PalSAR, AVNIR2, and PRISM.
@@ -208,12 +274,14 @@ Features Enhanced
 - Install missing documentation
 
 
-v3.0.23 (released 2007 April 12)
+
+ASF Convert 3.0.23 (released 2007 April 12)
 Fixed crashes when an image came near or crossed the International Date Line
 Fixed a failure when geocoding some ScanSAR images
 
 
-v3.0.21 (released 2007 February 8)
+
+ASF Convert 3.0.21 (released 2007 February 8)
 Improved datum and spheroid support
 Added new metadata values:
   In the "general" block:
@@ -293,7 +361,8 @@ metadata
   n/a
 
 
-2.1.9 (released 2006 May 15)
+
+ASF Convert 2.1.9 (released 2006 May 15)
 RPM installer for Linux
 Use autoconf/configure for source distribution
 Added meta->sar->azimuth_processing_bandwidth field to the metadata file
@@ -359,9 +428,9 @@ asf_export
 metadata
   n/a
 
--------------------------------------------------------------------------------
 
-2.0.1 (released 2005 April 28)
+
+ASF Convert 2.0.1 (released 2005 April 28)
 The ASF software tools are designed to make it easier for users to process ASF
 data products and translate them into a variety of other formats. A graphical
 user interface exists which guides the user through the process of ingesting,
@@ -372,4 +441,3 @@ The tools can currently ingest most Level 1 ASF products, and produce geocoded
 runs on the windows environment has 4 different tabs which allows the user to
 import, export, geocode to apply one of four projections and to modify how the
 radiometry is displayed.
-
