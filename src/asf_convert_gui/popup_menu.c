@@ -803,18 +803,6 @@ handle_view_output()
           else if (try_suffix(out_name, "_04", &tmp_out))
             show_image_with_asf_view(tmp_out);
           
-          // some airsar possibilities
-          else if (try_suffix(out_name, "_c_vv", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_l_vv", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_c_POWER", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_l_POWER", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          else if (try_suffix(out_name, "_p_POWER", &tmp_out))
-            show_image_with_asf_view(tmp_out);
-          
           // some SLC possibilities
           else if (try_suffix(out_name, "_AMP-HH", &tmp_out))
             show_image_with_asf_view(tmp_out);
@@ -856,6 +844,18 @@ handle_view_output()
           else if (try_suffix(out_name, "_Alpha", &tmp_out))
             show_image_with_asf_view(tmp_out);
           
+          // some airsar possibilities
+          else if (try_suffix(out_name, "_c_vv", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_l_vv", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_c_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_l_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+          else if (try_suffix(out_name, "_p_POWER", &tmp_out))
+            show_image_with_asf_view(tmp_out);
+
           // give up
           else {
             char msg[2048];
