@@ -27,6 +27,7 @@ SRCS = asf_view.c \
 	planner.c \
 	pan.c \
 	goto.c \
+	shape.c \
 	csv.c \
 	excel.c
 
@@ -167,6 +168,7 @@ default: $(OBJS)
 	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
 	cp planner_icon.ico $(SHAREDIR)
+#	cp corner_reflectors.csv $(SHAREDIR)
 
 %.c: %.h
 

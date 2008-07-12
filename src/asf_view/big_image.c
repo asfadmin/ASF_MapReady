@@ -409,6 +409,95 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
     }
 }
 
+static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
+                       int marker_code, int color, ImageInfo *ii)
+{
+    int i, j, width, height, rowstride, n_channels;
+    guchar *pixels, *p;
+
+    n_channels = gdk_pixbuf_get_n_channels (pixbuf);
+
+    g_assert (gdk_pixbuf_get_colorspace (pixbuf) == GDK_COLORSPACE_RGB);
+    g_assert (gdk_pixbuf_get_bits_per_sample (pixbuf) == 8);
+    g_assert (!gdk_pixbuf_get_has_alpha (pixbuf));
+    g_assert (n_channels == 3);
+
+    width = gdk_pixbuf_get_width (pixbuf);
+    height = gdk_pixbuf_get_height (pixbuf);
+
+    // convert from image coords to screen coords
+    int ix, iy;
+    ls2img(line, samp, &ix, &iy);
+
+    if (ix <= 0 || ix > width || iy <= 0 || iy > height)
+        return;
+
+    rowstride = gdk_pixbuf_get_rowstride (pixbuf);
+    pixels = gdk_pixbuf_get_pixels (pixbuf);
+
+    // color of the drawn line
+    unsigned char r, g, b;
+    get_color(color, &r, &g, &b);
+
+    switch (marker_code) {
+      case 1: // square, 5 pixels per side
+      {
+        const int ss = 2; // actual side length = ss*2+1
+
+        int lo = ix-ss;
+        if (lo<0) lo=0;
+
+        int hi = ix+ss;
+        if (hi>=width) hi=width-1;
+
+        if (iy>ss) {
+          for (i=lo; i<=hi; ++i) {
+            p = pixels + (iy-ss)*rowstride + i*n_channels;
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
+          }
+        }
+        if (iy<height-ss) {
+          for (i=lo; i<=hi; ++i) {
+            p = pixels + (iy+ss)*rowstride + i*n_channels;
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
+          }
+        }
+
+        lo = iy-(ss-1);
+        if (lo<0) lo=0;
+
+        hi = iy+(ss-1);
+        if (hi>=height) hi=height-1;
+
+        if (ix>ss) {
+          for (j=lo; j<=hi; ++j) {
+            p = pixels + j*rowstride + (ix-ss)*n_channels;
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
+          }
+        }
+        if (ix<width-ss) {
+          for (j=lo; j<=hi; ++j) {
+            p = pixels + j*rowstride + (ix+ss)*n_channels;
+            p[0] = r;
+            p[1] = g;
+            p[2] = b;
+          }
+        }
+        break;
+      }
+
+      case 0:
+      default: // no marker at each point
+        break;
+    }
+}
+
 static GdkPixbuf * make_big_image(ImageInfo *ii)
 {
     assert(ii->data_ci);
@@ -564,6 +653,20 @@ static GdkPixbuf * make_big_image(ImageInfo *ii)
                      g_poly->extent_y_min, g_poly->extent_x_max, PURPLE, ii);
         put_line(pb, g_poly->extent_y_min, g_poly->extent_x_max,
                      g_poly->extent_y_min, g_poly->extent_x_min, PURPLE, ii);
+    }
+
+    // draw stuff read in from CSV/Shapefile
+    if (num_shapes > 0) {
+        for (i=0; i<num_shapes; ++i) {
+            Shape *s = g_shapes[i];
+            for (j=0; j<s->num_points; ++j) {
+                if (j>0)
+                    put_line(pb, s->lines[j-1], s->samps[j-1],
+                             s->lines[j], s->samps[j], s->color_code, ii);
+                put_marker(pb, s->lines[j], s->samps[j], s->marker_code,
+                           s->color_code, ii);
+            }
+        }
     }
 
     return pb;

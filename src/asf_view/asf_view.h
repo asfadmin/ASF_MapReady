@@ -21,6 +21,7 @@
 #include "float_image.h"
 #include "asf_raster.h"
 #include "cache.h"
+#include "asf_vector.h"
 
 typedef struct {
     unsigned char *data;
@@ -58,6 +59,22 @@ typedef struct {
     char *data_name;
     char *meta_name;
 } ImageInfo;
+
+typedef struct {
+    // metadata
+    int num_meta_cols;
+    csv_meta_column_t *meta_cols;
+    char **meta_info;
+
+    // data
+    int num_points;
+    double *lines;
+    double *samps;
+
+    // display information
+    int color_code;
+    int marker_code;
+} Shape;
 
 /********************************** Prototypes ******************************/
 
@@ -212,6 +229,7 @@ void set_bands_rgb(int r, int g, int b);
 void set_bands_greyscale(int b);
 
 /* info.c */
+int meta_supports_meta_get_latLon(meta_parameters *meta);
 void update_pixel_info(ImageInfo *);
 
 /* lut.c */
@@ -234,6 +252,9 @@ void open_csv(const char *csv_file);
 
 /* pan.c */
 void clear_nb_callback(void);
+
+/* shape.c */
+void add_delta_shapes(meta_parameters *meta);
 
 #ifdef win32
 #ifdef DIR_SEPARATOR
@@ -271,6 +292,9 @@ extern ImageInfo *curr;
 extern UserPolygon g_polys[MAX_POLYS];
 extern UserPolygon *g_poly;
 extern int which_poly;
+
+extern Shape **g_shapes;
+extern int num_shapes;
 
 extern double zoom;
 extern double center_line, center_samp;

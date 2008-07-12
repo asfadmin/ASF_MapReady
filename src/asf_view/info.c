@@ -1,11 +1,29 @@
 #include "asf_view.h"
 #include "libasf_proj.h"
 
+int meta_supports_meta_get_latLon(meta_parameters *meta)
+{
+  // projected: YES
+  // slant/ground range with state vectors: YES
+  // transform block (i.e., ALOS): YES
+  // airsar: YES
+  // all others: NO
+  if (meta->projection || 
+      (meta->sar&&meta->state_vectors) ||
+      meta->airsar ||
+      meta->transform) {
+    return TRUE;
+  } 
+  else {
+    return FALSE;
+  }
+}
+
 static void line_samp_to_proj(ImageInfo *ii, double line, double samp,
                               double *x, double *y)
 {
   meta_parameters *meta = ii->meta;
-  if (meta->projection || (meta->sar&&meta->state_vectors) || meta->transform)
+  if (meta_supports_meta_get_latLon(meta))
   {
     double lat, lon, projZ;
     meta_get_latLon(meta, line, samp, 0, &lat, &lon);
@@ -96,8 +114,7 @@ void update_pixel_info(ImageInfo *ii)
     }
 
     double lat=0, lon=0;
-    if (meta->projection || (meta->sar&&meta->state_vectors) ||
-        meta->transform || meta->airsar)
+    if (meta_supports_meta_get_latLon(meta))
     {
         meta_get_latLon(meta, y, x, 0, &lat, &lon);
         sprintf(&buf[strlen(buf)], "Lat: %.4f, Lon: %.4f (deg)\n", lat, lon);
@@ -155,7 +172,7 @@ void update_pixel_info(ImageInfo *ii)
         A /= 2.;
 
         char *units = "m";
-        if (!meta->sar && !meta->transform && !meta->projection)
+        if (!meta_supports_meta_get_latLon(meta))
             units = "pixels";
 
         if (g_poly->n == 1)

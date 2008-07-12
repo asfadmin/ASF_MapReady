@@ -205,8 +205,7 @@ int read_file(const char *filename, const char *band, int multilook,
     free(data_name);
 /*
     // debug code -- prints bounding box
-    if (meta->projection || (meta->sar&&meta->state_vectors) ||
-        meta->transform || meta->airsar)
+    if (meta_supports_meta_get_latLon(meta)) {
     {
       double lat, lon;
       double lat_min, lat_max, lon_min, lon_max;
