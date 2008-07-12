@@ -80,7 +80,8 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_jpeg(filename, try_extensions)) {
+    }
+    else if (try_jpeg(filename, try_extensions)) {
         if (handle_jpeg_file(filename, meta_name, data_name, &err)) {
             meta = open_jpeg(data_name, client);
         } else {
@@ -88,7 +89,8 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_tiff(filename, try_extensions)) {
+    }
+    else if (try_tiff(filename, try_extensions)) {
         if (handle_tiff_file(filename, meta_name, data_name, &err)) {
             // Must be called before read_tiff_meta()
             open_tiff_data(data_name, band, client); 
@@ -99,7 +101,8 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_png(filename, try_extensions)) {
+    }
+    else if (try_png(filename, try_extensions)) {
         if (handle_png_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = open_png(data_name, client);
@@ -108,7 +111,8 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else if (try_pgm(filename, try_extensions)) {
+    }
+    else if (try_pgm(filename, try_extensions)) {
         if (handle_pgm_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = open_pgm(data_name, client);
@@ -117,11 +121,23 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
+    }
+    else if (try_airsar(filename)) {
+        if (handle_airsar_file(filename, meta_name, data_name, &err)) {
+            if (meta) meta_free(meta);
+            meta = read_airsar_meta(meta_name);
+            open_airsar_data(data_name, meta, client);
+        } else {
+            err_func(err);
+            free(err);
+            return FALSE;
+        }
+    }
     // NOTE: try_ceos() needs to be called LAST because get_ceos_names()
     // will add extensions, causing it to match if there are CEOS files
     // in the same directory as (eg) as GeoTIFF that the user wants to
     // view, and will block the user trying to view that GeoTIFF
-    } else if (try_ceos(filename)) {
+    else if (try_ceos(filename)) {
         if (handle_ceos_file(filename, meta_name, data_name, &err)) {
             if (meta) meta_free(meta);
             meta = read_ceos_meta(meta_name);
@@ -132,7 +148,8 @@ int read_file(const char *filename, const char *band, int multilook,
             free(err);
             return FALSE;
         }
-    } else {
+    }
+    else {
         err_func("Don't know how to load file: %s\n", filename);
         return FALSE;
     }

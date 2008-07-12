@@ -123,6 +123,14 @@ int open_ceos_data(const char *dataname, const char *metaname,
                    ClientInterface *client);
 void free_ceos_client_info(void *read_client_info);
 
+/* read_airsar.c */
+int try_airsar(const char *filename);
+int handle_airsar_file(const char *filename, char *meta_name, char *data_name,
+                       char **err);
+meta_parameters *read_airsar_meta(const char *meta_name);
+int open_airsar_data(const char *filename, meta_parameters *meta,
+                     ClientInterface *client);
+
 /* read_jpeg.c */
 int try_jpeg(const char *filename, int try_extensions);
 int handle_jpeg_file(const char *filename, char *meta_name, char *data_name,

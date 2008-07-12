@@ -216,7 +216,7 @@ void set_title(int band_specified, const char *band_in)
         strcpy(band, "");
 
     meta_parameters *meta = curr->meta;
-    char *basename = get_basename(curr->filename);
+    char *basename = get_basename(curr->data_name);
     snprintf(title, 239, "asf_view ver %s: %s", VERSION, basename);
 
     if (band_specified) {
