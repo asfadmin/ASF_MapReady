@@ -293,7 +293,7 @@ static void load_file_banded_imp(const char *file, const char *band,
       fill_meta_info();
       fill_stats(curr);
       setup_bands_tab(curr->meta);
-      add_delta_shapes(curr->meta);
+      //add_delta_shapes(curr->meta);
 
       FREE(old_file);
     }
