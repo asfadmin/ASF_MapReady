@@ -376,10 +376,7 @@ size_t FREAD_CHECKED(void *ptr, size_t size, size_t nitems, FILE *stream, int sh
 
     ret = fread(ptr, size, nitems, stream);
 
-    if (feof(stream) && !short_ok) {
-        asfPrintError("End of file reached!  Cannot read requested number of bytes.\n");
-    }
-    else if (ret < nitems && !short_ok) {
+    if (ret < nitems && !short_ok) {
         asfPrintError("File too short.  FREAD_CHECKED attempted to read %d bytes past end of file\n",
                       (nitems * size) - ret);
     }
@@ -431,9 +428,23 @@ int FSEEK(FILE *stream,int offset,int ptrname)
     int ret;
     if (stream==NULL)
         programmer_error("NULL file pointer passed to FSEEK.\n");
+    if (ptrname != SEEK_CUR &&
+        ptrname != SEEK_END &&
+        ptrname != SEEK_SET)
+    {
+        char msg[256];
+        sprintf(msg, "Invalid whence value (%s) passed to FSEEK.\n",
+                (ptrname == SEEK_CUR) ? "SEEK_CUR" :
+                (ptrname == SEEK_END) ? "SEEK_END" :
+                (ptrname == SEEK_SET) ? "SEEK_SET" : "UNKNOWN");
+        programmer_error(msg);
+    }
+
     ret=fseek(stream,offset,ptrname);
+
     if (ret==-1)
         programmer_error("Stream passed to FSEEK is not seekable.\n");
+
     return ret;
 }
 

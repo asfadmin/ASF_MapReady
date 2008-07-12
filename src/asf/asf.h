@@ -261,10 +261,6 @@ char *get_basename(const char *filename);
 char *get_dirname(const char *in);
 char *get_filename(const char *in);
 
-/* Prototypes from progress_meters.c *****************************************/
-void asfLineMeter(int currentLine, int totalLines);
-void asfPercentMeter(double inPercent);
-
 /* Prototypes from print_alerts.c ********************************************/
 /* Do not print to the terminal, only report to the log file */
 void asfPrintToLogOnly(const char *format, ...);
@@ -281,6 +277,10 @@ void asfPrintError(const char *format, ...);
 void asfPrintErrorMaybe(const char *format, ...);
 // Report at the different levels
 void asfReport(report_level_t level, const char *format, ...);
+void asfLineMeter(int currentLine, int totalLines);
+void asfPercentMeter(double inPercent);
+void asfRunWatchDog(double delay);
+void asfStopWatchDog();
 
 /* Prototype from splash_screen.c ********************************************/
 /* Print the commandline captured, date, and PID to screen & logfile */

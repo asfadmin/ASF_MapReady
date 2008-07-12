@@ -6,6 +6,7 @@ DESCRIPTION:
  Wrappers for consistant reporting to the terminal & log file
 ******************************************************************************/
 #include "asf.h"
+#include <sys/time.h>
 
 report_level_t g_report_level=WARNING;
 
@@ -278,3 +279,43 @@ void asfPercentMeter(double inPercent)
   if (newPercent%10==0)
     check_stop();
 }
+
+// Cute watch dog indicator ...just something on the screen
+// (looks like a rotating bar) to let the user know something
+// is processing.  WARNING: Unfortunately there are 2 issues:
+// a) the cursor-hiding escape sequence (esc[?25l) won't work
+// if the user is using a strange terminal (almost all linux
+// terminals work), and b) gettimeofday() is slow ...but I 
+// don't know of another way to get fractional seconds of time.
+// Processing with the watch dog indicator running does take
+// longer than without.
+//
+static struct timeval last_time = {0,0};
+static int watch_dog_idx = 0;
+void asfRunWatchDog(double delay)
+{
+  char ESC = 27;
+  unsigned char flipper[4] = {'|', '/', '-', '\\'};
+  struct timeval new_time;
+  double start, stop;
+
+  gettimeofday(&new_time, 0x0);
+  start = last_time.tv_sec + last_time.tv_usec/1000000.0;
+  stop = new_time.tv_sec + new_time.tv_usec/1000000.0;
+
+  if (stop - start > delay) {
+    printf("%c[?25l%c%c", ESC, '\r', flipper[watch_dog_idx]);
+    fflush(0x0);
+    watch_dog_idx = (watch_dog_idx + 1) % 4; 
+    last_time = new_time;
+  }
+}
+
+void asfStopWatchDog()
+{
+  char ESC = 27;
+  printf("%c %c[?25h\n", '\r', ESC);
+}
+
+
+
