@@ -20,7 +20,7 @@
 #ifdef MIN
 #  undef MIN
 #endif
-#define MIN(a,b) ((a) <= (b))
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 // Prototypes
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
