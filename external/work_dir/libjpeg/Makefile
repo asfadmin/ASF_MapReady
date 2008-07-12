@@ -9,15 +9,12 @@ INCLUDE_DIR := $(ROOT_DIR)/include
 # These variables specify the jpeg tarball and what it unpacks into.
 UNPACK_DIR := jpeg-6b
 
-# On Windows, use patched version to match binary version bundled
-# with GTK.  Patch is the lossless compression patch (checked in)
-ifeq ($(SYS),win32)
+# Use patched version to match binary version bundled
+# with GTK and to provide reversible compression support for both
+# Linux and Windows.  Patch is the lossless compression patch
+# (checked in)
 TARFILE := jpegsrc.v6b.patched.tar
 ZIPFILE := $(TARFILE).gz
-else
-TARFILE := jpegsrc.v6b.tar
-ZIPFILE := $(TARFILE).gz
-endif
 
 build: build_stamp
 
