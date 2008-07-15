@@ -1436,54 +1436,53 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   switch (data_type)
     {
     case BYTE:
-      byte_buf = (unsigned char *) MALLOC(ns * sizeof(unsigned char));
-      tmp_byte_buf = (unsigned char *) MALLOC(ns * sizeof(unsigned char));
+      byte_buf = (unsigned char *) CALLOC(ns, sizeof(unsigned char));
+      tmp_byte_buf = (unsigned char *) CALLOC(ns, sizeof(unsigned char));
       asfPrintStatus("   Data type: BYTE\n");
       break;
     case INTEGER16:
-      short_buf = (short *) MALLOC(ns * sizeof(short));
-      tmp_short_buf = (short *) MALLOC(ns * sizeof(short));
+      short_buf = (short *) CALLOC(ns, sizeof(short));
+      tmp_short_buf = (short *) CALLOC(ns, sizeof(short));
       asfPrintStatus("   Data type: INTEGER16\n");
       break;
     case INTEGER32:
-      int_buf = (int *) MALLOC(ns * sizeof(int));
-      tmp_int_buf = (int *) MALLOC(ns * sizeof(int));
+      int_buf = (int *) CALLOC(ns, sizeof(int));
+      tmp_int_buf = (int *) CALLOC(ns, sizeof(int));
       asfPrintStatus("   Data type: INTEGER32\n");
       break;
     case REAL32:
-      float_buf = (float *) MALLOC(ns * sizeof(float));
-      tmp_float_buf = (float *) MALLOC(ns * sizeof(float));
+      float_buf = (float *) CALLOC(ns, sizeof(float));
+      tmp_float_buf = (float *) CALLOC(ns, sizeof(float));
       asfPrintStatus("   Data type: REAL32\n");
       break;
     case REAL64:
-      double_buf = (double *) MALLOC(ns * sizeof(double));
-      tmp_double_buf = (double *) MALLOC(ns * sizeof(double));
+      double_buf = (double *) CALLOC(ns, sizeof(double));
+      tmp_double_buf = (double *) CALLOC(ns, sizeof(double));
       asfPrintStatus("   Data type: REAL64\n");
       break;
     case COMPLEX_BYTE:
-      cpx_byte_buf = (unsigned char *) MALLOC(2*ns * sizeof(unsigned char) * lc);
-      tmp_byte_buf =
-    (unsigned char *) MALLOC(2*ns * sizeof(unsigned char) *lc );
+      cpx_byte_buf = (unsigned char *) CALLOC(2*ns*lc, sizeof(unsigned char));
+      tmp_byte_buf =  (unsigned char *) CALLOC(2*ns*lc, sizeof(unsigned char));
       asfPrintStatus("   Data type: COMPLEX_BYTE\n");
       break;
     case COMPLEX_INTEGER16:
-      cpx_short_buf = (short *) MALLOC(2*ns * sizeof(short) *lc );
-      tmp_cpx_short_buf = (short *) MALLOC(2*ns * sizeof(short) * lc);
+      cpx_short_buf = (short *) CALLOC(2*ns*lc, sizeof(short));
+      tmp_cpx_short_buf = (short *) CALLOC(2*ns*lc, sizeof(short));
       asfPrintStatus("   Data type: COMPLEX_INTEGER16\n");
       break;
     case COMPLEX_INTEGER32:
-      cpx_int_buf = (int *) MALLOC(2*ns * sizeof(int) * lc);
-      tmp_int_buf = (int *) MALLOC(2*ns * sizeof(int) * lc);
+      cpx_int_buf = (int *) CALLOC(2*ns*lc, sizeof(int));
+      tmp_int_buf = (int *) CALLOC(2*ns*lc, sizeof(int));
       asfPrintStatus("   Data type: COMPLEX_INTEGER32\n");
       break;
     case COMPLEX_REAL32:
-      cpx_float_buf = (float *) MALLOC(2*ns * sizeof(float) * lc);
-      tmp_float_buf = (float *) MALLOC(2*ns * sizeof(float) * lc);
+      cpx_float_buf = (float *) CALLOC(2*ns*lc, sizeof(float));
+      tmp_float_buf = (float *) CALLOC(2*ns*lc, sizeof(float));
       asfPrintStatus("   Data type: COMPLEX_REAL32\n");
       break;
     case COMPLEX_REAL64:
-      cpx_double_buf = (double *) MALLOC(2*ns * sizeof(float) * lc);
-      tmp_double_buf = (double *) MALLOC(2*ns * sizeof(float) * lc);
+      cpx_double_buf = (double *) CALLOC(2*ns*lc, sizeof(float));
+      tmp_double_buf = (double *) CALLOC(2*ns*lc, sizeof(float));
       asfPrintStatus("   Data type: COMPLEX_REAL64\n");
       break;
     }
@@ -1492,24 +1491,24 @@ void import_ceos_data(char *inDataName, char *inMetaName, char *outDataName,
   switch (data_type)
     {
     case BYTE:
-      amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+      amp_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
       break;
     case INTEGER16:
     case INTEGER32:
     case REAL32:
     case REAL64:
-      amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+      amp_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
       break;
     case COMPLEX_BYTE:
     case COMPLEX_INTEGER16:
     case COMPLEX_INTEGER32:
     case COMPLEX_REAL32:
       if (complex_flag)
-    cpxFloat_buf = (complexFloat *) MALLOC(ns * sizeof(complexFloat) * lc);
+        cpxFloat_buf = (complexFloat *) CALLOC(ns*lc, sizeof(complexFloat));
       else {
-      cpx_float_ml_buf = (complexFloat *) MALLOC(2*ns * sizeof(float)*lc);	
-    amp_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
-    phase_float_buf = (float *) MALLOC(ns * sizeof(float) * lc);
+        cpx_float_ml_buf = (complexFloat *) CALLOC(2*ns*lc, sizeof(float));	
+    amp_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
+    phase_float_buf = (float *) CALLOC(ns*lc, sizeof(float));
       }
       break;
     case COMPLEX_REAL64:
