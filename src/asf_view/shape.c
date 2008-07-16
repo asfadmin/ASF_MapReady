@@ -19,6 +19,11 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
 
   asfPrintStatus("Adding: %s\n", csv_file);
 
+  if (!fileExists(csv_file)) {
+    asfPrintWarning("File not found: %s\n", csv_file);
+    return;
+  }
+
   FILE *ifp = csv_open(csv_file,
                       &num_meta_cols, &meta_column_info,
                       &num_data_cols, &data_column_info);
@@ -36,7 +41,6 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
 
   char line[1024];
   while (fgets(line, 1023, ifp)) {
-
     ++line_num;
 
     char **column_data;
@@ -61,7 +65,9 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
   FREE(data_column_info);
   data_column_info = NULL;
 
-  printf("File had %d lines, %d valid lines.\n", line_num, num);
+  // Use line_num-1 so we do not count the header line
+  asfPrintStatus("File had %d line%s, %d valid line%s.\n",
+                 line_num-1, line_num-1==1?"":"s", num, num==1?"":"s");
 
   // set up global array of shapes
   num_shapes = num;
@@ -77,7 +83,6 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
   num = 0;
 
   while (fgets(line, 1023, ifp)) {
-
     ++line_num;
 
     char **column_data;

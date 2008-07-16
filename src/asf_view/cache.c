@@ -75,11 +75,15 @@ static void print_cache_size(CachedImage *self)
 
 static unsigned char *get_pixel(CachedImage *self, int line, int samp)
 {
-    int i;
+    // check if outside the image
+    static unsigned char zero = 0;
+    if (line<0 || samp<0 || line >= self->nl || samp >= self->ns)
+        return &zero;
 
     // size of each pixel
     int ds = data_size(self);
 
+    int i;
     for (i=0; i<self->n_tiles; ++i) {
         int rs = self->rowstarts[i];
         if (rs >= 0) {
