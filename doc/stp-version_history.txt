@@ -1,5 +1,5 @@
-Release version 1.1.5
-16 May 2008
+Release version 1.1.6
+23 July 2008
 
 * Streamlined the way STP generates the JPEG intermediate images,
   so STP should run faster & use less memory.
@@ -16,12 +16,7 @@ Release version 1.1.5
 * Added an "Abort" button to halt processing.
 * Added a "Clear" button, to remove intermediate files and the
   generated debug JPEGs.
-
-Release version 1.0.14
-29 February 2008
-
 * Upgraded the installer for better integration with MapReady
-  (formerly Convert)
 * Improved build system for source builds
 
 
