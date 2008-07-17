@@ -25,7 +25,8 @@
 // Prototypes
 int compare_file_key(const void* file1, const void *file2); // For stdlib qsort() function
 int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
-                              int save_intermediates, const char *outBaseName);
+                              int save_intermediates, const char *outBaseName,
+                              int max_frames);
 int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out);
 
 // import_jaxa_L0()
@@ -47,7 +48,7 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
     int save_intermediates = 0;
     ceos_sensor_t sensor_type=AVNIR;
 
-    //asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
+    asfPrintError("Ingest of JAXA Level 0 (PRISM and AVNIR-2 Level 0) data not yet supported.\n");
 
     asfRequire(inBaseName && strlen(inBaseName) > 0, "Invalid inBaseName\n");
     asfRequire(outBaseName && strlen(outBaseName) > 0, "Invalid outBaseName\n");
@@ -112,15 +113,14 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
         // lines to the same .img file.  Correct order is: 01 (blue), 02 (green), 03 (red),
         // 04 (near infrared)
         blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, num_chunks, JL0_BLUE_BAND,
-                save_intermediates, out_file);
+                                                save_intermediates, out_file, (unsigned int)NULL);
         green_lines = import_jaxa_L0_avnir_band(green_chunks, num_chunks, JL0_GREEN_BAND,
-                                                save_intermediates, out_file);
+                                                save_intermediates, out_file, (unsigned int)NULL);
         red_lines   = import_jaxa_L0_avnir_band(red_chunks, num_chunks, JL0_RED_BAND,
-                save_intermediates, out_file);
+                                                save_intermediates, out_file, (unsigned int)NULL);
         nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, num_chunks, JL0_NIR_BAND,
-                                                save_intermediates, out_file);
+                                                save_intermediates, out_file, (unsigned int)NULL);
         line_count = MIN(nir_lines, MIN(red_lines, MIN(blue_lines, green_lines)));
-        FREE(out_file);
         if (red_lines != green_lines ||
             red_lines != blue_lines  ||
             red_lines != nir_lines)
@@ -137,7 +137,20 @@ void import_jaxa_L0(const char *inBaseName, const char *outBaseName) {
                     "If these files are merged into a single color image, then this\n"
                     "have to be taken into consideration (missing data?)\n",
                     red_lines, green_lines, blue_lines, nir_lines);
+            asfPrintStatus("Re-importing but limiting import to %d lines (%d frames)\n",
+                           line_count, line_count / 16);
+            FILE *tmp = FOPEN(out_file, "wb"); // Create an empty .img file.  The imports will append...
+            FCLOSE(tmp);
+            blue_lines  = import_jaxa_L0_avnir_band(blue_chunks, num_chunks, JL0_BLUE_BAND,
+                    save_intermediates, out_file, line_count / 16);
+            green_lines = import_jaxa_L0_avnir_band(green_chunks, num_chunks, JL0_GREEN_BAND,
+                    save_intermediates, out_file, line_count / 16);
+            red_lines   = import_jaxa_L0_avnir_band(red_chunks, num_chunks, JL0_RED_BAND,
+                    save_intermediates, out_file, line_count / 16);
+            nir_lines   = import_jaxa_L0_avnir_band(nir_chunks, num_chunks, JL0_NIR_BAND,
+                    save_intermediates, out_file, line_count / 16);
         }
+        FREE(out_file);
 
         // At this point, all 4 bands have been written into a single .img file consecutively
         // and it's time to produce the matching .meta file, then the import process will be
@@ -493,8 +506,10 @@ size_t get_avnir_data_line(FILE *in, unsigned char **data) {
 //       modify the name here.
 //
 int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
-                              int save_intermediates, const char *out_file)
+                              int save_intermediates, const char *out_file,
+                              int max_frames)
 {
+    int frame_count;
     char tmpJpegName[JL0_DIR_LEN + JL0_FILE_LEN + 1];
     char all_chunks[JL0_DIR_LEN + JL0_FILE_LEN + 1];
     char tmp_folder[256];
@@ -573,6 +588,7 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
     unsigned int payload_length;
     int tot_lines = 0;
     int num_read;
+    frame_count = 0;
     while (!feof(in)) {
         // 1) Find the start of the image (the SOI marker).  This gets rid of extraneous bytes at
         //    the beginning of the file and also the 32-bit boundary 0-fill that occurs after the
@@ -682,6 +698,10 @@ int import_jaxa_L0_avnir_band(char **chunks, int num_chunks, char *band,
             // Only convert completed temporary jpegs ...ALOS data may not end on a full
             // frame boundary ...in other words, the chunk data from the satellite may
             // end prematurely ...so discard incomplete frames.
+            frame_count++;
+            if (max_frames && frame_count > frame_count) {
+                break;
+            }
             tot_lines += import_avnir_frame_jpeg_to_img(tmpJpegName, out);
         }
     }
@@ -757,7 +777,7 @@ int import_avnir_frame_jpeg_to_img(const char *tmpJpegName, FILE *out)
             dest[n + 1] = (unsigned char)buf[k]; // Even pixel
             n += 2;
         }
-        FWRITE(buf, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
+        FWRITE(dest, sizeof(unsigned char), 2 * 3550, out); // Write raw interlaced data to .img file
     }
 
     FCLOSE(fp);
