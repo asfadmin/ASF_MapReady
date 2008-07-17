@@ -168,7 +168,8 @@ default: $(OBJS)
 	cp asf_view_icon.ico $(SHAREDIR)
 	cp asf_view_cfg.csv $(SHAREDIR)
 	cp planner_icon.ico $(SHAREDIR)
-#	cp corner_reflectors.csv $(SHAREDIR)
+#	-cp corner_reflectors.csv $(SHAREDIR)
+#	-cp gshhs.* $(SHAREDIR)
 
 %.c: %.h
 

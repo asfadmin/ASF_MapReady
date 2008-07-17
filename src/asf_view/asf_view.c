@@ -151,11 +151,13 @@ main(int argc, char **argv)
     setup_bands_tab(curr->meta);
     disable_meta_button_if_necessary();
     //add_delta_shapes(curr->meta);
+    //add_global_coast(curr->meta);
 
     glade_xml_signal_autoconnect(glade_xml);
     gtk_main ();
 
     image_info_free(curr);
+    free_shapes();
     exit (EXIT_SUCCESS);
 }
 

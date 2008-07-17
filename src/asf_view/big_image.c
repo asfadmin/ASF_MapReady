@@ -412,6 +412,9 @@ static void put_line(GdkPixbuf *pixbuf, double line0, double samp0,
 static void put_marker(GdkPixbuf *pixbuf, double line, double samp,
                        int marker_code, int color, ImageInfo *ii)
 {
+    if (marker_code == 0)
+      return;
+
     int i, j, width, height, rowstride, n_channels;
     guchar *pixels, *p;
 
