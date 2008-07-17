@@ -8,7 +8,7 @@
 // FIXME: This is from license.c ...need to either move it into a header or write
 // a function that just returns the string (without a trailing \n)
 #define ASF_COPYRIGHT_STRING \
- "Copyright (c) 2007, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
+ "Copyright (c) 2008, University of Alaska Fairbanks, Alaska Satellite Facility.\n"\
  "All rights reserved."
 
 GladeXML *glade_xml;
