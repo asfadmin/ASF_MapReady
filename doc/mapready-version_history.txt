@@ -1,6 +1,4 @@
 MapReady Version History
-
-
 MapReady 2.0.x (released 2008 July xx)
 New Functionality (GUI and command-line tools)
 - Support for single-look complex (SLC) data, including Palsar
@@ -19,6 +17,8 @@ New Functionality (GUI and command-line tools)
   terrain correction.
 - New tool!  asf_proj2proj is a command-line interface to the ASF
   Projection Coordinate Converter.
+- In ASF View, allow the user to move the crosshair to a specified
+  lat/lon, line/sample, or projected x/y coordinate.
 - Support for AirSAR data. [command-line only]
 - Support for Gamma data. [command-line only]
 
