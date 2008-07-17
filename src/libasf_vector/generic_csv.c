@@ -483,7 +483,7 @@ void csv_info(int num_meta_cols, csv_meta_column_t *meta_column_info,
   asfPrintStatus("\n");
 }
 
-int csv_line_parse(const char *line_in,
+int csv_line_parse(const char *line_in, int line_num,
                    int num_meta_cols, csv_meta_column_t *meta_column_info,
                    int num_data_cols, csv_data_column_t *data_column_info,
                    char ***column_data_o, double **lats_o, double **lons_o)
@@ -502,7 +502,6 @@ int csv_line_parse(const char *line_in,
 
   double *lats = MALLOC(sizeof(double)*num_data_cols);
   double *lons = MALLOC(sizeof(double)*num_data_cols);
-  char **column_data = MALLOC(sizeof(char*)*num_meta_cols);
 
   for (i=0; i<num_data_cols*2; ++i) {
     int col = data_column_info[i].column_number;
@@ -512,13 +511,33 @@ int csv_line_parse(const char *line_in,
 
     if (data_column_info[i].is_lat) {
       lats[n_lat] = atof(data);
+      // verify valid latitude
+      if (lats[n_lat] < -90 || lats[n_lat] > 90) {
+        asfPrintStatus("Invalid latitude on line %d, column %s: %f\n",
+                       line_num, data_column_info[i].column_name, lats[n_lat]);
+        FREE(lats); FREE(lons);
+        return FALSE;
+      }
       ++n_lat;
     }
     else {
       lons[n_lon] = atof(data);
+      // verify valid longitude
+      if (lons[n_lon] < -360 || lons[n_lon] > 360) {
+        asfPrintStatus("Invalid longitude on line %d, column %s: %f\n",
+                       line_num, data_column_info[i].column_name, lons[n_lon]);
+        FREE(lats); FREE(lons);
+        return FALSE;
+      }
+      // longitude should be -180 to 180
+      if (lons[n_lon] < -180) lons[n_lon] += 360;
+      if (lons[n_lon] > 180) lons[n_lon] -= 360;
       ++n_lon;
     }
   }
+
+  char **column_data = MALLOC(sizeof(char*)*num_meta_cols);
+
   for (i=0; i<num_meta_cols; ++i) {
     column_data[i] = (char*)MALLOC(sizeof(char)*256);
     int col = meta_column_info[i].column_number;
@@ -585,15 +604,16 @@ void csv_dump(const char *filename)
   // this is just for debugging, if you want to print out what was found
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
 
-  // start line counter at 2 (header line is not part of this loop)
-  int line_num=2;
+  // start line counter at 1 (header line is not part of this loop)
+  int line_num=1;
 
   char line[1024];
   while (fgets(line, 1023, fp)) {
+    ++line_num;
 
     char **column_data;
     double *lats, *lons;
-    int ok = csv_line_parse(line,
+    int ok = csv_line_parse(line, line_num,
                             num_meta_cols, meta_column_info,
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
@@ -675,7 +695,6 @@ void csv_dump(const char *filename)
     }
 
     csv_free(num_meta_cols, column_data, lats, lons);
-    ++line_num;
 
     asfPrintStatus("\n");
   }
@@ -709,14 +728,15 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
 
   // start line counter at 2 (header line is not part of this loop)
-  int i,line_num=2;
+  int i,line_num=1;
 
   char line[1024];
   while (fgets(line, 1023, ifp)) {
+    ++line_num;
 
     char **column_data;
     double *lats, *lons;
-    int ok = csv_line_parse(line,
+    int ok = csv_line_parse(line, line_num,
                             num_meta_cols, meta_column_info,
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
@@ -833,7 +853,6 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
     fprintf(ofp, "</Placemark>\n");
 
     csv_free(num_meta_cols, column_data, lats, lons);
-    ++line_num;
   }
   FCLOSE(ifp);
   kml_footer(ofp);
@@ -940,8 +959,8 @@ int csv2shape(char *inFile, char *outFile, int listFlag)
   // this is just for debugging, if you want to print out what was found
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
 
-  // start line counter at 2 (header line is not part of this loop)
-  int line_num=2;
+  // start line counter at 1 (header line is not part of this loop)
+  int line_num=1;
   int entry_num=0;
 
   // shapefile stuff
@@ -959,10 +978,11 @@ int csv2shape(char *inFile, char *outFile, int listFlag)
 
   char line[1024];
   while (fgets(line, 1023, fp)) {
+    ++line_num;
 
     char **column_data;
     double *lats, *lons;
-    int ok = csv_line_parse(line,
+    int ok = csv_line_parse(line, line_num,
                             num_meta_cols, meta_column_info,
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
@@ -1022,7 +1042,6 @@ int csv2shape(char *inFile, char *outFile, int listFlag)
 
     csv_free(num_meta_cols, column_data, lats, lons);
 
-    ++line_num;
     ++entry_num;
   }
   FCLOSE(fp);

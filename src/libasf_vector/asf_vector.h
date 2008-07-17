@@ -192,7 +192,7 @@ FILE *csv_open(const char *filename,
                int *num_data_cols, csv_data_column_t **data_column_info);
 void csv_info(int num_meta_cols, csv_meta_column_t *meta_column_info,
               int num_data_cols, csv_data_column_t *data_column_info);
-int csv_line_parse(const char *line,
+int csv_line_parse(const char *line, int line_num,
                    int num_meta_cols, csv_meta_column_t *meta_column_info,
                    int num_data_cols, csv_data_column_t *data_column_info,
                    char ***column_data_o, double **lats_o, double **lons_o);

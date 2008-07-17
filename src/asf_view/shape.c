@@ -45,7 +45,7 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
 
     char **column_data;
     double *lats, *lons;
-    int ok = csv_line_parse(line,
+    int ok = csv_line_parse(line, line_num,
                             num_meta_cols, meta_column_info,
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
@@ -87,7 +87,7 @@ static void add_generic_csv(meta_parameters *meta, const char *csv_file,
 
     char **column_data;
     double *lats, *lons;
-    int ok = csv_line_parse(line,
+    int ok = csv_line_parse(line, line_num,
                             num_meta_cols, meta_column_info,
                             num_data_cols, data_column_info,
                             &column_data, &lats, &lons);
