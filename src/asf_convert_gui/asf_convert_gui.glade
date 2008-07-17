@@ -1451,6 +1451,7 @@
 
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_cloude8">
+				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Cloude-Pottier (classification with 8 categories)</property>
 				      <property name="use_underline">True</property>
@@ -1471,6 +1472,7 @@
 
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_cloude16">
+				      <property name="visible">True</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Cloude-Pottier (classification with 16 categories)</property>
 				      <property name="use_underline">True</property>
@@ -1491,6 +1493,7 @@
 
 				  <child>
 				    <widget class="GtkRadioButton" id="rb_cloude_noclassify">
+				      <property name="visible">True</property>
 				      <property name="tooltip" translatable="yes">This option results in a 3-band image with the Cloude-Pottier components.  You may assign to RGB bands on the export tab, or create three different images.</property>
 				      <property name="can_focus">True</property>
 				      <property name="label" translatable="yes">Entropy, Anisotropy, Alpha (C-P without classification)</property>
