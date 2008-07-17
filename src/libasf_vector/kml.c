@@ -1063,7 +1063,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
           meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>30</tilt>\n");
+  //fprintf(kml_file, "    <tilt>30</tilt>\n");
   //fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
@@ -1200,11 +1200,16 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       //printf("Upper lon: %f\n", upper_lon);
       //printf("Lower lon: %f\n", lower_lon);
 
-      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
-      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
-      fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
-      fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
-      fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, lower_lat);
+      //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, lower_lat);
+      //fprintf(kml_file, "          %.12f,%.12f,500\n", lower_lon, upper_lat);
+      //fprintf(kml_file, "          %.12f,%.12f,500\n", upper_lon, upper_lat);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LL, lat_LL);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_LR, lat_LR);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UR, lat_UR);
+      fprintf(kml_file, "          %.12f,%.12f,7000\n", lon_UL, lat_UL);
       fprintf(kml_file, "        </coordinates>\n");
       fprintf(kml_file, "      </LinearRing>\n");
       fprintf(kml_file, "    </outerBoundaryIs>\n");
@@ -1216,7 +1221,7 @@ static void kml_entry_impl(FILE *kml_file, meta_parameters *meta,
       fprintf(kml_file, "    <longitude>%.10f</longitude>\n", clon);
       fprintf(kml_file, "    <latitude>%.10f</latitude>\n", clat);
       fprintf(kml_file, "    <range>400000</range>\n");
-      fprintf(kml_file, "    <tilt>45</tilt>\n");
+      //fprintf(kml_file, "    <tilt>45</tilt>\n");
       fprintf(kml_file, "    <heading>50</heading>\n");
       fprintf(kml_file, "  </LookAt>\n");
       fprintf(kml_file, "  <color>ffffffff</color>\n");
@@ -1310,7 +1315,7 @@ void kml_entry_overlay(FILE *kml_file, char *name)
   fprintf(kml_file, "    <latitude>%.10f</latitude>\n",
       meta->general->center_latitude);
   fprintf(kml_file, "    <range>400000</range>\n");
-  fprintf(kml_file, "    <tilt>45</tilt>\n");
+  //fprintf(kml_file, "    <tilt>45</tilt>\n");
   fprintf(kml_file, "    <heading>50</heading>\n");
   fprintf(kml_file, "  </LookAt>\n");
   fprintf(kml_file, "  <visibility>1</visibility>\n");
