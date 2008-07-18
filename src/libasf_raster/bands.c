@@ -244,8 +244,12 @@ int get_band_number(char *bands, int band_count, char *channel)
   int band_no;
 
   // First do the obvious for single-band images.
-  if (band_count == 1)
-    return 0;
+  if (band_count == 1) {
+    if (strcmp_case(channel, bands) == 0)
+      return 0;
+    else
+      return -1;
+  }
 
   /////////////////////////////////////////////////////////////////////
   // Copy then trim leading white space and zeros, and trailing white
