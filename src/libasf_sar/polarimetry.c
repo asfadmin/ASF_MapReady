@@ -100,8 +100,8 @@ static complexFloat complex_add(complexFloat a, complexFloat b)
 
 static double complex_amp(complexFloat c)
 {
-  return hypot(c.real, c.imag);
-  //return sqrt(c.real*c.real + c.imag*c.imag);
+  //return hypot(c.real, c.imag);
+  return sqrt(c.real*c.real + c.imag*c.imag);
 }
 
 static double complex_arg(complexFloat c)
@@ -334,11 +334,11 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
     int j, ns=self->meta->general->sample_count;
     for (j=0; j<ns; ++j) {
         quadPolFloat q = self->lines[n][j];
-        complexVector v = complex_vector_normalize(
+        complexVector v = //complex_vector_normalize(
           complex_vector_new(
             complex_add(q.hh, q.vv),
             complex_sub(q.hh, q.vv),
-            complex_add(q.hv, q.vh)));
+            complex_add(q.hv, q.vh))/*)*/;
         complexVector vc = complex_vector_conj(v);
 
         complexMatrix *m = self->coh_lines[n][j];
@@ -1178,6 +1178,7 @@ void cpx2debug(const char *inFile, const char *outFile)
   polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,"DEBUG",3);
 }
 
+/*
 typedef struct {
    int line;
    quadPolFloat *buf;
@@ -1192,7 +1193,6 @@ typedef struct {
    int vv_amp_band, vv_phase_band;
 } QuadPolData;
 
-/*
 QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
 {
   QuadPolData *qpd = MALLOC(sizeof(QuadPolData));
@@ -1365,4 +1365,5 @@ void faraday_correct(const char *inFile, const char *outFile,
 
   qpd_free(qpd);
 }
+
 */
