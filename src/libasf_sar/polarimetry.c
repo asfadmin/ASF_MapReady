@@ -203,6 +203,16 @@ static complexMatrix *complex_matrix_mul(complexMatrix *m1, complexMatrix *m2)
   return ret;
 }
 
+static void complex_matrix_scale(complexMatrix *m, float s)
+{
+  int i,j;
+  for (i=0; i<m->rows; ++i)
+    for (j=0; j<m->columns; ++j) {
+      m->coeff[i][j].real *= s;
+      m->coeff[i][j].imag *= s;
+    }
+}
+
 static void complex_matrix_free(complexMatrix *doomed)
 {
     int i;
@@ -354,6 +364,8 @@ static void calculate_coherence_for_row(PolarimetricImageRows *self, int n)
         complex_matrix_set(m,2,0,complex_mul(vc.C, v.A));
         complex_matrix_set(m,2,1,complex_mul(vc.C, v.B));
         complex_matrix_set(m,2,2,complex_mul(vc.C, v.C));
+
+        complex_matrix_scale(m,1./sqrt(2.0));
     }
 }
 
