@@ -727,7 +727,7 @@ int csv2kml(const char *in_file, const char *out_file, int listFlag)
   // this is just for debugging, if you want to print out what was found
   csv_info(num_meta_cols, meta_column_info, num_data_cols, data_column_info);
 
-  // start line counter at 2 (header line is not part of this loop)
+  // start line counter at 1 (header line is not part of this loop)
   int i,line_num=1;
 
   char line[1024];

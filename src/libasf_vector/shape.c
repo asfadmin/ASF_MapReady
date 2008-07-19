@@ -146,9 +146,10 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
   char *dbaseFile;
 
   // Open database for adding values
-  basename = get_basename(inFile);
-  dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(basename)+5));
-  sprintf(dbaseFile, "%s.dbf", basename);
+  //basename = get_basename(inFile);
+  //dbaseFile = (char *) MALLOC(sizeof(char)*(strlen(basename)+5));
+  //sprintf(dbaseFile, "%s.dbf", basename);
+  dbaseFile = appendExt(inFile, ".dbf");
   *dbase = DBFOpen(dbaseFile, "r+b");
   if (*dbase == NULL)
     asfPrintError("Could not open database file '%s'\n", dbaseFile);
@@ -158,7 +159,7 @@ void open_shape(char *inFile, DBFHandle *dbase, SHPHandle *shape)
   if (*shape == NULL)
     asfPrintError("Could not open shapefile '%s\n", inFile);
 
-  FREE(basename);
+  //FREE(basename);
   FREE(dbaseFile);
 
   return;
@@ -230,7 +231,7 @@ int shape2point(char *inFile, char *outFile, int listFlag)
 	  "(version %s))\n", SVN_REV);
   fprintf(fp, "#\n");
   fprintf(fp, "# ID,Latitude,Longitude\n");
-  
+
   for (ii=0; ii<nEntities; ii++) {
 
     // Read object for the number of vertices
