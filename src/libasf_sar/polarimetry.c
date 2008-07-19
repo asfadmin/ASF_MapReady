@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct {
    int current_row;
-   int nrows; // # in held in memory, not total image rows
+   int nrows;  // # in held in memory, not total image rows
    meta_parameters *meta;
 
    float *amp; // HH amplitude data
@@ -75,13 +75,13 @@ static complexFloat complex_new_polar(float amp, float phase)
     return ret;
 }
 
-//static complexFloat complex_new_gsl(gsl_complex c)
-//{
-//    complexFloat ret;
-//    ret.real = GSL_REAL(c);
-//    ret.imag = GSL_IMAG(c);
-//    return ret;
-//}
+static complexFloat complex_new_gsl(gsl_complex c)
+{
+    complexFloat ret;
+    ret.real = GSL_REAL(c);
+    ret.imag = GSL_IMAG(c);
+    return ret;
+}
 
 static complexFloat complex_zero()
 {
@@ -574,6 +574,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          const char *classFile,
                          int class_band)
 {
+  int debug_mode = classFile && strcmp_case(classFile, "DEBUG")==0;
+  int debug_bands_start = debug_mode ? class_band : -1;
+  class_band = -1;
+
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
   meta_parameters *outMeta = meta_read(meta_name);
@@ -622,6 +626,27 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   float *entropy = MALLOC(sizeof(float)*ns);
   float *anisotropy = MALLOC(sizeof(float)*ns);
   float *alpha = MALLOC(sizeof(float)*ns);
+
+  float *coh11 = NULL;
+  float *coh22 = NULL;
+  float *coh33 = NULL;
+  float *coh12_r = NULL;
+  float *coh12_i = NULL;
+  float *coh13_r = NULL;
+  float *coh13_i = NULL;
+  float *coh23_r = NULL;
+  float *coh23_i = NULL;
+  if (debug_bands_start >= 0) {
+    coh11 = MALLOC(sizeof(float)*ns);
+    coh22 = MALLOC(sizeof(float)*ns);
+    coh33 = MALLOC(sizeof(float)*ns);
+    coh12_r = MALLOC(sizeof(float)*ns);
+    coh12_i = MALLOC(sizeof(float)*ns);
+    coh13_r = MALLOC(sizeof(float)*ns);
+    coh13_i = MALLOC(sizeof(float)*ns);
+    coh23_r = MALLOC(sizeof(float)*ns);
+    coh23_i = MALLOC(sizeof(float)*ns);
+  }
 
   // at the start, we want to load the buffers as follows: (for chunk_size=5)
   //   *lines[0] = ALL ZEROS
@@ -716,6 +741,16 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
       else
           break;
   }
+
+  if (debug_bands_start >= 0) {
+    strcat(bands, "Coh11,Coh22,Coh33,"
+           //"Coh12_R,Coh12_I,Coh13_R,Coh13_I,"
+           //"Coh23_R,Coh23_I,"
+      );
+    //nBands += 9;
+    nBands += 3;
+  }
+
   if (strlen(bands) > 0) // chop last comma
       bands[strlen(bands)-1] = '\0';
 
@@ -902,6 +937,22 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                   }
               }
 
+              complexFloat c;
+              c = complex_new_gsl(gsl_matrix_complex_get(T,0,0)); 
+              coh11[j] = c.real;
+              if (c.imag != 0)
+                printf("coh11 imag!=0: %d %d %f\n",i,j,c.imag);
+
+              c = complex_new_gsl(gsl_matrix_complex_get(T,1,1)); 
+              coh22[j] = c.real;
+              if (c.imag != 0)
+                printf("coh22 imag!=0: %d %d %f\n",i,j,c.imag);
+
+              c = complex_new_gsl(gsl_matrix_complex_get(T,2,2)); 
+              coh33[j] = c.real;
+              if (c.imag != 0)
+                printf("coh33 imag!=0: %d %d %f\n",i,j,c.imag);
+
               gsl_eigen_hermv(T, eval, evec, ws);
               gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
 
@@ -971,6 +1022,12 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             put_band_float_line(fout, outMeta, class_band, i, buf);
           }
 
+          if (debug_bands_start >= 0) {
+            put_band_float_line(fout, outMeta, debug_bands_start+0, i, coh11);
+            put_band_float_line(fout, outMeta, debug_bands_start+1, i, coh22);
+            put_band_float_line(fout, outMeta, debug_bands_start+2, i, coh33);
+          }
+
           for (j=0; j<ns; ++j) {
             int entropy_index = entropy[j]*(float)hist_size;
             if (entropy_index<0) entropy_index=0;
@@ -1023,6 +1080,16 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   free(entropy);
   free(anisotropy);
   free(alpha);
+
+  FREE(coh11);
+  FREE(coh22);
+  FREE(coh33);
+  FREE(coh12_r);
+  FREE(coh12_i);
+  FREE(coh13_r);
+  FREE(coh13_i);
+  FREE(coh23_r);
+  FREE(coh23_i);
 
   free(out_img_name);
   free(in_img_name);
@@ -1093,15 +1160,15 @@ void cpx2entropy_anisotropy_alpha(const char *inFile, const char *outFile,
     polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,NULL,-1);
 }
 
-typedef struct {
-   int nrows;
-   int nrows_loaded;
-   int full;
-   int next_to_go;
+void cpx2debug(const char *inFile, const char *outFile)
+{
+  asfPrintStatus("\n\nCalculating EVERYTHING!\n");
+  polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,"DEBUG",3);
+}
 
-   quadPolFloat *data_buffer;
-   int *line_ptrs;
-   float *omega_vals;
+typedef struct {
+   int line;
+   quadPolFloat *buf;
 
    FILE *fp;
    meta_parameters *meta;
@@ -1113,7 +1180,8 @@ typedef struct {
    int vv_amp_band, vv_phase_band;
 } QuadPolData;
 
-QuadPolData *qpd_new(FILE *fp, meta_parameters *meta, int bufsiz)
+/*
+QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
 {
   QuadPolData *qpd = MALLOC(sizeof(QuadPolData));
   qpd->fp = fp;
@@ -1137,158 +1205,77 @@ QuadPolData *qpd_new(FILE *fp, meta_parameters *meta, int bufsiz)
   complexFloat im1 = complex_new(0,1);
   qpd->r = complex_matrix_new22(re1,im1,im1,re1);
 
-  int ns = meta->general->sample_count;
-  int nl = meta->general->line_count;
+  qpd->buf = CALLOC(ns, sizeof(quadPolFloat));
 
-  qpd->nrows = bufsiz;
-  qpd->data_buffer = CALLOC(bufsiz*ns, sizeof(quadPolFloat));
-  qpd->line_ptrs = MALLOC(nl*sizeof(int));
-  qpd->omega_vals = CALLOC(bufsiz*ns, sizeof(float));
-
-  int i;
-  for (i=0; i<nl; ++i)
-    qpd->line_ptrs[i] = -1;
-
-  qpd->full = FALSE;
-  qpd->nrows_loaded = 0;
-  qpd->next_to_go = 0;
   return qpd;
 }
 
 void qpd_free(QuadPolData *qpd)
 {
-  FREE(qpd->data_buffer);
-  FREE(qpd->line_ptrs);
-  FREE(qpd->omega_vals);
+  FREE(qpd->buf);
   complex_matrix_free(qpd->r);
   // do not free meta_parameters, or close the file
   FREE(qpd);
 }
 
-quadPolFloat *qpd_get_qpf(QuadPolData *qpd, int line, int samp)
+void qpd_get_line(QuadPolData *qpd, int line)
 {
-  assert(line < qpd->meta->general->line_count);
+  // load quad pol data into the buffer
+  float *amp_buf = MALLOC(sizeof(float)*meta->general->sample_count);
+  float *phase_buf = MALLOC(sizeof(float)*meta->general->sample_count);
+  int k;
 
-  meta_parameters *meta = qpd->meta;
-  int ns = meta->general->sample_count;
+  get_band_float_line(qpd->fp, meta, qpd->hh_amp_band, line, amp_buf);
+  get_band_float_line(qpd->fp, meta, qpd->hh_phase_band, line, phase_buf);
+  for (k=0; k<ns; ++k)
+    qpd->buf[k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
 
-  if (qpd->line_ptrs[line] < 0)
-  {
-    int spot = -1;
-
-    // find a place to put the next row of data
-    if (!qpd->full) {
-      // can just load at the end of the data buffer
-      spot = qpd->nrows_loaded;
-      ++qpd->nrows_loaded;
-      qpd->full = qpd->nrows_loaded == qpd->nrows;
-    }
-    else {
-      // must dump existing data, use the oldest (lowest numbered)
-      assert(qpd->nrows == qpd->nrows_loaded);
-      spot = qpd->next_to_go % qpd->nrows;
-      ++qpd->next_to_go;
-    }
-
-    assert(spot>=0);
-    quadPolFloat *dest = qpd->data_buffer + spot*ns;
-
-    // load quad pol data into "dest"
-    float *amp_buf = MALLOC(sizeof(float)*meta->general->sample_count);
-    float *phase_buf = MALLOC(sizeof(float)*meta->general->sample_count);
-    int k;
-
-    get_band_float_line(qpd->fp, meta, qpd->hh_amp_band, line, amp_buf);
-    get_band_float_line(qpd->fp, meta, qpd->hh_phase_band, line, phase_buf);
-    for (k=0; k<ns; ++k)
-      dest[k].hh = complex_new_polar(amp_buf[k], phase_buf[k]);
-
-    get_band_float_line(qpd->fp, meta, qpd->hv_amp_band, line, amp_buf);
-    get_band_float_line(qpd->fp, meta, qpd->hv_phase_band, line, phase_buf);
-    for (k=0; k<ns; ++k)
-      dest[k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
+  get_band_float_line(qpd->fp, meta, qpd->hv_amp_band, line, amp_buf);
+  get_band_float_line(qpd->fp, meta, qpd->hv_phase_band, line, phase_buf);
+  for (k=0; k<ns; ++k)
+    qpd->buf[k].hv = complex_new_polar(amp_buf[k], phase_buf[k]);
     
-    get_band_float_line(qpd->fp, meta, qpd->vh_amp_band, line, amp_buf);
-    get_band_float_line(qpd->fp, meta, qpd->vh_phase_band, line, phase_buf);
-    for (k=0; k<ns; ++k)
-      dest[k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
+  get_band_float_line(qpd->fp, meta, qpd->vh_amp_band, line, amp_buf);
+  get_band_float_line(qpd->fp, meta, qpd->vh_phase_band, line, phase_buf);
+  for (k=0; k<ns; ++k)
+    qpd->buf[k].vh = complex_new_polar(amp_buf[k], phase_buf[k]);
     
-    get_band_float_line(qpd->fp, meta, qpd->vv_amp_band, line, amp_buf);
-    get_band_float_line(qpd->fp, meta, qpd->vv_phase_band, line, phase_buf);
-    for (k=0; k<ns; ++k)
-      dest[k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
+  get_band_float_line(qpd->fp, meta, qpd->vv_amp_band, line, amp_buf);
+  get_band_float_line(qpd->fp, meta, qpd->vv_phase_band, line, phase_buf);
+  for (k=0; k<ns; ++k)
+    qpd->buf[k].vv = complex_new_polar(amp_buf[k], phase_buf[k]);
 
-    qpd->line_ptrs[line] = spot;
-
-    // mark all omega values in the new row as "uncalculated"
-    float *omega_ptr = qpd->omega_vals + spot*ns;
-    for (k=0; k<ns; ++k)
-      omega_ptr[k] = -999;
-  }
-
-  assert(qpd->line_ptrs[line] >= 0);
-  assert(samp < qpd->meta->general->sample_count);
-
-  return qpd->data_buffer + qpd->line_ptrs[line]*ns + samp;
+  qpd->line = line;
 }
-
-static int ncalcs=0;
 
 double get_omega(QuadPolData *qpd, int line, int samp)
 {
   assert(line < qpd->meta->general->line_count);
   assert(samp < qpd->meta->general->sample_count);
+  assert(line == qpd->line);
   int ns = qpd->meta->general->sample_count;
 
-  int spot;
-  float *dest = NULL;
-  int calculation_required = FALSE;
-  if (qpd->line_ptrs[line] < 0) {
-    calculation_required = TRUE;
-  }
-  else {
-    dest = qpd->omega_vals + qpd->line_ptrs[line]*ns;
-    if (dest[samp] == -999)
-      calculation_required = TRUE;
-  }
+  quadPolFloat = qpd->buf + samp;
 
-  if (calculation_required) {
-    //printf("Calculating for: %d %d\n", line, samp);
-    ++ncalcs;
+  // This is the "M" matrix
+  complexMatrix *m = complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
 
-    // this will load in a new row if needed
-    quadPolFloat *qpf = qpd_get_qpf(qpd, line, samp);
-    assert(qpd->line_ptrs[line] >= 0);
-    spot = qpd->line_ptrs[line];
+  // Calculating z = r*M*r, where r=[(1 j)(j 1)]
+  complexMatrix *z = complex_matrix_mul3(qpd->r,m,qpd->r);
 
-    // This is the "M" matrix
-    complexMatrix *m = complex_matrix_new22(
-      qpf->hh, qpf->hv, qpf->vh, qpf->vv);
+  // omega = 1/4 arg(z12 * conj(z21))
+  // keep adding the omega values up, average at the end
+  //float omega = 0.25 * (float)complex_arg(
+  //                    complex_mul(complex_matrix_get(z,0,1),
+  //                               complex_conj(complex_matrix_get(z,1,0))));
+  float omega = 0.25 * (float)complex_arg(
+                         complex_mul(complex_matrix_get(z,1,0),
+                                     complex_conj(complex_matrix_get(z,0,1))));
 
-    // Calculating z = r*M*r, where r=[(1 j)(j 1)]
-    complexMatrix *z = complex_matrix_mul3(qpd->r,m,qpd->r);
+  complex_matrix_free(z);
+  complex_matrix_free(m);
 
-    // omega = 1/4 arg(z12 * conj(z21))
-    // keep adding the omega values up, average at the end
-    //float omega = 0.25 * (float)complex_arg(
-    //                    complex_mul(complex_matrix_get(z,0,1),
-    //                               complex_conj(complex_matrix_get(z,1,0))));
-    float omega = 0.25 * (float)complex_arg(
-                        complex_mul(complex_matrix_get(z,1,0),
-                                    complex_conj(complex_matrix_get(z,0,1))));
-
-    complex_matrix_free(z);
-    complex_matrix_free(m);
-
-    // save this omega for later
-    dest = qpd->omega_vals + spot*ns;
-    dest[samp] = omega;
-    return omega;
-  }
-  else {
-    assert(dest);
-    return dest[samp];
-  }
+  return omega;
 }
 
 void faraday_correct(const char *inFile, const char *outFile,
@@ -1296,77 +1283,74 @@ void faraday_correct(const char *inFile, const char *outFile,
 {
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
-  meta_parameters *outMeta = meta_read(meta_name);
 
   char *in_img_name = appendExt(inFile, ".img");
+  char *rot_img_name = appendToBasename(in_img_name, "_rot");
+  char *smoothed_img_name = appendToBasename(in_img_name, "_smooth");
+  char *residuals_img_name = appendToBasename(in_img_name, "_residuals");
   char *out_img_name = appendExt(outFile, ".img");
 
   int nl = inMeta->general->line_count;
   int ns = inMeta->general->sample_count;
 
+  // STEP 1: Calculate the Faraday Rotation angle at each pixel
+  //         and generate an output .img
   FILE *fin = fopenImage(in_img_name, "rb");
-  FILE *fout = fopenImage(out_img_name, "wb");
-
-  //int rows = 601;
-  int rows = 51;
-  assert(rows%2==1);
-  int l = (rows-1)/2;
+  FILE *fout = fopenImage(rot_img_name, "wb");
 
   QuadPolData *qpd = qpd_new(fin, inMeta, rows);
 
-  char *out_meta_name = appendExt(outFile, ".meta");
-
-  // anything to update?
-  meta_write(outMeta, out_meta_name);
-  free(out_meta_name);
-
   float *out_line = MALLOC(sizeof(float)*ns);
 
-  // now loop through the lines/samples of the image
+  // now loop through the lines/samples of the image, calculating
+  // the faraday rotation angle
   int i,j,ii,jj;
   for (i=0; i<nl; ++i) {
     asfLineMeter(i,nl);
-    //printf("Line: %d\n", i);
-    
-    for (j=0; j<ns; ++j) {
+    qpd->get_line(qpd,i);
 
-      // average together all of the omegas in the window
-      int count = 0;
-      double omega = 0.0;
-
-      // here is the loop over the bufsiz by bufsiz window
-      int bot = i-l;
-      if (bot < 0) bot = 0;
-
-      int top = i+l;
-      if (top >= nl) top = nl-1;
-
-      for (ii=bot; ii<=top; ++ii) {
-
-        int left = j-l;
-        if (left<0) left = 0;
-
-        int right = j+l;
-        if (right>=ns) right = ns-1;
-
-        for (jj=left; jj<=right; ++jj) {
-          ++count;
-          omega += get_omega(qpd, ii, jj);
-        }
-      }
-
-      out_line[j] = R2D * (omega / (double)count);
-    }
+    for (j=0; j<ns; ++j)
+      out_line[j] = R2D * get_omega(qpd, i, j);
 
     put_float_line(fout, outMeta, i, out_line);
-    //if (i==50) break;
   }
 
   FCLOSE(fin);
   FCLOSE(fout);
 
-  printf("Total omega calcs: %d\n", ncalcs);
-
   FREE(out_line);
+
+  // faraday rotation metadata -- only has one band
+  char *rot_meta_name = appendExt(rot_img_name, ".meta");
+  meta_parameters *rotMeta = meta_read(meta_name);
+
+  strcpy(rotMeta->general->bands, "OMEGA");
+  rotMeta->general->image_data_type = AMPLITUDE_IMAGE;
+  rotMeta->general->band_count = 1;
+  meta_write(rotMeta, rot_meta_name);
+
+  // STEP 2: Smooth the Faraday rotation angle image
+  smooth(rot_img_name, smoothed_img_name, 600, EDGE_TRUNCATE);
+
+  // STEP 3: Calculate corrected values
+
+  // final output metadata
+  char *out_meta_name = appendExt(outFile, ".meta");
+  meta_parameters *outMeta = meta_read(meta_name);
+
+  // anything to update?
+  meta_write(outMeta, out_meta_name);
+
+  // STEP 4: Clean up!
+  free(out_meta_name);
+  free(rot_meta_name);
+
+  free(in_img_name);
+  free(rot_img_name);
+  free(smoothed_img_name);
+  free(residuals_img_name);
+  free(out_img_name);
+
   qpd_free(qpd);
 }
+*/

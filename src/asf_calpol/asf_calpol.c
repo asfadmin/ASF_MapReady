@@ -2,7 +2,7 @@
 
 #define ASF_USAGE_STRING \
 "   "ASF_NAME_STRING" [-log <logfile>] [-quiet] [-c <classification file>]\n"\
-"          <in_base_name> <out_base_name>\n"
+"          [-debug] <in_base_name> <out_base_name>\n"
 
 #define ASF_DESCRIPTION_STRING \
 "     This program decomposes SLC quad-pole data into data required\n"\
@@ -20,7 +20,8 @@
 "       band 9: VV [Sinclair blue]\n\n"\
 "     When used with the -c option, the output is a 2-band image:\n"\
 "       band 0: Amplitude (HH)\n"\
-"       band 1: Classification band\n\n"
+"       band 1: Classification band\n"\
+"     With the -debug option, debug bands are added.\n\n"
 
 #define ASF_INPUT_STRING \
 "     The input file is required, and should be in ASF Internal format.\n"
@@ -127,6 +128,7 @@ main (int argc, char *argv[])
 
   char classFile[255];
   int classify = extract_string_options(&argc,&argv,classFile,"-c",NULL);
+  int debug = extract_flag_options(&argc,&argv,"-debug","-d",NULL);
 
   if (argc<=1)
       usage(ASF_NAME_STRING);
@@ -156,7 +158,10 @@ main (int argc, char *argv[])
   inFile = argv[currArg];
   outFile = argv[currArg+1];
 
-  if (classify) {
+  if (debug) {
+    cpx2debug(inFile,outFile);
+  }
+  else if (classify) {
     polarimetric_decomp(inFile,outFile,0,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                         classFile,1);    
   }
