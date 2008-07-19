@@ -22,6 +22,7 @@ OBJS = \
 	fftMatch.o \
 	shaded_relief.o \
 	resample.o \
+	smooth.o \
 	tile.o \
 	look_up_table.o
 

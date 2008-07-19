@@ -59,6 +59,10 @@ typedef enum {
   LANCZOS
 } weighting_type_t;
 
+typedef enum {
+  EDGE_TRUNCATE=1
+} edge_strategy_t;
+
 typedef struct {
   double min;
   double max;
@@ -137,6 +141,10 @@ int resample_to_pixsiz(const char *infile, const char *outfile,
 		       double xpixsiz, double ypixsiz);
 int resample_to_square_pixsiz(const char *infile, const char *outfile, 
                               double pixsiz);
+
+/* Prototypes from smooth.c **************************************************/
+int smooth(const char *infile, const char *outfile, int kernel_size,
+           edge_strategy_t edge_strategy);
 
 // Prototypes from tile.c
 void create_image_tiles(char *inFile, char *outBaseName, int tile_size);
