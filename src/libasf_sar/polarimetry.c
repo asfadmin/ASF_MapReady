@@ -575,8 +575,11 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
                          int class_band)
 {
   int debug_mode = classFile && strcmp_case(classFile, "DEBUG")==0;
-  int debug_bands_start = debug_mode ? class_band : -1;
-  class_band = -1;
+  int debug_band = -1;
+  if (debug_mode) {
+    debug_band = class_band;
+    class_band = -1;
+  }
 
   char *meta_name = appendExt(inFile, ".meta");
   meta_parameters *inMeta = meta_read(meta_name);
@@ -636,7 +639,7 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
   float *coh13_i = NULL;
   float *coh23_r = NULL;
   float *coh23_i = NULL;
-  if (debug_bands_start >= 0) {
+  if (debug_band >= 0) {
     coh11 = MALLOC(sizeof(float)*ns);
     coh22 = MALLOC(sizeof(float)*ns);
     coh33 = MALLOC(sizeof(float)*ns);
@@ -742,13 +745,10 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
           break;
   }
 
-  if (debug_bands_start >= 0) {
-    strcat(bands, "Coh11,Coh22,Coh33,"
-           //"Coh12_R,Coh12_I,Coh13_R,Coh13_I,"
-           //"Coh23_R,Coh23_I,"
-      );
-    //nBands += 9;
-    nBands += 3;
+  if (debug_band >= 0) {
+    strcat(bands, "Coh11,Coh22,Coh33,Coh12_Re,Coh12_Im,Coh13_Re,Coh13_Im,"
+                  "Coh23_Re,Coh23_Im,");
+    nBands += 9;
   }
 
   if (strlen(bands) > 0) // chop last comma
@@ -940,18 +940,24 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
               complexFloat c;
               c = complex_new_gsl(gsl_matrix_complex_get(T,0,0)); 
               coh11[j] = c.real;
-              if (c.imag != 0)
-                printf("coh11 imag!=0: %d %d %f\n",i,j,c.imag);
 
               c = complex_new_gsl(gsl_matrix_complex_get(T,1,1)); 
               coh22[j] = c.real;
-              if (c.imag != 0)
-                printf("coh22 imag!=0: %d %d %f\n",i,j,c.imag);
 
               c = complex_new_gsl(gsl_matrix_complex_get(T,2,2)); 
               coh33[j] = c.real;
-              if (c.imag != 0)
-                printf("coh33 imag!=0: %d %d %f\n",i,j,c.imag);
+
+              c = complex_new_gsl(gsl_matrix_complex_get(T,0,1)); 
+              coh12_r[j] = c.real;
+              coh12_i[j] = c.imag;
+
+              c = complex_new_gsl(gsl_matrix_complex_get(T,0,2));
+              coh13_r[j] = c.real;
+              coh13_i[j] = c.imag;
+
+              c = complex_new_gsl(gsl_matrix_complex_get(T,1,2));
+              coh23_r[j] = c.real;
+              coh23_i[j] = c.imag;
 
               gsl_eigen_hermv(T, eval, evec, ws);
               gsl_eigen_hermv_sort(eval, evec, GSL_EIGEN_SORT_ABS_DESC);
@@ -1022,10 +1028,16 @@ void polarimetric_decomp(const char *inFile, const char *outFile,
             put_band_float_line(fout, outMeta, class_band, i, buf);
           }
 
-          if (debug_bands_start >= 0) {
-            put_band_float_line(fout, outMeta, debug_bands_start+0, i, coh11);
-            put_band_float_line(fout, outMeta, debug_bands_start+1, i, coh22);
-            put_band_float_line(fout, outMeta, debug_bands_start+2, i, coh33);
+          if (debug_band >= 0) {
+            put_band_float_line(fout, outMeta, debug_band+0, i, coh11);
+            put_band_float_line(fout, outMeta, debug_band+1, i, coh22);
+            put_band_float_line(fout, outMeta, debug_band+2, i, coh33);
+            put_band_float_line(fout, outMeta, debug_band+3, i, coh12_r);
+            put_band_float_line(fout, outMeta, debug_band+4, i, coh12_i);
+            put_band_float_line(fout, outMeta, debug_band+5, i, coh13_r);
+            put_band_float_line(fout, outMeta, debug_band+6, i, coh13_i);
+            put_band_float_line(fout, outMeta, debug_band+7, i, coh23_r);
+            put_band_float_line(fout, outMeta, debug_band+8, i, coh23_i);
           }
 
           for (j=0; j<ns; ++j) {
