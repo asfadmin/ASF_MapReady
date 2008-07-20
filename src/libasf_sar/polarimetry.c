@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "asf_sar.h"
 #include "asf_raster.h"
 #include <assert.h>
@@ -142,15 +143,15 @@ static complexVector complex_vector_conj(complexVector v)
         complex_conj(v.B), complex_conj(v.C));
 }
 
-static complexVector complex_vector_normalize(complexVector v)
-{
-    complexVector ret;
-    double mag = complex_amp(v.A) + complex_amp(v.B) + complex_amp(v.C);
-    ret.A.real = v.A.real/mag;   ret.A.imag = v.A.imag/mag;
-    ret.B.real = v.B.real/mag;   ret.B.imag = v.B.imag/mag;
-    ret.C.real = v.C.real/mag;   ret.C.imag = v.C.imag/mag;
-    return ret;
-}
+//static complexVector complex_vector_normalize(complexVector v)
+//{
+//    complexVector ret;
+//    double mag = complex_amp(v.A) + complex_amp(v.B) + complex_amp(v.C);
+//    ret.A.real = v.A.real/mag;   ret.A.imag = v.A.imag/mag;
+//    ret.B.real = v.B.real/mag;   ret.B.imag = v.B.imag/mag;
+//    ret.C.real = v.C.real/mag;   ret.C.imag = v.C.imag/mag;
+//    return ret;
+//}
 
 static complexVector complex_vector_zero()
 {
@@ -1190,7 +1191,6 @@ void cpx2debug(const char *inFile, const char *outFile)
   polarimetric_decomp(inFile,outFile,-1,-1,-1,-1,0,1,2,-1,-1,-1,"DEBUG",3);
 }
 
-/*
 typedef struct {
    int line;
    quadPolFloat *buf;
@@ -1229,7 +1229,7 @@ QuadPolData *qpd_new(FILE *fp, meta_parameters *meta)
   complexFloat im1 = complex_new(0,1);
   qpd->r = complex_matrix_new22(re1,im1,im1,re1);
 
-  qpd->buf = CALLOC(ns, sizeof(quadPolFloat));
+  qpd->buf = CALLOC(meta->general->sample_count, sizeof(quadPolFloat));
 
   return qpd;
 }
@@ -1245,6 +1245,9 @@ void qpd_free(QuadPolData *qpd)
 void qpd_get_line(QuadPolData *qpd, int line)
 {
   // load quad pol data into the buffer
+  meta_parameters *meta = qpd->meta;
+  int ns = meta->general->sample_count;
+
   float *amp_buf = MALLOC(sizeof(float)*meta->general->sample_count);
   float *phase_buf = MALLOC(sizeof(float)*meta->general->sample_count);
   int k;
@@ -1277,9 +1280,8 @@ static double get_omega(QuadPolData *qpd, int line, int samp)
   assert(line < qpd->meta->general->line_count);
   assert(samp < qpd->meta->general->sample_count);
   assert(line == qpd->line);
-  int ns = qpd->meta->general->sample_count;
 
-  quadPolFloat = qpd->buf + samp;
+  quadPolFloat *qpf = qpd->buf + samp;
 
   // This is the "M" matrix
   complexMatrix *m = complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
@@ -1307,11 +1309,23 @@ static complexMatrix *make_cpx_rotation_matrix(double ang)
   float c = cos(ang);
   float s = sin(ang);
   
-  complexFloat cpx_cos = complex_float_new(c, 0);
-  complexFloat cpx_sin = complex_float_new(s, 0);
-  complexFloat cpx_minus_sin = complex_float_new(-s, 0);
+  complexFloat cpx_cos = complex_new(c, 0);
+  complexFloat cpx_sin = complex_new(s, 0);
+  complexFloat cpx_minus_sin = complex_new(-s, 0);
   
   return complex_matrix_new22(cpx_cos, cpx_minus_sin, cpx_sin, cpx_cos);
+}
+
+void removeImgAndMeta(const char *f)
+{
+    char *meta_file = appendExt(f, ".meta");
+    char *img_file = appendExt(f, ".img");
+
+    unlink(meta_file);
+    unlink(img_file);
+
+    free(meta_file);
+    free(img_file);
 }
 
 void faraday_correct(const char *inFile, const char *outFile,
@@ -1334,21 +1348,30 @@ void faraday_correct(const char *inFile, const char *outFile,
   FILE *fin = fopenImage(in_img_name, "rb");
   FILE *fout = fopenImage(rot_img_name, "wb");
 
-  QuadPolData *qpd = qpd_new(fin, inMeta, rows);
+  QuadPolData *qpd = qpd_new(fin, inMeta);
 
   float *buf = MALLOC(sizeof(float)*ns);
+
+  // faraday rotation metadata -- only has one band
+  char *rot_meta_name = appendExt(rot_img_name, ".meta");
+  meta_parameters *rotMeta = meta_read(meta_name);
+
+  strcpy(rotMeta->general->bands, "OMEGA");
+  rotMeta->general->image_data_type = AMPLITUDE_IMAGE;
+  rotMeta->general->band_count = 1;
+  meta_write(rotMeta, rot_meta_name);
 
   // now loop through the lines/samples of the image, calculating
   // the faraday rotation angle
   int i,j;
   for (i=0; i<nl; ++i) {
     asfLineMeter(i,nl);
-    qpd->get_line(qpd,i);
+    qpd_get_line(qpd,i);
 
     for (j=0; j<ns; ++j)
       buf[j] = R2D * get_omega(qpd, i, j);
 
-    put_float_line(fout, outMeta, i, buf);
+    put_float_line(fout, rotMeta, i, buf);
   }
 
   FCLOSE(fin);
@@ -1360,22 +1383,13 @@ void faraday_correct(const char *inFile, const char *outFile,
   qpd_free(qpd);
   qpd = NULL;
 
-  // faraday rotation metadata -- only has one band
-  char *rot_meta_name = appendExt(rot_img_name, ".meta");
-  meta_parameters *rotMeta = meta_read(meta_name);
-
-  strcpy(rotMeta->general->bands, "OMEGA");
-  rotMeta->general->image_data_type = AMPLITUDE_IMAGE;
-  rotMeta->general->band_count = 1;
-  meta_write(rotMeta, rot_meta_name);
-
   double avg_omega = -999;
 
   // STEP 2: Smooth the Faraday rotation angle image, or calculate the 
   //         average rotation angle for the entire image
   if (use_single_rotation_value) {
     avg_omega = 0;
-    asfPrintStatus("Calculating average rotation angle...\n")
+    asfPrintStatus("Calculating average rotation angle...\n");
     FILE *fp = fopen(rot_img_name, "rb");
     for (i=0; i<nl; ++i) {
       asfLineMeter(i,nl);
@@ -1387,12 +1401,12 @@ void faraday_correct(const char *inFile, const char *outFile,
     avg_omega /= (double)(nl*ns);
   }
   else {
-    asfPrintStatus("Smoothing rotation angle image...\n")
+    asfPrintStatus("Smoothing rotation angle image...\n");
     smooth(rot_img_name, smoothed_img_name, 600, EDGE_TRUNCATE);
   }
 
   // STEP 3: Calculate corrected values
-  asfPrintStatus("Calculating corrected values...\n")
+  asfPrintStatus("Calculating corrected values...\n");
 
   // final output metadata
   char *out_meta_name = appendExt(outFile, ".meta");
@@ -1402,12 +1416,22 @@ void faraday_correct(const char *inFile, const char *outFile,
   // write out output metadata
   meta_write(outMeta, out_meta_name);
 
+  // metadata for the residuals file
+  char *res_meta_name = appendExt(residuals_img_name, ".meta");
+  meta_parameters *resMeta = meta_read(meta_name);
+
+  strcpy(resMeta->general->bands, "RESIDUALS");
+  resMeta->general->image_data_type = AMPLITUDE_IMAGE;
+  resMeta->general->band_count = 1;
+  meta_write(resMeta, res_meta_name);
+
+  // now the data files...
   fin = fopenImage(in_img_name, "rb");
   fout = fopenImage(out_img_name, "wb");
-  qpd = qpd_new(fin, inMeta, rows);
+  qpd = qpd_new(fin, inMeta);
 
   FILE *fprot = NULL;
-  float *rotatation_vals = NULL;
+  float *rotation_vals = NULL;
   if (!use_single_rotation_value) {
     fprot = fopenImage(smoothed_img_name, "rb");
     rotation_vals = MALLOC(sizeof(float)*ns);
@@ -1433,7 +1457,7 @@ void faraday_correct(const char *inFile, const char *outFile,
   // now iterate through the input image's pixels...
   for (i=0; i<nl; ++i) {
     asfLineMeter(i,nl);
-    qpd->get_line(qpd,i);
+    qpd_get_line(qpd,i);
 
     if (!use_single_rotation_value)
       get_float_line(fprot, rotMeta, i, rotation_vals);
@@ -1445,7 +1469,7 @@ void faraday_correct(const char *inFile, const char *outFile,
       else
         omega = rotation_vals[j];
       
-      quadPolFloat = qpd->buf + j;
+      quadPolFloat *qpf = qpd->buf + j;
 
       // This is the "M" matrix
       complexMatrix *m = complex_matrix_new22(qpf->hh, qpf->hv, qpf->vh, qpf->vv);
@@ -1487,14 +1511,14 @@ void faraday_correct(const char *inFile, const char *outFile,
     put_band_float_line(fout, outMeta, qpd->hh_phase_band, i, hh_phase);
     put_band_float_line(fout, outMeta, qpd->hv_amp_band, i, hv_amp);
     put_band_float_line(fout, outMeta, qpd->hv_phase_band, i, hv_phase);
-    put_band_float_line(fout, outMeta, qpd->vh_amp_band, i, hh_amp);
-    put_band_float_line(fout, outMeta, qpd->vh_phase_band, i, hh_phase);
+    put_band_float_line(fout, outMeta, qpd->vh_amp_band, i, vh_amp);
+    put_band_float_line(fout, outMeta, qpd->vh_phase_band, i, vh_phase);
     put_band_float_line(fout, outMeta, qpd->vv_amp_band, i, vv_amp);
     put_band_float_line(fout, outMeta, qpd->vv_phase_band, i, vv_phase);
     
     // write out residuals
     if (save_intermediates)
-      put_float_line(fpres, resMeta, i, res)
+      put_float_line(fpres, resMeta, i, res);
   }
 
   FCLOSE(fin);
@@ -1509,7 +1533,7 @@ void faraday_correct(const char *inFile, const char *outFile,
   free(rot_meta_name);
   FREE(buf);
 
-  if (fprot) close(fprot);
+  if (fprot) fclose(fprot);
   FREE(rotation_vals);
 
   FREE(hh_amp);
@@ -1526,6 +1550,8 @@ void faraday_correct(const char *inFile, const char *outFile,
     removeImgAndMeta(rot_img_name);
     if (!use_single_rotation_value)
       removeImgAndMeta(smoothed_img_name);
+    // no need to remove residuals file, it is not generated if intermediates
+    // are not being saved
   }
 
   meta_free(rotMeta);
@@ -1541,4 +1567,3 @@ void faraday_correct(const char *inFile, const char *outFile,
   qpd_free(qpd);
 }
 
-*/
